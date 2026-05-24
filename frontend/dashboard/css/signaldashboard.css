@@ -1,0 +1,596 @@
+/* ============================================
+   YOUR SIGNALS DASHBOARD - MAIN STYLES
+   ============================================ */
+
+/* ============================================
+   DASHBOARD ROOT CONTAINER
+   ============================================ */
+.dashboard-root {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px;
+    min-height: calc(100vh - 80px);
+}
+
+/* ============================================
+   DASHBOARD HEADER
+   Page title and quick stats summary
+   ============================================ */
+.dashboard-header {
+    margin-bottom: 40px;
+}
+
+.header-content {
+    margin-bottom: 30px;
+}
+
+.header-content h1 {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.header-subtitle {
+    font-size: 18px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ============================================
+   QUICK STATS - Summary Cards
+   ============================================ */
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, rgba(25, 25, 30, 0.95), rgba(20, 20, 25, 0.95));
+    border: 1px solid rgba(92, 197, 167, 0.2);
+    border-radius: 16px;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent-green);
+    box-shadow: 0 8px 24px rgba(92, 197, 167, 0.2);
+}
+
+.stat-icon {
+    font-size: 32px;
+    opacity: 0.9;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+/* ============================================
+   EMPTY STATE CONTAINER
+   Wrapper for empty state component
+   ============================================ */
+.empty-state-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    gap: 20px;
+}
+
+.loading-spinner {
+    position: relative;
+    width: 60px;
+    height: 60px;
+}
+
+.spinner {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 4px solid rgba(92, 197, 167, 0.2);
+    border-top-color: var(--accent-green);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 18px;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   SIGNALS GRID - Main Content Area
+   ============================================ */
+.signals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 25px;
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   SIGNAL CARD - Individual Post Card
+   ============================================ */
+.signal-card {
+    background: linear-gradient(135deg, rgba(25, 25, 30, 0.95), rgba(20, 20, 25, 0.95));
+    border: 1px solid rgba(92, 197, 167, 0.15);
+    border-radius: 16px;
+    padding: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.signal-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-green), var(--accent-hover));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.signal-card:hover::before {
+    transform: scaleX(1);
+}
+
+.signal-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-green);
+    box-shadow: 0 12px 32px rgba(92, 197, 167, 0.25);
+}
+
+/* Signal Card Header */
+.signal-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.signal-card-date {
+    font-size: 13px;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.signal-badge {
+    background: rgba(92, 197, 167, 0.2);
+    color: var(--accent-green);
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--accent-green);
+}
+
+/* Signal Card Content */
+.signal-card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.signal-card-preview {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Signal Card Analytics */
+.signal-card-analytics {
+    display: flex;
+    gap: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(92, 197, 167, 0.1);
+}
+
+.analytics-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.analytics-item-icon {
+    font-size: 16px;
+}
+
+.analytics-item-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+    gap: 15px;
+}
+
+.error-icon {
+    font-size: 64px;
+    opacity: 0.6;
+}
+
+.error-state h2 {
+    font-size: 28px;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.error-state p {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+/* ============================================
+   SIGNAL DETAIL MODAL
+   ============================================ */
+.signal-detail-content {
+    max-width: 900px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.signal-detail-header {
+    margin-bottom: 30px;
+    padding-bottom: 25px;
+    border-bottom: 2px solid rgba(92, 197, 167, 0.2);
+}
+
+.signal-detail-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    line-height: 1.3;
+}
+
+.signal-detail-meta {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Post Content */
+.post-content-section {
+    background: rgba(20, 20, 20, 0.6);
+    border: 1px solid rgba(92, 197, 167, 0.2);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.post-content-section h3 {
+    font-size: 18px;
+    color: var(--accent-green);
+    margin-bottom: 15px;
+}
+
+.post-content-text {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+}
+
+/* Analytics Detail */
+.analytics-detail {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.analytics-detail-card {
+    background: linear-gradient(135deg, rgba(92, 197, 167, 0.1), rgba(92, 197, 167, 0.05));
+    border: 1px solid rgba(92, 197, 167, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.analytics-detail-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent-green);
+    margin-bottom: 8px;
+}
+
+.analytics-detail-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================
+   MODAL STYLES
+   ============================================ */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, rgba(25, 25, 30, 0.98), rgba(20, 20, 25, 0.98));
+    border: 1px solid rgba(92, 197, 167, 0.3);
+    margin: 5% auto;
+    padding: 40px;
+    width: 90%;
+    max-width: 800px;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    position: relative;
+    animation: slideDown 0.3s ease-in-out;
+}
+
+.close-modal {
+    color: var(--text-secondary);
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 32px;
+    font-weight: 300;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.close-modal:hover,
+.close-modal:focus {
+    color: var(--accent-green);
+    background: rgba(92, 197, 167, 0.1);
+    transform: rotate(90deg);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Tablet (1024px and below) */
+@media (max-width: 1024px) {
+    .dashboard-root {
+        padding: 30px 25px;
+    }
+    
+    .header-content h1 {
+        font-size: 36px;
+    }
+    
+    .signals-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+}
+
+/* Mobile (768px and below) */
+@media (max-width: 768px) {
+    .dashboard-root {
+        padding: 25px 20px;
+    }
+    
+    .header-content h1 {
+        font-size: 32px;
+    }
+    
+    .quick-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-icon {
+        font-size: 28px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+    
+    .signals-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .analytics-detail {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Modal responsive */
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+        padding: 30px 20px;
+    }
+
+    .close-modal {
+        right: 15px;
+        top: 15px;
+        font-size: 28px;
+    }
+}
+
+/* Small mobile (480px and below) */
+/* ============================================
+   SIGNAL CARD IMAGE STYLES
+   ============================================ */
+.signal-card-image {
+    position: relative;
+    width: 100%;
+    margin: 15px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.signal-card-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+}
+
+.signal-card:hover .signal-card-image img {
+    transform: scale(1.05);
+}
+
+.image-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(92, 197, 167, 0.9);
+    color: #0D0D0D;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    backdrop-filter: blur(5px);
+}
+
+/* ============================================
+   MODAL IMAGE SECTION STYLES
+   ============================================ */
+.signal-image-section {
+    margin: 30px 0;
+    padding: 20px 0;
+    border-top: 1px solid rgba(92, 197, 167, 0.2);
+}
+
+.signal-image-section h3 {
+    font-size: 20px;
+    color: var(--accent-green);
+    margin-bottom: 15px;
+}
+
+.signal-image-container {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.signal-image-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid rgba(92, 197, 167, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+    .signal-card-image {
+        margin: 10px 0;
+    }
+
+    .image-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .signal-image-container {
+        padding: 15px;
+    }
+}

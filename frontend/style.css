@@ -1,0 +1,288 @@
+/* ============================================
+   GLOBAL RESET & BASE STYLES
+   ============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ============================================
+   CSS VARIABLES - For Consistent Theming
+   Centralize colors, spacing, and other design tokens
+   ============================================ */
+:root {
+    /* Color Palette */
+    --bg-dark: #0D0D0D;
+    --text-primary: #FFFFFF;
+    --text-secondary: #CCCCCC;
+    --accent-green: #5CC5A7;
+    --accent-hover: #4AB393;
+    --button-bg: #FFFFFF;
+    --button-text: #000000;
+    
+    /* Spacing */
+    --spacing-xs: 10px;
+    --spacing-sm: 20px;
+    --spacing-md: 40px;
+    --spacing-lg: 60px;
+    --spacing-xl: 80px;
+    
+    /* Typography */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-size-base: 18px;
+    --font-size-lg: 20px;
+    --font-size-xl: 48px;
+    
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 20px;
+    --radius-lg: 30px;
+    
+    /* Shadows */
+    --shadow-light: 0px 5px 15px rgba(92, 197, 167, 0.3);
+    --shadow-heavy: 0px 10px 20px rgba(0, 255, 200, 0.2);
+    --shadow-hover: 0px 5px 15px rgba(92, 197, 167, 0.6);
+}
+
+/* ============================================
+   BODY & BASE LAYOUT
+   ============================================ */
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+/* ============================================
+   HERO SECTION - Landing Page Main Content
+   ============================================ */
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    gap: var(--spacing-sm);
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 80px); /* Account for navbar height */
+}
+
+/* Hero Text Content */
+.hero-content {
+    max-width: 550px;
+}
+
+.hero-content h1 {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: var(--spacing-xs);
+}
+
+/* Accent color for tagline */
+.hero-content span {
+    color: var(--accent-green);
+}
+
+.hero-content p {
+    margin: var(--spacing-xs) 0 var(--spacing-sm) 0;
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   CALL TO ACTION BUTTON
+   Primary button style used across the site
+   ============================================ */
+.cta-button {
+    display: inline-block;
+    padding: 14px 28px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    transition: all 0.3s ease-in-out;
+    box-shadow: var(--shadow-light);
+    cursor: pointer;
+    border: none;
+    font-family: var(--font-primary);
+}
+
+.cta-button:hover {
+    background: var(--accent-green);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+.cta-button:active {
+    transform: translateY(0);
+}
+
+/* Secondary button variant */
+.secondary-button {
+    background-color: transparent;
+    color: var(--text-primary);
+    border: 2px solid var(--accent-green);
+    padding: 12px 24px;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.secondary-button:hover {
+    background-color: var(--accent-green);
+    color: var(--text-primary);
+}
+
+/* ============================================
+   HERO IMAGE
+   ============================================ */
+.hero-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-image img {
+    max-width: 100%;
+    height: auto;
+    max-height: 450px;
+    border-radius: var(--radius-md);
+    object-fit: contain;
+    box-shadow: var(--shadow-heavy);
+    transition: transform 0.3s ease-in-out;
+}
+
+.hero-image img:hover {
+    transform: scale(1.05);
+}
+
+/* ============================================
+   NAVBAR STYLES
+   Styles for the dynamically loaded navbar component
+   ============================================ */
+nav {
+    background-color: rgba(13, 13, 13, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 20px var(--spacing-xl);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(92, 197, 167, 0.1);
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    align-items: center;
+}
+
+nav li {
+    display: inline-block;
+}
+
+nav a {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+nav a:hover {
+    color: var(--accent-green);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   Reusable classes for common patterns
+   ============================================ */
+
+/* Container for centered content */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-md);
+}
+
+/* Text alignment utilities */
+.text-center {
+    text-align: center;
+}
+
+/* Spacing utilities */
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+
+/* ============================================
+   RESPONSIVE DESIGN
+   Mobile-first breakpoints
+   ============================================ */
+
+/* Tablet (1024px and below) */
+@media (max-width: 1024px) {
+    .hero {
+        flex-direction: column;
+        text-align: center;
+        padding: var(--spacing-lg) var(--spacing-md);
+        min-height: auto;
+    }
+
+    .hero-image img {
+        width: 100%;
+        max-height: 400px;
+    }
+    
+    nav {
+        padding: 20px var(--spacing-md);
+    }
+}
+
+/* Mobile (768px and below) */
+@media (max-width: 768px) {
+    :root {
+        --font-size-xl: 36px;
+        --font-size-lg: 18px;
+        --font-size-base: 16px;
+    }
+
+    .hero {
+        padding: var(--spacing-md) var(--spacing-sm);
+    }
+
+    .cta-button {
+        font-size: var(--font-size-base);
+        padding: 12px 24px;
+    }
+    
+    nav ul {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+/* Small mobile (480px and below) */
+@media (max-width: 480px) {
+    :root {
+        --font-size-xl: 28px;
+        --spacing-lg: 40px;
+    }
+    
+    .hero-image img {
+        max-height: 300px;
+    }
+}

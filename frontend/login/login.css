@@ -1,0 +1,357 @@
+/* ============================================
+   LOGIN PAGE STYLES
+   Clean, centered authentication form
+   ============================================ */
+
+/* ============================================
+   LOGIN PAGE LAYOUT
+   ============================================ */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ============================================
+   LOGIN CONTAINER
+   Main form container
+   ============================================ */
+.login-container {
+    background: linear-gradient(135deg, rgba(25, 25, 30, 0.95), rgba(20, 20, 25, 0.95));
+    border: 1px solid rgba(92, 197, 167, 0.3);
+    border-radius: 24px;
+    padding: 50px 40px;
+    max-width: 450px;
+    width: 100%;
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   LOGIN HEADER
+   Brand title and subtitle
+   ============================================ */
+.login-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.brand-title {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+
+.brand-title::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-green), var(--accent-hover));
+    margin: 15px auto 0;
+    border-radius: 2px;
+}
+
+.login-subtitle {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ============================================
+   AUTH FORM
+   Form styling
+   ============================================ */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Form Group - Label and Input wrapper */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(92, 197, 167, 0.2);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 16px;
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    transition: all 0.3s ease;
+}
+
+.form-group input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--accent-green);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 4px rgba(92, 197, 167, 0.1);
+}
+
+/* Password hint text */
+.password-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    margin-top: -4px;
+}
+
+/* ============================================
+   ERROR MESSAGE
+   Error display styling
+   ============================================ */
+.error-message {
+    background: rgba(255, 107, 107, 0.15);
+    border: 1px solid rgba(255, 107, 107, 0.5);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #ff6b6b;
+    font-size: 14px;
+    line-height: 1.5;
+    animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+/* ============================================
+   LOGIN BUTTON
+   Submit button with loading state
+   ============================================ */
+.login-button {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    margin-top: 10px;
+    position: relative;
+}
+
+.button-text,
+.button-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.button-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Loading state */
+.login-button.loading .button-text {
+    opacity: 0;
+}
+
+.login-button.loading .button-loader {
+    display: flex;
+}
+
+.login-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Small spinner for button */
+.spinner-small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   AUTH NOTE
+   Helper text below form
+   ============================================ */
+.auth-note {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+    padding-top: 10px;
+}
+
+/* ============================================
+   LOGIN FOOTER
+   Back link section
+   ============================================ */
+.login-footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 1px solid rgba(92, 197, 167, 0.2);
+}
+
+.back-link {
+    color: var(--accent-green);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.back-link:hover {
+    color: var(--accent-hover);
+    gap: 8px;
+}
+
+/* ============================================
+   DECORATIVE BACKGROUND
+   Animated circles for visual interest
+   ============================================ */
+.login-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.bg-circle {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(92, 197, 167, 0.15), transparent);
+    filter: blur(60px);
+    animation: float-circle 20s ease-in-out infinite;
+}
+
+.bg-circle-1 {
+    width: 400px;
+    height: 400px;
+    top: -200px;
+    left: -200px;
+    animation-delay: 0s;
+}
+
+.bg-circle-2 {
+    width: 300px;
+    height: 300px;
+    bottom: -150px;
+    right: -150px;
+    animation-delay: 7s;
+}
+
+.bg-circle-3 {
+    width: 250px;
+    height: 250px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: 14s;
+}
+
+@keyframes float-circle {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.3;
+    }
+    33% {
+        transform: translate(30px, -30px) scale(1.1);
+        opacity: 0.5;
+    }
+    66% {
+        transform: translate(-30px, 30px) scale(0.9);
+        opacity: 0.4;
+    }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Tablet (768px and below) */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 40px 30px;
+        max-width: 400px;
+    }
+    
+    .brand-title {
+        font-size: 40px;
+    }
+    
+    .login-subtitle {
+        font-size: 14px;
+    }
+}
+
+/* Mobile (480px and below) */
+@media (max-width: 480px) {
+    .login-page {
+        padding: 20px 15px;
+    }
+    
+    .login-container {
+        padding: 35px 25px;
+        border-radius: 20px;
+    }
+    
+    .brand-title {
+        font-size: 36px;
+    }
+    
+    .form-group input {
+        padding: 12px 16px;
+        font-size: 15px;
+    }
+    
+    .login-button {
+        padding: 14px;
+        font-size: 15px;
+    }
+}

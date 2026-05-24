@@ -1,0 +1,106 @@
+/* Navigation Bar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #111;
+    padding: 15px 30px;
+    font-size: 18px;
+}
+
+/* Logo Styling */
+.navbar .brand {
+    font-weight: bold;
+    font-size: 22px;
+    color: #5CC5A7;
+}
+
+.navbar .brand span {
+    color: white;
+}
+
+/* Navigation Links */
+.nav-links {
+    display: flex;
+    gap: 15px;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 5px 10px;
+    transition: color 0.3s ease-in-out;
+}
+
+.navbar a:hover {
+    color: #5CC5A7;
+}
+
+/* User Info Container */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-right: 10px;
+}
+
+/* Username Styling */
+.user-info span {
+    font-weight: 600;
+    color: white;
+    font-size: 16px;
+}
+
+/* Log In / Sign Up Button */
+.auth-btn {
+    background: white;
+    color: black;
+    border: none;
+    padding: 8px 22px;
+    border-radius: 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s ease-in-out;
+}
+
+.auth-btn:hover {
+    background: #5CC5A7;
+    color: white;
+}
+
+/* Logout Button Styling */
+.logout-btn {
+    background-color: #FF4C4C;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.logout-btn:hover {
+    background-color: #D43F3F;
+    transform: scale(1.05); /* Slight pop effect */
+}
+
+/* Responsive Navbar */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .nav-links {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .user-info {
+        margin-top: 10px;
+    }
+}

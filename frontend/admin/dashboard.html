@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SOORGA</title>
+
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="../style.css">
+    <script src="../login/config.js"></script>
+</head>
+<body>
+    <header>
+        <div id="navbar-container"></div>
+    </header>
+
+    <main class="admin-dashboard">
+        <div class="dashboard-header">
+            <h1>Admin Dashboard</h1>
+            <p class="header-subtitle">Create and manage signals</p>
+        </div>
+
+        <!-- Signal Creation Form -->
+        <div class="admin-panel">
+            <div class="panel-header">
+                <h2>Create New Signal</h2>
+            </div>
+
+            <form id="signal-form" class="signal-form">
+                <!-- Signal ID -->
+                <div class="form-group">
+                    <label for="signalId">Signal ID *</label>
+                    <input
+                        type="text"
+                        id="signalId"
+                        name="signalId"
+                        placeholder="bangalore-ai-infrastructure-2026"
+                        required
+                    >
+                    <div class="field-hint">Unique identifier (lowercase, hyphens only, e.g., city-category-year)</div>
+                </div>
+
+                <!-- Title -->
+                <div class="form-group">
+                    <label for="title">Title *</label>
+                    <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        placeholder="AI Infrastructure Expansion in Bangalore"
+                        required
+                    >
+                </div>
+
+                <!-- Category -->
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" name="category" required>
+                        <option value="">Select Category</option>
+                        <option value="GCC / Talent">GCC / Talent</option>
+                        <option value="AI / Infrastructure">AI / Infrastructure</option>
+                        <option value="Infrastructure / Connectivity">Infrastructure / Connectivity</option>
+                        <option value="Startup / Innovation">Startup / Innovation</option>
+                    </select>
+                </div>
+
+                <!-- Time Horizon -->
+                <div class="form-group">
+                    <label for="timeHorizon">Time Horizon *</label>
+                    <select id="timeHorizon" name="timeHorizon" required>
+                        <option value="">Select Time Horizon</option>
+                        <option value="3–5 years">3–5 years</option>
+                        <option value="5–10 years">5–10 years</option>
+                        <option value="10+ years">10+ years</option>
+                    </select>
+                </div>
+
+                <!-- Institutional Evidence -->
+                <div class="form-group">
+                    <label for="institutionalEvidence">Institutional Evidence *</label>
+                    <textarea
+                        id="institutionalEvidence"
+                        name="institutionalEvidence"
+                        rows="6"
+                        placeholder="Detailed evidence of institutional activity (e.g., companies, investments, government initiatives)..."
+                        required
+                    ></textarea>
+                    <div class="field-hint">Comprehensive evidence with sources and data points</div>
+                </div>
+
+                <!-- Interpretation -->
+                <div class="form-group">
+                    <label for="interpretation">Interpretation *</label>
+                    <textarea
+                        id="interpretation"
+                        name="interpretation"
+                        rows="4"
+                        placeholder="What does this signal mean for the market and stakeholders?"
+                        required
+                    ></textarea>
+                </div>
+
+                <!-- City Impact -->
+                <div class="form-group">
+                    <label for="cityImpact">City Impact *</label>
+                    <textarea
+                        id="cityImpact"
+                        name="cityImpact"
+                        rows="4"
+                        placeholder="How will this specifically affect Bangalore (or the target city)?"
+                        required
+                    ></textarea>
+                </div>
+
+                <!-- Narrative Seed -->
+                <div class="form-group">
+                    <label for="narrativeSeed">Narrative Seed *</label>
+                    <input
+                        type="text"
+                        id="narrativeSeed"
+                        name="narrativeSeed"
+                        placeholder="One-line compelling summary"
+                        required
+                    >
+                    <div class="field-hint">Concise, attention-grabbing summary for posts</div>
+                </div>
+
+                <!-- Signal Type -->
+                <div class="form-group">
+                    <label for="signalType">Signal Type</label>
+                    <select id="signalType" name="signalType" onchange="toggleSignalTypeFields()">
+                        <option value="standard">Standard</option>
+                        <option value="trending">🔥 Trending (High-Engagement)</option>
+                        <option value="early">🚀 Early (First-Mover)</option>
+                    </select>
+                    <div class="field-hint">Trending/Early signals appear in featured sections on the signal page</div>
+                </div>
+
+                <!-- Trending Fields (shown when signalType = trending) -->
+                <div id="trending-fields" class="conditional-fields" style="display: none;">
+                    <div class="conditional-fields-header">🔥 Trending Signal Fields</div>
+                    <div class="form-group">
+                        <label for="trendingScore">Trending Score (50-100)</label>
+                        <input type="number" id="trendingScore" name="trendingScore" min="0" max="100" value="75">
+                        <div class="field-hint">Score must be 50+ to appear in trending section</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="discussionIntensity">Discussion Intensity</label>
+                        <input type="text" id="discussionIntensity" name="discussionIntensity" placeholder="e.g., High - 47 LinkedIn posts this week">
+                    </div>
+                    <div class="form-group">
+                        <label for="whyTrending">Why It's Trending</label>
+                        <textarea id="whyTrending" name="whyTrending" rows="3" placeholder="Explain why this topic is generating buzz..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Early Fields (shown when signalType = early) -->
+                <div id="early-fields" class="conditional-fields" style="display: none;">
+                    <div class="conditional-fields-header">🚀 Early Signal Fields</div>
+                    <div class="form-group">
+                        <label for="earlyScore">Early Score (50-100)</label>
+                        <input type="number" id="earlyScore" name="earlyScore" min="0" max="100" value="75">
+                        <div class="field-hint">Score must be 50+ to appear in early section</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="coverageLevel">Coverage Level</label>
+                        <select id="coverageLevel" name="coverageLevel">
+                            <option value="low">Low (Best for first-mover)</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="timingAdvantage">Timing Advantage</label>
+                        <input type="text" id="timingAdvantage" name="timingAdvantage" placeholder="e.g., Post before Q3 earnings">
+                    </div>
+                    <div class="form-group">
+                        <label for="whatHappened">What Happened</label>
+                        <textarea id="whatHappened" name="whatHappened" rows="3" placeholder="Recent institutional event..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Common Featured Fields (shown for trending & early) -->
+                <div id="featured-fields" class="conditional-fields" style="display: none;">
+                    <div class="conditional-fields-header">📝 Featured Card Fields</div>
+                    <div class="form-group">
+                        <label for="postReadyHeadline">Post-Ready Headline</label>
+                        <input type="text" id="postReadyHeadline" name="postReadyHeadline" placeholder="Short, punchy headline for the card">
+                    </div>
+                    <div class="form-group">
+                        <label for="statusBadge">Status Badge</label>
+                        <input type="text" id="statusBadge" name="statusBadge" placeholder="e.g., ⚡ Fresh Intel, 🔥 Hot Topic">
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="form-group">
+                    <label for="status">Status *</label>
+                    <div class="toggle-group">
+                        <label class="toggle-option">
+                            <input type="radio" name="status" value="active" checked>
+                            <span>Active (Publish)</span>
+                        </label>
+                        <label class="toggle-option">
+                            <input type="radio" name="status" value="archived">
+                            <span>Draft</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="resetForm()">
+                        Clear Form
+                    </button>
+                    <button type="submit" class="cta-button" id="submit-btn">
+                        <span class="button-text">Create Signal</span>
+                        <span class="button-loader" style="display: none;">
+                            <span class="spinner-small"></span>
+                            Creating...
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Success/Error Messages -->
+                <div id="form-message" class="form-message" style="display: none;"></div>
+            </form>
+        </div>
+
+        <!-- Signal Management Section -->
+        <div class="admin-panel">
+            <div class="panel-header">
+                <h2>Manage Signals</h2>
+            </div>
+
+            <!-- Loading State -->
+            <div id="signals-loading" class="loading-state" style="display: none;">
+                <div class="spinner-large"></div>
+                <p>Loading signals...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="signals-empty" class="empty-state" style="display: none;">
+                <p>No signals found. Create your first signal above!</p>
+            </div>
+
+            <!-- Signals List -->
+            <div id="signals-list" class="signals-list"></div>
+        </div>
+    </main>
+
+    <script src="../navbar/navbar.js" defer></script>
+    <script src="dashboard.js" defer></script>
+</body>
+</html>

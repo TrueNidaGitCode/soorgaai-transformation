@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup | TrueNida</title>
+    <link rel="stylesheet" href="signup_style.css">
+</head>
+<body>
+    <div class="signup-container">
+        <h2>Create Your Account</h2>
+        <form id="signup-form">
+            <label for="name">Username:</label>
+            <input type="text" id="name" placeholder="Enter your username" required>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="Enter your email" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Create a password" required>
+
+            <button type="submit">Sign Up</button>
+        </form>
+        <p>Already have an account? <a href="/login/login.html">Login here</a></p>
+    </div>
+    <script src="../login/config.js"></script>  <!-- ✅ Load config from login directory -->
+    <script src="signup.js"></script>
+</body>
+</html>

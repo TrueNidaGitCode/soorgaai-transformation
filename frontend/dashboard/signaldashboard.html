@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1">
+    <meta name="description" content="Your Signals Dashboard - Track your generated LinkedIn posts and engagement analytics">
+    
+    <title>Your Signals Dashboard - SOORGA</title>
+    
+    <link rel="stylesheet" href="css/signaldashboard.css">
+    <link rel="stylesheet" href="../style.css">
+
+    <script src="/login/config.js"></script>
+    <!-- ✅ REMOVED: Mock data - using real backend API now -->
+    <!-- <script src="../mock-data.js"></script> -->
+</head>
+<body>
+    <header>
+        <div id="navbar-container"></div>
+    </header>
+
+    <main id="root" class="dashboard-root">
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1>Your Signals</h1>
+                <p class="header-subtitle">Track your generated posts and engagement metrics</p>
+            </div>
+            
+            <div id="quick-stats" class="quick-stats" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="total-posts">0</div>
+                        <div class="stat-label">Total Posts</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👁️</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="total-impressions">0</div>
+                        <div class="stat-label">Impressions</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">❤️</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="total-reactions">0</div>
+                        <div class="stat-label">Reactions</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💬</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="total-comments">0</div>
+                        <div class="stat-label">Comments</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="empty-state" class="empty-state-container">
+            <!-- Content loaded from components/empty-state.html -->
+        </div>
+
+        <div id="loading" class="loading-container" style="display: none;">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <p class="loading-text">Loading your signals...</p>
+        </div>
+
+        <div id="signals-grid" class="signals-grid" style="display: none;">
+            <!-- Signal cards dynamically inserted -->
+        </div>
+
+        <div id="error-state" class="error-state" style="display: none;">
+            <div class="error-icon">⚠️</div>
+            <h2>Unable to Load Signals</h2>
+            <p>There was an error loading your signals. Please try again.</p>
+            <button class="cta-button" onclick="window.location.reload()">
+                🔄 Retry
+            </button>
+        </div>
+    </main>
+
+    <div id="signal-detail-modal" class="modal" style="display: none;">
+        <div class="modal-content signal-detail-content">
+            <span class="close-modal" id="close-detail-modal">&times;</span>
+            <div id="signal-detail-body"></div>
+        </div>
+    </div>
+
+    <script src="../navbar/navbar.js" defer></script>
+    <script src="js/core/api.js" defer></script>
+    <script src="js/core/signaldashboard.js" defer></script>
+
+    <!-- ✅ Load signals from backend API -->
+    <script src="js/features/loadsignal.js" defer></script>
+</body>
+</html>

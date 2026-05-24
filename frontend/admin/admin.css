@@ -1,0 +1,703 @@
+/**
+ * ============================================
+ * ADMIN PANEL STYLES
+ * Extends existing design system from ../style.css
+ * ============================================
+ */
+
+/* Admin Dashboard Layout */
+.admin-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 20px 80px;
+    min-height: 100vh;
+}
+
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.dashboard-header h1 {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--text-primary, #FFFFFF);
+    margin-bottom: 10px;
+}
+
+.header-subtitle {
+    font-size: 18px;
+    color: var(--text-secondary, #CCCCCC);
+}
+
+/* Admin Panel Card */
+.admin-panel {
+    background: linear-gradient(135deg, rgba(25, 25, 30, 0.95), rgba(20, 20, 25, 0.95));
+    border: 1px solid rgba(92, 197, 167, 0.3);
+    border-radius: var(--border-radius-lg, 24px);
+    padding: 40px;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.panel-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(92, 197, 167, 0.2);
+}
+
+.panel-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary, #FFFFFF);
+}
+
+/* Signal Form */
+.signal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary, #FFFFFF);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(92, 197, 167, 0.2);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 16px;
+    color: var(--text-primary, #FFFFFF);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-green, #5CC5A7);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 4px rgba(92, 197, 167, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+}
+
+.form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235CC5A7' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 18px center;
+    padding-right: 45px;
+}
+
+/* Fix dropdown options visibility */
+.form-group select option {
+    background: #1a1a1a;
+    color: #FFFFFF;
+    padding: 10px;
+}
+
+.field-hint {
+    font-size: 12px;
+    color: var(--text-secondary, #CCCCCC);
+    opacity: 0.7;
+    font-style: italic;
+}
+
+/* Toggle Group for Status */
+.toggle-group {
+    display: flex;
+    gap: 15px;
+}
+
+.toggle-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(92, 197, 167, 0.2);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.toggle-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--accent-green, #5CC5A7);
+}
+
+.toggle-option span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary, #FFFFFF);
+}
+
+.toggle-option:has(input:checked) {
+    border-color: var(--accent-green, #5CC5A7);
+    background: rgba(92, 197, 167, 0.1);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.btn-secondary {
+    padding: 14px 30px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(92, 197, 167, 0.3);
+    border-radius: 12px;
+    color: var(--text-primary, #FFFFFF);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    border-color: var(--accent-green, #5CC5A7);
+    background: rgba(92, 197, 167, 0.1);
+}
+
+/* Form Messages - Toast Style */
+.form-message {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    padding: 18px 30px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    z-index: 9999;
+    min-width: 300px;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideDownFadeIn 0.4s ease-out forwards;
+    opacity: 0;
+}
+
+.form-message.success {
+    background: linear-gradient(135deg, rgba(92, 197, 167, 0.25), rgba(92, 197, 167, 0.35));
+    border: 2px solid var(--accent-green, #5CC5A7);
+    color: #FFFFFF;
+    box-shadow: 0 10px 40px rgba(92, 197, 167, 0.3);
+}
+
+.form-message.success::before {
+    content: "✓ ";
+    font-size: 20px;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.form-message.error {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.25), rgba(255, 107, 107, 0.35));
+    border: 2px solid #ff6b6b;
+    color: #FFFFFF;
+    box-shadow: 0 10px 40px rgba(255, 107, 107, 0.3);
+}
+
+.form-message.error::before {
+    content: "✕ ";
+    font-size: 20px;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+@keyframes slideDownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Fade out animation */
+.form-message.fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+}
+
+/* Spinner (for loading buttons) */
+.spinner-small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: var(--accent-green, #5CC5A7);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.button-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-dashboard {
+        padding: 40px 15px 60px;
+    }
+
+    .dashboard-header h1 {
+        font-size: 36px;
+    }
+
+    .admin-panel {
+        padding: 25px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn-secondary,
+    .cta-button {
+        width: 100%;
+    }
+
+    .toggle-group {
+        flex-direction: column;
+    }
+
+    /* Toast notification responsive */
+    .form-message {
+        top: 70px;
+        left: 15px;
+        right: 15px;
+        transform: translateX(0) translateY(-20px);
+        min-width: unset;
+        max-width: unset;
+        padding: 16px 20px;
+        font-size: 14px;
+    }
+
+    @keyframes slideDownFadeIn {
+        from {
+            opacity: 0;
+            transform: translateX(0) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0) translateY(0);
+        }
+    }
+
+    .form-message.fade-out {
+        animation: fadeOutMobile 0.3s ease-out forwards;
+    }
+
+    @keyframes fadeOutMobile {
+        from {
+            opacity: 1;
+            transform: translateX(0) translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(0) translateY(-20px);
+        }
+    }
+}
+
+/* Signal Management Section */
+.signals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.signal-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(92, 197, 167, 0.2);
+    border-radius: 16px;
+    padding: 25px;
+    transition: all 0.3s ease;
+}
+
+.signal-card:hover {
+    border-color: rgba(92, 197, 167, 0.4);
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.signal-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    gap: 20px;
+}
+
+.signal-card-info {
+    flex: 1;
+}
+
+.signal-card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary, #FFFFFF);
+    margin-bottom: 8px;
+}
+
+.signal-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-secondary, #CCCCCC);
+    margin-bottom: 12px;
+}
+
+.signal-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.signal-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.signal-badge.active {
+    background: rgba(92, 197, 167, 0.2);
+    color: var(--accent-green, #5CC5A7);
+    border: 1px solid rgba(92, 197, 167, 0.4);
+}
+
+.signal-badge.archived {
+    background: rgba(255, 255, 255, 0.1);
+    color: #999;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.signal-card-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-icon {
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(92, 197, 167, 0.3);
+    border-radius: 8px;
+    color: var(--text-primary, #FFFFFF);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-icon:hover {
+    border-color: var(--accent-green, #5CC5A7);
+    background: rgba(92, 197, 167, 0.1);
+}
+
+.btn-icon.delete {
+    border-color: rgba(255, 107, 107, 0.3);
+}
+
+.btn-icon.delete:hover {
+    border-color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.signal-card-content {
+    font-size: 14px;
+    color: var(--text-secondary, #CCCCCC);
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.signal-card-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(92, 197, 167, 0.1);
+}
+
+.signal-detail-item {
+    font-size: 13px;
+}
+
+.signal-detail-label {
+    font-weight: 600;
+    color: var(--accent-green, #5CC5A7);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 11px;
+}
+
+.signal-detail-value {
+    color: var(--text-secondary, #CCCCCC);
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-secondary, #CCCCCC);
+}
+
+.spinner-large {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--accent-green, #5CC5A7);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 15px;
+}
+
+.loading-state p {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary, #CCCCCC);
+    font-size: 16px;
+}
+
+/* Delete Confirmation Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal {
+    background: linear-gradient(135deg, rgba(25, 25, 30, 0.98), rgba(20, 20, 25, 0.98));
+    border: 2px solid rgba(92, 197, 167, 0.3);
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-header {
+    margin-bottom: 20px;
+}
+
+.modal-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary, #FFFFFF);
+    margin-bottom: 10px;
+}
+
+.modal-content {
+    font-size: 16px;
+    color: var(--text-secondary, #CCCCCC);
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+.modal-content .signal-id-highlight {
+    color: var(--accent-green, #5CC5A7);
+    font-weight: 600;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.modal-btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.modal-btn-cancel {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary, #FFFFFF);
+    border: 1px solid rgba(92, 197, 167, 0.3);
+}
+
+.modal-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.modal-btn-delete {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: #FFFFFF;
+}
+
+.modal-btn-delete:hover {
+    background: linear-gradient(135deg, #ee5a52, #d84a41);
+}
+
+.modal-btn-delete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-header h1 {
+        font-size: 28px;
+    }
+
+    .panel-header h2 {
+        font-size: 22px;
+    }
+
+    .admin-panel {
+        padding: 20px;
+    }
+
+    .signal-card-header {
+        flex-direction: column;
+    }
+
+    .signal-card-actions {
+        width: 100%;
+    }
+
+    .btn-icon {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .modal {
+        padding: 20px;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .modal-btn {
+        width: 100%;
+    }
+}
+
+/* ============================================
+   CONDITIONAL FIELDS (Trending/Early)
+   ============================================ */
+.conditional-fields {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(92, 197, 167, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.conditional-fields-header {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent-green, #5CC5A7);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(92, 197, 167, 0.15);
+}
+
+/* Signal Type Badges in Card List */
+.signal-type-trending {
+    background: rgba(255, 107, 107, 0.2) !important;
+    color: #ff6b6b !important;
+    border-color: rgba(255, 107, 107, 0.4) !important;
+}
+
+.signal-type-early {
+    background: rgba(92, 197, 167, 0.2) !important;
+    color: #5cc5a7 !important;
+    border-color: rgba(92, 197, 167, 0.4) !important;
+}

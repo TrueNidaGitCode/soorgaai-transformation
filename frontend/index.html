@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO meta description for search engines -->
+    <meta name="description" content="SOORGA - Intelligence-driven platform presenting deep city signals and institutional development insights for Bangalore">
+    
+    <title>SOORGA — Turn Bangalore's Signals into Stories</title>
+    
+    <!-- 
+      Main stylesheet - loads synchronously to prevent FOUC (Flash of Unstyled Content)
+      Path: /style.css since index.html is in / folder
+    -->
+    <link rel="stylesheet" href="style.css">
+
+    <!--
+      Configuration file - MUST load first
+      Contains all API endpoints and environment configuration
+      Loaded before other scripts so CONFIG is available globally
+    -->
+    <script src="login/config.js"></script>
+
+    <!-- 
+      JavaScript files loaded with 'defer' attribute:
+      - Scripts download in parallel but execute in order after DOM is fully parsed
+      - config.js loads first (synchronously above) to make CONFIG available
+      - navbar.js loads second to inject navigation component
+      - script.js loads last for main page functionality
+    -->
+    <script src="navbar/navbar.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <!-- 
+      Navbar Container
+      This empty div will be populated by navbar.js
+      The navbar component is injected here dynamically to maintain consistency across pages
+    -->
+    <div id="navbar-container"></div>
+
+    <!-- 
+      Hero Section - Landing Page Main Content
+      Contains the main value proposition and call-to-action
+    -->
+    <section class="hero">
+        <!-- Left column: Text content -->
+        <div class="hero-content">
+            <!-- 
+              Main headline with brand name and tagline 
+              Brand name "SOORGA" is on first line
+              Tagline wrapped in <span> for accent color styling
+            -->
+            <h1>SOORGA<br><span>Turn Bangalore's Future into a Story</span></h1>
+            
+            <!-- 
+              Value proposition paragraph
+              Explains what SOORGA does and the value it provides
+            -->
+            <p>Soorga breaks down what global companies are building in Bangalore — AI labs, data centers, GCCs — and helps you turn it into a story you can share. AI-assisted. Fully editable. Your voice stays yours.</p>
+            
+            <!-- 
+              Primary CTA (Call-to-Action) button
+              Navigates user to signal listing page
+              Arrow symbol (→) creates visual direction cue
+              Path is relative: signals/signal-page.html resolves to /signals/signal-page.html
+            -->
+            <a href="signals/signal-page.html" class="cta-button">→ Create a Post from a Signal</a>
+        </div>
+        
+        <!-- Right column: Hero image -->
+        <div class="hero-image">
+            <!-- 
+              Hero image
+              Path: images/hero.jpg (relative path from /)
+              Resolves to: /images/hero.jpg
+              Alt text for accessibility and SEO
+              
+              NOTE: If image is in /public/images/hero.jpg, 
+              path should be: public/images/hero.jpg
+            -->
+            <img src="public/images/hero.jpg" alt="Bangalore cityscape representing emerging institutional signals">
+        </div>
+    </section>
+
+    <!-- 
+      Footer Section (Optional)
+      Uncomment if you want to add footer with links
+    -->
+    <!--
+    <footer class="site-footer">
+        <div class="footer-content">
+            <p>&copy; 2025 SOORGA. All rights reserved.</p>
+            <nav class="footer-nav">
+                <a href="about/about.html">About</a>
+                <a href="signals/signal-page.html">Signals</a>
+                <a href="login/login.html">Login</a>
+            </nav>
+        </div>
+    </footer>
+    -->
+</body>
+</html>

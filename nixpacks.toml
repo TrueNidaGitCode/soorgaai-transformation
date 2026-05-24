@@ -1,0 +1,14 @@
+# Nixpacks configuration for Railway
+# Tells Railway to use Node.js 18
+
+[phases.setup]
+nixPkgs = ['nodejs-18_x']
+
+[phases.install]
+cmds = ['npm install']
+
+[phases.build]
+cmds = ['echo "No build step needed"']
+
+[start]
+cmd = 'npm start'

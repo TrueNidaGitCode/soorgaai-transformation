@@ -1,4 +1,29 @@
 {
   "version": 2,
-  "name": "soorga-frontend"
+  "name": "soorgaai-transformation",
+  "buildCommand": "",
+  "outputDirectory": "frontend",
+  "installCommand": "",
+  "framework": null,
+  "rewrites": [
+    { "source": "/assessment/:path*", "destination": "/assessment/:path*" },
+    { "source": "/results/:path*",    "destination": "/results/:path*" },
+    { "source": "/login/:path*",      "destination": "/login/:path*" },
+    { "source": "/signup/:path*",     "destination": "/signup/:path*" },
+    { "source": "/dashboard/:path*",  "destination": "/dashboard/:path*" },
+    { "source": "/admin/:path*",      "destination": "/admin/:path*" },
+    { "source": "/navbar/:path*",     "destination": "/navbar/:path*" },
+    { "source": "/(.*)",              "destination": "/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options",        "value": "DENY" },
+        { "key": "X-XSS-Protection",       "value": "1; mode=block" }
+      ]
+    }
+  ]
 }
+

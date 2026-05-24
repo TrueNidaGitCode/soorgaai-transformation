@@ -1,14 +1,15 @@
-# Nixpacks configuration for Railway
-# Tells Railway to use Node.js 18
+# SoorgaAI — Nixpacks configuration for Railway
+# Node.js 20 to match .node-version
 
 [phases.setup]
-nixPkgs = ['nodejs-18_x']
+nixPkgs = ['nodejs_20']
 
 [phases.install]
-cmds = ['npm install']
+cmds = ['cd backend/trunida-backend && npm install']
 
 [phases.build]
-cmds = ['echo "No build step needed"']
+cmds = ['echo "SoorgaAI backend ready"']
 
 [start]
-cmd = 'npm start'
+cmd = 'cd backend/trunida-backend && npm start'
+

@@ -1,9 +1,10 @@
-# Railway configuration
+# SoorgaAI — Railway Backend Configuration
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install"
+buildCommand = "cd backend/trunida-backend && npm install"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "cd backend/trunida-backend && npm start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+

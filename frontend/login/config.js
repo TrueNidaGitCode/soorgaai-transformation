@@ -9,7 +9,7 @@
 
 const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000'
-    : 'https://jubilant-essence-production-0a8a.up.railway.app'; // ← update with SoorgaAI backend URL
+    : 'https://truenidawebsite-production.up.railway.app'; // ← SoorgaAI Railway backend
 
 window.CONFIG = {
     API_BASE: `${API_BASE_URL}/api`,

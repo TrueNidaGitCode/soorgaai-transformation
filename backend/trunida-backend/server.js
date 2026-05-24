@@ -4,8 +4,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 // ✅ Import routes
-import userRoutes from "./routes/userRoutes.js";
-// Assessment routes will be added here as they are built
+import userRoutes       from "./routes/userRoutes.js";
+import assessmentRoutes from "./routes/assessmentRoutes.js";
 
 dotenv.config();
 
@@ -60,7 +60,8 @@ app.use(async (req, res, next) => {
 });
 
 // ✅ Register Routes
-app.use("/api/users", userRoutes);
+app.use("/api/users",      userRoutes);
+app.use("/api/assessment", assessmentRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

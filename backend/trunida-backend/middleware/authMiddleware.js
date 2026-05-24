@@ -2,25 +2,31 @@ import jwt from "jsonwebtoken";
 
 const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
 
-const authMiddleware = (req, res, next) => {
+/**
+ * protect — Verify JWT token and attach user to req.user
+ * Exposes both _id (Mongoose style) and id (legacy) for compatibility.
+ */
+const protect = (req, res, next) => {
     const authHeader = req.header("Authorization");
 
     if (!authHeader) {
-        console.log("❌ No token found in headers");
         return res.status(401).json({ error: "Access denied. No token provided." });
     }
 
-    const token = authHeader.split(" ")[1]; // Extract token after "Bearer"
+    const token = authHeader.split(" ")[1];
 
     if (!token) {
-        console.log("❌ Token format incorrect");
         return res.status(401).json({ error: "Invalid token format" });
     }
 
     try {
         const decoded = jwt.verify(token, SECRET_KEY);
-        console.log("✅ Token Verified. Decoded User:", decoded);
-        req.user = { id: decoded.userId }; // Attach user data to request
+        // Attach both _id and id for Mongoose + legacy compatibility
+        req.user = {
+            _id:  decoded.userId,
+            id:   decoded.userId,
+            role: decoded.role || 'user',
+        };
         next();
     } catch (error) {
         console.error("❌ Token verification failed:", error.message);
@@ -28,4 +34,5 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
-export default authMiddleware; // ✅ Use default export
+export { protect };
+export default protect;

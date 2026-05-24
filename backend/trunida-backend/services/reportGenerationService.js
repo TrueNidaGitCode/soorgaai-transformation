@@ -1,307 +1,195 @@
-import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
-import dotenv from "dotenv";
+/**
+ * SoorgaAI - AI Report Generation Service
+ *
+ * Uses Claude (claude-sonnet-4-6) to generate a structured AI Maturity Report
+ * from a user's assessment scores.
+ *
+ * Report includes:
+ *  - Executive summary
+ *  - Key strengths (top 3)
+ *  - Critical gaps (top 3)
+ *  - Top 3 priorities
+ *  - 90-day roadmap (concrete action items)
+ *  - 12-month roadmap (strategic milestones)
+ */
+
+import Anthropic from '@anthropic-ai/sdk';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Initialize both AI clients
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// ─────────────────────────────────────────────────────────
+// BUILD PROMPT
+// ─────────────────────────────────────────────────────────
 
-/**
- * ============================================
- * SOORGA NARRATIVE SERVICE
- * AI-powered LinkedIn post generation
- * Supports both OpenAI and Claude (Anthropic)
- * ============================================
- */
+function buildReportPrompt({ overallScore, maturityStage, domainScores, orgName, industry }) {
+  const domainSummary = domainScores
+    .map((d) => `  • ${d.domainName}: ${d.score}/100`)
+    .join('\n');
 
-/**
- * System prompt (hardcoded - defines Soorga's personality)
- */
-const SYSTEM_PROMPT = `You are Soorga — an internal institutional narrative engine.
+  const sorted = [...domainScores].sort((a, b) => b.score - a.score);
+  const topDomains    = sorted.slice(0, 3).map((d) => d.domainName).join(', ');
+  const bottomDomains = sorted.slice(-3).map((d) => d.domainName).join(', ');
 
-Your task is to convert structured urban and infrastructure signals into calm, long-horizon LinkedIn narratives.
+  return `You are SoorgaAI, an expert AI transformation advisor. Your role is to generate a precise, actionable AI Maturity Assessment Report for an organization.
 
-You do NOT market.
-You do NOT hype.
-You do NOT persuade.
+ORGANIZATION CONTEXT:
+- Name: ${orgName || 'the organization'}
+- Industry: ${industry || 'Not specified'}
+- Overall AI Maturity Score: ${overallScore}/100
+- Maturity Stage: ${maturityStage}
 
-You observe, interpret, and compress.
+DOMAIN SCORES (each out of 100):
+${domainSummary}
 
-You write for people who already understand cities — urban observers, real estate professionals, infrastructure analysts, and institutional investors in India.
+Strongest domains: ${topDomains}
+Weakest domains: ${bottomDomains}
 
-Your style:
-- Calm, measured tone
-- Evidence-based observations
-- Long-horizon perspective (3-15 years)
-- No speculation beyond institutional evidence
-- Maximum one subtle emoji (if any)
-- 5-7 short, crisp lines
-- No call-to-action
-- No marketing language
-- Focus on what institutions are actually doing, not what might happen`;
+MATURITY STAGE DEFINITIONS:
+- AI Scramble (0–20): Ad hoc, uncoordinated AI efforts, no strategy
+- AI Pivot (21–40): Early pilots exist but siloed, strategy emerging
+- AI Alignment (41–60): Strategy aligned, cross-functional collaboration growing
+- AI Transform (61–80): AI embedded in core processes, scaling systematically
+- AI-Fueled Enterprise (81–100): AI is a core competitive differentiator, industry-leading
 
-/**
- * Generate LinkedIn post from signal using AI
- * Routes to OpenAI or Claude based on AI_PROVIDER env variable
- * @param {Object} signal - Signal data object
- * @returns {Promise<Object>} - Generated LinkedIn post with metadata
- */
-export async function generateInfluencerPost(signal) {
-  const aiProvider = process.env.AI_PROVIDER || "openai"; // Default to OpenAI
+Generate a structured JSON report. Be specific, actionable, and calibrated to the organization's maturity stage. Do not be generic.
+Return ONLY valid JSON — no markdown, no code blocks, no explanation.
 
-  console.log(`🤖 Using AI Provider: ${aiProvider.toUpperCase()}`);
-
-  if (aiProvider === "claude") {
-    return await generateWithClaude(signal);
-  } else {
-    return await generateWithOpenAI(signal);
-  }
+{
+  "executiveSummary": "3–4 paragraph executive summary covering: current standing and score meaning; key strengths; critical gaps and business impact; transformation opportunity ahead.",
+  "strengths": [
+    "Specific strength 1 based on high-scoring domains — explain WHY this is a strength and its business value",
+    "Specific strength 2",
+    "Specific strength 3"
+  ],
+  "criticalGaps": [
+    "Specific gap 1 based on low-scoring domains — explain the business risk or missed opportunity",
+    "Specific gap 2",
+    "Specific gap 3"
+  ],
+  "topPriorities": [
+    "Priority 1: Specific, outcome-oriented priority the organization must focus on immediately",
+    "Priority 2",
+    "Priority 3"
+  ],
+  "roadmap90Days": [
+    { "title": "Action item title", "description": "What to do, how, and expected outcome within 90 days", "domain": "Relevant domain name", "priority": "High" },
+    { "title": "Action item 2", "description": "...", "domain": "...", "priority": "High" },
+    { "title": "Action item 3", "description": "...", "domain": "...", "priority": "Medium" },
+    { "title": "Action item 4", "description": "...", "domain": "...", "priority": "Medium" }
+  ],
+  "roadmap12Months": [
+    { "title": "Milestone 1 (Month 1–3)", "description": "What should be achieved and the strategic impact", "domain": "...", "priority": "High" },
+    { "title": "Milestone 2 (Month 3–6)", "description": "...", "domain": "...", "priority": "High" },
+    { "title": "Milestone 3 (Month 6–9)", "description": "...", "domain": "...", "priority": "High" },
+    { "title": "Milestone 4 (Month 9–12)", "description": "...", "domain": "...", "priority": "Medium" },
+    { "title": "Milestone 5 (Month 12)", "description": "Target state the organization should reach by end of year and how to measure it", "domain": "...", "priority": "High" }
+  ]
+}`;
 }
 
-/**
- * Generate LinkedIn post using Claude (Anthropic)
- */
-async function generateWithClaude(signal) {
+// ─────────────────────────────────────────────────────────
+// PARSE & VALIDATE RESPONSE
+// ─────────────────────────────────────────────────────────
+
+function parseReportResponse(rawText) {
+  const cleaned = rawText
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+
+  let parsed;
   try {
-    console.log(`🤖 Generating AI post with Claude for signal: ${signal.title}`);
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Claude returned invalid JSON. Raw: ' + rawText.slice(0, 500));
+  }
 
-    // Check if API key is configured
-    if (!process.env.ANTHROPIC_API_KEY) {
-      console.warn("⚠️ ANTHROPIC_API_KEY not configured, using fallback template");
-      return {
-        linkedinPost: generateFallbackTemplate(signal),
-        metadata: {
-          model: "fallback-template",
-          error: "ANTHROPIC_API_KEY not configured",
-        },
-      };
-    }
+  const required = ['executiveSummary', 'strengths', 'criticalGaps', 'topPriorities', 'roadmap90Days', 'roadmap12Months'];
+  for (const key of required) {
+    if (!parsed[key]) throw new Error(`Missing required report field: ${key}`);
+  }
 
-    // Construct user prompt with signal data
-    const userPrompt = `Convert the following signal into a LinkedIn post suitable for Indian urban observers and real estate influencers.
+  return parsed;
+}
 
-Rules:
-- Use ONLY the information provided below
-- Do NOT add facts not present in the signal
-- Do NOT exaggerate impact
-- Maximum one subtle emoji (or none)
-- 5-7 short lines
-- No call-to-action
-- No marketing hype
+// ─────────────────────────────────────────────────────────
+// FALLBACK REPORT
+// ─────────────────────────────────────────────────────────
 
-Signal Data:
+function buildFallbackReport({ overallScore, maturityStage, domainScores }) {
+  const sorted   = [...domainScores].sort((a, b) => b.score - a.score);
+  const top3     = sorted.slice(0, 3);
+  const bottom3  = sorted.slice(-3);
 
-Title: ${signal.title}
-Category: ${signal.category}
-Time Horizon: ${signal.timeHorizon}
+  return {
+    executiveSummary: `Based on your AI Maturity Assessment, your organization scored ${overallScore}/100, placing you at the "${maturityStage}" stage.\n\nYour strongest areas are ${top3.map(d => d.domainName).join(', ')}, which provide a solid foundation to build on.\n\nThe most significant improvement opportunities lie in ${bottom3.map(d => d.domainName).join(', ')}. Closing these gaps will be critical to advancing to the next maturity stage.\n\nWith focused effort and the right priorities, your organization has a clear path to becoming an AI-Fueled Enterprise.`,
+    strengths: top3.map(d => `Strong ${d.domainName} capability (${d.score}/100) — this domain scores above average and provides a competitive foundation for AI scale.`),
+    criticalGaps: bottom3.map(d => `${d.domainName} (${d.score}/100) is below the threshold needed to advance. Targeted investment here will have the highest ROI.`),
+    topPriorities: [
+      `Strengthen ${bottom3[0]?.domainName} by establishing clear ownership, processes, and quick wins within 90 days.`,
+      `Build on ${top3[0]?.domainName} strength to create replicable AI playbooks across the organization.`,
+      `Develop a cross-functional AI transformation team to coordinate efforts across all 7 domains.`,
+    ],
+    roadmap90Days: [
+      { title: 'Establish AI Steering Committee', description: 'Form a cross-functional group of leaders to govern AI priorities and unblock initiatives. Hold bi-weekly reviews.', domain: 'Leadership', priority: 'High' },
+      { title: `${bottom3[0]?.domainName} Quick Win Sprint`, description: `Identify and execute 2–3 concrete improvements in ${bottom3[0]?.domainName} within 90 days to build momentum.`, domain: bottom3[0]?.domainName, priority: 'High' },
+      { title: 'AI Use Case Inventory', description: 'Document all current and proposed AI initiatives. Prioritize top 5 by business value and feasibility.', domain: 'AI Use Cases', priority: 'High' },
+      { title: 'Skills Gap Assessment', description: 'Audit current AI skills across teams. Identify top 3 skill gaps and launch targeted upskilling programs.', domain: 'Skills & Workforce', priority: 'Medium' },
+    ],
+    roadmap12Months: [
+      { title: 'AI Strategy Formalized (Month 1–3)', description: 'Document and socialize a 12-month AI roadmap with clear KPIs, owners, and budget.', domain: 'AI Strategy', priority: 'High' },
+      { title: `${bottom3[0]?.domainName} Maturity Uplift (Month 3–6)`, description: `Move ${bottom3[0]?.domainName} score from ${bottom3[0]?.score} to 60+ through targeted programs.`, domain: bottom3[0]?.domainName, priority: 'High' },
+      { title: 'First AI Use Case at Scale (Month 6–9)', description: 'Take the highest-value AI use case from pilot to full production, demonstrating measurable ROI.', domain: 'AI Use Cases', priority: 'High' },
+      { title: 'AI Governance Framework Live (Month 9–12)', description: 'Deploy AI ethics guidelines, risk assessment processes, and model monitoring infrastructure.', domain: 'Governance & Security', priority: 'Medium' },
+      { title: 'Next Maturity Stage Achieved (Month 12)', description: `Reach a target overall score of ${Math.min(overallScore + 20, 100)}+, advancing to the next maturity stage with documented business impact.`, domain: 'AI Strategy', priority: 'High' },
+    ],
+  };
+}
 
-Institutional Evidence:
-${signal.institutionalEvidence}
+// ─────────────────────────────────────────────────────────
+// MAIN EXPORT
+// ─────────────────────────────────────────────────────────
 
-Interpretation:
-${signal.interpretation}
+/**
+ * Generate a structured AI Maturity Report using Claude.
+ * Falls back to a template-based report if Claude is unavailable.
+ *
+ * @param {{ overallScore, maturityStage, domainScores, orgName, industry }} params
+ * @returns {Promise<object>} Structured report object
+ */
+export async function generateMaturityReport(params) {
+  const { overallScore, maturityStage, domainScores, orgName, industry } = params;
 
-City Impact:
-${signal.cityImpact}
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.warn('⚠️ ANTHROPIC_API_KEY not set — using fallback report template.');
+    return buildFallbackReport({ overallScore, maturityStage, domainScores });
+  }
 
-Narrative Seed (use as inspiration, not verbatim):
-${signal.narrativeSeed}
+  try {
+    console.log('🤖 Generating AI Maturity Report with Claude...');
+    const prompt = buildReportPrompt({ overallScore, maturityStage, domainScores, orgName, industry });
 
-Generate the LinkedIn post now:`;
-
-    // Call Claude API
     const message = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5-20250929",
-      max_tokens: 500,
-      temperature: 0.7,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
+      model: 'claude-sonnet-4-6',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: prompt }],
     });
 
-    const generatedPost = message.content[0].text.trim();
+    const rawText = message.content[0]?.text || '';
+    const report  = parseReportResponse(rawText);
 
-    console.log("✅ Claude post generated successfully");
-    console.log(`📊 Tokens used: ${message.usage.input_tokens + message.usage.output_tokens}`);
+    console.log('✅ AI Maturity Report generated successfully.');
+    return report;
 
-    return {
-      linkedinPost: generatedPost,
-      metadata: {
-        provider: "claude",
-        model: message.model,
-        tokensUsed: message.usage.input_tokens + message.usage.output_tokens,
-        inputTokens: message.usage.input_tokens,
-        outputTokens: message.usage.output_tokens,
-        estimatedCost: calculateClaudeCost(message.usage.input_tokens, message.usage.output_tokens, message.model),
-      },
-    };
   } catch (error) {
-    console.error("❌ Error generating Claude post:", error);
-    console.log("⚠️ Falling back to template generation");
-    return {
-      linkedinPost: generateFallbackTemplate(signal),
-      metadata: {
-        provider: "claude",
-        model: "fallback-template",
-        error: error.message,
-      },
-    };
+    console.error('❌ Claude report generation failed:', error.message);
+    console.warn('⚠️ Falling back to template report.');
+    return buildFallbackReport({ overallScore, maturityStage, domainScores });
   }
 }
 
-/**
- * Generate LinkedIn post using OpenAI
- */
-async function generateWithOpenAI(signal) {
-  try {
-    console.log(`🤖 Generating AI post with OpenAI for signal: ${signal.title}`);
-
-    // Check if API key is configured
-    if (!process.env.OPENAI_API_KEY) {
-      console.warn("⚠️ OPENAI_API_KEY not configured, using fallback template");
-      return {
-        linkedinPost: generateFallbackTemplate(signal),
-        metadata: {
-          model: "fallback-template",
-          error: "OPENAI_API_KEY not configured",
-        },
-      };
-    }
-
-    // Construct user prompt with signal data
-    const userPrompt = `Convert the following signal into a LinkedIn post suitable for Indian urban observers and real estate influencers.
-
-Rules:
-- Use ONLY the information provided below
-- Do NOT add facts not present in the signal
-- Do NOT exaggerate impact
-- Maximum one subtle emoji (or none)
-- 5-7 short lines
-- No call-to-action
-- No marketing hype
-
-Signal Data:
-
-Title: ${signal.title}
-Category: ${signal.category}
-Time Horizon: ${signal.timeHorizon}
-
-Institutional Evidence:
-${signal.institutionalEvidence}
-
-Interpretation:
-${signal.interpretation}
-
-City Impact:
-${signal.cityImpact}
-
-Narrative Seed (use as inspiration, not verbatim):
-${signal.narrativeSeed}
-
-Generate the LinkedIn post now:`;
-
-    // Call OpenAI API
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 500,
-      top_p: 1,
-      frequency_penalty: 0.3,
-      presence_penalty: 0.2,
-    });
-
-    const generatedPost = completion.choices[0].message.content.trim();
-
-    console.log("✅ OpenAI post generated successfully");
-    console.log(`📊 Tokens used: ${completion.usage.total_tokens}`);
-
-    return {
-      linkedinPost: generatedPost,
-      metadata: {
-        provider: "openai",
-        model: completion.model,
-        tokensUsed: completion.usage.total_tokens,
-        inputTokens: completion.usage.prompt_tokens,
-        outputTokens: completion.usage.completion_tokens,
-        estimatedCost: calculateOpenAICost(completion.usage.prompt_tokens, completion.usage.completion_tokens, completion.model),
-      },
-    };
-  } catch (error) {
-    console.error("❌ Error generating OpenAI post:", error);
-    console.log("⚠️ Falling back to template generation");
-    return {
-      linkedinPost: generateFallbackTemplate(signal),
-      metadata: {
-        provider: "openai",
-        model: "fallback-template",
-        error: error.message,
-      },
-    };
-  }
-}
-
-/**
- * Fallback template if AI fails
- */
-function generateFallbackTemplate(signal) {
-  return `I've been tracking institutional infrastructure moves across Indian cities.
-
-${signal.narrativeSeed}
-
-${signal.institutionalEvidence.substring(0, 250)}...
-
-${signal.interpretation.substring(0, 150)}...
-
-When institutional capital moves at this scale, it's not speculative. It's positional.`;
-}
-
-/**
- * Calculate estimated cost for OpenAI API
- * GPT-4o-mini: $0.15 / 1M input tokens, $0.60 / 1M output tokens
- * GPT-4o: $2.50 / 1M input tokens, $10.00 / 1M output tokens
- */
-function calculateOpenAICost(inputTokens, outputTokens, model) {
-  const costs = {
-    "gpt-4o-mini": { input: 0.15, output: 0.60 },
-    "gpt-4o": { input: 2.50, output: 10.00 },
-    "gpt-4-turbo": { input: 10.00, output: 30.00 },
-  };
-
-  const modelCosts = costs[model] || { input: 0.15, output: 0.60 }; // Default to mini
-  const inputCost = (inputTokens / 1_000_000) * modelCosts.input;
-  const outputCost = (outputTokens / 1_000_000) * modelCosts.output;
-
-  return `$${(inputCost + outputCost).toFixed(4)}`;
-}
-
-/**
- * Calculate estimated cost for Claude API
- * Claude Sonnet 4.5: $3.00 / 1M input tokens, $15.00 / 1M output tokens
- * Claude Haiku 4.5: $1.00 / 1M input tokens, $5.00 / 1M output tokens
- */
-function calculateClaudeCost(inputTokens, outputTokens, model) {
-  const costs = {
-    "claude-sonnet-4-5-20250929": { input: 3.00, output: 15.00 },
-    "claude-haiku-4-5-20251001": { input: 1.00, output: 5.00 },
-    "claude-4.5-sonnet": { input: 3.00, output: 15.00 },
-    "claude-4.5-haiku": { input: 1.00, output: 5.00 },
-  };
-
-  const modelCosts = costs[model] || { input: 3.00, output: 15.00 }; // Default to Sonnet
-  const inputCost = (inputTokens / 1_000_000) * modelCosts.input;
-  const outputCost = (outputTokens / 1_000_000) * modelCosts.output;
-
-  return `$${(inputCost + outputCost).toFixed(4)}`;
-}
-
-console.log("✅ Soorga Narrative Service loaded");
+console.log('✅ SoorgaAI Report Generation Service loaded');

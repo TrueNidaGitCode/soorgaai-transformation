@@ -1,56 +1,35 @@
-import jwt from "jsonwebtoken";
-import { User } from "../models/user.js"; // ✅ Fixed: lowercase filename for Linux compatibility
-
-const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
+import { User } from "../models/user.js";
 
 /**
- * Admin Middleware - Verify admin role
- * Checks both JWT token validity and user role in database
+ * adminOnly — Must run AFTER protect middleware.
+ * Verifies the authenticated user has the 'admin' role in the DB.
  */
-const adminMiddleware = async (req, res, next) => {
-    const authHeader = req.header("Authorization");
-
-    if (!authHeader) {
-        console.log("❌ No token found in headers");
-        return res.status(401).json({ error: "Access denied. No token provided." });
-    }
-
-    const token = authHeader.split(" ")[1]; // Extract token after "Bearer"
-
-    if (!token) {
-        console.log("❌ Token format incorrect");
-        return res.status(401).json({ error: "Invalid token format" });
-    }
-
+const adminOnly = async (req, res, next) => {
     try {
-        // Verify JWT token
-        const decoded = jwt.verify(token, SECRET_KEY);
-        console.log("✅ Token Verified. User ID:", decoded.userId);
-
-        // Fetch user from database to check role
-        const user = await User.findById(decoded.userId).select('role').lean();
-
-        if (!user) {
-            console.log("❌ User not found in database");
-            return res.status(401).json({ error: "User not found" });
+        if (!req.user?._id) {
+            return res.status(401).json({ error: "Access denied. Authentication required." });
         }
 
-        // Check if user has admin role
+        // Re-verify role from DB (source of truth)
+        const user = await User.findById(req.user._id).select('role').lean();
+
+        if (!user) {
+            return res.status(401).json({ error: "User not found." });
+        }
+
         if (user.role !== 'admin') {
-            console.log("❌ Access denied - user is not admin");
             return res.status(403).json({ error: "Access denied. Admin privileges required." });
         }
 
-        console.log("✅ Admin access granted");
-
-        // Attach user data to request
-        req.user = { id: decoded.userId, role: user.role };
+        // Enrich req.user with confirmed role
+        req.user.role = user.role;
         next();
 
     } catch (error) {
-        console.error("❌ Admin middleware error:", error.message);
-        return res.status(401).json({ error: "Invalid token" });
+        console.error("❌ adminOnly middleware error:", error.message);
+        return res.status(500).json({ error: "Authorization check failed." });
     }
 };
 
-export default adminMiddleware;
+export { adminOnly };
+export default adminOnly;

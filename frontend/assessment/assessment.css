@@ -1,0 +1,399 @@
+/* ============================================================
+   SoorgaAI — Assessment Form Styles
+   ============================================================ */
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+    --bg:        #0D0D0D;
+    --surface:   #141414;
+    --surface2:  #1a1a1a;
+    --border:    rgba(255,255,255,0.08);
+    --green:     #5CC5A7;
+    --green-dim: rgba(92,197,167,0.15);
+    --text:      #FFFFFF;
+    --text2:     #AAAAAA;
+    --font:      'Inter', -apple-system, sans-serif;
+    --radius:    16px;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+}
+
+/* ── Layout ──────────────────────────────────────────────── */
+.assessment-wrapper {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.assessment-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.assessment-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.assessment-header p {
+    color: var(--text2);
+    font-size: 16px;
+}
+
+/* ── Progress bar ────────────────────────────────────────── */
+.progress-container {
+    margin-bottom: 36px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 10px;
+}
+
+.progress-track {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+/* ── Step dots ───────────────────────────────────────────── */
+.step-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.step-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.step-dot.completed { background: var(--green); opacity: 0.6; }
+.step-dot.active    { background: var(--green); transform: scale(1.3); }
+
+/* ── Step card ───────────────────────────────────────────── */
+.step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px;
+    animation: fadeSlide 0.3s ease;
+}
+
+@keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.domain-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+}
+
+.domain-icon {
+    font-size: 32px;
+    line-height: 1;
+}
+
+.domain-title {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.domain-description {
+    color: var(--text2);
+    font-size: 15px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+    padding-left: 46px;
+}
+
+/* ── Context step (step 0) ───────────────────────────────── */
+.context-step h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.context-step p {
+    color: var(--text2);
+    margin-bottom: 32px;
+    font-size: 15px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 15px;
+    color: var(--text);
+    font-family: var(--font);
+    outline: none;
+    transition: border-color 0.25s;
+}
+
+.form-group input:focus,
+.form-group select:focus { border-color: var(--green); }
+
+.form-group select option { background: #1a1a1a; }
+
+/* ── Questions ───────────────────────────────────────────── */
+.question-block {
+    margin-bottom: 28px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+}
+
+.question-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.question-text {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.question-number {
+    display: inline-block;
+    background: var(--green-dim);
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+}
+
+/* ── Option cards ────────────────────────────────────────── */
+.options-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.option-label {
+    flex: 1;
+    min-width: 90px;
+    cursor: pointer;
+    position: relative;
+}
+
+.option-label input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.option-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    text-align: center;
+    transition: all 0.2s;
+    min-height: 64px;
+    line-height: 1.3;
+}
+
+.option-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.option-label input:checked + .option-card {
+    background: var(--green-dim);
+    border-color: var(--green);
+    color: var(--text);
+}
+
+.option-label:hover .option-card {
+    border-color: rgba(92,197,167,0.5);
+    background: rgba(92,197,167,0.06);
+}
+
+/* ── Navigation buttons ──────────────────────────────────── */
+.step-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 36px;
+    gap: 12px;
+}
+
+.btn-primary {
+    padding: 14px 32px;
+    background: var(--green);
+    color: #000;
+    border: none;
+    border-radius: 40px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    font-family: var(--font);
+}
+
+.btn-primary:hover  { background: #4AB393; transform: translateY(-2px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+    padding: 14px 28px;
+    background: transparent;
+    color: var(--text2);
+    border: 1.5px solid var(--border);
+    border-radius: 40px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    font-family: var(--font);
+}
+
+.btn-secondary:hover { border-color: var(--green); color: var(--text); }
+
+.step-counter {
+    font-size: 14px;
+    color: var(--text2);
+}
+
+/* ── Error messages ──────────────────────────────────────── */
+.error-banner {
+    background: rgba(231,76,60,0.12);
+    border: 1px solid rgba(231,76,60,0.4);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #E74C3C;
+    font-size: 14px;
+    margin-top: 16px;
+    display: none;
+}
+
+.error-banner.visible { display: block; }
+
+/* ── Submitting overlay ──────────────────────────────────── */
+.submitting-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(13,13,13,0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 9999;
+    display: none;
+}
+
+.submitting-overlay.visible { display: flex; }
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(92,197,167,0.3);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.submitting-overlay p {
+    font-size: 18px;
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* ── Review step ─────────────────────────────────────────── */
+.review-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.review-domain-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.review-domain-name { font-weight: 600; font-size: 15px; }
+.review-answered {
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.review-answered.complete { background: rgba(92,197,167,0.15); color: var(--green); }
+.review-answered.incomplete { background: rgba(231,76,60,0.15); color: #E74C3C; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .assessment-wrapper { padding: 24px 16px 60px; }
+    .step-card { padding: 24px 18px; }
+    .options-grid { gap: 6px; }
+    .option-card { padding: 10px 6px; min-height: 56px; font-size: 12px; }
+    .option-value { font-size: 15px; }
+    .step-nav { flex-wrap: wrap; }
+    .btn-primary, .btn-secondary { flex: 1; text-align: center; }
+}

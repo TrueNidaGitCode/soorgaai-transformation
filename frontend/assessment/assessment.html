@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Maturity Assessment — SoorgaAI</title>
+    <link rel="stylesheet" href="../navbar/navbar.css">
+    <link rel="stylesheet" href="assessment.css">
+    <script src="../login/config.js"></script>
+    <script src="../navbar/navbar.js" defer></script>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <!-- Loading overlay while questions are fetched -->
+    <div id="loadingOverlay" class="submitting-overlay visible">
+        <div class="spinner"></div>
+        <p>Loading your assessment…</p>
+    </div>
+
+    <!-- Submitting overlay -->
+    <div id="submittingOverlay" class="submitting-overlay">
+        <div class="spinner"></div>
+        <p>Scoring your assessment…</p>
+    </div>
+
+    <main class="assessment-wrapper" id="assessmentMain" style="display:none">
+        <!-- Header -->
+        <div class="assessment-header">
+            <h1>AI Maturity Assessment</h1>
+            <p>Answer honestly — there are no right or wrong answers. Your results reflect reality.</p>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-container">
+            <div class="progress-info">
+                <span id="progressLabel">Step 1 of 9</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill" style="width:0%"></div>
+            </div>
+            <div class="step-dots" id="stepDots"></div>
+        </div>
+
+        <!-- Dynamic step content injected here -->
+        <div id="stepContent"></div>
+
+        <!-- Error banner -->
+        <div id="errorBanner" class="error-banner"></div>
+
+        <!-- Navigation -->
+        <div class="step-nav">
+            <button class="btn-secondary" id="btnBack" onclick="prevStep()">← Back</button>
+            <span class="step-counter" id="stepCounter"></span>
+            <button class="btn-primary" id="btnNext" onclick="nextStep()">Next →</button>
+        </div>
+    </main>
+
+    <script src="assessment.js"></script>
+</body>
+</html>

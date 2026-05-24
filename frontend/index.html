@@ -3,101 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- SEO meta description for search engines -->
-    <meta name="description" content="SOORGA - Intelligence-driven platform presenting deep city signals and institutional development insights for Bangalore">
-    
-    <title>SOORGA — Turn Bangalore's Signals into Stories</title>
-    
-    <!-- 
-      Main stylesheet - loads synchronously to prevent FOUC (Flash of Unstyled Content)
-      Path: /style.css since index.html is in / folder
-    -->
+    <meta name="description" content="SoorgaAI — Discover where your organization stands on the AI maturity curve and get a custom transformation roadmap.">
+    <title>SoorgaAI — Transforming Organizations into AI-Fueled Enterprises</title>
     <link rel="stylesheet" href="style.css">
-
-    <!--
-      Configuration file - MUST load first
-      Contains all API endpoints and environment configuration
-      Loaded before other scripts so CONFIG is available globally
-    -->
+    <link rel="stylesheet" href="home.css">
     <script src="login/config.js"></script>
-
-    <!-- 
-      JavaScript files loaded with 'defer' attribute:
-      - Scripts download in parallel but execute in order after DOM is fully parsed
-      - config.js loads first (synchronously above) to make CONFIG available
-      - navbar.js loads second to inject navigation component
-      - script.js loads last for main page functionality
-    -->
     <script src="navbar/navbar.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 <body>
-    <!-- 
-      Navbar Container
-      This empty div will be populated by navbar.js
-      The navbar component is injected here dynamically to maintain consistency across pages
-    -->
     <div id="navbar-container"></div>
 
-    <!-- 
-      Hero Section - Landing Page Main Content
-      Contains the main value proposition and call-to-action
-    -->
+    <!-- ── HERO ─────────────────────────────────────────── -->
     <section class="hero">
-        <!-- Left column: Text content -->
         <div class="hero-content">
-            <!-- 
-              Main headline with brand name and tagline 
-              Brand name "SOORGA" is on first line
-              Tagline wrapped in <span> for accent color styling
-            -->
-            <h1>SOORGA<br><span>Turn Bangalore's Future into a Story</span></h1>
-            
-            <!-- 
-              Value proposition paragraph
-              Explains what SOORGA does and the value it provides
-            -->
-            <p>Soorga breaks down what global companies are building in Bangalore — AI labs, data centers, GCCs — and helps you turn it into a story you can share. AI-assisted. Fully editable. Your voice stays yours.</p>
-            
-            <!-- 
-              Primary CTA (Call-to-Action) button
-              Navigates user to signal listing page
-              Arrow symbol (→) creates visual direction cue
-              Path is relative: signals/signal-page.html resolves to /signals/signal-page.html
-            -->
-            <a href="signals/signal-page.html" class="cta-button">→ Create a Post from a Signal</a>
+            <div class="hero-badge">AI Maturity Assessment</div>
+            <h1>Transform Your Organization into an<br><span>AI-Fueled Enterprise</span></h1>
+            <p>Discover where you stand on the AI maturity curve across 7 critical domains — and get a personalized AI transformation roadmap built for your organization.</p>
+            <div class="hero-cta-group">
+                <a href="assessment/assessment.html" class="cta-button" id="startAssessmentBtn">→ Start Free Assessment</a>
+                <span class="hero-cta-sub">Takes ~10 minutes · No credit card required</span>
+            </div>
         </div>
-        
-        <!-- Right column: Hero image -->
-        <div class="hero-image">
-            <!-- 
-              Hero image
-              Path: images/hero.jpg (relative path from /)
-              Resolves to: /images/hero.jpg
-              Alt text for accessibility and SEO
-              
-              NOTE: If image is in /public/images/hero.jpg, 
-              path should be: public/images/hero.jpg
-            -->
-            <img src="public/images/hero.jpg" alt="Bangalore cityscape representing emerging institutional signals">
+
+        <div class="hero-visual">
+            <div class="maturity-ladder">
+                <div class="stage-pill stage-5">🏆 AI-Fueled Enterprise</div>
+                <div class="stage-pill stage-4">⚡ AI Transform</div>
+                <div class="stage-pill stage-3">🔗 AI Alignment</div>
+                <div class="stage-pill stage-2">🔄 AI Pivot</div>
+                <div class="stage-pill stage-1 active-stage">🌀 AI Scramble</div>
+                <div class="ladder-line"></div>
+            </div>
         </div>
     </section>
 
-    <!-- 
-      Footer Section (Optional)
-      Uncomment if you want to add footer with links
-    -->
-    <!--
+    <!-- ── HOW IT WORKS ───────────────────────────────────── -->
+    <section class="how-it-works">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">01</div>
+                    <h3>Take the Assessment</h3>
+                    <p>Answer 35 questions across 7 AI domains. Takes about 10 minutes. Honest answers = better results.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">02</div>
+                    <h3>Get Your Score</h3>
+                    <p>Instantly see your AI Maturity Stage and domain-by-domain breakdown across all 7 dimensions.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">03</div>
+                    <h3>Receive Your Roadmap</h3>
+                    <p>Our AI generates a customized report with strengths, gaps, and a 90-day + 12-month action plan.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">04</div>
+                    <h3>Book a Consultation</h3>
+                    <p>Schedule a 1-on-1 advisory session to turn your roadmap into a real transformation programme.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── 7 DOMAINS ──────────────────────────────────────── -->
+    <section class="domains-section">
+        <div class="container">
+            <h2>7 Domains of AI Maturity</h2>
+            <p class="section-sub">We assess your organization across every dimension that determines AI success.</p>
+            <div class="domains-grid">
+                <div class="domain-chip">🎯 AI Strategy</div>
+                <div class="domain-chip">👥 Leadership</div>
+                <div class="domain-chip">💡 AI Use Cases</div>
+                <div class="domain-chip">🗄️ Data Readiness</div>
+                <div class="domain-chip">⚙️ Technology Infrastructure</div>
+                <div class="domain-chip">🧠 Skills &amp; Workforce</div>
+                <div class="domain-chip">🛡️ Governance &amp; Security</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── 5 STAGES ───────────────────────────────────────── -->
+    <section class="stages-section">
+        <div class="container">
+            <h2>5 Maturity Stages</h2>
+            <div class="stages-list">
+                <div class="stage-row"><span class="stage-dot" style="background:#E74C3C"></span><div><strong>AI Scramble</strong><p>Ad hoc, uncoordinated AI efforts — no cohesive strategy.</p></div></div>
+                <div class="stage-row"><span class="stage-dot" style="background:#E67E22"></span><div><strong>AI Pivot</strong><p>Early pilots exist but siloed — strategy is emerging.</p></div></div>
+                <div class="stage-row"><span class="stage-dot" style="background:#F1C40F"></span><div><strong>AI Alignment</strong><p>Strategy aligned with business — cross-functional collaboration growing.</p></div></div>
+                <div class="stage-row"><span class="stage-dot" style="background:#2ECC71"></span><div><strong>AI Transform</strong><p>AI embedded in core processes — scaling systematically.</p></div></div>
+                <div class="stage-row"><span class="stage-dot" style="background:#3498DB"></span><div><strong>AI-Fueled Enterprise</strong><p>AI is a core competitive differentiator — industry-leading.</p></div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FINAL CTA ──────────────────────────────────────── -->
+    <section class="final-cta">
+        <div class="container text-center">
+            <h2>Ready to find your AI Maturity Stage?</h2>
+            <p>Join organizations using SoorgaAI to accelerate their transformation journey.</p>
+            <a href="assessment/assessment.html" class="cta-button">→ Start Free Assessment</a>
+        </div>
+    </section>
+
+    <!-- ── FOOTER ─────────────────────────────────────────── -->
     <footer class="site-footer">
-        <div class="footer-content">
-            <p>&copy; 2025 SOORGA. All rights reserved.</p>
-            <nav class="footer-nav">
-                <a href="about/about.html">About</a>
-                <a href="signals/signal-page.html">Signals</a>
-                <a href="login/login.html">Login</a>
-            </nav>
+        <div class="container">
+            <p>© 2025 SoorgaAI. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
         </div>
     </footer>
-    -->
 </body>
 </html>

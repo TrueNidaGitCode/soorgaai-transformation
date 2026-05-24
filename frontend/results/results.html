@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your AI Maturity Results — SoorgaAI</title>
+    <link rel="stylesheet" href="../navbar/navbar.css">
+    <link rel="stylesheet" href="results.css">
+    <script src="../login/config.js"></script>
+    <script src="../navbar/navbar.js" defer></script>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <!-- Report generating overlay -->
+    <div id="generatingOverlay" class="overlay">
+        <div class="spinner"></div>
+        <p>Generating your AI Maturity Report…</p>
+        <small>Claude AI is analysing your results. This takes 15–30 seconds.</small>
+    </div>
+
+    <main class="results-wrapper">
+        <!-- Dynamic content injected by results.js -->
+        <div id="resultsContainer">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p style="color:#aaa">Loading your results…</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="results.js"></script>
+</body>
+</html>

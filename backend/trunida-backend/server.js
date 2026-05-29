@@ -74,8 +74,9 @@ app.use("/api/assessment",            assessmentRoutes);
 app.get("/", (req, res) => {
     res.status(200).json({
         message: "SoorgaAI Transformation API - Backend is Running!",
-        version: "2.0.0",
-        product: "SoorgaAI - AI Maturity Assessment Platform"
+        version: "2.1.0",
+        product: "SoorgaAI - AI Maturity Assessment Platform",
+        dynamicRoutes: "enabled"
     });
 });
 

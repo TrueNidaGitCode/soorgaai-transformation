@@ -52,6 +52,9 @@ function setupNavbarHandlers() {
 
     if (!loginBtn || !logoutBtn) return;
 
+    // Show "My Assessments" if logged in OR if a dynamic assessment has been completed
+    const hasCompletedAssessment = !!localStorage.getItem('da_score');
+
     if (token) {
         if (userDisplay) { userDisplay.textContent = `Hi, ${username}`; userDisplay.style.display = 'inline'; }
         loginBtn.style.display  = 'none';
@@ -64,7 +67,8 @@ function setupNavbarHandlers() {
         if (userDisplay) userDisplay.style.display = 'none';
         loginBtn.style.display  = 'inline';
         logoutBtn.style.display = 'none';
-        if (myAssessmentsBtn) myAssessmentsBtn.style.display = 'none';
+        // Show "My Assessments" even when logged out if they've completed a dynamic assessment
+        if (myAssessmentsBtn) myAssessmentsBtn.style.display = hasCompletedAssessment ? 'inline' : 'none';
         if (adminBtn) adminBtn.style.display = 'none';
 
         loginBtn.onclick = () => { window.location.href = '/login/login.html'; };
@@ -74,19 +78,16 @@ function setupNavbarHandlers() {
 // ── Navigation links ──────────────────────────────────────
 function setupNavLinks() {
     bindBtn('takeAssessmentBtn', () => {
-        if (localStorage.getItem('token')) {
-            window.location.href = '/assessment/assessment.html';
-        } else {
-            localStorage.setItem('redirectAfterLogin', '/assessment/assessment.html');
-            window.location.href = '/login/login.html';
-        }
+        window.location.href = '/dynamic-assessment/start.html';
     });
 
     bindBtn('myAssessmentsBtn', () => {
-        if (localStorage.getItem('token')) {
-            window.location.href = '/results/results.html';
+        // Show their most recent dynamic scorecard if available, else start fresh
+        const score = localStorage.getItem('da_score');
+        if (score) {
+            window.location.href = '/dynamic-assessment/scorecard.html';
         } else {
-            window.location.href = '/login/login.html';
+            window.location.href = '/dynamic-assessment/start.html';
         }
     });
 

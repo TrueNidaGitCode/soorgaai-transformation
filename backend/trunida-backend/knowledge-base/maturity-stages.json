@@ -1,0 +1,106 @@
+{
+  "version": "1.0",
+  "description": "SoorgaAI AI Maturity Stages Framework — 5 stages from AI Scramble to AI-Fueled Enterprise",
+  "stages": [
+    {
+      "stage": "AI Scramble",
+      "stageNumber": 1,
+      "minScore": 0,
+      "maxScore": 20,
+      "color": "#E74C3C",
+      "tagline": "Ad hoc. Uncoordinated. Reactive.",
+      "description": "AI efforts are isolated experiments with no strategic direction. Individual teams may be exploring AI tools independently, but there is no organization-wide vision, governance, or budget. The risk is wasted spend and missed competitive opportunities.",
+      "characteristics": [
+        "No formal AI strategy or roadmap",
+        "AI pilots are one-off and not connected to business goals",
+        "Data is siloed and not AI-ready",
+        "Leadership has low AI literacy",
+        "No AI governance or ethics framework",
+        "Workforce has minimal AI skills",
+        "Technology infrastructure is fragmented"
+      ],
+      "primaryRisk": "Competitors with structured AI programs will outpace the organization within 12–18 months.",
+      "nextStageTarget": "AI Pivot — establish a clear AI vision and at least one funded strategic pilot"
+    },
+    {
+      "stage": "AI Pivot",
+      "stageNumber": 2,
+      "minScore": 21,
+      "maxScore": 40,
+      "color": "#E67E22",
+      "tagline": "Awareness is rising. First pilots underway.",
+      "description": "The organization recognizes AI's strategic importance and has launched initial pilots. However, these are often siloed within specific teams or departments. A cohesive strategy is beginning to form but lacks enterprise-wide alignment and execution discipline.",
+      "characteristics": [
+        "AI strategy exists but is not fully funded or socialized",
+        "1–3 AI pilots running, mostly in IT or innovation teams",
+        "Data management practices improving but not centralized",
+        "Some leadership AI literacy — C-suite beginning to engage",
+        "Basic AI governance policies drafted",
+        "Targeted AI upskilling programs starting",
+        "Cloud infrastructure partially adopted"
+      ],
+      "primaryRisk": "Pilot fatigue — pilots succeed in isolation but fail to scale, leading to disillusionment.",
+      "nextStageTarget": "AI Alignment — connect pilots to business KPIs and build cross-functional AI leadership"
+    },
+    {
+      "stage": "AI Alignment",
+      "stageNumber": 3,
+      "minScore": 41,
+      "maxScore": 60,
+      "color": "#F1C40F",
+      "tagline": "Strategy is forming. Teams are collaborating.",
+      "description": "AI initiatives are increasingly aligned with business strategy. Cross-functional collaboration is growing, and repeatable processes for AI development and deployment are taking shape. The organization is transitioning from experimentation to disciplined execution.",
+      "characteristics": [
+        "Documented AI strategy with executive sponsorship",
+        "AI Center of Excellence or equivalent team established",
+        "Data platform investments underway — single source of truth emerging",
+        "Leadership actively champions AI transformation",
+        "AI governance framework live and enforced",
+        "Formal AI talent acquisition and upskilling programs",
+        "Modern MLOps tools and cloud-native infrastructure"
+      ],
+      "primaryRisk": "Speed — competitors who are further ahead may capture market share before full alignment is achieved.",
+      "nextStageTarget": "AI Transform — embed AI into core business processes and demonstrate measurable ROI"
+    },
+    {
+      "stage": "AI Transform",
+      "stageNumber": 4,
+      "minScore": 61,
+      "maxScore": 80,
+      "color": "#2ECC71",
+      "tagline": "AI is embedded. Scaling systematically.",
+      "description": "AI is embedded into core business processes across multiple functions. The organization scales AI systematically with strong governance, measurable business impact, and a culture that embraces AI-driven decision-making. ROI from AI investments is clearly demonstrated.",
+      "characteristics": [
+        "AI strategy is integrated into corporate strategy and investment planning",
+        "Multiple AI use cases in production delivering measurable ROI",
+        "Unified data platform with real-time analytics capabilities",
+        "C-suite makes AI-informed decisions regularly",
+        "Comprehensive AI governance with responsible AI practices",
+        "AI Centre of Excellence drives capability building across all functions",
+        "Scalable MLOps platform with automated model monitoring"
+      ],
+      "primaryRisk": "Complacency — organizations at this stage must continue to innovate or fall behind emerging AI-native disruptors.",
+      "nextStageTarget": "AI-Fueled Enterprise — make AI a core competitive differentiator and drive industry leadership"
+    },
+    {
+      "stage": "AI-Fueled Enterprise",
+      "stageNumber": 5,
+      "minScore": 81,
+      "maxScore": 100,
+      "color": "#3498DB",
+      "tagline": "AI is the competitive core. Industry leading.",
+      "description": "AI is a core competitive differentiator. The organization continuously innovates with AI, operates with AI-first thinking across all functions, and sets industry benchmarks. AI capabilities are a key factor in attracting talent, winning customers, and entering new markets.",
+      "characteristics": [
+        "AI is central to corporate strategy and competitive positioning",
+        "AI use cases span every business function — from product to supply chain to customer experience",
+        "AI-ready data infrastructure operating at enterprise scale with real-time capabilities",
+        "Board-level AI literacy — AI KPIs reported alongside financial KPIs",
+        "Industry-recognized responsible AI and governance frameworks",
+        "AI-first talent brand — the organization is known for AI capabilities",
+        "Proprietary AI platforms and models built on top of foundation models"
+      ],
+      "primaryRisk": "Maintaining leadership requires continuous investment in next-generation AI capabilities and talent.",
+      "nextStageTarget": "Sustain and extend industry leadership through continuous AI innovation"
+    }
+  ]
+}

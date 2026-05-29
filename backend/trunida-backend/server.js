@@ -4,8 +4,12 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 // ✅ Import routes
-import userRoutes       from "./routes/userRoutes.js";
-import assessmentRoutes from "./routes/assessmentRoutes.js";
+import userRoutes              from "./routes/userRoutes.js";
+import assessmentRoutes        from "./routes/assessmentRoutes.js";
+import dynamicAssessmentRoutes from "./routes/dynamicAssessmentRoutes.js";
+
+// ✅ Import KB cache warmer
+import { warmCache } from "./services/kbRetrievalService.js";
 
 dotenv.config();
 
@@ -60,8 +64,9 @@ app.use(async (req, res, next) => {
 });
 
 // ✅ Register Routes
-app.use("/api/users",      userRoutes);
-app.use("/api/assessment", assessmentRoutes);
+app.use("/api/users",                 userRoutes);
+app.use("/api/assessment",            assessmentRoutes);
+app.use("/api/assessment/dynamic",    dynamicAssessmentRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {
@@ -87,6 +92,7 @@ process.on("SIGTERM", gracefulShutdown);
 // ✅ Connect to MongoDB, then start the server
 connectDB()
     .then(() => {
+        warmCache(); // Pre-load KB files into memory
         console.log("🚀 Starting SoorgaAI Server...");
         app.listen(PORT, () => console.log(`🚀 SoorgaAI Server running on port ${PORT}`));
     })

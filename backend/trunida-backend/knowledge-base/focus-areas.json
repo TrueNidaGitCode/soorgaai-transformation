@@ -1,0 +1,160 @@
+{
+  "version": "1.0",
+  "description": "SoorgaAI Assessment Focus Areas — 7 capability domains measured across all industries",
+  "focusAreas": [
+    {
+      "id": "ai-strategy",
+      "name": "AI Strategy & Vision",
+      "icon": "🎯",
+      "shortName": "Strategy",
+      "description": "The degree to which the organization has a clear, funded, and socialized AI strategy aligned with business objectives.",
+      "executiveFocus": "Does your organization have a clear AI strategy with executive buy-in and dedicated budget?",
+      "keyCapabilities": [
+        "Documented AI vision and multi-year roadmap",
+        "Dedicated AI investment budget (not just IT budget)",
+        "AI strategy reviewed and updated at least annually",
+        "AI KPIs tracked at executive and board level",
+        "Clear ownership of AI transformation at C-suite"
+      ],
+      "probeAreas": [
+        "Strategic clarity and documentation",
+        "Investment commitment and budget allocation",
+        "Alignment between AI strategy and business goals",
+        "Executive sponsorship and accountability",
+        "Long-term competitive positioning through AI"
+      ]
+    },
+    {
+      "id": "leadership",
+      "name": "Leadership & Culture",
+      "icon": "👥",
+      "shortName": "Leadership",
+      "description": "The level of AI literacy, advocacy, and cultural readiness across leadership and the broader workforce.",
+      "executiveFocus": "Do your leaders champion AI transformation, and is your culture ready to work alongside AI?",
+      "keyCapabilities": [
+        "C-suite champions AI with visible actions (not just words)",
+        "Leaders understand AI capabilities and limitations",
+        "Organization has a growth mindset toward AI-driven change",
+        "AI successes and failures are celebrated as learning opportunities",
+        "Cross-functional AI collaboration is rewarded"
+      ],
+      "probeAreas": [
+        "Executive AI literacy and advocacy",
+        "Change management and AI adoption culture",
+        "Middle management buy-in and enablement",
+        "Psychological safety around AI experimentation",
+        "AI success stories communicated internally"
+      ]
+    },
+    {
+      "id": "ai-use-cases",
+      "name": "AI Use Cases & Applications",
+      "icon": "💡",
+      "shortName": "Use Cases",
+      "description": "The breadth, maturity, and business impact of AI applications currently in use or development.",
+      "executiveFocus": "Are you deploying AI where it creates the most business value, and can you demonstrate ROI?",
+      "keyCapabilities": [
+        "Structured process for identifying and prioritizing AI use cases",
+        "AI use cases in production delivering measurable business outcomes",
+        "Portfolio spans multiple functions (not just IT or R&D)",
+        "Clear ROI measurement framework for AI investments",
+        "Mechanism for scaling successful pilots enterprise-wide"
+      ],
+      "probeAreas": [
+        "Use case identification and prioritization process",
+        "Number and maturity of AI use cases in production",
+        "Business value delivered and ROI demonstrated",
+        "Breadth across business functions",
+        "Speed from pilot to production"
+      ]
+    },
+    {
+      "id": "data-readiness",
+      "name": "Data Readiness",
+      "icon": "🗄️",
+      "shortName": "Data",
+      "description": "The quality, accessibility, and governance of data assets that power AI systems.",
+      "executiveFocus": "Is your data organized, governed, and accessible enough to train and run AI systems reliably?",
+      "keyCapabilities": [
+        "Centralized and accessible data platform",
+        "Data quality standards and monitoring in place",
+        "Data governance and ownership clearly defined",
+        "Real-time or near-real-time data pipelines for key processes",
+        "Data privacy and compliance frameworks active"
+      ],
+      "probeAreas": [
+        "Data accessibility and centralization",
+        "Data quality and cleanliness",
+        "Data governance and stewardship",
+        "Volume and variety of usable training data",
+        "Data security and privacy compliance"
+      ]
+    },
+    {
+      "id": "technology",
+      "name": "Technology & Infrastructure",
+      "icon": "⚙️",
+      "shortName": "Technology",
+      "description": "The maturity of AI-enabling technology: cloud, MLOps, compute, and integration capabilities.",
+      "executiveFocus": "Does your technology stack enable rapid AI development, deployment, and scaling?",
+      "keyCapabilities": [
+        "Cloud-native infrastructure supporting AI workloads",
+        "MLOps platform for model development and deployment",
+        "Scalable compute (GPU/TPU access as needed)",
+        "API-first integration enabling AI across systems",
+        "Model monitoring and observability in production"
+      ],
+      "probeAreas": [
+        "Cloud maturity and AI-optimized infrastructure",
+        "MLOps and model lifecycle management",
+        "Compute scalability for AI workloads",
+        "System integration and AI operationalization",
+        "AI tooling standardization and developer experience"
+      ]
+    },
+    {
+      "id": "skills-workforce",
+      "name": "Skills & Workforce",
+      "icon": "🎓",
+      "shortName": "Skills",
+      "description": "The depth and breadth of AI talent, skills development programs, and workforce readiness.",
+      "executiveFocus": "Do you have the AI talent to execute your strategy, and are you building capabilities for the future?",
+      "keyCapabilities": [
+        "Dedicated AI/ML team with senior capability",
+        "Formal AI upskilling programs for the broader workforce",
+        "Clear AI talent acquisition and retention strategy",
+        "AI literacy programs for non-technical staff",
+        "Partnerships with universities or specialized AI firms"
+      ],
+      "probeAreas": [
+        "AI talent depth and technical capability",
+        "Workforce upskilling and reskilling programs",
+        "AI literacy across the business",
+        "Talent pipeline and recruitment strategy",
+        "External partnerships and ecosystem engagement"
+      ]
+    },
+    {
+      "id": "governance",
+      "name": "Governance, Ethics & Security",
+      "icon": "🛡️",
+      "shortName": "Governance",
+      "description": "The frameworks, policies, and practices ensuring AI is deployed responsibly, securely, and compliantly.",
+      "executiveFocus": "Do you have the guardrails to deploy AI responsibly and protect your organization from AI-related risks?",
+      "keyCapabilities": [
+        "AI ethics principles and responsible AI framework",
+        "AI risk assessment process before deployment",
+        "Model explainability and transparency standards",
+        "Regulatory compliance for AI in your industry",
+        "AI security practices including adversarial testing"
+      ],
+      "probeAreas": [
+        "AI ethics framework and responsible AI policies",
+        "Risk management and model governance",
+        "Regulatory compliance and auditability",
+        "AI security and adversarial robustness",
+        "Transparency and explainability practices"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Questions — SoorgaAI</title>
+    <link rel="stylesheet" href="../navbar/navbar.css">
+    <link rel="stylesheet" href="dynamic-assessment.css">
+    <script src="../login/config.js"></script>
+    <script src="../navbar/navbar.js" defer></script>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <!-- Submitting overlay -->
+    <div id="submittingOverlay" class="da-overlay">
+        <div class="da-spinner-large"></div>
+        <p>Computing your AI Maturity Score…</p>
+    </div>
+
+    <main class="da-wrapper" id="mainContent" style="display:none">
+
+        <!-- Header -->
+        <div class="da-question-header">
+            <div class="da-company-tag" id="companyTag">—</div>
+            <div class="da-domain-tag" id="domainTag">—</div>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-container">
+            <div class="progress-info">
+                <span id="progressLabel">Question 1 of 20</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill" style="width:0%"></div>
+            </div>
+        </div>
+
+        <!-- Question card -->
+        <div class="da-card" id="questionCard">
+            <div class="da-focus-area" id="focusAreaLabel"></div>
+            <p class="question-text" id="questionText"></p>
+            <div class="options-grid" id="optionsGrid"></div>
+        </div>
+
+        <!-- Error -->
+        <div id="errorBanner" class="error-banner"></div>
+
+        <!-- Navigation -->
+        <div class="step-nav">
+            <button class="btn-secondary" id="btnBack" onclick="prevQuestion()">← Back</button>
+            <span class="step-counter" id="stepCounter"></span>
+            <button class="btn-primary" id="btnNext" onclick="nextQuestion()">Next →</button>
+        </div>
+
+    </main>
+
+    <script src="dynamic-assessment.js"></script>
+    <script>
+        const sessionId = localStorage.getItem('da_sessionId');
+        if (!sessionId) { window.location.href = 'start.html'; }
+
+        let questions   = [];
+        let answers     = {};   // questionId → value
+        let currentIdx  = 0;
+
+        // ── Bootstrap ──────────────────────────────────────────────────────────
+
+        async function init() {
+            document.getElementById('companyTag').textContent = localStorage.getItem('da_companyName') || '—';
+            document.getElementById('domainTag').textContent  = localStorage.getItem('da_domain') || '—';
+
+            // Load session to get questions (already generated in discovery.html)
+            try {
+                const res  = await fetch(window.CONFIG.DYNAMIC.GET_SESSION(sessionId));
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error('Could not load session');
+
+                questions = data.session.questions || [];
+
+                // Restore any previously submitted answers
+                const savedAnswers = JSON.parse(localStorage.getItem('da_answers') || '{}');
+                answers = savedAnswers;
+
+                if (questions.length === 0) throw new Error('No questions found in session');
+
+                document.getElementById('mainContent').style.display = 'block';
+                renderQuestion();
+
+            } catch (err) {
+                console.error('Init failed:', err);
+                document.getElementById('mainContent').style.display = 'block';
+                showError('Could not load questions. Please try refreshing.');
+            }
+        }
+
+        // ── Render ─────────────────────────────────────────────────────────────
+
+        function renderQuestion() {
+            const q       = questions[currentIdx];
+            const total   = questions.length;
+            const pct     = Math.round((currentIdx / total) * 100);
+            const answered = Object.keys(answers).length;
+
+            // Progress
+            document.getElementById('progressLabel').textContent  = `Question ${currentIdx + 1} of ${total}`;
+            document.getElementById('progressPercent').textContent = `${Math.round((answered / total) * 100)}%`;
+            document.getElementById('progressFill').style.width    = `${Math.round((answered / total) * 100)}%`;
+            document.getElementById('stepCounter').textContent     = `${currentIdx + 1} / ${total}`;
+
+            // Focus area label
+            const faName = formatFocusArea(q.focusAreaId);
+            document.getElementById('focusAreaLabel').textContent = faName;
+
+            // Question text
+            document.getElementById('questionText').textContent = q.text;
+
+            // Options
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+            for (const opt of q.options) {
+                const label = document.createElement('label');
+                label.className = 'option-label';
+
+                const input = document.createElement('input');
+                input.type    = 'radio';
+                input.name    = 'answer';
+                input.value   = opt.value;
+                input.checked = answers[q.questionId] === opt.value;
+                input.addEventListener('change', () => {
+                    answers[q.questionId] = opt.value;
+                    localStorage.setItem('da_answers', JSON.stringify(answers));
+                    clearError();
+                    highlightSelected(grid, opt.value);
+                });
+
+                const card = document.createElement('div');
+                card.className = 'option-card' + (answers[q.questionId] === opt.value ? ' selected' : '');
+
+                const val = document.createElement('div');
+                val.className   = 'option-value';
+                val.textContent = opt.value;
+
+                const lbl = document.createElement('div');
+                lbl.textContent = opt.label;
+
+                card.appendChild(val);
+                card.appendChild(lbl);
+                label.appendChild(input);
+                label.appendChild(card);
+                grid.appendChild(label);
+            }
+
+            // Nav buttons
+            document.getElementById('btnBack').style.visibility = currentIdx === 0 ? 'hidden' : 'visible';
+            const isLast = currentIdx === total - 1;
+            document.getElementById('btnNext').textContent = isLast ? 'Submit →' : 'Next →';
+
+            clearError();
+        }
+
+        function highlightSelected(grid, value) {
+            grid.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            grid.querySelectorAll('input[type="radio"]').forEach(r => {
+                if (Number(r.value) === value) r.closest('.option-label').querySelector('.option-card').classList.add('selected');
+            });
+        }
+
+        // ── Navigation ─────────────────────────────────────────────────────────
+
+        function nextQuestion() {
+            const q = questions[currentIdx];
+            if (answers[q.questionId] === undefined) {
+                showError('Please select an answer before continuing.');
+                return;
+            }
+
+            // Submit this answer to backend
+            submitAnswerToBackend(q.questionId, answers[q.questionId]);
+
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                renderQuestion();
+            } else {
+                finishAssessment();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIdx > 0) {
+                currentIdx--;
+                renderQuestion();
+            }
+        }
+
+        async function submitAnswerToBackend(questionId, value) {
+            try {
+                await fetch(window.CONFIG.DYNAMIC.SUBMIT_ANSWER(sessionId), {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ questionId, value }),
+                });
+            } catch (err) {
+                console.warn('Answer sync error (non-blocking):', err.message);
+            }
+        }
+
+        async function finishAssessment() {
+            document.getElementById('submittingOverlay').style.display = 'flex';
+            try {
+                const res  = await fetch(window.CONFIG.DYNAMIC.SCORE(sessionId), {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || 'Scoring failed');
+
+                localStorage.setItem('da_score', JSON.stringify(data));
+                localStorage.removeItem('da_answers'); // clear interim answers
+                window.location.href = 'scorecard.html';
+
+            } catch (err) {
+                document.getElementById('submittingOverlay').style.display = 'none';
+                showError('Scoring failed. Please try again.');
+            }
+        }
+
+        // ── Helpers ────────────────────────────────────────────────────────────
+
+        const FA_NAMES = {
+            'ai-strategy':    '🎯 AI Strategy',
+            'leadership':     '👥 Leadership',
+            'ai-use-cases':   '💡 AI Use Cases',
+            'data-readiness': '🗄️ Data Readiness',
+            'technology':     '⚙️ Technology',
+            'skills-workforce':'🎓 Skills & Workforce',
+            'governance':     '🛡️ Governance',
+        };
+        function formatFocusArea(id) { return FA_NAMES[id] || id; }
+
+        init();
+    </script>
+</body>
+</html>

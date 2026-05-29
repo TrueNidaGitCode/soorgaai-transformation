@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalizing Your Assessment — SoorgaAI</title>
+    <link rel="stylesheet" href="../navbar/navbar.css">
+    <link rel="stylesheet" href="dynamic-assessment.css">
+    <script src="../login/config.js"></script>
+    <script src="../navbar/navbar.js" defer></script>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <main class="da-wrapper">
+
+        <!-- Loading state -->
+        <div id="loadingState" class="da-card da-center">
+            <div class="da-spinner-large"></div>
+            <h2>Analysing your organization…</h2>
+            <p class="da-subtitle">We're identifying your industry context and generating personalized questions. This takes about 15–20 seconds.</p>
+            <div class="da-steps-loading">
+                <div class="loading-step" id="step1">🔍 Identifying company domain</div>
+                <div class="loading-step" id="step2">📚 Loading industry knowledge base</div>
+                <div class="loading-step" id="step3">🤖 Generating personalized questions</div>
+            </div>
+        </div>
+
+        <!-- Welcome state (shown after discovery) -->
+        <div id="welcomeState" class="da-card" style="display:none">
+            <div class="da-badge" id="domainBadge">✦ Automotive</div>
+            <h1 id="welcomeHeading">Welcome to Your AI Transformation Assessment</h1>
+            <p class="da-welcome-msg" id="welcomeMessage"></p>
+
+            <div class="da-info-row">
+                <div class="da-info-chip">
+                    <span class="chip-label">Company</span>
+                    <span class="chip-value" id="chipCompany">—</span>
+                </div>
+                <div class="da-info-chip">
+                    <span class="chip-label">Domain</span>
+                    <span class="chip-value" id="chipDomain">—</span>
+                </div>
+                <div class="da-info-chip">
+                    <span class="chip-label">Questions</span>
+                    <span class="chip-value" id="chipQuestions">Up to 20</span>
+                </div>
+            </div>
+
+            <div id="errorBanner" class="error-banner"></div>
+
+            <button class="btn-primary btn-full" id="beginBtn" onclick="beginAssessment()">
+                <span id="beginBtnText">→ Begin Assessment</span>
+                <span id="beginBtnSpinner" class="btn-spinner" style="display:none"></span>
+            </button>
+
+            <p class="da-note">Questions are personalized to your organization and industry context</p>
+        </div>
+
+    </main>
+
+    <script src="dynamic-assessment.js"></script>
+    <script>
+        const sessionId   = localStorage.getItem('da_sessionId');
+        const companyName = localStorage.getItem('da_companyName');
+
+        if (!sessionId) {
+            window.location.href = 'start.html';
+        }
+
+        // ── Run discovery + question generation on load ────────────────────────
+
+        async function runDiscovery() {
+            try {
+                activateStep('step1');
+
+                // 1. Discover domain
+                const discRes = await fetch(window.CONFIG.DYNAMIC.DISCOVER(sessionId), {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }
+                });
+                const discData = await discRes.json();
+                if (!discRes.ok || !discData.success) throw new Error(discData.message || 'Discovery failed');
+
+                localStorage.setItem('da_domain',         discData.domain);
+                localStorage.setItem('da_welcomeMessage', discData.welcomeMessage);
+                completeStep('step1');
+                activateStep('step2');
+
+                // Small pause so user sees step 2 animate
+                await sleep(600);
+                completeStep('step2');
+                activateStep('step3');
+
+                // 2. Generate questions
+                const qRes = await fetch(window.CONFIG.DYNAMIC.QUESTIONS(sessionId), {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }
+                });
+                const qData = await qRes.json();
+                if (!qRes.ok || !qData.success) throw new Error(qData.message || 'Question generation failed');
+
+                localStorage.setItem('da_totalQuestions', qData.totalQuestions);
+                completeStep('step3');
+
+                // Show welcome screen
+                showWelcome(discData, qData.totalQuestions);
+
+            } catch (err) {
+                console.error('Discovery failed:', err);
+                // Soft fail — go straight to questions with whatever we have
+                showWelcome({
+                    domain: localStorage.getItem('da_domain') || 'Your Industry',
+                    welcomeMessage: `Welcome, ${localStorage.getItem('da_name') || 'there'}! Your personalized AI Maturity Assessment is ready. Answer honestly — there are no right or wrong answers.`
+                }, localStorage.getItem('da_totalQuestions') || 20);
+            }
+        }
+
+        function showWelcome(discData, totalQ) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('welcomeState').style.display = 'block';
+            document.getElementById('domainBadge').textContent   = `✦ ${discData.domain || 'Personalized'}`;
+            document.getElementById('welcomeMessage').textContent = discData.welcomeMessage || '';
+            document.getElementById('chipCompany').textContent   = companyName || '—';
+            document.getElementById('chipDomain').textContent    = discData.domain || '—';
+            document.getElementById('chipQuestions').textContent = `${totalQ || 20} questions`;
+        }
+
+        async function beginAssessment() {
+            const btn     = document.getElementById('beginBtn');
+            const btnText = document.getElementById('beginBtnText');
+            const spinner = document.getElementById('beginBtnSpinner');
+            btn.disabled  = true;
+            btnText.style.display  = 'none';
+            spinner.style.display  = 'inline-block';
+            window.location.href = 'questions.html';
+        }
+
+        // ── Step animation helpers ─────────────────────────────────────────────
+
+        function activateStep(id) {
+            document.getElementById(id)?.classList.add('active');
+        }
+        function completeStep(id) {
+            const el = document.getElementById(id);
+            el?.classList.remove('active');
+            el?.classList.add('done');
+        }
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        // Start on load
+        runDiscovery();
+    </script>
+</body>
+</html>

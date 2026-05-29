@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Transformation Assessment — SoorgaAI</title>
+    <link rel="stylesheet" href="../navbar/navbar.css">
+    <link rel="stylesheet" href="dynamic-assessment.css">
+    <script src="../login/config.js"></script>
+    <script src="../navbar/navbar.js" defer></script>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <main class="da-wrapper">
+        <div class="da-card">
+            <!-- Badge -->
+            <div class="da-badge">✦ Personalized Assessment</div>
+
+            <!-- Header -->
+            <h1>AI Transformation Assessment</h1>
+            <p class="da-subtitle">Tell us about yourself and your organization. We'll generate a personalized diagnostic based on your industry context — up to 20 executive-level questions, tailored to your AI journey.</p>
+
+            <!-- Form -->
+            <form id="startForm" class="da-form" onsubmit="handleStart(event)">
+                <div class="form-group">
+                    <label for="name">Your Name</label>
+                    <input type="text" id="name" placeholder="e.g. Sarah Johnson" required autocomplete="name">
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Your Role</label>
+                    <select id="role" required>
+                        <option value="" disabled selected>Select your role</option>
+                        <option value="Founder / CEO">Founder / CEO</option>
+                        <option value="CTO / CIO">CTO / CIO</option>
+                        <option value="Engineering Head">Engineering Head</option>
+                        <option value="Product Head">Product Head</option>
+                        <option value="AI / Data Lead">AI / Data Lead</option>
+                        <option value="Operations Head">Operations Head</option>
+                        <option value="Strategy / Transformation">Strategy / Transformation</option>
+                        <option value="Other Executive">Other Executive</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="companyName">Company Name</label>
+                    <input type="text" id="companyName" placeholder="e.g. Bosch, Continental, Aptiv" required autocomplete="organization">
+                    <span class="form-hint">We'll use this to personalize your assessment to your industry.</span>
+                </div>
+
+                <div id="errorBanner" class="error-banner"></div>
+
+                <button type="submit" class="btn-primary btn-full" id="submitBtn">
+                    <span id="btnText">→ Start My Assessment</span>
+                    <span id="btnSpinner" class="btn-spinner" style="display:none"></span>
+                </button>
+            </form>
+
+            <p class="da-note">Takes ≤10 minutes · No credit card required · Personalized to your industry</p>
+        </div>
+    </main>
+
+    <script src="dynamic-assessment.js"></script>
+    <script>
+        async function handleStart(e) {
+            e.preventDefault();
+            const name        = document.getElementById('name').value.trim();
+            const role        = document.getElementById('role').value;
+            const companyName = document.getElementById('companyName').value.trim();
+            const btn         = document.getElementById('submitBtn');
+            const btnText     = document.getElementById('btnText');
+            const btnSpinner  = document.getElementById('btnSpinner');
+
+            clearError();
+            btn.disabled   = true;
+            btnText.style.display   = 'none';
+            btnSpinner.style.display = 'inline-block';
+
+            try {
+                const res = await fetch(window.CONFIG.DYNAMIC.START_SESSION, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ name, role, companyName }),
+                });
+                const data = await res.json();
+
+                if (!res.ok || !data.success) throw new Error(data.message || 'Failed to start session');
+
+                // Persist session
+                localStorage.setItem('da_sessionId',   data.sessionId);
+                localStorage.setItem('da_companyName', companyName);
+                localStorage.setItem('da_name',        name);
+                localStorage.setItem('da_role',        role);
+
+                // Proceed to discovery
+                window.location.href = 'discovery.html';
+
+            } catch (err) {
+                showError(err.message || 'Something went wrong. Please try again.');
+                btn.disabled    = false;
+                btnText.style.display    = 'inline';
+                btnSpinner.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

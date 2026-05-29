@@ -34,5 +34,30 @@ const protect = (req, res, next) => {
     }
 };
 
-export { protect };
+/**
+ * optionalAuth — Attach user to req.user if a valid JWT is present.
+ * Does NOT block the request if token is missing or invalid.
+ * Used for routes that support both authenticated and anonymous users.
+ */
+const optionalAuth = (req, res, next) => {
+    const authHeader = req.header('Authorization');
+    if (!authHeader) return next();           // anonymous — no token present
+
+    const token = authHeader.split(' ')[1];
+    if (!token) return next();
+
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+        req.user = {
+            _id:  decoded.userId,
+            id:   decoded.userId,
+            role: decoded.role || 'user',
+        };
+    } catch {
+        // Invalid/expired token — treat as anonymous, don't block
+    }
+    next();
+};
+
+export { protect, optionalAuth };
 export default protect;

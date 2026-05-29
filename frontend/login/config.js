@@ -38,6 +38,16 @@ window.CONFIG = {
     ADMIN: {
         ALL_ASSESSMENTS: `${API_BASE_URL}/api/assessment/admin/all`,
     },
+
+    // ── Dynamic Assessment (v2) ───────────────────────────
+    DYNAMIC: {
+        START_SESSION:     `${API_BASE_URL}/api/assessment/dynamic/sessions`,
+        DISCOVER:    (id) => `${API_BASE_URL}/api/assessment/dynamic/sessions/${id}/discover`,
+        QUESTIONS:   (id) => `${API_BASE_URL}/api/assessment/dynamic/sessions/${id}/questions`,
+        SUBMIT_ANSWER:(id) => `${API_BASE_URL}/api/assessment/dynamic/sessions/${id}/answers`,
+        GET_SESSION: (id) => `${API_BASE_URL}/api/assessment/dynamic/sessions/${id}`,
+        SCORE:       (id) => `${API_BASE_URL}/api/assessment/dynamic/sessions/${id}/score`,
+    },
 };
 
 window.API_BASE_URL = window.CONFIG.API_BASE;

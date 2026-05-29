@@ -124,6 +124,29 @@ body {
     transform: translateY(0);
 }
 
+/* Personalized assessment primary variant */
+.cta-button--primary {
+    background: linear-gradient(135deg, #5CC5A7, #3DAFD3);
+    font-weight: 700;
+}
+
+/* Standard assessment secondary variant */
+.cta-button--secondary {
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    padding: 12px 22px;
+}
+
+.cta-button--secondary:hover {
+    border-color: #5CC5A7;
+    color: #fff;
+    background: rgba(92,197,167,0.08);
+    box-shadow: none;
+    transform: none;
+}
+
 /* Secondary button variant */
 .secondary-button {
     background-color: transparent;

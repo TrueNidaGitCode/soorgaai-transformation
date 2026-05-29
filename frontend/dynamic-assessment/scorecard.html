@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your AI Maturity Scorecard — SoorgaAI</title>
+    <link rel="stylesheet" href="../navbar/navbar.css">
+    <link rel="stylesheet" href="dynamic-assessment.css">
+    <script src="../login/config.js"></script>
+    <script src="../navbar/navbar.js" defer></script>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <!-- Loading -->
+    <div id="loadingState" class="da-overlay">
+        <div class="da-spinner-large"></div>
+        <p>Loading your scorecard…</p>
+    </div>
+
+    <main class="da-wrapper" id="mainContent" style="display:none">
+
+        <!-- Score hero -->
+        <div class="da-card scorecard-hero">
+            <div class="da-badge" id="stageBadge">AI Scramble</div>
+            <div class="score-circle" id="scoreCircle">
+                <span class="score-number" id="scoreNumber">—</span>
+                <span class="score-label">/100</span>
+            </div>
+            <h1 class="stage-name" id="stageName">—</h1>
+            <p class="stage-desc" id="stageDesc">—</p>
+            <div class="stage-meta">
+                <span id="metaCompany">—</span>
+                <span class="dot">·</span>
+                <span id="metaDomain">—</span>
+            </div>
+        </div>
+
+        <!-- Focus area breakdown -->
+        <div class="da-card">
+            <h2 class="section-title">Capability Breakdown</h2>
+            <p class="section-sub">Your scores across the 7 AI transformation domains</p>
+            <div id="focusAreaBars"></div>
+        </div>
+
+        <!-- Stage ladder -->
+        <div class="da-card stage-ladder-card">
+            <h2 class="section-title">Your Position on the AI Maturity Ladder</h2>
+            <div class="stage-ladder" id="stageLadder"></div>
+        </div>
+
+        <!-- CTA -->
+        <div class="da-card cta-card">
+            <h2>Ready to Accelerate Your AI Transformation?</h2>
+            <p>Book a 1-on-1 advisory session with a SoorgaAI expert to turn your scorecard into a concrete transformation roadmap.</p>
+            <div class="cta-buttons">
+                <button class="btn-primary" onclick="bookConsultation()">→ Book Advisory Session</button>
+                <button class="btn-secondary" onclick="retakeAssessment()">Retake Assessment</button>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="dynamic-assessment.js"></script>
+    <script>
+        const STAGES = [
+            { name: 'AI Scramble',         min: 0,  max: 20,  color: '#E74C3C' },
+            { name: 'AI Pivot',            min: 21, max: 40,  color: '#E67E22' },
+            { name: 'AI Alignment',        min: 41, max: 60,  color: '#F1C40F' },
+            { name: 'AI Transform',        min: 61, max: 80,  color: '#2ECC71' },
+            { name: 'AI-Fueled Enterprise',min: 81, max: 100, color: '#3498DB' },
+        ];
+
+        const FA_NAMES = {
+            'ai-strategy':    '🎯 AI Strategy',
+            'leadership':     '👥 Leadership',
+            'ai-use-cases':   '💡 AI Use Cases',
+            'data-readiness': '🗄️ Data Readiness',
+            'technology':     '⚙️ Technology',
+            'skills-workforce':'🎓 Skills & Workforce',
+            'governance':     '🛡️ Governance',
+        };
+
+        function init() {
+            const raw = localStorage.getItem('da_score');
+            if (!raw) { window.location.href = 'start.html'; return; }
+
+            const data = JSON.parse(raw);
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('mainContent').style.display  = 'block';
+
+            renderHero(data);
+            renderFocusAreas(data.focusAreaScores || []);
+            renderLadder(data.maturityStage);
+        }
+
+        function renderHero(data) {
+            const stage = STAGES.find(s => s.name === data.maturityStage) || STAGES[0];
+
+            document.getElementById('scoreNumber').textContent = Math.round(data.overallScore);
+            document.getElementById('stageName').textContent   = data.maturityStage || '—';
+            document.getElementById('stageDesc').textContent   = data.maturityStageDetails?.description || '';
+            document.getElementById('stageBadge').textContent  = data.maturityStage || '—';
+            document.getElementById('stageBadge').style.background = stage.color + '22';
+            document.getElementById('stageBadge').style.color      = stage.color;
+            document.getElementById('metaCompany').textContent = data.companyName || localStorage.getItem('da_companyName') || '—';
+            document.getElementById('metaDomain').textContent  = data.domain || localStorage.getItem('da_domain') || '—';
+
+            const circle = document.getElementById('scoreCircle');
+            circle.style.borderColor = stage.color;
+            circle.style.boxShadow   = `0 0 40px ${stage.color}33`;
+        }
+
+        function renderFocusAreas(scores) {
+            const container = document.getElementById('focusAreaBars');
+            if (!scores.length) {
+                container.innerHTML = '<p style="color:var(--text2)">No focus area data available.</p>';
+                return;
+            }
+            const sorted = [...scores].sort((a, b) => b.score - a.score);
+            container.innerHTML = sorted.map(fa => {
+                const name  = FA_NAMES[fa.focusAreaId] || fa.focusAreaName;
+                const score = Math.round(fa.score);
+                const color = score >= 60 ? '#2ECC71' : score >= 40 ? '#F1C40F' : '#E74C3C';
+                return `
+                <div class="fa-bar-row">
+                    <div class="fa-bar-meta">
+                        <span class="fa-name">${name}</span>
+                        <span class="fa-score" style="color:${color}">${score}/100</span>
+                    </div>
+                    <div class="fa-track">
+                        <div class="fa-fill" style="width:${score}%;background:${color}"></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderLadder(currentStage) {
+            const ladder = document.getElementById('stageLadder');
+            ladder.innerHTML = [...STAGES].reverse().map(s => {
+                const isActive = s.name === currentStage;
+                return `
+                <div class="ladder-rung ${isActive ? 'ladder-active' : ''}">
+                    <div class="ladder-dot" style="background:${isActive ? s.color : 'rgba(255,255,255,0.15)'}"></div>
+                    <div class="ladder-label" style="color:${isActive ? s.color : 'var(--text2)'}">
+                        ${s.name} ${isActive ? '← You are here' : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function bookConsultation() {
+            const company = localStorage.getItem('da_companyName') || 'my company';
+            const score   = JSON.parse(localStorage.getItem('da_score') || '{}');
+            const subject = encodeURIComponent(`AI Advisory Session — ${company}`);
+            const body    = encodeURIComponent(`Hi,\n\nI just completed the SoorgaAI AI Transformation Assessment for ${company}.\n\nOverall Score: ${Math.round(score.overallScore || 0)}/100\nMaturity Stage: ${score.maturityStage || '—'}\n\nI'd like to book an advisory session to discuss our AI transformation roadmap.\n\nThank you.`);
+            window.location.href = `mailto:hello@soorgaai.com?subject=${subject}&body=${body}`;
+        }
+
+        function retakeAssessment() {
+            localStorage.removeItem('da_sessionId');
+            localStorage.removeItem('da_score');
+            localStorage.removeItem('da_answers');
+            window.location.href = 'start.html';
+        }
+
+        init();
+    </script>
+</body>
+</html>

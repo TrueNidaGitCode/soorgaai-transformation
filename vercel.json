@@ -6,14 +6,15 @@
   "installCommand": "",
   "framework": null,
   "rewrites": [
-    { "source": "/assessment/:path*", "destination": "/assessment/:path*" },
-    { "source": "/results/:path*",    "destination": "/results/:path*" },
-    { "source": "/login/:path*",      "destination": "/login/:path*" },
-    { "source": "/signup/:path*",     "destination": "/signup/:path*" },
-    { "source": "/dashboard/:path*",  "destination": "/dashboard/:path*" },
-    { "source": "/admin/:path*",      "destination": "/admin/:path*" },
-    { "source": "/navbar/:path*",     "destination": "/navbar/:path*" },
-    { "source": "/(.*)",              "destination": "/$1" }
+    { "source": "/assessment/:path*",         "destination": "/assessment/:path*" },
+    { "source": "/dynamic-assessment/:path*", "destination": "/dynamic-assessment/:path*" },
+    { "source": "/results/:path*",            "destination": "/results/:path*" },
+    { "source": "/login/:path*",              "destination": "/login/:path*" },
+    { "source": "/signup/:path*",             "destination": "/signup/:path*" },
+    { "source": "/dashboard/:path*",          "destination": "/dashboard/:path*" },
+    { "source": "/admin/:path*",              "destination": "/admin/:path*" },
+    { "source": "/navbar/:path*",             "destination": "/navbar/:path*" },
+    { "source": "/(.*)",                      "destination": "/$1" }
   ],
   "headers": [
     {

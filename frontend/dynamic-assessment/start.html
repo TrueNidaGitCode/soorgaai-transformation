@@ -83,8 +83,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body:    JSON.stringify({ name, role, companyName }),
                 });
-                const data = await res.json();
 
+                // Detect HTML error response (server not ready / route not found)
+                const contentType = res.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    throw new Error('Server is still deploying. Please wait 1–2 minutes and try again.');
+                }
+
+                const data = await res.json();
                 if (!res.ok || !data.success) throw new Error(data.message || 'Failed to start session');
 
                 // Persist session

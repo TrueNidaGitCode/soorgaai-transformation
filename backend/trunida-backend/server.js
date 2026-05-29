@@ -64,9 +64,11 @@ app.use(async (req, res, next) => {
 });
 
 // ✅ Register Routes
+// NOTE: /api/assessment/dynamic MUST be mounted before /api/assessment
+// so Express doesn't swallow dynamic requests under the broader prefix.
 app.use("/api/users",                 userRoutes);
+app.use("/api/assessment/dynamic",    dynamicAssessmentRoutes);  // ← more specific first
 app.use("/api/assessment",            assessmentRoutes);
-app.use("/api/assessment/dynamic",    dynamicAssessmentRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

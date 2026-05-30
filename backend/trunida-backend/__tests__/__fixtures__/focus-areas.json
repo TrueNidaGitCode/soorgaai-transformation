@@ -1,0 +1,75 @@
+{
+  "version": "1.0",
+  "focusAreas": [
+    {
+      "id": "ai-strategy",
+      "name": "AI Strategy & Vision",
+      "icon": "🎯",
+      "shortName": "Strategy",
+      "description": "The degree to which the organization has a clear, funded, and socialized AI strategy.",
+      "executiveFocus": "Does your organization have a clear AI strategy?",
+      "keyCapabilities": ["Documented AI vision"],
+      "probeAreas": ["Strategic clarity"]
+    },
+    {
+      "id": "leadership",
+      "name": "Leadership & Culture",
+      "icon": "👥",
+      "shortName": "Leadership",
+      "description": "The level of AI literacy and advocacy across leadership.",
+      "executiveFocus": "Do your leaders champion AI transformation?",
+      "keyCapabilities": ["C-suite AI champions"],
+      "probeAreas": ["Executive AI literacy"]
+    },
+    {
+      "id": "ai-use-cases",
+      "name": "AI Use Cases & Applications",
+      "icon": "💡",
+      "shortName": "Use Cases",
+      "description": "The breadth and maturity of AI applications currently in use.",
+      "executiveFocus": "Are you deploying AI where it creates the most business value?",
+      "keyCapabilities": ["AI use cases in production"],
+      "probeAreas": ["Use case prioritization"]
+    },
+    {
+      "id": "data-readiness",
+      "name": "Data Readiness",
+      "icon": "🗄️",
+      "shortName": "Data",
+      "description": "The quality, accessibility, and governance of data assets that power AI systems.",
+      "executiveFocus": "Is your data organized and accessible enough for AI?",
+      "keyCapabilities": ["Centralized data platform"],
+      "probeAreas": ["Data accessibility"]
+    },
+    {
+      "id": "technology",
+      "name": "Technology & Infrastructure",
+      "icon": "⚙️",
+      "shortName": "Technology",
+      "description": "The maturity of AI-enabling technology: cloud, MLOps, and compute.",
+      "executiveFocus": "Does your technology stack enable rapid AI development?",
+      "keyCapabilities": ["Cloud-native infrastructure"],
+      "probeAreas": ["Cloud maturity"]
+    },
+    {
+      "id": "skills-workforce",
+      "name": "Skills & Workforce",
+      "icon": "🎓",
+      "shortName": "Skills",
+      "description": "The depth and breadth of AI talent and workforce readiness.",
+      "executiveFocus": "Do you have the AI talent to execute your strategy?",
+      "keyCapabilities": ["Dedicated AI/ML team"],
+      "probeAreas": ["AI talent depth"]
+    },
+    {
+      "id": "governance",
+      "name": "Governance, Ethics & Security",
+      "icon": "🛡️",
+      "shortName": "Governance",
+      "description": "The frameworks ensuring AI is deployed responsibly and securely.",
+      "executiveFocus": "Do you have guardrails to deploy AI responsibly?",
+      "keyCapabilities": ["AI ethics principles"],
+      "probeAreas": ["AI ethics framework"]
+    }
+  ]
+}

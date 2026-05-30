@@ -5,11 +5,18 @@
   "main": "server.js",
   "description": "SoorgaAI Transformation - AI Maturity Assessment Platform Backend",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "start": "node server.js",
     "dev": "node --watch server.js"
   },
-  "keywords": ["ai-maturity", "assessment", "transformation", "soorgaai"],
+  "keywords": [
+    "ai-maturity",
+    "assessment",
+    "transformation",
+    "soorgaai"
+  ],
   "author": "SoorgaAI",
   "license": "ISC",
   "dependencies": {
@@ -23,5 +30,8 @@
     "mongoose": "^7.0.0",
     "nodemailer": "^6.9.0",
     "openai": "^6.18.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.7"
   }
 }

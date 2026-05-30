@@ -1,0 +1,65 @@
+{
+  "version": "1.0",
+  "stages": [
+    {
+      "stage": "AI Scramble",
+      "stageNumber": 1,
+      "minScore": 0,
+      "maxScore": 20,
+      "color": "#E74C3C",
+      "tagline": "Ad hoc. Uncoordinated. Reactive.",
+      "description": "AI efforts are isolated experiments with no strategic direction.",
+      "characteristics": ["No formal AI strategy"],
+      "primaryRisk": "Competitors will outpace the organization.",
+      "nextStageTarget": "AI Pivot"
+    },
+    {
+      "stage": "AI Pivot",
+      "stageNumber": 2,
+      "minScore": 21,
+      "maxScore": 40,
+      "color": "#E67E22",
+      "tagline": "Awareness is rising. First pilots underway.",
+      "description": "The organization recognizes AI's strategic importance and has launched initial pilots.",
+      "characteristics": ["AI strategy exists but is not fully funded"],
+      "primaryRisk": "Pilot fatigue.",
+      "nextStageTarget": "AI Alignment"
+    },
+    {
+      "stage": "AI Alignment",
+      "stageNumber": 3,
+      "minScore": 41,
+      "maxScore": 60,
+      "color": "#F1C40F",
+      "tagline": "Strategy is forming. Teams are collaborating.",
+      "description": "AI initiatives are increasingly aligned with business strategy.",
+      "characteristics": ["Documented AI strategy with executive sponsorship"],
+      "primaryRisk": "Speed — competitors may capture market share.",
+      "nextStageTarget": "AI Transform"
+    },
+    {
+      "stage": "AI Transform",
+      "stageNumber": 4,
+      "minScore": 61,
+      "maxScore": 80,
+      "color": "#2ECC71",
+      "tagline": "AI is embedded. Scaling systematically.",
+      "description": "AI is embedded into core business processes across multiple functions.",
+      "characteristics": ["Multiple AI use cases in production delivering measurable ROI"],
+      "primaryRisk": "Complacency.",
+      "nextStageTarget": "AI-Fueled Enterprise"
+    },
+    {
+      "stage": "AI-Fueled Enterprise",
+      "stageNumber": 5,
+      "minScore": 81,
+      "maxScore": 100,
+      "color": "#3498DB",
+      "tagline": "AI is the competitive core. Industry leading.",
+      "description": "AI is a core competitive differentiator.",
+      "characteristics": ["AI is central to corporate strategy"],
+      "primaryRisk": "Maintaining leadership requires continuous investment.",
+      "nextStageTarget": "Sustain and extend industry leadership"
+    }
+  ]
+}

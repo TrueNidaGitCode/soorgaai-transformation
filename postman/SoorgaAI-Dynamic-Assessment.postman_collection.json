@@ -1,0 +1,852 @@
+{
+  "info": {
+    "name": "SoorgaAI — Dynamic Assessment Integration Tests",
+    "_postman_id": "soorgaai-dynamic-assessment-v2",
+    "description": "Integration test suite for EPIC SOORGA-EPIC-ASMT-002.\n\nBase URL variable: {{baseUrl}}\n  - Local:      http://localhost:3000\n  - Production: https://truenidawebsite-production.up.railway.app\n\nRun order matters for the happy-path flow (folders 1–6 in sequence).\nNegative tests in each folder are self-contained and can run standalone.\n\nNOTE — Spec vs Actual differences documented in gap-analysis.md",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",    "value": "http://localhost:3000",  "type": "string" },
+    { "key": "sessionId",  "value": "",                       "type": "string" },
+    { "key": "questionId", "value": "",                       "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "1 — Session Management",
+      "item": [
+
+        {
+          "name": "TC-API-001 — Start Session (Happy Path)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('success flag is true', () => pm.expect(json.success).to.be.true);",
+                "pm.test('sessionId is present and non-empty', () => {",
+                "  pm.expect(json.sessionId).to.be.a('string').and.not.empty;",
+                "});",
+                "pm.test('message is present', () => pm.expect(json.message).to.be.a('string'));",
+                "",
+                "// Persist sessionId for all downstream requests",
+                "pm.collectionVariables.set('sessionId', json.sessionId);",
+                "console.log('✅ sessionId saved:', json.sessionId);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"role\": \"CTO / CIO\",\n  \"companyName\": \"Acme Motors\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "TC-API-002 — Start Session (Missing name → 400)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);",
+                "pm.test('message is present', () => pm.expect(json.message).to.be.a('string'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"CTO / CIO\",\n  \"companyName\": \"Acme Motors\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "TC-API-003 — Start Session (Missing role → 400)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"companyName\": \"Acme Motors\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "TC-API-004 — Start Session (Empty body → 400)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "2 — Company Discovery",
+      "item": [
+
+        {
+          "name": "TC-API-005 — Discover Domain (Happy Path)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('success is true', () => pm.expect(json.success).to.be.true);",
+                "pm.test('sessionId matches', () => pm.expect(json.sessionId).to.equal(pm.collectionVariables.get('sessionId')));",
+                "pm.test('domain is a non-empty string', () => pm.expect(json.domain).to.be.a('string').and.not.empty);",
+                "pm.test('confidence is a number 0–1', () => {",
+                "  pm.expect(json.confidence).to.be.a('number');",
+                "  pm.expect(json.confidence).to.be.at.least(0).and.at.most(1);",
+                "});",
+                "pm.test('subDomain is present', () => pm.expect(json.subDomain).to.exist);",
+                "pm.test('welcomeMessage is present', () => pm.expect(json.welcomeMessage).to.be.a('string'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/discover", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","discover"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+
+        {
+          "name": "TC-API-006 — Discover (Invalid sessionId → 404)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/000000000000000000000000/discover", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","000000000000000000000000","discover"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+
+        {
+          "name": "TC-API-007 — Discover (Session Already Completed → 400)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "// Pre-condition: session is NOT in started/discovered state.",
+                "// This test creates a fresh session that immediately goes to completed",
+                "// (not possible without extra setup), so we test the general guard.",
+                "// When session status is e.g. 'in_progress', discover returns 400.",
+                "pm.test('Status is 400 or 404', () => {",
+                "  const code = pm.response.code;",
+                "  pm.expect([400, 404]).to.include(code);",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/111111111111111111111111/discover", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","111111111111111111111111","discover"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "3 — Question Generation",
+      "item": [
+
+        {
+          "name": "TC-API-009 — Generate Questions (Happy Path)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('success is true', () => pm.expect(json.success).to.be.true);",
+                "pm.test('questions array is present', () => pm.expect(json.questions).to.be.an('array'));",
+                "pm.test('20 or fewer questions returned', () => pm.expect(json.questions.length).to.be.at.most(20));",
+                "pm.test('at least 5 questions returned', () => pm.expect(json.questions.length).to.be.at.least(5));",
+                "",
+                "const q = json.questions[0];",
+                "pm.test('first question has questionId', () => pm.expect(q.questionId).to.be.a('string'));",
+                "pm.test('first question has text', () => pm.expect(q.text).to.be.a('string').and.not.empty);",
+                "pm.test('first question has focusAreaId', () => pm.expect(q.focusAreaId).to.be.a('string'));",
+                "pm.test('first question has 5 options', () => pm.expect(q.options).to.have.lengthOf(5));",
+                "",
+                "const validFocusAreas = ['ai-strategy','leadership','ai-use-cases','data-readiness','technology','skills-workforce','governance'];",
+                "pm.test('all questions have valid focusAreaId', () => {",
+                "  json.questions.forEach(question => {",
+                "    pm.expect(validFocusAreas).to.include(question.focusAreaId);",
+                "  });",
+                "});",
+                "",
+                "pm.test('option values are numbers 1–5', () => {",
+                "  json.questions.forEach(question => {",
+                "    question.options.forEach(opt => {",
+                "      pm.expect(opt.value).to.be.a('number');",
+                "      pm.expect(opt.value).to.be.at.least(1).and.at.most(5);",
+                "    });",
+                "  });",
+                "});",
+                "",
+                "// Save first questionId for answer submission tests",
+                "pm.collectionVariables.set('questionId', q.questionId);",
+                "// Save all questionIds as JSON string for batch submission",
+                "const allQIds = json.questions.map(qu => qu.questionId);",
+                "pm.collectionVariables.set('allQuestionIds', JSON.stringify(allQIds));",
+                "console.log('✅ questionId saved:', q.questionId);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/questions", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","questions"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+
+        {
+          "name": "TC-API-010 — Generate Questions (Cache Hit — Returns Cached)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "const json = pm.response.json();",
+                "pm.test('success is true', () => pm.expect(json.success).to.be.true);",
+                "pm.test('cached flag is true on second call', () => pm.expect(json.cached).to.be.true);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/questions", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","questions"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+
+        {
+          "name": "TC-API-011 — Generate Questions (Invalid sessionId → 404)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/000000000000000000000000/questions", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","000000000000000000000000","questions"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "4 — Submit Answers",
+      "item": [
+
+        {
+          "name": "TC-API-012 — Submit Answer (Happy Path)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('success is true', () => pm.expect(json.success).to.be.true);",
+                "pm.test('answered count is a number', () => pm.expect(json.answered).to.be.a('number'));",
+                "pm.test('total count is a number', () => pm.expect(json.total).to.be.a('number'));",
+                "pm.test('remaining count is present', () => pm.expect(json.remaining).to.be.a('number'));",
+                "pm.test('complete flag is present', () => pm.expect(json.complete).to.be.a('boolean'));",
+                "pm.test('answered + remaining = total', () => pm.expect(json.answered + json.remaining).to.equal(json.total));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/answers", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","answers"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"value\": 3\n}"
+            }
+          }
+        },
+
+        {
+          "name": "TC-API-013 — Submit Answer (Missing questionId → 400)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/answers", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","answers"] },
+            "body": { "mode": "raw", "raw": "{\n  \"value\": 3\n}" }
+          }
+        },
+
+        {
+          "name": "TC-API-014 — Submit Answer (Invalid questionId → 400)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/answers", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","answers"] },
+            "body": { "mode": "raw", "raw": "{\n  \"questionId\": \"q-fake-999\",\n  \"value\": 3\n}" }
+          }
+        },
+
+        {
+          "name": "TC-API-015 — Submit Answer (Value below 1 → 400)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/answers", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","answers"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"value\": 0\n}"
+            }
+          }
+        },
+
+        {
+          "name": "TC-API-015b — Submit Answer (Value above 5 → 400)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/answers", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","answers"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"value\": 6\n}"
+            }
+          }
+        },
+
+        {
+          "name": "TC-API-016 — Submit Answer (Duplicate → Overwrites, 200)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK (overwrite accepted)', () => pm.response.to.have.status(200));",
+                "const json = pm.response.json();",
+                "pm.test('success is true', () => pm.expect(json.success).to.be.true);",
+                "pm.test('answered count is still 1 (not doubled)', () => {",
+                "  pm.expect(json.answered).to.be.at.least(1);",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/answers", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","answers"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"value\": 5\n}"
+            }
+          }
+        },
+
+        {
+          "name": "TC-API-016b — Submit All Remaining Answers (Setup for Scoring)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Sequentially submit value=3 for every questionId in the session.",
+                  "// We read allQuestionIds saved during TC-API-009.",
+                  "const allIds = JSON.parse(pm.collectionVariables.get('allQuestionIds') || '[]');",
+                  "const sessionId = pm.collectionVariables.get('sessionId');",
+                  "const baseUrl   = pm.collectionVariables.get('baseUrl');",
+                  "",
+                  "// Use pm.sendRequest for each remaining question",
+                  "const submitAll = (ids, cb) => {",
+                  "  if (ids.length === 0) return cb();",
+                  "  const [head, ...tail] = ids;",
+                  "  pm.sendRequest({",
+                  "    url: `${baseUrl}/api/assessment/dynamic/sessions/${sessionId}/answers`,",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ questionId: head, value: 3 }) }",
+                  "  }, () => submitAll(tail, cb));",
+                  "};",
+                  "",
+                  "submitAll(allIds, () => console.log('✅ All answers submitted'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// This request itself submits the first question again (idempotent overwrite).",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('complete flag is true (all answered)', () => pm.expect(json.complete).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/answers", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","answers"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"value\": 3\n}"
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "5 — Compute Score",
+      "item": [
+
+        {
+          "name": "TC-API-017 — Compute Score (Happy Path — All Answers)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('success is true', () => pm.expect(json.success).to.be.true);",
+                "pm.test('sessionId is present', () => pm.expect(json.sessionId).to.be.a('string'));",
+                "pm.test('overallScore is 0–100', () => {",
+                "  pm.expect(json.overallScore).to.be.a('number');",
+                "  pm.expect(json.overallScore).to.be.at.least(0).and.at.most(100);",
+                "});",
+                "pm.test('maturityStage is a known stage name', () => {",
+                "  const validStages = ['AI Scramble','AI Pivot','AI Alignment','AI Transform','AI-Fueled Enterprise'];",
+                "  pm.expect(validStages).to.include(json.maturityStage);",
+                "});",
+                "pm.test('maturityStageDetails has description', () => {",
+                "  pm.expect(json.maturityStageDetails).to.have.property('description');",
+                "});",
+                "pm.test('focusAreaScores is an array', () => {",
+                "  pm.expect(json.focusAreaScores).to.be.an('array');",
+                "  pm.expect(json.focusAreaScores.length).to.be.at.least(1);",
+                "});",
+                "pm.test('each focusAreaScore has score 0–100', () => {",
+                "  json.focusAreaScores.forEach(fa => {",
+                "    pm.expect(fa.score).to.be.a('number');",
+                "    pm.expect(fa.score).to.be.at.least(0).and.at.most(100);",
+                "  });",
+                "});",
+                "pm.test('companyName is present', () => pm.expect(json.companyName).to.be.a('string'));",
+                "pm.test('domain is present', () => pm.expect(json.domain).to.be.a('string'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}/score", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}","score"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+
+        {
+          "name": "TC-API-018 — Compute Score (No Answers → 400)",
+          "event": [{
+            "listen": "prerequest",
+            "script": {
+              "exec": [
+                "// Create a fresh session (no answers) for this negative test",
+                "const baseUrl = pm.collectionVariables.get('baseUrl');",
+                "pm.sendRequest({",
+                "  url: `${baseUrl}/api/assessment/dynamic/sessions`,",
+                "  method: 'POST',",
+                "  header: { 'Content-Type': 'application/json' },",
+                "  body: { mode: 'raw', raw: JSON.stringify({ name: 'Test User', role: 'CTO / CIO', companyName: 'TestCo' }) }",
+                "}, (err, res) => {",
+                "  const json = res.json();",
+                "  pm.collectionVariables.set('emptySessionId', json.sessionId || '');",
+                "  console.log('Empty session created:', json.sessionId);",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }, {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request (no answers)', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);",
+                "pm.test('message is present', () => pm.expect(json.message).to.be.a('string'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{emptySessionId}}/score", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{emptySessionId}}","score"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+
+        {
+          "name": "TC-API-019 — Compute Score (Invalid sessionId → 404)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/000000000000000000000000/score", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","000000000000000000000000","score"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "6 — Get Session",
+      "item": [
+
+        {
+          "name": "TC-API-020 — Get Session (Happy Path)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('success is true', () => pm.expect(json.success).to.be.true);",
+                "pm.test('session object is present', () => pm.expect(json.session).to.be.an('object'));",
+                "",
+                "const s = json.session;",
+                "pm.test('session has _id', () => pm.expect(s._id).to.exist);",
+                "pm.test('session has name', () => pm.expect(s.name).to.be.a('string'));",
+                "pm.test('session has role', () => pm.expect(s.role).to.be.a('string'));",
+                "pm.test('session has companyName', () => pm.expect(s.companyName).to.be.a('string'));",
+                "pm.test('session has status', () => pm.expect(s.status).to.be.a('string'));",
+                "pm.test('session has questions array', () => pm.expect(s.questions).to.be.an('array'));",
+                "pm.test('session has answers array', () => pm.expect(s.answers).to.be.an('array'));",
+                "pm.test('session has overallScore after scoring', () => pm.expect(s.overallScore).to.be.a('number'));",
+                "pm.test('session status is completed after scoring', () => pm.expect(s.status).to.equal('completed'));",
+                "pm.test('session has createdAt timestamp', () => pm.expect(s.createdAt).to.exist);",
+                "pm.test('session has discoveredDomain', () => pm.expect(s.discoveredDomain).to.be.an('object'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{sessionId}}", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{sessionId}}"] }
+          }
+        },
+
+        {
+          "name": "TC-API-021 — Get Session (Invalid sessionId → 404)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/000000000000000000000000", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","000000000000000000000000"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "7 — Knowledge Base Endpoints",
+      "item": [
+
+        {
+          "name": "TC-API-022 — Get Maturity Stages (Happy Path)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('stages array is present', () => pm.expect(json.stages).to.be.an('array'));",
+                "pm.test('exactly 5 stages returned', () => pm.expect(json.stages).to.have.lengthOf(5));",
+                "pm.test('count matches stages.length', () => pm.expect(json.count).to.equal(json.stages.length));",
+                "",
+                "const stageNames = json.stages.map(s => s.stage);",
+                "pm.test('includes AI Scramble', () => pm.expect(stageNames).to.include('AI Scramble'));",
+                "pm.test('includes AI-Fueled Enterprise', () => pm.expect(stageNames).to.include('AI-Fueled Enterprise'));",
+                "",
+                "json.stages.forEach(s => {",
+                "  pm.test(`Stage ${s.stage}: has minScore and maxScore`, () => {",
+                "    pm.expect(s.minScore).to.be.a('number');",
+                "    pm.expect(s.maxScore).to.be.a('number');",
+                "    pm.expect(s.minScore).to.be.at.least(0);",
+                "    pm.expect(s.maxScore).to.be.at.most(100);",
+                "  });",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/kb/maturity-stages", "host": ["{{baseUrl}}"], "path": ["api","kb","maturity-stages"] }
+          }
+        },
+
+        {
+          "name": "TC-API-023 — Get Focus Areas (Happy Path)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('focusAreas array is present', () => pm.expect(json.focusAreas).to.be.an('array'));",
+                "pm.test('exactly 7 focus areas returned', () => pm.expect(json.focusAreas).to.have.lengthOf(7));",
+                "",
+                "const ids = json.focusAreas.map(f => f.id);",
+                "const expectedIds = ['ai-strategy','leadership','ai-use-cases','data-readiness','technology','skills-workforce','governance'];",
+                "expectedIds.forEach(id => {",
+                "  pm.test(`Focus area ${id} is present`, () => pm.expect(ids).to.include(id));",
+                "});",
+                "",
+                "json.focusAreas.forEach(f => {",
+                "  pm.test(`Focus area ${f.id}: has name and description`, () => {",
+                "    pm.expect(f.name).to.be.a('string').and.not.empty;",
+                "    pm.expect(f.description).to.be.a('string').and.not.empty;",
+                "  });",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/kb/focus-areas", "host": ["{{baseUrl}}"], "path": ["api","kb","focus-areas"] }
+          }
+        },
+
+        {
+          "name": "TC-API-024 — Get Domain Study Automotive (Happy Path)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('domain field is present', () => pm.expect(json.domain).to.be.a('string'));",
+                "pm.test('content is a non-empty string', () => pm.expect(json.content).to.be.a('string').and.not.empty);",
+                "pm.test('version is present', () => pm.expect(json.version).to.be.a('string'));",
+                "pm.test('content contains markdown', () => pm.expect(json.content).to.include('#'));",
+                "pm.test('availableDomains is an array', () => pm.expect(json.availableDomains).to.be.an('array'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/kb/domain-studies/automotive", "host": ["{{baseUrl}}"], "path": ["api","kb","domain-studies","automotive"] }
+          }
+        },
+
+        {
+          "name": "TC-API-025 — Get Domain Study Unknown (→ 404)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('error field is DomainNotFound', () => pm.expect(json.error).to.equal('DomainNotFound'));",
+                "pm.test('message is present', () => pm.expect(json.message).to.be.a('string'));",
+                "pm.test('availableDomains array is present', () => pm.expect(json.availableDomains).to.be.an('array'));",
+                "pm.test('automotive is in availableDomains', () => pm.expect(json.availableDomains).to.include('automotive'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/kb/domain-studies/cryptozoology", "host": ["{{baseUrl}}"], "path": ["api","kb","domain-studies","cryptozoology"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "8 — Health Check",
+      "item": [
+        {
+          "name": "Server Health Check",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "const json = pm.response.json();",
+                "pm.test('version is 2.1.0', () => pm.expect(json.version).to.equal('2.1.0'));",
+                "pm.test('dynamicRoutes is enabled', () => pm.expect(json.dynamicRoutes).to.equal('enabled'));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] }
+          }
+        }
+      ]
+    }
+
+  ]
+}

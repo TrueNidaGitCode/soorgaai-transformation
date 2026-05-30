@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import userRoutes              from "./routes/userRoutes.js";
 import assessmentRoutes        from "./routes/assessmentRoutes.js";
 import dynamicAssessmentRoutes from "./routes/dynamicAssessmentRoutes.js";
+import kbRoutes                from "./routes/kbRoutes.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
@@ -69,6 +70,7 @@ app.use(async (req, res, next) => {
 app.use("/api/users",                 userRoutes);
 app.use("/api/assessment/dynamic",    dynamicAssessmentRoutes);  // ← more specific first
 app.use("/api/assessment",            assessmentRoutes);
+app.use("/api/kb",                    kbRoutes);                 // Knowledge Base read endpoints
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

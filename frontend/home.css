@@ -66,6 +66,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 56px 40px 56px;
+  min-height: auto; /* override style.css calc(100vh - 80px) */
 }
 
 /* ── Hero left ───────────────────────────────────────────── */

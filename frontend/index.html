@@ -1,117 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SoorgaAI — Discover where your organization stands on the AI maturity curve and get a custom transformation roadmap.">
-    <title>SoorgaAI — Transforming Organizations into AI-Fueled Enterprises</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="home.css">
-    <script src="login/config.js"></script>
-    <script src="navbar/navbar.js" defer></script>
-    <script src="script.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SoorgaAI is the Enterprise AI Transformation Platform. Discover where your organization stands on the AI maturity curve and generate a personalized AI roadmap.">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="SoorgaAI — The Enterprise AI Transformation Platform">
+  <meta property="og:description" content="Discover your AI maturity stage across 7 domains and generate a custom AI transformation roadmap for your organization.">
+  <meta property="og:url"         content="https://soorgaai.com/">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="SoorgaAI — The Enterprise AI Transformation Platform">
+  <meta name="twitter:description" content="Discover your AI maturity stage and generate a personalized AI roadmap.">
+
+  <title>SoorgaAI — The Enterprise AI Transformation Platform</title>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="home.css">
+
+  <!-- Config must load before authState and navbar -->
+  <script src="login/config.js"></script>
+  <script src="login/authState.js"></script>
+  <script src="navbar/navbar.js" defer></script>
+  <script type="module" src="index.js"></script>
 </head>
 <body>
-    <div id="navbar-container"></div>
 
-    <!-- ── HERO ─────────────────────────────────────────── -->
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-badge">AI Maturity Assessment</div>
-            <h1>Transform Your Organization into an<br><span>AI-Fueled Enterprise</span></h1>
-            <p>Discover where you stand on the AI maturity curve across 7 critical domains — and get a personalized AI transformation roadmap built for your organization.</p>
-            <div class="hero-cta-group">
-                <a href="dynamic-assessment/start.html" class="cta-button cta-button--primary" id="startAssessmentBtn">✦ Start Personalized Assessment</a>
-                <span class="hero-cta-sub">Personalized to your industry · Takes ≤10 minutes · No credit card required</span>
-            </div>
+  <!-- Navbar: min-height reserved to prevent CLS -->
+  <div id="navbar-container" style="min-height:64px"></div>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════════════
+         HERO — Two-column: narrative left, stages right
+    ════════════════════════════════════════════════════ -->
+    <section class="hero" aria-labelledby="hero-heading">
+
+      <div class="hero__left">
+        <div class="hero__badge" role="img" aria-label="Product category">
+          Enterprise AI Transformation Platform
         </div>
 
-        <div class="hero-visual">
-            <div class="maturity-ladder">
-                <div class="stage-pill stage-5">🏆 AI-Fueled Enterprise</div>
-                <div class="stage-pill stage-4">⚡ AI Transform</div>
-                <div class="stage-pill stage-3">🔗 AI Alignment</div>
-                <div class="stage-pill stage-2">🔄 AI Pivot</div>
-                <div class="stage-pill stage-1 active-stage">🌀 AI Scramble</div>
-                <div class="ladder-line"></div>
-            </div>
+        <h1 id="hero-heading">
+          The Enterprise AI<br>
+          <span class="hero__headline-accent">Transformation Platform</span>
+        </h1>
+
+        <p class="hero__desc">
+          Discover where your organization stands on the AI maturity curve across
+          7 critical domains — and get a personalized transformation roadmap built
+          for your industry, your team, and your 90-day window.
+        </p>
+
+        <div class="hero__ctas">
+          <a
+            id="primaryCta"
+            href="/dynamic-assessment/start.html"
+            class="cta-button cta-button--primary"
+            data-cta="generate-roadmap"
+          >
+            Generate My AI Roadmap &rarr;
+          </a>
+          <a
+            href="/framework/framework.html"
+            class="cta-button cta-button--outline"
+            data-cta="explore-framework"
+          >
+            Explore Framework
+          </a>
         </div>
+
+        <p class="hero__trust">
+          Personalized to your industry &middot; Takes &le;10 minutes &middot; No credit card required
+        </p>
+      </div>
+
+      <!-- Stages panel — hydrated by index.js -->
+      <aside class="hero__right" aria-labelledby="stages-panel-heading">
+        <h2 id="stages-panel-heading" class="stages__title">
+          5-Stage AI Maturity Journey
+        </h2>
+        <ol class="stages" aria-label="AI Maturity Stages">
+          <!-- Rendered by index.js — stages ordered 5 → 1 (aspirational at top) -->
+        </ol>
+      </aside>
+
     </section>
 
-    <!-- ── HOW IT WORKS ───────────────────────────────────── -->
-    <section class="how-it-works">
-        <div class="container">
-            <h2>How It Works</h2>
-            <div class="steps-grid">
-                <div class="step-card">
-                    <div class="step-number">01</div>
-                    <h3>Take the Assessment</h3>
-                    <p>Answer up to 20 AI-generated questions personalized to your industry. Takes about 10 minutes. Honest answers = better results.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">02</div>
-                    <h3>Get Your Score</h3>
-                    <p>Instantly see your AI Maturity Stage and domain-by-domain breakdown across all 7 dimensions.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">03</div>
-                    <h3>Receive Your Roadmap</h3>
-                    <p>Our AI generates a customized report with strengths, gaps, and a 90-day + 12-month action plan.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-number">04</div>
-                    <h3>Book a Consultation</h3>
-                    <p>Schedule a 1-on-1 advisory session to turn your roadmap into a real transformation programme.</p>
-                </div>
-            </div>
-        </div>
+    <!-- ═══════════════════════════════════════════════════
+         OUTCOMES STRIP
+    ════════════════════════════════════════════════════ -->
+    <section class="outcomes" aria-label="What you will receive">
+      <ul class="outcomes__list" role="list">
+        <li class="outcomes__item">
+          <span class="outcomes__check" aria-hidden="true">&#10003;</span>
+          Identify Current Stage
+        </li>
+        <li class="outcomes__item">
+          <span class="outcomes__check" aria-hidden="true">&#10003;</span>
+          Discover Capability Gaps
+        </li>
+        <li class="outcomes__item">
+          <span class="outcomes__check" aria-hidden="true">&#10003;</span>
+          Generate AI Roadmap
+        </li>
+        <li class="outcomes__item">
+          <span class="outcomes__check" aria-hidden="true">&#10003;</span>
+          Become AI-Fueled Enterprise
+        </li>
+      </ul>
     </section>
 
-    <!-- ── 7 DOMAINS ──────────────────────────────────────── -->
-    <section class="domains-section">
-        <div class="container">
-            <h2>7 Domains of AI Maturity</h2>
-            <p class="section-sub">We assess your organization across every dimension that determines AI success.</p>
-            <div class="domains-grid">
-                <div class="domain-chip">🎯 AI Strategy</div>
-                <div class="domain-chip">👥 Leadership</div>
-                <div class="domain-chip">💡 AI Use Cases</div>
-                <div class="domain-chip">🗄️ Data Readiness</div>
-                <div class="domain-chip">⚙️ Technology Infrastructure</div>
-                <div class="domain-chip">🧠 Skills &amp; Workforce</div>
-                <div class="domain-chip">🛡️ Governance &amp; Security</div>
-            </div>
+    <!-- ═══════════════════════════════════════════════════
+         HOW IT WORKS
+    ════════════════════════════════════════════════════ -->
+    <section class="how-it-works" id="platform" aria-labelledby="how-heading">
+      <div class="container">
+        <h2 id="how-heading">How It Works</h2>
+        <div class="steps-grid">
+
+          <article class="step-card">
+            <div class="step-number" aria-hidden="true">01</div>
+            <h3>Take the Assessment</h3>
+            <p>Answer up to 20 AI-generated questions personalized to your industry. Takes about 10 minutes. Honest answers = better results.</p>
+          </article>
+
+          <article class="step-card">
+            <div class="step-number" aria-hidden="true">02</div>
+            <h3>Get Your Score</h3>
+            <p>Instantly see your AI Maturity Stage and domain-by-domain breakdown across all 7 dimensions.</p>
+          </article>
+
+          <article class="step-card">
+            <div class="step-number" aria-hidden="true">03</div>
+            <h3>Receive Your Roadmap</h3>
+            <p>Our AI generates a customized report with strengths, gaps, and a 90-day + 12-month action plan.</p>
+          </article>
+
+          <article class="step-card">
+            <div class="step-number" aria-hidden="true">04</div>
+            <h3>Book a Consultation</h3>
+            <p>Schedule a 1-on-1 advisory session to turn your roadmap into a real transformation programme.</p>
+          </article>
+
         </div>
+      </div>
     </section>
 
-    <!-- ── 5 STAGES ───────────────────────────────────────── -->
-    <section class="stages-section">
-        <div class="container">
-            <h2>5 Maturity Stages</h2>
-            <div class="stages-list">
-                <div class="stage-row"><span class="stage-dot" style="background:#E74C3C"></span><div><strong>AI Scramble</strong><p>Ad hoc, uncoordinated AI efforts — no cohesive strategy.</p></div></div>
-                <div class="stage-row"><span class="stage-dot" style="background:#E67E22"></span><div><strong>AI Pivot</strong><p>Early pilots exist but siloed — strategy is emerging.</p></div></div>
-                <div class="stage-row"><span class="stage-dot" style="background:#F1C40F"></span><div><strong>AI Alignment</strong><p>Strategy aligned with business — cross-functional collaboration growing.</p></div></div>
-                <div class="stage-row"><span class="stage-dot" style="background:#2ECC71"></span><div><strong>AI Transform</strong><p>AI embedded in core processes — scaling systematically.</p></div></div>
-                <div class="stage-row"><span class="stage-dot" style="background:#3498DB"></span><div><strong>AI-Fueled Enterprise</strong><p>AI is a core competitive differentiator — industry-leading.</p></div></div>
-            </div>
-        </div>
+    <!-- ═══════════════════════════════════════════════════
+         7 DOMAINS
+    ════════════════════════════════════════════════════ -->
+    <section class="domains-section" aria-labelledby="domains-heading">
+      <div class="container">
+        <h2 id="domains-heading">7 Domains of AI Maturity</h2>
+        <p class="section-sub">We assess your organization across every dimension that determines AI success.</p>
+        <ul class="domains-grid" role="list" aria-label="AI maturity domains">
+          <li class="domain-chip">&#127919; AI Strategy</li>
+          <li class="domain-chip">&#128101; Leadership</li>
+          <li class="domain-chip">&#128161; AI Use Cases</li>
+          <li class="domain-chip">&#128452; Data Readiness</li>
+          <li class="domain-chip">&#9881;&#65039; Technology Infrastructure</li>
+          <li class="domain-chip">&#129504; Skills &amp; Workforce</li>
+          <li class="domain-chip">&#128737;&#65039; Governance &amp; Security</li>
+        </ul>
+      </div>
     </section>
 
-    <!-- ── FINAL CTA ──────────────────────────────────────── -->
-    <section class="final-cta">
-        <div class="container text-center">
-            <h2>Ready to find your AI Maturity Stage?</h2>
-            <p>Join organizations using SoorgaAI to accelerate their transformation journey.</p>
-            <a href="dynamic-assessment/start.html" class="cta-button">→ Start Free Assessment</a>
-        </div>
+    <!-- ═══════════════════════════════════════════════════
+         FINAL CTA
+    ════════════════════════════════════════════════════ -->
+    <section class="final-cta" id="pricing" aria-labelledby="final-cta-heading">
+      <div class="container text-center">
+        <h2 id="final-cta-heading">Ready to find your AI Maturity Stage?</h2>
+        <p>Join organizations using SoorgaAI to accelerate their transformation journey.</p>
+        <a
+          href="/dynamic-assessment/start.html"
+          class="cta-button cta-button--primary"
+          data-cta="generate-roadmap-footer"
+        >
+          Generate My AI Roadmap &rarr;
+        </a>
+      </div>
     </section>
 
-    <!-- ── FOOTER ─────────────────────────────────────────── -->
-    <footer class="site-footer">
-        <div class="container">
-            <p>© 2025 SoorgaAI. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
-        </div>
-    </footer>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════════════ -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2025 SoorgaAI. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
+    </div>
+  </footer>
+
 </body>
 </html>

@@ -1,106 +1,251 @@
-/* Navigation Bar */
+/* ============================================================
+   SoorgaAI — Navbar Component Styles
+   ============================================================ */
+
 .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #111;
-    padding: 15px 30px;
-    font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  background: rgba(13, 13, 13, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 0 40px;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(92, 197, 167, 0.12);
 }
 
-/* Logo Styling */
-.navbar .brand {
-    font-weight: bold;
-    font-size: 22px;
-    color: #5CC5A7;
+/* ── Brand ────────────────────────────────────────────────── */
+.brand {
+  font-size: 20px;
+  font-weight: 700;
+  color: #5CC5A7;
+  text-decoration: none;
+  flex-shrink: 0;
+  letter-spacing: -0.3px;
 }
 
-.navbar .brand span {
-    color: white;
+.brand:focus-visible {
+  outline: 2px solid #5CC5A7;
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
-/* Navigation Links */
+/* ── Primary nav links ───────────────────────────────────── */
 .nav-links {
-    display: flex;
-    gap: 15px;
+  display: flex;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
 }
 
-.navbar a {
-    color: white;
-    text-decoration: none;
-    font-weight: 500;
-    padding: 5px 10px;
-    transition: color 0.3s ease-in-out;
+.nav-links li a {
+  display: inline-block;
+  padding: 6px 12px;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
-.navbar a:hover {
-    color: #5CC5A7;
+.nav-links li a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
 }
 
-/* User Info Container */
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding-right: 10px;
+.nav-links li a:focus-visible {
+  outline: 2px solid #5CC5A7;
+  outline-offset: 2px;
 }
 
-/* Username Styling */
-.user-info span {
-    font-weight: 600;
-    color: white;
-    font-size: 16px;
+/* ── Right-side controls ─────────────────────────────────── */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
-/* Log In / Sign Up Button */
+.nav-link-subtle {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.nav-link-subtle:hover { color: #fff; }
+
+.nav-link-subtle:focus-visible {
+  outline: 2px solid #5CC5A7;
+  outline-offset: 2px;
+}
+
+.nav-username {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+}
+
+/* ── Auth buttons ────────────────────────────────────────── */
 .auth-btn {
-    background: white;
-    color: black;
-    border: none;
-    padding: 8px 22px;
-    border-radius: 20px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: 0.3s ease-in-out;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 7px 18px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+  font-family: inherit;
 }
 
 .auth-btn:hover {
-    background: #5CC5A7;
-    color: white;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Logout Button Styling */
-.logout-btn {
-    background-color: #FF4C4C;
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 14px;
-    font-weight: 500;
-    transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
+.auth-btn:focus-visible {
+  outline: 2px solid #5CC5A7;
+  outline-offset: 2px;
 }
 
-.logout-btn:hover {
-    background-color: #D43F3F;
-    transform: scale(1.05); /* Slight pop effect */
+/* ── Generate Roadmap CTA ────────────────────────────────── */
+.nav-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #5CC5A7, #3DAFD3);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: opacity 0.2s, transform 0.15s;
+  box-shadow: 0 2px 12px rgba(92, 197, 167, 0.3);
 }
 
-/* Responsive Navbar */
+.nav-cta-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.nav-cta-btn:focus-visible {
+  outline: 2px solid #5CC5A7;
+  outline-offset: 3px;
+}
+
+/* ── Hamburger toggle (mobile only) ─────────────────────── */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.nav-toggle__bar {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.nav-toggle:focus-visible {
+  outline: 2px solid #5CC5A7;
+  outline-offset: 2px;
+}
+
+/* Open state: X shape */
+.navbar.is-open .nav-toggle__bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.navbar.is-open .nav-toggle__bar:nth-child(2) { opacity: 0; }
+.navbar.is-open .nav-toggle__bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .navbar { padding: 0 24px; gap: 16px; }
+  .nav-links li a { font-size: 14px; padding: 5px 10px; }
+}
+
 @media (max-width: 768px) {
-    .navbar {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
+  .navbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 14px 20px;
+    gap: 0;
+  }
 
-    .nav-links {
-        flex-direction: column;
-        gap: 10px;
-    }
+  .brand { flex: 1; }
 
-    .user-info {
-        margin-top: 10px;
-    }
+  .nav-toggle { display: flex; }
+
+  /* Nav links hidden by default on mobile; toggled via .is-open */
+  .nav-links {
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    order: 3;
+    padding: 12px 0 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .navbar.is-open .nav-links {
+    max-height: 400px;
+    padding: 12px 0 8px;
+  }
+
+  .nav-links li a { font-size: 15px; padding: 10px 8px; display: block; }
+
+  /* On mobile the right controls collapse too */
+  .nav-right {
+    order: 3;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0;
+    margin-left: 0;
+  }
+
+  .navbar.is-open .nav-right {
+    max-height: 200px;
+    padding: 8px 0 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar { padding: 12px 16px; }
+  .nav-cta-btn { padding: 8px 14px; font-size: 13px; }
 }

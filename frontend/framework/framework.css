@@ -1,0 +1,61 @@
+/* ============================================================
+   SoorgaAI — Framework Page Styles (stub)
+   ============================================================ */
+
+.framework-hero {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 80px 40px;
+    text-align: center;
+}
+
+.framework-hero .hero__badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(92, 197, 167, 0.12);
+    border: 1px solid rgba(92, 197, 167, 0.35);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #5CC5A7;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.framework-hero h1 {
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 800;
+    line-height: 1.2;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.framework-hero h1 span { color: #5CC5A7; }
+
+.framework-hero p {
+    font-size: 18px;
+    color: #ccc;
+    line-height: 1.65;
+    margin-bottom: 40px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.framework-coming-soon {
+    display: inline-block;
+    padding: 10px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 40px;
+}
+
+@media (max-width: 768px) {
+    .framework-hero { padding: 56px 20px; }
+    .framework-hero h1 { font-size: 28px; }
+    .framework-hero p { font-size: 16px; }
+}

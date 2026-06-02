@@ -1,22 +1,35 @@
 <link rel="stylesheet" href="/navbar/navbar.css">
 
-<nav class="navbar">
-    <!-- Logo -->
-    <a href="/index.html" class="brand" style="text-decoration: none;">
-        SoorgaAI
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+
+  <!-- Brand -->
+  <a href="/index.html" class="brand" aria-label="SoorgaAI — home">SoorgaAI</a>
+
+  <!-- Primary nav links -->
+  <ul class="nav-links" id="navLinksList" role="list">
+    <li><a href="/index.html#platform">Platform</a></li>
+    <li><a href="/framework/framework.html">Framework</a></li>
+    <li><a href="/index.html#resources">Resources</a></li>
+    <li><a href="/index.html#pricing">Pricing</a></li>
+  </ul>
+
+  <!-- Right-side controls -->
+  <div class="nav-right">
+    <a id="myAssessmentsBtn"  href="#" style="display:none" class="nav-link-subtle">My Assessments</a>
+    <a id="adminDashboardBtn" href="#" style="display:none" class="nav-link-subtle">Admin</a>
+    <span id="username-display" style="display:none" class="nav-username"></span>
+    <button id="loginSignupBtn" class="auth-btn">Log In</button>
+    <button id="logoutBtn"      class="auth-btn" style="display:none">Logout</button>
+    <a id="navRoadmapCta" href="/dynamic-assessment/start.html" class="nav-cta-btn" data-cta="generate-roadmap-nav">
+      Generate Roadmap <span aria-hidden="true">→</span>
     </a>
+  </div>
 
-    <!-- Navigation Links -->
-    <div class="nav-links">
-        <a id="takeAssessmentBtn" href="#">Take Assessment</a>
-        <a id="myAssessmentsBtn" href="#" style="display: none;">My Assessments</a>
-        <a id="adminDashboardBtn" href="#" style="display: none;">Admin</a>
-    </div>
+  <!-- Mobile hamburger -->
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinksList">
+    <span class="nav-toggle__bar"></span>
+    <span class="nav-toggle__bar"></span>
+    <span class="nav-toggle__bar"></span>
+  </button>
 
-    <!-- Auth Section -->
-    <div class="user-info">
-        <span id="username-display" style="display: none;"></span>
-        <button id="loginSignupBtn" class="auth-btn">Log In / Sign Up</button>
-        <button id="logoutBtn" class="auth-btn" style="display: none;">Logout</button>
-    </div>
 </nav>

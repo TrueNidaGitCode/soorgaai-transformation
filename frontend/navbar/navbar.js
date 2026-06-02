@@ -1,6 +1,6 @@
 /**
  * SoorgaAI — Navbar Component
- * Handles dynamic loading, auth state, and navigation.
+ * Handles dynamic loading, auth state, navigation, and mobile toggle.
  */
 
 window.loadNavbar = () => setupNavbarHandlers();
@@ -29,11 +29,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (document.getElementById('loginSignupBtn')) {
                     setupNavbarHandlers();
                     setupNavLinks();
+                    setupMobileToggle();
                     obs.disconnect();
                 }
             });
             observer.observe(container, { childList: true, subtree: true });
-            setTimeout(() => { setupNavbarHandlers(); setupNavLinks(); }, 400);
+            setTimeout(() => {
+                setupNavbarHandlers();
+                setupNavLinks();
+                setupMobileToggle();
+            }, 400);
         })
         .catch(err => console.error('❌ Navbar load failed:', err));
 });
@@ -44,15 +49,14 @@ function setupNavbarHandlers() {
     const username = localStorage.getItem('username') || 'User';
     const role     = localStorage.getItem('role') || 'user';
 
-    const loginBtn        = document.getElementById('loginSignupBtn');
-    const logoutBtn       = document.getElementById('logoutBtn');
-    const userDisplay     = document.getElementById('username-display');
-    const adminBtn        = document.getElementById('adminDashboardBtn');
-    const myAssessmentsBtn= document.getElementById('myAssessmentsBtn');
+    const loginBtn         = document.getElementById('loginSignupBtn');
+    const logoutBtn        = document.getElementById('logoutBtn');
+    const userDisplay      = document.getElementById('username-display');
+    const adminBtn         = document.getElementById('adminDashboardBtn');
+    const myAssessmentsBtn = document.getElementById('myAssessmentsBtn');
 
     if (!loginBtn || !logoutBtn) return;
 
-    // Show "My Assessments" if logged in OR if a dynamic assessment has been completed
     const hasCompletedAssessment = !!localStorage.getItem('da_score');
 
     if (token) {
@@ -61,40 +65,55 @@ function setupNavbarHandlers() {
         logoutBtn.style.display = 'inline';
         if (myAssessmentsBtn) myAssessmentsBtn.style.display = 'inline';
         if (adminBtn) adminBtn.style.display = role === 'admin' ? 'inline' : 'none';
-
         logoutBtn.onclick = logoutUser;
     } else {
         if (userDisplay) userDisplay.style.display = 'none';
         loginBtn.style.display  = 'inline';
         logoutBtn.style.display = 'none';
-        // Show "My Assessments" even when logged out if they've completed a dynamic assessment
         if (myAssessmentsBtn) myAssessmentsBtn.style.display = hasCompletedAssessment ? 'inline' : 'none';
         if (adminBtn) adminBtn.style.display = 'none';
-
         loginBtn.onclick = () => { window.location.href = '/login/login.html'; };
+    }
+
+    // Wire the Generate Roadmap CTA in the navbar using the shared authState helper
+    const roadmapCta = document.getElementById('navRoadmapCta');
+    if (roadmapCta && window.SoorgaAuth) {
+        roadmapCta.href = window.SoorgaAuth.getRoadmapHref();
     }
 }
 
 // ── Navigation links ──────────────────────────────────────
 function setupNavLinks() {
-    bindBtn('takeAssessmentBtn', () => {
-        window.location.href = '/dynamic-assessment/start.html';
-    });
-
     bindBtn('myAssessmentsBtn', () => {
-        // Show their most recent dynamic scorecard if available, else start fresh
-        const score = localStorage.getItem('da_score');
-        if (score) {
-            window.location.href = '/dynamic-assessment/scorecard.html';
-        } else {
-            window.location.href = '/dynamic-assessment/start.html';
-        }
+        window.location.href = localStorage.getItem('da_score')
+            ? '/dynamic-assessment/scorecard.html'
+            : '/dynamic-assessment/start.html';
     });
 
     bindBtn('adminDashboardBtn', () => {
         window.location.href = localStorage.getItem('role') === 'admin'
             ? '/admin/dashboard.html'
             : '/admin/login.html';
+    });
+}
+
+// ── Mobile hamburger toggle ───────────────────────────────
+function setupMobileToggle() {
+    const toggle = document.getElementById('navToggle');
+    const navbar = toggle && toggle.closest('.navbar');
+    if (!toggle || !navbar) return;
+
+    toggle.addEventListener('click', () => {
+        const open = navbar.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    // Close menu when a nav link is clicked
+    navbar.querySelectorAll('.nav-links a, .nav-right a').forEach(link => {
+        link.addEventListener('click', () => {
+            navbar.classList.remove('is-open');
+            toggle.setAttribute('aria-expanded', 'false');
+        });
     });
 }
 

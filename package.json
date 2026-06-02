@@ -5,7 +5,9 @@
   "scripts": {
     "start": "cd backend/trunida-backend && npm start",
     "install:backend": "cd backend/trunida-backend && npm install",
-    "dev": "cd backend/trunida-backend && npm run dev"
+    "dev": "cd backend/trunida-backend && npm run dev",
+    "test:frontend": "cd frontend && npm test",
+    "test:frontend:coverage": "cd frontend && npm run test:coverage"
   },
   "engines": {
     "node": "20.x"

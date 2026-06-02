@@ -14,6 +14,7 @@ function getNavbarPath() {
 }
 
 // ── Load + inject navbar ──────────────────────────────────
+/* v8 ignore next 28 */
 document.addEventListener('DOMContentLoaded', () => {
     let container = document.getElementById('navbar-container');
     if (!container) {
@@ -133,3 +134,7 @@ function logoutUser() {
 }
 
 console.log('✅ SoorgaAI Navbar loaded');
+
+// Named exports for unit testing (Vitest ESM).
+// The <script type="module"> tag in HTML loads these transparently.
+export { getNavbarPath, setupNavbarHandlers, setupNavLinks, setupMobileToggle, bindBtn, logoutUser };

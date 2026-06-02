@@ -1,0 +1,51 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MATURITY_STAGES — snapshot regression guard > matches the canonical stage list snapshot (sync guard with backend KB) 1`] = `
+[
+  {
+    "color": "#E74C3C",
+    "descriptor": "Ad hoc, no strategy",
+    "id": 1,
+    "maxScore": 20,
+    "minScore": 0,
+    "name": "AI Scramble",
+    "tagline": "Ad hoc. Uncoordinated. Reactive.",
+  },
+  {
+    "color": "#E67E22",
+    "descriptor": "Early pilots, siloed",
+    "id": 2,
+    "maxScore": 40,
+    "minScore": 21,
+    "name": "AI Pivot",
+    "tagline": "Awareness is rising. First pilots underway.",
+  },
+  {
+    "color": "#F1C40F",
+    "descriptor": "Strategy forming, cross-functional",
+    "id": 3,
+    "maxScore": 60,
+    "minScore": 41,
+    "name": "AI Alignment",
+    "tagline": "Strategy is forming. Teams are collaborating.",
+  },
+  {
+    "color": "#2ECC71",
+    "descriptor": "AI embedded in core processes",
+    "id": 4,
+    "maxScore": 80,
+    "minScore": 61,
+    "name": "AI Transform",
+    "tagline": "AI is embedded. Scaling systematically.",
+  },
+  {
+    "color": "#3498DB",
+    "descriptor": "AI as competitive differentiator",
+    "id": 5,
+    "maxScore": 100,
+    "minScore": 81,
+    "name": "AI-Fueled Enterprise",
+    "tagline": "AI is the competitive core. Industry leading.",
+  },
+]
+`;

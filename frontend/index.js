@@ -7,48 +7,53 @@
 
 import { MATURITY_STAGES } from './data/maturityStages.js';
 
+/* v8 ignore next 4 */
 document.addEventListener('DOMContentLoaded', () => {
-    renderStages();
+    renderStages(MATURITY_STAGES, document.querySelector('.stages'));
     wirePrimaryCta();
 });
 
 /**
- * Render the 5 maturity stages into <ol class="stages">.
+ * Render maturity stages into the given container.
  * Stages are displayed highest → lowest (5 at top = aspirational goal).
+ * Exported for unit testing.
+ *
+ * @param {Array}       stages    - Array of stage objects (from MATURITY_STAGES)
+ * @param {HTMLElement} container - The <ol> element to populate
  */
-function renderStages() {
-    const list = document.querySelector('.stages');
-    if (!list) return;
+export function renderStages(stages, container) {
+    if (!container) return;
+
+    container.innerHTML = ''; // Idempotent — clear before re-render
 
     const fragment = document.createDocumentFragment();
 
-    // Reverse so stage 5 appears at the top
-    [...MATURITY_STAGES].reverse().forEach(stage => {
+    [...stages].reverse().forEach(stage => {
         const li = document.createElement('li');
         li.className = 'stage-item';
-        li.style.setProperty('--stage-color', stage.color);
-        li.setAttribute('data-stage-id', stage.id);
+        li.style.setProperty('--stage-color', stage.color || '#5CC5A7');
+        li.setAttribute('data-stage-id', stage.id ?? '');
 
         li.innerHTML = `
-            <div class="stage-item__num" aria-hidden="true">${stage.id}</div>
+            <div class="stage-item__num" aria-hidden="true">${stage.id ?? ''}</div>
             <div class="stage-item__body">
-                <strong class="stage-item__name">${stage.name}</strong>
-                <span class="stage-item__desc">${stage.descriptor}</span>
+                <strong class="stage-item__name">${stage.name ?? ''}</strong>
+                <span class="stage-item__desc">${stage.descriptor ?? ''}</span>
             </div>
         `;
 
         fragment.appendChild(li);
     });
 
-    list.appendChild(fragment);
+    container.appendChild(fragment);
 }
 
 /**
- * Set the primary CTA href from the shared SoorgaAuth helper.
- * Falls back to the hard-coded href already in the HTML if authState
- * hasn't loaded (e.g., slow network).
+ * Set the primary CTA href from the shared SoorgaAuth helper
+ * and attach analytics instrumentation to all [data-cta] elements.
+ * Exported for unit testing.
  */
-function wirePrimaryCta() {
+export function wirePrimaryCta() {
     const cta = document.getElementById('primaryCta');
     if (!cta) return;
 

@@ -1,0 +1,17 @@
+{
+  "name": "soorgaai-frontend-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Frontend unit test suite for the SoorgaAI Command Center",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.7",
+    "jsdom": "^26.1.0",
+    "vitest": "^4.1.7"
+  }
+}

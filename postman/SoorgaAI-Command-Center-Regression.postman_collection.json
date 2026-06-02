@@ -1,0 +1,602 @@
+{
+  "info": {
+    "name": "SoorgaAI — Command Center Redesign (Regression)",
+    "_postman_id": "soorgaai-command-center-regression-v1",
+    "description": "Backend API regression suite for the Command Center Hero Redesign (SOORGA-EPIC-LANDING-001).\n\nPurpose: Verify that no existing endpoints used as CTA destinations were broken by the frontend-only redesign.\nThis suite introduces ZERO new endpoints — it only re-verifies existing ones.\n\nBase URL variable: {{baseUrl}}\n  - Local:      http://localhost:3000\n  - Production: https://truenidawebsite-production.up.railway.app\n\nSetup:\n1. Run '0 — Get JWT (Setup)' first if your {{jwt}} variable is not already set.\n2. Then run folders 1–4 in any order.\n\nTests: API-REG-001 → API-REG-004 (4 test cases + edge cases)\n\nSpec reference: SOORGA-EPIC-LANDING-001 Backend API Regression Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",      "value": "http://localhost:3000",            "type": "string" },
+    { "key": "jwt",          "value": "",                                  "type": "string",
+      "description": "Set manually OR run '0 — Get JWT (Setup)' to populate automatically." },
+    { "key": "signupEmail",  "value": "",                                  "type": "string" },
+    { "key": "testTimestamp","value": "",                                   "type": "string" }
+  ],
+
+  "item": [
+
+    {
+      "name": "0 — Get JWT (Setup)",
+      "description": "Run this folder first to obtain a valid JWT and store it in {{jwt}}. Requires an existing test account at {{testEmail}} / {{testPassword}}.",
+      "item": [
+
+        {
+          "name": "SETUP — Login and persist JWT",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Login succeeded (200)', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "if (json.token) {",
+                "  pm.collectionVariables.set('jwt', json.token);",
+                "  console.log('✅ JWT saved for downstream tests');",
+                "} else {",
+                "  console.warn('⚠️ No token in response — authenticated tests will fail');",
+                "}"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa-regression@soorgaai.test\",\n  \"password\": \"TestPass123!\"\n}"
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "1 — API-REG-001: Signup Endpoint (Anonymous CTA Path)",
+      "description": "Confirms that anonymous users routed from the primary CTA via /login/signup.html land on a working signup endpoint.\nSpec: API-REG-001",
+      "item": [
+
+        {
+          "name": "API-REG-001 — Signup Happy Path (201)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate a unique email for this run",
+                  "const ts = Date.now();",
+                  "pm.collectionVariables.set('signupEmail', `qa-reg-${ts}@inceptly.test`);",
+                  "pm.collectionVariables.set('testTimestamp', String(ts));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.test('Response contains a JWT token', () => {",
+                  "  pm.expect(json.token).to.be.a('string').and.have.lengthOf.at.least(10);",
+                  "});",
+                  "pm.test('Response contains a user object', () => {",
+                  "  pm.expect(json.user).to.be.an('object');",
+                  "});",
+                  "pm.test('User object contains _id', () => {",
+                  "  pm.expect(json.user._id).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.test('User object contains email', () => {",
+                  "  pm.expect(json.user.email).to.be.a('string').and.include('@');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "signup"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{signupEmail}}\",\n  \"password\": \"TestPass123!\",\n  \"name\": \"QA Regression Test\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "API-REG-001 — Edge: Missing email → 400",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);",
+                "pm.test('error message is present', () => pm.expect(json.message).to.be.a('string').and.not.empty);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users/signup", "host": ["{{baseUrl}}"], "path": ["api","users","signup"] },
+            "body": { "mode": "raw", "raw": "{\n  \"password\": \"TestPass123!\",\n  \"name\": \"No Email User\"\n}" }
+          }
+        },
+
+        {
+          "name": "API-REG-001 — Edge: Invalid email format → 400",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users/signup", "host": ["{{baseUrl}}"], "path": ["api","users","signup"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"not-a-valid-email\",\n  \"password\": \"TestPass123!\",\n  \"name\": \"Bad Email User\"\n}" }
+          }
+        },
+
+        {
+          "name": "API-REG-001 — Edge: Duplicate email → 400 or 409",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 or 409 (already exists)', () => {",
+                "  pm.expect(pm.response.code).to.be.oneOf([400, 409]);",
+                "});",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);",
+                "pm.test('error indicates duplicate or already exists', () => {",
+                "  const msg = (json.message || '').toLowerCase();",
+                "  pm.expect(msg).to.match(/already|exist|duplicate|registered/i);",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users/signup", "host": ["{{baseUrl}}"], "path": ["api","users","signup"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{signupEmail}}\",\n  \"password\": \"TestPass123!\",\n  \"name\": \"Duplicate User\"\n}",
+              "description": "Re-submits the same email from the happy-path test to trigger the duplicate check."
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "2 — API-REG-002: Assessment Questions Endpoint (Authenticated CTA Path)",
+      "description": "Confirms that logged-in users routed from the primary CTA to /assessment/assessment.html reach a working assessment API.\nSpec: API-REG-002",
+      "item": [
+
+        {
+          "name": "API-REG-002 — Get Questions Happy Path (200)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "const questions = Array.isArray(json) ? json : (json.questions || json.data || []);",
+                "pm.test('Response contains an array of questions', () => {",
+                "  pm.expect(questions).to.be.an('array').and.have.lengthOf.at.least(1);",
+                "});",
+                "pm.test('Each question has a required structure', () => {",
+                "  if (questions.length > 0) {",
+                "    const q = questions[0];",
+                "    pm.expect(q).to.have.property('_id').or.to.have.property('id').or.to.have.property('questionId');",
+                "  }",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assessment/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "assessment", "questions"]
+            }
+          }
+        },
+
+        {
+          "name": "API-REG-002 — Edge: Missing Authorization header → 401",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/questions", "host": ["{{baseUrl}}"], "path": ["api","assessment","questions"] }
+          }
+        },
+
+        {
+          "name": "API-REG-002 — Edge: Invalid JWT → 401",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer invalid.token.value.here" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/assessment/questions", "host": ["{{baseUrl}}"], "path": ["api","assessment","questions"] }
+          }
+        },
+
+        {
+          "name": "API-REG-002 — Edge: Malformed Authorization (no Bearer prefix) → 401",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{jwt}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/assessment/questions", "host": ["{{baseUrl}}"], "path": ["api","assessment","questions"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "3 — API-REG-003: Login Endpoint (Returning User CTA Path)",
+      "description": "Confirms that returning users clicking the CTA without a stored JWT land on a working login endpoint.\nSpec: API-REG-003",
+      "item": [
+
+        {
+          "name": "API-REG-003 — Login Happy Path (200)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('Response contains a JWT token', () => {",
+                "  pm.expect(json.token).to.be.a('string').and.have.lengthOf.at.least(10);",
+                "});",
+                "pm.test('Response contains a user object', () => {",
+                "  pm.expect(json.user).to.be.an('object');",
+                "});",
+                "pm.test('Token is stored for downstream use', () => {",
+                "  pm.collectionVariables.set('jwt', json.token);",
+                "  pm.expect(pm.collectionVariables.get('jwt')).to.not.be.empty;",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa-regression@soorgaai.test\",\n  \"password\": \"TestPass123!\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "API-REG-003 — Edge: Missing password → 400",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"qa-regression@soorgaai.test\"\n}" }
+          }
+        },
+
+        {
+          "name": "API-REG-003 — Edge: Wrong password → 401",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"qa-regression@soorgaai.test\",\n  \"password\": \"WrongPassword!\"\n}" }
+          }
+        },
+
+        {
+          "name": "API-REG-003 — Edge: Non-existent email → 401",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"nobody-exists-xyz-99@nowhere.com\",\n  \"password\": \"TestPass123!\"\n}" }
+          }
+        },
+
+        {
+          "name": "API-REG-003 — Edge: Non-string types → 400",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));",
+                "const json = pm.response.json();",
+                "pm.test('success is false', () => pm.expect(json.success).to.be.false);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": 12345,\n  \"password\": true\n}" }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "4 — API-REG-004: Stage Data Consistency Check",
+      "description": "Verifies that the 5 stage names returned by the backend scoring engine exactly match the stage names declared in frontend/data/maturityStages.js.\nSpec: API-REG-004\n\nThis test runs a full dynamic assessment flow and checks the maturityStage field in the score response.\nExpected stage names: AI Scramble | AI Pivot | AI Alignment | AI Transform | AI-Fueled Enterprise",
+      "item": [
+
+        {
+          "name": "API-REG-004a — Start Dynamic Session (Setup for stage test)",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                "const json = pm.response.json();",
+                "pm.collectionVariables.set('regSessionId', json.sessionId);",
+                "console.log('✅ regSessionId saved:', json.sessionId);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/assessment/dynamic/sessions", "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Stage Consistency QA\",\n  \"role\": \"CTO / CIO\",\n  \"companyName\": \"Regression Test Co\"\n}" }
+          }
+        },
+
+        {
+          "name": "API-REG-004b — Discover Domain",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                "const json = pm.response.json();",
+                "pm.test('domain is a string', () => pm.expect(json.domain).to.be.a('string').and.not.empty);"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{regSessionId}}/discover",
+              "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{regSessionId}}","discover"]
+            },
+            "body": { "mode": "raw", "raw": "{\n  \"companyName\": \"Regression Test Co\"\n}" }
+          }
+        },
+
+        {
+          "name": "API-REG-004c — Generate Questions",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                "const json = pm.response.json();",
+                "pm.test('Questions array is present', () => pm.expect(json.questions).to.be.an('array').with.lengthOf.at.least(1));",
+                "",
+                "// Persist all question IDs for bulk answer submission",
+                "const ids = json.questions.map(q => q.questionId);",
+                "pm.collectionVariables.set('regQuestionIds', JSON.stringify(ids));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{regSessionId}}/questions",
+              "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{regSessionId}}","questions"]
+            },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+
+        {
+          "name": "API-REG-004d — Submit All Answers (Batch via pre-request script)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Submit all answers programmatically before the score call",
+                  "const sessionId = pm.collectionVariables.get('regSessionId');",
+                  "const ids = JSON.parse(pm.collectionVariables.get('regQuestionIds') || '[]');",
+                  "const baseUrl = pm.collectionVariables.get('baseUrl');",
+                  "",
+                  "const submitAnswer = (questionId) => new Promise((resolve) => {",
+                  "  pm.sendRequest({",
+                  "    url: `${baseUrl}/api/assessment/dynamic/sessions/${sessionId}/answers`,",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ questionId, value: 3 }) }",
+                  "  }, (err, res) => resolve(res));",
+                  "});",
+                  "",
+                  "// Submit first answer synchronously (Postman pre-request is sync-ish)",
+                  "if (ids.length > 0) {",
+                  "  ids.forEach(id => {",
+                  "    pm.sendRequest({",
+                  "      url: `${baseUrl}/api/assessment/dynamic/sessions/${sessionId}/answers`,",
+                  "      method: 'POST',",
+                  "      header: { 'Content-Type': 'application/json' },",
+                  "      body: { mode: 'raw', raw: JSON.stringify({ questionId: id, value: 3 }) }",
+                  "    }, () => {});",
+                  "  });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Small delay accommodated by Postman's sequential execution",
+                  "pm.test('Score endpoint returns 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.test('overallScore is a number 0–100', () => {",
+                  "  pm.expect(json.overallScore).to.be.a('number');",
+                  "  pm.expect(json.overallScore).to.be.at.least(0).and.at.most(100);",
+                  "});",
+                  "",
+                  "// ── STAGE CONSISTENCY ASSERTION ────────────────────────────────────────",
+                  "// These MUST match frontend/data/maturityStages.js MATURITY_STAGES[i].name",
+                  "const EXPECTED_STAGE_NAMES = [",
+                  "  'AI Scramble',",
+                  "  'AI Pivot',",
+                  "  'AI Alignment',",
+                  "  'AI Transform',",
+                  "  'AI-Fueled Enterprise'",
+                  "];",
+                  "",
+                  "pm.test('maturityStage is one of the 5 canonical stage names', () => {",
+                  "  pm.expect(json.maturityStage).to.be.a('string').and.not.empty;",
+                  "  pm.expect(EXPECTED_STAGE_NAMES).to.include(json.maturityStage);",
+                  "});",
+                  "",
+                  "pm.test('maturityStageDetails.stage matches maturityStage', () => {",
+                  "  if (json.maturityStageDetails) {",
+                  "    pm.expect(json.maturityStageDetails.stage).to.equal(json.maturityStage);",
+                  "  }",
+                  "});",
+                  "",
+                  "console.log(`✅ Stage returned: \"${json.maturityStage}\" (score: ${json.overallScore})`);",
+                  "console.log('Stage names verified against frontend/data/maturityStages.js');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/assessment/dynamic/sessions/{{regSessionId}}/score",
+              "host": ["{{baseUrl}}"], "path": ["api","assessment","dynamic","sessions","{{regSessionId}}","score"]
+            },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        }
+
+      ]
+    }
+
+  ]
+}

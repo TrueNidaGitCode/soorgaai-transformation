@@ -65,8 +65,7 @@
   align-items: center;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 80px 40px 72px;
-  min-height: calc(100vh - 64px);
+  padding: 56px 40px 56px;
 }
 
 /* ── Hero left ───────────────────────────────────────────── */
@@ -369,7 +368,7 @@ h2 {
 @media (max-width: 1100px) {
   .hero {
     gap: 40px;
-    padding: 64px 32px 56px;
+    padding: 48px 32px 48px;
   }
 }
 
@@ -377,8 +376,7 @@ h2 {
 @media (max-width: 900px) {
   .hero {
     grid-template-columns: 1fr;
-    min-height: auto;
-    padding: 56px 32px 48px;
+    padding: 44px 32px 44px;
     gap: 48px;
   }
 

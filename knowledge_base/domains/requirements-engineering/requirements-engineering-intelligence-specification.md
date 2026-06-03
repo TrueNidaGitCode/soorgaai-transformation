@@ -764,6 +764,15 @@ Key findings adopted:
 * Retrieval grounding reduces hallucinations
 * Multi-model routing reduces operational cost
 * Metadata enrichment improves retrieval quality
+* Few-shot prompting improves requirement atomicity and singularity
+* Expert identity prompting improves verifiability but may introduce unsupported assumptions
+* Chain-of-Thought prompting improves engineering reasoning transparency
+* ReAct prompting improves evidence-based engineering analysis
+* LLM-as-a-Judge provides scalable requirement quality assessment
+* Context engineering has greater impact on output quality than prompt complexity alone
+* Retrieval-grounded prompting significantly reduces hallucinations
+* Different requirements engineering activities require different prompting strategies
+* Human oversight remains essential for validating AI-generated engineering recommendations
 
 ---
 

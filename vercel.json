@@ -14,6 +14,8 @@
     { "source": "/dashboard/:path*",          "destination": "/dashboard/:path*" },
     { "source": "/admin/:path*",              "destination": "/admin/:path*" },
     { "source": "/navbar/:path*",             "destination": "/navbar/:path*" },
+    { "source": "/platform/:path*",           "destination": "/platform/:path*" },
+    { "source": "/shared/:path*",             "destination": "/shared/:path*" },
     { "source": "/(.*)",                      "destination": "/$1" }
   ],
   "headers": [

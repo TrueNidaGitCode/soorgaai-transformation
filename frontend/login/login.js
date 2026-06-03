@@ -17,6 +17,27 @@
 // ============================================
 const MOCK_MODE = false; // ✅ Backend is ready - using real authentication
 
+// ── ?redirect= query-param support ───────────────────────────
+// Reads the redirect target from the URL on page load.
+// SECURITY: only accepts same-origin relative paths starting with /
+// that do NOT start with // (prevents open-redirect attacks).
+function getValidRedirect() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+        if (!redirect) return null;
+        if (!redirect.startsWith('/')) return null;       // must be relative
+        if (redirect.startsWith('//')) return null;       // reject protocol-relative
+        if (/^\/*(https?|ftp|javascript):/i.test(redirect)) return null; // extra guard
+        return redirect;
+    } catch {
+        return null;
+    }
+}
+
+// Resolved once at load time; used by redirectAfterLogin() and checkExistingAuth()
+const pendingRedirect = getValidRedirect();
+
 /**
  * ============================================
  * INITIALIZATION
@@ -67,13 +88,20 @@ document.addEventListener("DOMContentLoaded", function () {
  */
 function checkExistingAuth() {
     const token = localStorage.getItem('token');
-    
+
     if (token) {
         console.log('✅ User already authenticated');
-        
-        // Check for redirect URL
+
+        // ?redirect= param takes priority (e.g. platform page bounced them here)
+        if (pendingRedirect) {
+            console.log(`🔄 Redirecting to ?redirect param: ${pendingRedirect}`);
+            window.location.href = pendingRedirect;
+            return;
+        }
+
+        // Fall back to localStorage redirect
         const redirectUrl = localStorage.getItem('redirectAfterLogin');
-        
+
         if (redirectUrl) {
             console.log(`🔄 Redirecting to saved page: ${redirectUrl}`);
             localStorage.removeItem('redirectAfterLogin');
@@ -249,27 +277,34 @@ async function handleLogin(event) {
  */
 function redirectAfterLogin() {
     console.log("🔄 Determining redirect destination");
-    
-    // Check for saved redirect URL
+
+    // 1. ?redirect= query param (highest priority — set by CTARouter or platform guard)
+    if (pendingRedirect) {
+        console.log(`✅ Redirecting to ?redirect param: ${pendingRedirect}`);
+        window.location.href = pendingRedirect;
+        return;
+    }
+
+    // 2. Saved redirect from localStorage (legacy pattern)
     const redirectUrl = localStorage.getItem('redirectAfterLogin');
-    
+
     if (redirectUrl) {
         console.log(`✅ Redirecting to saved page: ${redirectUrl}`);
         localStorage.removeItem('redirectAfterLogin');
         window.location.href = redirectUrl;
         return;
     }
-    
-    // Check for pending signal generation
+
+    // 3. Check for pending signal generation
     const pendingSignalId = localStorage.getItem('pendingSignalId');
-    
+
     if (pendingSignalId) {
         console.log(`✅ Redirecting to signal page with pending generation`);
         window.location.href = '/signals/signal-page.html';
         return;
     }
-    
-    // Default redirect to dashboard
+
+    // 4. Default redirect to dashboard
     console.log("✅ Redirecting to dashboard");
     window.location.href = '/dashboard/signaldashboard.html';
 }

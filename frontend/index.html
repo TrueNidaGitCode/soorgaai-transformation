@@ -3,31 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="SoorgaAI is the Enterprise AI Transformation Platform. Discover where your organization stands on the AI maturity curve and generate a personalized AI roadmap.">
+  <meta name="description" content="SoorgaAI — Assess your AI maturity, benchmark against the 5-stage framework, and generate a personalized AI transformation roadmap for your organization.">
 
   <!-- Open Graph -->
   <meta property="og:type"        content="website">
-  <meta property="og:title"       content="SoorgaAI — The Enterprise AI Transformation Platform">
-  <meta property="og:description" content="Discover your AI maturity stage across 7 domains and generate a custom AI transformation roadmap for your organization.">
+  <meta property="og:title"       content="SoorgaAI — Build Your AI Transformation Roadmap">
+  <meta property="og:description" content="Assess. Benchmark. Transform. Generate a personalized AI roadmap across 7 critical domains.">
   <meta property="og:url"         content="https://soorgaai.com/">
 
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="SoorgaAI — The Enterprise AI Transformation Platform">
-  <meta name="twitter:description" content="Discover your AI maturity stage and generate a personalized AI roadmap.">
+  <meta name="twitter:title"       content="SoorgaAI — Build Your AI Transformation Roadmap">
+  <meta name="twitter:description" content="Assess your AI maturity and get a personalized transformation roadmap.">
 
-  <title>SoorgaAI — The Enterprise AI Transformation Platform</title>
+  <title>SoorgaAI — Build Your AI Transformation Roadmap</title>
 
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="home.css">
 
-  <!-- Config must load before authState and navbar -->
   <script src="login/config.js"></script>
   <script type="module" src="login/authState.js"></script>
   <script type="module" src="navbar/navbar.js"></script>
   <script type="module" src="index.js"></script>
 </head>
-<body>
+<body data-nav-mode="anonymous">
 
   <!-- Navbar: min-height reserved to prevent CLS -->
   <div id="navbar-container" style="min-height:64px"></div>
@@ -40,13 +39,14 @@
     <section class="hero" aria-labelledby="hero-heading">
 
       <div class="hero__left">
+
         <div class="hero__badge" role="img" aria-label="Product category">
           Enterprise AI Transformation Platform
         </div>
 
         <h1 id="hero-heading">
-          The Enterprise AI<br>
-          <span class="hero__headline-accent">Transformation Platform</span>
+          Assess. Benchmark. Transform.<br>
+          <span class="hero__headline-accent">Build Your AI Transformation Roadmap.</span>
         </h1>
 
         <p class="hero__desc">
@@ -55,15 +55,35 @@
           for your industry, your team, and your 90-day window.
         </p>
 
+        <!-- Benefits mini cards — between description and CTA -->
+        <div class="benefits-cards" aria-label="What you get">
+          <div class="benefit-card">
+            <span class="benefit-icon" aria-hidden="true">&#128202;</span>
+            <strong class="benefit-label">Assess</strong>
+            <p class="benefit-text">Evaluate AI maturity across 7 critical domains in under 10 minutes.</p>
+          </div>
+          <div class="benefit-card">
+            <span class="benefit-icon" aria-hidden="true">&#128200;</span>
+            <strong class="benefit-label">Benchmark</strong>
+            <p class="benefit-text">See exactly where you stand on the 5-stage AI Transformation Framework.</p>
+          </div>
+          <div class="benefit-card">
+            <span class="benefit-icon" aria-hidden="true">&#128506;</span>
+            <strong class="benefit-label">Roadmap</strong>
+            <p class="benefit-text">Get a personalized action plan built for your industry and goals.</p>
+          </div>
+        </div>
+
         <div class="hero__ctas">
-          <a
-            id="primaryCta"
-            href="/dynamic-assessment/start.html"
+          <button
+            id="cta-generate-roadmap"
             class="cta-button cta-button--primary"
+            onclick="CTARouter.routeToWorkspace()"
             data-cta="generate-roadmap"
+            aria-label="Generate My AI Roadmap"
           >
             Generate My AI Roadmap &rarr;
-          </a>
+          </button>
           <a
             href="/framework/framework.html"
             class="cta-button cta-button--outline"
@@ -76,42 +96,24 @@
         <p class="hero__trust">
           Personalized to your industry &middot; Takes &le;10 minutes &middot; No credit card required
         </p>
+
       </div>
 
-      <!-- Stages panel — hydrated by index.js -->
+      <!-- Framework panel — hydrated by index.js -->
       <aside class="hero__right" aria-labelledby="stages-panel-heading">
         <h2 id="stages-panel-heading" class="stages__title">
-          5-Stage AI Maturity Journey
+          5-Stage AI Transformation Framework
         </h2>
+        <p class="stages__desc">
+          A proven model used by technology and engineering organizations to measure,
+          benchmark, and accelerate AI adoption — from early experimentation to
+          enterprise-scale transformation.
+        </p>
         <ol class="stages" aria-label="AI Maturity Stages">
-          <!-- Rendered by index.js — stages ordered 5 → 1 (aspirational at top) -->
+          <!-- Rendered by index.js — stages ordered 5 to 1 (aspirational at top) -->
         </ol>
       </aside>
 
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════
-         OUTCOMES STRIP
-    ════════════════════════════════════════════════════ -->
-    <section class="outcomes" aria-label="What you will receive">
-      <ul class="outcomes__list" role="list">
-        <li class="outcomes__item">
-          <span class="outcomes__check" aria-hidden="true">&#10003;</span>
-          Identify Current Stage
-        </li>
-        <li class="outcomes__item">
-          <span class="outcomes__check" aria-hidden="true">&#10003;</span>
-          Discover Capability Gaps
-        </li>
-        <li class="outcomes__item">
-          <span class="outcomes__check" aria-hidden="true">&#10003;</span>
-          Generate AI Roadmap
-        </li>
-        <li class="outcomes__item">
-          <span class="outcomes__check" aria-hidden="true">&#10003;</span>
-          Become AI-Fueled Enterprise
-        </li>
-      </ul>
     </section>
 
     <!-- ═══════════════════════════════════════════════════
@@ -174,15 +176,15 @@
     ════════════════════════════════════════════════════ -->
     <section class="final-cta" id="pricing" aria-labelledby="final-cta-heading">
       <div class="container text-center">
-        <h2 id="final-cta-heading">Ready to find your AI Maturity Stage?</h2>
+        <h2 id="final-cta-heading">Ready to build your AI Transformation Roadmap?</h2>
         <p>Join organizations using SoorgaAI to accelerate their transformation journey.</p>
-        <a
-          href="/dynamic-assessment/start.html"
+        <button
           class="cta-button cta-button--primary"
+          onclick="CTARouter.routeToWorkspace()"
           data-cta="generate-roadmap-footer"
         >
           Generate My AI Roadmap &rarr;
-        </a>
+        </button>
       </div>
     </section>
 
@@ -196,6 +198,9 @@
       <p>&copy; 2025 SoorgaAI. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
     </div>
   </footer>
+
+  <!-- CTA Router loaded last so CTARouter is available when onclick fires -->
+  <script src="shared/ctaRouter.js"></script>
 
 </body>
 </html>

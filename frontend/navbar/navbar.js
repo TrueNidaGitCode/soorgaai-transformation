@@ -46,18 +46,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Auth state ────────────────────────────────────────────
 function setupNavbarHandlers() {
-    const token    = localStorage.getItem('token');
-    const username = localStorage.getItem('username') || 'User';
-    const role     = localStorage.getItem('role') || 'user';
-
     const loginBtn         = document.getElementById('loginSignupBtn');
     const logoutBtn        = document.getElementById('logoutBtn');
     const userDisplay      = document.getElementById('username-display');
     const adminBtn         = document.getElementById('adminDashboardBtn');
     const myAssessmentsBtn = document.getElementById('myAssessmentsBtn');
+    const roadmapCta       = document.getElementById('navRoadmapCta');
 
+    // ── Anonymous mode: homepage opts in via data-nav-mode="anonymous" ──
+    // Renders only the nav links + Generate Roadmap CTA. No auth chrome.
+    if (document.body.dataset.navMode === 'anonymous') {
+        [loginBtn, logoutBtn, userDisplay, adminBtn, myAssessmentsBtn].forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+        if (roadmapCta && window.CTARouter) {
+            roadmapCta.removeAttribute('href');
+            roadmapCta.onclick = (e) => { e.preventDefault(); window.CTARouter.routeToWorkspace(); };
+        }
+        return;
+    }
+
+    // ── Authenticated mode (default for all other pages) ─────────────────
     if (!loginBtn || !logoutBtn) return;
 
+    const token    = localStorage.getItem('token');
+    const username = localStorage.getItem('username') || 'User';
+    const role     = localStorage.getItem('role') || 'user';
     const hasCompletedAssessment = !!localStorage.getItem('da_score');
 
     if (token) {
@@ -76,8 +90,7 @@ function setupNavbarHandlers() {
         loginBtn.onclick = () => { window.location.href = '/login/login.html'; };
     }
 
-    // Wire the Generate Roadmap CTA in the navbar using the shared authState helper
-    const roadmapCta = document.getElementById('navRoadmapCta');
+    // Wire the Generate Roadmap CTA using the shared authState helper
     if (roadmapCta && window.SoorgaAuth) {
         roadmapCta.href = window.SoorgaAuth.getRoadmapHref();
     }

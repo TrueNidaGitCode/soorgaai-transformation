@@ -1,0 +1,477 @@
+{
+  "info": {
+    "name": "SoorgaAI — Landing Page Refinement & Platform Workspace v2.1.0",
+    "_postman_id": "soorgaai-landing-platform-v2-1-0",
+    "description": "Backend API regression suite for EPIC v2.1.0: Landing Page Refinement & Platform Workspace Stub.\n\nPurpose: Verify the two existing endpoints reused by the new frontend flows — POST /api/users/login (consumed by the anonymous CTA → login → platform flow) and GET /api/users/me (called by platform.js on every page load) — contain no regressions.\n\nTest IDs: API-LP-001 → API-LP-012 (12 test cases)\n\nBase URL variable: {{baseUrl}}\n  - Local:      http://localhost:3000\n  - Production: https://truenidawebsite-production.up.railway.app\n\nSetup:\n  1. Run folder '0 — Setup' first to obtain {{validToken}}.\n  2. Set {{expiredToken}} manually (pre-generated expired JWT).\n  3. Run folders 1–5 in any order.\n\nSpec reference: SoorgaAI EPIC v2.1.0 Integration Test Prompt — PART 1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",       "value": "http://localhost:3000",    "type": "string",
+      "description": "Switch to the production Railway URL for live-environment runs." },
+    { "key": "validToken",    "value": "",                         "type": "string",
+      "description": "Populated automatically by '0 — Setup' folder." },
+    { "key": "expiredToken",  "value": "",                         "type": "string",
+      "description": "Pre-generated expired JWT. Set manually before running API-LP-009." },
+    { "key": "testEmail",     "value": "testuser@inceptly.ai",     "type": "string" },
+    { "key": "testPassword",  "value": "TestPass123!",             "type": "string" }
+  ],
+
+  "item": [
+
+    {
+      "name": "0 — Setup: obtain valid JWT",
+      "description": "Run this folder first. Stores the JWT in {{validToken}} for use by authenticated tests.",
+      "item": [
+        {
+          "name": "SETUP — Login and persist JWT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Setup login succeeded (200)', () => pm.response.to.have.status(200));",
+                  "",
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('validToken', json.token);",
+                  "    console.log('✅ validToken saved for downstream tests');",
+                  "} else {",
+                  "    console.warn('⚠️ No token in response — authenticated tests will fail');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "1 — API-LP-001 / API-LP-005: Login endpoint",
+      "description": "Tests: API-LP-001 (happy path), API-LP-002 (missing email), API-LP-003 (missing password), API-LP-004 (invalid types), API-LP-005 (wrong credentials).",
+      "item": [
+
+        {
+          "name": "API-LP-001 — Login happy path returns 200 + token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('token is a non-empty string (length > 20)', () => {",
+                  "    const r = pm.response.json();",
+                  "    pm.expect(r.token).to.be.a('string').and.to.have.length.above(20);",
+                  "    pm.collectionVariables.set('validToken', r.token);",
+                  "});",
+                  "",
+                  "pm.test('username echoed back', () => {",
+                  "    const r = pm.response.json();",
+                  "    const email = pm.collectionVariables.get('testEmail');",
+                  "    pm.expect(r.username || r.user?.email).to.include(email.split('@')[0]);",
+                  "});",
+                  "",
+                  "pm.test('response time < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "API-LP-002 — Login missing email returns 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('error field is present', () => {",
+                  "    const r = pm.response.json();",
+                  "    pm.expect(r.error || r.message).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('no token in error response', () => {",
+                  "    pm.expect(pm.response.json().token).to.not.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{testPassword}}\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "API-LP-003 — Login missing password returns 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error field present', () => pm.expect(pm.response.json().error || pm.response.json().message).to.exist);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\"\n}"
+            }
+          }
+        },
+
+        {
+          "name": "API-LP-004 — Login non-string fields returns 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 (invalid types rejected)', () => pm.response.to.have.status(400));",
+                  "pm.test('no token returned', () => pm.expect(pm.response.json().token).to.not.exist);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": 12345,\n  \"password\": true\n}"
+            }
+          }
+        },
+
+        {
+          "name": "API-LP-005 — Login wrong password returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('no token in body', () => pm.expect(pm.response.json().token).to.not.exist);",
+                  "pm.test('error message present', () => pm.expect(pm.response.json().error || pm.response.json().message).to.exist);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"WrongPass!\"\n}"
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "2 — API-LP-006 / API-LP-010: GET /users/me (Platform Auth Guard)",
+      "description": "Tests: API-LP-006 (valid token), API-LP-007 (no token), API-LP-008 (malformed token), API-LP-009 (expired token), API-LP-010 (wrong auth scheme).",
+      "item": [
+
+        {
+          "name": "API-LP-006 — GET /users/me valid token returns 200 + user object",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('username or email present in response', () => {",
+                  "    const r = pm.response.json();",
+                  "    pm.expect(r.username || r.email || r.user?.email).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('response time < 2000ms', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{validToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+
+        {
+          "name": "API-LP-007 — GET /users/me no Authorization header returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 (no token)', () => pm.response.to.have.status(401));",
+                  "pm.test('no user data leaked', () => {",
+                  "    const r = pm.response.json();",
+                  "    pm.expect(r.username || r.email).to.not.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+
+        {
+          "name": "API-LP-008 — GET /users/me malformed token returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 (malformed token)', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiJ9.invalid.signature" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+
+        {
+          "name": "API-LP-009 — GET /users/me expired token returns 401 (triggers platform page clean redirect)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 (expired token)', () => pm.response.to.have.status(401));",
+                  "",
+                  "// This 401 is the trigger for platform.js to clear localStorage.token",
+                  "// and redirect to /login/login.html?redirect=/platform/platform.html",
+                  "pm.test('error field present confirming expired JWT', () => {",
+                  "    const r = pm.response.json();",
+                  "    pm.expect(r.error || r.message).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{expiredToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+
+        {
+          "name": "API-LP-010 — GET /users/me wrong auth scheme (Basic) returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 (wrong scheme)', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Basic dXNlcjpwYXNz" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "3 — API-LP-011: CORS Preflight — /api/users/login",
+      "description": "Verifies CORS preflight succeeds for the Vercel frontend origin hitting the login endpoint. Spec: API-LP-011.",
+      "item": [
+        {
+          "name": "API-LP-011 — OPTIONS /users/login from soorga.ai origin succeeds",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 or 204 (preflight accepted)', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "",
+                  "pm.test('Access-Control-Allow-Origin header present', () => {",
+                  "    const acao = pm.response.headers.get('Access-Control-Allow-Origin');",
+                  "    pm.expect(acao).to.exist;",
+                  "    pm.expect(acao).to.satisfy(v => v === '*' || v.includes('soorga'));",
+                  "});",
+                  "",
+                  "pm.test('Access-Control-Allow-Methods includes POST', () => {",
+                  "    const acam = pm.response.headers.get('Access-Control-Allow-Methods');",
+                  "    if (acam) pm.expect(acam.toUpperCase()).to.include('POST');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              { "key": "Origin",                           "value": "https://soorga.ai" },
+              { "key": "Access-Control-Request-Method",    "value": "POST" },
+              { "key": "Access-Control-Request-Headers",   "value": "content-type" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "4 — API-LP-012: CORS Preflight — /api/users/me",
+      "description": "Verifies CORS preflight succeeds for the platform page calling GET /api/users/me. Spec: API-LP-012.",
+      "item": [
+        {
+          "name": "API-LP-012 — OPTIONS /users/me from soorga.ai origin includes Authorization in allowed headers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 or 204', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));",
+                  "",
+                  "pm.test('Access-Control-Allow-Origin header present', () => {",
+                  "    const acao = pm.response.headers.get('Access-Control-Allow-Origin');",
+                  "    pm.expect(acao).to.exist;",
+                  "    pm.expect(acao).to.satisfy(v => v === '*' || v.includes('soorga'));",
+                  "});",
+                  "",
+                  "pm.test('Authorization is in Access-Control-Allow-Headers', () => {",
+                  "    const acah = pm.response.headers.get('Access-Control-Allow-Headers') || '';",
+                  "    pm.expect(acah.toLowerCase()).to.include('authorization');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              { "key": "Origin",                           "value": "https://soorga.ai" },
+              { "key": "Access-Control-Request-Method",    "value": "GET" },
+              { "key": "Access-Control-Request-Headers",   "value": "authorization" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        }
+      ]
+    }
+
+  ]
+}

@@ -11,7 +11,10 @@ export default defineConfig({
       include: [
         'data/**',
         'login/authState.js',
+        'login/login.js',
         'navbar/navbar.js',
+        'platform/platform.js',
+        'shared/ctaRouter.js',
         'index.js',
       ],
       reporter: ['text', 'lcov'],

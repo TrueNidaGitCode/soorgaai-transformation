@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoorgaAI — AI Transformation Workspace</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="workspace.css">
+  <script src="../login/config.js"></script>
+</head>
+<body class="workspace-page">
+
+  <!-- ── Workspace Navbar ────────────────────────────────────────────────── -->
+  <nav class="workspace-nav" aria-label="Workspace navigation">
+    <div class="workspace-nav__logo">SOORGA<span>AI</span></div>
+    <div class="workspace-nav__right">
+      <span id="ws-username" class="workspace-nav__username"></span>
+      <button id="ws-logout" class="workspace-nav__logout">Logout</button>
+    </div>
+  </nav>
+
+  <!-- ── Loading state ───────────────────────────────────────────────────── -->
+  <div id="ws-loading" class="ws-loading" aria-live="polite">
+    <div class="ws-spinner"></div>
+    <p>Loading your workspace…</p>
+  </div>
+
+  <!-- ── Main workspace ──────────────────────────────────────────────────── -->
+  <main id="ws-main" class="workspace-main" style="display:none" aria-labelledby="ws-title">
+
+    <header class="workspace-header">
+      <h1 id="ws-title" class="workspace-title">Your AI Transformation Workspace</h1>
+      <p class="workspace-subtitle">Co-create your AI strategy, roadmap, and transformation plan — one domain at a time.</p>
+    </header>
+
+    <section class="domain-grid" aria-label="Transformation domains">
+      <!-- Injected by workspace.js -->
+    </section>
+
+  </main>
+
+  <script type="module" src="workspace.js"></script>
+</body>
+</html>

@@ -8,6 +8,9 @@ import userRoutes              from "./routes/userRoutes.js";
 import assessmentRoutes        from "./routes/assessmentRoutes.js";
 import dynamicAssessmentRoutes from "./routes/dynamicAssessmentRoutes.js";
 import kbRoutes                from "./routes/kbRoutes.js";
+import profileRoutes           from "./routes/profileRoutes.js";
+import workspaceRoutes         from "./routes/workspaceRoutes.js";
+import chatRoutes              from "./routes/chatRoutes.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
@@ -71,6 +74,10 @@ app.use("/api/users",                 userRoutes);
 app.use("/api/assessment/dynamic",    dynamicAssessmentRoutes);  // ← more specific first
 app.use("/api/assessment",            assessmentRoutes);
 app.use("/api/kb",                    kbRoutes);                 // Knowledge Base read endpoints
+// Workspace routes (v2.2.0 — AI Transformation Workspace)
+app.use("/api/profile",               profileRoutes);
+app.use("/api/workspace",             workspaceRoutes);
+app.use("/api/chat",                  chatRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoorgaAI — AI Strategy</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="domain.css">
+  <script src="../login/config.js"></script>
+</head>
+<body class="domain-page">
+
+  <!-- ── Navbar ──────────────────────────────────────────────────────────── -->
+  <nav class="workspace-nav" aria-label="Workspace navigation">
+    <div class="workspace-nav__left">
+      <a href="/workspace/workspace.html" class="workspace-nav__back" aria-label="Back to workspace">← Workspace</a>
+      <span class="workspace-nav__logo">SOORGA<span>AI</span></span>
+    </div>
+    <div class="workspace-nav__right">
+      <span id="domain-title-nav" class="workspace-nav__domain-title"></span>
+      <button id="domain-logout" class="workspace-nav__logout">Logout</button>
+    </div>
+  </nav>
+
+  <!-- ── Loading ─────────────────────────────────────────────────────────── -->
+  <div id="domain-loading" class="ws-loading" aria-live="polite">
+    <div class="ws-spinner"></div>
+    <p>Loading your workspace…</p>
+  </div>
+
+  <!-- ── Two-panel layout ────────────────────────────────────────────────── -->
+  <main id="domain-main" class="domain-main" style="display:none" aria-label="Domain workspace">
+
+    <!-- Canvas panel -->
+    <section class="canvas-panel" aria-labelledby="canvas-heading">
+      <h2 id="canvas-heading" class="panel-heading">Strategy Canvas</h2>
+      <p class="panel-subheading">These focus areas evolve as you share context in the chat.</p>
+      <div id="canvas-focus-areas" class="focus-areas-list">
+        <!-- Injected by canvas.js -->
+      </div>
+    </section>
+
+    <!-- Chat panel -->
+    <section class="chat-panel" aria-labelledby="chat-heading">
+      <h2 id="chat-heading" class="panel-heading">AI Strategy Advisor</h2>
+      <p class="panel-subheading">Ask anything about your AI strategy. I'll help you think it through.</p>
+
+      <!-- Suggested prompts -->
+      <div id="suggested-prompts" class="suggested-prompts" aria-label="Suggested questions">
+        <!-- Injected by chat.js -->
+      </div>
+
+      <!-- Chat messages -->
+      <div id="chat-messages" class="chat-messages" role="log" aria-live="polite">
+        <!-- Injected by chat.js -->
+      </div>
+
+      <!-- Error banner -->
+      <div id="chat-error" class="chat-error" style="display:none" role="alert">
+        <span id="chat-error-text">We couldn't process that. Please try again.</span>
+        <button id="chat-retry" class="chat-retry-btn">Retry</button>
+      </div>
+
+      <!-- Input -->
+      <form id="chat-form" class="chat-input-form" novalidate>
+        <textarea
+          id="chat-input"
+          class="chat-input"
+          rows="3"
+          placeholder="Type your message…"
+          aria-label="Chat message"
+        ></textarea>
+        <button type="submit" id="chat-send" class="chat-send-btn" aria-label="Send message">
+          <span id="chat-send-icon">→</span>
+          <span id="chat-send-loader" class="chat-send-loader" style="display:none"></span>
+        </button>
+      </form>
+
+    </section>
+  </main>
+
+  <script type="module" src="canvas.js"></script>
+  <script type="module" src="chat.js"></script>
+</body>
+</html>

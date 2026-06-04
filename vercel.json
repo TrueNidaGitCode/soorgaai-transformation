@@ -16,6 +16,9 @@
     { "source": "/navbar/:path*",             "destination": "/navbar/:path*" },
     { "source": "/platform/:path*",           "destination": "/platform/:path*" },
     { "source": "/shared/:path*",             "destination": "/shared/:path*" },
+    { "source": "/workspace/:path*",          "destination": "/workspace/:path*" },
+    { "source": "/profile-setup/:path*",      "destination": "/profile-setup/:path*" },
+    { "source": "/domain/:path*",             "destination": "/domain/:path*" },
     { "source": "/(.*)",                      "destination": "/$1" }
   ],
   "headers": [

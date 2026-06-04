@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoorgaAI — Set Up Your Workspace</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="profile.css">
+  <script src="../login/config.js"></script>
+</head>
+<body class="profile-setup-page">
+
+  <main class="profile-setup-main">
+    <div class="profile-setup-card">
+
+      <header class="profile-setup-header">
+        <div class="profile-setup-logo">SOORGA<span>AI</span></div>
+        <h1 class="profile-setup-title">Set Up Your Workspace</h1>
+        <p class="profile-setup-subtitle">Tell us about your organisation so we can personalise your AI transformation workspace.</p>
+      </header>
+
+      <form id="profile-form" class="profile-form" novalidate>
+
+        <div class="form-group">
+          <label for="orgName" class="form-label">Organisation Name</label>
+          <input
+            id="orgName"
+            name="orgName"
+            type="text"
+            class="form-input"
+            placeholder="e.g. Acme Motors GmbH"
+            required
+            autocomplete="organization"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="role" class="form-label">Your Role</label>
+          <select id="role" name="role" class="form-input form-select" required>
+            <option value="" disabled selected>Select your role</option>
+            <option value="CTO">CTO</option>
+            <option value="Engineering Director">Engineering Director</option>
+            <option value="Engineering Manager">Engineering Manager</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="industryDomain" class="form-label">Industry Domain</label>
+          <select id="industryDomain" name="industryDomain" class="form-input form-select" required>
+            <option value="" disabled selected>Select your domain</option>
+            <option value="General">General</option>
+            <option value="Diagnostics">Diagnostics</option>
+            <option value="Infotainment">Infotainment</option>
+            <option value="ADAS">ADAS</option>
+          </select>
+        </div>
+
+        <div id="profile-error" class="profile-error" style="display:none"></div>
+
+        <button type="submit" id="profile-submit" class="cta-button profile-submit-btn">
+          <span class="button-text">Launch My Workspace →</span>
+          <span class="button-loader" style="display:none">
+            <span class="spinner-small"></span>
+          </span>
+        </button>
+
+      </form>
+
+    </div>
+  </main>
+
+  <script type="module" src="profile.js"></script>
+</body>
+</html>

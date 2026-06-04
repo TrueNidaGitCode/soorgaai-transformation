@@ -41,6 +41,7 @@ nul
 coverage/
 *.test.js
 !frontend/__tests__/*.test.js
+!backend/trunida-backend/__tests__/*.test.js
 
 # OS
 Thumbs.db

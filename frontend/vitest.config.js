@@ -15,6 +15,7 @@ export default defineConfig({
         'navbar/navbar.js',
         'platform/platform.js',
         'shared/ctaRouter.js',
+        'profile-setup/profile.js',
         'index.js',
       ],
       reporter: ['text', 'lcov'],

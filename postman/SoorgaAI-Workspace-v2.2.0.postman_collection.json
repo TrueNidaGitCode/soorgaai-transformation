@@ -1,0 +1,315 @@
+{
+  "info": {
+    "name": "SoorgaAI — AI Transformation Workspace v2.2.0",
+    "_postman_id": "soorgaai-workspace-v2-2-0",
+    "description": "API regression and smoke tests for the AI Transformation Workspace feature (EPIC v2.2.0).\n\nNew endpoints covered:\n  POST/GET/PATCH /api/profile\n  GET /api/workspace/state\n  GET /api/workspace/domains\n  POST /api/chat/:domainId/message\n  GET  /api/chat/:domainId/history\n  GET  /api/chat/:domainId/canvas\n  GET  /api/chat/:domainId/suggested-prompts\n\nSetup:\n  1. Run '0 — Setup' to obtain {{jwt}}.\n  2. Run folders 1–5 in order (profile must exist before workspace/chat tests).\n\nBase URL: {{baseUrl}}\n  Local:      http://localhost:3000\n  Production: https://truenidawebsite-production.up.railway.app",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",    "value": "http://localhost:3000",   "type": "string" },
+    { "key": "jwt",        "value": "",                        "type": "string",
+      "description": "Populated by '0 — Setup' folder." }
+  ],
+
+  "item": [
+
+    {
+      "name": "0 — Setup: login and obtain JWT",
+      "item": [
+        {
+          "name": "SETUP — Login and persist JWT",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Login 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "if (r.token) { pm.collectionVariables.set('jwt', r.token); console.log('✅ JWT saved'); }"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users/login", "host": ["{{baseUrl}}"], "path": ["api","users","login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"testuser@inceptly.ai\",\n  \"password\": \"TestPass123!\"\n}" }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "1 — Profile: POST /api/profile",
+      "description": "Creates the UserProfile + 7 DomainCanvas docs atomically. Idempotent.",
+      "item": [
+        {
+          "name": "WS-001 — Create profile (201 Created)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 201 or 200', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+            "pm.test('response has profile field', () => pm.expect(pm.response.json().profile).to.exist);",
+            "pm.test('created flag is boolean', () => pm.expect(pm.response.json().created).to.be.a('boolean'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/profile", "host": ["{{baseUrl}}"], "path": ["api","profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"orgName\": \"Acme Motors GmbH\",\n  \"role\": \"CTO\",\n  \"industryDomain\": \"ADAS\"\n}" }
+          }
+        },
+        {
+          "name": "WS-002 — Create profile missing field returns 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));",
+            "pm.test('error field present', () => pm.expect(pm.response.json().error).to.exist);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/profile", "host": ["{{baseUrl}}"], "path": ["api","profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"CTO\"\n}" }
+          }
+        },
+        {
+          "name": "WS-003 — Create profile without auth returns 401",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 401', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/profile", "host": ["{{baseUrl}}"], "path": ["api","profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"orgName\": \"Test\",\n  \"role\": \"CTO\",\n  \"industryDomain\": \"ADAS\"\n}" }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "2 — Profile: GET /api/profile/me",
+      "item": [
+        {
+          "name": "WS-004 — GET /profile/me returns 200 with profile",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('profile has orgName, role, industryDomain', () => {",
+            "  const p = pm.response.json().profile;",
+            "  pm.expect(p.orgName).to.exist;",
+            "  pm.expect(p.role).to.exist;",
+            "  pm.expect(p.industryDomain).to.exist;",
+            "});"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/api/profile/me", "host": ["{{baseUrl}}"], "path": ["api","profile","me"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "3 — Workspace: GET /api/workspace/state and /domains",
+      "item": [
+        {
+          "name": "WS-005 — GET /workspace/state returns profile + 7 domains",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('domains array has 7 entries', () => {",
+            "  pm.expect(pm.response.json().domains).to.have.length(7);",
+            "});",
+            "pm.test('ai-strategy is the only enabled domain', () => {",
+            "  const enabled = pm.response.json().domains.filter(d => d.enabled);",
+            "  pm.expect(enabled).to.have.length(1);",
+            "  pm.expect(enabled[0].domainId).to.equal('ai-strategy');",
+            "});",
+            "pm.test('profile is present in response', () => {",
+            "  pm.expect(pm.response.json().profile).to.exist;",
+            "});"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/api/workspace/state", "host": ["{{baseUrl}}"], "path": ["api","workspace","state"] }
+          }
+        },
+        {
+          "name": "WS-006 — GET /workspace/domains returns catalog (no auth required)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('7 domains returned', () => pm.expect(pm.response.json().domains).to.have.length(7));",
+            "pm.test('no focusAreas in catalog', () => {",
+            "  for (const d of pm.response.json().domains) {",
+            "    pm.expect(d.focusAreas).to.not.exist;",
+            "  }",
+            "});"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/workspace/domains", "host": ["{{baseUrl}}"], "path": ["api","workspace","domains"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "4 — Chat: GET endpoints (canvas, history, suggested-prompts)",
+      "item": [
+        {
+          "name": "WS-007 — GET /chat/ai-strategy/canvas returns 5 focus areas",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('5 focus areas', () => pm.expect(pm.response.json().focusAreas).to.have.length(5));",
+            "pm.test('every focus area has id, title, description', () => {",
+            "  for (const fa of pm.response.json().focusAreas) {",
+            "    pm.expect(fa.id).to.exist;",
+            "    pm.expect(fa.title).to.exist;",
+            "    pm.expect(fa.description).to.exist;",
+            "  }",
+            "});"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/api/chat/ai-strategy/canvas", "host": ["{{baseUrl}}"], "path": ["api","chat","ai-strategy","canvas"] }
+          }
+        },
+        {
+          "name": "WS-008 — GET /chat/ai-strategy/history returns turns array",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('turns is an array', () => pm.expect(pm.response.json().turns).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/api/chat/ai-strategy/history?limit=50", "host": ["{{baseUrl}}"], "path": ["api","chat","ai-strategy","history"], "query": [{ "key": "limit", "value": "50" }] }
+          }
+        },
+        {
+          "name": "WS-009 — GET /chat/ai-strategy/suggested-prompts returns 4 prompts",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('4 prompts returned', () => pm.expect(pm.response.json().prompts).to.have.length(4));",
+            "pm.test('each prompt is a non-empty string', () => {",
+            "  for (const p of pm.response.json().prompts) {",
+            "    pm.expect(p).to.be.a('string').and.to.have.length.above(0);",
+            "  }",
+            "});"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/api/chat/ai-strategy/suggested-prompts", "host": ["{{baseUrl}}"], "path": ["api","chat","ai-strategy","suggested-prompts"] }
+          }
+        },
+        {
+          "name": "WS-010 — GET /chat/leadership/suggested-prompts returns 200 with empty array (disabled domain)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('empty prompts array for disabled domain', () => pm.expect(pm.response.json().prompts).to.have.length(0));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{baseUrl}}/api/chat/leadership/suggested-prompts", "host": ["{{baseUrl}}"], "path": ["api","chat","leadership","suggested-prompts"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "5 — Chat: POST /api/chat/:domainId/message",
+      "item": [
+        {
+          "name": "WS-011 — POST /chat/ai-strategy/message returns reply + canvasUpdates",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('reply is a non-empty string', () => {",
+            "  pm.expect(pm.response.json().reply).to.be.a('string').and.have.length.above(0);",
+            "});",
+            "pm.test('canvasUpdates is an array', () => {",
+            "  pm.expect(pm.response.json().canvasUpdates).to.be.an('array');",
+            "});",
+            "pm.test('conversationId is present', () => {",
+            "  pm.expect(pm.response.json().conversationId).to.exist;",
+            "});",
+            "pm.test('response time < 30s (Claude may be slow)', () => pm.expect(pm.response.responseTime).to.be.below(30000));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/chat/ai-strategy/message", "host": ["{{baseUrl}}"], "path": ["api","chat","ai-strategy","message"] },
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"What should our AI strategy focus on first given our current situation?\"\n}" }
+          }
+        },
+        {
+          "name": "WS-012 — POST /chat/ai-strategy/message empty message returns 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));",
+            "pm.test('error field present', () => pm.expect(pm.response.json().error).to.exist);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/chat/ai-strategy/message", "host": ["{{baseUrl}}"], "path": ["api","chat","ai-strategy","message"] },
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"\"\n}" }
+          }
+        },
+        {
+          "name": "WS-013 — POST /chat/leadership/message returns 403 (disabled domain)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 403', () => pm.response.to.have.status(403));",
+            "pm.test('error mentions Coming soon', () => {",
+            "  pm.expect(pm.response.json().error.toLowerCase()).to.include('coming soon');",
+            "});"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/chat/leadership/message", "host": ["{{baseUrl}}"], "path": ["api","chat","leadership","message"] },
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Hello\"\n}" }
+          }
+        },
+        {
+          "name": "WS-014 — POST /chat/unknown-domain/message returns 404",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 404', () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/chat/unknown-domain/message", "host": ["{{baseUrl}}"], "path": ["api","chat","unknown-domain","message"] },
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Hello\"\n}" }
+          }
+        },
+        {
+          "name": "WS-015 — POST /chat/ai-strategy/message without auth returns 401",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 401', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/chat/ai-strategy/message", "host": ["{{baseUrl}}"], "path": ["api","chat","ai-strategy","message"] },
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Hello\"\n}" }
+          }
+        }
+      ]
+    }
+
+  ]
+}

@@ -9,7 +9,7 @@ export default defineConfig({
     hookTimeout: 10000,
     reporters: ['verbose'],
     coverage: {
-      include: ['services/**', 'controllers/**'],
+      include: ['services/**', 'controllers/**', 'data/**'],
       reporter: ['text', 'lcov'],
     },
   },

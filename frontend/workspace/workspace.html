@@ -26,19 +26,24 @@
   </div>
 
   <!-- ── Main workspace ──────────────────────────────────────────────────── -->
-  <main id="ws-main" class="workspace-main" style="display:none" aria-labelledby="ws-title">
+  <main id="ws-main" class="workspace-main" style="display:none">
 
-    <header class="workspace-header">
+    <h1 class="ws-page-title">AI Transformation Workspace</h1>
+
+    <!-- User info card -->
+    <div class="ws-card ws-user-card">
       <p class="ws-brand-label">SoorgaAI</p>
-      <h1 id="ws-title" class="ws-welcome-heading">
-        Welcome, <span id="ws-welcome-name"></span>
-      </h1>
+      <p class="ws-welcome-heading">Welcome, <span id="ws-welcome-name"></span></p>
       <p id="ws-user-context" class="ws-user-context"></p>
-    </header>
+    </div>
 
-    <section class="domain-grid" aria-label="Transformation domains">
-      <!-- Injected by workspace.js -->
-    </section>
+    <!-- Domains card -->
+    <div class="ws-card ws-domains-card">
+      <h2 class="ws-domains-title">Transformation Domains</h2>
+      <section class="domain-grid" aria-label="Transformation domains">
+        <!-- Injected by workspace.js -->
+      </section>
+    </div>
 
   </main>
 

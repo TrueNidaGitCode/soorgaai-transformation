@@ -84,33 +84,65 @@
   padding: 3rem 2rem 4rem;
 }
 
-.workspace-header {
-  margin-bottom: 3rem;
+/* ── Page title ────────────────────────────────────────────────────────────── */
+
+.ws-page-title {
+  font-size: clamp(1.4rem, 2.5vw, 1.75rem);
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 1.25rem;
+  letter-spacing: -0.2px;
 }
 
+/* ── Cards ───���─────────────────────────────────────────────────────────────── */
+
+.ws-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  padding: 1.75rem 2rem;
+}
+
+.ws-user-card {
+  margin-bottom: 1.25rem;
+}
+
+/* ── User info inside card ─────────────────────────────────────────────────── */
+
 .ws-brand-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: #5CC5A7;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 
 .ws-welcome-heading {
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 800;
   color: #fff;
   line-height: 1.1;
-  letter-spacing: -0.4px;
-  margin: 0 0 10px;
+  letter-spacing: -0.3px;
+  margin: 0 0 6px;
 }
 
 .ws-user-context {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.45);
   margin: 0;
   font-weight: 500;
+}
+
+/* ── Domains card header ────────��──────────────────────────────────────────── */
+
+.ws-domains-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0 0 1.25rem;
 }
 
 /* ── Domain grid ───────────────────────────────────────────────────────────── */

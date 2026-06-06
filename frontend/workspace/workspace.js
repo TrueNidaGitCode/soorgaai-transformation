@@ -30,8 +30,16 @@ function showMain(state) {
   document.getElementById('ws-loading').style.display = 'none';
   document.getElementById('ws-main').style.display    = 'block';
 
-  const username = state.profile?.orgName || localStorage.getItem('username') || '';
-  document.getElementById('ws-username').textContent  = username;
+  const username = localStorage.getItem('username') || state.profile?.orgName || '';
+  const role     = state.profile?.role || '';
+  const industry = state.profile?.industryDomain || '';
+
+  document.getElementById('ws-username').textContent     = username;
+  document.getElementById('ws-welcome-name').textContent = username;
+
+  const contextEl = document.getElementById('ws-user-context');
+  const contextParts = [role, industry].filter(Boolean);
+  if (contextParts.length) contextEl.textContent = contextParts.join(' | ');
 
   renderDomainGrid(state.domains || []);
 }

@@ -1,37 +1,85 @@
 /* ============================================================
    SoorgaAI — Enterprise Page Styles
-   Extends global style.css and home.css
+   Extends global style.css and home.css (brand tokens + footer)
    ============================================================ */
 
-/* ── Seven transformation domain cards ──────────────────────── */
+/* ── Hero — centered single column ───────────────────────── */
+.ent-hero {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 80px 40px 72px;
+}
+
+.ent-hero h1 {
+  font-size: clamp(32px, 3.5vw, 52px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.ent-accent {
+  color: var(--brand-primary, #5CC5A7);
+}
+
+.ent-desc {
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  max-width: 640px;
+  margin-bottom: 40px;
+}
+
+/* ── Seven transformation domain cards ───────────────────── */
 .domain-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
 }
 
 .domain-card {
+  width: 185px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  text-align: center;
+  border-radius: 12px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   transition: border-color 0.25s, background 0.25s;
-  white-space: nowrap;
 }
 
-.domain-card:hover {
-  border-color: var(--brand-primary);
+.domain-card--active {
+  border-color: rgba(92, 197, 167, 0.35);
   background: rgba(92, 197, 167, 0.06);
 }
 
-/* 7th card spans remaining columns to balance the 4-3 grid */
-.domain-card:last-child {
-  grid-column: span 2;
+.domain-card:hover {
+  border-color: var(--brand-primary, #5CC5A7);
+  background: rgba(92, 197, 167, 0.08);
+}
+
+.domain-card__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.domain-card__status {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.domain-card__status--available {
+  color: var(--brand-primary, #5CC5A7);
+}
+
+.domain-card__status--soon {
+  color: rgba(255, 255, 255, 0.3);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -43,7 +91,7 @@
 }
 
 .value-prop__inner {
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -59,29 +107,55 @@
   font-size: 18px;
   line-height: 1.7;
   color: var(--text-secondary);
-  max-width: 680px;
+  max-width: 640px;
 }
 
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .domain-cards {
-    grid-template-columns: repeat(2, 1fr);
+  .ent-hero {
+    padding: 56px 24px 48px;
   }
 
-  .domain-card:last-child {
-    grid-column: span 2;
+  .domain-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-content: unset;
+  }
+
+  .domain-card {
+    width: auto;
   }
 
   .value-prop {
-    padding: 48px 20px;
+    padding: 48px 24px;
   }
 }
 
 @media (max-width: 480px) {
+  .ent-hero {
+    padding: 40px 16px 36px;
+  }
+
+  .ent-hero h1 {
+    font-size: 28px;
+  }
+
+  .ent-desc {
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+
   .domain-card {
-    font-size: 11px;
-    padding: 9px 10px;
+    padding: 14px 12px;
+  }
+
+  .domain-card__name {
+    font-size: 13px;
+  }
+
+  .value-prop {
+    padding: 40px 16px;
   }
 }

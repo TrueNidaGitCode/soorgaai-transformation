@@ -1,0 +1,87 @@
+/* ============================================================
+   SoorgaAI — Enterprise Page Styles
+   Extends global style.css and home.css
+   ============================================================ */
+
+/* ── Seven transformation domain cards ──────────────────────── */
+.domain-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.domain-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  transition: border-color 0.25s, background 0.25s;
+  white-space: nowrap;
+}
+
+.domain-card:hover {
+  border-color: var(--brand-primary);
+  background: rgba(92, 197, 167, 0.06);
+}
+
+/* 7th card spans remaining columns to balance the 4-3 grid */
+.domain-card:last-child {
+  grid-column: span 2;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VALUE PROPOSITION
+══════════════════════════════════════════════════════════ */
+.value-prop {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 64px 40px;
+}
+
+.value-prop__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.value-prop__headline {
+  font-size: clamp(24px, 2.4vw, 36px);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  letter-spacing: -0.3px;
+}
+
+.value-prop__body {
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-width: 680px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .domain-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .domain-card:last-child {
+    grid-column: span 2;
+  }
+
+  .value-prop {
+    padding: 48px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .domain-card {
+    font-size: 11px;
+    padding: 9px 10px;
+  }
+}

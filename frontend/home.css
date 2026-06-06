@@ -112,35 +112,42 @@
   max-width: 480px;
 }
 
-/* ── Seven transformation domain cards ──────────────────────── */
-.domain-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+/* ── Benefits mini cards (between description and CTA) ──────── */
+.benefits-cards {
+  display: flex;
+  gap: 12px;
   margin-bottom: 28px;
+  flex-wrap: wrap;
 }
 
-.domain-card {
+.benefit-card {
+  flex: 1;
+  min-width: 110px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 12px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: border-color 0.25s;
+}
+
+.benefit-card:hover { border-color: var(--brand-primary); }
+
+.benefit-icon { font-size: 20px; line-height: 1; }
+
+.benefit-label {
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text-primary);
-  text-align: center;
-  transition: border-color 0.25s, background 0.25s;
-  white-space: nowrap;
 }
 
-.domain-card:hover {
-  border-color: var(--brand-primary);
-  background: rgba(92, 197, 167, 0.06);
-}
-
-/* 7th card spans 2 columns to balance the 4-3 grid */
-.domain-card:last-child {
-  grid-column: span 2;
+.benefit-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  line-height: 1.45;
 }
 
 /* ── Hero CTA group ──────────────────────────────────────────── */
@@ -391,34 +398,6 @@ h2 {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   VALUE PROPOSITION
-══════════════════════════════════════════════════════════ */
-.value-prop {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 64px 40px;
-}
-
-.value-prop__inner {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.value-prop__headline {
-  font-size: clamp(24px, 2.4vw, 36px);
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 16px;
-  letter-spacing: -0.3px;
-}
-
-.value-prop__body {
-  font-size: 18px;
-  line-height: 1.7;
-  color: var(--text-secondary);
-  max-width: 680px;
-}
-
-/* ═══════════════════════════════════════════════════════════
    FOOTER
 ══════════════════════════════════════════════════════════ */
 .site-footer {
@@ -469,11 +448,6 @@ h2 {
   .hero__left h1 { font-size: 32px; }
 
   .hero__ctas { flex-direction: column; align-items: flex-start; }
-
-  .domain-cards { grid-template-columns: repeat(2, 1fr); }
-  .domain-card:last-child { grid-column: span 2; }
-
-  .value-prop { padding: 48px 20px; }
 
   .outcomes {
     padding: 20px 20px;

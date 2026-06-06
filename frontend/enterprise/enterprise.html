@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SoorgaAI Enterprise — Transform your organization into an AI-Fueled Enterprise across seven transformation domains.">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="SoorgaAI — Enterprise AI Transformation">
+  <meta property="og:description" content="Define enterprise AI strategy across seven transformation domains and enable every function to align, adapt, and execute consistently.">
+  <meta property="og:url"         content="https://soorgaai.com/enterprise/">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="SoorgaAI — Enterprise AI Transformation">
+  <meta name="twitter:description" content="Transform your organization into an AI-Fueled Enterprise.">
+
+  <title>SoorgaAI — Enterprise AI Transformation</title>
+
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../home.css">
+  <link rel="stylesheet" href="enterprise.css">
+
+  <script src="../login/config.js"></script>
+  <script type="module" src="../login/authState.js"></script>
+  <script type="module" src="../navbar/navbar.js"></script>
+  <script type="module" src="../index.js"></script>
+</head>
+<body data-nav-mode="anonymous">
+
+  <!-- Navbar -->
+  <div id="navbar-container" style="min-height:64px"></div>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════════════
+         HERO — 50/50 two-column layout
+         Left:  badge · headline · description · domain cards · CTA
+         Right: 5-stage AI Transformation Framework panel
+    ════════════════════════════════════════════════════ -->
+    <section class="hero" aria-labelledby="enterprise-heading">
+
+      <!-- ── Left column ──────────────────────────────── -->
+      <div class="hero__left">
+
+        <div class="hero__badge" role="img" aria-label="Product category">
+          AI Strategy Workspace for CTOs
+        </div>
+
+        <h1 id="enterprise-heading">
+          Transform Your Organization Into an<br>
+          <span class="hero__headline-accent">AI-Fueled Enterprise</span>
+        </h1>
+
+        <p class="hero__desc">
+          Define enterprise AI strategy across seven transformation domains and enable
+          every business and engineering function to align, adapt, and execute consistently.
+        </p>
+
+        <!-- Seven transformation domain cards -->
+        <div class="domain-cards" aria-label="Seven transformation domains">
+          <div class="domain-card">AI Strategy</div>
+          <div class="domain-card">Leadership</div>
+          <div class="domain-card">AI Use Cases</div>
+          <div class="domain-card">Data Readiness</div>
+          <div class="domain-card">Technology</div>
+          <div class="domain-card">Skills &amp; Workforce</div>
+          <div class="domain-card">Governance</div>
+        </div>
+
+        <div class="hero__ctas">
+          <button
+            id="cta-generate-roadmap"
+            class="cta-button cta-button--primary"
+            onclick="CTARouter.routeToWorkspace()"
+            data-cta="generate-roadmap"
+            aria-label="Generate My AI Roadmap"
+          >
+            Generate My AI Roadmap &rarr;
+          </button>
+          <a
+            href="/framework/framework.html"
+            class="cta-button cta-button--outline"
+            data-cta="explore-framework"
+          >
+            Explore Framework
+          </a>
+        </div>
+
+      </div>
+
+      <!-- ── Right column — framework panel ──────────── -->
+      <aside class="hero__right" aria-labelledby="stages-panel-heading">
+        <h2 id="stages-panel-heading" class="stages__title">
+          5-Stage AI Transformation Framework
+        </h2>
+        <p class="stages__desc">
+          A proven model used by technology and engineering organizations to measure,
+          benchmark, and accelerate AI adoption — from early experimentation to
+          enterprise-scale transformation.
+        </p>
+        <ol class="stages" aria-label="AI Maturity Stages">
+          <!-- Rendered by index.js -->
+        </ol>
+      </aside>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         VALUE PROPOSITION
+    ════════════════════════════════════════════════════ -->
+    <section class="value-prop" aria-labelledby="value-prop-heading">
+      <div class="value-prop__inner">
+        <h2 id="value-prop-heading" class="value-prop__headline">
+          Create Once. Adapt Everywhere.
+        </h2>
+        <p class="value-prop__body">
+          Enterprise AI strategy should not be reinvented by every department.
+          SoorgaAI enables organizations to define AI transformation at the enterprise level
+          and systematically adapt it across business and engineering domains.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════════════ -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2025 SoorgaAI. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
+    </div>
+  </footer>
+
+  <script src="../shared/ctaRouter.js"></script>
+
+</body>
+</html>

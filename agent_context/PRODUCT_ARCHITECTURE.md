@@ -540,6 +540,169 @@ The following are natural extension points for the next version:
 
 *Document generated from live codebase — May 2026*
 
+---
+
+## 16. Knowledge Base Architecture (SoorgaAI Intelligence Platform)
+
+**Added:** June 2026  
+**Scope:** Persistent enterprise AI transformation knowledge powering SoorgaAI agents
+
+---
+
+### 16.1 Overview
+
+The Knowledge Base is SoorgaAI's intelligence backbone. It provides structured,
+reusable knowledge that AI agents use to generate enterprise AI transformation guidance.
+
+It is distinct from the assessment engine knowledge base (`backend/trunida-backend/knowledge-base/`),
+which serves the dynamic assessment flow. The enterprise KB is a strategic intelligence layer
+designed for long-term reuse across multiple automotive organizations.
+
+**Root path:** `knowledge_base/automotive/`
+
+---
+
+### 16.2 Five-Layer Intelligence Architecture
+
+```
+Layer 1 — Core Assets
+│   Universal AI transformation principles.
+│   Industry-agnostic. Owned by SoorgaAI. Updated rarely.
+│   Path: enterprise_ai/AI_Strategy/Core/
+│
+Layer 2 — Industry Templates (Automotive)
+│   Automotive-specific application of Core principles.
+│   Owned by SoorgaAI. Updated periodically.
+│   Path: enterprise_ai/AI_Strategy/Automotive/
+│
+Layer 3 — Company Customization
+│   CTO adapts Automotive guidance to organization priorities.
+│   Owned by customer CTO. Per-company instance.
+│   Path: enterprise_ai/AI_Strategy/Templates/Company_AI_Strategy_Template.md
+│
+Layer 4 — Domain Consumption
+│   Engineering and business leaders execute company strategy.
+│   Owned by domain leaders. Per-domain instance.
+│   Path: enterprise_ai/AI_Strategy/Templates/Domain_AI_Strategy_Template.md
+│
+Layer 5 — Learning Feedback
+    Outcomes from company implementations inform Automotive document improvements.
+    Only mature cross-company patterns influence Core Assets.
+```
+
+---
+
+### 16.3 Folder Structure
+
+```
+knowledge_base/
+└── automotive/
+    ├── README.md                          ← Navigation map + retrieval sequence
+    │
+    ├── enterprise_ai/                     ← Seven SoorgaAI transformation domains
+    │   ├── README.md
+    │   ├── AI_Strategy/                   ← ✓ Fully implemented (v1.0)
+    │   │   ├── README.md                  ← Architecture map + governance rules
+    │   │   ├── Core/                      ← Universal principles (6 documents)
+    │   │   │   ├── AI_Strategy_Intelligence_Specification.md
+    │   │   │   ├── AI_Initiative_Leadership.md
+    │   │   │   ├── Business_Strategy_Alignment.md
+    │   │   │   ├── AI_Center_of_Excellence.md
+    │   │   │   ├── AI_Performance_Management.md
+    │   │   │   └── AI_Governance_Ethics.md
+    │   │   ├── Automotive/                ← Industry applications (6 documents)
+    │   │   │   ├── Automotive_AI_Strategy_Intelligence_Specification.md
+    │   │   │   ├── Automotive_AI_Initiative_Leadership.md
+    │   │   │   ├── Automotive_Business_Strategy_Alignment.md
+    │   │   │   ├── Automotive_AI_Center_of_Excellence.md
+    │   │   │   ├── Automotive_AI_Performance_Management.md
+    │   │   │   └── Automotive_AI_Governance_Ethics.md
+    │   │   └── Templates/                 ← Customization layer (2 documents)
+    │   │       ├── Company_AI_Strategy_Template.md
+    │   │       └── Domain_AI_Strategy_Template.md
+    │   ├── Leadership/README.md           ← Coming Soon
+    │   ├── AI_Use_Cases/README.md         ← Coming Soon
+    │   ├── Data_Readiness/README.md       ← Coming Soon
+    │   ├── Technology_Infrastructure/README.md  ← Coming Soon
+    │   ├── Skills_Workforce/README.md     ← Coming Soon
+    │   └── Governance_Security/README.md  ← Coming Soon
+    │
+    ├── business_domains/                  ← Automotive domain adaptations
+    │   ├── README.md
+    │   ├── Diagnostics/README.md
+    │   ├── ADAS/README.md
+    │   ├── Connectivity/README.md
+    │   ├── Infotainment/README.md
+    │   ├── Validation/README.md
+    │   ├── Manufacturing/README.md
+    │   └── SDV/README.md
+    │
+    ├── enterprise_patterns/               ← Reusable enterprise AI concepts
+    │   ├── README.md
+    │   ├── AI_CoE.md
+    │   ├── AI_Governance.md
+    │   ├── AI_ROI.md
+    │   ├── AI_Operating_Model.md
+    │   └── Change_Management.md
+    │
+    └── shared/                            ← Common automotive AI reference
+        ├── README.md
+        ├── Automotive_AI_Glossary.md
+        ├── Automotive_AI_Trends.md
+        ├── Regulations.md
+        └── Best_Practices.md
+```
+
+---
+
+### 16.4 AI Agent Retrieval Sequence
+
+```
+Query enters SoorgaAI AI Strategy agent
+        ↓
+1. Enterprise AI Domain intelligence
+   → enterprise_ai/AI_Strategy/Core/
+   → enterprise_ai/AI_Strategy/Automotive/
+        ↓
+2. Automotive Business Domain context
+   → business_domains/[relevant domain]/
+        ↓
+3. Enterprise Pattern
+   → enterprise_patterns/
+        ↓
+4. Shared Context
+   → shared/
+        ↓
+5. Generate organization-specific guidance
+   combining all retrieved context layers
+```
+
+---
+
+### 16.5 Knowledge Base Governance Rules
+
+| Rule | Description |
+|------|-------------|
+| No duplication | Automotive documents reference Core — never copy Core content |
+| Stable Core | Core documents change only when cross-company patterns mature |
+| Template ownership | Company and Domain templates are customer-owned, not SoorgaAI-owned |
+| Versioning | All documents carry a version number and layer declaration |
+| Retrieval order | Core → Automotive → Company → Domain (never reversed) |
+| Feedback loop | Company outcomes inform Automotive improvements; Automotive learnings inform Core |
+
+---
+
+### 16.6 Relationship to Assessment Engine KB
+
+| | Assessment Engine KB | Enterprise Intelligence KB |
+|-|---------------------|---------------------------|
+| **Path** | `backend/trunida-backend/knowledge-base/` | `knowledge_base/automotive/` |
+| **Format** | JSON + Markdown | Markdown only |
+| **Purpose** | Dynamic assessment question generation and scoring | Enterprise AI transformation strategy guidance |
+| **Consumer** | `kbRetrievalService.js` (RAG) | AI Strategy agent (future) |
+| **Scope** | AI maturity stages + focus areas | Full 7-domain enterprise transformation |
+| **Lifecycle** | Tied to assessment session | Long-lived, multi-company reuse |
+
 
 ---
 

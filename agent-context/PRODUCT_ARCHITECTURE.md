@@ -124,6 +124,45 @@ Uses `window.CONFIG.AUTH.VERIFY` (`GET /api/users/me`) — no new backend endpoi
 
 ---
 
+## Knowledge Base Architecture
+
+**Root:** `knowledge_base/automotive/`  
+**Purpose:** Enterprise AI transformation intelligence for SoorgaAI agents
+
+### Five-Layer Intelligence Model
+
+```
+Core Assets          → enterprise_ai/AI_Strategy/Core/        (universal principles)
+Automotive Layer     → enterprise_ai/AI_Strategy/Automotive/  (industry application)
+Company Template     → Templates/Company_AI_Strategy_Template.md (CTO customization)
+Domain Template      → Templates/Domain_AI_Strategy_Template.md  (execution)
+Learning Feedback    → outcomes → Automotive improvements → Core improvements
+```
+
+### Folder Map
+
+```
+knowledge_base/automotive/
+├── enterprise_ai/AI_Strategy/   ← ✓ Fully implemented
+│   ├── Core/                    ← 6 universal AI strategy documents
+│   ├── Automotive/              ← 6 automotive-specific extensions
+│   └── Templates/               ← Company + Domain customization templates
+├── enterprise_ai/[6 other domains]/   ← Coming Soon
+├── business_domains/[7 domains]/      ← Automotive domain READMEs
+├── enterprise_patterns/               ← AI_CoE, Governance, ROI, Operating Model, Change Mgmt
+└── shared/                            ← Glossary, Trends, Regulations, Best Practices
+```
+
+### Agent Retrieval Order
+`Core → Automotive → Business Domain → Enterprise Pattern → Shared → Generate guidance`
+
+### Governance
+- Automotive documents reference Core — never duplicate it
+- Core documents change only when cross-company patterns mature
+- Company and Domain templates are customer-owned
+
+---
+
 ## Vercel Routing
 
 `vercel.json` — `outputDirectory: frontend`. Explicit rewrite rules for each subdirectory; catch-all `/(.*) → /$1` at the bottom.

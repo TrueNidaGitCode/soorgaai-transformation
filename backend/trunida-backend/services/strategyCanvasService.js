@@ -1,0 +1,199 @@
+import fs   from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Navigate: services/ → trunida-backend/ → backend/ → project root → knowledge_base
+const AI_STRATEGY_PATH = path.resolve(
+  __dirname, '../../../knowledge_base/automotive/enterprise_ai/AI_Strategy'
+);
+
+// ── Filename mapping ──────────────────────────────────────────────────────────
+
+function toFilename(capabilityName) {
+  return capabilityName
+    .replace(/&/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
+function toCapabilityId(capabilityName) {
+  return capabilityName
+    .replace(/&/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .toLowerCase()
+    .replace(/^-|-$/g, '');
+}
+
+// ── Spec parsing ──────────────────────────────────────────────────────────────
+
+function extractCapabilities(specMarkdown) {
+  // Find the Knowledge Architecture table (header row starts with "| Domain")
+  const tableMatch = specMarkdown.match(
+    /\| Domain\s*\|[^\n]+\n\|[-\s|]+\n((?:\|[^\n]+\n?)+)/
+  );
+  if (!tableMatch) return [];
+
+  return tableMatch[1]
+    .trim()
+    .split('\n')
+    .map(row => {
+      const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+      return cells.length >= 2 ? { name: cells[0], objective: cells[1] } : null;
+    })
+    .filter(Boolean);
+}
+
+// ── Core doc parsing (numbered h1 pillars) ────────────────────────────────────
+
+function parsePillarSections(markdown) {
+  const lines = markdown.split('\n');
+  const pillars = [];
+  let current = null;
+  let currentSub = null;
+  let subsections = {};
+  let subLines = [];
+
+  function flushSub() {
+    if (currentSub !== null) {
+      subsections[currentSub] = subLines.join('\n').trim();
+      currentSub = null;
+      subLines = [];
+    }
+  }
+
+  function flushPillar() {
+    if (current) {
+      flushSub();
+      pillars.push({ title: current.title, subsections: { ...subsections } });
+      current = null;
+      subsections = {};
+    }
+  }
+
+  for (const line of lines) {
+    const numberedH1 = line.match(/^# (\d+)\.\s+(.+)/);
+    const otherH1    = !numberedH1 && line.match(/^# .+/);
+    const h2         = line.match(/^## (.+)/);
+
+    if (numberedH1) {
+      flushPillar();
+      current = { title: numberedH1[2].trim() };
+    } else if (otherH1 && current) {
+      flushPillar();
+    } else if (h2 && current) {
+      flushSub();
+      currentSub = h2[1].trim();
+    } else if (currentSub !== null) {
+      subLines.push(line);
+    }
+  }
+  flushPillar();
+
+  return pillars;
+}
+
+// ── Automotive doc parsing (h2 sections) ─────────────────────────────────────
+
+function parseIndustrySections(markdown) {
+  const lines = markdown.split('\n');
+  const sections = [];
+  let current = null;
+  let contentLines = [];
+
+  for (const line of lines) {
+    const h2 = line.match(/^## (.+)/);
+    if (h2) {
+      if (current) sections.push({ ...current, content: contentLines.join('\n').trim() });
+      current = { title: h2[1].trim() };
+      contentLines = [];
+    } else if (current) {
+      contentLines.push(line);
+    }
+  }
+  if (current) sections.push({ ...current, content: contentLines.join('\n').trim() });
+  return sections;
+}
+
+// Match a Core pillar to an Automotive section by title containment
+function findIndustryMatch(pillarTitle, industrySections) {
+  const lower = pillarTitle.toLowerCase();
+  return industrySections.find(s => s.title.toLowerCase().includes(lower)) || null;
+}
+
+// ── Content extractors ────────────────────────────────────────────────────────
+
+function extractBulletList(text) {
+  return text
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.startsWith('* ') || l.startsWith('- '))
+    .map(l => l.replace(/^[*\-]\s+/, ''));
+}
+
+function extractLeadershipQuestion(text) {
+  const match = text.match(/\*\*(.+?)\*\*/s);
+  return match ? match[1].trim() : text.replace(/\*\*/g, '').trim();
+}
+
+// ── In-memory cache for capabilities list ────────────────────────────────────
+
+let _capabilitiesCache = null;
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+export function getCapabilities() {
+  if (_capabilitiesCache) return _capabilitiesCache;
+
+  const specPath = path.join(AI_STRATEGY_PATH, 'Core', 'AI_Strategy_Intelligence_Specification.md');
+  const specContent = fs.readFileSync(specPath, 'utf-8');
+  const raw = extractCapabilities(specContent);
+
+  _capabilitiesCache = raw.map(({ name, objective }) => ({
+    id:        toCapabilityId(name),
+    name,
+    objective,
+  }));
+
+  return _capabilitiesCache;
+}
+
+export function getCapabilityBlueprint(capabilityId, industry = 'Automotive') {
+  const capabilities = getCapabilities();
+  const cap = capabilities.find(c => c.id === capabilityId);
+  if (!cap) throw new Error(`Capability not found: ${capabilityId}`);
+
+  const filename     = toFilename(cap.name);
+  const corePath     = path.join(AI_STRATEGY_PATH, 'Core', `${filename}.md`);
+  const industryPath = path.join(AI_STRATEGY_PATH, industry, `${industry}_${filename}.md`);
+
+  let coreContent     = '';
+  let industryContent = '';
+
+  try { coreContent     = fs.readFileSync(corePath, 'utf-8');     } catch { /* file missing */ }
+  try { industryContent = fs.readFileSync(industryPath, 'utf-8'); } catch { /* file missing */ }
+
+  const pillars         = parsePillarSections(coreContent);
+  const industrySections = industryContent ? parseIndustrySections(industryContent) : [];
+
+  const sections = pillars.map(pillar => {
+    const match = findIndustryMatch(pillar.title, industrySections);
+    return {
+      title:              pillar.title,
+      definition:         pillar.subsections['Definition']        || '',
+      keyPrinciples:      extractBulletList(pillar.subsections['Key Principles']    || ''),
+      leadershipQuestion: extractLeadershipQuestion(pillar.subsections['Leadership Question'] || ''),
+      industryContext:    match ? match.content : null,
+      source:             match ? 'both' : 'core',
+    };
+  });
+
+  return {
+    capabilityId,
+    capabilityName: cap.name,
+    industry,
+    sections,
+  };
+}

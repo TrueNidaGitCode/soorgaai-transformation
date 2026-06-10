@@ -320,6 +320,227 @@
   animation: spin 0.7s linear infinite;
 }
 
+/* ── Strategy Canvas: shared container ────────────────────────────────────── */
+
+.canvas-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* ── Canvas loading / error states ────────────────────────────────────────── */
+
+.canvas-loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.canvas-error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+/* ── Capability list ───────────────────────────────────────────────────────── */
+
+.capability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.capability-card {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.75rem;
+  padding: 0.95rem 1.1rem;
+  cursor: pointer;
+  text-align: left;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 0.75rem;
+  row-gap: 0.25rem;
+  transition: border-color 0.2s, background 0.2s;
+  color: inherit;
+  font-family: inherit;
+}
+
+.capability-card:hover {
+  background: rgba(92,197,167,0.07);
+  border-color: rgba(92,197,167,0.35);
+}
+
+.capability-card:focus-visible {
+  outline: 2px solid #5CC5A7;
+  outline-offset: 2px;
+}
+
+.capability-card__name {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+  letter-spacing: 0.01em;
+}
+
+.capability-card__objective {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.4;
+}
+
+.capability-card__arrow {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+  color: rgba(92,197,167,0.5);
+  font-size: 1rem;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.capability-card:hover .capability-card__arrow {
+  color: #5CC5A7;
+  transform: translateX(3px);
+}
+
+/* ── Blueprint view ────────────────────────────────────────────────────────── */
+
+.blueprint-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.blueprint-back-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0;
+  text-align: left;
+  transition: color 0.2s;
+  font-family: inherit;
+}
+
+.blueprint-back-btn:hover { color: #fff; }
+
+.blueprint-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.blueprint-capability-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.blueprint-industry-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #5CC5A7;
+  background: rgba(92,197,167,0.1);
+  border: 1px solid rgba(92,197,167,0.25);
+  border-radius: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.blueprint-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.blueprint-section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.blueprint-section--enriched {
+  border-color: rgba(92,197,167,0.18);
+}
+
+.blueprint-section__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.blueprint-section__definition {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.blueprint-section__principles {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.blueprint-section__principles li {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.5;
+}
+
+.blueprint-section__question {
+  font-size: 0.82rem;
+  font-style: italic;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+  padding-top: 0.25rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.blueprint-section__industry {
+  background: rgba(92,197,167,0.05);
+  border: 1px solid rgba(92,197,167,0.12);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.blueprint-section__industry-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.blueprint-section__industry p {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.55;
+  margin: 0;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {

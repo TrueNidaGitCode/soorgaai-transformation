@@ -33,10 +33,10 @@
 
     <!-- Canvas panel -->
     <section class="canvas-panel" aria-labelledby="canvas-heading">
-      <h2 id="canvas-heading" class="panel-heading">Strategy Canvas</h2>
-      <p class="panel-subheading">These focus areas evolve as you share context in the chat.</p>
-      <div id="canvas-focus-areas" class="focus-areas-list">
-        <!-- Injected by canvas.js -->
+      <h2 id="canvas-heading" class="panel-heading">AI Strategy Canvas</h2>
+      <p class="panel-subheading" id="canvas-subheading">Select a capability to explore its blueprint.</p>
+      <div id="canvas-content" class="canvas-content">
+        <!-- Injected by strategy-canvas.js -->
       </div>
     </section>
 
@@ -79,7 +79,7 @@
     </section>
   </main>
 
-  <script type="module" src="canvas.js"></script>
+  <script type="module" src="strategy-canvas.js"></script>
   <script type="module" src="chat.js"></script>
 </body>
 </html>

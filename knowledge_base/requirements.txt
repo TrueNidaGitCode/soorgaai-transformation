@@ -1,0 +1,15 @@
+# SoorgaAI Knowledge Base — Python Tool Dependencies
+#
+# Core loader (loader.py) — no external dependencies, stdlib only.
+#
+# Embedding Engine (embedding_engine.py) — install the provider you need:
+
+# OpenAI embeddings
+langchain-openai>=0.1.0
+
+# HuggingFace embeddings (local, no API key required)
+# langchain-community>=0.2.0
+# sentence-transformers>=2.7.0
+
+# Ollama embeddings (requires a running Ollama server)
+# langchain-community>=0.2.0

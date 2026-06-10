@@ -8,6 +8,7 @@ Usage (CLI):
     py knowledge_base/loader.py                          # default: AI_Strategy/
     py knowledge_base/loader.py path/to/any/kb/dir
     py knowledge_base/loader.py --metadata               # include per-document metadata
+    py knowledge_base/loader.py --catalog                # print knowledge catalog
 
 Usage (module):
     from knowledge_base.loader import MarkdownLoader
@@ -153,6 +154,62 @@ class MarkdownLoader:
         print(_DIVIDER)
         print(f"\nTotal Documents: {len(documents)}")
 
+    @staticmethod
+    def print_catalog(
+        documents: list[Document],
+        title: str = "SOORGAAI KNOWLEDGE CATALOG",
+        layer_order: list[str] | None = None,
+        capability_layers: set[str] | None = None,
+    ) -> None:
+        """
+        Print a structured knowledge catalog grouped by layer.
+
+        Parameters
+        ----------
+        documents:
+            Documents returned by load().
+        title:
+            Catalog heading.
+        layer_order:
+            Display order for layers. Defaults to Core → Automotive → Templates.
+        capability_layers:
+            Layers that show a "Capabilities:" sub-heading.
+            Defaults to {"Core", "Automotive"}.
+        """
+        if not documents:
+            print("No documents loaded.")
+            return
+
+        _layer_order   = layer_order       or ["Core", "Automotive", "Templates"]
+        _cap_layers    = capability_layers or {"Core", "Automotive"}
+        _SEPARATOR     = "-" * 16
+
+        # Group by layer, preserving load order; skip Root (infrastructure docs)
+        groups: dict[str, list[Document]] = {}
+        for doc in documents:
+            if doc.layer != "Root":
+                groups.setdefault(doc.layer, []).append(doc)
+
+        available = [layer for layer in _layer_order if layer in groups]
+
+        print(title)
+
+        for i, layer in enumerate(available):
+            print()
+            print(layer)
+            print()
+
+            if layer in _cap_layers:
+                print("Capabilities:")
+                print()
+
+            for doc in groups[layer]:
+                print(doc.capability)
+                print()
+
+            if i < len(available) - 1:
+                print(_SEPARATOR)
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
@@ -229,12 +286,20 @@ def main() -> None:
         action="store_true",
         help="Print per-document metadata in addition to the summary",
     )
+    parser.add_argument(
+        "--catalog",
+        action="store_true",
+        help="Print a structured knowledge catalog grouped by layer",
+    )
     args = parser.parse_args()
 
     loader = MarkdownLoader(args.directory)
     docs   = loader.load()
 
-    MarkdownLoader.print_summary(docs)
+    if args.catalog:
+        MarkdownLoader.print_catalog(docs)
+    else:
+        MarkdownLoader.print_summary(docs)
 
     if args.metadata:
         print()

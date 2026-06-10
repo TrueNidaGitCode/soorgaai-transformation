@@ -10,6 +10,8 @@ Usage (CLI):
     py knowledge_base/loader.py --metadata               # include per-document metadata
     py knowledge_base/loader.py --catalog                # print knowledge catalog
     py knowledge_base/loader.py --index                  # print capability index
+    py knowledge_base/loader.py --query "AI Initiative Leadership"
+    py knowledge_base/loader.py --query "Automotive AI Initiative Leadership"
 
 Usage (module):
     from knowledge_base.loader import MarkdownLoader
@@ -275,6 +277,111 @@ class CapabilityIndex:
         return [layer for layer in self.LAYER_ORDER if layer in available]
 
     # ------------------------------------------------------------------
+    # Query API
+    # ------------------------------------------------------------------
+
+    def query(self, text: str) -> list[Document]:
+        """
+        Return documents matching the query text.
+
+        The query may optionally start with a layer name to narrow results.
+
+        Examples
+        --------
+        index.query("AI Initiative Leadership")              # all layers
+        index.query("Automotive AI Initiative Leadership")   # Automotive only
+        index.query("Governance")                            # substring match
+        """
+        layer_filter, cap_query = self._parse_query(text)
+        return self._match_documents(cap_query, layer_filter)
+
+    def print_query_result(self, text: str) -> None:
+        """
+        Query the index and print the matched capability with its layers.
+
+        Output includes:
+        - The original query
+        - Detected layer filter (if any)
+        - Each matched capability and which layers contain it
+        - The matching document paths
+        """
+        layer_filter, cap_query = self._parse_query(text)
+        docs = self._match_documents(cap_query, layer_filter)
+
+        print(f"Query:  {text.strip()}")
+
+        if layer_filter:
+            print(f"Layer:  {layer_filter}")
+
+        if not docs:
+            print()
+            print("  No matching capability found.")
+            return
+
+        # Group results by capability (a substring query may match several)
+        matched_caps: dict[str, list[Document]] = {}
+        for doc in docs:
+            matched_caps.setdefault(doc.capability, []).append(doc)
+
+        for cap, cap_docs in matched_caps.items():
+            layers = [l for l in self.LAYER_ORDER if any(d.layer == l for d in cap_docs)]
+            print()
+            print(f"  Capability : {cap}")
+            print(f"  Layers     : {', '.join(layers)}")
+            print()
+            for doc in cap_docs:
+                print(f"    [{doc.layer:<12}] {doc.relative_path}")
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _parse_query(self, text: str) -> tuple[str, str]:
+        """
+        Detect an optional layer prefix in the query text.
+
+        Returns (layer_filter, capability_query).
+        layer_filter is an empty string when no layer is detected.
+
+        Example: "Automotive AI Initiative Leadership"
+                 → ("Automotive", "AI Initiative Leadership")
+        """
+        stripped = text.strip()
+        for layer in self.LAYER_ORDER:
+            prefix = layer + " "
+            if stripped.lower().startswith(prefix.lower()):
+                return layer, stripped[len(prefix):].strip()
+        return "", stripped
+
+    def _match_documents(self, cap_query: str, layer_filter: str) -> list[Document]:
+        """
+        Return documents whose capability matches cap_query, filtered by layer.
+
+        Matching strategy:
+        1. Case-insensitive exact match — tried first.
+        2. Case-insensitive substring match — used as fallback.
+        """
+        query_lower = cap_query.lower()
+
+        # Exact match (case-insensitive)
+        for cap, docs in self._index.items():
+            if cap.lower() == query_lower:
+                if layer_filter:
+                    return [d for d in docs if d.layer == layer_filter]
+                return list(docs)
+
+        # Substring match (case-insensitive)
+        matched: list[Document] = []
+        for cap, docs in self._index.items():
+            if query_lower in cap.lower():
+                if layer_filter:
+                    matched.extend(d for d in docs if d.layer == layer_filter)
+                else:
+                    matched.extend(docs)
+
+        return matched
+
+    # ------------------------------------------------------------------
     # Display
     # ------------------------------------------------------------------
 
@@ -371,12 +478,23 @@ def main() -> None:
         action="store_true",
         help="Print the capability index with available layers per capability",
     )
+    parser.add_argument(
+        "--query",
+        metavar="TEXT",
+        help=(
+            'Query the capability index. Optionally prefix with a layer name. '
+            'Examples: "AI Initiative Leadership", '
+            '"Automotive AI Initiative Leadership", "Governance"'
+        ),
+    )
     args = parser.parse_args()
 
     loader = MarkdownLoader(args.directory)
     docs   = loader.load()
 
-    if args.catalog:
+    if args.query:
+        CapabilityIndex(docs).print_query_result(args.query)
+    elif args.catalog:
         MarkdownLoader.print_catalog(docs)
     elif args.index:
         CapabilityIndex(docs).print_summary()

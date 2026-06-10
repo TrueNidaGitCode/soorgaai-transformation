@@ -2,11 +2,12 @@
 SoorgaAI — Markdown Knowledge Loader
 
 Recursively scans a Markdown knowledge base directory and loads documents
-into typed objects, categorised by subfolder.
+into typed objects with inferred metadata, categorised by subfolder.
 
 Usage (CLI):
     py knowledge_base/loader.py                          # default: AI_Strategy/
     py knowledge_base/loader.py path/to/any/kb/dir
+    py knowledge_base/loader.py --metadata               # include per-document metadata
 
 Usage (module):
     from knowledge_base.loader import MarkdownLoader
@@ -17,7 +18,7 @@ from __future__ import annotations
 
 import sys
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -27,12 +28,18 @@ from pathlib import Path
 
 @dataclass
 class Document:
-    """A single Markdown knowledge document."""
+    """A single Markdown knowledge document with inferred metadata."""
 
-    file_name: str       # e.g. "AI_Initiative_Leadership.md"
-    relative_path: str   # relative to the loader's base_dir
-    category: str        # "Core" | "Automotive" | "Templates" | "Root"
-    content: str         # raw Markdown text
+    # Core fields
+    file_name: str          # e.g. "Automotive_AI_Initiative_Leadership.md"
+    relative_path: str      # relative to the loader's base_dir
+    category: str           # "Core" | "Automotive" | "Templates" | "Root"
+    content: str            # raw Markdown text
+
+    # Metadata — inferred from folder structure and filename
+    title: str = field(default="")       # "Automotive AI Initiative Leadership"
+    layer: str = field(default="")       # "Automotive"  (mirrors category)
+    capability: str = field(default="")  # "AI Initiative Leadership"
 
 
 # ---------------------------------------------------------------------------
@@ -86,13 +93,21 @@ class MarkdownLoader:
                 print(f"[WARN] Could not read {md_file}: {exc}", file=sys.stderr)
                 continue
 
-            rel_path = md_file.relative_to(self.base_dir)
+            rel_path  = md_file.relative_to(self.base_dir)
+            category  = self._resolve_category(rel_path)
+            title     = _extract_title(md_file.name)
+            layer     = category
+            capability = _extract_capability(title, layer)
+
             documents.append(
                 Document(
                     file_name=md_file.name,
                     relative_path=str(rel_path),
-                    category=self._resolve_category(rel_path),
+                    category=category,
                     content=content,
+                    title=title,
+                    layer=layer,
+                    capability=capability,
                 )
             )
 
@@ -100,7 +115,7 @@ class MarkdownLoader:
 
     @staticmethod
     def print_summary(documents: list[Document]) -> None:
-        """Print a human-readable summary of loaded documents."""
+        """Print a compact overview: document list, category counts, total."""
         if not documents:
             print("No documents loaded.")
             return
@@ -116,6 +131,28 @@ class MarkdownLoader:
 
         print(f"\nTotal Documents: {len(documents)}")
 
+    @staticmethod
+    def print_metadata_summary(documents: list[Document]) -> None:
+        """Print per-document metadata inferred from folder structure and filename."""
+        if not documents:
+            print("No documents loaded.")
+            return
+
+        _DIVIDER = "  " + "-" * 50
+
+        print("Document Metadata:")
+        for doc in documents:
+            print(_DIVIDER)
+            print(f"  {doc.file_name}")
+            print(f"    title      : {doc.title}")
+            print(f"    category   : {doc.category}")
+            print(f"    layer      : {doc.layer}")
+            print(f"    capability : {doc.capability}")
+            print(f"    path       : {doc.relative_path}")
+
+        print(_DIVIDER)
+        print(f"\nTotal Documents: {len(documents)}")
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
@@ -129,12 +166,36 @@ class MarkdownLoader:
 
 
 # ---------------------------------------------------------------------------
-# Module-level helper
+# Module-level helpers
 # ---------------------------------------------------------------------------
 
 def _is_hidden(path: Path) -> bool:
     """Return True if any path component starts with '.'."""
     return any(part.startswith(".") for part in path.parts)
+
+
+def _extract_title(file_name: str) -> str:
+    """
+    Convert a filename into a human-readable title.
+
+    Example: "Automotive_AI_Initiative_Leadership.md" -> "Automotive AI Initiative Leadership"
+    """
+    return Path(file_name).stem.replace("_", " ")
+
+
+def _extract_capability(title: str, layer: str) -> str:
+    """
+    Strip the layer prefix from a title to isolate the core capability name.
+
+    Example: title="Automotive AI Initiative Leadership", layer="Automotive"
+             -> "AI Initiative Leadership"
+
+    If the title does not start with the layer name, the full title is returned.
+    """
+    prefix = f"{layer} "
+    if layer and title.startswith(prefix):
+        return title[len(prefix):]
+    return title
 
 
 # ---------------------------------------------------------------------------
@@ -163,11 +224,21 @@ def main() -> None:
         default=str(_build_default_dir()),
         help="Directory to scan",
     )
+    parser.add_argument(
+        "--metadata",
+        action="store_true",
+        help="Print per-document metadata in addition to the summary",
+    )
     args = parser.parse_args()
 
     loader = MarkdownLoader(args.directory)
-    docs = loader.load()
+    docs   = loader.load()
+
     MarkdownLoader.print_summary(docs)
+
+    if args.metadata:
+        print()
+        MarkdownLoader.print_metadata_summary(docs)
 
 
 if __name__ == "__main__":

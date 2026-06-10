@@ -9,6 +9,7 @@ Usage (CLI):
     py knowledge_base/loader.py path/to/any/kb/dir
     py knowledge_base/loader.py --metadata               # include per-document metadata
     py knowledge_base/loader.py --catalog                # print knowledge catalog
+    py knowledge_base/loader.py --index                  # print capability index
 
 Usage (module):
     from knowledge_base.loader import MarkdownLoader
@@ -223,6 +224,80 @@ class MarkdownLoader:
 
 
 # ---------------------------------------------------------------------------
+# Capability Index
+# ---------------------------------------------------------------------------
+
+class CapabilityIndex:
+    """
+    Query index built from a list of Documents, grouped by capability name.
+
+    Excludes Root-layer documents (infrastructure files such as README).
+
+    Example
+    -------
+    index = CapabilityIndex(docs)
+    index.get_capabilities()                         # sorted list of names
+    index.find_capability("AI Initiative Leadership") # documents for that cap
+    index.get_capability_layers("AI Initiative Leadership")  # ["Core", "Automotive"]
+    index.print_summary()
+    """
+
+    LAYER_ORDER: tuple[str, ...] = ("Core", "Automotive", "Templates")
+
+    def __init__(self, documents: list[Document]) -> None:
+        # capability name -> list of documents that provide it
+        self._index: dict[str, list[Document]] = {}
+        for doc in documents:
+            if doc.layer != "Root":
+                self._index.setdefault(doc.capability, []).append(doc)
+
+    # ------------------------------------------------------------------
+    # Query API
+    # ------------------------------------------------------------------
+
+    def get_capabilities(self) -> list[str]:
+        """Return a sorted list of unique capability names."""
+        return sorted(self._index)
+
+    def find_capability(self, name: str) -> list[Document]:
+        """
+        Return all documents that provide the named capability.
+        Returns an empty list if the capability is not found.
+        """
+        return list(self._index.get(name, []))
+
+    def get_capability_layers(self, name: str) -> list[str]:
+        """
+        Return the layers that contain the named capability, in layer order.
+        Returns an empty list if the capability is not found.
+        """
+        available = {doc.layer for doc in self._index.get(name, [])}
+        return [layer for layer in self.LAYER_ORDER if layer in available]
+
+    # ------------------------------------------------------------------
+    # Display
+    # ------------------------------------------------------------------
+
+    def print_summary(self) -> None:
+        """Print the capability index: each capability with its available layers."""
+        capabilities = self.get_capabilities()
+
+        if not capabilities:
+            print("No capabilities indexed.")
+            return
+
+        print("CAPABILITY INDEX")
+        print()
+        print(f"Capabilities: {len(capabilities)}")
+
+        for cap in capabilities:
+            layers = self.get_capability_layers(cap)
+            print()
+            print(cap)
+            print(f"  Layers: {', '.join(layers)}")
+
+
+# ---------------------------------------------------------------------------
 # Module-level helpers
 # ---------------------------------------------------------------------------
 
@@ -291,6 +366,11 @@ def main() -> None:
         action="store_true",
         help="Print a structured knowledge catalog grouped by layer",
     )
+    parser.add_argument(
+        "--index",
+        action="store_true",
+        help="Print the capability index with available layers per capability",
+    )
     args = parser.parse_args()
 
     loader = MarkdownLoader(args.directory)
@@ -298,6 +378,8 @@ def main() -> None:
 
     if args.catalog:
         MarkdownLoader.print_catalog(docs)
+    elif args.index:
+        CapabilityIndex(docs).print_summary()
     else:
         MarkdownLoader.print_summary(docs)
 

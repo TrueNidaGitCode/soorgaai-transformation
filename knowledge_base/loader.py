@@ -12,14 +12,17 @@ Usage (CLI):
     py knowledge_base/loader.py --index                  # print capability index
     py knowledge_base/loader.py --query "AI Initiative Leadership"
     py knowledge_base/loader.py --query "Automotive AI Initiative Leadership"
+    py knowledge_base/loader.py --chunks                 # print chunk summary
 
 Usage (module):
-    from knowledge_base.loader import MarkdownLoader
-    docs = MarkdownLoader("knowledge_base/automotive/enterprise_ai/AI_Strategy").load()
+    from knowledge_base.loader import MarkdownLoader, ChunkEngine
+    docs   = MarkdownLoader("knowledge_base/automotive/enterprise_ai/AI_Strategy").load()
+    chunks = ChunkEngine(docs).chunk()
 """
 
 from __future__ import annotations
 
+import re
 import sys
 from collections import Counter
 from dataclasses import dataclass, field
@@ -44,6 +47,19 @@ class Document:
     title: str = field(default="")       # "Automotive AI Initiative Leadership"
     layer: str = field(default="")       # "Automotive"  (mirrors category)
     capability: str = field(default="")  # "AI Initiative Leadership"
+
+
+@dataclass
+class Chunk:
+    """A semantic section extracted from a knowledge document."""
+
+    document_title: str   # e.g. "AI Initiative Leadership"
+    layer: str            # "Core" | "Automotive" | "Templates"
+    capability: str       # e.g. "AI Initiative Leadership"
+    section_title: str    # e.g. "Vision"
+    content: str          # text content of this section
+    relative_path: str    # path relative to base_dir
+    heading_level: int    # 1–6; 0 for preamble content before the first heading
 
 
 # ---------------------------------------------------------------------------
@@ -405,8 +421,146 @@ class CapabilityIndex:
 
 
 # ---------------------------------------------------------------------------
+# Chunk Engine
+# ---------------------------------------------------------------------------
+
+class ChunkEngine:
+    """
+    Splits Document objects into semantic section chunks using markdown headings.
+
+    Each heading boundary in a document creates one Chunk. Content before the
+    first heading is collected as a preamble chunk (heading_level=0).
+
+    Example
+    -------
+    engine = ChunkEngine(docs)
+    chunks = engine.chunk()
+    ChunkEngine.print_summary(chunks)
+    """
+
+    def __init__(self, documents: list[Document]) -> None:
+        self._documents = documents
+
+    # ------------------------------------------------------------------
+    # Public interface
+    # ------------------------------------------------------------------
+
+    def chunk(self) -> list[Chunk]:
+        """Return all chunks across all documents, in document order."""
+        chunks: list[Chunk] = []
+        for doc in self._documents:
+            chunks.extend(self._chunk_document(doc))
+        return chunks
+
+    @staticmethod
+    def print_summary(chunks: list[Chunk]) -> None:
+        """
+        Print a summary block per chunk.
+
+        Format:
+            Document:    <document_title>
+            Section:     <section_title>
+            Layer:       <layer>
+            Capability:  <capability>
+            ---
+        """
+        if not chunks:
+            print("No chunks generated.")
+            return
+
+        _SEP = "---"
+
+        print(f"Total Chunks: {len(chunks)}")
+        print()
+
+        for chunk in chunks:
+            print("Document:")
+            print(chunk.document_title)
+            print()
+            print("Section:")
+            print(chunk.section_title)
+            print()
+            print("Layer:")
+            print(chunk.layer)
+            print()
+            print("Capability:")
+            print(chunk.capability)
+            print()
+            print(_SEP)
+            print()
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _chunk_document(self, doc: Document) -> list[Chunk]:
+        """Split a single document into section chunks."""
+        chunks: list[Chunk] = []
+
+        for title, level, content in _parse_sections(doc.content):
+            if not content.strip():
+                continue
+            chunks.append(
+                Chunk(
+                    document_title=doc.title,
+                    layer=doc.layer,
+                    capability=doc.capability,
+                    # Preamble (level 0) inherits the document title
+                    section_title=title if title else doc.title,
+                    content=content,
+                    relative_path=doc.relative_path,
+                    heading_level=level,
+                )
+            )
+
+        return chunks
+
+
+# ---------------------------------------------------------------------------
 # Module-level helpers
 # ---------------------------------------------------------------------------
+
+_HEADING_RE = re.compile(r'^(#{1,6})\s+(.+)$')
+
+
+def _parse_sections(content: str) -> list[tuple[str, int, str]]:
+    """
+    Parse markdown content into (section_title, heading_level, section_content).
+
+    Content before the first heading is returned as a preamble entry with
+    section_title="" and heading_level=0.
+    """
+    lines = content.splitlines()
+    sections: list[tuple[str, int, str]] = []
+    current_title: str = ""
+    current_level: int = 0
+    current_lines: list[str] = []
+
+    for line in lines:
+        m = _HEADING_RE.match(line)
+        if m:
+            if current_title or current_lines:
+                sections.append((
+                    current_title,
+                    current_level,
+                    "\n".join(current_lines).strip(),
+                ))
+            current_title = m.group(2).strip()
+            current_level = len(m.group(1))
+            current_lines = []
+        else:
+            current_lines.append(line)
+
+    # Flush the last section
+    if current_title or current_lines:
+        sections.append((
+            current_title,
+            current_level,
+            "\n".join(current_lines).strip(),
+        ))
+
+    return sections
+
 
 def _is_hidden(path: Path) -> bool:
     """Return True if any path component starts with '.'."""
@@ -487,6 +641,11 @@ def main() -> None:
             '"Automotive AI Initiative Leadership", "Governance"'
         ),
     )
+    parser.add_argument(
+        "--chunks",
+        action="store_true",
+        help="Split documents into semantic chunks and print the chunk summary",
+    )
     args = parser.parse_args()
 
     loader = MarkdownLoader(args.directory)
@@ -494,6 +653,9 @@ def main() -> None:
 
     if args.query:
         CapabilityIndex(docs).print_query_result(args.query)
+    elif args.chunks:
+        chunks = ChunkEngine(docs).chunk()
+        ChunkEngine.print_summary(chunks)
     elif args.catalog:
         MarkdownLoader.print_catalog(docs)
     elif args.index:

@@ -1,13 +1,23 @@
 import UserProfile from '../models/UserProfile.js';
 import { getCapabilities, getCapabilityBlueprint } from '../services/strategyCanvasService.js';
 
-// Default industry while Automotive is the only supported option
 const DEFAULT_INDUSTRY = 'Automotive';
+
+// Maps UserProfile.industryDomain enum values to knowledge-base folder names.
+// All current sub-domains (ADAS, Diagnostics, etc.) belong to the Automotive layer.
+const INDUSTRY_FOLDER = {
+  General:     'Automotive',
+  Diagnostics: 'Automotive',
+  Infotainment: 'Automotive',
+  ADAS:        'Automotive',
+  Automotive:  'Automotive',
+};
 
 async function detectIndustry(userId) {
   try {
     const profile = await UserProfile.findOne({ userId }).lean();
-    return profile?.industryDomain || DEFAULT_INDUSTRY;
+    const domain  = profile?.industryDomain || DEFAULT_INDUSTRY;
+    return INDUSTRY_FOLDER[domain] ?? DEFAULT_INDUSTRY;
   } catch {
     return DEFAULT_INDUSTRY;
   }

@@ -77,14 +77,36 @@ describe('listCapabilities()', () => {
     expect(mockGetCapabilities).toHaveBeenCalledTimes(1);
   });
 
-  it('detects industry from user profile', async () => {
+  it('maps ADAS sub-domain to Automotive knowledge-base folder', async () => {
     mockProfileFindOne.mockReturnValue({
-      lean: () => Promise.resolve({ industryDomain: 'Manufacturing' }),
+      lean: () => Promise.resolve({ industryDomain: 'ADAS' }),
     });
     const { req, res } = makeReqRes();
     await listCapabilities(req, res);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ industry: 'Manufacturing' }),
+      expect.objectContaining({ industry: 'Automotive' }),
+    );
+  });
+
+  it('maps Diagnostics sub-domain to Automotive knowledge-base folder', async () => {
+    mockProfileFindOne.mockReturnValue({
+      lean: () => Promise.resolve({ industryDomain: 'Diagnostics' }),
+    });
+    const { req, res } = makeReqRes();
+    await listCapabilities(req, res);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ industry: 'Automotive' }),
+    );
+  });
+
+  it('maps General sub-domain to Automotive knowledge-base folder', async () => {
+    mockProfileFindOne.mockReturnValue({
+      lean: () => Promise.resolve({ industryDomain: 'General' }),
+    });
+    const { req, res } = makeReqRes();
+    await listCapabilities(req, res);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ industry: 'Automotive' }),
     );
   });
 

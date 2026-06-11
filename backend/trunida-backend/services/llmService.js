@@ -7,14 +7,23 @@
  * code changes needed.
  *
  * Supported providers:
- *   claude  — Anthropic claude-sonnet-4-6 (default)
+ *   claude  — Anthropic (default model: claude-sonnet-4-6)
+ *   openai  — OpenAI    (default model: gpt-4o)
+ *
+ * Switch provider: set LLM_PROVIDER=openai in Railway Variables.
+ * Override model:  set ADVISOR_MODEL=gpt-4o-mini  (or any valid model ID).
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import OpenAI    from 'openai';
 
-const DEFAULT_PROVIDER = process.env.LLM_PROVIDER || 'claude';
-const DEFAULT_MODEL    = process.env.ADVISOR_MODEL || 'claude-sonnet-4-6';
+const DEFAULT_PROVIDER   = process.env.LLM_PROVIDER || 'claude';
 const DEFAULT_MAX_TOKENS = 1500;
+
+const DEFAULT_MODELS = {
+  claude: process.env.ADVISOR_MODEL || 'claude-sonnet-4-6',
+  openai: process.env.ADVISOR_MODEL || 'gpt-4o',
+};
 
 // ── Provider implementations ──────────────────────────────────────────────────
 
@@ -26,7 +35,7 @@ const PROVIDERS = {
 
       const client = new Anthropic({ apiKey });
       const resp   = await client.messages.create({
-        model:      model || DEFAULT_MODEL,
+        model:      model || DEFAULT_MODELS.claude,
         max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
         system:     systemPrompt,
         messages:   [{ role: 'user', content: userMessage }],
@@ -36,6 +45,29 @@ const PROVIDERS = {
         text:         resp.content[0]?.text || '',
         inputTokens:  resp.usage?.input_tokens  || 0,
         outputTokens: resp.usage?.output_tokens || 0,
+      };
+    },
+  },
+
+  openai: {
+    async generate({ systemPrompt, userMessage, model, maxTokens }) {
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) throw new Error('OPENAI_API_KEY is not configured.');
+
+      const client = new OpenAI({ apiKey });
+      const resp   = await client.chat.completions.create({
+        model:      model || DEFAULT_MODELS.openai,
+        max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userMessage  },
+        ],
+      });
+
+      return {
+        text:         resp.choices[0]?.message?.content || '',
+        inputTokens:  resp.usage?.prompt_tokens     || 0,
+        outputTokens: resp.usage?.completion_tokens || 0,
       };
     },
   },

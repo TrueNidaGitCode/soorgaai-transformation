@@ -989,6 +989,278 @@
   gap: 0.35rem;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sprint 17 — Blueprint Lifecycle Management
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Status badges ─────────────────────────────────────────────────────────── */
+
+.blueprint-section__badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.status-badge {
+  font-size: 0.63rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.status-badge--template {
+  color: rgba(255,255,255,0.38);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.status-badge--working-draft {
+  color: #f0a832;
+  background: rgba(240,168,50,0.1);
+  border: 1px solid rgba(240,168,50,0.28);
+}
+
+.status-badge--approved {
+  color: #5CC5A7;
+  background: rgba(92,197,167,0.12);
+  border: 1px solid rgba(92,197,167,0.32);
+}
+
+/* ── Source badges ─────────────────────────────────────────────────────────── */
+
+.source-badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.source-badge--core {
+  color: rgba(140,175,220,0.9);
+  background: rgba(100,140,210,0.1);
+  border: 1px solid rgba(100,140,210,0.2);
+}
+
+.source-badge--industry {
+  color: rgba(92,197,167,0.85);
+  background: rgba(92,197,167,0.08);
+  border: 1px solid rgba(92,197,167,0.18);
+}
+
+.source-badge--user-modified {
+  color: #f0a832;
+  background: rgba(240,168,50,0.08);
+  border: 1px solid rgba(240,168,50,0.2);
+}
+
+/* ── Section status modifiers ──────────────────────────────────────────────── */
+
+.blueprint-section--working-draft {
+  border-color: rgba(240,168,50,0.25) !important;
+}
+
+.blueprint-section--approved {
+  border-color: rgba(92,197,167,0.4) !important;
+  background: rgba(92,197,167,0.04) !important;
+}
+
+/* ── Section action buttons (Approve / Reset) ──────────────────────────────── */
+
+.blueprint-section__section-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.section-action-btn {
+  border-radius: 0.45rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.3rem 0.85rem;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.section-action-btn--approve {
+  background: rgba(92,197,167,0.12);
+  border: 1px solid rgba(92,197,167,0.35);
+  color: #5CC5A7;
+}
+.section-action-btn--approve:hover {
+  background: rgba(92,197,167,0.22);
+  border-color: #5CC5A7;
+}
+
+.section-action-btn--reset {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.4);
+}
+.section-action-btn--reset:hover {
+  border-color: rgba(255,107,107,0.4);
+  color: rgba(255,107,107,0.75);
+}
+
+/* ── Progress bar (per-capability) ────────────────────────────────────────── */
+
+.blueprint-progress {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.65rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-bottom: 0.5rem;
+}
+
+.blueprint-progress__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.blueprint-progress__item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.blueprint-progress__dot {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.3);
+  width: 1rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.blueprint-progress__dot--approved {
+  color: #5CC5A7;
+}
+
+.blueprint-progress__dot--draft {
+  color: #f0a832;
+}
+
+.blueprint-progress__name {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.65);
+  flex: 1;
+}
+
+.blueprint-progress__status {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.3);
+  text-align: right;
+}
+
+.blueprint-progress__track {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.blueprint-progress__bar {
+  height: 100%;
+  background: #5CC5A7;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  min-width: 0;
+}
+
+.blueprint-progress__label {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+  text-align: right;
+}
+
+/* ── Company Snapshot card ─────────────────────────────────────────────────── */
+
+.snapshot-card {
+  background: rgba(92,197,167,0.05);
+  border: 1px solid rgba(92,197,167,0.18);
+  border-radius: 0.65rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.snapshot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.snapshot-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.snapshot-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.snapshot-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.snapshot-stat__value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.snapshot-stat__label {
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.snapshot-bar-wrapper {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.snapshot-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #5CC5A7, #4ab396);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+  min-width: 0;
+}
+
+.snapshot-pct {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+  text-align: right;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {

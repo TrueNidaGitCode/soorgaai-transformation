@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Strategy Canvas Module (Sprint 14.1)
+ * SoorgaAI — Strategy Canvas Module (Sprint 14.1 / 15)
  *
  * Dynamically builds the AI Strategy Canvas from the Intelligence Specification.
  *
@@ -7,9 +7,14 @@
  *   list      — capability cards derived from the spec's Knowledge Architecture
  *   blueprint — sections of a selected capability (Core + Industry merged)
  *
- * Dispatches 'canvas:ready' when the initial capability list is loaded so
- * chat.js can coordinate the layout reveal.
- * Exposes window.Canvas for backward-compatibility with chat.js.
+ * Dispatches:
+ *   'canvas:ready'       — after initial capability list loads (coordinates layout reveal)
+ *   'blueprint:loaded'   — after a capability blueprint loads (detail: { capabilityId, blueprint })
+ *   'blueprint:cleared'  — when the user returns to the capability list
+ *
+ * Exposes:
+ *   window.StrategyCanvas.getCurrentContext() — current { capabilityId, blueprint } or null
+ *   window.Canvas                             — legacy no-op for backward compat
  */
 
 const API_BASE = window.CONFIG?.API_BASE
@@ -19,6 +24,10 @@ const API_BASE = window.CONFIG?.API_BASE
 
 function getToken()   { return localStorage.getItem('token'); }
 function getDomainId() { return new URLSearchParams(window.location.search).get('domain') || 'ai-strategy'; }
+
+// ── Session context (shared with advisor.js via window.StrategyCanvas) ────────
+
+let _currentContext = null; // { capabilityId, blueprint }
 
 // ── Render helpers ────────────────────────────────────────────────────────────
 
@@ -130,6 +139,10 @@ function renderLoading(container) {
 async function loadCapabilities(container) {
   renderLoading(container);
 
+  // Clear session context when returning to list
+  _currentContext = null;
+  document.dispatchEvent(new CustomEvent('blueprint:cleared'));
+
   const token = getToken();
   if (!token) {
     window.location.href = `/login/login.html?redirect=/domain/domain.html?domain=${getDomainId()}`;
@@ -147,7 +160,6 @@ async function loadCapabilities(container) {
 
     const { capabilities } = await resp.json();
 
-    // Update panel subheading for list state
     const sub = document.getElementById('canvas-subheading');
     if (sub) sub.textContent = 'Select a capability to explore its blueprint.';
 
@@ -173,7 +185,10 @@ async function loadBlueprint(capabilityId, container) {
 
     const blueprint = await resp.json();
 
-    // Update panel subheading for blueprint state
+    // Store session context — advisor.js reads this via window.StrategyCanvas
+    _currentContext = { capabilityId, blueprint };
+    document.dispatchEvent(new CustomEvent('blueprint:loaded', { detail: _currentContext }));
+
     const sub = document.getElementById('canvas-subheading');
     if (sub) sub.textContent = 'Core and industry frameworks merged into your capability blueprint.';
 
@@ -182,7 +197,6 @@ async function loadBlueprint(capabilityId, container) {
   } catch (err) {
     console.error('loadBlueprint error:', err);
     renderError('Failed to load blueprint. Please try again.', container);
-    // Fall back to capability list after a short delay
     setTimeout(() => loadCapabilities(container), 2000);
   }
 }
@@ -240,6 +254,12 @@ async function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 
-// Backward-compatibility: chat.js calls window.Canvas.updateFocusArea for
-// legacy canvas updates — no-op here since the strategy canvas is read-only.
+// ── Global context API ────────────────────────────────────────────────────────
+
+// advisor.js reads this to know which capability + blueprint is active.
+window.StrategyCanvas = {
+  getCurrentContext: () => _currentContext,
+};
+
+// Backward-compat: legacy canvas.js contract kept for any references in chat.js.
 window.Canvas = { updateFocusArea: () => {} };

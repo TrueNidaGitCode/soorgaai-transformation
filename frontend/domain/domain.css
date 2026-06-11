@@ -541,6 +541,108 @@
   margin: 0;
 }
 
+/* ── Advisor panel header ──────────────────────────────────────────────────── */
+
+.advisor-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+
+.advisor-panel-header .panel-heading { margin: 0; }
+
+.advisor-context-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5CC5A7;
+  background: rgba(92,197,167,0.1);
+  border: 1px solid rgba(92,197,167,0.25);
+  border-radius: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Advisor response card ─────────────────────────────────────────────────── */
+
+.advisor-response {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(92,197,167,0.2);
+  border-radius: 0.85rem;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  align-self: flex-start;
+  width: 100%;
+}
+
+.advisor-response__header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-wrap: wrap;
+}
+
+.advisor-response__capability {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.75);
+}
+
+.advisor-response__industry-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #5CC5A7;
+  background: rgba(92,197,167,0.1);
+  border: 1px solid rgba(92,197,167,0.2);
+  border-radius: 0.3rem;
+  padding: 0.15rem 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.advisor-response__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.advisor-response__section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.advisor-response__section-body {
+  font-size: 0.87rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.advisor-response__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.advisor-response__list li {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.5;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {

@@ -40,14 +40,19 @@
       </div>
     </section>
 
-    <!-- Chat panel -->
-    <section class="chat-panel" aria-labelledby="chat-heading">
-      <h2 id="chat-heading" class="panel-heading">AI Strategy Advisor</h2>
-      <p class="panel-subheading">Ask anything about your AI strategy. I'll help you think it through.</p>
+    <!-- Advisor panel -->
+    <section class="chat-panel" aria-labelledby="advisor-heading">
+      <div class="advisor-panel-header">
+        <h2 id="advisor-heading" class="panel-heading">AI Strategy Advisor</h2>
+        <div id="advisor-context" class="advisor-context-badge" style="display:none" aria-live="polite">
+          <!-- Injected by advisor.js: "AI Initiative Leadership · Automotive" -->
+        </div>
+      </div>
+      <p id="advisor-subheading" class="panel-subheading">Select a capability from the canvas to start asking questions.</p>
 
       <!-- Suggested prompts -->
       <div id="suggested-prompts" class="suggested-prompts" aria-label="Suggested questions">
-        <!-- Injected by chat.js -->
+        <!-- Injected by advisor.js -->
       </div>
 
       <!-- Chat messages -->
@@ -80,6 +85,6 @@
   </main>
 
   <script type="module" src="strategy-canvas.js"></script>
-  <script type="module" src="chat.js"></script>
+  <script type="module" src="advisor.js"></script>
 </body>
 </html>

@@ -110,6 +110,8 @@ vi.mock('fs', () => ({
 
 // ── Mock configuration ────────────────────────────────────────────────────────
 
+const STUB_RELATED_MD = '# Business Strategy Alignment\n\nRelated capability content.';
+
 function setupFsMocks({ missingIndustry = false, missingCore = false } = {}) {
   mockReadFileSync.mockImplementation((filePath) => {
     const p = String(filePath);
@@ -117,6 +119,8 @@ function setupFsMocks({ missingIndustry = false, missingCore = false } = {}) {
     if (!missingCore && p.includes('Automotive_AI_Initiative_Leadership.md'))
       return missingIndustry ? (() => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }); })() : AUTOMOTIVE_LEADERSHIP_MD;
     if (!missingCore && p.includes('AI_Initiative_Leadership.md')) return CORE_LEADERSHIP_MD;
+    // Related capability files used by readRelatedCapabilityContent
+    if (p.includes('Business_Strategy_Alignment.md')) return STUB_RELATED_MD;
     throw Object.assign(new Error(`ENOENT: ${filePath}`), { code: 'ENOENT' });
   });
 }
@@ -323,6 +327,108 @@ describe('strategyCanvasService', () => {
       expect(titles).not.toContain('Key Takeaways');
       expect(titles).not.toContain('Core Principles');
       expect(titles).not.toContain('AI Initiative Leadership');
+    });
+  });
+
+  // ── readCapabilityContent ───────────────────────────────────────────────────
+
+  describe('readCapabilityContent()', () => {
+    it('returns coreContent, industryContent, and capabilityName', () => {
+      const result = service.readCapabilityContent('ai-initiative-leadership', 'Automotive');
+      expect(result).toHaveProperty('coreContent');
+      expect(result).toHaveProperty('industryContent');
+      expect(result).toHaveProperty('capabilityName', 'AI Initiative Leadership');
+    });
+
+    it('coreContent contains the core document markdown', () => {
+      const { coreContent } = service.readCapabilityContent('ai-initiative-leadership', 'Automotive');
+      expect(coreContent).toContain('AI Initiative Leadership');
+      expect(coreContent.length).toBeGreaterThan(0);
+    });
+
+    it('industryContent contains the automotive document markdown', () => {
+      const { industryContent } = service.readCapabilityContent('ai-initiative-leadership', 'Automotive');
+      expect(industryContent).toContain('Automotive');
+      expect(industryContent.length).toBeGreaterThan(0);
+    });
+
+    it('returns empty strings when files are missing', async () => {
+      vi.resetModules();
+      mockReadFileSync.mockImplementation((filePath) => {
+        const p = String(filePath);
+        if (p.includes('AI_Strategy_Intelligence_Specification.md')) return SPEC_MD;
+        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+      });
+      const fresh = await import('../services/strategyCanvasService.js');
+      const { coreContent, industryContent } = fresh.readCapabilityContent('ai-initiative-leadership', 'Automotive');
+      expect(coreContent).toBe('');
+      expect(industryContent).toBe('');
+    });
+
+    it('returns empty strings for an unknown capability id', () => {
+      const { coreContent, industryContent, capabilityName } =
+        service.readCapabilityContent('unknown-id', 'Automotive');
+      expect(coreContent).toBe('');
+      expect(industryContent).toBe('');
+      expect(capabilityName).toBe('');
+    });
+  });
+
+  // ── readSpecContent ─────────────────────────────────────────────────────────
+
+  describe('readSpecContent()', () => {
+    it('returns the spec markdown string', () => {
+      const content = service.readSpecContent();
+      expect(typeof content).toBe('string');
+      expect(content.length).toBeGreaterThan(0);
+    });
+
+    it('reads the AI_Strategy_Intelligence_Specification.md file', () => {
+      service.readSpecContent();
+      expect(mockReadFileSync).toHaveBeenCalledWith(
+        expect.stringContaining('AI_Strategy_Intelligence_Specification.md'),
+        'utf-8',
+      );
+    });
+
+    it('returns empty string when spec file is missing', async () => {
+      vi.resetModules();
+      mockReadFileSync.mockImplementation(() => {
+        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+      });
+      const fresh = await import('../services/strategyCanvasService.js');
+      expect(fresh.readSpecContent()).toBe('');
+    });
+  });
+
+  // ── readRelatedCapabilityContent ────────────────────────────────────────────
+
+  describe('readRelatedCapabilityContent()', () => {
+    it('returns an array of related capability objects', () => {
+      const related = service.readRelatedCapabilityContent('ai-initiative-leadership');
+      expect(Array.isArray(related)).toBe(true);
+    });
+
+    it('excludes the specified capability from the results', () => {
+      const related = service.readRelatedCapabilityContent('ai-initiative-leadership');
+      const ids = related.map(r => r.id);
+      expect(ids).not.toContain('ai-initiative-leadership');
+    });
+
+    it('each item has id, name, and content fields', () => {
+      const related = service.readRelatedCapabilityContent('ai-initiative-leadership');
+      for (const item of related) {
+        expect(item).toHaveProperty('id');
+        expect(item).toHaveProperty('name');
+        expect(item).toHaveProperty('content');
+        expect(typeof item.content).toBe('string');
+      }
+    });
+
+    it('includes the other capability from the spec fixture', () => {
+      const related = service.readRelatedCapabilityContent('ai-initiative-leadership');
+      const names = related.map(r => r.name);
+      expect(names).toContain('Business Strategy Alignment');
     });
   });
 });

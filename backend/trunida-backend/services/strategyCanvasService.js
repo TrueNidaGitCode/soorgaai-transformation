@@ -160,6 +160,39 @@ export function getCapabilities() {
   return _capabilitiesCache;
 }
 
+// ── Raw document readers (used by advisorService) ────────────────────────────
+
+export function readCapabilityContent(capabilityId, industry = 'Automotive') {
+  const capabilities = getCapabilities();
+  const cap = capabilities.find(c => c.id === capabilityId);
+  if (!cap) return { coreContent: '', industryContent: '', capabilityName: '' };
+
+  const filename     = toFilename(cap.name);
+  const corePath     = path.join(AI_STRATEGY_PATH, 'Core', `${filename}.md`);
+  const industryPath = path.join(AI_STRATEGY_PATH, industry, `${industry}_${filename}.md`);
+
+  let coreContent = '', industryContent = '';
+  try { coreContent     = fs.readFileSync(corePath, 'utf-8');     } catch { /* missing */ }
+  try { industryContent = fs.readFileSync(industryPath, 'utf-8'); } catch { /* missing */ }
+
+  return { coreContent, industryContent, capabilityName: cap.name };
+}
+
+export function readSpecContent() {
+  const specPath = path.join(AI_STRATEGY_PATH, 'Core', 'AI_Strategy_Intelligence_Specification.md');
+  try { return fs.readFileSync(specPath, 'utf-8'); } catch { return ''; }
+}
+
+export function readRelatedCapabilityContent(excludeCapabilityId) {
+  const capabilities = getCapabilities().filter(c => c.id !== excludeCapabilityId);
+  return capabilities.map(cap => {
+    const corePath = path.join(AI_STRATEGY_PATH, 'Core', `${toFilename(cap.name)}.md`);
+    let content = '';
+    try { content = fs.readFileSync(corePath, 'utf-8'); } catch { /* missing */ }
+    return content ? { id: cap.id, name: cap.name, content } : null;
+  }).filter(Boolean);
+}
+
 export function getCapabilityBlueprint(capabilityId, industry = 'Automotive') {
   const capabilities = getCapabilities();
   const cap = capabilities.find(c => c.id === capabilityId);

@@ -22,7 +22,12 @@ export async function ask(req, res) {
   } catch (err) {
     console.error('advisor ask error:', err);
 
-    if (err.message?.includes('not configured')) {
+    // 503: all providers unavailable (missing keys, credits, outages)
+    const isUnavailable =
+      err.message?.includes('not configured') ||
+      err.message?.includes('All LLM providers') ||
+      err.message?.includes('No valid LLM providers');
+    if (isUnavailable) {
       return res.status(503).json({ error: 'AI Advisor is not available. Please try again later.' });
     }
     return res.status(500).json({ error: 'Failed to generate advisor response.' });

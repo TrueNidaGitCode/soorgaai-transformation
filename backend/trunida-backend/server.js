@@ -91,6 +91,31 @@ app.get("/", (req, res) => {
     });
 });
 
+// ✅ LLM provider diagnostic — shows which keys are configured (values never exposed)
+app.get("/api/llm-status", (req, res) => {
+    const chain = process.env.PROVIDER_CHAIN
+        ? process.env.PROVIDER_CHAIN.split(",").map(p => p.trim())
+        : process.env.LLM_PROVIDER
+            ? [process.env.LLM_PROVIDER]
+            : ["gemini", "claude", "openai"];
+
+    res.json({
+        providerChain:    chain,
+        keys: {
+            GOOGLE_API_KEY:    !!process.env.GOOGLE_API_KEY,
+            GEMINI_API_KEY:    !!process.env.GEMINI_API_KEY,
+            ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
+            OPENAI_API_KEY:    !!process.env.OPENAI_API_KEY,
+        },
+        overrides: {
+            LLM_PROVIDER:   process.env.LLM_PROVIDER    || null,
+            PROVIDER_CHAIN: process.env.PROVIDER_CHAIN  || null,
+            GEMINI_MODEL:   process.env.GEMINI_MODEL     || null,
+            ADVISOR_MODEL:  process.env.ADVISOR_MODEL    || null,
+        },
+    });
+});
+
 // ✅ Graceful Shutdown
 const gracefulShutdown = () => {
     console.log("🔴 Shutting down server... Closing MongoDB connection.");

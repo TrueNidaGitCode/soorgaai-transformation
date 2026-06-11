@@ -1,14 +1,23 @@
 /**
- * SoorgaAI — AI Strategy Advisor Module (Sprint 15)
+ * SoorgaAI — AI Strategy Advisor Module (Sprint 15 / 16)
  *
- * Implements the right-panel AI Advisor. Reads the current capability context
- * from window.StrategyCanvas (set by strategy-canvas.js) and sends questions
- * to POST /api/strategy-canvas/advisor/ask.
+ * Right-panel AI collaboration interface.
  *
- * The advisor is context-aware: every question is answered in the context of
- * the currently selected capability and blueprint. No conversation is persisted.
+ * Two operating modes:
  *
- * Coordinates layout reveal with strategy-canvas.js via the 'canvas:ready' event.
+ *   GENERAL MODE   — capability selected, no section active
+ *                    Questions go to POST /advisor/ask
+ *                    Returns structured executive guidance
+ *
+ *   SECTION MODE   — a blueprint section is selected (Sprint 16)
+ *                    Questions go to POST /blueprint-suggest
+ *                    Returns a structured suggestion (observations → gaps →
+ *                    revision → reasoning → alternatives)
+ *                    User chooses: Accept | Edit | Reject
+ *                    Only Accept/Edit pushes content to the Strategy Canvas
+ *
+ * The Strategy Canvas is the source of truth.
+ * The AI may suggest. It may never automatically overwrite user content.
  */
 
 const API_BASE = window.CONFIG?.API_BASE
@@ -16,7 +25,7 @@ const API_BASE = window.CONFIG?.API_BASE
       ? 'http://localhost:3000/api'
       : 'https://truenidawebsite-production.up.railway.app/api');
 
-function getToken()   { return localStorage.getItem('token'); }
+function getToken()    { return localStorage.getItem('token'); }
 function getDomainId() { return new URLSearchParams(window.location.search).get('domain') || 'ai-strategy'; }
 
 function logout() {
@@ -29,9 +38,14 @@ function logout() {
 let messagesEl, inputEl, sendBtn, sendIcon, sendLoader;
 let errorEl, errorTextEl, retryBtn;
 let advisorContextEl, advisorSubheadingEl;
+
+// Sprint 16
+let sectionContextEl, sectionTitleEl, sectionPreviewEl, sectionClearEl;
+let sectionPromptsEl, generalPromptsEl;
+
 let lastQuestion = '';
 
-// ── Layout coordination (mirrors chat.js pattern) ─────────────────────────────
+// ── Layout coordination ───────────────────────────────────────────────────────
 
 let canvasReady  = false;
 let advisorReady = false;
@@ -43,6 +57,12 @@ function maybeShowLayout() {
   }
 }
 
+// ── Mode state (Sprint 16) ────────────────────────────────────────────────────
+
+let _sectionMode               = false;
+let _activeSection             = null; // { sectionTitle, currentContent, capabilityId, blueprint }
+let _generalPromptsWereVisible = false;
+
 // ── Context indicator ─────────────────────────────────────────────────────────
 
 function updateContextIndicator(context) {
@@ -50,18 +70,108 @@ function updateContextIndicator(context) {
     const { blueprint } = context;
     advisorContextEl.textContent = `${blueprint.capabilityName} · ${blueprint.industry}`;
     advisorContextEl.style.display = 'block';
-    advisorSubheadingEl.textContent = 'Ask a question about this capability.';
-    inputEl.disabled = false;
-    sendBtn.disabled = false;
+    advisorSubheadingEl.textContent =
+      'Select a section to collaborate on it, or ask a general question below.';
+    inputEl.disabled  = false;
+    sendBtn.disabled  = false;
   } else {
     advisorContextEl.style.display = 'none';
-    advisorSubheadingEl.textContent = 'Select a capability from the canvas to start asking questions.';
-    inputEl.disabled = true;
-    sendBtn.disabled = true;
+    advisorSubheadingEl.textContent =
+      'Select a capability from the canvas to start asking questions.';
+    inputEl.disabled  = true;
+    sendBtn.disabled  = true;
   }
 }
 
-// ── Response rendering ────────────────────────────────────────────────────────
+// ── Section mode (Sprint 16) ──────────────────────────────────────────────────
+
+const SECTION_PROMPTS = [
+  'Improve this section',
+  'Make it more measurable',
+  'Make it more executive focused',
+  'Compare with industry practices',
+  'Identify missing elements',
+  'Simplify this statement',
+  'Generate alternatives',
+  'Challenge our assumptions',
+];
+
+function enterSectionMode(detail) {
+  _sectionMode   = true;
+  _activeSection = { ...detail };
+
+  // Track whether general prompts were visible so we can restore them on exit
+  _generalPromptsWereVisible = generalPromptsEl.style.display !== 'none';
+
+  // Update context badge
+  advisorContextEl.textContent =
+    `${detail.blueprint.capabilityName} · ${detail.sectionTitle} · ${detail.blueprint.industry}`;
+  advisorContextEl.style.display = 'block';
+
+  advisorSubheadingEl.textContent = 'Ask me to improve, review, or rewrite this section.';
+
+  // Show section context panel
+  sectionTitleEl.textContent   = detail.sectionTitle;
+  sectionPreviewEl.textContent = detail.currentContent
+    ? truncate(detail.currentContent, 140)
+    : '(No draft yet — I\'ll generate one from the knowledge base)';
+  sectionContextEl.style.display = 'block';
+
+  // Swap to section-specific prompts
+  generalPromptsEl.style.display = 'none';
+  renderSectionPrompts();
+  sectionPromptsEl.style.display = 'flex';
+
+  inputEl.disabled  = false;
+  sendBtn.disabled  = false;
+  inputEl.placeholder = `Ask about the ${detail.sectionTitle} section…`;
+  inputEl.focus();
+}
+
+function exitSectionMode() {
+  _sectionMode   = false;
+  _activeSection = null;
+
+  sectionContextEl.style.display = 'none';
+  sectionPromptsEl.style.display = 'none';
+
+  inputEl.placeholder = 'Type your message…';
+
+  // Restore general prompts only if they were visible before section mode started
+  if (_generalPromptsWereVisible) {
+    generalPromptsEl.style.display = 'flex';
+  }
+  _generalPromptsWereVisible = false;
+
+  // Restore context indicator
+  const ctx = window.StrategyCanvas?.getCurrentContext();
+  updateContextIndicator(ctx ? { blueprint: ctx.blueprint } : null);
+}
+
+function renderSectionPrompts() {
+  sectionPromptsEl.innerHTML = '';
+  for (const prompt of SECTION_PROMPTS) {
+    const btn = document.createElement('button');
+    btn.className = 'suggested-prompt-btn';
+    btn.textContent = prompt;
+    btn.addEventListener('click', () => {
+      // Hide prompts after first use
+      sectionPromptsEl.style.display = 'none';
+      sendQuestion(prompt);
+    });
+    sectionPromptsEl.appendChild(btn);
+  }
+}
+
+// Update the section context preview after a draft is accepted
+function updateSectionPreview(sectionTitle, content) {
+  if (_activeSection?.sectionTitle === sectionTitle) {
+    _activeSection.currentContent = content;
+    sectionPreviewEl.textContent  = truncate(content, 140);
+  }
+}
+
+// ── Response rendering — General mode ─────────────────────────────────────────
 
 function appendQuestion(text) {
   const el = document.createElement('div');
@@ -125,6 +235,185 @@ function appendAdvisorResponse(result) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+// ── Suggestion card — Section mode (Sprint 16) ────────────────────────────────
+
+function createSuggestionCard(result) {
+  const { suggestion, sectionTitle } = result;
+  const card = document.createElement('div');
+  card.className = 'suggestion-card';
+
+  // Helper: append a labeled section to a parent element
+  function addSection(parent, title, value, isList) {
+    if (!value || (Array.isArray(value) && !value.length)) return;
+    const s = document.createElement('div');
+    s.className = 'suggestion-section';
+
+    const h = document.createElement('h4');
+    h.className = 'suggestion-section__title';
+    h.textContent = title;
+    s.appendChild(h);
+
+    if (isList) {
+      const ul = document.createElement('ul');
+      ul.className = 'suggestion-section__list';
+      (value || []).forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        ul.appendChild(li);
+      });
+      s.appendChild(ul);
+    } else {
+      const p = document.createElement('p');
+      p.className = 'suggestion-section__body';
+      p.textContent = String(value);
+      s.appendChild(p);
+    }
+
+    parent.appendChild(s);
+  }
+
+  // Header
+  const headerEl = document.createElement('div');
+  headerEl.className = 'suggestion-card__header';
+  const sectionBadge = document.createElement('span');
+  sectionBadge.className = 'suggestion-card__section';
+  sectionBadge.textContent = sectionTitle;
+  const labelBadge = document.createElement('span');
+  labelBadge.className = 'suggestion-card__label';
+  labelBadge.textContent = 'AI Suggestion';
+  headerEl.appendChild(sectionBadge);
+  headerEl.appendChild(labelBadge);
+  card.appendChild(headerEl);
+
+  // Analysis
+  addSection(card, 'Current Observations', suggestion.currentObservations, false);
+  addSection(card, 'Strengths',            suggestion.strengths,            true);
+  addSection(card, 'Potential Gaps',       suggestion.potentialGaps,        true);
+
+  // Suggested revision (supports edit mode)
+  const revisionEl = document.createElement('div');
+  revisionEl.className = 'suggestion-revision';
+
+  const revTitle = document.createElement('h4');
+  revTitle.className = 'suggestion-section__title';
+  revTitle.textContent = 'Suggested Revision';
+  revisionEl.appendChild(revTitle);
+
+  const revText = document.createElement('p');
+  revText.className = 'suggestion-revision__text';
+  revText.textContent = suggestion.suggestedRevision;
+  revisionEl.appendChild(revText);
+
+  const revEdit = document.createElement('textarea');
+  revEdit.className = 'suggestion-revision__edit';
+  revEdit.value = suggestion.suggestedRevision;
+  revEdit.rows = 5;
+  revEdit.style.display = 'none';
+  revisionEl.appendChild(revEdit);
+
+  card.appendChild(revisionEl);
+
+  // Why this helps + alternatives
+  addSection(card, 'Why This Helps', suggestion.whyThisHelps, false);
+  addSection(card, 'Alternatives',   suggestion.alternatives,   true);
+
+  // Action buttons
+  const actionsEl = document.createElement('div');
+  actionsEl.className = 'suggestion-actions';
+
+  const acceptBtn = document.createElement('button');
+  acceptBtn.className = 'suggestion-btn suggestion-btn--accept';
+  acceptBtn.textContent = 'Accept';
+
+  const editBtn = document.createElement('button');
+  editBtn.className = 'suggestion-btn suggestion-btn--edit';
+  editBtn.textContent = 'Edit';
+
+  const rejectBtn = document.createElement('button');
+  rejectBtn.className = 'suggestion-btn suggestion-btn--reject';
+  rejectBtn.textContent = 'Reject';
+
+  actionsEl.appendChild(acceptBtn);
+  actionsEl.appendChild(editBtn);
+  actionsEl.appendChild(rejectBtn);
+  card.appendChild(actionsEl);
+
+  // ── Action handlers ───────────────────────────────────────────────────────
+
+  function doAccept(content) {
+    window.StrategyCanvas?.acceptSection(sectionTitle, content);
+
+    // Show accepted state in card
+    actionsEl.innerHTML = '';
+    const badge = document.createElement('span');
+    badge.className = 'suggestion-accepted-badge';
+    badge.textContent = '✓ Accepted — blueprint section updated';
+    actionsEl.appendChild(badge);
+    card.classList.add('suggestion-card--accepted');
+
+    // Restore text view if we were in edit mode
+    revText.textContent   = content;
+    revText.style.display = 'block';
+    revEdit.style.display = 'none';
+    revisionEl.classList.remove('suggestion-revision--editing');
+
+    setSending(false);
+    inputEl.placeholder = `Ask about the ${sectionTitle} section…`;
+  }
+
+  function doReject() {
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg chat-msg--assistant';
+    msg.textContent = 'Suggestion rejected. The blueprint section remains unchanged.';
+    card.replaceWith(msg);
+    setSending(false);
+  }
+
+  function enterEditMode() {
+    revText.style.display = 'none';
+    revEdit.style.display = 'block';
+    revisionEl.classList.add('suggestion-revision--editing');
+    revEdit.style.height = 'auto';
+    revEdit.style.height = `${revEdit.scrollHeight}px`;
+    revEdit.focus();
+
+    actionsEl.innerHTML = '';
+
+    const acceptEditBtn = document.createElement('button');
+    acceptEditBtn.className = 'suggestion-btn suggestion-btn--accept';
+    acceptEditBtn.textContent = 'Accept Edit';
+
+    const cancelEditBtn = document.createElement('button');
+    cancelEditBtn.className = 'suggestion-btn suggestion-btn--reject';
+    cancelEditBtn.textContent = 'Cancel';
+
+    actionsEl.appendChild(acceptEditBtn);
+    actionsEl.appendChild(cancelEditBtn);
+
+    acceptEditBtn.addEventListener('click', () => {
+      const edited = revEdit.value.trim() || suggestion.suggestedRevision;
+      doAccept(edited);
+    });
+
+    cancelEditBtn.addEventListener('click', () => {
+      revText.style.display = 'block';
+      revEdit.style.display = 'none';
+      revisionEl.classList.remove('suggestion-revision--editing');
+
+      actionsEl.innerHTML = '';
+      actionsEl.appendChild(acceptBtn);
+      actionsEl.appendChild(editBtn);
+      actionsEl.appendChild(rejectBtn);
+    });
+  }
+
+  acceptBtn.addEventListener('click', () => doAccept(suggestion.suggestedRevision));
+  editBtn.addEventListener('click',   () => enterEditMode());
+  rejectBtn.addEventListener('click', () => doReject());
+
+  return card;
+}
+
 // ── Error handling ────────────────────────────────────────────────────────────
 
 function showError(msg) {
@@ -158,37 +447,19 @@ async function sendQuestion(text) {
   inputEl.value = '';
   inputEl.style.height = 'auto';
 
-  // Hide suggested prompts after first question
+  // Hide both prompt sets once a message is sent
   document.getElementById('suggested-prompts')?.style?.setProperty('display', 'none');
+  sectionPromptsEl.style.display = 'none';
 
   setSending(true);
   appendTyping();
 
   try {
-    const resp = await fetch(`${API_BASE}/strategy-canvas/advisor/ask`, {
-      method:  'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization:  `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify({
-        capabilityId: ctx.capabilityId,
-        blueprint:    ctx.blueprint,
-        question:     lastQuestion,
-      }),
-    });
-
-    const data = await resp.json();
-    removeTyping();
-    setSending(false);
-
-    if (!resp.ok) {
-      showError(data?.error || 'We couldn\'t process that. Please try again.');
-      return;
+    if (_sectionMode && _activeSection) {
+      await sendSectionRequest(ctx, lastQuestion);
+    } else {
+      await sendGeneralRequest(ctx, lastQuestion);
     }
-
-    appendAdvisorResponse(data);
-
   } catch (err) {
     console.error('advisor sendQuestion error:', err);
     removeTyping();
@@ -197,7 +468,60 @@ async function sendQuestion(text) {
   }
 }
 
-// ── Suggested prompts ─────────────────────────────────────────────────────────
+async function sendGeneralRequest(ctx, question) {
+  const resp = await fetch(`${API_BASE}/strategy-canvas/advisor/ask`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({
+      capabilityId: ctx.capabilityId,
+      blueprint:    ctx.blueprint,
+      question,
+    }),
+  });
+
+  const data = await resp.json();
+  removeTyping();
+  setSending(false);
+
+  if (!resp.ok) {
+    showError(data?.error || 'We couldn\'t process that. Please try again.');
+    return;
+  }
+
+  appendAdvisorResponse(data);
+}
+
+async function sendSectionRequest(ctx, question) {
+  const { sectionTitle, currentContent } = _activeSection;
+
+  const resp = await fetch(`${API_BASE}/strategy-canvas/blueprint-suggest`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({
+      capabilityId:   ctx.capabilityId,
+      blueprint:      ctx.blueprint,
+      sectionTitle,
+      currentContent: ctx.companyDraft?.[sectionTitle] || currentContent || '',
+      request:        question,
+    }),
+  });
+
+  const data = await resp.json();
+  removeTyping();
+
+  if (!resp.ok) {
+    setSending(false);
+    showError(data?.error || 'We couldn\'t process that. Please try again.');
+    return;
+  }
+
+  // Render suggestion card — setSending(false) is deferred to Accept/Reject
+  const card = createSuggestionCard(data);
+  messagesEl.appendChild(card);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// ── Suggested prompts (general mode) ─────────────────────────────────────────
 
 async function loadSuggestedPrompts() {
   try {
@@ -220,12 +544,16 @@ async function loadSuggestedPrompts() {
   } catch { /* non-critical */ }
 }
 
-// ── Utility ───────────────────────────────────────────────────────────────────
+// ── Utilities ─────────────────────────────────────────────────────────────────
 
 function escapeHtml(text) {
   return String(text)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function truncate(text, max) {
+  return text.length <= max ? text : text.slice(0, max).trimEnd() + '…';
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
@@ -238,16 +566,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Cache DOM refs
-  messagesEl        = document.getElementById('chat-messages');
-  inputEl           = document.getElementById('chat-input');
-  sendBtn           = document.getElementById('chat-send');
-  sendIcon          = document.getElementById('chat-send-icon');
-  sendLoader        = document.getElementById('chat-send-loader');
-  errorEl           = document.getElementById('chat-error');
-  errorTextEl       = document.getElementById('chat-error-text');
-  retryBtn          = document.getElementById('chat-retry');
-  advisorContextEl  = document.getElementById('advisor-context');
+  messagesEl          = document.getElementById('chat-messages');
+  inputEl             = document.getElementById('chat-input');
+  sendBtn             = document.getElementById('chat-send');
+  sendIcon            = document.getElementById('chat-send-icon');
+  sendLoader          = document.getElementById('chat-send-loader');
+  errorEl             = document.getElementById('chat-error');
+  errorTextEl         = document.getElementById('chat-error-text');
+  retryBtn            = document.getElementById('chat-retry');
+  advisorContextEl    = document.getElementById('advisor-context');
   advisorSubheadingEl = document.getElementById('advisor-subheading');
+  generalPromptsEl    = document.getElementById('suggested-prompts');
+
+  // Sprint 16 refs
+  sectionContextEl = document.getElementById('section-context');
+  sectionTitleEl   = document.getElementById('section-context-title');
+  sectionPreviewEl = document.getElementById('section-context-preview');
+  sectionClearEl   = document.getElementById('section-context-clear');
+  sectionPromptsEl = document.getElementById('section-prompts');
 
   // Logout
   document.getElementById('domain-logout')?.addEventListener('click', logout);
@@ -260,19 +596,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.title = `SoorgaAI — ${titleEl.textContent}`;
   }
 
-  // Start disabled until a capability is selected
+  // Start in disabled/idle state
   updateContextIndicator(null);
 
-  // React to capability selection / deselection from strategy-canvas.js
-  document.addEventListener('blueprint:loaded',  e => updateContextIndicator(e.detail));
-  document.addEventListener('blueprint:cleared', () => updateContextIndicator(null));
+  // ── Canvas events ──────────────────────────────────────────────────────────
+  document.addEventListener('blueprint:loaded',  e => {
+    exitSectionMode();
+    updateContextIndicator(e.detail);
+  });
 
-  // Load suggested prompts
+  document.addEventListener('blueprint:cleared', () => {
+    exitSectionMode();
+    updateContextIndicator(null);
+    generalPromptsEl.style.display = 'none';
+  });
+
+  // Sprint 16: section events
+  document.addEventListener('section:selected',  e => enterSectionMode(e.detail));
+  document.addEventListener('section:deselected', () => exitSectionMode());
+
+  document.addEventListener('section:draft-updated', e => {
+    updateSectionPreview(e.detail.sectionTitle, e.detail.content);
+  });
+
+  // Section clear button
+  sectionClearEl?.addEventListener('click', () => {
+    window.StrategyCanvas?.deselectSection();
+    exitSectionMode();
+  });
+
+  // Load general suggested prompts
   await loadSuggestedPrompts();
   advisorReady = true;
   maybeShowLayout();
 
-  // Wait for canvas panel to be ready too
+  // Wait for canvas panel
   document.addEventListener('canvas:ready', () => {
     canvasReady = true;
     maybeShowLayout();

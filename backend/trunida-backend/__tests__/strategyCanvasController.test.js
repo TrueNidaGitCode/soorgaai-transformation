@@ -12,10 +12,16 @@ import { makeReqRes } from './__fixtures__/workspace-helpers.js';
 
 // ── Hoisted mock references ───────────────────────────────────────────────────
 
-const { mockProfileFindOne, mockGetCapabilities, mockGetCapabilityBlueprint } = vi.hoisted(() => ({
-  mockProfileFindOne:        vi.fn(),
-  mockGetCapabilities:       vi.fn(),
-  mockGetCapabilityBlueprint: vi.fn(),
+const {
+  mockProfileFindOne,
+  mockGetCapabilities,
+  mockGetCapabilityBlueprint,
+  mockSuggestBlueprintSection,
+} = vi.hoisted(() => ({
+  mockProfileFindOne:           vi.fn(),
+  mockGetCapabilities:          vi.fn(),
+  mockGetCapabilityBlueprint:   vi.fn(),
+  mockSuggestBlueprintSection:  vi.fn(),
 }));
 
 vi.mock('../models/UserProfile.js', () => ({
@@ -23,11 +29,15 @@ vi.mock('../models/UserProfile.js', () => ({
 }));
 
 vi.mock('../services/strategyCanvasService.js', () => ({
-  getCapabilities:       mockGetCapabilities,
+  getCapabilities:        mockGetCapabilities,
   getCapabilityBlueprint: mockGetCapabilityBlueprint,
 }));
 
-import { listCapabilities, fetchCapabilityBlueprint } from '../controllers/strategyCanvasController.js';
+vi.mock('../services/blueprintSuggestService.js', () => ({
+  suggestBlueprintSection: mockSuggestBlueprintSection,
+}));
+
+import { listCapabilities, fetchCapabilityBlueprint, suggestSection } from '../controllers/strategyCanvasController.js';
 
 // ── Fixture data ──────────────────────────────────────────────────────────────
 
@@ -46,6 +56,22 @@ const STUB_BLUEPRINT = {
   ],
 };
 
+const STUB_SUGGEST_RESULT = {
+  suggestion: {
+    currentObservations: 'The current vision is broad.',
+    strengths:           ['Executive commitment'],
+    potentialGaps:       ['No measurable targets'],
+    suggestedRevision:   'By 2027, achieve 30% lead-time reduction.',
+    whyThisHelps:        'Measurable targets enable board tracking.',
+    alternatives:        ['Alternative A'],
+  },
+  capabilityName: 'AI Initiative Leadership',
+  industry:       'Automotive',
+  sectionTitle:   'Vision',
+  inputTokens:    500,
+  outputTokens:   200,
+};
+
 // ── Setup ─────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
@@ -58,6 +84,7 @@ beforeEach(() => {
 
   mockGetCapabilities.mockReturnValue(STUB_CAPABILITIES);
   mockGetCapabilityBlueprint.mockReturnValue(STUB_BLUEPRINT);
+  mockSuggestBlueprintSection.mockResolvedValue(STUB_SUGGEST_RESULT);
 });
 
 // ── listCapabilities ──────────────────────────────────────────────────────────
@@ -179,5 +206,163 @@ describe('fetchCapabilityBlueprint()', () => {
       'ai-initiative-leadership',
       'Automotive',
     );
+  });
+});
+
+// ── suggestSection (Sprint 16) ────────────────────────────────────────────────
+
+describe('suggestSection()', () => {
+  it('returns 200 with the suggestion result on success', async () => {
+    const { req, res } = makeReqRes({
+      capabilityId:   'ai-initiative-leadership',
+      blueprint:      STUB_BLUEPRINT,
+      sectionTitle:   'Vision',
+      currentContent: 'OEMs are facing pressure.',
+      request:        'Make this more measurable.',
+    });
+    await suggestSection(req, res);
+    expect(res.json).toHaveBeenCalledWith(STUB_SUGGEST_RESULT);
+  });
+
+  it('calls suggestBlueprintSection with the correct parameters', async () => {
+    const { req, res } = makeReqRes({
+      capabilityId:   'ai-initiative-leadership',
+      blueprint:      STUB_BLUEPRINT,
+      sectionTitle:   'Vision',
+      currentContent: 'OEMs are facing pressure.',
+      request:        'Make this more measurable.',
+    });
+    await suggestSection(req, res);
+    expect(mockSuggestBlueprintSection).toHaveBeenCalledWith({
+      capabilityId:   'ai-initiative-leadership',
+      blueprint:      STUB_BLUEPRINT,
+      sectionTitle:   'Vision',
+      currentContent: 'OEMs are facing pressure.',
+      request:        'Make this more measurable.',
+    });
+  });
+
+  it('trims leading and trailing whitespace from the request', async () => {
+    const { req, res } = makeReqRes({
+      capabilityId: 'ai-initiative-leadership',
+      blueprint:    STUB_BLUEPRINT,
+      sectionTitle: 'Vision',
+      request:      '  Improve this section.  ',
+    });
+    await suggestSection(req, res);
+    expect(mockSuggestBlueprintSection).toHaveBeenCalledWith(
+      expect.objectContaining({ request: 'Improve this section.' }),
+    );
+  });
+
+  it('returns 400 when capabilityId is missing', async () => {
+    const { req, res } = makeReqRes({ sectionTitle: 'Vision', request: 'Improve.' });
+    await suggestSection(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when capabilityId is not a string', async () => {
+    const { req, res } = makeReqRes({ capabilityId: 123, sectionTitle: 'Vision', request: 'Improve.' });
+    await suggestSection(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when sectionTitle is missing', async () => {
+    const { req, res } = makeReqRes({ capabilityId: 'ai-initiative-leadership', request: 'Improve.' });
+    await suggestSection(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when request is missing', async () => {
+    const { req, res } = makeReqRes({ capabilityId: 'ai-initiative-leadership', sectionTitle: 'Vision' });
+    await suggestSection(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 400 when request is a whitespace-only string', async () => {
+    const { req, res } = makeReqRes({
+      capabilityId: 'ai-initiative-leadership',
+      sectionTitle: 'Vision',
+      request:      '   ',
+    });
+    await suggestSection(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('passes empty string as currentContent when omitted', async () => {
+    const { req, res } = makeReqRes({
+      capabilityId: 'ai-initiative-leadership',
+      blueprint:    STUB_BLUEPRINT,
+      sectionTitle: 'Vision',
+      request:      'Generate a draft.',
+      // currentContent omitted
+    });
+    await suggestSection(req, res);
+    expect(mockSuggestBlueprintSection).toHaveBeenCalledWith(
+      expect.objectContaining({ currentContent: '' }),
+    );
+  });
+
+  it('passes empty object as blueprint when omitted', async () => {
+    const { req, res } = makeReqRes({
+      capabilityId: 'ai-initiative-leadership',
+      sectionTitle: 'Vision',
+      request:      'Improve.',
+    });
+    await suggestSection(req, res);
+    expect(mockSuggestBlueprintSection).toHaveBeenCalledWith(
+      expect.objectContaining({ blueprint: {} }),
+    );
+  });
+
+  it('returns 503 when the service throws an API key error', async () => {
+    mockSuggestBlueprintSection.mockRejectedValueOnce(
+      new Error('ANTHROPIC_API_KEY is not configured.'),
+    );
+    const { req, res } = makeReqRes({
+      capabilityId: 'ai-initiative-leadership',
+      sectionTitle: 'Vision',
+      request:      'Improve.',
+    });
+    await suggestSection(req, res);
+    expect(res.status).toHaveBeenCalledWith(503);
+  });
+
+  it('returns 503 when all LLM providers are unavailable', async () => {
+    mockSuggestBlueprintSection.mockRejectedValueOnce(
+      new Error('All LLM providers are unavailable:\n  - gemini: quota exceeded'),
+    );
+    const { req, res } = makeReqRes({
+      capabilityId: 'ai-initiative-leadership',
+      sectionTitle: 'Vision',
+      request:      'Improve.',
+    });
+    await suggestSection(req, res);
+    expect(res.status).toHaveBeenCalledWith(503);
+  });
+
+  it('returns 503 error body containing "not available"', async () => {
+    mockSuggestBlueprintSection.mockRejectedValueOnce(
+      new Error('ANTHROPIC_API_KEY is not configured.'),
+    );
+    const { req, res } = makeReqRes({
+      capabilityId: 'ai-initiative-leadership',
+      sectionTitle: 'Vision',
+      request:      'Improve.',
+    });
+    await suggestSection(req, res);
+    const body = res.status.mock.results[0].value.json.mock.calls[0][0];
+    expect(body.error).toContain('not available');
+  });
+
+  it('returns 500 for unexpected service errors', async () => {
+    mockSuggestBlueprintSection.mockRejectedValueOnce(new Error('Unexpected parse failure'));
+    const { req, res } = makeReqRes({
+      capabilityId: 'ai-initiative-leadership',
+      sectionTitle: 'Vision',
+      request:      'Improve.',
+    });
+    await suggestSection(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
   });
 });

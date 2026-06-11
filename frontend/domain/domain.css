@@ -643,6 +643,352 @@
   line-height: 1.5;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sprint 16 — Blueprint Collaboration
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Clickable / selectable blueprint sections ─────────────────────────────── */
+
+.blueprint-section--selectable {
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.blueprint-section--selectable:hover {
+  background: rgba(92,197,167,0.05);
+  border-color: rgba(92,197,167,0.3);
+}
+
+.blueprint-section--selectable:focus-visible {
+  outline: 2px solid #5CC5A7;
+  outline-offset: 2px;
+}
+
+/* Active (selected) section in left panel */
+.blueprint-section--active {
+  border-color: #5CC5A7 !important;
+  background: rgba(92,197,167,0.08) !important;
+  box-shadow: 0 0 0 1px rgba(92,197,167,0.25);
+}
+
+/* Section with accepted company draft */
+.blueprint-section--has-draft {
+  border-color: rgba(92,197,167,0.35);
+}
+
+/* Flash animation when a draft is accepted */
+.blueprint-section--flash {
+  animation: section-flash 1.4s ease-out forwards;
+}
+
+@keyframes section-flash {
+  0%   { background: rgba(92,197,167,0.2); }
+  100% { background: rgba(255,255,255,0.03); }
+}
+
+/* Hover hint shown on non-active sections */
+.blueprint-section__select-hint {
+  display: none;
+  font-size: 0.72rem;
+  color: rgba(92,197,167,0.6);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.blueprint-section--selectable:hover .blueprint-section__select-hint {
+  display: block;
+}
+
+.blueprint-section--active .blueprint-section__select-hint {
+  display: none;
+}
+
+/* ── Company draft area (left panel) ───────────────────────────────────────── */
+
+.blueprint-section__draft {
+  background: rgba(92,197,167,0.07);
+  border: 1px solid rgba(92,197,167,0.25);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  margin-top: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.blueprint-section__draft-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.blueprint-section__draft-text {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Section context panel (right panel) ───────────────────────────────────── */
+
+.section-context {
+  background: rgba(92,197,167,0.07);
+  border: 1px solid rgba(92,197,167,0.22);
+  border-radius: 0.7rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.section-context__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.section-context__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.section-context__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.section-context__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.section-context__clear {
+  background: transparent;
+  border: 1px solid rgba(92,197,167,0.3);
+  border-radius: 0.4rem;
+  color: rgba(92,197,167,0.7);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  transition: border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.section-context__clear:hover { border-color: #5CC5A7; color: #5CC5A7; }
+
+.section-context__preview {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.5;
+  margin: 0;
+  font-style: italic;
+}
+
+/* ── Suggestion card ───────────────────────────────────────────────────────── */
+
+.suggestion-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(92,197,167,0.28);
+  border-radius: 0.85rem;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  align-self: flex-start;
+  width: 100%;
+}
+
+.suggestion-card--accepted {
+  border-color: rgba(92,197,167,0.5);
+  background: rgba(92,197,167,0.05);
+}
+
+.suggestion-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-wrap: wrap;
+}
+
+.suggestion-card__section {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #5CC5A7;
+}
+
+.suggestion-card__label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0.3rem;
+  padding: 0.15rem 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Suggestion analysis sections ──────────────────────────────────────────── */
+
+.suggestion-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.suggestion-section__title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.suggestion-section__body {
+  font-size: 0.87rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.suggestion-section__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.suggestion-section__list li {
+  font-size: 0.84rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.5;
+}
+
+/* ── Suggested revision block ──────────────────────────────────────────────── */
+
+.suggestion-revision {
+  background: rgba(92,197,167,0.06);
+  border: 1px solid rgba(92,197,167,0.2);
+  border-radius: 0.6rem;
+  padding: 0.8rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.suggestion-revision .suggestion-section__title {
+  color: #5CC5A7;
+}
+
+.suggestion-revision__text {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.65;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.suggestion-revision__edit {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(92,197,167,0.35);
+  border-radius: 0.5rem;
+  color: #fff;
+  font-size: 0.88rem;
+  font-family: inherit;
+  line-height: 1.6;
+  padding: 0.65rem 0.85rem;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.suggestion-revision__edit:focus { border-color: #5CC5A7; }
+
+.suggestion-revision--editing {
+  border-color: rgba(92,197,167,0.45);
+}
+
+/* ── Accept / Edit / Reject action buttons ─────────────────────────────────── */
+
+.suggestion-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  padding-top: 0.25rem;
+}
+
+.suggestion-btn {
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.4rem 1rem;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.suggestion-btn--accept {
+  background: #5CC5A7;
+  border: 1px solid #5CC5A7;
+  color: #0a0a0f;
+}
+.suggestion-btn--accept:hover {
+  background: #4ab396;
+  border-color: #4ab396;
+}
+
+.suggestion-btn--edit {
+  background: transparent;
+  border: 1px solid rgba(92,197,167,0.4);
+  color: #5CC5A7;
+}
+.suggestion-btn--edit:hover {
+  background: rgba(92,197,167,0.1);
+  border-color: #5CC5A7;
+}
+
+.suggestion-btn--reject {
+  background: transparent;
+  border: 1px solid rgba(255,107,107,0.3);
+  color: rgba(255,107,107,0.7);
+}
+.suggestion-btn--reject:hover {
+  background: rgba(255,107,107,0.08);
+  border-color: rgba(255,107,107,0.6);
+  color: #ff6b6b;
+}
+
+/* Accepted state badge */
+.suggestion-accepted-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #5CC5A7;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {

@@ -57,35 +57,33 @@
       </div>
       <p id="advisor-subheading" class="panel-subheading">Select a capability from the canvas to start asking questions.</p>
 
-      <!-- Sprint 16: Active section context panel
-           Sprint 18.2: sticky editing header — capability, section, industry,
-           status, and source attribution stay visible during interaction -->
+      <!-- Sprint 16/18.2/18.3: Compact sticky context header —
+           what is being worked on, status, and source attribution -->
       <div id="section-context" class="section-context" style="display:none" aria-live="polite">
-        <div class="section-context__header">
-          <div class="section-context__info">
-            <span class="section-context__label">EDITING SECTION</span>
-            <span id="section-context-title" class="section-context__title"></span>
-            <span id="section-context-meta" class="section-context__meta"></span>
-          </div>
-          <button id="section-context-clear" class="section-context__clear" aria-label="Clear section selection">Clear</button>
+        <div class="section-context__info">
+          <span class="section-context__label">Working on</span>
+          <span id="section-context-title" class="section-context__title"></span>
+          <span id="section-context-meta" class="section-context__meta"></span>
         </div>
         <div id="section-context-badges" class="section-context__badges"></div>
-        <p id="section-context-preview" class="section-context__preview"></p>
+        <button id="section-context-clear" class="section-context__clear" aria-label="Clear section selection">✕</button>
       </div>
 
-      <!-- Sprint 16: Section-specific quick prompts -->
-      <div id="section-prompts" class="suggested-prompts" style="display:none" aria-label="Section quick actions">
-        <!-- Injected by advisor.js when a section is selected -->
-      </div>
-
-      <!-- Suggested prompts -->
-      <div id="suggested-prompts" class="suggested-prompts" aria-label="Suggested questions">
-        <!-- Injected by advisor.js -->
+      <!-- Sprint 18.3: Welcome empty state (shown until the first message) -->
+      <div id="advisor-empty" class="advisor-empty">
+        <p class="advisor-empty__title">Welcome to SoorgaAI Advisor</p>
+        <p class="advisor-empty__text">Select any blueprint section and start a conversation.</p>
+        <ul class="advisor-empty__examples">
+          <li>“Help improve our AI vision.”</li>
+          <li>“Challenge our assumptions.”</li>
+          <li>“Make this measurable.”</li>
+          <li>“Compare against industry best practices.”</li>
+        </ul>
       </div>
 
       <!-- Chat messages -->
       <div id="chat-messages" class="chat-messages" role="log" aria-live="polite">
-        <!-- Injected by chat.js -->
+        <!-- Injected by advisor.js -->
       </div>
 
       <!-- Error banner -->
@@ -94,13 +92,13 @@
         <button id="chat-retry" class="chat-retry-btn">Retry</button>
       </div>
 
-      <!-- Input -->
+      <!-- Input — the primary interaction surface (Sprint 18.3) -->
       <form id="chat-form" class="chat-input-form" novalidate>
         <textarea
           id="chat-input"
           class="chat-input"
           rows="3"
-          placeholder="Type your message…"
+          placeholder="Ask SoorgaAI…"
           aria-label="Chat message"
         ></textarea>
         <button type="submit" id="chat-send" class="chat-send-btn" aria-label="Send message">
@@ -108,6 +106,15 @@
           <span id="chat-send-loader" class="chat-send-loader" style="display:none"></span>
         </button>
       </form>
+
+      <!-- Sprint 18.3: optional suggestion chips below the input.
+           Chips populate the input — typing stays the primary interaction. -->
+      <div id="section-prompts" class="suggested-prompts suggestion-chips" style="display:none" aria-label="Section suggestion chips">
+        <!-- Injected by advisor.js when a section is selected -->
+      </div>
+      <div id="suggested-prompts" class="suggested-prompts suggestion-chips" aria-label="Suggested questions">
+        <!-- Injected by advisor.js -->
+      </div>
 
     </section>
   </main>

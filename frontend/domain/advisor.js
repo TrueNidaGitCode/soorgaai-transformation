@@ -88,15 +88,15 @@ function updateContextIndicator(context) {
 
 // ── Section mode (Sprint 16) ──────────────────────────────────────────────────
 
-const SECTION_PROMPTS = [
-  'Improve this section',
-  'Make it more measurable',
-  'Make it more executive focused',
-  'Compare with industry practices',
-  'Identify missing elements',
-  'Simplify this statement',
-  'Generate alternatives',
-  'Challenge our assumptions',
+// Sprint 18.3: compact suggestion chips — clicking populates the chat input
+// (typing remains the primary interaction). The industry chip adapts to the
+// blueprint's industry layer.
+const SECTION_CHIPS = [
+  { label: 'Improve',   prompt: 'Improve this section' },
+  { label: 'Executive', prompt: 'Rewrite this for executives' },
+  { label: 'Measure',   prompt: 'Make this more measurable' },
+  { label: 'Challenge', prompt: 'Challenge our assumptions' },
+  { label: 'Simplify',  prompt: 'Simplify this statement' },
 ];
 
 function enterSectionMode(detail) {
@@ -113,25 +113,30 @@ function enterSectionMode(detail) {
 
   advisorSubheadingEl.textContent = 'Ask me to improve, review, or rewrite this section.';
 
-  // Show section context panel (Sprint 18.2: sticky editing header)
-  sectionTitleEl.textContent   = detail.sectionTitle;
+  // Show compact context header (Sprint 18.2/18.3)
+  sectionTitleEl.textContent = detail.sectionTitle;
   if (sectionMetaEl) {
     sectionMetaEl.textContent = `${detail.blueprint.capabilityName} · ${detail.blueprint.industry}`;
   }
   refreshSectionHeaderState(detail.sectionTitle);
-  sectionPreviewEl.textContent = detail.currentContent
-    ? truncate(detail.currentContent, 140)
-    : '(No draft yet — I\'ll generate one from the knowledge base)';
-  sectionContextEl.style.display = 'block';
+  if (sectionPreviewEl) {
+    sectionPreviewEl.textContent = detail.currentContent
+      ? truncate(detail.currentContent, 140)
+      : '(No draft yet — I\'ll generate one from the knowledge base)';
+  }
+  sectionContextEl.style.display = 'flex';
 
-  // Swap to section-specific prompts
+  // Sprint 18.3: mark the context switch in the conversation flow
+  appendSectionDivider(detail.sectionTitle);
+
+  // Swap to section-specific chips
   generalPromptsEl.style.display = 'none';
   renderSectionPrompts();
   sectionPromptsEl.style.display = 'flex';
 
   inputEl.disabled  = false;
   sendBtn.disabled  = false;
-  inputEl.placeholder = `Ask about the ${detail.sectionTitle} section…`;
+  inputEl.placeholder = 'Ask SoorgaAI about this section…';
 
   // Sprint 18.2: focus the advisor. On the stacked (mobile) layout the
   // advisor panel is not sticky, so bring the editing header into view.
@@ -139,6 +144,21 @@ function enterSectionMode(detail) {
     sectionContextEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
   inputEl.focus({ preventScroll: true });
+}
+
+// Sprint 18.3: small divider in the conversation when the working section
+// changes — keeps a continuous history readable across sections.
+function appendSectionDivider(sectionTitle) {
+  if (!messagesEl || messagesEl.childElementCount === 0) return;
+  const last = messagesEl.lastElementChild;
+  if (last?.classList.contains('chat-divider') && last.dataset.section === sectionTitle) return;
+
+  const el = document.createElement('div');
+  el.className = 'chat-divider';
+  el.dataset.section = sectionTitle;
+  el.textContent = `Now working on: ${sectionTitle}`;
+  messagesEl.appendChild(el);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
 // ── Sticky editing header: status + source attribution (Sprint 18.2) ──────────
@@ -173,7 +193,7 @@ function exitSectionMode() {
   sectionContextEl.style.display = 'none';
   sectionPromptsEl.style.display = 'none';
 
-  inputEl.placeholder = 'Type your message…';
+  inputEl.placeholder = 'Ask SoorgaAI…';
 
   // Restore general prompts only if they were visible before section mode started
   if (_generalPromptsWereVisible) {
@@ -188,30 +208,56 @@ function exitSectionMode() {
 
 function renderSectionPrompts() {
   sectionPromptsEl.innerHTML = '';
-  for (const prompt of SECTION_PROMPTS) {
+
+  const industry = _activeSection?.blueprint?.industry;
+  const chips = [...SECTION_CHIPS];
+  if (industry) {
+    chips.splice(2, 0, { label: industry, prompt: `How would a leading ${industry} company approach this?` });
+  }
+
+  for (const chip of chips) {
     const btn = document.createElement('button');
-    btn.className = 'suggested-prompt-btn';
-    btn.textContent = prompt;
-    // Sprint 18.2: quick actions stay visible for the whole conversation
-    btn.addEventListener('click', () => sendQuestion(prompt));
+    btn.type = 'button';
+    btn.className = 'suggestion-chip';
+    btn.textContent = chip.label;
+    btn.title = chip.prompt;
+    // Sprint 18.3: chips populate the input — they never auto-send
+    btn.addEventListener('click', () => populateInput(chip.prompt));
     sectionPromptsEl.appendChild(btn);
   }
 }
 
-// Update the section context preview after a draft is accepted
+// Sprint 18.3: put text in the chat input ready to edit or send
+function populateInput(text) {
+  inputEl.value = text;
+  inputEl.style.height = 'auto';
+  inputEl.style.height = `${inputEl.scrollHeight}px`;
+  inputEl.focus();
+}
+
+// Update the section context after a draft is accepted
 function updateSectionPreview(sectionTitle, content) {
   if (_activeSection?.sectionTitle === sectionTitle) {
     _activeSection.currentContent = content;
-    sectionPreviewEl.textContent  = content
-      ? truncate(content, 140)
-      : '(No draft yet — I\'ll generate one from the knowledge base)';
+    if (sectionPreviewEl) {
+      sectionPreviewEl.textContent = content
+        ? truncate(content, 140)
+        : '(No draft yet — I\'ll generate one from the knowledge base)';
+    }
     refreshSectionHeaderState(sectionTitle);
   }
 }
 
 // ── Response rendering — General mode ─────────────────────────────────────────
 
+// Sprint 18.3: the welcome empty state hides once a conversation begins
+function hideEmptyState() {
+  const el = document.getElementById('advisor-empty');
+  if (el) el.style.display = 'none';
+}
+
 function appendQuestion(text) {
+  hideEmptyState();
   const el = document.createElement('div');
   el.className = 'chat-msg chat-msg--user';
   el.textContent = text;
@@ -233,42 +279,64 @@ function removeTyping() {
   document.getElementById('advisor-typing')?.remove();
 }
 
+// Sprint 18.3: responses read conversationally — the executive perspective
+// leads as natural chat text; supporting detail collapses behind "Show more".
 function appendAdvisorResponse(result) {
-  const { response, capabilityName, industry } = result;
+  const { response, industry } = result;
   const card = document.createElement('div');
   card.className = 'advisor-response';
 
-  const sections = [
-    { key: 'executivePerspective', label: 'Executive Perspective', isList: false },
-    { key: 'industryContext',      label: `${industry} Context`,   isList: false },
-    { key: 'recommendations',      label: 'Recommendations',       isList: true  },
-    { key: 'potentialRisks',       label: 'Potential Risks',        isList: true  },
-    { key: 'suggestedNextStep',    label: 'Suggested Next Step',    isList: false },
+  const lead = document.createElement('p');
+  lead.className = 'advisor-response__lead';
+  lead.textContent = response.executivePerspective || 'Here\'s my perspective on that.';
+  card.appendChild(lead);
+
+  const detailSections = [
+    { key: 'industryContext',   label: `${industry} Context`,    isList: false },
+    { key: 'recommendations',   label: 'Recommendations',        isList: true  },
+    { key: 'potentialRisks',    label: 'Potential Risks',        isList: true  },
+    { key: 'suggestedNextStep', label: 'Suggested Next Step',    isList: false },
   ];
 
-  let html = `
-    <div class="advisor-response__header">
-      <span class="advisor-response__capability">${escapeHtml(capabilityName)}</span>
-      <span class="advisor-response__industry-tag">${escapeHtml(industry)}</span>
-    </div>`;
-
-  for (const { key, label, isList } of sections) {
+  let detailsHtml = '';
+  for (const { key, label, isList } of detailSections) {
     const value = response[key];
     if (!value || (Array.isArray(value) && value.length === 0)) continue;
 
-    html += `<div class="advisor-response__section">
+    detailsHtml += `<div class="advisor-response__section">
       <h4 class="advisor-response__section-title">${escapeHtml(label)}</h4>`;
 
     if (isList && Array.isArray(value)) {
-      html += `<ul class="advisor-response__list">${value.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+      detailsHtml += `<ul class="advisor-response__list">${value.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
     } else {
-      html += `<p class="advisor-response__section-body">${escapeHtml(String(value))}</p>`;
+      detailsHtml += `<p class="advisor-response__section-body">${escapeHtml(String(value))}</p>`;
     }
 
-    html += `</div>`;
+    detailsHtml += `</div>`;
   }
 
-  card.innerHTML = html;
+  if (detailsHtml) {
+    const detailsEl = document.createElement('div');
+    detailsEl.className = 'suggestion-analysis';
+    detailsEl.style.display = 'none';
+    detailsEl.innerHTML = detailsHtml;
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'suggestion-analysis-toggle';
+    toggleBtn.type = 'button';
+    toggleBtn.setAttribute('aria-expanded', 'false');
+    toggleBtn.textContent = 'Show more ▾';
+    toggleBtn.addEventListener('click', () => {
+      const open = detailsEl.style.display !== 'none';
+      detailsEl.style.display = open ? 'none' : 'flex';
+      toggleBtn.textContent = open ? 'Show more ▾' : 'Show less ▴';
+      toggleBtn.setAttribute('aria-expanded', String(!open));
+    });
+
+    card.appendChild(toggleBtn);
+    card.appendChild(detailsEl);
+  }
+
   messagesEl.appendChild(card);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
@@ -323,6 +391,14 @@ function createSuggestionCard(result) {
   headerEl.appendChild(labelBadge);
   card.appendChild(headerEl);
 
+  // Sprint 18.3: conversational lead-in built from the AI's own observations
+  const leadEl = document.createElement('p');
+  leadEl.className = 'advisor-response__lead';
+  leadEl.textContent = suggestion.currentObservations
+    ? `Here's what I think. ${truncate(String(suggestion.currentObservations), 220)}`
+    : `Here's what I think — I've drafted a revision for ${sectionTitle}:`;
+  card.appendChild(leadEl);
+
   // Suggested revision (supports edit mode)
   const revisionEl = document.createElement('div');
   revisionEl.className = 'suggestion-revision';
@@ -364,11 +440,11 @@ function createSuggestionCard(result) {
     toggleBtn.className = 'suggestion-analysis-toggle';
     toggleBtn.type = 'button';
     toggleBtn.setAttribute('aria-expanded', 'false');
-    toggleBtn.textContent = 'Show analysis ▾';
+    toggleBtn.textContent = 'Show more ▾';
     toggleBtn.addEventListener('click', () => {
       const open = analysisEl.style.display !== 'none';
       analysisEl.style.display = open ? 'none' : 'flex';
-      toggleBtn.textContent = open ? 'Show analysis ▾' : 'Hide analysis ▴';
+      toggleBtn.textContent = open ? 'Show more ▾' : 'Show less ▴';
       toggleBtn.setAttribute('aria-expanded', String(!open));
     });
     card.appendChild(toggleBtn);
@@ -416,7 +492,7 @@ function createSuggestionCard(result) {
     revisionEl.classList.remove('suggestion-revision--editing');
 
     setSending(false);
-    inputEl.placeholder = `Ask about the ${sectionTitle} section…`;
+    inputEl.placeholder = 'Ask SoorgaAI about this section…';
   }
 
   function doReject() {
@@ -504,10 +580,7 @@ async function sendQuestion(text) {
   appendQuestion(text);
   inputEl.value = '';
   inputEl.style.height = 'auto';
-
-  // Hide general prompts once a message is sent.
-  // Sprint 18.2: section quick actions remain visible during the conversation.
-  document.getElementById('suggested-prompts')?.style?.setProperty('display', 'none');
+  // Sprint 18.3: suggestion chips stay visible — they're compact and optional
 
   setSending(true);
   appendTyping();
@@ -594,9 +667,11 @@ async function loadSuggestedPrompts() {
 
     for (const prompt of prompts) {
       const btn = document.createElement('button');
-      btn.className = 'suggested-prompt-btn';
+      btn.type = 'button';
+      btn.className = 'suggestion-chip';
       btn.textContent = prompt;
-      btn.addEventListener('click', () => sendQuestion(prompt));
+      // Sprint 18.3: chips populate the input — they never auto-send
+      btn.addEventListener('click', () => populateInput(prompt));
       container.appendChild(btn);
     }
   } catch { /* non-critical */ }

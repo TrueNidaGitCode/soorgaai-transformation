@@ -126,6 +126,11 @@
   /* Conversation history is the scroll region; the panel itself only
      scrolls as a fallback on very short viewports. */
   overflow-y: auto;
+  /* Sprint 18.3: subtle visual identity — the AI interaction surface
+     reads slightly lighter than the blueprint canvas */
+  background: rgba(255,255,255,0.02);
+  border-left: 1px solid rgba(92,197,167,0.14);
+  margin-left: -1px; /* sit over the canvas border */
 }
 
 .panel-heading {
@@ -187,11 +192,12 @@
 
 /* ── Chat ──────────────────────────────────────────────────────────────────── */
 
+/* Sprint 18.3: chip containers sit below the input */
 .suggested-prompts {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0;
 }
 
 .suggested-prompt-btn {
@@ -287,22 +293,29 @@
   align-items: flex-end;
 }
 
+/* Sprint 18.3: the input is the primary interaction surface — visually
+   dominant: lighter background, clear border, generous height. */
 .chat-input {
   flex: 1;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 0.75rem;
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 0.9rem;
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   line-height: 1.5;
-  padding: 0.75rem 1rem;
+  min-height: 64px;
+  padding: 0.85rem 1.05rem;
   outline: none;
   resize: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s;
   font-family: inherit;
 }
-.chat-input::placeholder { color: rgba(255,255,255,0.3); }
-.chat-input:focus { border-color: #5CC5A7; }
+.chat-input::placeholder { color: rgba(255,255,255,0.38); }
+.chat-input:focus {
+  border-color: #5CC5A7;
+  background: rgba(255,255,255,0.11);
+  box-shadow: 0 0 0 2px rgba(92,197,167,0.15);
+}
 
 .chat-send-btn {
   background: #5CC5A7;
@@ -749,80 +762,78 @@
 
 /* ── Section context panel (right panel) ───────────────────────────────────── */
 
+/* Sprint 18.3: compact single-row context header — minimal vertical space,
+   stays visible during conversation (panel is sticky). */
 .section-context {
   background: rgba(92,197,167,0.07);
   border: 1px solid rgba(92,197,167,0.22);
   /* Sprint 18.2: accent bar mirrors the active section card on the canvas */
   border-left: 3px solid #5CC5A7;
   border-radius: 0.7rem;
-  padding: 0.8rem 1rem;
-  margin-bottom: 0.85rem;
+  padding: 0.5rem 0.85rem;
+  margin-bottom: 0.75rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.section-context__info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.section-context__label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+.section-context__title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
 }
 
 .section-context__meta {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: rgba(255,255,255,0.5);
 }
 
 .section-context__badges {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   flex-wrap: wrap;
 }
 .section-context__badges:empty { display: none; }
 
-.section-context__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.section-context__info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.section-context__label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #5CC5A7;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-}
-
-.section-context__title {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #fff;
-}
-
 .section-context__clear {
   background: transparent;
   border: 1px solid rgba(92,197,167,0.3);
-  border-radius: 0.4rem;
+  border-radius: 50%;
   color: rgba(92,197,167,0.7);
   cursor: pointer;
-  font-size: 0.75rem;
-  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   transition: border-color 0.2s, color 0.2s;
-  white-space: nowrap;
   flex-shrink: 0;
 }
 .section-context__clear:hover { border-color: #5CC5A7; color: #5CC5A7; }
-
-.section-context__preview {
-  font-size: 0.82rem;
-  color: rgba(255,255,255,0.6);
-  line-height: 1.5;
-  margin: 0;
-  font-style: italic;
-}
 
 /* ── Suggestion card ───────────────────────────────────────────────────────── */
 
@@ -1315,6 +1326,93 @@
   text-align: right;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sprint 18.3 — AI Advisor Conversation UX
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Suggestion chips — small, optional, populate the input */
+
+.suggestion-chip {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 1rem;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  font-size: 0.74rem;
+  padding: 0.28rem 0.7rem;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  line-height: 1.3;
+}
+.suggestion-chip:hover {
+  background: rgba(92,197,167,0.12);
+  border-color: rgba(92,197,167,0.4);
+  color: #fff;
+}
+
+/* Welcome empty state */
+
+.advisor-empty {
+  background: rgba(255,255,255,0.03);
+  border: 1px dashed rgba(92,197,167,0.25);
+  border-radius: 0.85rem;
+  padding: 1.5rem 1.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.advisor-empty__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.35rem;
+}
+
+.advisor-empty__text {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.55;
+  margin: 0 0 0.85rem;
+}
+
+.advisor-empty__examples {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.advisor-empty__examples li {
+  font-size: 0.84rem;
+  color: rgba(92,197,167,0.85);
+  font-style: italic;
+}
+
+/* Conversational lead in AI responses */
+
+.advisor-response__lead {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Section-change divider in conversation history */
+
+.chat-divider {
+  align-self: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(92,197,167,0.7);
+  background: rgba(92,197,167,0.07);
+  border: 1px solid rgba(92,197,167,0.18);
+  border-radius: 1rem;
+  padding: 0.2rem 0.8rem;
+  margin: 0.35rem 0;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {
@@ -1324,7 +1422,7 @@
   }
   .canvas-panel  { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
   /* Stacked layout: advisor flows in the document instead of sticking */
-  .chat-panel    { position: static; height: auto; overflow: visible; }
+  .chat-panel    { position: static; height: auto; overflow: visible; border-left: none; margin-left: 0; }
   .chat-messages { max-height: 35vh; }
 }
 

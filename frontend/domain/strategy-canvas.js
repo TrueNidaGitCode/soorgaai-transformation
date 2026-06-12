@@ -533,6 +533,11 @@ async function loadBlueprint(capabilityId, container) {
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    if (resp.status === 401) {
+      // Session expired — sign in again and come straight back here
+      window.location.href = `/login/login.html?redirect=/domain/domain.html?domain=${getDomainId()}`;
+      return;
+    }
     if (!resp.ok) throw new Error('Failed to load blueprint.');
 
     const blueprint = await resp.json();

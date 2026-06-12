@@ -37,11 +37,14 @@ export const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid Credentials" });
 
-    // Include role in JWT payload
+    // Include role in JWT payload.
+    // 8h expiry: a strategy-workspace session is conversational and long-
+    // lived — a 1h token expired mid-conversation and surfaced as a raw
+    // "Invalid token" error in the advisor chat.
     const token = jwt.sign(
       { userId: user._id, role: user.role || 'user' },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "8h" }
     );
 
     return res.status(200).json({

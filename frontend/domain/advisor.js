@@ -585,10 +585,23 @@ function createSuggestionCard(result) {
 
 function showError(msg) {
   errorTextEl.textContent = msg || 'We couldn\'t process that. Please try again.';
+  retryBtn.style.display = ''; // restore Retry (hidden during session expiry)
   errorEl.style.display = 'flex';
 }
 
 function hideError() { errorEl.style.display = 'none'; }
+
+// Sprint 20.1 fix: an expired JWT used to surface as a raw "Invalid token"
+// error with a Retry button that could never succeed. A 401 now sends the
+// user to sign in again and returns them to this exact domain page.
+function handleSessionExpired() {
+  showError('Your session has expired — taking you to sign in…');
+  retryBtn.style.display = 'none'; // retrying with the same token cannot work
+  setTimeout(() => {
+    window.location.href =
+      `/login/login.html?redirect=/domain/domain.html?domain=${getDomainId()}`;
+  }, 1500);
+}
 
 // ── Send logic ────────────────────────────────────────────────────────────────
 
@@ -648,6 +661,7 @@ async function sendGeneralRequest(ctx, question) {
   setSending(false);
 
   if (!resp.ok) {
+    if (resp.status === 401) { handleSessionExpired(); return; }
     showError(data?.error || 'We couldn\'t process that. Please try again.');
     return;
   }
@@ -686,6 +700,7 @@ async function sendSectionRequest(ctx, question) {
   setSending(false);
 
   if (!resp.ok) {
+    if (resp.status === 401) { handleSessionExpired(); return; }
     showError(data?.error || 'We couldn\'t process that. Please try again.');
     return;
   }

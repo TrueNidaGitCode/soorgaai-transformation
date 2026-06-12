@@ -13,11 +13,17 @@
  *                    Questions go to POST /blueprint-suggest
  *                    Returns a structured suggestion (observations → gaps →
  *                    revision → reasoning → alternatives)
- *                    User chooses: Accept | Edit | Reject
- *                    Only Accept/Edit pushes content to the Strategy Canvas
+ *                    User chooses: Accept | Refine | Discard
+ *                    Only Accept/Refine pushes content to the Strategy Canvas
  *
  * The Strategy Canvas is the source of truth.
  * The AI may suggest. It may never automatically overwrite user content.
+ *
+ * Sprint 20.1 — continuous conversation:
+ *   Accept/Refine/Discard are blueprint actions, not conversation
+ *   terminators. The chat input reactivates as soon as the AI responds,
+ *   and follow-up questions refine the latest pending recommendation
+ *   until it is accepted or discarded.
  */
 
 const API_BASE = window.CONFIG?.API_BASE
@@ -63,6 +69,10 @@ function maybeShowLayout() {
 
 let _sectionMode   = false;
 let _activeSection = null; // { sectionTitle, currentContent, capabilityId, blueprint }
+
+// Sprint 20.1: the latest AI recommendation that has not been accepted or
+// discarded yet — follow-up questions refine it instead of the older draft.
+let _pendingSuggestion = null; // { sectionTitle, content } | null
 
 // ── Context indicator ─────────────────────────────────────────────────────────
 // Sprint 19: implementation details (industry layer, source attribution) are
@@ -351,6 +361,72 @@ function appendAdvisorResponse(result) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+// ── Continuous conversation helpers (Sprint 20.1) ─────────────────────────────
+// Blueprint actions update the artifact; the strategic discussion continues.
+
+const _FOLLOW_UP_QUESTIONS = [
+  'Why did you suggest this?',
+  'What risks do you see?',
+  'Compare with industry best practices.',
+  'How measurable is this?',
+];
+
+// Chip that prefills the input so the user stays in control of what is sent
+function makeQuestionChip(question) {
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'advisor-empty__chip';
+  chip.textContent = question;
+  chip.addEventListener('click', () => {
+    inputEl.value = question;
+    inputEl.dispatchEvent(new Event('input'));
+    inputEl.focus();
+  });
+  return chip;
+}
+
+function nextSectionAfter(sectionTitle) {
+  const sections = _activeSection?.blueprint?.sections
+    || window.StrategyCanvas?.getCurrentContext()?.blueprint?.sections
+    || [];
+  const i = sections.findIndex(s => s.title === sectionTitle);
+  return i >= 0 && i + 1 < sections.length ? sections[i + 1].title : null;
+}
+
+// Shown after Accept: confirm the blueprint update, then keep collaborating
+function appendAcceptFollowUp(sectionTitle) {
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg chat-msg--assistant advisor-followup';
+
+  const text = document.createElement('p');
+  text.className = 'advisor-followup__text';
+  text.textContent =
+    `✓ ${sectionTitle} updated successfully. You can continue discussing ` +
+    'this section or move to another topic.';
+  msg.appendChild(text);
+
+  const chips = document.createElement('div');
+  chips.className = 'advisor-followup__chips';
+  for (const question of _FOLLOW_UP_QUESTIONS) {
+    chips.appendChild(makeQuestionChip(question));
+  }
+
+  const next = nextSectionAfter(sectionTitle);
+  if (next) {
+    const moveChip = document.createElement('button');
+    moveChip.type = 'button';
+    moveChip.className = 'advisor-empty__chip advisor-followup__move-chip';
+    moveChip.textContent = `Move to ${next} →`;
+    moveChip.addEventListener('click', () =>
+      window.StrategyCanvas?.selectSectionByTitle(next));
+    chips.appendChild(moveChip);
+  }
+
+  msg.appendChild(chips);
+  messagesEl.appendChild(msg);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
 // ── Suggestion card — Section mode (Sprint 16 / 19) ───────────────────────────
 // Sprint 19: concise and conversational — a short lead, the revision, a brief
 // "why this improves the strategy", and three actions. No structured report,
@@ -426,6 +502,7 @@ function createSuggestionCard(result) {
 
   function doAccept(content) {
     window.StrategyCanvas?.acceptSection(sectionTitle, content);
+    _pendingSuggestion = null; // accepted — the blueprint draft is the base again
 
     // Show accepted state in card
     actionsEl.innerHTML = '';
@@ -441,14 +518,20 @@ function createSuggestionCard(result) {
     revEdit.style.display = 'none';
     revisionEl.classList.remove('suggestion-revision--editing');
 
+    // Sprint 20.1: accepting updates the artifact — the conversation continues
     setSending(false);
-    inputEl.placeholder = 'Ask me to improve, review, rewrite, or challenge this section…';
+    inputEl.placeholder = 'Ask a follow-up question…';
+    appendAcceptFollowUp(sectionTitle);
   }
 
   function doReject() {
+    _pendingSuggestion = null; // discarded — the blueprint stays unchanged
+
     const msg = document.createElement('div');
     msg.className = 'chat-msg chat-msg--assistant';
-    msg.textContent = 'No problem — your blueprint stays as it is. Tell me what you\'d like instead.';
+    msg.textContent =
+      'Recommendation discarded — your blueprint remains unchanged. '
+      + 'Ask another question or request a different approach.';
     card.replaceWith(msg);
     setSending(false);
   }
@@ -575,6 +658,15 @@ async function sendGeneralRequest(ctx, question) {
 async function sendSectionRequest(ctx, question) {
   const { sectionTitle, currentContent } = _activeSection;
 
+  // Sprint 20.1: follow-up questions build on the latest AI recommendation
+  // while it is pending — so "add sustainability" refines the suggestion on
+  // the table, not the older accepted draft underneath it.
+  const acceptedDraft = ctx.companyDraft?.[sectionTitle] || currentContent || '';
+  const baseContent =
+    (_pendingSuggestion?.sectionTitle === sectionTitle && _pendingSuggestion.content)
+      ? _pendingSuggestion.content
+      : acceptedDraft;
+
   const resp = await fetch(`${API_BASE}/strategy-canvas/blueprint-suggest`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
@@ -582,24 +674,31 @@ async function sendSectionRequest(ctx, question) {
       capabilityId:   ctx.capabilityId,
       blueprint:      ctx.blueprint,
       sectionTitle,
-      currentContent: ctx.companyDraft?.[sectionTitle] || currentContent || '',
+      currentContent: baseContent,
       request:        question,
     }),
   });
 
   const data = await resp.json();
   removeTyping();
+  // Sprint 20.1: the chat always reactivates once the AI responds — Accept/
+  // Refine/Discard are blueprint actions, not conversation terminators.
+  setSending(false);
 
   if (!resp.ok) {
-    setSending(false);
     showError(data?.error || 'We couldn\'t process that. Please try again.');
     return;
   }
 
-  // Render suggestion card — setSending(false) is deferred to Accept/Reject
   const card = createSuggestionCard(data);
   messagesEl.appendChild(card);
   messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  _pendingSuggestion = {
+    sectionTitle,
+    content: data.suggestion?.suggestedRevision || '',
+  };
+  inputEl.placeholder = 'Ask a follow-up question…';
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -660,12 +759,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Canvas events ──────────────────────────────────────────────────────────
   document.addEventListener('blueprint:loaded',  e => {
+    _pendingSuggestion = null; // section titles can repeat across capabilities
     exitSectionMode();
     updateContextIndicator(e.detail);
     renderEmptyStateForBlueprint(e.detail.blueprint);
   });
 
   document.addEventListener('blueprint:cleared', () => {
+    _pendingSuggestion = null;
     exitSectionMode();
     updateContextIndicator(null);
   });

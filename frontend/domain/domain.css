@@ -1669,3 +1669,33 @@
 .blueprint-section__collapse-btn:hover { color: #fff; }
 
 .blueprint-section--collapsed { padding-bottom: 0.85rem; }
+
+/* ── Sprint 20.1 — Continuous conversation after blueprint actions ─────────── */
+
+/* Follow-up guidance message after Accept: confirmation + suggested questions */
+.advisor-followup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  white-space: normal;
+  max-width: 100%;
+}
+
+.advisor-followup__text {
+  margin: 0;
+  color: #5CC5A7;
+  font-weight: 600;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.advisor-followup__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.advisor-followup__move-chip {
+  background: rgba(92,197,167,0.18);
+  border-color: rgba(92,197,167,0.55);
+}

@@ -2,6 +2,12 @@
 #
 # Core loader (loader.py) — no external dependencies, stdlib only.
 #
+# Strategy Response Engine (strategy_response_engine.py)
+anthropic>=0.40.0
+
+# Vector store + hybrid retrieval
+chromadb>=0.5.0
+
 # Embedding Engine (embedding_engine.py) — install the provider you need:
 
 # OpenAI embeddings

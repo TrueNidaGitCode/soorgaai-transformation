@@ -30,6 +30,9 @@ dist/
 build/
 *.pyc
 
+# Vector store (local ChromaDB persistence)
+knowledge_base/.chroma/
+
 # Temporary files
 *.tmp
 *.temp

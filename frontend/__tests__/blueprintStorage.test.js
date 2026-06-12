@@ -16,6 +16,8 @@ import {
   loadCapabilityState,
   saveCapabilityState,
   getCompanySnapshot,
+  logActivity,
+  loadActivities,
 } from '../domain/blueprintStorage.js';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -248,5 +250,64 @@ describe('getCompanySnapshot', () => {
     expect(snap.draftSections).toBe(1);
     expect(snap.totalSections).toBe(4);
     expect(snap.overallPct).toBe(50); // 2/4
+  });
+});
+
+// ── Activity log (Sprint 18) ──────────────────────────────────────────────────
+
+describe('logActivity / loadActivities', () => {
+  it('returns an empty array when nothing has been logged', () => {
+    expect(loadActivities()).toEqual([]);
+  });
+
+  it('round-trips a logged event with action, capability, section and timestamp', () => {
+    logActivity('Approved', 'AI Initiative Leadership', 'Vision');
+
+    const [event] = loadActivities();
+    expect(event.action).toBe('Approved');
+    expect(event.capabilityName).toBe('AI Initiative Leadership');
+    expect(event.sectionTitle).toBe('Vision');
+    expect(new Date(event.at).toString()).not.toBe('Invalid Date');
+  });
+
+  it('returns events newest first', () => {
+    logActivity('Accepted', 'AI Initiative Leadership', 'Vision');
+    logActivity('Approved', 'AI Initiative Leadership', 'Vision');
+
+    const events = loadActivities();
+    expect(events.map(e => e.action)).toEqual(['Approved', 'Accepted']);
+  });
+
+  it('defaults to returning at most 10 events', () => {
+    for (let i = 0; i < 15; i++) logActivity('Approved', 'Cap', `Section ${i}`);
+    expect(loadActivities()).toHaveLength(10);
+  });
+
+  it('caps stored history at 50 events', () => {
+    for (let i = 0; i < 60; i++) logActivity('Approved', 'Cap', `Section ${i}`);
+    expect(loadActivities(100)).toHaveLength(50);
+  });
+
+  it('stores empty strings for missing capability or section', () => {
+    logActivity('Reset');
+    const [event] = loadActivities();
+    expect(event.capabilityName).toBe('');
+    expect(event.sectionTitle).toBe('');
+  });
+
+  it('returns an empty array when the stored value is corrupt JSON', () => {
+    localStorage.setItem('soorgaai_blueprint_activity_v1', '{not json');
+    expect(loadActivities()).toEqual([]);
+  });
+
+  it('returns an empty array when the stored value is not an array', () => {
+    localStorage.setItem('soorgaai_blueprint_activity_v1', '{"a":1}');
+    expect(loadActivities()).toEqual([]);
+  });
+
+  it('does not touch the Sprint 17 blueprint key', () => {
+    saveCapabilityState(CAP_ID, STUB_CAPABILITY);
+    logActivity('Approved', 'AI Initiative Leadership', 'Vision');
+    expect(loadCapabilityState(CAP_ID)).toEqual(STUB_CAPABILITY);
   });
 });

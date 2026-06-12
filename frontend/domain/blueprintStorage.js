@@ -77,6 +77,39 @@ export function saveCapabilityState(capabilityId, state) {
   saveAll(data);
 }
 
+// ── Activity log (Sprint 18 — Blueprint Timeline) ─────────────────────────────
+//
+// Separate key so the Sprint 17 blueprint schema stays untouched.
+// Newest event first. Capped to avoid unbounded growth.
+
+const ACTIVITY_KEY = 'soorgaai_blueprint_activity_v1';
+const ACTIVITY_MAX = 50;
+
+export function logActivity(action, capabilityName, sectionTitle) {
+  try {
+    const events = loadActivities(ACTIVITY_MAX);
+    events.unshift({
+      action,                              // 'Accepted' | 'Approved' | 'Reset'
+      capabilityName: capabilityName || '',
+      sectionTitle:   sectionTitle   || '',
+      at: new Date().toISOString(),
+    });
+    localStorage.setItem(ACTIVITY_KEY, JSON.stringify(events.slice(0, ACTIVITY_MAX)));
+  } catch { /* storage full or unavailable — fail silently */ }
+}
+
+export function loadActivities(limit = 10) {
+  try {
+    const raw = localStorage.getItem(ACTIVITY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
 // ── Company-wide snapshot (aggregate across all capabilities) ─────────────────
 
 export function getCompanySnapshot() {

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoorgaAI — Company AI Strategy</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../workspace/workspace.css">
+  <link rel="stylesheet" href="company-strategy.css">
+  <script src="../login/config.js"></script>
+</head>
+<body class="workspace-page strategy-dashboard-page">
+
+  <!-- ── Navbar ──────────────────────────────────────────────────────────── -->
+  <nav class="workspace-nav" aria-label="Dashboard navigation">
+    <div class="workspace-nav__left">
+      <a href="/workspace/workspace.html" class="workspace-nav__back" aria-label="Back to workspace">← Workspace</a>
+      <span class="workspace-nav__logo">SOORGA<span>AI</span></span>
+    </div>
+    <div class="workspace-nav__right">
+      <span class="workspace-nav__domain-title">Company AI Strategy</span>
+      <button id="csd-logout" class="workspace-nav__logout">Logout</button>
+    </div>
+  </nav>
+
+  <!-- ── Main dashboard ──────────────────────────────────────────────────── -->
+  <main class="workspace-main csd-main" aria-label="Company AI Strategy Dashboard">
+
+    <h1 class="ws-page-title">Company AI Strategy</h1>
+    <p class="csd-page-subtitle">Executive view of your company's evolving AI blueprint. Editing happens in the workspace.</p>
+
+    <!-- Empty state (no blueprint activity yet) -->
+    <div id="csd-empty" class="ws-card csd-empty" style="display:none">
+      <p class="csd-empty__title">No blueprint activity yet</p>
+      <p class="csd-empty__text">Collaborate with the AI Advisor in the workspace to start building your company blueprint. Progress will appear here automatically.</p>
+      <a class="csd-workspace-btn" href="/domain/domain.html?domain=ai-strategy">Open Workspace →</a>
+    </div>
+
+    <div id="csd-content" style="display:none">
+
+      <!-- ── Feature 1: Overall progress + Feature 4: Executive summary ──── -->
+      <div class="csd-top-grid">
+
+        <section class="ws-card csd-progress-card" aria-labelledby="csd-progress-heading">
+          <h2 id="csd-progress-heading" class="csd-card-label">Overall Progress</h2>
+          <div class="csd-progress-hero">
+            <span id="csd-overall-pct" class="csd-progress-pct">0%</span>
+            <div class="csd-progress-track"><div id="csd-overall-bar" class="csd-progress-bar"></div></div>
+          </div>
+          <div class="csd-stat-grid" id="csd-stat-grid">
+            <!-- Injected: completed / in progress / approved / drafts -->
+          </div>
+          <div class="csd-next-focus">
+            <span class="csd-card-label">Next Recommended Focus</span>
+            <p id="csd-next-focus-text" class="csd-next-focus__text"></p>
+          </div>
+        </section>
+
+        <section class="ws-card csd-summary-card" aria-labelledby="csd-summary-heading">
+          <h2 id="csd-summary-heading" class="csd-card-label">Executive Summary</h2>
+          <ul id="csd-summary-list" class="csd-summary-list">
+            <!-- Injected: deterministic summary sentences -->
+          </ul>
+        </section>
+      </div>
+
+      <!-- ── Feature 5: Current focus ─────────────────────────────────────── -->
+      <section id="csd-focus-card" class="ws-card csd-focus-card" aria-labelledby="csd-focus-heading" style="display:none">
+        <h2 id="csd-focus-heading" class="csd-card-label">Current Focus</h2>
+        <div class="csd-focus-grid">
+          <div class="csd-focus-item">
+            <span class="csd-focus-item__label">Capability</span>
+            <span id="csd-focus-capability" class="csd-focus-item__value"></span>
+          </div>
+          <div class="csd-focus-item">
+            <span class="csd-focus-item__label">Section</span>
+            <span id="csd-focus-section" class="csd-focus-item__value"></span>
+          </div>
+          <div class="csd-focus-item">
+            <span class="csd-focus-item__label">Last Updated</span>
+            <span id="csd-focus-updated" class="csd-focus-item__value"></span>
+          </div>
+        </div>
+        <p class="csd-focus-recommendation"><span class="csd-focus-item__label">Recommendation</span> <span id="csd-focus-recommendation"></span></p>
+      </section>
+
+      <!-- ── Features 2 & 3: Capability overview + detail ─────────────────── -->
+      <section class="csd-section" aria-labelledby="csd-capabilities-heading">
+        <h2 id="csd-capabilities-heading" class="ws-domains-title">Capability Overview</h2>
+        <div id="csd-capability-list" class="csd-capability-list">
+          <!-- Injected: one expandable card per capability -->
+        </div>
+      </section>
+
+      <!-- ── Feature 6: Blueprint timeline ─────────────────────────────────── -->
+      <section class="csd-section" aria-labelledby="csd-timeline-heading">
+        <h2 id="csd-timeline-heading" class="ws-domains-title">Blueprint Timeline</h2>
+        <div class="ws-card csd-timeline-card">
+          <ol id="csd-timeline" class="csd-timeline" aria-label="Recent blueprint activity">
+            <!-- Injected: latest 10 events -->
+          </ol>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script type="module" src="company-strategy.js"></script>
+</body>
+</html>

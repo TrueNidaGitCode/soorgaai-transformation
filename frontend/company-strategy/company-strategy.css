@@ -1,0 +1,547 @@
+/* ── Company AI Strategy Dashboard (Sprint 18) ───────────────────────────────
+   Read-oriented executive view. Builds on workspace.css; badge styles match
+   the workspace canvas (domain.css) so status reads identically everywhere. */
+
+/* ── Nav additions (match domain.css workspace nav) ─────────────────────────── */
+
+.workspace-nav__left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.workspace-nav__back {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.workspace-nav__back:hover { color: #fff; }
+
+.workspace-nav__domain-title {
+  font-size: 0.85rem;
+  color: #5CC5A7;
+  font-weight: 600;
+}
+
+/* ── Page chrome ─────────────────────────────────────────────────────────────── */
+
+.csd-page-subtitle {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.45);
+  margin: -0.75rem 0 2rem;
+}
+
+.csd-card-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #5CC5A7;
+  margin: 0 0 1rem;
+}
+
+.csd-section { margin-top: 2rem; }
+
+/* ── Empty state ─────────────────────────────────────────────────────────────── */
+
+.csd-empty { text-align: center; padding: 3rem 2rem; }
+
+.csd-empty__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem;
+}
+
+.csd-empty__text {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.5);
+  max-width: 480px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.6;
+}
+
+/* ── Top grid: progress + executive summary ─────────────────────────────────── */
+
+.csd-top-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+/* Overall progress */
+
+.csd-progress-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.csd-progress-pct {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #5CC5A7;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.csd-progress-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.csd-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #5CC5A7, #3DAFD3);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.csd-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.csd-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 0.6rem;
+  padding: 0.75rem 0.85rem;
+}
+
+.csd-stat__value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.csd-stat__label {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.03em;
+}
+
+.csd-next-focus { border-top: 1px solid rgba(255,255,255,0.07); padding-top: 1.1rem; }
+.csd-next-focus .csd-card-label { margin-bottom: 0.35rem; }
+
+.csd-next-focus__text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+/* Executive summary */
+
+.csd-summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.csd-summary-list li {
+  font-size: 0.92rem;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.55;
+  padding-left: 1.1rem;
+  position: relative;
+}
+
+.csd-summary-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #5CC5A7;
+}
+
+.csd-summary-list li:last-child {
+  color: #5CC5A7;
+  font-weight: 600;
+}
+
+/* ── Current focus ───────────────────────────────────────────────────────────── */
+
+.csd-focus-card { margin-top: 1.25rem; }
+
+.csd-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.csd-focus-item { display: flex; flex-direction: column; gap: 0.25rem; }
+
+.csd-focus-item__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+
+.csd-focus-item__value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.csd-focus-recommendation {
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* ── Capability cards ────────────────────────────────────────────────────────── */
+
+.csd-capability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.csd-capability-card { padding: 0; overflow: hidden; }
+
+.csd-capability-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 1.15rem 1.5rem;
+  text-align: left;
+  transition: background 0.15s;
+}
+.csd-capability-card__header:hover { background: rgba(255,255,255,0.03); }
+.csd-capability-card__header:focus-visible {
+  outline: 2px solid rgba(92,197,167,0.6);
+  outline-offset: -2px;
+}
+
+.csd-capability-card__titles {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.csd-capability-card__name {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.csd-capability-card__metrics {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-shrink: 0;
+}
+
+.csd-capability-card__counts {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.45);
+  white-space: nowrap;
+}
+
+.csd-capability-card__track {
+  width: 110px;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.csd-capability-card__bar {
+  height: 100%;
+  background: #5CC5A7;
+  border-radius: 3px;
+}
+
+.csd-capability-card__pct {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  width: 2.6rem;
+  text-align: right;
+}
+
+.csd-capability-card__chevron {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+.csd-capability-card--open .csd-capability-card__chevron { transform: rotate(180deg); }
+
+/* Status chips */
+
+.csd-status {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.16rem 0.55rem;
+  border-radius: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.csd-status--not-started {
+  color: rgba(255,255,255,0.38);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.csd-status--in-progress {
+  color: #f0a832;
+  background: rgba(240,168,50,0.1);
+  border: 1px solid rgba(240,168,50,0.28);
+}
+
+.csd-status--completed {
+  color: #5CC5A7;
+  background: rgba(92,197,167,0.12);
+  border: 1px solid rgba(92,197,167,0.32);
+}
+
+/* ── Capability detail (read-only) ──────────────────────────────────────────── */
+
+.csd-capability-card__detail {
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding: 1.25rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.csd-capability-card__empty {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+}
+
+.csd-section-detail {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 0.6rem;
+  padding: 0.85rem 1rem;
+}
+
+.csd-section-detail__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.csd-section-detail__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.csd-section-detail__badges {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.csd-section-detail__content {
+  margin-top: 0.7rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 0.7rem;
+}
+
+.csd-section-detail__content-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: rgba(92,197,167,0.8);
+}
+
+.csd-section-detail__content p {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.6;
+  margin: 0.35rem 0 0;
+  white-space: pre-wrap;
+}
+
+/* Status badges — mirrors domain.css so the dashboard reads identically */
+
+.status-badge {
+  font-size: 0.63rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.status-badge--template {
+  color: rgba(255,255,255,0.38);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.status-badge--working-draft {
+  color: #f0a832;
+  background: rgba(240,168,50,0.1);
+  border: 1px solid rgba(240,168,50,0.28);
+}
+
+.status-badge--approved {
+  color: #5CC5A7;
+  background: rgba(92,197,167,0.12);
+  border: 1px solid rgba(92,197,167,0.32);
+}
+
+.source-badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.source-badge--core {
+  color: rgba(140,175,220,0.9);
+  background: rgba(100,140,210,0.1);
+  border: 1px solid rgba(100,140,210,0.2);
+}
+
+.source-badge--industry {
+  color: rgba(92,197,167,0.85);
+  background: rgba(92,197,167,0.08);
+  border: 1px solid rgba(92,197,167,0.18);
+}
+
+.source-badge--user-modified {
+  color: #f0a832;
+  background: rgba(240,168,50,0.08);
+  border: 1px solid rgba(240,168,50,0.2);
+}
+
+/* ── Workspace navigation button ────────────────────────────────────────────── */
+
+.csd-workspace-btn {
+  display: inline-block;
+  align-self: flex-start;
+  background: rgba(92,197,167,0.12);
+  border: 1px solid rgba(92,197,167,0.35);
+  border-radius: 0.5rem;
+  color: #5CC5A7;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.95rem;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+.csd-workspace-btn:hover {
+  background: rgba(92,197,167,0.2);
+  border-color: rgba(92,197,167,0.6);
+}
+
+/* ── Timeline ────────────────────────────────────────────────────────────────── */
+
+.csd-timeline-card { padding: 1.25rem 1.5rem; }
+
+.csd-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.csd-timeline__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.6rem 0;
+}
+.csd-timeline__item + .csd-timeline__item {
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.csd-timeline__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  margin-top: 0.4rem;
+  flex-shrink: 0;
+}
+.csd-timeline__dot--accepted { background: #f0a832; }
+.csd-timeline__dot--approved { background: #5CC5A7; }
+.csd-timeline__dot--reset    { background: rgba(255,255,255,0.35); }
+
+.csd-timeline__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.csd-timeline__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.csd-timeline__meta {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+}
+
+.csd-timeline__empty {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.45);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .csd-top-grid  { grid-template-columns: 1fr; }
+  .csd-stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .csd-focus-grid { grid-template-columns: 1fr; }
+  .csd-capability-card__counts,
+  .csd-capability-card__track { display: none; }
+  .workspace-nav__domain-title { display: none; }
+}

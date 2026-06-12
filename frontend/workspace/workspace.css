@@ -134,6 +134,44 @@
   font-weight: 500;
 }
 
+/* ── Company AI Strategy dashboard link (Sprint 18) ────────────────────────── */
+
+.ws-strategy-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  text-decoration: none;
+  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.ws-strategy-card:hover {
+  border-color: rgba(92,197,167,0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(92,197,167,0.08);
+}
+
+.ws-strategy-card__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 0.4rem;
+}
+
+.ws-strategy-card__description {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.ws-strategy-card__arrow {
+  font-size: 1.3rem;
+  color: #5CC5A7;
+  flex-shrink: 0;
+}
+
 /* ── Domains card header ────────��──────────────────────────────────────────── */
 
 .ws-domains-title {

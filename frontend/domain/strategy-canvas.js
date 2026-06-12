@@ -34,6 +34,7 @@ import {
   loadCapabilityState,
   saveCapabilityState,
   getCompanySnapshot,
+  logActivity,
 } from './blueprintStorage.js';
 
 const API_BASE = window.CONFIG?.API_BASE
@@ -261,6 +262,7 @@ export function acceptSection(sectionTitle, content) {
   }
 
   refreshProgressAndSnapshot();
+  logActivity('Accepted', _currentContext.blueprint.capabilityName, sectionTitle);
 
   document.dispatchEvent(new CustomEvent('section:draft-updated', {
     detail: { sectionTitle, content },
@@ -274,6 +276,7 @@ export function approveSection(sectionTitle) {
   state.status = 'Approved';
   updateSectionCardState(sectionTitle);
   refreshProgressAndSnapshot();
+  logActivity('Approved', _currentContext?.blueprint?.capabilityName, sectionTitle);
 }
 
 export function resetSection(sectionTitle) {
@@ -296,6 +299,7 @@ export function resetSection(sectionTitle) {
 
   updateSectionCardState(sectionTitle);
   refreshProgressAndSnapshot();
+  logActivity('Reset', blueprint?.capabilityName, sectionTitle);
 
   document.dispatchEvent(new CustomEvent('section:draft-updated', {
     detail: { sectionTitle, content: '' },

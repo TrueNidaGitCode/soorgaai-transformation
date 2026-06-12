@@ -43,6 +43,9 @@ let advisorContextEl, advisorSubheadingEl;
 let sectionContextEl, sectionTitleEl, sectionPreviewEl, sectionClearEl;
 let sectionPromptsEl, generalPromptsEl;
 
+// Sprint 18.2: sticky editing header extras
+let sectionMetaEl, sectionBadgesEl;
+
 let lastQuestion = '';
 
 // ── Layout coordination ───────────────────────────────────────────────────────
@@ -110,8 +113,12 @@ function enterSectionMode(detail) {
 
   advisorSubheadingEl.textContent = 'Ask me to improve, review, or rewrite this section.';
 
-  // Show section context panel
+  // Show section context panel (Sprint 18.2: sticky editing header)
   sectionTitleEl.textContent   = detail.sectionTitle;
+  if (sectionMetaEl) {
+    sectionMetaEl.textContent = `${detail.blueprint.capabilityName} · ${detail.blueprint.industry}`;
+  }
+  refreshSectionHeaderState(detail.sectionTitle);
   sectionPreviewEl.textContent = detail.currentContent
     ? truncate(detail.currentContent, 140)
     : '(No draft yet — I\'ll generate one from the knowledge base)';
@@ -125,7 +132,38 @@ function enterSectionMode(detail) {
   inputEl.disabled  = false;
   sendBtn.disabled  = false;
   inputEl.placeholder = `Ask about the ${detail.sectionTitle} section…`;
-  inputEl.focus();
+
+  // Sprint 18.2: focus the advisor. On the stacked (mobile) layout the
+  // advisor panel is not sticky, so bring the editing header into view.
+  if (window.matchMedia('(max-width: 900px)').matches) {
+    sectionContextEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  inputEl.focus({ preventScroll: true });
+}
+
+// ── Sticky editing header: status + source attribution (Sprint 18.2) ──────────
+
+const HEADER_STATUS_CLASS = {
+  'Template':      'status-badge--template',
+  'Working Draft': 'status-badge--working-draft',
+  'Approved':      'status-badge--approved',
+};
+
+function refreshSectionHeaderState(sectionTitle) {
+  if (!sectionBadgesEl) return;
+  if (!_sectionMode && !sectionTitle) { sectionBadgesEl.innerHTML = ''; return; }
+
+  const state = window.StrategyCanvas?.getSectionState?.(sectionTitle);
+  if (!state) { sectionBadgesEl.innerHTML = ''; return; }
+
+  let html = `<span class="status-badge ${HEADER_STATUS_CLASS[state.status] || 'status-badge--template'}">${escapeHtml(state.status)}</span>`;
+  for (const src of state.sources || []) {
+    const cls = src === 'User Modified' ? 'source-badge--user-modified'
+              : src === 'Core'          ? 'source-badge--core'
+              :                           'source-badge--industry';
+    html += ` <span class="source-badge ${cls}">${escapeHtml(src)}</span>`;
+  }
+  sectionBadgesEl.innerHTML = html;
 }
 
 function exitSectionMode() {
@@ -154,11 +192,8 @@ function renderSectionPrompts() {
     const btn = document.createElement('button');
     btn.className = 'suggested-prompt-btn';
     btn.textContent = prompt;
-    btn.addEventListener('click', () => {
-      // Hide prompts after first use
-      sectionPromptsEl.style.display = 'none';
-      sendQuestion(prompt);
-    });
+    // Sprint 18.2: quick actions stay visible for the whole conversation
+    btn.addEventListener('click', () => sendQuestion(prompt));
     sectionPromptsEl.appendChild(btn);
   }
 }
@@ -167,7 +202,10 @@ function renderSectionPrompts() {
 function updateSectionPreview(sectionTitle, content) {
   if (_activeSection?.sectionTitle === sectionTitle) {
     _activeSection.currentContent = content;
-    sectionPreviewEl.textContent  = truncate(content, 140);
+    sectionPreviewEl.textContent  = content
+      ? truncate(content, 140)
+      : '(No draft yet — I\'ll generate one from the knowledge base)';
+    refreshSectionHeaderState(sectionTitle);
   }
 }
 
@@ -285,11 +323,6 @@ function createSuggestionCard(result) {
   headerEl.appendChild(labelBadge);
   card.appendChild(headerEl);
 
-  // Analysis
-  addSection(card, 'Current Observations', suggestion.currentObservations, false);
-  addSection(card, 'Strengths',            suggestion.strengths,            true);
-  addSection(card, 'Potential Gaps',       suggestion.potentialGaps,        true);
-
   // Suggested revision (supports edit mode)
   const revisionEl = document.createElement('div');
   revisionEl.className = 'suggestion-revision';
@@ -313,9 +346,34 @@ function createSuggestionCard(result) {
 
   card.appendChild(revisionEl);
 
-  // Why this helps + alternatives
-  addSection(card, 'Why This Helps', suggestion.whyThisHelps, false);
-  addSection(card, 'Alternatives',   suggestion.alternatives,   true);
+  // ── Collapsible analysis (Sprint 18.2) ────────────────────────────────────
+  // Only the revision + actions show initially; the supporting analysis
+  // expands on demand to reduce visual complexity.
+  const analysisEl = document.createElement('div');
+  analysisEl.className = 'suggestion-analysis';
+  analysisEl.style.display = 'none';
+
+  addSection(analysisEl, 'Current Observations', suggestion.currentObservations, false);
+  addSection(analysisEl, 'Strengths',            suggestion.strengths,            true);
+  addSection(analysisEl, 'Potential Gaps',       suggestion.potentialGaps,        true);
+  addSection(analysisEl, 'Why This Helps',       suggestion.whyThisHelps,         false);
+  addSection(analysisEl, 'Alternatives',         suggestion.alternatives,         true);
+
+  if (analysisEl.children.length > 0) {
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'suggestion-analysis-toggle';
+    toggleBtn.type = 'button';
+    toggleBtn.setAttribute('aria-expanded', 'false');
+    toggleBtn.textContent = 'Show analysis ▾';
+    toggleBtn.addEventListener('click', () => {
+      const open = analysisEl.style.display !== 'none';
+      analysisEl.style.display = open ? 'none' : 'flex';
+      toggleBtn.textContent = open ? 'Show analysis ▾' : 'Hide analysis ▴';
+      toggleBtn.setAttribute('aria-expanded', String(!open));
+    });
+    card.appendChild(toggleBtn);
+    card.appendChild(analysisEl);
+  }
 
   // Action buttons
   const actionsEl = document.createElement('div');
@@ -447,9 +505,9 @@ async function sendQuestion(text) {
   inputEl.value = '';
   inputEl.style.height = 'auto';
 
-  // Hide both prompt sets once a message is sent
+  // Hide general prompts once a message is sent.
+  // Sprint 18.2: section quick actions remain visible during the conversation.
   document.getElementById('suggested-prompts')?.style?.setProperty('display', 'none');
-  sectionPromptsEl.style.display = 'none';
 
   setSending(true);
   appendTyping();
@@ -585,6 +643,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   sectionClearEl   = document.getElementById('section-context-clear');
   sectionPromptsEl = document.getElementById('section-prompts');
 
+  // Sprint 18.2 refs
+  sectionMetaEl   = document.getElementById('section-context-meta');
+  sectionBadgesEl = document.getElementById('section-context-badges');
+
   // Logout
   document.getElementById('domain-logout')?.addEventListener('click', logout);
 
@@ -617,6 +679,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.addEventListener('section:draft-updated', e => {
     updateSectionPreview(e.detail.sectionTitle, e.detail.content);
+  });
+
+  // Sprint 18.2: keep the sticky editing header's status/sources current
+  // (covers Approve, which doesn't dispatch a draft update)
+  document.addEventListener('section:status-changed', e => {
+    if (_activeSection?.sectionTitle === e.detail.sectionTitle) {
+      refreshSectionHeaderState(e.detail.sectionTitle);
+    }
   });
 
   // Section clear button

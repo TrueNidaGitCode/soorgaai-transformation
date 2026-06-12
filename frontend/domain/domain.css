@@ -103,17 +103,29 @@
 }
 
 /* ── Shared panel styles ───────────────────────────────────────────────────── */
+/* Sprint 18.2: unified scrolling — the page scrolls naturally; panels no
+   longer have independent scrollbars. The advisor panel is sticky so editing
+   context stays visible while the blueprint scrolls. */
 
 .canvas-panel,
 .chat-panel {
   padding: 2rem;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
 .canvas-panel {
   border-right: 1px solid rgba(255,255,255,0.07);
+}
+
+.chat-panel {
+  position: sticky;
+  top: 64px; /* below the sticky workspace nav */
+  align-self: start;
+  height: calc(100vh - 64px);
+  /* Conversation history is the scroll region; the panel itself only
+     scrolls as a fallback on very short viewports. */
+  overflow-y: auto;
 }
 
 .panel-heading {
@@ -202,8 +214,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  min-height: 200px;
-  max-height: 50vh;
+  min-height: 120px;
   padding-right: 0.25rem;
   margin-bottom: 0.75rem;
 }
@@ -670,6 +681,8 @@
   border-color: #5CC5A7 !important;
   background: rgba(92,197,167,0.08) !important;
   box-shadow: 0 0 0 1px rgba(92,197,167,0.25);
+  /* Sprint 18.2: accent bar links the selected section to the editing header */
+  border-left: 3px solid #5CC5A7 !important;
 }
 
 /* Section with accepted company draft */
@@ -739,6 +752,8 @@
 .section-context {
   background: rgba(92,197,167,0.07);
   border: 1px solid rgba(92,197,167,0.22);
+  /* Sprint 18.2: accent bar mirrors the active section card on the canvas */
+  border-left: 3px solid #5CC5A7;
   border-radius: 0.7rem;
   padding: 0.8rem 1rem;
   margin-bottom: 0.85rem;
@@ -746,6 +761,19 @@
   flex-direction: column;
   gap: 0.45rem;
 }
+
+.section-context__meta {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+}
+
+.section-context__badges {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+.section-context__badges:empty { display: none; }
 
 .section-context__header {
   display: flex;
@@ -841,6 +869,32 @@
   padding: 0.15rem 0.45rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* ── Collapsible analysis (Sprint 18.2) ────────────────────────────────────── */
+
+.suggestion-analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 0.9rem;
+}
+
+.suggestion-analysis-toggle {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 0.4rem;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.7rem;
+  transition: border-color 0.2s, color 0.2s;
+}
+.suggestion-analysis-toggle:hover {
+  border-color: rgba(92,197,167,0.5);
+  color: #5CC5A7;
 }
 
 /* ── Suggestion analysis sections ──────────────────────────────────────────── */
@@ -1269,6 +1323,8 @@
     grid-template-rows: auto 1fr;
   }
   .canvas-panel  { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  /* Stacked layout: advisor flows in the document instead of sticking */
+  .chat-panel    { position: static; height: auto; overflow: visible; }
   .chat-messages { max-height: 35vh; }
 }
 

@@ -57,15 +57,19 @@
       </div>
       <p id="advisor-subheading" class="panel-subheading">Select a capability from the canvas to start asking questions.</p>
 
-      <!-- Sprint 16: Active section context panel -->
+      <!-- Sprint 16: Active section context panel
+           Sprint 18.2: sticky editing header — capability, section, industry,
+           status, and source attribution stay visible during interaction -->
       <div id="section-context" class="section-context" style="display:none" aria-live="polite">
         <div class="section-context__header">
           <div class="section-context__info">
             <span class="section-context__label">EDITING SECTION</span>
             <span id="section-context-title" class="section-context__title"></span>
+            <span id="section-context-meta" class="section-context__meta"></span>
           </div>
           <button id="section-context-clear" class="section-context__clear" aria-label="Clear section selection">Clear</button>
         </div>
+        <div id="section-context-badges" class="section-context__badges"></div>
         <p id="section-context-preview" class="section-context__preview"></p>
       </div>
 

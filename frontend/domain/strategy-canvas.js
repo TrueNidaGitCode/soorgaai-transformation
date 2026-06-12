@@ -263,9 +263,17 @@ export function acceptSection(sectionTitle, content) {
 
   refreshProgressAndSnapshot();
   logActivity('Accepted', _currentContext.blueprint.capabilityName, sectionTitle);
+  dispatchStatusChanged(sectionTitle);
 
   document.dispatchEvent(new CustomEvent('section:draft-updated', {
     detail: { sectionTitle, content },
+  }));
+}
+
+// Sprint 18.2: lets the advisor's sticky editing header track status/sources
+function dispatchStatusChanged(sectionTitle) {
+  document.dispatchEvent(new CustomEvent('section:status-changed', {
+    detail: { sectionTitle, state: _sectionStates[sectionTitle] || null },
   }));
 }
 
@@ -277,6 +285,7 @@ export function approveSection(sectionTitle) {
   updateSectionCardState(sectionTitle);
   refreshProgressAndSnapshot();
   logActivity('Approved', _currentContext?.blueprint?.capabilityName, sectionTitle);
+  dispatchStatusChanged(sectionTitle);
 }
 
 export function resetSection(sectionTitle) {
@@ -300,6 +309,7 @@ export function resetSection(sectionTitle) {
   updateSectionCardState(sectionTitle);
   refreshProgressAndSnapshot();
   logActivity('Reset', blueprint?.capabilityName, sectionTitle);
+  dispatchStatusChanged(sectionTitle);
 
   document.dispatchEvent(new CustomEvent('section:draft-updated', {
     detail: { sectionTitle, content: '' },
@@ -371,7 +381,8 @@ function renderBlueprint(blueprint, container) {
   view.appendChild(sectionsEl);
   container.appendChild(view);
 
-  container.closest('.canvas-panel')?.scrollTo({ top: 0, behavior: 'smooth' });
+  // Sprint 18.2: the page scrolls as one document — panels have no inner scroll
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function buildSectionCard(section, blueprint) {

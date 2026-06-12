@@ -1586,3 +1586,86 @@
   .workspace-nav { padding: 0 1rem; }
   .workspace-nav__domain-title { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sprint 20 — Domain UX Refinements
+   1. No advisor panel on the capability list (full-width canvas)
+   2. Guided advisor empty state: section chips + tappable example prompts
+   3. Reset link on sections with company content
+   4. Minimise/expand toggle on grown sections
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Capability list view: blueprint canvas owns the page ───────────────── */
+
+.domain-main--no-chat { grid-template-columns: 1fr; }
+.domain-main--no-chat .chat-panel { display: none; }
+.domain-main--no-chat .canvas-panel {
+  border-right: none;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+/* ── 2. Advisor empty-state guidance ───────────────────────────────────────── */
+
+.advisor-empty__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.advisor-empty__chip {
+  background: rgba(92,197,167,0.08);
+  border: 1px solid rgba(92,197,167,0.3);
+  border-radius: 1rem;
+  color: #5CC5A7;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.9rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+.advisor-empty__chip:hover {
+  background: rgba(92,197,167,0.18);
+  border-color: rgba(92,197,167,0.55);
+}
+
+.advisor-empty__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+}
+
+.advisor-empty__example-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-style: italic;
+  padding: 0;
+  text-align: left;
+  transition: color 0.2s;
+}
+.advisor-empty__example-btn:hover { color: #5CC5A7; }
+
+/* ── 3. Reset link (inherits the quiet approve-link look) ──────────────────── */
+
+.blueprint-section__reset-link:hover { color: #E07A6A; }
+
+/* ── 4. Minimise/expand toggle ─────────────────────────────────────────────── */
+
+.blueprint-section__collapse-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0.1rem 0.2rem;
+  transition: color 0.2s;
+}
+.blueprint-section__collapse-btn:hover { color: #fff; }
+
+.blueprint-section--collapsed { padding-bottom: 0.85rem; }

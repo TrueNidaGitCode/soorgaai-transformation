@@ -69,6 +69,11 @@ let _activeSection = null; // { sectionTitle, currentContent, capabilityId, blue
 // no longer surfaced — just the capability being worked on.
 
 function updateContextIndicator(context) {
+  // Sprint 20: the advisor panel only exists once a capability is open —
+  // on the capability list the blueprint canvas gets the full width.
+  document.getElementById('domain-main')
+    ?.classList.toggle('domain-main--no-chat', !context);
+
   if (context) {
     const { blueprint } = context;
     advisorContextEl.textContent = blueprint.capabilityName;
@@ -84,6 +89,93 @@ function updateContextIndicator(context) {
     inputEl.disabled  = true;
     sendBtn.disabled  = true;
   }
+}
+
+// ── Welcome empty state (Sprint 18.3 / 20) ───────────────────────────────────
+// Sprint 20: the empty state guides the first-time user instead of relying on
+// instruction text — it lists the blueprint sections as clickable chips, so
+// "select a section" is an action in the chat panel, not something to figure
+// out. Once a section is active it offers tappable example prompts.
+
+const _EXAMPLE_PROMPTS = [
+  'Help improve our AI vision.',
+  'Challenge our assumptions.',
+  'Make this measurable.',
+  'Compare against industry best practices.',
+];
+
+function emptyStateEl() {
+  const el = document.getElementById('advisor-empty');
+  // Once a conversation starts the empty state is gone for good
+  return el && el.style.display !== 'none' ? el : null;
+}
+
+function renderEmptyStateForBlueprint(blueprint) {
+  const el = emptyStateEl();
+  if (!el) return;
+  el.innerHTML = '';
+
+  const title = document.createElement('p');
+  title.className = 'advisor-empty__title';
+  title.textContent = `Let's build your ${blueprint.capabilityName} strategy`;
+  el.appendChild(title);
+
+  const text = document.createElement('p');
+  text.className = 'advisor-empty__text';
+  text.textContent = 'Choose the blueprint section you want to work on:';
+  el.appendChild(text);
+
+  const chips = document.createElement('div');
+  chips.className = 'advisor-empty__chips';
+  for (const section of blueprint.sections || []) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'advisor-empty__chip';
+    chip.textContent = section.title;
+    chip.addEventListener('click', () =>
+      window.StrategyCanvas?.selectSectionByTitle(section.title));
+    chips.appendChild(chip);
+  }
+  el.appendChild(chips);
+
+  const hint = document.createElement('p');
+  hint.className = 'advisor-empty__text advisor-empty__hint';
+  hint.textContent = 'Or just ask me anything about this capability.';
+  el.appendChild(hint);
+}
+
+function renderEmptyStateForSection(sectionTitle) {
+  const el = emptyStateEl();
+  if (!el) return;
+  el.innerHTML = '';
+
+  const title = document.createElement('p');
+  title.className = 'advisor-empty__title';
+  title.textContent = `Working on ${sectionTitle}`;
+  el.appendChild(title);
+
+  const text = document.createElement('p');
+  text.className = 'advisor-empty__text';
+  text.textContent = 'Tell me what you need — or start from one of these:';
+  el.appendChild(text);
+
+  const list = document.createElement('ul');
+  list.className = 'advisor-empty__examples';
+  for (const prompt of _EXAMPLE_PROMPTS) {
+    const li  = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'advisor-empty__example-btn';
+    btn.textContent = `“${prompt}”`;
+    btn.addEventListener('click', () => {
+      inputEl.value = prompt;
+      inputEl.dispatchEvent(new Event('input'));
+      inputEl.focus();
+    });
+    li.appendChild(btn);
+    list.appendChild(li);
+  }
+  el.appendChild(list);
 }
 
 // ── Section mode (Sprint 16) ──────────────────────────────────────────────────
@@ -570,6 +662,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('blueprint:loaded',  e => {
     exitSectionMode();
     updateContextIndicator(e.detail);
+    renderEmptyStateForBlueprint(e.detail.blueprint);
   });
 
   document.addEventListener('blueprint:cleared', () => {
@@ -578,8 +671,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Sprint 16: section events
-  document.addEventListener('section:selected',  e => enterSectionMode(e.detail));
-  document.addEventListener('section:deselected', () => exitSectionMode());
+  document.addEventListener('section:selected',  e => {
+    enterSectionMode(e.detail);
+    renderEmptyStateForSection(e.detail.sectionTitle);
+  });
+  document.addEventListener('section:deselected', () => {
+    exitSectionMode();
+    const ctx = window.StrategyCanvas?.getCurrentContext();
+    if (ctx?.blueprint) renderEmptyStateForBlueprint(ctx.blueprint);
+  });
 
   document.addEventListener('section:draft-updated', e => {
     updateSectionPreview(e.detail.sectionTitle, e.detail.content);

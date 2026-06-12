@@ -18,6 +18,7 @@
  *           status:  'Template' | 'Working Draft' | 'Approved',
  *           sources: string[],   // ['Core'] | ['Core','Automotive'] | [...,'User Modified']
  *           content: string,     // empty = template, otherwise accepted/edited text
+ *           collapsed?: boolean, // Sprint 20: section minimised on the canvas
  *         }
  *       }
  *     }

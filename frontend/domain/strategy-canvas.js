@@ -24,7 +24,8 @@
  *   approveSection(title)            — Sprint 17: promote Working Draft → Approved
  *   resetSection(title)              — Sprint 17: restore section to Template
  *   deselectSection()                — clear active section
- *   getSectionState(title)           — { status, sources, content }
+ *   selectSectionByTitle(title)      — Sprint 20: select a section programmatically
+ *   getSectionState(title)           — { status, sources, content, collapsed? }
  */
 
 import {
@@ -89,10 +90,13 @@ function applyStateToCard(card, sectionTitle) {
   if (!state) return;
 
   const hasContent = !!state.content;
+  // Sprint 20: sections with a grown draft can be minimised to one row
+  const collapsed  = hasContent && !!state.collapsed;
 
   card.classList.toggle('blueprint-section--approved',      state.status === 'Approved');
   card.classList.toggle('blueprint-section--working-draft', state.status === 'Working Draft');
   card.classList.toggle('blueprint-section--has-draft',     hasContent);
+  card.classList.toggle('blueprint-section--collapsed',     collapsed);
 
   // Status dot: ✓ once the section has company content, ○ before
   const dotEl = card.querySelector('.blueprint-section__dot');
@@ -101,12 +105,12 @@ function applyStateToCard(card, sectionTitle) {
     dotEl.classList.toggle('blueprint-section__dot--done',  hasContent);
   }
 
-  // Body: company draft text or start hint
+  // Body: company draft text or start hint (hidden while minimised)
   const draftTxt = card.querySelector('.blueprint-section__draft-text');
   const hintEl   = card.querySelector('.blueprint-section__start-hint');
   if (draftTxt && hintEl) {
     draftTxt.textContent  = state.content;
-    draftTxt.style.display = hasContent ? 'block' : 'none';
+    draftTxt.style.display = hasContent && !collapsed ? 'block' : 'none';
     hintEl.style.display   = hasContent ? 'none'  : 'block';
   }
 
@@ -131,6 +135,42 @@ function applyStateToCard(card, sectionTitle) {
       approveLink.textContent = 'Approve';
       approveLink.addEventListener('click', e => { e.stopPropagation(); approveSection(sectionTitle); });
       actionsEl.appendChild(approveLink);
+    }
+
+    // Sprint 20: any section with company content can be reset to its
+    // original template — including Approved sections.
+    if (hasContent) {
+      const resetLink = document.createElement('button');
+      resetLink.className = 'blueprint-section__approve-link blueprint-section__reset-link';
+      resetLink.textContent = 'Reset';
+      resetLink.setAttribute('aria-label', `Reset the ${sectionTitle} section to its original template`);
+      resetLink.addEventListener('click', e => {
+        e.stopPropagation();
+        const ok = window.confirm(
+          `Reset "${sectionTitle}" to its original template?\n\nYour current draft will be removed.`
+        );
+        if (ok) resetSection(sectionTitle);
+      });
+      actionsEl.appendChild(resetLink);
+
+      // Sprint 20: minimise/expand toggle for grown sections
+      const collapseBtn = document.createElement('button');
+      collapseBtn.className = 'blueprint-section__collapse-btn';
+      collapseBtn.textContent = collapsed ? '▸' : '▾';
+      collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+      collapseBtn.setAttribute(
+        'aria-label',
+        collapsed ? `Expand the ${sectionTitle} section` : `Minimise the ${sectionTitle} section`
+      );
+      collapseBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const st = _sectionStates[sectionTitle];
+        if (!st) return;
+        st.collapsed = !st.collapsed;
+        persistState();
+        updateSectionCardState(sectionTitle);
+      });
+      actionsEl.appendChild(collapseBtn);
     }
   }
 }
@@ -188,8 +228,9 @@ export function acceptSection(sectionTitle, content) {
   // Update section state (Sprint 17)
   const state = _sectionStates[sectionTitle];
   if (state) {
-    state.status  = 'Working Draft';
-    state.content = content;
+    state.status    = 'Working Draft';
+    state.content   = content;
+    state.collapsed = false; // Sprint 20: never hide freshly accepted content
     if (!state.sources.includes('User Modified')) {
       state.sources.push('User Modified');
     }
@@ -410,6 +451,14 @@ function selectSection(sectionTitle, cardEl) {
   cardEl.classList.add('blueprint-section--active');
   cardEl.setAttribute('aria-pressed', 'true');
 
+  // Sprint 20: working on a minimised section expands it
+  const state = _sectionStates[sectionTitle];
+  if (state?.collapsed) {
+    state.collapsed = false;
+    persistState();
+    updateSectionCardState(sectionTitle);
+  }
+
   const currentContent = _currentContext?.companyDraft?.[sectionTitle] || '';
 
   document.dispatchEvent(new CustomEvent('section:selected', {
@@ -557,12 +606,23 @@ document.addEventListener('DOMContentLoaded', init);
 
 // ── Global API ────────────────────────────────────────────────────────────────
 
+// Sprint 20: lets the advisor's section chips select a section on the canvas
+function selectSectionByTitle(sectionTitle) {
+  const card = document.querySelector(
+    `.blueprint-section[data-section-title="${CSS.escape(sectionTitle)}"]`
+  );
+  if (!card) return;
+  if (_activeSectionTitle !== sectionTitle) selectSection(sectionTitle, card);
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 window.StrategyCanvas = {
   getCurrentContext:  () => _currentContext,
   acceptSection,
   approveSection,
   resetSection,
   deselectSection,
+  selectSectionByTitle,
   getSectionState:    (title) => _sectionStates[title] || null,
 };
 

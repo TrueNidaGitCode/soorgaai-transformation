@@ -66,13 +66,21 @@ function setupNavbarHandlers() {
         return;
     }
 
+    // ── Login mode: login page opts in via data-nav-mode="login" ──
+    // Renders only the nav links. No auth chrome, no roadmap CTA.
+    if (document.body.dataset.navMode === 'login') {
+        [loginBtn, logoutBtn, userDisplay, adminBtn, myAssessmentsBtn, roadmapCta].forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+        return;
+    }
+
     // ── Authenticated mode (default for all other pages) ─────────────────
     if (!loginBtn || !logoutBtn) return;
 
     const token    = localStorage.getItem('token');
     const username = localStorage.getItem('username') || 'User';
     const role     = localStorage.getItem('role') || 'user';
-    const hasCompletedAssessment = !!localStorage.getItem('da_score');
 
     if (token) {
         if (userDisplay) { userDisplay.textContent = `Hi, ${username}`; userDisplay.style.display = 'inline'; }
@@ -85,7 +93,7 @@ function setupNavbarHandlers() {
         if (userDisplay) userDisplay.style.display = 'none';
         loginBtn.style.display  = 'inline';
         logoutBtn.style.display = 'none';
-        if (myAssessmentsBtn) myAssessmentsBtn.style.display = hasCompletedAssessment ? 'inline' : 'none';
+        if (myAssessmentsBtn) myAssessmentsBtn.style.display = 'none';
         if (adminBtn) adminBtn.style.display = 'none';
         loginBtn.onclick = () => { window.location.href = '/login/login.html'; };
     }

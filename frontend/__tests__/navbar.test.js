@@ -122,12 +122,43 @@ describe('setupNavbarHandlers — unauthenticated user', () => {
     expect(document.getElementById('myAssessmentsBtn').style.display).toBe('none');
   });
 
-  it('shows My Assessments when no token but da_score is present in localStorage', () => {
+  it('hides My Assessments when no token even if da_score is present in localStorage', () => {
     buildNavbarDOM({ daScore: '{"overallScore":60}' });
 
     setupNavbarHandlers();
 
-    expect(document.getElementById('myAssessmentsBtn').style.display).toBe('inline');
+    expect(document.getElementById('myAssessmentsBtn').style.display).toBe('none');
+  });
+});
+
+// ── setupNavbarHandlers — login mode ─────────────────────────────────────────
+
+describe('setupNavbarHandlers — login nav mode', () => {
+  afterEach(() => {
+    delete document.body.dataset.navMode;
+  });
+
+  it('hides all auth chrome and the roadmap CTA on the login page', () => {
+    buildNavbarDOM();
+    document.body.dataset.navMode = 'login';
+
+    setupNavbarHandlers();
+
+    ['loginSignupBtn', 'logoutBtn', 'username-display', 'adminDashboardBtn', 'myAssessmentsBtn', 'navRoadmapCta']
+      .forEach(id => {
+        expect(document.getElementById(id).style.display).toBe('none');
+      });
+  });
+
+  it('hides auth chrome even when a token and da_score are present', () => {
+    buildNavbarDOM({ token: 'valid-jwt', daScore: '{"overallScore":60}' });
+    document.body.dataset.navMode = 'login';
+
+    setupNavbarHandlers();
+
+    expect(document.getElementById('loginSignupBtn').style.display).toBe('none');
+    expect(document.getElementById('myAssessmentsBtn').style.display).toBe('none');
+    expect(document.getElementById('navRoadmapCta').style.display).toBe('none');
   });
 });
 

@@ -1413,6 +1413,161 @@
   margin: 0.35rem 0;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sprint 19 — Simplified Conversational Workspace
+   Minimal section cards, simple progress line, prominent input area.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Minimal section cards ─────────────────────────────────────────────────── */
+
+.blueprint-section__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.blueprint-section__dot {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+  width: 1.1rem;
+  text-align: center;
+}
+.blueprint-section__dot--done { color: #5CC5A7; }
+
+/* Section title reads as a document heading, not a technical label */
+.blueprint-section__title {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.blueprint-section__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.blueprint-section__action-btn {
+  background: rgba(92,197,167,0.1);
+  border: 1px solid rgba(92,197,167,0.3);
+  border-radius: 0.45rem;
+  color: #5CC5A7;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.28rem 0.8rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+.blueprint-section__action-btn:hover {
+  background: rgba(92,197,167,0.2);
+  border-color: rgba(92,197,167,0.55);
+}
+
+.blueprint-section__approve-link {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  font-size: 0.74rem;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+.blueprint-section__approve-link:hover { color: #5CC5A7; }
+
+.blueprint-section__start-hint {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.35);
+  font-style: italic;
+  margin: 0;
+  padding-left: 1.7rem;
+}
+
+/* Draft text sits under the title, indented past the dot */
+.blueprint-section .blueprint-section__draft-text {
+  padding-left: 1.7rem;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.85rem;
+}
+
+/* ── Simple company progress indicator ─────────────────────────────────────── */
+
+.snapshot-simple {
+  gap: 0.35rem;
+}
+
+.snapshot-simple__title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #5CC5A7;
+}
+
+.snapshot-simple__line {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.snapshot-simple__track {
+  height: 5px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 0.2rem;
+}
+
+.snapshot-simple__bar {
+  height: 100%;
+  background: linear-gradient(90deg, #5CC5A7, #3DAFD3);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.snapshot-simple__pct {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+}
+
+/* ── Prominent input area ──────────────────────────────────────────────────── */
+/* A distinct background block so the one primary action — typing — is obvious */
+
+.chat-input-form {
+  background: rgba(92,197,167,0.06);
+  border: 1px solid rgba(92,197,167,0.18);
+  border-radius: 1rem;
+  padding: 0.7rem;
+}
+
+/* ── Concise suggestion reasoning ──────────────────────────────────────────── */
+
+.suggestion-why {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.suggestion-why__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #5CC5A7;
+}
+
+.suggestion-why__text {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {

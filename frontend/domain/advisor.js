@@ -41,10 +41,9 @@ let advisorContextEl, advisorSubheadingEl;
 
 // Sprint 16
 let sectionContextEl, sectionTitleEl, sectionPreviewEl, sectionClearEl;
-let sectionPromptsEl, generalPromptsEl;
 
 // Sprint 18.2: sticky editing header extras
-let sectionMetaEl, sectionBadgesEl;
+let sectionMetaEl;
 
 let lastQuestion = '';
 
@@ -62,25 +61,26 @@ function maybeShowLayout() {
 
 // ── Mode state (Sprint 16) ────────────────────────────────────────────────────
 
-let _sectionMode               = false;
-let _activeSection             = null; // { sectionTitle, currentContent, capabilityId, blueprint }
-let _generalPromptsWereVisible = false;
+let _sectionMode   = false;
+let _activeSection = null; // { sectionTitle, currentContent, capabilityId, blueprint }
 
 // ── Context indicator ─────────────────────────────────────────────────────────
+// Sprint 19: implementation details (industry layer, source attribution) are
+// no longer surfaced — just the capability being worked on.
 
 function updateContextIndicator(context) {
   if (context) {
     const { blueprint } = context;
-    advisorContextEl.textContent = `${blueprint.capabilityName} · ${blueprint.industry}`;
+    advisorContextEl.textContent = blueprint.capabilityName;
     advisorContextEl.style.display = 'block';
     advisorSubheadingEl.textContent =
-      'Select a section to collaborate on it, or ask a general question below.';
+      'Pick a section on the left, or ask me anything about this capability.';
     inputEl.disabled  = false;
     sendBtn.disabled  = false;
   } else {
     advisorContextEl.style.display = 'none';
     advisorSubheadingEl.textContent =
-      'Select a capability from the canvas to start asking questions.';
+      'Select a capability from the blueprint to start the conversation.';
     inputEl.disabled  = true;
     sendBtn.disabled  = true;
   }
@@ -88,37 +88,22 @@ function updateContextIndicator(context) {
 
 // ── Section mode (Sprint 16) ──────────────────────────────────────────────────
 
-// Sprint 18.3: compact suggestion chips — clicking populates the chat input
-// (typing remains the primary interaction). The industry chip adapts to the
-// blueprint's industry layer.
-const SECTION_CHIPS = [
-  { label: 'Improve',   prompt: 'Improve this section' },
-  { label: 'Executive', prompt: 'Rewrite this for executives' },
-  { label: 'Measure',   prompt: 'Make this more measurable' },
-  { label: 'Challenge', prompt: 'Challenge our assumptions' },
-  { label: 'Simplify',  prompt: 'Simplify this statement' },
-];
-
 function enterSectionMode(detail) {
   _sectionMode   = true;
   _activeSection = { ...detail };
 
-  // Track whether general prompts were visible so we can restore them on exit
-  _generalPromptsWereVisible = generalPromptsEl.style.display !== 'none';
-
   // Update context badge
   advisorContextEl.textContent =
-    `${detail.blueprint.capabilityName} · ${detail.sectionTitle} · ${detail.blueprint.industry}`;
+    `${detail.blueprint.capabilityName} · ${detail.sectionTitle}`;
   advisorContextEl.style.display = 'block';
 
-  advisorSubheadingEl.textContent = 'Ask me to improve, review, or rewrite this section.';
+  advisorSubheadingEl.textContent = 'Chat naturally — I\'ll help you build this section.';
 
-  // Show compact context header (Sprint 18.2/18.3)
+  // Show compact "Working on" header (Sprint 18.2/19)
   sectionTitleEl.textContent = detail.sectionTitle;
   if (sectionMetaEl) {
-    sectionMetaEl.textContent = `${detail.blueprint.capabilityName} · ${detail.blueprint.industry}`;
+    sectionMetaEl.textContent = detail.blueprint.capabilityName;
   }
-  refreshSectionHeaderState(detail.sectionTitle);
   if (sectionPreviewEl) {
     sectionPreviewEl.textContent = detail.currentContent
       ? truncate(detail.currentContent, 140)
@@ -129,14 +114,9 @@ function enterSectionMode(detail) {
   // Sprint 18.3: mark the context switch in the conversation flow
   appendSectionDivider(detail.sectionTitle);
 
-  // Swap to section-specific chips
-  generalPromptsEl.style.display = 'none';
-  renderSectionPrompts();
-  sectionPromptsEl.style.display = 'flex';
-
   inputEl.disabled  = false;
   sendBtn.disabled  = false;
-  inputEl.placeholder = 'Ask SoorgaAI about this section…';
+  inputEl.placeholder = 'Ask me to improve, review, rewrite, or challenge this section…';
 
   // Sprint 18.2: focus the advisor. On the stacked (mobile) layout the
   // advisor panel is not sticky, so bring the editing header into view.
@@ -161,78 +141,17 @@ function appendSectionDivider(sectionTitle) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-// ── Sticky editing header: status + source attribution (Sprint 18.2) ──────────
-
-const HEADER_STATUS_CLASS = {
-  'Template':      'status-badge--template',
-  'Working Draft': 'status-badge--working-draft',
-  'Approved':      'status-badge--approved',
-};
-
-function refreshSectionHeaderState(sectionTitle) {
-  if (!sectionBadgesEl) return;
-  if (!_sectionMode && !sectionTitle) { sectionBadgesEl.innerHTML = ''; return; }
-
-  const state = window.StrategyCanvas?.getSectionState?.(sectionTitle);
-  if (!state) { sectionBadgesEl.innerHTML = ''; return; }
-
-  let html = `<span class="status-badge ${HEADER_STATUS_CLASS[state.status] || 'status-badge--template'}">${escapeHtml(state.status)}</span>`;
-  for (const src of state.sources || []) {
-    const cls = src === 'User Modified' ? 'source-badge--user-modified'
-              : src === 'Core'          ? 'source-badge--core'
-              :                           'source-badge--industry';
-    html += ` <span class="source-badge ${cls}">${escapeHtml(src)}</span>`;
-  }
-  sectionBadgesEl.innerHTML = html;
-}
-
 function exitSectionMode() {
   _sectionMode   = false;
   _activeSection = null;
 
   sectionContextEl.style.display = 'none';
-  sectionPromptsEl.style.display = 'none';
 
   inputEl.placeholder = 'Ask SoorgaAI…';
-
-  // Restore general prompts only if they were visible before section mode started
-  if (_generalPromptsWereVisible) {
-    generalPromptsEl.style.display = 'flex';
-  }
-  _generalPromptsWereVisible = false;
 
   // Restore context indicator
   const ctx = window.StrategyCanvas?.getCurrentContext();
   updateContextIndicator(ctx ? { blueprint: ctx.blueprint } : null);
-}
-
-function renderSectionPrompts() {
-  sectionPromptsEl.innerHTML = '';
-
-  const industry = _activeSection?.blueprint?.industry;
-  const chips = [...SECTION_CHIPS];
-  if (industry) {
-    chips.splice(2, 0, { label: industry, prompt: `How would a leading ${industry} company approach this?` });
-  }
-
-  for (const chip of chips) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'suggestion-chip';
-    btn.textContent = chip.label;
-    btn.title = chip.prompt;
-    // Sprint 18.3: chips populate the input — they never auto-send
-    btn.addEventListener('click', () => populateInput(chip.prompt));
-    sectionPromptsEl.appendChild(btn);
-  }
-}
-
-// Sprint 18.3: put text in the chat input ready to edit or send
-function populateInput(text) {
-  inputEl.value = text;
-  inputEl.style.height = 'auto';
-  inputEl.style.height = `${inputEl.scrollHeight}px`;
-  inputEl.focus();
 }
 
 // Update the section context after a draft is accepted
@@ -244,7 +163,6 @@ function updateSectionPreview(sectionTitle, content) {
         ? truncate(content, 140)
         : '(No draft yet — I\'ll generate one from the knowledge base)';
     }
-    refreshSectionHeaderState(sectionTitle);
   }
 }
 
@@ -341,72 +259,29 @@ function appendAdvisorResponse(result) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-// ── Suggestion card — Section mode (Sprint 16) ────────────────────────────────
+// ── Suggestion card — Section mode (Sprint 16 / 19) ───────────────────────────
+// Sprint 19: concise and conversational — a short lead, the revision, a brief
+// "why this improves the strategy", and three actions. No structured report,
+// no technical labels. Accept/Refine/Discard map to the existing
+// Accept/Edit/Reject workflow — behavior unchanged.
 
 function createSuggestionCard(result) {
   const { suggestion, sectionTitle } = result;
   const card = document.createElement('div');
   card.className = 'suggestion-card';
 
-  // Helper: append a labeled section to a parent element
-  function addSection(parent, title, value, isList) {
-    if (!value || (Array.isArray(value) && !value.length)) return;
-    const s = document.createElement('div');
-    s.className = 'suggestion-section';
-
-    const h = document.createElement('h4');
-    h.className = 'suggestion-section__title';
-    h.textContent = title;
-    s.appendChild(h);
-
-    if (isList) {
-      const ul = document.createElement('ul');
-      ul.className = 'suggestion-section__list';
-      (value || []).forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item;
-        ul.appendChild(li);
-      });
-      s.appendChild(ul);
-    } else {
-      const p = document.createElement('p');
-      p.className = 'suggestion-section__body';
-      p.textContent = String(value);
-      s.appendChild(p);
-    }
-
-    parent.appendChild(s);
-  }
-
-  // Header
-  const headerEl = document.createElement('div');
-  headerEl.className = 'suggestion-card__header';
-  const sectionBadge = document.createElement('span');
-  sectionBadge.className = 'suggestion-card__section';
-  sectionBadge.textContent = sectionTitle;
-  const labelBadge = document.createElement('span');
-  labelBadge.className = 'suggestion-card__label';
-  labelBadge.textContent = 'AI Suggestion';
-  headerEl.appendChild(sectionBadge);
-  headerEl.appendChild(labelBadge);
-  card.appendChild(headerEl);
-
-  // Sprint 18.3: conversational lead-in built from the AI's own observations
+  // Conversational lead-in
+  const industry = _activeSection?.blueprint?.industry || '';
   const leadEl = document.createElement('p');
   leadEl.className = 'advisor-response__lead';
-  leadEl.textContent = suggestion.currentObservations
-    ? `Here's what I think. ${truncate(String(suggestion.currentObservations), 220)}`
-    : `Here's what I think — I've drafted a revision for ${sectionTitle}:`;
+  leadEl.textContent = industry
+    ? `Here's an improved ${sectionTitle} for your ${industry.toLowerCase()} AI strategy:`
+    : `Here's an improved ${sectionTitle} for your AI strategy:`;
   card.appendChild(leadEl);
 
-  // Suggested revision (supports edit mode)
+  // Suggested revision (supports refine mode)
   const revisionEl = document.createElement('div');
   revisionEl.className = 'suggestion-revision';
-
-  const revTitle = document.createElement('h4');
-  revTitle.className = 'suggestion-section__title';
-  revTitle.textContent = 'Suggested Revision';
-  revisionEl.appendChild(revTitle);
 
   const revText = document.createElement('p');
   revText.className = 'suggestion-revision__text';
@@ -422,33 +297,16 @@ function createSuggestionCard(result) {
 
   card.appendChild(revisionEl);
 
-  // ── Collapsible analysis (Sprint 18.2) ────────────────────────────────────
-  // Only the revision + actions show initially; the supporting analysis
-  // expands on demand to reduce visual complexity.
-  const analysisEl = document.createElement('div');
-  analysisEl.className = 'suggestion-analysis';
-  analysisEl.style.display = 'none';
-
-  addSection(analysisEl, 'Current Observations', suggestion.currentObservations, false);
-  addSection(analysisEl, 'Strengths',            suggestion.strengths,            true);
-  addSection(analysisEl, 'Potential Gaps',       suggestion.potentialGaps,        true);
-  addSection(analysisEl, 'Why This Helps',       suggestion.whyThisHelps,         false);
-  addSection(analysisEl, 'Alternatives',         suggestion.alternatives,         true);
-
-  if (analysisEl.children.length > 0) {
-    const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'suggestion-analysis-toggle';
-    toggleBtn.type = 'button';
-    toggleBtn.setAttribute('aria-expanded', 'false');
-    toggleBtn.textContent = 'Show more ▾';
-    toggleBtn.addEventListener('click', () => {
-      const open = analysisEl.style.display !== 'none';
-      analysisEl.style.display = open ? 'none' : 'flex';
-      toggleBtn.textContent = open ? 'Show more ▾' : 'Show less ▴';
-      toggleBtn.setAttribute('aria-expanded', String(!open));
-    });
-    card.appendChild(toggleBtn);
-    card.appendChild(analysisEl);
+  // Brief reasoning — kept conversational, no report headings
+  if (suggestion.whyThisHelps) {
+    const whyEl = document.createElement('div');
+    whyEl.className = 'suggestion-why';
+    whyEl.innerHTML = `<span class="suggestion-why__label">Why this improves the strategy:</span>`;
+    const whyText = document.createElement('p');
+    whyText.className = 'suggestion-why__text';
+    whyText.textContent = String(suggestion.whyThisHelps);
+    whyEl.appendChild(whyText);
+    card.appendChild(whyEl);
   }
 
   // Action buttons
@@ -461,11 +319,11 @@ function createSuggestionCard(result) {
 
   const editBtn = document.createElement('button');
   editBtn.className = 'suggestion-btn suggestion-btn--edit';
-  editBtn.textContent = 'Edit';
+  editBtn.textContent = 'Refine';
 
   const rejectBtn = document.createElement('button');
   rejectBtn.className = 'suggestion-btn suggestion-btn--reject';
-  rejectBtn.textContent = 'Reject';
+  rejectBtn.textContent = 'Discard';
 
   actionsEl.appendChild(acceptBtn);
   actionsEl.appendChild(editBtn);
@@ -481,24 +339,24 @@ function createSuggestionCard(result) {
     actionsEl.innerHTML = '';
     const badge = document.createElement('span');
     badge.className = 'suggestion-accepted-badge';
-    badge.textContent = '✓ Accepted — blueprint section updated';
+    badge.textContent = '✓ Added to your blueprint';
     actionsEl.appendChild(badge);
     card.classList.add('suggestion-card--accepted');
 
-    // Restore text view if we were in edit mode
+    // Restore text view if we were in refine mode
     revText.textContent   = content;
     revText.style.display = 'block';
     revEdit.style.display = 'none';
     revisionEl.classList.remove('suggestion-revision--editing');
 
     setSending(false);
-    inputEl.placeholder = 'Ask SoorgaAI about this section…';
+    inputEl.placeholder = 'Ask me to improve, review, rewrite, or challenge this section…';
   }
 
   function doReject() {
     const msg = document.createElement('div');
     msg.className = 'chat-msg chat-msg--assistant';
-    msg.textContent = 'Suggestion rejected. The blueprint section remains unchanged.';
+    msg.textContent = 'No problem — your blueprint stays as it is. Tell me what you\'d like instead.';
     card.replaceWith(msg);
     setSending(false);
   }
@@ -515,7 +373,7 @@ function createSuggestionCard(result) {
 
     const acceptEditBtn = document.createElement('button');
     acceptEditBtn.className = 'suggestion-btn suggestion-btn--accept';
-    acceptEditBtn.textContent = 'Accept Edit';
+    acceptEditBtn.textContent = 'Accept';
 
     const cancelEditBtn = document.createElement('button');
     cancelEditBtn.className = 'suggestion-btn suggestion-btn--reject';
@@ -652,31 +510,6 @@ async function sendSectionRequest(ctx, question) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-// ── Suggested prompts (general mode) ─────────────────────────────────────────
-
-async function loadSuggestedPrompts() {
-  try {
-    const resp = await fetch(`${API_BASE}/chat/${getDomainId()}/suggested-prompts`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    if (!resp.ok) return;
-
-    const { prompts } = await resp.json();
-    const container = document.getElementById('suggested-prompts');
-    container.innerHTML = '';
-
-    for (const prompt of prompts) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'suggestion-chip';
-      btn.textContent = prompt;
-      // Sprint 18.3: chips populate the input — they never auto-send
-      btn.addEventListener('click', () => populateInput(prompt));
-      container.appendChild(btn);
-    }
-  } catch { /* non-critical */ }
-}
-
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
 function escapeHtml(text) {
@@ -709,18 +542,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   retryBtn            = document.getElementById('chat-retry');
   advisorContextEl    = document.getElementById('advisor-context');
   advisorSubheadingEl = document.getElementById('advisor-subheading');
-  generalPromptsEl    = document.getElementById('suggested-prompts');
 
   // Sprint 16 refs
   sectionContextEl = document.getElementById('section-context');
   sectionTitleEl   = document.getElementById('section-context-title');
   sectionPreviewEl = document.getElementById('section-context-preview');
   sectionClearEl   = document.getElementById('section-context-clear');
-  sectionPromptsEl = document.getElementById('section-prompts');
 
   // Sprint 18.2 refs
-  sectionMetaEl   = document.getElementById('section-context-meta');
-  sectionBadgesEl = document.getElementById('section-context-badges');
+  sectionMetaEl = document.getElementById('section-context-meta');
 
   // Logout
   document.getElementById('domain-logout')?.addEventListener('click', logout);
@@ -745,7 +575,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('blueprint:cleared', () => {
     exitSectionMode();
     updateContextIndicator(null);
-    generalPromptsEl.style.display = 'none';
   });
 
   // Sprint 16: section events
@@ -756,22 +585,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateSectionPreview(e.detail.sectionTitle, e.detail.content);
   });
 
-  // Sprint 18.2: keep the sticky editing header's status/sources current
-  // (covers Approve, which doesn't dispatch a draft update)
-  document.addEventListener('section:status-changed', e => {
-    if (_activeSection?.sectionTitle === e.detail.sectionTitle) {
-      refreshSectionHeaderState(e.detail.sectionTitle);
-    }
-  });
-
   // Section clear button
   sectionClearEl?.addEventListener('click', () => {
     window.StrategyCanvas?.deselectSection();
     exitSectionMode();
   });
 
-  // Load general suggested prompts
-  await loadSuggestedPrompts();
   advisorReady = true;
   maybeShowLayout();
 

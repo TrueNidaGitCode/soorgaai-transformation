@@ -32,13 +32,13 @@
   <!-- ── Two-panel layout ────────────────────────────────────────────────── -->
   <main id="domain-main" class="domain-main" style="display:none" aria-label="Domain workspace">
 
-    <!-- Canvas panel -->
+    <!-- Blueprint panel -->
     <section class="canvas-panel" aria-labelledby="canvas-heading">
-      <h2 id="canvas-heading" class="panel-heading">AI Strategy Canvas</h2>
+      <h2 id="canvas-heading" class="panel-heading">Company AI Blueprint</h2>
       <p class="panel-subheading" id="canvas-subheading">Select a capability to explore its blueprint.</p>
 
-      <!-- Sprint 17: Company Snapshot Card -->
-      <div id="snapshot-card" class="snapshot-card" style="display:none" aria-live="polite">
+      <!-- Sprint 17/19: simple company progress indicator -->
+      <div id="snapshot-card" class="snapshot-card snapshot-simple" style="display:none" aria-live="polite">
         <!-- Injected by strategy-canvas.js -->
       </div>
 
@@ -57,15 +57,13 @@
       </div>
       <p id="advisor-subheading" class="panel-subheading">Select a capability from the canvas to start asking questions.</p>
 
-      <!-- Sprint 16/18.2/18.3: Compact sticky context header —
-           what is being worked on, status, and source attribution -->
+      <!-- Sprint 16/18.2/19: Compact "Working on" header — no technical badges -->
       <div id="section-context" class="section-context" style="display:none" aria-live="polite">
         <div class="section-context__info">
           <span class="section-context__label">Working on</span>
-          <span id="section-context-title" class="section-context__title"></span>
           <span id="section-context-meta" class="section-context__meta"></span>
+          <span id="section-context-title" class="section-context__title"></span>
         </div>
-        <div id="section-context-badges" class="section-context__badges"></div>
         <button id="section-context-clear" class="section-context__clear" aria-label="Clear section selection">✕</button>
       </div>
 
@@ -107,14 +105,7 @@
         </button>
       </form>
 
-      <!-- Sprint 18.3: optional suggestion chips below the input.
-           Chips populate the input — typing stays the primary interaction. -->
-      <div id="section-prompts" class="suggested-prompts suggestion-chips" style="display:none" aria-label="Section suggestion chips">
-        <!-- Injected by advisor.js when a section is selected -->
-      </div>
-      <div id="suggested-prompts" class="suggested-prompts suggestion-chips" aria-label="Suggested questions">
-        <!-- Injected by advisor.js -->
-      </div>
+      <!-- Sprint 19: no suggestion buttons — typing is the one primary action -->
 
     </section>
   </main>

@@ -69,15 +69,6 @@ function initSectionStates(blueprint) {
   }
 }
 
-function getProgress() {
-  const values   = Object.values(_sectionStates);
-  const total    = values.length;
-  const approved = values.filter(s => s.status === 'Approved').length;
-  const draft    = values.filter(s => s.status === 'Working Draft').length;
-  const pct      = total > 0 ? Math.round((approved / total) * 100) : 0;
-  return { total, approved, draft, template: total - approved - draft, pct };
-}
-
 function persistState() {
   if (!_currentContext) return;
   const { blueprint } = _currentContext;
@@ -88,79 +79,58 @@ function persistState() {
   });
 }
 
-// ── Badge helpers (Sprint 17) ─────────────────────────────────────────────────
-
-const STATUS_CLASS = {
-  'Template':     'status-badge--template',
-  'Working Draft':'status-badge--working-draft',
-  'Approved':     'status-badge--approved',
-};
-
-function buildBadgesHTML(state) {
-  const sClass = STATUS_CLASS[state.status] || 'status-badge--template';
-  let html = `<span class="status-badge ${sClass}">${escapeHtml(state.status)}</span>`;
-
-  for (const src of state.sources) {
-    const srcClass = src === 'User Modified' ? 'source-badge--user-modified'
-                   : src === 'Core'          ? 'source-badge--core'
-                   :                           'source-badge--industry';
-    html += ` <span class="source-badge ${srcClass}">${escapeHtml(src)}</span>`;
-  }
-  return html;
-}
-
-function createApproveBtn(sectionTitle) {
-  const btn = document.createElement('button');
-  btn.className = 'section-action-btn section-action-btn--approve';
-  btn.textContent = 'Approve';
-  btn.addEventListener('click', e => { e.stopPropagation(); approveSection(sectionTitle); });
-  return btn;
-}
-
-function createResetBtn(sectionTitle) {
-  const btn = document.createElement('button');
-  btn.className = 'section-action-btn section-action-btn--reset';
-  btn.textContent = 'Reset';
-  btn.addEventListener('click', e => { e.stopPropagation(); resetSection(sectionTitle); });
-  return btn;
-}
-
-// ── Apply state to a section card (Sprint 17) ─────────────────────────────────
+// ── Apply state to a section card ─────────────────────────────────────────────
+// Sprint 19: minimal presentation — a status dot, the section title, the
+// company draft (or a start hint), and one Edit/Start action. All Sprint 17
+// state, sources, and lifecycle logic still run underneath, unpresented.
 
 function applyStateToCard(card, sectionTitle) {
   const state = _sectionStates[sectionTitle];
   if (!state) return;
 
-  // Status classes
-  card.classList.toggle('blueprint-section--approved',     state.status === 'Approved');
+  const hasContent = !!state.content;
+
+  card.classList.toggle('blueprint-section--approved',      state.status === 'Approved');
   card.classList.toggle('blueprint-section--working-draft', state.status === 'Working Draft');
-  card.classList.toggle('blueprint-section--has-draft',    !!state.content);
+  card.classList.toggle('blueprint-section--has-draft',     hasContent);
 
-  // Badges
-  const badgesEl = card.querySelector('.blueprint-section__badges');
-  if (badgesEl) badgesEl.innerHTML = buildBadgesHTML(state);
-
-  // Draft area
-  const draftEl  = card.querySelector('.blueprint-section__draft');
-  const draftTxt = card.querySelector('.blueprint-section__draft-text');
-  if (draftEl && draftTxt) {
-    if (state.content) {
-      draftTxt.textContent  = state.content;
-      draftEl.style.display = 'block';
-    } else {
-      draftEl.style.display = 'none';
-    }
+  // Status dot: ✓ once the section has company content, ○ before
+  const dotEl = card.querySelector('.blueprint-section__dot');
+  if (dotEl) {
+    dotEl.textContent = hasContent ? '✓' : '○';
+    dotEl.classList.toggle('blueprint-section__dot--done',  hasContent);
   }
 
-  // Action buttons (Approve / Reset)
-  const actionsEl = card.querySelector('.blueprint-section__section-actions');
+  // Body: company draft text or start hint
+  const draftTxt = card.querySelector('.blueprint-section__draft-text');
+  const hintEl   = card.querySelector('.blueprint-section__start-hint');
+  if (draftTxt && hintEl) {
+    draftTxt.textContent  = state.content;
+    draftTxt.style.display = hasContent ? 'block' : 'none';
+    hintEl.style.display   = hasContent ? 'none'  : 'block';
+  }
+
+  // Actions: one primary Edit/Start button, plus a quiet Approve link
+  // while a draft is awaiting sign-off (keeps the Sprint 17 lifecycle usable)
+  const actionsEl = card.querySelector('.blueprint-section__actions');
   if (actionsEl) {
     actionsEl.innerHTML = '';
+
+    const mainBtn = document.createElement('button');
+    mainBtn.className = 'blueprint-section__action-btn';
+    mainBtn.textContent = hasContent ? 'Edit' : 'Start';
+    mainBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (_activeSectionTitle !== sectionTitle) handleSectionClick(sectionTitle, card);
+    });
+    actionsEl.appendChild(mainBtn);
+
     if (state.status === 'Working Draft') {
-      actionsEl.appendChild(createApproveBtn(sectionTitle));
-      actionsEl.appendChild(createResetBtn(sectionTitle));
-    } else if (state.status === 'Approved') {
-      actionsEl.appendChild(createResetBtn(sectionTitle));
+      const approveLink = document.createElement('button');
+      approveLink.className = 'blueprint-section__approve-link';
+      approveLink.textContent = 'Approve';
+      approveLink.addEventListener('click', e => { e.stopPropagation(); approveSection(sectionTitle); });
+      actionsEl.appendChild(approveLink);
     }
   }
 }
@@ -172,60 +142,37 @@ function updateSectionCardState(sectionTitle) {
   if (card) applyStateToCard(card, sectionTitle);
 }
 
-// ── Progress bar refresh ──────────────────────────────────────────────────────
+// ── Company progress refresh ──────────────────────────────────────────────────
+// Sprint 19: one small indicator — "X of N Capabilities Started · Y% Complete".
+// getCompanySnapshot() still computes the full aggregate (preserved for the
+// dashboard and workspace widget); only the presentation is reduced.
 
-function refreshProgress() {
-  const existing = document.getElementById('blueprint-progress');
-  if (!existing || !_currentContext) return;
-  const newEl = renderProgressBar(_currentContext.blueprint.sections);
-  existing.replaceWith(newEl);
-}
-
-// ── Company Snapshot refresh ──────────────────────────────────────────────────
+let _totalCapabilities = 5; // updated from the API capability list when loaded
 
 function refreshSnapshot() {
   const el = document.getElementById('snapshot-card');
   if (!el) return;
 
-  const snap = getCompanySnapshot();
+  const snap    = getCompanySnapshot();
+  const started = snap.capabilitiesStarted;
+  const total   = Math.max(_totalCapabilities, snap.totalCapabilities);
+  const pct     = total > 0 ? Math.round((started / total) * 100) : 0;
 
-  if (snap.totalCapabilities === 0) {
+  if (started === 0) {
     el.style.display = 'none';
     return;
   }
 
   el.style.display = 'block';
   el.innerHTML = `
-    <div class="snapshot-header">
-      <span class="snapshot-title">COMPANY SNAPSHOT</span>
-    </div>
-    <div class="snapshot-stats">
-      <div class="snapshot-stat">
-        <span class="snapshot-stat__value">${snap.capabilitiesStarted}</span>
-        <span class="snapshot-stat__label">Started</span>
-      </div>
-      <div class="snapshot-stat">
-        <span class="snapshot-stat__value">${snap.capabilitiesCompleted}</span>
-        <span class="snapshot-stat__label">Completed</span>
-      </div>
-      <div class="snapshot-stat">
-        <span class="snapshot-stat__value">${snap.approvedSections}</span>
-        <span class="snapshot-stat__label">Approved</span>
-      </div>
-      <div class="snapshot-stat">
-        <span class="snapshot-stat__value">${snap.draftSections}</span>
-        <span class="snapshot-stat__label">In Draft</span>
-      </div>
-    </div>
-    <div class="snapshot-bar-wrapper">
-      <div class="snapshot-bar" style="width:${snap.overallPct}%"></div>
-    </div>
-    <span class="snapshot-pct">${snap.overallPct}% Overall Progress</span>
+    <span class="snapshot-simple__title">Company AI Strategy</span>
+    <span class="snapshot-simple__line">${started} of ${total} Capabilities Started</span>
+    <div class="snapshot-simple__track"><div class="snapshot-simple__bar" style="width:${pct}%"></div></div>
+    <span class="snapshot-simple__pct">${pct}% Complete</span>
   `;
 }
 
 function refreshProgressAndSnapshot() {
-  refreshProgress();
   persistState();
   refreshSnapshot();
 }
@@ -357,24 +304,20 @@ function renderBlueprint(blueprint, container) {
   back.addEventListener('click', () => loadCapabilities(container));
   view.appendChild(back);
 
-  // Capability header
+  // Capability header (Sprint 19: just the name — no technical metadata)
   const header = document.createElement('div');
   header.className = 'blueprint-header';
   header.innerHTML = `
     <h3 class="blueprint-capability-name">${blueprint.capabilityName}</h3>
-    <span class="blueprint-industry-badge">${blueprint.industry}</span>
   `;
   view.appendChild(header);
-
-  // Progress bar (Sprint 17)
-  view.appendChild(renderProgressBar(blueprint.sections));
 
   // Sections
   const sectionsEl = document.createElement('div');
   sectionsEl.className = 'blueprint-sections';
 
   for (const section of blueprint.sections) {
-    const card = buildSectionCard(section, blueprint);
+    const card = buildSectionCard(section);
     sectionsEl.appendChild(card);
   }
 
@@ -385,71 +328,50 @@ function renderBlueprint(blueprint, container) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function buildSectionCard(section, blueprint) {
+// Sprint 19: minimal card — dot · title · Edit/Start, with the company draft
+// (or a start hint) underneath. The knowledge-base template content still
+// powers the AI server-side; it's just no longer printed on the card.
+function buildSectionCard(section) {
   const card = document.createElement('div');
   card.className = 'blueprint-section blueprint-section--selectable';
-  if (section.source === 'both') card.classList.add('blueprint-section--enriched');
   card.dataset.sectionTitle = section.title;
   card.setAttribute('role', 'button');
   card.setAttribute('tabindex', '0');
   card.setAttribute('aria-pressed', 'false');
-  card.setAttribute('aria-label', `Select ${section.title} section to collaborate`);
+  card.setAttribute('aria-label', `Work on the ${section.title} section`);
 
-  // ── Badges row (Sprint 17) ────────────────────────────────────────────────
-  const badgesEl = document.createElement('div');
-  badgesEl.className = 'blueprint-section__badges';
-  card.appendChild(badgesEl);
+  // ── Header row: dot · title · actions ─────────────────────────────────────
+  const rowEl = document.createElement('div');
+  rowEl.className = 'blueprint-section__row';
 
-  // ── Knowledge content ─────────────────────────────────────────────────────
-  const contentEl = document.createElement('div');
-  contentEl.className = 'blueprint-section__content';
+  const dotEl = document.createElement('span');
+  dotEl.className = 'blueprint-section__dot';
+  dotEl.setAttribute('aria-hidden', 'true');
 
-  let html = `<h4 class="blueprint-section__title">${section.title}</h4>`;
+  const titleEl = document.createElement('h4');
+  titleEl.className = 'blueprint-section__title';
+  titleEl.textContent = section.title;
 
-  if (section.definition) {
-    html += `<p class="blueprint-section__definition">${escapeHtml(section.definition)}</p>`;
-  }
-  if (section.keyPrinciples.length > 0) {
-    html += `<ul class="blueprint-section__principles">
-      ${section.keyPrinciples.map(p => `<li>${escapeHtml(p)}</li>`).join('')}
-    </ul>`;
-  }
-  if (section.leadershipQuestion) {
-    html += `<p class="blueprint-section__question">${escapeHtml(section.leadershipQuestion)}</p>`;
-  }
-  if (section.industryContext) {
-    html += `<div class="blueprint-section__industry">
-      <span class="blueprint-section__industry-label">${blueprint.industry} Context</span>
-      <p>${escapeHtml(extractFirstParagraph(section.industryContext))}</p>
-    </div>`;
-  }
+  const actionsEl = document.createElement('span');
+  actionsEl.className = 'blueprint-section__actions';
 
-  contentEl.innerHTML = html;
-  card.appendChild(contentEl);
+  rowEl.appendChild(dotEl);
+  rowEl.appendChild(titleEl);
+  rowEl.appendChild(actionsEl);
+  card.appendChild(rowEl);
 
-  // ── Company draft area (Sprint 16) ────────────────────────────────────────
-  const draftEl = document.createElement('div');
-  draftEl.className = 'blueprint-section__draft';
-  draftEl.style.display = 'none';
-  draftEl.innerHTML = `
-    <span class="blueprint-section__draft-label">COMPANY DRAFT</span>
-    <p class="blueprint-section__draft-text"></p>
-  `;
-  card.appendChild(draftEl);
+  // ── Body: company draft text or start hint ────────────────────────────────
+  const draftTxt = document.createElement('p');
+  draftTxt.className = 'blueprint-section__draft-text';
+  draftTxt.style.display = 'none';
+  card.appendChild(draftTxt);
 
-  // ── Section actions (Sprint 17: Approve / Reset buttons) ─────────────────
-  const actionsEl = document.createElement('div');
-  actionsEl.className = 'blueprint-section__section-actions';
-  card.appendChild(actionsEl);
+  const hintEl = document.createElement('p');
+  hintEl.className = 'blueprint-section__start-hint';
+  hintEl.textContent = 'Start building…';
+  card.appendChild(hintEl);
 
-  // ── Select hint (Sprint 16) ───────────────────────────────────────────────
-  const hint = document.createElement('span');
-  hint.className = 'blueprint-section__select-hint';
-  hint.setAttribute('aria-hidden', 'true');
-  hint.textContent = 'Click to collaborate →';
-  card.appendChild(hint);
-
-  // Apply current state (badges + buttons)
+  // Apply current state (dot, body, actions)
   applyStateToCard(card, section.title);
 
   // ── Interaction ───────────────────────────────────────────────────────────
@@ -462,65 +384,6 @@ function buildSectionCard(section, blueprint) {
   });
 
   return card;
-}
-
-// ── Progress bar (Sprint 17) ──────────────────────────────────────────────────
-
-function renderProgressBar(sections) {
-  const progress = getProgress();
-
-  const el = document.createElement('div');
-  el.className = 'blueprint-progress';
-  el.id        = 'blueprint-progress';
-
-  // Section status list
-  const listEl = document.createElement('div');
-  listEl.className = 'blueprint-progress__list';
-
-  for (const section of sections) {
-    const state = _sectionStates[section.title] || { status: 'Template' };
-    const item  = document.createElement('div');
-    item.className = 'blueprint-progress__item';
-
-    const dot  = document.createElement('span');
-    const isApproved = state.status === 'Approved';
-    const isDraft    = state.status === 'Working Draft';
-    dot.className = `blueprint-progress__dot${isApproved ? ' blueprint-progress__dot--approved' : isDraft ? ' blueprint-progress__dot--draft' : ''}`;
-    dot.textContent = isApproved ? '✓' : isDraft ? '◑' : '○';
-
-    const nameEl = document.createElement('span');
-    nameEl.className = 'blueprint-progress__name';
-    nameEl.textContent = section.title;
-
-    const statusEl = document.createElement('span');
-    statusEl.className = 'blueprint-progress__status';
-    statusEl.textContent = state.status;
-
-    item.appendChild(dot);
-    item.appendChild(nameEl);
-    item.appendChild(statusEl);
-    listEl.appendChild(item);
-  }
-
-  el.appendChild(listEl);
-
-  // Bar track
-  const trackEl = document.createElement('div');
-  trackEl.className = 'blueprint-progress__track';
-
-  const barEl = document.createElement('div');
-  barEl.className = 'blueprint-progress__bar';
-  barEl.style.width = `${progress.pct}%`;
-  trackEl.appendChild(barEl);
-  el.appendChild(trackEl);
-
-  // Label
-  const pctEl = document.createElement('span');
-  pctEl.className = 'blueprint-progress__label';
-  pctEl.textContent = `${progress.approved}/${progress.total} Approved · ${progress.pct}% Complete`;
-  el.appendChild(pctEl);
-
-  return el;
 }
 
 // ── Section interaction (Sprint 16) ──────────────────────────────────────────
@@ -594,6 +457,7 @@ async function loadCapabilities(container) {
     if (!resp.ok) throw new Error('Failed to load capabilities.');
 
     const { capabilities } = await resp.json();
+    _totalCapabilities = capabilities.length || _totalCapabilities;
 
     const sub = document.getElementById('canvas-subheading');
     if (sub) sub.textContent = 'Select a capability to explore its blueprint.';
@@ -639,7 +503,7 @@ async function loadBlueprint(capabilityId, container) {
     document.dispatchEvent(new CustomEvent('blueprint:loaded', { detail: _currentContext }));
 
     const sub = document.getElementById('canvas-subheading');
-    if (sub) sub.textContent = 'Click any section to collaborate with the AI Advisor.';
+    if (sub) sub.textContent = 'Pick a section and chat with the AI Advisor to build it.';
 
     renderBlueprint(blueprint, container);
     refreshSnapshot();
@@ -659,34 +523,6 @@ function renderError(message, container) {
 
 function renderLoading(container) {
   container.innerHTML = `<div class="canvas-loading"><div class="ws-spinner"></div></div>`;
-}
-
-// ── Utilities ─────────────────────────────────────────────────────────────────
-
-function escapeHtml(text) {
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function extractFirstParagraph(text) {
-  const lines = text.split('\n');
-  const out = [];
-  for (const line of lines) {
-    const t = line.trim();
-    if (!t || t.startsWith('#') || t.startsWith('|') || t === '---') {
-      if (out.length > 0) break;
-      continue;
-    }
-    if (t.startsWith('*') || t.startsWith('-') || t.startsWith('>')) {
-      if (out.length > 0) break;
-      continue;
-    }
-    out.push(t);
-  }
-  return out.join(' ').replace(/\*\*/g, '').trim();
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────

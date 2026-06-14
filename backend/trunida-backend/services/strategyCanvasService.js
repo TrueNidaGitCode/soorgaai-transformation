@@ -240,12 +240,17 @@ export function getCapabilityBlueprint(capabilityId, industry = 'Automotive') {
 
   const sections = pillars.map(pillar => {
     const match = findIndustryMatch(pillar.title, industrySections);
+    // automotiveText: clean prose for the per-section Automotive Blueprint UI card.
+    // Extracted from the matching industry section content (same source as industryContext)
+    // using the shared extractParagraphText helper.
+    const automotiveText = match ? extractParagraphText(match.content, 150) : '';
     return {
       title:              pillar.title,
       definition:         pillar.subsections['Definition']        || '',
       keyPrinciples:      extractBulletList(pillar.subsections['Key Principles']    || ''),
       leadershipQuestion: extractLeadershipQuestion(pillar.subsections['Leadership Question'] || ''),
       industryContext:    match ? match.content : null,
+      automotiveText,
       source:             match ? 'both' : 'core',
     };
   });

@@ -105,6 +105,10 @@ function applyStateToCard(card, sectionTitle) {
     dotEl.classList.toggle('blueprint-section__dot--done',  hasContent);
   }
 
+  // Automotive Blueprint sub-section: always visible unless card is collapsed
+  const autoEl = card.querySelector('.blueprint-section__automotive');
+  if (autoEl) autoEl.style.display = collapsed ? 'none' : 'block';
+
   // Body: company draft text or start hint (hidden while minimised)
   const draftTxt = card.querySelector('.blueprint-section__draft-text');
   const hintEl   = card.querySelector('.blueprint-section__start-hint');
@@ -353,30 +357,6 @@ function renderBlueprint(blueprint, container) {
   `;
   view.appendChild(header);
 
-  // ── Automotive Blueprint (non-editable industry reference) ──────────────────
-  if (blueprint.automotiveBlueprint) {
-    const autoEl = document.createElement('div');
-    autoEl.className = 'automotive-blueprint';
-
-    const autoLabel = document.createElement('div');
-    autoLabel.className = 'automotive-blueprint__label';
-    autoLabel.textContent = 'AUTOMOTIVE BLUEPRINT';
-    autoEl.appendChild(autoLabel);
-
-    const autoText = document.createElement('p');
-    autoText.className = 'automotive-blueprint__text';
-    autoText.textContent = blueprint.automotiveBlueprint;
-    autoEl.appendChild(autoText);
-
-    view.appendChild(autoEl);
-  }
-
-  // ── Company Blueprint label ───────────────────────────────────────────────
-  const companyLabelEl = document.createElement('div');
-  companyLabelEl.className = 'company-blueprint-label';
-  companyLabelEl.textContent = 'COMPANY BLUEPRINT';
-  view.appendChild(companyLabelEl);
-
   // ── Sections ──────────────────────────────────────────────────────────────
   const sectionsEl = document.createElement('div');
   sectionsEl.className = 'blueprint-sections';
@@ -425,7 +405,25 @@ function buildSectionCard(section) {
   rowEl.appendChild(actionsEl);
   card.appendChild(rowEl);
 
-  // ── Body: company draft text or start hint ────────────────────────────────
+  // ── Automotive Blueprint sub-section (non-editable industry reference) ──────
+  if (section.automotiveText) {
+    const autoEl = document.createElement('div');
+    autoEl.className = 'blueprint-section__automotive';
+
+    const autoLabel = document.createElement('span');
+    autoLabel.className = 'blueprint-section__automotive-label';
+    autoLabel.textContent = 'AUTOMOTIVE BLUEPRINT';
+    autoEl.appendChild(autoLabel);
+
+    const autoText = document.createElement('p');
+    autoText.className = 'blueprint-section__automotive-text';
+    autoText.textContent = section.automotiveText;
+    autoEl.appendChild(autoText);
+
+    card.appendChild(autoEl);
+  }
+
+  // ── Company Blueprint body: draft text or start hint ─────────────────────
   const draftTxt = document.createElement('p');
   draftTxt.className = 'blueprint-section__draft-text';
   draftTxt.style.display = 'none';

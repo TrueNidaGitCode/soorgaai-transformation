@@ -1670,6 +1670,48 @@
 
 .blueprint-section--collapsed { padding-bottom: 0.85rem; }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sprint 21 — Automotive Blueprint + Company Blueprint
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Automotive Blueprint card (non-editable industry reference) ───────────── */
+
+.automotive-blueprint {
+  background: rgba(92,197,167,0.04);
+  border: 1px solid rgba(92,197,167,0.22);
+  border-radius: 0.85rem;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.automotive-blueprint__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.automotive-blueprint__text {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Company Blueprint label above section cards ───────────────────────────── */
+
+.company-blueprint-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.5rem 0 0.1rem;
+}
+
 /* ── Sprint 20.1 — Continuous conversation after blueprint actions ─────────── */
 
 /* Follow-up guidance message after Accept: confirmation + suggested questions */

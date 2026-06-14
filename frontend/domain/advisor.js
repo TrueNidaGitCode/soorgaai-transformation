@@ -650,9 +650,10 @@ async function sendGeneralRequest(ctx, question) {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
     body: JSON.stringify({
-      capabilityId: ctx.capabilityId,
-      blueprint:    ctx.blueprint,
+      capabilityId:        ctx.capabilityId,
+      blueprint:           ctx.blueprint,
       question,
+      automotiveBlueprint: ctx.blueprint?.automotiveBlueprint || '',
     }),
   });
 
@@ -685,11 +686,12 @@ async function sendSectionRequest(ctx, question) {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
     body: JSON.stringify({
-      capabilityId:   ctx.capabilityId,
-      blueprint:      ctx.blueprint,
+      capabilityId:        ctx.capabilityId,
+      blueprint:           ctx.blueprint,
       sectionTitle,
-      currentContent: baseContent,
-      request:        question,
+      currentContent:      baseContent,
+      request:             question,
+      automotiveBlueprint: ctx.blueprint?.automotiveBlueprint || '',
     }),
   });
 

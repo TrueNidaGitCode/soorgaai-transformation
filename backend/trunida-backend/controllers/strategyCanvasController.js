@@ -37,7 +37,7 @@ export async function listCapabilities(req, res) {
 
 export async function suggestSection(req, res) {
   try {
-    const { capabilityId, blueprint, sectionTitle, currentContent, request } = req.body;
+    const { capabilityId, blueprint, sectionTitle, currentContent, request, automotiveBlueprint } = req.body;
 
     if (!capabilityId || typeof capabilityId !== 'string') {
       return res.status(400).json({ error: 'capabilityId is required.' });
@@ -51,10 +51,11 @@ export async function suggestSection(req, res) {
 
     const result = await suggestBlueprintSection({
       capabilityId,
-      blueprint:      blueprint || {},
+      blueprint:           blueprint || {},
       sectionTitle,
-      currentContent: currentContent || '',
-      request:        request.trim(),
+      currentContent:      currentContent || '',
+      request:             request.trim(),
+      automotiveBlueprint: typeof automotiveBlueprint === 'string' ? automotiveBlueprint : '',
     });
 
     return res.json(result);

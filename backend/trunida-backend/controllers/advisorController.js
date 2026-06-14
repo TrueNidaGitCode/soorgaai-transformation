@@ -2,7 +2,7 @@ import { askAdvisor } from '../services/advisorService.js';
 
 export async function ask(req, res) {
   try {
-    const { capabilityId, blueprint, question } = req.body;
+    const { capabilityId, blueprint, question, automotiveBlueprint } = req.body;
 
     if (!question || typeof question !== 'string' || !question.trim()) {
       return res.status(400).json({ error: 'question is required.' });
@@ -13,8 +13,9 @@ export async function ask(req, res) {
 
     const result = await askAdvisor({
       capabilityId,
-      blueprint: blueprint || {},
-      question:  question.trim(),
+      blueprint:           blueprint || {},
+      question:            question.trim(),
+      automotiveBlueprint: typeof automotiveBlueprint === 'string' ? automotiveBlueprint : '',
     });
 
     return res.json(result);

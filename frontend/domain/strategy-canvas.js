@@ -353,7 +353,31 @@ function renderBlueprint(blueprint, container) {
   `;
   view.appendChild(header);
 
-  // Sections
+  // ── Automotive Blueprint (non-editable industry reference) ──────────────────
+  if (blueprint.automotiveBlueprint) {
+    const autoEl = document.createElement('div');
+    autoEl.className = 'automotive-blueprint';
+
+    const autoLabel = document.createElement('div');
+    autoLabel.className = 'automotive-blueprint__label';
+    autoLabel.textContent = 'AUTOMOTIVE BLUEPRINT';
+    autoEl.appendChild(autoLabel);
+
+    const autoText = document.createElement('p');
+    autoText.className = 'automotive-blueprint__text';
+    autoText.textContent = blueprint.automotiveBlueprint;
+    autoEl.appendChild(autoText);
+
+    view.appendChild(autoEl);
+  }
+
+  // ── Company Blueprint label ───────────────────────────────────────────────
+  const companyLabelEl = document.createElement('div');
+  companyLabelEl.className = 'company-blueprint-label';
+  companyLabelEl.textContent = 'COMPANY BLUEPRINT';
+  view.appendChild(companyLabelEl);
+
+  // ── Sections ──────────────────────────────────────────────────────────────
   const sectionsEl = document.createElement('div');
   sectionsEl.className = 'blueprint-sections';
 
@@ -409,7 +433,7 @@ function buildSectionCard(section) {
 
   const hintEl = document.createElement('p');
   hintEl.className = 'blueprint-section__start-hint';
-  hintEl.textContent = 'Start building…';
+  hintEl.textContent = 'No company blueprint yet. Use the AI Advisor to adapt the automotive blueprint for your organization.';
   card.appendChild(hintEl);
 
   // Apply current state (dot, body, actions)

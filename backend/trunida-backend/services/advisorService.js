@@ -65,8 +65,12 @@ function formatBlueprint(blueprint) {
   }).join('\n\n');
 }
 
-function buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question) {
+function buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint) {
   const blocks = [];
+
+  if (automotiveBlueprint) {
+    blocks.push(`=== AUTOMOTIVE INDUSTRY BLUEPRINT ===\n${automotiveBlueprint}`);
+  }
 
   blocks.push(
     `=== P1: CURRENT BLUEPRINT — ${blueprint.capabilityName} ===\n${formatBlueprint(blueprint)}`
@@ -127,7 +131,7 @@ function parseAdvisorResponse(rawText) {
  * @param {string}  params.question      - user's question
  * @returns {Promise<{ response, capabilityName, industry, inputTokens, outputTokens }>}
  */
-export async function askAdvisor({ capabilityId, blueprint, question }) {
+export async function askAdvisor({ capabilityId, blueprint, question, automotiveBlueprint = '' }) {
   const industry       = blueprint?.industry       || 'Automotive';
   const capabilityName = blueprint?.capabilityName || '';
   const sectionNames   = (blueprint?.sections || []).map(s => s.title);
@@ -139,7 +143,7 @@ export async function askAdvisor({ capabilityId, blueprint, question }) {
 
   // ── Build prompt + call LLM ─────────────────────────────────────────────────
   const systemPrompt = buildSystemPrompt(industry, capabilityName, sectionNames);
-  const userMessage  = buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question);
+  const userMessage  = buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint);
 
   const { text, inputTokens, outputTokens } = await generate({ systemPrompt, userMessage });
 

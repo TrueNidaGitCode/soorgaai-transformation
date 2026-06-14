@@ -89,9 +89,13 @@ function formatCurrentSection(sectionTitle, currentContent, blueprint) {
 
 function buildUserMessage(
   blueprint, sectionTitle, currentContent,
-  coreContent, industryContent, specContent, related, request
+  coreContent, industryContent, specContent, related, request, automotiveBlueprint
 ) {
   const blocks = [];
+
+  if (automotiveBlueprint) {
+    blocks.push(`=== AUTOMOTIVE INDUSTRY BLUEPRINT ===\n${automotiveBlueprint}`);
+  }
 
   blocks.push(
     `=== P1: ACTIVE BLUEPRINT SECTION ===\n${formatCurrentSection(sectionTitle, currentContent, blueprint)}`
@@ -158,6 +162,7 @@ export async function suggestBlueprintSection({
   sectionTitle,
   currentContent,
   request,
+  automotiveBlueprint = '',
 }) {
   const industry       = blueprint?.industry       || 'Automotive';
   const capabilityName = blueprint?.capabilityName || '';
@@ -169,7 +174,7 @@ export async function suggestBlueprintSection({
   const systemPrompt = buildSystemPrompt(industry, capabilityName, sectionTitle);
   const userMessage  = buildUserMessage(
     blueprint, sectionTitle, currentContent || '',
-    coreContent, industryContent, specContent, related, request
+    coreContent, industryContent, specContent, related, request, automotiveBlueprint
   );
 
   const { text, inputTokens, outputTokens } = await generate({

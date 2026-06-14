@@ -123,6 +123,33 @@ function findIndustryMatch(pillarTitle, industrySections) {
   return industrySections.find(s => s.title.toLowerCase().includes(lower)) || null;
 }
 
+// ── Automotive Blueprint extractor ────────────────────────────────────────────
+// Extracts up to maxWords of paragraph prose from a markdown document,
+// skipping headings, bullet lists, tables, blockquotes, and metadata lines.
+// Used to generate the non-editable AUTOMOTIVE BLUEPRINT card per capability.
+
+function extractParagraphText(markdown, maxWords = 200) {
+  if (!markdown) return '';
+  const lines = markdown.split('\n');
+  const paras = [];
+  let count = 0;
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t || t === '---') continue;
+    if (t.startsWith('#')) continue;
+    if (t.startsWith('> ')) continue;
+    if (t.startsWith('|')) continue;
+    if (t.startsWith('* ') || t.startsWith('- ')) continue;
+    if (t.match(/^\d+\.\s/)) continue;
+    // Skip standalone bold metadata labels (e.g. **Layer:** Automotive)
+    if (t.match(/^\*\*[^*]+:\*\*/)) continue;
+    paras.push(t);
+    count += t.split(/\s+/).filter(Boolean).length;
+    if (count >= maxWords) break;
+  }
+  return paras.join(' ').trim();
+}
+
 // ── Content extractors ────────────────────────────────────────────────────────
 
 function extractBulletList(text) {
@@ -223,10 +250,19 @@ export function getCapabilityBlueprint(capabilityId, industry = 'Automotive') {
     };
   });
 
+  // Automotive Blueprint: capability-level industry prose (100-200 words).
+  // Primary source is the industry doc; fall back to core doc if sparse.
+  let automotiveBlueprint = extractParagraphText(industryContent, 200);
+  if (automotiveBlueprint.split(/\s+/).filter(Boolean).length < 60) {
+    const coreProse = extractParagraphText(coreContent, 150);
+    automotiveBlueprint = [automotiveBlueprint, coreProse].filter(Boolean).join(' ').trim();
+  }
+
   return {
     capabilityId,
     capabilityName: cap.name,
     industry,
+    automotiveBlueprint,
     sections,
   };
 }

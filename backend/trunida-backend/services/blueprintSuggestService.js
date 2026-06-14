@@ -1,23 +1,23 @@
 /**
- * SoorgaAI — Blueprint Section Suggestion Service (Sprint 16)
+ * SoorgaAI — Blueprint Section Advisor Service (Sprint 16 / Sprint 22)
  *
- * Generates a structured, section-scoped suggestion for a single blueprint
- * section. The user decides whether to Accept, Edit, or Reject it.
+ * Sprint 22: The advisor detects user intent before responding.
  *
- * Retrieval priority mirrors advisorService:
+ * CONVERSATION mode — for explanatory, analytical, or strategic questions:
+ *   Returns { mode: 'conversation', response: '<prose>' }
+ *   Rendered as a chat message. No Accept/Refine/Discard shown.
+ *
+ * BLUEPRINT mode — only when the user explicitly requests a draft/update:
+ *   Returns { mode: 'blueprint', suggestion: { suggestedRevision, whyThisHelps } }
+ *   Rendered as a suggestion card with Accept/Refine/Discard.
+ *
+ * Retrieval priority:
+ *   P0 — Automotive Blueprint (industry reference for this section)
  *   P1 — Active blueprint section + company draft
  *   P2 — Core capability document
  *   P3 — Industry capability document
  *   P4 — AI Strategy Intelligence Specification
  *   P5 — Related capability knowledge
- *
- * Response structure (enforced via system prompt):
- *   currentObservations  — objective assessment of current content
- *   strengths            — what works well
- *   potentialGaps        — what is missing or could be stronger
- *   suggestedRevision    — complete, ready-to-use improved text
- *   whyThisHelps         — strategic justification for the changes
- *   alternatives         — optional alternative phrasings
  */
 
 import {
@@ -30,33 +30,76 @@ import { generate } from './llmService.js';
 // ── System prompt ─────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(industry, capabilityName, sectionTitle) {
-  return `You are SoorgaAI, an executive AI strategy consultant specialising in collaborative blueprint development.
+  return `You are an experienced Automotive CTO and AI Transformation Advisor collaborating with a senior executive team on their Company AI Blueprint.
 
 ADVISORY CONTEXT:
 - Industry: ${industry}
 - Capability: ${capabilityName}
 - Active Section: ${sectionTitle}
 
-ROLE: Collaborate with the user to improve the "${sectionTitle}" section of their company AI strategy blueprint. You suggest — they decide whether to accept.
+YOUR ROLE:
+You are a trusted strategic advisor — not a document editor. You educate, challenge, analyse, and help the executive team think clearly. You only update the Company Blueprint when explicitly asked to do so.
 
-INSTRUCTIONS:
-1. Assess the current section content objectively against the provided knowledge documents.
-2. Identify concrete strengths to preserve and specific gaps to address.
-3. Generate a complete, improved revision grounded strictly in the knowledge base provided.
-4. Always explain WHY the revision is better — justify every suggestion with strategic reasoning.
-5. Tailor everything to ${industry} industry realities and senior executive expectations.
-6. Do not invent company-specific information. State any assumptions you make explicitly.
-7. If current content is empty, generate an appropriate industry-grounded draft from the knowledge base.
-8. Be direct and specific — this content will be used in executive decision-making.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1 — DETECT USER INTENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-OUTPUT FORMAT — respond with ONLY valid JSON, no markdown fences:
+CONVERSATION intent — respond as an advisor, do NOT produce a blueprint revision:
+• Why / what does this mean / explain this
+• What risks / what could go wrong / concerns
+• What assumptions / what are we assuming
+• Alternatives / other approaches / different angle
+• CEO or CTO perspective / business case / ROI
+• Challenge / critique / is this right / push back on this
+• Compare / how would [company X] approach this / industry examples
+• What are we missing / blind spots / gaps in our thinking
+• How to implement / execution / next steps
+• General questions about the strategy or capability
+
+BLUEPRINT intent — generate a company blueprint revision:
+• Create / write / draft / generate [section name]
+• Improve / enhance / strengthen [section name]
+• Rewrite / update / revise [section name]
+• Make this measurable / make this specific / make this executive-focused
+• Adapt this for our company / apply this to our blueprint
+• Summarize what we agreed / capture our discussion into a draft
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2 — RESPOND
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For CONVERSATION intent:
+• Answer the actual question directly and insightfully
+• Think and speak as an experienced ${industry} CTO and AI strategy advisor
+• Reference the Automotive Blueprint and Company Blueprint naturally when relevant
+• Challenge assumptions honestly — do not just validate what the user says
+• Discuss trade-offs; nothing in strategy is without cost or risk
+• Keep responses practical and executive-level — no marketing language
+• End naturally — pose a question or suggest a next thought when appropriate
+• NEVER generate or rewrite the Company Blueprint unless asked
+• NEVER output a blueprint revision in conversation mode
+
+For BLUEPRINT intent:
+• Generate complete, polished text ready for the Company Blueprint
+• Ground it firmly in the Automotive Blueprint and knowledge base
+• State any assumptions you are making about the company
+• Briefly explain the strategic value of the revision
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT — valid JSON only, no markdown fences, no code blocks
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For CONVERSATION:
 {
-  "currentObservations": "<2-3 sentence objective assessment of the current content — its strengths and weaknesses>",
-  "strengths": ["<what works well in the current content>"],
-  "potentialGaps": ["<what is missing or could be improved>"],
-  "suggestedRevision": "<the complete, polished text for this section — ready to use as written>",
-  "whyThisHelps": "<2-3 sentences explaining the improvements and their strategic value>",
-  "alternatives": ["<alternative phrasing or approach the user may prefer>"]
+  "mode": "conversation",
+  "response": "Your complete advisory response as natural executive prose. Can be multiple paragraphs. Reference automotive context naturally. End with a question or suggestion if appropriate."
+}
+
+For BLUEPRINT:
+{
+  "mode": "blueprint",
+  "suggestedRevision": "Complete polished text for this section, ready to use as written.",
+  "whyThisHelps": "2-3 sentences on the strategic value of this revision."
 }`;
 }
 
@@ -67,15 +110,15 @@ function formatCurrentSection(sectionTitle, currentContent, blueprint) {
   const lines   = [`Section: ${sectionTitle}`];
 
   if (currentContent && currentContent.trim()) {
-    lines.push(`Company Draft (current user content):\n${currentContent.trim()}`);
+    lines.push(`Company Draft (current content):\n${currentContent.trim()}`);
   } else {
-    lines.push('Company Draft: (not yet written — generate an appropriate draft)');
+    lines.push('Company Draft: (none yet)');
     if (section?.definition) {
       lines.push(`Blueprint Definition: ${section.definition}`);
     }
     if (section?.keyPrinciples?.length) {
       lines.push(
-        `Blueprint Key Principles:\n${section.keyPrinciples.map(p => `  - ${p}`).join('\n')}`
+        `Key Principles:\n${section.keyPrinciples.map(p => `  - ${p}`).join('\n')}`
       );
     }
   }
@@ -121,40 +164,51 @@ function buildUserMessage(
   return `KNOWLEDGE BASE:\n\n${blocks.join('\n\n')}\n\n---\n\nUSER REQUEST: ${request}`;
 }
 
-// ── JSON parser ───────────────────────────────────────────────────────────────
+// ── Response parser ───────────────────────────────────────────────────────────
+// Handles both { mode: 'conversation', response } and { mode: 'blueprint', ... }
+// Falls back to conversation mode so the user always sees something useful.
 
-function parseSuggestionResponse(rawText) {
+function parseAIResponse(rawText) {
   try {
     const cleaned = rawText
       .replace(/^```json\s*/i, '')
       .replace(/^```\s*/,      '')
       .replace(/\s*```$/,      '')
       .trim();
-    return JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+    if (parsed.mode === 'conversation' || parsed.mode === 'blueprint') return parsed;
+    // Legacy shape (no mode field): treat as blueprint if suggestedRevision present
+    if (parsed.suggestedRevision) {
+      return {
+        mode:             'blueprint',
+        suggestedRevision: parsed.suggestedRevision,
+        whyThisHelps:      parsed.whyThisHelps || '',
+      };
+    }
+    return { mode: 'conversation', response: rawText.trim() };
   } catch {
-    return {
-      currentObservations: rawText.trim(),
-      strengths:           [],
-      potentialGaps:       [],
-      suggestedRevision:   rawText.trim(),
-      whyThisHelps:        '',
-      alternatives:        [],
-    };
+    return { mode: 'conversation', response: rawText.trim() };
   }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Generate a structured improvement suggestion for one blueprint section.
+ * Handle a user message in the context of a blueprint section.
+ * Returns either a conversation response or a blueprint suggestion depending
+ * on detected intent. The caller routes rendering based on `result.mode`.
  *
  * @param {object} params
- * @param {string} params.capabilityId   - e.g. 'ai-initiative-leadership'
- * @param {object} params.blueprint      - full blueprint from /strategy-canvas/blueprint/:id
- * @param {string} params.sectionTitle   - e.g. 'Vision'
- * @param {string} params.currentContent - user's current draft text for this section (may be empty)
- * @param {string} params.request        - user's request e.g. 'Make this more measurable'
- * @returns {Promise<{ suggestion, capabilityName, industry, sectionTitle, inputTokens, outputTokens }>}
+ * @param {string} params.capabilityId       - e.g. 'ai-initiative-leadership'
+ * @param {object} params.blueprint          - full blueprint from /strategy-canvas/blueprint/:id
+ * @param {string} params.sectionTitle       - e.g. 'Vision'
+ * @param {string} params.currentContent     - company draft for this section (may be empty)
+ * @param {string} params.request            - user's message
+ * @param {string} params.automotiveBlueprint - industry reference prose for this section
+ * @returns {Promise<
+ *   | { mode: 'conversation', response, capabilityName, industry, sectionTitle }
+ *   | { mode: 'blueprint', suggestion: { suggestedRevision, whyThisHelps }, capabilityName, industry, sectionTitle }
+ * >}
  */
 export async function suggestBlueprintSection({
   capabilityId,
@@ -183,12 +237,24 @@ export async function suggestBlueprintSection({
     maxTokens: 2000,
   });
 
+  const parsed = parseAIResponse(text);
+
+  const base = { capabilityName, industry, sectionTitle, inputTokens, outputTokens };
+
+  if (parsed.mode === 'blueprint') {
+    return {
+      ...base,
+      mode:       'blueprint',
+      suggestion: {
+        suggestedRevision: parsed.suggestedRevision || '',
+        whyThisHelps:      parsed.whyThisHelps      || '',
+      },
+    };
+  }
+
   return {
-    suggestion:     parseSuggestionResponse(text),
-    capabilityName,
-    industry,
-    sectionTitle,
-    inputTokens,
-    outputTokens,
+    ...base,
+    mode:     'conversation',
+    response: parsed.response || text.trim(),
   };
 }

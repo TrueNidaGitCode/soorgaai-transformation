@@ -270,6 +270,17 @@ function updateSectionPreview(sectionTitle, content) {
 
 // ── Response rendering — General mode ─────────────────────────────────────────
 
+// Sprint 22: conversation response in section mode — plain executive prose,
+// no suggestion card, no Accept/Refine/Discard.
+function appendConversationMessage(text) {
+  const el = document.createElement('div');
+  el.className = 'chat-msg chat-msg--assistant';
+  el.style.whiteSpace = 'pre-wrap';
+  el.textContent = text;
+  messagesEl.appendChild(el);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
 // Sprint 18.3: the welcome empty state hides once a conversation begins
 function hideEmptyState() {
   const el = document.getElementById('advisor-empty');
@@ -672,8 +683,8 @@ async function sendSectionRequest(ctx, question) {
 
   const data = await resp.json();
   removeTyping();
-  // Sprint 20.1: the chat always reactivates once the AI responds — Accept/
-  // Refine/Discard are blueprint actions, not conversation terminators.
+  // Chat always reactivates once the AI responds — Accept/Refine/Discard are
+  // blueprint actions, not conversation terminators.
   setSending(false);
 
   if (!resp.ok) {
@@ -682,15 +693,23 @@ async function sendSectionRequest(ctx, question) {
     return;
   }
 
-  const card = createSuggestionCard(data);
-  messagesEl.appendChild(card);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  // Sprint 22: route on mode detected by the AI advisor.
+  // CONVERSATION — explanatory / analytical / strategic question → chat message.
+  // BLUEPRINT    — explicit draft/update request → suggestion card.
+  if (data.mode === 'conversation') {
+    appendConversationMessage(data.response || 'I couldn\'t generate a response. Please try again.');
+    // Don't update _pendingSuggestion — the pending blueprint draft is unchanged.
+  } else {
+    const card = createSuggestionCard(data);
+    messagesEl.appendChild(card);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
 
-  _pendingSuggestion = {
-    sectionTitle,
-    content: data.suggestion?.suggestedRevision || '',
-  };
-  inputEl.placeholder = 'Ask a follow-up question…';
+    _pendingSuggestion = {
+      sectionTitle,
+      content: data.suggestion?.suggestedRevision || '',
+    };
+    inputEl.placeholder = 'Ask a follow-up question…';
+  }
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────

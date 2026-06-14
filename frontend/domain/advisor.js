@@ -364,27 +364,6 @@ function appendAdvisorResponse(result) {
 // ── Continuous conversation helpers (Sprint 20.1) ─────────────────────────────
 // Blueprint actions update the artifact; the strategic discussion continues.
 
-const _FOLLOW_UP_QUESTIONS = [
-  'Why did you suggest this?',
-  'What risks do you see?',
-  'Compare with industry best practices.',
-  'How measurable is this?',
-];
-
-// Chip that prefills the input so the user stays in control of what is sent
-function makeQuestionChip(question) {
-  const chip = document.createElement('button');
-  chip.type = 'button';
-  chip.className = 'advisor-empty__chip';
-  chip.textContent = question;
-  chip.addEventListener('click', () => {
-    inputEl.value = question;
-    inputEl.dispatchEvent(new Event('input'));
-    inputEl.focus();
-  });
-  return chip;
-}
-
 function nextSectionAfter(sectionTitle) {
   const sections = _activeSection?.blueprint?.sections
     || window.StrategyCanvas?.getCurrentContext()?.blueprint?.sections
@@ -405,14 +384,10 @@ function appendAcceptFollowUp(sectionTitle) {
     'this section or move to another topic.';
   msg.appendChild(text);
 
-  const chips = document.createElement('div');
-  chips.className = 'advisor-followup__chips';
-  for (const question of _FOLLOW_UP_QUESTIONS) {
-    chips.appendChild(makeQuestionChip(question));
-  }
-
   const next = nextSectionAfter(sectionTitle);
   if (next) {
+    const chips = document.createElement('div');
+    chips.className = 'advisor-followup__chips';
     const moveChip = document.createElement('button');
     moveChip.type = 'button';
     moveChip.className = 'advisor-empty__chip advisor-followup__move-chip';
@@ -420,9 +395,9 @@ function appendAcceptFollowUp(sectionTitle) {
     moveChip.addEventListener('click', () =>
       window.StrategyCanvas?.selectSectionByTitle(next));
     chips.appendChild(moveChip);
+    msg.appendChild(chips);
   }
 
-  msg.appendChild(chips);
   messagesEl.appendChild(msg);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }

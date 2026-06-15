@@ -52,6 +52,42 @@ let _currentContext     = null; // { capabilityId, blueprint, companyDraft: {} }
 let _activeSectionEl    = null;
 let _activeSectionTitle = null;
 let _sectionStates      = {};   // { [title]: { status, sources, content } }
+let _capabilityList     = [];
+
+// ── Capability visual metadata (icon + gradient per capability) ───────────────
+
+const CAP_META = {
+  'ai-initiative-leadership': {
+    grad:  'linear-gradient(135deg, #0a2d4a, #1a5276)',
+    color: '#5CC5A7',
+    svg:   `<path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>`,
+  },
+  'business-strategy-alignment': {
+    grad:  'linear-gradient(135deg, #0a1f3d, #1a3a6e)',
+    color: '#3D9BE9',
+    svg:   `<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="2"/>`,
+  },
+  'ai-center-of-excellence': {
+    grad:  'linear-gradient(135deg, #150e2e, #2d1b69)',
+    color: '#9B7FDB',
+    svg:   `<path stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 2L21.39 7v10L12 22 2.61 17V7L12 2z"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>`,
+  },
+  'ai-performance-management': {
+    grad:  'linear-gradient(135deg, #3a0000, #7a1818)',
+    color: '#E07A5F',
+    svg:   `<rect x="2" y="10" width="4" height="12" rx="1" stroke="currentColor" stroke-width="2"/><rect x="9" y="6" width="4" height="16" rx="1" stroke="currentColor" stroke-width="2"/><rect x="16" y="2" width="4" height="20" rx="1" stroke="currentColor" stroke-width="2"/>`,
+  },
+  'ai-governance-ethics': {
+    grad:  'linear-gradient(135deg, #2d1a00, #6b4400)',
+    color: '#D4A017',
+    svg:   `<path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 2L4 6v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V6L12 2z"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/>`,
+  },
+  _default: {
+    grad:  'linear-gradient(135deg, #1a1a2e, #16213e)',
+    color: '#5CC5A7',
+    svg:   `<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 8v4l3 3"/>`,
+  },
+};
 
 // ── Section state management (Sprint 17) ─────────────────────────────────────
 
@@ -187,38 +223,77 @@ function updateSectionCardState(sectionTitle) {
 }
 
 // ── Company progress refresh ──────────────────────────────────────────────────
-// Sprint 19: one small indicator — "X of N Capabilities Started · Y% Complete".
-// getCompanySnapshot() still computes the full aggregate (preserved for the
-// dashboard and workspace widget); only the presentation is reduced.
 
 let _totalCapabilities = 5; // updated from the API capability list when loaded
 
-function refreshSnapshot() {
-  const el = document.getElementById('snapshot-card');
-  if (!el) return;
+function getCapabilityProgress(capabilityId) {
+  const state = loadCapabilityState(capabilityId);
+  if (!state || !state.sections) return { status: 'Not Started', pct: 0 };
 
-  const snap    = getCompanySnapshot();
-  const started = snap.capabilitiesStarted;
-  const total   = Math.max(_totalCapabilities, snap.totalCapabilities);
-  const pct     = total > 0 ? Math.round((started / total) * 100) : 0;
+  const sections = Object.values(state.sections);
+  const total = sections.length;
+  if (total === 0) return { status: 'Not Started', pct: 0 };
 
-  if (started === 0) {
-    el.style.display = 'none';
-    return;
+  const approved      = sections.filter(s => s.status === 'Approved').length;
+  const withContent   = sections.filter(s => s.content).length;
+  const partialCount  = Math.max(0, withContent - approved);
+
+  if (approved === total) return { status: 'Complete', pct: 100 };
+
+  const pct = Math.round(((approved + partialCount * 0.5) / total) * 100);
+  if (withContent > 0) return { status: 'In Progress', pct };
+  return { status: 'Not Started', pct: 0 };
+}
+
+function refreshSidebar() {
+  const snap      = getCompanySnapshot();
+  const total     = Math.max(_totalCapabilities, snap.totalCapabilities);
+  const pct       = snap.overallPct || 0;
+  const started   = snap.capabilitiesStarted   || 0;
+  const completed = snap.capabilitiesCompleted || 0;
+  const inProg    = Math.max(0, started - completed);
+  const notStarted = Math.max(0, total - started);
+
+  const countEl = document.getElementById('dsb-caps-count');
+  if (countEl) countEl.textContent = `${started} of ${total} Capabilities Started`;
+
+  // Donut arc — r=48, circumference≈301.59; CSS rotates SVG -90° to start at 12 o'clock
+  const arc = document.getElementById('dsb-donut-arc');
+  if (arc) arc.style.strokeDasharray = `${(pct / 100) * 301.59} 301.59`;
+
+  const pctText = document.getElementById('dsb-pct-text');
+  if (pctText) pctText.textContent = `${Math.round(pct)}%`;
+
+  const progPct = document.getElementById('dsb-progress-pct');
+  if (progPct) progPct.textContent = `${Math.round(pct)}%`;
+
+  const bar = document.getElementById('dsb-progress-bar');
+  if (bar) bar.style.width = `${pct}%`;
+
+  const statsList = document.getElementById('dsb-stats-list');
+  if (statsList) {
+    statsList.innerHTML = '';
+    const rows = [
+      { count: completed,  label: 'Completed',  color: '#5CC5A7' },
+      { count: inProg,     label: 'In Progress', color: '#3DAFD3' },
+      { count: notStarted, label: 'Not Started', color: 'rgba(255,255,255,0.2)' },
+    ];
+    for (const r of rows) {
+      const li = document.createElement('li');
+      li.className = 'dsb-stat-item';
+      li.innerHTML = `
+        <span class="dsb-stat-item__dot" style="background:${r.color}"></span>
+        <span class="dsb-stat-item__count">${r.count}</span>
+        <span class="dsb-stat-item__label">${r.label}</span>
+      `;
+      statsList.appendChild(li);
+    }
   }
-
-  el.style.display = 'block';
-  el.innerHTML = `
-    <span class="snapshot-simple__title">Company AI Strategy</span>
-    <span class="snapshot-simple__line">${started} of ${total} Capabilities Started</span>
-    <div class="snapshot-simple__track"><div class="snapshot-simple__bar" style="width:${pct}%"></div></div>
-    <span class="snapshot-simple__pct">${pct}% Complete</span>
-  `;
 }
 
 function refreshProgressAndSnapshot() {
   persistState();
-  refreshSnapshot();
+  refreshSidebar();
 }
 
 // ── Actions (Sprint 16 acceptSection + Sprint 17 approveSection / resetSection) ─
@@ -317,15 +392,36 @@ function renderCapabilityList(capabilities, container) {
   list.className = 'capability-list';
 
   for (const cap of capabilities) {
+    const meta   = CAP_META[cap.id] || CAP_META._default;
+    const { status, pct } = getCapabilityProgress(cap.id);
+
+    const statusClass = status === 'Complete'    ? 'cap-status--complete'
+                      : status === 'In Progress' ? 'cap-status--in-progress'
+                      : 'cap-status--not-started';
+
     const card = document.createElement('button');
     card.className = 'capability-card';
     card.dataset.capabilityId = cap.id;
     card.setAttribute('aria-label', `Open ${cap.name} blueprint`);
 
     card.innerHTML = `
-      <span class="capability-card__name">${cap.name}</span>
-      <span class="capability-card__objective">${cap.objective}</span>
-      <span class="capability-card__arrow" aria-hidden="true">→</span>
+      <div class="cap-icon" style="background:${meta.grad}">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:${meta.color}" aria-hidden="true">${meta.svg}</svg>
+      </div>
+      <div class="cap-body">
+        <span class="cap-name">${cap.name}</span>
+        <span class="cap-objective">${cap.objective}</span>
+      </div>
+      <div class="cap-meta">
+        <div class="cap-status-row">
+          <span class="cap-status ${statusClass}">${status}</span>
+          <span class="cap-pct">${pct}%</span>
+        </div>
+        <div class="cap-track">
+          <div class="cap-bar${pct > 0 ? ' cap-bar--active' : ''}" style="width:${pct}%"></div>
+        </div>
+      </div>
+      <span class="cap-arrow" aria-hidden="true">›</span>
     `;
 
     card.addEventListener('click', () => loadBlueprint(cap.id, container));
@@ -528,13 +624,14 @@ async function loadCapabilities(container) {
     if (!resp.ok) throw new Error('Failed to load capabilities.');
 
     const { capabilities } = await resp.json();
+    _capabilityList    = capabilities;
     _totalCapabilities = capabilities.length || _totalCapabilities;
 
     const sub = document.getElementById('canvas-subheading');
     if (sub) sub.textContent = 'Select a capability to explore its blueprint.';
 
     renderCapabilityList(capabilities, container);
-    refreshSnapshot(); // Snapshot persists through list view
+    refreshSidebar();
 
   } catch (err) {
     console.error('loadCapabilities error:', err);
@@ -582,7 +679,7 @@ async function loadBlueprint(capabilityId, container) {
     if (sub) sub.textContent = 'Pick a section and chat with the AI Advisor to build it.';
 
     renderBlueprint(blueprint, container);
-    refreshSnapshot();
+    refreshSidebar();
 
   } catch (err) {
     console.error('loadBlueprint error:', err);
@@ -623,8 +720,8 @@ async function init() {
     await loadCapabilities(container);
   }
 
-  // Snapshot may have data from previous sessions even if no capability is loaded
-  refreshSnapshot();
+  // Sidebar may have data from previous sessions even if no capability is loaded
+  refreshSidebar();
 
   document.dispatchEvent(new CustomEvent('canvas:ready'));
 }

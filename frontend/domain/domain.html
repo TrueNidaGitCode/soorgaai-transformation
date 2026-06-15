@@ -28,18 +28,56 @@
     <p>Loading your workspace…</p>
   </div>
 
-  <!-- ── Two-panel layout ────────────────────────────────────────────────── -->
+  <!-- ── Main layout: sidebar + canvas + advisor ─────────────────────────── -->
   <main id="domain-main" class="domain-main" style="display:none" aria-label="Domain workspace">
 
-    <!-- Blueprint panel -->
+    <!-- Sidebar: visible in capability-list view, hidden in blueprint view -->
+    <aside id="domain-sidebar" class="domain-sidebar" aria-label="Company AI Strategy progress">
+
+      <div class="dsb-header">
+        <span class="dsb-strategy-label">Company AI Strategy</span>
+        <p id="dsb-caps-count" class="dsb-caps-count">0 of 5 Capabilities Started</p>
+      </div>
+
+      <div class="dsb-donut-wrap">
+        <svg class="dsb-donut" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="dsb-donut__bg" cx="60" cy="60" r="48"/>
+          <circle id="dsb-donut-arc" class="dsb-donut__arc" cx="60" cy="60" r="48"/>
+        </svg>
+        <div class="dsb-donut__overlay">
+          <span id="dsb-pct-text" class="dsb-pct-text">0%</span>
+          <span class="dsb-pct-label">Complete</span>
+        </div>
+      </div>
+
+      <div class="dsb-progress-section">
+        <div class="dsb-progress-header">
+          <span class="dsb-progress-title">Overall Progress</span>
+          <span id="dsb-progress-pct" class="dsb-progress-pct">0%</span>
+        </div>
+        <div class="dsb-progress-track">
+          <div id="dsb-progress-bar" class="dsb-progress-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <ul class="dsb-stats-list" id="dsb-stats-list" aria-label="Capability status breakdown">
+        <!-- Populated by strategy-canvas.js -->
+      </ul>
+
+      <div class="dsb-info-card">
+        <span class="dsb-info-card__icon" aria-hidden="true">📖</span>
+        <div>
+          <p class="dsb-info-card__title">Powered by Industry Knowledge</p>
+          <p class="dsb-info-card__body">Leverage SoorgaAI's cross-industry knowledge base and proven frameworks to accelerate your AI transformation journey.</p>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Blueprint canvas panel -->
     <section class="canvas-panel" aria-labelledby="canvas-heading">
       <h2 id="canvas-heading" class="panel-heading">Company AI Blueprint</h2>
       <p class="panel-subheading" id="canvas-subheading">Select a capability to explore its blueprint.</p>
-
-      <!-- Sprint 17/19: simple company progress indicator -->
-      <div id="snapshot-card" class="snapshot-card snapshot-simple" style="display:none" aria-live="polite">
-        <!-- Injected by strategy-canvas.js -->
-      </div>
 
       <div id="canvas-content" class="canvas-content">
         <!-- Injected by strategy-canvas.js -->
@@ -56,7 +94,7 @@
       </div>
       <p id="advisor-subheading" class="panel-subheading">Select a capability from the canvas to start asking questions.</p>
 
-      <!-- Sprint 16/18.2/19: Compact "Working on" header — no technical badges -->
+      <!-- Compact "Working on" header -->
       <div id="section-context" class="section-context" style="display:none" aria-live="polite">
         <div class="section-context__info">
           <span class="section-context__label">Working on</span>
@@ -66,15 +104,15 @@
         <button id="section-context-clear" class="section-context__clear" aria-label="Clear section selection">✕</button>
       </div>
 
-      <!-- Sprint 18.3: Welcome empty state (shown until the first message) -->
+      <!-- Welcome empty state -->
       <div id="advisor-empty" class="advisor-empty">
         <p class="advisor-empty__title">Welcome to SoorgaAI Advisor</p>
         <p class="advisor-empty__text">Select any blueprint section and start a conversation.</p>
         <ul class="advisor-empty__examples">
-          <li>“Help improve our AI vision.”</li>
-          <li>“Challenge our assumptions.”</li>
-          <li>“Make this measurable.”</li>
-          <li>“Compare against industry best practices.”</li>
+          <li>"Help improve our AI vision."</li>
+          <li>"Challenge our assumptions."</li>
+          <li>"Make this measurable."</li>
+          <li>"Compare against industry best practices."</li>
         </ul>
       </div>
 
@@ -89,7 +127,7 @@
         <button id="chat-retry" class="chat-retry-btn">Retry</button>
       </div>
 
-      <!-- Input — the primary interaction surface (Sprint 18.3) -->
+      <!-- Input -->
       <form id="chat-form" class="chat-input-form" novalidate>
         <textarea
           id="chat-input"
@@ -103,8 +141,6 @@
           <span id="chat-send-loader" class="chat-send-loader" style="display:none"></span>
         </button>
       </form>
-
-      <!-- Sprint 19: no suggestion buttons — typing is the one primary action -->
 
     </section>
   </main>

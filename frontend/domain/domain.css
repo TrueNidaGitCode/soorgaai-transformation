@@ -93,7 +93,8 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Two-panel main ────────────────────────────────────────────────────────── */
+/* ── Main layout ───────────────────────────────────────────────────────────── */
+/* Default: canvas + advisor (no sidebar) */
 
 .domain-main {
   display: grid;
@@ -101,6 +102,9 @@
   flex: 1;
   min-height: calc(100vh - 64px);
 }
+
+/* Sidebar hidden by default (blueprint view) */
+.domain-sidebar { display: none; }
 
 /* ── Shared panel styles ───────────────────────────────────────────────────── */
 /* Sprint 18.2: unified scrolling — the page scrolls naturally; panels no
@@ -1570,13 +1574,31 @@
 
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 
+@media (max-width: 1100px) {
+  .domain-main--no-chat { grid-template-columns: 260px 1fr; }
+}
+
 @media (max-width: 900px) {
   .domain-main {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
   }
+  .domain-main--no-chat {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .domain-main--no-chat .domain-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding: 1.25rem 1rem;
+    gap: 1rem;
+    align-items: center;
+  }
+  .dsb-donut-wrap { margin: 0; width: 80px; height: 80px; }
+  .dsb-pct-text   { font-size: 1.1rem; }
   .canvas-panel  { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
-  /* Stacked layout: advisor flows in the document instead of sticking */
   .chat-panel    { position: static; height: auto; overflow: visible; border-left: none; margin-left: 0; }
   .chat-messages { max-height: 35vh; }
 }
@@ -1595,16 +1617,14 @@
    4. Minimise/expand toggle on grown sections
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── 1. Capability list view: blueprint canvas owns the page ───────────────── */
+/* ── 1. Capability list view: sidebar + canvas ─────────────────────────────── */
 
-.domain-main--no-chat { grid-template-columns: 1fr; }
-.domain-main--no-chat .chat-panel { display: none; }
-.domain-main--no-chat .canvas-panel {
-  border-right: none;
-  width: 100%;
-  max-width: 920px;
-  margin: 0 auto;
+.domain-main--no-chat {
+  grid-template-columns: 300px 1fr;
 }
+.domain-main--no-chat .domain-sidebar { display: flex; }
+.domain-main--no-chat .chat-panel     { display: none; }
+.domain-main--no-chat .canvas-panel   { border-right: none; }
 
 /* ── 2. Advisor empty-state guidance ───────────────────────────────────────── */
 
@@ -1892,4 +1912,347 @@
 .cc-modal__error {
   font-size: 0.79rem;
   color: #ff6b6b;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sidebar — Company AI Strategy progress panel (overview state)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.domain-sidebar {
+  flex-direction: column;
+  gap: 1.4rem;
+  padding: 2rem 1.5rem;
+  background: rgba(255,255,255,0.015);
+  border-right: 1px solid rgba(255,255,255,0.07);
+  overflow-y: auto;
+  min-height: calc(100vh - 64px);
+}
+
+/* ── Sidebar header ────────────────────────────────────────────────────────── */
+
+.dsb-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.dsb-strategy-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+}
+
+.dsb-caps-count {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* ── Donut chart ───────────────────────────────────────────────────────────── */
+
+.dsb-donut-wrap {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+
+.dsb-donut {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.dsb-donut__bg {
+  fill: none;
+  stroke: rgba(255,255,255,0.08);
+  stroke-width: 10;
+}
+
+.dsb-donut__arc {
+  fill: none;
+  stroke: #5CC5A7;
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 0 301.59;
+  stroke-dashoffset: 0;
+  transition: stroke-dasharray 0.7s ease;
+}
+
+.dsb-donut__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.dsb-pct-text {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.dsb-pct-label {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+}
+
+/* ── Progress bar ──────────────────────────────────────────────────────────── */
+
+.dsb-progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dsb-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dsb-progress-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+}
+
+.dsb-progress-pct {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.5);
+}
+
+.dsb-progress-track {
+  height: 5px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.dsb-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #5CC5A7, #3DAFD3);
+  border-radius: 3px;
+  transition: width 0.6s ease;
+  min-width: 0;
+}
+
+/* ── Stats list ────────────────────────────────────────────────────────────── */
+
+.dsb-stats-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.dsb-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.dsb-stat-item__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dsb-stat-item__count {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  min-width: 1.2rem;
+}
+
+.dsb-stat-item__label {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.6);
+}
+
+/* ── Info card ─────────────────────────────────────────────────────────────── */
+
+.dsb-info-card {
+  background: rgba(92,197,167,0.06);
+  border: 1px solid rgba(92,197,167,0.18);
+  border-radius: 0.75rem;
+  padding: 1rem 1rem 1rem 0.85rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-top: auto;
+}
+
+.dsb-info-card__icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.dsb-info-card__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  margin: 0 0 0.3rem;
+}
+
+.dsb-info-card__body {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Capability cards — redesigned with icon, status, progress
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.capability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.capability-card {
+  width: 100%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.85rem;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  text-align: left;
+  display: grid;
+  grid-template-columns: 52px 1fr auto 28px;
+  align-items: center;
+  gap: 0 1rem;
+  transition: border-color 0.2s, background 0.2s;
+  color: inherit;
+  font-family: inherit;
+}
+
+.capability-card:hover {
+  background: rgba(92,197,167,0.06);
+  border-color: rgba(92,197,167,0.3);
+}
+
+.capability-card:focus-visible {
+  outline: 2px solid #5CC5A7;
+  outline-offset: 2px;
+}
+
+/* Icon circle */
+.cap-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cap-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Name + objective */
+.cap-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.cap-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cap-objective {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.48);
+}
+
+/* Status + percentage + progress bar */
+.cap-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 160px;
+  text-align: right;
+}
+
+.cap-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.cap-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.cap-status--in-progress { color: #5CC5A7; }
+.cap-status--not-started { color: rgba(255,255,255,0.38); }
+.cap-status--complete    { color: #5CC5A7; }
+
+.cap-pct {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.cap-track {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cap-bar {
+  height: 100%;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  min-width: 0;
+}
+
+.cap-bar--active {
+  background: linear-gradient(90deg, #5CC5A7, #3DAFD3);
+}
+
+/* Arrow */
+.cap-arrow {
+  color: rgba(92,197,167,0.45);
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: center;
+  transition: color 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+
+.capability-card:hover .cap-arrow {
+  color: #5CC5A7;
+  transform: translateX(3px);
 }

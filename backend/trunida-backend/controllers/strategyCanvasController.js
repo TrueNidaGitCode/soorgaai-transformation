@@ -73,12 +73,19 @@ export async function suggestSection(req, res) {
     return res.json(result);
 
   } catch (err) {
-    console.error('suggestSection error:', err);
+    console.error('[suggestSection] Error:', {
+      message:  err.message,
+      name:     err.name,
+      stack:    err.stack,
+      capabilityId: req.body?.capabilityId,
+      sectionTitle: req.body?.sectionTitle,
+    });
 
     const isUnavailable =
       err.message?.includes('not configured') ||
       err.message?.includes('All LLM providers') ||
-      err.message?.includes('No valid LLM providers');
+      err.message?.includes('No valid LLM providers') ||
+      err.message?.includes('Gemini response unavailable');
     if (isUnavailable) {
       return res.status(503).json({ error: 'AI Advisor is not available. Please try again later.' });
     }

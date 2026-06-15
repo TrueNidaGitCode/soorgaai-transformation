@@ -89,6 +89,12 @@ const PROVIDERS = {
       const mdl    = genAI.getGenerativeModel({
         model:              model || DEFAULT_MODELS.gemini,
         systemInstruction:  systemPrompt,
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT',       threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH',      threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ],
       });
 
       const result   = await mdl.generateContent({
@@ -99,8 +105,21 @@ const PROVIDERS = {
       const response = result.response;
       const meta     = response.usageMetadata;
 
+      // response.text() throws when Gemini blocks the response (safety, recitation, etc.).
+      // We catch it and rethrow as a plain Error so the failover chain can handle it.
+      let text;
+      try {
+        text = response.text();
+      } catch (textErr) {
+        const finishReason = response.candidates?.[0]?.finishReason || 'UNKNOWN';
+        const blockReason  = response.promptFeedback?.blockReason   || '';
+        throw new Error(
+          `Gemini response unavailable — finishReason: ${finishReason}${blockReason ? `, blockReason: ${blockReason}` : ''}`
+        );
+      }
+
       return {
-        text:         response.text(),
+        text,
         inputTokens:  meta?.promptTokenCount     || 0,
         outputTokens: meta?.candidatesTokenCount || 0,
       };

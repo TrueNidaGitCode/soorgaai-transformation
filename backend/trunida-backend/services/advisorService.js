@@ -157,6 +157,25 @@ function buildUserMessage(blueprint, coreContent, industryContent, specContent, 
   return `KNOWLEDGE BASE:\n\n${blocks.join('\n\n')}\n\n---\n\nQUESTION: ${question}`;
 }
 
+// ── Markdown stripper ─────────────────────────────────────────────────────────
+
+function cleanMarkdown(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/```[\w]*\n?[\s\S]*?```/g, '')
+    .replace(/`([^`\n]+)`/g, '$1')
+    .replace(/\*{3}([^*]+)\*{3}/g, '$1')
+    .replace(/\*{2}([^*]+)\*{2}/g, '$1')
+    .replace(/(?<![•\n])\*([^*\n]+)\*/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\* /gm, '• ')
+    .replace(/^- (?!-)/gm, '• ')
+    .replace(/^[-*]{3,}\s*$/gm, '')
+    .replace(/^>\s?/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // ── JSON parser ───────────────────────────────────────────────────────────────
 
 function parseAdvisorResponse(rawText) {
@@ -223,8 +242,17 @@ export async function askAdvisor({
 
   const { text, inputTokens, outputTokens } = await generate({ systemPrompt, userMessage });
 
+  const parsed = parseAdvisorResponse(text);
+  const cleaned = {
+    executivePerspective: cleanMarkdown(parsed.executivePerspective || ''),
+    industryContext:      cleanMarkdown(parsed.industryContext      || ''),
+    recommendations:      (parsed.recommendations  || []).map(cleanMarkdown),
+    potentialRisks:       (parsed.potentialRisks   || []).map(cleanMarkdown),
+    suggestedNextStep:    cleanMarkdown(parsed.suggestedNextStep    || ''),
+  };
+
   return {
-    response:       parseAdvisorResponse(text),
+    response:       cleaned,
     capabilityName,
     industry,
     inputTokens,

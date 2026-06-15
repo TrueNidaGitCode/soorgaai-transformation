@@ -310,6 +310,39 @@ function buildUserMessage(
   return `KNOWLEDGE BASE:\n\n${blocks.join('\n\n')}\n\n---\n\nUSER REQUEST: ${request}`;
 }
 
+// ── Markdown stripper ─────────────────────────────────────────────────────────
+// LLMs frequently output Markdown even when instructed not to.
+// This strips all Markdown formatting from a string, converting it to clean
+// executive prose before it reaches the frontend.
+
+function cleanMarkdown(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    // Remove fenced code blocks (``` ... ```)
+    .replace(/```[\w]*\n?[\s\S]*?```/g, '')
+    // Remove inline code (`code`)
+    .replace(/`([^`\n]+)`/g, '$1')
+    // Remove bold+italic (***text***)
+    .replace(/\*{3}([^*]+)\*{3}/g, '$1')
+    // Remove bold (**text**)
+    .replace(/\*{2}([^*]+)\*{2}/g, '$1')
+    // Remove italic (*text*) — only when not a leading bullet
+    .replace(/(?<![•\n])\*([^*\n]+)\*/g, '$1')
+    // Convert markdown headings (# ## ### etc.) to plain text
+    .replace(/^#{1,6}\s+/gm, '')
+    // Convert * bullets to • bullets (at start of line)
+    .replace(/^\* /gm, '• ')
+    // Convert - bullets to • bullets (at start of line, not --- separators)
+    .replace(/^- (?!-)/gm, '• ')
+    // Remove horizontal rules (--- or ***)
+    .replace(/^[-*]{3,}\s*$/gm, '')
+    // Remove blockquotes (> text)
+    .replace(/^>\s?/gm, '')
+    // Collapse 3+ blank lines to 2
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // ── Response parser ───────────────────────────────────────────────────────────
 // Handles both { mode: 'conversation', response } and { mode: 'blueprint', ... }.
 // Robustly extracts JSON even when the LLM wraps it in explanatory prose.
@@ -437,8 +470,8 @@ export async function suggestBlueprintSection({
       ...base,
       mode:       'blueprint',
       suggestion: {
-        suggestedRevision: parsed.suggestedRevision || '',
-        whyThisHelps:      parsed.whyThisHelps      || '',
+        suggestedRevision: cleanMarkdown(parsed.suggestedRevision || ''),
+        whyThisHelps:      cleanMarkdown(parsed.whyThisHelps      || ''),
       },
       ...ctxUpdate,
     };
@@ -447,7 +480,7 @@ export async function suggestBlueprintSection({
   return {
     ...base,
     mode:     'conversation',
-    response: parsed.response || text.trim(),
+    response: cleanMarkdown(parsed.response || text.trim()),
     ...ctxUpdate,
   };
 }

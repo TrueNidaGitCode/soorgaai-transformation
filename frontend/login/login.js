@@ -222,38 +222,15 @@ async function handleLogin(event) {
         // Authentication successful
         console.log("✅ Authentication successful");
 
-        // Clear any previous user's local data before storing the new session.
-        // This prevents blueprint/memory/assessment data leaking across accounts
-        // when two users log in on the same device without an explicit logout.
-        [
-          'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
-          'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
-          'da_score', 'soorga_assessment_progress',
-        ].forEach(k => localStorage.removeItem(k));
-
         // Store authentication data
-        localStorage.setItem("token", data.token);
+        localStorage.setItem("token",    data.token);
+        localStorage.setItem("role",     data.role     || "user");
+        localStorage.setItem("username", data.username || email.split('@')[0]);
 
-        // Store role (important for admin access)
-        if (data.role) {
-            localStorage.setItem("role", data.role);
-            console.log("🔐 User role:", data.role);
-        } else {
-            localStorage.setItem("role", "user"); // Default to user
-            console.log("🔐 User role: user (default)");
-        }
-
-        // Store user info if provided
-        if (data.user) {
-            if (data.user.email) {
-                localStorage.setItem("username", data.user.email.split('@')[0]);
-            }
-            if (data.user.id) {
-                localStorage.setItem("userId", data.user.id);
-            }
-        } else {
-            // Fallback: use email prefix as username
-            localStorage.setItem("username", email.split('@')[0]);
+        // userId is used to scope blueprint storage per user so work persists
+        // across logout/login and never leaks between accounts on shared devices.
+        if (data.userId) {
+            localStorage.setItem("userId", data.userId);
         }
 
         console.log("📦 Token stored in localStorage");

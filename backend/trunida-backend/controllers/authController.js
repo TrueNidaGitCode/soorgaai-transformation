@@ -49,8 +49,9 @@ export const login = async (req, res) => {
 
     return res.status(200).json({
       token,
+      userId:   user._id.toString(),
       username: user.name,
-      role: user.role || 'user'  // ✅ Return role to frontend
+      role:     user.role || 'user',
     });
   } catch (error) {
     console.error("❌ Login Error:", error);

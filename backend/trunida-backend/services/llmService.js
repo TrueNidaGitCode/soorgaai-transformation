@@ -85,21 +85,28 @@ const PROVIDERS = {
       const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
       if (!apiKey) throw new Error('GOOGLE_API_KEY is not configured.');
 
+      // Safety settings applied at BOTH model level and request level.
+      // Some SDK versions only honour request-level settings; duplicating
+      // ensures they take effect regardless of @google/generative-ai version.
+      const safetySettings = [
+        { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_CIVIC_INTEGRITY',   threshold: 'BLOCK_NONE' },
+      ];
+
       const genAI  = new GoogleGenerativeAI(apiKey);
       const mdl    = genAI.getGenerativeModel({
-        model:              model || DEFAULT_MODELS.gemini,
-        systemInstruction:  systemPrompt,
-        safetySettings: [
-          { category: 'HARM_CATEGORY_HARASSMENT',       threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_HATE_SPEECH',      threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-        ],
+        model:             model || DEFAULT_MODELS.gemini,
+        systemInstruction: systemPrompt,
+        safetySettings,
       });
 
       const result   = await mdl.generateContent({
-        contents:          [{ role: 'user', parts: [{ text: userMessage }] }],
-        generationConfig:  { maxOutputTokens: maxTokens || DEFAULT_MAX_TOKENS },
+        contents:         [{ role: 'user', parts: [{ text: userMessage }] }],
+        generationConfig: { maxOutputTokens: maxTokens || DEFAULT_MAX_TOKENS },
+        safetySettings,
       });
 
       const response = result.response;

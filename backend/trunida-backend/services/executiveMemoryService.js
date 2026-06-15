@@ -12,8 +12,9 @@
  * buildMemoryContext() with their own data.
  */
 
-const HISTORY_LIMIT   = 16;  // max messages included (8 exchanges)
-const CONTENT_TRUNCATE = 500; // chars per history message before truncation
+const HISTORY_LIMIT    = 10;  // max messages included (5 exchanges)
+const CONTENT_TRUNCATE = 400; // chars per history message before truncation
+const SECTION_TRUNCATE = 600; // chars per approved-section content before truncation
 
 /**
  * Build the Executive Memory prompt block.
@@ -44,7 +45,13 @@ export function buildMemoryContext({
   // ── Accepted / approved blueprint sections ───────────────────────────────────
   const entries = Object.entries(approvedSections).filter(([, v]) => v?.trim());
   if (entries.length) {
-    const lines = entries.map(([title, content]) => `${title}:\n${content.trim()}`);
+    const lines = entries.map(([title, content]) => {
+      const text = content.trim();
+      const truncated = text.length > SECTION_TRUNCATE
+        ? text.slice(0, SECTION_TRUNCATE) + '…'
+        : text;
+      return `${title}:\n${truncated}`;
+    });
     parts.push(`COMPANY BLUEPRINT (accepted sections):\n${lines.join('\n\n')}`);
   }
 

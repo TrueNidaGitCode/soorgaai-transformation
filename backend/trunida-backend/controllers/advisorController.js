@@ -33,11 +33,12 @@ export async function ask(req, res) {
   } catch (err) {
     console.error('advisor ask error:', err);
 
-    // 503: all providers unavailable (missing keys, credits, outages)
+    // 503: all providers unavailable (missing keys, credits, safety block, outages)
     const isUnavailable =
       err.message?.includes('not configured') ||
       err.message?.includes('All LLM providers') ||
-      err.message?.includes('No valid LLM providers');
+      err.message?.includes('No valid LLM providers') ||
+      err.message?.includes('Gemini response unavailable');
     if (isUnavailable) {
       return res.status(503).json({ error: 'AI Advisor is not available. Please try again later.' });
     }

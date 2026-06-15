@@ -138,9 +138,16 @@ function bindBtn(id, handler) {
 
 // ── Logout ────────────────────────────────────────────────
 function logoutUser() {
-    ['token', 'username', 'userId', 'role', 'redirectAfterLogin'].forEach(k => localStorage.removeItem(k));
-    setupNavbarHandlers();
-    window.location.href = '/index.html';
+  [
+    // Auth
+    'token', 'username', 'userId', 'role', 'redirectAfterLogin',
+    // User-scoped local data — must clear so the next user starts clean
+    'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
+    'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
+    'da_score', 'soorga_assessment_progress',
+  ].forEach(k => localStorage.removeItem(k));
+  setupNavbarHandlers();
+  window.location.href = '/index.html';
 }
 
 console.log('✅ SoorgaAI Navbar loaded');

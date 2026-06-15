@@ -222,6 +222,15 @@ async function handleLogin(event) {
         // Authentication successful
         console.log("✅ Authentication successful");
 
+        // Clear any previous user's local data before storing the new session.
+        // This prevents blueprint/memory/assessment data leaking across accounts
+        // when two users log in on the same device without an explicit logout.
+        [
+          'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
+          'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
+          'da_score', 'soorga_assessment_progress',
+        ].forEach(k => localStorage.removeItem(k));
+
         // Store authentication data
         localStorage.setItem("token", data.token);
 

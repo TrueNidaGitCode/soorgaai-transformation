@@ -16,9 +16,14 @@ const API_BASE = window.CONFIG?.API_BASE
 function getToken() { return localStorage.getItem('token'); }
 
 function logout() {
-  ['token', 'username', 'userId', 'role', 'redirectAfterLogin'].forEach(k =>
-    localStorage.removeItem(k)
-  );
+  [
+    // Auth
+    'token', 'username', 'userId', 'role', 'redirectAfterLogin',
+    // User-scoped local data — must clear so the next user starts clean
+    'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
+    'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
+    'da_score', 'soorga_assessment_progress',
+  ].forEach(k => localStorage.removeItem(k));
   window.location.href = '/index.html';
 }
 

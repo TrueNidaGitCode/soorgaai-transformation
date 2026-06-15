@@ -19,6 +19,7 @@ import {
   readRelatedCapabilityContent,
 } from './strategyCanvasService.js';
 import { generate } from './llmService.js';
+import { buildMemoryContext } from './executiveMemoryService.js';
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
@@ -36,6 +37,13 @@ CONTENT RULES:
 2. Tailor all guidance to the ${industry} industry and senior executive context.
 3. Do not invent company-specific details — state assumptions explicitly if needed.
 4. If the knowledge base is insufficient for part of the question, say so.
+
+EXECUTIVE MEMORY USAGE:
+When EXECUTIVE MEMORY is present in the user message:
+• Company Profile is the source of truth — NEVER ask again for information already stated.
+• Approved Blueprint sections are the team's agreed strategy — reference and build on them directly.
+• Conversation History provides full context — use it to answer follow-up and summary questions.
+• NEVER respond as if starting fresh when there is conversation history.
 
 EXECUTIVE COMMUNICATION RULES:
 • Lead with the main insight or recommendation — never build up to it.
@@ -71,8 +79,12 @@ function formatBlueprint(blueprint) {
   }).join('\n\n');
 }
 
-function buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint) {
+function buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint, memoryContext) {
   const blocks = [];
+
+  if (memoryContext) {
+    blocks.push(memoryContext);
+  }
 
   if (automotiveBlueprint) {
     blocks.push(`=== AUTOMOTIVE INDUSTRY BLUEPRINT ===\n${automotiveBlueprint}`);
@@ -137,7 +149,14 @@ function parseAdvisorResponse(rawText) {
  * @param {string}  params.question      - user's question
  * @returns {Promise<{ response, capabilityName, industry, inputTokens, outputTokens }>}
  */
-export async function askAdvisor({ capabilityId, blueprint, question, automotiveBlueprint = '' }) {
+export async function askAdvisor({
+  capabilityId,
+  blueprint,
+  question,
+  automotiveBlueprint = '',
+  conversationHistory = [],
+  companyMemory = {},
+}) {
   const industry       = blueprint?.industry       || 'Automotive';
   const capabilityName = blueprint?.capabilityName || '';
   const sectionNames   = (blueprint?.sections || []).map(s => s.title);
@@ -147,9 +166,15 @@ export async function askAdvisor({ capabilityId, blueprint, question, automotive
   const specContent                       = readSpecContent();
   const related                           = readRelatedCapabilityContent(capabilityId);
 
+  const memoryContext = buildMemoryContext({
+    companyProfile:      companyMemory.profile      || {},
+    approvedSections:    companyMemory.approvedSections || {},
+    conversationHistory,
+  });
+
   // ── Build prompt + call LLM ─────────────────────────────────────────────────
   const systemPrompt = buildSystemPrompt(industry, capabilityName, sectionNames);
-  const userMessage  = buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint);
+  const userMessage  = buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint, memoryContext);
 
   const { text, inputTokens, outputTokens } = await generate({ systemPrompt, userMessage });
 

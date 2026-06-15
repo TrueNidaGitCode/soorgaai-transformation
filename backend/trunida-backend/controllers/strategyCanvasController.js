@@ -37,7 +37,16 @@ export async function listCapabilities(req, res) {
 
 export async function suggestSection(req, res) {
   try {
-    const { capabilityId, blueprint, sectionTitle, currentContent, request, automotiveBlueprint } = req.body;
+    const {
+      capabilityId,
+      blueprint,
+      sectionTitle,
+      currentContent,
+      request,
+      automotiveBlueprint,
+      conversationHistory,
+      companyMemory,
+    } = req.body;
 
     if (!capabilityId || typeof capabilityId !== 'string') {
       return res.status(400).json({ error: 'capabilityId is required.' });
@@ -56,6 +65,8 @@ export async function suggestSection(req, res) {
       currentContent:      currentContent || '',
       request:             request.trim(),
       automotiveBlueprint: typeof automotiveBlueprint === 'string' ? automotiveBlueprint : '',
+      conversationHistory: Array.isArray(conversationHistory) ? conversationHistory : [],
+      companyMemory:       companyMemory && typeof companyMemory === 'object' ? companyMemory : {},
     });
 
     return res.json(result);

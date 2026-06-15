@@ -26,6 +26,8 @@
  *   until it is accepted or discarded.
  */
 
+import { getCompanyProfile, updateCompanyProfile } from './executiveMemory.js';
+
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
       ? 'http://localhost:3000/api'
@@ -73,6 +75,32 @@ let _activeSection = null; // { sectionTitle, currentContent, capabilityId, blue
 // Sprint 20.1: the latest AI recommendation that has not been accepted or
 // discarded yet — follow-up questions refine it instead of the older draft.
 let _pendingSuggestion = null; // { sectionTitle, content } | null
+
+// ── Executive Memory: session conversation history (Sprint 23) ────────────────
+// Cleared when switching capabilities; persists across section changes within
+// the same capability so the AI remembers the full workshop context.
+let _conversationHistory = [];
+const _HISTORY_MAX      = 20;  // max stored messages (10 exchanges)
+const _CONTENT_TRUNCATE = 500; // chars per entry before truncation
+
+function addToHistory(role, content) {
+  if (!content) return;
+  const stored = content.length > _CONTENT_TRUNCATE
+    ? content.slice(0, _CONTENT_TRUNCATE) + '…'
+    : content;
+  _conversationHistory.push({ role, content: stored });
+  if (_conversationHistory.length > _HISTORY_MAX) {
+    _conversationHistory = _conversationHistory.slice(-_HISTORY_MAX);
+  }
+}
+
+function getApprovedSections() {
+  const draft = window.StrategyCanvas?.getCurrentContext()?.companyDraft;
+  if (!draft) return {};
+  return Object.fromEntries(
+    Object.entries(draft).filter(([, v]) => typeof v === 'string' && v.trim())
+  );
+}
 
 // ── Context indicator ─────────────────────────────────────────────────────────
 // Sprint 19: implementation details (industry layer, source attribution) are
@@ -632,6 +660,8 @@ async function sendQuestion(text) {
 }
 
 async function sendGeneralRequest(ctx, question) {
+  addToHistory('user', question);
+
   const resp = await fetch(`${API_BASE}/strategy-canvas/advisor/ask`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
@@ -640,6 +670,11 @@ async function sendGeneralRequest(ctx, question) {
       blueprint:           ctx.blueprint,
       question,
       automotiveBlueprint: ctx.blueprint?.automotiveBlueprint || '',
+      conversationHistory: _conversationHistory,
+      companyMemory: {
+        profile:          getCompanyProfile(),
+        approvedSections: getApprovedSections(),
+      },
     }),
   });
 
@@ -653,11 +688,16 @@ async function sendGeneralRequest(ctx, question) {
     return;
   }
 
+  const perspective = data.response?.executivePerspective;
+  if (perspective) addToHistory('assistant', perspective);
+
   appendAdvisorResponse(data);
 }
 
 async function sendSectionRequest(ctx, question) {
   const { sectionTitle, currentContent } = _activeSection;
+
+  addToHistory('user', question);
 
   // Sprint 20.1: follow-up questions build on the latest AI recommendation
   // while it is pending — so "add sustainability" refines the suggestion on
@@ -678,6 +718,11 @@ async function sendSectionRequest(ctx, question) {
       currentContent:      baseContent,
       request:             question,
       automotiveBlueprint: ctx.blueprint?.automotiveBlueprint || '',
+      conversationHistory: _conversationHistory,
+      companyMemory: {
+        profile:          getCompanyProfile(),
+        approvedSections: getApprovedSections(),
+      },
     }),
   });
 
@@ -693,21 +738,25 @@ async function sendSectionRequest(ctx, question) {
     return;
   }
 
+  // Sprint 23: persist any company context the AI extracted from this exchange.
+  if (data.companyContext) updateCompanyProfile(data.companyContext);
+
   // Sprint 22: route on mode detected by the AI advisor.
   // CONVERSATION — explanatory / analytical / strategic question → chat message.
   // BLUEPRINT    — explicit draft/update request → suggestion card.
   if (data.mode === 'conversation') {
+    addToHistory('assistant', data.response || '');
     appendConversationMessage(data.response || 'I couldn\'t generate a response. Please try again.');
     // Don't update _pendingSuggestion — the pending blueprint draft is unchanged.
   } else {
+    const revision = data.suggestion?.suggestedRevision || '';
+    addToHistory('assistant', `Generated ${sectionTitle} blueprint: ${revision}`);
+
     const card = createSuggestionCard(data);
     messagesEl.appendChild(card);
     messagesEl.scrollTop = messagesEl.scrollHeight;
 
-    _pendingSuggestion = {
-      sectionTitle,
-      content: data.suggestion?.suggestedRevision || '',
-    };
+    _pendingSuggestion = { sectionTitle, content: revision };
     inputEl.placeholder = 'Ask a follow-up question…';
   }
 }
@@ -770,14 +819,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Canvas events ──────────────────────────────────────────────────────────
   document.addEventListener('blueprint:loaded',  e => {
-    _pendingSuggestion = null; // section titles can repeat across capabilities
+    _pendingSuggestion   = null; // section titles can repeat across capabilities
+    _conversationHistory = [];   // fresh memory context per capability
     exitSectionMode();
     updateContextIndicator(e.detail);
     renderEmptyStateForBlueprint(e.detail.blueprint);
   });
 
   document.addEventListener('blueprint:cleared', () => {
-    _pendingSuggestion = null;
+    _pendingSuggestion   = null;
+    _conversationHistory = [];
     exitSectionMode();
     updateContextIndicator(null);
   });

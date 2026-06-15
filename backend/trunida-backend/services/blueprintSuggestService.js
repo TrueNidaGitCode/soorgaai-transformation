@@ -26,6 +26,7 @@ import {
   readRelatedCapabilityContent,
 } from './strategyCanvasService.js';
 import { generate } from './llmService.js';
+import { buildMemoryContext } from './executiveMemoryService.js';
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
@@ -140,21 +141,49 @@ RULE 7 — ONE QUESTION ONLY
 End with at most one focused follow-up question. Never ask multiple questions at once.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXECUTIVE MEMORY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+When EXECUTIVE MEMORY appears in the user message:
+
+1. COMPANY PROFILE is the source of truth for who this company is.
+   NEVER ask for information already in memory.
+   NEVER say you do not know who the company is if it is stated there.
+
+2. COMPANY BLUEPRINT shows sections the team has already accepted.
+   Build new sections that are consistent with approved ones.
+   Reference approved sections explicitly when generating new ones.
+
+3. CONVERSATION HISTORY shows the full session context.
+   "What assumptions did you make?" → state exactly what was assumed from the history and blueprint.
+   "Based on everything we discussed..." → summarise directly from history and approved sections.
+   NEVER respond as if starting fresh when history is present.
+
+4. COMPANY CONTEXT EXTRACTION (optional):
+   If the user's message reveals new company information not yet in memory
+   (company type, customers, strategic priorities, business model),
+   extract it into a companyContext field. Only include fields the user actually revealed.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT — respond with ONLY valid JSON, no markdown fences, no code blocks
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 For CONVERSATION (INTENT A or B):
 {
   "mode": "conversation",
-  "response": "Lead with the main point. Short paragraphs. Bullets for key items. 100-200 words. ONE focused question at the end if appropriate."
+  "response": "Lead with the main point. Short paragraphs. Bullets for key items. 100-200 words. ONE focused question at the end if appropriate.",
+  "companyContext": { "type": "...", "customers": "...", "priorities": ["..."], "businessModel": "..." }
 }
+(companyContext is OPTIONAL — only include when the user revealed new company information in this message)
 
 For BLUEPRINT (INTENT C or D):
 {
   "mode": "blueprint",
   "suggestedRevision": "Polished section text, 150-250 words, ready to use as written.",
-  "whyThisHelps": "2-3 concise sentences: key rationale, any assumptions made, invitation to refine or discuss."
-}`;
+  "whyThisHelps": "2-3 concise sentences: key rationale, any assumptions made, invitation to refine or discuss.",
+  "companyContext": { "type": "...", "customers": "...", "priorities": ["..."], "businessModel": "..." }
+}
+(companyContext is OPTIONAL — only include when the user revealed new company information in this message)`;
 }
 
 // ── Context formatters ────────────────────────────────────────────────────────
@@ -186,9 +215,14 @@ function formatCurrentSection(sectionTitle, currentContent, blueprint) {
 
 function buildUserMessage(
   blueprint, sectionTitle, currentContent,
-  coreContent, industryContent, specContent, related, request, automotiveBlueprint
+  coreContent, industryContent, specContent, related, request, automotiveBlueprint,
+  memoryContext
 ) {
   const blocks = [];
+
+  if (memoryContext) {
+    blocks.push(memoryContext);
+  }
 
   if (automotiveBlueprint) {
     blocks.push(`=== AUTOMOTIVE INDUSTRY BLUEPRINT ===\n${automotiveBlueprint}`);
@@ -228,7 +262,12 @@ function normalizeparsed(parsed) {
   if (parsed.mode === 'conversation' || parsed.mode === 'blueprint') return parsed;
   // Legacy shape (no mode field)
   if (parsed.suggestedRevision) {
-    return { mode: 'blueprint', suggestedRevision: parsed.suggestedRevision, whyThisHelps: parsed.whyThisHelps || '' };
+    return {
+      mode: 'blueprint',
+      suggestedRevision: parsed.suggestedRevision,
+      whyThisHelps:      parsed.whyThisHelps || '',
+      ...(parsed.companyContext ? { companyContext: parsed.companyContext } : {}),
+    };
   }
   return null; // signal: couldn't normalize
 }
@@ -297,6 +336,8 @@ export async function suggestBlueprintSection({
   currentContent,
   request,
   automotiveBlueprint = '',
+  conversationHistory = [],
+  companyMemory = {},
 }) {
   const industry       = blueprint?.industry       || 'Automotive';
   const capabilityName = blueprint?.capabilityName || '';
@@ -305,10 +346,17 @@ export async function suggestBlueprintSection({
   const specContent                       = readSpecContent();
   const related                           = readRelatedCapabilityContent(capabilityId);
 
+  const memoryContext = buildMemoryContext({
+    companyProfile:      companyMemory.profile      || {},
+    approvedSections:    companyMemory.approvedSections || {},
+    conversationHistory,
+  });
+
   const systemPrompt = buildSystemPrompt(industry, capabilityName, sectionTitle);
   const userMessage  = buildUserMessage(
     blueprint, sectionTitle, currentContent || '',
-    coreContent, industryContent, specContent, related, request, automotiveBlueprint
+    coreContent, industryContent, specContent, related, request, automotiveBlueprint,
+    memoryContext
   );
 
   const { text, inputTokens, outputTokens } = await generate({
@@ -320,6 +368,7 @@ export async function suggestBlueprintSection({
   const parsed = parseAIResponse(text);
 
   const base = { capabilityName, industry, sectionTitle, inputTokens, outputTokens };
+  const ctxUpdate = parsed.companyContext ? { companyContext: parsed.companyContext } : {};
 
   if (parsed.mode === 'blueprint') {
     return {
@@ -329,6 +378,7 @@ export async function suggestBlueprintSection({
         suggestedRevision: parsed.suggestedRevision || '',
         whyThisHelps:      parsed.whyThisHelps      || '',
       },
+      ...ctxUpdate,
     };
   }
 
@@ -336,5 +386,6 @@ export async function suggestBlueprintSection({
     ...base,
     mode:     'conversation',
     response: parsed.response || text.trim(),
+    ...ctxUpdate,
   };
 }

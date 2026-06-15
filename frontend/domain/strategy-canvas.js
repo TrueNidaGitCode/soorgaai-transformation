@@ -385,6 +385,8 @@ export function resetSection(sectionTitle) {
 
 // ── Render helpers ────────────────────────────────────────────────────────────
 
+const LIVE_CAPABILITIES = new Set(['ai-initiative-leadership']);
+
 function renderCapabilityList(capabilities, container) {
   container.innerHTML = '';
 
@@ -392,17 +394,19 @@ function renderCapabilityList(capabilities, container) {
   list.className = 'capability-list';
 
   for (const cap of capabilities) {
-    const meta   = CAP_META[cap.id] || CAP_META._default;
-    const { status, pct } = getCapabilityProgress(cap.id);
+    const meta    = CAP_META[cap.id] || CAP_META._default;
+    const isLive  = LIVE_CAPABILITIES.has(cap.id);
+    const { status, pct } = isLive ? getCapabilityProgress(cap.id) : { status: '', pct: 0 };
 
     const statusClass = status === 'Complete'    ? 'cap-status--complete'
                       : status === 'In Progress' ? 'cap-status--in-progress'
                       : 'cap-status--not-started';
 
     const card = document.createElement('button');
-    card.className = 'capability-card';
+    card.className = `capability-card${isLive ? '' : ' capability-card--coming-soon'}`;
     card.dataset.capabilityId = cap.id;
-    card.setAttribute('aria-label', `Open ${cap.name} blueprint`);
+    card.setAttribute('aria-label', isLive ? `Open ${cap.name} blueprint` : `${cap.name} — coming soon`);
+    if (!isLive) card.setAttribute('disabled', '');
 
     card.innerHTML = `
       <div class="cap-icon" style="background:${meta.grad}">
@@ -413,18 +417,22 @@ function renderCapabilityList(capabilities, container) {
         <span class="cap-objective">${cap.objective}</span>
       </div>
       <div class="cap-meta">
-        <div class="cap-status-row">
-          <span class="cap-status ${statusClass}">${status}</span>
-          <span class="cap-pct">${pct}%</span>
-        </div>
-        <div class="cap-track">
-          <div class="cap-bar${pct > 0 ? ' cap-bar--active' : ''}" style="width:${pct}%"></div>
-        </div>
+        ${isLive ? `
+          <div class="cap-status-row">
+            <span class="cap-status ${statusClass}">${status}</span>
+            <span class="cap-pct">${pct}%</span>
+          </div>
+          <div class="cap-track">
+            <div class="cap-bar${pct > 0 ? ' cap-bar--active' : ''}" style="width:${pct}%"></div>
+          </div>
+        ` : `
+          <span class="cap-coming-soon">Coming Soon</span>
+        `}
       </div>
-      <span class="cap-arrow" aria-hidden="true">›</span>
+      <span class="cap-arrow" aria-hidden="true">${isLive ? '›' : ''}</span>
     `;
 
-    card.addEventListener('click', () => loadBlueprint(cap.id, container));
+    if (isLive) card.addEventListener('click', () => loadBlueprint(cap.id, container));
     list.appendChild(card);
   }
 

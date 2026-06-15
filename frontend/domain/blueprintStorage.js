@@ -26,11 +26,20 @@
  * }
  */
 
-const KEY = 'soorgaai_blueprint_v1';
+// Storage keys are scoped to the logged-in user so data survives logout/login
+// and multiple users on the same browser never share blueprint data.
+let _userId = '';
+
+export function initStorage(userId) {
+  _userId = userId || '';
+}
+
+function KEY()          { return _userId ? `soorgaai_blueprint_v1_${_userId}`          : 'soorgaai_blueprint_v1'; }
+function ACTIVITY_KEY() { return _userId ? `soorgaai_blueprint_activity_v1_${_userId}` : 'soorgaai_blueprint_activity_v1'; }
 
 function loadAll() {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY());
     if (!raw) return { currentCapabilityId: null, capabilities: {} };
     const parsed = JSON.parse(raw);
     return {
@@ -44,7 +53,7 @@ function loadAll() {
 
 function saveAll(data) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(data));
+    localStorage.setItem(KEY(), JSON.stringify(data));
   } catch { /* storage full or unavailable — fail silently */ }
 }
 
@@ -83,7 +92,6 @@ export function saveCapabilityState(capabilityId, state) {
 // Separate key so the Sprint 17 blueprint schema stays untouched.
 // Newest event first. Capped to avoid unbounded growth.
 
-const ACTIVITY_KEY = 'soorgaai_blueprint_activity_v1';
 const ACTIVITY_MAX = 50;
 
 export function logActivity(action, capabilityName, sectionTitle) {
@@ -95,13 +103,13 @@ export function logActivity(action, capabilityName, sectionTitle) {
       sectionTitle:   sectionTitle   || '',
       at: new Date().toISOString(),
     });
-    localStorage.setItem(ACTIVITY_KEY, JSON.stringify(events.slice(0, ACTIVITY_MAX)));
+    localStorage.setItem(ACTIVITY_KEY(), JSON.stringify(events.slice(0, ACTIVITY_MAX)));
   } catch { /* storage full or unavailable — fail silently */ }
 }
 
 export function loadActivities(limit = 10) {
   try {
-    const raw = localStorage.getItem(ACTIVITY_KEY);
+    const raw = localStorage.getItem(ACTIVITY_KEY());
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];

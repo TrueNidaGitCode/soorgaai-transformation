@@ -37,9 +37,10 @@ function getToken()    { return localStorage.getItem('token'); }
 function getDomainId() { return new URLSearchParams(window.location.search).get('domain') || 'ai-strategy'; }
 
 function logout() {
+  // Blueprint data is stored under user-scoped keys (soorgaai_blueprint_v1_<userId>)
+  // and intentionally NOT cleared on logout so work persists across sessions.
   [
     'token', 'username', 'userId', 'role', 'redirectAfterLogin',
-    'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
     'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
     'da_score', 'soorga_assessment_progress',
   ].forEach(k => localStorage.removeItem(k));

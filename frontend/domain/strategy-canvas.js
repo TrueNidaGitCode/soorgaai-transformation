@@ -29,6 +29,7 @@
  */
 
 import {
+  initStorage,
   loadCurrentCapability,
   saveCurrentCapability,
   clearCurrentCapability,
@@ -716,6 +717,9 @@ async function init() {
     window.location.href = `/login/login.html?redirect=/domain/domain.html?domain=${domainId}`;
     return;
   }
+
+  // Scope blueprint storage to this user so data survives logout/login
+  initStorage(localStorage.getItem('userId') || '');
 
   const container = document.getElementById('canvas-content');
   if (!container) return;

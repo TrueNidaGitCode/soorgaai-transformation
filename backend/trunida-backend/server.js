@@ -93,16 +93,18 @@ app.get("/", (req, res) => {
     });
 });
 
-// ✅ LLM provider diagnostic — shows which keys are configured (values never exposed)
-app.get("/api/llm-status", (req, res) => {
+// ✅ LLM provider diagnostic — shows which keys are configured + live provider test
+import { generate } from "./services/llmService.js";
+
+app.get("/api/llm-status", async (req, res) => {
     const chain = process.env.PROVIDER_CHAIN
         ? process.env.PROVIDER_CHAIN.split(",").map(p => p.trim())
         : process.env.LLM_PROVIDER
             ? [process.env.LLM_PROVIDER]
             : ["gemini", "claude", "openai"];
 
-    res.json({
-        providerChain:    chain,
+    const status = {
+        providerChain: chain,
         keys: {
             GOOGLE_API_KEY:    !!process.env.GOOGLE_API_KEY,
             GEMINI_API_KEY:    !!process.env.GEMINI_API_KEY,
@@ -110,12 +112,30 @@ app.get("/api/llm-status", (req, res) => {
             OPENAI_API_KEY:    !!process.env.OPENAI_API_KEY,
         },
         overrides: {
-            LLM_PROVIDER:   process.env.LLM_PROVIDER    || null,
-            PROVIDER_CHAIN: process.env.PROVIDER_CHAIN  || null,
-            GEMINI_MODEL:   process.env.GEMINI_MODEL     || null,
-            ADVISOR_MODEL:  process.env.ADVISOR_MODEL    || null,
+            LLM_PROVIDER:   process.env.LLM_PROVIDER   || null,
+            PROVIDER_CHAIN: process.env.PROVIDER_CHAIN || null,
+            GEMINI_MODEL:   process.env.GEMINI_MODEL   || null,
+            ADVISOR_MODEL:  process.env.ADVISOR_MODEL  || null,
         },
-    });
+        liveTest: null,
+    };
+
+    // ?test=1 runs a minimal real LLM call through the full chain
+    if (req.query.test === '1') {
+        try {
+            const t0 = Date.now();
+            const result = await generate({
+                systemPrompt: 'You are a test assistant.',
+                userMessage:  'Reply with exactly: OK',
+                maxTokens:    10,
+            });
+            status.liveTest = { ok: true, ms: Date.now() - t0, preview: result.text.slice(0, 80) };
+        } catch (err) {
+            status.liveTest = { ok: false, error: err.message };
+        }
+    }
+
+    res.json(status);
 });
 
 // ✅ Graceful Shutdown

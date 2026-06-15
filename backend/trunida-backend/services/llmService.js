@@ -211,9 +211,10 @@ async function runChain({ systemPrompt, userMessage, model, maxTokens }) {
     } catch (err) {
       const msg = err.message || String(err);
       errors.push(`${name}: ${msg}`);
+      console.error(`[llm] ${name} FAILED —`, { message: msg, type: err.constructor?.name, status: err.status });
 
       if (!isLast && isFailoverError(err)) {
-        console.warn(`[llm] ${name} unavailable (${msg}) — trying next provider`);
+        console.warn(`[llm] trying next provider in chain`);
         continue;
       }
 

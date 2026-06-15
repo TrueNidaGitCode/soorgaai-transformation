@@ -43,8 +43,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const GLOBAL_MODEL = process.env.ADVISOR_MODEL;   // backward-compat override
 
 const DEFAULT_MODELS = {
-  // gemini-1.5-flash: 1500 RPD on free tier vs gemini-2.5-flash-lite: 20 RPD
-  gemini: process.env.GEMINI_MODEL || GLOBAL_MODEL || 'gemini-1.5-flash',
+  // gemini-2.0-flash: ~200 RPD on free tier (v1beta supported);
+  // gemini-2.5-flash-lite was only 20 RPD and gemini-1.5-flash is not on v1beta
+  gemini: process.env.GEMINI_MODEL || GLOBAL_MODEL || 'gemini-2.0-flash',
   claude: process.env.CLAUDE_MODEL || GLOBAL_MODEL || 'claude-sonnet-4-6',
   openai: process.env.OPENAI_MODEL || GLOBAL_MODEL || 'gpt-4o',
 };

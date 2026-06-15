@@ -37,7 +37,12 @@ function getToken()    { return localStorage.getItem('token'); }
 function getDomainId() { return new URLSearchParams(window.location.search).get('domain') || 'ai-strategy'; }
 
 function logout() {
-  ['token', 'username', 'userId', 'role', 'redirectAfterLogin'].forEach(k => localStorage.removeItem(k));
+  [
+    'token', 'username', 'userId', 'role', 'redirectAfterLogin',
+    'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
+    'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
+    'da_score', 'soorga_assessment_progress',
+  ].forEach(k => localStorage.removeItem(k));
   window.location.href = '/index.html';
 }
 
@@ -812,6 +817,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (titleEl) {
     titleEl.textContent = domainId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     document.title = `SoorgaAI — ${titleEl.textContent}`;
+  }
+
+  // Username in nav — same value stored at login
+  const usernameEl = document.getElementById('domain-username');
+  if (usernameEl) {
+    usernameEl.textContent = localStorage.getItem('username') || '';
   }
 
   // Start in disabled/idle state

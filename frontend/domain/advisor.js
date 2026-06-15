@@ -811,13 +811,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Logout
   document.getElementById('domain-logout')?.addEventListener('click', logout);
 
-  // Domain title in nav
-  const domainId = getDomainId();
-  const titleEl  = document.getElementById('domain-title-nav');
-  if (titleEl) {
-    titleEl.textContent = domainId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    document.title = `SoorgaAI — ${titleEl.textContent}`;
-  }
+  // Set document title from domain id (navbar title span removed)
+  const domainId    = getDomainId();
+  const domainLabel = domainId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  document.title = `SoorgaAI — ${domainLabel}`;
 
   // Username in nav — same value stored at login
   const usernameEl = document.getElementById('domain-username');

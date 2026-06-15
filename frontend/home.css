@@ -112,6 +112,28 @@
   max-width: 480px;
 }
 
+/* ── Credibility stats strip ─────────────────────────────────── */
+.hero__stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.hero__stat {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--brand-primary);
+}
+
+.hero__stat-sep {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 14px;
+}
+
 /* ── Benefits mini cards (between description and CTA) ──────── */
 .benefits-cards {
   display: flex;
@@ -135,7 +157,14 @@
 
 .benefit-card:hover { border-color: var(--brand-primary); }
 
-.benefit-icon { font-size: 20px; line-height: 1; }
+.benefit-num {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--brand-primary);
+  opacity: 0.7;
+  line-height: 1;
+}
 
 .benefit-label {
   font-size: 13px;
@@ -174,12 +203,13 @@
 }
 
 .stages__title {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: rgba(255, 255, 255, 0.45);
-  margin-bottom: 24px;
+  letter-spacing: 1px;
+  color: var(--brand-primary);
+  margin-bottom: 16px;
+  opacity: 0.85;
 }
 
 /* Framework panel description */

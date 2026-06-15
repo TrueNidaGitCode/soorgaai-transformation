@@ -26,20 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); })
         .then(html => {
             container.innerHTML = html;
-            const observer = new MutationObserver((_, obs) => {
-                if (document.getElementById('loginSignupBtn')) {
-                    setupNavbarHandlers();
-                    setupNavLinks();
-                    setupMobileToggle();
-                    obs.disconnect();
-                }
-            });
-            observer.observe(container, { childList: true, subtree: true });
-            setTimeout(() => {
-                setupNavbarHandlers();
-                setupNavLinks();
-                setupMobileToggle();
-            }, 400);
+            setupNavbarHandlers();
+            setupNavLinks();
+            setupMobileToggle();
         })
         .catch(err => console.error('❌ Navbar load failed:', err));
 });

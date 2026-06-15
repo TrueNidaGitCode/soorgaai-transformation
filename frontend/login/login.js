@@ -107,8 +107,8 @@ function checkExistingAuth() {
             localStorage.removeItem('redirectAfterLogin');
             window.location.href = redirectUrl;
         } else {
-            console.log('🔄 Redirecting to dashboard');
-            window.location.href = '/dashboard/signaldashboard.html';
+            console.log('🔄 Redirecting to workspace');
+            window.location.href = '/workspace/workspace.html';
         }
     }
 }
@@ -304,9 +304,9 @@ function redirectAfterLogin() {
         return;
     }
 
-    // 4. Default redirect to dashboard
-    console.log("✅ Redirecting to dashboard");
-    window.location.href = '/dashboard/signaldashboard.html';
+    // 4. Default redirect to workspace
+    console.log("✅ Redirecting to workspace");
+    window.location.href = '/workspace/workspace.html';
 }
 
 /**

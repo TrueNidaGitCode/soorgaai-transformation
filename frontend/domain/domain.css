@@ -1731,3 +1731,165 @@
   background: rgba(92,197,167,0.18);
   border-color: rgba(92,197,167,0.55);
 }
+
+/* ── Company Context Modal (Sprint 23.1) ─────────────────────────────────── */
+
+.cc-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.74);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: cc-fade-in 0.2s ease;
+}
+
+@keyframes cc-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.cc-modal {
+  background: #0d1117;
+  border: 1px solid rgba(92, 197, 167, 0.22);
+  border-radius: 1rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 660px;
+  max-height: 88vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.cc-modal__header { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.cc-modal__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+}
+
+.cc-modal__subtitle {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.48);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.cc-modal__label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+}
+
+.cc-modal__content {
+  background: rgba(92, 197, 167, 0.04);
+  border: 1px solid rgba(92, 197, 167, 0.13);
+  border-radius: 0.55rem;
+  padding: 0.9rem 1rem;
+  font-size: 0.81rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  font-family: inherit;
+  min-height: 200px;
+  max-height: 360px;
+  overflow-y: auto;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: default;
+}
+
+.cc-modal__content--editable {
+  cursor: text;
+  color: rgba(255, 255, 255, 0.88);
+  border-color: rgba(92, 197, 167, 0.35);
+  outline: none;
+}
+
+.cc-modal__content--editable:focus {
+  border-color: rgba(92, 197, 167, 0.55);
+}
+
+.cc-modal__spinner {
+  display: none;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.81rem;
+  color: rgba(255, 255, 255, 0.48);
+  padding: 0.75rem 0;
+}
+
+.cc-modal__spinner::before {
+  content: '';
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(92, 197, 167, 0.25);
+  border-top-color: #5CC5A7;
+  border-radius: 50%;
+  animation: cc-spin 0.75s linear infinite;
+}
+
+@keyframes cc-spin { to { transform: rotate(360deg); } }
+
+.cc-modal__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.cc-modal__btn {
+  padding: 0.48rem 1.05rem;
+  border-radius: 0.4rem;
+  border: none;
+  font-size: 0.81rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  font-family: inherit;
+}
+
+.cc-modal__btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+.cc-modal__btn--primary {
+  background: #5CC5A7;
+  color: #0a0e1a;
+}
+
+.cc-modal__btn--primary:hover:not(:disabled) { opacity: 0.86; }
+
+.cc-modal__btn--secondary {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.cc-modal__btn--secondary:hover:not(:disabled) { background: rgba(255, 255, 255, 0.11); }
+
+.cc-modal__skip {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.77rem;
+  cursor: pointer;
+  padding: 0.35rem 0.1rem;
+  font-family: inherit;
+}
+
+.cc-modal__skip:hover { color: rgba(255, 255, 255, 0.5); }
+
+.cc-modal__error {
+  font-size: 0.79rem;
+  color: #ff6b6b;
+}

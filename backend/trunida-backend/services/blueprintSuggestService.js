@@ -27,6 +27,7 @@ import {
 } from './strategyCanvasService.js';
 import { generate } from './llmService.js';
 import { buildMemoryContext } from './executiveMemoryService.js';
+import { getCompanyContext } from './companyContextService.js';
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
@@ -165,6 +166,17 @@ When EXECUTIVE MEMORY appears in the user message:
    extract it into a companyContext field. Only include fields the user actually revealed.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMPANY CONTEXT USAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+When COMPANY CONTEXT is present in the user message:
+• Ground all blueprint sections in this company's specific industry and capabilities.
+• Use business model, customers, and strategic priorities to write relevant, concrete content.
+• Reference the company naturally: "As a company focused on [domain]..." — never quote the document.
+• When generating or refining a blueprint section, ensure it fits this company's context.
+• Priority: Executive Memory > Company Context > Automotive Blueprint > Industry Knowledge.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT — respond with ONLY valid JSON, no markdown fences, no code blocks
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -216,12 +228,16 @@ function formatCurrentSection(sectionTitle, currentContent, blueprint) {
 function buildUserMessage(
   blueprint, sectionTitle, currentContent,
   coreContent, industryContent, specContent, related, request, automotiveBlueprint,
-  memoryContext
+  memoryContext, companyContext
 ) {
   const blocks = [];
 
   if (memoryContext) {
     blocks.push(memoryContext);
+  }
+
+  if (companyContext) {
+    blocks.push(`=== COMPANY CONTEXT ===\n${companyContext}\n=== END COMPANY CONTEXT ===`);
   }
 
   if (automotiveBlueprint) {
@@ -338,6 +354,7 @@ export async function suggestBlueprintSection({
   automotiveBlueprint = '',
   conversationHistory = [],
   companyMemory = {},
+  userId,
 }) {
   const industry       = blueprint?.industry       || 'Automotive';
   const capabilityName = blueprint?.capabilityName || '';
@@ -352,11 +369,14 @@ export async function suggestBlueprintSection({
     conversationHistory,
   });
 
+  const companyCtxRecord = userId ? await getCompanyContext(userId) : null;
+  const companyContext   = companyCtxRecord?.content || '';
+
   const systemPrompt = buildSystemPrompt(industry, capabilityName, sectionTitle);
   const userMessage  = buildUserMessage(
     blueprint, sectionTitle, currentContent || '',
     coreContent, industryContent, specContent, related, request, automotiveBlueprint,
-    memoryContext
+    memoryContext, companyContext
   );
 
   const { text, inputTokens, outputTokens } = await generate({

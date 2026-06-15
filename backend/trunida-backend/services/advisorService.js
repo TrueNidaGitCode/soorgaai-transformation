@@ -20,6 +20,7 @@ import {
 } from './strategyCanvasService.js';
 import { generate } from './llmService.js';
 import { buildMemoryContext } from './executiveMemoryService.js';
+import { getCompanyContext } from './companyContextService.js';
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
@@ -44,6 +45,14 @@ When EXECUTIVE MEMORY is present in the user message:
 • Approved Blueprint sections are the team's agreed strategy — reference and build on them directly.
 • Conversation History provides full context — use it to answer follow-up and summary questions.
 • NEVER respond as if starting fresh when there is conversation history.
+
+COMPANY CONTEXT USAGE:
+When COMPANY CONTEXT is present in the user message:
+• Ground all responses in this company's specific industry, business model, and capabilities.
+• Reference the company naturally: "As a company focused on [domain], your priority should be..."
+• Tailor recommendations to their customers, strategic focus, and known challenges.
+• NEVER quote or expose the Company Context document verbatim — incorporate it naturally.
+• Priority: Executive Memory > Company Context > Automotive Blueprint > Industry Knowledge.
 
 EXECUTIVE COMMUNICATION RULES:
 • Lead with the main insight or recommendation — never build up to it.
@@ -79,11 +88,15 @@ function formatBlueprint(blueprint) {
   }).join('\n\n');
 }
 
-function buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint, memoryContext) {
+function buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint, memoryContext, companyContext) {
   const blocks = [];
 
   if (memoryContext) {
     blocks.push(memoryContext);
+  }
+
+  if (companyContext) {
+    blocks.push(`=== COMPANY CONTEXT ===\n${companyContext}\n=== END COMPANY CONTEXT ===`);
   }
 
   if (automotiveBlueprint) {
@@ -156,6 +169,7 @@ export async function askAdvisor({
   automotiveBlueprint = '',
   conversationHistory = [],
   companyMemory = {},
+  userId,
 }) {
   const industry       = blueprint?.industry       || 'Automotive';
   const capabilityName = blueprint?.capabilityName || '';
@@ -172,9 +186,12 @@ export async function askAdvisor({
     conversationHistory,
   });
 
+  const companyCtxRecord = userId ? await getCompanyContext(userId) : null;
+  const companyContext   = companyCtxRecord?.content || '';
+
   // ── Build prompt + call LLM ─────────────────────────────────────────────────
   const systemPrompt = buildSystemPrompt(industry, capabilityName, sectionNames);
-  const userMessage  = buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint, memoryContext);
+  const userMessage  = buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint, memoryContext, companyContext);
 
   const { text, inputTokens, outputTokens } = await generate({ systemPrompt, userMessage });
 

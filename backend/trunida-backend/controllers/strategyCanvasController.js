@@ -67,6 +67,7 @@ export async function suggestSection(req, res) {
       automotiveBlueprint: typeof automotiveBlueprint === 'string' ? automotiveBlueprint : '',
       conversationHistory: Array.isArray(conversationHistory) ? conversationHistory : [],
       companyMemory:       companyMemory && typeof companyMemory === 'object' ? companyMemory : {},
+      userId:              req.user._id,
     });
 
     return res.json(result);

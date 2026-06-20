@@ -104,10 +104,14 @@ function parseIndustrySections(markdown) {
   let contentLines = [];
 
   for (const line of lines) {
-    const h2 = line.match(/^## (.+)/);
-    if (h2) {
+    // Match ## headings OR numbered # headings (e.g. "# 1. Financial Performance")
+    const h2          = line.match(/^## (.+)/);
+    const numberedH1  = line.match(/^# \d+\.\s+(.+)/);
+    const heading     = h2 ? h2[1].trim() : numberedH1 ? numberedH1[1].trim() : null;
+
+    if (heading) {
       if (current) sections.push({ ...current, content: contentLines.join('\n').trim() });
-      current = { title: h2[1].trim() };
+      current = { title: heading };
       contentLines = [];
     } else if (current) {
       contentLines.push(line);

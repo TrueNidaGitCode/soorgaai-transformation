@@ -68,12 +68,12 @@ const CAP_META = {
     color: '#3D9BE9',
     svg:   `<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="2"/>`,
   },
-  'ai-center-of-excellence': {
+  'ai-operating-model': {
     grad:  'linear-gradient(135deg, #150e2e, #2d1b69)',
     color: '#9B7FDB',
     svg:   `<path stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 2L21.39 7v10L12 22 2.61 17V7L12 2z"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>`,
   },
-  'ai-performance-management': {
+  'ai-roi': {
     grad:  'linear-gradient(135deg, #3a0000, #7a1818)',
     color: '#E07A5F',
     svg:   `<rect x="2" y="10" width="4" height="12" rx="1" stroke="currentColor" stroke-width="2"/><rect x="9" y="6" width="4" height="16" rx="1" stroke="currentColor" stroke-width="2"/><rect x="16" y="2" width="4" height="20" rx="1" stroke="currentColor" stroke-width="2"/>`,
@@ -386,7 +386,13 @@ export function resetSection(sectionTitle) {
 
 // ── Render helpers ────────────────────────────────────────────────────────────
 
-const LIVE_CAPABILITIES = new Set(['ai-initiative-leadership']);
+const LIVE_CAPABILITIES = new Set([
+  'ai-initiative-leadership',
+  'business-strategy-alignment',
+  'ai-operating-model',
+  'ai-roi',
+  'ai-governance-ethics',
+]);
 
 function renderCapabilityList(capabilities, container) {
   container.innerHTML = '';

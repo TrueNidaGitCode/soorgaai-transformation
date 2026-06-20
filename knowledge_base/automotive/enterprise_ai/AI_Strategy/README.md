@@ -66,8 +66,8 @@ Generate Organization-Specific AI Strategy
 | AI_Strategy_Intelligence_Specification.md | Master specification for the AI Strategy domain |
 | AI_Initiative_Leadership.md | Vision, Alignment, Commitment framework |
 | Business_Strategy_Alignment.md | Connecting AI investment to business objectives |
-| AI_Center_of_Excellence.md | Prioritizing and coordinating AI initiatives |
-| AI_Performance_Management.md | Measuring AI success and business value |
+| AI_Operating_Model.md | Organizing people, capabilities, and delivery teams for AI outcomes |
+| AI_ROI.md | Measuring AI business value and investment returns |
 | AI_Governance_Ethics.md | Risk management, policies, and digital trust |
 
 ### Automotive — Industry Applications
@@ -78,7 +78,7 @@ Generate Organization-Specific AI Strategy
 | Automotive_AI_Initiative_Leadership.md | Leadership in automotive transformation context |
 | Automotive_Business_Strategy_Alignment.md | Aligning AI with automotive business priorities |
 | Automotive_AI_Center_of_Excellence.md | AI CoE for OEMs and Tier-1 suppliers |
-| Automotive_AI_Performance_Management.md | Automotive-specific AI performance metrics |
+| Automotive_AI_ROI.md | Automotive AI ROI and business value metrics |
 | Automotive_AI_Governance_Ethics.md | Automotive regulatory and safety governance |
 
 ### Templates — Customization and Execution

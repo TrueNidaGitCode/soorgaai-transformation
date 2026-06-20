@@ -4,169 +4,204 @@
 
 AI Governance & Ethics ensures that AI initiatives are developed, deployed, and managed responsibly while protecting customers, employees, and the organization.
 
-Successful AI transformation requires building digital trust through effective risk management, clear policies, operational controls, and a culture of accountability.
+Successful AI transformation requires balancing innovation with responsibility, enabling organizations to build trusted AI systems that deliver sustainable business value.
 
 ---
 
 # Core Principles
 
-Successful AI governance is built upon four fundamental principles:
+Successful AI governance is built upon five fundamental principles:
 
-1. Risk Management
-2. Policies and Standards
-3. Operational Controls
-4. Digital Trust Culture
-
----
-
-# 1. Risk Management
-
-## Definition
-
-Risk Management identifies and manages potential risks associated with AI systems, data, and digital solutions.
-
-Organizations should proactively assess risks to minimize unintended consequences and maintain stakeholder confidence.
-
-## Key Principles
-
-* Identify AI-related risks.
-* Assess potential business impact.
-* Protect data and systems.
-* Manage regulatory and operational risks.
-* Continuously monitor emerging threats.
-
-## Leadership Question
-
-**Have we identified and understood the major risks associated with our AI initiatives?**
+1. Data Privacy & Security
+2. Ethical AI Guidelines
+3. Model Validation & Monitoring
+4. Regulatory Compliance
+5. Trust & Adoption
 
 ---
 
-# 2. Policies and Standards
+# 1. Data Privacy & Security
 
 ## Definition
 
-Policies and Standards establish clear principles for the responsible use of AI, data, and digital technologies.
+Data Privacy & Security protects organizational, customer, and employee data while ensuring AI systems are developed using secure and resilient architectures.
 
-They provide consistent guidance for the development and deployment of AI solutions across the organization.
+Security should be integrated into AI development from the beginning rather than added as an afterthought.
 
 ## Key Principles
 
-* Promote responsible AI practices.
-* Protect personal and business data.
-* Encourage transparency and fairness.
-* Strengthen security and privacy.
-* Support regulatory compliance.
+* Embed DevSecOps into AI solution delivery.
+* Design secure AI architectures.
+* Establish strong data governance.
+* Protect sensitive and personal information.
+* Automate security controls where possible.
 
 ## Leadership Question
 
-**Do we have clear principles for the responsible use of AI and data?**
+**Are our AI systems designed with security and privacy from the start?**
 
 ---
 
-# 3. Operational Controls
+# 2. Ethical AI Guidelines
 
 ## Definition
 
-Operational Controls integrate governance into the AI development and deployment lifecycle.
+Ethical AI Guidelines ensure AI systems are developed and used responsibly, transparently, and fairly while maintaining stakeholder trust.
 
-Governance should become part of everyday operations rather than a final approval activity.
+Organizations should align AI development with customer needs and organizational values.
 
 ## Key Principles
 
-* Embed governance into AI delivery.
-* Perform regular risk assessments.
-* Monitor AI systems continuously.
-* Automate compliance where possible.
-* Build specialized governance capabilities.
+* Promote customer-centric AI.
+* Improve transparency and explainability.
+* Encourage fairness and accountability.
+* Maintain human oversight.
+* Leadership should model responsible AI behaviour.
 
 ## Leadership Question
 
-**Are governance practices integrated into our AI delivery process?**
+**Are we developing AI solutions that customers and employees can trust?**
 
 ---
 
-# 4. Digital Trust Culture
+# 3. Model Validation & Monitoring
 
 ## Definition
 
-Digital Trust Culture promotes responsible AI practices across the organization through leadership, education, and accountability.
+Model Validation & Monitoring ensures AI systems remain accurate, reliable, secure, and aligned with business objectives throughout their lifecycle.
 
-Building trust requires active participation from both leadership and employees.
+Continuous monitoring enables organizations to detect issues and improve AI performance over time.
 
 ## Key Principles
 
-* Encourage responsible AI behaviour.
-* Develop organizational awareness.
-* Promote transparency.
-* Foster accountability.
-* Support continuous learning.
+* Validate models before deployment.
+* Continuously monitor performance.
+* Detect model drift and bias.
+* Automate retraining through MLOps.
+* Measure business outcomes.
 
 ## Leadership Question
 
-**Does our organization foster a culture of responsible and trusted AI?**
+**Do we continuously validate and improve our AI systems?**
+
+---
+
+# 4. Regulatory Compliance
+
+## Definition
+
+Regulatory Compliance integrates legal, industry, and organizational requirements into AI operations.
+
+Governance should become part of the enterprise operating model and transformation strategy.
+
+## Key Principles
+
+* Establish executive governance structures.
+* Integrate AI risk management.
+* Support industry regulations.
+* Maintain auditability.
+* Manage third-party AI risks.
+
+## Leadership Question
+
+**Are our AI initiatives aligned with regulatory and organizational requirements?**
+
+---
+
+# 5. Trust & Adoption
+
+## Definition
+
+Trust & Adoption ensures AI is embraced across the organization through transparency, accountability, and measurable business outcomes.
+
+Building trust requires leadership commitment and continuous engagement with stakeholders.
+
+## Key Principles
+
+* Build digital trust.
+* Define clear accountability.
+* Measure AI impact.
+* Promote organizational adoption.
+* Continuously improve governance practices.
+
+## Leadership Question
+
+**Have we built sufficient trust for AI to be widely adopted across the organization?**
 
 ---
 
 # AI Governance & Ethics Framework
 
 ```text
-Risk Management
-Identify and manage AI risks.
+Data Privacy & Security
+Protect data and AI infrastructure.
 
 ↓
 
-Policies and Standards
-Define responsible AI practices.
+Ethical AI Guidelines
+Promote responsible and transparent AI.
 
 ↓
 
-Operational Controls
-Embed governance into delivery.
+Model Validation & Monitoring
+Ensure AI remains reliable and effective.
 
 ↓
 
-Digital Trust Culture
-Build organizational trust and accountability.
+Regulatory Compliance
+Meet organizational and legal requirements.
+
+↓
+
+Trust & Adoption
+Build confidence and drive AI value.
 ```
 
 ---
 
 # CTO Perspective
 
-AI Governance & Ethics helps executive teams answer four fundamental questions:
+AI Governance & Ethics helps executive teams answer five fundamental questions:
 
-| Principle              | Executive Question                             |
-| ---------------------- | ---------------------------------------------- |
-| Risk Management        | What risks should we manage?                   |
-| Policies and Standards | What principles should guide AI use?           |
-| Operational Controls   | How do we embed governance into AI delivery?   |
-| Digital Trust Culture  | How do we build trust across the organization? |
+| Principle | Executive Question |
+|----------|-------------------|
+| Data Privacy & Security | How do we protect our data and AI systems? |
+| Ethical AI Guidelines | How do we ensure AI is responsible and transparent? |
+| Model Validation & Monitoring | How do we maintain AI reliability and performance? |
+| Regulatory Compliance | How do we meet legal and organizational obligations? |
+| Trust & Adoption | How do we build confidence and maximize AI value? |
 
 ---
 
-# Automotive Context
+# AI Governance Lifecycle
 
-For automotive organizations, AI governance extends across the entire product and service lifecycle.
+Successful AI governance should be embedded throughout the AI lifecycle.
 
-Potential focus areas include:
+```text
+Strategy
+    ↓
+Data Collection
+    ↓
+AI Development
+    ↓
+Validation
+    ↓
+Deployment
+    ↓
+Monitoring
+    ↓
+Continuous Improvement
+```
 
-* Vehicle Engineering
-* Software Development
-* Verification and Validation
-* Manufacturing
-* Connected Vehicle Services
-* Customer Data Protection
-* Supply Chain Operations
-* Autonomous and Intelligent Systems
-
-The objective is to ensure that AI systems are safe, secure, transparent, and aligned with business and regulatory expectations while maintaining customer and stakeholder trust.
+The five governance principles apply across every stage of this lifecycle.
 
 ---
 
 # Key Takeaways
 
-* Trusted AI requires proactive risk management.
-* Clear policies guide responsible AI development and use.
-* Governance should be embedded into everyday operations.
-* Building digital trust is a shared organizational responsibility.
-* Successful AI transformation balances innovation with responsibility and accountability.
+* Secure data and AI systems through strong privacy and security practices.
+* Develop AI responsibly with ethical principles and human oversight.
+* Continuously validate and monitor AI performance.
+* Integrate compliance into everyday AI operations.
+* Build digital trust and organizational adoption to maximize AI value.
+* Successful AI transformation balances innovation with responsibility, accountability, and long-term business outcomes.

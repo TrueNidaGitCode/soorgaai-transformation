@@ -10,74 +10,92 @@ Successful AI transformations focus on solving meaningful business problems, enh
 
 # Core Principles
 
-Successful AI initiatives are built upon three fundamental principles:
+Successful AI transformations are built upon three strategic pillars:
 
-1. Meaningful Business Impact
-2. Customer-Centric Value
-3. Measurable Business Outcomes
+1. Business-Led Roadmap
+2. Strategic Roadmap Design
+3. Operating Model
 
----
-
-# 1. Meaningful Business Impact
-
-## Definition
-
-AI initiatives should address significant business challenges rather than isolated technology experiments.
-
-Organizations should prioritize opportunities that create noticeable improvements in business performance and competitive positioning.
-
-## Key Principles
-
-* Focus on high-impact business problems.
-* Prioritize strategic opportunities.
-* Avoid low-value pilot projects.
-* Create sustainable competitive advantage.
-
-## Leadership Question
-
-**Are we solving a business problem that matters?**
+Together, these pillars help organizations align AI investments with business priorities, maximize value creation, and deliver sustainable outcomes.
 
 ---
 
-# 2. Customer-Centric Value
+# 1. Business-Led Roadmap
 
 ## Definition
 
-Customer value should be a primary consideration when identifying and prioritizing AI initiatives.
+AI and digital transformation initiatives should be driven by business priorities rather than technology adoption alone.
 
-AI should improve products, services, and experiences while strengthening customer relationships.
+Organizations should focus on solving meaningful business challenges that support strategic objectives and create measurable business value.
 
 ## Key Principles
 
-* Improve customer experiences.
-* Enhance products and services.
-* Increase responsiveness and personalization.
-* Strengthen customer satisfaction and loyalty.
+* Align AI initiatives with business strategy.
+* Focus on high-impact business challenges.
+* Prioritize customer and business value.
+* Balance short-term wins with long-term transformation.
+* Support sustainable competitive advantage.
 
 ## Leadership Question
 
-**How does this AI initiative create value for our customers?**
+**Are our AI investments directly supporting our business strategy?**
 
 ---
 
-# 3. Measurable Business Outcomes
+# 2. Strategic Roadmap Design
 
 ## Definition
 
-AI initiatives should deliver clear and measurable business benefits.
+Organizations should systematically identify and prioritize AI opportunities based on business value and organizational readiness.
 
-Success should be evaluated through operational and business performance indicators rather than technology adoption alone.
+Successful AI roadmaps balance strategic ambition with practical execution capabilities.
 
 ## Key Principles
 
-* Define measurable objectives.
-* Track business performance improvements.
-* Monitor operational efficiency.
-* Evaluate financial and strategic impact.
+### Business Value
+
+* Improve customer experience.
+* Create new revenue opportunities.
+* Increase operational efficiency.
+* Deliver measurable financial benefits.
+* Accelerate time to value.
+* Strengthen competitive positioning.
+
+### Organizational Readiness
+
+* Executive sponsorship.
+* Data readiness.
+* Technology readiness.
+* Talent and skills availability.
+* Change readiness.
+* Cross-functional collaboration.
 
 ## Leadership Question
 
-**How will we measure the success of this AI initiative?**
+**Are we investing in AI opportunities that deliver the greatest business value and have the highest likelihood of success?**
+
+---
+
+# 3. Operating Model
+
+## Definition
+
+Successful AI transformation requires an operating model that enables cross-functional collaboration and continuous delivery of business value.
+
+Organizations should create agile teams that combine business, technology, and domain expertise to deliver customer-centric outcomes.
+
+## Key Principles
+
+* Build cross-functional teams.
+* Encourage business and technology partnership.
+* Adopt agile ways of working.
+* Focus on customer-centric outcomes.
+* Enable continuous learning and improvement.
+* Support enterprise-wide AI adoption.
+
+## Leadership Question
+
+**Does our organization have the right structure to consistently deliver AI-driven business outcomes?**
 
 ---
 
@@ -86,15 +104,17 @@ Success should be evaluated through operational and business performance indicat
 ```
 Business Strategy
         ↓
-Business Challenges
+Business-Led Roadmap
         ↓
-AI Opportunities
+Strategic Roadmap Design
+        ↓
+Operating Model
+        ↓
+AI Initiative Delivery
         ↓
 Customer Value
         ↓
 Business Outcomes
-        ↓
-Measurable Success
 ```
 
 ---
@@ -103,35 +123,20 @@ Measurable Success
 
 Business Strategy Alignment helps executive teams answer three fundamental questions:
 
-| Principle         | Executive Question                            |
-| ----------------- | --------------------------------------------- |
-| Business Impact   | Are we solving an important business problem? |
-| Customer Value    | How does AI improve the customer experience?  |
-| Business Outcomes | How will we measure success?                  |
-
----
-
-# Automotive Context
-
-For automotive organizations, AI initiatives should support strategic business objectives across the enterprise.
-
-Potential focus areas include:
-
-* Accelerating product development.
-* Improving software and vehicle quality.
-* Enhancing manufacturing efficiency.
-* Optimizing supply chain operations.
-* Strengthening after-sales services.
-* Improving customer satisfaction.
-
-The objective is to use AI as a business enabler that creates measurable value for customers and the organization.
+| Strategic Pillar         | Executive Question                                     |
+| ------------------------ | ------------------------------------------------------ |
+| Business-Led Roadmap     | Are our AI investments aligned with business strategy? |
+| Strategic Roadmap Design | Are we prioritizing the right AI opportunities?        |
+| Operating Model          | Can our organization successfully deliver AI outcomes? |
 
 ---
 
 # Key Takeaways
 
 * AI initiatives should be driven by business strategy.
-* Focus on meaningful business challenges.
+* Business priorities should guide AI investments.
+* Strategic roadmaps should balance value and feasibility.
+* Cross-functional operating models accelerate AI adoption.
 * Customer value should remain a primary consideration.
 * Success should be measured through business outcomes.
 * AI investments should create sustainable competitive advantage.

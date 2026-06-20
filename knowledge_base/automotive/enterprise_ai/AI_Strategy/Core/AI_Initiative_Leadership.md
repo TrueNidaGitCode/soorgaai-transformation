@@ -115,14 +115,6 @@ AI Initiative Leadership helps executive teams answer three fundamental question
 
 ---
 
-# Automotive Context
-
-For automotive organizations, AI Initiative Leadership supports transformation across engineering, software development, validation, manufacturing, quality, supply chain, and customer services.
-
-The objective is not to deploy AI for its own sake, but to create sustainable business value while strengthening competitiveness and customer experience.
-
----
-
 # Key Takeaways
 
 * AI transformation starts with leadership, not technology.

@@ -63,4 +63,4 @@ Start centralized → Evolve to hub-and-spoke as domain teams mature → Conside
 
 ## Related
 
-- `../enterprise_ai/AI_Strategy/AI_Center_of_Excellence.md` — Automotive-specific CoE guidance
+- `../enterprise_ai/AI_Strategy/Core/AI_Operating_Model.md` — Core AI Operating Model guidance

@@ -143,8 +143,15 @@ function extractParagraphText(markdown, maxWords = 200) {
     if (t.match(/^\d+\.\s/)) continue;
     // Skip standalone bold metadata labels (e.g. **Layer:** Automotive)
     if (t.match(/^\*\*[^*]+:\*\*/)) continue;
-    paras.push(t);
-    count += t.split(/\s+/).filter(Boolean).length;
+    // Skip pure italic lines (e.g. *Leadership Question text*)
+    if (t.match(/^\*[^*].*\*$/)) continue;
+    // Strip inline markdown formatting (* ** `)
+    const clean = t
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/`(.+?)`/g, '$1');
+    paras.push(clean);
+    count += clean.split(/\s+/).filter(Boolean).length;
     if (count >= maxWords) break;
   }
   return paras.join(' ').trim();

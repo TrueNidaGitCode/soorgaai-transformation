@@ -72,7 +72,7 @@ AI investments should generate measurable financial benefits while improving the
 
 ---
 
-# 2. Operational Performance
+# 2. Operational Excellence
 
 ## Definition
 

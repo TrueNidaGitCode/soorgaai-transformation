@@ -102,16 +102,23 @@ function parseIndustrySections(markdown) {
   const sections = [];
   let current = null;
   let contentLines = [];
+  // Once a numbered h1 (# 1. Title) is seen, ## headings become sub-content
+  // rather than section boundaries — they belong inside the numbered section.
+  let numberedH1Mode = false;
 
   for (const line of lines) {
-    // Match ## headings OR numbered # headings (e.g. "# 1. Financial Performance")
-    const h2          = line.match(/^## (.+)/);
-    const numberedH1  = line.match(/^# \d+\.\s+(.+)/);
-    const heading     = h2 ? h2[1].trim() : numberedH1 ? numberedH1[1].trim() : null;
+    const numberedH1 = line.match(/^# \d+\.\s+(.+)/);
+    const h2         = line.match(/^## (.+)/);
 
-    if (heading) {
+    if (numberedH1) {
+      numberedH1Mode = true;
       if (current) sections.push({ ...current, content: contentLines.join('\n').trim() });
-      current = { title: heading };
+      current = { title: numberedH1[1].trim() };
+      contentLines = [];
+    } else if (h2 && !numberedH1Mode) {
+      // ## only acts as a section boundary in docs that don't use numbered h1 style
+      if (current) sections.push({ ...current, content: contentLines.join('\n').trim() });
+      current = { title: h2[1].trim() };
       contentLines = [];
     } else if (current) {
       contentLines.push(line);

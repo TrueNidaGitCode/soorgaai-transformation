@@ -2880,6 +2880,107 @@
 .bp-regen-btn:hover:not(:disabled) { opacity: 0.82; }
 .bp-regen-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* ── Vision Layout (custom 4-block template) ───────────────────────────────── */
+
+.vision-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* Block shared base */
+.vision-statement,
+.vision-metrics,
+.vision-timeline {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.65rem;
+  padding: 1.1rem 1.25rem;
+}
+
+/* 1. Vision Statement */
+.vision-statement__text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.88);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* 2. Pillars — .pillars-grid styles below */
+
+/* 3. Success Metrics */
+.vision-metrics__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 1.5rem;
+}
+
+.vision-metrics__list li {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.68);
+  padding-left: 1.1rem;
+  position: relative;
+  line-height: 1.5;
+}
+
+.vision-metrics__list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: rgba(92,197,167,0.75);
+  font-size: 0.75rem;
+}
+
+/* 4. Priority Timeline */
+.vision-timeline__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.vision-timeline__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.vision-timeline__step:last-child { border-bottom: none; }
+
+.vision-timeline__step-num {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: rgba(99,102,241,0.14);
+  border: 1px solid rgba(99,102,241,0.28);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(160,163,255,0.85);
+  margin-top: 0.05rem;
+}
+
+.vision-timeline__step-text {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.68);
+  line-height: 1.55;
+  padding-top: 0.22rem;
+}
+
+@media (max-width: 640px) {
+  .vision-metrics__list { grid-template-columns: 1fr; }
+}
+
 /* ── Strategic Pillars (Vision template) ───────────────────────────────────── */
 
 .pillars-grid {

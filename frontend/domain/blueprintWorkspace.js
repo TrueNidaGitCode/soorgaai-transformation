@@ -215,6 +215,74 @@ function buildPillarsGrid(pillars) {
   return grid;
 }
 
+function buildVisionLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'vision-layout';
+
+  // 1. Vision Statement
+  const stmtBlock = document.createElement('div');
+  stmtBlock.className = 'vision-statement';
+  const stmtLabel = document.createElement('p');
+  stmtLabel.className = 'brief-label';
+  stmtLabel.textContent = 'Vision Statement';
+  const stmtText = document.createElement('p');
+  stmtText.className = 'vision-statement__text';
+  stmtText.textContent = b.strategicPosition || '—';
+  stmtBlock.appendChild(stmtLabel);
+  stmtBlock.appendChild(stmtText);
+  wrap.appendChild(stmtBlock);
+
+  // 2. Strategic Pillars
+  if (b.strategicPillars?.length) {
+    wrap.appendChild(buildPillarsGrid(b.strategicPillars));
+  }
+
+  // 3. Success Metrics
+  const metricsBlock = document.createElement('div');
+  metricsBlock.className = 'vision-metrics';
+  const metricsLabel = document.createElement('p');
+  metricsLabel.className = 'brief-label';
+  metricsLabel.textContent = 'Success Metrics';
+  const metricsList = document.createElement('ul');
+  metricsList.className = 'vision-metrics__list';
+  (b.successMetrics || []).forEach(m => {
+    const li = document.createElement('li');
+    li.textContent = m;
+    metricsList.appendChild(li);
+  });
+  metricsBlock.appendChild(metricsLabel);
+  metricsBlock.appendChild(metricsList);
+  wrap.appendChild(metricsBlock);
+
+  // 4. Priority Actions as Timeline
+  const timelineBlock = document.createElement('div');
+  timelineBlock.className = 'vision-timeline';
+  const timelineLabel = document.createElement('p');
+  timelineLabel.className = 'brief-label';
+  timelineLabel.textContent = 'Priority Timeline (90 Days)';
+  const steps = document.createElement('ol');
+  steps.className = 'vision-timeline__steps';
+  (b.priorityActions || []).forEach((a, i) => {
+    const li = document.createElement('li');
+    li.className = 'vision-timeline__step';
+    const num = document.createElement('span');
+    num.className = 'vision-timeline__step-num';
+    num.textContent = String(i + 1).padStart(2, '0');
+    const text = document.createElement('span');
+    text.className = 'vision-timeline__step-text';
+    text.textContent = a;
+    li.appendChild(num);
+    li.appendChild(text);
+    steps.appendChild(li);
+  });
+  timelineBlock.appendChild(timelineLabel);
+  timelineBlock.appendChild(steps);
+  wrap.appendChild(timelineBlock);
+
+  return wrap;
+}
+
 function buildSectionCard(blueprint, cap, section) {
   const card = document.createElement('div');
   card.className = 'bp-section';
@@ -232,14 +300,13 @@ function buildSectionCard(blueprint, cap, section) {
   header.querySelector('.js-refine-btn').addEventListener('click', () => openAssistantForSection(section.title));
   card.appendChild(header);
 
-  // Strategic Pillars — rendered above the brief grid for sections that have them (Vision template)
+  // Vision template: full custom layout replaces the standard brief grid
   const pillars = section.brief?.strategicPillars;
   if (Array.isArray(pillars) && pillars.length > 0) {
-    card.appendChild(buildPillarsGrid(pillars));
+    card.appendChild(buildVisionLayout(section));
+  } else {
+    card.appendChild(buildBriefGrid(section));
   }
-
-  // Strategy Brief (primary)
-  card.appendChild(buildBriefGrid(section));
 
   // Essay (secondary, hidden by default)
   if (section.content) {

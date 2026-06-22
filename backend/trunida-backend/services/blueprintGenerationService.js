@@ -45,19 +45,24 @@ async function loadCompanyProfile(userId) {
 }
 
 // ── LLM prompt builder ────────────────────────────────────────────────────────
-// Uses pre-parsed pillar sections (title + definition + keyPrinciples) so the
-// LLM receives an explicit, numbered list of sections to generate — never the
-// raw markdown which contains non-pillar headings (Purpose, Core Principles, etc.)
+// Uses pre-parsed pillar sections so the LLM receives an explicit, numbered list
+// of sections — never the raw markdown which contains non-pillar headings.
+//
+// Primary output format: Strategy Brief (Option 1)
+//   Each section produces 4 structured fields a CTO can scan in 30 seconds:
+//     strategicPosition — 2-3 sentence assessment of where the company stands
+//     priorityActions   — exactly 3 specific 90-day actions (action-verb led)
+//     successMetrics    — 2-3 measurable KPIs with targets where possible
+//     keyRisk           — the single biggest risk if this is not addressed
 
 function buildGenerationPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint }) {
-  // Build a clean section reference block from the parsed pillars only
   const sectionList = parsedSections.map((s, i) =>
     `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`
   ).join('\n\n');
 
   const sectionTitles = parsedSections.map(s => `"${s.title}"`).join(', ');
 
-  const systemPrompt = `You are a senior AI Strategy Consultant generating a Company AI Blueprint for ${companyName}.
+  const systemPrompt = `You are a senior AI Strategy Consultant compiling a CTO-level AI Strategy Blueprint for ${companyName}.
 
 COMPANY CONTEXT:
 - Organisation: ${companyName}
@@ -67,35 +72,50 @@ COMPANY CONTEXT:
 ${contextDoc ? `\nCOMPANY PROFILE:\n${contextDoc}` : ''}
 
 TASK:
-Generate company-specific content for EXACTLY these ${parsedSections.length} sections of the "${capabilityName}" capability:
-${sectionTitles}
+For EXACTLY these ${parsedSections.length} sections of the "${capabilityName}" capability — ${sectionTitles} — compile a Strategy Brief that a CTO can scan in 30 seconds.
 
-Do NOT add, rename, or remove any sections. Generate ONLY the sections listed above.
+Each section must have exactly 4 fields:
 
-For each section, write 200–300 words of executive-quality, company-specific strategic content that is:
-- Tailored to ${companyName}'s business objective
-- Grounded in ${industry} industry context
-- Actionable and measurable
-- Written in executive consulting prose (no jargon)
+1. strategicPosition (2–3 sentences)
+   A crisp assessment of where ${companyName} stands on this dimension today, anchored to the business objective. Be specific — name the gap or the advantage.
+
+2. priorityActions (exactly 3 items)
+   The 3 most important actions to take in the next 90 days. Each must start with a strong action verb (e.g. "Establish", "Define", "Launch", "Assign"). Be concrete, not generic.
+
+3. successMetrics (2–3 items)
+   Specific, measurable KPIs. Include a target or threshold where possible (e.g. "Reduce validation cycle time by 25% within 6 months"). Avoid vague metrics like "improve quality."
+
+4. keyRisk (1 sentence)
+   The single biggest organisational or business risk if this capability is neglected. Be direct.
+
+Rules:
+- Do NOT add, rename, or remove sections. Generate ONLY the ${parsedSections.length} sections listed.
+- All content must be tailored to ${companyName}'s objective and the ${industry} industry context.
+- No generic consulting filler. Every sentence must earn its place.
 
 OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
 {
   "sections": [
     {
-      "title": "<exact section title from the list above>",
-      "content": "<200-300 words of company-specific strategic content>"
+      "title": "<exact section title>",
+      "brief": {
+        "strategicPosition": "<2-3 sentences>",
+        "priorityActions": ["<action 1>", "<action 2>", "<action 3>"],
+        "successMetrics": ["<metric 1>", "<metric 2>"],
+        "keyRisk": "<1 sentence>"
+      }
     }
   ]
 }`;
 
-  const userMessage = `CAPABILITY SECTIONS TO GENERATE (${parsedSections.length} sections):
+  const userMessage = `SECTIONS TO COMPILE (${parsedSections.length} sections):
 
 ${sectionList}
 
 ${automotiveBlueprint ? `AUTOMOTIVE INDUSTRY REFERENCE:\n${automotiveBlueprint}\n` : ''}
 BUSINESS OBJECTIVE: ${businessObjective}
 
-Generate the Company Blueprint JSON. Include exactly ${parsedSections.length} sections: ${sectionTitles}.`;
+Compile the Strategy Brief JSON for all ${parsedSections.length} sections: ${sectionTitles}.`;
 
   return { systemPrompt, userMessage };
 }
@@ -137,15 +157,24 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
   const parsed = JSON.parse(jsonMatch[0]);
   const sections = parsed?.sections || [];
 
-  // Only keep sections whose title matches one of the parsed pillars
+  // Only keep sections whose title matches a parsed pillar (safety net)
   const validTitles = new Set(parsedSections.map(s => s.title.toLowerCase()));
 
   return sections
-    .map(s => ({
-      title:     String(s.title   || '').trim(),
-      content:   String(s.content || '').trim(),
-      updatedAt: new Date(),
-    }))
+    .map(s => {
+      const b = s.brief || {};
+      return {
+        title: String(s.title || '').trim(),
+        brief: {
+          strategicPosition: String(b.strategicPosition || '').trim(),
+          priorityActions:   Array.isArray(b.priorityActions) ? b.priorityActions.map(String) : [],
+          successMetrics:    Array.isArray(b.successMetrics)  ? b.successMetrics.map(String)  : [],
+          keyRisk:           String(b.keyRisk || '').trim(),
+        },
+        content:   '',
+        updatedAt: new Date(),
+      };
+    })
     .filter(s => s.title && validTitles.has(s.title.toLowerCase()));
 }
 

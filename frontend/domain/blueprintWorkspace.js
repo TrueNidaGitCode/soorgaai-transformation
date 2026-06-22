@@ -174,23 +174,87 @@ function buildSectionCard(blueprint, cap, section) {
   card.className = 'bp-section';
   card.dataset.sectionTitle = section.title;
 
-  card.innerHTML = `
-    <div class="bp-section__header">
-      <h3 class="bp-section__title">${section.title}</h3>
-      <div class="bp-section__actions">
-        <button class="bp-section__action-btn js-refine-btn" data-section="${section.title}" aria-label="Refine this section with AI">
-          Refine with AI
-        </button>
-      </div>
+  // Header
+  const header = document.createElement('div');
+  header.className = 'bp-section__header';
+  header.innerHTML = `
+    <h3 class="bp-section__title">${section.title}</h3>
+    <div class="bp-section__actions">
+      <button class="bp-section__action-btn js-refine-btn" aria-label="Refine this section with AI">Refine with AI</button>
     </div>
-    <p class="bp-section__content">${section.content || '—'}</p>
   `;
+  header.querySelector('.js-refine-btn').addEventListener('click', () => openAssistantForSection(section.title));
+  card.appendChild(header);
 
-  card.querySelector('.js-refine-btn')?.addEventListener('click', () => {
-    openAssistantForSection(section.title);
-  });
+  // Strategy Brief (primary)
+  card.appendChild(buildBriefGrid(section));
+
+  // Essay (secondary, hidden by default)
+  if (section.content) {
+    const toggle = document.createElement('button');
+    toggle.className = 'bp-essay-toggle';
+    toggle.textContent = '▸ Show full analysis';
+    const essay = document.createElement('p');
+    essay.className = 'bp-essay-content';
+    essay.textContent = section.content;
+    toggle.addEventListener('click', () => {
+      const open = essay.classList.toggle('is-visible');
+      toggle.textContent = open ? '▾ Hide full analysis' : '▸ Show full analysis';
+    });
+    card.appendChild(toggle);
+    card.appendChild(essay);
+  }
 
   return card;
+}
+
+function buildBriefGrid(section) {
+  const b = section.brief || {};
+  const grid = document.createElement('div');
+  grid.className = 'brief-grid';
+  grid.dataset.sectionTitle = section.title;
+
+  // Strategic Position (full width)
+  const posCell = document.createElement('div');
+  posCell.className = 'brief-cell brief-cell--position';
+  posCell.innerHTML = `
+    <p class="brief-label">Strategic Position</p>
+    <p class="brief-position-text">${b.strategicPosition || '—'}</p>
+  `;
+  grid.appendChild(posCell);
+
+  // Priority Actions
+  const actCell = document.createElement('div');
+  actCell.className = 'brief-cell brief-cell--actions';
+  actCell.innerHTML = `
+    <p class="brief-label">Priority Actions (90 days)</p>
+    <ul class="brief-list">
+      ${(b.priorityActions || []).map(a => `<li>${a}</li>`).join('') || '<li>—</li>'}
+    </ul>
+  `;
+  grid.appendChild(actCell);
+
+  // Success Metrics
+  const metCell = document.createElement('div');
+  metCell.className = 'brief-cell brief-cell--metrics';
+  metCell.innerHTML = `
+    <p class="brief-label">Success Metrics</p>
+    <ul class="brief-list">
+      ${(b.successMetrics || []).map(m => `<li>${m}</li>`).join('') || '<li>—</li>'}
+    </ul>
+  `;
+  grid.appendChild(metCell);
+
+  // Key Risk (full width)
+  const riskCell = document.createElement('div');
+  riskCell.className = 'brief-cell brief-cell--risk';
+  riskCell.innerHTML = `
+    <p class="brief-label">Key Risk</p>
+    <p class="brief-risk-text">${b.keyRisk || '—'}</p>
+  `;
+  grid.appendChild(riskCell);
+
+  return grid;
 }
 
 // ── AI Assistant panel ────────────────────────────────────────────────────────
@@ -368,21 +432,26 @@ function clearSuggestionCard() {
 async function acceptSuggestion() {
   if (!_pendingSuggestion || !_blueprint) return;
 
-  // For capability-level suggestions, apply to the first section as a proxy
   const cap     = (_blueprint.capabilities || [])[_selectedCapIndex];
   const section = cap?.sections?.[0];
   if (!cap || !section) { clearSuggestionCard(); return; }
 
-  const newContent = _pendingSuggestion.text;
-
-  // Update DOM immediately
-  updateSectionContent(section.title, newContent);
-
-  // Update local blueprint state
-  section.content = newContent;
+  // AI returns prose — update strategicPosition as the primary brief field
+  const newPosition = _pendingSuggestion.text;
+  if (!section.brief) section.brief = {};
+  section.brief.strategicPosition = newPosition;
   section.updatedAt = new Date().toISOString();
   _blueprint.updatedAt = new Date().toISOString();
+
+  // Re-render the brief grid for this section
+  const oldGrid = document.querySelector(`.brief-grid[data-section-title="${CSS.escape(section.title)}"]`);
+  if (oldGrid) oldGrid.replaceWith(buildBriefGrid(section));
+
   renderHeader(_blueprint);
+
+  // Flash the card
+  const card = document.querySelector(`.bp-section[data-section-title="${CSS.escape(section.title)}"]`);
+  if (card) { card.classList.remove('bp-section--updated'); void card.offsetWidth; card.classList.add('bp-section--updated'); }
 
   // Persist to backend
   try {
@@ -391,31 +460,14 @@ async function acceptSuggestion() {
       {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body:    JSON.stringify({ content: newContent }),
+        body:    JSON.stringify({ brief: { strategicPosition: newPosition } }),
       }
     );
   } catch (err) {
-    console.warn('[workspace] Failed to persist section update:', err.message);
+    console.warn('[workspace] Failed to persist brief update:', err.message);
   }
 
   clearSuggestionCard();
-}
-
-function updateSectionContent(sectionTitle, newContent) {
-  const area  = document.getElementById('bp-content');
-  const cards = area?.querySelectorAll('.bp-section');
-  if (!cards) return;
-
-  for (const card of cards) {
-    if (card.dataset.sectionTitle === sectionTitle) {
-      const contentEl = card.querySelector('.bp-section__content');
-      if (contentEl) contentEl.textContent = newContent;
-      card.classList.remove('bp-section--updated');
-      void card.offsetWidth;
-      card.classList.add('bp-section--updated');
-      break;
-    }
-  }
 }
 
 // ── Chat UI helpers ───────────────────────────────────────────────────────────

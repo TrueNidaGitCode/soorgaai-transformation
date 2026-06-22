@@ -240,38 +240,39 @@ export async function getCompanyBlueprint(req, res) {
 
 /**
  * PATCH /strategy-canvas/company-blueprint/:blueprintId/capability/:capabilityId/section/:sectionTitle
- * Updates the content of one section in the stored blueprint.
+ *
+ * Updates one section in the stored blueprint.
+ * Accepts any combination of `brief` (Strategy Brief fields) and `content` (essay).
+ * Only the fields present in the request body are overwritten.
  */
 export async function updateBlueprintSection(req, res) {
   try {
     const { blueprintId, capabilityId, sectionTitle } = req.params;
-    const { content } = req.body;
-    const userId = req.user._id;
+    const { brief, content } = req.body;
+    const userId  = req.user._id;
+    const decoded = decodeURIComponent(sectionTitle);
 
-    if (typeof content !== 'string') {
-      return res.status(400).json({ error: 'content is required.' });
+    if (brief === undefined && content === undefined) {
+      return res.status(400).json({ error: 'Provide brief and/or content to update.' });
+    }
+
+    const setFields = { 'capabilities.$[cap].sections.$[sec].updatedAt': new Date(), updatedAt: new Date() };
+
+    if (brief && typeof brief === 'object') {
+      if (typeof brief.strategicPosition === 'string')  setFields['capabilities.$[cap].sections.$[sec].brief.strategicPosition'] = brief.strategicPosition;
+      if (Array.isArray(brief.priorityActions))          setFields['capabilities.$[cap].sections.$[sec].brief.priorityActions']   = brief.priorityActions;
+      if (Array.isArray(brief.successMetrics))           setFields['capabilities.$[cap].sections.$[sec].brief.successMetrics']    = brief.successMetrics;
+      if (typeof brief.keyRisk === 'string')             setFields['capabilities.$[cap].sections.$[sec].brief.keyRisk']           = brief.keyRisk;
+    }
+
+    if (typeof content === 'string') {
+      setFields['capabilities.$[cap].sections.$[sec].content'] = content;
     }
 
     const result = await CompanyBlueprint.updateOne(
-      {
-        _id:    blueprintId,
-        userId,
-        'capabilities.capabilityId':        capabilityId,
-        'capabilities.sections.title':       decodeURIComponent(sectionTitle),
-      },
-      {
-        $set: {
-          'capabilities.$[cap].sections.$[sec].content':   content,
-          'capabilities.$[cap].sections.$[sec].updatedAt': new Date(),
-          updatedAt: new Date(),
-        },
-      },
-      {
-        arrayFilters: [
-          { 'cap.capabilityId': capabilityId },
-          { 'sec.title':        decodeURIComponent(sectionTitle) },
-        ],
-      }
+      { _id: blueprintId, userId, 'capabilities.capabilityId': capabilityId, 'capabilities.sections.title': decoded },
+      { $set: setFields },
+      { arrayFilters: [{ 'cap.capabilityId': capabilityId }, { 'sec.title': decoded }] }
     );
 
     if (result.matchedCount === 0) {

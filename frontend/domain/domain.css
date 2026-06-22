@@ -2843,6 +2843,115 @@
 .bp-empty__title { font-size: 1rem; font-weight: 600; color: rgba(255,255,255,0.55); margin: 0 0 0.4rem; }
 .bp-empty__text  { font-size: 0.85rem; margin: 0; }
 
+/* ── Strategy Brief Card ───────────────────────────────────────────────────── */
+
+.brief-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 0.6rem;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.brief-cell {
+  background: rgba(255,255,255,0.02);
+  padding: 1rem 1.1rem;
+}
+
+.brief-cell--position {
+  grid-column: 1 / -1;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.brief-cell--risk {
+  grid-column: 1 / -1;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,107,107,0.04);
+}
+
+.brief-cell--actions { border-right: 1px solid rgba(255,255,255,0.06); }
+
+.brief-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin: 0 0 0.55rem;
+}
+
+.brief-cell--risk .brief-label { color: rgba(255,107,107,0.6); }
+
+.brief-position-text {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.brief-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.brief-list li {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.5;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.brief-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #5CC5A7;
+  font-size: 0.75rem;
+}
+
+.brief-cell--risk .brief-list li::before { content: '▲'; color: rgba(255,107,107,0.7); }
+
+.brief-risk-text {
+  font-size: 0.83rem;
+  color: rgba(255,150,130,0.85);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Essay toggle (secondary) */
+.bp-essay-toggle {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.28);
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 0.5rem 0 0;
+  transition: color 0.2s;
+  font-family: inherit;
+  display: block;
+}
+.bp-essay-toggle:hover { color: rgba(255,255,255,0.55); }
+
+.bp-essay-content {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.75;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  white-space: pre-wrap;
+  display: none;
+}
+.bp-essay-content.is-visible { display: block; }
+
 /* ── AI Assistant Panel ────────────────────────────────────────────────────── */
 
 .ai-panel {

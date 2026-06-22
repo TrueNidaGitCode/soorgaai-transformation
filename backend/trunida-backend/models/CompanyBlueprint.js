@@ -1,18 +1,69 @@
 /**
- * SoorgaAI — Company Blueprint Model (PI 26.3 Sprint 1)
+ * SoorgaAI — Company Blueprint Model
  *
- * Persists AI-generated company-specific AI Strategy Blueprint documents.
- * One active blueprint per user (soft-versioned via `version` field).
- * Capabilities are generated sequentially; each tracks its own status.
+ * Section content is structured to support multiple presentation formats.
+ * Only `brief` (Strategy Brief) is generated today; additional format slots
+ * are schema-ready for future product expansion without migrations.
+ *
+ * Section format slots:
+ *   brief   — Strategy Brief (Option 1, primary) ✓ implemented
+ *   csg     — Current State / Target State / Gap (Option 2) — future
+ *   okr     — Objective / Key Results / Initiatives (Option 3) — future
+ *   maturity — Maturity Level / Rationale / Next Steps (Option 4) — future
+ *   content  — Long-form essay (secondary, generated alongside brief)
  */
 
 import mongoose from 'mongoose';
 
-const sectionSchema = new mongoose.Schema({
-  title:     { type: String, required: true },
-  content:   { type: String, default: '' },
-  updatedAt: { type: Date,   default: Date.now },
+// ── Strategy Brief (Option 1) ─────────────────────────────────────────────────
+
+const briefSchema = new mongoose.Schema({
+  strategicPosition: { type: String, default: '' },
+  priorityActions:   { type: [String], default: [] },
+  successMetrics:    { type: [String], default: [] },
+  keyRisk:           { type: String, default: '' },
 }, { _id: false });
+
+// ── Future format slots (schema-ready, not yet populated) ─────────────────────
+
+const csgSchema = new mongoose.Schema({
+  currentState: { type: String, default: '' },
+  targetState:  { type: String, default: '' },
+  gap:          { type: String, default: '' },
+}, { _id: false });
+
+const okrSchema = new mongoose.Schema({
+  objective:   { type: String, default: '' },
+  keyResults:  { type: [String], default: [] },
+  initiatives: { type: [String], default: [] },
+}, { _id: false });
+
+const maturitySchema = new mongoose.Schema({
+  score:     { type: Number, min: 1, max: 5, default: null },
+  rationale: { type: String, default: '' },
+  nextSteps: { type: [String], default: [] },
+}, { _id: false });
+
+// ── Section ───────────────────────────────────────────────────────────────────
+
+const sectionSchema = new mongoose.Schema({
+  title:    { type: String, required: true },
+
+  // Primary format — Strategy Brief
+  brief:    { type: briefSchema, default: () => ({}) },
+
+  // Secondary — long-form essay
+  content:  { type: String, default: '' },
+
+  // Future format slots
+  csg:      { type: csgSchema,     default: undefined },
+  okr:      { type: okrSchema,     default: undefined },
+  maturity: { type: maturitySchema, default: undefined },
+
+  updatedAt: { type: Date, default: Date.now },
+}, { _id: false });
+
+// ── Capability ────────────────────────────────────────────────────────────────
 
 const capabilitySchema = new mongoose.Schema({
   capabilityId:   { type: String, required: true },
@@ -22,10 +73,12 @@ const capabilitySchema = new mongoose.Schema({
     enum:    ['pending', 'in-progress', 'completed', 'error'],
     default: 'pending',
   },
-  sections:    { type: [sectionSchema], default: [] },
-  completedAt: { type: Date },
+  sections:     { type: [sectionSchema], default: [] },
+  completedAt:  { type: Date },
   errorMessage: { type: String },
 }, { _id: false });
+
+// ── Blueprint document ────────────────────────────────────────────────────────
 
 const companyBlueprintSchema = new mongoose.Schema({
   userId: {
@@ -42,8 +95,8 @@ const companyBlueprintSchema = new mongoose.Schema({
     enum:    ['generating', 'completed', 'error'],
     default: 'generating',
   },
-  version:     { type: String, default: '1.0' },
-  generatedAt: { type: Date,   default: Date.now },
+  version:      { type: String, default: '1.0' },
+  generatedAt:  { type: Date, default: Date.now },
   capabilities: { type: [capabilitySchema], default: [] },
 }, { timestamps: true });
 

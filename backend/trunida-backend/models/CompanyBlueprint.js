@@ -17,11 +17,16 @@ import mongoose from 'mongoose';
 
 // ── Strategy Brief (Option 1) ─────────────────────────────────────────────────
 
+const leadershipValidationSchema = new mongoose.Schema({
+  status:  { type: String, enum: ['Approved', 'In Review', 'Not Yet Validated'], default: 'Not Yet Validated' },
+  context: { type: String, default: '' },
+}, { _id: false });
+
 const briefSchema = new mongoose.Schema({
-  strategicPosition: { type: String, default: '' },
-  priorityActions:   { type: [String], default: [] },
-  successMetrics:    { type: [String], default: [] },
-  keyRisk:           { type: String, default: '' },
+  strategicPosition:    { type: String, default: '' },
+  priorityActions:      { type: [String], default: [] },
+  successMetrics:       { type: [String], default: [] },
+  leadershipValidation: { type: leadershipValidationSchema, default: () => ({ status: 'Not Yet Validated', context: '' }) },
 }, { _id: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────

@@ -45,15 +45,9 @@ async function loadCompanyProfile(userId) {
 }
 
 // ── LLM prompt builder ────────────────────────────────────────────────────────
-// Uses pre-parsed pillar sections so the LLM receives an explicit, numbered list
-// of sections — never the raw markdown which contains non-pillar headings.
-//
-// Primary output format: Strategy Brief (Option 1)
-//   Each section produces 4 structured fields a CTO can scan in 30 seconds:
-//     strategicPosition — 2-3 sentence assessment of where the company stands
-//     priorityActions   — exactly 3 specific 90-day actions (action-verb led)
-//     successMetrics    — 2-3 measurable KPIs with targets where possible
-//     keyRisk           — the single biggest risk if this is not addressed
+// SoorgaAI Execution Strategy Co-Pilot prompt.
+// Generates execution-ready future-state strategies — not assessments or gap analyses.
+// Each section produces 4 typed brief fields + leadership validation status.
 
 function buildGenerationPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint }) {
   const sectionList = parsedSections.map((s, i) =>
@@ -62,7 +56,11 @@ function buildGenerationPrompt({ companyName, industry, role, businessObjective,
 
   const sectionTitles = parsedSections.map(s => `"${s.title}"`).join(', ');
 
-  const systemPrompt = `You are a senior AI Strategy Consultant compiling a CTO-level AI Strategy Blueprint for ${companyName}.
+  const systemPrompt = `You are SoorgaAI, an enterprise Strategy Co-Pilot for CTO-level decision making.
+
+Your job is to generate execution-ready future-state strategies for enterprise capabilities.
+
+You are NOT a consultant. You are NOT an auditor. You are a strategy execution generator.
 
 COMPANY CONTEXT:
 - Organisation: ${companyName}
@@ -72,26 +70,40 @@ COMPANY CONTEXT:
 ${contextDoc ? `\nCOMPANY PROFILE:\n${contextDoc}` : ''}
 
 TASK:
-For EXACTLY these ${parsedSections.length} sections of the "${capabilityName}" capability — ${sectionTitles} — compile a Strategy Brief that a CTO can scan in 30 seconds.
+For EXACTLY these ${parsedSections.length} sections of the "${capabilityName}" capability — ${sectionTitles} — generate an execution-ready Strategy Brief.
 
 Each section must have exactly 4 fields:
 
-1. strategicPosition (2–3 sentences)
-   A crisp assessment of where ${companyName} stands on this dimension today, anchored to the business objective. Be specific — name the gap or the advantage.
+1. strategicPosition (1–2 sentences MAXIMUM)
+   Define the IDEAL FUTURE-STATE — what success looks like when this capability is fully executing.
+   Must be outcome-oriented and concrete. Must describe the target operating model.
+   Do NOT describe current problems or gaps.
 
-2. priorityActions (exactly 3 items)
-   The 3 most important actions to take in the next 90 days. Each must start with a strong action verb (e.g. "Establish", "Define", "Launch", "Assign"). Be concrete, not generic.
+2. priorityActions (3 to 5 items)
+   Executable actions for the next 90 days only.
+   Must use strong verbs: Define, Deploy, Integrate, Implement, Establish, Launch, Assign.
+   Must directly impact delivery or capability execution.
+   Do NOT use: improve, enhance, explore, consider, leverage.
 
-3. successMetrics (2–3 items)
-   Specific, measurable KPIs. Include a target or threshold where possible (e.g. "Reduce validation cycle time by 25% within 6 months"). Avoid vague metrics like "improve quality."
+3. successMetrics (2 to 4 items)
+   Measurable KPIs only. Must be quantifiable (%, time, cost, adoption rate, defect rate).
+   Must clearly state direction: increase / decrease / target value.
+   Must reflect real execution outcomes.
+   Do NOT use vague metrics like "improve quality" or "increase efficiency."
 
-4. keyRisk (1 sentence)
-   The single biggest organisational or business risk if this capability is neglected. Be direct.
+4. leadershipValidation
+   An object with two fields:
+   - status: always set to "Not Yet Validated" for AI-generated blueprints
+   - context: one sentence describing what executive alignment or approval is needed for this section
+     (e.g. "Requires CTO sign-off on AI investment allocation for ${industry} program")
 
-Rules:
-- Do NOT add, rename, or remove sections. Generate ONLY the ${parsedSections.length} sections listed.
-- All content must be tailored to ${companyName}'s objective and the ${industry} industry context.
-- No generic consulting filler. Every sentence must earn its place.
+HARD RULES:
+- Do NOT include a Key Risk section
+- Do NOT write essays or paragraphs
+- Do NOT describe problems or gaps
+- Do NOT exceed bullet limits
+- Do NOT add, rename, or remove sections — generate ONLY the ${parsedSections.length} sections listed
+- Every output must be scannable in under 30 seconds
 
 OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
 {
@@ -99,23 +111,26 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanati
     {
       "title": "<exact section title>",
       "brief": {
-        "strategicPosition": "<2-3 sentences>",
+        "strategicPosition": "<1-2 sentence future-state definition>",
         "priorityActions": ["<action 1>", "<action 2>", "<action 3>"],
-        "successMetrics": ["<metric 1>", "<metric 2>"],
-        "keyRisk": "<1 sentence>"
+        "successMetrics": ["<KPI 1>", "<KPI 2>", "<KPI 3>"],
+        "leadershipValidation": {
+          "status": "Not Yet Validated",
+          "context": "<one sentence on what alignment or approval is needed>"
+        }
       }
     }
   ]
 }`;
 
-  const userMessage = `SECTIONS TO COMPILE (${parsedSections.length} sections):
+  const userMessage = `CAPABILITY SECTIONS TO GENERATE (${parsedSections.length} sections):
 
 ${sectionList}
 
 ${automotiveBlueprint ? `AUTOMOTIVE INDUSTRY REFERENCE:\n${automotiveBlueprint}\n` : ''}
 BUSINESS OBJECTIVE: ${businessObjective}
 
-Compile the Strategy Brief JSON for all ${parsedSections.length} sections: ${sectionTitles}.`;
+Generate the execution-ready Strategy Brief JSON for all ${parsedSections.length} sections: ${sectionTitles}.`;
 
   return { systemPrompt, userMessage };
 }
@@ -162,14 +177,20 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
 
   return sections
     .map(s => {
-      const b = s.brief || {};
+      const b  = s.brief || {};
+      const lv = b.leadershipValidation || {};
       return {
         title: String(s.title || '').trim(),
         brief: {
-          strategicPosition: String(b.strategicPosition || '').trim(),
-          priorityActions:   Array.isArray(b.priorityActions) ? b.priorityActions.map(String) : [],
-          successMetrics:    Array.isArray(b.successMetrics)  ? b.successMetrics.map(String)  : [],
-          keyRisk:           String(b.keyRisk || '').trim(),
+          strategicPosition:    String(b.strategicPosition || '').trim(),
+          priorityActions:      Array.isArray(b.priorityActions) ? b.priorityActions.map(String) : [],
+          successMetrics:       Array.isArray(b.successMetrics)  ? b.successMetrics.map(String)  : [],
+          leadershipValidation: {
+            status:  ['Approved', 'In Review', 'Not Yet Validated'].includes(lv.status)
+                       ? lv.status
+                       : 'Not Yet Validated',
+            context: String(lv.context || '').trim(),
+          },
         },
         content:   '',
         updatedAt: new Date(),

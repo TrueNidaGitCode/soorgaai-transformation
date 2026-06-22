@@ -245,14 +245,29 @@ function buildBriefGrid(section) {
   `;
   grid.appendChild(metCell);
 
-  // Key Risk (full width)
-  const riskCell = document.createElement('div');
-  riskCell.className = 'brief-cell brief-cell--risk';
-  riskCell.innerHTML = `
-    <p class="brief-label">Key Risk</p>
-    <p class="brief-risk-text">${b.keyRisk || '—'}</p>
+  // Leadership Validation (full width)
+  const lv         = b.leadershipValidation || {};
+  const lvStatus   = lv.status || 'Not Yet Validated';
+  const lvContext  = lv.context || '';
+  const badgeClass = lvStatus === 'Approved'  ? 'brief-validation-badge--approved'
+                   : lvStatus === 'In Review' ? 'brief-validation-badge--review'
+                   : 'brief-validation-badge--pending';
+  const badgeDot   = lvStatus === 'Approved'  ? '✓'
+                   : lvStatus === 'In Review' ? '◐'
+                   : '○';
+
+  const validationCell = document.createElement('div');
+  validationCell.className = 'brief-cell brief-cell--validation';
+  validationCell.innerHTML = `
+    <div>
+      <p class="brief-label">Leadership Validation</p>
+      <p class="brief-validation-context">${lvContext || '—'}</p>
+    </div>
+    <span class="brief-validation-badge ${badgeClass}" aria-label="Validation status: ${lvStatus}">
+      ${badgeDot} ${lvStatus}
+    </span>
   `;
-  grid.appendChild(riskCell);
+  grid.appendChild(validationCell);
 
   return grid;
 }

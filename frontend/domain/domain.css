@@ -2866,10 +2866,13 @@
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
-.brief-cell--risk {
+.brief-cell--validation {
   grid-column: 1 / -1;
   border-top: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,107,107,0.04);
+  background: rgba(92,197,167,0.03);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
 }
 
 .brief-cell--actions { border-right: 1px solid rgba(255,255,255,0.06); }
@@ -2883,7 +2886,7 @@
   margin: 0 0 0.55rem;
 }
 
-.brief-cell--risk .brief-label { color: rgba(255,107,107,0.6); }
+.brief-cell--validation .brief-label { color: rgba(92,197,167,0.55); }
 
 .brief-position-text {
   font-size: 0.88rem;
@@ -2917,11 +2920,42 @@
   font-size: 0.75rem;
 }
 
-.brief-cell--risk .brief-list li::before { content: '▲'; color: rgba(255,107,107,0.7); }
+/* Leadership Validation */
+.brief-validation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.65rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
 
-.brief-risk-text {
-  font-size: 0.83rem;
-  color: rgba(255,150,130,0.85);
+.brief-validation-badge--approved {
+  background: rgba(92,197,167,0.15);
+  border: 1px solid rgba(92,197,167,0.35);
+  color: #5CC5A7;
+}
+
+.brief-validation-badge--review {
+  background: rgba(255,200,80,0.12);
+  border: 1px solid rgba(255,200,80,0.3);
+  color: #f0c040;
+}
+
+.brief-validation-badge--pending {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.4);
+}
+
+.brief-validation-context {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.5);
   line-height: 1.55;
   margin: 0;
 }

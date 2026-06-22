@@ -259,10 +259,20 @@ export async function updateBlueprintSection(req, res) {
     const setFields = { 'capabilities.$[cap].sections.$[sec].updatedAt': new Date(), updatedAt: new Date() };
 
     if (brief && typeof brief === 'object') {
-      if (typeof brief.strategicPosition === 'string')  setFields['capabilities.$[cap].sections.$[sec].brief.strategicPosition'] = brief.strategicPosition;
-      if (Array.isArray(brief.priorityActions))          setFields['capabilities.$[cap].sections.$[sec].brief.priorityActions']   = brief.priorityActions;
-      if (Array.isArray(brief.successMetrics))           setFields['capabilities.$[cap].sections.$[sec].brief.successMetrics']    = brief.successMetrics;
-      if (typeof brief.keyRisk === 'string')             setFields['capabilities.$[cap].sections.$[sec].brief.keyRisk']           = brief.keyRisk;
+      if (typeof brief.strategicPosition === 'string')
+        setFields['capabilities.$[cap].sections.$[sec].brief.strategicPosition'] = brief.strategicPosition;
+      if (Array.isArray(brief.priorityActions))
+        setFields['capabilities.$[cap].sections.$[sec].brief.priorityActions']   = brief.priorityActions;
+      if (Array.isArray(brief.successMetrics))
+        setFields['capabilities.$[cap].sections.$[sec].brief.successMetrics']    = brief.successMetrics;
+      if (brief.leadershipValidation && typeof brief.leadershipValidation === 'object') {
+        const lv = brief.leadershipValidation;
+        const validStatuses = ['Approved', 'In Review', 'Not Yet Validated'];
+        if (typeof lv.status === 'string' && validStatuses.includes(lv.status))
+          setFields['capabilities.$[cap].sections.$[sec].brief.leadershipValidation.status']  = lv.status;
+        if (typeof lv.context === 'string')
+          setFields['capabilities.$[cap].sections.$[sec].brief.leadershipValidation.context'] = lv.context;
+      }
     }
 
     if (typeof content === 'string') {

@@ -2635,8 +2635,29 @@
   font-size: 0.7rem;
 }
 
-.ws-header__status {
+.ws-header__right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   flex-shrink: 0;
+}
+
+.btn-new-blueprint {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 0.5rem;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  transition: border-color 0.2s, color 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.btn-new-blueprint:hover {
+  border-color: rgba(255,255,255,0.4);
+  color: #fff;
 }
 
 .ws-completion-pill {

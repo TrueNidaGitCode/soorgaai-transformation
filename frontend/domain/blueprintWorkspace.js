@@ -201,6 +201,14 @@ function initAssistantButton() {
 
   const closeBtn = document.getElementById('btn-close-assistant');
   if (closeBtn) closeBtn.addEventListener('click', () => setAssistantOpen(false));
+
+  const newBlueprintBtn = document.getElementById('btn-new-blueprint');
+  if (newBlueprintBtn) newBlueprintBtn.addEventListener('click', () => {
+    showScreen('screen-generate');
+    const assistantBtn = document.getElementById('btn-ai-assistant');
+    if (assistantBtn) assistantBtn.style.display = 'none';
+    setAssistantOpen(false);
+  });
 }
 
 function toggleAssistant() {

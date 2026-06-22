@@ -1,18 +1,21 @@
 /**
  * SoorgaAI — Blueprint Generation Service (PI 26.3 Sprint 1)
  *
- * Generates a Company AI Strategy Blueprint by running one LLM call per
- * capability. Reads Core + Automotive docs dynamically — no hardcoded structure.
+ * Supports three generation pipelines controlled by blueprintConfig.js:
  *
- * Called fire-and-forget from the controller; updates CompanyBlueprint in MongoDB
- * as each capability completes so the SSE stream can poll for live status.
+ *   Essay pipeline  (generate.essay = true)
+ *     LLM call 1 → section.content  (long-form prose per section)
+ *     LLM call 2 → section.brief    (structured extraction from essay)
  *
- * Context stack per capability (highest priority first):
- *   1. Business Objective
- *   2. Company Profile (orgName, role, industry)
- *   3. Company Context document (if generated)
- *   4. Core Capability document
- *   5. Automotive Blueprint document
+ *   Brief pipeline  (generate.essay = false)  ← active
+ *     LLM call 1 → section.brief    (direct structured generation)
+ *
+ *   CTO extras      (generate.ctoExtras = true)  ← active
+ *     Injected into whichever brief call runs above
+ *     Adds template-specific fields e.g. strategicPillars for Vision sections
+ *
+ * Called fire-and-forget from the controller; updates CompanyBlueprint in
+ * MongoDB as each capability completes so the SSE stream can poll live status.
  */
 
 import CompanyBlueprint  from '../models/CompanyBlueprint.js';
@@ -23,6 +26,7 @@ import {
   getCapabilities,
   getCapabilityBlueprint,
 } from './strategyCanvasService.js';
+import { BLUEPRINT_CONFIG } from '../config/blueprintConfig.js';
 
 // ── Company profile helpers ───────────────────────────────────────────────────
 
@@ -32,12 +36,11 @@ async function loadCompanyProfile(userId) {
       UserProfile.findOne({ userId }).lean(),
       CompanyContext.findOne({ userId }).lean(),
     ]);
-
     return {
-      companyName:  profile?.orgName        || 'Your Organisation',
-      role:         profile?.role           || 'Executive',
-      industry:     profile?.industryDomain || 'Automotive',
-      contextDoc:   ctx?.content            || '',
+      companyName: profile?.orgName        || 'Your Organisation',
+      role:        profile?.role           || 'Executive',
+      industry:    profile?.industryDomain || 'Automotive',
+      contextDoc:  ctx?.content            || '',
     };
   } catch {
     return { companyName: 'Your Organisation', role: 'Executive', industry: 'Automotive', contextDoc: '' };
@@ -45,9 +48,9 @@ async function loadCompanyProfile(userId) {
 }
 
 // ── Section template config ───────────────────────────────────────────────────
-// Declares which section titles get extra LLM-generated fields beyond the 4 standard ones.
+// Declares which section titles get extra LLM-generated fields (CTO view).
 // Add a new entry here when a new slide template needs section-specific data.
-// Key: exact section title (case-sensitive). Value: extra field instructions for the LLM.
+// Only injected when BLUEPRINT_CONFIG.generate.ctoExtras = true.
 
 const SECTION_TEMPLATES = {
   Vision: {
@@ -71,24 +74,79 @@ SECTION-SPECIFIC EXTRA — "Vision" sections only:
   },
 };
 
-// ── LLM prompt builder ────────────────────────────────────────────────────────
-// SoorgaAI Execution Strategy Co-Pilot prompt.
-// Generates execution-ready future-state strategies — not assessments or gap analyses.
-// Each section produces 4 typed brief fields + leadership validation status.
-// Sections matching SECTION_TEMPLATES also receive template-specific extra fields.
+// ── Shared output parser ──────────────────────────────────────────────────────
+// Normalises and validates the brief JSON returned by any LLM call.
 
-function buildGenerationPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint }) {
-  const sectionList = parsedSections.map((s, i) =>
+function parseBriefOutput(rawSections, validTitles) {
+  return rawSections
+    .map(s => {
+      const b  = s.brief || {};
+      const lv = b.leadershipValidation || {};
+
+      const rawPillars = Array.isArray(b.strategicPillars) ? b.strategicPillars : [];
+      const strategicPillars = rawPillars
+        .filter(p => p && typeof p === 'object' && String(p.title || '').trim())
+        .map(p => ({
+          title:             String(p.title             || '').trim(),
+          description:       String(p.description       || '').trim(),
+          businessImpactTag: String(p.businessImpactTag || '').trim(),
+        }))
+        .slice(0, 3);
+
+      return {
+        title: String(s.title || '').trim(),
+        brief: {
+          strategicPosition:    String(b.strategicPosition || '').trim(),
+          priorityActions:      Array.isArray(b.priorityActions) ? b.priorityActions.map(String) : [],
+          successMetrics:       Array.isArray(b.successMetrics)  ? b.successMetrics.map(String)  : [],
+          leadershipValidation: {
+            status:  ['Approved', 'In Review', 'Not Yet Validated'].includes(lv.status)
+                       ? lv.status : 'Not Yet Validated',
+            context: String(lv.context || '').trim(),
+          },
+          ...(strategicPillars.length ? { strategicPillars } : {}),
+        },
+        content:   s.content ? String(s.content).trim() : '',
+        updatedAt: new Date(),
+      };
+    })
+    .filter(s => s.title && validTitles.has(s.title.toLowerCase()));
+}
+
+// ── LLM call helper ───────────────────────────────────────────────────────────
+
+async function callLLM(systemPrompt, userMessage, timeoutMs, capName) {
+  const { text } = await Promise.race([
+    generate({ systemPrompt, userMessage, maxTokens: 4000 }),
+    new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`LLM timeout after ${timeoutMs / 1000}s for: ${capName}`)),
+        timeoutMs
+      )
+    ),
+  ]);
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error(`No JSON in LLM response for: ${capName}`);
+  return JSON.parse(match[0]);
+}
+
+// ── Pipeline A: Brief (direct) ────────────────────────────────────────────────
+// Active when BLUEPRINT_CONFIG.generate.essay = false.
+// Generates section.brief in a single LLM call per capability.
+// CTO extras (strategicPillars etc.) are injected into this call when enabled.
+
+function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint }) {
+  const sectionList   = parsedSections.map((s, i) =>
     `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`
   ).join('\n\n');
-
   const sectionTitles = parsedSections.map(s => `"${s.title}"`).join(', ');
 
-  // Collect any template-specific instructions for sections in this capability
-  const templateInstructions = parsedSections
-    .filter(s => SECTION_TEMPLATES[s.title])
-    .map(s => SECTION_TEMPLATES[s.title].promptInstruction)
-    .join('\n');
+  const templateInstructions = BLUEPRINT_CONFIG.generate.ctoExtras
+    ? parsedSections
+        .filter(s => SECTION_TEMPLATES[s.title])
+        .map(s => SECTION_TEMPLATES[s.title].promptInstruction)
+        .join('\n')
+    : '';
 
   const systemPrompt = `You are SoorgaAI, an enterprise Strategy Co-Pilot for CTO-level decision making.
 
@@ -128,7 +186,7 @@ Each section must have 4 required fields:
 4. leadershipValidation
    An object with two fields:
    - status: always set to "Not Yet Validated" for AI-generated blueprints
-   - context: one sentence describing what executive alignment or approval is needed for this section
+   - context: one sentence describing what executive alignment or approval is needed
      (e.g. "Requires CTO sign-off on AI investment allocation for ${industry} program")
 ${templateInstructions}
 
@@ -165,18 +223,168 @@ ${sectionList}
 ${automotiveBlueprint ? `AUTOMOTIVE INDUSTRY REFERENCE:\n${automotiveBlueprint}\n` : ''}
 BUSINESS OBJECTIVE: ${businessObjective}
 
-Generate the execution-ready Strategy Brief JSON for all ${parsedSections.length} sections: ${sectionTitles}.`;
+Generate the Strategy Brief JSON for all ${parsedSections.length} sections: ${sectionTitles}.`;
 
   return { systemPrompt, userMessage };
 }
 
-// ── Single capability generation ──────────────────────────────────────────────
+async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint) {
+  const { systemPrompt, userMessage } = buildBriefPrompt({
+    companyName:         companyProfile.companyName,
+    industry,
+    role:                companyProfile.role,
+    businessObjective,
+    contextDoc:          companyProfile.contextDoc,
+    capabilityName:      cap.name,
+    parsedSections,
+    automotiveBlueprint: automotiveBlueprint || '',
+  });
+
+  const timeoutMs = Math.max(120_000, parsedSections.length * 60_000);
+  const parsed    = await callLLM(systemPrompt, userMessage, timeoutMs, cap.name);
+  const validTitles = new Set(parsedSections.map(s => s.title.toLowerCase()));
+  return parseBriefOutput(parsed?.sections || [], validTitles);
+}
+
+// ── Pipeline B: Essay → Brief (cascade) ──────────────────────────────────────
+// Active when BLUEPRINT_CONFIG.generate.essay = true.
+// Step 1 generates long-form prose (section.content).
+// Step 2 extracts the structured brief from that prose.
+// CTO extras are injected into Step 2 when enabled.
+
+function buildEssayPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint }) {
+  const sectionList   = parsedSections.map((s, i) =>
+    `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`
+  ).join('\n\n');
+  const sectionTitles = parsedSections.map(s => `"${s.title}"`).join(', ');
+
+  const systemPrompt = `You are SoorgaAI, a senior enterprise AI strategy advisor writing for a CTO audience.
+
+Generate a deep, future-state strategic analysis for each capability section.
+Each analysis must be 500–700 words. Write in executive prose — no bullet points, no headers within the essay.
+Ground every claim in the ${industry} engineering context and the company's business objective.
+Focus exclusively on what success looks like and how to get there — not current problems or gaps.
+
+OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
+{
+  "sections": [
+    {
+      "title": "<exact section title>",
+      "content": "<500-700 word strategic analysis>"
+    }
+  ]
+}`;
+
+  const userMessage = `COMPANY CONTEXT:
+- Organisation: ${companyName}
+- Industry: ${industry}
+- Executive Role: ${role}
+- Business Objective: ${businessObjective}
+${contextDoc ? `\nCOMPANY PROFILE:\n${contextDoc}` : ''}
+
+CAPABILITY: "${capabilityName}"
+SECTIONS TO ANALYSE (${parsedSections.length}): ${sectionTitles}
+
+${sectionList}
+
+${automotiveBlueprint ? `AUTOMOTIVE INDUSTRY REFERENCE:\n${automotiveBlueprint}\n` : ''}
+Generate a 500–700 word strategic analysis for each section.`;
+
+  return { systemPrompt, userMessage };
+}
+
+function buildBriefExtractionPrompt({ capabilityName, parsedSections, essays }) {
+  const sectionTitles = parsedSections.map(s => `"${s.title}"`).join(', ');
+
+  const essayBlock = essays
+    .map(e => `SECTION: ${e.title}\n\n${e.content}`)
+    .join('\n\n---\n\n');
+
+  const templateInstructions = BLUEPRINT_CONFIG.generate.ctoExtras
+    ? parsedSections
+        .filter(s => SECTION_TEMPLATES[s.title])
+        .map(s => SECTION_TEMPLATES[s.title].promptInstruction)
+        .join('\n')
+    : '';
+
+  const systemPrompt = `You are SoorgaAI. Extract a structured Strategy Brief from each strategic analysis below.
+
+For each section produce exactly 4 fields:
+
+1. strategicPosition — 1–2 sentences distilling the core future-state thesis from the essay
+2. priorityActions   — 3–5 concrete 90-day actions extracted or inferred from the essay
+                       Must use strong verbs: Define, Deploy, Integrate, Implement, Establish, Launch, Assign
+3. successMetrics    — 2–4 quantifiable KPIs with direction (increase/decrease/target value)
+4. leadershipValidation — { status: "Not Yet Validated", context: "<one sentence on exec approval needed>" }
+${templateInstructions}
+
+OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
+{
+  "sections": [
+    {
+      "title": "<exact section title>",
+      "brief": {
+        "strategicPosition": "...",
+        "priorityActions": [...],
+        "successMetrics": [...],
+        "leadershipValidation": { "status": "Not Yet Validated", "context": "..." }
+      }
+    }
+  ]
+}`;
+
+  const userMessage = `CAPABILITY: "${capabilityName}"
+SECTIONS: ${sectionTitles}
+
+STRATEGIC ANALYSES:
+
+${essayBlock}
+
+Extract the structured Strategy Brief for all ${parsedSections.length} sections.`;
+
+  return { systemPrompt, userMessage };
+}
+
+async function runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint) {
+  const { systemPrompt, userMessage } = buildEssayPrompt({
+    companyName:         companyProfile.companyName,
+    industry,
+    role:                companyProfile.role,
+    businessObjective,
+    contextDoc:          companyProfile.contextDoc,
+    capabilityName:      cap.name,
+    parsedSections,
+    automotiveBlueprint: automotiveBlueprint || '',
+  });
+
+  // Essays are longer — allow 90 s per section
+  const timeoutMs = Math.max(180_000, parsedSections.length * 90_000);
+  const parsed    = await callLLM(systemPrompt, userMessage, timeoutMs, `${cap.name} [essay]`);
+  return parsed?.sections || [];
+}
+
+async function runBriefExtraction(cap, parsedSections, essays) {
+  const { systemPrompt, userMessage } = buildBriefExtractionPrompt({
+    capabilityName: cap.name,
+    parsedSections,
+    essays,
+  });
+
+  const timeoutMs  = Math.max(120_000, parsedSections.length * 60_000);
+  const parsed     = await callLLM(systemPrompt, userMessage, timeoutMs, `${cap.name} [extraction]`);
+  const validTitles = new Set(parsedSections.map(s => s.title.toLowerCase()));
+
+  // Merge essay content back into the extracted brief sections
+  const essayMap = Object.fromEntries(essays.map(e => [e.title.toLowerCase(), e.content || '']));
+  const sections = parseBriefOutput(parsed?.sections || [], validTitles);
+  return sections.map(s => ({ ...s, content: essayMap[s.title.toLowerCase()] || '' }));
+}
+
+// ── Main per-capability generation ────────────────────────────────────────────
+// Branches on BLUEPRINT_CONFIG.generate.essay to select the active pipeline.
 
 async function generateCapabilitySections(cap, companyProfile, businessObjective, industry) {
-  // Use getCapabilityBlueprint which already runs parsePillarSections —
-  // this gives only the numbered pillar sections, filtering out non-pillar
-  // headings like "Purpose", "Core Principles", "CTO Perspective", etc.
-  const blueprint = getCapabilityBlueprint(cap.id, industry);
+  const blueprint     = getCapabilityBlueprint(cap.id, industry);
   const parsedSections = blueprint.sections || [];
 
   if (!parsedSections.length) {
@@ -184,75 +392,15 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
     return [];
   }
 
-  const { systemPrompt, userMessage } = buildGenerationPrompt({
-    companyName:       companyProfile.companyName,
-    industry,
-    role:              companyProfile.role,
-    businessObjective,
-    contextDoc:        companyProfile.contextDoc,
-    capabilityName:    cap.name,
-    parsedSections,
-    automotiveBlueprint: blueprint.automotiveBlueprint || '',
-  });
-
-  // Scale timeout with section count: 60 s per section, minimum 2 minutes.
-  // AI Governance has 5 sections and needs ~4 minutes; others average 3 sections.
-  const LLM_TIMEOUT_MS = Math.max(120_000, parsedSections.length * 60_000);
-  const { text } = await Promise.race([
-    generate({ systemPrompt, userMessage, maxTokens: 4000 }),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`LLM timeout after ${LLM_TIMEOUT_MS / 1000}s for capability: ${cap.name}`)), LLM_TIMEOUT_MS)
-    ),
-  ]);
-
-  // Extract JSON from response (model may wrap in code fences)
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    console.error(`[blueprintGen] No JSON found in response for ${cap.id}`);
-    return [];
+  if (BLUEPRINT_CONFIG.generate.essay) {
+    // Essay pipeline: long-form prose first, brief extracted from it
+    console.log(`[blueprintGen] Essay pipeline active for: ${cap.name}`);
+    const essays = await runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint);
+    return await runBriefExtraction(cap, parsedSections, essays);
   }
 
-  const parsed = JSON.parse(jsonMatch[0]);
-  const sections = parsed?.sections || [];
-
-  // Only keep sections whose title matches a parsed pillar (safety net)
-  const validTitles = new Set(parsedSections.map(s => s.title.toLowerCase()));
-
-  return sections
-    .map(s => {
-      const b  = s.brief || {};
-      const lv = b.leadershipValidation || {};
-
-      // Extract strategicPillars when the LLM returns them (Vision template)
-      const rawPillars = Array.isArray(b.strategicPillars) ? b.strategicPillars : [];
-      const strategicPillars = rawPillars
-        .filter(p => p && typeof p === 'object' && String(p.title || '').trim())
-        .map(p => ({
-          title:             String(p.title             || '').trim(),
-          description:       String(p.description       || '').trim(),
-          businessImpactTag: String(p.businessImpactTag || '').trim(),
-        }))
-        .slice(0, 3);
-
-      return {
-        title: String(s.title || '').trim(),
-        brief: {
-          strategicPosition:    String(b.strategicPosition || '').trim(),
-          priorityActions:      Array.isArray(b.priorityActions) ? b.priorityActions.map(String) : [],
-          successMetrics:       Array.isArray(b.successMetrics)  ? b.successMetrics.map(String)  : [],
-          leadershipValidation: {
-            status:  ['Approved', 'In Review', 'Not Yet Validated'].includes(lv.status)
-                       ? lv.status
-                       : 'Not Yet Validated',
-            context: String(lv.context || '').trim(),
-          },
-          ...(strategicPillars.length ? { strategicPillars } : {}),
-        },
-        content:   '',
-        updatedAt: new Date(),
-      };
-    })
-    .filter(s => s.title && validTitles.has(s.title.toLowerCase()));
+  // Brief pipeline (default): direct structured generation
+  return await runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint);
 }
 
 // ── Single-capability regeneration (fire-and-forget) ─────────────────────────
@@ -308,7 +456,6 @@ export async function generateBlueprintAsync(blueprintId, userId, businessObject
 
   for (const cap of capabilities) {
     try {
-      // Mark in-progress
       await CompanyBlueprint.updateOne(
         { _id: blueprintId, 'capabilities.capabilityId': cap.id },
         { $set: { 'capabilities.$.status': 'in-progress' } }
@@ -316,7 +463,6 @@ export async function generateBlueprintAsync(blueprintId, userId, businessObject
 
       const sections = await generateCapabilitySections(cap, companyProfile, businessObjective, industry);
 
-      // Mark completed with generated sections
       await CompanyBlueprint.updateOne(
         { _id: blueprintId, 'capabilities.capabilityId': cap.id },
         {
@@ -343,7 +489,6 @@ export async function generateBlueprintAsync(blueprintId, userId, businessObject
     }
   }
 
-  // Mark the whole blueprint complete once all capabilities processed
   await CompanyBlueprint.updateOne(
     { _id: blueprintId },
     { $set: { status: 'completed', updatedAt: new Date() } }

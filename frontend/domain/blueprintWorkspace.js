@@ -21,6 +21,15 @@ const API_BASE = window.CONFIG?.API_BASE
 
 function getToken() { return localStorage.getItem('token'); }
 
+// ── View mode ─────────────────────────────────────────────────────────────────
+// Controls which renderer the product ships. Match this to BLUEPRINT_CONFIG.activeView
+// in backend/config/blueprintConfig.js when toggling between views.
+//   'essay' — Long-form prose per section  (section.content)
+//   'pm'    — Uniform 4-cell Strategy Brief cards  (section.brief)
+//   'cto'   — Presentation-style with section-specific templates  (section.brief + extras)
+
+const BLUEPRINT_VIEW_MODE = 'cto';
+
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let _blueprint           = null;
@@ -184,6 +193,34 @@ function renderBlueprintContent(blueprint, capIdx) {
   area.appendChild(sectionsEl);
 }
 
+// ── Essay renderer (Essay view) ───────────────────────────────────────────────
+
+function buildEssayBlock(section) {
+  const block = document.createElement('div');
+  block.className = 'essay-block';
+
+  const label = document.createElement('p');
+  label.className = 'brief-label';
+  label.textContent = 'Strategic Analysis';
+  block.appendChild(label);
+
+  if (section.content) {
+    const text = document.createElement('p');
+    text.className = 'essay-block__text';
+    text.textContent = section.content;
+    block.appendChild(text);
+  } else {
+    const empty = document.createElement('p');
+    empty.className = 'essay-block__empty';
+    empty.textContent = 'Essay not available for this section.';
+    block.appendChild(empty);
+  }
+
+  return block;
+}
+
+// ── Pillars renderer (CTO view — Vision template) ─────────────────────────────
+
 function buildPillarsGrid(pillars) {
   const grid = document.createElement('div');
   grid.className = 'pillars-grid';
@@ -300,12 +337,19 @@ function buildSectionCard(blueprint, cap, section) {
   header.querySelector('.js-refine-btn').addEventListener('click', () => openAssistantForSection(section.title));
   card.appendChild(header);
 
-  // Vision template: full custom layout replaces the standard brief grid
-  const pillars = section.brief?.strategicPillars;
-  if (Array.isArray(pillars) && pillars.length > 0) {
-    card.appendChild(buildVisionLayout(section));
-  } else {
+  // Route to the correct renderer based on active view mode
+  if (BLUEPRINT_VIEW_MODE === 'essay') {
+    card.appendChild(buildEssayBlock(section));
+  } else if (BLUEPRINT_VIEW_MODE === 'pm') {
     card.appendChild(buildBriefGrid(section));
+  } else {
+    // CTO view: section-specific templates; falls back to brief grid when no template applies
+    const pillars = section.brief?.strategicPillars;
+    if (Array.isArray(pillars) && pillars.length > 0) {
+      card.appendChild(buildVisionLayout(section));
+    } else {
+      card.appendChild(buildBriefGrid(section));
+    }
   }
 
   // Essay (secondary, hidden by default)

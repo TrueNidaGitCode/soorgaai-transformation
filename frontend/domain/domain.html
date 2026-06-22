@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SoorgaAI — AI Strategy</title>
+  <title>SoorgaAI — AI Strategy Blueprint</title>
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="domain.css">
   <script src="../login/config.js"></script>
@@ -18,135 +18,162 @@
     </div>
     <div class="workspace-nav__right">
       <span id="domain-username" class="workspace-nav__username"></span>
+      <!-- AI Assistant button: shown only on Screen 3 -->
+      <button id="btn-ai-assistant" class="btn-ai-assistant" style="display:none" aria-label="Open AI Assistant">
+        AI Assistant
+      </button>
       <button id="domain-logout" class="workspace-nav__logout">Logout</button>
     </div>
   </nav>
 
-  <!-- ── Loading ─────────────────────────────────────────────────────────── -->
+  <!-- ── Loading splash ─────────────────────────────────────────────────── -->
   <div id="domain-loading" class="ws-loading" aria-live="polite">
     <div class="ws-spinner"></div>
-    <p>Loading your workspace…</p>
+    <p>Loading…</p>
   </div>
 
-  <!-- ── Main layout: sidebar + canvas + advisor ─────────────────────────── -->
-  <main id="domain-main" class="domain-main" style="display:none" aria-label="Domain workspace">
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SCREEN 1 — Generate Blueprint
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <main id="screen-generate" class="screen screen--generate" style="display:none" aria-label="Generate AI Strategy Blueprint">
 
-    <!-- Sidebar: visible in capability-list view, hidden in blueprint view -->
-    <aside id="domain-sidebar" class="domain-sidebar" aria-label="Company AI Strategy progress">
+    <div class="gen-hero">
+      <p class="gen-eyebrow">Company AI Strategy</p>
+      <h1 class="gen-title">Generate AI Strategy Blueprint</h1>
+      <p class="gen-subtitle">What would you like to achieve with AI?</p>
+    </div>
 
-      <div class="dsb-header">
-        <span class="dsb-strategy-label">Company AI Strategy</span>
-        <p id="dsb-caps-count" class="dsb-caps-count">0 of 5 Capabilities Started</p>
-      </div>
-
-      <div class="dsb-donut-wrap">
-        <svg class="dsb-donut" viewBox="0 0 120 120" aria-hidden="true">
-          <circle class="dsb-donut__bg" cx="60" cy="60" r="48"/>
-          <circle id="dsb-donut-arc" class="dsb-donut__arc" cx="60" cy="60" r="48"/>
-        </svg>
-        <div class="dsb-donut__overlay">
-          <span id="dsb-pct-text" class="dsb-pct-text">0%</span>
-          <span class="dsb-pct-label">Complete</span>
-        </div>
-      </div>
-
-      <div class="dsb-progress-section">
-        <div class="dsb-progress-header">
-          <span class="dsb-progress-title">Overall Progress</span>
-          <span id="dsb-progress-pct" class="dsb-progress-pct">0%</span>
-        </div>
-        <div class="dsb-progress-track">
-          <div id="dsb-progress-bar" class="dsb-progress-bar" style="width:0%"></div>
-        </div>
-      </div>
-
-      <ul class="dsb-stats-list" id="dsb-stats-list" aria-label="Capability status breakdown">
-        <!-- Populated by strategy-canvas.js -->
-      </ul>
-
-      <div class="dsb-info-card">
-        <span class="dsb-info-card__icon" aria-hidden="true">📖</span>
-        <div>
-          <p class="dsb-info-card__title">Powered by Industry Knowledge</p>
-          <p class="dsb-info-card__body">Leverage SoorgaAI's cross-industry knowledge base and proven frameworks to accelerate your AI transformation journey.</p>
-        </div>
-      </div>
-
-    </aside>
-
-    <!-- Blueprint canvas panel -->
-    <section class="canvas-panel" aria-labelledby="canvas-heading">
-      <h2 id="canvas-heading" class="panel-heading">Company AI Blueprint</h2>
-      <p class="panel-subheading" id="canvas-subheading">Select a capability to explore its blueprint.</p>
-
-      <div id="canvas-content" class="canvas-content">
-        <!-- Injected by strategy-canvas.js -->
-      </div>
-    </section>
-
-    <!-- Advisor panel -->
-    <section class="chat-panel" aria-labelledby="advisor-heading">
-      <div class="advisor-panel-header">
-        <h2 id="advisor-heading" class="panel-heading">AI Strategy Advisor</h2>
-        <div id="advisor-context" class="advisor-context-badge" style="display:none" aria-live="polite">
-          <!-- Injected by advisor.js: "AI Initiative Leadership · Automotive" -->
-        </div>
-      </div>
-      <p id="advisor-subheading" class="panel-subheading">Select a capability from the canvas to start asking questions.</p>
-
-      <!-- Compact "Working on" header -->
-      <div id="section-context" class="section-context" style="display:none" aria-live="polite">
-        <div class="section-context__info">
-          <span class="section-context__label">Working on</span>
-          <span id="section-context-meta" class="section-context__meta"></span>
-          <span id="section-context-title" class="section-context__title"></span>
-        </div>
-        <button id="section-context-clear" class="section-context__clear" aria-label="Clear section selection">✕</button>
-      </div>
-
-      <!-- Welcome empty state -->
-      <div id="advisor-empty" class="advisor-empty">
-        <p class="advisor-empty__title">Welcome to SoorgaAI Advisor</p>
-        <p class="advisor-empty__text">Select any blueprint section and start a conversation.</p>
-        <ul class="advisor-empty__examples">
-          <li>"Help improve our AI vision."</li>
-          <li>"Challenge our assumptions."</li>
-          <li>"Make this measurable."</li>
-          <li>"Compare against industry best practices."</li>
-        </ul>
-      </div>
-
-      <!-- Chat messages -->
-      <div id="chat-messages" class="chat-messages" role="log" aria-live="polite">
-        <!-- Injected by advisor.js -->
-      </div>
-
-      <!-- Error banner -->
-      <div id="chat-error" class="chat-error" style="display:none" role="alert">
-        <span id="chat-error-text">We couldn't process that. Please try again.</span>
-        <button id="chat-retry" class="chat-retry-btn">Retry</button>
-      </div>
-
-      <!-- Input -->
-      <form id="chat-form" class="chat-input-form" novalidate>
+    <form id="generate-form" class="gen-form" novalidate>
+      <div class="gen-input-wrap">
         <textarea
-          id="chat-input"
-          class="chat-input"
-          rows="3"
-          placeholder="Ask SoorgaAI…"
-          aria-label="Chat message"
+          id="gen-objective"
+          class="gen-objective"
+          rows="4"
+          maxlength="500"
+          placeholder="e.g. Reduce software validation effort by 30%"
+          aria-label="Business objective"
         ></textarea>
-        <button type="submit" id="chat-send" class="chat-send-btn" aria-label="Send message">
-          <span id="chat-send-icon">→</span>
-          <span id="chat-send-loader" class="chat-send-loader" style="display:none"></span>
-        </button>
-      </form>
+      </div>
 
-    </section>
+      <div id="gen-examples" class="gen-examples" aria-label="Example objectives">
+        <span class="gen-examples__label">Examples</span>
+        <button type="button" class="gen-example-chip" data-text="Reduce software validation effort by 30%">Reduce software validation effort by 30%</button>
+        <button type="button" class="gen-example-chip" data-text="Improve requirements engineering productivity">Improve requirements engineering productivity</button>
+        <button type="button" class="gen-example-chip" data-text="Accelerate software development using AI">Accelerate software development using AI</button>
+        <button type="button" class="gen-example-chip" data-text="Build an enterprise AI transformation roadmap">Build an enterprise AI transformation roadmap</button>
+        <button type="button" class="gen-example-chip" data-text="Improve software quality through AI-assisted validation">Improve software quality through AI-assisted validation</button>
+      </div>
+
+      <div id="gen-error" class="gen-error" style="display:none" role="alert"></div>
+
+      <button type="submit" id="gen-submit" class="gen-submit-btn">
+        <span id="gen-submit-text">Generate Blueprint</span>
+        <span id="gen-submit-loader" class="gen-submit-loader" style="display:none"></span>
+      </button>
+    </form>
+
   </main>
 
-  <script type="module" src="strategy-canvas.js"></script>
-  <script type="module" src="companyContext.js"></script>
-  <script type="module" src="advisor.js"></script>
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SCREEN 2 — Blueprint Generation Progress
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <main id="screen-progress" class="screen screen--progress" style="display:none" aria-label="Blueprint generation progress" aria-live="polite">
+
+    <div class="prog-header">
+      <h1 class="prog-title">Generating Company Blueprint</h1>
+      <p id="prog-objective" class="prog-objective"></p>
+    </div>
+
+    <div id="prog-capabilities" class="prog-capabilities">
+      <!-- Populated dynamically by blueprintGenerate.js -->
+    </div>
+
+    <p class="prog-hint">Analysing your business objective across all AI Strategy capabilities…</p>
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SCREEN 3 — Company Blueprint Workspace
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <main id="screen-workspace" class="screen screen--workspace" style="display:none" aria-label="Company Blueprint Workspace">
+
+    <!-- Workspace header -->
+    <header class="ws-header">
+      <div class="ws-header__meta">
+        <h1 class="ws-header__title">Company AI Strategy Blueprint</h1>
+        <div class="ws-header__details" id="ws-header-details">
+          <!-- Populated by blueprintWorkspace.js -->
+        </div>
+      </div>
+      <div class="ws-header__status" id="ws-header-status">
+        <!-- Completion pill populated by blueprintWorkspace.js -->
+      </div>
+    </header>
+
+    <!-- Capability navigation tabs -->
+    <nav class="cap-nav" id="cap-nav" aria-label="Capability navigation">
+      <!-- Populated by blueprintWorkspace.js -->
+    </nav>
+
+    <!-- Split: blueprint content (full-width or 70%) + AI assistant (30%) -->
+    <div class="ws-body" id="ws-body">
+
+      <!-- Blueprint content area -->
+      <section class="bp-content" id="bp-content" aria-label="Blueprint content">
+        <!-- Populated by blueprintWorkspace.js -->
+      </section>
+
+      <!-- AI Assistant panel (hidden by default) -->
+      <aside class="ai-panel" id="ai-panel" style="display:none" aria-label="AI Assistant">
+        <div class="ai-panel__header">
+          <h2 class="ai-panel__title">AI Assistant</h2>
+          <button id="btn-close-assistant" class="ai-panel__close" aria-label="Close AI Assistant">✕</button>
+        </div>
+
+        <div id="ai-panel-context" class="ai-panel__context" aria-live="polite" style="display:none">
+          <!-- Context badge populated by blueprintWorkspace.js -->
+        </div>
+
+        <div id="ai-chat-messages" class="chat-messages" role="log" aria-live="polite">
+          <!-- Chat messages injected by advisor logic -->
+        </div>
+
+        <div id="ai-chat-error" class="chat-error" style="display:none" role="alert">
+          <span id="ai-chat-error-text">We couldn't process that. Please try again.</span>
+          <button id="ai-chat-retry" class="chat-retry-btn">Retry</button>
+        </div>
+
+        <form id="ai-chat-form" class="chat-input-form" novalidate>
+          <textarea
+            id="ai-chat-input"
+            class="chat-input"
+            rows="3"
+            placeholder="Ask about this capability…"
+            aria-label="AI Assistant message"
+          ></textarea>
+          <button type="submit" id="ai-chat-send" class="chat-send-btn" aria-label="Send message">
+            <span id="ai-chat-send-icon">→</span>
+            <span id="ai-chat-send-loader" class="chat-send-loader" style="display:none"></span>
+          </button>
+        </form>
+
+        <!-- Suggestion card (shown when AI returns blueprint mode content) -->
+        <div id="ai-suggestion-card" class="ai-suggestion-card" style="display:none">
+          <p class="ai-suggestion-card__label">Suggested revision</p>
+          <p id="ai-suggestion-text" class="ai-suggestion-card__text"></p>
+          <p id="ai-suggestion-rationale" class="ai-suggestion-card__rationale"></p>
+          <div class="ai-suggestion-card__actions">
+            <button id="ai-suggestion-accept" class="ai-suggestion-btn ai-suggestion-btn--accept">Accept</button>
+            <button id="ai-suggestion-discard" class="ai-suggestion-btn ai-suggestion-btn--discard">Discard</button>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+
+  </main>
+
+  <script type="module" src="blueprintGenerate.js"></script>
+  <script type="module" src="blueprintWorkspace.js"></script>
 </body>
 </html>

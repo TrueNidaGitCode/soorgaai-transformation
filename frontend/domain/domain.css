@@ -2742,6 +2742,10 @@
 /* Blueprint capability title area */
 .bp-cap-header {
   margin-bottom: 1.75rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .bp-cap-title {
@@ -2750,6 +2754,25 @@
   color: #fff;
   margin: 0 0 0.4rem;
 }
+
+.bp-cap-regen-btn {
+  flex-shrink: 0;
+  padding: 0.35rem 0.9rem;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.bp-cap-regen-btn:hover:not(:disabled) {
+  border-color: rgba(99,102,241,0.5);
+  color: rgba(160,163,255,0.9);
+}
+.bp-cap-regen-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .bp-cap-objective {
   font-size: 0.88rem;

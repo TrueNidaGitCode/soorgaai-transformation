@@ -137,12 +137,20 @@ function renderBlueprintContent(blueprint, capIdx) {
   const cap = (blueprint.capabilities || [])[capIdx];
   if (!cap) return;
 
-  // Capability title
+  // Capability title + regenerate button (always available for completed caps)
   const header = document.createElement('div');
   header.className = 'bp-cap-header';
-  header.innerHTML = `
-    <h2 class="bp-cap-title">${cap.capabilityName}</h2>
-  `;
+  const capTitle = document.createElement('h2');
+  capTitle.className = 'bp-cap-title';
+  capTitle.textContent = cap.capabilityName;
+  header.appendChild(capTitle);
+  if (cap.status === 'completed') {
+    const regenBtn = document.createElement('button');
+    regenBtn.className = 'bp-cap-regen-btn';
+    regenBtn.textContent = 'Regenerate';
+    regenBtn.addEventListener('click', () => triggerCapabilityRegeneration(cap, regenBtn));
+    header.appendChild(regenBtn);
+  }
   area.appendChild(header);
 
   if (cap.status !== 'completed' || !cap.sections?.length) {

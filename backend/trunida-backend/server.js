@@ -16,6 +16,7 @@ import companyContextRoutes    from "./routes/companyContextRoutes.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
+import CompanyBlueprint from "./models/CompanyBlueprint.js";
 
 dotenv.config();
 
@@ -150,9 +151,32 @@ const gracefulShutdown = () => {
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
 
+// ── Startup recovery: reset blueprints left in-progress by a previous server crash/deploy
+async function recoverStuckBlueprints() {
+    try {
+        // Reset overall status
+        const blueprintResult = await CompanyBlueprint.updateMany(
+            { status: 'generating' },
+            { $set: { status: 'error', updatedAt: new Date() } }
+        );
+        // Reset any in-progress capabilities within all blueprints
+        const capResult = await CompanyBlueprint.updateMany(
+            { 'capabilities.status': 'in-progress' },
+            { $set: { 'capabilities.$[cap].status': 'error' } },
+            { arrayFilters: [{ 'cap.status': 'in-progress' }] }
+        );
+        if (blueprintResult.modifiedCount > 0 || capResult.modifiedCount > 0) {
+            console.log(`[startup] Recovered ${blueprintResult.modifiedCount} stuck blueprint(s) and ${capResult.modifiedCount} stuck capability doc(s)`);
+        }
+    } catch (err) {
+        console.warn('[startup] Blueprint recovery failed (non-fatal):', err.message);
+    }
+}
+
 // ✅ Connect to MongoDB, then start the server
 connectDB()
-    .then(() => {
+    .then(async () => {
+        await recoverStuckBlueprints();
         warmCache(); // Pre-load KB files into memory
         console.log("🚀 Starting SoorgaAI Server...");
         app.listen(PORT, () => console.log(`🚀 SoorgaAI Server running on port ${PORT}`));

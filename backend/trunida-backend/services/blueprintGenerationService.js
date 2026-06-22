@@ -160,7 +160,13 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
     automotiveBlueprint: blueprint.automotiveBlueprint || '',
   });
 
-  const { text } = await generate({ systemPrompt, userMessage, maxTokens: 4000 });
+  const LLM_TIMEOUT_MS = 120_000; // 2 minutes per capability — fail fast rather than hang forever
+  const { text } = await Promise.race([
+    generate({ systemPrompt, userMessage, maxTokens: 4000 }),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`LLM timeout after ${LLM_TIMEOUT_MS / 1000}s for capability: ${cap.name}`)), LLM_TIMEOUT_MS)
+    ),
+  ]);
 
   // Extract JSON from response (model may wrap in code fences)
   const jsonMatch = text.match(/\{[\s\S]*\}/);

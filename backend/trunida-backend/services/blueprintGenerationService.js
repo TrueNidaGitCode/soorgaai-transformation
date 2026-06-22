@@ -22,7 +22,6 @@ import { generate }       from './llmService.js';
 import {
   getCapabilities,
   getCapabilityBlueprint,
-  readCapabilityContent,
 } from './strategyCanvasService.js';
 
 // ── Company profile helpers ───────────────────────────────────────────────────
@@ -46,8 +45,18 @@ async function loadCompanyProfile(userId) {
 }
 
 // ── LLM prompt builder ────────────────────────────────────────────────────────
+// Uses pre-parsed pillar sections (title + definition + keyPrinciples) so the
+// LLM receives an explicit, numbered list of sections to generate — never the
+// raw markdown which contains non-pillar headings (Purpose, Core Principles, etc.)
 
-function buildGenerationPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, coreContent, industryContent }) {
+function buildGenerationPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint }) {
+  // Build a clean section reference block from the parsed pillars only
+  const sectionList = parsedSections.map((s, i) =>
+    `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`
+  ).join('\n\n');
+
+  const sectionTitles = parsedSections.map(s => `"${s.title}"`).join(', ');
+
   const systemPrompt = `You are a senior AI Strategy Consultant generating a Company AI Blueprint for ${companyName}.
 
 COMPANY CONTEXT:
@@ -58,35 +67,35 @@ COMPANY CONTEXT:
 ${contextDoc ? `\nCOMPANY PROFILE:\n${contextDoc}` : ''}
 
 TASK:
-Generate company-specific AI strategy blueprint content for the "${capabilityName}" capability.
+Generate company-specific content for EXACTLY these ${parsedSections.length} sections of the "${capabilityName}" capability:
+${sectionTitles}
 
-For EACH section defined in the Core document below, produce 200–300 words of executive-quality,
-company-specific strategic content. Content must be:
+Do NOT add, rename, or remove any sections. Generate ONLY the sections listed above.
+
+For each section, write 200–300 words of executive-quality, company-specific strategic content that is:
 - Tailored to ${companyName}'s business objective
 - Grounded in ${industry} industry context
 - Actionable and measurable
 - Written in executive consulting prose (no jargon)
-- Referencing specific ${industry} examples where applicable
 
-OUTPUT FORMAT — respond ONLY with valid JSON, no markdown, no explanation:
+OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
 {
   "sections": [
     {
-      "title": "<exact section title from Core document>",
+      "title": "<exact section title from the list above>",
       "content": "<200-300 words of company-specific strategic content>"
     }
   ]
-}
+}`;
 
-Include ALL sections found in the Core document.`;
+  const userMessage = `CAPABILITY SECTIONS TO GENERATE (${parsedSections.length} sections):
 
-  const userMessage = `CORE CAPABILITY DOCUMENT — "${capabilityName}":
-${coreContent}
+${sectionList}
 
-${industryContent ? `AUTOMOTIVE INDUSTRY BLUEPRINT:\n${industryContent}\n` : ''}
+${automotiveBlueprint ? `AUTOMOTIVE INDUSTRY REFERENCE:\n${automotiveBlueprint}\n` : ''}
 BUSINESS OBJECTIVE: ${businessObjective}
 
-Generate the full Company Blueprint JSON for the "${capabilityName}" capability.`;
+Generate the Company Blueprint JSON. Include exactly ${parsedSections.length} sections: ${sectionTitles}.`;
 
   return { systemPrompt, userMessage };
 }
@@ -94,22 +103,26 @@ Generate the full Company Blueprint JSON for the "${capabilityName}" capability.
 // ── Single capability generation ──────────────────────────────────────────────
 
 async function generateCapabilitySections(cap, companyProfile, businessObjective, industry) {
-  const { coreContent, industryContent } = readCapabilityContent(cap.id, industry);
+  // Use getCapabilityBlueprint which already runs parsePillarSections —
+  // this gives only the numbered pillar sections, filtering out non-pillar
+  // headings like "Purpose", "Core Principles", "CTO Perspective", etc.
+  const blueprint = getCapabilityBlueprint(cap.id, industry);
+  const parsedSections = blueprint.sections || [];
 
-  if (!coreContent) {
-    console.warn(`[blueprintGen] No core content for capability: ${cap.id}`);
+  if (!parsedSections.length) {
+    console.warn(`[blueprintGen] No pillar sections found for capability: ${cap.id}`);
     return [];
   }
 
   const { systemPrompt, userMessage } = buildGenerationPrompt({
-    companyName:      companyProfile.companyName,
+    companyName:       companyProfile.companyName,
     industry,
-    role:             companyProfile.role,
+    role:              companyProfile.role,
     businessObjective,
-    contextDoc:       companyProfile.contextDoc,
-    capabilityName:   cap.name,
-    coreContent,
-    industryContent,
+    contextDoc:        companyProfile.contextDoc,
+    capabilityName:    cap.name,
+    parsedSections,
+    automotiveBlueprint: blueprint.automotiveBlueprint || '',
   });
 
   const { text } = await generate({ systemPrompt, userMessage, maxTokens: 4000 });
@@ -124,11 +137,16 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
   const parsed = JSON.parse(jsonMatch[0]);
   const sections = parsed?.sections || [];
 
-  return sections.map(s => ({
-    title:     String(s.title   || '').trim(),
-    content:   String(s.content || '').trim(),
-    updatedAt: new Date(),
-  })).filter(s => s.title);
+  // Only keep sections whose title matches one of the parsed pillars
+  const validTitles = new Set(parsedSections.map(s => s.title.toLowerCase()));
+
+  return sections
+    .map(s => ({
+      title:     String(s.title   || '').trim(),
+      content:   String(s.content || '').trim(),
+      updatedAt: new Date(),
+    }))
+    .filter(s => s.title && validTitles.has(s.title.toLowerCase()));
 }
 
 // ── Main generation orchestrator (fire-and-forget) ────────────────────────────

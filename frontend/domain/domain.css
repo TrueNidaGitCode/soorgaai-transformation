@@ -2841,7 +2841,21 @@
 
 .bp-empty__icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .bp-empty__title { font-size: 1rem; font-weight: 600; color: rgba(255,255,255,0.55); margin: 0 0 0.4rem; }
-.bp-empty__text  { font-size: 0.85rem; margin: 0; }
+.bp-empty__text  { font-size: 0.85rem; margin: 0 0 1.25rem; }
+
+.bp-regen-btn {
+  padding: 0.5rem 1.4rem;
+  background: var(--brand, #6366f1);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.bp-regen-btn:hover:not(:disabled) { opacity: 0.82; }
+.bp-regen-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── Strategy Brief Card ───────────────────────────────────────────────────── */
 

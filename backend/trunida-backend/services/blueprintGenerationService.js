@@ -160,7 +160,9 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
     automotiveBlueprint: blueprint.automotiveBlueprint || '',
   });
 
-  const LLM_TIMEOUT_MS = 120_000; // 2 minutes per capability — fail fast rather than hang forever
+  // Scale timeout with section count: 60 s per section, minimum 2 minutes.
+  // AI Governance has 5 sections and needs ~4 minutes; others average 3 sections.
+  const LLM_TIMEOUT_MS = Math.max(120_000, parsedSections.length * 60_000);
   const { text } = await Promise.race([
     generate({ systemPrompt, userMessage, maxTokens: 4000 }),
     new Promise((_, reject) =>
@@ -203,6 +205,50 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
       };
     })
     .filter(s => s.title && validTitles.has(s.title.toLowerCase()));
+}
+
+// ── Single-capability regeneration (fire-and-forget) ─────────────────────────
+
+export async function regenerateCapabilityAsync(blueprintId, capabilityId, userId, businessObjective) {
+  const companyProfile = await loadCompanyProfile(userId);
+  const industry       = companyProfile.industry || 'Automotive';
+  const capabilities   = getCapabilities();
+  const cap            = capabilities.find(c => c.id === capabilityId);
+
+  if (!cap) throw new Error(`Capability not found: ${capabilityId}`);
+
+  try {
+    await CompanyBlueprint.updateOne(
+      { _id: blueprintId, 'capabilities.capabilityId': capabilityId },
+      { $set: { 'capabilities.$.status': 'in-progress', 'capabilities.$.errorMessage': '' } }
+    );
+
+    const sections = await generateCapabilitySections(cap, companyProfile, businessObjective, industry);
+
+    await CompanyBlueprint.updateOne(
+      { _id: blueprintId, 'capabilities.capabilityId': capabilityId },
+      {
+        $set: {
+          'capabilities.$.status':      'completed',
+          'capabilities.$.sections':    sections,
+          'capabilities.$.completedAt': new Date(),
+        },
+      }
+    );
+
+    console.log(`[blueprintGen] ✓ Regenerated ${cap.name} (${sections.length} sections)`);
+  } catch (err) {
+    console.error(`[blueprintGen] ✗ Regenerate ${cap.name}:`, err.message);
+    await CompanyBlueprint.updateOne(
+      { _id: blueprintId, 'capabilities.capabilityId': capabilityId },
+      {
+        $set: {
+          'capabilities.$.status':       'error',
+          'capabilities.$.errorMessage': err.message,
+        },
+      }
+    );
+  }
 }
 
 // ── Main generation orchestrator (fire-and-forget) ────────────────────────────

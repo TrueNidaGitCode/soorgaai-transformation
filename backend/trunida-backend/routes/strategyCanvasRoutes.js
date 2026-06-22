@@ -8,6 +8,7 @@ import {
   streamBlueprintProgress,
   getCompanyBlueprint,
   updateBlueprintSection,
+  regenerateCapability,
 } from '../controllers/strategyCanvasController.js';
 import { ask } from '../controllers/advisorController.js';
 
@@ -24,5 +25,6 @@ router.post('/generate-blueprint',                                              
 router.get('/generate-blueprint/:blueprintId/stream',                                      protect, streamBlueprintProgress);
 router.get('/company-blueprint',                                                           protect, getCompanyBlueprint);
 router.patch('/company-blueprint/:blueprintId/capability/:capabilityId/section/:sectionTitle', protect, updateBlueprintSection);
+router.post('/company-blueprint/:blueprintId/capability/:capabilityId/regenerate',            protect, regenerateCapability);
 
 export default router;

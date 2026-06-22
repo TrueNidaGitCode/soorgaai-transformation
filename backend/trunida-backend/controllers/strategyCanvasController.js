@@ -2,7 +2,7 @@ import UserProfile          from '../models/UserProfile.js';
 import CompanyBlueprint      from '../models/CompanyBlueprint.js';
 import { getCapabilities, getCapabilityBlueprint } from '../services/strategyCanvasService.js';
 import { suggestBlueprintSection }  from '../services/blueprintSuggestService.js';
-import { generateBlueprintAsync }   from '../services/blueprintGenerationService.js';
+import { generateBlueprintAsync, regenerateCapabilityAsync } from '../services/blueprintGenerationService.js';
 
 const DEFAULT_INDUSTRY = 'Automotive';
 
@@ -235,6 +235,35 @@ export async function getCompanyBlueprint(req, res) {
   } catch (err) {
     console.error('getCompanyBlueprint error:', err);
     res.status(500).json({ error: 'Failed to load company blueprint.' });
+  }
+}
+
+/**
+ * POST /strategy-canvas/company-blueprint/:blueprintId/capability/:capabilityId/regenerate
+ *
+ * Re-runs generation for a single capability that previously failed.
+ * Returns immediately; generation runs fire-and-forget in the background.
+ * The client should poll GET /company-blueprint to detect completion.
+ */
+export async function regenerateCapability(req, res) {
+  try {
+    const { blueprintId, capabilityId } = req.params;
+    const userId = req.user._id;
+
+    const bp = await CompanyBlueprint.findOne({ _id: blueprintId, userId }).lean();
+    if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    const capExists = bp.capabilities.some(c => c.capabilityId === capabilityId);
+    if (!capExists) return res.status(404).json({ error: 'Capability not found in blueprint.' });
+
+    regenerateCapabilityAsync(blueprintId, capabilityId, userId, bp.businessObjective)
+      .catch(err => console.error('[regenerateCapability] async error:', err));
+
+    return res.json({ ok: true });
+
+  } catch (err) {
+    console.error('regenerateCapability error:', err);
+    res.status(500).json({ error: 'Failed to start regeneration.' });
   }
 }
 

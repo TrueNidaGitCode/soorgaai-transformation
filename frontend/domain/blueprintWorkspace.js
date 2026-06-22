@@ -152,8 +152,15 @@ function renderBlueprintContent(blueprint, capIdx) {
     empty.innerHTML = `
       <div class="bp-empty__icon">${isError ? '⚠' : '⟳'}</div>
       <p class="bp-empty__title">${isError ? 'Generation failed for this capability' : 'Still generating…'}</p>
-      <p class="bp-empty__text">${isError ? 'The AI encountered an error. Try regenerating.' : 'This section will appear when generation completes.'}</p>
+      <p class="bp-empty__text">${isError ? 'The AI encountered an error generating this section.' : 'This section will appear when generation completes.'}</p>
     `;
+    if (isError) {
+      const regenBtn = document.createElement('button');
+      regenBtn.className = 'bp-regen-btn';
+      regenBtn.textContent = 'Regenerate';
+      regenBtn.addEventListener('click', () => triggerCapabilityRegeneration(cap, regenBtn));
+      empty.appendChild(regenBtn);
+    }
     area.appendChild(empty);
     return;
   }
@@ -270,6 +277,70 @@ function buildBriefGrid(section) {
   grid.appendChild(validationCell);
 
   return grid;
+}
+
+// ── Capability regeneration ───────────────────────────────────────────────────
+
+async function triggerCapabilityRegeneration(cap, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Regenerating…';
+
+  // Optimistically show in-progress state
+  const capIdx = (_blueprint.capabilities || []).findIndex(c => c.capabilityId === cap.capabilityId);
+  if (capIdx >= 0) {
+    _blueprint.capabilities[capIdx].status = 'in-progress';
+    renderCapabilityTabs(_blueprint);
+  }
+
+  try {
+    const resp = await fetch(
+      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${cap.capabilityId}/regenerate`,
+      { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` } }
+    );
+    if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
+    if (!resp.ok) {
+      const { error } = await resp.json().catch(() => ({}));
+      throw new Error(error || 'Failed to start regeneration.');
+    }
+
+    await pollForCapabilityCompletion(cap.capabilityId);
+
+  } catch (err) {
+    console.error('[workspace] Regeneration failed:', err.message);
+    // Restore error state if something went wrong starting the request
+    if (capIdx >= 0) {
+      _blueprint.capabilities[capIdx].status = 'error';
+      renderCapabilityTabs(_blueprint);
+      renderBlueprintContent(_blueprint, capIdx);
+    }
+  }
+}
+
+async function pollForCapabilityCompletion(capabilityId) {
+  const maxAttempts = 90; // 3 minutes at 2 s intervals
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+
+    try {
+      const resp = await fetch(`${API_BASE}/strategy-canvas/company-blueprint`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!resp.ok) continue;
+
+      const freshBp  = await resp.json();
+      const freshCap = (freshBp.capabilities || []).find(c => c.capabilityId === capabilityId);
+
+      if (freshCap && freshCap.status !== 'in-progress' && freshCap.status !== 'pending') {
+        _blueprint = freshBp;
+        renderHeader(freshBp);
+        renderCapabilityTabs(freshBp);
+        renderBlueprintContent(freshBp, _selectedCapIndex);
+        return;
+      }
+    } catch {
+      // transient network error — keep polling
+    }
+  }
 }
 
 // ── AI Assistant panel ────────────────────────────────────────────────────────

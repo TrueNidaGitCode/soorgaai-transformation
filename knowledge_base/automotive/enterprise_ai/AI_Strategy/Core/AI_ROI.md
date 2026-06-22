@@ -32,6 +32,7 @@ AI investments should generate measurable financial returns while improving the 
 * Track shareholder value creation.
 * Monitor revenue growth.
 * Evaluate cost efficiency and scalability.
+* Establish a financial baseline before AI program initiation to enable credible before-and-after ROI measurement.
 
 ## Leadership Question
 
@@ -53,6 +54,7 @@ AI should simplify processes, reduce manual effort, and accelerate business oper
 * Reduce operational costs.
 * Accelerate business processes.
 * Increase automation and efficiency.
+* Define operational baseline metrics — cycle time, defect rate, productivity — before scaling AI programs so gains are measurable.
 
 ## Leadership Question
 
@@ -74,6 +76,7 @@ AI transformation should create better products, services, and interactions that
 * Improve customer experiences.
 * Grow digital revenue channels.
 * Strengthen customer loyalty.
+* Establish a customer metric baseline and track improvement on a quarterly cadence after AI deployment.
 
 ## Leadership Question
 

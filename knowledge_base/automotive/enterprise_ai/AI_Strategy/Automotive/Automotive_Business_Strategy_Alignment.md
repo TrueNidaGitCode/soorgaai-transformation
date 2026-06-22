@@ -50,6 +50,15 @@ Organizations should identify the most significant business challenges across th
 
 AI transformation should solve meaningful automotive business challenges while creating measurable customer and business value.
 
+### AI Portfolio Alignment Benchmarks
+
+| Alignment Metric | Benchmark Target |
+| ---------------- | ---------------- |
+| Strategic coverage | > 80% of AI initiatives directly linked to a named business priority |
+| Business ownership | 100% of AI programs have a named business sponsor outside of IT or Technology |
+| Time-to-value delivery | At least 50% of AI initiatives delivering measurable value within 12 months |
+| Portfolio review cadence | Quarterly review of AI investment portfolio against strategic business priorities |
+
 **Leadership Question:**
 
 *Are our AI investments addressing the most important business priorities across the automotive enterprise?*
@@ -64,13 +73,13 @@ Successful roadmaps balance strategic ambition with practical execution capabili
 
 ### Business Value Priorities
 
-| Business Objective    | Potential Value                          |
-| --------------------- | ---------------------------------------- |
-| Customer Experience   | Improved ownership journey               |
-| Product Engineering   | Faster development and higher quality    |
-| Manufacturing         | Increased productivity and lower defects |
-| Supply Chain          | Improved planning and resilience         |
-| Enterprise Operations | Greater efficiency and decision support  |
+| Business Objective | Potential Value | Benchmark Range |
+| ------------------ | --------------- | --------------- |
+| Customer Experience | Improved ownership journey and loyalty | 10–20% improvement in customer satisfaction |
+| Product Engineering | Faster development and higher quality | 25–35% cycle time reduction; 20–40% defect reduction |
+| Manufacturing | Increased productivity and lower defects | 5–15% OEE improvement; 10–25% defect reduction |
+| Supply Chain | Improved planning and resilience | 15–25% improvement in demand forecast accuracy |
+| Enterprise Operations | Greater efficiency and decision support | 20–35% productivity improvement in targeted functions |
 
 ### Organizational Readiness
 
@@ -89,6 +98,14 @@ Successful roadmaps balance strategic ambition with practical execution capabili
 * Consider organizational readiness.
 * Align investments with business strategy.
 * Continuously adapt to changing market conditions.
+
+### Time-to-Value Expectations
+
+Automotive AI roadmaps should be structured to deliver measurable value in stages:
+
+* **0–6 months:** Pilot programs with defined success criteria and a measurable baseline established before start
+* **6–12 months:** Validated pilot results with scale decision checkpoint and executive review
+* **12–24 months:** Enterprise-scale rollout across targeted business functions with quarterly value reporting
 
 **Leadership Question:**
 
@@ -123,6 +140,24 @@ Cross-functional teams should combine automotive expertise with digital and AI c
 * Focus on customer-centric outcomes.
 * Promote continuous learning.
 * Scale successful AI initiatives across the enterprise.
+
+### Automotive Operating Model Target State
+
+The operating model is effective when:
+
+* Every major engineering and business function has a named AI delivery lead with defined accountability.
+* Cross-functional AI delivery teams combine business domain expertise with data, software, and AI engineering capabilities.
+* AI programs operate on agile delivery cycles with visible business outcomes at each sprint.
+* Enterprise AI adoption is tracked quarterly with function-level adoption scorecards.
+
+### Delivery Benchmarks
+
+| Delivery Metric | Benchmark Target |
+| --------------- | ---------------- |
+| Cross-functional coverage | AI delivery representation across > 80% of engineering functions within 12 months |
+| Sprint cadence | AI delivery teams operating on 2–4 week release cycles |
+| Business outcome visibility | Monthly KPI reporting for all active AI programs |
+| Enterprise adoption rate | > 50% of targeted functions actively using AI tools within 18 months |
 
 **Leadership Question:**
 

@@ -33,6 +33,7 @@ Vision provides the strategic direction for AI transformation and serves as the 
 * Include measurable outcomes.
 * Establish a realistic time horizon.
 * Align AI ambitions with business strategy.
+* Define success metrics tied to business outcomes — revenue impact, cost reduction, time-to-market, quality improvement.
 
 ## Leadership Question
 

@@ -123,6 +123,7 @@ Building trust requires leadership commitment and continuous engagement with sta
 * Measure AI impact.
 * Promote organizational adoption.
 * Continuously improve governance practices.
+* Define measurable trust indicators — adoption rate, governance satisfaction score, and business value attribution — and report quarterly to leadership.
 
 ## Leadership Question
 

@@ -35,6 +35,7 @@ Organizations should focus on solving meaningful business challenges that suppor
 * Prioritize customer and business value.
 * Balance short-term wins with long-term transformation.
 * Support sustainable competitive advantage.
+* Measure portfolio alignment — the percentage of AI initiatives directly tied to a named business priority and executive sponsor.
 
 ## Leadership Question
 

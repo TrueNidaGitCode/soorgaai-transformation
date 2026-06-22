@@ -1,175 +1,116 @@
 # Automotive AI ROI
 
 **Layer:** Automotive
-
 **Extends:** Core/AI_ROI.md
-
-**Version:** 1.0
+**Version:** 1.1
 
 ---
 
 ## Purpose
 
-Automotive AI ROI ensures that AI investments create measurable business value across engineering, operations, and customer-facing capabilities while supporting the organization's strategic objectives.
+Automotive AI ROI ensures that AI investments create measurable business value across engineering, operations, and customer-facing capabilities while supporting the organisation's strategic objectives.
 
-Successful automotive organizations use AI to improve engineering productivity, operational performance, and customer experiences. AI investments should strengthen competitiveness and accelerate the transition toward software-defined and intelligent mobility.
+Successful automotive organisations use AI to improve engineering productivity, operational performance, and customer experiences. AI investments should strengthen competitiveness and accelerate the transition toward software-defined and intelligent mobility.
 
-> For the universal AI ROI framework, refer to:
-> `Core/AI_ROI.md`
-
----
-
-# Core Principles
-
-Successful automotive AI transformations measure ROI across three strategic pillars:
-
-1. Financial Performance
-2. Operational Performance
-3. Customer Value
-
-Together, these pillars help automotive organizations maximize the business impact of AI investments while supporting sustainable growth and innovation.
+> For the universal AI ROI framework, refer to: `Core/AI_ROI.md`
 
 ---
 
-# 1. Financial Performance
+## Financial Performance in Automotive
 
-## Definition
+AI investments should generate measurable financial returns while improving the organisation's competitive position across engineering, manufacturing, and enterprise operations.
 
-Financial Performance measures how AI contributes to profitability, technology investment efficiency, and long-term business growth.
+### Key Focus Areas
 
-AI investments should generate measurable financial benefits while improving the organization's competitive position.
+* Measure engineering cost efficiency improvements.
+* Track program cost reduction through AI-assisted development.
+* Monitor warranty and quality cost savings.
+* Evaluate technology investment payback periods.
+* Track digital and software service revenue growth.
 
-## Key Principles
+### Automotive Financial Benchmarks
 
-* Measure profitability improvements.
-* Track business value creation.
-* Monitor revenue growth opportunities.
-* Evaluate cost efficiency and scalability.
+| Financial KPI | Benchmark Target |
+| ------------- | ---------------- |
+| Engineering cost per feature | 15–25% reduction within 18 months of AI program initiation |
+| Program engineering cost reduction | 10–20% reduction through AI-assisted development workflows |
+| Warranty and maintenance savings | 10–20% reduction through predictive quality and maintenance AI |
+| Technology investment payback | Positive ROI achieved within 18–24 months |
+| Digital and subscription revenue | 15–25% year-on-year growth |
 
-## Example Automotive KPIs
+**Leadership Question:**
 
-### Engineering
-
-* Engineering cost per feature.
-* Development cost reduction.
-* Engineering productivity.
-
-### Manufacturing
-
-* Manufacturing cost reduction.
-* Predictive maintenance savings.
-* Warranty cost reduction.
-
-### Enterprise
-
-* Technology investment ROI.
-* Operating leverage improvements.
-* Digital service revenue growth.
-
-## Leadership Question
-
-**Are our AI investments creating measurable financial value for the organization?**
+*Are our AI investments creating measurable financial value for the organisation?*
 
 ---
 
-# 2. Operational Excellence
+## Operational Excellence in Automotive
 
-## Definition
+AI should improve productivity, quality, and execution speed across the automotive value chain — from product engineering through manufacturing and supply chain.
 
-Operational Performance measures how AI improves productivity, quality, and execution across the automotive value chain.
+### Key Focus Areas
 
-AI should simplify processes, reduce manual effort, and accelerate business operations.
+* Improve engineering productivity across product and software development teams.
+* Accelerate delivery cycles for software-defined vehicle programs.
+* Increase test automation coverage and reduce manual validation effort.
+* Improve manufacturing efficiency and reduce unplanned downtime.
+* Strengthen supply chain forecast accuracy and resilience.
 
-## Key Principles
+### Automotive Operational Benchmarks
 
-* Improve engineering productivity.
-* Accelerate delivery cycles.
-* Increase automation.
-* Improve operational quality.
-* Strengthen enterprise resilience.
+| Operational KPI | Benchmark Target |
+| --------------- | ---------------- |
+| Engineering productivity | 20–35% increase in output per engineer through AI tooling |
+| Feature-to-production cycle time | 25–35% reduction in end-to-end delivery lead time |
+| Test automation coverage | Target 60–80% automated coverage within 12 months |
+| Defect escape rate | 20–40% reduction through AI-assisted V&V |
+| Manufacturing OEE | 5–15% improvement in Overall Equipment Effectiveness |
+| Supply chain forecast accuracy | 15–25% improvement through AI-enabled demand planning |
 
-## Example Automotive KPIs
+**Leadership Question:**
 
-### Product Engineering
-
-* Development cycle time.
-* Sprint velocity.
-* Release frequency.
-* Software quality.
-* Test automation.
-
-### Manufacturing
-
-* Production efficiency.
-* Equipment uptime.
-* Defect reduction.
-* Predictive maintenance effectiveness.
-
-### Supply Chain
-
-* Forecast accuracy.
-* Inventory optimization.
-* Supplier performance.
-
-## Leadership Question
-
-**Is AI improving operational performance across engineering and enterprise functions?**
+*Is AI improving operational performance across engineering and enterprise functions?*
 
 ---
 
-# 3. Customer Value
+## Customer Value in Automotive
 
-## Definition
+AI should strengthen customer relationships while supporting connected, software-enabled services and improving the vehicle ownership experience.
 
-Customer Value measures how AI improves customer experiences and creates new business opportunities.
+### Key Focus Areas
 
-AI should strengthen customer relationships while supporting connected and software-enabled services.
+* Improve connected vehicle service adoption and engagement.
+* Increase OTA update reliability and deployment success rate.
+* Reduce warranty claims through proactive quality and service AI.
+* Grow digital and subscription revenue streams.
+* Strengthen customer loyalty through AI-enhanced personalisation.
 
-## Key Principles
+### Automotive Customer Benchmarks
 
-* Improve customer experiences.
-* Increase digital adoption.
-* Create new revenue opportunities.
-* Strengthen customer loyalty.
-* Enable intelligent mobility services.
+| Customer KPI | Benchmark Target |
+| ------------ | ---------------- |
+| Connected service adoption | 30–50% growth in active users within 12 months |
+| OTA update success rate | Target > 95% successful deployment rate |
+| Customer satisfaction | 10–20% improvement through AI-enhanced service delivery |
+| Warranty claims reduction | 15–25% reduction through predictive service and quality AI |
+| Digital and subscription revenue | 15–25% year-on-year revenue growth |
 
-## Example Automotive KPIs
+**Leadership Question:**
 
-### Connected Vehicles
-
-* Connected service adoption.
-* Over-the-air update success.
-* Digital feature utilization.
-
-### Customer Experience
-
-* Customer satisfaction.
-* Warranty claims reduction.
-* Service response times.
-* Personalization effectiveness.
-
-### Business Growth
-
-* Subscription revenue.
-* Digital service revenue.
-* Customer retention.
-
-## Leadership Question
-
-**Are our AI investments improving customer experiences and enabling future business growth?**
+*Are our AI investments improving customer experiences and enabling future business growth?*
 
 ---
 
-# Automotive AI ROI Framework
+## Automotive AI ROI Framework
 
 ```text
 Financial Performance
-Measure business value.
+Measure business value and investment returns.
 
 ↓
 
-Operational Performance
-Measure engineering and operational excellence.
+Operational Excellence
+Measure engineering and operational productivity.
 
 ↓
 
@@ -183,64 +124,12 @@ Sustainable Competitive Advantage
 
 ---
 
-# CTO Perspective
-
-Automotive AI ROI helps executive teams answer three fundamental questions:
-
-| Strategic Pillar        | Executive Question                                            |
-| ----------------------- | ------------------------------------------------------------- |
-| Financial Performance   | Are AI investments creating measurable business value?        |
-| Operational Performance | Is AI improving engineering and operational performance?      |
-| Customer Value          | Is AI strengthening customer experiences and enabling growth? |
-
----
-
-# Automotive Context
-
-AI investments should create value across the automotive ecosystem.
-
-## Product Engineering
-
-* Accelerate software-defined vehicle development.
-* Improve software quality.
-* Increase engineering productivity.
-* Reduce validation effort.
-
-## Manufacturing
-
-* Improve production efficiency.
-* Enable predictive maintenance.
-* Reduce downtime.
-* Improve manufacturing quality.
-
-## Supply Chain
-
-* Optimize planning and logistics.
-* Improve supplier collaboration.
-* Increase resilience.
-
-## Customer Experience
-
-* Enhance connected vehicle services.
-* Improve after-sales operations.
-* Deliver personalized experiences.
-
-## Enterprise Operations
-
-* Improve productivity.
-* Automate workflows.
-* Support faster decision making.
-
-The objective is to ensure that AI investments generate measurable business value while strengthening engineering capabilities, operational excellence, and customer relationships.
-
----
-
-# Key Takeaways
+## Key Takeaways
 
 * Automotive AI ROI should balance financial, operational, and customer outcomes.
-* Financial performance demonstrates business value creation.
-* Operational performance measures engineering and enterprise productivity.
-* Customer value captures growth and experience improvements.
+* Financial performance demonstrates business value creation and investment efficiency.
+* Operational performance measures engineering and enterprise productivity gains.
+* Customer value captures growth, experience improvements, and loyalty.
 * AI investments should support software-defined and intelligent mobility.
-* Success should be measured through business outcomes that align with strategic objectives.
+* Success should be measured through quantifiable business outcomes that align with strategic objectives.
 * Sustainable competitive advantage is created when AI delivers measurable value across the automotive value chain.

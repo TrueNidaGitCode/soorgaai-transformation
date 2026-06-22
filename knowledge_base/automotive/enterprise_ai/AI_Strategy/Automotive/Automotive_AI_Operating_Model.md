@@ -52,6 +52,18 @@ Business strategy determines which opportunities should be prioritized, while th
 
 AI transformation should organize teams around business solutions that create measurable customer and organizational value.
 
+### Solution Priority Guidance
+
+Not all solution areas deliver equal value. Automotive AI programs should prioritise based on business impact, organisational readiness, and time-to-value.
+
+| Priority | Solution Area | Rationale |
+| -------- | ------------- | --------- |
+| 1 | Software-defined vehicle development | Highest strategic differentiation; fastest competitive impact |
+| 2 | Product engineering excellence | Broad engineering productivity gains measurable within 6–12 months |
+| 3 | Vehicle quality improvement | Direct cost and customer satisfaction impact |
+| 4 | Manufacturing optimisation | Operational efficiency with high ROI visibility |
+| 5 | Enterprise productivity | Foundation for scaling AI across the organisation |
+
 **Leadership Question:**
 
 *Are we organizing our AI initiatives around the automotive business problems that matter most?*
@@ -84,6 +96,27 @@ Team composition should adapt to the business solution while combining the exper
 * Adapt team composition to solution needs.
 * Encourage collaboration and shared accountability.
 * Promote agile and iterative delivery.
+
+### Team Composition Guidance
+
+A minimum viable cross-functional AI delivery team for an automotive program should include:
+
+| Role | Responsibility |
+| ---- | -------------- |
+| Business Domain Owner | Defines business objectives and success criteria |
+| Systems or Software Engineer | Provides automotive engineering domain expertise |
+| Data & AI Engineer | Builds and maintains AI models and data pipelines |
+| Product or Delivery Manager | Coordinates delivery and manages stakeholder communication |
+
+Teams scale with program complexity. Larger programs should add specialist roles — V&V, Cybersecurity, Data Governance — as the solution matures beyond pilot phase.
+
+### Delivery Benchmarks
+
+| Team Metric | Target |
+| ----------- | ------ |
+| Business-to-technical ratio | Minimum 1 business domain expert per 3 technical members |
+| Sprint cadence | 2–4 week delivery cycles with demonstrable output each sprint |
+| Time to first valuable output | Demonstrable AI capability within 90 days of team formation |
 
 **Leadership Question:**
 
@@ -121,6 +154,24 @@ Continuous Improvement
         ↓
 Business Value
 ```
+
+### Ownership Target State
+
+End-to-end ownership is established when:
+
+* Each AI solution has a named owner accountable from concept through production.
+* Solution teams are not disbanded after initial deployment — they own the solution through continuous improvement cycles.
+* Handoffs between development, deployment, and operations are eliminated or minimised to same-team transitions.
+* Each solution has a defined improvement backlog and quarterly business value assessment.
+
+### Continuity Benchmarks
+
+| Ownership Metric | Target |
+| ---------------- | ------ |
+| Handoff reduction | > 50% reduction in cross-team handoffs within 12 months of operating model adoption |
+| Team continuity | > 80% of AI solutions maintained by their original delivery team through production |
+| Time-to-improvement | Average time from issue identification to deployed fix < 30 days |
+| Value review cadence | Quarterly capability and business value review for all production AI solutions |
 
 **Leadership Question:**
 

@@ -83,6 +83,7 @@ Long-lived teams improve continuity, accelerate learning, and enable continuous 
 * Reduce unnecessary handoffs.
 * Capture and apply lessons learned.
 * Scale successful capabilities across the organization.
+* Measure ownership continuity by tracking whether solution teams remain intact from development through production and improvement cycles.
 
 ## Leadership Question
 

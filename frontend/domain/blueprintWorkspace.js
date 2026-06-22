@@ -176,6 +176,37 @@ function renderBlueprintContent(blueprint, capIdx) {
   area.appendChild(sectionsEl);
 }
 
+function buildPillarsGrid(pillars) {
+  const grid = document.createElement('div');
+  grid.className = 'pillars-grid';
+
+  pillars.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'pillar-card';
+
+    const title = document.createElement('p');
+    title.className = 'pillar-card__title';
+    title.textContent = p.title;
+    card.appendChild(title);
+
+    const desc = document.createElement('p');
+    desc.className = 'pillar-card__description';
+    desc.textContent = p.description;
+    card.appendChild(desc);
+
+    if (p.businessImpactTag) {
+      const tag = document.createElement('span');
+      tag.className = 'pillar-card__tag';
+      tag.textContent = p.businessImpactTag;
+      card.appendChild(tag);
+    }
+
+    grid.appendChild(card);
+  });
+
+  return grid;
+}
+
 function buildSectionCard(blueprint, cap, section) {
   const card = document.createElement('div');
   card.className = 'bp-section';
@@ -192,6 +223,12 @@ function buildSectionCard(blueprint, cap, section) {
   `;
   header.querySelector('.js-refine-btn').addEventListener('click', () => openAssistantForSection(section.title));
   card.appendChild(header);
+
+  // Strategic Pillars — rendered above the brief grid for sections that have them (Vision template)
+  const pillars = section.brief?.strategicPillars;
+  if (Array.isArray(pillars) && pillars.length > 0) {
+    card.appendChild(buildPillarsGrid(pillars));
+  }
 
   // Strategy Brief (primary)
   card.appendChild(buildBriefGrid(section));

@@ -22,11 +22,20 @@ const leadershipValidationSchema = new mongoose.Schema({
   context: { type: String, default: '' },
 }, { _id: false });
 
+// Optional — populated only for sections that use a template with extra fields.
+// Pillars are named strategic themes extracted from strategicPosition (Vision template only).
+const pillarSchema = new mongoose.Schema({
+  title:             { type: String, default: '' },
+  description:       { type: String, default: '' },
+  businessImpactTag: { type: String, default: '' },
+}, { _id: false });
+
 const briefSchema = new mongoose.Schema({
   strategicPosition:    { type: String, default: '' },
   priorityActions:      { type: [String], default: [] },
   successMetrics:       { type: [String], default: [] },
   leadershipValidation: { type: leadershipValidationSchema, default: () => ({ status: 'Not Yet Validated', context: '' }) },
+  strategicPillars:     { type: [pillarSchema], default: [] },
 }, { _id: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────

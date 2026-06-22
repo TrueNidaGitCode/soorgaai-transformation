@@ -44,10 +44,38 @@ async function loadCompanyProfile(userId) {
   }
 }
 
+// ── Section template config ───────────────────────────────────────────────────
+// Declares which section titles get extra LLM-generated fields beyond the 4 standard ones.
+// Add a new entry here when a new slide template needs section-specific data.
+// Key: exact section title (case-sensitive). Value: extra field instructions for the LLM.
+
+const SECTION_TEMPLATES = {
+  Vision: {
+    extraField: 'strategicPillars',
+    promptInstruction: `
+SECTION-SPECIFIC EXTRA — "Vision" sections only:
+
+5. strategicPillars (exactly 3 items)
+   Extract 3 distinct strategic themes from the strategicPosition as named pillars.
+   Each item must have:
+   - title: 2–4 words, noun phrase (e.g. "AI-Embedded SDLC", "Delivery Excellence", "Talent Acceleration")
+   - description: 1 sentence, outcome-oriented, no jargon
+   - businessImpactTag: 1–3 word impact label (e.g. "Engineering Velocity", "Release Predictability", "Cost Reduction")
+
+   For Vision sections, include this additional field in the brief object:
+   "strategicPillars": [
+     { "title": "...", "description": "...", "businessImpactTag": "..." },
+     { "title": "...", "description": "...", "businessImpactTag": "..." },
+     { "title": "...", "description": "...", "businessImpactTag": "..." }
+   ]`,
+  },
+};
+
 // ── LLM prompt builder ────────────────────────────────────────────────────────
 // SoorgaAI Execution Strategy Co-Pilot prompt.
 // Generates execution-ready future-state strategies — not assessments or gap analyses.
 // Each section produces 4 typed brief fields + leadership validation status.
+// Sections matching SECTION_TEMPLATES also receive template-specific extra fields.
 
 function buildGenerationPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint }) {
   const sectionList = parsedSections.map((s, i) =>
@@ -55,6 +83,12 @@ function buildGenerationPrompt({ companyName, industry, role, businessObjective,
   ).join('\n\n');
 
   const sectionTitles = parsedSections.map(s => `"${s.title}"`).join(', ');
+
+  // Collect any template-specific instructions for sections in this capability
+  const templateInstructions = parsedSections
+    .filter(s => SECTION_TEMPLATES[s.title])
+    .map(s => SECTION_TEMPLATES[s.title].promptInstruction)
+    .join('\n');
 
   const systemPrompt = `You are SoorgaAI, an enterprise Strategy Co-Pilot for CTO-level decision making.
 
@@ -72,7 +106,7 @@ ${contextDoc ? `\nCOMPANY PROFILE:\n${contextDoc}` : ''}
 TASK:
 For EXACTLY these ${parsedSections.length} sections of the "${capabilityName}" capability — ${sectionTitles} — generate an execution-ready Strategy Brief.
 
-Each section must have exactly 4 fields:
+Each section must have 4 required fields:
 
 1. strategicPosition (1–2 sentences MAXIMUM)
    Define the IDEAL FUTURE-STATE — what success looks like when this capability is fully executing.
@@ -96,6 +130,7 @@ Each section must have exactly 4 fields:
    - status: always set to "Not Yet Validated" for AI-generated blueprints
    - context: one sentence describing what executive alignment or approval is needed for this section
      (e.g. "Requires CTO sign-off on AI investment allocation for ${industry} program")
+${templateInstructions}
 
 HARD RULES:
 - Do NOT include a Key Risk section
@@ -187,6 +222,18 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
     .map(s => {
       const b  = s.brief || {};
       const lv = b.leadershipValidation || {};
+
+      // Extract strategicPillars when the LLM returns them (Vision template)
+      const rawPillars = Array.isArray(b.strategicPillars) ? b.strategicPillars : [];
+      const strategicPillars = rawPillars
+        .filter(p => p && typeof p === 'object' && String(p.title || '').trim())
+        .map(p => ({
+          title:             String(p.title             || '').trim(),
+          description:       String(p.description       || '').trim(),
+          businessImpactTag: String(p.businessImpactTag || '').trim(),
+        }))
+        .slice(0, 3);
+
       return {
         title: String(s.title || '').trim(),
         brief: {
@@ -199,6 +246,7 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
                        : 'Not Yet Validated',
             context: String(lv.context || '').trim(),
           },
+          ...(strategicPillars.length ? { strategicPillars } : {}),
         },
         content:   '',
         updatedAt: new Date(),

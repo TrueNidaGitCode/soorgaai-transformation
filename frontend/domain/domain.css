@@ -2857,6 +2857,58 @@
 .bp-regen-btn:hover:not(:disabled) { opacity: 0.82; }
 .bp-regen-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* ── Strategic Pillars (Vision template) ───────────────────────────────────── */
+
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.pillar-card {
+  background: rgba(99,102,241,0.07);
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 0.65rem;
+  padding: 1rem 1.1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pillar-card__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.pillar-card__description {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  line-height: 1.55;
+  flex: 1;
+}
+
+.pillar-card__tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.18rem 0.5rem;
+  background: rgba(99,102,241,0.18);
+  color: rgba(160,163,255,0.9);
+  border-radius: 4px;
+  margin-top: 0.2rem;
+  align-self: flex-start;
+}
+
+@media (max-width: 640px) {
+  .pillars-grid { grid-template-columns: 1fr; }
+}
+
 /* ── Strategy Brief Card ───────────────────────────────────────────────────── */
 
 .brief-grid {

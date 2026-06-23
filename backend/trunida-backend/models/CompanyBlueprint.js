@@ -90,6 +90,33 @@ const lifecycleStageSchema = new mongoose.Schema({
   keyActivities:      { type: String, default: '' },  // e.g. "Release to production with minimal risk"
 }, { _id: false });
 
+// Shared: pillar or flywheel stage with a bullet-point list (used across AI ROI + Governance)
+const pillarBulletSchema = new mongoose.Schema({
+  name:   { type: String, default: '' },
+  points: { type: [String], default: [] },
+}, { _id: false });
+
+// Shared: lifecycle/monitoring stage with bullet-point list (stage key instead of name)
+const stageBulletSchema = new mongoose.Schema({
+  stage:  { type: String, default: '' },
+  points: { type: [String], default: [] },
+}, { _id: false });
+
+// AI ROI — Financial Performance: one bar in the value waterfall
+const waterfallItemSchema = new mongoose.Schema({
+  category:    { type: String, default: '' },   // e.g. "Initial Investment"
+  value:       { type: String, default: '0' },  // numeric string e.g. "-8", "2"
+  type:        { type: String, default: 'positive' }, // 'negative' | 'positive' | 'total'
+  description: { type: String, default: '' },
+}, { _id: false });
+
+// AI ROI — Operational Excellence: one SDLC stage
+const sdlcStageSchema = new mongoose.Schema({
+  stage:       { type: String, default: '' },  // e.g. "Plan"
+  aiTool:      { type: String, default: '' },  // e.g. "AI Planning Assistant"
+  description: { type: String, default: '' },
+}, { _id: false });
+
 const briefSchema = new mongoose.Schema({
   strategicPosition:    { type: String, default: '' },
   priorityActions:      { type: [String], default: [] },
@@ -114,6 +141,16 @@ const briefSchema = new mongoose.Schema({
   solutionPortfolio:    { type: [solutionPortfolioItemSchema], default: [] },
   teamRoles:            { type: [teamRoleSchema],               default: [] },
   lifecycleStages:      { type: [lifecycleStageSchema],         default: [] },
+  // AI ROI CTO template extras
+  waterfallItems:       { type: [waterfallItemSchema],  default: [] },
+  sdlcStages:           { type: [sdlcStageSchema],      default: [] },
+  flywheelStages:       { type: [pillarBulletSchema],   default: [] },
+  // AI Governance & Ethics CTO template extras
+  securityPillars:      { type: [pillarBulletSchema],   default: [] },
+  ethicsPillars:        { type: [pillarBulletSchema],   default: [] },
+  modelLifecycleStages: { type: [stageBulletSchema],    default: [] },
+  complianceControls:   { type: [pillarBulletSchema],   default: [] },
+  adoptionStages:       { type: [pillarBulletSchema],   default: [] },
 }, { _id: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────

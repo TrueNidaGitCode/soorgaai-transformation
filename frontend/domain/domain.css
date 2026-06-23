@@ -4111,6 +4111,171 @@
   .lifecycle-loop { justify-content: center; }
 }
 
+/* ── AI ROI + AI Governance — shared CTO template components ─────────────────
+   All new section templates use these shared building blocks so that the
+   visual language stays consistent across every new capability. ──────────── */
+
+/* Diagram panel — wraps SVG or pill-chain visuals */
+.cto-diagram-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cto-diagram-panel {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.65rem;
+  padding: 1.25rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-x: auto;
+}
+
+/* Spoke-wheel panel — centers the spoke SVG and constrains its width */
+.cto-spoke-panel {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.65rem;
+  padding: 1.25rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cto-spoke-panel .spoke-wheel {
+  max-width: 280px;
+}
+
+/* Detail section — label + card list */
+.cto-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* ── Detail bullet cards ─────────────────────────────────────────────────────
+   Used by: Customer Value, Data Privacy, Ethical AI, Model Validation,
+            Regulatory Compliance, Trust & Adoption, Operational Excellence,
+            Financial Performance ────────────────────────────────────────── */
+
+.detail-bullet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.detail-bullet-card {
+  padding: 0.75rem 1rem 0.75rem 1.2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 3px solid rgba(99, 102, 241, 0.5);
+  border-radius: 0 0.55rem 0.55rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.detail-bullet-card__title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(160, 163, 255, 0.92);
+  margin: 0;
+}
+
+.detail-bullet-card__desc {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.52);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.detail-bullet-card__list {
+  list-style: disc;
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.detail-bullet-card__list li {
+  font-size: 0.79rem;
+  color: rgba(255, 255, 255, 0.54);
+  line-height: 1.5;
+}
+
+/* ── SDLC Pipeline ───────────────────────────────────────────────────────────
+   Used by: Operational Excellence ──────────────────────────────────────── */
+
+.sdlc-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.sdlc-pipeline__stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 0.55rem;
+  padding: 0.75rem 1.1rem;
+  min-width: 88px;
+}
+
+.sdlc-pipeline__stage-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+}
+
+.sdlc-pipeline__stage-tool {
+  font-size: 0.7rem;
+  color: rgba(129, 140, 248, 0.82);
+  text-align: center;
+  line-height: 1.35;
+}
+
+.sdlc-pipeline__arrow {
+  font-size: 1.1rem;
+  color: rgba(99, 102, 241, 0.5);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ── Waterfall SVG ───────────────────────────────────────────────────────────
+   Used by: Financial Performance ─────────────────────────────────────── */
+
+.waterfall-svg {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  display: block;
+}
+
+/* ── Layout wrappers ─────────────────────────────────────────────────────────
+   One wrapper per section type — all share the same column layout. ─────── */
+
+.financial-performance-layout,
+.operational-excellence-layout,
+.customer-value-layout,
+.data-privacy-layout,
+.ethical-ai-layout,
+.model-validation-layout,
+.regulatory-compliance-layout,
+.trust-adoption-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {

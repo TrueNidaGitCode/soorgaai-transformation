@@ -229,6 +229,156 @@ SECTION-SPECIFIC EXTRAS — "End-to-End Ownership" sections only:
    "lifecycleStages": [...], "kpiHighlights": [...]`,
   },
 
+  // ── AI ROI capability ──────────────────────────────────────────────────────
+
+  'Financial Performance': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Financial Performance" sections only:
+
+5. waterfallItems (exactly 6 items, in this order)
+   A value waterfall showing the ROI progression from investment to return.
+   Items must be in this fixed sequence: Initial Investment, Automation Savings, Productivity Gains, Revenue Growth, Financial Return, Total
+   Each item: { "category": "<category name>", "value": "<numeric string e.g. -8, 2>", "type": "negative|positive|total", "description": "<1 short sentence describing this value element, ≤12 words>" }
+   Rules: Initial Investment must use type "negative"; Total must use type "total"; all others use "positive".
+   Values should be realistic relative numbers in $M that show a clear investment-to-return progression; Total value should roughly equal the sum of all positive values minus the absolute investment.
+   Example item: { "category": "Automation Savings", "value": "2", "type": "positive", "description": "Reduced manual effort and faster process throughput." }
+
+6. kpiHighlights (exactly 3 items)
+   Three headline financial performance KPIs.
+   Each item: { "value": "<number with unit e.g. 25%, 3×, $2M>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+
+   Add both to the brief object:
+   "waterfallItems": [...], "kpiHighlights": [...]`,
+  },
+
+  'Operational Excellence': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Operational Excellence" sections only:
+
+5. sdlcStages (exactly 5 items, in this order)
+   The five SDLC stages showing how AI enhances each phase.
+   Stages must be in this fixed sequence: Plan, Develop, Test, Deploy, Operate
+   Each item: { "stage": "<stage name>", "aiTool": "<AI tool or capability name e.g. AI Planning Assistant, AI Copilot>", "description": "<1 sentence on how AI improves this stage, ≤12 words>" }
+   Example item: { "stage": "Plan", "aiTool": "AI Planning Assistant", "description": "Intelligent resource allocation and proactive risk assessment at scale." }
+
+6. kpiHighlights (exactly 3 items)
+   Three delivery performance metrics demonstrating operational improvement.
+   Each item: { "value": "<number with unit e.g. 40%, 2×, 50%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+
+   Add both to the brief object:
+   "sdlcStages": [...], "kpiHighlights": [...]`,
+  },
+
+  'Customer Value': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Customer Value" sections only:
+
+5. flywheelStages (exactly 5 items)
+   A self-reinforcing customer value flywheel where each stage feeds the next.
+   Stages should follow this progression concept: better experience → higher adoption → more engagement → higher satisfaction → recurring revenue (adapt names to the company context).
+   Each item: { "name": "<stage name, 2–4 words>", "points": ["<characteristic or outcome 1>", "<characteristic or outcome 2>", "<characteristic or outcome 3>"] }
+   Example item: { "name": "Better Experience", "points": ["Faster issue resolution", "Personalised AI support", "Intuitive interfaces"] }
+
+6. kpiHighlights (exactly 3 items)
+   Three customer value or satisfaction success metrics.
+   Each item: { "value": "<number with unit e.g. 30%, 90%, 15%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+
+   Add both to the brief object:
+   "flywheelStages": [...], "kpiHighlights": [...]`,
+  },
+
+  // ── AI Governance & Ethics capability ─────────────────────────────────────
+
+  'Data Privacy & Security': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Data Privacy & Security" sections only:
+
+5. securityPillars (exactly 4 items)
+   Four security-by-design pillars that protect AI delivery.
+   Cover these domains: pipeline/DevSecOps security, data protection/PII masking, access control, continuous monitoring.
+   Each item: { "name": "<pillar name, 3–5 words>", "points": ["<security practice 1>", "<security practice 2>", "<security practice 3>"] }
+   Example item: { "name": "DevSecOps Pipelines", "points": ["Automated vulnerability scanning", "Secure code review gates", "Container image hardening"] }
+
+6. kpiHighlights (exactly 3 items)
+   Three security or compliance success metrics.
+   Each item: { "value": "<number with unit e.g. 100%, 0 breaches, 99.9%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+
+   Add both to the brief object:
+   "securityPillars": [...], "kpiHighlights": [...]`,
+  },
+
+  'Ethical AI Guidelines': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Ethical AI Guidelines" sections only:
+
+5. ethicsPillars (exactly 4 items)
+   Four responsible AI pillars forming the ethics framework.
+   Pillars should cover: Fairness, Explainability, Transparency, Accountability (adapt names/content to company context).
+   Each item: { "name": "<pillar name e.g. Fairness, Explainability>", "points": ["<practice or principle 1>", "<practice or principle 2>", "<practice or principle 3>"] }
+   Example item: { "name": "Fairness", "points": ["Bias testing across demographic groups", "Diverse training data validation", "Regular fairness audits"] }
+
+6. kpiHighlights (exactly 3 items)
+   Three ethics governance or fairness metrics.
+   Each item: { "value": "<number with unit e.g. 100%, 0, 100%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+
+   Add both to the brief object:
+   "ethicsPillars": [...], "kpiHighlights": [...]`,
+  },
+
+  'Model Validation & Monitoring': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Model Validation & Monitoring" sections only:
+
+5. modelLifecycleStages (exactly 6 items, in this order)
+   The six stages of the AI model lifecycle monitoring loop.
+   Stages must be in this fixed sequence: Train, Validate, Deploy, Monitor, Detect Drift, Retrain
+   Each item: { "stage": "<stage name>", "points": ["<key activity or practice 1>", "<key activity 2>", "<key activity 3>"] }
+   Example item: { "stage": "Validate", "points": ["Performance benchmarking against baselines", "Bias and fairness checks", "Edge case stress testing"] }
+
+6. kpiHighlights (exactly 3 items)
+   Three model governance or reliability metrics.
+   Each item: { "value": "<number with unit e.g. 100%, 48-hour, 95%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+
+   Add both to the brief object:
+   "modelLifecycleStages": [...], "kpiHighlights": [...]`,
+  },
+
+  'Regulatory Compliance': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Regulatory Compliance" sections only:
+
+5. complianceControls (exactly 4 items)
+   Four compliance control categories forming the AI compliance framework.
+   Cover these domains: audit trails and logging, documentation standards, delivery gate reviews, third-party validation/certification.
+   Each item: { "name": "<control category name, 3–5 words>", "points": ["<control practice 1>", "<control practice 2>", "<control practice 3>"] }
+   Example item: { "name": "Audit Trails & Logging", "points": ["Immutable decision audit logs", "Full data lineage tracking", "Automated compliance reporting"] }
+
+6. kpiHighlights (exactly 3 items)
+   Three regulatory compliance or audit success metrics.
+   Each item: { "value": "<number with unit e.g. 100%, 0 findings, 100%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+
+   Add both to the brief object:
+   "complianceControls": [...], "kpiHighlights": [...]`,
+  },
+
+  'Trust & Adoption': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Trust & Adoption" sections only:
+
+5. adoptionStages (exactly 5 items)
+   A self-reinforcing trust and adoption flywheel.
+   Stages should follow this progression: trust building → adoption → active usage → business value realisation → confidence/advocacy (adapt names to company context).
+   Each item: { "name": "<stage name, 1–3 words e.g. Trust, Adoption, Usage>", "points": ["<stage characteristic or outcome 1>", "<characteristic 2>", "<characteristic 3>"] }
+   Example item: { "name": "Trust", "points": ["Transparent AI decision explanations", "Consistent model reliability", "Stakeholder communication programme"] }
+
+6. kpiHighlights (exactly 3 items)
+   Three adoption or change management success metrics.
+   Each item: { "value": "<number with unit e.g. 90%, 85%, 80%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+
+   Add both to the brief object:
+   "adoptionStages": [...], "kpiHighlights": [...]`,
+  },
+
 };
 
 // ── Shared output parser ──────────────────────────────────────────────────────
@@ -348,6 +498,56 @@ function parseBriefOutput(rawSections, validTitles) {
         }))
         .slice(0, 6);
 
+      // ── AI ROI parsers ─────────────────────────────────────────────────────
+
+      const rawWaterfallItems = Array.isArray(b.waterfallItems) ? b.waterfallItems : [];
+      const waterfallItems = rawWaterfallItems
+        .filter(it => it && typeof it === 'object' && String(it.category || '').trim())
+        .map(it => ({
+          category:    String(it.category    || '').trim(),
+          value:       String(it.value       || '0').trim(),
+          type:        ['negative', 'positive', 'total'].includes(it.type) ? it.type : 'positive',
+          description: String(it.description || '').trim(),
+        }))
+        .slice(0, 6);
+
+      const rawSdlcStages = Array.isArray(b.sdlcStages) ? b.sdlcStages : [];
+      const sdlcStages = rawSdlcStages
+        .filter(s => s && typeof s === 'object' && String(s.stage || '').trim())
+        .map(s => ({
+          stage:       String(s.stage       || '').trim(),
+          aiTool:      String(s.aiTool      || '').trim(),
+          description: String(s.description || '').trim(),
+        }))
+        .slice(0, 5);
+
+      function parsePillarBullets(arr) {
+        return (Array.isArray(arr) ? arr : [])
+          .filter(it => it && typeof it === 'object' && String(it.name || '').trim())
+          .map(it => ({
+            name:   String(it.name || '').trim(),
+            points: Array.isArray(it.points) ? it.points.map(String).filter(Boolean) : [],
+          }));
+      }
+
+      const flywheelStages    = parsePillarBullets(b.flywheelStages).slice(0, 5);
+
+      // ── AI Governance & Ethics parsers ────────────────────────────────────
+
+      const securityPillars   = parsePillarBullets(b.securityPillars).slice(0, 4);
+      const ethicsPillars     = parsePillarBullets(b.ethicsPillars).slice(0, 4);
+      const complianceControls = parsePillarBullets(b.complianceControls).slice(0, 4);
+      const adoptionStages    = parsePillarBullets(b.adoptionStages).slice(0, 5);
+
+      const rawModelLifecycleStages = Array.isArray(b.modelLifecycleStages) ? b.modelLifecycleStages : [];
+      const modelLifecycleStages = rawModelLifecycleStages
+        .filter(s => s && typeof s === 'object' && String(s.stage || '').trim())
+        .map(s => ({
+          stage:  String(s.stage || '').trim(),
+          points: Array.isArray(s.points) ? s.points.map(String).filter(Boolean) : [],
+        }))
+        .slice(0, 6);
+
       return {
         title: String(s.title || '').trim(),
         brief: {
@@ -371,6 +571,16 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(solutionPortfolio.length    ? { solutionPortfolio }    : {}),
           ...(teamRoles.length            ? { teamRoles }            : {}),
           ...(lifecycleStages.length      ? { lifecycleStages }      : {}),
+          // AI ROI extras
+          ...(waterfallItems.length       ? { waterfallItems }       : {}),
+          ...(sdlcStages.length           ? { sdlcStages }           : {}),
+          ...(flywheelStages.length       ? { flywheelStages }       : {}),
+          // AI Governance & Ethics extras
+          ...(securityPillars.length      ? { securityPillars }      : {}),
+          ...(ethicsPillars.length        ? { ethicsPillars }        : {}),
+          ...(modelLifecycleStages.length ? { modelLifecycleStages } : {}),
+          ...(complianceControls.length   ? { complianceControls }   : {}),
+          ...(adoptionStages.length       ? { adoptionStages }       : {}),
           ...(Array.isArray(b.spokeNodes) && b.spokeNodes.length
               ? { spokeNodes: b.spokeNodes.map(String).filter(Boolean).slice(0, 6) }
               : {}),

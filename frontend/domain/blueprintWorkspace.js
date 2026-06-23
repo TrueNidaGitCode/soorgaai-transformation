@@ -1319,6 +1319,451 @@ function buildEndToEndOwnershipLayout(section) {
   return wrap;
 }
 
+// ── Shared helpers for the new CTO templates ──────────────────────────────────
+
+// CSS pill chain — reuses lifecycle-loop styles; labelKey selects which property to display.
+function buildPillChain(items, labelKey) {
+  const wrap = document.createElement('div');
+  wrap.className = 'lifecycle-loop';
+  items.forEach((item, i) => {
+    const node = document.createElement('div');
+    node.className = 'lifecycle-loop__node';
+    node.textContent = (typeof item === 'string' ? item : item[labelKey]) || '';
+    wrap.appendChild(node);
+    if (i < items.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.className = 'lifecycle-loop__arrow';
+      wrap.appendChild(arrow);
+    }
+  });
+  return wrap;
+}
+
+// CSS SDLC pipeline — two-line pills (stage name + "with AI Tool").
+function buildSdlcPipeline(stages) {
+  const wrap = document.createElement('div');
+  wrap.className = 'sdlc-pipeline';
+  stages.forEach((stage, i) => {
+    if (i > 0) {
+      const arrow = document.createElement('span');
+      arrow.className = 'sdlc-pipeline__arrow';
+      arrow.textContent = '→';
+      wrap.appendChild(arrow);
+    }
+    const pill = document.createElement('div');
+    pill.className = 'sdlc-pipeline__stage';
+    const name = document.createElement('span');
+    name.className = 'sdlc-pipeline__stage-name';
+    name.textContent = stage.stage;
+    const tool = document.createElement('span');
+    tool.className = 'sdlc-pipeline__stage-tool';
+    tool.textContent = stage.aiTool ? `with ${stage.aiTool}` : '';
+    pill.appendChild(name);
+    pill.appendChild(tool);
+    wrap.appendChild(pill);
+  });
+  return wrap;
+}
+
+// Pillar/stage detail cards with a bullet list — used by all governance and flywheel templates.
+function buildPillarBulletCards(items, labelKey) {
+  const list = document.createElement('div');
+  list.className = 'detail-bullet-list';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'detail-bullet-card';
+    const title = document.createElement('p');
+    title.className = 'detail-bullet-card__title';
+    title.textContent = item[labelKey] || '';
+    card.appendChild(title);
+    const points = Array.isArray(item.points) ? item.points : [];
+    if (points.length) {
+      const ul = document.createElement('ul');
+      ul.className = 'detail-bullet-card__list';
+      points.forEach(pt => {
+        const li = document.createElement('li');
+        li.textContent = String(pt);
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+    }
+    list.appendChild(card);
+  });
+  return list;
+}
+
+// SVG waterfall chart for Financial Performance.
+function buildWaterfallSvg(items) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = 480, H = 240;
+  const padL = 14, padR = 14, padT = 20, padB = 58;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const vals = items.map(it => parseFloat(it.value) || 0);
+
+  let running = 0;
+  const bars = items.map((it, i) => {
+    const v = vals[i];
+    let low, high;
+    if (it.type === 'total') {
+      low = 0;
+      high = running + v;
+    } else if (it.type === 'negative') {
+      high = running;
+      low = running + v;
+      running += v;
+    } else {
+      low = running;
+      high = running + v;
+      running += v;
+    }
+    return { ...it, low, high };
+  });
+
+  const allVals = bars.flatMap(b => [b.low, b.high, 0]);
+  const minV = Math.min(...allVals);
+  const maxV = Math.max(...allVals);
+  const range = maxV - minV || 1;
+  const toY = v => padT + chartH - ((v - minV) / range) * chartH;
+
+  const n = items.length;
+  const slotW = chartW / n;
+  const barW = slotW * 0.58;
+  const barX = i => padL + i * slotW + (slotW - barW) / 2;
+
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.classList.add('waterfall-svg');
+
+  // Grid lines
+  [0, 0.25, 0.5, 0.75, 1].forEach(t => {
+    const gv = minV + t * range;
+    const gy = toY(gv);
+    const gl = document.createElementNS(NS, 'line');
+    gl.setAttribute('x1', padL); gl.setAttribute('y1', gy);
+    gl.setAttribute('x2', W - padR); gl.setAttribute('y2', gy);
+    gl.setAttribute('stroke', Math.abs(gv) < 0.01 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)');
+    gl.setAttribute('stroke-width', '1');
+    svg.appendChild(gl);
+  });
+
+  // Connector dashed lines between bars
+  bars.forEach((b, i) => {
+    if (i >= bars.length - 1) return;
+    const next = bars[i + 1];
+    if (next.type === 'total') return;
+    const connY = b.type === 'negative' ? toY(b.low) : toY(b.high);
+    const dash = document.createElementNS(NS, 'line');
+    dash.setAttribute('x1', barX(i) + barW); dash.setAttribute('y1', connY);
+    dash.setAttribute('x2', barX(i + 1));     dash.setAttribute('y2', connY);
+    dash.setAttribute('stroke', 'rgba(129,140,248,0.4)');
+    dash.setAttribute('stroke-width', '1');
+    dash.setAttribute('stroke-dasharray', '4,3');
+    svg.appendChild(dash);
+  });
+
+  // Bars + value labels
+  bars.forEach((b, i) => {
+    const x = barX(i);
+    const y1 = toY(b.high);
+    const y2 = toY(b.low);
+    const bH = Math.max(y2 - y1, 3);
+    const fill = b.type === 'negative' ? 'rgba(79,70,229,0.82)'
+               : b.type === 'total'    ? 'rgba(99,102,241,0.95)'
+               :                         'rgba(129,140,248,0.6)';
+
+    const rect = document.createElementNS(NS, 'rect');
+    rect.setAttribute('x', x); rect.setAttribute('y', y1);
+    rect.setAttribute('width', barW); rect.setAttribute('height', bH);
+    rect.setAttribute('fill', fill); rect.setAttribute('rx', '3');
+    svg.appendChild(rect);
+
+    // Value label above/below bar
+    const labelY = b.type === 'negative' ? toY(b.low) + 11 : toY(b.high) - 5;
+    const vl = document.createElementNS(NS, 'text');
+    vl.setAttribute('x', x + barW / 2); vl.setAttribute('y', labelY);
+    vl.setAttribute('text-anchor', 'middle');
+    vl.setAttribute('font-size', '9'); vl.setAttribute('fill', 'rgba(255,255,255,0.78)');
+    vl.textContent = b.value;
+    svg.appendChild(vl);
+  });
+
+  // X-axis category labels (two lines if > 2 words)
+  bars.forEach((b, i) => {
+    const cx = barX(i) + barW / 2;
+    const words = (b.category || '').split(' ');
+    const line1 = words.slice(0, 2).join(' ');
+    const line2 = words.slice(2).join(' ');
+    const t1 = document.createElementNS(NS, 'text');
+    t1.setAttribute('x', cx); t1.setAttribute('y', H - padB + 14);
+    t1.setAttribute('text-anchor', 'middle');
+    t1.setAttribute('font-size', '8.5'); t1.setAttribute('fill', 'rgba(255,255,255,0.5)');
+    t1.textContent = line1;
+    svg.appendChild(t1);
+    if (line2) {
+      const t2 = document.createElementNS(NS, 'text');
+      t2.setAttribute('x', cx); t2.setAttribute('y', H - padB + 26);
+      t2.setAttribute('text-anchor', 'middle');
+      t2.setAttribute('font-size', '8.5'); t2.setAttribute('fill', 'rgba(255,255,255,0.5)');
+      t2.textContent = line2;
+      svg.appendChild(t2);
+    }
+  });
+
+  return svg;
+}
+
+// ── Shared layout section helpers ─────────────────────────────────────────────
+
+function buildStrategicPositionBlock(position) {
+  const stmt = document.createElement('div');
+  stmt.className = 'vision-statement';
+  const lbl = document.createElement('p');
+  lbl.className = 'brief-label'; lbl.textContent = 'Strategic Position';
+  const txt = document.createElement('p');
+  txt.className = 'vision-statement__text'; txt.textContent = position || '—';
+  stmt.appendChild(lbl); stmt.appendChild(txt);
+  return stmt;
+}
+
+function buildDiagramSection(label, panelContent, panelClass) {
+  const section = document.createElement('div');
+  section.className = 'cto-diagram-section';
+  const lbl = document.createElement('p');
+  lbl.className = 'brief-label'; lbl.textContent = label;
+  section.appendChild(lbl);
+  const panel = document.createElement('div');
+  panel.className = panelClass || 'cto-diagram-panel';
+  panel.appendChild(panelContent);
+  section.appendChild(panel);
+  return section;
+}
+
+function buildDetailSection(label, listEl) {
+  const section = document.createElement('div');
+  section.className = 'cto-detail-section';
+  const lbl = document.createElement('p');
+  lbl.className = 'brief-label'; lbl.textContent = label;
+  section.appendChild(lbl);
+  section.appendChild(listEl);
+  return section;
+}
+
+// ── AI ROI — Financial Performance ────────────────────────────────────────────
+
+function buildFinancialPerformanceLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'financial-performance-layout';
+
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  if (b.waterfallItems?.length) {
+    // Value Waterfall Visualization
+    wrap.appendChild(buildDiagramSection('Value Waterfall Visualization', buildWaterfallSvg(b.waterfallItems)));
+
+    // Financial Breakdown — one card per waterfall item (title + description)
+    const list = document.createElement('div');
+    list.className = 'detail-bullet-list';
+    b.waterfallItems.filter(it => it.description).forEach(it => {
+      const card = document.createElement('div');
+      card.className = 'detail-bullet-card';
+      const t = document.createElement('p');
+      t.className = 'detail-bullet-card__title'; t.textContent = it.category;
+      card.appendChild(t);
+      const d = document.createElement('p');
+      d.className = 'detail-bullet-card__desc'; d.textContent = it.description;
+      card.appendChild(d);
+      list.appendChild(card);
+    });
+    wrap.appendChild(buildDetailSection('Financial Breakdown', list));
+  }
+
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
+// ── AI ROI — Operational Excellence ───────────────────────────────────────────
+
+function buildOperationalExcellenceLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'operational-excellence-layout';
+
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  if (b.sdlcStages?.length) {
+    // SDLC Performance Dashboard
+    wrap.appendChild(buildDiagramSection('SDLC Performance Dashboard', buildSdlcPipeline(b.sdlcStages)));
+
+    // SDLC Stage Details
+    const list = document.createElement('div');
+    list.className = 'detail-bullet-list';
+    b.sdlcStages.forEach(stage => {
+      const card = document.createElement('div');
+      card.className = 'detail-bullet-card';
+      const t = document.createElement('p');
+      t.className = 'detail-bullet-card__title'; t.textContent = stage.stage;
+      card.appendChild(t);
+      if (stage.description) {
+        const d = document.createElement('p');
+        d.className = 'detail-bullet-card__desc'; d.textContent = stage.description;
+        card.appendChild(d);
+      }
+      list.appendChild(card);
+    });
+    wrap.appendChild(buildDetailSection('SDLC Stage Details', list));
+  }
+
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
+// ── AI ROI — Customer Value ────────────────────────────────────────────────────
+
+function buildCustomerValueLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'customer-value-layout';
+
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  if (b.flywheelStages?.length) {
+    wrap.appendChild(buildDiagramSection('Customer Value Flywheel', buildPillChain(b.flywheelStages, 'name')));
+    wrap.appendChild(buildDetailSection('Customer Value Details', buildPillarBulletCards(b.flywheelStages, 'name')));
+  }
+
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
+// ── AI Governance — Data Privacy & Security ───────────────────────────────────
+
+function buildDataPrivacyLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'data-privacy-layout';
+
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  if (b.securityPillars?.length) {
+    wrap.appendChild(buildDiagramSection(
+      'Security-by-Design Framework',
+      buildSpokeWheel(b.securityPillars.map(p => p.name), 'Secure AI Delivery'),
+      'cto-spoke-panel',
+    ));
+    wrap.appendChild(buildDetailSection('Security Pillar Details', buildPillarBulletCards(b.securityPillars, 'name')));
+  }
+
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
+// ── AI Governance — Ethical AI Guidelines ─────────────────────────────────────
+
+function buildEthicalAILayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'ethical-ai-layout';
+
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  if (b.ethicsPillars?.length) {
+    wrap.appendChild(buildDiagramSection(
+      'Responsible AI Framework',
+      buildSpokeWheel(b.ethicsPillars.map(p => p.name), 'Responsible AI'),
+      'cto-spoke-panel',
+    ));
+    wrap.appendChild(buildDetailSection('Responsible AI Pillar Details', buildPillarBulletCards(b.ethicsPillars, 'name')));
+  }
+
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
+// ── AI Governance — Model Validation & Monitoring ─────────────────────────────
+
+function buildModelValidationLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'model-validation-layout';
+
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  if (b.modelLifecycleStages?.length) {
+    wrap.appendChild(buildDiagramSection('AI Lifecycle Monitoring Loop', buildPillChain(b.modelLifecycleStages, 'stage')));
+    wrap.appendChild(buildDetailSection('Lifecycle Stage Details', buildPillarBulletCards(b.modelLifecycleStages, 'stage')));
+  }
+
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
+// ── AI Governance — Regulatory Compliance ─────────────────────────────────────
+
+function buildRegulatoryComplianceLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'regulatory-compliance-layout';
+
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  if (b.complianceControls?.length) {
+    wrap.appendChild(buildDiagramSection(
+      'Compliance Control Framework',
+      buildSpokeWheel(b.complianceControls.map(p => p.name), 'AI Compliance Management'),
+      'cto-spoke-panel',
+    ));
+    wrap.appendChild(buildDetailSection('Compliance Control Details', buildPillarBulletCards(b.complianceControls, 'name')));
+  }
+
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
+// ── AI Governance — Trust & Adoption ──────────────────────────────────────────
+
+function buildTrustAdoptionLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'trust-adoption-layout';
+
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  if (b.adoptionStages?.length) {
+    wrap.appendChild(buildDiagramSection('Trust & Adoption Flywheel', buildPillChain(b.adoptionStages, 'name')));
+    wrap.appendChild(buildDetailSection('Trust & Adoption Stage Details', buildPillarBulletCards(b.adoptionStages, 'name')));
+  }
+
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
 function buildVisionLayout(section) {
   const b = section.brief || {};
   const wrap = document.createElement('div');
@@ -1399,6 +1844,22 @@ function buildSectionCard(blueprint, cap, section) {
       card.appendChild(buildCrossFunctionalLayout(section));
     } else if (section.title === 'End-to-End Ownership') {
       card.appendChild(buildEndToEndOwnershipLayout(section));
+    } else if (section.title === 'Financial Performance') {
+      card.appendChild(buildFinancialPerformanceLayout(section));
+    } else if (section.title === 'Operational Excellence') {
+      card.appendChild(buildOperationalExcellenceLayout(section));
+    } else if (section.title === 'Customer Value') {
+      card.appendChild(buildCustomerValueLayout(section));
+    } else if (section.title === 'Data Privacy & Security') {
+      card.appendChild(buildDataPrivacyLayout(section));
+    } else if (section.title === 'Ethical AI Guidelines') {
+      card.appendChild(buildEthicalAILayout(section));
+    } else if (section.title === 'Model Validation & Monitoring') {
+      card.appendChild(buildModelValidationLayout(section));
+    } else if (section.title === 'Regulatory Compliance') {
+      card.appendChild(buildRegulatoryComplianceLayout(section));
+    } else if (section.title === 'Trust & Adoption') {
+      card.appendChild(buildTrustAdoptionLayout(section));
     } else {
       card.appendChild(buildBriefGrid(section));
     }

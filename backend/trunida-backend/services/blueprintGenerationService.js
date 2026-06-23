@@ -172,6 +172,63 @@ SECTION-SPECIFIC EXTRAS — "Commitment" sections only:
    "commitmentPillars": [...], "governanceNodes": [...], "kpiHighlights": [...]`,
   },
 
+  'Solution-Centric Organization': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Solution-Centric Organization" sections only:
+
+5. solutionPortfolio (exactly 3 items)
+   Define 3 AI solutions organized as a portfolio map showing clear business ownership.
+   Each item: { "name": "<2–4 word solution name>", "businessOwner": "<role title e.g. Support Operations Lead>", "deliveryTeam": "<teams comma-separated e.g. AI/ML Engineering, Product>", "kpis": ["<KPI metric 1>", "<KPI metric 2>"] }
+   Example: { "name": "AI Support Assistant", "businessOwner": "Support Operations Lead", "deliveryTeam": "AI/ML Engineering, Product", "kpis": ["Resolution Time", "First Contact Resolution Rate"] }
+   Solutions must be grounded in the company's business objective and industry context.
+
+6. kpiHighlights (exactly 3 items)
+   Extract 3 portfolio-level success metrics showing organizational alignment and dependency reduction.
+   Each item: { "value": "<number with unit e.g. 100%, 30%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+   Example: { "value": "100%", "label": "Solutions Linked to Business Outcomes", "description": "Every AI initiative tied to a named business outcome." }
+
+   Add both to the brief object:
+   "solutionPortfolio": [...], "kpiHighlights": [...]`,
+  },
+
+  'Cross-Functional Delivery Teams': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Cross-Functional Delivery Teams" sections only:
+
+5. teamRoles (5 to 7 items)
+   Define the key roles forming the cross-functional AI delivery team structure.
+   Each item: { "title": "<role name>", "description": "<1 sentence on their specific responsibility>" }
+   Include roles such as: Product Owner, Business Lead, Data/AI Specialist, Engineering Lead, Domain Expert, Architect, QA/Test.
+   Descriptions must reflect the company's industry context (e.g. automotive engineering, vehicle software).
+
+6. kpiHighlights (exactly 3 items)
+   Extract 3 team effectiveness metrics reflecting delivery speed and onboarding outcomes.
+   Each item: { "value": "<number with unit e.g. +3, 20%, 100%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+   Example: { "value": "20%", "label": "Cycle Time Reduction", "description": "Faster delivery through cross-functional collaboration." }
+
+   Add both to the brief object:
+   "teamRoles": [...], "kpiHighlights": [...]`,
+  },
+
+  'End-to-End Ownership': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "End-to-End Ownership" sections only:
+
+5. lifecycleStages (exactly 6 items)
+   Define the 6 stages of the AI solution lifecycle ownership loop in order.
+   Stages must be: Idea, Build, Test, Deploy, Monitor, Improve
+   Each item: { "stage": "<stage name>", "teamResponsibility": "<1–2 key roles e.g. Product Owner, Business Lead>", "keyActivities": "<5–10 word activity description>" }
+   Example: { "stage": "Deploy", "teamResponsibility": "Engineering Lead, DevOps", "keyActivities": "Release to production with minimal risk" }
+
+6. kpiHighlights (exactly 3 items)
+   Extract 3 ownership continuity metrics (e.g. single-team ownership, incident resolution speed, improvement cycles).
+   Each item: { "value": "<number with unit e.g. 100%, 40%, 2+>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+   Example: { "value": "40%", "label": "Faster Incident Resolution", "description": "Single-team ownership accelerates fixes and learning." }
+
+   Add both to the brief object:
+   "lifecycleStages": [...], "kpiHighlights": [...]`,
+  },
+
 };
 
 // ── Shared output parser ──────────────────────────────────────────────────────
@@ -261,6 +318,36 @@ function parseBriefOutput(rawSections, validTitles) {
         }))
         .slice(0, 4);
 
+      const rawSolutionPortfolio = Array.isArray(b.solutionPortfolio) ? b.solutionPortfolio : [];
+      const solutionPortfolio = rawSolutionPortfolio
+        .filter(s => s && typeof s === 'object' && String(s.name || '').trim())
+        .map(s => ({
+          name:          String(s.name          || '').trim(),
+          businessOwner: String(s.businessOwner || '').trim(),
+          deliveryTeam:  String(s.deliveryTeam  || '').trim(),
+          kpis:          Array.isArray(s.kpis) ? s.kpis.map(String).filter(Boolean) : [],
+        }))
+        .slice(0, 3);
+
+      const rawTeamRoles = Array.isArray(b.teamRoles) ? b.teamRoles : [];
+      const teamRoles = rawTeamRoles
+        .filter(r => r && typeof r === 'object' && String(r.title || '').trim())
+        .map(r => ({
+          title:       String(r.title       || '').trim(),
+          description: String(r.description || '').trim(),
+        }))
+        .slice(0, 7);
+
+      const rawLifecycleStages = Array.isArray(b.lifecycleStages) ? b.lifecycleStages : [];
+      const lifecycleStages = rawLifecycleStages
+        .filter(s => s && typeof s === 'object' && String(s.stage || '').trim())
+        .map(s => ({
+          stage:              String(s.stage              || '').trim(),
+          teamResponsibility: String(s.teamResponsibility || '').trim(),
+          keyActivities:      String(s.keyActivities      || '').trim(),
+        }))
+        .slice(0, 6);
+
       return {
         title: String(s.title || '').trim(),
         brief: {
@@ -281,6 +368,9 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(funnelStages.length         ? { funnelStages }         : {}),
           ...(matrixQuadrants.length      ? { matrixQuadrants }      : {}),
           ...(quarterlyPlan.length        ? { quarterlyPlan }        : {}),
+          ...(solutionPortfolio.length    ? { solutionPortfolio }    : {}),
+          ...(teamRoles.length            ? { teamRoles }            : {}),
+          ...(lifecycleStages.length      ? { lifecycleStages }      : {}),
           ...(Array.isArray(b.spokeNodes) && b.spokeNodes.length
               ? { spokeNodes: b.spokeNodes.map(String).filter(Boolean).slice(0, 6) }
               : {}),

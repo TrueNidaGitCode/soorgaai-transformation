@@ -3832,6 +3832,252 @@
 
 /* AI panel open — content shrinks naturally via flex; no explicit rule needed */
 
+/* ── AI Operating Model — Solution-Centric Organization ────────────────────── */
+
+.solution-centric-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.solution-portfolio-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.solution-portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+.solution-portfolio-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 0.65rem;
+  padding: 1.1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.solution-portfolio-card__name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  margin: 0;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(99,102,241,0.2);
+}
+
+.solution-portfolio-card__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.solution-portfolio-card__row-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(129,140,248,0.8);
+}
+
+.solution-portfolio-card__row-value {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.68);
+  line-height: 1.5;
+}
+
+.solution-portfolio-card__kpis {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.solution-portfolio-card__kpis-list {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .solution-portfolio-grid { grid-template-columns: 1fr; }
+}
+
+/* ── AI Operating Model — Cross-Functional Delivery Teams ───────────────────── */
+
+.cross-functional-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.team-composition-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.team-composition-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.65rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.team-hierarchy-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-hierarchy-svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  display: block;
+}
+
+.team-role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.team-role-item {
+  padding: 0.65rem 0.85rem;
+  background: rgba(99,102,241,0.07);
+  border-left: 2px solid rgba(99,102,241,0.45);
+  border-radius: 0 0.4rem 0.4rem 0;
+}
+
+.team-role-item__title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+  margin: 0 0 0.2rem 0;
+}
+
+.team-role-item__desc {
+  font-size: 0.79rem;
+  color: rgba(255,255,255,0.52);
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .team-composition-body { grid-template-columns: 1fr; }
+}
+
+/* ── AI Operating Model — End-to-End Ownership ──────────────────────────────── */
+
+.end-to-end-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lifecycle-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.65rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.lifecycle-loop {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.lifecycle-loop__node {
+  background: rgba(99,102,241,0.15);
+  border: 1px solid rgba(99,102,241,0.4);
+  border-radius: 2rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+  white-space: nowrap;
+}
+
+.lifecycle-loop__arrow {
+  width: 20px;
+  height: 2px;
+  background: rgba(99,102,241,0.45);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.lifecycle-loop__arrow::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 6px solid rgba(99,102,241,0.55);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+.lifecycle-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7rem;
+}
+
+.lifecycle-detail-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.55rem;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.lifecycle-detail-card__stage {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: rgba(160,163,255,0.9);
+  margin: 0;
+}
+
+.lifecycle-detail-card__resp {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  margin: 0;
+}
+
+.lifecycle-detail-card__activities {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .lifecycle-details { grid-template-columns: repeat(2, 1fr); }
+  .lifecycle-loop { justify-content: center; }
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {

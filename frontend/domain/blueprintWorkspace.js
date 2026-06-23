@@ -899,6 +899,309 @@ function buildCommitmentLayout(section) {
   return wrap;
 }
 
+// ── AI Operating Model — Solution-Centric Organization ────────────────────────
+
+function buildSolutionCentricLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'solution-centric-layout';
+
+  // 1. Strategic Position
+  const stmt = document.createElement('div');
+  stmt.className = 'vision-statement';
+  const stmtLbl = document.createElement('p');
+  stmtLbl.className = 'brief-label'; stmtLbl.textContent = 'Strategic Position';
+  const stmtTxt = document.createElement('p');
+  stmtTxt.className = 'vision-statement__text';
+  stmtTxt.textContent = b.strategicPosition || '—';
+  stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
+  wrap.appendChild(stmt);
+
+  // 2. Solution Portfolio Map — 3-col cards
+  if (b.solutionPortfolio?.length) {
+    const portfolioSection = document.createElement('div');
+    portfolioSection.className = 'solution-portfolio-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Solution Portfolio Map';
+    portfolioSection.appendChild(lbl);
+    const grid = document.createElement('div');
+    grid.className = 'solution-portfolio-grid';
+    b.solutionPortfolio.forEach(sol => {
+      const card = document.createElement('div');
+      card.className = 'solution-portfolio-card';
+
+      const name = document.createElement('p');
+      name.className = 'solution-portfolio-card__name';
+      name.textContent = sol.name;
+      card.appendChild(name);
+
+      [['Business Owner', sol.businessOwner], ['Delivery Team', sol.deliveryTeam]].forEach(([label, value]) => {
+        if (!value) return;
+        const row = document.createElement('div');
+        row.className = 'solution-portfolio-card__row';
+        const lbl = document.createElement('span');
+        lbl.className = 'solution-portfolio-card__row-label';
+        lbl.textContent = label;
+        const val = document.createElement('span');
+        val.className = 'solution-portfolio-card__row-value';
+        val.textContent = value;
+        row.appendChild(lbl); row.appendChild(val);
+        card.appendChild(row);
+      });
+
+      if (sol.kpis?.length) {
+        const kpisRow = document.createElement('div');
+        kpisRow.className = 'solution-portfolio-card__kpis';
+        const kpisLbl = document.createElement('span');
+        kpisLbl.className = 'solution-portfolio-card__row-label';
+        kpisLbl.textContent = 'KPIs';
+        const kpisList = document.createElement('p');
+        kpisList.className = 'solution-portfolio-card__kpis-list';
+        kpisList.textContent = sol.kpis.join(' · ');
+        kpisRow.appendChild(kpisLbl); kpisRow.appendChild(kpisList);
+        card.appendChild(kpisRow);
+      }
+
+      grid.appendChild(card);
+    });
+    portfolioSection.appendChild(grid);
+    wrap.appendChild(portfolioSection);
+  }
+
+  // 3. KPI Highlights
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
+// ── AI Operating Model — Cross-Functional Delivery Teams ──────────────────────
+
+function buildTeamHierarchySvg() {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 320 210');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Team composition hierarchy');
+  svg.classList.add('team-hierarchy-svg');
+
+  function mkNode(cx, y, w, h, label) {
+    const g = document.createElementNS(NS, 'g');
+    const rect = document.createElementNS(NS, 'rect');
+    rect.setAttribute('x', cx - w / 2); rect.setAttribute('y', y);
+    rect.setAttribute('width', w); rect.setAttribute('height', h);
+    rect.setAttribute('rx', '10');
+    rect.setAttribute('fill', 'rgba(99,102,241,0.14)');
+    rect.setAttribute('stroke', 'rgba(99,102,241,0.4)');
+    rect.setAttribute('stroke-width', '1.5');
+    const text = document.createElementNS(NS, 'text');
+    text.setAttribute('x', cx); text.setAttribute('y', y + h / 2 + 1);
+    text.setAttribute('text-anchor', 'middle'); text.setAttribute('dominant-baseline', 'middle');
+    text.setAttribute('font-size', '10'); text.setAttribute('fill', 'rgba(255,255,255,0.85)');
+    text.setAttribute('font-weight', '500');
+    text.textContent = label;
+    g.appendChild(rect); g.appendChild(text);
+    return g;
+  }
+
+  function mkLine(x1, y1, x2, y2) {
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', 'rgba(99,102,241,0.45)');
+    line.setAttribute('stroke-width', '1.5');
+    return line;
+  }
+
+  function mkDot(cx, cy) {
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy);
+    c.setAttribute('r', '3');
+    c.setAttribute('fill', 'rgba(129,140,248,0.8)');
+    return c;
+  }
+
+  // Row Y positions
+  const y1 = 10, h1 = 34, cx1 = 160;
+  const y2 = 82, h2 = 30;
+  const y3 = 152, h3 = 28;
+  const midXs = [65, 160, 255];
+  const midLabels = ['Business Lead', 'Data/AI Specialist', 'Engineering Lead'];
+  const botLabels = ['Domain Expert', 'Architect', 'QA / Test'];
+
+  const midY = (y1 + h1 + y2) / 2;
+
+  // Product Owner → horizontal bar → 3 leads
+  svg.appendChild(mkLine(cx1, y1 + h1, cx1, midY));
+  svg.appendChild(mkLine(midXs[0], midY, midXs[2], midY));
+  midXs.forEach(x => {
+    svg.appendChild(mkLine(x, midY, x, y2));
+    svg.appendChild(mkDot(x, midY));
+  });
+
+  // 3 leads → 3 specialists
+  const leadBot = y2 + h2;
+  midXs.forEach(x => {
+    svg.appendChild(mkLine(x, leadBot, x, y3));
+    svg.appendChild(mkDot(x, leadBot));
+  });
+
+  // Draw nodes on top of lines
+  svg.appendChild(mkNode(cx1, y1, 115, h1, 'Product Owner'));
+  midXs.forEach((x, i) => svg.appendChild(mkNode(x, y2, 96, h2, midLabels[i])));
+  midXs.forEach((x, i) => svg.appendChild(mkNode(x, y3, 96, h3, botLabels[i])));
+
+  return svg;
+}
+
+function buildCrossFunctionalLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'cross-functional-layout';
+
+  // 1. Strategic Position
+  const stmt = document.createElement('div');
+  stmt.className = 'vision-statement';
+  const stmtLbl = document.createElement('p');
+  stmtLbl.className = 'brief-label'; stmtLbl.textContent = 'Strategic Position';
+  const stmtTxt = document.createElement('p');
+  stmtTxt.className = 'vision-statement__text';
+  stmtTxt.textContent = b.strategicPosition || '—';
+  stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
+  wrap.appendChild(stmt);
+
+  // 2. Team Composition — SVG hierarchy + role list
+  const compSection = document.createElement('div');
+  compSection.className = 'team-composition-section';
+  const compLbl = document.createElement('p');
+  compLbl.className = 'brief-label'; compLbl.textContent = 'Team Composition Model';
+  compSection.appendChild(compLbl);
+
+  const compBody = document.createElement('div');
+  compBody.className = 'team-composition-body';
+
+  const svgWrap = document.createElement('div');
+  svgWrap.className = 'team-hierarchy-wrap';
+  svgWrap.appendChild(buildTeamHierarchySvg());
+  compBody.appendChild(svgWrap);
+
+  if (b.teamRoles?.length) {
+    const roleList = document.createElement('div');
+    roleList.className = 'team-role-list';
+    b.teamRoles.forEach(role => {
+      const item = document.createElement('div');
+      item.className = 'team-role-item';
+      const title = document.createElement('p');
+      title.className = 'team-role-item__title';
+      title.textContent = role.title;
+      item.appendChild(title);
+      if (role.description) {
+        const desc = document.createElement('p');
+        desc.className = 'team-role-item__desc';
+        desc.textContent = role.description;
+        item.appendChild(desc);
+      }
+      roleList.appendChild(item);
+    });
+    compBody.appendChild(roleList);
+  }
+
+  compSection.appendChild(compBody);
+  wrap.appendChild(compSection);
+
+  // 3. KPI Highlights
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
+// ── AI Operating Model — End-to-End Ownership ─────────────────────────────────
+
+function buildLifecycleLoop(stages) {
+  const wrap = document.createElement('div');
+  wrap.className = 'lifecycle-loop';
+  stages.forEach((stage, i) => {
+    const node = document.createElement('div');
+    node.className = 'lifecycle-loop__node';
+    node.textContent = stage.stage;
+    wrap.appendChild(node);
+    if (i < stages.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.className = 'lifecycle-loop__arrow';
+      wrap.appendChild(arrow);
+    }
+  });
+  return wrap;
+}
+
+function buildEndToEndOwnershipLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'end-to-end-layout';
+
+  // 1. Strategic Position
+  const stmt = document.createElement('div');
+  stmt.className = 'vision-statement';
+  const stmtLbl = document.createElement('p');
+  stmtLbl.className = 'brief-label'; stmtLbl.textContent = 'Strategic Position';
+  const stmtTxt = document.createElement('p');
+  stmtTxt.className = 'vision-statement__text';
+  stmtTxt.textContent = b.strategicPosition || '—';
+  stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
+  wrap.appendChild(stmt);
+
+  // 2. Lifecycle Ownership Loop
+  if (b.lifecycleStages?.length) {
+    const loopSection = document.createElement('div');
+    loopSection.className = 'lifecycle-section';
+    const loopLbl = document.createElement('p');
+    loopLbl.className = 'brief-label'; loopLbl.textContent = 'Lifecycle Ownership Loop';
+    loopSection.appendChild(loopLbl);
+
+    loopSection.appendChild(buildLifecycleLoop(b.lifecycleStages));
+
+    const details = document.createElement('div');
+    details.className = 'lifecycle-details';
+    b.lifecycleStages.forEach(stage => {
+      const card = document.createElement('div');
+      card.className = 'lifecycle-detail-card';
+
+      const stageName = document.createElement('p');
+      stageName.className = 'lifecycle-detail-card__stage';
+      stageName.textContent = stage.stage;
+      card.appendChild(stageName);
+
+      if (stage.teamResponsibility) {
+        const resp = document.createElement('p');
+        resp.className = 'lifecycle-detail-card__resp';
+        resp.textContent = stage.teamResponsibility;
+        card.appendChild(resp);
+      }
+
+      if (stage.keyActivities) {
+        const act = document.createElement('p');
+        act.className = 'lifecycle-detail-card__activities';
+        act.textContent = stage.keyActivities;
+        card.appendChild(act);
+      }
+
+      details.appendChild(card);
+    });
+    loopSection.appendChild(details);
+    wrap.appendChild(loopSection);
+  }
+
+  // 3. KPI Highlights
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
 function buildVisionLayout(section) {
   const b = section.brief || {};
   const wrap = document.createElement('div');
@@ -973,6 +1276,12 @@ function buildSectionCard(blueprint, cap, section) {
       card.appendChild(buildBusinessRoadmapLayout(section));
     } else if (section.title === 'Strategic Roadmap Design' || section.title === 'Strategic Roadmap') {
       card.appendChild(buildStrategicRoadmapLayout(section));
+    } else if (section.title === 'Solution-Centric Organization') {
+      card.appendChild(buildSolutionCentricLayout(section));
+    } else if (section.title === 'Cross-Functional Delivery Teams') {
+      card.appendChild(buildCrossFunctionalLayout(section));
+    } else if (section.title === 'End-to-End Ownership') {
+      card.appendChild(buildEndToEndOwnershipLayout(section));
     } else {
       card.appendChild(buildBriefGrid(section));
     }

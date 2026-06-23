@@ -3206,6 +3206,93 @@
   font-size: 0.75rem;
 }
 
+/* Executive Commitment Pillars */
+
+.commitment-pillars-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.commitment-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+.commitment-pillar-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 0.65rem;
+  padding: 1.1rem 1.2rem;
+}
+
+.commitment-pillar-card__title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin: 0 0 0.65rem 0;
+}
+
+.commitment-pillar-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.commitment-pillar-card__list li {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.62);
+  padding-left: 1rem;
+  position: relative;
+  line-height: 1.5;
+}
+
+.commitment-pillar-card__list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: rgba(99,102,241,0.7);
+}
+
+/* Governance Structure */
+
+.commitment-governance-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.commitment-governance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+}
+
+.commitment-governance-card {
+  background: rgba(99,102,241,0.06);
+  border: 1px solid rgba(99,102,241,0.15);
+  border-left: 3px solid rgba(99,102,241,0.55);
+  border-radius: 0.65rem;
+  padding: 1rem 1.15rem;
+}
+
+.commitment-governance-card__title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+  margin: 0 0 0.35rem 0;
+}
+
+.commitment-governance-card__desc {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.58);
+  margin: 0;
+  line-height: 1.55;
+}
 
 /* ── Strategic Pillars (Vision template) ───────────────────────────────────── */
 

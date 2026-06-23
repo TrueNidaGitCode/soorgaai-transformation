@@ -45,6 +45,12 @@ const initiativeSchema = new mongoose.Schema({
   description: { type: String, default: '' },
 }, { _id: false });
 
+// Commitment pillar cards — title + bullet action items
+const commitmentPillarSchema = new mongoose.Schema({
+  title:   { type: String, default: '' },
+  actions: { type: [String], default: [] },
+}, { _id: false });
+
 const briefSchema = new mongoose.Schema({
   strategicPosition:    { type: String, default: '' },
   priorityActions:      { type: [String], default: [] },
@@ -57,6 +63,9 @@ const briefSchema = new mongoose.Schema({
   // Alignment CTO template extras
   alignmentInitiatives: { type: [initiativeSchema],  default: [] },
   spokeNodes:           { type: [String],            default: [] }, // stakeholder groups for spoke wheel
+  // Commitment CTO template extras
+  commitmentPillars:    { type: [commitmentPillarSchema], default: [] },
+  governanceNodes:      { type: [initiativeSchema],       default: [] }, // 4 governance structure nodes
 }, { _id: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────

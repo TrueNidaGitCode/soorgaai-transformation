@@ -105,14 +105,24 @@ SECTION-SPECIFIC EXTRAS — "Alignment" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Commitment" sections only:
 
-5. kpiHighlights (exactly 3 items)
-   Extract 3 concrete commitment outcomes to display as large-number KPI cards filling the full page width.
-   Each item: { "value": "<specific number with unit e.g. 90%, 12mo, 3×, $2M>", "label": "<2–5 word metric name>", "description": "<1 short sentence, ≤10 words stating the business outcome>" }
-   Values must reflect tangible commitments — adoption targets, cost savings, cycle time, headcount, or timelines.
-   Example: { "value": "90%", "label": "AI Tool Adoption Rate", "description": "Teams actively using AI-assisted workflows within 12 months." }
+5. commitmentPillars (exactly 3 items)
+   Extract 3 executive commitment themes (e.g. Investment, Governance, Leadership Engagement).
+   Each item: { "title": "<1–3 word pillar name>", "actions": ["<action item 1>", "<action item 2>", "<action item 3>"] }
+   Actions must be concrete, scannable 3–8 word bullet items describing what leaders commit to doing.
+   Example: { "title": "Investment", "actions": ["AI skill development funding", "AI tooling investments", "25% increase in AI initiative budget"] }
 
-   Add to the brief object for Commitment sections:
-   "kpiHighlights": [...]`,
+6. governanceNodes (exactly 4 items)
+   Identify the 4 governance roles/bodies forming the oversight structure.
+   Each item: { "title": "<role or body name>", "description": "<1 sentence on their responsibility>" }
+   Example: { "title": "CTO Oversight", "description": "Executive sponsorship and strategic direction." }
+
+7. kpiHighlights (exactly 3 items)
+   Extract 3 concrete commitment outcomes as large-number KPI cards.
+   Each item: { "value": "<number with unit e.g. 25%, 100%, 85%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+   Example: { "value": "25%", "label": "Increase in AI Initiative Funding", "description": "Year-over-year budget growth committed by leadership." }
+
+   Add all three to the brief object for Commitment sections:
+   "commitmentPillars": [...], "governanceNodes": [...], "kpiHighlights": [...]`,
   },
 
 };
@@ -159,6 +169,24 @@ function parseBriefOutput(rawSections, validTitles) {
         }))
         .slice(0, 4);
 
+      const rawCommitmentPillars = Array.isArray(b.commitmentPillars) ? b.commitmentPillars : [];
+      const commitmentPillars = rawCommitmentPillars
+        .filter(p => p && typeof p === 'object' && String(p.title || '').trim())
+        .map(p => ({
+          title:   String(p.title || '').trim(),
+          actions: Array.isArray(p.actions) ? p.actions.map(String).filter(Boolean) : [],
+        }))
+        .slice(0, 3);
+
+      const rawGovernanceNodes = Array.isArray(b.governanceNodes) ? b.governanceNodes : [];
+      const governanceNodes = rawGovernanceNodes
+        .filter(n => n && typeof n === 'object' && String(n.title || '').trim())
+        .map(n => ({
+          title:       String(n.title       || '').trim(),
+          description: String(n.description || '').trim(),
+        }))
+        .slice(0, 4);
+
       return {
         title: String(s.title || '').trim(),
         brief: {
@@ -174,6 +202,8 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(kpiHighlights.length        ? { kpiHighlights }        : {}),
           ...(timelineSteps.length        ? { timelineSteps }        : {}),
           ...(alignmentInitiatives.length ? { alignmentInitiatives } : {}),
+          ...(commitmentPillars.length    ? { commitmentPillars }    : {}),
+          ...(governanceNodes.length      ? { governanceNodes }      : {}),
           ...(Array.isArray(b.spokeNodes) && b.spokeNodes.length
               ? { spokeNodes: b.spokeNodes.map(String).filter(Boolean).slice(0, 6) }
               : {}),

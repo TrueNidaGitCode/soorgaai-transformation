@@ -500,26 +500,67 @@ function buildCommitmentLayout(section) {
   stmtBlock.appendChild(stmtText);
   wrap.appendChild(stmtBlock);
 
-  // 2. Priority Actions
-  if (b.priorityActions?.length) {
-    const actBlock = document.createElement('div');
-    actBlock.className = 'commitment-actions';
-    const actLabel = document.createElement('p');
-    actLabel.className = 'brief-label';
-    actLabel.textContent = 'Priority Actions (90 Days)';
-    const actList = document.createElement('ul');
-    actList.className = 'commitment-actions__list';
-    b.priorityActions.forEach(a => {
-      const li = document.createElement('li');
-      li.textContent = a;
-      actList.appendChild(li);
+  // 2. Executive Commitment Pillars — 3-col cards with bullet actions
+  if (b.commitmentPillars?.length) {
+    const pillarsSection = document.createElement('div');
+    pillarsSection.className = 'commitment-pillars-section';
+    const pillarsHeading = document.createElement('p');
+    pillarsHeading.className = 'brief-label';
+    pillarsHeading.textContent = 'Executive Commitment Pillars';
+    const pillarsGrid = document.createElement('div');
+    pillarsGrid.className = 'commitment-pillars';
+    b.commitmentPillars.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'commitment-pillar-card';
+      const title = document.createElement('p');
+      title.className = 'commitment-pillar-card__title';
+      title.textContent = p.title;
+      card.appendChild(title);
+      if (p.actions?.length) {
+        const ul = document.createElement('ul');
+        ul.className = 'commitment-pillar-card__list';
+        p.actions.forEach(a => {
+          const li = document.createElement('li');
+          li.textContent = a;
+          ul.appendChild(li);
+        });
+        card.appendChild(ul);
+      }
+      pillarsGrid.appendChild(card);
     });
-    actBlock.appendChild(actLabel);
-    actBlock.appendChild(actList);
-    wrap.appendChild(actBlock);
+    pillarsSection.appendChild(pillarsHeading);
+    pillarsSection.appendChild(pillarsGrid);
+    wrap.appendChild(pillarsSection);
   }
 
-  // 3. Success Metrics — KPI highlight cards (large number + label + description)
+  // 3. Governance Structure — 2×2 grid of governance node cards
+  if (b.governanceNodes?.length) {
+    const govSection = document.createElement('div');
+    govSection.className = 'commitment-governance-section';
+    const govHeading = document.createElement('p');
+    govHeading.className = 'brief-label';
+    govHeading.textContent = 'Governance Structure';
+    const govGrid = document.createElement('div');
+    govGrid.className = 'commitment-governance-grid';
+    b.governanceNodes.forEach(n => {
+      const card = document.createElement('div');
+      card.className = 'commitment-governance-card';
+      const title = document.createElement('p');
+      title.className = 'commitment-governance-card__title';
+      title.textContent = n.title;
+      const desc = document.createElement('p');
+      desc.className = 'commitment-governance-card__desc';
+      desc.textContent = n.description;
+      card.appendChild(title);
+      card.appendChild(desc);
+      govGrid.appendChild(card);
+    });
+    govSection.appendChild(govHeading);
+    govSection.appendChild(govGrid);
+    wrap.appendChild(govSection);
+  }
+
+  // 4. Success Metrics — KPI highlight cards at the bottom
   if (b.kpiHighlights?.length) {
     wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   }

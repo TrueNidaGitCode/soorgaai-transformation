@@ -56,6 +56,7 @@ const briefSchema = new mongoose.Schema({
   timelineSteps:        { type: [String],             default: [] },
   // Alignment CTO template extras
   alignmentInitiatives: { type: [initiativeSchema],  default: [] },
+  spokeNodes:           { type: [String],            default: [] }, // stakeholder groups for spoke wheel
 }, { _id: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────

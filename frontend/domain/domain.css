@@ -3067,6 +3067,20 @@
   align-items: start;
 }
 
+/* Left column wrapper */
+.alignment-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Spoke wheel SVG */
+.spoke-wheel {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 /* Left: stacked KPI metrics */
 .kpi-stacked-wrap {
   display: flex;

@@ -92,8 +92,13 @@ SECTION-SPECIFIC EXTRAS — "Alignment" sections only:
    Each item: { "title": "<3–6 word initiative name>", "description": "<2–3 sentences explaining what it is and why it matters>" }
    Examples: "Common AI Vocabulary & Learning", "Cross-Functional AI Workshops", "Executive Ownership Framework", "AI Program Liaisons"
 
-   Add both to the brief object for Alignment sections:
-   "kpiHighlights": [...], "alignmentInitiatives": [...]`,
+7. spokeNodes (5–6 items)
+   Identify the key stakeholder groups that must align around the AI transformation agenda.
+   Each item is a plain string, 2–5 words. These will be rendered as nodes on a spoke wheel diagram.
+   Examples: ["CTO & Technology Leadership", "Engineering Teams", "Business Stakeholders", "Architecture & Platform Teams", "Delivery & Program Management", "Customer Representatives"]
+
+   Add all three to the brief object for Alignment sections:
+   "kpiHighlights": [...], "alignmentInitiatives": [...], "spokeNodes": [...]`,
   },
 
 };
@@ -155,6 +160,9 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(kpiHighlights.length        ? { kpiHighlights }        : {}),
           ...(timelineSteps.length        ? { timelineSteps }        : {}),
           ...(alignmentInitiatives.length ? { alignmentInitiatives } : {}),
+          ...(Array.isArray(b.spokeNodes) && b.spokeNodes.length
+              ? { spokeNodes: b.spokeNodes.map(String).filter(Boolean).slice(0, 6) }
+              : {}),
         },
         content:   s.content ? String(s.content).trim() : '',
         updatedAt: new Date(),

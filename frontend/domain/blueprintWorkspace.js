@@ -323,6 +323,87 @@ function buildHorizontalTimeline(steps) {
   return block;
 }
 
+function buildSpokeWheel(nodes, centerLabel) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = 300, H = 300, cx = 150, cy = 150;
+  const spokeR  = 105;
+  const centerR = 44;
+  const nodeR   = 36;
+  const n       = nodes.length;
+
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.style.width  = '100%';
+  svg.style.height = 'auto';
+  svg.classList.add('spoke-wheel');
+
+  function wrapWords(text, maxPer) {
+    const words = text.split(' ');
+    const lines = [];
+    for (let i = 0; i < words.length; i += maxPer) {
+      lines.push(words.slice(i, i + maxPer).join(' '));
+    }
+    return lines;
+  }
+
+  function addText(parent, lines, x, y, fontSize, fill, lineH) {
+    const el = document.createElementNS(NS, 'text');
+    el.setAttribute('text-anchor', 'middle');
+    el.setAttribute('fill', fill);
+    el.setAttribute('font-size', fontSize);
+    el.setAttribute('font-weight', '600');
+    el.setAttribute('font-family', 'inherit');
+    const totalH = (lines.length - 1) * lineH;
+    lines.forEach((line, i) => {
+      const ts = document.createElementNS(NS, 'tspan');
+      ts.setAttribute('x', x);
+      ts.setAttribute('y', y - totalH / 2 + i * lineH);
+      ts.textContent = line;
+      el.appendChild(ts);
+    });
+    parent.appendChild(el);
+  }
+
+  // Spokes first (drawn behind circles)
+  nodes.forEach((_, i) => {
+    const a = (2 * Math.PI / n) * i - Math.PI / 2;
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', cx);
+    line.setAttribute('y1', cy);
+    line.setAttribute('x2', cx + spokeR * Math.cos(a));
+    line.setAttribute('y2', cy + spokeR * Math.sin(a));
+    line.setAttribute('stroke', 'rgba(99,102,241,0.3)');
+    line.setAttribute('stroke-width', '1.5');
+    svg.appendChild(line);
+  });
+
+  // Center circle
+  const cc = document.createElementNS(NS, 'circle');
+  cc.setAttribute('cx', cx); cc.setAttribute('cy', cy); cc.setAttribute('r', centerR);
+  cc.setAttribute('fill', 'rgba(99,102,241,0.18)');
+  cc.setAttribute('stroke', 'rgba(99,102,241,0.55)');
+  cc.setAttribute('stroke-width', '1.5');
+  svg.appendChild(cc);
+  addText(svg, wrapWords(centerLabel, 2), cx, cy, 6.5, 'rgba(255,255,255,0.92)', 8.5);
+
+  // Outer node circles
+  nodes.forEach((label, i) => {
+    const a  = (2 * Math.PI / n) * i - Math.PI / 2;
+    const nx = cx + spokeR * Math.cos(a);
+    const ny = cy + spokeR * Math.sin(a);
+
+    const oc = document.createElementNS(NS, 'circle');
+    oc.setAttribute('cx', nx); oc.setAttribute('cy', ny); oc.setAttribute('r', nodeR);
+    oc.setAttribute('fill', 'rgba(255,255,255,0.04)');
+    oc.setAttribute('stroke', 'rgba(99,102,241,0.28)');
+    oc.setAttribute('stroke-width', '1');
+    svg.appendChild(oc);
+    addText(svg, wrapWords(label, 2), nx, ny, 6, 'rgba(255,255,255,0.72)', 8);
+  });
+
+  return svg;
+}
+
 function buildInitiativeCard(init, wide = false) {
   const card = document.createElement('div');
   card.className = `initiative-card${wide ? ' initiative-card--wide' : ''}`;
@@ -362,7 +443,14 @@ function buildAlignmentLayout(section) {
   const body = document.createElement('div');
   body.className = 'alignment-body';
 
-  // Left column: stacked KPI metrics
+  // Left column: spoke wheel + stacked KPI metrics
+  const leftCol = document.createElement('div');
+  leftCol.className = 'alignment-left';
+
+  if (b.spokeNodes?.length) {
+    leftCol.appendChild(buildSpokeWheel(b.spokeNodes, 'AI Transformation Agenda'));
+  }
+
   if (b.kpiHighlights?.length) {
     const kpiWrap = document.createElement('div');
     kpiWrap.className = 'kpi-stacked-wrap';
@@ -393,8 +481,10 @@ function buildAlignmentLayout(section) {
     });
 
     kpiWrap.appendChild(kpiBlock);
-    body.appendChild(kpiWrap);
+    leftCol.appendChild(kpiWrap);
   }
+
+  body.appendChild(leftCol);
 
   // Right column: 3-card grid + 1 wide card
   if (b.alignmentInitiatives?.length) {

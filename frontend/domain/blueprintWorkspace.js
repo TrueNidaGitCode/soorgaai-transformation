@@ -482,6 +482,268 @@ function buildAlignmentLayout(section) {
   return wrap;
 }
 
+function buildFunnelChart(stages) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = 400, stageH = 65, gap = 8;
+  const n = stages.length;
+  const totalH = n * stageH + (n - 1) * gap;
+
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${totalH}`);
+  svg.classList.add('funnel-chart');
+
+  const accentColors = [
+    'rgba(129,140,248,0.85)',
+    'rgba(129,140,248,0.75)',
+    'rgba(167,139,250,0.75)',
+    'rgba(244,114,182,0.7)',
+  ];
+
+  stages.forEach((stage, i) => {
+    const inset = i * 38;
+    const nextInset = (i + 1) * 38;
+    const topY = i * (stageH + gap);
+    const botY = topY + stageH;
+    const lxTop = 20 + inset, rxTop = W - 20 - inset;
+    const lxBot = i < n - 1 ? 20 + nextInset : lxTop + 18;
+    const rxBot = i < n - 1 ? W - 20 - nextInset : rxTop - 18;
+
+    // Main trapezoid
+    const poly = document.createElementNS(NS, 'polygon');
+    poly.setAttribute('points', `${lxTop},${topY} ${rxTop},${topY} ${rxBot},${botY} ${lxBot},${botY}`);
+    poly.setAttribute('fill', `rgba(99,102,241,${0.72 - i * 0.08})`);
+    poly.setAttribute('stroke', 'rgba(129,140,248,0.2)');
+    poly.setAttribute('stroke-width', '1');
+    svg.appendChild(poly);
+
+    // Right accent stripe (~6% of width)
+    const aw = Math.max(14, (rxTop - lxTop) * 0.06);
+    const accentPoly = document.createElementNS(NS, 'polygon');
+    accentPoly.setAttribute('points', `${rxTop - aw},${topY} ${rxTop},${topY} ${rxBot},${botY} ${rxBot - aw},${botY}`);
+    accentPoly.setAttribute('fill', accentColors[i] || accentColors[accentColors.length - 1]);
+    svg.appendChild(accentPoly);
+
+    // Count (large)
+    const midX = (lxTop + rxTop) / 2;
+    const midY = topY + stageH * 0.38;
+    const countEl = document.createElementNS(NS, 'text');
+    countEl.setAttribute('x', midX); countEl.setAttribute('y', midY);
+    countEl.setAttribute('text-anchor', 'middle'); countEl.setAttribute('dominant-baseline', 'middle');
+    countEl.setAttribute('font-size', '26'); countEl.setAttribute('font-weight', '700');
+    countEl.setAttribute('fill', 'rgba(255,255,255,0.95)');
+    countEl.textContent = stage.count;
+    svg.appendChild(countEl);
+
+    // Label (small)
+    const labelEl = document.createElementNS(NS, 'text');
+    labelEl.setAttribute('x', midX); labelEl.setAttribute('y', midY + 21);
+    labelEl.setAttribute('text-anchor', 'middle'); labelEl.setAttribute('dominant-baseline', 'middle');
+    labelEl.setAttribute('font-size', '11.5'); labelEl.setAttribute('fill', 'rgba(255,255,255,0.7)');
+    labelEl.textContent = stage.label;
+    svg.appendChild(labelEl);
+
+    // Connector circle between stages
+    if (i < n - 1) {
+      const connY = botY + gap / 2;
+      const circ = document.createElementNS(NS, 'circle');
+      circ.setAttribute('cx', W / 2); circ.setAttribute('cy', connY);
+      circ.setAttribute('r', '3.5');
+      circ.setAttribute('fill', 'rgba(129,140,248,0.85)');
+      svg.appendChild(circ);
+    }
+  });
+
+  return svg;
+}
+
+function buildPrioritizationMatrix(quadrants) {
+  // quadrants order: [0] Quick Wins, [1] Strategic Bets, [2] Fill-ins, [3] Defer
+  const wrap = document.createElement('div');
+  wrap.className = 'priority-matrix';
+
+  const yAxis = document.createElement('div');
+  yAxis.className = 'matrix-y-axis';
+  ['High', 'Business Impact', 'Low'].forEach((t, i) => {
+    const el = document.createElement('span');
+    el.className = i === 1 ? 'matrix-axis-label' : 'matrix-axis-tick';
+    el.textContent = t;
+    yAxis.appendChild(el);
+  });
+  wrap.appendChild(yAxis);
+
+  const content = document.createElement('div');
+  content.className = 'matrix-content';
+
+  const grid = document.createElement('div');
+  grid.className = 'matrix-grid';
+  (quadrants.slice(0, 4)).forEach(q => {
+    const cell = document.createElement('div');
+    cell.className = 'matrix-quadrant';
+    const title = document.createElement('p');
+    title.className = 'matrix-quadrant__title';
+    title.textContent = q.title;
+    cell.appendChild(title);
+    if (q.initiatives?.length) {
+      const items = document.createElement('p');
+      items.className = 'matrix-quadrant__items';
+      items.textContent = q.initiatives.join(', ');
+      cell.appendChild(items);
+    }
+    grid.appendChild(cell);
+  });
+  content.appendChild(grid);
+
+  const xAxis = document.createElement('div');
+  xAxis.className = 'matrix-x-axis';
+  ['Low', 'Readiness', 'High'].forEach((t, i) => {
+    const el = document.createElement('span');
+    el.className = i === 1 ? 'matrix-axis-label' : 'matrix-axis-tick';
+    el.textContent = t;
+    xAxis.appendChild(el);
+  });
+  content.appendChild(xAxis);
+
+  wrap.appendChild(content);
+  return wrap;
+}
+
+function buildQuarterlyTimeline(plan) {
+  const wrap = document.createElement('div');
+  wrap.className = 'quarterly-timeline';
+
+  plan.forEach((item, i) => {
+    const step = document.createElement('div');
+    step.className = 'quarterly-timeline__step';
+
+    const num = document.createElement('div');
+    num.className = 'quarterly-timeline__num';
+    num.textContent = String(i + 1);
+
+    const quarter = document.createElement('div');
+    quarter.className = 'quarterly-timeline__quarter';
+    quarter.textContent = item.quarter;
+
+    const inits = document.createElement('div');
+    inits.className = 'quarterly-timeline__initiatives';
+    (item.initiatives || []).forEach(init => {
+      const p = document.createElement('p');
+      p.className = 'quarterly-timeline__initiative';
+      p.textContent = init;
+      inits.appendChild(p);
+    });
+
+    step.appendChild(num);
+    step.appendChild(quarter);
+    step.appendChild(inits);
+    wrap.appendChild(step);
+  });
+
+  return wrap;
+}
+
+function buildBusinessRoadmapLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'business-roadmap-layout';
+
+  // 1. Strategic Position
+  const stmt = document.createElement('div');
+  stmt.className = 'vision-statement';
+  const stmtLbl = document.createElement('p');
+  stmtLbl.className = 'brief-label'; stmtLbl.textContent = 'Strategic Position';
+  const stmtTxt = document.createElement('p');
+  stmtTxt.className = 'vision-statement__text';
+  stmtTxt.textContent = b.strategicPosition || '—';
+  stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
+  wrap.appendChild(stmt);
+
+  // 2. Business Priorities — pill tags from priorityActions
+  if (b.priorityActions?.length) {
+    const priSection = document.createElement('div');
+    priSection.className = 'roadmap-priorities-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Business Priorities';
+    const pills = document.createElement('div');
+    pills.className = 'roadmap-priority-pills';
+    b.priorityActions.forEach(a => {
+      const pill = document.createElement('div');
+      pill.className = 'roadmap-priority-pill';
+      pill.textContent = a;
+      pills.appendChild(pill);
+    });
+    priSection.appendChild(lbl);
+    priSection.appendChild(pills);
+    wrap.appendChild(priSection);
+  }
+
+  // 3. AI Opportunity Funnel
+  if (b.funnelStages?.length) {
+    const funnelSection = document.createElement('div');
+    funnelSection.className = 'roadmap-funnel-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'AI Opportunity Funnel';
+    funnelSection.appendChild(lbl);
+    const funnelWrap = document.createElement('div');
+    funnelWrap.className = 'funnel-chart-wrap';
+    funnelWrap.appendChild(buildFunnelChart(b.funnelStages));
+    funnelSection.appendChild(funnelWrap);
+    wrap.appendChild(funnelSection);
+  }
+
+  // 4. Business Outcomes — KPI highlights
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
+function buildStrategicRoadmapLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'strategic-roadmap-layout';
+
+  // 1. Strategic Position
+  const stmt = document.createElement('div');
+  stmt.className = 'vision-statement';
+  const stmtLbl = document.createElement('p');
+  stmtLbl.className = 'brief-label'; stmtLbl.textContent = 'Strategic Position';
+  const stmtTxt = document.createElement('p');
+  stmtTxt.className = 'vision-statement__text';
+  stmtTxt.textContent = b.strategicPosition || '—';
+  stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
+  wrap.appendChild(stmt);
+
+  // 2. Prioritization Matrix
+  if (b.matrixQuadrants?.length) {
+    const matSection = document.createElement('div');
+    matSection.className = 'roadmap-matrix-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Prioritization Matrix';
+    matSection.appendChild(lbl);
+    matSection.appendChild(buildPrioritizationMatrix(b.matrixQuadrants));
+    wrap.appendChild(matSection);
+  }
+
+  // 3. Quarterly Execution Timeline
+  if (b.quarterlyPlan?.length) {
+    const qtSection = document.createElement('div');
+    qtSection.className = 'roadmap-quarterly-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Quarterly Execution Timeline';
+    qtSection.appendChild(lbl);
+    qtSection.appendChild(buildQuarterlyTimeline(b.quarterlyPlan));
+    wrap.appendChild(qtSection);
+  }
+
+  // 4. Success Metrics — KPI highlights
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  return wrap;
+}
+
 function buildGovernanceTemple() {
   const NS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(NS, 'svg');
@@ -707,6 +969,10 @@ function buildSectionCard(blueprint, cap, section) {
       card.appendChild(buildAlignmentLayout(section));
     } else if (section.title === 'Commitment') {
       card.appendChild(buildCommitmentLayout(section));
+    } else if (section.title === 'Business-Led Roadmap') {
+      card.appendChild(buildBusinessRoadmapLayout(section));
+    } else if (section.title === 'Strategic Roadmap Design' || section.title === 'Strategic Roadmap') {
+      card.appendChild(buildStrategicRoadmapLayout(section));
     } else {
       card.appendChild(buildBriefGrid(section));
     }

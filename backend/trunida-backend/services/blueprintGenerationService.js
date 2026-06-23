@@ -101,6 +101,53 @@ SECTION-SPECIFIC EXTRAS — "Alignment" sections only:
    "kpiHighlights": [...], "alignmentInitiatives": [...], "spokeNodes": [...]`,
   },
 
+  'Business-Led Roadmap': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Business-Led Roadmap" sections only:
+
+5. funnelStages (exactly 4 items)
+   Estimate a realistic AI opportunity funnel showing how ideas narrow from ideation to production.
+   Each item: { "count": "<number as string e.g. '15'>", "label": "<stage label>" }
+   Stages in order (widest to narrowest):
+   [0] Total AI ideas/opportunities identified
+   [1] Ideas formally evaluated for feasibility
+   [2] Ideas prioritized and approved for development
+   [3] Ideas deployed to production
+   Example: [{"count":"15","label":"AI Ideas"},{"count":"8","label":"Evaluated"},{"count":"4","label":"Prioritized"},{"count":"2","label":"Production Deployments"}]
+   Use realistic numbers for the company's context and maturity level.
+
+6. kpiHighlights (exactly 3 items)
+   Extract 3 business outcome KPIs reflecting the roadmap's measurable impact.
+   Each item: { "value": "<number with unit>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+   Example: { "value": "100%", "label": "Initiatives Linked to Business Priorities", "description": "Every AI initiative tied to a named business objective." }
+
+   Add both to the brief object:
+   "funnelStages": [...], "kpiHighlights": [...]`,
+  },
+
+  'Strategic Roadmap Design': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Strategic Roadmap Design" sections only:
+
+5. matrixQuadrants (exactly 4 items in this order)
+   Classify AI initiatives into a 2×2 Business Impact vs Readiness prioritization matrix.
+   Order: [0] Quick Wins (High Impact, High Readiness), [1] Strategic Bets (High Impact, Low Readiness), [2] Fill-ins (Low Impact, High Readiness), [3] Defer (Low Impact, Low Readiness)
+   Each item: { "title": "<quadrant name>", "initiatives": ["<initiative 1>", "<initiative 2>"] }
+   "initiatives" should be 1–3 short initiative names (3–6 words each). Defer may have ["Future consideration"].
+
+6. quarterlyPlan (exactly 4 items)
+   Sequence the Quick Wins and Strategic Bets initiatives across 4 quarters.
+   Each item: { "quarter": "Q1" | "Q2" | "Q3" | "Q4", "initiatives": ["<initiative 1>", "<initiative 2>"] }
+   Q1–Q2 should contain Quick Wins; Q3–Q4 should contain Strategic Bets and scale-up work.
+
+7. kpiHighlights (exactly 3 items)
+   Extract 3 roadmap execution success metrics.
+   Each item: { "value": "<number with unit e.g. 100%, <10%, 4>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+
+   Add all three to the brief object:
+   "matrixQuadrants": [...], "quarterlyPlan": [...], "kpiHighlights": [...]`,
+  },
+
   Commitment: {
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Commitment" sections only:
@@ -169,6 +216,33 @@ function parseBriefOutput(rawSections, validTitles) {
         }))
         .slice(0, 4);
 
+      const rawFunnelStages = Array.isArray(b.funnelStages) ? b.funnelStages : [];
+      const funnelStages = rawFunnelStages
+        .filter(f => f && typeof f === 'object' && String(f.count || '').trim())
+        .map(f => ({
+          count: String(f.count || '').trim(),
+          label: String(f.label || '').trim(),
+        }))
+        .slice(0, 4);
+
+      const rawMatrixQuadrants = Array.isArray(b.matrixQuadrants) ? b.matrixQuadrants : [];
+      const matrixQuadrants = rawMatrixQuadrants
+        .filter(q => q && typeof q === 'object' && String(q.title || '').trim())
+        .map(q => ({
+          title:       String(q.title || '').trim(),
+          initiatives: Array.isArray(q.initiatives) ? q.initiatives.map(String).filter(Boolean) : [],
+        }))
+        .slice(0, 4);
+
+      const rawQuarterlyPlan = Array.isArray(b.quarterlyPlan) ? b.quarterlyPlan : [];
+      const quarterlyPlan = rawQuarterlyPlan
+        .filter(p => p && typeof p === 'object' && String(p.quarter || '').trim())
+        .map(p => ({
+          quarter:     String(p.quarter || '').trim(),
+          initiatives: Array.isArray(p.initiatives) ? p.initiatives.map(String).filter(Boolean) : [],
+        }))
+        .slice(0, 4);
+
       const rawCommitmentPillars = Array.isArray(b.commitmentPillars) ? b.commitmentPillars : [];
       const commitmentPillars = rawCommitmentPillars
         .filter(p => p && typeof p === 'object' && String(p.title || '').trim())
@@ -204,6 +278,9 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(alignmentInitiatives.length ? { alignmentInitiatives } : {}),
           ...(commitmentPillars.length    ? { commitmentPillars }    : {}),
           ...(governanceNodes.length      ? { governanceNodes }      : {}),
+          ...(funnelStages.length         ? { funnelStages }         : {}),
+          ...(matrixQuadrants.length      ? { matrixQuadrants }      : {}),
+          ...(quarterlyPlan.length        ? { quarterlyPlan }        : {}),
           ...(Array.isArray(b.spokeNodes) && b.spokeNodes.length
               ? { spokeNodes: b.spokeNodes.map(String).filter(Boolean).slice(0, 6) }
               : {}),

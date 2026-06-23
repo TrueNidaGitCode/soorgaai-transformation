@@ -8,7 +8,7 @@
 
 ## Purpose
 
-This document applies the Core Business Strategy Alignment framework — Business-Led Roadmap, Strategic Roadmap Design, and Operating Model — to the specific business and operational context of the automotive industry.
+This document applies the Core Business Strategy Alignment framework — Business-Led Roadmap and Strategic Roadmap Design — to the specific business and operational context of the automotive industry.
 
 > For the universal business strategy framework, refer to:
 > `Core/Business_Strategy_Alignment.md`
@@ -113,63 +113,10 @@ Automotive AI roadmaps should be structured to deliver measurable value in stage
 
 ---
 
-## Operating Model in Automotive
-
-Successful automotive AI transformation requires collaboration across engineering, manufacturing, business, and technology organizations.
-
-Cross-functional teams should combine automotive expertise with digital and AI capabilities to deliver customer-centric outcomes.
-
-### Operating Model Priorities
-
-| Function                    | Strategic Contribution                |
-| --------------------------- | ------------------------------------- |
-| Product Management          | Customer and market alignment         |
-| Systems Engineering         | AI-enabled development processes      |
-| Software Engineering        | AI-assisted software delivery         |
-| Verification and Validation | AI-supported quality assurance        |
-| Manufacturing               | Productivity and quality improvements |
-| Supply Chain                | Planning and operational resilience   |
-| Customer Services           | Enhanced ownership experience         |
-| Business Functions          | Enterprise-wide AI adoption           |
-
-### Operating Model Principles
-
-* Build cross-functional teams.
-* Encourage collaboration across functions.
-* Integrate business and technology expertise.
-* Focus on customer-centric outcomes.
-* Promote continuous learning.
-* Scale successful AI initiatives across the enterprise.
-
-### Automotive Operating Model Target State
-
-The operating model is effective when:
-
-* Every major engineering and business function has a named AI delivery lead with defined accountability.
-* Cross-functional AI delivery teams combine business domain expertise with data, software, and AI engineering capabilities.
-* AI programs operate on agile delivery cycles with visible business outcomes at each sprint.
-* Enterprise AI adoption is tracked quarterly with function-level adoption scorecards.
-
-### Delivery Benchmarks
-
-| Delivery Metric | Benchmark Target |
-| --------------- | ---------------- |
-| Cross-functional coverage | AI delivery representation across > 80% of engineering functions within 12 months |
-| Sprint cadence | AI delivery teams operating on 2–4 week release cycles |
-| Business outcome visibility | Monthly KPI reporting for all active AI programs |
-| Enterprise adoption rate | > 50% of targeted functions actively using AI tools within 18 months |
-
-**Leadership Question:**
-
-*Do we have the organizational structure and collaboration needed to successfully scale AI across the automotive enterprise?*
-
----
-
 ## Key Takeaways
 
 * The automotive industry faces increasing complexity and competitive pressure.
 * AI can improve engineering, manufacturing, supply chain, customer experience, and enterprise operations.
 * Business priorities should guide AI investments.
 * Strategic roadmaps should balance business value with organizational readiness.
-* Cross-functional operating models accelerate enterprise AI adoption.
 * Successful automotive AI transformation integrates Business-Led Roadmaps, Strategic Roadmap Design, and Operating Models to deliver measurable business value and sustainable competitive advantage.

@@ -10,11 +10,10 @@ Successful AI transformations focus on solving meaningful business problems, enh
 
 # Core Principles
 
-Successful AI transformations are built upon three strategic pillars:
+Successful AI transformations are built upon two strategic pillars:
 
 1. Business-Led Roadmap
 2. Strategic Roadmap Design
-3. Operating Model
 
 Together, these pillars help organizations align AI investments with business priorities, maximize value creation, and deliver sustainable outcomes.
 
@@ -77,29 +76,6 @@ Successful AI roadmaps balance strategic ambition with practical execution capab
 
 ---
 
-# 3. Operating Model
-
-## Definition
-
-Successful AI transformation requires an operating model that enables cross-functional collaboration and continuous delivery of business value.
-
-Organizations should create agile teams that combine business, technology, and domain expertise to deliver customer-centric outcomes.
-
-## Key Principles
-
-* Build cross-functional teams.
-* Encourage business and technology partnership.
-* Adopt agile ways of working.
-* Focus on customer-centric outcomes.
-* Enable continuous learning and improvement.
-* Support enterprise-wide AI adoption.
-
-## Leadership Question
-
-**Does our organization have the right structure to consistently deliver AI-driven business outcomes?**
-
----
-
 # Business Strategy Alignment Framework
 
 ```
@@ -108,8 +84,6 @@ Business Strategy
 Business-Led Roadmap
         ↓
 Strategic Roadmap Design
-        ↓
-Operating Model
         ↓
 AI Initiative Delivery
         ↓
@@ -122,13 +96,12 @@ Business Outcomes
 
 # CTO Perspective
 
-Business Strategy Alignment helps executive teams answer three fundamental questions:
+Business Strategy Alignment helps executive teams answer two fundamental questions:
 
 | Strategic Pillar         | Executive Question                                     |
 | ------------------------ | ------------------------------------------------------ |
 | Business-Led Roadmap     | Are our AI investments aligned with business strategy? |
 | Strategic Roadmap Design | Are we prioritizing the right AI opportunities?        |
-| Operating Model          | Can our organization successfully deliver AI outcomes? |
 
 ---
 
@@ -137,7 +110,6 @@ Business Strategy Alignment helps executive teams answer three fundamental quest
 * AI initiatives should be driven by business strategy.
 * Business priorities should guide AI investments.
 * Strategic roadmaps should balance value and feasibility.
-* Cross-functional operating models accelerate AI adoption.
 * Customer value should remain a primary consideration.
 * Success should be measured through business outcomes.
 * AI investments should create sustainable competitive advantage.

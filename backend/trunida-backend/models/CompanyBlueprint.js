@@ -51,6 +51,24 @@ const commitmentPillarSchema = new mongoose.Schema({
   actions: { type: [String], default: [] },
 }, { _id: false });
 
+// Business-Led Roadmap: funnel stage (count + label)
+const funnelStageSchema = new mongoose.Schema({
+  count: { type: String, default: '' },  // e.g. "15", "8"
+  label: { type: String, default: '' },  // e.g. "AI Ideas", "Evaluated"
+}, { _id: false });
+
+// Strategic Roadmap Design: 2×2 matrix quadrant
+const matrixQuadrantSchema = new mongoose.Schema({
+  title:       { type: String, default: '' },    // e.g. "Quick Wins"
+  initiatives: { type: [String], default: [] },  // initiative names in this quadrant
+}, { _id: false });
+
+// Strategic Roadmap Design: quarterly execution plan item
+const quarterlyPlanItemSchema = new mongoose.Schema({
+  quarter:     { type: String, default: '' },    // "Q1" | "Q2" | "Q3" | "Q4"
+  initiatives: { type: [String], default: [] },
+}, { _id: false });
+
 const briefSchema = new mongoose.Schema({
   strategicPosition:    { type: String, default: '' },
   priorityActions:      { type: [String], default: [] },
@@ -64,8 +82,13 @@ const briefSchema = new mongoose.Schema({
   alignmentInitiatives: { type: [initiativeSchema],  default: [] },
   spokeNodes:           { type: [String],            default: [] }, // stakeholder groups for spoke wheel
   // Commitment CTO template extras
-  commitmentPillars:    { type: [commitmentPillarSchema], default: [] },
-  governanceNodes:      { type: [initiativeSchema],       default: [] }, // 4 governance structure nodes
+  commitmentPillars:    { type: [commitmentPillarSchema],   default: [] },
+  governanceNodes:      { type: [initiativeSchema],         default: [] },
+  // Business-Led Roadmap CTO template extras
+  funnelStages:         { type: [funnelStageSchema],        default: [] }, // 4 funnel stages
+  // Strategic Roadmap Design CTO template extras
+  matrixQuadrants:      { type: [matrixQuadrantSchema],     default: [] }, // 4 quadrants
+  quarterlyPlan:        { type: [quarterlyPlanItemSchema],  default: [] }, // 4 quarters
 }, { _id: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────

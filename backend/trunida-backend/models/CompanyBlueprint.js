@@ -69,6 +69,27 @@ const quarterlyPlanItemSchema = new mongoose.Schema({
   initiatives: { type: [String], default: [] },
 }, { _id: false });
 
+// AI Operating Model: solution in the portfolio map
+const solutionPortfolioItemSchema = new mongoose.Schema({
+  name:          { type: String, default: '' },  // e.g. "AI Support Assistant"
+  businessOwner: { type: String, default: '' },  // e.g. "Support Operations Lead"
+  deliveryTeam:  { type: String, default: '' },  // e.g. "AI/ML Engineering, Product"
+  kpis:          { type: [String], default: [] },
+}, { _id: false });
+
+// AI Operating Model: role in the cross-functional team
+const teamRoleSchema = new mongoose.Schema({
+  title:       { type: String, default: '' },  // e.g. "Product Owner"
+  description: { type: String, default: '' },  // e.g. "Owns business outcomes and prioritization"
+}, { _id: false });
+
+// AI Operating Model: stage in the lifecycle ownership loop
+const lifecycleStageSchema = new mongoose.Schema({
+  stage:              { type: String, default: '' },  // e.g. "Deploy"
+  teamResponsibility: { type: String, default: '' },  // e.g. "Engineering Lead, DevOps"
+  keyActivities:      { type: String, default: '' },  // e.g. "Release to production with minimal risk"
+}, { _id: false });
+
 const briefSchema = new mongoose.Schema({
   strategicPosition:    { type: String, default: '' },
   priorityActions:      { type: [String], default: [] },
@@ -80,15 +101,19 @@ const briefSchema = new mongoose.Schema({
   timelineSteps:        { type: [String],             default: [] },
   // Alignment CTO template extras
   alignmentInitiatives: { type: [initiativeSchema],  default: [] },
-  spokeNodes:           { type: [String],            default: [] }, // stakeholder groups for spoke wheel
+  spokeNodes:           { type: [String],            default: [] },
   // Commitment CTO template extras
   commitmentPillars:    { type: [commitmentPillarSchema],   default: [] },
   governanceNodes:      { type: [initiativeSchema],         default: [] },
   // Business-Led Roadmap CTO template extras
-  funnelStages:         { type: [funnelStageSchema],        default: [] }, // 4 funnel stages
+  funnelStages:         { type: [funnelStageSchema],        default: [] },
   // Strategic Roadmap Design CTO template extras
-  matrixQuadrants:      { type: [matrixQuadrantSchema],     default: [] }, // 4 quadrants
-  quarterlyPlan:        { type: [quarterlyPlanItemSchema],  default: [] }, // 4 quarters
+  matrixQuadrants:      { type: [matrixQuadrantSchema],     default: [] },
+  quarterlyPlan:        { type: [quarterlyPlanItemSchema],  default: [] },
+  // AI Operating Model CTO template extras
+  solutionPortfolio:    { type: [solutionPortfolioItemSchema], default: [] },
+  teamRoles:            { type: [teamRoleSchema],               default: [] },
+  lifecycleStages:      { type: [lifecycleStageSchema],         default: [] },
 }, { _id: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────

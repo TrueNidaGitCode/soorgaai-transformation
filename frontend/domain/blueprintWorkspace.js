@@ -323,6 +323,102 @@ function buildHorizontalTimeline(steps) {
   return block;
 }
 
+function buildInitiativeCard(init, wide = false) {
+  const card = document.createElement('div');
+  card.className = `initiative-card${wide ? ' initiative-card--wide' : ''}`;
+
+  const title = document.createElement('p');
+  title.className = 'initiative-card__title';
+  title.textContent = init.title;
+
+  const desc = document.createElement('p');
+  desc.className = 'initiative-card__description';
+  desc.textContent = init.description;
+
+  card.appendChild(title);
+  card.appendChild(desc);
+  return card;
+}
+
+function buildAlignmentLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'alignment-layout';
+
+  // 1. Strategic Position — full width
+  const stmtBlock = document.createElement('div');
+  stmtBlock.className = 'vision-statement';
+  const stmtLabel = document.createElement('p');
+  stmtLabel.className = 'brief-label';
+  stmtLabel.textContent = 'Strategic Position';
+  const stmtText = document.createElement('p');
+  stmtText.className = 'vision-statement__text';
+  stmtText.textContent = b.strategicPosition || '—';
+  stmtBlock.appendChild(stmtLabel);
+  stmtBlock.appendChild(stmtText);
+  wrap.appendChild(stmtBlock);
+
+  // 2. Two-column body
+  const body = document.createElement('div');
+  body.className = 'alignment-body';
+
+  // Left column: stacked KPI metrics
+  if (b.kpiHighlights?.length) {
+    const kpiWrap = document.createElement('div');
+    kpiWrap.className = 'kpi-stacked-wrap';
+
+    const kpiLabel = document.createElement('p');
+    kpiLabel.className = 'brief-label';
+    kpiLabel.textContent = 'Success Metrics';
+    kpiWrap.appendChild(kpiLabel);
+
+    const kpiBlock = document.createElement('div');
+    kpiBlock.className = 'kpi-stacked';
+
+    b.kpiHighlights.forEach(k => {
+      const item = document.createElement('div');
+      item.className = 'kpi-stacked__item';
+
+      const value = document.createElement('p');
+      value.className = 'kpi-stacked__value';
+      value.textContent = k.value;
+
+      const label = document.createElement('p');
+      label.className = 'kpi-stacked__label';
+      label.textContent = k.label;
+
+      item.appendChild(value);
+      item.appendChild(label);
+      kpiBlock.appendChild(item);
+    });
+
+    kpiWrap.appendChild(kpiBlock);
+    body.appendChild(kpiWrap);
+  }
+
+  // Right column: 3-card grid + 1 wide card
+  if (b.alignmentInitiatives?.length) {
+    const col = document.createElement('div');
+    col.className = 'alignment-initiatives';
+
+    const gridItems = b.alignmentInitiatives.slice(0, 3);
+    if (gridItems.length) {
+      const grid = document.createElement('div');
+      grid.className = 'initiative-grid';
+      gridItems.forEach(init => grid.appendChild(buildInitiativeCard(init)));
+      col.appendChild(grid);
+    }
+
+    const wideItem = b.alignmentInitiatives[3];
+    if (wideItem) col.appendChild(buildInitiativeCard(wideItem, true));
+
+    body.appendChild(col);
+  }
+
+  if (body.children.length) wrap.appendChild(body);
+  return wrap;
+}
+
 function buildVisionLayout(section) {
   const b = section.brief || {};
   const wrap = document.createElement('div');
@@ -389,6 +485,8 @@ function buildSectionCard(blueprint, cap, section) {
     // which includes the Leadership Validation cell not needed in CTO style.
     if (section.title === 'Vision') {
       card.appendChild(buildVisionLayout(section));
+    } else if (section.title === 'Alignment') {
+      card.appendChild(buildAlignmentLayout(section));
     } else {
       card.appendChild(buildBriefGrid(section));
     }

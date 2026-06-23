@@ -32,11 +32,17 @@ const pillarSchema = new mongoose.Schema({
   businessImpactTag: { type: String, default: '' },
 }, { _id: false });
 
-// Hero KPI metrics displayed as large-number cards (Vision)
+// Hero KPI metrics displayed as large-number cards (Vision — 3-col grid; Alignment — stacked)
 const kpiHighlightSchema = new mongoose.Schema({
   value:       { type: String, default: '' },  // e.g. "75%", "4+", "100%"
   label:       { type: String, default: '' },  // e.g. "Leadership Awareness"
   description: { type: String, default: '' },  // e.g. "Aligned across leadership."
+}, { _id: false });
+
+// Named action/initiative cards (Alignment — 3-col grid + 1 wide card)
+const initiativeSchema = new mongoose.Schema({
+  title:       { type: String, default: '' },
+  description: { type: String, default: '' },
 }, { _id: false });
 
 const briefSchema = new mongoose.Schema({
@@ -48,6 +54,8 @@ const briefSchema = new mongoose.Schema({
   strategicPillars:     { type: [pillarSchema],      default: [] },
   kpiHighlights:        { type: [kpiHighlightSchema], default: [] },
   timelineSteps:        { type: [String],             default: [] },
+  // Alignment CTO template extras
+  alignmentInitiatives: { type: [initiativeSchema],  default: [] },
 }, { _id: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────

@@ -3052,6 +3052,106 @@
   .bp-content { padding: 1.25rem 1rem; }
 }
 
+/* ── Alignment Layout ──────────────────────────────────────────────────────── */
+
+.alignment-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.alignment-body {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+/* Left: stacked KPI metrics */
+.kpi-stacked-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kpi-stacked {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.65rem;
+  overflow: hidden;
+}
+
+.kpi-stacked__item {
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.kpi-stacked__item:last-child { border-bottom: none; }
+
+.kpi-stacked__value {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.95);
+  line-height: 1;
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.02em;
+}
+
+.kpi-stacked__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.58);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Right: initiative cards */
+.alignment-initiatives {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.initiative-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+.initiative-card {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.65rem;
+  padding: 1rem 1.15rem;
+}
+
+.initiative-card--wide {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.65rem;
+  padding: 1rem 1.25rem;
+}
+
+.initiative-card__title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  margin: 0 0 0.5rem;
+  line-height: 1.35;
+}
+
+.initiative-card__description {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.65;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .alignment-body { grid-template-columns: 1fr; }
+  .initiative-grid { grid-template-columns: 1fr; }
+}
+
 /* ── Strategic Pillars (Vision template) ───────────────────────────────────── */
 
 .pillars-grid {

@@ -53,6 +53,7 @@ async function loadCompanyProfile(userId) {
 // Only injected when BLUEPRINT_CONFIG.generate.ctoExtras = true.
 
 const SECTION_TEMPLATES = {
+
   Vision: {
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Vision" sections only:
@@ -66,7 +67,6 @@ SECTION-SPECIFIC EXTRAS — "Vision" sections only:
    Extract 3 hero success metrics to display as large-number KPI cards.
    Each item: { "value": "<number with unit e.g. 75%, 4+, 2×, 18mo>", "label": "<2–4 word metric name>", "description": "<1 short sentence, ≤8 words>" }
    Values must be specific and quantified. Labels must be scannable in 1 second.
-   Example: { "value": "75%", "label": "Automation Coverage", "description": "AI tools across the SDLC." }
 
 7. timelineSteps (exactly 4 items)
    Condense the 4 most critical priority actions into short 3–5 word action labels for a horizontal timeline.
@@ -74,10 +74,28 @@ SECTION-SPECIFIC EXTRAS — "Vision" sections only:
    Example: ["Define 3-Year AI Vision", "Establish Measurable Outcomes", "Deploy AI Council", "Assign Accountable Owners"]
 
    Add all three to the brief object for Vision sections:
-   "strategicPillars": [...],
-   "kpiHighlights": [...],
-   "timelineSteps": [...]`,
+   "strategicPillars": [...], "kpiHighlights": [...], "timelineSteps": [...]`,
   },
+
+  Alignment: {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Alignment" sections only:
+
+5. kpiHighlights (exactly 3 items)
+   Extract 3 measurable alignment outcomes to display as stacked large-number metrics.
+   Each item: { "value": "<number with unit e.g. 90%, 100%, 4+>", "label": "<2–5 word metric name>", "description": "" }
+   Values must reflect leadership, stakeholder, or governance alignment targets.
+   Example: { "value": "90%", "label": "Leadership Alignment Score", "description": "" }
+
+6. alignmentInitiatives (exactly 4 items)
+   Extract 4 concrete alignment initiatives — the first 3 will display as equal cards, the 4th as a full-width card.
+   Each item: { "title": "<3–6 word initiative name>", "description": "<2–3 sentences explaining what it is and why it matters>" }
+   Examples: "Common AI Vocabulary & Learning", "Cross-Functional AI Workshops", "Executive Ownership Framework", "AI Program Liaisons"
+
+   Add both to the brief object for Alignment sections:
+   "kpiHighlights": [...], "alignmentInitiatives": [...]`,
+  },
+
 };
 
 // ── Shared output parser ──────────────────────────────────────────────────────
@@ -113,6 +131,15 @@ function parseBriefOutput(rawSections, validTitles) {
         ? b.timelineSteps.map(String).filter(Boolean).slice(0, 4)
         : [];
 
+      const rawInitiatives = Array.isArray(b.alignmentInitiatives) ? b.alignmentInitiatives : [];
+      const alignmentInitiatives = rawInitiatives
+        .filter(i => i && typeof i === 'object' && String(i.title || '').trim())
+        .map(i => ({
+          title:       String(i.title       || '').trim(),
+          description: String(i.description || '').trim(),
+        }))
+        .slice(0, 4);
+
       return {
         title: String(s.title || '').trim(),
         brief: {
@@ -124,9 +151,10 @@ function parseBriefOutput(rawSections, validTitles) {
                        ? lv.status : 'Not Yet Validated',
             context: String(lv.context || '').trim(),
           },
-          ...(strategicPillars.length ? { strategicPillars } : {}),
-          ...(kpiHighlights.length    ? { kpiHighlights }    : {}),
-          ...(timelineSteps.length    ? { timelineSteps }    : {}),
+          ...(strategicPillars.length     ? { strategicPillars }     : {}),
+          ...(kpiHighlights.length        ? { kpiHighlights }        : {}),
+          ...(timelineSteps.length        ? { timelineSteps }        : {}),
+          ...(alignmentInitiatives.length ? { alignmentInitiatives } : {}),
         },
         content:   s.content ? String(s.content).trim() : '',
         updatedAt: new Date(),

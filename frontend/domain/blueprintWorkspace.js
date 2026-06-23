@@ -253,6 +253,14 @@ function buildPillarsGrid(pillars) {
 }
 
 function buildKpiHighlights(highlights) {
+  const wrap = document.createElement('div');
+  wrap.className = 'kpi-highlights-wrap';
+
+  const heading = document.createElement('p');
+  heading.className = 'brief-label';
+  heading.textContent = 'Success Metrics';
+  wrap.appendChild(heading);
+
   const block = document.createElement('div');
   block.className = 'kpi-highlights';
 
@@ -278,7 +286,8 @@ function buildKpiHighlights(highlights) {
     block.appendChild(item);
   });
 
-  return block;
+  wrap.appendChild(block);
+  return wrap;
 }
 
 function buildHorizontalTimeline(steps) {
@@ -374,9 +383,11 @@ function buildSectionCard(blueprint, cap, section) {
   } else if (BLUEPRINT_VIEW_MODE === 'pm') {
     card.appendChild(buildBriefGrid(section));
   } else {
-    // CTO view: section-specific templates; falls back to brief grid when no template applies
-    const pillars = section.brief?.strategicPillars;
-    if (Array.isArray(pillars) && pillars.length > 0) {
+    // CTO view: route by section title to the matching template renderer.
+    // Routing on title (not data presence) ensures the correct layout is always
+    // used regardless of whether extras were generated, avoiding brief-grid fallback
+    // which includes the Leadership Validation cell not needed in CTO style.
+    if (section.title === 'Vision') {
       card.appendChild(buildVisionLayout(section));
     } else {
       card.appendChild(buildBriefGrid(section));

@@ -482,6 +482,64 @@ function buildAlignmentLayout(section) {
   return wrap;
 }
 
+function buildGovernanceTemple() {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 200 230');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Governance structure pillars');
+  svg.classList.add('governance-temple');
+
+  function mkRect(x, y, w, h, fill, rx) {
+    const r = document.createElementNS(NS, 'rect');
+    r.setAttribute('x', x); r.setAttribute('y', y);
+    r.setAttribute('width', w); r.setAttribute('height', h);
+    r.setAttribute('fill', fill);
+    if (rx) r.setAttribute('rx', rx);
+    return r;
+  }
+  function mkPoly(points, fill) {
+    const p = document.createElementNS(NS, 'polygon');
+    p.setAttribute('points', points); p.setAttribute('fill', fill);
+    return p;
+  }
+
+  const dark  = 'rgba(67,56,202,0.92)';
+  const mid   = 'rgba(99,102,241,0.82)';
+  const light = 'rgba(129,140,248,0.45)';
+
+  // Pediment triangle
+  svg.appendChild(mkPoly('100,8 15,56 185,56', dark));
+  // Entablature beam
+  svg.appendChild(mkRect(13, 56, 174, 14, mid, 2));
+  // 4 pillars + highlight strip
+  [23, 62, 101, 140].forEach((x, i) => {
+    const fill = i % 2 === 0 ? 'rgba(99,102,241,0.68)' : 'rgba(99,102,241,0.55)';
+    svg.appendChild(mkRect(x, 70, 27, 112, fill, 1));
+    svg.appendChild(mkRect(x + 3, 70, 8, 112, light, 1));
+  });
+  // Step above base
+  svg.appendChild(mkRect(13, 182, 174, 11, mid, 2));
+  // Base
+  svg.appendChild(mkRect(7, 193, 186, 15, dark, 3));
+
+  return svg;
+}
+
+function buildGovernanceNode(node) {
+  const div = document.createElement('div');
+  div.className = 'commitment-governance-node';
+  const title = document.createElement('p');
+  title.className = 'commitment-governance-node__title';
+  title.textContent = node.title;
+  const desc = document.createElement('p');
+  desc.className = 'commitment-governance-node__desc';
+  desc.textContent = node.description;
+  div.appendChild(title);
+  div.appendChild(desc);
+  return div;
+}
+
 function buildCommitmentLayout(section) {
   const b = section.brief || {};
   const wrap = document.createElement('div');
@@ -533,30 +591,41 @@ function buildCommitmentLayout(section) {
     wrap.appendChild(pillarsSection);
   }
 
-  // 3. Governance Structure — 2×2 grid of governance node cards
+  // 3. Governance Structure — temple SVG flanked by node pairs
   if (b.governanceNodes?.length) {
     const govSection = document.createElement('div');
     govSection.className = 'commitment-governance-section';
     const govHeading = document.createElement('p');
     govHeading.className = 'brief-label';
     govHeading.textContent = 'Governance Structure';
-    const govGrid = document.createElement('div');
-    govGrid.className = 'commitment-governance-grid';
-    b.governanceNodes.forEach(n => {
-      const card = document.createElement('div');
-      card.className = 'commitment-governance-card';
-      const title = document.createElement('p');
-      title.className = 'commitment-governance-card__title';
-      title.textContent = n.title;
-      const desc = document.createElement('p');
-      desc.className = 'commitment-governance-card__desc';
-      desc.textContent = n.description;
-      card.appendChild(title);
-      card.appendChild(desc);
-      govGrid.appendChild(card);
-    });
     govSection.appendChild(govHeading);
-    govSection.appendChild(govGrid);
+
+    const templeWrap = document.createElement('div');
+    templeWrap.className = 'commitment-governance-temple';
+
+    // Left column: nodes[0] (top) + nodes[2] (bottom)
+    const leftCol = document.createElement('div');
+    leftCol.className = 'commitment-governance-nodes';
+    [0, 2].forEach(i => {
+      if (b.governanceNodes[i]) leftCol.appendChild(buildGovernanceNode(b.governanceNodes[i]));
+    });
+
+    // Center: simplified temple SVG
+    const center = document.createElement('div');
+    center.className = 'commitment-governance-center';
+    center.appendChild(buildGovernanceTemple());
+
+    // Right column: nodes[1] (top) + nodes[3] (bottom)
+    const rightCol = document.createElement('div');
+    rightCol.className = 'commitment-governance-nodes';
+    [1, 3].forEach(i => {
+      if (b.governanceNodes[i]) rightCol.appendChild(buildGovernanceNode(b.governanceNodes[i]));
+    });
+
+    templeWrap.appendChild(leftCol);
+    templeWrap.appendChild(center);
+    templeWrap.appendChild(rightCol);
+    govSection.appendChild(templeWrap);
     wrap.appendChild(govSection);
   }
 

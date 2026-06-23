@@ -901,6 +901,107 @@ function buildCommitmentLayout(section) {
 
 // ── AI Operating Model — Solution-Centric Organization ────────────────────────
 
+function buildSolutionPortfolioTree(solutions) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = 460, H = 215;
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Solution portfolio hierarchy diagram');
+  svg.classList.add('solution-portfolio-tree');
+
+  const trunc = (s, n) => (s && s.length > n) ? s.slice(0, n) + '…' : (s || '');
+
+  function mkRect(x, y, w, h, rx, fill, stroke) {
+    const r = document.createElementNS(NS, 'rect');
+    r.setAttribute('x', x); r.setAttribute('y', y);
+    r.setAttribute('width', w); r.setAttribute('height', h);
+    r.setAttribute('rx', rx);
+    r.setAttribute('fill', fill);
+    if (stroke) { r.setAttribute('stroke', stroke); r.setAttribute('stroke-width', '1.5'); }
+    return r;
+  }
+
+  function mkText(x, y, text, size, fill, weight) {
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', x); t.setAttribute('y', y);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('dominant-baseline', 'middle');
+    t.setAttribute('font-size', size);
+    t.setAttribute('fill', fill);
+    if (weight) t.setAttribute('font-weight', weight);
+    t.textContent = text;
+    return t;
+  }
+
+  function mkLine(x1, y1, x2, y2) {
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', x1); l.setAttribute('y1', y1);
+    l.setAttribute('x2', x2); l.setAttribute('y2', y2);
+    l.setAttribute('stroke', 'rgba(99,102,241,0.4)');
+    l.setAttribute('stroke-width', '1.5');
+    return l;
+  }
+
+  function mkDot(cx, cy) {
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy);
+    c.setAttribute('r', '3');
+    c.setAttribute('fill', 'rgba(129,140,248,0.85)');
+    return c;
+  }
+
+  // Root node
+  const rootCx = W / 2, rootY = 8, rootW = 160, rootH = 36;
+  svg.appendChild(mkRect(rootCx - rootW / 2, rootY, rootW, rootH, '18',
+    'rgba(99,102,241,0.12)', 'rgba(99,102,241,0.5)'));
+  svg.appendChild(mkText(rootCx, rootY + rootH / 2, 'Solution Portfolio', '11',
+    'rgba(255,255,255,0.9)', '600'));
+
+  // Root → junction → 3 children
+  const rootBot = rootY + rootH;
+  const childCxs = [78, W / 2, W - 78];
+  const childW = 124, childH = 30, childY = 78;
+  const juncY = (rootBot + childY) / 2;
+
+  svg.appendChild(mkLine(rootCx, rootBot, rootCx, juncY));
+  svg.appendChild(mkLine(childCxs[0], juncY, childCxs[2], juncY));
+  childCxs.forEach(cx => {
+    svg.appendChild(mkLine(cx, juncY, cx, childY));
+    svg.appendChild(mkDot(cx, juncY));
+  });
+
+  // Sub-node labels per child
+  const subLabels = ['Business Owner', 'Delivery Team', 'KPIs'];
+  const subW = 104, subH = 20;
+  const subYs = [118, 143, 168];
+
+  childCxs.forEach((cx, i) => {
+    const sol = solutions[i] || {};
+
+    // Child node
+    svg.appendChild(mkRect(cx - childW / 2, childY, childW, childH, '15',
+      'rgba(99,102,241,0.1)', 'rgba(99,102,241,0.4)'));
+    svg.appendChild(mkText(cx, childY + childH / 2, trunc(sol.name || `Solution ${i + 1}`, 17),
+      '9.5', 'rgba(255,255,255,0.88)', '600'));
+
+    // Child → first sub-node
+    svg.appendChild(mkLine(cx, childY + childH, cx, subYs[0]));
+    svg.appendChild(mkDot(cx, childY + childH));
+
+    // Sub-nodes + connecting lines
+    subYs.forEach((sy, j) => {
+      if (j > 0) svg.appendChild(mkLine(cx, subYs[j - 1] + subH, cx, sy));
+      svg.appendChild(mkRect(cx - subW / 2, sy, subW, subH, '10',
+        'rgba(99,102,241,0.07)', 'rgba(99,102,241,0.28)'));
+      svg.appendChild(mkText(cx, sy + subH / 2, subLabels[j], '8.5',
+        'rgba(255,255,255,0.62)'));
+    });
+  });
+
+  return svg;
+}
+
 function buildSolutionCentricLayout(section) {
   const b = section.brief || {};
   const wrap = document.createElement('div');
@@ -917,13 +1018,25 @@ function buildSolutionCentricLayout(section) {
   stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
   wrap.appendChild(stmt);
 
-  // 2. Solution Portfolio Map — 3-col cards
   if (b.solutionPortfolio?.length) {
-    const portfolioSection = document.createElement('div');
-    portfolioSection.className = 'solution-portfolio-section';
-    const lbl = document.createElement('p');
-    lbl.className = 'brief-label'; lbl.textContent = 'Solution Portfolio Map';
-    portfolioSection.appendChild(lbl);
+    // 2. Solution Portfolio Map — tree diagram
+    const mapSection = document.createElement('div');
+    mapSection.className = 'solution-portfolio-section';
+    const mapLbl = document.createElement('p');
+    mapLbl.className = 'brief-label'; mapLbl.textContent = 'Solution Portfolio Map';
+    mapSection.appendChild(mapLbl);
+    const treeWrap = document.createElement('div');
+    treeWrap.className = 'solution-portfolio-tree-wrap';
+    treeWrap.appendChild(buildSolutionPortfolioTree(b.solutionPortfolio));
+    mapSection.appendChild(treeWrap);
+    wrap.appendChild(mapSection);
+
+    // 3. Solution Details Section — 3-col cards
+    const detailSection = document.createElement('div');
+    detailSection.className = 'solution-portfolio-section';
+    const detailLbl = document.createElement('p');
+    detailLbl.className = 'brief-label'; detailLbl.textContent = 'Solution Details Section';
+    detailSection.appendChild(detailLbl);
     const grid = document.createElement('div');
     grid.className = 'solution-portfolio-grid';
     b.solutionPortfolio.forEach(sol => {
@@ -939,36 +1052,33 @@ function buildSolutionCentricLayout(section) {
         if (!value) return;
         const row = document.createElement('div');
         row.className = 'solution-portfolio-card__row';
-        const lbl = document.createElement('span');
-        lbl.className = 'solution-portfolio-card__row-label';
-        lbl.textContent = label;
-        const val = document.createElement('span');
-        val.className = 'solution-portfolio-card__row-value';
-        val.textContent = value;
-        row.appendChild(lbl); row.appendChild(val);
+        const rl = document.createElement('span');
+        rl.className = 'solution-portfolio-card__row-label'; rl.textContent = label;
+        const rv = document.createElement('span');
+        rv.className = 'solution-portfolio-card__row-value'; rv.textContent = value;
+        row.appendChild(rl); row.appendChild(rv);
         card.appendChild(row);
       });
 
       if (sol.kpis?.length) {
         const kpisRow = document.createElement('div');
         kpisRow.className = 'solution-portfolio-card__kpis';
-        const kpisLbl = document.createElement('span');
-        kpisLbl.className = 'solution-portfolio-card__row-label';
-        kpisLbl.textContent = 'KPIs';
-        const kpisList = document.createElement('p');
-        kpisList.className = 'solution-portfolio-card__kpis-list';
-        kpisList.textContent = sol.kpis.join(' · ');
-        kpisRow.appendChild(kpisLbl); kpisRow.appendChild(kpisList);
+        const kl = document.createElement('span');
+        kl.className = 'solution-portfolio-card__row-label'; kl.textContent = 'KPIs';
+        const kv = document.createElement('p');
+        kv.className = 'solution-portfolio-card__kpis-list';
+        kv.textContent = sol.kpis.join(' · ');
+        kpisRow.appendChild(kl); kpisRow.appendChild(kv);
         card.appendChild(kpisRow);
       }
 
       grid.appendChild(card);
     });
-    portfolioSection.appendChild(grid);
-    wrap.appendChild(portfolioSection);
+    detailSection.appendChild(grid);
+    wrap.appendChild(detailSection);
   }
 
-  // 3. KPI Highlights
+  // 4. Success Metrics
   if (b.kpiHighlights?.length) {
     wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   }
@@ -1071,22 +1181,25 @@ function buildCrossFunctionalLayout(section) {
   stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
   wrap.appendChild(stmt);
 
-  // 2. Team Composition — SVG hierarchy + role list
+  // 2. Team Composition Model — SVG hierarchy (centered, full-width panel)
   const compSection = document.createElement('div');
   compSection.className = 'team-composition-section';
   const compLbl = document.createElement('p');
   compLbl.className = 'brief-label'; compLbl.textContent = 'Team Composition Model';
   compSection.appendChild(compLbl);
-
-  const compBody = document.createElement('div');
-  compBody.className = 'team-composition-body';
-
   const svgWrap = document.createElement('div');
   svgWrap.className = 'team-hierarchy-wrap';
   svgWrap.appendChild(buildTeamHierarchySvg());
-  compBody.appendChild(svgWrap);
+  compSection.appendChild(svgWrap);
+  wrap.appendChild(compSection);
 
+  // 3. Team Structure Details — role list below, separate section
   if (b.teamRoles?.length) {
+    const detailSection = document.createElement('div');
+    detailSection.className = 'team-structure-section';
+    const detailLbl = document.createElement('p');
+    detailLbl.className = 'brief-label'; detailLbl.textContent = 'Team Structure Details';
+    detailSection.appendChild(detailLbl);
     const roleList = document.createElement('div');
     roleList.className = 'team-role-list';
     b.teamRoles.forEach(role => {
@@ -1104,13 +1217,11 @@ function buildCrossFunctionalLayout(section) {
       }
       roleList.appendChild(item);
     });
-    compBody.appendChild(roleList);
+    detailSection.appendChild(roleList);
+    wrap.appendChild(detailSection);
   }
 
-  compSection.appendChild(compBody);
-  wrap.appendChild(compSection);
-
-  // 3. KPI Highlights
+  // 4. Success Metrics
   if (b.kpiHighlights?.length) {
     wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   }
@@ -1153,16 +1264,22 @@ function buildEndToEndOwnershipLayout(section) {
   stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
   wrap.appendChild(stmt);
 
-  // 2. Lifecycle Ownership Loop
   if (b.lifecycleStages?.length) {
+    // 2. Lifecycle Ownership Loop — visual pill chain
     const loopSection = document.createElement('div');
     loopSection.className = 'lifecycle-section';
     const loopLbl = document.createElement('p');
     loopLbl.className = 'brief-label'; loopLbl.textContent = 'Lifecycle Ownership Loop';
     loopSection.appendChild(loopLbl);
-
     loopSection.appendChild(buildLifecycleLoop(b.lifecycleStages));
+    wrap.appendChild(loopSection);
 
+    // 3. Ownership Model Details — 6-card grid, separate labeled section
+    const detailSection = document.createElement('div');
+    detailSection.className = 'lifecycle-details-section';
+    const detailLbl = document.createElement('p');
+    detailLbl.className = 'brief-label'; detailLbl.textContent = 'Ownership Model Details';
+    detailSection.appendChild(detailLbl);
     const details = document.createElement('div');
     details.className = 'lifecycle-details';
     b.lifecycleStages.forEach(stage => {
@@ -1190,8 +1307,8 @@ function buildEndToEndOwnershipLayout(section) {
 
       details.appendChild(card);
     });
-    loopSection.appendChild(details);
-    wrap.appendChild(loopSection);
+    detailSection.appendChild(details);
+    wrap.appendChild(detailSection);
   }
 
   // 3. KPI Highlights

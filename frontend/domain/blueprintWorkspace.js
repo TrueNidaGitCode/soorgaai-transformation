@@ -546,24 +546,9 @@ function buildCommitmentLayout(section) {
     wrap.appendChild(actBlock);
   }
 
-  // 3. Success Metrics — horizontal cards filling the full width
-  if (b.successMetrics?.length) {
-    const metricsWrap = document.createElement('div');
-    metricsWrap.className = 'commitment-metrics-wrap';
-    const metricsLabel = document.createElement('p');
-    metricsLabel.className = 'brief-label';
-    metricsLabel.textContent = 'Success Metrics';
-    const metricsGrid = document.createElement('div');
-    metricsGrid.className = 'commitment-metrics';
-    b.successMetrics.forEach(m => {
-      const card = document.createElement('div');
-      card.className = 'commitment-metric-card';
-      card.textContent = m;
-      metricsGrid.appendChild(card);
-    });
-    metricsWrap.appendChild(metricsLabel);
-    metricsWrap.appendChild(metricsGrid);
-    wrap.appendChild(metricsWrap);
+  // 3. Success Metrics — KPI highlight cards (large number + label + description)
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   }
 
   return wrap;

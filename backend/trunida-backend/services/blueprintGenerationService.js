@@ -101,6 +101,20 @@ SECTION-SPECIFIC EXTRAS — "Alignment" sections only:
    "kpiHighlights": [...], "alignmentInitiatives": [...], "spokeNodes": [...]`,
   },
 
+  Commitment: {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Commitment" sections only:
+
+5. kpiHighlights (exactly 3 items)
+   Extract 3 concrete commitment outcomes to display as large-number KPI cards filling the full page width.
+   Each item: { "value": "<specific number with unit e.g. 90%, 12mo, 3×, $2M>", "label": "<2–5 word metric name>", "description": "<1 short sentence, ≤10 words stating the business outcome>" }
+   Values must reflect tangible commitments — adoption targets, cost savings, cycle time, headcount, or timelines.
+   Example: { "value": "90%", "label": "AI Tool Adoption Rate", "description": "Teams actively using AI-assisted workflows within 12 months." }
+
+   Add to the brief object for Commitment sections:
+   "kpiHighlights": [...]`,
+  },
+
 };
 
 // ── Shared output parser ──────────────────────────────────────────────────────

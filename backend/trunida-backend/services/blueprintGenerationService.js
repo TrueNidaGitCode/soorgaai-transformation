@@ -54,23 +54,29 @@ async function loadCompanyProfile(userId) {
 
 const SECTION_TEMPLATES = {
   Vision: {
-    extraField: 'strategicPillars',
     promptInstruction: `
-SECTION-SPECIFIC EXTRA — "Vision" sections only:
+SECTION-SPECIFIC EXTRAS — "Vision" sections only:
 
 5. strategicPillars (exactly 3 items)
    Extract 3 distinct strategic themes from the strategicPosition as named pillars.
-   Each item must have:
-   - title: 2–4 words, noun phrase (e.g. "AI-Embedded SDLC", "Delivery Excellence", "Talent Acceleration")
-   - description: 1 sentence, outcome-oriented, no jargon
-   - businessImpactTag: 1–3 word impact label (e.g. "Engineering Velocity", "Release Predictability", "Cost Reduction")
+   Each item: { "title": "<2–4 word noun phrase>", "description": "<1 outcome sentence>", "businessImpactTag": "<1–3 word impact label>" }
+   Example tags: "Engineering Velocity", "Release Predictability", "Cost Reduction"
 
-   For Vision sections, include this additional field in the brief object:
-   "strategicPillars": [
-     { "title": "...", "description": "...", "businessImpactTag": "..." },
-     { "title": "...", "description": "...", "businessImpactTag": "..." },
-     { "title": "...", "description": "...", "businessImpactTag": "..." }
-   ]`,
+6. kpiHighlights (exactly 3 items)
+   Extract 3 hero success metrics to display as large-number KPI cards.
+   Each item: { "value": "<number with unit e.g. 75%, 4+, 2×, 18mo>", "label": "<2–4 word metric name>", "description": "<1 short sentence, ≤8 words>" }
+   Values must be specific and quantified. Labels must be scannable in 1 second.
+   Example: { "value": "75%", "label": "Automation Coverage", "description": "AI tools across the SDLC." }
+
+7. timelineSteps (exactly 4 items)
+   Condense the 4 most critical priority actions into short 3–5 word action labels for a horizontal timeline.
+   Each item is a plain string. Must be directive and scannable.
+   Example: ["Define 3-Year AI Vision", "Establish Measurable Outcomes", "Deploy AI Council", "Assign Accountable Owners"]
+
+   Add all three to the brief object for Vision sections:
+   "strategicPillars": [...],
+   "kpiHighlights": [...],
+   "timelineSteps": [...]`,
   },
 };
 
@@ -93,6 +99,20 @@ function parseBriefOutput(rawSections, validTitles) {
         }))
         .slice(0, 3);
 
+      const rawKpi = Array.isArray(b.kpiHighlights) ? b.kpiHighlights : [];
+      const kpiHighlights = rawKpi
+        .filter(k => k && typeof k === 'object' && String(k.value || '').trim())
+        .map(k => ({
+          value:       String(k.value       || '').trim(),
+          label:       String(k.label       || '').trim(),
+          description: String(k.description || '').trim(),
+        }))
+        .slice(0, 3);
+
+      const timelineSteps = Array.isArray(b.timelineSteps)
+        ? b.timelineSteps.map(String).filter(Boolean).slice(0, 4)
+        : [];
+
       return {
         title: String(s.title || '').trim(),
         brief: {
@@ -105,6 +125,8 @@ function parseBriefOutput(rawSections, validTitles) {
             context: String(lv.context || '').trim(),
           },
           ...(strategicPillars.length ? { strategicPillars } : {}),
+          ...(kpiHighlights.length    ? { kpiHighlights }    : {}),
+          ...(timelineSteps.length    ? { timelineSteps }    : {}),
         },
         content:   s.content ? String(s.content).trim() : '',
         updatedAt: new Date(),

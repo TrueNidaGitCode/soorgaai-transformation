@@ -252,6 +252,68 @@ function buildPillarsGrid(pillars) {
   return grid;
 }
 
+function buildKpiHighlights(highlights) {
+  const block = document.createElement('div');
+  block.className = 'kpi-highlights';
+
+  highlights.forEach(k => {
+    const item = document.createElement('div');
+    item.className = 'kpi-item';
+
+    const value = document.createElement('p');
+    value.className = 'kpi-item__value';
+    value.textContent = k.value;
+
+    const label = document.createElement('p');
+    label.className = 'kpi-item__label';
+    label.textContent = k.label;
+
+    const desc = document.createElement('p');
+    desc.className = 'kpi-item__description';
+    desc.textContent = k.description;
+
+    item.appendChild(value);
+    item.appendChild(label);
+    item.appendChild(desc);
+    block.appendChild(item);
+  });
+
+  return block;
+}
+
+function buildHorizontalTimeline(steps) {
+  const block = document.createElement('div');
+  block.className = 'h-timeline';
+
+  const label = document.createElement('p');
+  label.className = 'brief-label';
+  label.textContent = 'Priority Timeline (90 Days)';
+  block.appendChild(label);
+
+  const track = document.createElement('div');
+  track.className = 'h-timeline__track';
+
+  steps.forEach((step, i) => {
+    const item = document.createElement('div');
+    item.className = 'h-timeline__step';
+
+    const num = document.createElement('span');
+    num.className = 'h-timeline__step-num';
+    num.textContent = String(i + 1);
+
+    const stepLabel = document.createElement('span');
+    stepLabel.className = 'h-timeline__step-label';
+    stepLabel.textContent = step;
+
+    item.appendChild(num);
+    item.appendChild(stepLabel);
+    track.appendChild(item);
+  });
+
+  block.appendChild(track);
+  return block;
+}
+
 function buildVisionLayout(section) {
   const b = section.brief || {};
   const wrap = document.createElement('div');
@@ -275,47 +337,16 @@ function buildVisionLayout(section) {
     wrap.appendChild(buildPillarsGrid(b.strategicPillars));
   }
 
-  // 3. Success Metrics
-  const metricsBlock = document.createElement('div');
-  metricsBlock.className = 'vision-metrics';
-  const metricsLabel = document.createElement('p');
-  metricsLabel.className = 'brief-label';
-  metricsLabel.textContent = 'Success Metrics';
-  const metricsList = document.createElement('ul');
-  metricsList.className = 'vision-metrics__list';
-  (b.successMetrics || []).forEach(m => {
-    const li = document.createElement('li');
-    li.textContent = m;
-    metricsList.appendChild(li);
-  });
-  metricsBlock.appendChild(metricsLabel);
-  metricsBlock.appendChild(metricsList);
-  wrap.appendChild(metricsBlock);
+  // 3. KPI Highlights — large-number cards (falls back to plain metrics list)
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
 
-  // 4. Priority Actions as Timeline
-  const timelineBlock = document.createElement('div');
-  timelineBlock.className = 'vision-timeline';
-  const timelineLabel = document.createElement('p');
-  timelineLabel.className = 'brief-label';
-  timelineLabel.textContent = 'Priority Timeline (90 Days)';
-  const steps = document.createElement('ol');
-  steps.className = 'vision-timeline__steps';
-  (b.priorityActions || []).forEach((a, i) => {
-    const li = document.createElement('li');
-    li.className = 'vision-timeline__step';
-    const num = document.createElement('span');
-    num.className = 'vision-timeline__step-num';
-    num.textContent = String(i + 1).padStart(2, '0');
-    const text = document.createElement('span');
-    text.className = 'vision-timeline__step-text';
-    text.textContent = a;
-    li.appendChild(num);
-    li.appendChild(text);
-    steps.appendChild(li);
-  });
-  timelineBlock.appendChild(timelineLabel);
-  timelineBlock.appendChild(steps);
-  wrap.appendChild(timelineBlock);
+  // 4. Horizontal Timeline
+  const timelineSource = b.timelineSteps?.length ? b.timelineSteps : b.priorityActions || [];
+  if (timelineSource.length) {
+    wrap.appendChild(buildHorizontalTimeline(timelineSource));
+  }
 
   return wrap;
 }

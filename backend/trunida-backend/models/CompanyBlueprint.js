@@ -22,12 +22,21 @@ const leadershipValidationSchema = new mongoose.Schema({
   context: { type: String, default: '' },
 }, { _id: false });
 
-// Optional — populated only for sections that use a template with extra fields.
-// Pillars are named strategic themes extracted from strategicPosition (Vision template only).
+// ── CTO template extras (Vision template) ────────────────────────────────────
+// All optional — empty arrays for sections that don't use a visual template.
+
+// Named strategic themes displayed as cards above the brief (Vision)
 const pillarSchema = new mongoose.Schema({
   title:             { type: String, default: '' },
   description:       { type: String, default: '' },
   businessImpactTag: { type: String, default: '' },
+}, { _id: false });
+
+// Hero KPI metrics displayed as large-number cards (Vision)
+const kpiHighlightSchema = new mongoose.Schema({
+  value:       { type: String, default: '' },  // e.g. "75%", "4+", "100%"
+  label:       { type: String, default: '' },  // e.g. "Leadership Awareness"
+  description: { type: String, default: '' },  // e.g. "Aligned across leadership."
 }, { _id: false });
 
 const briefSchema = new mongoose.Schema({
@@ -35,7 +44,10 @@ const briefSchema = new mongoose.Schema({
   priorityActions:      { type: [String], default: [] },
   successMetrics:       { type: [String], default: [] },
   leadershipValidation: { type: leadershipValidationSchema, default: () => ({ status: 'Not Yet Validated', context: '' }) },
-  strategicPillars:     { type: [pillarSchema], default: [] },
+  // Vision CTO template extras
+  strategicPillars:     { type: [pillarSchema],      default: [] },
+  kpiHighlights:        { type: [kpiHighlightSchema], default: [] },
+  timelineSteps:        { type: [String],             default: [] },
 }, { _id: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────

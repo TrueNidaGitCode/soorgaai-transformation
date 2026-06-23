@@ -439,12 +439,7 @@ function buildAlignmentLayout(section) {
   stmtBlock.appendChild(stmtText);
   wrap.appendChild(stmtBlock);
 
-  // 2. KPI highlights — full-width horizontal cards
-  if (b.kpiHighlights?.length) {
-    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
-  }
-
-  // 3. Two-column body
+  // 2. Two-column body
   const body = document.createElement('div');
   body.className = 'alignment-body';
 
@@ -478,6 +473,12 @@ function buildAlignmentLayout(section) {
   }
 
   if (body.children.length) wrap.appendChild(body);
+
+  // 3. KPI highlights — full-width horizontal cards at the bottom
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
   return wrap;
 }
 

@@ -3166,6 +3166,69 @@
   .initiative-grid { grid-template-columns: 1fr; }
 }
 
+/* ── Commitment section CTO template ──────────────────────────────────────── */
+
+.commitment-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.commitment-actions {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.65rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.commitment-actions__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.commitment-actions__list li {
+  font-size: 0.84rem;
+  color: rgba(255,255,255,0.68);
+  padding-left: 1.1rem;
+  position: relative;
+  line-height: 1.5;
+}
+
+.commitment-actions__list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: rgba(92,197,167,0.75);
+  font-size: 0.75rem;
+}
+
+.commitment-metrics-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.commitment-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.85rem;
+}
+
+.commitment-metric-card {
+  background: rgba(99,102,241,0.07);
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 0.65rem;
+  padding: 1rem 1.15rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.55;
+}
+
 /* ── Strategic Pillars (Vision template) ───────────────────────────────────── */
 
 .pillars-grid {

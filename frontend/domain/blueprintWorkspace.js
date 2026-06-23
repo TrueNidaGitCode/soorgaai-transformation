@@ -509,6 +509,66 @@ function buildAlignmentLayout(section) {
   return wrap;
 }
 
+function buildCommitmentLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'commitment-layout';
+
+  // 1. Strategic Position
+  const stmtBlock = document.createElement('div');
+  stmtBlock.className = 'vision-statement';
+  const stmtLabel = document.createElement('p');
+  stmtLabel.className = 'brief-label';
+  stmtLabel.textContent = 'Strategic Position';
+  const stmtText = document.createElement('p');
+  stmtText.className = 'vision-statement__text';
+  stmtText.textContent = b.strategicPosition || '—';
+  stmtBlock.appendChild(stmtLabel);
+  stmtBlock.appendChild(stmtText);
+  wrap.appendChild(stmtBlock);
+
+  // 2. Priority Actions
+  if (b.priorityActions?.length) {
+    const actBlock = document.createElement('div');
+    actBlock.className = 'commitment-actions';
+    const actLabel = document.createElement('p');
+    actLabel.className = 'brief-label';
+    actLabel.textContent = 'Priority Actions (90 Days)';
+    const actList = document.createElement('ul');
+    actList.className = 'commitment-actions__list';
+    b.priorityActions.forEach(a => {
+      const li = document.createElement('li');
+      li.textContent = a;
+      actList.appendChild(li);
+    });
+    actBlock.appendChild(actLabel);
+    actBlock.appendChild(actList);
+    wrap.appendChild(actBlock);
+  }
+
+  // 3. Success Metrics — horizontal cards filling the full width
+  if (b.successMetrics?.length) {
+    const metricsWrap = document.createElement('div');
+    metricsWrap.className = 'commitment-metrics-wrap';
+    const metricsLabel = document.createElement('p');
+    metricsLabel.className = 'brief-label';
+    metricsLabel.textContent = 'Success Metrics';
+    const metricsGrid = document.createElement('div');
+    metricsGrid.className = 'commitment-metrics';
+    b.successMetrics.forEach(m => {
+      const card = document.createElement('div');
+      card.className = 'commitment-metric-card';
+      card.textContent = m;
+      metricsGrid.appendChild(card);
+    });
+    metricsWrap.appendChild(metricsLabel);
+    metricsWrap.appendChild(metricsGrid);
+    wrap.appendChild(metricsWrap);
+  }
+
+  return wrap;
+}
+
 function buildVisionLayout(section) {
   const b = section.brief || {};
   const wrap = document.createElement('div');
@@ -577,6 +637,8 @@ function buildSectionCard(blueprint, cap, section) {
       card.appendChild(buildVisionLayout(section));
     } else if (section.title === 'Alignment') {
       card.appendChild(buildAlignmentLayout(section));
+    } else if (section.title === 'Commitment') {
+      card.appendChild(buildCommitmentLayout(section));
     } else {
       card.appendChild(buildBriefGrid(section));
     }

@@ -439,49 +439,21 @@ function buildAlignmentLayout(section) {
   stmtBlock.appendChild(stmtText);
   wrap.appendChild(stmtBlock);
 
-  // 2. Two-column body
+  // 2. KPI highlights — full-width horizontal cards
+  if (b.kpiHighlights?.length) {
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  }
+
+  // 3. Two-column body
   const body = document.createElement('div');
   body.className = 'alignment-body';
 
-  // Left column: spoke wheel + stacked KPI metrics
+  // Left column: spoke wheel
   const leftCol = document.createElement('div');
   leftCol.className = 'alignment-left';
 
   if (b.spokeNodes?.length) {
     leftCol.appendChild(buildSpokeWheel(b.spokeNodes, 'AI Transformation Agenda'));
-  }
-
-  if (b.kpiHighlights?.length) {
-    const kpiWrap = document.createElement('div');
-    kpiWrap.className = 'kpi-stacked-wrap';
-
-    const kpiLabel = document.createElement('p');
-    kpiLabel.className = 'brief-label';
-    kpiLabel.textContent = 'Success Metrics';
-    kpiWrap.appendChild(kpiLabel);
-
-    const kpiBlock = document.createElement('div');
-    kpiBlock.className = 'kpi-stacked';
-
-    b.kpiHighlights.forEach(k => {
-      const item = document.createElement('div');
-      item.className = 'kpi-stacked__item';
-
-      const value = document.createElement('p');
-      value.className = 'kpi-stacked__value';
-      value.textContent = k.value;
-
-      const label = document.createElement('p');
-      label.className = 'kpi-stacked__label';
-      label.textContent = k.label;
-
-      item.appendChild(value);
-      item.appendChild(label);
-      kpiBlock.appendChild(item);
-    });
-
-    kpiWrap.appendChild(kpiBlock);
-    leftCol.appendChild(kpiWrap);
   }
 
   body.appendChild(leftCol);

@@ -2171,9 +2171,9 @@ function getCurrentCapabilityContent(cap) {
 // and the Accept / Discard buttons are always visible without extra scrolling.
 
 function showSuggestionCard(capabilityName, text, rationale, sectionTitle) {
-  _pendingSuggestion = { capabilityName, text, rationale, sectionTitle: sectionTitle || null };
+  clearSuggestionCard(); // remove any existing card first (also nulls _pendingSuggestion)
 
-  clearSuggestionCard(); // remove any existing card first
+  _pendingSuggestion = { capabilityName, text, rationale, sectionTitle: sectionTitle || null };
 
   const log = document.getElementById('ai-chat-messages');
   if (!log) return;

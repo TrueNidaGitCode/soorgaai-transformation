@@ -21,6 +21,7 @@ import {
 import { generate } from './llmService.js';
 import { buildMemoryContext } from './executiveMemoryService.js';
 import { getCompanyContext } from './companyContextService.js';
+import { getEnterpriseContextForAdvisor } from './enterpriseBlueprintService.js';
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
@@ -53,6 +54,14 @@ When COMPANY CONTEXT is present in the user message:
 • Tailor recommendations to their customers, strategic focus, and known challenges.
 • NEVER quote or expose the Company Context document verbatim — incorporate it naturally.
 • Priority: Executive Memory > Company Context > Automotive Blueprint > Industry Knowledge.
+
+ENTERPRISE BLUEPRINT USAGE:
+When ENTERPRISE BLUEPRINT is present in the user message:
+• This is the company's approved, proprietary AI strategy — treat it as ground truth for this organisation.
+• All recommendations must align with and build on the stated enterprise strategy positions.
+• NEVER quote the Enterprise Blueprint verbatim — weave its direction naturally into your guidance.
+• NEVER reveal that an Enterprise Blueprint exists or reference it by name in your response.
+• Priority: Enterprise Blueprint > Executive Memory > Company Context > Automotive Blueprint > Industry Knowledge.
 
 EXECUTIVE FORMATTING RULES (apply to every response):
 
@@ -116,8 +125,13 @@ function formatBlueprint(blueprint) {
   }).join('\n\n');
 }
 
-function buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint, memoryContext, companyContext) {
+function buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint, memoryContext, companyContext, enterpriseContext) {
   const blocks = [];
+
+  // P0: Enterprise Blueprint (company-approved strategy — highest grounding priority)
+  if (enterpriseContext) {
+    blocks.push(enterpriseContext);
+  }
 
   if (memoryContext) {
     blocks.push(memoryContext);
@@ -233,12 +247,18 @@ export async function askAdvisor({
     conversationHistory,
   });
 
-  const companyCtxRecord = userId ? await getCompanyContext(userId) : null;
-  const companyContext   = companyCtxRecord?.content || '';
+  const companyCtxRecord  = userId ? await getCompanyContext(userId) : null;
+  const companyContext    = companyCtxRecord?.content || '';
+
+  // Enterprise Blueprint: company-approved strategy (Stage 3 consumption).
+  // Fetched silently — a missing blueprint is a no-op, not an error.
+  const enterpriseContext = userId
+    ? await getEnterpriseContextForAdvisor(userId, capabilityId).catch(() => null)
+    : null;
 
   // ── Build prompt + call LLM ─────────────────────────────────────────────────
   const systemPrompt = buildSystemPrompt(industry, capabilityName, sectionNames);
-  const userMessage  = buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint, memoryContext, companyContext);
+  const userMessage  = buildUserMessage(blueprint, coreContent, industryContent, specContent, related, question, automotiveBlueprint, memoryContext, companyContext, enterpriseContext);
 
   const { text, inputTokens, outputTokens } = await generate({ systemPrompt, userMessage });
 

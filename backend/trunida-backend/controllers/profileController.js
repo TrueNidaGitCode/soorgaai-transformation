@@ -19,6 +19,7 @@
 import UserProfile  from '../models/UserProfile.js';
 import DomainCanvas from '../models/DomainCanvas.js';
 import DOMAINS      from '../data/domainDefinitions.js';
+import { ensureBlueprint } from '../services/enterpriseBlueprintService.js';
 
 // ── POST /api/profile ─────────────────────────────────────────────────────────
 
@@ -55,6 +56,11 @@ export const createProfile = async (req, res) => {
     await DomainCanvas.insertMany(canvasDocs, { ordered: false });
 
     console.log(`✅ Profile + 7 canvases created for userId ${userId}`);
+
+    // Stage 1: auto-create empty enterprise blueprint shell for the org.
+    // Fire-and-forget — a failure here must not block the profile response.
+    ensureBlueprint({ orgName, industry: industryDomain, createdByUserId: userId })
+      .catch(err => console.error('[EnterpriseBlueprint] Shell creation failed (non-fatal):', err.message));
 
     return res.status(201).json({ profile, created: true });
 

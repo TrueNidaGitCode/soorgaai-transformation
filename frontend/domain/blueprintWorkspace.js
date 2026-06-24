@@ -1812,7 +1812,7 @@ function buildSectionCard(blueprint, cap, section) {
   header.innerHTML = `
     <h3 class="bp-section__title">${section.title}</h3>
     <div class="bp-section__actions">
-      <button class="bp-section__action-btn js-refine-btn" aria-label="Refine this section with AI">Refine with AI</button>
+      <button class="bp-section__action-btn js-refine-btn" aria-label="Refine this section with AI Assistant">Refine with AI Assistant</button>
     </div>
   `;
   header.querySelector('.js-refine-btn').addEventListener('click', () => openAssistantForSection(section.title));
@@ -2048,20 +2048,16 @@ function setAssistantOpen(open) {
 }
 
 function updateAssistantContext() {
-  const cap    = (_blueprint?.capabilities || [])[_selectedCapIndex];
-  const ctxEl  = document.getElementById('ai-panel-context');
-  if (!ctxEl || !cap) return;
-  ctxEl.innerHTML = `Working on: <strong>${cap.capabilityName}</strong>`;
+  const ctxEl = document.getElementById('ai-panel-context');
+  if (!ctxEl) return;
+  ctxEl.innerHTML = 'Discuss your <strong>Company AI Strategy</strong> — ask questions, explore options, or refine any section.';
   ctxEl.style.display = '';
 }
 
 function openAssistantForSection(sectionTitle) {
   setAssistantOpen(true);
-  const input = document.getElementById('ai-chat-input');
-  if (input) {
-    input.value = `Help me improve the "${sectionTitle}" section.`;
-    input.focus();
-  }
+  // Auto-send so the conversation starts immediately, focused on this section
+  setTimeout(() => handleChatSubmit(null, `Please review the "${sectionTitle}" section and suggest specific improvements.`), 80);
 }
 
 // ── AI Chat ───────────────────────────────────────────────────────────────────

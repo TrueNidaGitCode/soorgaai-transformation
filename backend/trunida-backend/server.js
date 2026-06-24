@@ -12,7 +12,8 @@ import profileRoutes           from "./routes/profileRoutes.js";
 import workspaceRoutes         from "./routes/workspaceRoutes.js";
 import chatRoutes              from "./routes/chatRoutes.js";
 import strategyCanvasRoutes    from "./routes/strategyCanvasRoutes.js";
-import companyContextRoutes    from "./routes/companyContextRoutes.js";
+import companyContextRoutes         from "./routes/companyContextRoutes.js";
+import enterpriseBlueprintRoutes    from "./routes/enterpriseBlueprintRoutes.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
@@ -83,6 +84,7 @@ app.use("/api/workspace",             workspaceRoutes);
 app.use("/api/chat",                  chatRoutes);
 app.use("/api/strategy-canvas",       strategyCanvasRoutes);
 app.use("/api/company-context",       companyContextRoutes);
+app.use("/api/enterprise-blueprint", enterpriseBlueprintRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

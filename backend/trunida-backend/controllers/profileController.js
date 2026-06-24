@@ -26,10 +26,10 @@ import { ensureBlueprint } from '../services/enterpriseBlueprintService.js';
 export const createProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { orgName, role, industryDomain } = req.body;
+    const { orgName } = req.body;
 
-    if (!orgName || !role || !industryDomain) {
-      return res.status(400).json({ error: 'orgName, role, and industryDomain are required.' });
+    if (!orgName) {
+      return res.status(400).json({ error: 'orgName is required.' });
     }
 
     // Idempotency: return existing profile without mutation
@@ -38,8 +38,8 @@ export const createProfile = async (req, res) => {
       return res.status(200).json({ profile: existing, created: false });
     }
 
-    // Create profile
-    const profile = await UserProfile.create({ userId, orgName, role, industryDomain });
+    // Create profile (role and industryDomain use schema defaults)
+    const profile = await UserProfile.create({ userId, orgName });
 
     // Atomically initialize 7 DomainCanvas docs from config defaults
     const canvasDocs = DOMAINS.map(domain => ({
@@ -59,7 +59,7 @@ export const createProfile = async (req, res) => {
 
     // Stage 1: auto-create empty enterprise blueprint shell for the org.
     // Fire-and-forget — a failure here must not block the profile response.
-    ensureBlueprint({ orgName, industry: industryDomain, createdByUserId: userId })
+    ensureBlueprint({ orgName, industry: profile.industryDomain, createdByUserId: userId })
       .catch(err => console.error('[EnterpriseBlueprint] Shell creation failed (non-fatal):', err.message));
 
     return res.status(201).json({ profile, created: true });

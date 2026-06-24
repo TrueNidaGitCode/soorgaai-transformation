@@ -58,12 +58,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     e.preventDefault();
     hideError();
 
-    const orgName       = document.getElementById('orgName').value.trim();
-    const role          = document.getElementById('role').value;
-    const industryDomain = document.getElementById('industryDomain').value;
+    const orgName = document.getElementById('orgName').value.trim();
 
-    if (!orgName || !role || !industryDomain) {
-      showError('All fields are required.');
+    if (!orgName) {
+      showError('Organisation name is required.');
       return;
     }
 
@@ -75,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           'Content-Type':  'application/json',
           Authorization:   `Bearer ${getToken()}`,
         },
-        body: JSON.stringify({ orgName, role, industryDomain }),
+        body: JSON.stringify({ orgName }),
       });
 
       const data = await resp.json();

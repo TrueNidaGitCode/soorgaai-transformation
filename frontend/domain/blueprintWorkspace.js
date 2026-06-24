@@ -2070,9 +2070,21 @@ function initChat() {
   const log      = document.getElementById('ai-chat-messages');
 
   if (form) form.addEventListener('submit', handleChatSubmit);
+
+  // Enter sends; Shift+Enter inserts a newline (matches ChatGPT / Claude behaviour)
+  const input = document.getElementById('ai-chat-input');
+  if (input) {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!_isSending && input.value.trim()) handleChatSubmit(null, input.value.trim());
+      }
+    });
+  }
+
   if (retryBtn) retryBtn.addEventListener('click', () => {
-    const input = document.getElementById('ai-chat-input');
-    if (input?.value?.trim()) handleChatSubmit(null, input.value.trim());
+    const inp = document.getElementById('ai-chat-input');
+    if (inp?.value?.trim()) handleChatSubmit(null, inp.value.trim());
   });
 
   // Delegate Accept / Discard clicks — card is dynamically created inside the log

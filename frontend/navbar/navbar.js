@@ -152,6 +152,12 @@ function logoutUser() {
     'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
     'da_score', 'soorga_assessment_progress',
   ].forEach(k => localStorage.removeItem(k));
+
+  // Clear all persisted AI chat histories (keys are dynamic: soorgaai_chat_v1_<blueprintId>_<capabilityId>)
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('soorgaai_chat_v1_'))
+    .forEach(k => localStorage.removeItem(k));
+
   setupNavbarHandlers();
   window.location.href = '/index.html';
 }

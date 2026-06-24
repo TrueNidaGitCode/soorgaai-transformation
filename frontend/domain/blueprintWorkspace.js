@@ -125,7 +125,6 @@ function renderCapabilityTabs(blueprint) {
 
 function selectCapability(idx) {
   _selectedCapIndex    = idx;
-  _chatHistory         = [];
   _refineTargetSection = null;
   clearSuggestionCard();
 
@@ -135,6 +134,7 @@ function selectCapability(idx) {
   });
 
   renderBlueprintContent(_blueprint, idx);
+  restoreChat();
   updateAssistantContext();
 }
 
@@ -2098,6 +2098,7 @@ async function handleChatSubmit(e, prefillText) {
 
   appendChatMessage('user', message);
   _chatHistory.push({ role: 'user', content: message });
+  saveChatHistory();
   setChatSending(true);
 
   const cap = (_blueprint?.capabilities || [])[_selectedCapIndex];
@@ -2138,16 +2139,18 @@ async function handleChatSubmit(e, prefillText) {
       const text = result.response || '';
       appendChatMessage('assistant', text);
       _chatHistory.push({ role: 'assistant', content: text });
+      saveChatHistory();
     } else if (result.mode === 'blueprint') {
       const s = result.suggestion || {};
       showSuggestionCard(cap.capabilityName, s.suggestedRevision || '', s.whyThisHelps || '', _refineTargetSection);
       _chatHistory.push({ role: 'assistant', content: s.suggestedRevision || '' });
+      saveChatHistory();
     }
 
   } catch (err) {
     setChatSending(false);
     setErrorVisible(true, err.message);
-    _chatHistory.push({ role: 'assistant', content: `[Error: ${err.message}]` });
+    // Errors are transient — not persisted so they don't re-appear on refresh
   }
 }
 
@@ -2247,7 +2250,10 @@ async function acceptSuggestion() {
   clearSuggestionCard();
   _refineTargetSection = null;
 
-  appendChatMessage('assistant', `Done — the "${section.title}" section has been updated. Continue refining or ask a follow-up question.`);
+  const doneMsg = `Done — the "${section.title}" section has been updated. Continue refining or ask a follow-up question.`;
+  appendChatMessage('assistant', doneMsg);
+  _chatHistory.push({ role: 'assistant', content: doneMsg });
+  saveChatHistory();
 
   // Persist to backend (non-blocking — UI already updated above)
   try {
@@ -2262,6 +2268,47 @@ async function acceptSuggestion() {
   } catch (err) {
     console.warn('[workspace] Failed to persist section update:', err.message);
   }
+}
+
+// ── Chat persistence ──────────────────────────────────────────────────────────
+
+function chatStorageKey() {
+  const cap = (_blueprint?.capabilities || [])[_selectedCapIndex];
+  if (!_blueprint?._id || !cap?.capabilityId) return null;
+  return `soorgaai_chat_v1_${_blueprint._id}_${cap.capabilityId}`;
+}
+
+function saveChatHistory() {
+  const key = chatStorageKey();
+  if (!key) return;
+  try {
+    localStorage.setItem(key, JSON.stringify(_chatHistory.slice(-60)));
+  } catch { /* localStorage quota exceeded */ }
+}
+
+function restoreChat() {
+  const key = chatStorageKey();
+  const log = document.getElementById('ai-chat-messages');
+  if (log) log.innerHTML = '';
+
+  try {
+    _chatHistory = key && localStorage.getItem(key)
+      ? JSON.parse(localStorage.getItem(key))
+      : [];
+  } catch {
+    _chatHistory = [];
+  }
+
+  // Re-render stored messages directly into the DOM (no save loop)
+  _chatHistory.forEach(entry => {
+    if (entry.role !== 'user' && entry.role !== 'assistant') return;
+    if (entry.content.startsWith('[Error:')) return; // skip transient errors
+    const msg = document.createElement('div');
+    msg.className = `chat-msg chat-msg--${entry.role}`;
+    msg.textContent = entry.content;
+    if (log) log.appendChild(msg);
+  });
+  if (log) log.scrollTop = log.scrollHeight;
 }
 
 // ── Chat UI helpers ───────────────────────────────────────────────────────────
@@ -2313,7 +2360,6 @@ function setErrorVisible(visible, msg = '') {
 function initWorkspace(blueprint) {
   _blueprint        = blueprint;
   _selectedCapIndex = 0;
-  _chatHistory      = [];
 
   // Show AI Assistant button now that we're in workspace
   const assistantBtn = document.getElementById('btn-ai-assistant');
@@ -2322,6 +2368,7 @@ function initWorkspace(blueprint) {
   renderHeader(blueprint);
   renderCapabilityTabs(blueprint);
   renderBlueprintContent(blueprint, _selectedCapIndex);
+  restoreChat(); // load persisted chat for initial capability
 
   showScreen('screen-workspace');
 

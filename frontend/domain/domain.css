@@ -3773,12 +3773,11 @@
 /* ── AI Suggestion Card ────────────────────────────────────────────────────── */
 
 .ai-suggestion-card {
-  margin: 0 1.25rem 0.75rem;
+  margin: 0.75rem 0 0;
   background: rgba(92,197,167,0.07);
   border: 1px solid rgba(92,197,167,0.25);
   border-radius: 0.75rem;
   padding: 1rem;
-  flex-shrink: 0;
 }
 
 .ai-suggestion-card__label {

@@ -2063,8 +2063,9 @@ function openAssistantForSection(sectionTitle) {
 // ── AI Chat ───────────────────────────────────────────────────────────────────
 
 function initChat() {
-  const form    = document.getElementById('ai-chat-form');
+  const form     = document.getElementById('ai-chat-form');
   const retryBtn = document.getElementById('ai-chat-retry');
+  const log      = document.getElementById('ai-chat-messages');
 
   if (form) form.addEventListener('submit', handleChatSubmit);
   if (retryBtn) retryBtn.addEventListener('click', () => {
@@ -2072,10 +2073,13 @@ function initChat() {
     if (input?.value?.trim()) handleChatSubmit(null, input.value.trim());
   });
 
-  const acceptBtn  = document.getElementById('ai-suggestion-accept');
-  const discardBtn = document.getElementById('ai-suggestion-discard');
-  if (acceptBtn)  acceptBtn.addEventListener('click',  acceptSuggestion);
-  if (discardBtn) discardBtn.addEventListener('click', clearSuggestionCard);
+  // Delegate Accept / Discard clicks — card is dynamically created inside the log
+  if (log) {
+    log.addEventListener('click', (e) => {
+      if (e.target.id === 'ai-suggestion-accept')  acceptSuggestion();
+      if (e.target.id === 'ai-suggestion-discard') clearSuggestionCard();
+    });
+  }
 }
 
 async function handleChatSubmit(e, prefillText) {
@@ -2161,23 +2165,52 @@ function getCurrentCapabilityContent(cap) {
 }
 
 // ── Suggestion card ───────────────────────────────────────────────────────────
+// Card is appended directly into the chat log so it scrolls with the conversation
+// and the Accept / Discard buttons are always visible without extra scrolling.
 
 function showSuggestionCard(capabilityName, text, rationale) {
   _pendingSuggestion = { capabilityName, text, rationale };
 
-  const card      = document.getElementById('ai-suggestion-card');
-  const textEl    = document.getElementById('ai-suggestion-text');
-  const rationale1El = document.getElementById('ai-suggestion-rationale');
+  clearSuggestionCard(); // remove any existing card first
 
-  if (textEl)       textEl.textContent     = text;
-  if (rationale1El) rationale1El.textContent = rationale;
-  if (card)         card.style.display      = '';
+  const log = document.getElementById('ai-chat-messages');
+  if (!log) return;
+
+  const card = document.createElement('div');
+  card.id        = 'ai-suggestion-card';
+  card.className = 'ai-suggestion-card';
+
+  const label = document.createElement('p');
+  label.className   = 'ai-suggestion-card__label';
+  label.textContent = 'Suggested revision';
+
+  const textEl = document.createElement('p');
+  textEl.className   = 'ai-suggestion-card__text';
+  textEl.textContent = text;
+
+  const rationaleEl = document.createElement('p');
+  rationaleEl.className   = 'ai-suggestion-card__rationale';
+  rationaleEl.textContent = rationale;
+
+  const actions = document.createElement('div');
+  actions.className = 'ai-suggestion-card__actions';
+  actions.innerHTML =
+    '<button id="ai-suggestion-accept"  class="ai-suggestion-btn ai-suggestion-btn--accept">Accept &amp; Replace</button>' +
+    '<button id="ai-suggestion-discard" class="ai-suggestion-btn ai-suggestion-btn--discard">Discard</button>';
+
+  card.appendChild(label);
+  card.appendChild(textEl);
+  card.appendChild(rationaleEl);
+  card.appendChild(actions);
+  log.appendChild(card);
+
+  // Scroll so the card and its buttons are fully visible
+  log.scrollTop = log.scrollHeight;
 }
 
 function clearSuggestionCard() {
   _pendingSuggestion = null;
-  const card = document.getElementById('ai-suggestion-card');
-  if (card) card.style.display = 'none';
+  document.getElementById('ai-suggestion-card')?.remove();
 }
 
 async function acceptSuggestion() {

@@ -140,7 +140,7 @@
         </div>
 
         <div id="ai-chat-messages" class="chat-messages" role="log" aria-live="polite">
-          <!-- Chat messages injected by advisor logic -->
+          <!-- Chat messages and suggestion cards injected by advisor logic -->
         </div>
 
         <div id="ai-chat-error" class="chat-error" style="display:none" role="alert">
@@ -153,7 +153,7 @@
             id="ai-chat-input"
             class="chat-input"
             rows="3"
-            placeholder="Ask about this capability…"
+            placeholder="Ask a question or describe what you'd like to refine…"
             aria-label="AI Assistant message"
           ></textarea>
           <button type="submit" id="ai-chat-send" class="chat-send-btn" aria-label="Send message">
@@ -161,17 +161,6 @@
             <span id="ai-chat-send-loader" class="chat-send-loader" style="display:none"></span>
           </button>
         </form>
-
-        <!-- Suggestion card (shown when AI returns blueprint mode content) -->
-        <div id="ai-suggestion-card" class="ai-suggestion-card" style="display:none">
-          <p class="ai-suggestion-card__label">Suggested revision</p>
-          <p id="ai-suggestion-text" class="ai-suggestion-card__text"></p>
-          <p id="ai-suggestion-rationale" class="ai-suggestion-card__rationale"></p>
-          <div class="ai-suggestion-card__actions">
-            <button id="ai-suggestion-accept" class="ai-suggestion-btn ai-suggestion-btn--accept">Accept</button>
-            <button id="ai-suggestion-discard" class="ai-suggestion-btn ai-suggestion-btn--discard">Discard</button>
-          </div>
-        </div>
 
       </aside>
     </div>

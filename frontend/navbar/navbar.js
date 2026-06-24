@@ -48,9 +48,15 @@ function setupNavbarHandlers() {
         [loginBtn, logoutBtn, userDisplay, adminBtn, myAssessmentsBtn].forEach(el => {
             if (el) el.style.display = 'none';
         });
-        if (roadmapCta && window.CTARouter) {
+        if (roadmapCta) {
             roadmapCta.removeAttribute('href');
-            roadmapCta.onclick = (e) => { e.preventDefault(); window.CTARouter.routeToWorkspace(); };
+            roadmapCta.onclick = (e) => {
+                e.preventDefault();
+                const token = localStorage.getItem('token');
+                window.location.href = token
+                    ? '/workspace/workspace.html'
+                    : '/login/login.html?redirect=/workspace/workspace.html';
+            };
         }
         return;
     }

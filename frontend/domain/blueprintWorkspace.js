@@ -36,7 +36,8 @@ let _blueprint           = null;
 let _selectedCapIndex    = 0;
 let _assistantOpen       = false;
 let _chatHistory         = [];   // [{ role: 'user'|'assistant', content: string }]
-let _pendingSuggestion   = null; // { sectionTitle, content, rationale }
+let _pendingSuggestion   = null; // { sectionTitle, text, rationale }
+let _refineTargetSection = null; // section title currently being refined via "Refine with AI Assistant"
 let _isSending           = false;
 
 // ── Screen helpers ────────────────────────────────────────────────────────────
@@ -123,8 +124,9 @@ function renderCapabilityTabs(blueprint) {
 }
 
 function selectCapability(idx) {
-  _selectedCapIndex = idx;
-  _chatHistory = [];        // reset chat context when switching capability
+  _selectedCapIndex    = idx;
+  _chatHistory         = [];
+  _refineTargetSection = null;
   clearSuggestionCard();
 
   // Update tab active state
@@ -2055,8 +2057,8 @@ function updateAssistantContext() {
 }
 
 function openAssistantForSection(sectionTitle) {
+  _refineTargetSection = sectionTitle;
   setAssistantOpen(true);
-  // Auto-send so the conversation starts immediately, focused on this section
   setTimeout(() => handleChatSubmit(null, `Please review the "${sectionTitle}" section and suggest specific improvements.`), 80);
 }
 
@@ -2138,7 +2140,7 @@ async function handleChatSubmit(e, prefillText) {
       _chatHistory.push({ role: 'assistant', content: text });
     } else if (result.mode === 'blueprint') {
       const s = result.suggestion || {};
-      showSuggestionCard(cap.capabilityName, s.suggestedRevision || '', s.whyThisHelps || '');
+      showSuggestionCard(cap.capabilityName, s.suggestedRevision || '', s.whyThisHelps || '', _refineTargetSection);
       _chatHistory.push({ role: 'assistant', content: s.suggestedRevision || '' });
     }
 
@@ -2168,8 +2170,8 @@ function getCurrentCapabilityContent(cap) {
 // Card is appended directly into the chat log so it scrolls with the conversation
 // and the Accept / Discard buttons are always visible without extra scrolling.
 
-function showSuggestionCard(capabilityName, text, rationale) {
-  _pendingSuggestion = { capabilityName, text, rationale };
+function showSuggestionCard(capabilityName, text, rationale, sectionTitle) {
+  _pendingSuggestion = { capabilityName, text, rationale, sectionTitle: sectionTitle || null };
 
   clearSuggestionCard(); // remove any existing card first
 
@@ -2216,28 +2218,38 @@ function clearSuggestionCard() {
 async function acceptSuggestion() {
   if (!_pendingSuggestion || !_blueprint) return;
 
-  const cap     = (_blueprint.capabilities || [])[_selectedCapIndex];
-  const section = cap?.sections?.[0];
-  if (!cap || !section) { clearSuggestionCard(); return; }
+  const cap = (_blueprint.capabilities || [])[_selectedCapIndex];
+  if (!cap) { clearSuggestionCard(); return; }
 
-  // AI returns prose — update strategicPosition as the primary brief field
+  // Find the exact section that was being refined (by title), fall back to first
+  const targetTitle = _pendingSuggestion.sectionTitle;
+  const section = targetTitle
+    ? (cap.sections || []).find(s => s.title === targetTitle)
+    : (cap.sections || [])[0];
+
+  if (!section) { clearSuggestionCard(); return; }
+
+  // Apply suggestion to the primary prose field used by all view modes
   const newPosition = _pendingSuggestion.text;
   if (!section.brief) section.brief = {};
   section.brief.strategicPosition = newPosition;
   section.updatedAt = new Date().toISOString();
   _blueprint.updatedAt = new Date().toISOString();
 
-  // Re-render the brief grid for this section
-  const oldGrid = document.querySelector(`.brief-grid[data-section-title="${CSS.escape(section.title)}"]`);
-  if (oldGrid) oldGrid.replaceWith(buildBriefGrid(section));
+  // Re-render the section card in-place — works for all view modes (CTO, PM, essay)
+  const oldCard = document.querySelector(`.bp-section[data-section-title="${CSS.escape(section.title)}"]`);
+  if (oldCard) {
+    const newCard = buildSectionCard(_blueprint, cap, section);
+    oldCard.replaceWith(newCard);
+  }
 
   renderHeader(_blueprint);
+  clearSuggestionCard();
+  _refineTargetSection = null;
 
-  // Flash the card
-  const card = document.querySelector(`.bp-section[data-section-title="${CSS.escape(section.title)}"]`);
-  if (card) { card.classList.remove('bp-section--updated'); void card.offsetWidth; card.classList.add('bp-section--updated'); }
+  appendChatMessage('assistant', `Done — the "${section.title}" section has been updated. Continue refining or ask a follow-up question.`);
 
-  // Persist to backend
+  // Persist to backend (non-blocking — UI already updated above)
   try {
     await fetch(
       `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${cap.capabilityId}/section/${encodeURIComponent(section.title)}`,
@@ -2248,10 +2260,8 @@ async function acceptSuggestion() {
       }
     );
   } catch (err) {
-    console.warn('[workspace] Failed to persist brief update:', err.message);
+    console.warn('[workspace] Failed to persist section update:', err.message);
   }
-
-  clearSuggestionCard();
 }
 
 // ── Chat UI helpers ───────────────────────────────────────────────────────────

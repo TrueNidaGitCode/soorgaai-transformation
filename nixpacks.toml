@@ -1,8 +1,8 @@
 # SoorgaAI — Nixpacks configuration for Railway
-# Node.js 20 to match .node-version
+# Node.js 20 + system Chromium for Puppeteer PDF export
 
 [phases.setup]
-nixPkgs = ['nodejs_20']
+nixPkgs = ['nodejs_20', 'chromium', 'noto-fonts', 'font-liberation']
 
 [phases.install]
 cmds = ['cd backend/trunida-backend && npm install']

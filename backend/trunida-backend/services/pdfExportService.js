@@ -9,13 +9,20 @@
  *   generateBlueprintPDF(blueprint) → Promise<Buffer>
  */
 
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 import { buildBlueprintHTML } from './pdfTemplateService.js';
+
+// Use system Chromium installed by nixpacks on Railway; override via env var if needed
+const CHROME_EXECUTABLE =
+  process.env.PUPPETEER_EXECUTABLE_PATH ||
+  process.env.CHROME_BIN ||
+  'chromium';
 
 export async function generateBlueprintPDF(blueprint) {
   const html = buildBlueprintHTML(blueprint);
 
   const browser = await puppeteer.launch({
+    executablePath: CHROME_EXECUTABLE,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',

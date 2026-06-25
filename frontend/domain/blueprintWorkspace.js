@@ -2036,6 +2036,55 @@ function initAssistantButton() {
     if (assistantBtn) assistantBtn.style.display = 'none';
     setAssistantOpen(false);
   });
+
+  const exportBtn = document.getElementById('btn-export-pdf');
+  if (exportBtn) exportBtn.addEventListener('click', handleExportPDF);
+}
+
+async function handleExportPDF() {
+  const btn    = document.getElementById('btn-export-pdf');
+  const label  = document.getElementById('btn-export-pdf-text');
+  const loader = document.getElementById('btn-export-pdf-loader');
+
+  if (!btn || btn.disabled) return;
+
+  btn.disabled      = true;
+  label.style.display  = 'none';
+  loader.style.display = '';
+
+  try {
+    const res = await fetch(`${API_BASE}/strategy-canvas/company-blueprint/export-pdf`, {
+      method:  'GET',
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Server error ${res.status}`);
+    }
+
+    const blob        = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const nameMatch   = disposition.match(/filename="([^"]+)"/);
+    const filename    = nameMatch ? nameMatch[1] : 'AI_Strategy_Blueprint.pdf';
+
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+
+  } catch (err) {
+    console.error('[exportPDF]', err.message);
+    alert('PDF export failed. Please try again.');
+  } finally {
+    btn.disabled         = false;
+    label.style.display  = '';
+    loader.style.display = 'none';
+  }
 }
 
 function toggleAssistant() {

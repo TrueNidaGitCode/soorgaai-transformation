@@ -2398,18 +2398,30 @@
 
 .gen-examples {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gen-examples__divider {
+  display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 1rem;
+}
+
+.gen-examples__divider::before,
+.gen-examples__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.15);
 }
 
 .gen-examples__label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.35);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-right: 0.15rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .gen-example-chip {

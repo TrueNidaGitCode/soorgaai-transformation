@@ -2415,15 +2415,16 @@
 .gen-example-chip {
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 2rem;
+  border-radius: 0.5rem;
   color: rgba(255,255,255,0.6);
   cursor: pointer;
   font-size: 0.78rem;
-  padding: 0.3rem 0.75rem;
+  padding: 0.6rem 1rem;
   text-align: left;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
   font-family: inherit;
-  line-height: 1.4;
+  line-height: 1.6;
+  width: 100%;
 }
 .gen-example-chip:hover {
   background: rgba(92,197,167,0.1);

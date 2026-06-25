@@ -1744,6 +1744,36 @@ html, body {
 .model-validation-layout,
 .regulatory-compliance-layout,
 .trust-adoption-layout { display: flex; flex-direction: column; gap: 1rem; }
+
+/* ── Page-break control ─────────────────────────────────────────────── */
+/* Keep section headings bound to their first content block */
+.pdf-section-h3 { page-break-after: avoid; break-after: avoid; }
+/* Prevent individual cards and component blocks from splitting mid-element */
+.vision-statement,
+.kpi-highlights,
+.h-timeline,
+.pillar-card,
+.pillars-grid,
+.initiative-card,
+.initiative-card--wide,
+.commitment-pillar-card,
+.commitment-pillars,
+.matrix-quadrant,
+.solution-portfolio-card,
+.solution-portfolio-tree-wrap,
+.team-composition-section,
+.team-role-item,
+.lifecycle-section,
+.lifecycle-detail-card,
+.cto-diagram-panel,
+.cto-spoke-panel,
+.detail-bullet-card,
+.sdlc-pipeline__stage,
+.team-composition-section,
+.kpi-item {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
 `;
 }
 

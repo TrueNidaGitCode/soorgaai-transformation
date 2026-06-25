@@ -113,7 +113,40 @@ export async function getBlueprint(orgName) {
   return EnterpriseBlueprint.findOne({ orgName }).lean();
 }
 
-// ── Stage 3: Advisor context injection ───────────────────────────────────────
+// ── Stage 3a: Blueprint generation context injection ─────────────────────────
+
+/**
+ * Returns a formatted enterprise context block for blueprint generation prompts.
+ * Keyed by orgName directly (already resolved by loadCompanyProfile).
+ * Returns null when the org has no blueprint or the capability has no filled sections.
+ */
+export async function getCapabilityEnterpriseContext(orgName, capabilityId) {
+  if (!orgName || !capabilityId) return null;
+
+  const blueprint = await EnterpriseBlueprint.findOne({ orgName }).lean();
+  if (!blueprint) return null;
+
+  const cap = blueprint.capabilities.find(c => c.capabilityId === capabilityId);
+  if (!cap) return null;
+
+  const filledSections = cap.sections.filter(s => s.content && s.content.trim().length > 0);
+  if (filledSections.length === 0) return null;
+
+  const sectionBlock = filledSections
+    .map(s => `[${s.title}]\n${s.content.trim()}`)
+    .join('\n\n');
+
+  return [
+    `=== ENTERPRISE BLUEPRINT — ${orgName} ===`,
+    `[CONFIDENTIAL — Authoritative strategic grounding for this organisation. Ground all generated content in this direction. Do not quote verbatim.]`,
+    `Capability: ${cap.capabilityName}`,
+    '',
+    sectionBlock,
+    `=== END ENTERPRISE BLUEPRINT ===`,
+  ].join('\n');
+}
+
+// ── Stage 3b: Advisor context injection ──────────────────────────────────────
 
 /**
  * Returns a formatted context block for the advisor prompt, or null.

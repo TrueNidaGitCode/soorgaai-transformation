@@ -27,6 +27,7 @@ import {
   getCapabilityBlueprint,
 } from './strategyCanvasService.js';
 import { BLUEPRINT_CONFIG } from '../config/blueprintConfig.js';
+import { getCapabilityEnterpriseContext } from './enterpriseBlueprintService.js';
 
 // ── Company profile helpers ───────────────────────────────────────────────────
 
@@ -38,12 +39,13 @@ async function loadCompanyProfile(userId) {
     ]);
     return {
       companyName: profile?.orgName        || 'Your Organisation',
+      orgName:     profile?.orgName        || '',
       role:        profile?.role           || 'Executive',
       industry:    profile?.industryDomain || 'Automotive',
       contextDoc:  ctx?.content            || '',
     };
   } catch {
-    return { companyName: 'Your Organisation', role: 'Executive', industry: 'Automotive', contextDoc: '' };
+    return { companyName: 'Your Organisation', orgName: '', role: 'Executive', industry: 'Automotive', contextDoc: '' };
   }
 }
 
@@ -614,7 +616,7 @@ async function callLLM(systemPrompt, userMessage, timeoutMs, capName) {
 // Generates section.brief in a single LLM call per capability.
 // CTO extras (strategicPillars etc.) are injected into this call when enabled.
 
-function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint }) {
+function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext }) {
   const sectionList   = parsedSections.map((s, i) =>
     `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`
   ).join('\n\n');
@@ -695,7 +697,7 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanati
   ]
 }`;
 
-  const userMessage = `CAPABILITY SECTIONS TO GENERATE (${parsedSections.length} sections):
+  const userMessage = `${enterpriseContext ? `${enterpriseContext}\n\n` : ''}CAPABILITY SECTIONS TO GENERATE (${parsedSections.length} sections):
 
 ${sectionList}
 
@@ -707,7 +709,7 @@ Generate the Strategy Brief JSON for all ${parsedSections.length} sections: ${se
   return { systemPrompt, userMessage };
 }
 
-async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint) {
+async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext) {
   const { systemPrompt, userMessage } = buildBriefPrompt({
     companyName:         companyProfile.companyName,
     industry,
@@ -717,6 +719,7 @@ async function runBriefGeneration(cap, companyProfile, businessObjective, indust
     capabilityName:      cap.name,
     parsedSections,
     automotiveBlueprint: automotiveBlueprint || '',
+    enterpriseContext:   enterpriseContext || '',
   });
 
   const timeoutMs = Math.max(120_000, parsedSections.length * 60_000);
@@ -731,7 +734,7 @@ async function runBriefGeneration(cap, companyProfile, businessObjective, indust
 // Step 2 extracts the structured brief from that prose.
 // CTO extras are injected into Step 2 when enabled.
 
-function buildEssayPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint }) {
+function buildEssayPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext }) {
   const sectionList   = parsedSections.map((s, i) =>
     `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`
   ).join('\n\n');
@@ -754,7 +757,7 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanati
   ]
 }`;
 
-  const userMessage = `COMPANY CONTEXT:
+  const userMessage = `${enterpriseContext ? `${enterpriseContext}\n\n` : ''}COMPANY CONTEXT:
 - Organisation: ${companyName}
 - Industry: ${industry}
 - Executive Role: ${role}
@@ -824,7 +827,7 @@ Extract the structured Strategy Brief for all ${parsedSections.length} sections.
   return { systemPrompt, userMessage };
 }
 
-async function runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint) {
+async function runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext) {
   const { systemPrompt, userMessage } = buildEssayPrompt({
     companyName:         companyProfile.companyName,
     industry,
@@ -834,6 +837,7 @@ async function runEssayGeneration(cap, companyProfile, businessObjective, indust
     capabilityName:      cap.name,
     parsedSections,
     automotiveBlueprint: automotiveBlueprint || '',
+    enterpriseContext:   enterpriseContext || '',
   });
 
   // Essays are longer — allow 90 s per section
@@ -863,7 +867,7 @@ async function runBriefExtraction(cap, parsedSections, essays) {
 // Branches on BLUEPRINT_CONFIG.generate.essay to select the active pipeline.
 
 async function generateCapabilitySections(cap, companyProfile, businessObjective, industry) {
-  const blueprint     = getCapabilityBlueprint(cap.id, industry);
+  const blueprint      = getCapabilityBlueprint(cap.id, industry);
   const parsedSections = blueprint.sections || [];
 
   if (!parsedSections.length) {
@@ -871,15 +875,24 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
     return [];
   }
 
+  // Fetch Enterprise Blueprint grounding context (P0 — silent no-op if none exists)
+  const enterpriseContext = companyProfile.orgName
+    ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
+    : null;
+
+  if (enterpriseContext) {
+    console.log(`[blueprintGen] Enterprise Blueprint context injected for: ${cap.name}`);
+  }
+
   if (BLUEPRINT_CONFIG.generate.essay) {
     // Essay pipeline: long-form prose first, brief extracted from it
     console.log(`[blueprintGen] Essay pipeline active for: ${cap.name}`);
-    const essays = await runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint);
+    const essays = await runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint, enterpriseContext);
     return await runBriefExtraction(cap, parsedSections, essays);
   }
 
   // Brief pipeline (default): direct structured generation
-  return await runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint);
+  return await runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint, enterpriseContext);
 }
 
 // ── Single-capability regeneration (fire-and-forget) ─────────────────────────

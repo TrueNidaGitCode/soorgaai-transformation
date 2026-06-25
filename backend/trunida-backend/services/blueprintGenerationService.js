@@ -182,9 +182,9 @@ SECTION-SPECIFIC EXTRAS — "Solution-Centric Organization" sections only:
 
 5. solutionPortfolio (exactly 3 items)
    Define 3 AI solutions organized as a portfolio map showing clear business ownership.
-   Each item: { "name": "<2–4 word solution name>", "businessOwner": "<role title e.g. Support Operations Lead>", "deliveryTeam": "<teams comma-separated e.g. AI/ML Engineering, Product>", "kpis": ["<KPI metric 1>", "<KPI metric 2>"] }
-   Example: { "name": "AI Support Assistant", "businessOwner": "Support Operations Lead", "deliveryTeam": "AI/ML Engineering, Product", "kpis": ["Resolution Time", "First Contact Resolution Rate"] }
-   Solutions must be grounded in the company's business objective and industry context.
+   Each item: { "name": "<2–4 word solution name>", "businessOwner": "<role title e.g. Diagnostics Program Lead>", "deliveryTeam": "<teams comma-separated e.g. AI/ML Engineering, Domain Engineering>", "kpis": ["<KPI metric 1>", "<KPI metric 2>"] }
+   Solutions MUST be grounded in the company's specific business objective, industry, and engineering domains — not generic examples.
+   Example for an automotive engineering services company: { "name": "AI Defect Triage", "businessOwner": "Engineering Delivery Lead", "deliveryTeam": "AI/ML Engineering, Domain Engineering", "kpis": ["Triage Effort Reduction", "Classification Accuracy"] }
 
 6. kpiHighlights (exactly 3 items)
    Extract 3 portfolio-level success metrics showing organizational alignment and dependency reduction.

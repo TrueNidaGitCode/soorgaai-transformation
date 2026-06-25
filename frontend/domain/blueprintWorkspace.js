@@ -905,7 +905,7 @@ function buildCommitmentLayout(section) {
 
 function buildSolutionPortfolioTree(solutions) {
   const NS = 'http://www.w3.org/2000/svg';
-  const W = 460, H = 215;
+  const W = 460, H = 240;
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.setAttribute('role', 'img');
@@ -973,13 +973,16 @@ function buildSolutionPortfolioTree(solutions) {
     svg.appendChild(mkDot(cx, juncY));
   });
 
-  // Sub-node labels per child
-  const subLabels = ['Business Owner', 'Delivery Team', 'KPIs'];
-  const subW = 104, subH = 20;
-  const subYs = [118, 143, 168];
+  const subW = 124, subH = 34;
+  const subYs = [118, 158, 198];
 
   childCxs.forEach((cx, i) => {
     const sol = solutions[i] || {};
+    const subEntries = [
+      { label: 'Owner',  value: sol.businessOwner || '—' },
+      { label: 'Team',   value: sol.deliveryTeam  || '—' },
+      { label: 'KPI',    value: (sol.kpis || []).join(' · ') || '—' },
+    ];
 
     // Child node
     svg.appendChild(mkRect(cx - childW / 2, childY, childW, childH, '15',
@@ -991,13 +994,16 @@ function buildSolutionPortfolioTree(solutions) {
     svg.appendChild(mkLine(cx, childY + childH, cx, subYs[0]));
     svg.appendChild(mkDot(cx, childY + childH));
 
-    // Sub-nodes + connecting lines
-    subYs.forEach((sy, j) => {
+    // Sub-nodes: label (small, dim) + value (slightly larger, bright)
+    subEntries.forEach(({ label, value }, j) => {
+      const sy = subYs[j];
       if (j > 0) svg.appendChild(mkLine(cx, subYs[j - 1] + subH, cx, sy));
       svg.appendChild(mkRect(cx - subW / 2, sy, subW, subH, '10',
         'rgba(99,102,241,0.07)', 'rgba(99,102,241,0.28)'));
-      svg.appendChild(mkText(cx, sy + subH / 2, subLabels[j], '8.5',
-        'rgba(255,255,255,0.62)'));
+      // Label row
+      svg.appendChild(mkText(cx, sy + 11, label, '7', 'rgba(255,255,255,0.42)'));
+      // Value row
+      svg.appendChild(mkText(cx, sy + 24, trunc(value, 18), '8', 'rgba(255,255,255,0.85)', '500'));
     });
   });
 

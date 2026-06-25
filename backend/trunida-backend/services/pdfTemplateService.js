@@ -1485,12 +1485,12 @@ html, body {
 
 /* ── Content pages ── */
 .pdf-page {
-  padding: 18mm 20mm 16mm;
+  padding: 18mm 20mm 0;
   page-break-before: always;
   background: #0d0f1a;
 }
 .pdf-cap {
-  padding: 18mm 20mm 16mm;
+  padding: 18mm 20mm 0;
   page-break-before: always;
   background: #0d0f1a;
 }

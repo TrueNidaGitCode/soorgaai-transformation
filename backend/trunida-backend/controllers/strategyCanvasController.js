@@ -26,6 +26,15 @@ async function detectIndustry(userId) {
   }
 }
 
+async function detectOrgName(userId) {
+  try {
+    const profile = await UserProfile.findOne({ userId }).lean();
+    return profile?.orgName || '';
+  } catch {
+    return '';
+  }
+}
+
 export async function listCapabilities(req, res) {
   try {
     const industry     = await detectIndustry(req.user._id);
@@ -124,7 +133,10 @@ export async function startBlueprintGeneration(req, res) {
     }
 
     const userId     = req.user._id;
-    const industry   = await detectIndustry(userId);
+    const [industry, companyName] = await Promise.all([
+      detectIndustry(userId),
+      detectOrgName(userId),
+    ]);
     const capabilities = getCapabilities();
 
     // Create initial blueprint record with all capabilities pending
@@ -132,6 +144,7 @@ export async function startBlueprintGeneration(req, res) {
       userId,
       businessObjective: businessObjective.trim(),
       industry,
+      companyName,
       status:       'generating',
       capabilities: capabilities.map(c => ({
         capabilityId:   c.id,

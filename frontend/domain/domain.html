@@ -169,6 +169,18 @@
 
   </main>
 
+  <!-- ── Feedback card (shown once after first AI ROI tab visit) ────────────── -->
+  <div id="feedback-card" class="feedback-card" style="display:none" role="dialog" aria-modal="true" aria-labelledby="feedback-question">
+    <button id="feedback-dismiss" class="feedback-dismiss" aria-label="Dismiss">✕</button>
+    <p class="feedback-label">Quick question</p>
+    <p id="feedback-question" class="feedback-question">How valuable do you think this product could be for organizations?</p>
+    <div class="feedback-options">
+      <button class="feedback-btn" data-rating="high">👍 High Value</button>
+      <button class="feedback-btn" data-rating="some">🤔 Some Value</button>
+      <button class="feedback-btn" data-rating="low">👎 Low Value</button>
+    </div>
+  </div>
+
   <script type="module" src="blueprintGenerate.js"></script>
   <script type="module" src="blueprintWorkspace.js"></script>
 </body>

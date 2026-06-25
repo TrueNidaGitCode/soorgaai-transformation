@@ -4342,3 +4342,83 @@
     z-index: 50;
   }
 }
+
+/* ── Feedback card ──────────────────────────────────────────────────────────── */
+.feedback-card {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1000;
+  width: 320px;
+  background: #1a1d2e;
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 14px;
+  padding: 1.5rem 1.5rem 1.25rem;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,102,241,0.12);
+  animation: fb-slide-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes fb-slide-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+.feedback-dismiss {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.85rem;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.9rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  transition: color 0.15s;
+}
+.feedback-dismiss:hover { color: rgba(255,255,255,0.7); }
+.feedback-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(99,102,241,0.85);
+  margin: 0 0 0.6rem;
+}
+.feedback-question {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  margin: 0 0 1.1rem;
+  line-height: 1.45;
+}
+.feedback-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.feedback-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.82);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.feedback-btn:hover {
+  background: rgba(99,102,241,0.18);
+  border-color: rgba(99,102,241,0.45);
+  color: #fff;
+}
+.feedback-btn:active { background: rgba(99,102,241,0.28); }
+.feedback-card--thankyou .feedback-options { display: none; }
+.feedback-card--thankyou .feedback-question {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.88rem;
+  font-weight: 400;
+  margin: 0;
+}

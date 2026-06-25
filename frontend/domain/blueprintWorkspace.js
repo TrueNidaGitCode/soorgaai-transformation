@@ -39,6 +39,7 @@ let _chatHistory         = [];   // [{ role: 'user'|'assistant', content: string
 let _pendingSuggestion   = null; // { sectionTitle, text, rationale }
 let _refineTargetSection = null; // section title currently being refined via "Refine with AI Assistant"
 let _isSending           = false;
+let _feedbackShown       = false; // guard: show at most once per session
 
 // ── Screen helpers ────────────────────────────────────────────────────────────
 
@@ -123,6 +124,63 @@ function renderCapabilityTabs(blueprint) {
   });
 }
 
+// ── One-time feedback card ─────────────────────────────────────────────────────
+
+const FB_LS_KEY = 'soorgaai_fb_done';
+
+async function maybeShowFeedback() {
+  if (_feedbackShown) return;
+  if (localStorage.getItem(FB_LS_KEY)) return;
+
+  // Backend check (handles new devices where localStorage is empty)
+  try {
+    const resp = await fetch(`${API_BASE}/feedback`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    if (!resp.ok) return;
+    const { submitted } = await resp.json();
+    if (submitted) { localStorage.setItem(FB_LS_KEY, '1'); return; }
+  } catch { return; }
+
+  _feedbackShown = true;
+
+  // Show after a brief delay so the capability content loads first
+  setTimeout(() => {
+    const card = document.getElementById('feedback-card');
+    if (!card) return;
+    card.style.display = 'block';
+
+    card.querySelector('#feedback-dismiss').addEventListener('click', () => {
+      localStorage.setItem(FB_LS_KEY, '1');
+      card.style.display = 'none';
+    }, { once: true });
+
+    card.querySelectorAll('.feedback-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const rating = btn.dataset.rating;
+        localStorage.setItem(FB_LS_KEY, '1');
+
+        // Optimistic thank-you state
+        card.classList.add('feedback-card--thankyou');
+        card.querySelector('#feedback-question').textContent = 'Thank you for your feedback!';
+
+        setTimeout(() => { card.style.display = 'none'; }, 2000);
+
+        try {
+          await fetch(`${API_BASE}/feedback`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${getToken()}`,
+            },
+            body: JSON.stringify({ rating }),
+          });
+        } catch { /* non-critical — already stored in localStorage */ }
+      }, { once: true });
+    });
+  }, 1500);
+}
+
 function selectCapability(idx) {
   _selectedCapIndex    = idx;
   _refineTargetSection = null;
@@ -136,6 +194,10 @@ function selectCapability(idx) {
   renderBlueprintContent(_blueprint, idx);
   restoreChat();
   updateAssistantContext();
+
+  // Trigger one-time feedback prompt on first AI ROI tab visit
+  const cap = (_blueprint?.capabilities || [])[idx];
+  if (cap?.capabilityName === 'AI ROI') maybeShowFeedback();
 }
 
 // ── Blueprint content ─────────────────────────────────────────────────────────

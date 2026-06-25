@@ -85,6 +85,16 @@ Long-lived teams improve continuity, accelerate learning, and enable continuous 
 * Scale successful capabilities across the organization.
 * Measure ownership continuity by tracking whether solution teams remain intact from development through production and improvement cycles.
 
+## Product Owner Continuity
+
+The Product Owner is the single most critical knowledge carrier on an AI delivery team.
+
+They hold the business context, the decision history, the customer relationship, and the evolving understanding of what the solution must become. When a Product Owner leaves or rotates mid-program, this institutional knowledge is lost — and it cannot be fully recovered through documentation alone.
+
+AI programs should treat Product Owner continuity as a governance commitment, not an HR default. Product Owners should be assigned for the full planned lifecycle of the solution — from opportunity identification through production and the first improvement cycle. Rotation or reassignment during active delivery requires a formal knowledge transfer period of at least 6–8 weeks with the incoming Product Owner shadowing before taking ownership.
+
+Organisations that invest in Product Owner stability consistently deliver AI solutions faster, with fewer requirement changes, and with higher business value attribution than those that rotate Product Owners across programs.
+
 ## Leadership Question
 
 **Do our teams own AI solutions from concept to continuous improvement?**

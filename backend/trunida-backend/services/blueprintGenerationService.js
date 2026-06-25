@@ -97,7 +97,7 @@ SECTION-SPECIFIC EXTRAS — "Alignment" sections only:
 7. spokeNodes (5–6 items)
    Identify the key stakeholder groups that must align around the AI transformation agenda.
    Each item is a plain string, 2–5 words. These will be rendered as nodes on a spoke wheel diagram.
-   Examples: ["CTO & Technology Leadership", "Engineering Teams", "Business Stakeholders", "Architecture & Platform Teams", "Delivery & Program Management", "Customer Representatives"]
+   Examples: ["Technology Leadership", "Engineering Teams", "Business Stakeholders", "Architecture & Platform Teams", "Delivery & Program Management", "Customer Representatives"]
 
    Add all three to the brief object for Alignment sections:
    "kpiHighlights": [...], "alignmentInitiatives": [...], "spokeNodes": [...]`,
@@ -158,12 +158,14 @@ SECTION-SPECIFIC EXTRAS — "Commitment" sections only:
    Extract 3 executive commitment themes (e.g. Investment, Governance, Leadership Engagement).
    Each item: { "title": "<1–3 word pillar name>", "actions": ["<action item 1>", "<action item 2>", "<action item 3>"] }
    Actions must be concrete, scannable 3–8 word bullet items describing what leaders commit to doing.
+   IMPORTANT: Never use "CTO" as a pillar title — use "Leadership" instead.
    Example: { "title": "Investment", "actions": ["AI skill development funding", "AI tooling investments", "25% increase in AI initiative budget"] }
 
 6. governanceNodes (exactly 4 items)
    Identify the 4 governance roles/bodies forming the oversight structure.
    Each item: { "title": "<role or body name>", "description": "<1 sentence on their responsibility>" }
-   Example: { "title": "CTO Oversight", "description": "Executive sponsorship and strategic direction." }
+   IMPORTANT: Never use "CTO" as a node title — use "Leadership Oversight" instead.
+   Example: { "title": "Leadership Oversight", "description": "Executive sponsorship and strategic direction for AI transformation." }
 
 7. kpiHighlights (exactly 3 items)
    Extract 3 concrete commitment outcomes as large-number KPI cards.

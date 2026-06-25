@@ -2,7 +2,7 @@
 # Node.js 20 + system Chromium for Puppeteer PDF export
 
 [phases.setup]
-nixPkgs = ['nodejs_20', 'chromium', 'noto-fonts', 'font-liberation']
+nixPkgs = ['nodejs_20', 'chromium', 'noto-fonts', 'liberation_ttf']
 
 [phases.install]
 cmds = ['cd backend/trunida-backend && npm install']

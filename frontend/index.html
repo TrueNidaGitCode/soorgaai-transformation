@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="SoorgaAI — Build your AI transformation strategy for the Automotive Industry. Define strategy, build capability, and scale AI adoption across your organization.">
+  <meta name="description" content="SoorgaAI helps Automotive Product Managers and Project Managers generate a structured AI strategy tailored to their projects — from business objective to executive-ready blueprint.">
 
   <!-- Open Graph -->
   <meta property="og:type"        content="website">
-  <meta property="og:title"       content="SoorgaAI — AI Strategy Workspace for CTOs">
-  <meta property="og:description" content="Build Your AI Transformation strategy for Automotive Industry. Discover where your organization stands and get a personalized strategy.">
+  <meta property="og:title"       content="SoorgaAI — AI Strategy Generator for Automotive Teams">
+  <meta property="og:description" content="Turn your automotive project into an AI-enabled project. Generate a structured AI strategy and executive-ready blueprint in minutes.">
   <meta property="og:url"         content="https://soorgaai.com/">
 
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="SoorgaAI — AI Strategy Workspace for CTOs">
-  <meta name="twitter:description" content="Build your AI transformation strategy for the Automotive Industry.">
+  <meta name="twitter:title"       content="SoorgaAI — AI Strategy Generator for Automotive Teams">
+  <meta name="twitter:description" content="Generate a structured AI strategy tailored to your automotive project. Executive-ready blueprint, no AI expertise required.">
 
-  <title>SoorgaAI — AI Strategy Workspace for CTOs</title>
+  <title>SoorgaAI — AI Strategy Generator for Automotive Teams</title>
 
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="home.css">
@@ -35,59 +35,33 @@
 
     <!-- ═══════════════════════════════════════════════════
          HERO — 50/50 two-column layout
-         Left:  badge · headline · description · cards · CTA
-         Right: 5-stage AI Transformation Framework panel
+         Left:  label · headline · description · CTAs
+         Right: product workflow preview
     ════════════════════════════════════════════════════ -->
     <section class="hero" aria-labelledby="hero-heading">
 
       <!-- ── Left column ──────────────────────────────── -->
       <div class="hero__left">
 
-        <div class="hero__badge" role="img" aria-label="Product category">
-          AI Transformation Intelligence Platform
+        <div class="hero__badge hero__badge--label" role="img" aria-label="Product audience">
+          Built for Automotive Product Managers and Project Managers
         </div>
 
         <h1 id="hero-heading">
-          Benchmark Your AI Maturity.<br>
-          <span class="hero__headline-accent">Build Your Transformation Strategy.</span>
+          Turn Your Automotive Project<br>
+          <span class="hero__headline-accent">into an AI-Enabled Project</span>
         </h1>
 
-        <p class="hero__desc">
-          SoorgaAI structures cross-industry AI transformation knowledge across
-          7 capability domains — giving your leadership team a benchmark-driven
-          roadmap grounded in your organization's context, not generic frameworks.
-        </p>
-
-        <!-- Credibility stats strip -->
-        <div class="hero__stats" aria-label="Platform scope">
-          <span class="hero__stat">7 Capability Domains</span>
-          <span class="hero__stat-sep" aria-hidden="true">·</span>
-          <span class="hero__stat">5 Maturity Stages</span>
-          <span class="hero__stat-sep" aria-hidden="true">·</span>
-          <span class="hero__stat">40+ Assessment Criteria</span>
-        </div>
-
-        <!-- Outcome cards — Benchmark · Architect · Operationalize -->
-        <div class="benefits-cards" aria-label="What you get">
-
-          <div class="benefit-card">
-            <span class="benefit-num" aria-hidden="true">01</span>
-            <strong class="benefit-label">Benchmark &amp; Diagnose</strong>
-            <p class="benefit-text">Assess AI maturity across 7 domains against cross-industry transformation benchmarks.</p>
-          </div>
-
-          <div class="benefit-card">
-            <span class="benefit-num" aria-hidden="true">02</span>
-            <strong class="benefit-label">Architect Strategy</strong>
-            <p class="benefit-text">Generate a structured, capability-by-capability plan aligned to your organizational context.</p>
-          </div>
-
-          <div class="benefit-card">
-            <span class="benefit-num" aria-hidden="true">03</span>
-            <strong class="benefit-label">Govern &amp; Scale</strong>
-            <p class="benefit-text">Build governance, leadership alignment, and readiness to operationalize AI at enterprise scale.</p>
-          </div>
-
+        <div class="hero__desc-wrap">
+          <p class="hero__desc">
+            Most automotive engineering teams recognize the importance of AI but struggle to
+            identify where it can create business value.
+          </p>
+          <p class="hero__desc">
+            Generate a structured AI strategy tailored to your project, identify high-impact
+            opportunities, and create an executive-ready blueprint that can be refined and
+            shared with stakeholders.
+          </p>
         </div>
 
         <div class="hero__ctas">
@@ -96,9 +70,9 @@
             class="cta-button cta-button--primary"
             onclick="CTARouter.routeToWorkspace()"
             data-cta="generate-roadmap"
-            aria-label="Start Enterprise Assessment"
+            aria-label="Generate My AI Strategy"
           >
-            Start Enterprise Assessment &rarr;
+            Generate My AI Strategy &rarr;
           </button>
           <a
             href="/framework/framework.html"
@@ -109,22 +83,89 @@
           </a>
         </div>
 
+        <p class="hero__trust">No AI expertise required.</p>
+
       </div>
 
-      <!-- ── Right column — maturity benchmark panel ──────────── -->
-      <aside class="hero__right" aria-labelledby="stages-panel-heading">
-        <h2 id="stages-panel-heading" class="stages__title">
-          Enterprise AI Maturity Benchmark
-        </h2>
-        <p class="stages__desc">
-          SoorgaAI benchmarks your organization against a structured 5-stage model —
-          from uncoordinated AI activity to an AI-fueled enterprise operating at scale.
-          Your current stage determines your transformation priority and capability
-          investment sequence.
-        </p>
-        <ol class="stages" aria-label="AI Maturity Stages">
-          <!-- Rendered by index.js — stages ordered 5 to 1 (aspirational at top) -->
-        </ol>
+      <!-- ── Right column — product workflow preview ──────────── -->
+      <aside class="hero__right" aria-label="Product workflow preview">
+        <div class="wf-panel">
+          <p class="wf-panel__label">See how it works</p>
+
+          <!-- Step 1: Business Objective -->
+          <div class="wf-step">
+            <div class="wf-step__track">
+              <div class="wf-step__dot"></div>
+              <div class="wf-step__line"></div>
+            </div>
+            <div class="wf-step__body">
+              <p class="wf-step__name">Business Objective</p>
+              <div class="wf-input-mock">
+                <p class="wf-input-mock__text">"Automate defect triage and root-cause analysis across our vehicle software programs…"</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: AI Strategy Generation -->
+          <div class="wf-step">
+            <div class="wf-step__track">
+              <div class="wf-step__dot"></div>
+              <div class="wf-step__line"></div>
+            </div>
+            <div class="wf-step__body">
+              <p class="wf-step__name">AI Strategy Generation</p>
+              <div class="wf-caps-mock">
+                <span class="wf-cap">AI Vision ✓</span>
+                <span class="wf-cap">Roadmap ✓</span>
+                <span class="wf-cap">Governance ✓</span>
+                <span class="wf-cap">AI ROI ✓</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Company Blueprint -->
+          <div class="wf-step">
+            <div class="wf-step__track">
+              <div class="wf-step__dot"></div>
+              <div class="wf-step__line"></div>
+            </div>
+            <div class="wf-step__body">
+              <p class="wf-step__name">Company Blueprint</p>
+              <div class="wf-blueprint-mock">
+                <div class="wf-blueprint-mock__tabs">
+                  <span class="wf-mock-tab wf-mock-tab--active">AI Vision</span>
+                  <span class="wf-mock-tab">Roadmap</span>
+                  <span class="wf-mock-tab">AI ROI</span>
+                </div>
+                <div class="wf-blueprint-mock__content">
+                  <div class="wf-mock-line wf-mock-line--title"></div>
+                  <div class="wf-mock-line"></div>
+                  <div class="wf-mock-line wf-mock-line--short"></div>
+                  <div class="wf-mock-cards">
+                    <div class="wf-mock-card"></div>
+                    <div class="wf-mock-card"></div>
+                    <div class="wf-mock-card"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: PDF Export -->
+          <div class="wf-step">
+            <div class="wf-step__track">
+              <div class="wf-step__dot"></div>
+            </div>
+            <div class="wf-step__body">
+              <p class="wf-step__name">PDF Export</p>
+              <div class="wf-export-mock">
+                <span class="wf-export-mock__icon">↓</span>
+                <span class="wf-export-mock__label">Executive-Ready Blueprint · PDF</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </aside>
 
     </section>

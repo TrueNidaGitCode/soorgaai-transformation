@@ -513,10 +513,212 @@ h2 {
   .cta-button--primary,
   .cta-button--outline { font-size: 15px; padding: 13px 22px; width: 100%; text-align: center; }
 
-  .benefits-cards { gap: 8px; }
-  .benefit-card { min-width: 100%; }
-
   .hero__right { padding: 20px 16px; }
-  .stage-item { gap: 12px; }
-  .stage-item__name { font-size: 14px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HERO REDESIGN — badge label · desc wrap · workflow panel
+══════════════════════════════════════════════════════════ */
+
+/* Badge label variant — longer text, no uppercase treatment */
+.hero__badge--label {
+  text-transform: none;
+  letter-spacing: 0.2px;
+  font-weight: 600;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* Two-paragraph description block */
+.hero__desc-wrap {
+  max-width: 520px;
+  margin-bottom: 32px;
+}
+.hero__desc-wrap .hero__desc {
+  max-width: 100%;
+  margin-bottom: 10px;
+}
+.hero__desc-wrap .hero__desc:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Workflow panel ─────────────────────────────────────── */
+.wf-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.wf-panel__label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--brand-primary);
+  margin: 0 0 18px;
+  opacity: 0.8;
+}
+
+.wf-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.wf-step__track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+
+.wf-step__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  flex-shrink: 0;
+}
+
+.wf-step__line {
+  width: 2px;
+  min-height: 18px;
+  flex: 1;
+  background: rgba(92, 197, 167, 0.2);
+  margin: 5px 0;
+}
+
+.wf-step__body {
+  flex: 1;
+  padding-bottom: 18px;
+}
+
+.wf-step__name {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 8px;
+  letter-spacing: 0.2px;
+}
+
+/* Input mock */
+.wf-input-mock {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.wf-input-mock__text {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.38);
+  line-height: 1.55;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Capability pills */
+.wf-caps-mock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.wf-cap {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: rgba(92, 197, 167, 0.1);
+  border: 1px solid rgba(92, 197, 167, 0.28);
+  color: var(--brand-primary);
+}
+
+/* Blueprint workspace mock */
+.wf-blueprint-mock {
+  background: rgba(13, 15, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.wf-blueprint-mock__tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0 6px;
+}
+
+.wf-mock-tab {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3);
+  padding: 6px 10px;
+}
+
+.wf-mock-tab--active {
+  color: var(--brand-primary);
+  border-bottom: 2px solid var(--brand-primary);
+  margin-bottom: -1px;
+}
+
+.wf-blueprint-mock__content {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wf-mock-line {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  width: 90%;
+}
+
+.wf-mock-line--title {
+  width: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  height: 7px;
+}
+
+.wf-mock-line--short {
+  width: 60%;
+}
+
+.wf-mock-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.wf-mock-card {
+  height: 26px;
+  background: rgba(99, 102, 241, 0.09);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 5px;
+}
+
+/* Export mock */
+.wf-export-mock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(92, 197, 167, 0.12), rgba(61, 175, 211, 0.12));
+  border: 1px solid rgba(92, 197, 167, 0.3);
+  border-radius: 8px;
+  padding: 7px 12px;
+}
+
+.wf-export-mock__icon {
+  font-size: 13px;
+  color: var(--brand-primary);
+  font-weight: 700;
+}
+
+.wf-export-mock__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
 }

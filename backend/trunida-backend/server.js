@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 // ✅ Import routes
 import userRoutes              from "./routes/userRoutes.js";
+import oauthRoutes             from "./routes/oauthRoutes.js";
 import assessmentRoutes        from "./routes/assessmentRoutes.js";
 import dynamicAssessmentRoutes from "./routes/dynamicAssessmentRoutes.js";
 import kbRoutes                from "./routes/kbRoutes.js";
@@ -76,6 +77,7 @@ app.use(async (req, res, next) => {
 // NOTE: /api/assessment/dynamic MUST be mounted before /api/assessment
 // so Express doesn't swallow dynamic requests under the broader prefix.
 app.use("/api/users",                 userRoutes);
+app.use("/api/auth/oauth",            oauthRoutes);
 app.use("/api/assessment/dynamic",    dynamicAssessmentRoutes);  // ← more specific first
 app.use("/api/assessment",            assessmentRoutes);
 app.use("/api/kb",                    kbRoutes);                 // Knowledge Base read endpoints

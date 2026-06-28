@@ -34,6 +34,16 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email }).lean();
     if (!user) return res.status(400).json({ msg: "Invalid Credentials" });
 
+    // OAuth-only account has no password hash — direct them to social login
+    if (!user.password) {
+      const provider = user.authProvider === 'google' ? 'Google'
+                     : user.authProvider === 'microsoft' ? 'Microsoft'
+                     : 'social login';
+      return res.status(400).json({
+        msg: `This account uses ${provider} sign-in. Please use the ${provider} button above.`,
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid Credentials" });
 

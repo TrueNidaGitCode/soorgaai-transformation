@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signing in — SoorgaAI</title>
+  <link rel="stylesheet" href="login.css">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .oauth-cb {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .oauth-cb__card {
+      background: linear-gradient(135deg, rgba(25,25,30,0.95), rgba(20,20,25,0.95));
+      border: 1px solid rgba(92,197,167,0.3);
+      border-radius: 24px;
+      padding: 50px 40px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      animation: slideUp 0.5s ease-out;
+    }
+    .oauth-cb__icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .oauth-cb__title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      margin: 0 0 12px;
+    }
+    .oauth-cb__body {
+      font-size: 15px;
+      color: var(--text-secondary, rgba(255,255,255,0.6));
+      margin: 0 0 28px;
+      line-height: 1.55;
+    }
+    .oauth-cb__spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(92,197,167,0.2);
+      border-top-color: #5CC5A7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    .oauth-cb__btn {
+      display: inline-block;
+      padding: 13px 28px;
+      background: #5CC5A7;
+      color: #0D0D0D;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .oauth-cb__btn:hover { background: #4ab898; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body data-nav-mode="login">
+
+  <main class="oauth-cb">
+    <div class="oauth-cb__card" id="cb-card">
+      <!-- JS fills this in -->
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script>
+    (function () {
+      var card   = document.getElementById('cb-card');
+      var params = new URLSearchParams(window.location.search);
+      var error  = params.get('error');
+      var token  = params.get('token');
+
+      if (error) {
+        // ── Error state ───────────────────────────────────────
+        card.innerHTML =
+          '<span class="oauth-cb__icon" aria-hidden="true">⚠️</span>' +
+          '<h1 class="oauth-cb__title">Sign-in Failed</h1>' +
+          '<p class="oauth-cb__body">' + escapeHtml(error) + '</p>' +
+          '<a href="/login/login.html" class="oauth-cb__btn">Try Again</a>';
+        return;
+      }
+
+      if (!token) {
+        // ── No params at all (direct navigation) ─────────────
+        window.location.replace('/login/login.html');
+        return;
+      }
+
+      // ── Success: store auth data, redirect ────────────────
+      var userId   = params.get('userId')   || '';
+      var username = params.get('username') || '';
+      var role     = params.get('role')     || 'user';
+
+      try {
+        localStorage.setItem('token',    token);
+        localStorage.setItem('userId',   userId);
+        localStorage.setItem('username', username);
+        localStorage.setItem('role',     role);
+      } catch (e) {
+        card.innerHTML =
+          '<span class="oauth-cb__icon" aria-hidden="true">⚠️</span>' +
+          '<h1 class="oauth-cb__title">Storage Error</h1>' +
+          '<p class="oauth-cb__body">Could not save your session. Please allow local storage and try again.</p>' +
+          '<a href="/login/login.html" class="oauth-cb__btn">Try Again</a>';
+        return;
+      }
+
+      // Show brief success state while redirect fires
+      card.innerHTML =
+        '<div class="oauth-cb__spinner" role="status" aria-label="Signing you in"></div>' +
+        '<h1 class="oauth-cb__title">Signed in!</h1>' +
+        '<p class="oauth-cb__body">Taking you to your workspace…</p>';
+
+      // Respect any pending redirect (set by login.html before the OAuth dance)
+      var destination = '/workspace/workspace.html';
+      try {
+        var pending = localStorage.getItem('redirectAfterLogin');
+        if (pending && pending.startsWith('/') && !pending.startsWith('//')) {
+          localStorage.removeItem('redirectAfterLogin');
+          destination = pending;
+        }
+      } catch (e) { /* ignore */ }
+
+      // Small delay so user sees the "Signed in!" flash
+      setTimeout(function () {
+        window.location.replace(destination);
+      }, 600);
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g,  '&amp;')
+          .replace(/</g,  '&lt;')
+          .replace(/>/g,  '&gt;')
+          .replace(/"/g,  '&quot;')
+          .replace(/'/g,  '&#39;');
+      }
+    })();
+  </script>
+
+</body>
+</html>

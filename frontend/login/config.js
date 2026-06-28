@@ -21,6 +21,12 @@ window.CONFIG = {
         VERIFY:          `${API_BASE_URL}/api/users/me`,
         FORGOT_PASSWORD: `${API_BASE_URL}/api/users/forgot-password`,
         RESET_PASSWORD:  `${API_BASE_URL}/api/users/reset-password`,
+
+        // OAuth — browser navigates directly to these URLs (not fetch)
+        OAUTH: {
+            GOOGLE:    `${API_BASE_URL}/api/auth/oauth/google`,
+            MICROSOFT: `${API_BASE_URL}/api/auth/oauth/microsoft`,
+        },
     },
 
     // ── Assessment ────────────────────────────────────────

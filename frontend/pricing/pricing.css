@@ -105,6 +105,13 @@
   letter-spacing: 0.1px;
 }
 
+/* .pr-card__price has display:flex which overrides the HTML `hidden` attribute.
+   This rule ensures hidden price variants are always invisible. */
+.pr-price--monthly[hidden],
+.pr-price--yearly[hidden] {
+  display: none !important;
+}
+
 /* ═══════════════════════════════════════════════════════════
    EARLY ACCESS BANNER
 ══════════════════════════════════════════════════════════ */

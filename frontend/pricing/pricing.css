@@ -1,0 +1,621 @@
+/* ============================================================
+   SoorgaAI — Pricing Page Styles
+   Extends global style.css and home.css (brand tokens + footer)
+   ============================================================ */
+
+:root {
+  --pr-brand:        #5CC5A7;
+  --pr-accent:       #3DAFD3;
+  --pr-card-bg:      rgba(255, 255, 255, 0.03);
+  --pr-card-border:  rgba(255, 255, 255, 0.08);
+  --pr-text-dim:     rgba(255, 255, 255, 0.45);
+  --pr-max-w:        1120px;
+}
+
+/* Override home.css global h2 for pricing-specific headings */
+.pr-faq__heading,
+.pr-footer-cta__heading {
+  font-size: clamp(24px, 2.6vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin-bottom: 0;
+  color: #fff;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HERO — Heading + billing toggle
+══════════════════════════════════════════════════════════ */
+.pr-hero {
+  padding: 72px 40px 0;
+  text-align: center;
+}
+
+.pr-hero__inner {
+  max-width: var(--pr-max-w);
+  margin: 0 auto;
+}
+
+.pr-hero__heading {
+  font-size: clamp(32px, 3.6vw, 50px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.pr-accent {
+  color: var(--pr-brand);
+}
+
+.pr-hero__sub {
+  font-size: 18px;
+  color: var(--pr-text-dim);
+  line-height: 1.65;
+  margin: 0 auto 40px;
+  max-width: 520px;
+}
+
+/* ── Billing toggle pill ────────────────────────────────── */
+.pr-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  padding: 4px;
+  margin-bottom: 52px;
+}
+
+.pr-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 24px;
+  border-radius: 26px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+
+.pr-toggle__btn--active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.pr-toggle__btn:hover:not(.pr-toggle__btn--active) {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.pr-toggle__save {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  background: rgba(92, 197, 167, 0.14);
+  color: var(--pr-brand);
+  border: 1px solid rgba(92, 197, 167, 0.28);
+  border-radius: 12px;
+  letter-spacing: 0.1px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EARLY ACCESS BANNER
+══════════════════════════════════════════════════════════ */
+.pr-early-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 32px;
+  background: rgba(92, 197, 167, 0.05);
+  border-top: 1px solid rgba(92, 197, 167, 0.12);
+  border-bottom: 1px solid rgba(92, 197, 167, 0.12);
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.pr-early-banner__icon {
+  font-size: 15px;
+}
+
+.pr-early-banner__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pr-brand);
+  letter-spacing: 0.3px;
+}
+
+.pr-early-banner__sep {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+}
+
+.pr-early-banner__body {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PRICING CARDS
+══════════════════════════════════════════════════════════ */
+.pr-cards-section {
+  padding: 56px 40px 80px;
+}
+
+.pr-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: var(--pr-max-w);
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+/* ── Base card ──────────────────────────────────────────── */
+.pr-card {
+  position: relative;
+  background: var(--pr-card-bg);
+  border: 1px solid var(--pr-card-border);
+  border-radius: 20px;
+  padding: 36px 28px 32px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.25s ease;
+}
+
+.pr-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* ── Featured (Professional) card ───────────────────────── */
+.pr-card--featured {
+  background: rgba(92, 197, 167, 0.04);
+  border: 1.5px solid rgba(92, 197, 167, 0.32);
+  box-shadow:
+    0 0 0 1px rgba(92, 197, 167, 0.08),
+    0 12px 48px rgba(92, 197, 167, 0.07);
+}
+
+.pr-card--featured:hover {
+  border-color: rgba(92, 197, 167, 0.52);
+}
+
+/* Most Popular badge */
+.pr-card__badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #5CC5A7, #3DAFD3);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 4px 18px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* ── Card header ─────────────────────────────────────────── */
+.pr-card__header {
+  margin-bottom: 24px;
+}
+
+.pr-card__name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 14px;
+  letter-spacing: -0.2px;
+}
+
+/* Reserve height so cards stay aligned regardless of content */
+.pr-card__price-wrap {
+  min-height: 60px;
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 14px;
+}
+
+.pr-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pr-price__amount {
+  font-size: 40px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.6px;
+}
+
+.pr-price__period {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--pr-text-dim);
+  align-self: flex-end;
+  padding-bottom: 3px;
+}
+
+.pr-price__saving {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  background: rgba(92, 197, 167, 0.12);
+  color: var(--pr-brand);
+  border: 1px solid rgba(92, 197, 167, 0.24);
+  border-radius: 12px;
+  align-self: center;
+  white-space: nowrap;
+}
+
+.pr-price__custom {
+  font-size: 28px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: -0.3px;
+  align-self: flex-end;
+  padding-bottom: 2px;
+}
+
+.pr-card__sub {
+  font-size: 14px;
+  color: var(--pr-text-dim);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Feature list ────────────────────────────────────────── */
+.pr-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  flex: 1;
+}
+
+.pr-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.45;
+}
+
+.pr-feature::before {
+  content: '✓';
+  color: var(--pr-brand);
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* "Everything in X" — separator line with different marker */
+.pr-feature--group {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  margin-bottom: 1px;
+}
+
+.pr-feature--group::before {
+  content: '→';
+  color: var(--pr-text-dim);
+  font-weight: 400;
+}
+
+/* Upcoming / future feature */
+.pr-feature--future {
+  color: var(--pr-text-dim);
+  font-style: italic;
+}
+
+.pr-feature--future::before {
+  content: '◦';
+  color: rgba(255, 255, 255, 0.25);
+  font-weight: 400;
+}
+
+/* ── Card CTA button ─────────────────────────────────────── */
+.pr-card__cta {
+  margin-top: auto;
+}
+
+.pr-cta-btn {
+  display: block;
+  width: 100%;
+  padding: 13px 24px;
+  border-radius: 28px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  border: none;
+  text-align: center;
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.pr-cta-btn--primary {
+  background: linear-gradient(135deg, #5CC5A7, #3DAFD3);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(92, 197, 167, 0.28);
+}
+
+.pr-cta-btn--primary:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(92, 197, 167, 0.42);
+}
+
+.pr-cta-btn--outline {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+}
+
+.pr-cta-btn--outline:hover {
+  border-color: var(--pr-brand);
+  color: #fff;
+  background: rgba(92, 197, 167, 0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FAQ — Accordion using <details>/<summary>
+══════════════════════════════════════════════════════════ */
+.pr-faq {
+  padding: 80px 40px;
+  background: rgba(255, 255, 255, 0.015);
+  border-top: 1px solid var(--pr-card-border);
+}
+
+.pr-faq__inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.pr-faq__heading {
+  text-align: center;
+  margin-bottom: 48px !important;
+}
+
+.pr-faq__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.pr-faq-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.pr-faq-item:first-child {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.pr-faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  gap: 16px;
+  transition: color 0.2s;
+}
+
+/* Remove default marker in all browsers */
+.pr-faq-q::-webkit-details-marker { display: none; }
+.pr-faq-q::marker { display: none; }
+
+/* +/× indicator */
+.pr-faq-q::after {
+  content: '+';
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--pr-text-dim);
+  flex-shrink: 0;
+  line-height: 1;
+  transition: transform 0.25s ease, color 0.2s;
+}
+
+.pr-faq-item[open] .pr-faq-q::after {
+  transform: rotate(45deg);
+  color: var(--pr-brand);
+}
+
+.pr-faq-item[open] .pr-faq-q {
+  color: #fff;
+}
+
+.pr-faq-a {
+  font-size: 15px;
+  color: var(--pr-text-dim);
+  line-height: 1.72;
+  padding-bottom: 20px;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FOOTER CTA
+══════════════════════════════════════════════════════════ */
+.pr-footer-cta {
+  padding: 88px 40px;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: radial-gradient(ellipse at 50% 100%, rgba(92, 197, 167, 0.07) 0%, transparent 65%);
+}
+
+.pr-footer-cta__inner {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.pr-footer-cta__heading {
+  margin-bottom: 16px !important;
+}
+
+.pr-footer-cta__sub {
+  font-size: 17px;
+  color: var(--pr-text-dim);
+  line-height: 1.65;
+  margin-bottom: 36px;
+}
+
+.pr-footer-cta__btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DIALOGS — Coming Soon + Contact
+══════════════════════════════════════════════════════════ */
+.pr-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 24px;
+}
+
+.pr-dialog-overlay[hidden] { display: none !important; }
+
+.pr-dialog {
+  position: relative;
+  background: #14141f;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 48px 40px 40px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.65);
+}
+
+.pr-dialog__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.pr-dialog__close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.pr-dialog__icon {
+  font-size: 38px;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
+.pr-dialog__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 12px;
+}
+
+.pr-dialog__body {
+  font-size: 15px;
+  color: var(--pr-text-dim);
+  line-height: 1.68;
+  margin: 0 0 28px;
+}
+
+.pr-dialog__cta {
+  display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════════ */
+
+@media (max-width: 1080px) {
+  .pr-cards { gap: 16px; }
+  .pr-card  { padding: 32px 22px 28px; }
+}
+
+@media (max-width: 860px) {
+  /* Stack cards: Professional first (featured) */
+  .pr-cards {
+    grid-template-columns: 1fr;
+    max-width: 460px;
+  }
+
+  .pr-card--featured { order: -1; }
+
+  .pr-cards-section { padding: 44px 24px 64px; }
+}
+
+@media (max-width: 768px) {
+  .pr-hero         { padding: 56px 24px 0; }
+  .pr-hero__heading { font-size: 30px; }
+  .pr-hero__sub    { font-size: 16px; }
+  .pr-toggle       { margin-bottom: 40px; }
+
+  .pr-faq          { padding: 60px 24px; }
+  .pr-footer-cta   { padding: 64px 24px; }
+
+  .pr-footer-cta__btns { flex-direction: column; align-items: center; }
+
+  .cta-button,
+  .cta-button--primary,
+  .cta-button--outline {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .pr-hero          { padding: 44px 16px 0; }
+  .pr-toggle__btn   { padding: 8px 16px; font-size: 13px; }
+  .pr-cards-section { padding: 36px 16px 52px; }
+  .pr-card          { padding: 28px 18px 24px; }
+  .pr-price__amount { font-size: 34px; }
+  .pr-early-banner  { padding: 12px 16px; gap: 6px; }
+  .pr-dialog        { padding: 40px 24px 32px; }
+  .pr-faq           { padding: 48px 16px; }
+  .pr-footer-cta    { padding: 52px 16px; }
+}

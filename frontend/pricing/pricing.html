@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SoorgaAI Pricing — Simple, transparent pricing for Automotive Product Managers and Project Managers driving AI initiatives. Start free, scale with your team.">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="SoorgaAI — Pricing">
+  <meta property="og:description" content="Start free, grow with your team, and scale AI transformation across your organization.">
+  <meta property="og:url"         content="https://soorgaai.com/pricing/">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="SoorgaAI — Pricing">
+  <meta name="twitter:description" content="Start free, grow with your team, and scale AI transformation across your organization.">
+
+  <title>SoorgaAI — Pricing</title>
+
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../home.css">
+  <link rel="stylesheet" href="pricing.css">
+
+  <script src="../login/config.js"></script>
+  <script type="module" src="../login/authState.js"></script>
+  <script type="module" src="../navbar/navbar.js"></script>
+</head>
+<body data-nav-mode="anonymous">
+
+  <div id="navbar-container" style="min-height:64px"></div>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════════════
+         HERO — Page heading + billing toggle
+    ════════════════════════════════════════════════════ -->
+    <section class="pr-hero" aria-labelledby="pr-heading">
+      <div class="pr-hero__inner">
+
+        <h1 id="pr-heading" class="pr-hero__heading">
+          Simple pricing for every stage<br>
+          <span class="pr-accent">of your AI journey.</span>
+        </h1>
+        <p class="pr-hero__sub">
+          Start free, grow with your team, and scale AI transformation across your organization.
+        </p>
+
+        <!-- Billing period toggle -->
+        <div class="pr-toggle" role="group" aria-label="Billing period">
+          <button class="pr-toggle__btn" data-period="monthly" aria-pressed="false">
+            Monthly
+          </button>
+          <button class="pr-toggle__btn pr-toggle__btn--active" data-period="yearly" aria-pressed="true">
+            Yearly <span class="pr-toggle__save">Save 20%</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         EARLY ACCESS BANNER
+    ════════════════════════════════════════════════════ -->
+    <div class="pr-early-banner" role="note" aria-label="Early access program">
+      <span class="pr-early-banner__icon" aria-hidden="true">🚀</span>
+      <strong class="pr-early-banner__title">Early Access</strong>
+      <span class="pr-early-banner__sep" aria-hidden="true">—</span>
+      <span class="pr-early-banner__body">Join our early access program and help shape the future of AI Strategy.</span>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         PRICING CARDS
+    ════════════════════════════════════════════════════ -->
+    <section class="pr-cards-section" aria-label="Pricing plans">
+      <div class="pr-cards">
+
+        <!-- ── Free ─────────────────────────────────────── -->
+        <div class="pr-card" data-plan="free">
+          <div class="pr-card__header">
+            <h3 class="pr-card__name">Free</h3>
+            <div class="pr-card__price-wrap">
+              <div class="pr-card__price">
+                <span class="pr-price__amount">₹0</span>
+              </div>
+            </div>
+            <p class="pr-card__sub">Perfect for exploring AI Strategy.</p>
+          </div>
+
+          <ul class="pr-features" aria-label="Free plan features">
+            <li class="pr-feature">Generate AI Strategy Blueprints</li>
+            <li class="pr-feature">Automotive Industry Blueprint</li>
+            <li class="pr-feature">AI Assistant</li>
+            <li class="pr-feature">PDF Export</li>
+            <li class="pr-feature">1 Active Project</li>
+            <li class="pr-feature">Community Support</li>
+          </ul>
+
+          <div class="pr-card__cta">
+            <button class="pr-cta-btn pr-cta-btn--outline" onclick="CTARouter.routeToWorkspace()" aria-label="Get started with the Free plan">
+              Get Started
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Professional (featured) ──────────────────── -->
+        <div class="pr-card pr-card--featured" data-plan="professional" data-price-monthly="2999" data-price-yearly="28999">
+          <div class="pr-card__badge" aria-label="Most popular plan">Most Popular</div>
+
+          <div class="pr-card__header">
+            <h3 class="pr-card__name">Professional</h3>
+            <div class="pr-card__price-wrap">
+              <!-- Monthly price (hidden by default — yearly is default) -->
+              <div class="pr-card__price pr-price--monthly" hidden>
+                <span class="pr-price__amount">₹2,999</span>
+                <span class="pr-price__period">/ month</span>
+              </div>
+              <!-- Yearly price (visible by default) -->
+              <div class="pr-card__price pr-price--yearly">
+                <span class="pr-price__amount">₹28,999</span>
+                <span class="pr-price__period">/ year</span>
+                <span class="pr-price__saving">Save ₹6,989</span>
+              </div>
+            </div>
+            <p class="pr-card__sub">Designed for Product Managers and Project Managers driving AI initiatives.</p>
+          </div>
+
+          <ul class="pr-features" aria-label="Professional plan features">
+            <li class="pr-feature pr-feature--group">Everything in Free</li>
+            <li class="pr-feature">Unlimited Projects</li>
+            <li class="pr-feature">Unlimited AI Strategy Blueprints</li>
+            <li class="pr-feature">AI Assistant</li>
+            <li class="pr-feature">Version History</li>
+            <li class="pr-feature">Executive PDF Export</li>
+            <li class="pr-feature">Priority AI Generation</li>
+            <li class="pr-feature">Priority Support</li>
+          </ul>
+
+          <div class="pr-card__cta">
+            <button class="pr-cta-btn pr-cta-btn--primary" id="btn-pro-trial" aria-haspopup="dialog" aria-label="Start free trial of Professional plan">
+              Start Free Trial
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Enterprise ────────────────────────────────── -->
+        <div class="pr-card" data-plan="enterprise">
+          <div class="pr-card__header">
+            <h3 class="pr-card__name">Enterprise</h3>
+            <div class="pr-card__price-wrap">
+              <div class="pr-card__price">
+                <span class="pr-price__custom">Custom Pricing</span>
+              </div>
+            </div>
+            <p class="pr-card__sub">Scale AI Strategy across your engineering organization.</p>
+          </div>
+
+          <ul class="pr-features" aria-label="Enterprise plan features">
+            <li class="pr-feature pr-feature--group">Everything in Professional</li>
+            <li class="pr-feature">Unlimited Users</li>
+            <li class="pr-feature">Organization Blueprints</li>
+            <li class="pr-feature">Company Knowledge Base</li>
+            <li class="pr-feature">Role-Based Access Control</li>
+            <li class="pr-feature">Team Collaboration</li>
+            <li class="pr-feature">Admin Dashboard</li>
+            <li class="pr-feature">Dedicated Customer Success</li>
+            <li class="pr-feature">Custom Integrations</li>
+            <li class="pr-feature pr-feature--future">Private Deployment (Future)</li>
+          </ul>
+
+          <div class="pr-card__cta">
+            <button class="pr-cta-btn pr-cta-btn--outline" id="btn-enterprise-contact" aria-haspopup="dialog" aria-label="Contact us about Enterprise plan">
+              Contact Us
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         FAQ
+    ════════════════════════════════════════════════════ -->
+    <section class="pr-faq" aria-labelledby="faq-heading">
+      <div class="pr-faq__inner">
+        <h2 id="faq-heading" class="pr-faq__heading">Frequently Asked Questions</h2>
+
+        <div class="pr-faq__list">
+
+          <details class="pr-faq-item">
+            <summary class="pr-faq-q">Can I start for free?</summary>
+            <p class="pr-faq-a">Yes. You can explore the platform using the Free plan — no credit card required.</p>
+          </details>
+
+          <details class="pr-faq-item">
+            <summary class="pr-faq-q">Do I need AI expertise?</summary>
+            <p class="pr-faq-a">No. The platform is designed for Product Managers, Project Managers, Engineering Managers, and Technology Leaders. No AI expertise is needed.</p>
+          </details>
+
+          <details class="pr-faq-item">
+            <summary class="pr-faq-q">Can I upgrade later?</summary>
+            <p class="pr-faq-a">Yes. You can move to Professional or Enterprise at any time as your needs grow.</p>
+          </details>
+
+          <details class="pr-faq-item">
+            <summary class="pr-faq-q">Is Enterprise pricing fixed?</summary>
+            <p class="pr-faq-a">No. Enterprise pricing depends on organization size and requirements. Contact us to discuss a plan that works for your team.</p>
+          </details>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         FOOTER CTA
+    ════════════════════════════════════════════════════ -->
+    <section class="pr-footer-cta" aria-labelledby="footer-cta-heading">
+      <div class="pr-footer-cta__inner">
+        <h2 id="footer-cta-heading" class="pr-footer-cta__heading">
+          Ready to Build Your AI Strategy?
+        </h2>
+        <p class="pr-footer-cta__sub">
+          Start your AI transformation today with a strategy tailored to your product, project, or organization.
+        </p>
+        <div class="pr-footer-cta__btns">
+          <button class="cta-button cta-button--primary" onclick="CTARouter.routeToWorkspace()">
+            Get Started Free
+          </button>
+          <button class="cta-button cta-button--outline" id="btn-footer-contact">
+            Contact Us
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════════════ -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2025 SoorgaAI. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
+    </div>
+  </footer>
+
+  <!-- ── Coming Soon dialog (Professional) ─────────────────── -->
+  <div id="dialog-coming-soon" class="pr-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="cs-title" hidden>
+    <div class="pr-dialog">
+      <button class="pr-dialog__close" id="btn-close-cs" aria-label="Close dialog">✕</button>
+      <div class="pr-dialog__icon" aria-hidden="true">🚀</div>
+      <h3 id="cs-title" class="pr-dialog__title">Coming Soon</h3>
+      <p class="pr-dialog__body">
+        The Professional plan will be available soon as part of our early access program.
+        Start with the Free plan today and upgrade when it launches.
+      </p>
+      <button class="pr-cta-btn pr-cta-btn--primary pr-dialog__cta" onclick="CTARouter.routeToWorkspace()">
+        Get Started Free
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Contact dialog (Enterprise) ──────────────────────── -->
+  <div id="dialog-contact" class="pr-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="ct-title" hidden>
+    <div class="pr-dialog">
+      <button class="pr-dialog__close" id="btn-close-ct" aria-label="Close dialog">✕</button>
+      <div class="pr-dialog__icon" aria-hidden="true">✉️</div>
+      <h3 id="ct-title" class="pr-dialog__title">Get in Touch</h3>
+      <p class="pr-dialog__body">
+        Interested in Enterprise access? Tell us about your team and we'll put together
+        a plan tailored to your organization's needs.
+      </p>
+      <a class="pr-cta-btn pr-cta-btn--primary pr-dialog__cta" href="mailto:contact@soorgaai.com?subject=Enterprise%20Plan%20Enquiry">
+        Email Us
+      </a>
+    </div>
+  </div>
+
+  <!-- CTA Router — must load before any onclick="CTARouter.*" fires -->
+  <script src="../shared/ctaRouter.js"></script>
+
+  <!-- Pricing page interactions -->
+  <script>
+    (function () {
+      'use strict';
+
+      // ── Billing period toggle ─────────────────────────────
+      var toggleBtns  = document.querySelectorAll('.pr-toggle__btn');
+      var monthlyEls  = document.querySelectorAll('.pr-price--monthly');
+      var yearlyEls   = document.querySelectorAll('.pr-price--yearly');
+
+      function setPeriod(period) {
+        toggleBtns.forEach(function (btn) {
+          var active = btn.dataset.period === period;
+          btn.classList.toggle('pr-toggle__btn--active', active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        monthlyEls.forEach(function (el) { el.hidden = period !== 'monthly'; });
+        yearlyEls.forEach(function  (el) { el.hidden = period !== 'yearly';  });
+      }
+
+      toggleBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () { setPeriod(btn.dataset.period); });
+      });
+
+      // Initialize: yearly is the default
+      setPeriod('yearly');
+
+      // ── Dialog helpers ─────────────────────────────────────
+      function showDialog(id) {
+        var overlay = document.getElementById(id);
+        if (!overlay) return;
+        overlay.hidden = false;
+        document.body.style.overflow = 'hidden';
+        var closeBtn = overlay.querySelector('.pr-dialog__close');
+        if (closeBtn) closeBtn.focus();
+      }
+
+      function hideDialog(id) {
+        var overlay = document.getElementById(id);
+        if (!overlay) return;
+        overlay.hidden = true;
+        document.body.style.overflow = '';
+      }
+
+      // Professional — Coming Soon
+      var btnPro = document.getElementById('btn-pro-trial');
+      if (btnPro) btnPro.addEventListener('click', function () { showDialog('dialog-coming-soon'); });
+      document.getElementById('btn-close-cs').addEventListener('click', function () { hideDialog('dialog-coming-soon'); });
+
+      // Enterprise & footer — Contact
+      function openContact() { showDialog('dialog-contact'); }
+      var btnEnt    = document.getElementById('btn-enterprise-contact');
+      var btnFooter = document.getElementById('btn-footer-contact');
+      if (btnEnt)    btnEnt.addEventListener('click', openContact);
+      if (btnFooter) btnFooter.addEventListener('click', openContact);
+      document.getElementById('btn-close-ct').addEventListener('click', function () { hideDialog('dialog-contact'); });
+
+      // Close on backdrop click
+      document.querySelectorAll('.pr-dialog-overlay').forEach(function (overlay) {
+        overlay.addEventListener('click', function (e) {
+          if (e.target === overlay) hideDialog(overlay.id);
+        });
+      });
+
+      // Close on Escape
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          hideDialog('dialog-coming-soon');
+          hideDialog('dialog-contact');
+        }
+      });
+
+    })();
+  </script>
+
+</body>
+</html>

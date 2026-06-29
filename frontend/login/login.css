@@ -53,22 +53,13 @@
     margin-bottom: 40px;
 }
 
-.brand-title {
-    font-size: 48px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 10px;
-    letter-spacing: 2px;
-}
-
-.brand-title::after {
-    content: '';
+.login-logo {
+    height: 72px;
+    width: auto;
     display: block;
-    width: 60px;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent-green), var(--accent-hover));
-    margin: 15px auto 0;
-    border-radius: 2px;
+    margin: 0 auto 6px;
+    /* Removes the black PNG background on dark backgrounds */
+    mix-blend-mode: screen;
 }
 
 .login-subtitle {

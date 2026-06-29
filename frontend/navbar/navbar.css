@@ -19,12 +19,18 @@
 
 /* ── Brand ────────────────────────────────────────────────── */
 .brand {
-  font-size: 20px;
-  font-weight: 700;
-  color: #5CC5A7;
   text-decoration: none;
   flex-shrink: 0;
-  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+}
+
+.brand-logo {
+  height: 38px;
+  width: auto;
+  display: block;
+  /* Removes the black PNG background on dark backgrounds */
+  mix-blend-mode: screen;
 }
 
 .brand:focus-visible {

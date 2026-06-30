@@ -72,13 +72,15 @@ export async function handleTurn(userId, domainId, userMessage) {
 
   // ── Parse JSON envelope ────────────────────────────────────────────────────
 
-  let reply        = rawText;
-  let parsedUpdates = [];
+  let reply               = rawText;
+  let parsedUpdates       = [];
+  let rawKnowledgeSuggs   = [];
 
   try {
     const envelope = JSON.parse(rawText);
-    if (typeof envelope.reply === 'string') reply = envelope.reply;
-    if (Array.isArray(envelope.canvasUpdates)) parsedUpdates = envelope.canvasUpdates;
+    if (typeof envelope.reply === 'string')        reply              = envelope.reply;
+    if (Array.isArray(envelope.canvasUpdates))     parsedUpdates      = envelope.canvasUpdates;
+    if (Array.isArray(envelope.knowledgeSuggestions)) rawKnowledgeSuggs = envelope.knowledgeSuggestions;
   } catch {
     // Malformed JSON — use raw text as reply, no canvas update
     console.warn('[conversation] LLM returned non-JSON; using raw text as reply.');
@@ -96,7 +98,7 @@ export async function handleTurn(userId, domainId, userMessage) {
 
   await maybeSummarize(userId, domainId, profile, conversationId);
 
-  return { reply, parsedUpdates, conversationId };
+  return { reply, parsedUpdates, rawKnowledgeSuggs, conversationId };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

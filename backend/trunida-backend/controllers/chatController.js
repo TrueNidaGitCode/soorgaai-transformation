@@ -34,7 +34,7 @@ export const sendMessage = async (req, res) => {
     }
 
     // Run the conversation turn (Claude call + turn persistence)
-    const { reply, parsedUpdates, conversationId } = await handleTurn(
+    const { reply, parsedUpdates, rawKnowledgeSuggs, conversationId } = await handleTurn(
       userId, domainId, message.trim()
     );
 
@@ -43,8 +43,10 @@ export const sendMessage = async (req, res) => {
 
     return res.status(200).json({
       reply,
-      canvasUpdates:  acceptedUpdates,
-      conversationId: conversationId.toString(),
+      canvasUpdates:        acceptedUpdates,
+      conversationId:       conversationId.toString(),
+      // Raw knowledge suggestions — frontend saves them via /api/knowledge-suggestions/batch
+      knowledgeSuggestions: rawKnowledgeSuggs || [],
     });
 
   } catch (err) {

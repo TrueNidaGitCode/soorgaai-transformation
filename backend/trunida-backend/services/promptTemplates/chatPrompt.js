@@ -56,6 +56,17 @@ OUTPUT FORMAT — respond with ONLY valid JSON, no markdown:
       "confidence": <0.0 to 1.0>,
       "evidence": "<direct quote or brief summary of what the user said that justifies this update>"
     }
+  ],
+  "knowledgeSuggestions": [
+    {
+      "title": "<concise knowledge title, max 100 chars>",
+      "description": "<what was learned, 1–2 sentences>",
+      "knowledgeType": "<PROJECT | COMPANY | INDUSTRY>",
+      "suggestedCapability": "<which AI capability area this relates to, or null>",
+      "suggestedSection": "<which blueprint section this applies to, or null>",
+      "confidence": <0.0 to 1.0>,
+      "reasoning": "<why this insight is reusable beyond this project>"
+    }
   ]
 }
 
@@ -65,7 +76,17 @@ CANVAS UPDATE RULES (strictly enforced server-side):
 - newDescription must be 20–400 characters.
 - Never change focus area titles — only descriptions.
 - evidence is mandatory for every update.
-- canvasUpdates can be [] if nothing warrants an update yet.`;
+- canvasUpdates can be [] if nothing warrants an update yet.
+
+KNOWLEDGE SUGGESTION RULES:
+- Include a knowledgeSuggestion ONLY when the user shares genuinely reusable organisational knowledge:
+  customer feedback, lessons learned, engineering practices, AI implementation insights
+  (successes or failures), process improvements, governance or data recommendations.
+- knowledgeType: PROJECT = applies only to this project; COMPANY = reusable across projects;
+  INDUSTRY = generic automotive/engineering insight.
+- Set confidence ≥ 0.7 only when the knowledge is clearly articulated and reusable.
+- knowledgeSuggestions can be [] when the message contains no reusable knowledge.
+- Do NOT generate suggestions for routine clarifications or questions.`;
 }
 
 export function buildMessages(recentTurns, summary, userMessage) {

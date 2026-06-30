@@ -1,0 +1,413 @@
+/* ── Page layout ─────────────────────────────────────────────────────────── */
+.ks-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.ks-header {
+  margin-bottom: 32px;
+}
+
+.ks-header__inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.ks-header__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin: 0 0 8px;
+}
+
+.ks-header__sub {
+  font-size: 15px;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  max-width: 560px;
+  line-height: 1.5;
+}
+
+.ks-back-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.ks-back-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+/* ── Filters ─────────────────────────────────────────────────────────────── */
+.ks-filters {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.ks-filter-group {
+  display: flex;
+  gap: 6px;
+}
+
+.ks-filter-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.ks-filter-btn:hover {
+  color: rgba(255,255,255,0.85);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.ks-filter-btn--active {
+  background: rgba(92, 197, 167, 0.12);
+  border-color: rgba(92, 197, 167, 0.4);
+  color: #5CC5A7;
+}
+
+.ks-total {
+  font-size: 13px;
+  color: rgba(255,255,255,0.35);
+  margin-left: auto;
+}
+
+/* ── Loading ─────────────────────────────────────────────────────────────── */
+.ks-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 80px 20px;
+  color: rgba(255,255,255,0.4);
+  font-size: 14px;
+}
+
+.ks-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(92, 197, 167, 0.2);
+  border-top-color: #5CC5A7;
+  border-radius: 50%;
+  animation: ksSpin 0.8s linear infinite;
+}
+
+@keyframes ksSpin { to { transform: rotate(360deg); } }
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.ks-empty {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.ks-empty__icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.ks-empty__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin: 0 0 12px;
+}
+
+.ks-empty__body {
+  font-size: 15px;
+  color: rgba(255,255,255,0.5);
+  margin: 0 0 28px;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.55;
+}
+
+.ks-cta-btn {
+  display: inline-block;
+  padding: 12px 24px;
+  background: #5CC5A7;
+  color: #0D0D0D;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.ks-cta-btn:hover { background: #4ab898; }
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.ks-table-wrap {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.ks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.ks-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  white-space: nowrap;
+}
+
+.ks-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.8);
+  vertical-align: top;
+}
+
+.ks-table tbody tr:last-child td { border-bottom: none; }
+
+.ks-table tbody tr:hover td {
+  background: rgba(255,255,255,0.02);
+}
+
+.ks-table__title {
+  font-weight: 600;
+  color: #fff;
+  max-width: 260px;
+  line-height: 1.35;
+}
+
+/* ── Type badge ──────────────────────────────────────────────────────────── */
+.ks-type {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ks-type--COMPANY  { background: rgba(92,197,167,0.14); color: #5CC5A7; }
+.ks-type--INDUSTRY { background: rgba(255,196,92,0.14);  color: #f5b942; }
+.ks-type--PROJECT  { background: rgba(130,130,255,0.14); color: #9b9bff; }
+
+/* ── Confidence bar ──────────────────────────────────────────────────────── */
+.ks-confidence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.ks-conf-bar {
+  width: 56px;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ks-conf-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: #5CC5A7;
+}
+
+.ks-conf-pct {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  min-width: 32px;
+}
+
+/* ── Status pill ─────────────────────────────────────────────────────────── */
+.ks-status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.ks-status--PENDING  { background: rgba(255,196,92,0.14);  color: #f5b942; }
+.ks-status--APPROVED { background: rgba(92,197,167,0.14);  color: #5CC5A7; }
+.ks-status--REJECTED { background: rgba(255,100,100,0.12); color: #ff7070; }
+
+/* ── Action buttons ──────────────────────────────────────────────────────── */
+.ks-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.ks-action-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.ks-action-btn--approve {
+  background: rgba(92,197,167,0.12);
+  border-color: rgba(92,197,167,0.3);
+  color: #5CC5A7;
+}
+
+.ks-action-btn--approve:hover {
+  background: rgba(92,197,167,0.22);
+}
+
+.ks-action-btn--reject {
+  background: transparent;
+  border-color: rgba(255,100,100,0.25);
+  color: rgba(255,100,100,0.7);
+}
+
+.ks-action-btn--reject:hover {
+  background: rgba(255,100,100,0.08);
+  color: #ff7070;
+}
+
+.ks-action-btn--detail {
+  background: transparent;
+  border-color: rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.5);
+}
+
+.ks-action-btn--detail:hover {
+  color: rgba(255,255,255,0.85);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.ks-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Drawer ──────────────────────────────────────────────────────────────── */
+.ks-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 1100;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ks-drawer {
+  width: min(480px, 92vw);
+  height: 100%;
+  background: #17181f;
+  border-left: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  flex-direction: column;
+  animation: ksSlideIn 0.25s ease;
+}
+
+@keyframes ksSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.ks-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+.ks-drawer__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.ks-drawer__close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+
+.ks-drawer__close:hover { color: #fff; }
+
+.ks-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Detail sections in drawer */
+.ks-detail-section {
+  margin-bottom: 20px;
+}
+
+.ks-detail-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: rgba(255,255,255,0.3);
+  margin: 0 0 6px;
+}
+
+.ks-detail-value {
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ks-page { padding: 24px 16px 60px; }
+  .ks-header__title { font-size: 22px; }
+  .ks-table th:nth-child(3),
+  .ks-table td:nth-child(3),
+  .ks-table th:nth-child(4),
+  .ks-table td:nth-child(4) { display: none; }
+}

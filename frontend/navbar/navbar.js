@@ -77,12 +77,15 @@ function setupNavbarHandlers() {
     const username = localStorage.getItem('username') || 'User';
     const role     = localStorage.getItem('role') || 'user';
 
+    const knowledgeNavItem = document.getElementById('nav-knowledge-link');
+
     if (token) {
         if (userDisplay) { userDisplay.textContent = `Hi, ${username}`; userDisplay.style.display = 'inline'; }
         loginBtn.style.display  = 'none';
         logoutBtn.style.display = 'inline';
         if (myAssessmentsBtn) myAssessmentsBtn.style.display = 'inline';
         if (adminBtn) adminBtn.style.display = role === 'admin' ? 'inline' : 'none';
+        if (knowledgeNavItem) knowledgeNavItem.style.display = 'list-item';
         logoutBtn.onclick = logoutUser;
     } else {
         if (userDisplay) userDisplay.style.display = 'none';
@@ -90,6 +93,7 @@ function setupNavbarHandlers() {
         logoutBtn.style.display = 'none';
         if (myAssessmentsBtn) myAssessmentsBtn.style.display = 'none';
         if (adminBtn) adminBtn.style.display = 'none';
+        if (knowledgeNavItem) knowledgeNavItem.style.display = 'none';
         loginBtn.onclick = () => { window.location.href = '/login/login.html'; };
     }
 

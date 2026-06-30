@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 // ✅ Import routes
 import userRoutes              from "./routes/userRoutes.js";
 import oauthRoutes             from "./routes/oauthRoutes.js";
+import knowledgeSuggestionRoutes from "./routes/knowledgeSuggestionRoutes.js";
 import assessmentRoutes        from "./routes/assessmentRoutes.js";
 import dynamicAssessmentRoutes from "./routes/dynamicAssessmentRoutes.js";
 import kbRoutes                from "./routes/kbRoutes.js";
@@ -89,6 +90,7 @@ app.use("/api/strategy-canvas",       strategyCanvasRoutes);
 app.use("/api/company-context",       companyContextRoutes);
 app.use("/api/enterprise-blueprint", enterpriseBlueprintRoutes);
 app.use("/api/feedback",             feedbackRoutes);
+app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

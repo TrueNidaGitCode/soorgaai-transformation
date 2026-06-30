@@ -226,18 +226,40 @@ For ADVISOR MODE (CONVERSATION):
 {
   "mode": "conversation",
   "response": "Lead with the direct answer. Short paragraphs. Bullets for 3+ items. 100–150 words maximum. ONE focused follow-up thought at the end if appropriate.",
-  "companyContext": { "type": "...", "customers": "...", "priorities": ["..."], "businessModel": "..." }
+  "companyContext": { "type": "...", "customers": "...", "priorities": ["..."], "businessModel": "..." },
+  "knowledgeSuggestions": [
+    {
+      "title": "<concise knowledge title, max 100 chars>",
+      "description": "<what was learned, 1–2 sentences>",
+      "knowledgeType": "<PROJECT | COMPANY | INDUSTRY>",
+      "suggestedCapability": "<AI capability area or null>",
+      "suggestedSection": "<blueprint section or null>",
+      "confidence": <0.0 to 1.0>,
+      "reasoning": "<why this insight is reusable beyond this project>"
+    }
+  ]
 }
-(companyContext is OPTIONAL — only include when the user revealed new company information in this message)
 
 For BUILDER MODE (BLUEPRINT):
 {
   "mode": "blueprint",
   "suggestedRevision": "Polished section text, 150-250 words, ready to use as written.",
   "whyThisHelps": "2 sentences max: key rationale and any assumptions. Invite the user to refine or discuss.",
-  "companyContext": { "type": "...", "customers": "...", "priorities": ["..."], "businessModel": "..." }
+  "companyContext": { "type": "...", "customers": "...", "priorities": ["..."], "businessModel": "..." },
+  "knowledgeSuggestions": [
+    {
+      "title": "<concise knowledge title, max 100 chars>",
+      "description": "<what was learned, 1–2 sentences>",
+      "knowledgeType": "<PROJECT | COMPANY | INDUSTRY>",
+      "suggestedCapability": "<AI capability area or null>",
+      "suggestedSection": "<blueprint section or null>",
+      "confidence": <0.0 to 1.0>,
+      "reasoning": "<why this insight is reusable beyond this project>"
+    }
+  ]
 }
-(companyContext is OPTIONAL — only include when the user revealed new company information in this message)`;
+
+knowledgeSuggestions is OPTIONAL in both modes — include ONLY when the user's message contains genuinely reusable organisational knowledge: customer feedback, lessons learned, engineering practices, AI implementation insights (successes or failures), process improvements, governance or data recommendations. Set to [] when the message contains no reusable knowledge. Do NOT generate suggestions for routine questions or clarifications.`;
 }
 
 // ── Context formatters ────────────────────────────────────────────────────────
@@ -462,8 +484,11 @@ export async function suggestBlueprintSection({
 
   const parsed = parseAIResponse(text);
 
-  const base = { capabilityName, industry, sectionTitle, inputTokens, outputTokens };
+  const base      = { capabilityName, industry, sectionTitle, inputTokens, outputTokens };
   const ctxUpdate = parsed.companyContext ? { companyContext: parsed.companyContext } : {};
+  const ksUpdate  = Array.isArray(parsed.knowledgeSuggestions) && parsed.knowledgeSuggestions.length > 0
+    ? { knowledgeSuggestions: parsed.knowledgeSuggestions }
+    : {};
 
   if (parsed.mode === 'blueprint') {
     return {
@@ -474,6 +499,7 @@ export async function suggestBlueprintSection({
         whyThisHelps:      cleanMarkdown(parsed.whyThisHelps      || ''),
       },
       ...ctxUpdate,
+      ...ksUpdate,
     };
   }
 
@@ -482,5 +508,6 @@ export async function suggestBlueprintSection({
     mode:     'conversation',
     response: cleanMarkdown(parsed.response || text.trim()),
     ...ctxUpdate,
+    ...ksUpdate,
   };
 }

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SoorgaAI — Review and approve organisational knowledge detected during AI strategy sessions.">
+  <title>Knowledge Suggestions — SoorgaAI</title>
+
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="knowledge-suggestions.css">
+
+  <script src="../login/config.js"></script>
+  <script type="module" src="../login/authState.js"></script>
+  <script type="module" src="../navbar/navbar.js"></script>
+</head>
+<body data-nav-mode="anonymous">
+
+  <div id="navbar-container" style="min-height:64px"></div>
+
+  <main class="ks-page">
+
+    <!-- ── Page header ──────────────────────────────────────── -->
+    <header class="ks-header">
+      <div class="ks-header__inner">
+        <div>
+          <h1 class="ks-header__title">Knowledge Suggestions</h1>
+          <p class="ks-header__sub">
+            Organisational learnings detected during AI strategy sessions.
+            Approve to store in your company knowledge repository.
+          </p>
+        </div>
+        <a href="/workspace/workspace.html" class="ks-back-btn">← Back to Workspace</a>
+      </div>
+    </header>
+
+    <!-- ── Filters ───────────────────────────────────────────── -->
+    <div class="ks-filters">
+      <div class="ks-filter-group" role="group" aria-label="Filter by status">
+        <button class="ks-filter-btn ks-filter-btn--active" data-status="">All</button>
+        <button class="ks-filter-btn" data-status="PENDING">Pending</button>
+        <button class="ks-filter-btn" data-status="APPROVED">Approved</button>
+        <button class="ks-filter-btn" data-status="REJECTED">Rejected</button>
+      </div>
+      <span class="ks-total" id="ks-total"></span>
+    </div>
+
+    <!-- ── Loading state ─────────────────────────────────────── -->
+    <div class="ks-loading" id="ks-loading" aria-live="polite">
+      <div class="ks-spinner" role="status" aria-label="Loading suggestions"></div>
+      <p>Loading suggestions…</p>
+    </div>
+
+    <!-- ── Empty state ───────────────────────────────────────── -->
+    <div class="ks-empty" id="ks-empty" hidden>
+      <div class="ks-empty__icon" aria-hidden="true">💡</div>
+      <h2 class="ks-empty__title">No suggestions yet</h2>
+      <p class="ks-empty__body">
+        Organisational learnings will appear here as the AI detects them
+        during your strategy sessions.
+      </p>
+      <a href="/workspace/workspace.html" class="ks-cta-btn">Go to Workspace</a>
+    </div>
+
+    <!-- ── Table ─────────────────────────────────────────────── -->
+    <div class="ks-table-wrap" id="ks-table-wrap" hidden>
+      <table class="ks-table" aria-label="Knowledge suggestions">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Capability</th>
+            <th>Section</th>
+            <th>Confidence</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="ks-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- ── Detail drawer ─────────────────────────────────────── -->
+    <div class="ks-drawer-overlay" id="ks-drawer-overlay" hidden>
+      <div class="ks-drawer" role="dialog" aria-modal="true" aria-labelledby="ks-drawer-title">
+        <div class="ks-drawer__header">
+          <h2 class="ks-drawer__title" id="ks-drawer-title">Suggestion Detail</h2>
+          <button class="ks-drawer__close" id="ks-drawer-close" aria-label="Close detail">✕</button>
+        </div>
+        <div class="ks-drawer__body" id="ks-drawer-body"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2025 SoorgaAI. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
+    </div>
+  </footer>
+
+  <script type="module" src="knowledge-suggestions.js"></script>
+</body>
+</html>

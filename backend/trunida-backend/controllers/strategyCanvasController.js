@@ -3,6 +3,7 @@ import CompanyBlueprint      from '../models/CompanyBlueprint.js';
 import { getCapabilities, getCapabilityBlueprint } from '../services/strategyCanvasService.js';
 import { suggestBlueprintSection }  from '../services/blueprintSuggestService.js';
 import { generateBlueprintAsync, regenerateCapabilityAsync } from '../services/blueprintGenerationService.js';
+import { autoCapture } from '../services/knowledgeSuggestionService.js';
 
 const DEFAULT_INDUSTRY = 'Automotive';
 
@@ -81,7 +82,19 @@ export async function suggestSection(req, res) {
       userId:              req.user._id,
     });
 
-    return res.json(result);
+    // Auto-capture detected knowledge — fire-and-forget, never blocks the response
+    const rawKS = result.knowledgeSuggestions || [];
+    if (rawKS.length > 0) {
+      autoCapture(rawKS, {
+        projectId:          capabilityId,
+        userId:             req.user._id,
+        sourceConversation: String(conversationHistory?.length || 0),
+      }).catch(err => console.warn('[suggestSection] knowledge auto-capture non-fatal:', err.message));
+    }
+
+    // Strip raw suggestions from response; send only the count for the UI toast
+    const { knowledgeSuggestions: _ks, ...responsePayload } = result;
+    return res.json({ ...responsePayload, knowledgeCaptured: rawKS.length });
 
   } catch (err) {
     console.error('[suggestSection] Error:', {

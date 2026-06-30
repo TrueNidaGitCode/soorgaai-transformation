@@ -766,10 +766,9 @@ async function sendSectionRequest(ctx, question) {
     inputEl.placeholder = 'Ask a follow-up question…';
   }
 
-  // Organisational Learning Detection — show notification if AI found reusable knowledge
-  if (Array.isArray(data.knowledgeSuggestions) && data.knowledgeSuggestions.length > 0) {
-    const projectId = ctx?.capabilityId || 'unknown';
-    showKnowledgeNotification(data.knowledgeSuggestions, projectId, messagesEl);
+  // Organisational Learning — show silent toast if knowledge was auto-captured
+  if (data.knowledgeCaptured > 0) {
+    showKnowledgeToast(data.knowledgeCaptured);
   }
 }
 
@@ -785,118 +784,40 @@ function truncate(text, max) {
   return text.length <= max ? text : text.slice(0, max).trimEnd() + '…';
 }
 
-// ── Organisational Learning Notification ──────────────────────────────────────
+// ── Organisational Learning Toast (silent, auto-dismiss) ──────────────────────
 
-let _ksStylesInjected = false;
+let _ksToastStylesInjected = false;
 
-function injectKnowledgeStyles() {
-  if (_ksStylesInjected) return;
-  _ksStylesInjected = true;
-  const style = document.createElement('style');
-  style.textContent = `
-    .ks-notification {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin: 12px 0 4px;
-      padding: 14px 16px;
-      background: rgba(92, 197, 167, 0.07);
-      border: 1px solid rgba(92, 197, 167, 0.28);
-      border-radius: 12px;
-      animation: ksFadeIn 0.3s ease;
-    }
-    @keyframes ksFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-    .ks-notification__icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-    .ks-notification__body { flex: 1; min-width: 0; }
-    .ks-notification__title {
-      font-size: 13px; font-weight: 700;
-      color: #5CC5A7; margin: 0 0 4px;
-    }
-    .ks-notification__desc {
-      font-size: 12px; color: rgba(255,255,255,0.6);
-      margin: 0 0 10px; line-height: 1.4;
-    }
-    .ks-notification__actions { display: flex; gap: 8px; }
-    .ks-btn {
-      padding: 6px 14px; border-radius: 8px; font-size: 12px;
-      font-weight: 600; cursor: pointer; border: 1px solid transparent;
-      font-family: inherit; transition: all 0.15s;
-    }
-    .ks-btn--save {
-      background: #5CC5A7; color: #0D0D0D; border-color: #5CC5A7;
-    }
-    .ks-btn--save:hover { background: #4ab898; }
-    .ks-btn--dismiss {
-      background: transparent; color: rgba(255,255,255,0.5);
-      border-color: rgba(255,255,255,0.15);
-    }
-    .ks-btn--dismiss:hover { color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.3); }
-    .ks-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  `;
-  document.head.appendChild(style);
-}
-
-function showKnowledgeNotification(suggestions, projectId, container) {
-  injectKnowledgeStyles();
-
-  const count = suggestions.length;
-  const label = count === 1 ? '1 organisational learning detected' : `${count} organisational learnings detected`;
-
-  const el = document.createElement('div');
-  el.className = 'ks-notification';
-  el.innerHTML = `
-    <span class="ks-notification__icon" aria-hidden="true">💡</span>
-    <div class="ks-notification__body">
-      <p class="ks-notification__title">Organisational Learning Detected</p>
-      <p class="ks-notification__desc">${label} — this conversation may improve future AI strategies.</p>
-      <div class="ks-notification__actions">
-        <button class="ks-btn ks-btn--save">Save Suggestion${count > 1 ? 's' : ''}</button>
-        <button class="ks-btn ks-btn--dismiss">Dismiss</button>
-      </div>
-    </div>
-  `;
-
-  const saveBtn    = el.querySelector('.ks-btn--save');
-  const dismissBtn = el.querySelector('.ks-btn--dismiss');
-
-  saveBtn.addEventListener('click', async () => {
-    saveBtn.disabled    = true;
-    dismissBtn.disabled = true;
-    saveBtn.textContent = 'Saving…';
-
-    try {
-      const resp = await fetch(`${API_BASE}/knowledge-suggestions/batch`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ suggestions, projectId }),
-      });
-
-      if (resp.ok) {
-        el.innerHTML = `
-          <span class="ks-notification__icon" aria-hidden="true">✓</span>
-          <div class="ks-notification__body">
-            <p class="ks-notification__title" style="color:#5CC5A7">
-              ${count === 1 ? 'Suggestion saved' : `${count} suggestions saved`} — review in Knowledge Suggestions
-            </p>
-          </div>
-        `;
-        setTimeout(() => el.remove(), 3500);
-      } else {
-        saveBtn.textContent = 'Save Suggestions';
-        saveBtn.disabled    = false;
-        dismissBtn.disabled = false;
+function showKnowledgeToast(count) {
+  if (!_ksToastStylesInjected) {
+    _ksToastStylesInjected = true;
+    const style = document.createElement('style');
+    style.textContent = `
+      .ks-toast {
+        display: inline-flex; align-items: center; gap: 7px;
+        margin: 8px 0 2px; padding: 7px 13px;
+        background: rgba(92, 197, 167, 0.07);
+        border: 1px solid rgba(92, 197, 167, 0.22);
+        border-radius: 20px;
+        font-size: 12px; font-weight: 600; color: rgba(92,197,167,0.85);
+        animation: ksToastIn 0.3s ease, ksToastOut 0.4s ease 3.6s forwards;
+        pointer-events: none;
       }
-    } catch {
-      saveBtn.textContent = 'Save Suggestions';
-      saveBtn.disabled    = false;
-      dismissBtn.disabled = false;
-    }
-  });
+      @keyframes ksToastIn  { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes ksToastOut { to   { opacity:0; transform:translateY(-4px); } }
+    `;
+    document.head.appendChild(style);
+  }
 
-  dismissBtn.addEventListener('click', () => el.remove());
+  const label = count === 1 ? '1 learning captured' : `${count} learnings captured`;
+  const el = document.createElement('div');
+  el.className  = 'ks-toast';
+  el.setAttribute('aria-live', 'polite');
+  el.innerHTML  = `<span aria-hidden="true">💡</span><span>${label}</span>`;
 
-  container.appendChild(el);
-  container.scrollTop = container.scrollHeight;
+  messagesEl.appendChild(el);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  setTimeout(() => el.remove(), 4100);
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────

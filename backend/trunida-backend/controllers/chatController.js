@@ -10,6 +10,7 @@
 import { getDomain }             from '../data/domainDefinitions.js';
 import { handleTurn }            from '../services/conversationService.js';
 import { applyUpdates }          from '../services/canvasEvolutionService.js';
+import { autoCapture }           from '../services/knowledgeSuggestionService.js';
 import Conversation              from '../models/Conversation.js';
 import DomainCanvas              from '../models/DomainCanvas.js';
 
@@ -41,12 +42,20 @@ export const sendMessage = async (req, res) => {
     // Validate + apply canvas updates atomically
     const acceptedUpdates = await applyUpdates(userId, domainId, parsedUpdates, conversationId);
 
+    // Auto-capture detected knowledge — fire-and-forget, never blocks the response
+    if (rawKnowledgeSuggs?.length > 0) {
+      autoCapture(rawKnowledgeSuggs, {
+        projectId:          domainId,
+        userId,
+        sourceConversation: conversationId?.toString(),
+      }).catch(err => console.warn('[chat] knowledge auto-capture non-fatal:', err.message));
+    }
+
     return res.status(200).json({
       reply,
-      canvasUpdates:        acceptedUpdates,
-      conversationId:       conversationId.toString(),
-      // Raw knowledge suggestions — frontend saves them via /api/knowledge-suggestions/batch
-      knowledgeSuggestions: rawKnowledgeSuggs || [],
+      canvasUpdates:    acceptedUpdates,
+      conversationId:   conversationId.toString(),
+      knowledgeCaptured: rawKnowledgeSuggs?.length || 0,
     });
 
   } catch (err) {

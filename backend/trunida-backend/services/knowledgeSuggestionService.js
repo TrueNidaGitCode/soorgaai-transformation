@@ -138,6 +138,71 @@ export async function approveSuggestion(id, userId) {
   return suggestion.toObject();
 }
 
+// ── Auto-capture (server-side, no user action required) ───────────────────────
+
+/**
+ * Silently persist all valid suggestions detected by the LLM, then
+ * immediately approve any COMPANY-type suggestions above the confidence
+ * threshold into the user's CompanyContext so future strategies draw on them.
+ *
+ * Designed to run fire-and-forget — errors are logged but never thrown.
+ *
+ * @param {object[]} rawSuggestions - suggestions as returned by the LLM
+ * @param {object}   context        - { projectId, userId, sourceConversation }
+ * @returns {Promise<{ totalSaved: number, autoCaptured: number }>}
+ */
+export async function autoCapture(rawSuggestions, { projectId, userId, sourceConversation }) {
+  if (!Array.isArray(rawSuggestions) || rawSuggestions.length === 0) {
+    return { totalSaved: 0, autoCaptured: 0 };
+  }
+
+  const docs = rawSuggestions
+    .map(validateRawSuggestion)
+    .filter(Boolean)
+    .map(s => ({
+      ...s,
+      projectId,
+      createdBy:          userId,
+      sourceConversation: sourceConversation ? String(sourceConversation) : null,
+      status:             'PENDING',
+    }));
+
+  if (docs.length === 0) return { totalSaved: 0, autoCaptured: 0 };
+
+  let saved = [];
+  try {
+    saved = await KnowledgeSuggestion.insertMany(docs, { ordered: false });
+  } catch (err) {
+    console.error('[knowledgeSuggestion] autoCapture save failed:', err.message);
+    return { totalSaved: 0, autoCaptured: 0 };
+  }
+
+  // Auto-approve high-confidence COMPANY knowledge into CompanyContext so that
+  // the next strategy session for this user benefits from it automatically.
+  const AUTO_APPROVE_THRESHOLD = 0.75;
+  const toApprove = saved.filter(
+    s => s.knowledgeType === 'COMPANY' &&
+         (s.confidence == null || s.confidence >= AUTO_APPROVE_THRESHOLD)
+  );
+
+  let autoCaptured = 0;
+  for (const s of toApprove) {
+    try {
+      s.status = 'APPROVED';
+      await s.save();
+
+      const existing = await getCompanyContext(userId);
+      const entry    = `\n\n[COMPANY KNOWLEDGE — ${new Date().toISOString().slice(0, 10)}]\nTitle: ${s.title}\n${s.description}`;
+      await saveCompanyContext(userId, (existing?.content || '') + entry, existing?.orgName, existing?.role);
+      autoCaptured++;
+    } catch (err) {
+      console.warn('[knowledgeSuggestion] autoCapture approve failed (non-fatal):', err.message);
+    }
+  }
+
+  return { totalSaved: saved.length, autoCaptured };
+}
+
 // ── Reject ────────────────────────────────────────────────────────────────────
 
 export async function rejectSuggestion(id, userId) {

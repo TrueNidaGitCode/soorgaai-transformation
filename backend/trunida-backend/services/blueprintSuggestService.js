@@ -69,6 +69,26 @@ Examples:
 • "Capture what we discussed into a blueprint."
 
 ────────────────────────────────────
+MULTI-BUILDER MODE → use BLUEPRINT-MULTI response
+────────────────────────────────────
+Use this when the user asks to update, apply, or embed information across
+MULTIPLE sections simultaneously — or confirms they want changes written
+into the blueprint after a conversation.
+
+Trigger signals: "update the content", "can you update", "yes, please update",
+"apply this to the blueprint", "update all relevant sections", "capture this",
+"reflect this across", or when the user confirms a previous conversational answer
+should now be written into the blueprint.
+
+In MULTI-BUILDER MODE:
+• Review every section listed under CAPABILITY SECTIONS
+• Generate polished strategic position text for each section where the discussed
+  topic has clear, direct relevance — and ONLY those sections
+• Leave unaffected sections out of the updates array entirely
+• List other capability names (not sections) that may also need updating in
+  otherCapabilities — but do NOT attempt to generate their content
+
+────────────────────────────────────
 ADVISOR MODE → use CONVERSATION response
 ────────────────────────────────────
 The user wants explanation, strategic analysis, or executive discussion.
@@ -269,7 +289,19 @@ For BUILDER MODE (BLUEPRINT):
   ]
 }
 
-knowledgeSuggestions is OPTIONAL in both modes — include ONLY when the user's message contains genuinely reusable organisational knowledge: customer feedback, lessons learned, engineering practices, AI implementation insights (successes or failures), process improvements, governance or data recommendations. Set to [] when the message contains no reusable knowledge. Do NOT generate suggestions for routine questions or clarifications.`;
+For MULTI-BUILDER MODE (BLUEPRINT-MULTI):
+{
+  "mode": "blueprint-multi",
+  "summary": "1-2 sentence plain-English summary of what changed and why.",
+  "updates": [
+    { "sectionTitle": "<exact section title matching the capability sections list>", "suggestedRevision": "Polished strategic position text, 80-150 words." }
+  ],
+  "otherCapabilities": ["<capability name>", "<capability name>"],
+  "companyContext": { "type": "...", "customers": "...", "priorities": ["..."], "businessModel": "..." },
+  "knowledgeSuggestions": []
+}
+
+knowledgeSuggestions is OPTIONAL in all modes — include ONLY when the user's message contains genuinely reusable organisational knowledge: customer feedback, lessons learned, engineering practices, AI implementation insights (successes or failures), process improvements, governance or data recommendations. Set to [] when the message contains no reusable knowledge. Do NOT generate suggestions for routine questions or clarifications.`;
 }
 
 // ── Context formatters ────────────────────────────────────────────────────────
@@ -302,7 +334,7 @@ function formatCurrentSection(sectionTitle, currentContent, blueprint) {
 function buildUserMessage(
   blueprint, sectionTitle, currentContent,
   coreContent, industryContent, specContent, related, request, automotiveBlueprint,
-  memoryContext, companyContext
+  memoryContext, companyContext, capabilitySections = []
 ) {
   const blocks = [];
 
@@ -337,6 +369,13 @@ function buildUserMessage(
   if (related.length > 0) {
     const relatedText = related.map(r => `--- ${r.name} ---\n${r.content}`).join('\n\n');
     blocks.push(`=== P5: RELATED CAPABILITY KNOWLEDGE ===\n${relatedText}`);
+  }
+
+  if (capabilitySections.length > 0) {
+    const sectionsText = capabilitySections
+      .map(s => `[${s.title}]\n${s.strategicPosition || '(empty)'}`)
+      .join('\n\n');
+    blocks.push(`=== CAPABILITY SECTIONS ===\n${sectionsText}\n=== END CAPABILITY SECTIONS ===`);
   }
 
   return `KNOWLEDGE BASE:\n\n${blocks.join('\n\n')}\n\n---\n\nUSER REQUEST: ${request}`;
@@ -383,6 +422,7 @@ function cleanMarkdown(text) {
 
 function normalizeparsed(parsed) {
   if (parsed.mode === 'conversation' || parsed.mode === 'blueprint') return parsed;
+  if (parsed.mode === 'blueprint-multi') return parsed;
   // Legacy shape (no mode field)
   if (parsed.suggestedRevision) {
     return {
@@ -462,6 +502,7 @@ export async function suggestBlueprintSection({
   conversationHistory = [],
   companyMemory = {},
   userId,
+  capabilitySections = [],
 }) {
   const industry       = blueprint?.industry       || 'Automotive';
   const capabilityName = blueprint?.capabilityName || '';
@@ -483,7 +524,7 @@ export async function suggestBlueprintSection({
   const userMessage  = buildUserMessage(
     blueprint, sectionTitle, currentContent || '',
     coreContent, industryContent, specContent, related, request, automotiveBlueprint,
-    memoryContext, companyContext
+    memoryContext, companyContext, capabilitySections
   );
 
   const { text, inputTokens, outputTokens } = await generate({
@@ -508,6 +549,22 @@ export async function suggestBlueprintSection({
         suggestedRevision: cleanMarkdown(parsed.suggestedRevision || ''),
         whyThisHelps:      cleanMarkdown(parsed.whyThisHelps      || ''),
       },
+      ...ctxUpdate,
+      ...ksUpdate,
+    };
+  }
+
+  if (parsed.mode === 'blueprint-multi') {
+    const updates = (parsed.updates || []).map(u => ({
+      sectionTitle:     u.sectionTitle || '',
+      suggestedRevision: cleanMarkdown(u.suggestedRevision || ''),
+    }));
+    return {
+      ...base,
+      mode:              'blueprint-multi',
+      summary:           cleanMarkdown(parsed.summary || ''),
+      updates,
+      otherCapabilities: parsed.otherCapabilities || [],
       ...ctxUpdate,
       ...ksUpdate,
     };

@@ -2498,9 +2498,10 @@ async function showMultiUpdateResult(summary, updates, currentCap) {
     fetch(
       `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${u._targetCap.capabilityId}/section/${encodeURIComponent(u._section.title)}`,
       {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body:    JSON.stringify({ brief: { strategicPosition: u.suggestedRevision } }),
+        method:   'PATCH',
+        headers:  { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body:     JSON.stringify({ brief: { strategicPosition: u.suggestedRevision } }),
+        keepalive: true, // survive page navigation
       }
     ).then(r => {
       if (!r.ok) {
@@ -2600,9 +2601,10 @@ async function undoMultiUpdate(undoData, currentCap, doneCard) {
     fetch(
       `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${targetCapId}/section/${encodeURIComponent(u.sectionTitle)}`,
       {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body:    JSON.stringify({ brief: { strategicPosition: u.previousPosition } }),
+        method:    'PATCH',
+        headers:   { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body:      JSON.stringify({ brief: { strategicPosition: u.previousPosition } }),
+        keepalive: true,
       }
     )
     .then(r => { if (!r.ok) console.warn('[undo-multi] PATCH non-ok:', r.status, targetCapId, u.sectionTitle); })
@@ -2652,9 +2654,10 @@ async function acceptSuggestion() {
     await fetch(
       `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${cap.capabilityId}/section/${encodeURIComponent(section.title)}`,
       {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body:    JSON.stringify({ brief: { strategicPosition: newPosition } }),
+        method:    'PATCH',
+        headers:   { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body:      JSON.stringify({ brief: { strategicPosition: newPosition } }),
+        keepalive: true,
       }
     );
   } catch (err) {

@@ -2176,7 +2176,15 @@ function updateAssistantContext() {
 function openAssistantForSection(sectionTitle) {
   _refineTargetSection = sectionTitle;
   setAssistantOpen(true);
-  setTimeout(() => handleChatSubmit(null, `Please review the "${sectionTitle}" section and suggest specific improvements.`), 80);
+  // Pre-fill the input so the user can review/edit before sending — don't auto-send
+  setTimeout(() => {
+    const input = document.getElementById('ai-chat-input');
+    if (input) {
+      input.value = `Please review the "${sectionTitle}" section and suggest specific improvements.`;
+      input.dispatchEvent(new Event('input'));
+      input.focus();
+    }
+  }, 80);
 }
 
 // ── AI Chat ───────────────────────────────────────────────────────────────────
@@ -2416,27 +2424,13 @@ function saveChatHistory() {
 }
 
 function restoreChat() {
-  const key = chatStorageKey();
+  // Always start with an empty chat — no localStorage restoration.
+  // _chatHistory is preserved in-memory while the page is open (so switching
+  // capability tabs mid-session keeps the conversation alive), but we never
+  // surface a prior session's messages when the panel opens fresh.
+  _chatHistory = [];
   const log = document.getElementById('ai-chat-messages');
   if (log) log.innerHTML = '';
-
-  try {
-    _chatHistory = key && localStorage.getItem(key)
-      ? JSON.parse(localStorage.getItem(key))
-      : [];
-  } catch {
-    _chatHistory = [];
-  }
-
-  // Re-render stored messages directly into the DOM (no save loop)
-  _chatHistory.forEach(entry => {
-    if (entry.role !== 'user' && entry.role !== 'assistant') return;
-    if (entry.content.startsWith('[Error:')) return; // skip transient errors
-    const msg = document.createElement('div');
-    msg.className = `chat-msg chat-msg--${entry.role}`;
-    msg.textContent = entry.content;
-    if (log) log.appendChild(msg);
-  });
   if (log) log.scrollTop = log.scrollHeight;
 }
 

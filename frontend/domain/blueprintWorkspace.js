@@ -2383,6 +2383,25 @@ function clearSuggestionCard() {
   document.getElementById('ai-suggestion-card')?.remove();
 }
 
+function appendProgressMessage(text) {
+  const log = document.getElementById('ai-chat-messages');
+  if (!log) return null;
+  const el = document.createElement('div');
+  el.className = 'chat-msg chat-msg--progress';
+  el.textContent = text;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+  return el;
+}
+
+function resolveProgressMessage(el, finalText) {
+  if (!el) return;
+  el.textContent = finalText;
+  el.className = 'chat-msg chat-msg--progress chat-msg--progress-done';
+  const log = document.getElementById('ai-chat-messages');
+  if (log) log.scrollTop = log.scrollHeight;
+}
+
 async function showMultiUpdateResult(summary, updates, currentCap) {
   if (!updates.length || !_blueprint) return;
 
@@ -2462,8 +2481,8 @@ async function showMultiUpdateResult(summary, updates, currentCap) {
   log.appendChild(card);
   log.scrollTop = log.scrollHeight;
 
-  // Persist all sections to backend — fire-and-forget
-  for (const u of resolvedUpdates) {
+  // Phase 1 — persist strategicPosition for all sections
+  await Promise.all(resolvedUpdates.map(u =>
     fetch(
       `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${u._targetCap.capabilityId}/section/${encodeURIComponent(u.sectionTitle)}`,
       {
@@ -2471,7 +2490,48 @@ async function showMultiUpdateResult(summary, updates, currentCap) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body:    JSON.stringify({ brief: { strategicPosition: u.suggestedRevision } }),
       }
-    ).catch(err => console.warn('[multi-update] PATCH failed:', u._targetCap.capabilityId, u.sectionTitle, err.message));
+    ).then(r => { if (!r.ok) console.warn('[multi-update] PATCH failed:', r.status, u._targetCap.capabilityId, u.sectionTitle); })
+     .catch(err => console.warn('[multi-update] PATCH error:', u._targetCap.capabilityId, u.sectionTitle, err.message))
+  ));
+
+  // Phase 2 — regenerate visual extras per capability, with chat progress
+  const byCapability = {};
+  resolvedUpdates.forEach(u => {
+    const id = u._targetCap.capabilityId;
+    if (!byCapability[id]) byCapability[id] = { cap: u._targetCap, titles: [] };
+    byCapability[id].titles.push(u.sectionTitle);
+  });
+
+  for (const [capId, { cap: targetCap, titles }] of Object.entries(byCapability)) {
+    const progressMsg = appendProgressMessage(`Updating graphs for ${targetCap.capabilityName}…`);
+    try {
+      const resp = await fetch(
+        `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${capId}/regenerate-section-extras`,
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+          body:    JSON.stringify({ sectionTitles: titles }),
+        }
+      );
+      if (resp.ok) {
+        const { updatedBriefs } = await resp.json();
+        for (const [sectionTitle, extraBrief] of Object.entries(updatedBriefs || {})) {
+          const section = (targetCap.sections || []).find(s => s.title === sectionTitle);
+          if (section) {
+            section.brief = { ...(section.brief || {}), ...extraBrief };
+            if (targetCap.capabilityId === currentCap.capabilityId) {
+              const oldCard = document.querySelector(`.bp-section[data-section-title="${CSS.escape(sectionTitle)}"]`);
+              if (oldCard) oldCard.replaceWith(buildSectionCard(_blueprint, targetCap, section));
+            }
+          }
+        }
+        resolveProgressMessage(progressMsg, `Graphs updated — ${targetCap.capabilityName} ✓`);
+      } else {
+        resolveProgressMessage(progressMsg, `Graphs skipped — ${targetCap.capabilityName}`);
+      }
+    } catch {
+      resolveProgressMessage(progressMsg, `Graphs skipped — ${targetCap.capabilityName}`);
+    }
   }
 }
 
@@ -2582,19 +2642,33 @@ function saveChatHistory() {
   const key = chatStorageKey();
   if (!key) return;
   try {
-    localStorage.setItem(key, JSON.stringify(_chatHistory.slice(-60)));
-  } catch { /* localStorage quota exceeded */ }
+    // sessionStorage: survives same-tab navigation, clears on tab close/refresh
+    sessionStorage.setItem(key, JSON.stringify(_chatHistory.slice(-60)));
+  } catch { /* quota exceeded */ }
 }
 
 function restoreChat() {
-  // Always start with an empty chat — no localStorage restoration.
-  // _chatHistory is preserved in-memory while the page is open (so switching
-  // capability tabs mid-session keeps the conversation alive), but we never
-  // surface a prior session's messages when the panel opens fresh.
-  _chatHistory = [];
+  const key = chatStorageKey();
+  const stored = key ? sessionStorage.getItem(key) : null;
+  let history = [];
+  if (stored) {
+    try { history = JSON.parse(stored); } catch { history = []; }
+  }
+  _chatHistory = Array.isArray(history) ? history : [];
+
   const log = document.getElementById('ai-chat-messages');
-  if (log) log.innerHTML = '';
-  if (log) log.scrollTop = log.scrollHeight;
+  if (!log) return;
+  log.innerHTML = '';
+
+  for (const msg of _chatHistory) {
+    if (msg.role === 'user' || msg.role === 'assistant') {
+      const el = document.createElement('div');
+      el.className = `chat-msg chat-msg--${msg.role}`;
+      el.textContent = msg.content || '';
+      log.appendChild(el);
+    }
+  }
+  log.scrollTop = log.scrollHeight;
 }
 
 // ── Chat UI helpers ───────────────────────────────────────────────────────────

@@ -897,6 +897,97 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
   return await runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint, enterpriseContext);
 }
 
+// ── Single-section extras regeneration ───────────────────────────────────────
+// Regenerates CTO-view visual fields (strategicPillars, kpiHighlights, etc.)
+// for specific sections within one capability, using their current
+// strategicPosition as the strategic anchor. Does NOT rewrite strategicPosition.
+
+export async function regenerateSectionExtras(blueprintId, capabilityId, sectionTitles, userId) {
+  const companyProfile = await loadCompanyProfile(userId);
+  const { companyName, industry, role } = companyProfile;
+
+  const blueprint = await CompanyBlueprint.findOne({ _id: blueprintId, userId }).lean();
+  if (!blueprint) throw new Error('Blueprint not found');
+
+  const cap = (blueprint.capabilities || []).find(c => c.capabilityId === capabilityId);
+  if (!cap) throw new Error('Capability not found');
+
+  const targetSections = (cap.sections || []).filter(
+    s => sectionTitles.includes(s.title) && SECTION_TEMPLATES[s.title]
+  );
+  if (!targetSections.length) return {};
+
+  const templateInstructions = targetSections.map(s =>
+    `--- Section: "${s.title}" ---\n` +
+    `Current Strategic Position (DO NOT rewrite — use as context only):\n"${s.brief?.strategicPosition || '—'}"\n` +
+    SECTION_TEMPLATES[s.title].promptInstruction
+  ).join('\n\n');
+
+  const sectionTitlesStr = targetSections.map(s => `"${s.title}"`).join(', ');
+
+  const systemPrompt = `You are SoorgaAI generating CTO-view visual data for a Strategy Blueprint.
+
+Company: ${companyName} | Industry: ${industry} | Role: ${role}
+Capability: ${cap.capabilityName}
+
+For each section below, generate ONLY the extra visual fields listed in the instructions.
+The Strategic Position is already set — treat it as fixed context. Do NOT include
+strategicPosition, priorityActions, successMetrics, or leadershipValidation in your output.
+
+${templateInstructions}
+
+OUTPUT — valid JSON only, no markdown fences:
+{
+  "sections": [
+    { "title": "<exact section title>", "brief": { <extra visual fields only> } }
+  ]
+}`;
+
+  const parsed = await callLLM(systemPrompt, `Generate visual extras for: ${sectionTitlesStr}`, 90000, cap.capabilityName);
+  const rawSections = (parsed.sections || []).map(ps => ({
+    ...ps,
+    brief: { ...(ps.brief || {}), strategicPosition: '' },
+    content: '',
+  }));
+
+  const validTitles = new Set(targetSections.map(s => s.title.toLowerCase()));
+  const normalized  = parseBriefOutput(rawSections, validTitles);
+
+  const updatedBriefs = {};
+
+  for (const ns of normalized) {
+    const b = ns.brief || {};
+    const setFields = {
+      'capabilities.$[cap].sections.$[sec].updatedAt': new Date(),
+      updatedAt: new Date(),
+    };
+
+    const extraKeys = [
+      'strategicPillars', 'kpiHighlights', 'timelineSteps', 'alignmentInitiatives',
+      'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
+      'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'teamRoles',
+      'lifecycleStages', 'waterfallItems', 'sdlcStages', 'flywheelStages',
+      'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
+      'adoptionStages',
+    ];
+    for (const key of extraKeys) {
+      if (b[key] !== undefined) {
+        setFields[`capabilities.$[cap].sections.$[sec].brief.${key}`] = b[key];
+      }
+    }
+
+    await CompanyBlueprint.updateOne(
+      { _id: blueprintId, userId, 'capabilities.capabilityId': capabilityId },
+      { $set: setFields },
+      { arrayFilters: [{ 'cap.capabilityId': capabilityId }, { 'sec.title': ns.title }] }
+    );
+
+    updatedBriefs[ns.title] = b;
+  }
+
+  return updatedBriefs;
+}
+
 // ── Single-capability regeneration (fire-and-forget) ─────────────────────────
 
 export async function regenerateCapabilityAsync(blueprintId, capabilityId, userId, businessObjective) {

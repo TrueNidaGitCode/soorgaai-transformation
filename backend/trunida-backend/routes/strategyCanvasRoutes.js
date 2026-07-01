@@ -9,6 +9,7 @@ import {
   getCompanyBlueprint,
   updateBlueprintSection,
   regenerateCapability,
+  regenerateSectionExtrasHandler,
 } from '../controllers/strategyCanvasController.js';
 import { ask } from '../controllers/advisorController.js';
 import { exportBlueprintPDF } from '../controllers/pdfExportController.js';
@@ -27,6 +28,7 @@ router.get('/generate-blueprint/:blueprintId/stream',                           
 router.get('/company-blueprint',                                                               protect, getCompanyBlueprint);
 router.get('/company-blueprint/export-pdf',                                                    protect, exportBlueprintPDF);
 router.patch('/company-blueprint/:blueprintId/capability/:capabilityId/section/:sectionTitle', protect, updateBlueprintSection);
-router.post('/company-blueprint/:blueprintId/capability/:capabilityId/regenerate',             protect, regenerateCapability);
+router.post('/company-blueprint/:blueprintId/capability/:capabilityId/regenerate',                                         protect, regenerateCapability);
+router.post('/company-blueprint/:blueprintId/capability/:capabilityId/regenerate-section-extras',                         protect, regenerateSectionExtrasHandler);
 
 export default router;

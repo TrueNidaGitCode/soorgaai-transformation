@@ -2,7 +2,7 @@ import UserProfile          from '../models/UserProfile.js';
 import CompanyBlueprint      from '../models/CompanyBlueprint.js';
 import { getCapabilities, getCapabilityBlueprint } from '../services/strategyCanvasService.js';
 import { suggestBlueprintSection }  from '../services/blueprintSuggestService.js';
-import { generateBlueprintAsync, regenerateCapabilityAsync } from '../services/blueprintGenerationService.js';
+import { generateBlueprintAsync, regenerateCapabilityAsync, regenerateSectionExtras } from '../services/blueprintGenerationService.js';
 import { autoCapture } from '../services/knowledgeSuggestionService.js';
 
 const DEFAULT_INDUSTRY = 'Automotive';
@@ -330,6 +330,19 @@ export async function updateBlueprintSection(req, res) {
         if (typeof lv.context === 'string')
           setFields['capabilities.$[cap].sections.$[sec].brief.leadershipValidation.context'] = lv.context;
       }
+      // CTO-view visual/extra fields
+      const extraArrayFields = [
+        'strategicPillars', 'kpiHighlights', 'timelineSteps', 'alignmentInitiatives',
+        'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
+        'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'teamRoles',
+        'lifecycleStages', 'waterfallItems', 'sdlcStages', 'flywheelStages',
+        'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
+        'adoptionStages',
+      ];
+      for (const field of extraArrayFields) {
+        if (brief[field] !== undefined)
+          setFields[`capabilities.$[cap].sections.$[sec].brief.${field}`] = brief[field];
+      }
     }
 
     if (typeof content === 'string') {
@@ -351,5 +364,31 @@ export async function updateBlueprintSection(req, res) {
   } catch (err) {
     console.error('updateBlueprintSection error:', err);
     res.status(500).json({ error: 'Failed to update section.' });
+  }
+}
+
+/**
+ * POST /strategy-canvas/company-blueprint/:blueprintId/capability/:capabilityId/regenerate-section-extras
+ *
+ * Regenerates CTO-view visual fields (strategicPillars, kpiHighlights, etc.)
+ * for specified sections using their current strategicPosition as context.
+ * Body: { sectionTitles: string[] }
+ */
+export async function regenerateSectionExtrasHandler(req, res) {
+  try {
+    const { blueprintId, capabilityId } = req.params;
+    const { sectionTitles } = req.body;
+    const userId = req.user._id;
+
+    if (!Array.isArray(sectionTitles) || !sectionTitles.length) {
+      return res.status(400).json({ error: 'sectionTitles must be a non-empty array.' });
+    }
+
+    const updatedBriefs = await regenerateSectionExtras(blueprintId, capabilityId, sectionTitles, userId);
+    return res.json({ ok: true, updatedBriefs });
+
+  } catch (err) {
+    console.error('regenerateSectionExtrasHandler error:', err);
+    res.status(500).json({ error: err.message || 'Failed to regenerate section extras.' });
   }
 }

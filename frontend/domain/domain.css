@@ -259,6 +259,16 @@
   color: rgba(255,255,255,0.4);
   font-style: italic;
 }
+.chat-msg--progress {
+  color: rgba(255,255,255,0.5);
+  font-style: italic;
+  font-size: 0.82rem;
+  padding: 2px 0;
+}
+.chat-msg--progress-done {
+  color: rgba(74,222,128,0.8);
+  font-style: normal;
+}
 
 /* ── Error banner ──────────────────────────────────────────────────────────── */
 

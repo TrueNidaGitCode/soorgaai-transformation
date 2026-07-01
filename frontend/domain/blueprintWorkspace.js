@@ -2491,25 +2491,42 @@ async function showMultiUpdateResult(summary, updates, currentCap) {
   log.appendChild(card);
   log.scrollTop = log.scrollHeight;
 
-  // Phase 1 — persist strategicPosition for all sections
+  // Phase 1 — persist strategicPosition for all sections.
+  // Use _section.title (exact DB value) not sectionTitle (AI-returned, may differ in case).
+  const patchErrors = [];
   await Promise.all(resolvedUpdates.map(u =>
     fetch(
-      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${u._targetCap.capabilityId}/section/${encodeURIComponent(u.sectionTitle)}`,
+      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${u._targetCap.capabilityId}/section/${encodeURIComponent(u._section.title)}`,
       {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body:    JSON.stringify({ brief: { strategicPosition: u.suggestedRevision } }),
       }
-    ).then(r => { if (!r.ok) console.warn('[multi-update] PATCH failed:', r.status, u._targetCap.capabilityId, u.sectionTitle); })
-     .catch(err => console.warn('[multi-update] PATCH error:', u._targetCap.capabilityId, u.sectionTitle, err.message))
+    ).then(r => {
+      if (!r.ok) {
+        const msg = `"${u._section.title}" (${r.status})`;
+        console.warn('[multi-update] PATCH failed:', r.status, u._targetCap.capabilityId, u._section.title);
+        patchErrors.push(msg);
+      }
+    })
+     .catch(err => {
+       const msg = `"${u._section.title}": ${err.message}`;
+       console.warn('[multi-update] PATCH error:', u._targetCap.capabilityId, u._section.title, err.message);
+       patchErrors.push(msg);
+     })
   ));
+  if (patchErrors.length) {
+    const errEl = appendProgressMessage(`⚠ Save failed for: ${patchErrors.join(', ')} — changes may not persist`);
+    resolveProgressMessage(errEl, `⚠ Save failed for: ${patchErrors.join(', ')} — changes may not persist`);
+  }
 
-  // Phase 2 — regenerate visual extras per capability, with chat progress
+  // Phase 2 — regenerate visual extras per capability, with chat progress.
+  // Use _section.title (exact DB value) so the backend can find each section.
   const byCapability = {};
   resolvedUpdates.forEach(u => {
     const id = u._targetCap.capabilityId;
     if (!byCapability[id]) byCapability[id] = { cap: u._targetCap, titles: [] };
-    byCapability[id].titles.push(u.sectionTitle);
+    byCapability[id].titles.push(u._section.title);
   });
 
   for (const [capId, { cap: targetCap, titles }] of Object.entries(byCapability)) {

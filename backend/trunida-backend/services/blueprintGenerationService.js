@@ -181,10 +181,11 @@ SECTION-SPECIFIC EXTRAS — "Commitment" sections only:
 SECTION-SPECIFIC EXTRAS — "Solution-Centric Organization" sections only:
 
 5. solutionPortfolio (exactly 3 items)
-   Define 3 AI solutions organized as a portfolio map showing clear business ownership.
+   Define 3 AI solutions that directly implement the Strategic Position stated above for this section.
+   Solutions MUST be derived from the Strategic Position text — name each solution after a specific AI initiative, capability, or workflow described in that text.
    Each item: { "name": "<2–4 word solution name>", "businessOwner": "<role title e.g. Diagnostics Program Lead>", "deliveryTeam": "<teams comma-separated e.g. AI/ML Engineering, Domain Engineering>", "kpis": ["<KPI metric 1>", "<KPI metric 2>"] }
-   Solutions MUST be grounded in the company's specific business objective, industry, and engineering domains — not generic examples.
-   Example for an automotive engineering services company: { "name": "AI Defect Triage", "businessOwner": "Engineering Delivery Lead", "deliveryTeam": "AI/ML Engineering, Domain Engineering", "kpis": ["Triage Effort Reduction", "Classification Accuracy"] }
+   Do NOT use generic names like "AI Platform" or "Data Services" — every solution name must reflect the company's specific engineering context.
+   Example for an automotive engineering services company with a diagnostics objective: { "name": "AI Defect Triage", "businessOwner": "Engineering Delivery Lead", "deliveryTeam": "AI/ML Engineering, Domain Engineering", "kpis": ["Triage Effort Reduction", "Classification Accuracy"] }
 
 6. kpiHighlights (exactly 3 items)
    Extract 3 portfolio-level success metrics showing organizational alignment and dependency reduction.
@@ -928,11 +929,13 @@ export async function regenerateSectionExtras(blueprintId, capabilityId, section
   const systemPrompt = `You are SoorgaAI generating CTO-view visual data for a Strategy Blueprint.
 
 Company: ${companyName} | Industry: ${industry} | Role: ${role}
+Business Objective: ${blueprint.businessObjective || '—'}
 Capability: ${cap.capabilityName}
 
 For each section below, generate ONLY the extra visual fields listed in the instructions.
 The Strategic Position is already set — treat it as fixed context. Do NOT include
 strategicPosition, priorityActions, successMetrics, or leadershipValidation in your output.
+All generated content MUST be grounded in the company's Business Objective above — not generic examples.
 
 ${templateInstructions}
 

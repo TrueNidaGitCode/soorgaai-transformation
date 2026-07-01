@@ -2399,7 +2399,7 @@ async function showMultiUpdateResult(summary, updates, otherCapabilities, cap) {
   _blueprint.updatedAt = new Date().toISOString();
   renderHeader(_blueprint);
 
-  // Build Undo card in the chat log
+  // Show applied summary + Undo in chat
   const log = document.getElementById('ai-chat-messages');
   if (!log) return;
 
@@ -2407,7 +2407,7 @@ async function showMultiUpdateResult(summary, updates, otherCapabilities, cap) {
 
   const card = document.createElement('div');
   card.id        = 'ai-multi-update-card';
-  card.className = 'ai-multi-update';
+  card.className = 'ai-multi-update ai-multi-update--applied';
 
   const summaryEl = document.createElement('p');
   summaryEl.className   = 'ai-multi-update__summary';
@@ -2429,10 +2429,9 @@ async function showMultiUpdateResult(summary, updates, otherCapabilities, cap) {
   const actionsEl = document.createElement('div');
   actionsEl.className = 'ai-multi-update__actions';
   const undoBtn = document.createElement('button');
-  undoBtn.id        = 'ai-multi-undo';
-  undoBtn.className = 'ai-multi-update-btn ai-multi-update-btn--undo';
+  undoBtn.className   = 'ai-multi-update-btn ai-multi-update-btn--undo';
   undoBtn.textContent = 'Undo';
-  undoBtn.addEventListener('click', () => undoMultiUpdate(undoData, cap));
+  undoBtn.addEventListener('click', () => undoMultiUpdate(undoData, cap, card));
   actionsEl.appendChild(undoBtn);
   card.appendChild(actionsEl);
 
@@ -2452,7 +2451,7 @@ async function showMultiUpdateResult(summary, updates, otherCapabilities, cap) {
   }
 }
 
-async function undoMultiUpdate(undoData, cap) {
+async function undoMultiUpdate(undoData, cap, doneCard) {
   if (!_blueprint) return;
 
   for (const u of undoData) {
@@ -2468,7 +2467,7 @@ async function undoMultiUpdate(undoData, cap) {
   _blueprint.updatedAt = new Date().toISOString();
   renderHeader(_blueprint);
 
-  document.getElementById('ai-multi-update-card')?.remove();
+  doneCard?.remove();
 
   const msg = 'Changes undone.';
   appendChatMessage('assistant', msg);

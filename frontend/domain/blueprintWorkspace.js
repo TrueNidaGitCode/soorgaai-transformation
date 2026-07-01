@@ -2455,13 +2455,13 @@ async function showMultiUpdateResult(summary, updates, currentCap) {
   card.appendChild(summaryEl);
 
   // Group by capability for display
-  const byCapability = {};
+  const byCapabilityDisplay = {};
   resolvedUpdates.forEach(u => {
     const name = u.capabilityName || u._targetCap.capabilityName;
-    if (!byCapability[name]) byCapability[name] = [];
-    byCapability[name].push(u.sectionTitle);
+    if (!byCapabilityDisplay[name]) byCapabilityDisplay[name] = [];
+    byCapabilityDisplay[name].push(u.sectionTitle);
   });
-  const changesLabel = Object.entries(byCapability)
+  const changesLabel = Object.entries(byCapabilityDisplay)
     .map(([capName, sections]) => `${capName}: ${sections.join(', ')}`)
     .join(' · ');
   const sectionsEl = document.createElement('p');

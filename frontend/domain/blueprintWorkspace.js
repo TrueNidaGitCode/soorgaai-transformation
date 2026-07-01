@@ -2405,28 +2405,38 @@ function resolveProgressMessage(el, finalText) {
 async function showMultiUpdateResult(summary, updates, currentCap) {
   if (!updates.length || !_blueprint) return;
 
-  // Resolve each update to its target capability object
+  // Resolve each update to its target capability + section.
+  // Case-insensitive section title matching tolerates minor AI variation.
+  // Skip any update where the capabilityId or sectionTitle can't be matched.
   const resolvedUpdates = updates.map(u => {
     const targetCap = u.capabilityId
       ? (_blueprint.capabilities || []).find(c => c.capabilityId === u.capabilityId)
       : currentCap;
-    return { ...u, _targetCap: targetCap || currentCap };
-  });
+    if (!targetCap) {
+      console.warn('[multi-update] capabilityId not found, skipping:', u.capabilityId, u.sectionTitle);
+      return null;
+    }
+    const sectionLower = (u.sectionTitle || '').toLowerCase();
+    const section = (targetCap.sections || []).find(s => s.title === u.sectionTitle)
+      || (targetCap.sections || []).find(s => s.title.toLowerCase() === sectionLower);
+    if (!section) {
+      console.warn('[multi-update] sectionTitle not found, skipping:', u.capabilityId, u.sectionTitle,
+        '| available:', targetCap.sections?.map(s => s.title).join(', '));
+      return null;
+    }
+    return { ...u, _targetCap: targetCap, _section: section };
+  }).filter(Boolean);
 
   // Snapshot for undo before applying anything
-  const undoData = resolvedUpdates.map(u => {
-    const section = (u._targetCap.sections || []).find(s => s.title === u.sectionTitle);
-    return {
-      capabilityId:     u._targetCap.capabilityId,
-      sectionTitle:     u.sectionTitle,
-      previousPosition: section?.brief?.strategicPosition || section?.content || '',
-    };
-  });
+  const undoData = resolvedUpdates.map(u => ({
+    capabilityId:     u._targetCap.capabilityId,
+    sectionTitle:     u._section.title,
+    previousPosition: u._section.brief?.strategicPosition || u._section.content || '',
+  }));
 
   // Apply all updates to in-memory blueprint + DOM (DOM only for currently visible capability)
   for (const u of resolvedUpdates) {
-    const section = (u._targetCap.sections || []).find(s => s.title === u.sectionTitle);
-    if (!section) continue;
+    const section = u._section;
     if (!section.brief) section.brief = {};
     section.brief.strategicPosition = u.suggestedRevision;
     section.updatedAt = new Date().toISOString();
@@ -2516,11 +2526,14 @@ async function showMultiUpdateResult(summary, updates, currentCap) {
       if (resp.ok) {
         const { updatedBriefs } = await resp.json();
         for (const [sectionTitle, extraBrief] of Object.entries(updatedBriefs || {})) {
-          const section = (targetCap.sections || []).find(s => s.title === sectionTitle);
+          const section = (targetCap.sections || []).find(s => s.title === sectionTitle)
+            || (targetCap.sections || []).find(s => s.title.toLowerCase() === sectionTitle.toLowerCase());
           if (section) {
-            section.brief = { ...(section.brief || {}), ...extraBrief };
+            // Merge extras only — never let extraBrief overwrite strategicPosition
+            const { strategicPosition: _sp, priorityActions: _pa, successMetrics: _sm, leadershipValidation: _lv, ...extrasOnly } = extraBrief;
+            section.brief = { ...(section.brief || {}), ...extrasOnly };
             if (targetCap.capabilityId === currentCap.capabilityId) {
-              const oldCard = document.querySelector(`.bp-section[data-section-title="${CSS.escape(sectionTitle)}"]`);
+              const oldCard = document.querySelector(`.bp-section[data-section-title="${CSS.escape(section.title)}"]`);
               if (oldCard) oldCard.replaceWith(buildSectionCard(_blueprint, targetCap, section));
             }
           }
@@ -2574,7 +2587,9 @@ async function undoMultiUpdate(undoData, currentCap, doneCard) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body:    JSON.stringify({ brief: { strategicPosition: u.previousPosition } }),
       }
-    ).catch(err => console.warn('[undo-multi] PATCH failed:', targetCapId, u.sectionTitle, err.message));
+    )
+    .then(r => { if (!r.ok) console.warn('[undo-multi] PATCH non-ok:', r.status, targetCapId, u.sectionTitle); })
+    .catch(err => console.warn('[undo-multi] PATCH error:', targetCapId, u.sectionTitle, err.message));
   }
 }
 

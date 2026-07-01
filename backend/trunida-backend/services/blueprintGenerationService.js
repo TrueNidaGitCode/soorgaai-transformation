@@ -982,7 +982,9 @@ OUTPUT — valid JSON only, no markdown fences:
       { arrayFilters: [{ 'cap.capabilityId': capabilityId }, { 'sec.title': ns.title }] }
     );
 
-    updatedBriefs[ns.title] = b;
+    // Return only the extra/visual fields — never overwrite strategicPosition
+    const { strategicPosition: _sp, priorityActions: _pa, successMetrics: _sm, leadershipValidation: _lv, ...extrasOnly } = b;
+    updatedBriefs[ns.title] = extrasOnly;
   }
 
   return updatedBriefs;

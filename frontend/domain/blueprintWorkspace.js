@@ -2260,7 +2260,7 @@ async function handleChatSubmit(e, prefillText) {
         automotiveBlueprint: '',
         conversationHistory: _chatHistory.slice(-10),
         companyMemory:       {},
-        capabilitySections:  getCapabilitySections(cap),
+        allCapabilitySections: getAllCapabilitySections(_blueprint),
       }),
     });
 
@@ -2286,8 +2286,7 @@ async function handleChatSubmit(e, prefillText) {
     } else if (result.mode === 'blueprint-multi') {
       const updates = result.updates || [];
       const summary = result.summary || '';
-      const others  = result.otherCapabilities || [];
-      await showMultiUpdateResult(summary, updates, others, cap);
+      await showMultiUpdateResult(summary, updates, cap);
       _chatHistory.push({ role: 'assistant', content: summary });
       saveChatHistory();
     }
@@ -2321,6 +2320,17 @@ function getCapabilitySections(cap) {
   return (cap.sections || []).map(s => ({
     title:             s.title,
     strategicPosition: s.brief?.strategicPosition || s.content || '',
+  }));
+}
+
+function getAllCapabilitySections(blueprint) {
+  return (blueprint.capabilities || []).map(cap => ({
+    capabilityId:   cap.capabilityId,
+    capabilityName: cap.capabilityName,
+    sections: (cap.sections || []).map(s => ({
+      title:             s.title,
+      strategicPosition: s.brief?.strategicPosition || s.content || '',
+    })),
   }));
 }
 
@@ -2373,33 +2383,44 @@ function clearSuggestionCard() {
   document.getElementById('ai-suggestion-card')?.remove();
 }
 
-async function showMultiUpdateResult(summary, updates, otherCapabilities, cap) {
+async function showMultiUpdateResult(summary, updates, currentCap) {
   if (!updates.length || !_blueprint) return;
 
-  // Snapshot current state for undo before applying
-  const undoData = updates.map(u => {
-    const section = (cap.sections || []).find(s => s.title === u.sectionTitle);
+  // Resolve each update to its target capability object
+  const resolvedUpdates = updates.map(u => {
+    const targetCap = u.capabilityId
+      ? (_blueprint.capabilities || []).find(c => c.capabilityId === u.capabilityId)
+      : currentCap;
+    return { ...u, _targetCap: targetCap || currentCap };
+  });
+
+  // Snapshot for undo before applying anything
+  const undoData = resolvedUpdates.map(u => {
+    const section = (u._targetCap.sections || []).find(s => s.title === u.sectionTitle);
     return {
+      capabilityId:     u._targetCap.capabilityId,
       sectionTitle:     u.sectionTitle,
       previousPosition: section?.brief?.strategicPosition || section?.content || '',
     };
   });
 
-  // Apply each update to in-memory blueprint + DOM
-  for (const u of updates) {
-    const section = (cap.sections || []).find(s => s.title === u.sectionTitle);
+  // Apply all updates to in-memory blueprint + DOM (DOM only for currently visible capability)
+  for (const u of resolvedUpdates) {
+    const section = (u._targetCap.sections || []).find(s => s.title === u.sectionTitle);
     if (!section) continue;
     if (!section.brief) section.brief = {};
     section.brief.strategicPosition = u.suggestedRevision;
     section.updatedAt = new Date().toISOString();
 
-    const oldCard = document.querySelector(`.bp-section[data-section-title="${CSS.escape(section.title)}"]`);
-    if (oldCard) oldCard.replaceWith(buildSectionCard(_blueprint, cap, section));
+    if (u._targetCap.capabilityId === currentCap.capabilityId) {
+      const oldCard = document.querySelector(`.bp-section[data-section-title="${CSS.escape(section.title)}"]`);
+      if (oldCard) oldCard.replaceWith(buildSectionCard(_blueprint, u._targetCap, section));
+    }
   }
   _blueprint.updatedAt = new Date().toISOString();
   renderHeader(_blueprint);
 
-  // Show applied summary + Undo in chat
+  // Build applied summary card with Undo
   const log = document.getElementById('ai-chat-messages');
   if (!log) return;
 
@@ -2414,55 +2435,64 @@ async function showMultiUpdateResult(summary, updates, otherCapabilities, cap) {
   summaryEl.textContent = summary;
   card.appendChild(summaryEl);
 
+  // Group by capability for display
+  const byCapability = {};
+  resolvedUpdates.forEach(u => {
+    const name = u.capabilityName || u._targetCap.capabilityName;
+    if (!byCapability[name]) byCapability[name] = [];
+    byCapability[name].push(u.sectionTitle);
+  });
+  const changesLabel = Object.entries(byCapability)
+    .map(([capName, sections]) => `${capName}: ${sections.join(', ')}`)
+    .join(' · ');
   const sectionsEl = document.createElement('p');
   sectionsEl.className   = 'ai-multi-update__sections';
-  sectionsEl.textContent = `Updated: ${updates.map(u => u.sectionTitle).join(', ')}`;
+  sectionsEl.textContent = `Updated — ${changesLabel}`;
   card.appendChild(sectionsEl);
-
-  if (otherCapabilities.length) {
-    const othersEl = document.createElement('p');
-    othersEl.className   = 'ai-multi-update__other';
-    othersEl.textContent = `Also relevant: ${otherCapabilities.join(', ')}`;
-    card.appendChild(othersEl);
-  }
 
   const actionsEl = document.createElement('div');
   actionsEl.className = 'ai-multi-update__actions';
   const undoBtn = document.createElement('button');
   undoBtn.className   = 'ai-multi-update-btn ai-multi-update-btn--undo';
   undoBtn.textContent = 'Undo';
-  undoBtn.addEventListener('click', () => undoMultiUpdate(undoData, cap, card));
+  undoBtn.addEventListener('click', () => undoMultiUpdate(undoData, currentCap, card));
   actionsEl.appendChild(undoBtn);
   card.appendChild(actionsEl);
 
   log.appendChild(card);
   log.scrollTop = log.scrollHeight;
 
-  // Persist to backend — fire-and-forget
-  for (const u of updates) {
+  // Persist all sections to backend — fire-and-forget
+  for (const u of resolvedUpdates) {
     fetch(
-      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${cap.capabilityId}/section/${encodeURIComponent(u.sectionTitle)}`,
+      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${u._targetCap.capabilityId}/section/${encodeURIComponent(u.sectionTitle)}`,
       {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body:    JSON.stringify({ brief: { strategicPosition: u.suggestedRevision } }),
       }
-    ).catch(err => console.warn('[multi-update] PATCH failed:', u.sectionTitle, err.message));
+    ).catch(err => console.warn('[multi-update] PATCH failed:', u._targetCap.capabilityId, u.sectionTitle, err.message));
   }
 }
 
-async function undoMultiUpdate(undoData, cap, doneCard) {
+async function undoMultiUpdate(undoData, currentCap, doneCard) {
   if (!_blueprint) return;
 
   for (const u of undoData) {
-    const section = (cap.sections || []).find(s => s.title === u.sectionTitle);
+    const targetCap = u.capabilityId
+      ? (_blueprint.capabilities || []).find(c => c.capabilityId === u.capabilityId)
+      : currentCap;
+    if (!targetCap) continue;
+    const section = (targetCap.sections || []).find(s => s.title === u.sectionTitle);
     if (!section) continue;
     if (!section.brief) section.brief = {};
     section.brief.strategicPosition = u.previousPosition;
     section.updatedAt = new Date().toISOString();
 
-    const oldCard = document.querySelector(`.bp-section[data-section-title="${CSS.escape(section.title)}"]`);
-    if (oldCard) oldCard.replaceWith(buildSectionCard(_blueprint, cap, section));
+    if (targetCap.capabilityId === currentCap.capabilityId) {
+      const oldCard = document.querySelector(`.bp-section[data-section-title="${CSS.escape(section.title)}"]`);
+      if (oldCard) oldCard.replaceWith(buildSectionCard(_blueprint, targetCap, section));
+    }
   }
   _blueprint.updatedAt = new Date().toISOString();
   renderHeader(_blueprint);
@@ -2476,14 +2506,15 @@ async function undoMultiUpdate(undoData, cap, doneCard) {
 
   // Restore in backend — fire-and-forget
   for (const u of undoData) {
+    const targetCapId = u.capabilityId || currentCap.capabilityId;
     fetch(
-      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${cap.capabilityId}/section/${encodeURIComponent(u.sectionTitle)}`,
+      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${targetCapId}/section/${encodeURIComponent(u.sectionTitle)}`,
       {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body:    JSON.stringify({ brief: { strategicPosition: u.previousPosition } }),
       }
-    ).catch(err => console.warn('[undo-multi] PATCH failed:', u.sectionTitle, err.message));
+    ).catch(err => console.warn('[undo-multi] PATCH failed:', targetCapId, u.sectionTitle, err.message));
   }
 }
 

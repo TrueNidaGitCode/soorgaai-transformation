@@ -58,7 +58,7 @@ export async function suggestSection(req, res) {
       automotiveBlueprint,
       conversationHistory,
       companyMemory,
-      capabilitySections,
+      allCapabilitySections,
     } = req.body;
 
     if (!capabilityId || typeof capabilityId !== 'string') {
@@ -81,7 +81,7 @@ export async function suggestSection(req, res) {
       conversationHistory: Array.isArray(conversationHistory) ? conversationHistory : [],
       companyMemory:       companyMemory && typeof companyMemory === 'object' ? companyMemory : {},
       userId:              req.user._id,
-      capabilitySections:  Array.isArray(capabilitySections) ? capabilitySections : [],
+      allCapabilitySections: Array.isArray(allCapabilitySections) ? allCapabilitySections : [],
     });
 
     // Auto-capture detected knowledge — fire-and-forget, never blocks the response

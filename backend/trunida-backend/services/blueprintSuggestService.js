@@ -286,12 +286,13 @@ For MULTI-BUILDER MODE (BLUEPRINT-MULTI):
   "mode": "blueprint-multi",
   "summary": "1-2 sentence plain-English summary of what changed and why.",
   "updates": [
-    { "sectionTitle": "<exact section title matching the capability sections list>", "suggestedRevision": "Polished strategic position text, 80-150 words." }
+    { "capabilityId": "<exact capabilityId from ALL CAPABILITY SECTIONS>", "capabilityName": "<exact capabilityName>", "sectionTitle": "<exact section title>", "suggestedRevision": "Polished strategic position text, 80-150 words." }
   ],
-  "otherCapabilities": ["<capability name>", "<capability name>"],
   "companyContext": { "type": "...", "customers": "...", "priorities": ["..."], "businessModel": "..." },
   "knowledgeSuggestions": []
 }
+IMPORTANT: capabilityId and sectionTitle must exactly match the identifiers in ALL CAPABILITY SECTIONS.
+Only include sections where the change has clear, direct relevance. Leave unaffected sections out entirely.
 
 knowledgeSuggestions is OPTIONAL in all modes — include ONLY when the user's message contains genuinely reusable organisational knowledge: customer feedback, lessons learned, engineering practices, AI implementation insights (successes or failures), process improvements, governance or data recommendations. Set to [] when the message contains no reusable knowledge. Do NOT generate suggestions for routine questions or clarifications.`;
 }
@@ -326,7 +327,7 @@ function formatCurrentSection(sectionTitle, currentContent, blueprint) {
 function buildUserMessage(
   blueprint, sectionTitle, currentContent,
   coreContent, industryContent, specContent, related, request, automotiveBlueprint,
-  memoryContext, companyContext, capabilitySections = []
+  memoryContext, companyContext, allCapabilitySections = []
 ) {
   const blocks = [];
 
@@ -363,11 +364,14 @@ function buildUserMessage(
     blocks.push(`=== P5: RELATED CAPABILITY KNOWLEDGE ===\n${relatedText}`);
   }
 
-  if (capabilitySections.length > 0) {
-    const sectionsText = capabilitySections
-      .map(s => `[${s.title}]\n${s.strategicPosition || '(empty)'}`)
-      .join('\n\n');
-    blocks.push(`=== CAPABILITY SECTIONS ===\n${sectionsText}\n=== END CAPABILITY SECTIONS ===`);
+  if (allCapabilitySections.length > 0) {
+    const capBlockText = allCapabilitySections.map(cap => {
+      const sectionsText = (cap.sections || [])
+        .map(s => `  [${s.title}]\n  ${s.strategicPosition || '(empty)'}`)
+        .join('\n\n');
+      return `[${cap.capabilityName}] | capabilityId: ${cap.capabilityId}\n${sectionsText}`;
+    }).join('\n\n---\n\n');
+    blocks.push(`=== ALL CAPABILITY SECTIONS ===\n\n${capBlockText}\n\n=== END ALL CAPABILITY SECTIONS ===`);
   }
 
   return `KNOWLEDGE BASE:\n\n${blocks.join('\n\n')}\n\n---\n\nUSER REQUEST: ${request}`;
@@ -494,7 +498,7 @@ export async function suggestBlueprintSection({
   conversationHistory = [],
   companyMemory = {},
   userId,
-  capabilitySections = [],
+  allCapabilitySections = [],
 }) {
   const industry       = blueprint?.industry       || 'Automotive';
   const capabilityName = blueprint?.capabilityName || '';
@@ -516,7 +520,7 @@ export async function suggestBlueprintSection({
   const userMessage  = buildUserMessage(
     blueprint, sectionTitle, currentContent || '',
     coreContent, industryContent, specContent, related, request, automotiveBlueprint,
-    memoryContext, companyContext, capabilitySections
+    memoryContext, companyContext, allCapabilitySections
   );
 
   const { text, inputTokens, outputTokens } = await generate({
@@ -548,15 +552,16 @@ export async function suggestBlueprintSection({
 
   if (parsed.mode === 'blueprint-multi') {
     const updates = (parsed.updates || []).map(u => ({
-      sectionTitle:     u.sectionTitle || '',
+      capabilityId:      u.capabilityId      || '',
+      capabilityName:    u.capabilityName    || '',
+      sectionTitle:      u.sectionTitle      || '',
       suggestedRevision: cleanMarkdown(u.suggestedRevision || ''),
     }));
     return {
       ...base,
-      mode:              'blueprint-multi',
-      summary:           cleanMarkdown(parsed.summary || ''),
+      mode:    'blueprint-multi',
+      summary: cleanMarkdown(parsed.summary || ''),
       updates,
-      otherCapabilities: parsed.otherCapabilities || [],
       ...ctxUpdate,
       ...ksUpdate,
     };

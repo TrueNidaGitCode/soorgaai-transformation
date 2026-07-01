@@ -192,7 +192,7 @@ function selectCapability(idx) {
   });
 
   renderBlueprintContent(_blueprint, idx);
-  restoreChat();
+  // Chat is blueprint-wide — no restoreChat() on tab switch, history stays visible
   updateAssistantContext();
 
   // Trigger one-time feedback prompt on first AI ROI tab visit
@@ -2176,14 +2176,10 @@ function updateAssistantContext() {
 function openAssistantForSection(sectionTitle) {
   _refineTargetSection = sectionTitle;
   setAssistantOpen(true);
-  // Pre-fill the input so the user can review/edit before sending — don't auto-send
+  const cap = (_blueprint?.capabilities || [])[_selectedCapIndex];
+  const capName = cap?.capabilityName || 'this capability';
   setTimeout(() => {
-    const input = document.getElementById('ai-chat-input');
-    if (input) {
-      input.value = `Please review the "${sectionTitle}" section and suggest specific improvements.`;
-      input.dispatchEvent(new Event('input'));
-      input.focus();
-    }
+    handleChatSubmit(null, `Please review the "${sectionTitle}" section in ${capName} and suggest specific improvements.`);
   }, 80);
 }
 
@@ -2668,9 +2664,8 @@ async function acceptSuggestion() {
 // ── Chat persistence ──────────────────────────────────────────────────────────
 
 function chatStorageKey() {
-  const cap = (_blueprint?.capabilities || [])[_selectedCapIndex];
-  if (!_blueprint?._id || !cap?.capabilityId) return null;
-  return `soorgaai_chat_v1_${_blueprint._id}_${cap.capabilityId}`;
+  if (!_blueprint?._id) return null;
+  return `soorgaai_chat_v1_${_blueprint._id}`;
 }
 
 function saveChatHistory() {

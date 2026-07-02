@@ -117,6 +117,13 @@ const sdlcStageSchema = new mongoose.Schema({
   description: { type: String, default: '' },
 }, { _id: false });
 
+// AI Use Cases sub-schemas
+const valueCategorySchema       = new mongoose.Schema({ title: String, focus: String, outcomes: [String] }, { _id: false });
+const priorityQuadrantSchema    = new mongoose.Schema({ id: String, label: String, initiatives: [String] }, { _id: false });
+const dimensionCardSchema       = new mongoose.Schema({ title: String, bullets: [String] }, { _id: false });
+const classificationSchema      = new mongoose.Schema({ name: String, description: String }, { _id: false });
+const classificationCardSchema  = new mongoose.Schema({ type: String, purpose: String, characteristics: [String], examples: [String] }, { _id: false });
+
 const briefSchema = new mongoose.Schema({
   strategicPosition:    { type: String, default: '' },
   priorityActions:      { type: [String], default: [] },
@@ -151,6 +158,22 @@ const briefSchema = new mongoose.Schema({
   modelLifecycleStages: { type: [stageBulletSchema],    default: [] },
   complianceControls:   { type: [pillarBulletSchema],   default: [] },
   adoptionStages:       { type: [pillarBulletSchema],   default: [] },
+  // AI Use Cases extras
+  businessProblems:         { type: [String], default: [] },
+  workflowSteps:            { type: [String], default: [] },
+  highEffortActivities:     { type: [String], default: [] },
+  aiOpportunities:          { type: [String], default: [] },
+  valueCategories:          { type: [valueCategorySchema],      default: [] },
+  kpiPills:                 { type: [String], default: [] },
+  businessValueInsight:     { type: String,   default: '' },
+  recommendedStartingPoint: { type: String,   default: '' },
+  priorityQuadrants:        { type: [priorityQuadrantSchema],   default: [] },
+  dimensionCards:           { type: [dimensionCardSchema],      default: [] },
+  prioritizationInsight:    { type: String,   default: '' },
+  primaryClassification:    { type: classificationSchema,       default: undefined },
+  secondaryClassification:  { type: classificationSchema,       default: undefined },
+  classificationCards:      { type: [classificationCardSchema], default: [] },
+  classificationInsight:    { type: String,   default: '' },
 }, { _id: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────

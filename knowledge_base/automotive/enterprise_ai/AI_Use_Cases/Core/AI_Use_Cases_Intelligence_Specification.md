@@ -1,6 +1,6 @@
 # SoorgaAI AI Use Cases Intelligence Specification
 
-Version 1.0
+Version 2.0
 
 ---
 
@@ -53,8 +53,8 @@ Processing:
 
 1. **AI Opportunity Discovery** — Bug pre-analysis is identified as a high-effort, knowledge-intensive process suitable for AI assistance.
 2. **AI Use Case Classification** — Classified as Productivity AI (reduces engineer effort) and Functional AI (improves defect management processes).
-3. **Business Value Definition** — Outcomes defined: reduce analysis time from 8 hours to 2 hours; improve assignment accuracy; increase knowledge reuse; reduce resolution time.
-4. **AI Use Case Prioritization** — Scored: Business value High, Technical feasibility Medium–High, Data availability High. Recommendation: high-priority pilot.
+3. **Business Value Definition** — Outcomes defined: reduce analysis time from 8 hours to 2 hours (Engineering Productivity); improve defect assignment accuracy from 85% to 95% (Engineering Excellence); reduce Mean Time to Resolution by 40% (Project & Operational Performance); increase engineering capacity by reducing repetitive analysis activities (Customer & Product Value).
+4. **AI Use Case Prioritization** — Scored: Business Value High, Implementation Feasibility High, Strategic Alignment High, Organizational Readiness Medium. Recommendation: high-priority pilot.
 
 ---
 
@@ -92,7 +92,7 @@ Key question:
 
 ## Prioritization & Pilot Decision
 
-Score use cases against four dimensions — business value, technical feasibility, data availability, and organizational impact — to produce a ranked pilot recommendation.
+Score use cases against four dimensions — Business Value, Implementation Feasibility, Strategic Alignment, and Organizational Readiness — to produce a ranked pilot recommendation.
 
 Key question:
 

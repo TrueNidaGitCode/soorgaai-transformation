@@ -2,104 +2,76 @@
 
 ## Purpose
 
-AI Use Case Classification assigns every AI opportunity to one or more of three value categories: Productivity AI, Functional AI, and Product AI. Classification is a critical step because each category carries different investment expectations, success metrics, stakeholder ownership, and delivery approaches.
+AI Use Case Classification is the second capability in the AI Use Case domain. It categorizes every AI opportunity based on where AI creates value within the organization. Classification establishes the context for business value assessment, prioritization, technology selection, and implementation planning.
 
-Misclassification is one of the most common reasons AI use cases fail to deliver expected value. A productivity use case evaluated as a product innovation sets the wrong expectations, attracts the wrong investment, and is almost always disappointing when measured against the wrong outcomes.
+AI opportunities generally fall into three categories:
 
-Classification is done immediately after discovery, before any value quantification or prioritization work begins.
+- **Productivity AI** — Improves the productivity of individuals and teams.
+- **Functional AI** — Enhances the effectiveness of business functions and engineering processes.
+- **Product AI** — Creates new value by embedding AI capabilities into products and customer experiences.
 
----
-
-# Core Principles
-
-The right classification prevents misaligned expectations and misdirected investment.
-
-1. Productivity AI
-2. Functional AI
-3. Product AI
-
-A single use case may span two categories. When this happens, both classifications are recorded and the primary value driver determines the success metrics applied.
+A single AI opportunity may belong to more than one category. In such cases, the primary classification should reflect where the greatest business value is expected to be realized.
 
 ---
 
-# 1. Productivity AI
+# 1. AI Use Case Classification
 
 ## Definition
 
-Productivity AI use cases reduce the time, effort, and cognitive load required for delivery team members to complete existing tasks. The work itself does not change — the same tasks are done, but faster, with less manual effort, and with more consistency.
+AI use cases create value at different levels of an organization. Some help individuals complete their work more efficiently, others improve the performance of business processes, while others deliver new capabilities directly to customers.
 
-Productivity AI operates at the team level. Its primary beneficiaries are engineers, analysts, testers, project managers, and other delivery roles. The business value is measured in hours saved, throughput increased, and team capacity freed for higher-value work.
+Classifying AI opportunities provides a common language for understanding the purpose of each use case and ensures that subsequent business value assessment and prioritization are based on the appropriate context.
 
-Productivity AI use cases are typically the fastest to justify, the easiest to pilot, and the quickest to show measurable return. They are the most common starting point for organizations building their first AI use case portfolio because the data required already exists in the tools teams use every day.
+## Classification Framework
 
-Common productivity AI patterns include: automated summarisation, intelligent pre-analysis, classification routing, draft generation, and knowledge-base-assisted lookup.
+### Productivity AI
 
-## Key Principles
+**Primary Goal:** Improve the productivity of individuals or teams by reducing manual effort and accelerating routine activities.
 
-* Measure success in hours saved per team member per week.
-* The target beneficiary is the delivery team, not the end customer.
-* Data is typically available in existing tools: issue trackers, version control, test management systems.
-* Productivity use cases require minimal change to existing workflows — AI augments the existing process.
-* Acceptance criteria are quantitative: time reduction, throughput increase, or rework reduction.
-* Pilot scope should be small: one team, one workflow, one sprint cycle.
-* Value is realized within weeks, not months.
+**Typical Characteristics**
+* Team or individual focused
+* AI augments existing work
+* Quick implementation
+* Immediate productivity improvements
 
-## Leadership Question
-
-**How much time does our team spend on this task today, and how much of that time could AI realistically reduce by taking the first pass or providing a structured starting point?**
+**Common Examples:** Document summarization, AI coding assistants, meeting summaries, knowledge assistants, AI-assisted bug analysis.
 
 ---
 
-# 2. Functional AI
+### Functional AI
 
-## Definition
+**Primary Goal:** Improve the quality, consistency, and effectiveness of business functions or engineering processes.
 
-Functional AI use cases improve the quality, consistency, and effectiveness of a business function or engineering process. Unlike Productivity AI, the goal is not just to do the same work faster — it is to do the work better, with outcomes that the current process cannot reliably achieve.
+**Typical Characteristics**
+* Process focused
+* Improves operational performance
+* Requires workflow integration
+* Benefits multiple teams
 
-Functional AI operates at the process and program level. Its primary beneficiaries are the teams that own and manage a business function: defect management, requirements engineering, testing, supplier quality, risk management. The business value is measured in quality improvement, error reduction, consistency of outcomes, and capability uplift across the function.
-
-Functional AI use cases take longer to justify and require more investment in data preparation and process integration than Productivity AI. They often involve redesigning the workflow to incorporate AI outputs as a standard input to decisions. The reward is a step-change in process capability rather than incremental efficiency.
-
-Common functional AI patterns include: predictive classification, risk scoring, automated triage, root-cause suggestion, anomaly detection, and intelligent routing.
-
-## Key Principles
-
-* Measure success in quality metrics: defect escape rate, assignment accuracy, false positive rate, rework rate.
-* The target beneficiary is the function or process owner, not individual team members.
-* Data requires more preparation — historical records, labels, and ground truth are essential.
-* Functional AI changes how a process works, not just how fast it runs.
-* Pilot scope includes a complete process cycle: end-to-end validation of one workflow.
-* Value is realized over one to three program cycles, not weeks.
-* Stakeholder ownership must be assigned at the function level before the pilot begins.
-
-## Leadership Question
-
-**Will this AI use case change the quality or consistency of outcomes in our process, not just the speed — and do we have the data and process maturity to support it?**
+**Common Examples:** Intelligent defect triage, requirements analysis, test optimization, risk prediction, supplier quality analysis.
 
 ---
 
-# 3. Product AI
+### Product AI
 
-## Definition
+**Primary Goal:** Deliver new customer value by embedding AI capabilities into products and services.
 
-Product AI use cases embed AI capabilities directly into a product, platform, or customer-facing service. The AI becomes part of what the customer receives or experiences. Unlike Productivity and Functional AI — which improve internal delivery — Product AI creates new value for external stakeholders: customers, partners, or end users.
+**Typical Characteristics**
+* Customer focused
+* Product differentiation
+* New intelligent capabilities
+* Long-term strategic investment
 
-Product AI operates at the product and market level. Its primary beneficiaries are end customers, and its value is measured in customer experience improvement, product differentiation, new revenue, or competitive advantage.
-
-Product AI use cases carry the highest complexity, longest delivery cycle, and largest organizational investment of the three categories. They require clear product strategy, safety and compliance validation (particularly in regulated industries), and sustained product ownership. They are not appropriate as first AI use cases for teams just beginning their AI journey.
-
-Common product AI patterns include: intelligent assistant features, predictive maintenance, personalization engines, anomaly detection in field data, automated decision support for customers, and AI-powered product diagnostics.
+**Common Examples:** Predictive maintenance, intelligent virtual assistants, personalized customer experiences, AI-powered diagnostics, smart product recommendations.
 
 ## Key Principles
 
-* Measure success in customer-facing outcomes: customer satisfaction, product adoption, field failure rate, time-to-resolution for customers.
-* The target beneficiary is the end customer or external partner, not the internal team.
-* Data includes both internal training data and field/customer data — data governance and privacy requirements apply.
-* Product AI requires product design, safety review, and compliance validation before release.
-* Pilot is a controlled market or field trial, not an internal team experiment.
-* Value realization timeline is measured in product release cycles and market adoption.
-* Not recommended as an entry point — teams should build Productivity and Functional AI experience first.
+* Classify AI opportunities based on who receives the primary value.
+* A single AI opportunity may belong to multiple categories.
+* Identify the primary classification before assigning secondary classifications.
+* Use classification to guide business value definition and prioritization.
+* Review classifications as business objectives and AI capabilities evolve.
 
 ## Leadership Question
 
-**Is this AI capability something our customers will experience directly — and does it create measurable customer value or competitive differentiation in the market?**
+**Who receives the greatest benefit from this AI opportunity — our teams, our business processes, or our customers?**

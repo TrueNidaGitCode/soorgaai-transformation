@@ -1880,6 +1880,459 @@ function buildTrustAdoptionLayout(section) {
   return wrap;
 }
 
+// ── AI Use Cases — Classification ────────────────────────────────────────────
+
+function buildClassificationView(section) {
+  const b              = section.brief || {};
+  const primaryClass   = b.primaryClassification   || null;
+  const secondaryClass = b.secondaryClassification || null;
+  const cards          = b.classificationCards     || [];
+  const insight        = b.classificationInsight   || '';
+
+  const ICONS   = { 'Productivity AI': '⚡', 'Functional AI': '⚙', 'Product AI': '🚗' };
+  const COLORS  = { 'Productivity AI': 'productivity', 'Functional AI': 'functional', 'Product AI': 'product' };
+
+  const wrap = document.createElement('div');
+  wrap.className = 'cls-view';
+
+  if (b.strategicPosition) {
+    const pos = document.createElement('p');
+    pos.className = 'cls-view__position';
+    pos.textContent = b.strategicPosition;
+    wrap.appendChild(pos);
+  }
+
+  // ── Classification Banner ─────────────────────────────────────────────────
+  if (primaryClass) {
+    const banner = document.createElement('div');
+    banner.className = 'cls-banner';
+
+    const mkCell = (label, cls, isSec) => {
+      const cell = document.createElement('div');
+      cell.className = `cls-banner__cell${isSec ? ' cls-banner__cell--secondary' : ''}`;
+      cell.innerHTML = `
+        <span class="cls-banner__label">${label}</span>
+        <span class="cls-banner__name cls-name--${COLORS[cls.name] || 'functional'}">${cls.name}</span>
+        <span class="cls-banner__desc">${cls.description}</span>`;
+      return cell;
+    };
+
+    banner.appendChild(mkCell('Primary Classification', primaryClass, false));
+    if (secondaryClass) banner.appendChild(mkCell('Secondary Classification', secondaryClass, true));
+    wrap.appendChild(banner);
+  }
+
+  // ── Three Category Cards ──────────────────────────────────────────────────
+  if (cards.length) {
+    const grid = document.createElement('div');
+    grid.className = 'cls-cards';
+
+    for (const card of cards) {
+      const colorKey = COLORS[card.type] || 'functional';
+      const el = document.createElement('div');
+      el.className = `cls-card cls-card--${colorKey}`;
+      el.innerHTML = `
+        <div class="cls-card__header">
+          <span class="cls-card__icon">${ICONS[card.type] || '●'}</span>
+          <span class="cls-card__type">${card.type}</span>
+        </div>
+        <div class="cls-card__section">
+          <p class="cls-card__section-label">Purpose</p>
+          <p class="cls-card__purpose">${card.purpose}</p>
+        </div>
+        <div class="cls-card__section">
+          <p class="cls-card__section-label">Characteristics</p>
+          <ul class="cls-card__list">${(card.characteristics || []).map(c => `<li>${c}</li>`).join('')}</ul>
+        </div>
+        <div class="cls-card__section">
+          <p class="cls-card__section-label">Automotive Examples</p>
+          <ul class="cls-card__list">${(card.examples || []).map(e => `<li>${e}</li>`).join('')}</ul>
+        </div>`;
+      grid.appendChild(el);
+    }
+    wrap.appendChild(grid);
+  }
+
+  // ── Insight Footer ────────────────────────────────────────────────────────
+  if (insight) {
+    const footer = document.createElement('div');
+    footer.className = 'cls-insight';
+    footer.innerHTML = `
+      <span class="cls-insight__icon">□</span>
+      <p class="cls-insight__text"><strong>Classification Insight</strong> — ${insight}</p>`;
+    wrap.appendChild(footer);
+  }
+
+  return wrap;
+}
+
+// ── AI Use Cases — Business Value Definition ──────────────────────────────────
+
+function buildBvdCatCard(cat) {
+  const card = document.createElement('div');
+  card.className = 'bvd-cat-card';
+
+  const dot = document.createElement('div');
+  dot.className = 'bvd-cat-card__dot';
+  card.appendChild(dot);
+
+  const body = document.createElement('div');
+  body.className = 'bvd-cat-card__body';
+
+  const title = document.createElement('p');
+  title.className = 'bvd-cat-card__title';
+  title.textContent = cat.title;
+  body.appendChild(title);
+
+  if (cat.focus) {
+    const focus = document.createElement('p');
+    focus.className = 'bvd-cat-card__focus';
+    focus.innerHTML = `<span class="bvd-cat-card__focus-label">Focus: </span>${cat.focus}`;
+    body.appendChild(focus);
+  }
+
+  if (cat.outcomes?.length) {
+    const ul = document.createElement('ul');
+    ul.className = 'bvd-cat-card__outcomes';
+    cat.outcomes.forEach(o => {
+      const li = document.createElement('li');
+      li.textContent = o;
+      ul.appendChild(li);
+    });
+    body.appendChild(ul);
+  }
+
+  card.appendChild(body);
+  return card;
+}
+
+function buildBusinessValueDefinitionView(section) {
+  const b          = section.brief || {};
+  const categories = b.valueCategories     || [];
+  const kpiPills   = b.kpiPills            || [];
+  const insight    = b.businessValueInsight || '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'bvd-view';
+
+  // Intro quote (strategic position)
+  if (b.strategicPosition) {
+    const quote = document.createElement('div');
+    quote.className = 'bvd-quote';
+    const p = document.createElement('p');
+    p.className = 'bvd-quote__text';
+    p.textContent = b.strategicPosition;
+    quote.appendChild(p);
+    wrap.appendChild(quote);
+  }
+
+  // Top row — first 3 categories connected by amber line
+  const topCats    = categories.slice(0, 3);
+  const bottomCats = categories.slice(3, 4);
+
+  function buildRow(cats, centered) {
+    const rowWrap = document.createElement('div');
+    rowWrap.className = 'bvd-row-wrap';
+
+    const line = document.createElement('div');
+    line.className = 'bvd-row-line';
+    rowWrap.appendChild(line);
+
+    const row = document.createElement('div');
+    row.className = centered ? 'bvd-cards-row bvd-cards-row--center' : 'bvd-cards-row';
+    cats.forEach(cat => row.appendChild(buildBvdCatCard(cat)));
+    rowWrap.appendChild(row);
+    return rowWrap;
+  }
+
+  if (topCats.length)    wrap.appendChild(buildRow(topCats, false));
+  if (bottomCats.length) wrap.appendChild(buildRow(bottomCats, true));
+
+  // KPI pills
+  if (kpiPills.length) {
+    const pillsWrap = document.createElement('div');
+    pillsWrap.className = 'bvd-kpi-pills';
+    kpiPills.forEach(pill => {
+      const span = document.createElement('span');
+      span.className = 'bvd-kpi-pill';
+      span.textContent = pill;
+      pillsWrap.appendChild(span);
+    });
+    wrap.appendChild(pillsWrap);
+  }
+
+  // Insight footer
+  if (insight) {
+    const footer = document.createElement('div');
+    footer.className = 'bvd-insight';
+    const icon = document.createElement('span');
+    icon.className = 'bvd-insight__icon';
+    icon.textContent = '□';
+    const text = document.createElement('p');
+    text.className = 'bvd-insight__text';
+    const dotIdx = insight.indexOf('. ');
+    if (dotIdx !== -1) {
+      text.innerHTML = `<strong>${insight.slice(0, dotIdx + 1)}</strong> ${insight.slice(dotIdx + 2)}`;
+    } else {
+      text.innerHTML = `<strong>${insight}</strong>`;
+    }
+    footer.appendChild(icon);
+    footer.appendChild(text);
+    wrap.appendChild(footer);
+  }
+
+  return wrap;
+}
+
+// ── AI Use Cases — Prioritization ────────────────────────────────────────────
+
+function buildPrioritizationView(section) {
+  const b              = section.brief || {};
+  const recStart       = b.recommendedStartingPoint || '';
+  const quadrants      = b.priorityQuadrants        || [];
+  const dimCards       = b.dimensionCards           || [];
+  const insight        = b.prioritizationInsight    || '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'pri-view';
+
+  if (b.strategicPosition) {
+    const pos = document.createElement('p');
+    pos.className = 'pri-view__position';
+    pos.textContent = b.strategicPosition;
+    wrap.appendChild(pos);
+  }
+
+  // Recommended Starting Point banner
+  if (recStart) {
+    const banner = document.createElement('div');
+    banner.className = 'pri-recommended';
+    banner.innerHTML = `
+      <span class="pri-recommended__icon">★</span>
+      <div>
+        <p class="pri-recommended__title">Recommended Starting Point</p>
+        <p class="pri-recommended__text">${recStart}</p>
+      </div>`;
+    wrap.appendChild(banner);
+  }
+
+  // 2×2 Priority Matrix
+  if (quadrants.length) {
+    const matSection = document.createElement('div');
+    matSection.className = 'pri-matrix-section';
+
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label';
+    lbl.textContent = 'Prioritization Matrix';
+    matSection.appendChild(lbl);
+
+    const matWrap = document.createElement('div');
+    matWrap.className = 'pri-matrix-wrap';
+
+    // Y-axis label
+    const yAxis = document.createElement('div');
+    yAxis.className = 'pri-y-axis';
+    ['High', 'Business Value', 'Low'].forEach((t, i) => {
+      const el = document.createElement('span');
+      el.className = i === 1 ? 'pri-axis-label' : 'pri-axis-tick';
+      el.textContent = t;
+      yAxis.appendChild(el);
+    });
+    matWrap.appendChild(yAxis);
+
+    const matBody = document.createElement('div');
+    matBody.className = 'pri-matrix-body';
+
+    // X-axis top labels
+    const xHeader = document.createElement('div');
+    xHeader.className = 'pri-x-header';
+    ['Low Implementation Feasibility', 'High Implementation Feasibility'].forEach(t => {
+      const el = document.createElement('span');
+      el.textContent = t;
+      xHeader.appendChild(el);
+    });
+    matBody.appendChild(xHeader);
+
+    // 2×2 grid — order: [0] Strategic Bets (top-left), [1] Quick Wins (top-right), [2] Fill-ins (bottom-left), [3] Avoid (bottom-right)
+    const QUADRANT_CLASS = {
+      'quick-wins':     'pri-quadrant--quick-wins',
+      'strategic-bets': 'pri-quadrant--strategic-bets',
+      'fill-ins':       'pri-quadrant--fill-ins',
+      'avoid':          'pri-quadrant--avoid',
+    };
+    const grid = document.createElement('div');
+    grid.className = 'pri-matrix-grid';
+    quadrants.forEach(q => {
+      const cell = document.createElement('div');
+      cell.className = `pri-quadrant ${QUADRANT_CLASS[q.id] || 'pri-quadrant--fill-ins'}`;
+      const title = document.createElement('p');
+      title.className = 'pri-quadrant__label';
+      title.textContent = q.label;
+      cell.appendChild(title);
+      if (q.initiatives?.length) {
+        const items = document.createElement('p');
+        items.className = 'pri-quadrant__items';
+        items.textContent = q.initiatives.join(', ');
+        cell.appendChild(items);
+      }
+      grid.appendChild(cell);
+    });
+    matBody.appendChild(grid);
+
+    // X-axis bottom label
+    const xAxis = document.createElement('div');
+    xAxis.className = 'pri-x-axis';
+    ['Low', 'Implementation Feasibility', 'High'].forEach((t, i) => {
+      const el = document.createElement('span');
+      el.className = i === 1 ? 'pri-axis-label' : 'pri-axis-tick';
+      el.textContent = t;
+      xAxis.appendChild(el);
+    });
+    matBody.appendChild(xAxis);
+
+    matWrap.appendChild(matBody);
+    matSection.appendChild(matWrap);
+    wrap.appendChild(matSection);
+  }
+
+  // Evaluation Dimension Cards
+  if (dimCards.length) {
+    const dimSection = document.createElement('div');
+    dimSection.className = 'pri-dim-section';
+    const dimLbl = document.createElement('p');
+    dimLbl.className = 'brief-label';
+    dimLbl.textContent = 'Evaluation Dimensions';
+    dimSection.appendChild(dimLbl);
+    const dimRow = document.createElement('div');
+    dimRow.className = 'pri-dim-cards';
+    dimCards.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'pri-dim-card';
+      const title = document.createElement('p');
+      title.className = 'pri-dim-card__title';
+      title.textContent = d.title;
+      card.appendChild(title);
+      if (d.bullets?.length) {
+        const ul = document.createElement('ul');
+        ul.className = 'pri-dim-card__bullets';
+        d.bullets.forEach(bullet => {
+          const li = document.createElement('li');
+          li.textContent = bullet;
+          ul.appendChild(li);
+        });
+        card.appendChild(ul);
+      }
+      dimRow.appendChild(card);
+    });
+    dimSection.appendChild(dimRow);
+    wrap.appendChild(dimSection);
+  }
+
+  // Insight footer
+  if (insight) {
+    const footer = document.createElement('div');
+    footer.className = 'pri-insight';
+    footer.innerHTML = `
+      <span class="pri-insight__icon">💡</span>
+      <p class="pri-insight__text"><strong>Prioritization Insight</strong> — ${insight}</p>`;
+    wrap.appendChild(footer);
+  }
+
+  return wrap;
+}
+
+// ── AI Use Cases — Opportunity Discovery ──────────────────────────────────────
+
+function buildOppConnector() {
+  const c = document.createElement('div');
+  c.className = 'opp-connector';
+  c.innerHTML = '<div class="opp-connector__line"></div><div class="opp-connector__arrow">▼</div>';
+  return c;
+}
+
+function buildOpportunityDiscoveryView(section) {
+  const b                    = section.brief || {};
+  const businessProblems     = b.businessProblems     || [];
+  const workflowSteps        = b.workflowSteps        || [];
+  const highEffortActivities = b.highEffortActivities || [];
+  const aiOpportunities      = b.aiOpportunities      || [];
+
+  const wrap = document.createElement('div');
+  wrap.className = 'opp-discovery';
+
+  // Strategic position
+  if (b.strategicPosition) {
+    const pos = document.createElement('p');
+    pos.className = 'opp-discovery__position';
+    pos.textContent = b.strategicPosition;
+    wrap.appendChild(pos);
+  }
+
+  // ── Layer 1: Business Problem ─────────────────────────────────────────────
+  const layer1 = document.createElement('div');
+  layer1.className = 'opp-layer';
+  layer1.innerHTML = `
+    <div class="opp-layer__header">
+      <span class="opp-layer__dot opp-layer__dot--problem"></span>
+      <span class="opp-layer__title">Business Problem</span>
+    </div>
+    <div class="opp-chips">
+      ${businessProblems.length
+        ? businessProblems.map(p => `<span class="opp-chip opp-chip--problem">${p}</span>`).join('')
+        : '<span class="opp-chip opp-chip--problem opp-chip--placeholder">Generating…</span>'}
+    </div>`;
+  wrap.appendChild(layer1);
+
+  wrap.appendChild(buildOppConnector());
+
+  // ── Layer 2: Current Workflow + High-Effort Activities ────────────────────
+  const layer2 = document.createElement('div');
+  layer2.className = 'opp-layer';
+  const stepsHtml = workflowSteps.map((step, i) =>
+    `<div class="opp-step">${step}</div>${i < workflowSteps.length - 1 ? '<div class="opp-step-arrow">→</div>' : ''}`
+  ).join('');
+  const heaHtml = highEffortActivities.length
+    ? `<div class="opp-workflow__hea-label">High-Effort Activities</div>
+       <div class="opp-hea-row">${highEffortActivities.map(a => `<div class="opp-hea">${a}</div>`).join('')}</div>`
+    : '';
+  layer2.innerHTML = `
+    <div class="opp-layer__header">
+      <span class="opp-layer__dot opp-layer__dot--workflow"></span>
+      <span class="opp-layer__title">Current Workflow</span>
+    </div>
+    <div class="opp-workflow">
+      <div class="opp-workflow__steps">${stepsHtml}</div>
+      ${heaHtml}
+    </div>`;
+  wrap.appendChild(layer2);
+
+  wrap.appendChild(buildOppConnector());
+
+  // ── Layer 3: AI Opportunities ─────────────────────────────────────────────
+  const layer3 = document.createElement('div');
+  layer3.className = 'opp-layer';
+  const mid      = Math.ceil(aiOpportunities.length / 2);
+  const leftOpps = aiOpportunities.slice(0, mid);
+  const rightOpps = aiOpportunities.slice(mid);
+  layer3.innerHTML = `
+    <div class="opp-layer__header">
+      <span class="opp-layer__dot opp-layer__dot--ai"></span>
+      <span class="opp-layer__title">AI Opportunities</span>
+    </div>
+    <div class="opp-ai-hub">
+      <div class="opp-ai-hub__side opp-ai-hub__left">
+        ${leftOpps.map(o => `<span class="opp-chip opp-chip--ai">${o}</span>`).join('')}
+      </div>
+      <div class="opp-ai-node">AI</div>
+      <div class="opp-ai-hub__side opp-ai-hub__right">
+        ${rightOpps.map(o => `<span class="opp-chip opp-chip--ai">${o}</span>`).join('')}
+      </div>
+    </div>`;
+  wrap.appendChild(layer3);
+
+  return wrap;
+}
+
 function buildVisionLayout(section) {
   const b = section.brief || {};
   const wrap = document.createElement('div');
@@ -1976,6 +2429,14 @@ function buildSectionCard(blueprint, cap, section) {
       card.appendChild(buildRegulatoryComplianceLayout(section));
     } else if (section.title === 'Trust & Adoption') {
       card.appendChild(buildTrustAdoptionLayout(section));
+    } else if (section.title === 'AI Opportunity Discovery') {
+      card.appendChild(buildOpportunityDiscoveryView(section));
+    } else if (section.title === 'AI Use Case Classification') {
+      card.appendChild(buildClassificationView(section));
+    } else if (section.title === 'Business Value Definition') {
+      card.appendChild(buildBusinessValueDefinitionView(section));
+    } else if (section.title === 'AI Use Case Prioritization') {
+      card.appendChild(buildPrioritizationView(section));
     } else {
       card.appendChild(buildBriefGrid(section));
     }

@@ -2,98 +2,84 @@
 
 ## Purpose
 
-Business Value Definition translates an AI opportunity from an idea into a quantified value proposition. It ensures that every AI use case entering the prioritization stage has a clear, measurable answer to the question: what exactly will this AI use case deliver, and how will we know it worked?
+Business Value Definition establishes the expected business outcomes of an AI use case before implementation begins. It ensures that every AI initiative is aligned with project and business objectives, supported by measurable success criteria, and justified by the value it is expected to deliver.
 
-For project and product managers, this capability prevents two of the most common AI project failures: building use cases whose value was never defined before development started, and discovering after delivery that no one can prove the AI made a difference.
+Rather than focusing on AI capabilities, this capability defines the outcomes that matter most to stakeholders and provides a clear basis for measuring success after deployment.
 
-Business value must be defined before the pilot begins — not after. Once defined, it becomes the acceptance criterion for the pilot and the baseline for measuring production ROI.
-
----
-
-# Core Principles
-
-AI value is only real when it is measurable from the first day of the pilot.
-
-1. Effort & Time Reduction
-2. Quality & Accuracy Improvement
-3. Knowledge Reuse & Productivity Gains
-
-Each dimension captures a different type of value. The strongest use cases deliver measurable improvement across two or more dimensions simultaneously.
+The outcome of this capability is a Business Value Statement with measurable success metrics.
 
 ---
 
-# 1. Effort & Time Reduction
+# 1. Business Value Definition
 
 ## Definition
 
-Effort and Time Reduction quantifies how much human time and effort is displaced by AI assistance. It is the most direct and immediately measurable form of AI business value, and the most commonly used justification for Productivity AI use cases.
+Successful AI initiatives are driven by business outcomes rather than technology adoption. Before implementation, Project Managers should define how the AI use case will improve business performance and establish the metrics that will demonstrate success.
 
-The baseline is the current time spent on the target activity per occurrence and per period. The AI target is a specific, realistic reduction in that time, expressed as a percentage or absolute hours. Both numbers must be grounded in actual measurement or reliable estimation — not assumed or aspirational.
+Business value should be expressed as measurable improvements across productivity, operational performance, customer impact, and business growth. These outcomes form the foundation for investment decisions, implementation planning, and continuous value tracking.
 
-Effort reduction must be validated during the pilot. If the AI-assisted process does not produce a measurable reduction in the time team members spend on the task, the use case has not delivered its claimed value regardless of how impressive the AI model performs in isolation.
+## Business Value Framework
 
-## Key Principles
+### Productivity Improvement
 
-* Establish a documented baseline: current time per occurrence, frequency per sprint or week, and total team effort per period.
-* Define a specific target reduction: for example, from 8 hours to 2 hours per analysis cycle.
-* Express the value in team capacity terms: hours saved per week, FTE equivalent, or sprint capacity freed.
-* Distinguish between full automation (AI completes the task) and augmentation (AI reduces the time a human spends).
-* Account for review time: AI-assisted tasks still require human validation — include review effort in the calculation.
-* Validate the target during the pilot before claiming the value in production projections.
-* Avoid overstating reduction by assuming 100% adoption — apply a realistic adoption rate.
+Measure how AI increases the efficiency and effectiveness of individuals and teams.
 
-## Leadership Question
+Typical outcomes include:
 
-**What is the current time cost of this activity per occurrence, how frequently does it occur, and what specific time reduction is AI realistically expected to achieve?**
+- Reduced manual effort
+- Faster task completion
+- Increased engineering capacity
+- Improved knowledge accessibility
 
 ---
 
-# 2. Quality & Accuracy Improvement
+### Operational Excellence
 
-## Definition
+Measure how AI improves engineering and business processes.
 
-Quality and Accuracy Improvement quantifies how AI intervention changes the consistency, correctness, and completeness of outputs from the target activity. It captures the value that Functional AI use cases deliver — not just doing work faster, but doing it better.
+Typical outcomes include:
 
-Quality improvement is measured against a defined baseline: the current error rate, inconsistency rate, false assignment rate, rework rate, or defect escape rate of the activity without AI assistance. The AI target is a specific, defensible improvement in one or more of these quality metrics.
-
-Unlike time reduction, quality improvement is often harder to measure during a short pilot. A longer measurement window — typically one or two program cycles — is required to detect statistically significant quality changes. This must be planned into the pilot design, not added as an afterthought.
-
-## Key Principles
-
-* Define a specific quality metric as the primary success indicator: assignment accuracy, classification accuracy, false positive rate, rework rate, or defect escape rate.
-* Establish the current baseline value of that metric from historical data before the pilot begins.
-* Set a minimum improvement threshold that would justify production deployment: for example, 80% assignment accuracy compared to a current 55% manual accuracy.
-* Identify the downstream impact of the quality improvement: reduced rework hours, faster resolution time, lower escaped defects, improved customer quality.
-* Plan the measurement window: quality changes require time to accumulate enough cases to measure reliably.
-* Define how the quality metric will be measured during and after the pilot: automated tracking, human review sampling, or outcome comparison.
-* Avoid single-metric fixation — quality improvements in one metric can sometimes degrade another. Monitor multiple quality indicators.
-
-## Leadership Question
-
-**What quality metric does this AI use case improve, what is the current baseline value, and what improvement level would justify moving from pilot to production?**
+- Reduced process cycle time
+- Improved quality and consistency
+- Lower operational costs
+- Reduced errors and rework
+- Faster decision making
 
 ---
 
-# 3. Knowledge Reuse & Productivity Gains
+### Customer & Business Impact
 
-## Definition
+Measure how AI contributes to customer satisfaction and organizational success.
 
-Knowledge Reuse and Productivity Gains captures the compounding value that AI delivers when it makes organizational knowledge accessible, searchable, and applicable at the point of need. In most engineering and delivery environments, significant knowledge is locked inside individual experts, buried in historical records, or spread across disconnected tools. AI use cases that unlock and apply this institutional knowledge create value that compounds over time as adoption grows.
+Typical outcomes include:
 
-This dimension is especially relevant for use cases involving diagnosis, triage, root-cause analysis, and decision support — where the quality of the output depends on how much relevant historical context the analyst can access. AI assistance in these areas does not just save time; it makes the work of less experienced team members more consistent with the performance of experts.
+- Improved customer experience
+- Higher product or service quality
+- Increased customer retention
+- Revenue growth
+- Competitive differentiation
 
-Productivity gain from knowledge reuse is measured differently from direct effort reduction. The value appears as: faster onboarding of new team members, reduced dependency on specific individuals, more consistent outcomes across teams, and improved decision quality when historical precedent is applied.
+---
+
+### Success Measurement
+
+Define how business value will be monitored after implementation.
+
+Typical considerations include:
+
+- Establish current baseline performance.
+- Define measurable target outcomes.
+- Track value continuously using agreed business metrics.
+- Review outcomes and refine AI initiatives over time.
 
 ## Key Principles
 
-* Identify the knowledge currently locked in individuals, tribal expertise, or historical records that the AI use case will make accessible.
-* Measure the current knowledge accessibility gap: how long does it take a new team member to reach proficiency for this activity? How much does outcome quality vary between experienced and inexperienced staff?
-* Define the productivity gain in terms of consistency improvement: experienced staff benchmark versus average staff performance with AI assistance.
-* Measure knowledge reuse rate: how often does the AI surface relevant historical cases, and what percentage of those are applied by the user?
-* Quantify the dependency reduction: how many decisions currently depend on a specific individual, and what happens when they are unavailable?
-* Track onboarding acceleration: does AI assistance reduce the time for new team members to reach productive output quality?
-* Include knowledge reuse value in the overall business case as a compound benefit that grows with adoption and use.
+- Define business outcomes before implementation begins.
+- Align AI initiatives with project and organizational objectives.
+- Focus on measurable outcomes rather than AI capabilities.
+- Establish baseline and target metrics for every AI initiative.
+- Continuously monitor business value after deployment.
 
 ## Leadership Question
 
-**What institutional knowledge does this AI use case make accessible to the whole team — and how does this reduce our dependency on specific individuals while improving consistency across the function?**
+**What measurable business outcomes will demonstrate that this AI initiative has successfully achieved its intended purpose?**

@@ -2,151 +2,146 @@
 
 **Layer:** Automotive
 **Extends:** Core/AI_Use_Case_Prioritization.md
-**Version:** 1.0
+**Version:** 2.0
 
 ---
 
 ## Purpose
 
-This document applies the Core AI Use Case Prioritization framework — Business Value Assessment, Technical Feasibility & Data Readiness, and Organizational Impact & Pilot Recommendation — to automotive software programs, with scoring benchmarks, worked examples, and specific guidance for the automotive engineering context.
+This document applies the Core AI Use Case Prioritization framework to automotive software engineering and product development. It helps Project Managers and Product Managers prioritize AI opportunities based on engineering impact, implementation feasibility, strategic importance, and organizational readiness.
 
-Prioritization in automotive programs must account for industry-specific factors: program governance gates, safety review obligations for Product AI, supplier data access constraints, and the multi-stakeholder complexity of OEM-supplier-services delivery chains.
+Automotive software programs often generate numerous AI opportunities across requirements engineering, software development, testing, diagnostics, and project management. Prioritization ensures that engineering teams focus on AI initiatives that deliver measurable value while remaining practical to implement within existing programs.
 
 > For the universal prioritization framework, refer to: `Core/AI_Use_Case_Prioritization.md`
 
 ---
 
-## Automotive Prioritization Context
+## AI Use Case Prioritization in Automotive
 
-Several automotive-specific factors affect how use cases are scored:
+Automotive AI initiatives should be prioritized by balancing engineering value with implementation complexity. While many opportunities may appear valuable, successful AI adoption typically begins with initiatives that leverage existing engineering data, integrate into established workflows, and solve recurring engineering challenges.
 
-* **Program timeline pressure**: AI use cases that can deliver value within the current program cycle are scored higher than those requiring a multi-year data preparation programme.
-* **Existing data infrastructure**: Programs using structured tools (Jira, Polarion, DOORS, ALM, Confluence) have high baseline data readiness. Programs with informal, document-based processes have lower data readiness regardless of data volume.
-* **Safety and compliance gate**: Product AI use cases in automotive must pass safety assessment before they can be piloted in a live vehicle or customer context. This adds months to the delivery timeline and is a significant organizational impact factor.
-* **Supplier program constraints**: Use cases involving supplier data, supplier processes, or supplier system integration carry additional organizational impact due to contractual, access, and governance constraints.
+Project Managers should establish an AI implementation roadmap that delivers quick wins while building the organizational capability to support larger, more strategic AI initiatives.
 
----
+### Prioritization Framework
 
-## Business Value Assessment in Automotive
+#### Business Value
 
-### Automotive Business Value Scoring Guide
+Prioritize AI opportunities that deliver measurable improvements to engineering and project outcomes.
 
-| Score | Criteria | Automotive Examples |
-|---|---|---|
-| **High** | Time reduction ≥ 40%, measurable quality improvement with quantified baseline, or strategic capability enabling multiple downstream use cases | Defect pre-analysis (75% time reduction + 25pp accuracy improvement); Test case generation (65% reduction + coverage improvement) |
-| **Medium** | Time reduction 15–40%, quality improvement measurable but modest, or productivity gain for a small team | Requirements gap checking (40% review time reduction); Meeting summarisation (80% reduction but low program impact) |
-| **Low** | Time reduction < 15%, quality impact not quantified, or value limited to convenience | AI-assisted formatting of existing documents; Basic document search improvement |
+Typical considerations include:
 
-### Business Value Assessment — Bug Analysis Example
-
-**Score: High**
-
-Justification:
-* Effort reduction: 75% reduction in analysis time per defect cycle (from 8 hours to 2 hours). Across 20–40 defects per sprint, this frees 120–240 hours of engineering capacity.
-* Quality improvement: First-assignment accuracy improves from 55% to 80%+, reducing re-assignment rework by approximately 60%.
-* Knowledge reuse: Junior engineers perform at 70–80% of senior engineer quality with AI assistance, reducing senior dependency.
-* Strategic value: Establishes the data infrastructure and AI delivery capability that enables downstream use cases in root cause prediction and release risk scoring.
+* Reduced engineering effort
+* Faster software delivery
+* Improved software quality
+* Reduced defect leakage
+* Better project visibility
+* Improved customer satisfaction
 
 ---
 
-## Technical Feasibility & Data Readiness in Automotive
+#### Implementation Feasibility
 
-### Automotive Technical Feasibility Scoring Guide
+Assess how easily the AI solution can be developed and integrated into existing engineering environments.
 
-| Score | Criteria | Notes |
-|---|---|---|
-| **High** | Well-understood AI pattern (classification, summarisation, routing); proven in comparable automotive or software contexts; available tooling (LLM APIs, vector search, standard classifiers) | Most defect management, requirements review, and test generation use cases |
-| **Medium** | Clear AI pattern but requires custom model training, novel data combination, or integration with non-standard systems | Root cause prediction requiring custom classification; multi-system data fusion |
-| **Low** | Requires AI research capability not yet mature; real-time vehicle system integration; physical world understanding | Autonomous system parameter tuning; real-time sensor-based anomaly detection |
+Typical considerations include:
 
-### Automotive Data Readiness Scoring Guide
-
-| Score | Criteria | Notes |
-|---|---|---|
-| **High** | Data exists in structured tools (Jira, Polarion, DOORS, ALM); accessible without data governance constraints; 12+ months of history available; minimal preparation required | Standard automotive software program using structured defect and requirements tools |
-| **Medium** | Data exists but requires significant cleaning, de-duplication, or labelling; partial historical coverage; requires integration work across multiple tools | Programs with mixed tool usage; recently migrated tools; sparse historical labelling |
-| **Low** | Data is missing, in unstructured format (email, documents), inaccessible due to contractual constraints, or insufficient in volume | Early-stage programs; supplier data with access restrictions; paper-based or informal processes |
-
-### Technical Feasibility & Data Readiness — Bug Analysis Example
-
-**Technical Feasibility: High**
-
-* The core AI pattern — multi-label classification, entity extraction, and structured summarisation from text — is well-understood and fully supported by current LLM APIs and retrieval-augmented generation (RAG) tooling.
-* Similar use cases have been successfully deployed in comparable software engineering and IT service management contexts.
-* No novel AI research is required. The use case can be built using standard retrieval and classification tooling integrated with the existing Jira API.
-
-**Data Readiness: High**
-
-* Jira contains the full defect history: titles, descriptions, severity ratings, current assignments, resolved-by teams, and resolution notes.
-* Historical data volume: typically 3–5+ years of defect records in active automotive programs — more than sufficient for retrieval-augmented classification.
-* Data access: Jira API is accessible with standard program credentials. No special data governance approval required for internal program data.
-* Data quality: defect descriptions vary in quality but historical resolution data provides reliable ground truth for classification and routing.
-
-**Combined Score: High — no pre-conditions blocking the pilot.**
+* Availability of historical engineering data
+* Quality of Jira, Polarion, DOORS, ALM or test data
+* Integration with existing engineering tools
+* AI model complexity
+* Development effort
+* Infrastructure readiness
 
 ---
 
-## Organizational Impact & Pilot Recommendation in Automotive
+#### Strategic Alignment
 
-### Automotive Organizational Impact Scoring Guide
+Ensure the AI initiative supports both project objectives and broader organisational goals.
 
-| Score | Criteria | Automotive Examples |
-|---|---|---|
-| **Low** | Single team workflow augmentation; no process redesign; no cross-team coordination; sponsor is the team lead | Meeting summarisation; individual code review assistance; release note generation |
-| **Medium** | Multiple teams involved; workflow adjustment required; program-level sponsor needed; moderate change management | Defect pre-analysis (engineering + QA teams); requirements gap checking (systems + software teams) |
-| **High** | Function-level process change; cross-program or OEM-supplier coordination; senior sponsor required; Product AI safety review | Defect routing redesign at program level; supplier quality AI integration; Product AI in vehicle systems |
+Typical considerations include:
 
-### Pilot Design Guidance for Automotive Programs
-
-| Pilot Scope | What It Means | When to Use |
-|---|---|---|
-| Single team, one sprint | AI augments one engineer role for one sprint cycle | Productivity AI use cases; initial feasibility validation |
-| One workflow, one program cycle | AI processes all inputs for one complete defect management or test cycle | Functional AI use cases; quality measurement requires full cycle |
-| Cross-team, one quarter | AI is integrated into a shared workflow across teams | Medium-high organizational impact; requires program sponsor |
-| Program-wide deployment | AI is part of the standard delivery process | Post-pilot production deployment; success metrics validated |
-
-### Pilot Recommendation — Bug Analysis Example
-
-**Organizational Impact: Medium**
-
-* The defect pre-analysis use case affects the engineering team (defect analysts) and the QA/quality function (assignment accuracy improvement).
-* Workflow adjustment is required: the process must be updated to include AI pre-analysis as a standard step before human review.
-* A program-level sponsor is needed to authorize the workflow change and communicate expectations to both teams.
-* No cross-supplier or OEM coordination is required for the pilot scope.
+* Alignment with project milestones
+* Support for quality improvement initiatives
+* Contribution to software-defined vehicle programs
+* Reusability across multiple vehicle programs
+* Alignment with enterprise AI strategy
 
 ---
 
-**Pilot Recommendation: HIGH PRIORITY**
+#### Organisational Readiness
 
-**Summary Scorecard:**
+Evaluate whether engineering teams are prepared to adopt and operationalise the AI solution.
 
-| Dimension | Score | Key Evidence |
-|---|---|---|
-| Business Value | High | 75% effort reduction + 25pp accuracy improvement + knowledge reuse |
-| Technical Feasibility | High | Well-understood LLM classification and RAG pattern; proven in comparable contexts |
-| Data Readiness | High | Jira defect history available; no access constraints; 3–5 year historical data volume |
-| Organizational Impact | Medium | Two teams affected; workflow adjustment required; program sponsor needed |
+Typical considerations include:
 
-**Recommendation:**
+* Executive sponsorship
+* Engineering team acceptance
+* Process maturity
+* Availability of AI skills
+* Change management readiness
 
-This use case is approved for immediate pilot. The business value is high, the AI approach is technically proven, and the required data is immediately accessible. Organizational impact is manageable with a program-level sponsor and clear communication of the workflow change to both teams.
+### Key Principles
 
-**Pre-conditions before pilot start:**
+* Begin with engineering workflows that have high manual effort and readily available historical data.
+* Prioritize AI initiatives that integrate naturally into existing engineering processes.
+* Deliver quick wins to build confidence and encourage wider AI adoption.
+* Balance short-term productivity improvements with long-term engineering transformation.
+* Select AI opportunities that can be reused across projects, vehicle platforms, or engineering teams.
 
-1. Program sponsor identified and briefed (responsible for authorizing workflow change).
-2. Baseline metrics recorded: current time-per-defect-analysis, current first-assignment accuracy rate.
-3. Jira API access confirmed for the pilot team's project.
-4. Pilot measurement plan agreed: 20 defects minimum in pilot group and comparison group.
-5. Engineer participation agreed: at least 4 engineers participating in the AI-assisted workflow for the pilot sprint.
+### Leadership Question
 
-**Pilot Duration:** Two sprint cycles (recommended) to accumulate sufficient defect volume for statistical validity of quality metrics.
+**Which AI opportunities deliver the greatest engineering impact while being practical to implement using our existing engineering data, tools, and team capabilities?**
 
-**Success Criteria:**
-* Time reduction: average defect analysis time reduced from 8 hours to ≤ 3 hours per cycle.
-* Assignment accuracy: first-assignment accuracy ≥ 72% (current baseline: 55%).
-* Engineer satisfaction: positive qualitative feedback from ≥ 3 of 4 participating engineers.
+---
 
-**Next Steps after Successful Pilot:**
-* Expand to full program team.
-* Extend scope to root cause prediction (next use case in the pipeline).
-* Begin data collection for defect risk scoring use case.
+## Typical Automotive AI Prioritization
+
+| AI Opportunity | Business Value | Feasibility | Typical Priority |
+|---|---|---|---|
+| AI Bug Pre-analysis | High | High | High |
+| Engineering Knowledge Assistant | High | High | High |
+| Requirements Summarisation | Medium | High | High |
+| Intelligent Defect Triage | High | Medium | High |
+| Test Case Generation | High | Medium | High |
+| Regression Impact Analysis | High | Medium | Medium |
+| Release Risk Prediction | High | Medium | Medium |
+| Supplier Quality Intelligence | Medium | Medium | Medium |
+| Predictive Maintenance | High | Low | Medium |
+| AI Vehicle Assistant | High | Low | Low |
+| Driver Personalisation | Medium | Low | Low |
+
+---
+
+## Recommended AI Adoption Roadmap
+
+### Phase 1 — Quick Wins
+
+Focus on Productivity AI initiatives that use existing engineering data and require minimal process change.
+
+Examples:
+* AI Bug Pre-analysis
+* Requirements Summarisation
+* Engineering Knowledge Assistant
+* Meeting and Documentation Summaries
+
+### Phase 2 — Process Transformation
+
+Expand into Functional AI initiatives that improve engineering processes and decision-making.
+
+Examples:
+* Intelligent Defect Triage
+* Test Optimisation
+* Regression Impact Analysis
+* Release Risk Prediction
+* Supplier Quality Intelligence
+
+### Phase 3 — Product Innovation
+
+Invest in Product AI initiatives that create new customer-facing capabilities and competitive differentiation.
+
+Examples:
+* Predictive Maintenance
+* Intelligent Vehicle Assistant
+* AI Diagnostics
+* Driver Personalisation
+* Connected Vehicle Intelligence

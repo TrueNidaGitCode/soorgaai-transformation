@@ -388,6 +388,106 @@ SECTION-SPECIFIC EXTRAS — "Trust & Adoption" sections only:
    "adoptionStages": [...], "kpiHighlights": [...]`,
   },
 
+  // ── AI Use Cases domain ───────────────────────────────────────────────────
+
+  'AI Opportunity Discovery': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "AI Opportunity Discovery" sections only:
+
+5. businessProblems (4 to 6 items)
+   The key business and engineering challenges this company faces that create AI opportunities.
+   Each item is a plain string, 3–6 words. Must be specific to the company's industry and context.
+   Example: ["Manual Defect Analysis", "Knowledge Concentration Risk", "Slow Requirements Review", "Inconsistent Test Coverage"]
+
+6. workflowSteps (3 to 5 items)
+   The major steps in the current workflow where AI can assist, in left-to-right order.
+   Each item is a plain string, 1–3 words.
+   Example: ["Analyze", "Review", "Classify"]
+
+7. highEffortActivities (2 to 4 items)
+   The most time-consuming or expert-dependent activities within the current workflow.
+   Each item is a plain string, 1–3 words.
+   Example: ["Validate", "Assign", "Document"]
+
+8. aiOpportunities (4 to 6 items)
+   The specific AI capabilities matched to the company's high-effort activities.
+   Each item is a plain string, 2–4 words. Must be specific to the company context — not generic.
+   Example: ["Defect Summarisation", "Intelligent Classification", "Knowledge Retrieval", "Smart Assignment", "Risk Prediction"]
+
+   Add all four to the brief object:
+   "businessProblems": [...], "workflowSteps": [...], "highEffortActivities": [...], "aiOpportunities": [...]`,
+  },
+
+  'Business Value Definition': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Business Value Definition" sections only:
+
+5. valueCategories (exactly 4 items in this fixed order)
+   Each card describes how this AI use case creates value in one dimension for this company.
+   Order: [0] Engineering Productivity, [1] Engineering Excellence, [2] Project & Operational Performance, [3] Customer & Product Value
+   Each item: { "title": "<category name>", "focus": "<short phrase, e.g. 'Improve engineering team efficiency'>", "outcomes": ["<outcome 1>", "<outcome 2>", "<outcome 3>", "<outcome 4>"] }
+   "outcomes" must be 4 concise company-specific expected outcomes (3–6 words each).
+   "focus" must be short and match the format "Improve [area]" (max 6 words).
+
+6. kpiPills (exactly 6 items)
+   Short metric names for the primary measurable KPIs for this AI use case. Each item is a short string (2–5 words) in title case, e.g. "Effort Reduction", "Cycle Time Improvement", "Quality Improvement". Make them specific to this company's context.
+
+7. businessValueInsight (1–2 sentences)
+   A clear, specific statement on how value will be measured and tracked for this AI use case. Lead with the primary expected business outcome.
+
+   Add all to the brief object:
+   "valueCategories": [...], "kpiPills": [...], "businessValueInsight": "..."`,
+  },
+
+  'AI Use Case Prioritization': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "AI Use Case Prioritization" sections only:
+
+5. recommendedStartingPoint (1 sentence)
+   A concise recommendation for where to begin, emphasising high business value combined with high implementation feasibility for this specific company.
+
+6. priorityQuadrants (exactly 4 items in this fixed order)
+   Classify specific AI initiatives for this company into a 2×2 Business Value vs Implementation Feasibility matrix.
+   Order: [0] Strategic Bets (High Value, Low Feasibility), [1] Quick Wins (High Value, High Feasibility), [2] Fill-ins (Low Value, Low Feasibility), [3] Avoid (Low Value, High Feasibility)
+   Each item: { "id": "<strategic-bets|quick-wins|fill-ins|avoid>", "label": "<quadrant name>", "initiatives": ["<initiative 1>", "<initiative 2>", "<initiative 3>"] }
+   Use 2–4 short initiative names (3–6 words each) specific to this company's industry and context. "Avoid" may use generic low-value examples.
+
+7. dimensionCards (exactly 4 items in this fixed order)
+   Each card lists 3 company-specific considerations for the given evaluation dimension.
+   Order: [0] Business Value, [1] Implementation Feasibility, [2] Strategic Alignment, [3] Organizational Readiness
+   Each item: { "title": "<dimension name>", "bullets": ["<consideration 1>", "<consideration 2>", "<consideration 3>"] }
+   Bullets must be concise 2–4 word labels tailored to this company's industry and use case context.
+
+8. prioritizationInsight (1 sentence)
+   A concise insight for this company explaining how to sequence AI initiatives to build momentum while working toward long-term transformation.
+
+   Add all to the brief object:
+   "recommendedStartingPoint": "...", "priorityQuadrants": [...], "dimensionCards": [...], "prioritizationInsight": "..."`,
+  },
+
+  'AI Use Case Classification': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "AI Use Case Classification" sections only:
+
+5. primaryClassification
+   The primary AI classification for this company's most relevant AI use case.
+   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "description": "<1 sentence on the primary value this classification delivers for this company>" }
+
+6. secondaryClassification (include only if a second classification clearly applies — otherwise omit or set to null)
+   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "description": "<1 sentence>" }
+
+7. classificationCards (exactly 3 items, in this fixed order: Productivity AI, Functional AI, Product AI)
+   Each card describes one category with company-specific examples.
+   Each item: { "type": "Productivity AI" | "Functional AI" | "Product AI", "purpose": "<1 sentence>", "characteristics": ["<3-word label>", "<3-word label>", "<3-word label>"], "examples": ["<example 1>", "<example 2>", "<example 3>", "<example 4>"] }
+   Characteristics must be 2–4 word scannable labels. Examples must reflect the company's industry context.
+
+8. classificationInsight (1 sentence)
+   A concise insight for this company explaining how classification guides the next steps: business value assessment, prioritization, and implementation planning.
+
+   Add all to the brief object:
+   "primaryClassification": {...}, "secondaryClassification": {...} or null, "classificationCards": [...], "classificationInsight": "..."`,
+  },
+
 };
 
 // ── Shared output parser ──────────────────────────────────────────────────────
@@ -548,6 +648,80 @@ function parseBriefOutput(rawSections, validTitles) {
       const complianceControls = parsePillarBullets(b.complianceControls).slice(0, 4);
       const adoptionStages    = parsePillarBullets(b.adoptionStages).slice(0, 5);
 
+      // ── AI Use Cases parsers ───────────────────────────────────────────────
+
+      const rawValueCategories = Array.isArray(b.valueCategories) ? b.valueCategories : [];
+      const valueCategories = rawValueCategories
+        .filter(c => c && typeof c === 'object' && String(c.title || '').trim())
+        .map(c => ({
+          title:    String(c.title || '').trim(),
+          focus:    String(c.focus || '').trim(),
+          outcomes: Array.isArray(c.outcomes) ? c.outcomes.map(String).filter(Boolean).slice(0, 4) : [],
+        }))
+        .slice(0, 4);
+
+      const kpiPills = Array.isArray(b.kpiPills)
+        ? b.kpiPills.map(String).filter(Boolean).slice(0, 6) : [];
+
+      const businessValueInsight = typeof b.businessValueInsight === 'string'
+        ? b.businessValueInsight.trim() : '';
+
+      const recommendedStartingPoint = typeof b.recommendedStartingPoint === 'string'
+        ? b.recommendedStartingPoint.trim() : '';
+
+      const rawPriorityQuadrants = Array.isArray(b.priorityQuadrants) ? b.priorityQuadrants : [];
+      const priorityQuadrants = rawPriorityQuadrants
+        .filter(q => q && typeof q === 'object' && String(q.label || '').trim())
+        .map(q => ({
+          id:          String(q.id    || '').trim(),
+          label:       String(q.label || '').trim(),
+          initiatives: Array.isArray(q.initiatives) ? q.initiatives.map(String).filter(Boolean) : [],
+        }))
+        .slice(0, 4);
+
+      const rawDimensionCards = Array.isArray(b.dimensionCards) ? b.dimensionCards : [];
+      const dimensionCards = rawDimensionCards
+        .filter(d => d && typeof d === 'object' && String(d.title || '').trim())
+        .map(d => ({
+          title:   String(d.title || '').trim(),
+          bullets: Array.isArray(d.bullets) ? d.bullets.map(String).filter(Boolean) : [],
+        }))
+        .slice(0, 4);
+
+      const prioritizationInsight = typeof b.prioritizationInsight === 'string'
+        ? b.prioritizationInsight.trim() : '';
+
+      const primaryClassification = b.primaryClassification && typeof b.primaryClassification === 'object'
+        ? { name: String(b.primaryClassification.name || '').trim(), description: String(b.primaryClassification.description || '').trim() }
+        : null;
+
+      const secondaryClassification = b.secondaryClassification && typeof b.secondaryClassification === 'object'
+        ? { name: String(b.secondaryClassification.name || '').trim(), description: String(b.secondaryClassification.description || '').trim() }
+        : null;
+
+      const rawClassificationCards = Array.isArray(b.classificationCards) ? b.classificationCards : [];
+      const classificationCards = rawClassificationCards
+        .filter(c => c && typeof c === 'object' && String(c.type || '').trim())
+        .map(c => ({
+          type:            String(c.type    || '').trim(),
+          purpose:         String(c.purpose || '').trim(),
+          characteristics: Array.isArray(c.characteristics) ? c.characteristics.map(String).filter(Boolean) : [],
+          examples:        Array.isArray(c.examples)        ? c.examples.map(String).filter(Boolean)        : [],
+        }))
+        .slice(0, 3);
+
+      const classificationInsight = typeof b.classificationInsight === 'string'
+        ? b.classificationInsight.trim() : '';
+
+      const businessProblems     = Array.isArray(b.businessProblems)
+        ? b.businessProblems.map(String).filter(Boolean).slice(0, 6) : [];
+      const workflowSteps        = Array.isArray(b.workflowSteps)
+        ? b.workflowSteps.map(String).filter(Boolean).slice(0, 5) : [];
+      const highEffortActivities = Array.isArray(b.highEffortActivities)
+        ? b.highEffortActivities.map(String).filter(Boolean).slice(0, 4) : [];
+      const aiOpportunities      = Array.isArray(b.aiOpportunities)
+        ? b.aiOpportunities.map(String).filter(Boolean).slice(0, 6) : [];
+
       const rawModelLifecycleStages = Array.isArray(b.modelLifecycleStages) ? b.modelLifecycleStages : [];
       const modelLifecycleStages = rawModelLifecycleStages
         .filter(s => s && typeof s === 'object' && String(s.stage || '').trim())
@@ -590,6 +764,22 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(modelLifecycleStages.length ? { modelLifecycleStages } : {}),
           ...(complianceControls.length   ? { complianceControls }   : {}),
           ...(adoptionStages.length       ? { adoptionStages }       : {}),
+          // AI Use Cases extras
+          ...(valueCategories.length               ? { valueCategories }          : {}),
+          ...(kpiPills.length                      ? { kpiPills }                 : {}),
+          ...(businessValueInsight                 ? { businessValueInsight }     : {}),
+          ...(recommendedStartingPoint             ? { recommendedStartingPoint } : {}),
+          ...(priorityQuadrants.length             ? { priorityQuadrants }        : {}),
+          ...(dimensionCards.length                ? { dimensionCards }            : {}),
+          ...(prioritizationInsight                ? { prioritizationInsight }     : {}),
+          ...(primaryClassification                ? { primaryClassification }   : {}),
+          ...(secondaryClassification              ? { secondaryClassification } : {}),
+          ...(classificationCards.length           ? { classificationCards }     : {}),
+          ...(classificationInsight                ? { classificationInsight }   : {}),
+          ...(businessProblems.length     ? { businessProblems }     : {}),
+          ...(workflowSteps.length        ? { workflowSteps }        : {}),
+          ...(highEffortActivities.length ? { highEffortActivities } : {}),
+          ...(aiOpportunities.length      ? { aiOpportunities }      : {}),
           ...(Array.isArray(b.spokeNodes) && b.spokeNodes.length
               ? { spokeNodes: b.spokeNodes.map(String).filter(Boolean).slice(0, 6) }
               : {}),
@@ -976,6 +1166,11 @@ OUTPUT — valid JSON only, no markdown fences:
       'lifecycleStages', 'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',
+      // AI Use Cases extras
+      'valueCategories', 'kpiPills', 'businessValueInsight',
+      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
+      'primaryClassification', 'secondaryClassification', 'classificationCards', 'classificationInsight',
+      'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
     ];
     for (const key of extraKeys) {
       if (b[key] !== undefined) {

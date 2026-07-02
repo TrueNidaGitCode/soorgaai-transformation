@@ -2,138 +2,138 @@
 
 **Layer:** Automotive
 **Extends:** Core/Business_Value_Definition.md
-**Version:** 1.0
+**Version:** 2.0
 
 ---
 
 ## Purpose
 
-This document applies the Core Business Value Definition framework — Effort & Time Reduction, Quality & Accuracy Improvement, and Knowledge Reuse & Productivity Gains — to automotive software programs, with quantified benchmarks, measurement guidance, and worked examples drawn from defect management, requirements engineering, and test execution contexts.
+This document applies the Core Business Value Definition framework to automotive software engineering and product development. It helps Project Managers and Product Managers define measurable business outcomes for AI initiatives by focusing on engineering productivity, software quality, delivery performance, and customer value.
 
-Business value in automotive software delivery must be expressed in engineering program terms: time saved per defect cycle, accuracy improvement per assignment decision, or rework reduction per sprint. Abstract claims about "AI-driven productivity" are insufficient. Program managers and delivery leads need numbers they can defend to their program sponsors.
+Automotive software programs involve complex engineering workflows, large volumes of historical data, and cross-functional collaboration. Clearly defining business value ensures AI initiatives are aligned with engineering objectives and that success can be measured using meaningful project and operational metrics.
 
 > For the universal business value framework, refer to: `Core/Business_Value_Definition.md`
 
 ---
 
-## Value Definition Context in Automotive
+## AI Use Case Business Value Definition in Automotive
 
-Automotive software programs have several characteristics that affect how AI business value is defined and measured:
+Business value in automotive AI initiatives should be defined using measurable engineering and business outcomes rather than technical capabilities. Every AI initiative should improve an aspect of software delivery, engineering effectiveness, operational performance, or customer experience.
 
-* **Long program cycles**: Value accumulates over sprint cycles, program milestones, and release phases — not overnight. Value projections must account for ramp-up time and adoption rates.
-* **Multi-team complexity**: Value measurement must distinguish between individual productivity gain and program-level quality improvement.
-* **Safety and compliance constraints**: Some value claims (e.g. "AI reduces the need for human review") must be carefully qualified — automotive safety standards may require maintained human oversight regardless of AI performance.
-* **Existing tool infrastructure**: Most value is measurable from data already available in Jira, Polarion, DOORS, and ALM — baseline metrics can be established from historical tool data before the pilot begins.
+Project Managers should establish baseline performance, define target outcomes, and identify the metrics that will be used to measure success throughout implementation and operation.
 
----
+### Automotive Business Value Framework
 
-## Effort & Time Reduction in Automotive
+#### Engineering Productivity
 
-### Automotive Effort Reduction Benchmarks
+Measure how AI improves the efficiency of engineering teams.
 
-Based on automotive software program experience, AI assistance in the following activities delivers consistent time reduction:
+Typical outcomes include:
 
-| Activity | Typical Current Effort | AI-Assisted Effort | Reduction |
-|---|---|---|---|
-| Defect pre-analysis (read, classify, assess) | 6–8 hours per defect cycle | 1.5–2.5 hours | 65–75% |
-| Requirements review for completeness | 3–5 hours per document | 1–1.5 hours | 60–70% |
-| Test case generation from requirements | 4–6 hours per requirement block | 1–2 hours | 60–70% |
-| Root cause classification | 2–4 hours per defect batch | 0.5–1 hour | 70–80% |
-| Release note compilation | 2–3 hours per release | 15–30 minutes | 85–90% |
-| Meeting action item extraction | 30–60 minutes per meeting | 5–10 minutes | 80–90% |
-
-### Effort Reduction — Bug Analysis Example
-
-**Baseline (current state):**
-* Average time to complete one defect analysis cycle: 8 hours
-* Number of defects per sprint: 20–40
-* Total team effort per sprint for defect analysis: 160–320 hours
-* Number of engineers performing this activity: 4–8
-
-**AI-Assisted Target:**
-* Average time to complete one defect analysis cycle (with AI pre-analysis): 2 hours
-* Effort reduction per defect: 6 hours (75% reduction)
-* Total team effort saved per sprint: 120–240 hours
-* Team capacity freed per sprint: equivalent to 3–6 engineer-days per sprint
-
-**Measurement Approach:**
-* Record time-to-complete per defect ticket (start and close timestamps in Jira).
-* Compare average analysis time across 20 defects pre-AI and 20 defects post-AI.
-* Adjust for complexity distribution — ensure pilot and baseline samples have comparable defect complexity.
+- Reduced engineering effort
+- Faster defect analysis
+- Accelerated requirements review
+- Reduced documentation effort
+- Improved engineering knowledge reuse
+- Increased engineering capacity
 
 ---
 
-## Quality & Accuracy Improvement in Automotive
+#### Engineering Excellence
 
-### Automotive Quality Improvement Benchmarks
+Measure how AI improves engineering quality and delivery performance.
 
-| Quality Metric | Typical Baseline | AI-Assisted Target | Improvement |
-|---|---|---|---|
-| Defect assignment accuracy (correct team on first assignment) | 50–60% | 78–85% | +20–30 percentage points |
-| Root cause classification consistency across engineers | High variability | Low variability | Measurable reduction in inter-engineer disagreement |
-| Requirements completeness score (attributes present) | 60–70% | 85–90% | +15–25 percentage points |
-| Test coverage completeness from requirements | 55–65% | 80–88% | +20–25 percentage points |
-| Defect escape rate (defects found post-release) | Baseline varies | 15–25% reduction | Program-dependent |
+Typical outcomes include:
 
-### Quality Improvement — Bug Analysis Example
-
-**Assignment Accuracy:**
-* Current state: approximately 55% of defects are assigned to the correct team on first assignment.
-* Re-assignment rate: 45% of defects require at least one re-assignment, consuming an additional 2–4 hours per defect.
-* AI target: 80%+ first-assignment accuracy.
-* Downstream value: reduce re-assignment rework by approximately 60%, saving 0.9–1.8 hours per defect in rework effort.
-
-**Measurement Approach:**
-* Track first-assignment accuracy rate in Jira: compare original assignment versus final resolved-by team.
-* Measure re-assignment rate before and after pilot.
-* Track time between creation and first-valid-assignment (measures routing speed, not just accuracy).
-
-**Resolution Time Reduction:**
-* Current average time from defect creation to resolution closure: [program baseline].
-* AI-assisted target: 20–30% reduction in end-to-end resolution time due to faster triage and more accurate initial assignment.
-* Note: resolution time reduction is a lagging indicator — it will appear 2–3 sprint cycles after pilot deployment.
+- Reduced defect leakage
+- Improved defect classification accuracy
+- Better requirements quality
+- Increased test coverage
+- Faster release readiness assessment
+- Improved decision consistency
 
 ---
 
-## Knowledge Reuse & Productivity Gains in Automotive
+#### Project & Operational Performance
 
-### The Automotive Knowledge Concentration Problem
+Measure how AI improves project execution and operational efficiency.
 
-Automotive software programs have a critical structural vulnerability: the knowledge required to perform defect analysis, root cause identification, and risk assessment is concentrated in a small number of senior engineers — often 2–3 people who have been on the program for multiple years.
+Typical outcomes include:
 
-When these engineers are unavailable, analysis quality drops significantly. When they leave the program, their knowledge leaves with them. This creates fragility in the delivery team that AI can systematically address.
+- Reduced issue turnaround time
+- Improved delivery predictability
+- Lower rework effort
+- Reduced operational costs
+- Better resource utilisation
+- Faster engineering decision making
 
-### Knowledge Reuse in Bug Analysis
+---
 
-**Current State — Knowledge Lock:**
-* Senior engineers complete defect analysis in 4–6 hours with high accuracy.
-* Junior engineers take 8–12 hours for the same analysis and produce lower-quality outputs.
-* The gap between senior and junior performance is caused by access to historical knowledge, not skill.
-* There is no systematic mechanism for capturing and reapplying historical defect patterns.
+#### Customer & Product Value
 
-**AI-Assisted State — Knowledge Distribution:**
-* AI surfaces relevant historical defects, resolutions, and root cause patterns automatically for every new defect.
-* Junior engineers working with AI assistance perform at 70–80% of senior engineer quality levels.
-* The senior engineer's time shifts from performing first-pass analysis to reviewing AI-generated outputs and handling edge cases.
-* Program knowledge is codified in the AI's context rather than residing only in individual minds.
+Measure how AI contributes to product quality and customer satisfaction.
 
-### Automotive Knowledge Reuse Benchmarks
+Typical outcomes include:
 
-| Metric | Current State | AI-Assisted Target |
-|---|---|---|
-| Junior-to-senior quality gap | 30–50% quality difference | Reduced to 10–15% with AI assistance |
-| Knowledge capture rate | Ad hoc, informal, incomplete | Systematic — every resolution contributes to the knowledge base |
-| Time for new engineer to reach productive output quality | 3–6 months | 4–8 weeks with AI assistance |
-| Senior engineer dependency for first-pass analysis | High | Low — senior engineers review rather than perform first-pass |
-| Historical pattern reuse in current analyses | Informal, dependent on memory | Systematic, AI-surfaced for every case |
+- Improved software quality
+- Reduced field defects
+- Faster customer issue resolution
+- Higher customer satisfaction
+- Improved vehicle reliability
+- Enhanced intelligent product capabilities
 
-### Long-term Compounding Value
+---
 
-Knowledge reuse value compounds with use. As more defects are processed through the AI-assisted pipeline:
+#### Success Measurement
 
-* The AI's historical context grows, improving classification and routing accuracy.
-* The team develops shared vocabulary and classification standards, improving consistency.
-* The organisation builds an institutional memory of defect patterns that survives team turnover.
-* New programs can inherit knowledge from previous program defect history, accelerating ramp-up.
+Define measurable success criteria before implementation begins.
 
-This compounding value should be included in the three-year business case for the use case, not just the immediate pilot ROI.
+Typical considerations include:
+
+- Establish current baseline performance.
+- Define target improvements for each KPI.
+- Track business outcomes throughout the project lifecycle.
+- Review results after deployment and identify improvement opportunities.
+- Continuously refine AI initiatives based on measured outcomes.
+
+### Key Principles
+
+- Define engineering and business outcomes before implementation.
+- Measure value using objective project and engineering metrics.
+- Balance productivity improvements with quality and customer outcomes.
+- Establish baseline and target KPIs for every AI initiative.
+- Continuously monitor and optimise business value after deployment.
+
+### Leadership Question
+
+**What measurable improvements in engineering performance, project delivery, software quality, or customer outcomes will demonstrate the success of this AI initiative?**
+
+---
+
+## Typical Automotive Business Value Metrics
+
+| Engineering Area | Example KPIs |
+|---|---|
+| Defect Management | Defect analysis time, assignment accuracy, Mean Time to Resolution (MTTR), defect backlog reduction |
+| Requirements Engineering | Review effort, traceability completeness, requirements quality |
+| Test Engineering | Test case generation effort, test coverage, regression execution time, defect leakage |
+| Diagnostics | Root cause analysis time, diagnostic accuracy, issue resolution time |
+| Software Development | Code review effort, development productivity, documentation effort |
+| Project Management | Schedule predictability, delivery velocity, project risk reduction |
+| Supplier Quality | Supplier issue resolution time, non-conformance rate, supplier performance |
+| Customer Support | Customer issue resolution time, first-time resolution rate, customer satisfaction |
+
+---
+
+## Example Business Value Statement
+
+**AI Initiative:** AI-Assisted Bug Analysis
+
+### Expected Business Outcomes
+
+- Reduce manual defect pre-analysis effort from **8 hours to 2 hours**.
+- Improve defect assignment accuracy from **85% to 95%**.
+- Reduce Mean Time to Resolution (MTTR) by **40%**.
+- Improve consistency of defect analysis across engineering teams.
+- Enable junior engineers to perform defect analysis with greater confidence and accuracy.
+- Increase engineering capacity by reducing repetitive analysis activities.

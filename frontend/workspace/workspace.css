@@ -234,6 +234,54 @@
   letter-spacing: 0.02em;
 }
 
+/* Example prompt chips */
+.ws-gen-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ws-gen-examples__divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.ws-gen-examples__divider::before,
+.ws-gen-examples__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+}
+
+.ws-gen-examples__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.ws-gen-example-chip {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 0.5rem;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  padding: 0.65rem 1rem;
+  text-align: left;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  width: 100%;
+}
+.ws-gen-example-chip:hover {
+  background: rgba(92,197,167,0.08);
+  border-color: rgba(92,197,167,0.28);
+  color: #fff;
+}
+
 /* Generate button */
 .ws-gen-btn {
   align-self: flex-start;

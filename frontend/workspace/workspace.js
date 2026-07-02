@@ -257,6 +257,14 @@ function initGenerateForm() {
   const form = document.getElementById('ws-gen-form');
   if (!form) return;
 
+  // Example chips populate the textarea on click
+  document.querySelectorAll('.ws-gen-example-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const input = document.getElementById('ws-gen-objective');
+      if (input) { input.value = chip.dataset.text; input.focus(); }
+    });
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 

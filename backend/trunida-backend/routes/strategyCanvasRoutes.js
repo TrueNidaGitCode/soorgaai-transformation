@@ -10,6 +10,8 @@ import {
   updateBlueprintSection,
   regenerateCapability,
   regenerateSectionExtrasHandler,
+  regenerateTransformationSectionExtrasHandler,
+  regenerateTransformationCapabilityHandler,
   startTransformationGeneration,
   streamTransformationProgress,
   getTransformationBlueprint,
@@ -42,6 +44,14 @@ router.get('/transformation-blueprint',                                protect, 
 router.patch(
   '/transformation-blueprint/:blueprintId/domain/:domainId/capability/:capabilityId/section/:sectionTitle',
   protect, updateTransformationSection
+);
+router.post(
+  '/transformation-blueprint/:blueprintId/domain/:domainId/capability/:capabilityId/regenerate',
+  protect, regenerateTransformationCapabilityHandler
+);
+router.post(
+  '/transformation-blueprint/:blueprintId/domain/:domainId/capability/:capabilityId/regenerate-section-extras',
+  protect, regenerateTransformationSectionExtrasHandler
 );
 
 export default router;

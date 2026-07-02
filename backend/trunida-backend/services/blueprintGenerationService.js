@@ -30,7 +30,7 @@ import {
   getDomainCapabilityBlueprint,
 } from './strategyCanvasService.js';
 import { BLUEPRINT_CONFIG }       from '../config/blueprintConfig.js';
-import { enabledDomains }         from '../config/domainRegistry.js';
+import { enabledDomains, getDomain } from '../config/domainRegistry.js';
 import { getCapabilityEnterpriseContext } from './enterpriseBlueprintService.js';
 
 // ── Company profile helpers ───────────────────────────────────────────────────
@@ -1190,6 +1190,171 @@ OUTPUT — valid JSON only, no markdown fences:
   }
 
   return updatedBriefs;
+}
+
+// ── Transformation Blueprint: regenerate-section-extras ──────────────────────
+// Mirror of regenerateSectionExtras but for TransformationBlueprint (nested
+// domains → capabilities → sections structure).
+
+export async function regenerateSectionExtrasForTransformation(blueprintId, domainId, capabilityId, sectionTitles, userId) {
+  const companyProfile = await loadCompanyProfile(userId);
+  const { companyName, industry, role } = companyProfile;
+
+  const blueprint = await TransformationBlueprint.findOne({ _id: blueprintId, userId }).lean();
+  if (!blueprint) throw new Error('Blueprint not found');
+
+  const domain = (blueprint.domains || []).find(d => d.domainId === domainId);
+  if (!domain) throw new Error(`Domain not found: ${domainId}`);
+
+  const cap = (domain.capabilities || []).find(c => c.capabilityId === capabilityId);
+  if (!cap) throw new Error(`Capability not found: ${capabilityId}`);
+
+  const targetSections = (cap.sections || []).filter(
+    s => sectionTitles.includes(s.title) && SECTION_TEMPLATES[s.title]
+  );
+  if (!targetSections.length) return {};
+
+  const templateInstructions = targetSections.map(s =>
+    `--- Section: "${s.title}" ---\n` +
+    `Current Strategic Position (DO NOT rewrite — use as context only):\n"${s.brief?.strategicPosition || '—'}"\n` +
+    SECTION_TEMPLATES[s.title].promptInstruction
+  ).join('\n\n');
+
+  const sectionTitlesStr = targetSections.map(s => `"${s.title}"`).join(', ');
+
+  const systemPrompt = `You are SoorgaAI generating CTO-view visual data for a Strategy Blueprint.
+
+Company: ${companyName} | Industry: ${industry} | Role: ${role}
+Business Objective: ${blueprint.businessObjective || '—'}
+Capability: ${cap.capabilityName}
+
+For each section below, generate ONLY the extra visual fields listed in the instructions.
+The Strategic Position is already set — treat it as fixed context. Do NOT include
+strategicPosition, priorityActions, successMetrics, or leadershipValidation in your output.
+All generated content MUST be grounded in the company's Business Objective above — not generic examples.
+
+${templateInstructions}
+
+OUTPUT — valid JSON only, no markdown fences:
+{
+  "sections": [
+    { "title": "<exact section title>", "brief": { <extra visual fields only> } }
+  ]
+}`;
+
+  const parsed = await callLLM(systemPrompt, `Generate visual extras for: ${sectionTitlesStr}`, 90000, cap.capabilityName);
+  const rawSections = (parsed.sections || []).map(ps => ({
+    ...ps,
+    brief: { ...(ps.brief || {}), strategicPosition: '' },
+    content: '',
+  }));
+
+  const validTitles = new Set(targetSections.map(s => s.title.toLowerCase()));
+  const normalized  = parseBriefOutput(rawSections, validTitles);
+
+  const updatedBriefs = {};
+
+  for (const ns of normalized) {
+    const b = ns.brief || {};
+    const setFields = {
+      'domains.$[dom].capabilities.$[cap].sections.$[sec].updatedAt': new Date(),
+      updatedAt: new Date(),
+    };
+
+    const extraKeys = [
+      'strategicPillars', 'kpiHighlights', 'timelineSteps', 'alignmentInitiatives',
+      'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
+      'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'teamRoles',
+      'lifecycleStages', 'waterfallItems', 'sdlcStages', 'flywheelStages',
+      'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
+      'adoptionStages',
+      'valueCategories', 'kpiPills', 'businessValueInsight',
+      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
+      'primaryClassification', 'secondaryClassification', 'classificationCards', 'classificationInsight',
+      'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
+    ];
+    for (const key of extraKeys) {
+      if (b[key] !== undefined) {
+        setFields[`domains.$[dom].capabilities.$[cap].sections.$[sec].brief.${key}`] = b[key];
+      }
+    }
+
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId, userId },
+      { $set: setFields },
+      {
+        arrayFilters: [
+          { 'dom.domainId':      domainId },
+          { 'cap.capabilityId': capabilityId },
+          { 'sec.title':        ns.title },
+        ],
+      }
+    );
+
+    const { strategicPosition: _sp, priorityActions: _pa, successMetrics: _sm, leadershipValidation: _lv, ...extrasOnly } = b;
+    updatedBriefs[ns.title] = extrasOnly;
+  }
+
+  return updatedBriefs;
+}
+
+// ── Transformation Blueprint: single-capability regeneration ──────────────────
+
+export async function regenerateTransformationCapabilityAsync(blueprintId, domainId, capabilityId, userId, businessObjective) {
+  const companyProfile = await loadCompanyProfile(userId);
+  const industry       = companyProfile.industry || 'Automotive';
+
+  const domain = getDomain(domainId);
+  if (!domain) throw new Error(`Domain not found in registry: ${domainId}`);
+
+  const caps = getDomainCapabilities(domain.kbPath);
+  const cap  = caps.find(c => c.id === capabilityId);
+  if (!cap) throw new Error(`Capability not found: ${capabilityId} in ${domain.kbPath}`);
+
+  try {
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId },
+      { $set: { 'domains.$[dom].capabilities.$[cap].status': 'in-progress', 'domains.$[dom].capabilities.$[cap].errorMessage': '' } },
+      { arrayFilters: [{ 'dom.domainId': domainId }, { 'cap.capabilityId': capabilityId }] }
+    );
+
+    const capBlueprint    = getDomainCapabilityBlueprint(cap.id, domain.kbPath, industry);
+    const enterpriseContext = companyProfile.orgName
+      ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
+      : null;
+
+    const sections = await runBriefGeneration(
+      cap, companyProfile, businessObjective, industry,
+      capBlueprint.sections, capBlueprint.automotiveBlueprint, enterpriseContext
+    );
+
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId },
+      {
+        $set: {
+          'domains.$[dom].capabilities.$[cap].status':      'completed',
+          'domains.$[dom].capabilities.$[cap].sections':    sections,
+          'domains.$[dom].capabilities.$[cap].completedAt': new Date(),
+          'domains.$[dom].capabilities.$[cap].errorMessage': '',
+        },
+      },
+      { arrayFilters: [{ 'dom.domainId': domainId }, { 'cap.capabilityId': capabilityId }] }
+    );
+
+    console.log(`[transformationGen] ✓ Regenerated ${domain.name} / ${cap.name} (${sections.length} sections)`);
+  } catch (err) {
+    console.error(`[transformationGen] ✗ Regenerate ${cap.name}:`, err.message);
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId },
+      {
+        $set: {
+          'domains.$[dom].capabilities.$[cap].status':       'error',
+          'domains.$[dom].capabilities.$[cap].errorMessage': err.message,
+        },
+      },
+      { arrayFilters: [{ 'dom.domainId': domainId }, { 'cap.capabilityId': capabilityId }] }
+    );
+  }
 }
 
 // ── Single-capability regeneration (fire-and-forget) ─────────────────────────

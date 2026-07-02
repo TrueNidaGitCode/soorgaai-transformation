@@ -7,6 +7,8 @@ import {
   generateBlueprintAsync,
   regenerateCapabilityAsync,
   regenerateSectionExtras,
+  regenerateSectionExtrasForTransformation,
+  regenerateTransformationCapabilityAsync,
   generateTransformationAsync,
 } from '../services/blueprintGenerationService.js';
 import { autoCapture }      from '../services/knowledgeSuggestionService.js';
@@ -397,6 +399,51 @@ export async function regenerateSectionExtrasHandler(req, res) {
   } catch (err) {
     console.error('regenerateSectionExtrasHandler error:', err);
     res.status(500).json({ error: err.message || 'Failed to regenerate section extras.' });
+  }
+}
+
+// ── Transformation Blueprint: regenerate-section-extras ──────────────────────
+
+export async function regenerateTransformationSectionExtrasHandler(req, res) {
+  try {
+    const { blueprintId, domainId, capabilityId } = req.params;
+    const { sectionTitles } = req.body;
+    const userId = req.user._id;
+
+    if (!Array.isArray(sectionTitles) || !sectionTitles.length) {
+      return res.status(400).json({ error: 'sectionTitles must be a non-empty array.' });
+    }
+
+    const updatedBriefs = await regenerateSectionExtrasForTransformation(
+      blueprintId, domainId, capabilityId, sectionTitles, userId
+    );
+    return res.json({ ok: true, updatedBriefs });
+
+  } catch (err) {
+    console.error('regenerateTransformationSectionExtrasHandler error:', err);
+    res.status(500).json({ error: err.message || 'Failed to regenerate section extras.' });
+  }
+}
+
+// ── Transformation Blueprint: single-capability regeneration ──────────────────
+
+export async function regenerateTransformationCapabilityHandler(req, res) {
+  try {
+    const { blueprintId, domainId, capabilityId } = req.params;
+    const userId = req.user._id;
+
+    const bp = await TransformationBlueprint.findOne({ _id: blueprintId, userId }).lean();
+    if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    res.json({ ok: true });
+
+    regenerateTransformationCapabilityAsync(
+      blueprintId, domainId, capabilityId, userId, bp.businessObjective
+    ).catch(err => console.error('[regenerateTransformation] async error:', err.message));
+
+  } catch (err) {
+    console.error('regenerateTransformationCapabilityHandler error:', err);
+    res.status(500).json({ error: err.message || 'Failed to start regeneration.' });
   }
 }
 

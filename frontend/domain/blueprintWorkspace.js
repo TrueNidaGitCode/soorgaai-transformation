@@ -2539,9 +2539,10 @@ async function triggerCapabilityRegeneration(cap, btn) {
     renderCapabilityTabs(_blueprint);
   }
 
+  const domainId = currentDomain()?.domainId;
   try {
     const resp = await fetch(
-      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${cap.capabilityId}/regenerate`,
+      `${API_BASE}/strategy-canvas/transformation-blueprint/${_blueprint._id}/domain/${domainId}/capability/${cap.capabilityId}/regenerate`,
       { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` } }
     );
     if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
@@ -3046,15 +3047,15 @@ async function showMultiUpdateResult(summary, updates, currentCap) {
   const byCapability = {};
   resolvedUpdates.forEach(u => {
     const id = u._targetCap.capabilityId;
-    if (!byCapability[id]) byCapability[id] = { cap: u._targetCap, titles: [] };
+    if (!byCapability[id]) byCapability[id] = { cap: u._targetCap, domainId: u._targetDom?.domainId, titles: [] };
     byCapability[id].titles.push(u._section.title);
   });
 
-  for (const [capId, { cap: targetCap, titles }] of Object.entries(byCapability)) {
+  for (const [capId, { cap: targetCap, domainId: capDomainId, titles }] of Object.entries(byCapability)) {
     const progressMsg = appendProgressMessage(`Updating graphs for ${targetCap.capabilityName}…`);
     try {
       const resp = await fetch(
-        `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${capId}/regenerate-section-extras`,
+        `${API_BASE}/strategy-canvas/transformation-blueprint/${_blueprint._id}/domain/${capDomainId}/capability/${capId}/regenerate-section-extras`,
         {
           method:  'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },

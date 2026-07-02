@@ -73,7 +73,7 @@ export const DOMAINS = [
     domainId:    'ai-use-cases',
     title:       'AI Use Cases',
     description: 'Identify, prioritize, and govern AI use cases across the enterprise.',
-    enabled:     false,
+    enabled:     true,
     icon:        '💡',
     focusAreas:  [],
     suggestedPrompts: [],

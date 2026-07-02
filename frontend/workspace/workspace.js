@@ -1,11 +1,10 @@
 /**
- * SoorgaAI — Workspace Shell
+ * SoorgaAI — Workspace Shell (v2)
  *
- * On load:
- *   1. Guard: if no JWT → redirect to login.
- *   2. GET /api/profile/me → if 404 → redirect to profile setup.
- *   3. GET /api/workspace/state → render domain cards.
- *   4. Logout: clear localStorage, redirect to landing.
+ * Three states, determined by blueprint status on load:
+ *   prompt     — no blueprint; user enters objective to generate
+ *   generating — SSE in progress; shows domain/capability progress cards
+ *   done       — blueprint complete; summary + "Open Full Blueprint" CTA → domain.html
  */
 
 const API_BASE = window.CONFIG?.API_BASE
@@ -14,12 +13,11 @@ const API_BASE = window.CONFIG?.API_BASE
       : 'https://truenidawebsite-production.up.railway.app/api');
 
 function getToken() { return localStorage.getItem('token'); }
+function authHeaders() { return { Authorization: `Bearer ${getToken()}` }; }
 
 function logout() {
   [
-    // Auth
     'token', 'username', 'userId', 'role', 'redirectAfterLogin',
-    // User-scoped local data — must clear so the next user starts clean
     'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
     'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
     'da_score', 'soorga_assessment_progress',
@@ -27,70 +25,310 @@ function logout() {
   window.location.href = '/index.html';
 }
 
-function authHeaders() {
-  return { Authorization: `Bearer ${getToken()}` };
+// ── State switching ───────────────────────────────────────────────────────────
+
+function showState(id) {
+  ['ws-prompt', 'ws-progress', 'ws-done'].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.style.display = (s === id) ? '' : 'none';
+  });
 }
 
-function showMain(state) {
-  document.getElementById('ws-loading').style.display = 'none';
-  document.getElementById('ws-main').style.display    = 'block';
+// ── Profile ───────────────────────────────────────────────────────────────────
 
+function renderProfile(state) {
   const username = localStorage.getItem('username') || state.profile?.orgName || '';
-  const role     = state.profile?.role || '';
+  const role     = state.profile?.role     || '';
   const industry = state.profile?.industryDomain || '';
 
-  document.getElementById('ws-username').textContent     = username;
-  document.getElementById('ws-welcome-name').textContent = username;
+  const el = document.getElementById('ws-username');
+  if (el) el.textContent = username;
 
-  const contextEl = document.getElementById('ws-user-context');
-  const contextParts = [role, industry].filter(Boolean);
-  if (contextParts.length) contextEl.textContent = contextParts.join(' | ');
+  const nameEl = document.getElementById('ws-welcome-name');
+  if (nameEl) nameEl.textContent = username;
 
-  renderDomainGrid(state.domains || []);
+  const ctxEl = document.getElementById('ws-user-context');
+  if (ctxEl) {
+    const parts = [role, industry].filter(Boolean);
+    ctxEl.textContent = parts.join(' | ');
+  }
 }
 
-// ── Domain card rendering ─────────────────────────────────────────────────────
+// ── Domain badges (prompt state) ──────────────────────────────────────────────
 
-function formatActivity(iso) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  const diffH = Math.round((Date.now() - d) / 3600000);
-  if (diffH < 1)   return 'Active just now';
-  if (diffH < 24)  return `Active ${diffH}h ago`;
-  const diffD = Math.round(diffH / 24);
-  return `Active ${diffD}d ago`;
+function renderDomainBadges(domains) {
+  const container = document.getElementById('ws-domain-badge-list');
+  if (!container) return;
+  container.innerHTML = '';
+  domains.filter(d => d.enabled).forEach(d => {
+    const badge = document.createElement('span');
+    badge.className = 'ws-domain-badge';
+    badge.textContent = d.title;
+    container.appendChild(badge);
+  });
 }
 
-function renderDomainGrid(domains) {
-  const grid = document.querySelector('.domain-grid');
-  grid.innerHTML = '';
+// ── Progress cards (generating state) ────────────────────────────────────────
+
+const STATUS_ICON = {
+  pending:       '○',
+  'in-progress': '⟳',
+  generating:    '⟳',
+  completed:     '✓',
+  error:         '✕',
+};
+const STATUS_CLASS = {
+  pending:       'pending',
+  'in-progress': 'progress',
+  generating:    'progress',
+  completed:     'completed',
+  error:         'error',
+};
+
+function capLabel(status) {
+  if (status === 'in-progress' || status === 'generating') return 'In Progress';
+  if (!status) return 'Pending';
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function renderProgressDomains(domains) {
+  const container = document.getElementById('ws-prog-domains');
+  if (!container) return;
+  container.innerHTML = '';
 
   for (const domain of domains) {
-    const card = document.createElement('article');
-    card.className = `domain-card domain-card--${domain.enabled ? 'enabled' : 'disabled'}`;
-    card.setAttribute('role', domain.enabled ? 'button' : 'article');
-    if (domain.enabled) card.setAttribute('tabindex', '0');
+    const section = document.createElement('div');
+    section.className = 'ws-prog-domain';
+    section.dataset.domainId = domain.domainId;
 
-    const activity = formatActivity(domain.lastActivityAt);
+    const header = document.createElement('h3');
+    header.className = 'ws-prog-domain__name';
+    header.textContent = domain.domainName;
+    section.appendChild(header);
 
-    card.innerHTML = `
-      <span class="domain-card__icon" aria-hidden="true">${domain.icon || '📋'}</span>
-      <h2 class="domain-card__title">${domain.title}</h2>
-      <p class="domain-card__description">${domain.description}</p>
-      ${activity ? `<span class="domain-card__activity">${activity}</span>` : ''}
-      ${!domain.enabled ? '<span class="domain-card__badge">Coming Soon</span>' : ''}
-    `;
+    const grid = document.createElement('div');
+    grid.className = 'ws-prog-domain__caps';
 
-    if (domain.enabled) {
-      const navigate = () => {
-        window.location.href = `/domain/domain.html?domain=${encodeURIComponent(domain.domainId)}`;
-      };
-      card.addEventListener('click', navigate);
-      card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') navigate(); });
+    for (const cap of (domain.capabilities || [])) {
+      const cls  = STATUS_CLASS[cap.status] || 'pending';
+      const icon = STATUS_ICON[cap.status]  || '○';
+      const card = document.createElement('div');
+      card.className = `ws-prog-cap ws-prog-cap--${cls}`;
+      card.dataset.domainId = domain.domainId;
+      card.dataset.capId    = cap.id || cap.capabilityId;
+      card.innerHTML = `
+        <span class="ws-prog-cap__icon ws-prog-cap__icon--${cls}" aria-hidden="true">${icon}</span>
+        <span class="ws-prog-cap__name">${cap.name || cap.capabilityName}</span>
+        <span class="ws-prog-cap__label ws-prog-cap__label--${cls}">${capLabel(cap.status)}</span>
+      `;
+      grid.appendChild(card);
     }
 
-    grid.appendChild(card);
+    section.appendChild(grid);
+    container.appendChild(section);
   }
+}
+
+function updateProgressCard(domainId, capId, status) {
+  const card = document.querySelector(
+    `.ws-prog-cap[data-domain-id="${CSS.escape(domainId)}"][data-cap-id="${CSS.escape(capId)}"]`
+  );
+  if (!card) return;
+  const cls   = STATUS_CLASS[status] || 'pending';
+  const icon  = STATUS_ICON[status]  || '○';
+  const label = capLabel(status);
+  card.className = `ws-prog-cap ws-prog-cap--${cls}`;
+  const iconEl  = card.querySelector('.ws-prog-cap__icon');
+  const labelEl = card.querySelector('.ws-prog-cap__label');
+  if (iconEl)  { iconEl.textContent  = icon;  iconEl.className  = `ws-prog-cap__icon ws-prog-cap__icon--${cls}`; }
+  if (labelEl) { labelEl.textContent = label; labelEl.className = `ws-prog-cap__label ws-prog-cap__label--${cls}`; }
+}
+
+// ── Done state ────────────────────────────────────────────────────────────────
+
+function renderDoneState(blueprint) {
+  const objEl = document.getElementById('ws-done-objective');
+  if (objEl) objEl.textContent = `"${blueprint.businessObjective || ''}"`;
+
+  const container = document.getElementById('ws-done-domains');
+  if (!container) return;
+  container.innerHTML = '';
+
+  for (const domain of (blueprint.domains || [])) {
+    const caps  = domain.capabilities || [];
+    const total = caps.length;
+    const done  = caps.filter(c => c.status === 'completed').length;
+    const pct   = total ? Math.round((done / total) * 100) : 0;
+
+    const card = document.createElement('div');
+    card.className = 'ws-done-domain';
+    card.innerHTML = `
+      <div class="ws-done-domain__row">
+        <span class="ws-done-domain__name">${domain.domainName}</span>
+        <span class="ws-done-domain__count">${done}/${total} capabilities</span>
+      </div>
+      <div class="ws-done-domain__bar">
+        <div class="ws-done-domain__bar-fill" style="width:${pct}%"></div>
+      </div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+// ── SSE stream ────────────────────────────────────────────────────────────────
+
+let _sseReader = null;
+
+async function connectProgressStream(transformationId) {
+  const token = getToken();
+  if (!token) return;
+
+  try {
+    const response = await fetch(
+      `${API_BASE}/strategy-canvas/generate-transformation/${transformationId}/stream`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (!response.ok || !response.body) {
+      console.error('[workspace] SSE connection failed');
+      return;
+    }
+
+    _sseReader = response.body
+      .pipeThrough(new TextDecoderStream())
+      .getReader();
+
+    let buffer = '';
+    while (true) {
+      const { done, value } = await _sseReader.read();
+      if (done) break;
+      buffer += value;
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const msg = JSON.parse(line.slice(6));
+
+          if (msg.domains) {
+            for (const domain of msg.domains) {
+              for (const cap of (domain.capabilities || [])) {
+                updateProgressCard(domain.domainId, cap.id || cap.capabilityId, cap.status);
+              }
+            }
+          }
+
+          if (msg.done) {
+            await transitionToDone();
+            return;
+          }
+        } catch { /* skip malformed */ }
+      }
+    }
+  } catch (err) {
+    console.error('[workspace] SSE error:', err);
+  }
+}
+
+async function transitionToDone() {
+  try {
+    const resp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
+      headers: authHeaders(),
+    });
+    if (!resp.ok) return;
+    const bp = await resp.json();
+    renderDoneState(bp);
+    showState('ws-done');
+    bindNewBlueprintBtn();
+  } catch (err) {
+    console.error('[workspace] transitionToDone error:', err);
+  }
+}
+
+// ── Generate form ─────────────────────────────────────────────────────────────
+
+let _formBound = false;
+
+function initGenerateForm() {
+  if (_formBound) return;
+  _formBound = true;
+
+  const form = document.getElementById('ws-gen-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const input      = document.getElementById('ws-gen-objective');
+    const errEl      = document.getElementById('ws-gen-error');
+    const submitBtn  = document.getElementById('ws-gen-submit');
+    const submitText = document.getElementById('ws-gen-submit-text');
+    const loader     = document.getElementById('ws-gen-submit-loader');
+
+    const objective = input?.value?.trim();
+    if (!objective) {
+      if (errEl) { errEl.textContent = 'Please enter your transformation objective.'; errEl.style.display = ''; }
+      return;
+    }
+    if (errEl) errEl.style.display = 'none';
+    if (submitBtn)  submitBtn.disabled       = true;
+    if (submitText) submitText.style.display = 'none';
+    if (loader)     loader.style.display     = '';
+
+    try {
+      const resp = await fetch(`${API_BASE}/strategy-canvas/generate-transformation`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body:    JSON.stringify({ businessObjective: objective }),
+      });
+
+      if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
+      if (!resp.ok) {
+        const { error } = await resp.json().catch(() => ({}));
+        throw new Error(error || 'Failed to start generation.');
+      }
+
+      const { transformationId } = await resp.json();
+
+      // Load blueprint shell so progress cards are pre-rendered as pending
+      try {
+        const bpResp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
+          headers: authHeaders(),
+        });
+        if (bpResp.ok) {
+          const bp = await bpResp.json();
+          renderProgressDomains(bp.domains || []);
+          const objEl = document.getElementById('ws-prog-objective');
+          if (objEl) objEl.textContent = `"${objective}"`;
+        }
+      } catch { /* non-critical */ }
+
+      showState('ws-progress');
+      connectProgressStream(transformationId);
+
+    } catch (err) {
+      if (errEl) { errEl.textContent = err.message || 'Something went wrong. Please try again.'; errEl.style.display = ''; }
+      if (submitBtn)  submitBtn.disabled       = false;
+      if (submitText) submitText.style.display = '';
+      if (loader)     loader.style.display     = 'none';
+    }
+  });
+}
+
+// ── New Blueprint button ──────────────────────────────────────────────────────
+
+function bindNewBlueprintBtn() {
+  const btn = document.getElementById('ws-new-blueprint');
+  if (!btn || btn.dataset.bound) return;
+  btn.dataset.bound = '1';
+  btn.addEventListener('click', () => {
+    const input = document.getElementById('ws-gen-objective');
+    if (input) input.value = '';
+    _formBound = false;
+    showState('ws-prompt');
+    initGenerateForm();
+  });
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
@@ -101,30 +339,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  document.getElementById('ws-logout').addEventListener('click', logout);
+  document.getElementById('ws-logout')?.addEventListener('click', logout);
+
+  const loadingEl = document.getElementById('ws-loading');
+  const mainEl    = document.getElementById('ws-main');
 
   try {
-    // Check profile — redirect to setup if not found
+    // Auth guard + profile redirect
     const profileResp = await fetch(`${API_BASE}/profile/me`, { headers: authHeaders() });
-    if (profileResp.status === 404) {
-      window.location.href = '/profile-setup/profile.html';
-      return;
-    }
-    if (profileResp.status === 401) {
-      logout();
-      return;
-    }
+    if (profileResp.status === 404) { window.location.href = '/profile-setup/profile.html'; return; }
+    if (profileResp.status === 401) { logout(); return; }
 
-    // Load full workspace state
+    // Load workspace state (profile + domain list with enabled flags)
     const stateResp = await fetch(`${API_BASE}/workspace/state`, { headers: authHeaders() });
-    if (!stateResp.ok) throw new Error('Failed to load workspace state.');
-
+    if (!stateResp.ok) throw new Error('Failed to load workspace state');
     const state = await stateResp.json();
-    showMain(state);
+
+    renderProfile(state);
+    renderDomainBadges(state.domains || []);
+
+    // Check blueprint status
+    const bpResp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
+      headers: authHeaders(),
+    });
+
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (mainEl)    mainEl.style.display    = '';
+
+    if (bpResp.status === 404) {
+      showState('ws-prompt');
+      initGenerateForm();
+      return;
+    }
+
+    if (!bpResp.ok) throw new Error('Failed to check blueprint status');
+    const bp = await bpResp.json();
+
+    if (bp.status === 'generating') {
+      const objEl = document.getElementById('ws-prog-objective');
+      if (objEl) objEl.textContent = `"${bp.businessObjective || ''}"`;
+      renderProgressDomains(bp.domains || []);
+      showState('ws-progress');
+      connectProgressStream(bp._id);
+      return;
+    }
+
+    // Blueprint completed
+    renderDoneState(bp);
+    showState('ws-done');
+    bindNewBlueprintBtn();
 
   } catch (err) {
-    console.error('Workspace load error:', err);
-    document.getElementById('ws-loading').innerHTML =
-      '<p style="color:#ff6b6b">Failed to load workspace. Please refresh.</p>';
+    console.error('[workspace] load error:', err);
+    if (loadingEl) loadingEl.innerHTML = '<p style="color:#ff6b6b">Failed to load workspace. Please refresh.</p>';
   }
 });

@@ -19,30 +19,88 @@
     </div>
   </nav>
 
-  <!-- ── Loading state ───────────────────────────────────────────────────── -->
+  <!-- ── Loading ─────────────────────────────────────────────────────────── -->
   <div id="ws-loading" class="ws-loading" aria-live="polite">
     <div class="ws-spinner"></div>
     <p>Loading your workspace…</p>
   </div>
 
-  <!-- ── Main workspace ──────────────────────────────────────────────────── -->
+  <!-- ── Main ───────────────────────────────────────────────────────────── -->
   <main id="ws-main" class="workspace-main" style="display:none">
 
-    <h1 class="ws-page-title">AI Transformation Workspace</h1>
-
-    <!-- User info card -->
+    <!-- User greeting (always visible) -->
     <div class="ws-card ws-user-card">
       <p class="ws-brand-label">SoorgaAI</p>
       <p class="ws-welcome-heading">Welcome, <span id="ws-welcome-name"></span></p>
       <p id="ws-user-context" class="ws-user-context"></p>
     </div>
 
-    <!-- Domains card -->
-    <div class="ws-card ws-domains-card">
-      <h2 class="ws-domains-title">Transformation Domains</h2>
-      <section class="domain-grid" aria-label="Transformation domains">
-        <!-- Injected by workspace.js -->
-      </section>
+    <!-- ── STATE 1: Prompt entry (no blueprint yet) ────────────────────── -->
+    <div id="ws-prompt" style="display:none">
+      <div class="ws-card ws-gen-card">
+        <div class="ws-gen-card__header">
+          <h2 class="ws-gen-card__title">Generate Your AI Transformation Blueprint</h2>
+          <p class="ws-gen-card__sub">Describe your AI transformation objective and we'll build a personalised blueprint across all active domains in one go.</p>
+        </div>
+
+        <form id="ws-gen-form" class="ws-gen-form" novalidate>
+          <label for="ws-gen-objective" class="ws-gen-label">What is your AI transformation objective?</label>
+          <textarea
+            id="ws-gen-objective"
+            class="ws-gen-textarea"
+            rows="4"
+            placeholder="e.g. Reduce defect analysis time and improve software quality across our automotive programs using AI"
+          ></textarea>
+          <p id="ws-gen-error" class="ws-gen-error" style="display:none" role="alert"></p>
+
+          <!-- Domain badges — injected by workspace.js -->
+          <div class="ws-gen-domains">
+            <span class="ws-gen-domains__label">Will generate:</span>
+            <div id="ws-domain-badge-list" class="ws-gen-domains__badges"></div>
+          </div>
+
+          <button type="submit" id="ws-gen-submit" class="ws-gen-btn">
+            <span id="ws-gen-submit-text">Generate Blueprint</span>
+            <span id="ws-gen-submit-loader" class="ws-gen-btn__loader" style="display:none" aria-hidden="true">
+              <span class="ws-gen-btn__dot"></span><span class="ws-gen-btn__dot"></span><span class="ws-gen-btn__dot"></span>
+            </span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── STATE 2: Generation in progress ─────────────────────────────── -->
+    <div id="ws-progress" style="display:none" aria-live="polite">
+      <div class="ws-card ws-prog-card">
+        <div class="ws-prog-card__header">
+          <div class="ws-prog-spinner" aria-hidden="true"></div>
+          <div>
+            <h2 class="ws-prog-card__title">Building your blueprint…</h2>
+            <p id="ws-prog-objective" class="ws-prog-card__objective"></p>
+          </div>
+        </div>
+        <div id="ws-prog-domains" class="ws-prog-domains"></div>
+      </div>
+    </div>
+
+    <!-- ── STATE 3: Blueprint ready ────────────────────────────────────── -->
+    <div id="ws-done" style="display:none">
+      <div class="ws-card ws-done-card">
+        <div class="ws-done-card__header">
+          <div class="ws-done-check" aria-hidden="true">✓</div>
+          <div>
+            <h2 class="ws-done-card__title">Your Blueprint is Ready</h2>
+            <p id="ws-done-objective" class="ws-done-card__objective"></p>
+          </div>
+        </div>
+
+        <div id="ws-done-domains" class="ws-done-domains"></div>
+
+        <div class="ws-done-actions">
+          <a href="/domain/domain.html" class="ws-open-btn">Open Full Blueprint</a>
+          <button id="ws-new-blueprint" class="ws-new-btn">New Blueprint</button>
+        </div>
+      </div>
     </div>
 
   </main>

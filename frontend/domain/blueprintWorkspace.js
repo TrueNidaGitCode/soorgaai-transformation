@@ -2672,14 +2672,13 @@ function saveChatHistory() {
   const key = chatStorageKey();
   if (!key) return;
   try {
-    // sessionStorage: survives same-tab navigation, clears on tab close/refresh
-    sessionStorage.setItem(key, JSON.stringify(_chatHistory.slice(-60)));
+    localStorage.setItem(key, JSON.stringify(_chatHistory.slice(-60)));
   } catch { /* quota exceeded */ }
 }
 
 function restoreChat() {
   const key = chatStorageKey();
-  const stored = key ? sessionStorage.getItem(key) : null;
+  const stored = key ? localStorage.getItem(key) : null;
   let history = [];
   if (stored) {
     try { history = JSON.parse(stored); } catch { history = []; }

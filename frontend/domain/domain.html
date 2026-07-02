@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SoorgaAI — AI Strategy Blueprint</title>
+  <title>SoorgaAI — AI Transformation Blueprint</title>
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="domain.css">
   <script src="../login/config.js"></script>
@@ -38,9 +38,9 @@
   <main id="screen-generate" class="screen screen--generate" style="display:none" aria-label="Generate AI Strategy Blueprint">
 
     <div class="gen-hero">
-      <p class="gen-eyebrow">Company AI Strategy</p>
-      <h1 class="gen-title">Generate AI Strategy Blueprint</h1>
-      <p class="gen-subtitle">What would you like to achieve with AI?</p>
+      <p class="gen-eyebrow">AI Transformation Blueprint</p>
+      <h1 class="gen-title">Generate Your AI Transformation Plan</h1>
+      <p class="gen-subtitle">Describe your goal and we'll build a full cross-domain blueprint covering Strategy, Use Cases, Skills, Data, and Technology.</p>
     </div>
 
     <form id="generate-form" class="gen-form" novalidate>
@@ -78,15 +78,15 @@
   <main id="screen-progress" class="screen screen--progress" style="display:none" aria-label="Blueprint generation progress" aria-live="polite">
 
     <div class="prog-header">
-      <h1 class="prog-title">Generating Company Blueprint</h1>
+      <h1 class="prog-title">Generating AI Transformation Blueprint</h1>
       <p id="prog-objective" class="prog-objective"></p>
     </div>
 
-    <div id="prog-capabilities" class="prog-capabilities">
-      <!-- Populated dynamically by blueprintGenerate.js -->
+    <div id="prog-domains" class="prog-domains">
+      <!-- Domain sections with capability cards populated by blueprintGenerate.js -->
     </div>
 
-    <p class="prog-hint">Analysing your business objective across all AI Strategy capabilities…</p>
+    <p class="prog-hint">Analysing your objective across all transformation domains…</p>
 
   </main>
 
@@ -98,7 +98,7 @@
     <!-- Workspace header -->
     <header class="ws-header">
       <div class="ws-header__meta">
-        <h1 class="ws-header__title">Company AI Strategy Blueprint</h1>
+        <h1 class="ws-header__title">AI Transformation Blueprint</h1>
         <div class="ws-header__details" id="ws-header-details">
           <!-- Populated by blueprintWorkspace.js -->
         </div>
@@ -117,7 +117,12 @@
       </div>
     </header>
 
-    <!-- Capability navigation tabs -->
+    <!-- Domain navigation tabs (top level) -->
+    <nav class="domain-nav" id="domain-nav" aria-label="Domain navigation">
+      <!-- Populated by blueprintWorkspace.js -->
+    </nav>
+
+    <!-- Capability navigation tabs (within selected domain) -->
     <nav class="cap-nav" id="cap-nav" aria-label="Capability navigation">
       <!-- Populated by blueprintWorkspace.js -->
     </nav>

@@ -33,6 +33,7 @@ const BLUEPRINT_VIEW_MODE = 'cto';
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let _blueprint           = null;
+let _selectedDomainIdx   = 0;
 let _selectedCapIndex    = 0;
 let _assistantOpen       = false;
 let _chatHistory         = [];   // [{ role: 'user'|'assistant', content: string }]
@@ -60,7 +61,7 @@ function fmtDate(iso) {
 // ── Completion calculation ────────────────────────────────────────────────────
 
 function calcCompletion(blueprint) {
-  const caps = blueprint.capabilities || [];
+  const caps = (blueprint.domains || []).flatMap(d => d.capabilities || []);
   if (!caps.length) return 0;
   const done = caps.filter(c => c.status === 'completed').length;
   return Math.round((done / caps.length) * 100);
@@ -104,6 +105,49 @@ function renderHeader(blueprint) {
   }
 }
 
+// ── Domain state helpers ──────────────────────────────────────────────────────
+
+function currentDomain() {
+  return (_blueprint?.domains || [])[_selectedDomainIdx] || null;
+}
+
+function currentCap() {
+  const dom = currentDomain();
+  return (dom?.capabilities || [])[_selectedCapIndex] || null;
+}
+
+// ── Domain Navigation Tabs ────────────────────────────────────────────────────
+
+function renderDomainTabs(blueprint) {
+  const nav = document.getElementById('domain-nav');
+  if (!nav) return;
+  nav.innerHTML = '';
+
+  (blueprint.domains || []).forEach((domain, idx) => {
+    const tab = document.createElement('button');
+    tab.className = `domain-nav__tab${idx === _selectedDomainIdx ? ' is-active' : ''}`;
+    tab.dataset.idx = idx;
+    tab.textContent = domain.domainName;
+    tab.addEventListener('click', () => selectDomain(idx));
+    nav.appendChild(tab);
+  });
+}
+
+function selectDomain(idx) {
+  _selectedDomainIdx = idx;
+  _selectedCapIndex  = 0;
+  _refineTargetSection = null;
+  clearSuggestionCard();
+
+  document.querySelectorAll('.domain-nav__tab').forEach((t, i) => {
+    t.classList.toggle('is-active', i === idx);
+  });
+
+  renderCapabilityTabs(_blueprint);
+  renderBlueprintContent(_blueprint, 0);
+  updateAssistantContext();
+}
+
 // ── Capability tabs ───────────────────────────────────────────────────────────
 
 function renderCapabilityTabs(blueprint) {
@@ -111,7 +155,8 @@ function renderCapabilityTabs(blueprint) {
   if (!nav) return;
   nav.innerHTML = '';
 
-  (blueprint.capabilities || []).forEach((cap, idx) => {
+  const dom = (blueprint.domains || [])[_selectedDomainIdx];
+  (dom?.capabilities || []).forEach((cap, idx) => {
     const tab = document.createElement('button');
     tab.className = `cap-nav__tab${idx === _selectedCapIndex ? ' is-active' : ''}`;
     tab.dataset.idx = idx;
@@ -196,7 +241,7 @@ function selectCapability(idx) {
   updateAssistantContext();
 
   // Trigger one-time feedback prompt on first AI ROI tab visit
-  const cap = (_blueprint?.capabilities || [])[idx];
+  const cap = (currentDomain()?.capabilities || [])[idx];
   if (cap?.capabilityName === 'AI ROI') maybeShowFeedback();
 }
 
@@ -207,7 +252,8 @@ function renderBlueprintContent(blueprint, capIdx) {
   if (!area) return;
   area.innerHTML = '';
 
-  const cap = (blueprint.capabilities || [])[capIdx];
+  const dom = (blueprint.domains || [])[_selectedDomainIdx];
+  const cap = (dom?.capabilities || [])[capIdx];
   if (!cap) return;
 
   // Capability title + regenerate button (always available for completed caps)
@@ -2025,9 +2071,10 @@ async function triggerCapabilityRegeneration(cap, btn) {
   btn.textContent = 'Regenerating…';
 
   // Optimistically show in-progress state
-  const capIdx = (_blueprint.capabilities || []).findIndex(c => c.capabilityId === cap.capabilityId);
-  if (capIdx >= 0) {
-    _blueprint.capabilities[capIdx].status = 'in-progress';
+  const dom = currentDomain();
+  const capIdx = (dom?.capabilities || []).findIndex(c => c.capabilityId === cap.capabilityId);
+  if (capIdx >= 0 && dom) {
+    dom.capabilities[capIdx].status = 'in-progress';
     renderCapabilityTabs(_blueprint);
   }
 
@@ -2046,9 +2093,8 @@ async function triggerCapabilityRegeneration(cap, btn) {
 
   } catch (err) {
     console.error('[workspace] Regeneration failed:', err.message);
-    // Restore error state if something went wrong starting the request
-    if (capIdx >= 0) {
-      _blueprint.capabilities[capIdx].status = 'error';
+    if (capIdx >= 0 && dom) {
+      dom.capabilities[capIdx].status = 'error';
       renderCapabilityTabs(_blueprint);
       renderBlueprintContent(_blueprint, capIdx);
     }
@@ -2061,17 +2107,22 @@ async function pollForCapabilityCompletion(capabilityId) {
     await new Promise(r => setTimeout(r, 2000));
 
     try {
-      const resp = await fetch(`${API_BASE}/strategy-canvas/company-blueprint`, {
+      const resp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (!resp.ok) continue;
 
-      const freshBp  = await resp.json();
-      const freshCap = (freshBp.capabilities || []).find(c => c.capabilityId === capabilityId);
+      const freshBp = await resp.json();
+      let freshCap = null;
+      for (const dom of (freshBp.domains || [])) {
+        freshCap = (dom.capabilities || []).find(c => c.capabilityId === capabilityId);
+        if (freshCap) break;
+      }
 
       if (freshCap && freshCap.status !== 'in-progress' && freshCap.status !== 'pending') {
         _blueprint = freshBp;
         renderHeader(freshBp);
+        renderDomainTabs(freshBp);
         renderCapabilityTabs(freshBp);
         renderBlueprintContent(freshBp, _selectedCapIndex);
         return;
@@ -2176,7 +2227,7 @@ function updateAssistantContext() {
 function openAssistantForSection(sectionTitle) {
   _refineTargetSection = sectionTitle;
   setAssistantOpen(true);
-  const cap = (_blueprint?.capabilities || [])[_selectedCapIndex];
+  const cap = currentCap();
   const capName = cap?.capabilityName || 'this capability';
   setTimeout(() => {
     handleChatSubmit(null, `Please review the "${sectionTitle}" section in ${capName} and suggest specific improvements.`);
@@ -2234,7 +2285,7 @@ async function handleChatSubmit(e, prefillText) {
   saveChatHistory();
   setChatSending(true);
 
-  const cap = (_blueprint?.capabilities || [])[_selectedCapIndex];
+  const cap = currentCap();
   if (!cap) return;
 
   // Build a minimal blueprint summary for the advisor
@@ -2295,7 +2346,8 @@ async function handleChatSubmit(e, prefillText) {
 }
 
 function buildBlueprintSummary(blueprint, capIdx) {
-  const cap = (blueprint.capabilities || [])[capIdx];
+  const dom = (blueprint.domains || [])[_selectedDomainIdx];
+  const cap = (dom?.capabilities || [])[capIdx];
   if (!cap) return {};
   return {
     capabilityName: cap.capabilityName,
@@ -2320,14 +2372,16 @@ function getCapabilitySections(cap) {
 }
 
 function getAllCapabilitySections(blueprint) {
-  return (blueprint.capabilities || []).map(cap => ({
-    capabilityId:   cap.capabilityId,
-    capabilityName: cap.capabilityName,
-    sections: (cap.sections || []).map(s => ({
-      title:             s.title,
-      strategicPosition: s.brief?.strategicPosition || s.content || '',
-    })),
-  }));
+  return (blueprint.domains || []).flatMap(dom =>
+    (dom.capabilities || []).map(cap => ({
+      capabilityId:   cap.capabilityId,
+      capabilityName: cap.capabilityName,
+      sections: (cap.sections || []).map(s => ({
+        title:             s.title,
+        strategicPosition: s.brief?.strategicPosition || s.content || '',
+      })),
+    }))
+  );
 }
 
 // ── Suggestion card ───────────────────────────────────────────────────────────
@@ -2401,14 +2455,22 @@ function resolveProgressMessage(el, finalText) {
 async function showMultiUpdateResult(summary, updates, currentCap) {
   if (!updates.length || !_blueprint) return;
 
-  // Resolve each update to its target capability + section.
+  // Resolve each update to its target domain + capability + section.
   // Case-insensitive section title matching tolerates minor AI variation.
   // Skip any update where the capabilityId or sectionTitle can't be matched.
   const resolvedUpdates = updates.map(u => {
-    const targetCap = u.capabilityId
-      ? (_blueprint.capabilities || []).find(c => c.capabilityId === u.capabilityId)
-      : currentCap;
-    if (!targetCap) {
+    let targetDom = null;
+    let targetCap = null;
+    if (u.capabilityId) {
+      for (const dom of (_blueprint.domains || [])) {
+        const found = (dom.capabilities || []).find(c => c.capabilityId === u.capabilityId);
+        if (found) { targetDom = dom; targetCap = found; break; }
+      }
+    } else {
+      targetCap = currentCap;
+      targetDom = currentDomain();
+    }
+    if (!targetCap || !targetDom) {
       console.warn('[multi-update] capabilityId not found, skipping:', u.capabilityId, u.sectionTitle);
       return null;
     }
@@ -2420,11 +2482,12 @@ async function showMultiUpdateResult(summary, updates, currentCap) {
         '| available:', targetCap.sections?.map(s => s.title).join(', '));
       return null;
     }
-    return { ...u, _targetCap: targetCap, _section: section };
+    return { ...u, _targetDom: targetDom, _targetCap: targetCap, _section: section };
   }).filter(Boolean);
 
   // Snapshot for undo before applying anything
   const undoData = resolvedUpdates.map(u => ({
+    domainId:         u._targetDom.domainId,
     capabilityId:     u._targetCap.capabilityId,
     sectionTitle:     u._section.title,
     previousPosition: u._section.brief?.strategicPosition || u._section.content || '',
@@ -2492,7 +2555,7 @@ async function showMultiUpdateResult(summary, updates, currentCap) {
   const patchErrors = [];
   await Promise.all(resolvedUpdates.map(u =>
     fetch(
-      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${u._targetCap.capabilityId}/section/${encodeURIComponent(u._section.title)}`,
+      `${API_BASE}/strategy-canvas/transformation-blueprint/${_blueprint._id}/domain/${u._targetDom.domainId}/capability/${u._targetCap.capabilityId}/section/${encodeURIComponent(u._section.title)}`,
       {
         method:   'PATCH',
         headers:  { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
@@ -2566,17 +2629,21 @@ async function undoMultiUpdate(undoData, currentCap, doneCard) {
   if (!_blueprint) return;
 
   for (const u of undoData) {
-    const targetCap = u.capabilityId
-      ? (_blueprint.capabilities || []).find(c => c.capabilityId === u.capabilityId)
-      : currentCap;
-    if (!targetCap) continue;
+    let targetDom = null;
+    let targetCap = null;
+    for (const dom of (_blueprint.domains || [])) {
+      const found = (dom.capabilities || []).find(c => c.capabilityId === u.capabilityId);
+      if (found) { targetDom = dom; targetCap = found; break; }
+    }
+    if (!targetDom || !targetCap) continue;
+
     const section = (targetCap.sections || []).find(s => s.title === u.sectionTitle);
     if (!section) continue;
     if (!section.brief) section.brief = {};
     section.brief.strategicPosition = u.previousPosition;
     section.updatedAt = new Date().toISOString();
 
-    if (targetCap.capabilityId === currentCap.capabilityId) {
+    if (targetCap.capabilityId === currentCap?.capabilityId) {
       const oldCard = document.querySelector(`.bp-section[data-section-title="${CSS.escape(section.title)}"]`);
       if (oldCard) oldCard.replaceWith(buildSectionCard(_blueprint, targetCap, section));
     }
@@ -2593,9 +2660,8 @@ async function undoMultiUpdate(undoData, currentCap, doneCard) {
 
   // Restore in backend — fire-and-forget
   for (const u of undoData) {
-    const targetCapId = u.capabilityId || currentCap.capabilityId;
     fetch(
-      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${targetCapId}/section/${encodeURIComponent(u.sectionTitle)}`,
+      `${API_BASE}/strategy-canvas/transformation-blueprint/${_blueprint._id}/domain/${u.domainId}/capability/${u.capabilityId}/section/${encodeURIComponent(u.sectionTitle)}`,
       {
         method:    'PATCH',
         headers:   { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
@@ -2603,16 +2669,17 @@ async function undoMultiUpdate(undoData, currentCap, doneCard) {
         keepalive: true,
       }
     )
-    .then(r => { if (!r.ok) console.warn('[undo-multi] PATCH non-ok:', r.status, targetCapId, u.sectionTitle); })
-    .catch(err => console.warn('[undo-multi] PATCH error:', targetCapId, u.sectionTitle, err.message));
+    .then(r => { if (!r.ok) console.warn('[undo-multi] PATCH non-ok:', r.status, u.capabilityId, u.sectionTitle); })
+    .catch(err => console.warn('[undo-multi] PATCH error:', u.capabilityId, u.sectionTitle, err.message));
   }
 }
 
 async function acceptSuggestion() {
   if (!_pendingSuggestion || !_blueprint) return;
 
-  const cap = (_blueprint.capabilities || [])[_selectedCapIndex];
-  if (!cap) { clearSuggestionCard(); return; }
+  const dom = currentDomain();
+  const cap = currentCap();
+  if (!cap || !dom) { clearSuggestionCard(); return; }
 
   // Find the exact section that was being refined (by title), fall back to first
   const targetTitle = _pendingSuggestion.sectionTitle;
@@ -2648,7 +2715,7 @@ async function acceptSuggestion() {
   // Persist to backend (non-blocking — UI already updated above)
   try {
     await fetch(
-      `${API_BASE}/strategy-canvas/company-blueprint/${_blueprint._id}/capability/${cap.capabilityId}/section/${encodeURIComponent(section.title)}`,
+      `${API_BASE}/strategy-canvas/transformation-blueprint/${_blueprint._id}/domain/${dom.domainId}/capability/${cap.capabilityId}/section/${encodeURIComponent(section.title)}`,
       {
         method:    'PATCH',
         headers:   { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
@@ -2747,17 +2814,18 @@ function setErrorVisible(visible, msg = '') {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
 function initWorkspace(blueprint) {
-  _blueprint        = blueprint;
-  _selectedCapIndex = 0;
+  _blueprint         = blueprint;
+  _selectedDomainIdx = 0;
+  _selectedCapIndex  = 0;
 
-  // Show AI Assistant button now that we're in workspace
   const assistantBtn = document.getElementById('btn-ai-assistant');
   if (assistantBtn) assistantBtn.style.display = '';
 
   renderHeader(blueprint);
+  renderDomainTabs(blueprint);
   renderCapabilityTabs(blueprint);
   renderBlueprintContent(blueprint, _selectedCapIndex);
-  restoreChat(); // load persisted chat for initial capability
+  restoreChat();
 
   showScreen('screen-workspace');
 

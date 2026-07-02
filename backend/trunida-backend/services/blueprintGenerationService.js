@@ -18,15 +18,19 @@
  * MongoDB as each capability completes so the SSE stream can poll live status.
  */
 
-import CompanyBlueprint  from '../models/CompanyBlueprint.js';
-import CompanyContext     from '../models/CompanyContext.js';
-import UserProfile        from '../models/UserProfile.js';
-import { generate }       from './llmService.js';
+import CompanyBlueprint        from '../models/CompanyBlueprint.js';
+import TransformationBlueprint  from '../models/TransformationBlueprint.js';
+import CompanyContext            from '../models/CompanyContext.js';
+import UserProfile               from '../models/UserProfile.js';
+import { generate }              from './llmService.js';
 import {
   getCapabilities,
   getCapabilityBlueprint,
+  getDomainCapabilities,
+  getDomainCapabilityBlueprint,
 } from './strategyCanvasService.js';
-import { BLUEPRINT_CONFIG } from '../config/blueprintConfig.js';
+import { BLUEPRINT_CONFIG }       from '../config/blueprintConfig.js';
+import { enabledDomains }         from '../config/domainRegistry.js';
 import { getCapabilityEnterpriseContext } from './enterpriseBlueprintService.js';
 
 // ── Company profile helpers ───────────────────────────────────────────────────
@@ -1085,4 +1089,115 @@ export async function generateBlueprintAsync(blueprintId, userId, businessObject
   );
 
   console.log(`[blueprintGen] Blueprint ${blueprintId} generation complete`);
+}
+
+// ── Multi-domain transformation generation ────────────────────────────────────
+
+// Generates all enabled domains → capabilities in the TransformationBlueprint.
+// Called fire-and-forget. Domains without KB documents are skipped gracefully.
+export async function generateTransformationAsync(blueprintId, userId, businessObjective) {
+  const companyProfile = await loadCompanyProfile(userId);
+  const industry       = companyProfile.industry || 'Automotive';
+  const domains        = enabledDomains();
+
+  for (const domain of domains) {
+    const caps = getDomainCapabilities(domain.kbPath);
+    if (!caps.length) {
+      // No KB documents yet for this domain — mark completed with no capabilities
+      await TransformationBlueprint.updateOne(
+        { _id: blueprintId, 'domains.domainId': domain.id },
+        { $set: { 'domains.$.status': 'completed' } }
+      );
+      console.log(`[transformationGen] ⚡ ${domain.name} — no KB docs yet, skipped`);
+      continue;
+    }
+
+    // Mark domain as generating
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId, 'domains.domainId': domain.id },
+      { $set: { 'domains.$.status': 'generating' } }
+    );
+
+    for (const cap of caps) {
+      try {
+        // Mark capability in-progress
+        await TransformationBlueprint.updateOne(
+          {
+            _id: blueprintId,
+            'domains.domainId': domain.id,
+            'domains.capabilities.capabilityId': cap.id,
+          },
+          {
+            $set: {
+              'domains.$[dom].capabilities.$[cap].status': 'in-progress',
+            },
+          },
+          { arrayFilters: [{ 'dom.domainId': domain.id }, { 'cap.capabilityId': cap.id }] }
+        );
+
+        // Build a capability-like object getDomainCapabilityBlueprint expects
+        const capBlueprint = getDomainCapabilityBlueprint(cap.id, domain.kbPath, industry);
+        const parsedSections = capBlueprint.sections;
+
+        // Reuse the existing generation pipeline
+        const capObj = { id: cap.id, name: cap.name, objective: cap.objective };
+        const enterpriseContext = companyProfile.orgName
+          ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
+          : null;
+
+        let sections;
+        if (BLUEPRINT_CONFIG.generate.essay) {
+          const essays = await runEssayGeneration(
+            capObj, companyProfile, businessObjective, industry,
+            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext
+          );
+          sections = await runBriefExtraction(capObj, parsedSections, essays);
+        } else {
+          sections = await runBriefGeneration(
+            capObj, companyProfile, businessObjective, industry,
+            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext
+          );
+        }
+
+        await TransformationBlueprint.updateOne(
+          { _id: blueprintId },
+          {
+            $set: {
+              'domains.$[dom].capabilities.$[cap].status':      'completed',
+              'domains.$[dom].capabilities.$[cap].sections':    sections,
+              'domains.$[dom].capabilities.$[cap].completedAt': new Date(),
+            },
+          },
+          { arrayFilters: [{ 'dom.domainId': domain.id }, { 'cap.capabilityId': cap.id }] }
+        );
+
+        console.log(`[transformationGen] ✓ ${domain.name} / ${cap.name} (${sections.length} sections)`);
+      } catch (err) {
+        console.error(`[transformationGen] ✗ ${domain.name} / ${cap.name}:`, err.message);
+        await TransformationBlueprint.updateOne(
+          { _id: blueprintId },
+          {
+            $set: {
+              'domains.$[dom].capabilities.$[cap].status':       'error',
+              'domains.$[dom].capabilities.$[cap].errorMessage': err.message,
+            },
+          },
+          { arrayFilters: [{ 'dom.domainId': domain.id }, { 'cap.capabilityId': cap.id }] }
+        );
+      }
+    }
+
+    // Mark domain completed
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId, 'domains.domainId': domain.id },
+      { $set: { 'domains.$.status': 'completed' } }
+    );
+  }
+
+  await TransformationBlueprint.updateOne(
+    { _id: blueprintId },
+    { $set: { status: 'completed', updatedAt: new Date() } }
+  );
+
+  console.log(`[transformationGen] Transformation ${blueprintId} complete`);
 }

@@ -4,10 +4,18 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Navigate: services/ → trunida-backend/ → backend/ → project root → knowledge_base
-const AI_STRATEGY_PATH = path.resolve(
-  __dirname, '../../../knowledge_base/automotive/enterprise_ai/AI_Strategy'
+// KB root: services/ → trunida-backend/ → backend/ → project root → knowledge_base
+const KB_ENTERPRISE_ROOT = path.resolve(
+  __dirname, '../../../knowledge_base/automotive/enterprise_ai'
 );
+
+// Legacy path kept for backwards-compat helpers that still reference it directly
+const AI_STRATEGY_PATH = path.join(KB_ENTERPRISE_ROOT, 'AI_Strategy');
+
+// Resolve any domain's KB folder by its kbPath (from domainRegistry)
+function domainPath(kbPath) {
+  return path.join(KB_ENTERPRISE_ROOT, kbPath);
+}
 
 // ── Filename mapping ──────────────────────────────────────────────────────────
 
@@ -183,9 +191,83 @@ function extractLeadershipQuestion(text) {
   return match ? match[1].trim() : text.replace(/\*\*/g, '').trim();
 }
 
-// ── In-memory cache for capabilities list ────────────────────────────────────
+// ── In-memory caches ─────────────────────────────────────────────────────────
 
-let _capabilitiesCache = null;
+let _capabilitiesCache = null;                // legacy AI Strategy cache
+const _domainCapabilitiesCache = new Map();   // keyed by kbPath
+
+// ── Domain-aware helpers ──────────────────────────────────────────────────────
+
+// Returns capabilities for any domain identified by its kbPath.
+// Spec file convention: {kbPath}/Core/{kbPath}_Intelligence_Specification.md
+// Returns [] gracefully if the spec file doesn't exist yet.
+export function getDomainCapabilities(kbPath) {
+  if (_domainCapabilitiesCache.has(kbPath)) return _domainCapabilitiesCache.get(kbPath);
+
+  const dp       = domainPath(kbPath);
+  const specFile = `${kbPath}_Intelligence_Specification.md`;
+  const specPath = path.join(dp, 'Core', specFile);
+
+  let raw = [];
+  try {
+    const specContent = fs.readFileSync(specPath, 'utf-8');
+    raw = extractCapabilities(specContent);
+  } catch {
+    // KB documents not created yet for this domain — return empty
+    return [];
+  }
+
+  const caps = raw.map(({ name, objective }) => ({
+    id:        toCapabilityId(name),
+    name,
+    objective,
+  }));
+
+  _domainCapabilitiesCache.set(kbPath, caps);
+  return caps;
+}
+
+// Returns the full parsed blueprint (pillars + automotive sections) for a
+// capability within a given domain (identified by kbPath).
+export function getDomainCapabilityBlueprint(capabilityId, kbPath, industry = 'Automotive') {
+  const caps = getDomainCapabilities(kbPath);
+  const cap  = caps.find(c => c.id === capabilityId);
+  if (!cap) throw new Error(`Capability not found: ${capabilityId} in ${kbPath}`);
+
+  const dp          = domainPath(kbPath);
+  const filename    = toFilename(cap.name);
+  const corePath    = path.join(dp, 'Core',     `${filename}.md`);
+  const industryPath = path.join(dp, industry, `${industry}_${filename}.md`);
+
+  let coreContent = '', industryContent = '';
+  try { coreContent     = fs.readFileSync(corePath, 'utf-8');     } catch { /* missing */ }
+  try { industryContent = fs.readFileSync(industryPath, 'utf-8'); } catch { /* missing */ }
+
+  const pillars          = parsePillarSections(coreContent);
+  const industrySections = industryContent ? parseIndustrySections(industryContent) : [];
+
+  const sections = pillars.map(pillar => {
+    const match        = findIndustryMatch(pillar.title, industrySections);
+    const automotiveText = match ? extractParagraphText(match.content, 150) : '';
+    return {
+      title:              pillar.title,
+      definition:         pillar.subsections['Definition']           || '',
+      keyPrinciples:      extractBulletList(pillar.subsections['Key Principles'] || ''),
+      leadershipQuestion: extractLeadershipQuestion(pillar.subsections['Leadership Question'] || ''),
+      industryContext:    match ? match.content : null,
+      automotiveText,
+      source:             match ? 'both' : 'core',
+    };
+  });
+
+  let automotiveBlueprint = extractParagraphText(industryContent, 200);
+  if (automotiveBlueprint.split(/\s+/).filter(Boolean).length < 60) {
+    const coreProse = extractParagraphText(coreContent, 150);
+    automotiveBlueprint = [automotiveBlueprint, coreProse].filter(Boolean).join(' ').trim();
+  }
+
+  return { capabilityId, capabilityName: cap.name, industry, automotiveBlueprint, sections };
+}
 
 // ── Public API ────────────────────────────────────────────────────────────────
 

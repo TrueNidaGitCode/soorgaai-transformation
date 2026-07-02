@@ -1,23 +1,23 @@
 /**
- * SoorgaAI — Blueprint Generate Module (PI 26.3 Sprint 1)
+ * SoorgaAI — Blueprint Generate Module
  *
- * Manages Screen 1 (Generate Blueprint form) and Screen 2 (Generation Progress).
+ * Manages Screen 1 (Generate form) and Screen 2 (Generation Progress).
  *
  * Flow:
- *   1. On page load: check API for existing blueprint.
- *      - If completed  → dispatch 'blueprint:ready' (blueprintWorkspace takes over Screen 3)
+ *   1. On page load: check for existing TransformationBlueprint.
+ *      - If completed  → dispatch 'blueprint:ready' (workspace takes over Screen 3)
  *      - If generating → show Screen 2 and reconnect to SSE stream
  *      - If none       → show Screen 1
  *
- *   2. Screen 1: user enters business objective, clicks Generate.
- *      POST /api/strategy-canvas/generate-blueprint → { blueprintId }
+ *   2. Screen 1: user enters objective, clicks Generate.
+ *      POST /api/strategy-canvas/generate-transformation → { transformationId }
  *      Then show Screen 2 and open SSE stream.
  *
- *   3. Screen 2: SSE stream updates capability status cards in real time.
- *      When all done → dispatch 'blueprint:ready' with full blueprint data.
+ *   3. Screen 2: SSE updates domain/capability status cards in real time.
+ *      When done → dispatch 'blueprint:ready' with full blueprint data.
  *
  * Events dispatched:
- *   'blueprint:ready'   — { blueprint }  — tells workspace module to take over
+ *   'blueprint:ready' — { blueprint } — tells workspace module to take over
  */
 
 const API_BASE = window.CONFIG?.API_BASE
@@ -25,8 +25,7 @@ const API_BASE = window.CONFIG?.API_BASE
       ? 'http://localhost:3000/api'
       : 'https://truenidawebsite-production.up.railway.app/api');
 
-function getToken()  { return localStorage.getItem('token'); }
-function getUserId() { return localStorage.getItem('userId') || ''; }
+function getToken() { return localStorage.getItem('token'); }
 
 // ── Screen helpers ────────────────────────────────────────────────────────────
 
@@ -37,7 +36,7 @@ function showScreen(id) {
   });
 }
 
-// ── Logout ────────────────────────────────────────────────────────────────────
+// ── Nav / logout ──────────────────────────────────────────────────────────────
 
 function initNav() {
   const usernameEl = document.getElementById('domain-username');
@@ -53,68 +52,91 @@ function initNav() {
   }
 }
 
-// ── Screen 2: Progress rendering ─────────────────────────────────────────────
+// ── Screen 2: Domain-grouped progress rendering ───────────────────────────────
 
-const STATUS_ICON  = { pending: '○', 'in-progress': '⟳', completed: '✓', error: '✕' };
+const STATUS_ICON  = { pending: '○', 'in-progress': '⟳', generating: '⟳', completed: '✓', error: '✕' };
 const STATUS_CLASS = {
-  pending:      'pending',
-  'in-progress':'progress',
-  completed:    'completed',
-  error:        'error',
+  pending:       'pending',
+  'in-progress': 'progress',
+  generating:    'progress',
+  completed:     'completed',
+  error:         'error',
 };
 
-function renderProgressCapabilities(capabilities) {
-  const container = document.getElementById('prog-capabilities');
+function capStatusLabel(status) {
+  if (status === 'in-progress' || status === 'generating') return 'In Progress';
+  if (!status) return 'Pending';
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function renderProgressDomains(domains) {
+  const container = document.getElementById('prog-domains');
   if (!container) return;
   container.innerHTML = '';
 
-  for (const cap of capabilities) {
-    const cls  = STATUS_CLASS[cap.status] || 'pending';
-    const icon = STATUS_ICON[cap.status]  || '○';
-    const card = document.createElement('div');
-    card.className = `prog-cap prog-cap--${cls}`;
-    card.dataset.capId = cap.id;
-    card.innerHTML = `
-      <span class="prog-cap__icon prog-cap__icon--${cls}" aria-hidden="true">${icon}</span>
-      <span class="prog-cap__name">${cap.name}</span>
-      <span class="prog-cap__status-label prog-cap__status-label--${cls}">${cap.status === 'in-progress' ? 'In Progress' : cap.status.charAt(0).toUpperCase() + cap.status.slice(1)}</span>
-    `;
-    container.appendChild(card);
+  for (const domain of domains) {
+    const section = document.createElement('div');
+    section.className = 'prog-domain';
+    section.dataset.domainId = domain.domainId;
+
+    const header = document.createElement('div');
+    header.className = 'prog-domain__header';
+    const nameEl = document.createElement('h3');
+    nameEl.className = 'prog-domain__name';
+    nameEl.textContent = domain.domainName;
+    header.appendChild(nameEl);
+    section.appendChild(header);
+
+    const capsGrid = document.createElement('div');
+    capsGrid.className = 'prog-domain__caps';
+
+    for (const cap of (domain.capabilities || [])) {
+      const cls  = STATUS_CLASS[cap.status] || 'pending';
+      const icon = STATUS_ICON[cap.status]  || '○';
+      const card = document.createElement('div');
+      card.className = `prog-cap prog-cap--${cls}`;
+      card.dataset.domainId = domain.domainId;
+      card.dataset.capId    = cap.id || cap.capabilityId;
+      card.innerHTML = `
+        <span class="prog-cap__icon prog-cap__icon--${cls}" aria-hidden="true">${icon}</span>
+        <span class="prog-cap__name">${cap.name || cap.capabilityName}</span>
+        <span class="prog-cap__status-label prog-cap__status-label--${cls}">${capStatusLabel(cap.status)}</span>
+      `;
+      capsGrid.appendChild(card);
+    }
+
+    section.appendChild(capsGrid);
+    container.appendChild(section);
   }
 }
 
-function updateProgressCard(capId, status) {
-  const card = document.querySelector(`.prog-cap[data-cap-id="${CSS.escape(capId)}"]`);
+function updateProgressCard(domainId, capId, status) {
+  const selector = `.prog-cap[data-domain-id="${CSS.escape(domainId)}"][data-cap-id="${CSS.escape(capId)}"]`;
+  const card = document.querySelector(selector);
   if (!card) return;
 
-  const cls  = STATUS_CLASS[status] || 'pending';
-  const icon = STATUS_ICON[status]  || '○';
-  const label = status === 'in-progress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1);
+  const cls   = STATUS_CLASS[status] || 'pending';
+  const icon  = STATUS_ICON[status]  || '○';
+  const label = capStatusLabel(status);
 
   card.className = `prog-cap prog-cap--${cls}`;
   const iconEl  = card.querySelector('.prog-cap__icon');
   const labelEl = card.querySelector('.prog-cap__status-label');
-  if (iconEl) {
-    iconEl.textContent = icon;
-    iconEl.className   = `prog-cap__icon prog-cap__icon--${cls}`;
-  }
-  if (labelEl) {
-    labelEl.textContent = label;
-    labelEl.className   = `prog-cap__status-label prog-cap__status-label--${cls}`;
-  }
+  if (iconEl)  { iconEl.textContent  = icon;  iconEl.className  = `prog-cap__icon prog-cap__icon--${cls}`; }
+  if (labelEl) { labelEl.textContent = label; labelEl.className = `prog-cap__status-label prog-cap__status-label--${cls}`; }
 }
 
 // ── SSE: stream generation progress ──────────────────────────────────────────
 
 let _sseReader = null;
 
-async function connectProgressStream(blueprintId) {
+async function connectProgressStream(transformationId) {
   const token = getToken();
   if (!token) return;
 
   try {
     const response = await fetch(
-      `${API_BASE}/strategy-canvas/generate-blueprint/${blueprintId}/stream`,
+      `${API_BASE}/strategy-canvas/generate-transformation/${transformationId}/stream`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -140,7 +162,7 @@ async function connectProgressStream(blueprintId) {
         if (!line.startsWith('data: ')) continue;
         try {
           const msg = JSON.parse(line.slice(6));
-          handleProgressMessage(msg, blueprintId);
+          handleProgressMessage(msg, transformationId);
           if (msg.done) return;
         } catch { /* skip malformed */ }
       }
@@ -150,28 +172,30 @@ async function connectProgressStream(blueprintId) {
   }
 }
 
-function handleProgressMessage(msg, blueprintId) {
+function handleProgressMessage(msg, transformationId) {
   if (msg.error) {
     console.error('[blueprintGenerate] Server error:', msg.error);
     return;
   }
 
-  if (msg.capabilities) {
-    for (const cap of msg.capabilities) {
-      updateProgressCard(cap.id, cap.status);
+  // Update individual capability cards within their domains
+  if (msg.domains) {
+    for (const domain of msg.domains) {
+      for (const cap of (domain.capabilities || [])) {
+        updateProgressCard(domain.domainId, cap.id || cap.capabilityId, cap.status);
+      }
     }
   }
 
   if (msg.done) {
-    // Fetch completed blueprint then hand off to workspace
-    loadBlueprintAndTransition(blueprintId);
+    loadBlueprintAndTransition(transformationId);
   }
 }
 
 // ── API helpers ───────────────────────────────────────────────────────────────
 
-async function fetchCompanyBlueprint() {
-  const resp = await fetch(`${API_BASE}/strategy-canvas/company-blueprint`, {
+async function fetchTransformationBlueprint() {
+  const resp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   if (resp.status === 404) return null;
@@ -179,9 +203,9 @@ async function fetchCompanyBlueprint() {
   return resp.json();
 }
 
-async function loadBlueprintAndTransition(blueprintId) {
+async function loadBlueprintAndTransition(transformationId) {
   try {
-    const bp = await fetchCompanyBlueprint();
+    const bp = await fetchTransformationBlueprint();
     if (bp) {
       document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
     }
@@ -193,14 +217,14 @@ async function loadBlueprintAndTransition(blueprintId) {
 // ── Screen 1: form logic ──────────────────────────────────────────────────────
 
 function initGenerateForm() {
-  const form    = document.getElementById('generate-form');
-  const input   = document.getElementById('gen-objective');
-  const errEl   = document.getElementById('gen-error');
-  const submitBtn  = document.getElementById('gen-submit');
-  const submitText = document.getElementById('gen-submit-text');
+  const form         = document.getElementById('generate-form');
+  const input        = document.getElementById('gen-objective');
+  const errEl        = document.getElementById('gen-error');
+  const submitBtn    = document.getElementById('gen-submit');
+  const submitText   = document.getElementById('gen-submit-text');
   const submitLoader = document.getElementById('gen-submit-loader');
 
-  // Example chips fill the text area
+  // Example chips fill the textarea
   document.querySelectorAll('.gen-example-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       if (input) input.value = chip.dataset.text;
@@ -219,14 +243,13 @@ function initGenerateForm() {
       return;
     }
 
-    // Loading state
     if (errEl) errEl.style.display = 'none';
     if (submitBtn) submitBtn.disabled = true;
     if (submitText) submitText.style.display = 'none';
     if (submitLoader) submitLoader.style.display = '';
 
     try {
-      const resp = await fetch(`${API_BASE}/strategy-canvas/generate-blueprint`, {
+      const resp = await fetch(`${API_BASE}/strategy-canvas/generate-transformation`, {
         method:  'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -241,17 +264,16 @@ function initGenerateForm() {
         throw new Error(error || 'Failed to start blueprint generation.');
       }
 
-      const { blueprintId } = await resp.json();
+      const { transformationId } = await resp.json();
 
-      // Show progress screen
       const objEl = document.getElementById('prog-objective');
       if (objEl) objEl.textContent = `"${objective}"`;
 
-      // Init all caps as pending from API capability list
-      await initProgressFromCapabilities(objective);
+      // Fetch the shell blueprint (domains + capabilities pre-seeded as pending) for initial render
+      await initProgressFromBlueprint();
 
       showScreen('screen-progress');
-      connectProgressStream(blueprintId);
+      connectProgressStream(transformationId);
 
     } catch (err) {
       showError(errEl, err.message || 'Something went wrong. Please try again.');
@@ -262,18 +284,10 @@ function initGenerateForm() {
   });
 }
 
-async function initProgressFromCapabilities(objective) {
+async function initProgressFromBlueprint() {
   try {
-    const resp = await fetch(`${API_BASE}/strategy-canvas/capabilities`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    if (!resp.ok) return;
-    const { capabilities } = await resp.json();
-
-    const objEl = document.getElementById('prog-objective');
-    if (objEl) objEl.textContent = `"${objective}"`;
-
-    renderProgressCapabilities(capabilities.map(c => ({ id: c.id, name: c.name, status: 'pending' })));
+    const bp = await fetchTransformationBlueprint();
+    if (bp?.domains) renderProgressDomains(bp.domains);
   } catch { /* non-critical */ }
 }
 
@@ -288,14 +302,14 @@ function showError(el, msg) {
 async function init() {
   const token = getToken();
   if (!token) {
-    window.location.href = `/login/login.html?redirect=/domain/domain.html?domain=ai-strategy`;
+    window.location.href = `/login/login.html?redirect=/domain/domain.html`;
     return;
   }
 
   initNav();
 
   try {
-    const bp = await fetchCompanyBlueprint();
+    const bp = await fetchTransformationBlueprint();
 
     if (!bp) {
       showScreen('screen-generate');
@@ -305,20 +319,17 @@ async function init() {
 
     if (bp.status === 'generating') {
       // Reconnect to in-progress stream
-      const objective = bp.businessObjective || '';
       const objEl = document.getElementById('prog-objective');
-      if (objEl) objEl.textContent = `"${objective}"`;
-      renderProgressCapabilities(
-        (bp.capabilities || []).map(c => ({ id: c.capabilityId, name: c.capabilityName, status: c.status }))
-      );
+      if (objEl) objEl.textContent = `"${bp.businessObjective || ''}"`;
+      renderProgressDomains(bp.domains || []);
       showScreen('screen-progress');
       connectProgressStream(bp._id);
       return;
     }
 
-    // Blueprint is completed — workspace module takes over
+    // Blueprint completed — workspace takes over
     document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
-    initGenerateForm(); // keep form initialised in case user wants to regenerate later
+    initGenerateForm(); // keep form initialised in case user clicks New Blueprint
 
   } catch (err) {
     console.error('[blueprintGenerate] init error:', err);

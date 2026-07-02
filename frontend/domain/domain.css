@@ -2536,6 +2536,44 @@
   gap: 0.65rem;
 }
 
+/* Domain-grouped progress layout */
+.prog-domains {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.prog-domain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.prog-domain__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.prog-domain__name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin: 0;
+}
+
+.prog-domain__caps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
 .prog-cap {
   display: flex;
   align-items: center;
@@ -2732,6 +2770,41 @@
   font-size: 0.78rem;
   font-weight: 700;
   padding: 0.3rem 0.75rem;
+}
+
+/* ── Domain Navigation Tabs (top-level, above capability tabs) ────────────── */
+
+.domain-nav {
+  display: flex;
+  overflow-x: auto;
+  gap: 0;
+  padding: 0 2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.02);
+  scrollbar-width: none;
+}
+.domain-nav::-webkit-scrollbar { display: none; }
+
+.domain-nav__tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.85rem 1.25rem;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
+  font-family: inherit;
+  position: relative;
+  top: 1px;
+}
+.domain-nav__tab:hover { color: rgba(255,255,255,0.85); }
+.domain-nav__tab.is-active {
+  color: #5CC5A7;
+  border-bottom-color: #5CC5A7;
 }
 
 /* ── Capability Navigation Tabs ───────────────────────────────────────────── */

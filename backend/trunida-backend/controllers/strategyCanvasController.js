@@ -1,9 +1,16 @@
-import UserProfile          from '../models/UserProfile.js';
-import CompanyBlueprint      from '../models/CompanyBlueprint.js';
-import { getCapabilities, getCapabilityBlueprint } from '../services/strategyCanvasService.js';
+import UserProfile               from '../models/UserProfile.js';
+import CompanyBlueprint           from '../models/CompanyBlueprint.js';
+import TransformationBlueprint    from '../models/TransformationBlueprint.js';
+import { getCapabilities, getCapabilityBlueprint, getDomainCapabilities } from '../services/strategyCanvasService.js';
 import { suggestBlueprintSection }  from '../services/blueprintSuggestService.js';
-import { generateBlueprintAsync, regenerateCapabilityAsync, regenerateSectionExtras } from '../services/blueprintGenerationService.js';
-import { autoCapture } from '../services/knowledgeSuggestionService.js';
+import {
+  generateBlueprintAsync,
+  regenerateCapabilityAsync,
+  regenerateSectionExtras,
+  generateTransformationAsync,
+} from '../services/blueprintGenerationService.js';
+import { autoCapture }      from '../services/knowledgeSuggestionService.js';
+import { enabledDomains }   from '../config/domainRegistry.js';
 
 const DEFAULT_INDUSTRY = 'Automotive';
 
@@ -390,5 +397,192 @@ export async function regenerateSectionExtrasHandler(req, res) {
   } catch (err) {
     console.error('regenerateSectionExtrasHandler error:', err);
     res.status(500).json({ error: err.message || 'Failed to regenerate section extras.' });
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Multi-domain Transformation Blueprint handlers
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * POST /strategy-canvas/generate-transformation
+ * Starts async multi-domain generation. Returns transformationId immediately.
+ */
+export async function startTransformationGeneration(req, res) {
+  try {
+    const { businessObjective } = req.body;
+    if (!businessObjective?.trim()) {
+      return res.status(400).json({ error: 'businessObjective is required.' });
+    }
+
+    const userId = req.user._id;
+    const [industry, companyName] = await Promise.all([
+      detectIndustry(userId),
+      detectOrgName(userId),
+    ]);
+
+    const domains = enabledDomains();
+
+    // Pre-populate each enabled domain with its capabilities (if KB docs exist)
+    const domainDocs = domains.map(domain => {
+      const caps = getDomainCapabilities(domain.kbPath);
+      return {
+        domainId:   domain.id,
+        domainName: domain.name,
+        status:     'pending',
+        capabilities: caps.map(c => ({
+          capabilityId:   c.id,
+          capabilityName: c.name,
+          status:         'pending',
+          sections:       [],
+        })),
+      };
+    });
+
+    const blueprint = await TransformationBlueprint.create({
+      userId,
+      businessObjective: businessObjective.trim(),
+      industry,
+      companyName,
+      status: 'generating',
+      domains: domainDocs,
+    });
+
+    generateTransformationAsync(blueprint._id, userId, businessObjective.trim())
+      .catch(err => console.error('[startTransformationGeneration] async error:', err));
+
+    return res.json({ transformationId: blueprint._id });
+
+  } catch (err) {
+    console.error('startTransformationGeneration error:', err);
+    res.status(500).json({ error: 'Failed to start transformation generation.' });
+  }
+}
+
+/**
+ * GET /strategy-canvas/generate-transformation/:transformationId/stream
+ * SSE — emits domain + capability status updates until complete.
+ */
+export async function streamTransformationProgress(req, res) {
+  const { transformationId } = req.params;
+  const userId = req.user._id;
+
+  res.setHeader('Content-Type',  'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection',    'keep-alive');
+  res.flushHeaders();
+
+  const send = (data) => { if (!res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`); };
+  const heartbeat = setInterval(() => { if (!res.writableEnded) res.write(': heartbeat\n\n'); }, 15000);
+
+  const poll = setInterval(async () => {
+    try {
+      const bp = await TransformationBlueprint.findOne({ _id: transformationId, userId }).lean();
+      if (!bp) { send({ error: 'Transformation not found.' }); clearInterval(poll); clearInterval(heartbeat); res.end(); return; }
+
+      const domainStatuses = bp.domains.map(d => ({
+        domainId:   d.domainId,
+        domainName: d.domainName,
+        status:     d.status,
+        capabilities: (d.capabilities || []).map(c => ({ id: c.capabilityId, name: c.capabilityName, status: c.status })),
+      }));
+
+      send({ domains: domainStatuses, overallStatus: bp.status });
+
+      if (bp.status === 'completed' || bp.status === 'error') {
+        send({ done: true });
+        clearInterval(poll); clearInterval(heartbeat); res.end();
+      }
+    } catch (err) {
+      send({ error: 'Stream error.' });
+      clearInterval(poll); clearInterval(heartbeat); res.end();
+    }
+  }, 1500);
+
+  req.on('close', () => { clearInterval(poll); clearInterval(heartbeat); });
+}
+
+/**
+ * GET /strategy-canvas/transformation-blueprint
+ * Returns the user's most recent TransformationBlueprint.
+ */
+export async function getTransformationBlueprint(req, res) {
+  try {
+    const bp = await TransformationBlueprint
+      .findOne({ userId: req.user._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!bp) return res.status(404).json({ error: 'No transformation blueprint found.' });
+    return res.json(bp);
+  } catch (err) {
+    console.error('getTransformationBlueprint error:', err);
+    res.status(500).json({ error: 'Failed to load transformation blueprint.' });
+  }
+}
+
+/**
+ * PATCH /strategy-canvas/transformation-blueprint/:blueprintId/domain/:domainId/capability/:capabilityId/section/:sectionTitle
+ * Updates one section brief within a domain capability.
+ */
+export async function updateTransformationSection(req, res) {
+  try {
+    const { blueprintId, domainId, capabilityId, sectionTitle } = req.params;
+    const { brief, content } = req.body;
+    const userId  = req.user._id;
+    const decoded = decodeURIComponent(sectionTitle);
+
+    if (brief === undefined && content === undefined) {
+      return res.status(400).json({ error: 'Provide brief and/or content to update.' });
+    }
+
+    const setFields = {
+      'domains.$[dom].capabilities.$[cap].sections.$[sec].updatedAt': new Date(),
+      updatedAt: new Date(),
+    };
+
+    if (brief && typeof brief === 'object') {
+      if (typeof brief.strategicPosition === 'string')
+        setFields['domains.$[dom].capabilities.$[cap].sections.$[sec].brief.strategicPosition'] = brief.strategicPosition;
+      if (Array.isArray(brief.priorityActions))
+        setFields['domains.$[dom].capabilities.$[cap].sections.$[sec].brief.priorityActions']   = brief.priorityActions;
+      if (Array.isArray(brief.successMetrics))
+        setFields['domains.$[dom].capabilities.$[cap].sections.$[sec].brief.successMetrics']    = brief.successMetrics;
+
+      const extraArrayFields = [
+        'strategicPillars', 'kpiHighlights', 'timelineSteps', 'alignmentInitiatives',
+        'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
+        'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'teamRoles',
+        'lifecycleStages', 'waterfallItems', 'sdlcStages', 'flywheelStages',
+        'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls', 'adoptionStages',
+      ];
+      for (const field of extraArrayFields) {
+        if (brief[field] !== undefined)
+          setFields[`domains.$[dom].capabilities.$[cap].sections.$[sec].brief.${field}`] = brief[field];
+      }
+    }
+    if (typeof content === 'string')
+      setFields['domains.$[dom].capabilities.$[cap].sections.$[sec].content'] = content;
+
+    const result = await TransformationBlueprint.updateOne(
+      {
+        _id: blueprintId,
+        userId,
+        'domains.domainId': domainId,
+        'domains.capabilities.capabilityId': capabilityId,
+        'domains.capabilities.sections.title': decoded,
+      },
+      { $set: setFields },
+      { arrayFilters: [{ 'dom.domainId': domainId }, { 'cap.capabilityId': capabilityId }, { 'sec.title': decoded }] }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Blueprint, domain, capability, or section not found.' });
+    }
+    return res.json({ ok: true });
+
+  } catch (err) {
+    console.error('updateTransformationSection error:', err);
+    res.status(500).json({ error: 'Failed to update section.' });
   }
 }

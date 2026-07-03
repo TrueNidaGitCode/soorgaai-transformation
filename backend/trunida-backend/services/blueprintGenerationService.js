@@ -1576,27 +1576,40 @@ async function callLLM(systemPrompt, userMessage, timeoutMs, capName) {
 
 // ── Output format helpers ─────────────────────────────────────────────────────
 
-// Extracts extra field names from a promptInstruction by parsing the
-// "Add all ... to ... brief object..." line at the end of each template.
-function extractExtraFieldNames(promptInstruction) {
+// Parses the "Add all ... to ... brief object:" line in a promptInstruction
+// and returns [{name, placeholder}] pairs where placeholder is a JSON-valid
+// type-appropriate value ([] for arrays, {} for objects, 0 for numbers, "").
+// This ensures the output format schema shows the correct JSON type for each
+// extra field so the LLM generates the right structure, not a plain string.
+function extractExtraFields(promptInstruction) {
   const m = promptInstruction.match(/Add (?:all(?:\s+\w+)?|both)\s+to\s+(?:the\s+)?brief object[^:\n]*:\n\s+(.+)/);
   if (!m) return [];
   const fields = [];
+  const re = /"(\w+)":\s*([\[{<"])/g;
   let r;
-  const re = /"(\w+)":/g;
-  while ((r = re.exec(m[1])) !== null) fields.push(r[1]);
+  while ((r = re.exec(m[1])) !== null) {
+    const name  = r[1];
+    const start = r[2];
+    let placeholder;
+    if      (start === '[') placeholder = '["<see SECTION-SPECIFIC EXTRAS above>"]';
+    else if (start === '{') placeholder = '{"<see SECTION-SPECIFIC EXTRAS above>": ""}';
+    else if (start === '<') placeholder = '0';
+    else                    placeholder = '"<see SECTION-SPECIFIC EXTRAS above>"';
+    fields.push({ name, placeholder });
+  }
   return fields;
 }
 
 // Builds the OUTPUT FORMAT section of the system prompt dynamically so the
-// JSON schema example shows the section-specific extra fields. Without this
-// the LLM ignores the templateInstructions and only emits the 4 base fields.
+// JSON schema example shows the section-specific extra fields with correct
+// JSON types. Without this the LLM ignores templateInstructions and only
+// emits the 4 base fields (or generates extras as plain strings).
 function buildOutputFormat(parsedSections) {
   const examples = parsedSections.map(s => {
     const tpl        = BLUEPRINT_CONFIG.generate.ctoExtras ? SECTION_TEMPLATES[s.title] : null;
-    const extras     = tpl ? extractExtraFieldNames(tpl.promptInstruction) : [];
+    const extras     = tpl ? extractExtraFields(tpl.promptInstruction) : [];
     const extraLines = extras.length
-      ? ',\n        ' + extras.map(f => `"${f}": "<required — see SECTION-SPECIFIC EXTRAS above>"`).join(',\n        ')
+      ? ',\n        ' + extras.map(({ name, placeholder }) => `"${name}": ${placeholder}`).join(',\n        ')
       : '';
     return `    {
       "title": "${s.title}",

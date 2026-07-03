@@ -1574,6 +1574,46 @@ async function callLLM(systemPrompt, userMessage, timeoutMs, capName) {
   return JSON.parse(match[0]);
 }
 
+// ── Output format helpers ─────────────────────────────────────────────────────
+
+// Extracts extra field names from a promptInstruction by parsing the
+// "Add all ... to ... brief object..." line at the end of each template.
+function extractExtraFieldNames(promptInstruction) {
+  const m = promptInstruction.match(/Add (?:all(?:\s+\w+)?|both)\s+to\s+(?:the\s+)?brief object[^:\n]*:\n\s+(.+)/);
+  if (!m) return [];
+  const fields = [];
+  let r;
+  const re = /"(\w+)":/g;
+  while ((r = re.exec(m[1])) !== null) fields.push(r[1]);
+  return fields;
+}
+
+// Builds the OUTPUT FORMAT section of the system prompt dynamically so the
+// JSON schema example shows the section-specific extra fields. Without this
+// the LLM ignores the templateInstructions and only emits the 4 base fields.
+function buildOutputFormat(parsedSections) {
+  const examples = parsedSections.map(s => {
+    const tpl        = BLUEPRINT_CONFIG.generate.ctoExtras ? SECTION_TEMPLATES[s.title] : null;
+    const extras     = tpl ? extractExtraFieldNames(tpl.promptInstruction) : [];
+    const extraLines = extras.length
+      ? ',\n        ' + extras.map(f => `"${f}": "<required — see SECTION-SPECIFIC EXTRAS above>"`).join(',\n        ')
+      : '';
+    return `    {
+      "title": "${s.title}",
+      "brief": {
+        "strategicPosition": "<1-2 sentence future-state definition>",
+        "priorityActions": ["<action 1>", "<action 2>", "<action 3>"],
+        "successMetrics": ["<KPI 1>", "<KPI 2>"],
+        "leadershipValidation": {
+          "status": "Not Yet Validated",
+          "context": "<one sentence on what alignment or approval is needed>"
+        }${extraLines}
+      }
+    }`;
+  }).join(',\n');
+  return `OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:\n{\n  "sections": [\n${examples}\n  ]\n}`;
+}
+
 // ── Pipeline A: Brief (direct) ────────────────────────────────────────────────
 // Active when BLUEPRINT_CONFIG.generate.essay = false.
 // Generates section.brief in a single LLM call per capability.
@@ -1642,23 +1682,7 @@ HARD RULES:
 - Do NOT add, rename, or remove sections — generate ONLY the ${parsedSections.length} sections listed
 - Every output must be scannable in under 30 seconds
 
-OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
-{
-  "sections": [
-    {
-      "title": "<exact section title>",
-      "brief": {
-        "strategicPosition": "<1-2 sentence future-state definition>",
-        "priorityActions": ["<action 1>", "<action 2>", "<action 3>"],
-        "successMetrics": ["<KPI 1>", "<KPI 2>", "<KPI 3>"],
-        "leadershipValidation": {
-          "status": "Not Yet Validated",
-          "context": "<one sentence on what alignment or approval is needed>"
-        }
-      }
-    }
-  ]
-}`;
+${buildOutputFormat(parsedSections)}`;
 
   const userMessage = `${enterpriseContext ? `${enterpriseContext}\n\n` : ''}CAPABILITY SECTIONS TO GENERATE (${parsedSections.length} sections):
 

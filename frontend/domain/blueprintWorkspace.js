@@ -5200,6 +5200,7 @@ async function pollForCapabilityCompletion(capabilityId) {
       }
 
       if (freshCap && freshCap.status !== 'in-progress' && freshCap.status !== 'pending' && freshCap.status !== 'generating') {
+        await augmentBlueprintWithMissingDomains(freshBp);
         _blueprint = freshBp;
         renderHeader(freshBp);
         renderDomainTabs(freshBp);

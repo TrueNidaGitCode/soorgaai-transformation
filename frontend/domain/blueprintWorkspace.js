@@ -317,13 +317,11 @@ function renderBlueprintContent(blueprint, capIdx) {
       <p class="bp-empty__title">${isError ? 'Generation failed for this capability' : 'Still generating…'}</p>
       <p class="bp-empty__text">${isError ? 'The AI encountered an error generating this section.' : 'This section will appear when generation completes.'}</p>
     `;
-    if (isError) {
-      const regenBtn = document.createElement('button');
-      regenBtn.className = 'bp-regen-btn';
-      regenBtn.textContent = 'Regenerate';
-      regenBtn.addEventListener('click', () => triggerCapabilityRegeneration(cap, regenBtn));
-      empty.appendChild(regenBtn);
-    }
+    const regenBtn = document.createElement('button');
+    regenBtn.className = 'bp-regen-btn';
+    regenBtn.textContent = 'Regenerate';
+    regenBtn.addEventListener('click', () => triggerCapabilityRegeneration(cap, regenBtn));
+    empty.appendChild(regenBtn);
     area.appendChild(empty);
     return;
   }

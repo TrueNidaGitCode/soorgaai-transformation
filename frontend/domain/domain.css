@@ -8638,3 +8638,145 @@
   .ala-summary-cell:nth-child(odd) { border-right: 1px solid rgba(255,255,255,0.07); }
   .ala-view__position { padding-right: 0; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Blueprint Design System — McKinsey-Style Typography Normalization
+   One consistent type scale shared across ALL domain capability views.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Section card: stronger title, cleaner border ── */
+
+.bp-section {
+  border-color: rgba(255,255,255,0.09);
+  border-radius: 1rem;
+}
+
+.bp-section__header {
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.bp-section__title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+/* ── Sub-section column headings (brief-label) ──
+   Used as headings for every panel/column inside a capability view.
+   Upgraded from near-invisible 0.3 opacity to clearly readable labels
+   with a teal accent mark that ties back to the brand colour. */
+
+.brief-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.52);
+  margin: 0 0 0.65rem;
+}
+
+/* ── Intro / strategic-position paragraphs ──
+   Every domain view starts with a one-paragraph context sentence.
+   All previously ranged from 0.85 rem–0.92 rem at 0.55–0.80 opacity. */
+
+.cls-view__position,
+.pri-view__position,
+.opp-discovery__position,
+.cdi-view__position,
+.adp-view__position,
+.dae-view__position,
+.cds-view__position,
+.sia-view__position,
+.apr-view__position,
+.aee-view__position,
+.asa-view__position,
+.atr-view__position,
+.ala-view__position {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ── Card primary titles / names ──
+   Item names on dataset cards, role cards, skill cards, rec cards, etc.
+   Unified to one weight/size so every card reads the same across domains. */
+
+.cdi-dataset-card__name,
+.adp-dataset-card__name,
+.dae-sys-card__name,
+.dae-rec-card__title,
+.sia-sys-card__name,
+.cds-workload-card__name,
+.cds-rec-card__text,
+.aee-cap-card__name,
+.asa-skill-card__name,
+.asa-rec-item__title,
+.atr-role-card__name,
+.atr-rec-item__title,
+.ala-pillar-card__name,
+.ala-rec-item__title,
+.apr-rec-item__text {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  margin: 0;
+}
+
+/* ── Card secondary descriptions / purposes ──
+   Supporting text below card titles. */
+
+.cdi-dataset-card__purpose,
+.cds-workload-card__spec,
+.ala-pillar-card__desc,
+.atr-role-card__resp {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.64);
+  line-height: 1.52;
+  margin: 0;
+}
+
+/* ── Meta / tertiary text ──
+   Smallest tier: category tags, scores, meta rows, benefit italics. */
+
+.cdi-dataset-card__category,
+.aee-cap-card__score,
+.asa-skill-card__meta,
+.asa-rec-item__meta,
+.asa-rec-item__benefit,
+.atr-rec-item__meta,
+.atr-rec-item__impact,
+.ala-rec-item__meta,
+.ala-rec-item__outcome,
+.apr-rec-item__meta,
+.apr-rec-item__benefit,
+.cds-rec-card__impact-row,
+.cds-rec-card__reason,
+.dae-rec-meta-row,
+.sia-sys-card__method,
+.adp-rec-card__meta {
+  font-size: 0.71rem;
+  color: rgba(255,255,255,0.44);
+  line-height: 1.42;
+}
+
+/* ── Matrix row category labels ──
+   Row headers in the Skills Assessment matrix. */
+
+.asa-matrix-row__cat {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+}
+
+/* ── Recommendation benefit italics: keep italic style, just normalise size ── */
+.asa-rec-item__benefit,
+.atr-rec-item__impact,
+.ala-rec-item__outcome,
+.apr-rec-item__benefit,
+.cds-rec-card__reason {
+  font-style: italic;
+}

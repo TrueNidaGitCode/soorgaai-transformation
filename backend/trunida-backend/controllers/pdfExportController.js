@@ -7,8 +7,8 @@
  * The PDF is executive-ready and contains no platform branding.
  */
 
-import CompanyBlueprint     from '../models/CompanyBlueprint.js';
-import UserProfile           from '../models/UserProfile.js';
+import TransformationBlueprint from '../models/TransformationBlueprint.js';
+import UserProfile              from '../models/UserProfile.js';
 import { generateBlueprintPDF } from '../services/pdfExportService.js';
 
 export async function exportBlueprintPDF(req, res) {
@@ -16,7 +16,7 @@ export async function exportBlueprintPDF(req, res) {
     const userId = req.user._id;
 
     const [blueprint, profile] = await Promise.all([
-      CompanyBlueprint.findOne({ userId }).sort({ createdAt: -1 }).lean(),
+      TransformationBlueprint.findOne({ userId }).sort({ createdAt: -1 }).lean(),
       UserProfile.findOne({ userId }).lean(),
     ]);
 

@@ -1281,7 +1281,11 @@ function buildSectionContent(section) {
 
 function buildExecContent(bp, container, tocEntries) {
   tocEntries.push({ title: 'Executive Summary', level: 1 });
-  var completed = (bp.capabilities || []).filter(function(c) { return c.status === 'completed'; });
+  var allCaps = [];
+  (bp.domains || []).forEach(function(domain) {
+    (domain.capabilities || []).forEach(function(cap) { allCaps.push(cap); });
+  });
+  var completed = allCaps.filter(function(c) { return c.status === 'completed'; });
 
   function makeSection(labelText, bodyEl, accent) {
     var sec = document.createElement('div');
@@ -1340,46 +1344,57 @@ function buildExecContent(bp, container, tocEntries) {
 }
 
 function renderBlueprint(bp) {
-  var completed = (bp.capabilities || []).filter(function(c) { return c.status === 'completed'; });
   var tocEntries = [];
 
   // Executive summary
   var execContainer = document.getElementById('exec-content');
   if (execContainer) buildExecContent(bp, execContainer, tocEntries);
 
-  // Capability sections
+  // Domain → capability sections
   var capRoot = document.getElementById('capabilities-root');
   if (capRoot) {
-    completed.forEach(function(cap) {
-      tocEntries.push({ title: cap.capabilityName, level: 1 });
+    (bp.domains || []).forEach(function(domain) {
+      var completedCaps = (domain.capabilities || []).filter(function(c) { return c.status === 'completed'; });
+      if (!completedCaps.length) return;
 
-      var capPage = document.createElement('div');
-      capPage.className = 'pdf-cap';
+      tocEntries.push({ title: domain.domainName, level: 0 });
 
-      var capTitle = document.createElement('h2');
-      capTitle.className = 'pdf-cap-title'; capTitle.textContent = cap.capabilityName;
-      capPage.appendChild(capTitle);
+      completedCaps.forEach(function(cap) {
+        tocEntries.push({ title: cap.capabilityName, level: 1 });
 
-      var hr = document.createElement('hr');
-      hr.className = 'pdf-cap-rule';
-      capPage.appendChild(hr);
+        var capPage = document.createElement('div');
+        capPage.className = 'pdf-cap';
 
-      (cap.sections || []).forEach(function(section) {
-        if (!section.brief || !section.brief.strategicPosition) return;
-        tocEntries.push({ title: section.title, level: 2 });
+        var domainLbl = document.createElement('p');
+        domainLbl.className = 'pdf-domain-label';
+        domainLbl.textContent = (domain.domainName || '').toUpperCase();
+        capPage.appendChild(domainLbl);
 
-        var secWrap = document.createElement('div');
-        secWrap.className = 'pdf-section';
+        var capTitle = document.createElement('h2');
+        capTitle.className = 'pdf-cap-title'; capTitle.textContent = cap.capabilityName;
+        capPage.appendChild(capTitle);
 
-        var secTitle = document.createElement('h3');
-        secTitle.className = 'pdf-section-h3'; secTitle.textContent = section.title;
-        secWrap.appendChild(secTitle);
+        var hr = document.createElement('hr');
+        hr.className = 'pdf-cap-rule';
+        capPage.appendChild(hr);
 
-        secWrap.appendChild(buildSectionContent(section));
-        capPage.appendChild(secWrap);
+        (cap.sections || []).forEach(function(section) {
+          if (!section.brief || !section.brief.strategicPosition) return;
+          tocEntries.push({ title: section.title, level: 2 });
+
+          var secWrap = document.createElement('div');
+          secWrap.className = 'pdf-section';
+
+          var secTitle = document.createElement('h3');
+          secTitle.className = 'pdf-section-h3'; secTitle.textContent = section.title;
+          secWrap.appendChild(secTitle);
+
+          secWrap.appendChild(buildSectionContent(section));
+          capPage.appendChild(secWrap);
+        });
+
+        capRoot.appendChild(capPage);
       });
-
-      capRoot.appendChild(capPage);
     });
   }
 
@@ -1390,7 +1405,9 @@ function renderBlueprint(bp) {
     tocList.className = 'toc-list';
     tocEntries.forEach(function(entry) {
       var row = document.createElement('div');
-      row.className = entry.level === 1 ? 'toc-row toc-row--cap' : 'toc-row toc-row--section';
+      row.className = entry.level === 0 ? 'toc-row toc-row--domain'
+                    : entry.level === 1 ? 'toc-row toc-row--cap'
+                    : 'toc-row toc-row--section';
       row.textContent = entry.title;
       tocList.appendChild(row);
     });
@@ -1526,8 +1543,15 @@ html, body {
 /* ── TOC ── */
 .toc-list { display: flex; flex-direction: column; gap: 0.3rem; }
 .toc-row { font-size: 0.9rem; color: rgba(255,255,255,0.72); padding: 0.28rem 0; }
-.toc-row--cap { font-weight: 700; color: rgba(255,255,255,0.92); font-size: 1rem; margin-top: 0.5rem; }
-.toc-row--section { padding-left: 1.5rem; font-size: 0.85rem; color: rgba(255,255,255,0.52); }
+.toc-row--domain { font-weight: 800; color: rgba(92,197,167,0.9); font-size: 1.05rem; margin-top: 1rem; padding-bottom: 0.2rem; border-bottom: 1px solid rgba(92,197,167,0.2); }
+.toc-row--cap { font-weight: 700; color: rgba(255,255,255,0.92); font-size: 0.95rem; margin-top: 0.4rem; padding-left: 1rem; }
+.toc-row--section { padding-left: 2rem; font-size: 0.82rem; color: rgba(255,255,255,0.48); }
+
+/* ── Domain label above capability heading ── */
+.pdf-domain-label {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(92,197,167,0.72); margin: 0 0 0.3rem;
+}
 
 /* ── Executive summary ── */
 .exec-section { margin-bottom: 1.25rem; }
@@ -1802,7 +1826,7 @@ function buildCoverPageHTML(blueprint) {
   <div class="cover-body">
     <div class="cover-company">${company}</div>
     <div class="cover-industry">${industry}</div>
-    <div class="cover-blueprint-title">AI Strategy Blueprint</div>
+    <div class="cover-blueprint-title">AI Transformation Blueprint</div>
     <div class="cover-divider"></div>
     <div class="cover-meta">${rows}</div>
   </div>
@@ -1826,13 +1850,16 @@ function buildAppendixPageHTML(blueprint) {
       <span class="appendix-meta-val">${v}</span>
     </div>`).join('');
 
-  const capRows = (blueprint.capabilities || []).map(cap => {
-    const done = cap.status === 'completed';
-    return `<tr>
-      <td>${cap.capabilityName || '—'}</td>
-      <td class="${done ? 'status-complete' : 'status-other'}">${done ? 'Complete' : (cap.status || '—')}</td>
-    </tr>`;
-  }).join('');
+  const capRows = (blueprint.domains || []).flatMap(domain =>
+    (domain.capabilities || []).map(cap => {
+      const done = cap.status === 'completed';
+      return `<tr>
+        <td>${domain.domainName || '—'}</td>
+        <td>${cap.capabilityName || '—'}</td>
+        <td class="${done ? 'status-complete' : 'status-other'}">${done ? 'Complete' : (cap.status || '—')}</td>
+      </tr>`;
+    })
+  ).join('');
 
   return `
 <div class="pdf-page">
@@ -1840,7 +1867,7 @@ function buildAppendixPageHTML(blueprint) {
   <div class="appendix-meta">${meta}</div>
   <p class="brief-label" style="margin-bottom:0.75rem">CAPABILITY COMPLETION STATUS</p>
   <table class="appendix-cap-table">
-    <thead><tr><th>Capability</th><th>Status</th></tr></thead>
+    <thead><tr><th>Domain</th><th>Capability</th><th>Status</th></tr></thead>
     <tbody>${capRows}</tbody>
   </table>
 </div>`;

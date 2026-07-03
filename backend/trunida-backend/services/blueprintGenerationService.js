@@ -2334,6 +2334,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
  * Called fire-and-forget from the controller.
  */
 export async function generateSpecificDomainsAsync(blueprintId, userId, businessObjective, domainIds) {
+  try {
   const companyProfile = await loadCompanyProfile(userId);
   const industry       = companyProfile.industry || 'Automotive';
   const allDomains     = enabledDomains();
@@ -2348,6 +2349,35 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
       );
       console.log(`[domainRegen] ⚡ ${domain.name} — no KB docs yet, skipped`);
       continue;
+    }
+
+    // Seed any capabilities that are missing from the blueprint document
+    // (happens when the blueprint was created before KB files existed)
+    const bpSnap = await TransformationBlueprint.findOne(
+      { _id: blueprintId, 'domains.domainId': domain.id },
+      { 'domains.$': 1 }
+    ).lean();
+    const existingCapIds = new Set(
+      (bpSnap?.domains?.[0]?.capabilities || []).map(c => c.capabilityId)
+    );
+    const missingCaps = caps.filter(c => !existingCapIds.has(c.id));
+    if (missingCaps.length) {
+      await TransformationBlueprint.updateOne(
+        { _id: blueprintId, 'domains.domainId': domain.id },
+        {
+          $push: {
+            'domains.$.capabilities': {
+              $each: missingCaps.map(c => ({
+                capabilityId:   c.id,
+                capabilityName: c.name,
+                status:         'pending',
+                sections:       [],
+              })),
+            },
+          },
+        }
+      );
+      console.log(`[domainRegen] seeded ${missingCaps.length} missing caps for ${domain.name}`);
     }
 
     await TransformationBlueprint.updateOne(
@@ -2428,4 +2458,12 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
     { $set: { status: 'completed', updatedAt: new Date() } }
   );
   console.log(`[domainRegen] Done — domains: ${domainIds.join(', ')}`);
+
+  } catch (err) {
+    console.error(`[domainRegen] Fatal error for blueprint ${blueprintId}:`, err.message);
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId },
+      { $set: { status: 'error', updatedAt: new Date() } }
+    ).catch(() => {});
+  }
 }

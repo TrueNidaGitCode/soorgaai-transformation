@@ -8,16 +8,16 @@
 
 export const DOMAINS = [
   {
-    id:      'ai-strategy',
-    name:    'AI Strategy',
-    enabled: true,
-    kbPath:  'AI_Strategy',
-  },
-  {
     id:      'ai-use-cases',
     name:    'AI Use Cases',
     enabled: true,
     kbPath:  'AI_Use_Cases',
+  },
+  {
+    id:      'ai-strategy',
+    name:    'AI Strategy',
+    enabled: true,
+    kbPath:  'AI_Strategy',
   },
   {
     id:      'data-readiness',

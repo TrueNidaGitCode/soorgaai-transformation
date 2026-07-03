@@ -146,6 +146,38 @@ export async function getCapabilityEnterpriseContext(orgName, capabilityId) {
   ].join('\n');
 }
 
+/**
+ * Fetches the enterprise blueprint once and returns a Map<capabilityId, contextString>.
+ * Use before a multi-capability generation loop to avoid one DB query per capability.
+ * Returns an empty Map when there is no blueprint or orgName is blank.
+ */
+export async function preloadEnterpriseContextMap(orgName) {
+  if (!orgName) return new Map();
+
+  const blueprint = await EnterpriseBlueprint.findOne({ orgName }).lean().catch(() => null);
+  if (!blueprint) return new Map();
+
+  const map = new Map();
+  for (const cap of blueprint.capabilities) {
+    const filledSections = cap.sections.filter(s => s.content && s.content.trim().length > 0);
+    if (filledSections.length === 0) continue;
+
+    const sectionBlock = filledSections
+      .map(s => `[${s.title}]\n${s.content.trim()}`)
+      .join('\n\n');
+
+    map.set(cap.capabilityId, [
+      `=== ENTERPRISE BLUEPRINT — ${orgName} ===`,
+      `[CONFIDENTIAL — Authoritative strategic grounding for this organisation. Ground all generated content in this direction. Do not quote verbatim.]`,
+      `Capability: ${cap.capabilityName}`,
+      '',
+      sectionBlock,
+      `=== END ENTERPRISE BLUEPRINT ===`,
+    ].join('\n'));
+  }
+  return map;
+}
+
 // ── Stage 3b: Advisor context injection ──────────────────────────────────────
 
 /**

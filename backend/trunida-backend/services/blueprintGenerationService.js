@@ -31,7 +31,7 @@ import {
 } from './strategyCanvasService.js';
 import { BLUEPRINT_CONFIG }       from '../config/blueprintConfig.js';
 import { enabledDomains, getDomain } from '../config/domainRegistry.js';
-import { getCapabilityEnterpriseContext } from './enterpriseBlueprintService.js';
+import { getCapabilityEnterpriseContext, preloadEnterpriseContextMap } from './enterpriseBlueprintService.js';
 
 // ── Company profile helpers ───────────────────────────────────────────────────
 
@@ -2293,9 +2293,10 @@ export async function generateBlueprintAsync(blueprintId, userId, businessObject
 // Generates all enabled domains → capabilities in the TransformationBlueprint.
 // Called fire-and-forget. Domains without KB documents are skipped gracefully.
 export async function generateTransformationAsync(blueprintId, userId, businessObjective) {
-  const companyProfile = await loadCompanyProfile(userId);
-  const industry       = companyProfile.industry || 'Automotive';
-  const domains        = enabledDomains();
+  const companyProfile    = await loadCompanyProfile(userId);
+  const industry          = companyProfile.industry || 'Automotive';
+  const domains           = enabledDomains();
+  const enterpriseCtxMap  = await preloadEnterpriseContextMap(companyProfile.orgName || '');
 
   for (const domain of domains) {
     const caps = getDomainCapabilities(domain.kbPath);
@@ -2338,9 +2339,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
 
         // Reuse the existing generation pipeline
         const capObj = { id: cap.id, name: cap.name, objective: cap.objective };
-        const enterpriseContext = companyProfile.orgName
-          ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
-          : null;
+        const enterpriseContext = enterpriseCtxMap.get(cap.id) ?? null;
 
         let sections;
         if (BLUEPRINT_CONFIG.generate.essay) {

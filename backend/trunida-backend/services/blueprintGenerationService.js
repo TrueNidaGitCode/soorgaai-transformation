@@ -2071,10 +2071,26 @@ OUTPUT — valid JSON only, no markdown fences:
       'lifecycleStages', 'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',
+      // AI Use Cases extras
       'valueCategories', 'kpiPills', 'businessValueInsight',
       'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
       'primaryClassification', 'secondaryClassification', 'classificationCards', 'classificationInsight',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
+      // Data Readiness extras
+      'datasets', 'recommendations', 'coverageSummary', 'relationshipMap',
+      'inputDatasets', 'pipelineStages', 'prepRecommendations', 'dataStats', 'readinessSummary',
+      'projectSystems', 'archRecommendations', 'archStats', 'healthTimeline',
+      // Technology Infrastructure extras
+      'integrationReadiness', 'connectedSystems', 'integrationSummary',
+      'platformReadiness', 'capabilityAssessment', 'platformStack', 'platformRecommendations', 'platformSummary',
+      'deploymentReadiness', 'workloadProfile', 'deploymentRecommendations', 'deploymentScores', 'deploymentKpis',
+      'engineeringReadiness', 'engineeringCapabilities', 'engineeringLifecycle', 'engineeringRecommendations',
+      'automationStats', 'engineeringSummary',
+      // Skills & Workforce extras
+      'skillsReadiness', 'requiredSkills', 'skillsMatrix', 'skillsRecommendations', 'skillsStats', 'skillsCategorySummary',
+      'teamReadiness', 'requiredRoles', 'teamRecommendations', 'teamStats', 'teamCoverageSummary',
+      'adoptionReadiness', 'learningPillars', 'adoptionLifecycle', 'adoptionRecommendations',
+      'adoptionStats', 'adoptionReadinessSummary',
     ];
     for (const key of extraKeys) {
       if (b[key] !== undefined) {

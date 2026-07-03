@@ -64,7 +64,7 @@ export const DOMAINS = [
     name: 'AI Strategy',
     description:
       'Evaluates whether your organization has a clear, documented AI strategy aligned with business goals.',
-    icon: '🎯',
+    icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#5CC5A7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
     weight: 1 / 7,
     questions: [
       {
@@ -103,7 +103,7 @@ export const DOMAINS = [
     name: 'Leadership',
     description:
       'Measures the degree to which senior leadership actively champions and enables AI transformation.',
-    icon: '👥',
+    icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M3 21V7l9-5 9 5v14"/><path d="M9 21v-5h6v5"/></svg>`,
     weight: 1 / 7,
     questions: [
       {
@@ -142,7 +142,7 @@ export const DOMAINS = [
     name: 'AI Use Cases',
     description:
       'Assesses the breadth, depth, and business impact of AI use cases your organization has identified and deployed.',
-    icon: '💡',
+    icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>`,
     weight: 1 / 7,
     questions: [
       {
@@ -226,7 +226,7 @@ export const DOMAINS = [
     name: 'Technology Infrastructure',
     description:
       'Measures the maturity of your technology stack, cloud readiness, and MLOps capabilities.',
-    icon: '⚙️',
+    icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M9 2v2M9 20v2M2 15h2M2 9h2M20 15h2M20 9h2"/></svg>`,
     weight: 1 / 7,
     questions: [
       {
@@ -265,7 +265,7 @@ export const DOMAINS = [
     name: 'Skills & Workforce',
     description:
       'Assesses your organization\'s AI talent, upskilling programs, and cultural readiness for AI adoption.',
-    icon: '🧠',
+    icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
     weight: 1 / 7,
     questions: [
       {

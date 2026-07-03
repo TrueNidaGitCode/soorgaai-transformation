@@ -709,6 +709,7 @@
 .ws-done-cap-icon--domain {
   font-size: 1.2rem;
 }
+.ws-done-cap-icon--domain svg { display: block; }
 
 .ws-done-cap-body { flex: 1; min-width: 0; }
 

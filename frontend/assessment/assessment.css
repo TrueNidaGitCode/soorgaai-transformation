@@ -120,7 +120,10 @@ body {
 .domain-icon {
     font-size: 32px;
     line-height: 1;
+    display: flex;
+    align-items: center;
 }
+.domain-icon svg { display: block; }
 
 .domain-title {
     font-size: 22px;

@@ -1249,6 +1249,537 @@ function buildVisionLayout(section) {
   return wrap;
 }
 
+// ── New-domain shared helpers ─────────────────────────────────────────────────
+
+function buildStatusTable(rows, cols) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pdf-status-table';
+  const header = document.createElement('div');
+  header.className = 'pdf-status-table__header';
+  cols.forEach(function(col) {
+    const cell = document.createElement('span');
+    cell.className = 'pdf-status-table__hcell';
+    cell.textContent = col.label;
+    header.appendChild(cell);
+  });
+  wrap.appendChild(header);
+  rows.forEach(function(row) {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'pdf-status-table__row';
+    cols.forEach(function(col) {
+      const cell = document.createElement('span');
+      cell.className = 'pdf-status-table__cell';
+      cell.textContent = row[col.key] !== undefined ? String(row[col.key]) : '—';
+      rowEl.appendChild(cell);
+    });
+    wrap.appendChild(rowEl);
+  });
+  return wrap;
+}
+
+function buildTagList(items, label) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pdf-tag-list-wrap';
+  if (label) {
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = label;
+    wrap.appendChild(lbl);
+  }
+  const tagWrap = document.createElement('div');
+  tagWrap.className = 'pdf-tag-list';
+  items.forEach(function(item) {
+    const tag = document.createElement('span');
+    tag.className = 'pdf-tag';
+    tag.textContent = typeof item === 'string' ? item : (item.name || item.text || '');
+    tagWrap.appendChild(tag);
+  });
+  wrap.appendChild(tagWrap);
+  return wrap;
+}
+
+function buildPdfRecommendations(items, label) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pdf-recommendations';
+  if (label) {
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = label;
+    wrap.appendChild(lbl);
+  }
+  const list = document.createElement('div');
+  list.className = 'pdf-rec-list';
+  items.forEach(function(rec, i) {
+    const item = document.createElement('div');
+    item.className = 'pdf-rec-item';
+    const text = rec.text || rec.title || String(rec);
+    const priority = rec.priority || '';
+    const sub = rec.sub || rec.benefit || rec.impact || rec.reason || rec.expectedBenefit || rec.expectedOutcome || '';
+    const p = document.createElement('p');
+    p.className = 'pdf-rec-item__text';
+    p.textContent = (i + 1) + '. ' + text + (priority ? '  [' + priority + ']' : '');
+    item.appendChild(p);
+    if (sub) {
+      const s = document.createElement('p');
+      s.className = 'pdf-rec-item__sub'; s.textContent = sub;
+      item.appendChild(s);
+    }
+    list.appendChild(item);
+  });
+  wrap.appendChild(list);
+  return wrap;
+}
+
+function buildSummaryGrid(entries) {
+  const grid = document.createElement('div');
+  grid.className = 'pdf-summary-grid';
+  entries.forEach(function(entry) {
+    const cell = document.createElement('div');
+    cell.className = 'pdf-summary-cell';
+    const key = document.createElement('span');
+    key.className = 'pdf-summary-cell__key'; key.textContent = entry.key;
+    const val = document.createElement('span');
+    val.className = 'pdf-summary-cell__val'; val.textContent = entry.val || '—';
+    cell.appendChild(key); cell.appendChild(val);
+    grid.appendChild(cell);
+  });
+  return grid;
+}
+
+// ── New-domain layout functions ───────────────────────────────────────────────
+
+function buildAIOpportunityDiscoveryLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.businessProblems && b.businessProblems.length) wrap.appendChild(buildTagList(b.businessProblems, 'Key Business Problems'));
+  if (b.workflowSteps && b.workflowSteps.length) wrap.appendChild(buildTagList(b.workflowSteps, 'Current Workflow Steps'));
+  if (b.highEffortActivities && b.highEffortActivities.length) wrap.appendChild(buildTagList(b.highEffortActivities, 'High-Effort Activities'));
+  if (b.aiOpportunities && b.aiOpportunities.length) wrap.appendChild(buildTagList(b.aiOpportunities, 'AI Opportunities'));
+  return wrap;
+}
+
+function buildBusinessValueDefinitionLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.businessValueInsight) {
+    const ins = document.createElement('div'); ins.className = 'vision-statement';
+    const insL = document.createElement('p'); insL.className = 'brief-label'; insL.textContent = 'Business Value Insight';
+    const insT = document.createElement('p'); insT.className = 'vision-statement__text'; insT.textContent = b.businessValueInsight;
+    ins.appendChild(insL); ins.appendChild(insT); wrap.appendChild(ins);
+  }
+  if (b.valueCategories && b.valueCategories.length) {
+    const items = b.valueCategories.map(function(c) {
+      return { name: c.title, points: [c.focus].concat(c.outcomes || []) };
+    });
+    wrap.appendChild(buildDetailSection('Value Categories', buildPillarBulletCards(items, 'name')));
+  }
+  if (b.kpiPills && b.kpiPills.length) wrap.appendChild(buildTagList(b.kpiPills, 'Key Performance Indicators'));
+  return wrap;
+}
+
+function buildAIUseCasePrioritizationLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.recommendedStartingPoint) {
+    const rs = document.createElement('div'); rs.className = 'vision-statement';
+    const rsL = document.createElement('p'); rsL.className = 'brief-label'; rsL.textContent = 'Recommended Starting Point';
+    const rsT = document.createElement('p'); rsT.className = 'vision-statement__text'; rsT.textContent = b.recommendedStartingPoint;
+    rs.appendChild(rsL); rs.appendChild(rsT); wrap.appendChild(rs);
+  }
+  if (b.priorityQuadrants && b.priorityQuadrants.length) {
+    const items = b.priorityQuadrants.map(function(q) { return { name: q.label, points: q.initiatives || [] }; });
+    wrap.appendChild(buildDetailSection('Priority Matrix (Business Value × Feasibility)', buildPillarBulletCards(items, 'name')));
+  }
+  if (b.prioritizationInsight) {
+    const pi = document.createElement('div'); pi.className = 'vision-statement';
+    const piL = document.createElement('p'); piL.className = 'brief-label'; piL.textContent = 'Prioritization Insight';
+    const piT = document.createElement('p'); piT.className = 'vision-statement__text'; piT.textContent = b.prioritizationInsight;
+    pi.appendChild(piL); pi.appendChild(piT); wrap.appendChild(pi);
+  }
+  return wrap;
+}
+
+function buildAIUseCaseClassificationLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.primaryClassification) {
+    const pc = document.createElement('div'); pc.className = 'vision-statement';
+    const pcL = document.createElement('p'); pcL.className = 'brief-label'; pcL.textContent = 'Primary Classification: ' + b.primaryClassification.name;
+    const pcT = document.createElement('p'); pcT.className = 'vision-statement__text'; pcT.textContent = b.primaryClassification.description;
+    pc.appendChild(pcL); pc.appendChild(pcT); wrap.appendChild(pc);
+  }
+  if (b.classificationCards && b.classificationCards.length) {
+    const items = b.classificationCards.map(function(cc) {
+      return { name: cc.type, points: (cc.characteristics || []).concat(cc.examples || []) };
+    });
+    wrap.appendChild(buildDetailSection('AI Classification Categories', buildPillarBulletCards(items, 'name')));
+  }
+  if (b.classificationInsight) {
+    const ci = document.createElement('div'); ci.className = 'vision-statement';
+    const ciL = document.createElement('p'); ciL.className = 'brief-label'; ciL.textContent = 'Classification Insight';
+    const ciT = document.createElement('p'); ciT.className = 'vision-statement__text'; ciT.textContent = b.classificationInsight;
+    ci.appendChild(ciL); ci.appendChild(ciT); wrap.appendChild(ci);
+  }
+  return wrap;
+}
+
+function buildCriticalDataIdentificationLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.coverageSummary) {
+    const cs = b.coverageSummary;
+    const csSection = document.createElement('div'); csSection.className = 'cto-detail-section';
+    const csL = document.createElement('p'); csL.className = 'brief-label'; csL.textContent = 'Data Coverage Summary';
+    csSection.appendChild(csL);
+    csSection.appendChild(buildSummaryGrid([
+      { key: 'Critical Datasets', val: String(cs.criticalDatasets || 0) },
+      { key: 'Missing Data', val: String(cs.missingData || 0) },
+      { key: 'Confidence', val: (cs.confidence || 0) + '%' },
+    ]));
+    wrap.appendChild(csSection);
+  }
+  if (b.datasets && b.datasets.length) {
+    wrap.appendChild(buildDetailSection('Critical Datasets', buildStatusTable(b.datasets, [
+      { key: 'name', label: 'Dataset' },
+      { key: 'category', label: 'Category' },
+      { key: 'priority', label: 'Priority' },
+      { key: 'availability', label: 'Availability' },
+    ])));
+  }
+  if (b.recommendations && b.recommendations.length) {
+    wrap.appendChild(buildPdfRecommendations(b.recommendations.map(function(r) {
+      return { text: r.text || String(r), priority: r.priority };
+    }), 'Recommendations'));
+  }
+  return wrap;
+}
+
+function buildAIDataPreparationLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.pipelineStages && b.pipelineStages.length) {
+    wrap.appendChild(buildDetailSection('Pipeline Status', buildStatusTable(b.pipelineStages, [
+      { key: 'stage', label: 'Stage' },
+      { key: 'status', label: 'Status' },
+    ])));
+  }
+  if (b.readinessSummary) {
+    const rs = b.readinessSummary;
+    const rsSection = document.createElement('div'); rsSection.className = 'cto-detail-section';
+    const rsL = document.createElement('p'); rsL.className = 'brief-label'; rsL.textContent = 'Readiness Summary';
+    rsSection.appendChild(rsL);
+    rsSection.appendChild(buildSummaryGrid([
+      { key: 'Quality', val: (rs.quality || 0) + '%' },
+      { key: 'Standardization', val: (rs.standardization || 0) + '%' },
+      { key: 'Integration', val: (rs.integration || 0) + '%' },
+      { key: 'AI Readiness', val: (rs.aiReadiness || 0) + '%' },
+    ]));
+    wrap.appendChild(rsSection);
+  }
+  if (b.prepRecommendations && b.prepRecommendations.length) {
+    wrap.appendChild(buildPdfRecommendations(b.prepRecommendations.map(function(r) {
+      return { text: r.text, priority: r.priority, sub: r.impact };
+    }), 'Preparation Recommendations'));
+  }
+  return wrap;
+}
+
+function buildDataArchitectureEnablementLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.archStats) {
+    const as = b.archStats;
+    const asSection = document.createElement('div'); asSection.className = 'cto-detail-section';
+    const asL = document.createElement('p'); asL.className = 'brief-label'; asL.textContent = 'Architecture Stats';
+    asSection.appendChild(asL);
+    asSection.appendChild(buildSummaryGrid([
+      { key: 'Architecture Readiness', val: (as.architectureReadiness || 0) + '%' },
+      { key: 'Automation', val: (as.automation || 0) + '%' },
+      { key: 'Connected Systems', val: String(as.connectedSystems || 0) },
+      { key: 'Disconnected', val: String(as.disconnectedSystems || 0) },
+    ]));
+    wrap.appendChild(asSection);
+  }
+  if (b.healthTimeline && b.healthTimeline.length) {
+    wrap.appendChild(buildDetailSection('Architecture Health', buildStatusTable(b.healthTimeline, [
+      { key: 'stage', label: 'Layer' },
+      { key: 'status', label: 'Status' },
+      { key: 'health', label: 'Health' },
+    ])));
+  }
+  if (b.archRecommendations && b.archRecommendations.length) {
+    wrap.appendChild(buildPdfRecommendations(b.archRecommendations.map(function(r) {
+      return { text: r.title || String(r), priority: r.impact };
+    }), 'Architecture Recommendations'));
+  }
+  return wrap;
+}
+
+function buildSystemIntegrationLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.integrationReadiness !== undefined) {
+    const irSection = document.createElement('div'); irSection.className = 'cto-detail-section';
+    const irL = document.createElement('p'); irL.className = 'brief-label'; irL.textContent = 'Integration Overview';
+    irSection.appendChild(irL);
+    const summData = [{ key: 'Overall Readiness', val: b.integrationReadiness + '%' }];
+    if (b.integrationSummary) {
+      const s = b.integrationSummary;
+      if (s.integration) summData.push({ key: 'Integration', val: s.integration });
+      if (s.automation) summData.push({ key: 'Automation', val: s.automation });
+      if (s.reliability) summData.push({ key: 'Reliability', val: s.reliability });
+      if (s.scalability) summData.push({ key: 'Scalability', val: s.scalability });
+    }
+    irSection.appendChild(buildSummaryGrid(summData));
+    wrap.appendChild(irSection);
+  }
+  if (b.connectedSystems && b.connectedSystems.length) {
+    wrap.appendChild(buildDetailSection('Connected Systems', buildStatusTable(b.connectedSystems, [
+      { key: 'name', label: 'System' },
+      { key: 'integrationMethod', label: 'Method' },
+      { key: 'status', label: 'Status' },
+      { key: 'healthIndicator', label: 'Health' },
+    ])));
+  }
+  return wrap;
+}
+
+function buildAIPlatformReadinessLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.platformReadiness !== undefined) {
+    const prSection = document.createElement('div'); prSection.className = 'cto-detail-section';
+    const prL = document.createElement('p'); prL.className = 'brief-label';
+    prL.textContent = 'Platform Readiness: ' + b.platformReadiness + '%';
+    prSection.appendChild(prL);
+    if (b.platformSummary) {
+      const ps = b.platformSummary;
+      prSection.appendChild(buildSummaryGrid([
+        { key: 'Development', val: ps.development || '—' },
+        { key: 'Knowledge', val: ps.knowledge || '—' },
+        { key: 'Deployment', val: ps.deployment || '—' },
+        { key: 'Monitoring', val: ps.monitoring || '—' },
+      ]));
+    }
+    wrap.appendChild(prSection);
+  }
+  if (b.platformStack && b.platformStack.length) {
+    wrap.appendChild(buildDetailSection('Platform Stack Assessment', buildStatusTable(b.platformStack, [
+      { key: 'layer', label: 'Layer' },
+      { key: 'score', label: 'Score' },
+      { key: 'status', label: 'Status' },
+    ])));
+  }
+  if (b.platformRecommendations && b.platformRecommendations.length) {
+    wrap.appendChild(buildPdfRecommendations(b.platformRecommendations.map(function(r) {
+      return { text: r.text, priority: r.priority, sub: r.benefit };
+    }), 'Platform Recommendations'));
+  }
+  return wrap;
+}
+
+function buildAIComputeDeploymentLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.deploymentReadiness !== undefined || b.deploymentKpis) {
+    const drSection = document.createElement('div'); drSection.className = 'cto-detail-section';
+    const drL = document.createElement('p'); drL.className = 'brief-label';
+    drL.textContent = 'Deployment Readiness' + (b.deploymentReadiness !== undefined ? ': ' + b.deploymentReadiness + '%' : '');
+    drSection.appendChild(drL);
+    if (b.deploymentKpis) {
+      const kpis = b.deploymentKpis;
+      drSection.appendChild(buildSummaryGrid([
+        { key: 'Compute', val: kpis.compute || '—' },
+        { key: 'Deployment', val: kpis.deployment || '—' },
+        { key: 'Latency', val: kpis.latency || '—' },
+        { key: 'Scalability', val: kpis.scalability || '—' },
+      ]));
+    }
+    wrap.appendChild(drSection);
+  }
+  if (b.workloadProfile && b.workloadProfile.length) {
+    wrap.appendChild(buildDetailSection('Workload Profile', buildStatusTable(b.workloadProfile, [
+      { key: 'workloadType', label: 'Workload' },
+      { key: 'computeRequirement', label: 'Compute' },
+      { key: 'performanceRequirement', label: 'Performance' },
+      { key: 'priority', label: 'Priority' },
+    ])));
+  }
+  if (b.deploymentRecommendations && b.deploymentRecommendations.length) {
+    wrap.appendChild(buildPdfRecommendations(b.deploymentRecommendations.map(function(r) {
+      return { text: r.text, priority: r.impact, sub: r.reason };
+    }), 'Deployment Recommendations'));
+  }
+  return wrap;
+}
+
+function buildAIEngineeringEnablementLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.engineeringReadiness !== undefined || b.automationStats) {
+    const erSection = document.createElement('div'); erSection.className = 'cto-detail-section';
+    const erL = document.createElement('p'); erL.className = 'brief-label';
+    erL.textContent = 'Engineering Readiness' + (b.engineeringReadiness !== undefined ? ': ' + b.engineeringReadiness + '%' : '');
+    erSection.appendChild(erL);
+    if (b.automationStats) {
+      const as = b.automationStats;
+      erSection.appendChild(buildSummaryGrid([
+        { key: 'Automation', val: as.automation || '—' },
+        { key: 'Testing', val: as.testing || '—' },
+        { key: 'Deployment', val: as.deployment || '—' },
+      ]));
+    }
+    wrap.appendChild(erSection);
+  }
+  if (b.engineeringCapabilities && b.engineeringCapabilities.length) {
+    wrap.appendChild(buildDetailSection('Engineering Capabilities', buildStatusTable(b.engineeringCapabilities, [
+      { key: 'name', label: 'Capability' },
+      { key: 'score', label: 'Score' },
+      { key: 'status', label: 'Status' },
+    ])));
+  }
+  if (b.engineeringRecommendations && b.engineeringRecommendations.length) {
+    wrap.appendChild(buildPdfRecommendations(b.engineeringRecommendations.map(function(r) {
+      return { text: r.text, priority: r.priority };
+    }), 'Engineering Recommendations'));
+  }
+  return wrap;
+}
+
+function buildAISkillsAssessmentLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.skillsReadiness !== undefined || b.skillsStats) {
+    const srSection = document.createElement('div'); srSection.className = 'cto-detail-section';
+    const srL = document.createElement('p'); srL.className = 'brief-label';
+    srL.textContent = 'Skills Readiness' + (b.skillsReadiness !== undefined ? ': ' + b.skillsReadiness + '%' : '');
+    srSection.appendChild(srL);
+    if (b.skillsStats) {
+      const ss = b.skillsStats;
+      srSection.appendChild(buildSummaryGrid([
+        { key: 'Available', val: String(ss.available || 0) },
+        { key: 'Gaps', val: String(ss.gaps || 0) },
+        { key: 'Critical Gaps', val: String(ss.critical || 0) },
+      ]));
+    }
+    wrap.appendChild(srSection);
+  }
+  if (b.skillsMatrix && b.skillsMatrix.length) {
+    wrap.appendChild(buildDetailSection('Skills Matrix', buildStatusTable(b.skillsMatrix, [
+      { key: 'category', label: 'Category' },
+      { key: 'readiness', label: 'Readiness' },
+      { key: 'required', label: 'Required' },
+      { key: 'missing', label: 'Missing' },
+    ])));
+  }
+  if (b.skillsRecommendations && b.skillsRecommendations.length) {
+    wrap.appendChild(buildPdfRecommendations(b.skillsRecommendations.map(function(r) {
+      return { text: r.title, priority: r.priority, sub: r.expectedBenefit };
+    }), 'Skills Recommendations'));
+  }
+  return wrap;
+}
+
+function buildAITeamReadinessLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.teamReadiness !== undefined || b.teamStats) {
+    const trSection = document.createElement('div'); trSection.className = 'cto-detail-section';
+    const trL = document.createElement('p'); trL.className = 'brief-label';
+    trL.textContent = 'Team Readiness' + (b.teamReadiness !== undefined ? ': ' + b.teamReadiness + '%' : '');
+    trSection.appendChild(trL);
+    if (b.teamStats) {
+      const ts = b.teamStats;
+      trSection.appendChild(buildSummaryGrid([
+        { key: 'Required Roles', val: String(ts.required || 0) },
+        { key: 'Available', val: String(ts.available || 0) },
+        { key: 'Missing / Partial', val: String(ts.missing || 0) },
+      ]));
+    }
+    wrap.appendChild(trSection);
+  }
+  if (b.requiredRoles && b.requiredRoles.length) {
+    wrap.appendChild(buildDetailSection('Required Roles', buildStatusTable(b.requiredRoles, [
+      { key: 'name', label: 'Role' },
+      { key: 'responsibility', label: 'Responsibility' },
+      { key: 'availability', label: 'Availability' },
+      { key: 'priority', label: 'Priority' },
+    ])));
+  }
+  if (b.teamRecommendations && b.teamRecommendations.length) {
+    wrap.appendChild(buildPdfRecommendations(b.teamRecommendations.map(function(r) {
+      return { text: r.title, priority: r.priority, sub: r.impact };
+    }), 'Team Recommendations'));
+  }
+  return wrap;
+}
+
+function buildAILearningAdoptionLayout(section) {
+  const b = section.brief || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.adoptionReadiness !== undefined || b.adoptionStats) {
+    const arSection = document.createElement('div'); arSection.className = 'cto-detail-section';
+    const arL = document.createElement('p'); arL.className = 'brief-label';
+    arL.textContent = 'Adoption Readiness' + (b.adoptionReadiness !== undefined ? ': ' + b.adoptionReadiness + '%' : '');
+    arSection.appendChild(arL);
+    if (b.adoptionStats) {
+      const as = b.adoptionStats;
+      arSection.appendChild(buildSummaryGrid([
+        { key: 'Teams Trained', val: String(as.teamsTrained || 0) },
+        { key: 'Tools Adopted', val: String(as.toolsAdopted || 0) },
+        { key: 'Adoption Rate', val: as.adoptionRate || '—' },
+      ]));
+    }
+    wrap.appendChild(arSection);
+  }
+  if (b.learningPillars && b.learningPillars.length) {
+    wrap.appendChild(buildDetailSection('Learning Pillars', buildStatusTable(b.learningPillars, [
+      { key: 'name', label: 'Pillar' },
+      { key: 'description', label: 'Focus' },
+      { key: 'status', label: 'Status' },
+    ])));
+  }
+  if (b.adoptionLifecycle && b.adoptionLifecycle.length) {
+    const lcSection = document.createElement('div'); lcSection.className = 'cto-detail-section';
+    const lcL = document.createElement('p'); lcL.className = 'brief-label'; lcL.textContent = 'Adoption Lifecycle';
+    lcSection.appendChild(lcL);
+    lcSection.appendChild(buildPillChain(b.adoptionLifecycle, 'stage'));
+    wrap.appendChild(lcSection);
+  }
+  if (b.adoptionRecommendations && b.adoptionRecommendations.length) {
+    wrap.appendChild(buildPdfRecommendations(b.adoptionRecommendations.map(function(r) {
+      return { text: r.title, priority: r.priority, sub: r.expectedOutcome };
+    }), 'Adoption Recommendations'));
+  }
+  return wrap;
+}
+
 // ── PDF-specific render functions ─────────────────────────────────────────────
 
 function buildSectionContent(section) {
@@ -1269,6 +1800,24 @@ function buildSectionContent(section) {
   if (t === 'Model Validation & Monitoring')    return buildModelValidationLayout(section);
   if (t === 'Regulatory Compliance')            return buildRegulatoryComplianceLayout(section);
   if (t === 'Trust & Adoption')                 return buildTrustAdoptionLayout(section);
+  // AI Use Cases
+  if (t === 'AI Opportunity Discovery')          return buildAIOpportunityDiscoveryLayout(section);
+  if (t === 'Business Value Definition')         return buildBusinessValueDefinitionLayout(section);
+  if (t === 'AI Use Case Prioritization')        return buildAIUseCasePrioritizationLayout(section);
+  if (t === 'AI Use Case Classification')        return buildAIUseCaseClassificationLayout(section);
+  // Data Readiness
+  if (t === 'Critical Data Identification')      return buildCriticalDataIdentificationLayout(section);
+  if (t === 'AI Data Preparation')               return buildAIDataPreparationLayout(section);
+  if (t === 'Data Architecture Enablement')      return buildDataArchitectureEnablementLayout(section);
+  // Technology Infrastructure
+  if (t === 'System Integration & Architecture') return buildSystemIntegrationLayout(section);
+  if (t === 'AI Platform Readiness')             return buildAIPlatformReadinessLayout(section);
+  if (t === 'AI Compute & Deployment Strategy')  return buildAIComputeDeploymentLayout(section);
+  if (t === 'AI Engineering Enablement')         return buildAIEngineeringEnablementLayout(section);
+  // Skills & Workforce
+  if (t === 'AI Skills Assessment')              return buildAISkillsAssessmentLayout(section);
+  if (t === 'AI Team Readiness')                 return buildAITeamReadinessLayout(section);
+  if (t === 'AI Learning & Adoption')            return buildAILearningAdoptionLayout(section);
   // Default: strategic position only
   var div = document.createElement('div');
   div.className = 'vision-statement';
@@ -1454,6 +2003,24 @@ const BROWSER_FUNCTIONS = [
   buildRegulatoryComplianceLayout,
   buildTrustAdoptionLayout,
   buildVisionLayout,
+  buildStatusTable,
+  buildTagList,
+  buildPdfRecommendations,
+  buildSummaryGrid,
+  buildAIOpportunityDiscoveryLayout,
+  buildBusinessValueDefinitionLayout,
+  buildAIUseCasePrioritizationLayout,
+  buildAIUseCaseClassificationLayout,
+  buildCriticalDataIdentificationLayout,
+  buildAIDataPreparationLayout,
+  buildDataArchitectureEnablementLayout,
+  buildSystemIntegrationLayout,
+  buildAIPlatformReadinessLayout,
+  buildAIComputeDeploymentLayout,
+  buildAIEngineeringEnablementLayout,
+  buildAISkillsAssessmentLayout,
+  buildAITeamReadinessLayout,
+  buildAILearningAdoptionLayout,
   buildSectionContent,
   buildExecContent,
   renderBlueprint,
@@ -1768,6 +2335,31 @@ html, body {
 .model-validation-layout,
 .regulatory-compliance-layout,
 .trust-adoption-layout { display: flex; flex-direction: column; gap: 1rem; }
+
+/* ── New-domain shared components ── */
+.new-domain-layout { display: flex; flex-direction: column; gap: 1rem; }
+
+.pdf-status-table { display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.08); border-radius: 0.55rem; overflow: hidden; }
+.pdf-status-table__header { display: flex; background: rgba(99,102,241,0.1); padding: 0.5rem 0.85rem; }
+.pdf-status-table__hcell { flex: 1; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(160,163,255,0.82); }
+.pdf-status-table__row { display: flex; padding: 0.55rem 0.85rem; border-top: 1px solid rgba(255,255,255,0.05); }
+.pdf-status-table__row:nth-child(even) { background: rgba(255,255,255,0.015); }
+.pdf-status-table__cell { flex: 1; font-size: 0.79rem; color: rgba(255,255,255,0.72); line-height: 1.45; }
+
+.pdf-tag-list-wrap { display: flex; flex-direction: column; gap: 0.5rem; }
+.pdf-tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.pdf-tag { display: inline-block; font-size: 0.74rem; font-weight: 500; padding: 0.25rem 0.7rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.28); border-radius: 1rem; color: rgba(255,255,255,0.78); white-space: nowrap; }
+
+.pdf-recommendations { display: flex; flex-direction: column; gap: 0.5rem; }
+.pdf-rec-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.pdf-rec-item { padding: 0.6rem 1rem 0.6rem 1.1rem; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-left: 2px solid rgba(99,102,241,0.45); border-radius: 0 0.45rem 0.45rem 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.pdf-rec-item__text { font-size: 0.82rem; font-weight: 500; color: rgba(255,255,255,0.84); margin: 0; line-height: 1.5; }
+.pdf-rec-item__sub { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin: 0; line-height: 1.4; }
+
+.pdf-summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.6rem; }
+.pdf-summary-cell { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem; padding: 0.6rem 0.85rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.pdf-summary-cell__key { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.36); }
+.pdf-summary-cell__val { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.2; }
 
 /* ── Page-break control ─────────────────────────────────────────────── */
 /* Keep section headings bound to their first content block */

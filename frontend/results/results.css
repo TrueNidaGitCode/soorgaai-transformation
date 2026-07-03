@@ -148,7 +148,8 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); }
     font-size: 15px;
 }
 
-.domain-card-icon { font-size: 20px; }
+.domain-card-icon { font-size: 20px; display: inline-flex; align-items: center; vertical-align: middle; }
+.domain-card-icon svg { display: block; }
 
 .domain-card-score {
     font-size: 22px;

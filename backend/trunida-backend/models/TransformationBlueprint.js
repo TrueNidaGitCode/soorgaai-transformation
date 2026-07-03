@@ -38,6 +38,54 @@ const dimensionCardSchema       = new mongoose.Schema({ title: String, bullets: 
 const classificationSchema      = new mongoose.Schema({ name: String, description: String }, { _id: false });
 const classificationCardSchema  = new mongoose.Schema({ type: String, purpose: String, characteristics: [String], examples: [String] }, { _id: false });
 
+// ── Data Readiness sub-schemas ────────────────────────────────────────────────
+const datasetSchema             = new mongoose.Schema({ name: String, purpose: String, priority: String, availability: String, category: String }, { _id: false });
+const drRecommendationSchema    = new mongoose.Schema({ text: String, priority: String }, { _id: false });
+const coverageSummarySchema     = new mongoose.Schema({ criticalDatasets: Number, missingData: Number, confidence: Number }, { _id: false });
+const relationshipMapSchema     = new mongoose.Schema({ dataSource: [String], dependentData: [String], relatedData: [String], targetData: [String] }, { _id: false });
+const inputDatasetSchema        = new mongoose.Schema({ name: String, status: String }, { _id: false });
+const pipelineStageSchema       = new mongoose.Schema({ stage: String, status: String }, { _id: false });
+const prepRecommendationSchema  = new mongoose.Schema({ text: String, priority: String, effort: String, impact: String }, { _id: false });
+const dataStatsSchema           = new mongoose.Schema({ missingData: Number, dataQuality: Number, traceability: Number }, { _id: false });
+const readinessSummarySchema    = new mongoose.Schema({ quality: Number, standardization: Number, integration: Number, aiReadiness: Number }, { _id: false });
+const projectSystemSchema       = new mongoose.Schema({ name: String, connectionStatus: String }, { _id: false });
+const archRecommendationSchema  = new mongoose.Schema({ title: String, impact: String, effort: String }, { _id: false });
+const archStatsSchema           = new mongoose.Schema({ architectureReadiness: Number, automation: Number, connectedSystems: Number, disconnectedSystems: Number }, { _id: false });
+const healthTimelineSchema      = new mongoose.Schema({ stage: String, status: String, health: String }, { _id: false });
+
+// ── Technology Infrastructure sub-schemas ─────────────────────────────────────
+const connectedSystemSchema         = new mongoose.Schema({ name: String, integrationMethod: String, status: String, healthIndicator: String }, { _id: false });
+const integrationSummarySchema      = new mongoose.Schema({ integration: String, automation: String, reliability: String, scalability: String }, { _id: false });
+const capabilityAssessmentSchema    = new mongoose.Schema({ name: String, score: Number, status: String }, { _id: false });
+const platformStackLayerSchema      = new mongoose.Schema({ layer: String, score: Number, status: String }, { _id: false });
+const platformRecommendationSchema  = new mongoose.Schema({ text: String, priority: String, benefit: String }, { _id: false });
+const platformSummarySchema         = new mongoose.Schema({ development: String, knowledge: String, deployment: String, monitoring: String }, { _id: false });
+const workloadProfileSchema         = new mongoose.Schema({ workloadType: String, computeRequirement: String, performanceRequirement: String, scalabilityRequirement: String, priority: String }, { _id: false });
+const deploymentRecommendationSchema = new mongoose.Schema({ text: String, impact: String, reason: String }, { _id: false });
+const deploymentScoresSchema        = new mongoose.Schema({ computeFit: Number, deploymentConfidence: Number, estimatedScalability: String }, { _id: false });
+const deploymentKpisSchema          = new mongoose.Schema({ compute: String, deployment: String, latency: String, scalability: String }, { _id: false });
+const engineeringCapabilitySchema   = new mongoose.Schema({ name: String, status: String, score: Number }, { _id: false });
+const engineeringLifecycleSchema    = new mongoose.Schema({ stage: String, readiness: Number, automation: String }, { _id: false });
+const engineeringRecommendationSchema = new mongoose.Schema({ text: String, priority: String, businessImpact: String }, { _id: false });
+const automationStatsSchema         = new mongoose.Schema({ automation: String, testing: String, deployment: String }, { _id: false });
+const engineeringSummarySchema      = new mongoose.Schema({ development: String, testing: String, deployment: String, continuousImprovement: String }, { _id: false });
+
+// ── Skills & Workforce sub-schemas ────────────────────────────────────────────
+const requiredSkillSchema           = new mongoose.Schema({ name: String, category: String, priority: String, availability: String }, { _id: false });
+const skillsMatrixEntrySchema       = new mongoose.Schema({ category: String, readiness: Number, required: Number, missing: Number }, { _id: false });
+const skillsRecommendationSchema    = new mongoose.Schema({ title: String, priority: String, expectedBenefit: String }, { _id: false });
+const skillsStatsSchema             = new mongoose.Schema({ available: Number, gaps: Number, critical: Number }, { _id: false });
+const skillsCategorySummarySchema   = new mongoose.Schema({ category: String, status: String }, { _id: false });
+const requiredRoleSchema            = new mongoose.Schema({ name: String, responsibility: String, availability: String, priority: String }, { _id: false });
+const teamRecommendationSchema      = new mongoose.Schema({ title: String, priority: String, impact: String }, { _id: false });
+const teamStatsSchema               = new mongoose.Schema({ required: Number, available: Number, missing: Number }, { _id: false });
+const teamCoverageSummarySchema     = new mongoose.Schema({ category: String, status: String }, { _id: false });
+const learningPillarSchema          = new mongoose.Schema({ name: String, description: String, status: String }, { _id: false });
+const adoptionLifecycleStageSchema  = new mongoose.Schema({ stage: String, currentStatus: String, readiness: Number, keyActivities: [String] }, { _id: false });
+const adoptionRecommendationSchema  = new mongoose.Schema({ title: String, priority: String, expectedOutcome: String }, { _id: false });
+const adoptionStatsSchema           = new mongoose.Schema({ teamsTrained: Number, toolsAdopted: Number, adoptionRate: String }, { _id: false });
+const adoptionReadinessSummarySchema = new mongoose.Schema({ category: String, status: String }, { _id: false });
+
 const briefSchema = new mongoose.Schema({
   strategicPosition:    { type: String, default: '' },
   priorityActions:      { type: [String], default: [] },
@@ -80,6 +128,65 @@ const briefSchema = new mongoose.Schema({
   secondaryClassification:  { type: classificationSchema,       default: undefined },
   classificationCards:      { type: [classificationCardSchema], default: [] },
   classificationInsight:    { type: String,   default: '' },
+  // Data Readiness: Critical Data Identification extras
+  datasets:                 { type: [datasetSchema],            default: [] },
+  recommendations:          { type: [drRecommendationSchema],   default: [] },
+  coverageSummary:          { type: coverageSummarySchema,      default: undefined },
+  relationshipMap:          { type: relationshipMapSchema,      default: undefined },
+  // Data Readiness: AI Data Preparation extras
+  inputDatasets:            { type: [inputDatasetSchema],       default: [] },
+  pipelineStages:           { type: [pipelineStageSchema],      default: [] },
+  prepRecommendations:      { type: [prepRecommendationSchema], default: [] },
+  dataStats:                { type: dataStatsSchema,            default: undefined },
+  readinessSummary:         { type: readinessSummarySchema,     default: undefined },
+  // Data Readiness: Data Architecture Enablement extras
+  projectSystems:           { type: [projectSystemSchema],      default: [] },
+  archRecommendations:      { type: [archRecommendationSchema], default: [] },
+  archStats:                { type: archStatsSchema,            default: undefined },
+  healthTimeline:           { type: [healthTimelineSchema],     default: [] },
+  // Technology Infrastructure: System Integration & Architecture extras
+  integrationReadiness:     { type: Number,   default: 0 },
+  connectedSystems:         { type: [connectedSystemSchema],          default: [] },
+  integrationSummary:       { type: integrationSummarySchema,         default: undefined },
+  // Technology Infrastructure: AI Platform Readiness extras
+  platformReadiness:        { type: Number,   default: 0 },
+  capabilityAssessment:     { type: [capabilityAssessmentSchema],     default: [] },
+  platformStack:            { type: [platformStackLayerSchema],       default: [] },
+  platformRecommendations:  { type: [platformRecommendationSchema],   default: [] },
+  platformSummary:          { type: platformSummarySchema,            default: undefined },
+  // Technology Infrastructure: AI Compute & Deployment Strategy extras
+  deploymentReadiness:      { type: Number,   default: 0 },
+  workloadProfile:          { type: [workloadProfileSchema],          default: [] },
+  deploymentRecommendations: { type: [deploymentRecommendationSchema], default: [] },
+  deploymentScores:         { type: deploymentScoresSchema,           default: undefined },
+  deploymentKpis:           { type: deploymentKpisSchema,             default: undefined },
+  // Technology Infrastructure: AI Engineering Enablement extras
+  engineeringReadiness:     { type: Number,   default: 0 },
+  engineeringCapabilities:  { type: [engineeringCapabilitySchema],    default: [] },
+  engineeringLifecycle:     { type: [engineeringLifecycleSchema],     default: [] },
+  engineeringRecommendations: { type: [engineeringRecommendationSchema], default: [] },
+  automationStats:          { type: automationStatsSchema,            default: undefined },
+  engineeringSummary:       { type: engineeringSummarySchema,         default: undefined },
+  // Skills & Workforce: AI Skills Assessment extras
+  skillsReadiness:          { type: Number,   default: 0 },
+  requiredSkills:           { type: [requiredSkillSchema],            default: [] },
+  skillsMatrix:             { type: [skillsMatrixEntrySchema],        default: [] },
+  skillsRecommendations:    { type: [skillsRecommendationSchema],     default: [] },
+  skillsStats:              { type: skillsStatsSchema,                default: undefined },
+  skillsCategorySummary:    { type: [skillsCategorySummarySchema],    default: [] },
+  // Skills & Workforce: AI Team Readiness extras
+  teamReadiness:            { type: Number,   default: 0 },
+  requiredRoles:            { type: [requiredRoleSchema],             default: [] },
+  teamRecommendations:      { type: [teamRecommendationSchema],       default: [] },
+  teamStats:                { type: teamStatsSchema,                  default: undefined },
+  teamCoverageSummary:      { type: [teamCoverageSummarySchema],      default: [] },
+  // Skills & Workforce: AI Learning & Adoption extras
+  adoptionReadiness:        { type: Number,   default: 0 },
+  learningPillars:          { type: [learningPillarSchema],           default: [] },
+  adoptionLifecycle:        { type: [adoptionLifecycleStageSchema],   default: [] },
+  adoptionRecommendations:  { type: [adoptionRecommendationSchema],   default: [] },
+  adoptionStats:            { type: adoptionStatsSchema,              default: undefined },
+  adoptionReadinessSummary: { type: [adoptionReadinessSummarySchema], default: [] },
 }, { _id: false, strict: false });
 
 const sectionSchema = new mongoose.Schema({

@@ -2819,12 +2819,16 @@
 }
 
 .ws-domain-item__icon {
-  font-size: 1rem;
   flex-shrink: 0;
   width: 20px;
-  text-align: center;
+  height: 20px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
 }
+.ws-domain-item__icon svg { display: block; }
 
 .ws-domain-item__name {
   flex: 1;

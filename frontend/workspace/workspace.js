@@ -243,6 +243,7 @@ function renderDoneState(blueprint) {
     const color = DOMAIN_COLORS[domain.domainId] || '#5CC5A7';
     const icon  = DOMAIN_ICONS[domain.domainId]  || '●';
     const { label, cls, pct } = domainStatusFromCaps(caps);
+    const isNotStarted = cls === 'not-started';
 
     const card = document.createElement('div');
     card.className = 'ws-done-cap-card';
@@ -258,9 +259,55 @@ function renderDoneState(blueprint) {
           </div>
         </div>
       </div>
-      <span class="ws-done-cap-arrow">→</span>
+      ${isNotStarted
+        ? `<button class="ws-done-cap-generate-btn" data-domain-id="${domain.domainId}" data-blueprint-id="${blueprint._id}">Generate</button>`
+        : '<span class="ws-done-cap-arrow">→</span>'}
     `;
     capsEl.appendChild(card);
+  }
+
+  // Bind "Generate" buttons on not-started domain cards
+  capsEl.querySelectorAll('.ws-done-cap-generate-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const { domainId, blueprintId: bpId } = btn.dataset;
+      triggerDomainRegeneration(bpId, domainId);
+    });
+  });
+}
+
+// ── Domain regeneration ───────────────────────────────────────────────────────
+
+async function triggerDomainRegeneration(blueprintId, domainId) {
+  try {
+    const resp = await fetch(
+      `${API_BASE}/strategy-canvas/transformation-blueprint/${blueprintId}/regenerate-domains`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body:    JSON.stringify({ domainIds: [domainId] }),
+      }
+    );
+    if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
+    if (!resp.ok) throw new Error('Failed to start regeneration');
+    const { transformationId } = await resp.json();
+
+    // Reload blueprint so progress cards reflect updated domain statuses
+    try {
+      const bpResp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
+        headers: authHeaders(),
+      });
+      if (bpResp.ok) {
+        const bp = await bpResp.json();
+        renderProgressDomains(bp.domains || []);
+      }
+    } catch { /* non-critical */ }
+
+    showState('ws-progress');
+    connectProgressStream(transformationId);
+  } catch (err) {
+    console.error('[workspace] domain regen error:', err);
+    alert('Could not start generation. Please try again.');
   }
 }
 

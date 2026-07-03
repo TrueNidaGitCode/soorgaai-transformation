@@ -101,13 +101,44 @@ function currentCap() {
 
 // ── Domain Navigation Tabs ────────────────────────────────────────────────────
 
+function isDomainNotStarted(domain) {
+  const caps = domain.capabilities || [];
+  return caps.length > 0 && caps.every(c => !c.status || c.status === 'pending');
+}
+
+async function regenerateDomain(blueprintId, domainId) {
+  try {
+    const resp = await fetch(
+      `${API_BASE}/strategy-canvas/transformation-blueprint/${blueprintId}/regenerate-domains`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body:    JSON.stringify({ domainIds: [domainId] }),
+      }
+    );
+    if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
+    if (!resp.ok) throw new Error('Failed to start regeneration');
+    // Redirect to workspace — it detects 'generating' status and shows the progress screen
+    window.location.href = '/workspace/workspace.html';
+  } catch (err) {
+    console.error('[blueprintWorkspace] domain regen error:', err);
+    alert('Could not start generation. Please try again.');
+  }
+}
+
 function renderDomainTabs(blueprint) {
   const nav = document.getElementById('domain-nav');
   if (!nav) return;
   nav.innerHTML = '<p class="ws-domain-sidebar__label">Domains</p>';
 
   (blueprint.domains || []).forEach((domain, idx) => {
-    const icon = DOMAIN_ICONS_MAP[domain.domainId] || '●';
+    const icon         = DOMAIN_ICONS_MAP[domain.domainId] || '●';
+    const notStarted   = isDomainNotStarted(domain);
+
+    // Wrapper so we can place the Generate chip without nesting buttons
+    const row = document.createElement('div');
+    row.className = 'ws-domain-row';
+
     const item = document.createElement('button');
     item.className = `ws-domain-item${idx === _selectedDomainIdx ? ' is-active' : ''}`;
     item.dataset.idx = idx;
@@ -117,7 +148,23 @@ function renderDomainTabs(blueprint) {
       <span class="ws-domain-item__name">${domain.domainName}</span>
     `;
     item.addEventListener('click', () => selectDomain(idx));
-    nav.appendChild(item);
+    row.appendChild(item);
+
+    if (notStarted) {
+      const chip = document.createElement('button');
+      chip.className = 'ws-domain-regen-chip';
+      chip.textContent = 'Generate';
+      chip.title = `Generate ${domain.domainName}`;
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        chip.disabled = true;
+        chip.textContent = '…';
+        regenerateDomain(blueprint._id, domain.domainId);
+      });
+      row.appendChild(chip);
+    }
+
+    nav.appendChild(row);
   });
 }
 

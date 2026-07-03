@@ -782,6 +782,24 @@
   transform: translateX(2px);
 }
 
+.ws-done-cap-generate-btn {
+  flex-shrink: 0;
+  padding: 0.32rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: #5CC5A7;
+  background: rgba(92,197,167,0.08);
+  border: 1px solid rgba(92,197,167,0.3);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.ws-done-cap-generate-btn:hover {
+  background: rgba(92,197,167,0.16);
+}
+
 /* Actions */
 .ws-done-actions {
   display: flex;

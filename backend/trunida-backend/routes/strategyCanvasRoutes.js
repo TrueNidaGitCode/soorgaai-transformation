@@ -16,6 +16,7 @@ import {
   streamTransformationProgress,
   getTransformationBlueprint,
   updateTransformationSection,
+  regenerateSpecificDomains,
 } from '../controllers/strategyCanvasController.js';
 import { ask } from '../controllers/advisorController.js';
 import { exportBlueprintPDF } from '../controllers/pdfExportController.js';
@@ -52,6 +53,10 @@ router.post(
 router.post(
   '/transformation-blueprint/:blueprintId/domain/:domainId/capability/:capabilityId/regenerate-section-extras',
   protect, regenerateTransformationSectionExtrasHandler
+);
+router.post(
+  '/transformation-blueprint/:blueprintId/regenerate-domains',
+  protect, regenerateSpecificDomains
 );
 
 export default router;

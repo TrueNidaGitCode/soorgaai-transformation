@@ -2327,3 +2327,105 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
 
   console.log(`[transformationGen] Transformation ${blueprintId} complete`);
 }
+
+/**
+ * Regenerates only the specified domains on an existing blueprint.
+ * Domains already completed are left untouched (unless explicitly included).
+ * Called fire-and-forget from the controller.
+ */
+export async function generateSpecificDomainsAsync(blueprintId, userId, businessObjective, domainIds) {
+  const companyProfile = await loadCompanyProfile(userId);
+  const industry       = companyProfile.industry || 'Automotive';
+  const allDomains     = enabledDomains();
+  const domains        = allDomains.filter(d => domainIds.includes(d.id));
+
+  for (const domain of domains) {
+    const caps = getDomainCapabilities(domain.kbPath);
+    if (!caps.length) {
+      await TransformationBlueprint.updateOne(
+        { _id: blueprintId, 'domains.domainId': domain.id },
+        { $set: { 'domains.$.status': 'completed' } }
+      );
+      console.log(`[domainRegen] ⚡ ${domain.name} — no KB docs yet, skipped`);
+      continue;
+    }
+
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId, 'domains.domainId': domain.id },
+      { $set: { 'domains.$.status': 'generating' } }
+    );
+
+    for (const cap of caps) {
+      try {
+        await TransformationBlueprint.updateOne(
+          {
+            _id: blueprintId,
+            'domains.domainId': domain.id,
+            'domains.capabilities.capabilityId': cap.id,
+          },
+          { $set: { 'domains.$[dom].capabilities.$[cap].status': 'in-progress' } },
+          { arrayFilters: [{ 'dom.domainId': domain.id }, { 'cap.capabilityId': cap.id }] }
+        );
+
+        const capBlueprint   = getDomainCapabilityBlueprint(cap.id, domain.kbPath, industry);
+        const parsedSections = capBlueprint.sections;
+        const capObj         = { id: cap.id, name: cap.name, objective: cap.objective };
+        const enterpriseContext = companyProfile.orgName
+          ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
+          : null;
+
+        let sections;
+        if (BLUEPRINT_CONFIG.generate.essay) {
+          const essays = await runEssayGeneration(
+            capObj, companyProfile, businessObjective, industry,
+            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext
+          );
+          sections = await runBriefExtraction(capObj, parsedSections, essays);
+        } else {
+          sections = await runBriefGeneration(
+            capObj, companyProfile, businessObjective, industry,
+            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext
+          );
+        }
+
+        await TransformationBlueprint.updateOne(
+          { _id: blueprintId },
+          {
+            $set: {
+              'domains.$[dom].capabilities.$[cap].status':      'completed',
+              'domains.$[dom].capabilities.$[cap].sections':    sections,
+              'domains.$[dom].capabilities.$[cap].completedAt': new Date(),
+            },
+          },
+          { arrayFilters: [{ 'dom.domainId': domain.id }, { 'cap.capabilityId': cap.id }] }
+        );
+
+        console.log(`[domainRegen] ✓ ${domain.name} / ${cap.name} (${sections.length} sections)`);
+      } catch (err) {
+        console.error(`[domainRegen] ✗ ${domain.name} / ${cap.name}:`, err.message);
+        await TransformationBlueprint.updateOne(
+          { _id: blueprintId },
+          {
+            $set: {
+              'domains.$[dom].capabilities.$[cap].status':       'error',
+              'domains.$[dom].capabilities.$[cap].errorMessage': err.message,
+            },
+          },
+          { arrayFilters: [{ 'dom.domainId': domain.id }, { 'cap.capabilityId': cap.id }] }
+        );
+      }
+    }
+
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId, 'domains.domainId': domain.id },
+      { $set: { 'domains.$.status': 'completed' } }
+    );
+  }
+
+  // Always mark blueprint completed so the SSE stream terminates
+  await TransformationBlueprint.updateOne(
+    { _id: blueprintId },
+    { $set: { status: 'completed', updatedAt: new Date() } }
+  );
+  console.log(`[domainRegen] Done — domains: ${domainIds.join(', ')}`);
+}

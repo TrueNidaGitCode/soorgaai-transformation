@@ -10,6 +10,7 @@ import {
   regenerateSectionExtrasForTransformation,
   regenerateTransformationCapabilityAsync,
   generateTransformationAsync,
+  generateSpecificDomainsAsync,
 } from '../services/blueprintGenerationService.js';
 import { autoCapture }      from '../services/knowledgeSuggestionService.js';
 import { enabledDomains }   from '../config/domainRegistry.js';
@@ -503,6 +504,83 @@ export async function startTransformationGeneration(req, res) {
   } catch (err) {
     console.error('startTransformationGeneration error:', err);
     res.status(500).json({ error: 'Failed to start transformation generation.' });
+  }
+}
+
+/**
+ * POST /strategy-canvas/transformation-blueprint/:blueprintId/regenerate-domains
+ * Regenerates only the specified domains on an existing blueprint.
+ * Body: { domainIds: string[] }
+ */
+export async function regenerateSpecificDomains(req, res) {
+  try {
+    const { blueprintId } = req.params;
+    const { domainIds }   = req.body;
+    const userId          = req.user._id;
+
+    if (!Array.isArray(domainIds) || !domainIds.length) {
+      return res.status(400).json({ error: 'domainIds array is required.' });
+    }
+
+    const blueprint = await TransformationBlueprint.findOne({ _id: blueprintId, userId });
+    if (!blueprint) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    const allDomainDefs = enabledDomains();
+
+    // Add any missing domains to the blueprint first, then save
+    let modified = false;
+    for (const domainId of domainIds) {
+      const existsInBlueprint = blueprint.domains.some(d => d.domainId === domainId);
+      if (!existsInBlueprint) {
+        const def  = allDomainDefs.find(d => d.id === domainId);
+        if (!def) continue;
+        const caps = getDomainCapabilities(def.kbPath);
+        blueprint.domains.push({
+          domainId:   def.id,
+          domainName: def.name,
+          status:     'pending',
+          capabilities: caps.map(c => ({
+            capabilityId:   c.id,
+            capabilityName: c.name,
+            status:         'pending',
+            sections:       [],
+          })),
+        });
+        modified = true;
+      }
+    }
+    if (modified) await blueprint.save();
+
+    // Reset targeted domains + their capabilities to pending
+    for (const domainId of domainIds) {
+      await TransformationBlueprint.updateOne(
+        { _id: blueprintId },
+        {
+          $set: {
+            'domains.$[dom].status': 'pending',
+            'domains.$[dom].capabilities.$[].status': 'pending',
+            'domains.$[dom].capabilities.$[].sections': [],
+          },
+        },
+        { arrayFilters: [{ 'dom.domainId': domainId }] }
+      );
+    }
+
+    // Mark blueprint as generating so SSE stream stays open
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId },
+      { $set: { status: 'generating', updatedAt: new Date() } }
+    );
+
+    const objective = blueprint.businessObjective || '';
+    generateSpecificDomainsAsync(blueprint._id, userId, objective, domainIds)
+      .catch(err => console.error('[regenerateSpecificDomains] async error:', err));
+
+    return res.json({ transformationId: blueprint._id });
+
+  } catch (err) {
+    console.error('regenerateSpecificDomains error:', err);
+    res.status(500).json({ error: 'Failed to start domain regeneration.' });
   }
 }
 

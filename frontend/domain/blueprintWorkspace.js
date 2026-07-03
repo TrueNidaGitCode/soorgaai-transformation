@@ -2296,6 +2296,10 @@ function buildOpportunityDiscoveryView(section) {
 
   // Strategic position
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'opp-discovery__position';
     pos.textContent = b.strategicPosition;

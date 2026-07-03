@@ -122,8 +122,7 @@ Rules:
 - One opportunity should solve one or more business problems
 - Use business capability names
 - Avoid AI buzzwords
-- Prioritise by business value
-- The final item should be identified as the recommended starting point
+- List in priority order — highest business value first
 
 Examples: AI Traceability Mapping, Coverage Analytics, Gap Detection, Test Recommendation, Automated Reporting
 

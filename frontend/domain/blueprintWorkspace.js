@@ -4974,8 +4974,11 @@ function buildSectionCard(blueprint, cap, section) {
   // Header
   const header = document.createElement('div');
   header.className = 'bp-section__header';
+  const titleHtml = section.title !== cap.capabilityName
+    ? `<h3 class="bp-section__title">${section.title}</h3>`
+    : '';
   header.innerHTML = `
-    <h3 class="bp-section__title">${section.title}</h3>
+    ${titleHtml}
     <div class="bp-section__actions">
       <button class="bp-section__action-btn js-refine-btn" aria-label="Refine this section with AI Assistant">Refine with AI Assistant</button>
     </div>

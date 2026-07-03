@@ -155,20 +155,24 @@ const DOMAIN_COLORS = {
   'governance-security':       '#f87171',
 };
 
-function doneStatusLabel(s) {
-  if (s === 'completed')                              return 'Complete';
-  if (s === 'in-progress' || s === 'generating')     return 'In Progress';
-  return 'Not Started';
-}
-function doneStatusCls(s) {
-  if (s === 'completed')                              return 'complete';
-  if (s === 'in-progress' || s === 'generating')     return 'in-progress';
-  return 'not-started';
-}
-function doneStatusPct(s) {
-  if (s === 'completed')                              return 100;
-  if (s === 'in-progress' || s === 'generating')     return 50;
-  return 0;
+const DOMAIN_ICONS = {
+  'ai-strategy':               '🎯',
+  'ai-use-cases':              '💡',
+  'skills-workforce':          '🧠',
+  'data-readiness':            '📊',
+  'technology-infrastructure': '⚙️',
+  'governance-security':       '🔒',
+};
+
+function domainStatusFromCaps(caps) {
+  const total      = caps.length;
+  if (!total) return { label: 'Not Started', cls: 'not-started', pct: 0 };
+  const complete   = caps.filter(c => c.status === 'completed').length;
+  const inProgress = caps.filter(c => c.status === 'in-progress' || c.status === 'generating').length;
+  const pct        = Math.round((complete / total) * 100);
+  if (complete === total)              return { label: 'Complete',    cls: 'complete',    pct };
+  if (complete > 0 || inProgress > 0) return { label: 'In Progress', cls: 'in-progress', pct };
+  return { label: 'Not Started', cls: 'not-started', pct: 0 };
 }
 
 function renderDoneState(blueprint) {
@@ -231,46 +235,35 @@ function renderDoneState(blueprint) {
     });
   }
 
-  // Right panel — capability cards grouped by domain
+  // Right panel — one card per domain
   const capsEl = document.getElementById('ws-done-caps');
   if (!capsEl) return;
   capsEl.innerHTML = '';
 
   for (const domain of domains) {
-    const caps = domain.capabilities || [];
+    const caps  = domain.capabilities || [];
     if (!caps.length) continue;
     const color = DOMAIN_COLORS[domain.domainId] || '#5CC5A7';
+    const icon  = DOMAIN_ICONS[domain.domainId]  || '●';
+    const { label, cls, pct } = domainStatusFromCaps(caps);
 
-    const header = document.createElement('p');
-    header.className = 'ws-done-domain-header';
-    header.textContent = domain.domainName;
-    capsEl.appendChild(header);
-
-    for (const cap of caps) {
-      const name     = cap.name || cap.capabilityName || '';
-      const initials = name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-      const lbl      = doneStatusLabel(cap.status);
-      const cls      = doneStatusCls(cap.status);
-      const capPct   = doneStatusPct(cap.status);
-
-      const card = document.createElement('div');
-      card.className = 'ws-done-cap-card';
-      card.innerHTML = `
-        <div class="ws-done-cap-icon" style="background:${color}22;color:${color};border:1.5px solid ${color}55">${initials}</div>
-        <div class="ws-done-cap-body">
-          <p class="ws-done-cap-name">${name}</p>
-          <div class="ws-done-cap-footer">
-            <span class="ws-done-cap-badge ws-done-cap-badge--${cls}">${lbl}</span>
-            <div class="ws-done-cap-prog">
-              <span class="ws-done-cap-pct">${capPct}%</span>
-              <div class="ws-done-cap-bar"><div class="ws-done-cap-bar-fill" style="width:${capPct}%;background:${color}"></div></div>
-            </div>
+    const card = document.createElement('div');
+    card.className = 'ws-done-cap-card';
+    card.innerHTML = `
+      <div class="ws-done-cap-icon ws-done-cap-icon--domain" style="background:${color}1a;border:1.5px solid ${color}44">${icon}</div>
+      <div class="ws-done-cap-body">
+        <p class="ws-done-cap-name">${domain.domainName}</p>
+        <div class="ws-done-cap-footer">
+          <span class="ws-done-cap-badge ws-done-cap-badge--${cls}">${label}</span>
+          <div class="ws-done-cap-prog">
+            <span class="ws-done-cap-pct">${pct}%</span>
+            <div class="ws-done-cap-bar"><div class="ws-done-cap-bar-fill" style="width:${pct}%;background:${color}"></div></div>
           </div>
         </div>
-        <span class="ws-done-cap-arrow">→</span>
-      `;
-      capsEl.appendChild(card);
-    }
+      </div>
+      <span class="ws-done-cap-arrow">→</span>
+    `;
+    capsEl.appendChild(card);
   }
 }
 

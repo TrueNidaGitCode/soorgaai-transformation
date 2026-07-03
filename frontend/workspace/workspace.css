@@ -702,8 +702,8 @@
 }
 
 .ws-done-cap-icon {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   border-radius: 50%;
   display: flex;
@@ -712,6 +712,10 @@
   font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 0.01em;
+}
+
+.ws-done-cap-icon--domain {
+  font-size: 1.2rem;
 }
 
 .ws-done-cap-body { flex: 1; min-width: 0; }

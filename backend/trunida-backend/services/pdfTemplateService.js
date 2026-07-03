@@ -1347,85 +1347,275 @@ function buildSummaryGrid(entries) {
 // ── New-domain layout functions ───────────────────────────────────────────────
 
 function buildAIOpportunityDiscoveryLayout(section) {
-  const b = section.brief || {};
+  const b                    = section.brief || {};
+  const businessProblems     = b.businessProblems     || [];
+  const workflowSteps        = b.workflowSteps        || [];
+  const highEffortActivities = b.highEffortActivities || [];
+  const aiOpportunities      = b.aiOpportunities      || [];
+
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.businessProblems && b.businessProblems.length) wrap.appendChild(buildTagList(b.businessProblems, 'Key Business Problems'));
-  if (b.workflowSteps && b.workflowSteps.length) wrap.appendChild(buildTagList(b.workflowSteps, 'Current Workflow Steps'));
-  if (b.highEffortActivities && b.highEffortActivities.length) wrap.appendChild(buildTagList(b.highEffortActivities, 'High-Effort Activities'));
-  if (b.aiOpportunities && b.aiOpportunities.length) wrap.appendChild(buildTagList(b.aiOpportunities, 'AI Opportunities'));
+
+  function makeLayer(dotCls, title, content) {
+    const layer = document.createElement('div');
+    layer.className = 'opp-pdf-layer';
+    const hdr = document.createElement('div');
+    hdr.className = 'opp-pdf-header';
+    const dot = document.createElement('span');
+    dot.className = 'opp-pdf-dot ' + dotCls;
+    const lbl = document.createElement('span');
+    lbl.className = 'opp-pdf-title'; lbl.textContent = title;
+    hdr.appendChild(dot); hdr.appendChild(lbl);
+    layer.appendChild(hdr);
+    layer.appendChild(content);
+    return layer;
+  }
+
+  function makeChips(items, cls) {
+    const row = document.createElement('div'); row.className = 'opp-pdf-chips';
+    items.forEach(function(t) {
+      const c = document.createElement('span'); c.className = 'opp-pdf-chip ' + cls; c.textContent = t;
+      row.appendChild(c);
+    });
+    return row;
+  }
+
+  function makeConnector() {
+    const d = document.createElement('div'); d.className = 'opp-pdf-connector'; d.textContent = '↓'; return d;
+  }
+
+  // Layer 1: Business Problems
+  if (businessProblems.length) {
+    wrap.appendChild(makeLayer('opp-pdf-dot--problem', 'Business Problem', makeChips(businessProblems, 'opp-pdf-chip--problem')));
+    wrap.appendChild(makeConnector());
+  }
+
+  // Layer 2: Current Workflow + High-Effort Activities
+  const layer2body = document.createElement('div');
+  layer2body.className = 'opp-pdf-workflow';
+  if (workflowSteps.length) {
+    const stepsRow = document.createElement('div'); stepsRow.className = 'opp-pdf-steps';
+    workflowSteps.forEach(function(step, i) {
+      const s = document.createElement('div'); s.className = 'opp-pdf-step'; s.textContent = step;
+      stepsRow.appendChild(s);
+      if (i < workflowSteps.length - 1) {
+        const a = document.createElement('div'); a.className = 'opp-pdf-step-arrow'; a.textContent = '→';
+        stepsRow.appendChild(a);
+      }
+    });
+    layer2body.appendChild(stepsRow);
+  }
+  if (highEffortActivities.length) {
+    const heaLbl = document.createElement('p'); heaLbl.className = 'opp-pdf-hea-label'; heaLbl.textContent = 'High-Effort Activities';
+    const heaRow = document.createElement('div'); heaRow.className = 'opp-pdf-chips';
+    highEffortActivities.forEach(function(a) {
+      const c = document.createElement('span'); c.className = 'opp-pdf-chip opp-pdf-chip--hea'; c.textContent = a;
+      heaRow.appendChild(c);
+    });
+    layer2body.appendChild(heaLbl);
+    layer2body.appendChild(heaRow);
+  }
+  if (workflowSteps.length || highEffortActivities.length) {
+    wrap.appendChild(makeLayer('opp-pdf-dot--workflow', 'Current Workflow', layer2body));
+    wrap.appendChild(makeConnector());
+  }
+
+  // Layer 3: AI Opportunities — hub layout (left | AI | right)
+  if (aiOpportunities.length) {
+    const mid   = Math.ceil(aiOpportunities.length / 2);
+    const left  = aiOpportunities.slice(0, mid);
+    const right = aiOpportunities.slice(mid);
+    const hub = document.createElement('div'); hub.className = 'opp-pdf-hub';
+    const leftCol = document.createElement('div'); leftCol.className = 'opp-pdf-hub__col';
+    left.forEach(function(o) { const c = document.createElement('span'); c.className = 'opp-pdf-chip opp-pdf-chip--ai'; c.textContent = o; leftCol.appendChild(c); });
+    const aiNode = document.createElement('div'); aiNode.className = 'opp-pdf-ai-node'; aiNode.textContent = 'AI';
+    const rightCol = document.createElement('div'); rightCol.className = 'opp-pdf-hub__col';
+    right.forEach(function(o) { const c = document.createElement('span'); c.className = 'opp-pdf-chip opp-pdf-chip--ai'; c.textContent = o; rightCol.appendChild(c); });
+    hub.appendChild(leftCol); hub.appendChild(aiNode); hub.appendChild(rightCol);
+    wrap.appendChild(makeLayer('opp-pdf-dot--ai', 'AI Opportunities', hub));
+  }
+
   return wrap;
 }
 
 function buildBusinessValueDefinitionLayout(section) {
-  const b = section.brief || {};
+  const b          = section.brief || {};
+  const categories = b.valueCategories     || [];
+  const kpiPills   = b.kpiPills            || [];
+  const insight    = b.businessValueInsight || '';
+
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.businessValueInsight) {
-    const ins = document.createElement('div'); ins.className = 'vision-statement';
-    const insL = document.createElement('p'); insL.className = 'brief-label'; insL.textContent = 'Business Value Insight';
-    const insT = document.createElement('p'); insT.className = 'vision-statement__text'; insT.textContent = b.businessValueInsight;
-    ins.appendChild(insL); ins.appendChild(insT); wrap.appendChild(ins);
-  }
-  if (b.valueCategories && b.valueCategories.length) {
-    const items = b.valueCategories.map(function(c) {
-      return { name: c.title, points: [c.focus].concat(c.outcomes || []) };
+
+  // Value category cards — 3-across top row + centred last card
+  if (categories.length) {
+    const lbl = document.createElement('p'); lbl.className = 'brief-label'; lbl.textContent = 'Value Categories';
+    wrap.appendChild(lbl);
+    const grid = document.createElement('div'); grid.className = 'bvd-pdf-grid';
+    categories.forEach(function(cat) {
+      const card = document.createElement('div'); card.className = 'bvd-pdf-card';
+      const title = document.createElement('p'); title.className = 'bvd-pdf-card__title'; title.textContent = cat.title || '';
+      const focus = document.createElement('p'); focus.className = 'bvd-pdf-card__focus'; focus.textContent = cat.focus || '';
+      card.appendChild(title); card.appendChild(focus);
+      if (cat.outcomes && cat.outcomes.length) {
+        const ul = document.createElement('ul'); ul.className = 'bvd-pdf-card__outcomes';
+        cat.outcomes.forEach(function(o) { const li = document.createElement('li'); li.textContent = o; ul.appendChild(li); });
+        card.appendChild(ul);
+      }
+      grid.appendChild(card);
     });
-    wrap.appendChild(buildDetailSection('Value Categories', buildPillarBulletCards(items, 'name')));
+    wrap.appendChild(grid);
   }
-  if (b.kpiPills && b.kpiPills.length) wrap.appendChild(buildTagList(b.kpiPills, 'Key Performance Indicators'));
+
+  // KPI pills
+  if (kpiPills.length) wrap.appendChild(buildTagList(kpiPills, 'Key Performance Indicators'));
+
+  // Insight footer
+  if (insight) {
+    const footer = document.createElement('div'); footer.className = 'bvd-pdf-insight';
+    const icon = document.createElement('span'); icon.className = 'bvd-pdf-insight__icon'; icon.textContent = '◆';
+    const text = document.createElement('p'); text.className = 'bvd-pdf-insight__text'; text.textContent = insight;
+    footer.appendChild(icon); footer.appendChild(text);
+    wrap.appendChild(footer);
+  }
+
   return wrap;
 }
 
 function buildAIUseCasePrioritizationLayout(section) {
-  const b = section.brief || {};
+  const b         = section.brief || {};
+  const recStart  = b.recommendedStartingPoint || '';
+  const quadrants = b.priorityQuadrants        || [];
+  const insight   = b.prioritizationInsight    || '';
+
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.recommendedStartingPoint) {
-    const rs = document.createElement('div'); rs.className = 'vision-statement';
-    const rsL = document.createElement('p'); rsL.className = 'brief-label'; rsL.textContent = 'Recommended Starting Point';
-    const rsT = document.createElement('p'); rsT.className = 'vision-statement__text'; rsT.textContent = b.recommendedStartingPoint;
-    rs.appendChild(rsL); rs.appendChild(rsT); wrap.appendChild(rs);
+
+  // Recommended Starting Point banner
+  if (recStart) {
+    const banner = document.createElement('div'); banner.className = 'pri-pdf-banner';
+    const star = document.createElement('span'); star.className = 'pri-pdf-banner__star'; star.textContent = '★';
+    const inner = document.createElement('div');
+    const t = document.createElement('p'); t.className = 'pri-pdf-banner__title'; t.textContent = 'Recommended Starting Point';
+    const tx = document.createElement('p'); tx.className = 'pri-pdf-banner__text'; tx.textContent = recStart;
+    inner.appendChild(t); inner.appendChild(tx);
+    banner.appendChild(star); banner.appendChild(inner);
+    wrap.appendChild(banner);
   }
-  if (b.priorityQuadrants && b.priorityQuadrants.length) {
-    const items = b.priorityQuadrants.map(function(q) { return { name: q.label, points: q.initiatives || [] }; });
-    wrap.appendChild(buildDetailSection('Priority Matrix (Business Value × Feasibility)', buildPillarBulletCards(items, 'name')));
+
+  // 2×2 Priority Matrix
+  if (quadrants.length) {
+    const matLbl = document.createElement('p'); matLbl.className = 'brief-label'; matLbl.textContent = 'Prioritization Matrix';
+    wrap.appendChild(matLbl);
+    const matWrap = document.createElement('div'); matWrap.className = 'pri-pdf-matrix-wrap';
+
+    const xHdr = document.createElement('div'); xHdr.className = 'pri-pdf-x-header';
+    const xEmpty = document.createElement('div'); xEmpty.className = 'pri-pdf-x-empty';
+    const xLow = document.createElement('span'); xLow.textContent = 'Low Feasibility';
+    const xHigh = document.createElement('span'); xHigh.textContent = 'High Feasibility';
+    xHdr.appendChild(xEmpty); xHdr.appendChild(xLow); xHdr.appendChild(xHigh);
+    matWrap.appendChild(xHdr);
+
+    const Q_CLS = { 'strategic-bets': 'pri-pdf-q--bets', 'quick-wins': 'pri-pdf-q--wins', 'fill-ins': 'pri-pdf-q--fill', 'avoid': 'pri-pdf-q--avoid' };
+    const grid = document.createElement('div'); grid.className = 'pri-pdf-grid';
+    // Y high-value row
+    const rowHigh = document.createElement('div'); rowHigh.className = 'pri-pdf-row';
+    const yHigh = document.createElement('div'); yHigh.className = 'pri-pdf-y-label'; yHigh.textContent = '↑ High Value';
+    rowHigh.appendChild(yHigh);
+    [quadrants[0], quadrants[1]].forEach(function(q) {
+      if (!q) return;
+      const cell = document.createElement('div'); cell.className = 'pri-pdf-q ' + (Q_CLS[q.id] || '');
+      const lbl = document.createElement('p'); lbl.className = 'pri-pdf-q__label'; lbl.textContent = q.label;
+      cell.appendChild(lbl);
+      if (q.initiatives && q.initiatives.length) {
+        const items = document.createElement('p'); items.className = 'pri-pdf-q__items'; items.textContent = q.initiatives.join(' · ');
+        cell.appendChild(items);
+      }
+      rowHigh.appendChild(cell);
+    });
+    grid.appendChild(rowHigh);
+    // Y low-value row
+    const rowLow = document.createElement('div'); rowLow.className = 'pri-pdf-row';
+    const yLow = document.createElement('div'); yLow.className = 'pri-pdf-y-label'; yLow.textContent = '↓ Low Value';
+    rowLow.appendChild(yLow);
+    [quadrants[2], quadrants[3]].forEach(function(q) {
+      if (!q) return;
+      const cell = document.createElement('div'); cell.className = 'pri-pdf-q ' + (Q_CLS[q.id] || '');
+      const lbl = document.createElement('p'); lbl.className = 'pri-pdf-q__label'; lbl.textContent = q.label;
+      cell.appendChild(lbl);
+      if (q.initiatives && q.initiatives.length) {
+        const items = document.createElement('p'); items.className = 'pri-pdf-q__items'; items.textContent = q.initiatives.join(' · ');
+        cell.appendChild(items);
+      }
+      rowLow.appendChild(cell);
+    });
+    grid.appendChild(rowLow);
+    matWrap.appendChild(grid);
+    wrap.appendChild(matWrap);
   }
-  if (b.prioritizationInsight) {
-    const pi = document.createElement('div'); pi.className = 'vision-statement';
-    const piL = document.createElement('p'); piL.className = 'brief-label'; piL.textContent = 'Prioritization Insight';
-    const piT = document.createElement('p'); piT.className = 'vision-statement__text'; piT.textContent = b.prioritizationInsight;
-    pi.appendChild(piL); pi.appendChild(piT); wrap.appendChild(pi);
+
+  // Prioritization Insight
+  if (insight) {
+    const ins = document.createElement('div'); ins.className = 'vision-statement';
+    const insL = document.createElement('p'); insL.className = 'brief-label'; insL.textContent = 'Prioritization Insight';
+    const insT = document.createElement('p'); insT.className = 'vision-statement__text'; insT.textContent = insight;
+    ins.appendChild(insL); ins.appendChild(insT); wrap.appendChild(ins);
   }
+
   return wrap;
 }
 
 function buildAIUseCaseClassificationLayout(section) {
-  const b = section.brief || {};
+  const b    = section.brief || {};
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  // Primary classification highlight
   if (b.primaryClassification) {
-    const pc = document.createElement('div'); pc.className = 'vision-statement';
-    const pcL = document.createElement('p'); pcL.className = 'brief-label'; pcL.textContent = 'Primary Classification: ' + b.primaryClassification.name;
-    const pcT = document.createElement('p'); pcT.className = 'vision-statement__text'; pcT.textContent = b.primaryClassification.description;
-    pc.appendChild(pcL); pc.appendChild(pcT); wrap.appendChild(pc);
+    const pc = document.createElement('div'); pc.className = 'clf-pdf-primary';
+    const label = document.createElement('p'); label.className = 'clf-pdf-primary__label'; label.textContent = 'Primary Classification';
+    const name = document.createElement('p'); name.className = 'clf-pdf-primary__name'; name.textContent = b.primaryClassification.name || '';
+    const desc = document.createElement('p'); desc.className = 'clf-pdf-primary__desc'; desc.textContent = b.primaryClassification.description || '';
+    pc.appendChild(label); pc.appendChild(name); pc.appendChild(desc);
+    wrap.appendChild(pc);
   }
+
+  // 3 Classification type cards
   if (b.classificationCards && b.classificationCards.length) {
-    const items = b.classificationCards.map(function(cc) {
-      return { name: cc.type, points: (cc.characteristics || []).concat(cc.examples || []) };
+    const lbl = document.createElement('p'); lbl.className = 'brief-label'; lbl.textContent = 'AI Classification Types';
+    wrap.appendChild(lbl);
+    const row = document.createElement('div'); row.className = 'clf-pdf-row';
+    b.classificationCards.forEach(function(cc) {
+      const isPrimary = b.primaryClassification && b.primaryClassification.name === cc.type;
+      const card = document.createElement('div');
+      card.className = 'clf-pdf-card' + (isPrimary ? ' clf-pdf-card--active' : '');
+      const t = document.createElement('p'); t.className = 'clf-pdf-card__type'; t.textContent = cc.type || '';
+      const p = document.createElement('p'); p.className = 'clf-pdf-card__purpose'; p.textContent = cc.purpose || '';
+      card.appendChild(t); card.appendChild(p);
+      if (cc.characteristics && cc.characteristics.length) {
+        const chars = document.createElement('div'); chars.className = 'clf-pdf-card__chars';
+        cc.characteristics.forEach(function(ch) {
+          const chip = document.createElement('span'); chip.className = 'clf-pdf-chip'; chip.textContent = ch; chars.appendChild(chip);
+        });
+        card.appendChild(chars);
+      }
+      row.appendChild(card);
     });
-    wrap.appendChild(buildDetailSection('AI Classification Categories', buildPillarBulletCards(items, 'name')));
+    wrap.appendChild(row);
   }
+
+  // Classification Insight
   if (b.classificationInsight) {
     const ci = document.createElement('div'); ci.className = 'vision-statement';
     const ciL = document.createElement('p'); ciL.className = 'brief-label'; ciL.textContent = 'Classification Insight';
     const ciT = document.createElement('p'); ciT.className = 'vision-statement__text'; ciT.textContent = b.classificationInsight;
     ci.appendChild(ciL); ci.appendChild(ciT); wrap.appendChild(ci);
   }
+
   return wrap;
 }
 
@@ -2360,6 +2550,74 @@ html, body {
 .pdf-summary-cell { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem; padding: 0.6rem 0.85rem; display: flex; flex-direction: column; gap: 0.2rem; }
 .pdf-summary-cell__key { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.36); }
 .pdf-summary-cell__val { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.2; }
+
+/* ── AI Opportunity Discovery layout ─────────────────────────────────── */
+.opp-pdf-layer { display: flex; flex-direction: column; gap: 0.55rem; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.65rem; padding: 0.85rem 1rem; }
+.opp-pdf-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.15rem; }
+.opp-pdf-dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; flex-shrink: 0; }
+.opp-pdf-dot--problem  { background: #f87171; }
+.opp-pdf-dot--workflow { background: #60a5fa; }
+.opp-pdf-dot--ai       { background: #34d399; }
+.opp-pdf-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+.opp-pdf-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.opp-pdf-chip { display: inline-block; font-size: 0.73rem; padding: 0.22rem 0.65rem; border-radius: 1rem; font-weight: 500; white-space: nowrap; }
+.opp-pdf-chip--problem { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); color: rgba(255,255,255,0.8); }
+.opp-pdf-chip--hea     { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3); color: rgba(255,255,255,0.8); }
+.opp-pdf-chip--ai      { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); color: rgba(255,255,255,0.8); }
+.opp-pdf-connector { text-align: center; font-size: 1rem; color: rgba(255,255,255,0.2); line-height: 1; margin: -0.2rem 0; }
+.opp-pdf-workflow { display: flex; flex-direction: column; gap: 0.5rem; }
+.opp-pdf-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
+.opp-pdf-step { font-size: 0.73rem; padding: 0.22rem 0.65rem; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25); border-radius: 0.4rem; color: rgba(255,255,255,0.78); }
+.opp-pdf-step-arrow { font-size: 0.8rem; color: rgba(255,255,255,0.22); }
+.opp-pdf-hea-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(251,191,36,0.6); margin-top: 0.2rem; }
+.opp-pdf-hub { display: flex; align-items: center; gap: 0.75rem; justify-content: center; }
+.opp-pdf-hub__col { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
+.opp-pdf-ai-node { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(52,211,153,0.15); border: 1.5px solid rgba(52,211,153,0.45); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #34d399; flex-shrink: 0; }
+
+/* ── Business Value Definition layout ────────────────────────────────── */
+.bvd-pdf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-top: 0.35rem; }
+.bvd-pdf-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.55rem; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.bvd-pdf-card__title { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.9); margin: 0; }
+.bvd-pdf-card__focus { font-size: 0.72rem; color: rgba(255,200,60,0.85); margin: 0; line-height: 1.4; }
+.bvd-pdf-card__outcomes { list-style: none; display: flex; flex-direction: column; gap: 0.2rem; margin: 0; padding: 0; }
+.bvd-pdf-card__outcomes li { font-size: 0.7rem; color: rgba(255,255,255,0.55); line-height: 1.4; padding-left: 0.7rem; position: relative; }
+.bvd-pdf-card__outcomes li::before { content: '·'; position: absolute; left: 0; }
+.bvd-pdf-insight { display: flex; align-items: flex-start; gap: 0.6rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.2); border-radius: 0.5rem; padding: 0.75rem 0.9rem; margin-top: 0.2rem; }
+.bvd-pdf-insight__icon { font-size: 0.7rem; color: rgba(129,140,248,0.7); flex-shrink: 0; margin-top: 0.15rem; }
+.bvd-pdf-insight__text { font-size: 0.77rem; color: rgba(255,255,255,0.72); line-height: 1.55; margin: 0; }
+
+/* ── AI Use Case Prioritization layout ───────────────────────────────── */
+.pri-pdf-banner { display: flex; align-items: flex-start; gap: 0.65rem; background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25); border-radius: 0.5rem; padding: 0.75rem 1rem; }
+.pri-pdf-banner__star { font-size: 1rem; color: #fbbf24; flex-shrink: 0; line-height: 1; }
+.pri-pdf-banner__title { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(251,191,36,0.7); margin: 0 0 0.2rem; }
+.pri-pdf-banner__text { font-size: 0.79rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
+.pri-pdf-matrix-wrap { display: flex; flex-direction: column; gap: 0; margin-top: 0.35rem; }
+.pri-pdf-x-header { display: grid; grid-template-columns: 3.5rem 1fr 1fr; gap: 0.4rem; padding-bottom: 0.25rem; }
+.pri-pdf-x-empty { }
+.pri-pdf-x-header span { font-size: 0.62rem; font-weight: 600; text-align: center; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 0.05em; }
+.pri-pdf-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+.pri-pdf-row { display: grid; grid-template-columns: 3.5rem 1fr 1fr; gap: 0.4rem; align-items: stretch; }
+.pri-pdf-y-label { font-size: 0.6rem; font-weight: 600; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.4rem; line-height: 1.3; }
+.pri-pdf-q { border-radius: 0.5rem; padding: 0.65rem 0.8rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.pri-pdf-q--wins { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25); }
+.pri-pdf-q--bets { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.25); }
+.pri-pdf-q--fill { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+.pri-pdf-q--avoid { background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.2); }
+.pri-pdf-q__label { font-size: 0.73rem; font-weight: 700; color: rgba(255,255,255,0.85); margin: 0; }
+.pri-pdf-q__items { font-size: 0.68rem; color: rgba(255,255,255,0.5); margin: 0; line-height: 1.5; }
+
+/* ── AI Use Case Classification layout ───────────────────────────────── */
+.clf-pdf-primary { background: rgba(129,140,248,0.08); border: 1px solid rgba(129,140,248,0.25); border-radius: 0.55rem; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.clf-pdf-primary__label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(129,140,248,0.7); margin: 0; }
+.clf-pdf-primary__name { font-size: 0.92rem; font-weight: 700; color: rgba(255,255,255,0.95); margin: 0; }
+.clf-pdf-primary__desc { font-size: 0.76rem; color: rgba(255,255,255,0.6); margin: 0; line-height: 1.5; }
+.clf-pdf-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.55rem; margin-top: 0.35rem; }
+.clf-pdf-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.55rem; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.clf-pdf-card--active { background: rgba(129,140,248,0.09); border-color: rgba(129,140,248,0.35); }
+.clf-pdf-card__type { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.9); margin: 0; }
+.clf-pdf-card__purpose { font-size: 0.71rem; color: rgba(255,255,255,0.55); margin: 0; line-height: 1.45; }
+.clf-pdf-card__chars { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.1rem; }
+.clf-pdf-chip { display: inline-block; font-size: 0.67rem; padding: 0.15rem 0.5rem; background: rgba(129,140,248,0.1); border: 1px solid rgba(129,140,248,0.22); border-radius: 0.75rem; color: rgba(255,255,255,0.65); white-space: nowrap; }
 
 /* ── Page-break control ─────────────────────────────────────────────── */
 /* Keep section headings bound to their first content block */

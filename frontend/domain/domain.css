@@ -8780,3 +8780,58 @@
 .cds-rec-card__reason {
   font-style: italic;
 }
+
+/* ── AI Strategy domain — card primary titles ──
+   Older layouts used 0.88 rem–0.95 rem / weight 700 for item card headings.
+   Normalised to match the new-domain card title tier. */
+
+.initiative-card__title,
+.commitment-pillar-card__title,
+.pillar-card__title,
+.solution-portfolio-card__name,
+.team-role-item__title,
+.matrix-quadrant__title,
+.detail-bullet-card__title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  margin: 0;
+}
+
+/* ── AI Strategy domain — card secondary / body text ──
+   Older layouts ranged from 0.79 rem–0.84 rem at 0.52–0.68 opacity. */
+
+.initiative-card__description,
+.pillar-card__description,
+.commitment-pillar-card__list li,
+.solution-portfolio-card__row-value,
+.solution-portfolio-card__kpis-list,
+.team-role-item__desc,
+.detail-bullet-card__desc,
+.detail-bullet-card__list li,
+.matrix-quadrant__items {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.64);
+  line-height: 1.55;
+}
+
+/* ── AI Use Cases domain — body text ── */
+
+.cls-card__purpose,
+.cls-banner__desc,
+.bvd-cat-card__outcomes li {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.64);
+  line-height: 1.5;
+}
+
+/* ── AI Use Cases domain — sub-section labels (near-invisible at 0.25–0.28) ── */
+
+.cls-banner__label,
+.cls-card__section-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.52);
+}

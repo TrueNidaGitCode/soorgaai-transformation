@@ -488,6 +488,276 @@ SECTION-SPECIFIC EXTRAS — "AI Use Case Classification" sections only:
    "primaryClassification": {...}, "secondaryClassification": {...} or null, "classificationCards": [...], "classificationInsight": "..."`,
   },
 
+  'Critical Data Identification': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Critical Data Identification" sections only:
+
+5. datasets (exactly 7 items)
+   Identify the 7 critical datasets required for this AI use case, one per data category.
+   Each item: { "name": "<dataset name, 2–4 words>", "purpose": "<1 sentence, ≤10 words>", "priority": "HIGH|MEDIUM|LOW", "availability": "AVAILABLE|MISSING|PARTIAL", "category": "Business|Product|System|Engineering|Operational|Supporting|Relationships" }
+
+6. relationshipMap
+   Classify the identified datasets into 4 relationship roles.
+   Object: { "dataSource": ["<dataset 1>", "<dataset 2>"], "dependentData": ["..."], "relatedData": ["..."], "targetData": ["..."] }
+   dataSource = primary input datasets; dependentData = derived metrics/features; relatedData = contextual/reference data; targetData = final model outputs.
+
+7. recommendations (exactly 3 items)
+   The 3 highest-priority data collection or preparation actions for this project.
+   Each item: { "text": "<action, ≤12 words>", "priority": "HIGH|MEDIUM|LOW" }
+
+8. coverageSummary
+   Object: { "criticalDatasets": <number 1–7>, "missingData": <number 0–7>, "confidence": <number 0–100> }
+   criticalDatasets = total datasets identified; missingData = count with availability MISSING or PARTIAL; confidence = estimated % confidence that identified data is sufficient.
+
+   Add all to the brief object:
+   "datasets": [...], "relationshipMap": {...}, "recommendations": [...], "coverageSummary": {...}`,
+  },
+
+  'AI Data Preparation': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "AI Data Preparation" sections only:
+
+5. inputDatasets (up to 4 items)
+   The key datasets from the previous step that are being prepared for AI.
+   Each item: { "name": "<dataset name, 2–4 words>", "status": "AVAILABLE|MISSING|IN PROGRESS" }
+
+6. pipelineStages (exactly 4 items, fixed order: Raw Data, Quality Check, Standardization, Integration)
+   The current preparation status of each pipeline stage for this project's data.
+   Each item: { "stage": "Raw Data|Quality Check|Standardization|Integration", "status": "Completed|Needs Attention|In Progress|Pending" }
+
+7. prepRecommendations (exactly 3 items)
+   The 3 highest-priority data preparation actions for this project.
+   Each item: { "text": "<action, ≤12 words>", "priority": "HIGH|MEDIUM|LOW", "effort": "LOW|MEDIUM|HIGH", "impact": "<expected outcome, ≤8 words>" }
+
+8. dataStats
+   Key data health metrics for this project.
+   Object: { "missingData": <count 0–10>, "dataQuality": <score 0–100>, "traceability": <score 0–100> }
+
+9. readinessSummary
+   Four dimension readiness scores as percentages (0–100).
+   Object: { "quality": <0–100>, "standardization": <0–100>, "integration": <0–100>, "aiReadiness": <0–100> }
+
+   Add all to the brief object:
+   "inputDatasets": [...], "pipelineStages": [...], "prepRecommendations": [...], "dataStats": {...}, "readinessSummary": {...}`,
+  },
+
+  'Data Architecture Enablement': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "Data Architecture Enablement" sections only:
+
+5. projectSystems (up to 4 items)
+   The engineering or project systems containing data relevant to this AI use case.
+   Each item: { "name": "<system name, 2–4 words>", "connectionStatus": "Connected|Partial|Disconnected" }
+
+6. archRecommendations (up to 4 items)
+   The highest-priority architecture improvement actions for this project.
+   Each item: { "title": "<action, ≤6 words>", "impact": "High|Medium|Low", "effort": "Low|Medium|High" }
+
+7. archStats
+   Key architecture health metrics for this project.
+   Object: { "architectureReadiness": <0–100>, "automation": <0–100>, "connectedSystems": <count>, "disconnectedSystems": <count> }
+
+8. healthTimeline (exactly 4 items, fixed order: Source Systems, Integration, AI Data Hub, AI Application)
+   Current health status of each architecture layer for this project.
+   Each item: { "stage": "Source Systems|Integration|AI Data Hub|AI Application", "status": "<1-line description, ≤6 words>", "health": "Healthy|Needs Attention|Pending|Critical" }
+
+   Add all to the brief object:
+   "projectSystems": [...], "archRecommendations": [...], "archStats": {...}, "healthTimeline": [...]`,
+  },
+
+  'System Integration & Architecture': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "System Integration & Architecture" sections only:
+
+5. integrationReadiness (number 0–100)
+   The overall system integration readiness score as a percentage for this AI use case.
+
+6. connectedSystems (exactly 4 items)
+   The 4 key systems that must integrate with this AI solution.
+   Each item: { "name": "<system name, 2–4 words>", "integrationMethod": "<e.g. REST API|Database|Webhook|Event Queue|Direct Integration>", "status": "CONNECTED|PARTIAL|MISSING", "healthIndicator": "Healthy|Degraded|Offline" }
+   Rule: CONNECTED = fully integrated or ready, PARTIAL = partially integrated, MISSING = not yet integrated.
+
+7. integrationSummary
+   Summary of integration health across 4 key dimensions for this AI use case.
+   Object: { "integration": "<Ready|Partial|Needs Improvement|Missing>", "automation": "<Ready|Partial|Needs Improvement|Missing>", "reliability": "<High|Medium|Low>", "scalability": "<Good|Moderate|Poor>" }
+
+   Add all to the brief object:
+   "integrationReadiness": <number>, "connectedSystems": [...], "integrationSummary": {...}`,
+  },
+
+  'AI Platform Readiness': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "AI Platform Readiness" sections only:
+
+5. platformReadiness (number 0–100)
+   The overall AI platform readiness score as a percentage for this AI use case.
+
+6. capabilityAssessment (exactly 4 items)
+   The 4 most critical platform capability areas relevant to this AI use case.
+   Each item: { "name": "<capability name, 2–5 words>", "score": <0–100>, "status": "READY|PARTIAL|MISSING" }
+   Rule: READY = score ≥ 75, PARTIAL = score 40–74, MISSING = score < 40.
+
+7. platformStack (exactly 6 items, in this fixed order)
+   Readiness assessment for each layer of the AI platform stack.
+   Each item: { "layer": "AI Applications|AI Model & Prompt Management|Knowledge & Retrieval Services|AI Deployment & Automation|AI Monitoring & Evaluation|AI Development Environment", "score": <0–100>, "status": "READY|PARTIAL|MISSING" }
+   Use EXACTLY these layer names. Rule: READY = score ≥ 75, PARTIAL = score 40–74, MISSING = score < 40.
+
+8. platformRecommendations (exactly 3 items)
+   The 3 highest-priority actions to improve platform readiness for this AI use case.
+   Each item: { "text": "<action, ≤10 words>", "priority": "HIGH|MEDIUM|LOW", "benefit": "<expected outcome, ≤8 words>" }
+
+9. platformSummary
+   Summary status of the 4 key platform areas for this AI use case.
+   Object: { "development": "<Ready|Partial|Needs Improvement|Missing>", "knowledge": "<Ready|Partial|Needs Improvement|Missing>", "deployment": "<Ready|Partial|Needs Improvement|Missing>", "monitoring": "<Ready|Partial|Needs Improvement|Missing>" }
+
+   Add all to the brief object:
+   "platformReadiness": <number>, "capabilityAssessment": [...], "platformStack": [...], "platformRecommendations": [...], "platformSummary": {...}`,
+  },
+
+  'AI Compute & Deployment Strategy': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "AI Compute & Deployment Strategy" sections only:
+
+5. deploymentReadiness (number 0–100)
+   The overall deployment readiness score as a percentage reflecting how prepared the infrastructure is for this AI use case.
+
+6. workloadProfile (exactly 4 items)
+   Profile of the distinct AI workloads required by this use case, covering different processing modes.
+   Each item: { "workloadType": "<2–4 word workload name>", "computeRequirement": "Low|Medium|High|Very High", "performanceRequirement": "<e.g. Low Latency|High Throughput|Batch Processing|Real-time>", "scalabilityRequirement": "Low|Moderate|High|Critical", "priority": "LOW|MEDIUM|HIGH|CRITICAL" }
+   Priority must reflect engineering importance. One item should be CRITICAL.
+
+7. deploymentRecommendations (exactly 3 items)
+   The top 3 AI-recommended deployment actions to maximise compute fit and operational confidence.
+   Each item: { "text": "<recommendation, ≤8 words>", "impact": "High|Medium|Low", "reason": "<1 sentence explaining why, ≤12 words>" }
+
+8. deploymentScores
+   Key deployment quality metrics for this AI use case.
+   Object: { "computeFit": <0–100>, "deploymentConfidence": <0–100>, "estimatedScalability": "Low|Moderate|High|Critical" }
+
+9. deploymentKpis
+   Summary deployment KPIs for the recommended strategy.
+   Object: { "compute": "<e.g. GPU|CPU|TPU|Mixed>", "deployment": "<e.g. Cloud|Hybrid|Edge|On-Premise>", "latency": "<e.g. Low|Medium|High>", "scalability": "<e.g. Low|Moderate|High|Critical>" }
+
+   Add all to the brief object:
+   "deploymentReadiness": <number>, "workloadProfile": [...], "deploymentRecommendations": [...], "deploymentScores": {...}, "deploymentKpis": {...}`,
+  },
+
+  'AI Engineering Enablement': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "AI Engineering Enablement" sections only:
+
+5. engineeringReadiness (number 0–100)
+   The overall engineering readiness score as a percentage for this AI use case.
+
+6. engineeringCapabilities (exactly 5 items, in this fixed order)
+   Assessment of the 5 key engineering capability areas for this AI use case.
+   Each item: { "name": "Development Environment|Workflow|Testing|Deployment|Monitoring", "status": "READY|PARTIAL|ATTENTION", "score": <0–100> }
+   Use EXACTLY these names in this order. Rule: READY = score ≥ 75, PARTIAL = score 50–74, ATTENTION = score < 50.
+
+7. engineeringLifecycle (exactly 6 items, in this fixed order)
+   Readiness and automation level for each stage of the AI engineering lifecycle.
+   Each item: { "stage": "Plan|Develop|Test|Deploy|Monitor|Improve", "readiness": <0–100>, "automation": "High|Medium|Low" }
+   Use EXACTLY these stage names in this order. Readiness must reflect realistic engineering maturity for this AI use case.
+
+8. engineeringRecommendations (exactly 3 items)
+   The 3 highest-priority actions to improve engineering enablement for this AI use case.
+   Each item: { "text": "<action, ≤10 words>", "priority": "HIGH|MEDIUM|LOW", "businessImpact": "Significant|Moderate|Minor" }
+
+9. automationStats
+   Key automation metrics summarising the engineering delivery capability for this AI use case.
+   Object: { "automation": "<percentage e.g. 85%>", "testing": "<percentage e.g. 92%>", "deployment": "<Ready|Partial|Not Ready>" }
+
+10. engineeringSummary
+    Summary health status of the 4 key engineering areas for this AI use case.
+    Object: { "development": "<Ready|Strong|Partial|Needs Attention>", "testing": "<Ready|Strong|Partial|Needs Attention>", "deployment": "<Ready|Strong|Partial|Needs Attention>", "continuousImprovement": "<Good|Strong|Partial|Needs Attention>" }
+
+   Add all to the brief object:
+   "engineeringReadiness": <number>, "engineeringCapabilities": [...], "engineeringLifecycle": [...], "engineeringRecommendations": [...], "automationStats": {...}, "engineeringSummary": {...}`,
+  },
+
+  // ── Skills & Workforce domain ─────────────────────────────────────────────
+
+  'AI Skills Assessment': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "AI Skills Assessment" sections only:
+
+5. skillsReadiness (number 0–100)
+   The overall skills readiness score as a percentage for this AI use case.
+
+6. requiredSkills (4 to 6 items)
+   The most critical skills required for this AI use case across all four categories.
+   Each item: { "name": "<skill name, 2–4 words>", "category": "Business|AI & Data|Engineering|Domain", "priority": "High|Medium|Low", "availability": "Available|Partial|Missing" }
+   Include at least one skill per category. Priority must reflect criticality to delivery.
+
+7. skillsMatrix (exactly 4 items, fixed order: Business Skills, AI & Data Skills, Engineering Skills, Domain Expertise)
+   Each item: { "category": "Business Skills|AI & Data Skills|Engineering Skills|Domain Expertise", "readiness": <0–100>, "required": <count 1–10>, "missing": <count 0–5> }
+   "missing" must be ≤ "required". Readiness reflects realistic skill availability for this project.
+
+8. skillsRecommendations (exactly 3 items)
+   Each item: { "title": "<action, 2–5 words>", "priority": "High|Medium|Low", "expectedBenefit": "<outcome, ≤8 words>" }
+
+9. skillsStats
+   Object: { "available": <count of skills marked Available>, "gaps": <count of Partial or Missing skills>, "critical": <count of High-priority Missing skills> }
+
+10. skillsCategorySummary (exactly 4 items, fixed order: Business, AI & Data, Engineering, Domain)
+    Each item: { "category": "Business|AI & Data|Engineering|Domain", "status": "Ready|Strong|Partial|Needs Improvement" }
+
+   Add all to the brief object:
+   "skillsReadiness": <number>, "requiredSkills": [...], "skillsMatrix": [...], "skillsRecommendations": [...], "skillsStats": {...}, "skillsCategorySummary": [...]`,
+  },
+
+  'AI Team Readiness': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "AI Team Readiness" sections only:
+
+5. teamReadiness (number 0–100)
+   The overall team readiness score as a percentage for this AI use case.
+
+6. requiredRoles (4 to 6 items)
+   The key project roles required to deliver this AI use case.
+   Each item: { "name": "<role name, 2–4 words>", "responsibility": "<primary responsibility, ≤6 words>", "availability": "Available|Partial|Missing", "priority": "High|Medium|Low" }
+   Cover all four role categories: business leadership, AI specialists, engineering, domain expertise.
+
+7. teamRecommendations (exactly 3 items)
+   Each item: { "title": "<action, 2–5 words>", "priority": "High|Medium|Low", "impact": "<outcome, ≤8 words>" }
+
+8. teamStats
+   Object: { "required": <total roles count>, "available": <count of Available roles>, "missing": <count of Missing or Partial roles> }
+
+9. teamCoverageSummary (exactly 4 items, fixed order: Business, AI, Engineering, Domain)
+   Each item: { "category": "Business|AI|Engineering|Domain", "status": "Ready|Strong|Needs Support|Missing" }
+
+   Add all to the brief object:
+   "teamReadiness": <number>, "requiredRoles": [...], "teamRecommendations": [...], "teamStats": {...}, "teamCoverageSummary": [...]`,
+  },
+
+  'AI Learning & Adoption': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "AI Learning & Adoption" sections only:
+
+5. adoptionReadiness (number 0–100)
+   The overall adoption readiness score as a percentage for this AI use case.
+
+6. learningPillars (exactly 4 items, fixed order: AI Literacy, Engineering Learning, AI Tool Adoption, Human-AI Collaboration)
+   Each item: { "name": "AI Literacy|Engineering Learning|AI Tool Adoption|Human-AI Collaboration", "description": "<focus phrase, ≤5 words>", "status": "Ready|In Progress|Not Started" }
+
+7. adoptionLifecycle (exactly 5 items, fixed order: Awareness, Learning, Experimentation, Integration, Mastery)
+   Each item: { "stage": "Awareness|Learning|Experimentation|Integration|Mastery", "currentStatus": "<2–4 word status>", "readiness": <0–100>, "keyActivities": ["<≤5 word activity>", "<≤5 word activity>", "<≤5 word activity>"] }
+   Readiness values must increase stage by stage — Mastery must be 100.
+
+8. adoptionRecommendations (exactly 3 items)
+   Each item: { "title": "<action, 2–5 words>", "priority": "High|Medium|Low", "expectedOutcome": "<outcome, ≤5 words>" }
+
+9. adoptionStats
+   Object: { "teamsTrained": <count>, "toolsAdopted": <count>, "adoptionRate": "<percentage e.g. 68%>" }
+
+10. adoptionReadinessSummary (exactly 4 items, fixed order: AI Literacy, Tool Adoption, Collaboration, Knowledge Sharing)
+    Each item: { "category": "AI Literacy|Tool Adoption|Collaboration|Knowledge Sharing", "status": "Ready|In Progress|Emerging|Developing" }
+
+   Add all to the brief object:
+   "adoptionReadiness": <number>, "learningPillars": [...], "adoptionLifecycle": [...], "adoptionRecommendations": [...], "adoptionStats": {...}, "adoptionReadinessSummary": [...]`,
+  },
+
 };
 
 // ── Shared output parser ──────────────────────────────────────────────────────
@@ -731,6 +1001,439 @@ function parseBriefOutput(rawSections, validTitles) {
         }))
         .slice(0, 6);
 
+      // ── Data Readiness: Critical Data Identification parsers ──────────────────
+
+      const rawDatasets = Array.isArray(b.datasets) ? b.datasets : [];
+      const datasets = rawDatasets
+        .filter(d => d && typeof d === 'object' && String(d.name || '').trim())
+        .map(d => ({
+          name:         String(d.name         || '').trim(),
+          purpose:      String(d.purpose      || '').trim(),
+          priority:     String(d.priority     || 'MEDIUM').trim(),
+          availability: String(d.availability || 'UNKNOWN').trim(),
+          category:     String(d.category     || '').trim(),
+        }))
+        .slice(0, 7);
+
+      const rawRelMap = b.relationshipMap && typeof b.relationshipMap === 'object' ? b.relationshipMap : {};
+      const relationshipMap = {
+        dataSource:    Array.isArray(rawRelMap.dataSource)    ? rawRelMap.dataSource.map(String).filter(Boolean)    : [],
+        dependentData: Array.isArray(rawRelMap.dependentData) ? rawRelMap.dependentData.map(String).filter(Boolean) : [],
+        relatedData:   Array.isArray(rawRelMap.relatedData)   ? rawRelMap.relatedData.map(String).filter(Boolean)   : [],
+        targetData:    Array.isArray(rawRelMap.targetData)    ? rawRelMap.targetData.map(String).filter(Boolean)    : [],
+      };
+
+      const rawRecs = Array.isArray(b.recommendations) ? b.recommendations : [];
+      const recommendations = rawRecs
+        .filter(r => r && typeof r === 'object' && String(r.text || '').trim())
+        .map(r => ({
+          text:     String(r.text     || '').trim(),
+          priority: String(r.priority || 'MEDIUM').trim(),
+        }))
+        .slice(0, 3);
+
+      const rawCoverage = b.coverageSummary && typeof b.coverageSummary === 'object' ? b.coverageSummary : {};
+      const coverageSummary = {
+        criticalDatasets: parseInt(rawCoverage.criticalDatasets, 10) || 0,
+        missingData:      parseInt(rawCoverage.missingData,      10) || 0,
+        confidence:       parseInt(rawCoverage.confidence,       10) || 0,
+      };
+
+      // ── Data Readiness: AI Data Preparation parsers ───────────────────────────
+
+      const rawInputDatasets = Array.isArray(b.inputDatasets) ? b.inputDatasets : [];
+      const inputDatasets = rawInputDatasets
+        .filter(d => d && typeof d === 'object' && String(d.name || '').trim())
+        .map(d => ({
+          name:   String(d.name   || '').trim(),
+          status: String(d.status || 'AVAILABLE').trim(),
+        }))
+        .slice(0, 4);
+
+      const PIPELINE_STAGES = ['Raw Data', 'Quality Check', 'Standardization', 'Integration'];
+      const rawPipelineStages = Array.isArray(b.pipelineStages) ? b.pipelineStages : [];
+      const pipelineStages = PIPELINE_STAGES.map(stageName => {
+        const found = rawPipelineStages.find(s => s && String(s.stage || '').trim() === stageName);
+        return {
+          stage:  stageName,
+          status: found ? String(found.status || 'Pending').trim() : 'Pending',
+        };
+      });
+
+      const rawPrepRecs = Array.isArray(b.prepRecommendations) ? b.prepRecommendations : [];
+      const prepRecommendations = rawPrepRecs
+        .filter(r => r && typeof r === 'object' && String(r.text || '').trim())
+        .map(r => ({
+          text:     String(r.text     || '').trim(),
+          priority: String(r.priority || 'MEDIUM').trim(),
+          effort:   String(r.effort   || 'MEDIUM').trim(),
+          impact:   String(r.impact   || '').trim(),
+        }))
+        .slice(0, 3);
+
+      const rawDataStats = b.dataStats && typeof b.dataStats === 'object' ? b.dataStats : {};
+      const dataStats = {
+        missingData:  parseInt(rawDataStats.missingData,  10) || 0,
+        dataQuality:  parseInt(rawDataStats.dataQuality,  10) || 0,
+        traceability: parseInt(rawDataStats.traceability, 10) || 0,
+      };
+
+      const rawReadiness = b.readinessSummary && typeof b.readinessSummary === 'object' ? b.readinessSummary : {};
+      const readinessSummary = {
+        quality:         parseInt(rawReadiness.quality,         10) || 0,
+        standardization: parseInt(rawReadiness.standardization, 10) || 0,
+        integration:     parseInt(rawReadiness.integration,     10) || 0,
+        aiReadiness:     parseInt(rawReadiness.aiReadiness,     10) || 0,
+      };
+
+      // ── Technology Infrastructure: System Integration & Architecture parsers ──
+
+      const integrationReadiness = parseInt(b.integrationReadiness, 10) || 0;
+
+      const rawConnectedSystems = Array.isArray(b.connectedSystems) ? b.connectedSystems : [];
+      const connectedSystems = rawConnectedSystems
+        .filter(s => s && typeof s === 'object' && String(s.name || '').trim())
+        .map(s => ({
+          name:              String(s.name              || '').trim(),
+          integrationMethod: String(s.integrationMethod || '').trim(),
+          status:            String(s.status            || 'MISSING').trim().toUpperCase(),
+          healthIndicator:   String(s.healthIndicator   || '').trim(),
+        }))
+        .slice(0, 4);
+
+      const rawIntegrationSummary = b.integrationSummary && typeof b.integrationSummary === 'object'
+        ? b.integrationSummary : {};
+      const integrationSummary = {
+        integration: String(rawIntegrationSummary.integration || '').trim(),
+        automation:  String(rawIntegrationSummary.automation  || '').trim(),
+        reliability: String(rawIntegrationSummary.reliability || '').trim(),
+        scalability: String(rawIntegrationSummary.scalability || '').trim(),
+      };
+
+      // ── Technology Infrastructure: AI Platform Readiness parsers ─────────────
+
+      const platformReadiness = parseInt(b.platformReadiness, 10) || 0;
+
+      const rawCapabilityAssessment = Array.isArray(b.capabilityAssessment) ? b.capabilityAssessment : [];
+      const capabilityAssessment = rawCapabilityAssessment
+        .filter(c => c && typeof c === 'object' && String(c.name || '').trim())
+        .map(c => ({
+          name:   String(c.name   || '').trim(),
+          score:  parseInt(c.score, 10) || 0,
+          status: String(c.status || 'PARTIAL').trim().toUpperCase(),
+        }))
+        .slice(0, 4);
+
+      const PLATFORM_STACK_LAYERS = [
+        'AI Applications',
+        'AI Model & Prompt Management',
+        'Knowledge & Retrieval Services',
+        'AI Deployment & Automation',
+        'AI Monitoring & Evaluation',
+        'AI Development Environment',
+      ];
+      const rawPlatformStack = Array.isArray(b.platformStack) ? b.platformStack : [];
+      const platformStack = PLATFORM_STACK_LAYERS.map(layerName => {
+        const found = rawPlatformStack.find(l => l && String(l.layer || '').trim() === layerName);
+        return {
+          layer:  layerName,
+          score:  found ? parseInt(found.score, 10) || 0 : 0,
+          status: found ? String(found.status || 'MISSING').trim().toUpperCase() : 'MISSING',
+        };
+      });
+
+      const rawPlatformRecs = Array.isArray(b.platformRecommendations) ? b.platformRecommendations : [];
+      const platformRecommendations = rawPlatformRecs
+        .filter(r => r && typeof r === 'object' && String(r.text || '').trim())
+        .map(r => ({
+          text:     String(r.text     || '').trim(),
+          priority: String(r.priority || 'MEDIUM').trim().toUpperCase(),
+          benefit:  String(r.benefit  || '').trim(),
+        }))
+        .slice(0, 3);
+
+      const rawPlatformSummary = b.platformSummary && typeof b.platformSummary === 'object' ? b.platformSummary : {};
+      const platformSummary = {
+        development: String(rawPlatformSummary.development || '').trim(),
+        knowledge:   String(rawPlatformSummary.knowledge   || '').trim(),
+        deployment:  String(rawPlatformSummary.deployment  || '').trim(),
+        monitoring:  String(rawPlatformSummary.monitoring  || '').trim(),
+      };
+
+      // ── Technology Infrastructure: AI Compute & Deployment Strategy parsers ──
+
+      const deploymentReadiness = parseInt(b.deploymentReadiness, 10) || 0;
+
+      const rawWorkloadProfile = Array.isArray(b.workloadProfile) ? b.workloadProfile : [];
+      const workloadProfile = rawWorkloadProfile
+        .filter(w => w && typeof w === 'object' && String(w.workloadType || '').trim())
+        .map(w => ({
+          workloadType:            String(w.workloadType            || '').trim(),
+          computeRequirement:      String(w.computeRequirement      || '').trim(),
+          performanceRequirement:  String(w.performanceRequirement  || '').trim(),
+          scalabilityRequirement:  String(w.scalabilityRequirement  || '').trim(),
+          priority:                String(w.priority                || 'MEDIUM').trim().toUpperCase(),
+        }))
+        .slice(0, 4);
+
+      const rawDeploymentRecs = Array.isArray(b.deploymentRecommendations) ? b.deploymentRecommendations : [];
+      const deploymentRecommendations = rawDeploymentRecs
+        .filter(r => r && typeof r === 'object' && String(r.text || '').trim())
+        .map(r => ({
+          text:   String(r.text   || '').trim(),
+          impact: String(r.impact || 'Medium').trim(),
+          reason: String(r.reason || '').trim(),
+        }))
+        .slice(0, 3);
+
+      const rawDeploymentScores = b.deploymentScores && typeof b.deploymentScores === 'object' ? b.deploymentScores : {};
+      const deploymentScores = {
+        computeFit:           parseInt(rawDeploymentScores.computeFit,           10) || 0,
+        deploymentConfidence: parseInt(rawDeploymentScores.deploymentConfidence, 10) || 0,
+        estimatedScalability: String(rawDeploymentScores.estimatedScalability   || '').trim(),
+      };
+
+      const rawDeploymentKpis = b.deploymentKpis && typeof b.deploymentKpis === 'object' ? b.deploymentKpis : {};
+      const deploymentKpis = {
+        compute:    String(rawDeploymentKpis.compute    || '').trim(),
+        deployment: String(rawDeploymentKpis.deployment || '').trim(),
+        latency:    String(rawDeploymentKpis.latency    || '').trim(),
+        scalability: String(rawDeploymentKpis.scalability || '').trim(),
+      };
+
+      // ── Technology Infrastructure: AI Engineering Enablement parsers ─────────
+
+      const engineeringReadiness = parseInt(b.engineeringReadiness, 10) || 0;
+
+      const ENG_CAP_NAMES = ['Development Environment', 'Workflow', 'Testing', 'Deployment', 'Monitoring'];
+      const rawEngCaps = Array.isArray(b.engineeringCapabilities) ? b.engineeringCapabilities : [];
+      const engineeringCapabilities = ENG_CAP_NAMES.map(capName => {
+        const found = rawEngCaps.find(c => c && String(c.name || '').trim() === capName);
+        return {
+          name:   capName,
+          status: found ? String(found.status || 'PARTIAL').trim().toUpperCase() : 'PARTIAL',
+          score:  found ? parseInt(found.score, 10) || 0 : 0,
+        };
+      });
+
+      const ENG_LIFECYCLE_STAGES = ['Plan', 'Develop', 'Test', 'Deploy', 'Monitor', 'Improve'];
+      const rawEngLifecycle = Array.isArray(b.engineeringLifecycle) ? b.engineeringLifecycle : [];
+      const engineeringLifecycle = ENG_LIFECYCLE_STAGES.map(stageName => {
+        const found = rawEngLifecycle.find(s => s && String(s.stage || '').trim() === stageName);
+        return {
+          stage:      stageName,
+          readiness:  found ? parseInt(found.readiness, 10) || 0 : 0,
+          automation: found ? String(found.automation || 'Low').trim() : 'Low',
+        };
+      });
+
+      const rawEngRecs = Array.isArray(b.engineeringRecommendations) ? b.engineeringRecommendations : [];
+      const engineeringRecommendations = rawEngRecs
+        .filter(r => r && typeof r === 'object' && String(r.text || '').trim())
+        .map(r => ({
+          text:           String(r.text           || '').trim(),
+          priority:       String(r.priority       || 'MEDIUM').trim().toUpperCase(),
+          businessImpact: String(r.businessImpact || 'Moderate').trim(),
+        }))
+        .slice(0, 3);
+
+      const rawAutoStats = b.automationStats && typeof b.automationStats === 'object' ? b.automationStats : {};
+      const automationStats = {
+        automation: String(rawAutoStats.automation || '').trim(),
+        testing:    String(rawAutoStats.testing    || '').trim(),
+        deployment: String(rawAutoStats.deployment || '').trim(),
+      };
+
+      const rawEngSummary = b.engineeringSummary && typeof b.engineeringSummary === 'object' ? b.engineeringSummary : {};
+      const engineeringSummary = {
+        development:           String(rawEngSummary.development           || '').trim(),
+        testing:               String(rawEngSummary.testing               || '').trim(),
+        deployment:            String(rawEngSummary.deployment            || '').trim(),
+        continuousImprovement: String(rawEngSummary.continuousImprovement || '').trim(),
+      };
+
+      // ── Data Readiness: Data Architecture Enablement parsers ─────────────────
+
+      const rawProjectSystems = Array.isArray(b.projectSystems) ? b.projectSystems : [];
+      const projectSystems = rawProjectSystems
+        .filter(s => s && typeof s === 'object' && String(s.name || '').trim())
+        .map(s => ({
+          name:             String(s.name             || '').trim(),
+          connectionStatus: String(s.connectionStatus || 'Disconnected').trim(),
+        }))
+        .slice(0, 4);
+
+      const rawArchRecs = Array.isArray(b.archRecommendations) ? b.archRecommendations : [];
+      const archRecommendations = rawArchRecs
+        .filter(r => r && typeof r === 'object' && String(r.title || '').trim())
+        .map(r => ({
+          title:  String(r.title  || '').trim(),
+          impact: String(r.impact || 'Medium').trim(),
+          effort: String(r.effort || 'Medium').trim(),
+        }))
+        .slice(0, 4);
+
+      const rawArchStats = b.archStats && typeof b.archStats === 'object' ? b.archStats : {};
+      const archStats = {
+        architectureReadiness: parseInt(rawArchStats.architectureReadiness, 10) || 0,
+        automation:            parseInt(rawArchStats.automation,            10) || 0,
+        connectedSystems:      parseInt(rawArchStats.connectedSystems,      10) || 0,
+        disconnectedSystems:   parseInt(rawArchStats.disconnectedSystems,   10) || 0,
+      };
+
+      const HEALTH_STAGES = ['Source Systems', 'Integration', 'AI Data Hub', 'AI Application'];
+      const rawHealthTimeline = Array.isArray(b.healthTimeline) ? b.healthTimeline : [];
+      const healthTimeline = HEALTH_STAGES.map(stageName => {
+        const found = rawHealthTimeline.find(h => h && String(h.stage || '').trim() === stageName);
+        return {
+          stage:  stageName,
+          status: found ? String(found.status || '').trim() : '',
+          health: found ? String(found.health || 'Pending').trim() : 'Pending',
+        };
+      });
+
+      // ── Skills & Workforce: AI Skills Assessment parsers ─────────────────────
+
+      const skillsReadiness = parseInt(b.skillsReadiness, 10) || 0;
+
+      const rawRequiredSkills = Array.isArray(b.requiredSkills) ? b.requiredSkills : [];
+      const requiredSkills = rawRequiredSkills
+        .filter(sk => sk && typeof sk === 'object' && String(sk.name || '').trim())
+        .map(sk => ({
+          name:         String(sk.name         || '').trim(),
+          category:     String(sk.category     || '').trim(),
+          priority:     String(sk.priority     || 'Medium').trim(),
+          availability: String(sk.availability || 'Partial').trim(),
+        }))
+        .slice(0, 6);
+
+      const SKILLS_MATRIX_CATEGORIES = ['Business Skills', 'AI & Data Skills', 'Engineering Skills', 'Domain Expertise'];
+      const rawSkillsMatrix = Array.isArray(b.skillsMatrix) ? b.skillsMatrix : [];
+      const skillsMatrix = SKILLS_MATRIX_CATEGORIES.map(catName => {
+        const found = rawSkillsMatrix.find(c => c && String(c.category || '').trim() === catName);
+        return {
+          category:  catName,
+          readiness: found ? parseInt(found.readiness, 10) || 0 : 0,
+          required:  found ? parseInt(found.required,  10) || 0 : 0,
+          missing:   found ? parseInt(found.missing,   10) || 0 : 0,
+        };
+      });
+
+      const rawSkillsRecs = Array.isArray(b.skillsRecommendations) ? b.skillsRecommendations : [];
+      const skillsRecommendations = rawSkillsRecs
+        .filter(r => r && typeof r === 'object' && String(r.title || '').trim())
+        .map(r => ({
+          title:           String(r.title           || '').trim(),
+          priority:        String(r.priority        || 'Medium').trim(),
+          expectedBenefit: String(r.expectedBenefit || '').trim(),
+        }))
+        .slice(0, 3);
+
+      const rawSkillsStats = b.skillsStats && typeof b.skillsStats === 'object' ? b.skillsStats : {};
+      const skillsStats = {
+        available: parseInt(rawSkillsStats.available, 10) || 0,
+        gaps:      parseInt(rawSkillsStats.gaps,      10) || 0,
+        critical:  parseInt(rawSkillsStats.critical,  10) || 0,
+      };
+
+      const SKILLS_SUMMARY_CATS = ['Business', 'AI & Data', 'Engineering', 'Domain'];
+      const rawSkillsCatSummary = Array.isArray(b.skillsCategorySummary) ? b.skillsCategorySummary : [];
+      const skillsCategorySummary = SKILLS_SUMMARY_CATS.map(catName => {
+        const found = rawSkillsCatSummary.find(c => c && String(c.category || '').trim() === catName);
+        return { category: catName, status: found ? String(found.status || '').trim() : '' };
+      });
+
+      // ── Skills & Workforce: AI Team Readiness parsers ─────────────────────────
+
+      const teamReadiness = parseInt(b.teamReadiness, 10) || 0;
+
+      const rawRequiredRoles = Array.isArray(b.requiredRoles) ? b.requiredRoles : [];
+      const requiredRoles = rawRequiredRoles
+        .filter(r => r && typeof r === 'object' && String(r.name || '').trim())
+        .map(r => ({
+          name:           String(r.name           || '').trim(),
+          responsibility: String(r.responsibility || '').trim(),
+          availability:   String(r.availability   || 'Partial').trim(),
+          priority:       String(r.priority       || 'Medium').trim(),
+        }))
+        .slice(0, 6);
+
+      const rawTeamRecs = Array.isArray(b.teamRecommendations) ? b.teamRecommendations : [];
+      const teamRecommendations = rawTeamRecs
+        .filter(r => r && typeof r === 'object' && String(r.title || '').trim())
+        .map(r => ({
+          title:    String(r.title    || '').trim(),
+          priority: String(r.priority || 'Medium').trim(),
+          impact:   String(r.impact   || '').trim(),
+        }))
+        .slice(0, 3);
+
+      const rawTeamStats = b.teamStats && typeof b.teamStats === 'object' ? b.teamStats : {};
+      const teamStats = {
+        required:  parseInt(rawTeamStats.required,  10) || 0,
+        available: parseInt(rawTeamStats.available, 10) || 0,
+        missing:   parseInt(rawTeamStats.missing,   10) || 0,
+      };
+
+      const TEAM_COVERAGE_CATS = ['Business', 'AI', 'Engineering', 'Domain'];
+      const rawTeamCoverage = Array.isArray(b.teamCoverageSummary) ? b.teamCoverageSummary : [];
+      const teamCoverageSummary = TEAM_COVERAGE_CATS.map(catName => {
+        const found = rawTeamCoverage.find(c => c && String(c.category || '').trim() === catName);
+        return { category: catName, status: found ? String(found.status || '').trim() : '' };
+      });
+
+      // ── Skills & Workforce: AI Learning & Adoption parsers ───────────────────
+
+      const adoptionReadiness = parseInt(b.adoptionReadiness, 10) || 0;
+
+      const LEARNING_PILLAR_NAMES = ['AI Literacy', 'Engineering Learning', 'AI Tool Adoption', 'Human-AI Collaboration'];
+      const rawLearningPillars = Array.isArray(b.learningPillars) ? b.learningPillars : [];
+      const learningPillars = LEARNING_PILLAR_NAMES.map(pillarName => {
+        const found = rawLearningPillars.find(p => p && String(p.name || '').trim() === pillarName);
+        return {
+          name:        pillarName,
+          description: found ? String(found.description || '').trim() : '',
+          status:      found ? String(found.status      || 'Not Started').trim() : 'Not Started',
+        };
+      });
+
+      const ADOPTION_STAGE_NAMES = ['Awareness', 'Learning', 'Experimentation', 'Integration', 'Mastery'];
+      const rawAdoptionLifecycle = Array.isArray(b.adoptionLifecycle) ? b.adoptionLifecycle : [];
+      const adoptionLifecycle = ADOPTION_STAGE_NAMES.map(stageName => {
+        const found = rawAdoptionLifecycle.find(st => st && String(st.stage || '').trim() === stageName);
+        return {
+          stage:         stageName,
+          currentStatus: found ? String(found.currentStatus || '').trim() : '',
+          readiness:     found ? parseInt(found.readiness, 10) || 0 : 0,
+          keyActivities: found && Array.isArray(found.keyActivities)
+                          ? found.keyActivities.map(String).filter(Boolean).slice(0, 3) : [],
+        };
+      });
+
+      const rawAdoptionRecs = Array.isArray(b.adoptionRecommendations) ? b.adoptionRecommendations : [];
+      const adoptionRecommendations = rawAdoptionRecs
+        .filter(r => r && typeof r === 'object' && String(r.title || '').trim())
+        .map(r => ({
+          title:           String(r.title           || '').trim(),
+          priority:        String(r.priority        || 'Medium').trim(),
+          expectedOutcome: String(r.expectedOutcome || '').trim(),
+        }))
+        .slice(0, 3);
+
+      const rawAdoptionStats = b.adoptionStats && typeof b.adoptionStats === 'object' ? b.adoptionStats : {};
+      const adoptionStats = {
+        teamsTrained: parseInt(rawAdoptionStats.teamsTrained, 10) || 0,
+        toolsAdopted: parseInt(rawAdoptionStats.toolsAdopted, 10) || 0,
+        adoptionRate: String(rawAdoptionStats.adoptionRate || '').trim(),
+      };
+
+      const ADOPTION_SUMMARY_CATS = ['AI Literacy', 'Tool Adoption', 'Collaboration', 'Knowledge Sharing'];
+      const rawAdoptionSummary = Array.isArray(b.adoptionReadinessSummary) ? b.adoptionReadinessSummary : [];
+      const adoptionReadinessSummary = ADOPTION_SUMMARY_CATS.map(catName => {
+        const found = rawAdoptionSummary.find(c => c && String(c.category || '').trim() === catName);
+        return { category: catName, status: found ? String(found.status || '').trim() : '' };
+      });
+
       return {
         title: String(s.title || '').trim(),
         brief: {
@@ -783,6 +1486,69 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(Array.isArray(b.spokeNodes) && b.spokeNodes.length
               ? { spokeNodes: b.spokeNodes.map(String).filter(Boolean).slice(0, 6) }
               : {}),
+          // Data Readiness: Critical Data Identification extras
+          ...(datasets.length                          ? { datasets }         : {}),
+          ...(recommendations.length                   ? { recommendations }  : {}),
+          ...(coverageSummary.criticalDatasets         ? { coverageSummary }  : {}),
+          ...((relationshipMap.dataSource.length || relationshipMap.dependentData.length ||
+               relationshipMap.relatedData.length || relationshipMap.targetData.length)
+              ? { relationshipMap } : {}),
+          // Data Readiness: AI Data Preparation extras
+          ...(inputDatasets.length        ? { inputDatasets }        : {}),
+          ...(pipelineStages.length       ? { pipelineStages }       : {}),
+          ...(prepRecommendations.length  ? { prepRecommendations }  : {}),
+          ...(dataStats.dataQuality       ? { dataStats }            : {}),
+          ...(readinessSummary.aiReadiness? { readinessSummary }     : {}),
+          // Data Readiness: Data Architecture Enablement extras
+          ...(projectSystems.length          ? { projectSystems }       : {}),
+          ...(archRecommendations.length     ? { archRecommendations }  : {}),
+          ...(archStats.architectureReadiness? { archStats }            : {}),
+          ...(healthTimeline.length          ? { healthTimeline }       : {}),
+          // Technology Infrastructure: System Integration & Architecture extras
+          ...(integrationReadiness             ? { integrationReadiness } : {}),
+          ...(connectedSystems.length          ? { connectedSystems }     : {}),
+          ...((integrationSummary.integration || integrationSummary.reliability)
+              ? { integrationSummary } : {}),
+          // Technology Infrastructure: AI Platform Readiness extras
+          ...(platformReadiness                    ? { platformReadiness }           : {}),
+          ...(capabilityAssessment.length          ? { capabilityAssessment }        : {}),
+          ...(platformStack.length                 ? { platformStack }               : {}),
+          ...(platformRecommendations.length       ? { platformRecommendations }     : {}),
+          ...((platformSummary.development || platformSummary.monitoring)
+              ? { platformSummary } : {}),
+          // Technology Infrastructure: AI Compute & Deployment Strategy extras
+          ...(deploymentReadiness                  ? { deploymentReadiness }         : {}),
+          ...(workloadProfile.length               ? { workloadProfile }             : {}),
+          ...(deploymentRecommendations.length     ? { deploymentRecommendations }   : {}),
+          ...(deploymentScores.computeFit          ? { deploymentScores }            : {}),
+          ...((deploymentKpis.compute || deploymentKpis.deployment) ? { deploymentKpis } : {}),
+          // Technology Infrastructure: AI Engineering Enablement extras
+          ...(engineeringReadiness                      ? { engineeringReadiness }          : {}),
+          ...(engineeringCapabilities.some(c => c.score)? { engineeringCapabilities }       : {}),
+          ...(engineeringLifecycle.some(s => s.readiness)? { engineeringLifecycle }         : {}),
+          ...(engineeringRecommendations.length          ? { engineeringRecommendations }    : {}),
+          ...((automationStats.automation || automationStats.testing) ? { automationStats } : {}),
+          ...(engineeringSummary.development             ? { engineeringSummary }            : {}),
+          // Skills & Workforce: AI Skills Assessment extras
+          ...(skillsReadiness                              ? { skillsReadiness }              : {}),
+          ...(requiredSkills.length                        ? { requiredSkills }               : {}),
+          ...(skillsMatrix.some(m => m.readiness)          ? { skillsMatrix }                : {}),
+          ...(skillsRecommendations.length                 ? { skillsRecommendations }        : {}),
+          ...((skillsStats.available || skillsStats.gaps)  ? { skillsStats }                 : {}),
+          ...(skillsCategorySummary.some(c => c.status)    ? { skillsCategorySummary }       : {}),
+          // Skills & Workforce: AI Team Readiness extras
+          ...(teamReadiness                                ? { teamReadiness }               : {}),
+          ...(requiredRoles.length                         ? { requiredRoles }               : {}),
+          ...(teamRecommendations.length                   ? { teamRecommendations }         : {}),
+          ...((teamStats.required || teamStats.available)  ? { teamStats }                  : {}),
+          ...(teamCoverageSummary.some(c => c.status)      ? { teamCoverageSummary }        : {}),
+          // Skills & Workforce: AI Learning & Adoption extras
+          ...(adoptionReadiness                            ? { adoptionReadiness }           : {}),
+          ...(learningPillars.some(p => p.description)     ? { learningPillars }            : {}),
+          ...(adoptionLifecycle.some(st => st.readiness)   ? { adoptionLifecycle }          : {}),
+          ...(adoptionRecommendations.length               ? { adoptionRecommendations }     : {}),
+          ...((adoptionStats.teamsTrained || adoptionStats.adoptionRate) ? { adoptionStats }: {}),
+          ...(adoptionReadinessSummary.some(c => c.status) ? { adoptionReadinessSummary }   : {}),
         },
         content:   s.content ? String(s.content).trim() : '',
         updatedAt: new Date(),

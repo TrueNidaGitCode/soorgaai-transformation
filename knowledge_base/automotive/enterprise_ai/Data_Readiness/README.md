@@ -1,37 +1,48 @@
 # Data Readiness
 
 **Domain:** Enterprise AI Transformation  
-**Status:** Coming Soon
+**Status:** Active
 
 ---
 
 ## Purpose
 
-Establish the data foundations, governance, and quality standards required for
-enterprise AI at scale in automotive organizations.
+Assess and improve the data foundations required to implement AI use cases within enterprise programs and delivery teams. The Data Readiness domain helps project managers identify critical data, prepare it for AI consumption, and ensure the data architecture can reliably support AI implementation.
 
 ---
 
-## Planned Content
+## Structure
 
-- Data_Readiness_Intelligence_Specification.md
-- Data_Strategy.md
-- Data_Governance.md
-- Data_Quality_Framework.md
-- Automotive_Data_Architecture.md
-- Vehicle_Data_Management.md
+### Core
 
-## Key Topics
+Industry-agnostic Data Readiness knowledge, applicable across all enterprise AI programs.
 
-- Enterprise data strategy for AI
-- Data governance and ownership models
-- Data quality assessment and improvement
-- Automotive data architecture (vehicle telemetry, test data, manufacturing data)
-- Data lake and lakehouse patterns for automotive
-- Privacy and consent management for vehicle data
-- Data readiness assessment methodology
+- `Core/Data_Readiness_Intelligence_Specification.md` — capability overview and pipeline
+- `Core/Critical_Data_Identification.md`
+- `Core/AI_Data_Preparation.md`
+- `Core/Data_Architecture_Enablement.md`
+
+### Automotive
+
+Automotive-specific extensions covering vehicle telemetry, ECU data, ADAS datasets, supplier data, and regulatory compliance.
+
+- `Automotive/Automotive_Critical_Data_Identification.md`
+- `Automotive/Automotive_AI_Data_Preparation.md`
+- `Automotive/Automotive_Data_Architecture_Enablement.md`
+
+---
+
+## Capability Pipeline
+
+```text
+Critical Data Identification
+        ↓
+AI Data Preparation
+        ↓
+Data Architecture Enablement
+```
 
 ## Dependencies
 
 - `../AI_Strategy/`
-- `../../shared/Regulations.md` — Data privacy regulations (GDPR, CCPA)
+- `../../shared/Regulations.md` — Data privacy regulations (GDPR, CCPA, UN R155)

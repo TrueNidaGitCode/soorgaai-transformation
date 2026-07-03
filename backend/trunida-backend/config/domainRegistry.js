@@ -38,15 +38,9 @@ export const DOMAINS = [
     kbPath:  'Technology_Infrastructure',
   },
   {
-    id:      'leadership',
-    name:    'Leadership',
-    enabled: false,
-    kbPath:  'Leadership',
-  },
-  {
     id:      'governance-security',
     name:    'Governance & Security',
-    enabled: false,
+    enabled: true,
     kbPath:  'Governance_Security',
   },
 ];

@@ -32,7 +32,7 @@ The domain does not focus on specific AI technologies or implementation details 
 
 # Knowledge Architecture
 
-The AI Strategy domain consists of five core intelligence areas.
+The AI Strategy domain consists of four core intelligence areas.
 
 | Domain                      | Primary Objective                        |
 | --------------------------- | ---------------------------------------- |
@@ -40,7 +40,6 @@ The AI Strategy domain consists of five core intelligence areas.
 | Business Strategy Alignment | Connect AI with business objectives      |
 | AI Operating Model          | Organize people, capabilities, and delivery teams for AI outcomes |
 | AI ROI                      | Measure AI business value and investment returns                  |
-| AI Governance & Ethics      | Build trusted AI                         |
 
 ---
 
@@ -232,6 +231,5 @@ Trust
 * Business_Strategy_Alignment.md
 * AI_Operating_Model.md
 * AI_ROI.md
-* AI_Governance_and_Ethics.md
 
 This specification acts as the authoritative reference for the AI Strategy domain within SoorgaAI and provides the foundation for future expansion and industry-specific adaptations.

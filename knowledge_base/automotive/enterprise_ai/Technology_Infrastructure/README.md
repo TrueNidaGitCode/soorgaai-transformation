@@ -1,38 +1,52 @@
 # Technology Infrastructure
 
 **Domain:** Enterprise AI Transformation  
-**Status:** Coming Soon
+**Status:** Active
 
 ---
 
 ## Purpose
 
-Design and govern the technical architecture enabling enterprise AI deployment
-at scale across automotive engineering and business functions.
+Assess whether the organisation's technology infrastructure can support the implementation of AI solutions. The Technology Infrastructure domain helps project managers select the right deployment strategy, confirm platform readiness, design system integrations, and enable engineering teams to build and deliver AI reliably.
 
 ---
 
-## Planned Content
+## Structure
 
-- Technology_Infrastructure_Intelligence_Specification.md
-- AI_Platform_Architecture.md
-- MLOps_Framework.md
-- Cloud_Strategy_for_AI.md
-- Edge_AI_Architecture.md
-- AI_Tooling_Standards.md
+### Core
 
-## Key Topics
+Industry-agnostic Technology Infrastructure knowledge, applicable across all enterprise AI programs.
 
-- Enterprise AI platform selection and architecture
-- MLOps pipeline design (training, deployment, monitoring)
-- Cloud vs. on-premise vs. hybrid for automotive AI workloads
-- Edge AI for vehicle systems and manufacturing
-- Model registry and versioning
-- AI infrastructure security
-- Integration with existing automotive IT/OT systems
+- `Core/Technology_Infrastructure_Intelligence_Specification.md` — capability overview and pipeline
+- `Core/AI_Compute_Deployment_Strategy.md`
+- `Core/AI_Platform_Readiness.md`
+- `Core/System_Integration_Architecture.md`
+- `Core/AI_Engineering_Enablement.md`
+
+### Automotive
+
+Automotive-specific extensions covering embedded AI, ADAS platforms, automotive tool integration, and safety-compliant engineering enablement across vehicle program lifecycles.
+
+- `Automotive/Automotive_AI_Compute_Deployment_Strategy.md`
+- `Automotive/Automotive_AI_Platform_Readiness.md`
+- `Automotive/Automotive_System_Integration_Architecture.md`
+- `Automotive/Automotive_AI_Engineering_Enablement.md`
+
+---
+
+## Capability Pipeline
+
+```text
+AI Compute & Deployment Strategy
+        ↓
+AI Platform Readiness
+        ↓
+System Integration & Architecture
+        ↓
+AI Engineering Enablement
+```
 
 ## Dependencies
 
 - `../AI_Strategy/`
 - `../Data_Readiness/`
-- `../../shared/Automotive_AI_Trends.md`

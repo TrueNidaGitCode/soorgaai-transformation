@@ -1,38 +1,48 @@
 # Skills & Workforce
 
 **Domain:** Enterprise AI Transformation  
-**Status:** Coming Soon
+**Status:** Active
 
 ---
 
 ## Purpose
 
-Build AI competencies and adapt workforce roles for sustained AI transformation
-across automotive engineering and business functions.
+Assess and develop the human capabilities required to deliver, sustain, and scale AI initiatives across automotive engineering and business functions. The Skills & Workforce domain helps delivery teams identify AI skill gaps, evaluate team structure and readiness, and design targeted learning programs that build practical AI competency.
 
 ---
 
-## Planned Content
+## Structure
 
-- Skills_Workforce_Intelligence_Specification.md
-- AI_Skills_Framework.md
-- Workforce_Transition_Planning.md
-- AI_Learning_Curriculum.md
-- Role_Design_for_AI.md
-- Talent_Acquisition_Strategy.md
+### Core
 
-## Key Topics
+Industry-agnostic Skills & Workforce knowledge, applicable across all enterprise AI programs.
 
-- AI skills taxonomy for automotive engineering
-- Workforce segmentation (AI practitioners, AI-enabled engineers, AI-aware leaders)
-- Learning and development program design
-- Role evolution in an AI-transformed organization
-- Talent acquisition for AI roles in automotive
-- Upskilling vs. hiring strategy
-- Managing workforce transition concerns
+- `Core/Skills_Workforce_Intelligence_Specification.md` — capability overview and pipeline
+- `Core/AI_Skills_Assessment.md`
+- `Core/AI_Team_Readiness.md`
+- `Core/AI_Learning_Adoption.md`
+
+### Automotive
+
+Automotive-specific extensions covering AI skills for embedded software, ADAS, functional safety, ASPICE-governed programs, and OEM-supplier delivery models.
+
+- `Automotive/Automotive_AI_Skills_Assessment.md`
+- `Automotive/Automotive_AI_Team_Readiness.md`
+- `Automotive/Automotive_AI_Learning_Adoption.md`
+
+---
+
+## Capability Pipeline
+
+```text
+AI Skills Assessment
+        ↓
+AI Team Readiness
+        ↓
+AI Learning & Adoption
+```
 
 ## Dependencies
 
 - `../AI_Strategy/`
-- `../Leadership/`
-- `../../enterprise_patterns/Change_Management.md`
+- `../AI_Use_Cases/`

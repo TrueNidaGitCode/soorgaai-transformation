@@ -1619,353 +1619,850 @@ function buildAIUseCaseClassificationLayout(section) {
   return wrap;
 }
 
+// ── Shared helpers used by all new-domain PDF layouts ─────────────────────────
+
+function ndBadge(text) {
+  var b = document.createElement('div'); b.className = 'nd-badge'; b.textContent = text; return b;
+}
+function ndBody(cols) {
+  var d = document.createElement('div'); d.className = 'nd-body nd-body--' + cols + 'col'; return d;
+}
+function ndCol(cls) {
+  var d = document.createElement('div'); d.className = 'nd-col' + (cls ? ' ' + cls : ''); return d;
+}
+function ndLbl(text) {
+  var p = document.createElement('p'); p.className = 'brief-label'; p.textContent = text; return p;
+}
+function ndScoresBar(items) {
+  var bar = document.createElement('div'); bar.className = 'nd-scores-bar';
+  items.forEach(function(item) {
+    var cell = document.createElement('div'); cell.className = 'nd-score-cell';
+    var val = document.createElement('p'); val.className = 'nd-score-cell__val'; val.textContent = item.value;
+    var lbl = document.createElement('p'); lbl.className = 'nd-score-cell__lbl'; lbl.textContent = item.label;
+    cell.appendChild(val); cell.appendChild(lbl); bar.appendChild(cell);
+  });
+  return bar;
+}
+function ndSummaryGrid(items) {
+  var grid = document.createElement('div'); grid.className = 'nd-summary-grid';
+  items.forEach(function(item) {
+    var cell = document.createElement('div'); cell.className = 'nd-summary-cell';
+    var lbl = document.createElement('p'); lbl.className = 'nd-summary-cell__lbl'; lbl.textContent = item.label; cell.appendChild(lbl);
+    if (item.value) { var val = document.createElement('p'); val.className = 'nd-summary-cell__val'; val.textContent = item.value; cell.appendChild(val); }
+    grid.appendChild(cell);
+  });
+  return grid;
+}
+function ndRecList(items, mapFn) {
+  var PRI = { HIGH: 'nd-pri--high', MEDIUM: 'nd-pri--medium', LOW: 'nd-pri--low', High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
+  var list = document.createElement('div'); list.className = 'nd-rec-list';
+  items.forEach(function(r) {
+    var m = mapFn(r);
+    var item = document.createElement('div'); item.className = 'nd-rec-item';
+    var text = document.createElement('p'); text.className = 'nd-rec-item__text'; text.textContent = m.text || ''; item.appendChild(text);
+    if (m.priority) { var meta = document.createElement('p'); meta.className = 'nd-rec-item__meta'; meta.innerHTML = 'Priority: <span class="nd-pri ' + (PRI[String(m.priority).toUpperCase()] || PRI[m.priority] || 'nd-pri--medium') + '">' + m.priority + '</span>'; item.appendChild(meta); }
+    if (m.sub) { var sub = document.createElement('p'); sub.className = 'nd-rec-item__sub'; sub.textContent = m.sub; item.appendChild(sub); }
+    list.appendChild(item);
+  });
+  return list;
+}
+function ndStatBlock(items) {
+  var block = document.createElement('div'); block.className = 'nd-stat-block';
+  items.filter(function(e) { return e.value !== undefined && e.value !== null; }).forEach(function(e) {
+    var row = document.createElement('div'); row.className = 'nd-stat-row';
+    var lbl = document.createElement('span'); lbl.className = 'nd-stat-row__lbl'; lbl.textContent = e.label + ':';
+    var val = document.createElement('span'); val.className = 'nd-stat-row__val'; val.textContent = e.value;
+    row.appendChild(lbl); row.appendChild(val); block.appendChild(row);
+  });
+  return block;
+}
+
+// ── Data Readiness: Critical Data Identification ───────────────────────────────
+
 function buildCriticalDataIdentificationLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'new-domain-layout';
+  var b               = section.brief || {};
+  var datasets        = b.datasets        || [];
+  var recommendations = b.recommendations || [];
+  var coverage        = b.coverageSummary  || {};
+  var relMap          = b.relationshipMap  || {};
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.coverageSummary) {
-    const cs = b.coverageSummary;
-    const csSection = document.createElement('div'); csSection.className = 'cto-detail-section';
-    const csL = document.createElement('p'); csL.className = 'brief-label'; csL.textContent = 'Data Coverage Summary';
-    csSection.appendChild(csL);
-    csSection.appendChild(buildSummaryGrid([
-      { key: 'Critical Datasets', val: String(cs.criticalDatasets || 0) },
-      { key: 'Missing Data', val: String(cs.missingData || 0) },
-      { key: 'Confidence', val: (cs.confidence || 0) + '%' },
+
+  var PBADGE = { HIGH: 'nd-pri--high', MEDIUM: 'nd-pri--medium', LOW: 'nd-pri--low' };
+  var ABADGE = { AVAILABLE: 'cdi-avail--available', MISSING: 'cdi-avail--missing', PARTIAL: 'cdi-avail--partial' };
+
+  var body = ndBody(2);
+
+  // LEFT: dataset cards
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('Critical Datasets'));
+  datasets.forEach(function(ds) {
+    var card = document.createElement('div'); card.className = 'cdi-card';
+    var top = document.createElement('div'); top.className = 'cdi-card__top';
+    var priK = String(ds.priority || 'MEDIUM').toUpperCase();
+    var pri = document.createElement('span'); pri.className = 'cdi-badge nd-pri ' + (PBADGE[priK] || 'nd-pri--medium'); pri.textContent = ds.priority || 'MEDIUM';
+    var avlK = String(ds.availability || '').toUpperCase();
+    var avl = document.createElement('span'); avl.className = 'cdi-avail ' + (ABADGE[avlK] || ''); avl.textContent = ds.availability || '';
+    top.appendChild(pri); top.appendChild(avl); card.appendChild(top);
+    var name = document.createElement('p'); name.className = 'cdi-card__name'; name.textContent = ds.name || ''; card.appendChild(name);
+    if (ds.purpose) { var purp = document.createElement('p'); purp.className = 'cdi-card__purpose'; purp.textContent = ds.purpose; card.appendChild(purp); }
+    if (ds.category) { var cat = document.createElement('span'); cat.className = 'cdi-card__cat'; cat.textContent = ds.category; card.appendChild(cat); }
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // RIGHT: relationship map + recommendations + coverage
+  var rightCol = ndCol();
+  var hasRel = [relMap.dataSource, relMap.dependentData, relMap.relatedData, relMap.targetData].some(function(a) { return a && a.length; });
+  if (hasRel) {
+    rightCol.appendChild(ndLbl('Data Relationship Map'));
+    var relFlow = document.createElement('div'); relFlow.className = 'cdi-relmap';
+    [{ key: 'dataSource', label: 'Data Source', icon: '◉' }, { key: 'dependentData', label: 'Dependent', icon: '◈' },
+     { key: 'relatedData', label: 'Related', icon: '◇' }, { key: 'targetData', label: 'Target', icon: '◆' }].forEach(function(node, i) {
+      var items = relMap[node.key] || [];
+      var nodeEl = document.createElement('div'); nodeEl.className = 'cdi-relnode';
+      var hdr = document.createElement('div'); hdr.className = 'cdi-relnode__hdr'; hdr.textContent = node.icon + ' ' + node.label; nodeEl.appendChild(hdr);
+      if (items.length) {
+        var ul = document.createElement('ul'); ul.className = 'cdi-relnode__list';
+        items.slice(0, 3).forEach(function(t) { var li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+        nodeEl.appendChild(ul);
+      }
+      relFlow.appendChild(nodeEl);
+      if (i < 3) { var arr = document.createElement('div'); arr.className = 'cdi-relmap__arr'; arr.textContent = '→'; relFlow.appendChild(arr); }
+    });
+    rightCol.appendChild(relFlow);
+  }
+  if (recommendations.length) {
+    rightCol.appendChild(ndLbl('Data Collection Recommendations'));
+    recommendations.forEach(function(rec, i) {
+      var row = document.createElement('div'); row.className = 'cdi-rec-row';
+      var num = document.createElement('span'); num.className = 'cdi-rec-row__num'; num.textContent = i + 1;
+      var txt = document.createElement('p'); txt.className = 'cdi-rec-row__text'; txt.textContent = rec.text || '';
+      var priK2 = String(rec.priority || 'MEDIUM').toUpperCase();
+      var pri2 = document.createElement('span'); pri2.className = 'cdi-badge nd-pri ' + (PBADGE[priK2] || 'nd-pri--medium'); pri2.textContent = rec.priority || 'MEDIUM';
+      row.appendChild(num); row.appendChild(txt); row.appendChild(pri2); rightCol.appendChild(row);
+    });
+  }
+  if (coverage.criticalDatasets !== undefined || coverage.confidence) {
+    rightCol.appendChild(ndLbl('Coverage Summary'));
+    rightCol.appendChild(ndScoresBar([
+      { value: String(coverage.criticalDatasets || 0), label: 'Datasets Identified' },
+      { value: String(coverage.missingData || 0),       label: 'Missing or Partial' },
+      { value: (coverage.confidence || 0) + '%',        label: 'Data Confidence' },
     ]));
-    wrap.appendChild(csSection);
   }
-  if (b.datasets && b.datasets.length) {
-    wrap.appendChild(buildDetailSection('Critical Datasets', buildStatusTable(b.datasets, [
-      { key: 'name', label: 'Dataset' },
-      { key: 'category', label: 'Category' },
-      { key: 'priority', label: 'Priority' },
-      { key: 'availability', label: 'Availability' },
-    ])));
-  }
-  if (b.recommendations && b.recommendations.length) {
-    wrap.appendChild(buildPdfRecommendations(b.recommendations.map(function(r) {
-      return { text: r.text || String(r), priority: r.priority };
-    }), 'Recommendations'));
-  }
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
   return wrap;
 }
+
+// ── Data Readiness: AI Data Preparation ───────────────────────────────────────
 
 function buildAIDataPreparationLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'new-domain-layout';
+  var b             = section.brief || {};
+  var inputDatasets = b.inputDatasets      || [];
+  var pipelineStages = b.pipelineStages    || [];
+  var prepRecs      = b.prepRecommendations || [];
+  var dataStats     = b.dataStats          || {};
+  var readiness     = b.readinessSummary   || {};
+
+  var SICON  = { AVAILABLE: '◉', MISSING: '◎', 'IN PROGRESS': '◷' };
+  var SCLS   = { AVAILABLE: 'adp-status--available', MISSING: 'adp-status--missing', 'IN PROGRESS': 'adp-status--progress' };
+  var PSTCLS = { Completed: 'adp-circle--completed', 'Needs Attention': 'adp-circle--attention', 'In Progress': 'adp-circle--progress', Pending: 'adp-circle--pending' };
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
+  if (readiness.aiReadiness) { wrap.appendChild(ndBadge('AI READINESS: ' + readiness.aiReadiness + '%')); }
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.pipelineStages && b.pipelineStages.length) {
-    wrap.appendChild(buildDetailSection('Pipeline Status', buildStatusTable(b.pipelineStages, [
-      { key: 'stage', label: 'Stage' },
-      { key: 'status', label: 'Status' },
-    ])));
+
+  var body = ndBody(3);
+
+  // LEFT: input dataset cards
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('Input Datasets'));
+  inputDatasets.forEach(function(ds) {
+    var card = document.createElement('div'); card.className = 'adp-ds-card';
+    var icon = document.createElement('div'); icon.className = 'adp-ds-card__icon'; icon.textContent = SICON[ds.status] || '◉'; card.appendChild(icon);
+    var name = document.createElement('p'); name.className = 'adp-ds-card__name'; name.textContent = ds.name; card.appendChild(name);
+    var badge = document.createElement('span'); badge.className = 'adp-ds-status ' + (SCLS[ds.status] || 'adp-status--available'); badge.textContent = ds.status; card.appendChild(badge);
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // CENTER: pipeline circles
+  var centerCol = ndCol();
+  centerCol.appendChild(ndLbl('AI Data Preparation Pipeline'));
+  var pGrid = document.createElement('div'); pGrid.className = 'adp-pipeline-grid';
+  pipelineStages.forEach(function(stage) {
+    var cell = document.createElement('div'); cell.className = 'adp-pipeline-cell';
+    var circle = document.createElement('div'); circle.className = 'adp-circle ' + (PSTCLS[stage.status] || 'adp-circle--pending');
+    var sn = document.createElement('p'); sn.className = 'adp-circle__name'; sn.textContent = stage.stage; circle.appendChild(sn);
+    var ss = document.createElement('p'); ss.className = 'adp-circle__status'; ss.textContent = stage.status; circle.appendChild(ss);
+    cell.appendChild(circle); pGrid.appendChild(cell);
+  });
+  centerCol.appendChild(pGrid);
+  body.appendChild(centerCol);
+
+  // RIGHT: recommendations + data stats
+  var rightCol = ndCol();
+  if (prepRecs.length) {
+    rightCol.appendChild(ndLbl('AI Recommendations'));
+    prepRecs.forEach(function(rec) {
+      var card = document.createElement('div'); card.className = 'adp-rec-card';
+      var txt = document.createElement('p'); txt.className = 'adp-rec-card__text'; txt.textContent = rec.text; card.appendChild(txt);
+      var meta = document.createElement('p'); meta.className = 'adp-rec-card__meta'; meta.textContent = 'Priority: ' + rec.priority + (rec.effort ? '  ·  Effort: ' + rec.effort : ''); card.appendChild(meta);
+      if (rec.impact) { var imp = document.createElement('p'); imp.className = 'adp-rec-card__impact'; imp.textContent = rec.impact; card.appendChild(imp); }
+      rightCol.appendChild(card);
+    });
   }
-  if (b.readinessSummary) {
-    const rs = b.readinessSummary;
-    const rsSection = document.createElement('div'); rsSection.className = 'cto-detail-section';
-    const rsL = document.createElement('p'); rsL.className = 'brief-label'; rsL.textContent = 'Readiness Summary';
-    rsSection.appendChild(rsL);
-    rsSection.appendChild(buildSummaryGrid([
-      { key: 'Quality', val: (rs.quality || 0) + '%' },
-      { key: 'Standardization', val: (rs.standardization || 0) + '%' },
-      { key: 'Integration', val: (rs.integration || 0) + '%' },
-      { key: 'AI Readiness', val: (rs.aiReadiness || 0) + '%' },
+  var dsEntries = [{ label: 'Missing Data', value: dataStats.missingData }, { label: 'Data Quality', value: dataStats.dataQuality }, { label: 'Traceability', value: dataStats.traceability }].filter(function(e) { return e.value !== undefined; }).map(function(e) { return { label: e.label, value: String(e.value) }; });
+  if (dsEntries.length) { rightCol.appendChild(ndStatBlock(dsEntries)); }
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Readiness 4-cell grid
+  if (readiness.quality || readiness.standardization || readiness.integration || readiness.aiReadiness) {
+    wrap.appendChild(ndLbl('Readiness Summary'));
+    wrap.appendChild(ndSummaryGrid([
+      { label: 'Quality', value: (readiness.quality || 0) + '%' },
+      { label: 'Standardization', value: (readiness.standardization || 0) + '%' },
+      { label: 'Integration', value: (readiness.integration || 0) + '%' },
+      { label: 'AI Readiness', value: (readiness.aiReadiness || 0) + '%' },
     ]));
-    wrap.appendChild(rsSection);
-  }
-  if (b.prepRecommendations && b.prepRecommendations.length) {
-    wrap.appendChild(buildPdfRecommendations(b.prepRecommendations.map(function(r) {
-      return { text: r.text, priority: r.priority, sub: r.impact };
-    }), 'Preparation Recommendations'));
   }
   return wrap;
 }
+
+// ── Data Readiness: Data Architecture Enablement ──────────────────────────────
 
 function buildDataArchitectureEnablementLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'new-domain-layout';
+  var b              = section.brief || {};
+  var projectSystems = b.projectSystems      || [];
+  var archRecs       = b.archRecommendations || [];
+  var archStats      = b.archStats           || {};
+  var healthTimeline = b.healthTimeline      || [];
+
+  var CCLS = { Connected: 'dae-conn--connected', Partial: 'dae-conn--partial', Disconnected: 'dae-conn--disconnected' };
+  var HCLS = { Healthy: 'dae-health--healthy', 'Needs Attention': 'dae-health--attention', Pending: 'dae-health--pending', Critical: 'dae-health--critical' };
+  var HICON = { Healthy: '◉', 'Needs Attention': '◈', Pending: '◷', Critical: '◎' };
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
+  if (archStats.architectureReadiness) { wrap.appendChild(ndBadge('ARCHITECTURE HEALTH: ' + archStats.architectureReadiness + '% HEALTHY')); }
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.archStats) {
-    const as = b.archStats;
-    const asSection = document.createElement('div'); asSection.className = 'cto-detail-section';
-    const asL = document.createElement('p'); asL.className = 'brief-label'; asL.textContent = 'Architecture Stats';
-    asSection.appendChild(asL);
-    asSection.appendChild(buildSummaryGrid([
-      { key: 'Architecture Readiness', val: (as.architectureReadiness || 0) + '%' },
-      { key: 'Automation', val: (as.automation || 0) + '%' },
-      { key: 'Connected Systems', val: String(as.connectedSystems || 0) },
-      { key: 'Disconnected', val: String(as.disconnectedSystems || 0) },
+
+  var body = ndBody(2);
+
+  // LEFT: project system cards
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('Project Systems'));
+  projectSystems.forEach(function(sys) {
+    var card = document.createElement('div'); card.className = 'dae-sys-card ' + (CCLS[sys.connectionStatus] || 'dae-conn--disconnected');
+    var name = document.createElement('p'); name.className = 'dae-sys-card__name'; name.textContent = sys.name; card.appendChild(name);
+    var conn = document.createElement('p'); conn.className = 'dae-sys-card__conn'; conn.textContent = 'Connection: ' + (sys.connectionStatus || 'Unknown'); card.appendChild(conn);
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // RIGHT: network hub diagram + recs
+  var rightCol = ndCol();
+  if (projectSystems.length) {
+    rightCol.appendChild(ndLbl('Data Architecture Network'));
+    var netDiag = document.createElement('div'); netDiag.className = 'dae-net-diagram';
+    var topRow = document.createElement('div'); topRow.className = 'dae-net-row';
+    projectSystems.slice(0, 4).forEach(function(sys) {
+      var node = document.createElement('div'); node.className = 'dae-net-node ' + (CCLS[sys.connectionStatus] || 'dae-conn--disconnected');
+      node.textContent = sys.name; topRow.appendChild(node);
+    });
+    netDiag.appendChild(topRow);
+    var arrows = document.createElement('div'); arrows.className = 'dae-net-arrows';
+    projectSystems.slice(0, 4).forEach(function() {
+      var a = document.createElement('div'); a.className = 'dae-net-arrow'; a.textContent = '↓'; arrows.appendChild(a);
+    });
+    netDiag.appendChild(arrows);
+    var hub = document.createElement('div'); hub.className = 'dae-net-hub'; hub.textContent = '⬡  AI Data Hub'; netDiag.appendChild(hub);
+    var legend = document.createElement('div'); legend.className = 'dae-net-legend';
+    [{ cls: 'dae-conn--connected', label: 'Healthy' }, { cls: 'dae-conn--partial', label: 'Limited' }, { cls: 'dae-conn--disconnected', label: 'Missing' }].forEach(function(leg) {
+      var dot = document.createElement('span'); dot.className = 'dae-net-legend__dot ' + leg.cls;
+      var lbl = document.createElement('span'); lbl.className = 'dae-net-legend__lbl'; lbl.textContent = leg.label;
+      legend.appendChild(dot); legend.appendChild(lbl);
+    });
+    netDiag.appendChild(legend);
+    rightCol.appendChild(netDiag);
+  }
+  if (archRecs.length) {
+    rightCol.appendChild(ndLbl('AI Recommendations'));
+    var ICLS = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
+    archRecs.forEach(function(rec) {
+      var card = document.createElement('div'); card.className = 'dae-rec-card';
+      var title = document.createElement('p'); title.className = 'dae-rec-card__title'; title.textContent = rec.title || ''; card.appendChild(title);
+      var meta = document.createElement('p'); meta.className = 'dae-rec-card__meta'; meta.innerHTML = 'Impact: <span class="nd-pri ' + (ICLS[rec.impact] || 'nd-pri--medium') + '">' + (rec.impact || '') + '</span>' + (rec.effort ? '  ·  Effort: <strong>' + rec.effort + '</strong>' : ''); card.appendChild(meta);
+      rightCol.appendChild(card);
+    });
+  }
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Stats bar
+  if (archStats.architectureReadiness || archStats.automation || archStats.connectedSystems || archStats.disconnectedSystems) {
+    wrap.appendChild(ndScoresBar([
+      { value: (archStats.architectureReadiness || 0) + '%', label: 'Architecture Readiness' },
+      { value: (archStats.automation || 0) + '%',            label: 'Automation' },
+      { value: String(archStats.connectedSystems || 0),      label: 'Connected Systems' },
+      { value: String(archStats.disconnectedSystems || 0),   label: 'Disconnected' },
     ]));
-    wrap.appendChild(asSection);
   }
-  if (b.healthTimeline && b.healthTimeline.length) {
-    wrap.appendChild(buildDetailSection('Architecture Health', buildStatusTable(b.healthTimeline, [
-      { key: 'stage', label: 'Layer' },
-      { key: 'status', label: 'Status' },
-      { key: 'health', label: 'Health' },
-    ])));
-  }
-  if (b.archRecommendations && b.archRecommendations.length) {
-    wrap.appendChild(buildPdfRecommendations(b.archRecommendations.map(function(r) {
-      return { text: r.title || String(r), priority: r.impact };
-    }), 'Architecture Recommendations'));
+
+  // Health timeline
+  if (healthTimeline.length) {
+    wrap.appendChild(ndLbl('Architecture Health Timeline'));
+    var timelineWrap = document.createElement('div'); timelineWrap.className = 'dae-timeline';
+    healthTimeline.forEach(function(item) {
+      var row = document.createElement('div'); row.className = 'dae-timeline-row';
+      var icon = document.createElement('div'); icon.className = 'dae-timeline-row__icon ' + (HCLS[item.health] || 'dae-health--pending'); icon.textContent = HICON[item.health] || '◷'; row.appendChild(icon);
+      var txt = document.createElement('div'); txt.className = 'dae-timeline-row__text';
+      var stage = document.createElement('p'); stage.className = 'dae-timeline-row__stage'; stage.textContent = item.stage; txt.appendChild(stage);
+      if (item.status) { var st = document.createElement('p'); st.className = 'dae-timeline-row__status'; st.textContent = item.status; txt.appendChild(st); }
+      row.appendChild(txt);
+      var pill = document.createElement('span'); pill.className = 'dae-health-pill ' + (HCLS[item.health] || 'dae-health--pending'); pill.textContent = item.health; row.appendChild(pill);
+      timelineWrap.appendChild(row);
+    });
+    wrap.appendChild(timelineWrap);
   }
   return wrap;
 }
+
+// ── Technology Infrastructure: System Integration & Architecture ───────────────
 
 function buildSystemIntegrationLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'new-domain-layout';
+  var b                  = section.brief || {};
+  var connectedSystems   = b.connectedSystems   || [];
+  var integrationSummary = b.integrationSummary || {};
+
+  var SCLS = { CONNECTED: 'sia-card--connected', PARTIAL: 'sia-card--partial', MISSING: 'sia-card--missing' };
+  var SBADGE = { CONNECTED: 'nd-pri--low', PARTIAL: 'nd-pri--medium', MISSING: 'nd-pri--high' };
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
+  if (b.integrationReadiness) { wrap.appendChild(ndBadge('INTEGRATION READINESS: ' + b.integrationReadiness + '%')); }
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.integrationReadiness !== undefined) {
-    const irSection = document.createElement('div'); irSection.className = 'cto-detail-section';
-    const irL = document.createElement('p'); irL.className = 'brief-label'; irL.textContent = 'Integration Overview';
-    irSection.appendChild(irL);
-    const summData = [{ key: 'Overall Readiness', val: b.integrationReadiness + '%' }];
-    if (b.integrationSummary) {
-      const s = b.integrationSummary;
-      if (s.integration) summData.push({ key: 'Integration', val: s.integration });
-      if (s.automation) summData.push({ key: 'Automation', val: s.automation });
-      if (s.reliability) summData.push({ key: 'Reliability', val: s.reliability });
-      if (s.scalability) summData.push({ key: 'Scalability', val: s.scalability });
-    }
-    irSection.appendChild(buildSummaryGrid(summData));
-    wrap.appendChild(irSection);
-  }
-  if (b.connectedSystems && b.connectedSystems.length) {
-    wrap.appendChild(buildDetailSection('Connected Systems', buildStatusTable(b.connectedSystems, [
-      { key: 'name', label: 'System' },
-      { key: 'integrationMethod', label: 'Method' },
-      { key: 'status', label: 'Status' },
-      { key: 'healthIndicator', label: 'Health' },
-    ])));
+
+  var body = ndBody(2);
+
+  // LEFT: connected system cards (2-per-row grid)
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('Connected Systems'));
+  var sysGrid = document.createElement('div'); sysGrid.className = 'sia-sys-grid';
+  connectedSystems.forEach(function(sys) {
+    var status = String(sys.status || 'MISSING').toUpperCase();
+    var card = document.createElement('div'); card.className = 'sia-sys-card ' + (SCLS[status] || 'sia-card--missing');
+    var name = document.createElement('p'); name.className = 'sia-sys-card__name'; name.textContent = sys.name; card.appendChild(name);
+    if (sys.integrationMethod) { var method = document.createElement('p'); method.className = 'sia-sys-card__method'; method.textContent = sys.integrationMethod; card.appendChild(method); }
+    var badge = document.createElement('span'); badge.className = 'sia-status nd-pri ' + (SBADGE[status] || 'nd-pri--medium'); badge.textContent = status; card.appendChild(badge);
+    if (sys.healthIndicator) { var health = document.createElement('span'); health.className = 'sia-health'; health.textContent = sys.healthIndicator; card.appendChild(health); }
+    sysGrid.appendChild(card);
+  });
+  leftCol.appendChild(sysGrid);
+  body.appendChild(leftCol);
+
+  // RIGHT: integration architecture visual (hub+spoke DOM)
+  var rightCol = ndCol();
+  rightCol.appendChild(ndLbl('AI Integration Architecture'));
+  var archPanel = document.createElement('div'); archPanel.className = 'sia-arch-panel';
+  var spokeRow = document.createElement('div'); spokeRow.className = 'sia-spoke-row';
+  connectedSystems.slice(0, 4).forEach(function(sys) {
+    var status = String(sys.status || 'MISSING').toUpperCase();
+    var node = document.createElement('div'); node.className = 'sia-spoke-node sia-spoke-node--' + status.toLowerCase();
+    var icon = document.createElement('span'); icon.className = 'sia-spoke-node__icon'; icon.textContent = '▣';
+    var lbl = document.createElement('span'); lbl.className = 'sia-spoke-node__name'; lbl.textContent = sys.name;
+    node.appendChild(icon); node.appendChild(lbl); spokeRow.appendChild(node);
+  });
+  archPanel.appendChild(spokeRow);
+  var connectors = document.createElement('div'); connectors.className = 'sia-connectors';
+  connectedSystems.slice(0, 4).forEach(function() { var c = document.createElement('div'); c.className = 'sia-connector-line'; connectors.appendChild(c); });
+  archPanel.appendChild(connectors);
+  var hub = document.createElement('div'); hub.className = 'sia-hub'; hub.textContent = 'AI Integration Hub'; archPanel.appendChild(hub);
+  rightCol.appendChild(archPanel);
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Integration summary 4-cell grid
+  var hasSummary = integrationSummary.integration || integrationSummary.automation || integrationSummary.reliability || integrationSummary.scalability;
+  if (hasSummary) {
+    wrap.appendChild(ndSummaryGrid([
+      { label: 'Integration', value: integrationSummary.integration },
+      { label: 'Automation',  value: integrationSummary.automation },
+      { label: 'Reliability', value: integrationSummary.reliability },
+      { label: 'Scalability', value: integrationSummary.scalability },
+    ]));
   }
   return wrap;
 }
+
+// ── Technology Infrastructure: AI Platform Readiness ──────────────────────────
 
 function buildAIPlatformReadinessLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'new-domain-layout';
+  var b                    = section.brief || {};
+  var capabilityAssessment = b.capabilityAssessment    || [];
+  var platformStack        = b.platformStack           || [];
+  var platformRecs         = b.platformRecommendations || [];
+  var platformSummary      = b.platformSummary         || {};
+
+  var SICON = { 'AI Applications': '⊞', 'AI Model & Prompt Management': '⚙', 'Knowledge & Retrieval Services': '◻', 'AI Deployment & Automation': '▷', 'AI Monitoring & Evaluation': '△', 'AI Development Environment': '⌨' };
+  var SCLS = { READY: 'apr-status--ready', PARTIAL: 'apr-status--partial', MISSING: 'apr-status--missing' };
+  var SBADGE = { READY: 'nd-pri--low', PARTIAL: 'nd-pri--medium', MISSING: 'nd-pri--high' };
+  var PCLS = { HIGH: 'nd-pri--high', MEDIUM: 'nd-pri--medium', LOW: 'nd-pri--low' };
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
+  if (b.platformReadiness) { wrap.appendChild(ndBadge('PLATFORM READINESS: ' + b.platformReadiness + '%')); }
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.platformReadiness !== undefined) {
-    const prSection = document.createElement('div'); prSection.className = 'cto-detail-section';
-    const prL = document.createElement('p'); prL.className = 'brief-label';
-    prL.textContent = 'Platform Readiness: ' + b.platformReadiness + '%';
-    prSection.appendChild(prL);
-    if (b.platformSummary) {
-      const ps = b.platformSummary;
-      prSection.appendChild(buildSummaryGrid([
-        { key: 'Development', val: ps.development || '—' },
-        { key: 'Knowledge', val: ps.knowledge || '—' },
-        { key: 'Deployment', val: ps.deployment || '—' },
-        { key: 'Monitoring', val: ps.monitoring || '—' },
-      ]));
-    }
-    wrap.appendChild(prSection);
+
+  var body = ndBody(3);
+
+  // LEFT: capability assessment cards
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('Platform Capability Assessment'));
+  capabilityAssessment.forEach(function(cap) {
+    var status = String(cap.status || 'PARTIAL').toUpperCase();
+    var card = document.createElement('div'); card.className = 'apr-cap-card apr-cap-card--' + status.toLowerCase();
+    var name = document.createElement('p'); name.className = 'apr-cap-card__name'; name.textContent = cap.name; card.appendChild(name);
+    var score = document.createElement('p'); score.className = 'apr-cap-card__score'; score.textContent = (cap.score || 0) + '%'; card.appendChild(score);
+    var badge = document.createElement('span'); badge.className = 'apr-status nd-pri ' + (SBADGE[status] || 'nd-pri--medium'); badge.textContent = status; card.appendChild(badge);
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // CENTER: platform stack rows
+  var centerCol = ndCol();
+  centerCol.appendChild(ndLbl('AI Platform Stack'));
+  var stackList = document.createElement('div'); stackList.className = 'apr-stack-list';
+  platformStack.forEach(function(layer) {
+    var status = String(layer.status || 'MISSING').toUpperCase();
+    var row = document.createElement('div'); row.className = 'apr-stack-row apr-stack-row--' + status.toLowerCase();
+    var icon = document.createElement('div'); icon.className = 'apr-stack-row__icon'; icon.textContent = SICON[layer.layer] || '●'; row.appendChild(icon);
+    var info = document.createElement('div'); info.className = 'apr-stack-row__info';
+    var lname = document.createElement('p'); lname.className = 'apr-stack-row__name'; lname.textContent = layer.layer; info.appendChild(lname);
+    var lscore = document.createElement('p'); lscore.className = 'apr-stack-row__score'; lscore.textContent = (layer.score || 0) + '%'; info.appendChild(lscore);
+    row.appendChild(info);
+    var badge = document.createElement('span'); badge.className = 'apr-status nd-pri ' + (SCLS[status] || 'apr-status--missing'); badge.textContent = status; row.appendChild(badge);
+    stackList.appendChild(row);
+  });
+  centerCol.appendChild(stackList);
+  body.appendChild(centerCol);
+
+  // RIGHT: recommendations
+  var rightCol = ndCol();
+  if (platformRecs.length) {
+    rightCol.appendChild(ndLbl('AI Recommendations'));
+    rightCol.appendChild(ndRecList(platformRecs, function(r) { return { text: r.text, priority: r.priority, sub: r.benefit ? 'Benefit: ' + r.benefit : '' }; }));
   }
-  if (b.platformStack && b.platformStack.length) {
-    wrap.appendChild(buildDetailSection('Platform Stack Assessment', buildStatusTable(b.platformStack, [
-      { key: 'layer', label: 'Layer' },
-      { key: 'score', label: 'Score' },
-      { key: 'status', label: 'Status' },
-    ])));
-  }
-  if (b.platformRecommendations && b.platformRecommendations.length) {
-    wrap.appendChild(buildPdfRecommendations(b.platformRecommendations.map(function(r) {
-      return { text: r.text, priority: r.priority, sub: r.benefit };
-    }), 'Platform Recommendations'));
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Platform summary 4-cell grid
+  if (platformSummary.development || platformSummary.knowledge || platformSummary.deployment || platformSummary.monitoring) {
+    wrap.appendChild(ndSummaryGrid([
+      { label: 'Development', value: platformSummary.development },
+      { label: 'Knowledge',   value: platformSummary.knowledge },
+      { label: 'Deployment',  value: platformSummary.deployment },
+      { label: 'Monitoring',  value: platformSummary.monitoring },
+    ]));
   }
   return wrap;
 }
+
+// ── Technology Infrastructure: AI Compute & Deployment Strategy ───────────────
 
 function buildAIComputeDeploymentLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'new-domain-layout';
+  var b                  = section.brief || {};
+  var workloadProfile    = b.workloadProfile          || [];
+  var deploymentRecs     = b.deploymentRecommendations || [];
+  var deploymentScores   = b.deploymentScores         || {};
+  var deploymentKpis     = b.deploymentKpis           || {};
+
+  var PCLS  = { CRITICAL: 'nd-pri--high', HIGH: 'nd-pri--high', MEDIUM: 'nd-pri--medium', LOW: 'nd-pri--low' };
+  var ICLS  = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
+  if (b.deploymentReadiness) { wrap.appendChild(ndBadge('DEPLOYMENT READINESS: ' + b.deploymentReadiness + '%')); }
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.deploymentReadiness !== undefined || b.deploymentKpis) {
-    const drSection = document.createElement('div'); drSection.className = 'cto-detail-section';
-    const drL = document.createElement('p'); drL.className = 'brief-label';
-    drL.textContent = 'Deployment Readiness' + (b.deploymentReadiness !== undefined ? ': ' + b.deploymentReadiness + '%' : '');
-    drSection.appendChild(drL);
-    if (b.deploymentKpis) {
-      const kpis = b.deploymentKpis;
-      drSection.appendChild(buildSummaryGrid([
-        { key: 'Compute', val: kpis.compute || '—' },
-        { key: 'Deployment', val: kpis.deployment || '—' },
-        { key: 'Latency', val: kpis.latency || '—' },
-        { key: 'Scalability', val: kpis.scalability || '—' },
-      ]));
-    }
-    wrap.appendChild(drSection);
+
+  var body = ndBody(2);
+
+  // LEFT: workload profile cards
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('AI Workload Profile'));
+  workloadProfile.forEach(function(wl) {
+    var card = document.createElement('div'); card.className = 'cds-wl-card';
+    var name = document.createElement('p'); name.className = 'cds-wl-card__name'; name.textContent = wl.workloadType; card.appendChild(name);
+    [['Compute', wl.computeRequirement], ['Performance', wl.performanceRequirement], ['Scalability', wl.scalabilityRequirement]].forEach(function(pair) {
+      if (!pair[1]) return;
+      var spec = document.createElement('p'); spec.className = 'cds-wl-card__spec'; spec.innerHTML = '<span class="cds-wl-card__spec-label">' + pair[0] + ':</span> ' + pair[1]; card.appendChild(spec);
+    });
+    var priK = String(wl.priority || 'MEDIUM').toUpperCase();
+    var badge = document.createElement('span'); badge.className = 'nd-pri ' + (PCLS[priK] || 'nd-pri--medium'); badge.textContent = 'PRIORITY: ' + (wl.priority || 'MEDIUM'); card.appendChild(badge);
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // RIGHT: deployment canvas (4-node hub) + rec cards
+  var rightCol = ndCol();
+  rightCol.appendChild(ndLbl('Deployment Decision Canvas'));
+  var canvas = document.createElement('div'); canvas.className = 'cds-canvas';
+  var canvasNodes = document.createElement('div'); canvasNodes.className = 'cds-canvas__nodes';
+  [{ label: 'Public Cloud', sub: 'Cloud Native' }, { label: 'Private Cloud', sub: 'On-Premise' }, { label: 'Hybrid Cloud', sub: 'Mixed' }, { label: 'Edge Deployment', sub: 'Distributed' }].forEach(function(n) {
+    var node = document.createElement('div'); node.className = 'cds-canvas__node';
+    var nl = document.createElement('p'); nl.className = 'cds-canvas__node-label'; nl.textContent = n.label; node.appendChild(nl);
+    var ns = document.createElement('p'); ns.className = 'cds-canvas__node-sub'; ns.textContent = n.sub; node.appendChild(ns);
+    canvasNodes.appendChild(node);
+  });
+  var canvasHub = document.createElement('div'); canvasHub.className = 'cds-canvas__hub';
+  canvasHub.innerHTML = '<p class="cds-canvas__hub-label">AI Decision</p><p class="cds-canvas__hub-sub">Engine</p>';
+  if (deploymentScores.deploymentConfidence) { canvasHub.innerHTML += '<p class="cds-canvas__hub-conf">Confidence: ' + deploymentScores.deploymentConfidence + '%</p>'; }
+  canvas.appendChild(canvasHub); canvas.appendChild(canvasNodes); rightCol.appendChild(canvas);
+  if (deploymentRecs.length) {
+    rightCol.appendChild(ndLbl('AI Recommendations'));
+    var recGrid = document.createElement('div'); recGrid.className = 'cds-rec-grid';
+    deploymentRecs.forEach(function(rec) {
+      var card = document.createElement('div'); card.className = 'cds-rec-card';
+      var txt = document.createElement('p'); txt.className = 'cds-rec-card__text'; txt.textContent = rec.text; card.appendChild(txt);
+      var impact = document.createElement('div'); impact.className = 'cds-rec-card__impact-row';
+      impact.innerHTML = 'Impact: <span class="nd-pri ' + (ICLS[rec.impact] || 'nd-pri--medium') + '">' + (rec.impact || 'Medium') + '</span>'; card.appendChild(impact);
+      if (rec.reason) { var reason = document.createElement('p'); reason.className = 'cds-rec-card__reason'; reason.textContent = rec.reason; card.appendChild(reason); }
+      recGrid.appendChild(card);
+    });
+    rightCol.appendChild(recGrid);
   }
-  if (b.workloadProfile && b.workloadProfile.length) {
-    wrap.appendChild(buildDetailSection('Workload Profile', buildStatusTable(b.workloadProfile, [
-      { key: 'workloadType', label: 'Workload' },
-      { key: 'computeRequirement', label: 'Compute' },
-      { key: 'performanceRequirement', label: 'Performance' },
-      { key: 'priority', label: 'Priority' },
-    ])));
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Scores bar
+  if (deploymentScores.computeFit || deploymentScores.deploymentConfidence || deploymentScores.estimatedScalability) {
+    wrap.appendChild(ndScoresBar([
+      { value: (deploymentScores.computeFit || 0) + '%',             label: 'Compute Fit' },
+      { value: deploymentScores.estimatedScalability || '—',         label: 'Est. Scalability' },
+      { value: (deploymentScores.deploymentConfidence || 0) + '%',   label: 'Deployment Confidence' },
+    ]));
   }
-  if (b.deploymentRecommendations && b.deploymentRecommendations.length) {
-    wrap.appendChild(buildPdfRecommendations(b.deploymentRecommendations.map(function(r) {
-      return { text: r.text, priority: r.impact, sub: r.reason };
-    }), 'Deployment Recommendations'));
+
+  // KPI bar
+  var kpiItems = [{ label: 'Compute', value: deploymentKpis.compute }, { label: 'Deployment', value: deploymentKpis.deployment }, { label: 'Latency', value: deploymentKpis.latency }, { label: 'Scalability', value: deploymentKpis.scalability }].filter(function(k) { return k.value; });
+  if (kpiItems.length) {
+    var kpiLbl = document.createElement('p'); kpiLbl.className = 'brief-label'; kpiLbl.textContent = 'Deployment Summary KPIs'; wrap.appendChild(kpiLbl);
+    wrap.appendChild(ndSummaryGrid(kpiItems.map(function(k) { return { label: k.label, value: k.value }; })));
   }
   return wrap;
 }
+
+// ── Technology Infrastructure: AI Engineering Enablement ──────────────────────
 
 function buildAIEngineeringEnablementLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'new-domain-layout';
+  var b                   = section.brief || {};
+  var engineeringCaps     = b.engineeringCapabilities    || [];
+  var engineeringLifecycle = b.engineeringLifecycle      || [];
+  var engineeringRecs     = b.engineeringRecommendations || [];
+  var automationStats     = b.automationStats            || {};
+  var engineeringSummary  = b.engineeringSummary         || {};
+
+  var SCLS   = { READY: 'aee-cap--ready', PARTIAL: 'aee-cap--partial', ATTENTION: 'aee-cap--attention' };
+  var SBADGE = { READY: 'nd-pri--low', PARTIAL: 'nd-pri--medium', ATTENTION: 'nd-pri--high' };
+  var PCLS   = { HIGH: 'nd-pri--high', MEDIUM: 'nd-pri--medium', LOW: 'nd-pri--low' };
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
+  if (b.engineeringReadiness) { wrap.appendChild(ndBadge('ENGINEERING READINESS: ' + b.engineeringReadiness + '%')); }
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.engineeringReadiness !== undefined || b.automationStats) {
-    const erSection = document.createElement('div'); erSection.className = 'cto-detail-section';
-    const erL = document.createElement('p'); erL.className = 'brief-label';
-    erL.textContent = 'Engineering Readiness' + (b.engineeringReadiness !== undefined ? ': ' + b.engineeringReadiness + '%' : '');
-    erSection.appendChild(erL);
-    if (b.automationStats) {
-      const as = b.automationStats;
-      erSection.appendChild(buildSummaryGrid([
-        { key: 'Automation', val: as.automation || '—' },
-        { key: 'Testing', val: as.testing || '—' },
-        { key: 'Deployment', val: as.deployment || '—' },
-      ]));
-    }
-    wrap.appendChild(erSection);
+
+  var body = ndBody(3);
+
+  // LEFT: engineering capabilities
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('Engineering Capabilities'));
+  engineeringCaps.forEach(function(cap) {
+    var status = String(cap.status || 'PARTIAL').toUpperCase();
+    var card = document.createElement('div'); card.className = 'aee-cap-card ' + (SCLS[status] || 'aee-cap--partial');
+    var name = document.createElement('p'); name.className = 'aee-cap-card__name'; name.textContent = cap.name; card.appendChild(name);
+    var score = document.createElement('p'); score.className = 'aee-cap-card__score'; score.textContent = 'Readiness: ' + (cap.score || 0) + '%'; card.appendChild(score);
+    var badge = document.createElement('span'); badge.className = 'nd-pri ' + (SBADGE[status] || 'nd-pri--medium'); badge.textContent = status === 'ATTENTION' ? 'Needs Attention' : status.charAt(0) + status.slice(1).toLowerCase(); card.appendChild(badge);
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // CENTER: lifecycle via pill chain
+  var centerCol = ndCol();
+  centerCol.appendChild(ndLbl('AI Engineering Lifecycle'));
+  if (engineeringLifecycle.length) {
+    var lcWrap = document.createElement('div'); lcWrap.className = 'aee-lifecycle-wrap';
+    engineeringLifecycle.forEach(function(stage, i) {
+      var stageEl = document.createElement('div'); stageEl.className = 'aee-lifecycle-stage';
+      var stageName = document.createElement('p'); stageName.className = 'aee-lifecycle-stage__name'; stageName.textContent = stage.stage; stageEl.appendChild(stageName);
+      var barTrack = document.createElement('div'); barTrack.className = 'aee-lifecycle-bar-track';
+      var barFill = document.createElement('div'); barFill.className = 'aee-lifecycle-bar-fill'; barFill.style.width = (stage.readiness || 0) + '%'; barTrack.appendChild(barFill); stageEl.appendChild(barTrack);
+      var pct = document.createElement('span'); pct.className = 'aee-lifecycle-stage__pct'; pct.textContent = (stage.readiness || 0) + '%'; stageEl.appendChild(pct);
+      if (stage.automation) { var auto = document.createElement('p'); auto.className = 'aee-lifecycle-stage__auto'; auto.textContent = stage.automation; stageEl.appendChild(auto); }
+      lcWrap.appendChild(stageEl);
+      if (i < engineeringLifecycle.length - 1) { var arr = document.createElement('div'); arr.className = 'aee-lifecycle-arrow'; arr.textContent = '↓'; lcWrap.appendChild(arr); }
+    });
+    centerCol.appendChild(lcWrap);
   }
-  if (b.engineeringCapabilities && b.engineeringCapabilities.length) {
-    wrap.appendChild(buildDetailSection('Engineering Capabilities', buildStatusTable(b.engineeringCapabilities, [
-      { key: 'name', label: 'Capability' },
-      { key: 'score', label: 'Score' },
-      { key: 'status', label: 'Status' },
-    ])));
+  body.appendChild(centerCol);
+
+  // RIGHT: recommendations + automation stats
+  var rightCol = ndCol();
+  if (engineeringRecs.length) {
+    rightCol.appendChild(ndLbl('AI Recommendations'));
+    rightCol.appendChild(ndRecList(engineeringRecs, function(r) { return { text: r.text, priority: r.priority, sub: r.businessImpact ? 'Business Impact: ' + r.businessImpact : '' }; }));
   }
-  if (b.engineeringRecommendations && b.engineeringRecommendations.length) {
-    wrap.appendChild(buildPdfRecommendations(b.engineeringRecommendations.map(function(r) {
-      return { text: r.text, priority: r.priority };
-    }), 'Engineering Recommendations'));
+  var statsEntries = [{ label: 'Automation', value: automationStats.automation }, { label: 'Testing', value: automationStats.testing }, { label: 'Deployment', value: automationStats.deployment }].filter(function(e) { return e.value; });
+  if (statsEntries.length) { rightCol.appendChild(ndStatBlock(statsEntries)); }
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Engineering health summary
+  if (engineeringSummary.development || engineeringSummary.testing || engineeringSummary.deployment || engineeringSummary.continuousImprovement) {
+    wrap.appendChild(ndLbl('Engineering Health Metrics'));
+    wrap.appendChild(ndSummaryGrid([
+      { label: 'Development',           value: engineeringSummary.development },
+      { label: 'Testing',               value: engineeringSummary.testing },
+      { label: 'Deployment',            value: engineeringSummary.deployment },
+      { label: 'Continuous Improvement', value: engineeringSummary.continuousImprovement },
+    ]));
   }
   return wrap;
 }
+
+// ── Skills & Workforce: AI Skills Assessment ───────────────────────────────────
 
 function buildAISkillsAssessmentLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'new-domain-layout';
+  var b              = section.brief || {};
+  var requiredSkills = b.requiredSkills         || [];
+  var skillsMatrix   = b.skillsMatrix           || [];
+  var skillsRecs     = b.skillsRecommendations  || [];
+  var skillsStats    = b.skillsStats            || {};
+  var skillsCatSum   = b.skillsCategorySummary  || [];
+
+  var ACLS  = { Available: 'nd-pri--low', Partial: 'nd-pri--medium', Missing: 'nd-pri--high' };
+  var PCLS  = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
+  var CATCLS = { Ready: 'asa-cat--ready', Strong: 'asa-cat--strong', Partial: 'asa-cat--partial', 'Needs Improvement': 'asa-cat--needs' };
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
+  if (b.skillsReadiness) { wrap.appendChild(ndBadge('SKILLS READINESS: ' + b.skillsReadiness + '%')); }
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.skillsReadiness !== undefined || b.skillsStats) {
-    const srSection = document.createElement('div'); srSection.className = 'cto-detail-section';
-    const srL = document.createElement('p'); srL.className = 'brief-label';
-    srL.textContent = 'Skills Readiness' + (b.skillsReadiness !== undefined ? ': ' + b.skillsReadiness + '%' : '');
-    srSection.appendChild(srL);
-    if (b.skillsStats) {
-      const ss = b.skillsStats;
-      srSection.appendChild(buildSummaryGrid([
-        { key: 'Available', val: String(ss.available || 0) },
-        { key: 'Gaps', val: String(ss.gaps || 0) },
-        { key: 'Critical Gaps', val: String(ss.critical || 0) },
-      ]));
-    }
-    wrap.appendChild(srSection);
+
+  var body = ndBody(3);
+
+  // LEFT: required skill cards
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('Required Skills'));
+  requiredSkills.forEach(function(sk) {
+    var card = document.createElement('div'); card.className = 'asa-skill-card';
+    var name = document.createElement('p'); name.className = 'asa-skill-card__name'; name.textContent = sk.name; card.appendChild(name);
+    var meta = document.createElement('p'); meta.className = 'asa-skill-card__meta'; meta.textContent = (sk.category || '') + (sk.category && sk.availability ? ' · ' : '') + (sk.availability || ''); card.appendChild(meta);
+    var pri = document.createElement('span'); pri.className = 'nd-pri ' + (PCLS[sk.priority] || 'nd-pri--medium'); pri.textContent = sk.priority; card.appendChild(pri);
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // CENTER: skills matrix with progress bars
+  var centerCol = ndCol();
+  centerCol.appendChild(ndLbl('Skills Matrix'));
+  if (skillsMatrix.length) {
+    var matrixWrap = document.createElement('div'); matrixWrap.className = 'asa-matrix-wrap';
+    skillsMatrix.forEach(function(row) {
+      var rowEl = document.createElement('div'); rowEl.className = 'asa-matrix-row';
+      var cat = document.createElement('p'); cat.className = 'asa-matrix-row__cat'; cat.textContent = row.category; rowEl.appendChild(cat);
+      var track = document.createElement('div'); track.className = 'asa-matrix-bar-track';
+      var fill = document.createElement('div'); fill.className = 'asa-matrix-bar-fill'; fill.style.width = (row.readiness || 0) + '%'; track.appendChild(fill); rowEl.appendChild(track);
+      var counts = document.createElement('p'); counts.className = 'asa-matrix-row__counts'; counts.textContent = 'Required: ' + (row.required || 0) + '  ·  Missing: ' + (row.missing || 0); rowEl.appendChild(counts);
+      matrixWrap.appendChild(rowEl);
+    });
+    centerCol.appendChild(matrixWrap);
   }
-  if (b.skillsMatrix && b.skillsMatrix.length) {
-    wrap.appendChild(buildDetailSection('Skills Matrix', buildStatusTable(b.skillsMatrix, [
-      { key: 'category', label: 'Category' },
-      { key: 'readiness', label: 'Readiness' },
-      { key: 'required', label: 'Required' },
-      { key: 'missing', label: 'Missing' },
-    ])));
+  body.appendChild(centerCol);
+
+  // RIGHT: recommendations + stats
+  var rightCol = ndCol();
+  if (skillsRecs.length) {
+    rightCol.appendChild(ndLbl('AI Recommendations'));
+    rightCol.appendChild(ndRecList(skillsRecs, function(r) { return { text: r.title, priority: r.priority, sub: r.expectedBenefit }; }));
   }
-  if (b.skillsRecommendations && b.skillsRecommendations.length) {
-    wrap.appendChild(buildPdfRecommendations(b.skillsRecommendations.map(function(r) {
-      return { text: r.title, priority: r.priority, sub: r.expectedBenefit };
-    }), 'Skills Recommendations'));
+  var statsEntries = [{ label: 'Available', value: skillsStats.available }, { label: 'Gaps', value: skillsStats.gaps }, { label: 'Critical', value: skillsStats.critical }].filter(function(e) { return e.value !== undefined && e.value !== null; }).map(function(e) { return { label: e.label, value: String(e.value) }; });
+  if (statsEntries.length) { rightCol.appendChild(ndStatBlock(statsEntries)); }
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Category summary grid
+  if (skillsCatSum.some(function(c) { return c.status; })) {
+    wrap.appendChild(ndLbl('Skills Category Summary'));
+    var grid = document.createElement('div'); grid.className = 'asa-summary-grid';
+    skillsCatSum.forEach(function(c) {
+      var cell = document.createElement('div'); cell.className = 'asa-summary-cell ' + (CATCLS[c.status] || '');
+      var lbl = document.createElement('p'); lbl.className = 'asa-summary-cell__lbl'; lbl.textContent = c.category; cell.appendChild(lbl);
+      if (c.status) { var val = document.createElement('p'); val.className = 'asa-summary-cell__val'; val.textContent = c.status; cell.appendChild(val); }
+      grid.appendChild(cell);
+    });
+    wrap.appendChild(grid);
   }
   return wrap;
 }
+
+// ── Skills & Workforce: AI Team Readiness ─────────────────────────────────────
 
 function buildAITeamReadinessLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'new-domain-layout';
+  var b            = section.brief || {};
+  var requiredRoles = b.requiredRoles       || [];
+  var teamRecs     = b.teamRecommendations  || [];
+  var teamStats    = b.teamStats            || {};
+  var teamCoverage = b.teamCoverageSummary  || [];
+
+  var ACLS  = { Available: 'atr-role--available', Partial: 'atr-role--partial', Missing: 'atr-role--missing' };
+  var PCLS  = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
+  var CCLS  = { Ready: 'atr-cov--ready', Strong: 'atr-cov--strong', 'Needs Support': 'atr-cov--needs', Missing: 'atr-cov--missing' };
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
+  if (b.teamReadiness) { wrap.appendChild(ndBadge('TEAM READINESS: ' + b.teamReadiness + '%')); }
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.teamReadiness !== undefined || b.teamStats) {
-    const trSection = document.createElement('div'); trSection.className = 'cto-detail-section';
-    const trL = document.createElement('p'); trL.className = 'brief-label';
-    trL.textContent = 'Team Readiness' + (b.teamReadiness !== undefined ? ': ' + b.teamReadiness + '%' : '');
-    trSection.appendChild(trL);
-    if (b.teamStats) {
-      const ts = b.teamStats;
-      trSection.appendChild(buildSummaryGrid([
-        { key: 'Required Roles', val: String(ts.required || 0) },
-        { key: 'Available', val: String(ts.available || 0) },
-        { key: 'Missing / Partial', val: String(ts.missing || 0) },
-      ]));
-    }
-    wrap.appendChild(trSection);
+
+  var body = ndBody(3);
+
+  // LEFT: required role cards
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('Required Roles'));
+  requiredRoles.forEach(function(role) {
+    var card = document.createElement('div'); card.className = 'atr-role-card ' + (ACLS[role.availability] || 'atr-role--partial');
+    var name = document.createElement('p'); name.className = 'atr-role-card__name'; name.textContent = role.name; card.appendChild(name);
+    if (role.responsibility) { var resp = document.createElement('p'); resp.className = 'atr-role-card__resp'; resp.textContent = role.responsibility; card.appendChild(resp); }
+    var meta = document.createElement('span'); meta.className = 'nd-pri ' + (PCLS[role.priority] || 'nd-pri--medium'); meta.textContent = (role.availability || '') + (role.priority ? ' · ' + role.priority : ''); card.appendChild(meta);
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // CENTER: team structure network (DOM hub-spoke)
+  var centerCol = ndCol();
+  centerCol.appendChild(ndLbl('Team Structure'));
+  var networkWrap = document.createElement('div'); networkWrap.className = 'atr-network-wrap';
+  var hub = document.createElement('div'); hub.className = 'atr-network-hub'; hub.innerHTML = '<p class="atr-hub__top">AI</p><p class="atr-hub__sub">PROJECT</p>'; networkWrap.appendChild(hub);
+  var rolesGrid = document.createElement('div'); rolesGrid.className = 'atr-network-grid';
+  var ACOLOR = { Available: '#5CC5A7', Partial: '#fbbf24', Missing: '#f87171' };
+  requiredRoles.slice(0, 6).forEach(function(role) {
+    var node = document.createElement('div'); node.className = 'atr-network-node';
+    node.style.borderColor = ACOLOR[role.availability] || '#6b7280';
+    node.style.color = ACOLOR[role.availability] || '#6b7280';
+    var words = role.name.split(' ');
+    var l1 = words.slice(0, 2).join(' ');
+    var l2 = words.slice(2).join(' ');
+    node.textContent = l2 ? l1 + '\n' + l2 : l1;
+    rolesGrid.appendChild(node);
+  });
+  networkWrap.appendChild(rolesGrid);
+  centerCol.appendChild(networkWrap);
+  body.appendChild(centerCol);
+
+  // RIGHT: recommendations + stats
+  var rightCol = ndCol();
+  if (teamRecs.length) {
+    rightCol.appendChild(ndLbl('AI Recommendations'));
+    rightCol.appendChild(ndRecList(teamRecs, function(r) { return { text: r.title, priority: r.priority, sub: r.impact }; }));
   }
-  if (b.requiredRoles && b.requiredRoles.length) {
-    wrap.appendChild(buildDetailSection('Required Roles', buildStatusTable(b.requiredRoles, [
-      { key: 'name', label: 'Role' },
-      { key: 'responsibility', label: 'Responsibility' },
-      { key: 'availability', label: 'Availability' },
-      { key: 'priority', label: 'Priority' },
-    ])));
-  }
-  if (b.teamRecommendations && b.teamRecommendations.length) {
-    wrap.appendChild(buildPdfRecommendations(b.teamRecommendations.map(function(r) {
-      return { text: r.title, priority: r.priority, sub: r.impact };
-    }), 'Team Recommendations'));
+  var statsEntries = [{ label: 'Required', value: teamStats.required }, { label: 'Available', value: teamStats.available }, { label: 'Missing', value: teamStats.missing }].filter(function(e) { return e.value !== undefined && e.value !== null; }).map(function(e) { return { label: e.label, value: String(e.value) }; });
+  if (statsEntries.length) { rightCol.appendChild(ndStatBlock(statsEntries)); }
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Team coverage summary grid
+  if (teamCoverage.some(function(c) { return c.status; })) {
+    wrap.appendChild(ndLbl('Team Coverage Summary'));
+    var grid = document.createElement('div'); grid.className = 'atr-summary-grid';
+    teamCoverage.forEach(function(c) {
+      var cell = document.createElement('div'); cell.className = 'atr-summary-cell ' + (CCLS[c.status] || '');
+      var lbl = document.createElement('p'); lbl.className = 'atr-summary-cell__lbl'; lbl.textContent = c.category; cell.appendChild(lbl);
+      if (c.status) { var val = document.createElement('p'); val.className = 'atr-summary-cell__val'; val.textContent = c.status; cell.appendChild(val); }
+      grid.appendChild(cell);
+    });
+    wrap.appendChild(grid);
   }
   return wrap;
 }
 
+// ── Skills & Workforce: AI Learning & Adoption ────────────────────────────────
+
 function buildAILearningAdoptionLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'new-domain-layout';
+  var b               = section.brief || {};
+  var learningPillars = b.learningPillars          || [];
+  var adoptionLifecycle = b.adoptionLifecycle       || [];
+  var adoptionRecs    = b.adoptionRecommendations   || [];
+  var adoptionStats   = b.adoptionStats             || {};
+  var adoptionSummary = b.adoptionReadinessSummary  || [];
+
+  var PILLAR_CLS = { Ready: 'ala-pillar--ready', 'In Progress': 'ala-pillar--progress', 'Not Started': 'ala-pillar--notstarted' };
+  var PCLS       = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
+  var SUMCLS     = { Ready: 'ala-sum--ready', 'In Progress': 'ala-sum--progress', Emerging: 'ala-sum--emerging', Developing: 'ala-sum--developing' };
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
+  if (b.adoptionReadiness) { wrap.appendChild(ndBadge('ADOPTION READINESS: ' + b.adoptionReadiness + '%')); }
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.adoptionReadiness !== undefined || b.adoptionStats) {
-    const arSection = document.createElement('div'); arSection.className = 'cto-detail-section';
-    const arL = document.createElement('p'); arL.className = 'brief-label';
-    arL.textContent = 'Adoption Readiness' + (b.adoptionReadiness !== undefined ? ': ' + b.adoptionReadiness + '%' : '');
-    arSection.appendChild(arL);
-    if (b.adoptionStats) {
-      const as = b.adoptionStats;
-      arSection.appendChild(buildSummaryGrid([
-        { key: 'Teams Trained', val: String(as.teamsTrained || 0) },
-        { key: 'Tools Adopted', val: String(as.toolsAdopted || 0) },
-        { key: 'Adoption Rate', val: as.adoptionRate || '—' },
-      ]));
-    }
-    wrap.appendChild(arSection);
+
+  var body = ndBody(3);
+
+  // LEFT: learning pillar cards
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('Learning Pillars'));
+  learningPillars.forEach(function(pillar) {
+    var card = document.createElement('div'); card.className = 'ala-pillar-card ' + (PILLAR_CLS[pillar.status] || 'ala-pillar--notstarted');
+    var name = document.createElement('p'); name.className = 'ala-pillar-card__name'; name.textContent = pillar.name; card.appendChild(name);
+    if (pillar.description) { var desc = document.createElement('p'); desc.className = 'ala-pillar-card__desc'; desc.textContent = pillar.description; card.appendChild(desc); }
+    var status = document.createElement('span'); status.className = 'ala-pillar-card__status'; status.textContent = pillar.status || 'Not Started'; card.appendChild(status);
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // CENTER: adoption lifecycle stages with readiness bars
+  var centerCol = ndCol();
+  centerCol.appendChild(ndLbl('Adoption Lifecycle'));
+  if (adoptionLifecycle.length) {
+    var lcWrap = document.createElement('div'); lcWrap.className = 'ala-lifecycle-wrap';
+    adoptionLifecycle.forEach(function(stage, i) {
+      var stageEl = document.createElement('div'); stageEl.className = 'ala-lifecycle-stage';
+      var hdr = document.createElement('div'); hdr.className = 'ala-lifecycle-stage__hdr';
+      var num = document.createElement('span'); num.className = 'ala-lifecycle-stage__num'; num.textContent = i + 1;
+      var sname = document.createElement('span'); sname.className = 'ala-lifecycle-stage__name'; sname.textContent = stage.stage;
+      hdr.appendChild(num); hdr.appendChild(sname); stageEl.appendChild(hdr);
+      if (stage.currentStatus) { var st = document.createElement('p'); st.className = 'ala-lifecycle-stage__status'; st.textContent = stage.currentStatus; stageEl.appendChild(st); }
+      var barTrack = document.createElement('div'); barTrack.className = 'ala-lifecycle-bar-track';
+      var barFill = document.createElement('div'); barFill.className = 'ala-lifecycle-bar-fill'; barFill.style.width = (stage.readiness || 0) + '%'; barTrack.appendChild(barFill);
+      var pct = document.createElement('span'); pct.className = 'ala-lifecycle-stage__pct'; pct.textContent = (stage.readiness || 0) + '%';
+      stageEl.appendChild(barTrack); stageEl.appendChild(pct);
+      if (stage.keyActivities && stage.keyActivities.length) {
+        var ul = document.createElement('ul'); ul.className = 'ala-lifecycle-stage__acts';
+        stage.keyActivities.slice(0, 2).forEach(function(act) { var li = document.createElement('li'); li.textContent = act; ul.appendChild(li); });
+        stageEl.appendChild(ul);
+      }
+      lcWrap.appendChild(stageEl);
+      if (i < adoptionLifecycle.length - 1) { var arr = document.createElement('div'); arr.className = 'ala-lifecycle-arr'; arr.textContent = '›'; lcWrap.appendChild(arr); }
+    });
+    centerCol.appendChild(lcWrap);
   }
-  if (b.learningPillars && b.learningPillars.length) {
-    wrap.appendChild(buildDetailSection('Learning Pillars', buildStatusTable(b.learningPillars, [
-      { key: 'name', label: 'Pillar' },
-      { key: 'description', label: 'Focus' },
-      { key: 'status', label: 'Status' },
-    ])));
+  body.appendChild(centerCol);
+
+  // RIGHT: recommendations + stats
+  var rightCol = ndCol();
+  if (adoptionRecs.length) {
+    rightCol.appendChild(ndLbl('AI Recommendations'));
+    rightCol.appendChild(ndRecList(adoptionRecs, function(r) { return { text: r.title, priority: r.priority, sub: r.expectedOutcome }; }));
   }
-  if (b.adoptionLifecycle && b.adoptionLifecycle.length) {
-    const lcSection = document.createElement('div'); lcSection.className = 'cto-detail-section';
-    const lcL = document.createElement('p'); lcL.className = 'brief-label'; lcL.textContent = 'Adoption Lifecycle';
-    lcSection.appendChild(lcL);
-    lcSection.appendChild(buildPillChain(b.adoptionLifecycle, 'stage'));
-    wrap.appendChild(lcSection);
-  }
-  if (b.adoptionRecommendations && b.adoptionRecommendations.length) {
-    wrap.appendChild(buildPdfRecommendations(b.adoptionRecommendations.map(function(r) {
-      return { text: r.title, priority: r.priority, sub: r.expectedOutcome };
-    }), 'Adoption Recommendations'));
+  var statsEntries = [{ label: 'Teams Trained', value: adoptionStats.teamsTrained }, { label: 'Tools Adopted', value: adoptionStats.toolsAdopted }, { label: 'Adoption Rate', value: adoptionStats.adoptionRate }].filter(function(e) { return e.value !== undefined && e.value !== null && e.value !== ''; }).map(function(e) { return { label: e.label, value: String(e.value) }; });
+  if (statsEntries.length) { rightCol.appendChild(ndStatBlock(statsEntries)); }
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Adoption readiness summary grid
+  if (adoptionSummary.some(function(c) { return c.status; })) {
+    wrap.appendChild(ndLbl('Adoption Readiness Summary'));
+    var grid = document.createElement('div'); grid.className = 'ala-summary-grid';
+    adoptionSummary.forEach(function(c) {
+      var cell = document.createElement('div'); cell.className = 'ala-summary-cell ' + (SUMCLS[c.status] || '');
+      var lbl = document.createElement('p'); lbl.className = 'ala-summary-cell__lbl'; lbl.textContent = c.category; cell.appendChild(lbl);
+      if (c.status) { var val = document.createElement('p'); val.className = 'ala-summary-cell__val'; val.textContent = c.status; cell.appendChild(val); }
+      grid.appendChild(cell);
+    });
+    wrap.appendChild(grid);
   }
   return wrap;
 }
@@ -2201,6 +2698,14 @@ const BROWSER_FUNCTIONS = [
   buildBusinessValueDefinitionLayout,
   buildAIUseCasePrioritizationLayout,
   buildAIUseCaseClassificationLayout,
+  ndBadge,
+  ndBody,
+  ndCol,
+  ndLbl,
+  ndScoresBar,
+  ndSummaryGrid,
+  ndRecList,
+  ndStatBlock,
   buildCriticalDataIdentificationLayout,
   buildAIDataPreparationLayout,
   buildDataArchitectureEnablementLayout,
@@ -2550,6 +3055,269 @@ html, body {
 .pdf-summary-cell { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem; padding: 0.6rem 0.85rem; display: flex; flex-direction: column; gap: 0.2rem; }
 .pdf-summary-cell__key { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.36); }
 .pdf-summary-cell__val { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.2; }
+
+/* ── Shared new-domain components (nd-*) ─────────────────────────────── */
+.nd-badge { display: inline-block; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 1rem; padding: 0.2rem 0.65rem; color: rgba(255,255,255,0.55); margin-bottom: 0.5rem; }
+.nd-body { display: flex; gap: 0.85rem; align-items: flex-start; }
+.nd-body--2col > .nd-col { flex: 1; min-width: 0; }
+.nd-body--3col > .nd-col { flex: 1; min-width: 0; }
+.nd-col { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
+.nd-scores-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.3rem; }
+.nd-score-cell { flex: 1; min-width: 60px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.7rem; display: flex; flex-direction: column; gap: 0.12rem; }
+.nd-score-cell__val { font-size: 1rem; font-weight: 700; color: rgba(255,255,255,0.9); margin: 0; }
+.nd-score-cell__lbl { font-size: 0.6rem; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+.nd-rec-list { display: flex; flex-direction: column; gap: 0.38rem; }
+.nd-rec-item { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-left: 2px solid rgba(99,102,241,0.45); border-radius: 0 0.4rem 0.4rem 0; padding: 0.45rem 0.7rem; display: flex; flex-direction: column; gap: 0.12rem; }
+.nd-rec-item__text { font-size: 0.77rem; font-weight: 500; color: rgba(255,255,255,0.84); margin: 0; line-height: 1.45; }
+.nd-rec-item__meta { font-size: 0.68rem; color: rgba(255,255,255,0.42); margin: 0; }
+.nd-rec-item__sub { font-size: 0.67rem; color: rgba(255,255,255,0.38); margin: 0; font-style: italic; line-height: 1.4; }
+.nd-pri { font-weight: 700; }
+.nd-pri--high { color: #f87171; }
+.nd-pri--medium { color: #fbbf24; }
+.nd-pri--low { color: #34d399; }
+.nd-stat-block { display: flex; flex-direction: column; gap: 0.25rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.4rem; padding: 0.5rem 0.7rem; margin-top: 0.35rem; }
+.nd-stat-row { display: flex; justify-content: space-between; align-items: center; }
+.nd-stat-row__lbl { font-size: 0.67rem; color: rgba(255,255,255,0.4); }
+.nd-stat-row__val { font-size: 0.77rem; font-weight: 700; color: rgba(255,255,255,0.82); }
+.nd-summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.45rem; margin-top: 0.4rem; }
+.nd-summary-cell { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.7rem; display: flex; flex-direction: column; gap: 0.18rem; }
+.nd-summary-cell__lbl { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: rgba(255,255,255,0.35); margin: 0; }
+.nd-summary-cell__val { font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.82); margin: 0; line-height: 1.4; }
+
+/* ── CDI: Critical Data Identification ───────────────────────── */
+.cdi-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem; padding: 0.55rem 0.75rem; display: flex; flex-direction: column; gap: 0.22rem; }
+.cdi-card__top { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.cdi-badge { display: inline-block; font-size: 0.59rem; font-weight: 700; padding: 0.13rem 0.48rem; border-radius: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.cdi-avail { display: inline-block; font-size: 0.59rem; font-weight: 600; padding: 0.13rem 0.48rem; border-radius: 0.7rem; }
+.cdi-avail--available { background: rgba(52,211,153,0.1); color: #34d399; }
+.cdi-avail--missing { background: rgba(248,113,113,0.1); color: #f87171; }
+.cdi-avail--partial { background: rgba(251,191,36,0.1); color: #fbbf24; }
+.cdi-card__name { font-size: 0.79rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
+.cdi-card__purpose { font-size: 0.69rem; color: rgba(255,255,255,0.52); margin: 0; line-height: 1.4; }
+.cdi-card__cat { display: inline-block; font-size: 0.59rem; color: rgba(129,140,248,0.8); background: rgba(129,140,248,0.08); border: 1px solid rgba(129,140,248,0.2); border-radius: 0.5rem; padding: 0.08rem 0.4rem; }
+.cdi-relmap { display: flex; align-items: flex-start; gap: 0.2rem; flex-wrap: nowrap; overflow: hidden; }
+.cdi-relnode { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.38rem 0.5rem; flex: 1; min-width: 0; }
+.cdi-relnode__hdr { font-size: 0.62rem; font-weight: 700; color: rgba(255,255,255,0.52); margin-bottom: 0.2rem; white-space: nowrap; }
+.cdi-relnode__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.12rem; }
+.cdi-relnode__list li { font-size: 0.64rem; color: rgba(255,255,255,0.58); line-height: 1.35; }
+.cdi-relmap__arr { font-size: 0.8rem; color: rgba(255,255,255,0.18); align-self: center; flex-shrink: 0; }
+.cdi-rec-row { display: flex; align-items: flex-start; gap: 0.45rem; padding: 0.38rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.cdi-rec-row__num { font-size: 0.7rem; font-weight: 700; color: rgba(99,102,241,0.7); flex-shrink: 0; min-width: 14px; }
+.cdi-rec-row__text { font-size: 0.71rem; color: rgba(255,255,255,0.72); flex: 1; margin: 0; line-height: 1.4; }
+
+/* ── ADP: AI Data Preparation ────────────────────────────────── */
+.adp-ds-card { display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.45rem 0.65rem; }
+.adp-ds-card__icon { font-size: 0.9rem; flex-shrink: 0; }
+.adp-ds-card__name { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.85); flex: 1; margin: 0; }
+.adp-ds-status { font-size: 0.6rem; font-weight: 600; padding: 0.1rem 0.45rem; border-radius: 0.7rem; white-space: nowrap; }
+.adp-status--available { background: rgba(52,211,153,0.1); color: #34d399; }
+.adp-status--missing   { background: rgba(248,113,113,0.1); color: #f87171; }
+.adp-status--progress  { background: rgba(251,191,36,0.1); color: #fbbf24; }
+.adp-pipeline-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+.adp-pipeline-cell { display: flex; justify-content: center; }
+.adp-circle { border-radius: 50%; width: 68px; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.12rem; border: 1.5px solid; }
+.adp-circle--completed  { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.45); }
+.adp-circle--attention  { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.45); }
+.adp-circle--progress   { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.45); }
+.adp-circle--pending    { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.12); }
+.adp-circle__name   { font-size: 0.62rem; font-weight: 700; color: rgba(255,255,255,0.82); margin: 0; text-align: center; line-height: 1.2; }
+.adp-circle__status { font-size: 0.56rem; color: rgba(255,255,255,0.42); margin: 0; text-align: center; }
+.adp-rec-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.7rem; display: flex; flex-direction: column; gap: 0.18rem; }
+.adp-rec-card__text   { font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.82); margin: 0; line-height: 1.4; }
+.adp-rec-card__meta   { font-size: 0.67rem; color: rgba(255,255,255,0.42); margin: 0; }
+.adp-rec-card__impact { font-size: 0.67rem; color: rgba(255,255,255,0.38); margin: 0; font-style: italic; }
+
+/* ── DAE: Data Architecture Enablement ───────────────────────── */
+.dae-sys-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.7rem; display: flex; flex-direction: column; gap: 0.18rem; border-left: 2px solid transparent; }
+.dae-conn--connected    { border-left-color: #34d399; }
+.dae-conn--partial      { border-left-color: #fbbf24; }
+.dae-conn--disconnected { border-left-color: #f87171; }
+.dae-sys-card__name { font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
+.dae-sys-card__conn { font-size: 0.68rem; color: rgba(255,255,255,0.45); margin: 0; }
+.dae-net-diagram { display: flex; flex-direction: column; align-items: center; gap: 0; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.5rem; padding: 0.6rem; }
+.dae-net-row { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
+.dae-net-node { font-size: 0.65rem; font-weight: 600; padding: 0.28rem 0.55rem; border-radius: 0.35rem; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7); }
+.dae-net-node.dae-conn--connected    { border-color: rgba(52,211,153,0.4); color: #34d399; }
+.dae-net-node.dae-conn--partial      { border-color: rgba(251,191,36,0.4); color: #fbbf24; }
+.dae-net-node.dae-conn--disconnected { border-color: rgba(248,113,113,0.35); color: #f87171; }
+.dae-net-arrows { display: flex; gap: 0.4rem; width: 100%; justify-content: center; padding: 0.1rem 0; }
+.dae-net-arrow { flex: 1; text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.18); }
+.dae-net-hub { display: flex; align-items: center; gap: 0.4rem; background: rgba(99,102,241,0.1); border: 1.5px solid rgba(99,102,241,0.35); border-radius: 1rem; padding: 0.3rem 0.9rem; font-size: 0.72rem; font-weight: 700; color: rgba(160,163,255,0.85); }
+.dae-net-legend { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.35rem; }
+.dae-net-legend__dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; display: inline-block; }
+.dae-net-legend__lbl { font-size: 0.6rem; color: rgba(255,255,255,0.38); }
+.dae-net-legend__dot.dae-conn--connected    { background: #34d399; }
+.dae-net-legend__dot.dae-conn--partial      { background: #fbbf24; }
+.dae-net-legend__dot.dae-conn--disconnected { background: #f87171; }
+.dae-rec-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.45rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.dae-rec-card__title { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.85); margin: 0; }
+.dae-rec-card__meta { font-size: 0.67rem; color: rgba(255,255,255,0.42); margin: 0; }
+.dae-timeline { display: flex; flex-direction: column; gap: 0.3rem; }
+.dae-timeline-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.dae-timeline-row__icon { width: 1.3rem; height: 1.3rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; flex-shrink: 0; }
+.dae-health--healthy    { background: rgba(52,211,153,0.15); color: #34d399; }
+.dae-health--attention  { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.dae-health--pending    { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.45); }
+.dae-health--critical   { background: rgba(248,113,113,0.15); color: #f87171; }
+.dae-timeline-row__text { flex: 1; }
+.dae-timeline-row__stage  { font-size: 0.74rem; font-weight: 600; color: rgba(255,255,255,0.82); margin: 0; }
+.dae-timeline-row__status { font-size: 0.65rem; color: rgba(255,255,255,0.42); margin: 0; }
+.dae-health-pill { font-size: 0.6rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 0.6rem; }
+.dae-health-pill.dae-health--healthy    { background: rgba(52,211,153,0.12); color: #34d399; }
+.dae-health-pill.dae-health--attention  { background: rgba(251,191,36,0.12); color: #fbbf24; }
+.dae-health-pill.dae-health--pending    { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.45); }
+.dae-health-pill.dae-health--critical   { background: rgba(248,113,113,0.12); color: #f87171; }
+
+/* ── SIA: System Integration & Architecture ──────────────────── */
+.sia-sys-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
+.sia-sys-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.18rem; border-left: 2px solid transparent; }
+.sia-card--connected { border-left-color: #34d399; }
+.sia-card--partial   { border-left-color: #fbbf24; }
+.sia-card--missing   { border-left-color: #f87171; }
+.sia-sys-card__name   { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
+.sia-sys-card__method { font-size: 0.65rem; color: rgba(255,255,255,0.45); margin: 0; }
+.sia-status { font-size: 0.59rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 0.5rem; }
+.sia-health { font-size: 0.59rem; color: rgba(255,255,255,0.35); }
+.sia-arch-panel { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.5rem; padding: 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+.sia-spoke-row { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; }
+.sia-spoke-node { display: flex; align-items: center; gap: 0.3rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.35rem; padding: 0.28rem 0.55rem; font-size: 0.63rem; color: rgba(255,255,255,0.65); }
+.sia-spoke-node--connected { border-color: rgba(52,211,153,0.35); color: rgba(52,211,153,0.85); }
+.sia-spoke-node--partial   { border-color: rgba(251,191,36,0.35); color: rgba(251,191,36,0.85); }
+.sia-spoke-node--missing   { border-color: rgba(248,113,113,0.3); color: rgba(248,113,113,0.8); }
+.sia-spoke-node__icon { font-size: 0.7rem; }
+.sia-spoke-node__name { font-size: 0.62rem; font-weight: 600; }
+.sia-connectors { display: flex; gap: 0.35rem; width: 100%; justify-content: center; }
+.sia-connector-line { flex: 1; height: 0.8rem; border-right: 1px dashed rgba(255,255,255,0.15); display: flex; align-items: flex-end; justify-content: center; font-size: 0.65rem; color: rgba(255,255,255,0.18); }
+.sia-connector-line::after { content: '↓'; }
+.sia-hub { background: rgba(99,102,241,0.1); border: 1.5px solid rgba(99,102,241,0.35); border-radius: 1rem; padding: 0.3rem 0.9rem; font-size: 0.72rem; font-weight: 700; color: rgba(160,163,255,0.85); }
+
+/* ── APR: AI Platform Readiness ──────────────────────────────── */
+.apr-cap-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; border-left: 2px solid transparent; }
+.apr-cap-card--ready   { border-left-color: #34d399; }
+.apr-cap-card--partial { border-left-color: #fbbf24; }
+.apr-cap-card--missing { border-left-color: #f87171; }
+.apr-cap-card__name  { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
+.apr-cap-card__score { font-size: 0.7rem; color: rgba(255,255,255,0.5); margin: 0; }
+.apr-status { font-size: 0.59rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 0.5rem; display: inline-block; }
+.apr-status--ready   { background: rgba(52,211,153,0.1); }
+.apr-status--partial { background: rgba(251,191,36,0.1); }
+.apr-status--missing { background: rgba(248,113,113,0.1); }
+.apr-stack-list { display: flex; flex-direction: column; gap: 0.35rem; }
+.apr-stack-row { display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.4rem; padding: 0.4rem 0.6rem; border-left: 2px solid transparent; }
+.apr-stack-row--ready   { border-left-color: #34d399; }
+.apr-stack-row--partial { border-left-color: #fbbf24; }
+.apr-stack-row--missing { border-left-color: #f87171; }
+.apr-stack-row__icon  { font-size: 0.85rem; flex-shrink: 0; color: rgba(255,255,255,0.5); }
+.apr-stack-row__info  { flex: 1; display: flex; flex-direction: column; gap: 0.08rem; }
+.apr-stack-row__name  { font-size: 0.71rem; font-weight: 600; color: rgba(255,255,255,0.82); margin: 0; }
+.apr-stack-row__score { font-size: 0.63rem; color: rgba(255,255,255,0.4); margin: 0; }
+
+/* ── CDS: AI Compute & Deployment Strategy ───────────────────── */
+.cds-wl-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.18rem; }
+.cds-wl-card__name  { font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.88); margin: 0; }
+.cds-wl-card__spec  { font-size: 0.68rem; color: rgba(255,255,255,0.55); margin: 0; line-height: 1.35; }
+.cds-wl-card__spec-label { color: rgba(255,255,255,0.38); }
+.cds-canvas { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.5rem; padding: 0.65rem; }
+.cds-canvas__hub { background: rgba(99,102,241,0.12); border: 1.5px solid rgba(99,102,241,0.4); border-radius: 0.6rem; padding: 0.4rem 0.8rem; text-align: center; min-width: 80px; }
+.cds-canvas__hub-label { font-size: 0.7rem; font-weight: 700; color: rgba(160,163,255,0.9); margin: 0; }
+.cds-canvas__hub-sub { font-size: 0.62rem; color: rgba(160,163,255,0.6); margin: 0; }
+.cds-canvas__hub-conf { font-size: 0.58rem; color: rgba(197,155,52,0.75); margin: 0; margin-top: 0.15rem; }
+.cds-canvas__nodes { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; }
+.cds-canvas__node { background: rgba(255,255,255,0.03); border: 1px solid rgba(99,102,241,0.25); border-radius: 0.4rem; padding: 0.28rem 0.55rem; text-align: center; }
+.cds-canvas__node-label { font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.78); margin: 0; }
+.cds-canvas__node-sub { font-size: 0.58rem; color: rgba(255,255,255,0.36); margin: 0; }
+.cds-rec-grid { display: flex; flex-direction: column; gap: 0.35rem; }
+.cds-rec-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.45rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.cds-rec-card__text { font-size: 0.74rem; font-weight: 500; color: rgba(255,255,255,0.82); margin: 0; line-height: 1.4; }
+.cds-rec-card__impact-row { font-size: 0.67rem; color: rgba(255,255,255,0.42); }
+.cds-rec-card__reason { font-size: 0.65rem; color: rgba(255,255,255,0.36); margin: 0; font-style: italic; }
+
+/* ── AEE: AI Engineering Enablement ──────────────────────────── */
+.aee-cap-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; border-left: 2px solid transparent; }
+.aee-cap--ready     { border-left-color: #34d399; }
+.aee-cap--partial   { border-left-color: #fbbf24; }
+.aee-cap--attention { border-left-color: #f87171; }
+.aee-cap-card__name  { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
+.aee-cap-card__score { font-size: 0.68rem; color: rgba(255,255,255,0.45); margin: 0; }
+.aee-lifecycle-wrap { display: flex; flex-direction: column; gap: 0.2rem; }
+.aee-lifecycle-stage { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.45rem 0.65rem; display: flex; flex-direction: column; gap: 0.18rem; }
+.aee-lifecycle-stage__name { font-size: 0.73rem; font-weight: 600; color: rgba(255,255,255,0.82); margin: 0; }
+.aee-lifecycle-bar-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+.aee-lifecycle-bar-fill  { height: 100%; background: rgba(99,102,241,0.7); border-radius: 2px; }
+.aee-lifecycle-stage__pct  { font-size: 0.62rem; color: rgba(99,102,241,0.7); font-weight: 700; }
+.aee-lifecycle-stage__auto { font-size: 0.63rem; color: rgba(255,255,255,0.38); margin: 0; }
+.aee-lifecycle-arrow { text-align: center; font-size: 0.9rem; color: rgba(255,255,255,0.18); line-height: 1; }
+
+/* ── ASA: AI Skills Assessment ───────────────────────────────── */
+.asa-skill-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.45rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.asa-skill-card__name { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
+.asa-skill-card__meta { font-size: 0.65rem; color: rgba(255,255,255,0.45); margin: 0; }
+.asa-matrix-wrap { display: flex; flex-direction: column; gap: 0.35rem; }
+.asa-matrix-row { display: flex; flex-direction: column; gap: 0.18rem; }
+.asa-matrix-row__cat { font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.72); margin: 0; }
+.asa-matrix-bar-track { height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+.asa-matrix-bar-fill  { height: 100%; background: rgba(99,102,241,0.65); border-radius: 3px; }
+.asa-matrix-row__counts { font-size: 0.62rem; color: rgba(255,255,255,0.38); margin: 0; }
+.asa-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: 0.35rem; }
+.asa-summary-cell { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.45rem 0.6rem; }
+.asa-cat--ready   { border-color: rgba(52,211,153,0.3); }
+.asa-cat--strong  { border-color: rgba(52,211,153,0.25); }
+.asa-cat--partial { border-color: rgba(251,191,36,0.3); }
+.asa-cat--needs   { border-color: rgba(248,113,113,0.3); }
+.asa-summary-cell__lbl { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.7); margin: 0; }
+.asa-summary-cell__val { font-size: 0.62rem; color: rgba(255,255,255,0.42); margin: 0; }
+
+/* ── ATR: AI Team Readiness ──────────────────────────────────── */
+.atr-role-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; border-left: 2px solid transparent; }
+.atr-role--available { border-left-color: #5CC5A7; }
+.atr-role--partial   { border-left-color: #fbbf24; }
+.atr-role--missing   { border-left-color: #f87171; }
+.atr-role-card__name { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
+.atr-role-card__resp { font-size: 0.67rem; color: rgba(255,255,255,0.48); margin: 0; line-height: 1.4; }
+.atr-network-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.5rem; padding: 0.6rem; }
+.atr-network-hub { background: rgba(30,58,95,0.8); border: 1.5px solid rgba(99,162,241,0.4); border-radius: 50%; width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.atr-hub__top { font-size: 0.72rem; font-weight: 800; color: #fff; margin: 0; }
+.atr-hub__sub { font-size: 0.52rem; color: rgba(255,255,255,0.6); margin: 0; }
+.atr-network-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3rem; width: 100%; }
+.atr-network-node { background: rgba(255,255,255,0.03); border: 1.5px solid; border-radius: 0.35rem; padding: 0.25rem 0.35rem; font-size: 0.6rem; font-weight: 600; text-align: center; line-height: 1.3; white-space: pre-line; }
+.atr-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: 0.35rem; }
+.atr-summary-cell { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.45rem 0.6rem; }
+.atr-cov--ready   { border-color: rgba(52,211,153,0.3); }
+.atr-cov--strong  { border-color: rgba(52,211,153,0.25); }
+.atr-cov--needs   { border-color: rgba(251,191,36,0.3); }
+.atr-cov--missing { border-color: rgba(248,113,113,0.3); }
+.atr-summary-cell__lbl { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.7); margin: 0; }
+.atr-summary-cell__val { font-size: 0.62rem; color: rgba(255,255,255,0.42); margin: 0; }
+
+/* ── ALA: AI Learning & Adoption ─────────────────────────────── */
+.ala-pillar-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; border-left: 2px solid transparent; }
+.ala-pillar--ready      { border-left-color: #34d399; }
+.ala-pillar--progress   { border-left-color: #fbbf24; }
+.ala-pillar--notstarted { border-left-color: rgba(255,255,255,0.18); }
+.ala-pillar-card__name   { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
+.ala-pillar-card__desc   { font-size: 0.67rem; color: rgba(255,255,255,0.48); margin: 0; line-height: 1.4; }
+.ala-pillar-card__status { font-size: 0.6rem; font-weight: 600; color: rgba(255,255,255,0.38); }
+.ala-lifecycle-wrap { display: flex; flex-direction: column; gap: 0.15rem; }
+.ala-lifecycle-stage { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.4rem 0.6rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.ala-lifecycle-stage__hdr { display: flex; align-items: center; gap: 0.35rem; }
+.ala-lifecycle-stage__num { display: inline-flex; align-items: center; justify-content: center; width: 1.1rem; height: 1.1rem; background: rgba(99,102,241,0.2); border-radius: 50%; font-size: 0.62rem; font-weight: 700; color: rgba(160,163,255,0.9); flex-shrink: 0; }
+.ala-lifecycle-stage__name { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.82); }
+.ala-lifecycle-stage__status { font-size: 0.63rem; color: rgba(255,255,255,0.42); margin: 0; }
+.ala-lifecycle-bar-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+.ala-lifecycle-bar-fill  { height: 100%; background: rgba(92,197,167,0.6); border-radius: 2px; }
+.ala-lifecycle-stage__pct { font-size: 0.61rem; color: rgba(92,197,167,0.8); font-weight: 700; }
+.ala-lifecycle-stage__acts { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.08rem; }
+.ala-lifecycle-stage__acts li { font-size: 0.61rem; color: rgba(255,255,255,0.36); line-height: 1.35; padding-left: 0.6rem; position: relative; }
+.ala-lifecycle-stage__acts li::before { content: '·'; position: absolute; left: 0; }
+.ala-lifecycle-arr { text-align: center; font-size: 1rem; color: rgba(255,255,255,0.15); line-height: 1; }
+.ala-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: 0.35rem; }
+.ala-summary-cell { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.45rem 0.6rem; }
+.ala-sum--ready      { border-color: rgba(52,211,153,0.3); }
+.ala-sum--progress   { border-color: rgba(251,191,36,0.3); }
+.ala-sum--emerging   { border-color: rgba(96,165,250,0.3); }
+.ala-sum--developing { border-color: rgba(99,102,241,0.3); }
+.ala-summary-cell__lbl { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.7); margin: 0; }
+.ala-summary-cell__val { font-size: 0.62rem; color: rgba(255,255,255,0.42); margin: 0; }
 
 /* ── AI Opportunity Discovery layout ─────────────────────────────────── */
 .opp-pdf-layer { display: flex; flex-direction: column; gap: 0.55rem; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.65rem; padding: 0.85rem 1rem; }

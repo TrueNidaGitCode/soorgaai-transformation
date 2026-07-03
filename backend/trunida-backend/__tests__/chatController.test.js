@@ -87,13 +87,13 @@ describe('sendMessage() — domain checks', () => {
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  it('returns 403 for a disabled domain (leadership)', async () => {
+  it('returns 404 for an unknown domain', async () => {
     const { req, res } = makeReqRes({ message: 'Hello' }, { domainId: 'leadership' });
     await sendMessage(req, res);
-    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  it('does not call handleTurn for a disabled domain', async () => {
+  it('does not call handleTurn for an unknown domain', async () => {
     const { req, res } = makeReqRes({ message: 'Hello' }, { domainId: 'leadership' });
     await sendMessage(req, res);
     expect(mockHandleTurn).not.toHaveBeenCalled();

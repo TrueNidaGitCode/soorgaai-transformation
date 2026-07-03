@@ -52,20 +52,19 @@ describe('getWorkspaceState()', () => {
     expect(body).toHaveProperty('domains');
   });
 
-  it('returns exactly 7 domains', async () => {
+  it('returns exactly 6 domains', async () => {
     const { req, res } = makeReqRes();
     await getWorkspaceState(req, res);
     const { domains } = res.status.mock.results[0].value.json.mock.calls[0][0];
-    expect(domains).toHaveLength(7);
+    expect(domains).toHaveLength(6);
   });
 
-  it('marks ai-strategy as enabled and the rest as disabled', async () => {
+  it('all 6 domains are enabled', async () => {
     const { req, res } = makeReqRes();
     await getWorkspaceState(req, res);
     const { domains } = res.status.mock.results[0].value.json.mock.calls[0][0];
     const enabled = domains.filter(d => d.enabled);
-    expect(enabled).toHaveLength(1);
-    expect(enabled[0].domainId).toBe('ai-strategy');
+    expect(enabled).toHaveLength(6);
   });
 
   it('attaches canvas focus areas to the ai-strategy domain', async () => {
@@ -94,8 +93,8 @@ describe('getWorkspaceState()', () => {
     const { req, res } = makeReqRes();
     await getWorkspaceState(req, res);
     const { domains } = res.status.mock.results[0].value.json.mock.calls[0][0];
-    const leadership = domains.find(d => d.domainId === 'leadership');
-    expect(leadership.lastActivityAt).toBeNull();
+    const govSec = domains.find(d => d.domainId === 'governance-security');
+    expect(govSec.lastActivityAt).toBeNull();
   });
 });
 
@@ -108,11 +107,11 @@ describe('getDomainCatalog()', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  it('returns exactly 7 domains', async () => {
+  it('returns exactly 6 domains', async () => {
     const { req, res } = makeReqRes();
     await getDomainCatalog(req, res);
     const body = res.status.mock.results[0].value.json.mock.calls[0][0];
-    expect(body.domains).toHaveLength(7);
+    expect(body.domains).toHaveLength(6);
   });
 
   it('each catalog entry has domainId, title, description, icon, and enabled', () => {

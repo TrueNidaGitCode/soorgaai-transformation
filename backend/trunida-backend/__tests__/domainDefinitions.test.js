@@ -11,8 +11,8 @@ import DOMAINS, { getDomain, getFocusAreaIds } from '../data/domainDefinitions.j
 // ── DOMAINS array structure ───────────────────────────────────────────────────
 
 describe('DOMAINS — array structure', () => {
-  it('exports exactly 7 domains', () => {
-    expect(DOMAINS).toHaveLength(7);
+  it('exports exactly 6 domains', () => {
+    expect(DOMAINS).toHaveLength(6);
   });
 
   it('every domain has the required shape (domainId, title, description, enabled, icon, focusAreas, suggestedPrompts)', () => {
@@ -36,15 +36,14 @@ describe('DOMAINS — array structure', () => {
 // ── Enabled / disabled split ──────────────────────────────────────────────────
 
 describe('DOMAINS — enabled flag', () => {
-  it('exactly one domain is enabled (ai-strategy)', () => {
+  it('all 6 domains are enabled', () => {
     const enabled = DOMAINS.filter(d => d.enabled);
-    expect(enabled).toHaveLength(1);
-    expect(enabled[0].domainId).toBe('ai-strategy');
+    expect(enabled).toHaveLength(6);
   });
 
-  it('the remaining 6 domains are disabled', () => {
+  it('no domains are disabled', () => {
     const disabled = DOMAINS.filter(d => !d.enabled);
-    expect(disabled).toHaveLength(6);
+    expect(disabled).toHaveLength(0);
   });
 });
 
@@ -127,10 +126,10 @@ describe('getDomain()', () => {
     expect(domain.enabled).toBe(true);
   });
 
-  it('returns a disabled domain by ID', () => {
-    const domain = getDomain('leadership');
+  it('returns a domain by ID', () => {
+    const domain = getDomain('governance-security');
     expect(domain).toBeDefined();
-    expect(domain.enabled).toBe(false);
+    expect(domain.enabled).toBe(true);
   });
 
   it('returns undefined for an unknown domainId', () => {
@@ -156,8 +155,8 @@ describe('getFocusAreaIds()', () => {
     expect(ids).toContain('metrics-value');
   });
 
-  it('returns an empty array for a disabled domain', () => {
-    expect(getFocusAreaIds('leadership')).toHaveLength(0);
+  it('returns an empty array for a domain with no focus areas', () => {
+    expect(getFocusAreaIds('governance-security')).toHaveLength(0);
   });
 
   it('returns an empty array for an unknown domainId', () => {

@@ -91,11 +91,11 @@ describe('createProfile() — happy path', () => {
     }));
   });
 
-  it('calls DomainCanvas.insertMany with exactly 7 canvas documents', async () => {
+  it('calls DomainCanvas.insertMany with exactly 6 canvas documents', async () => {
     const { req, res } = makeReqRes(VALID_BODY);
     await createProfile(req, res);
     const canvasDocs = mockCanvasInsertMany.mock.calls[0][0];
-    expect(canvasDocs).toHaveLength(7);
+    expect(canvasDocs).toHaveLength(6);
   });
 
   it('includes ai-strategy canvas with 5 focus areas', async () => {

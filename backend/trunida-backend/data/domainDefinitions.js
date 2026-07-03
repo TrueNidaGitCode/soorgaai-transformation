@@ -2,12 +2,9 @@
  * SoorgaAI — Workspace Domain Definitions
  *
  * Single source of truth for:
- *   - All 7 workspace domains (IDs, titles, enabled flag)
+ *   - All 6 workspace domains (IDs, titles, enabled flag)
  *   - AI Strategy focus areas (titles + default descriptions)
  *   - Suggested prompts per enabled domain
- *
- * Only ai-strategy has enabled: true for v1.0.
- * Other 6 domains are rendered as "Coming Soon" cards in the workspace.
  */
 
 export const DOMAINS = [
@@ -60,16 +57,6 @@ export const DOMAINS = [
   },
 
   {
-    domainId:    'leadership',
-    title:       'Leadership',
-    description: 'Develop AI-literate leadership and executive sponsorship.',
-    enabled:     false,
-    icon:        '👥',
-    focusAreas:  [],
-    suggestedPrompts: [],
-  },
-
-  {
     domainId:    'ai-use-cases',
     title:       'AI Use Cases',
     description: 'Identify, prioritize, and govern AI use cases across the enterprise.',
@@ -80,10 +67,20 @@ export const DOMAINS = [
   },
 
   {
+    domainId:    'skills-workforce',
+    title:       'Skills & Workforce',
+    description: 'Upskill your teams and build the AI capabilities needed to deliver.',
+    enabled:     true,
+    icon:        '🧠',
+    focusAreas:  [],
+    suggestedPrompts: [],
+  },
+
+  {
     domainId:    'data-readiness',
     title:       'Data Readiness',
     description: 'Assess and strengthen your data foundation for AI.',
-    enabled:     false,
+    enabled:     true,
     icon:        '📊',
     focusAreas:  [],
     suggestedPrompts: [],
@@ -93,18 +90,8 @@ export const DOMAINS = [
     domainId:    'technology-infrastructure',
     title:       'Technology Infrastructure',
     description: 'Build the platforms and tooling required to deploy AI at scale.',
-    enabled:     false,
+    enabled:     true,
     icon:        '⚙️',
-    focusAreas:  [],
-    suggestedPrompts: [],
-  },
-
-  {
-    domainId:    'skills-workforce',
-    title:       'Skills & Workforce',
-    description: 'Upskill your teams and attract the AI talent you need.',
-    enabled:     false,
-    icon:        '🧠',
     focusAreas:  [],
     suggestedPrompts: [],
   },
@@ -113,7 +100,7 @@ export const DOMAINS = [
     domainId:    'governance-security',
     title:       'Governance & Security',
     description: 'Establish responsible AI policies, ethics, and risk controls.',
-    enabled:     false,
+    enabled:     true,
     icon:        '🔒',
     focusAreas:  [],
     suggestedPrompts: [],

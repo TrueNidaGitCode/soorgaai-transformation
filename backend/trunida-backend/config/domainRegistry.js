@@ -40,7 +40,7 @@ export const DOMAINS = [
   {
     id:      'governance-security',
     name:    'Governance & Security',
-    enabled: true,
+    enabled: false,
     kbPath:  'Governance_Security',
   },
 ];

@@ -8348,21 +8348,25 @@
 }
 
 .ala-lifecycle-wrap {
-  overflow-x: auto;
   min-width: 0;
 }
 
 .ala-lifecycle {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: flex-start;
-  gap: 0;
+  gap: 0.5rem;
   min-width: 0;
 }
 
+.ala-lifecycle__arrow {
+  display: none;
+}
+
 .ala-lifecycle__stage {
-  flex: 1;
-  min-width: 130px; /* triggers horizontal scroll before cards squish to nothing */
+  flex: 1 1 calc(33% - 0.5rem);
+  min-width: 140px;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;

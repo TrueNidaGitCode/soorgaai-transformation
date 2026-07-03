@@ -103,7 +103,8 @@ function currentCap() {
 
 function isDomainNotStarted(domain) {
   const caps = domain.capabilities || [];
-  return caps.length > 0 && caps.every(c => !c.status || c.status === 'pending');
+  if (!caps.length) return true;
+  return caps.every(c => !c.status || c.status === 'pending');
 }
 
 async function regenerateDomain(blueprintId, domainId) {
@@ -5894,7 +5895,26 @@ function setErrorVisible(visible, msg = '') {
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
-function initWorkspace(blueprint) {
+const DOMAIN_ORDER = ['ai-strategy','ai-use-cases','skills-workforce','data-readiness','technology-infrastructure','governance-security'];
+
+async function augmentBlueprintWithMissingDomains(blueprint) {
+  try {
+    const resp = await fetch(`${API_BASE}/workspace/domains`);
+    if (!resp.ok) return;
+    const { domains } = await resp.json();
+    const existingIds = new Set(blueprint.domains.map(d => d.domainId));
+    for (const d of domains.filter(d => d.enabled)) {
+      if (!existingIds.has(d.domainId)) {
+        blueprint.domains.push({ domainId: d.domainId, domainName: d.title, capabilities: [], status: 'pending' });
+      }
+    }
+    blueprint.domains.sort((a, b) => DOMAIN_ORDER.indexOf(a.domainId) - DOMAIN_ORDER.indexOf(b.domainId));
+  } catch { /* non-critical — render with what we have */ }
+}
+
+async function initWorkspace(blueprint) {
+  await augmentBlueprintWithMissingDomains(blueprint);
+
   _blueprint         = blueprint;
   _selectedDomainIdx = 0;
   _selectedCapIndex  = 0;

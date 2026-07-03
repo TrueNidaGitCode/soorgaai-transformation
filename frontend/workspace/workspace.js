@@ -15,6 +15,9 @@ const API_BASE = window.CONFIG?.API_BASE
 function getToken() { return localStorage.getItem('token'); }
 function authHeaders() { return { Authorization: `Bearer ${getToken()}` }; }
 
+// All enabled domains from workspace state — set during DOMContentLoaded
+let _enabledDomains = [];
+
 function logout() {
   [
     'token', 'username', 'userId', 'role', 'redirectAfterLogin',
@@ -175,8 +178,17 @@ function domainStatusFromCaps(caps) {
   return { label: 'Not Started', cls: 'not-started', pct: 0 };
 }
 
+function buildMergedDomains(blueprint) {
+  const bpMap  = Object.fromEntries((blueprint.domains || []).map(d => [d.domainId, d]));
+  const ORDER  = ['ai-strategy','ai-use-cases','skills-workforce','data-readiness','technology-infrastructure','governance-security'];
+  const source = _enabledDomains.length ? _enabledDomains : (blueprint.domains || []).map(d => ({ domainId: d.domainId, title: d.domainName }));
+  return source
+    .map(ed => bpMap[ed.domainId] || { domainId: ed.domainId, domainName: ed.title, capabilities: [], status: 'pending' })
+    .sort((a, b) => ORDER.indexOf(a.domainId) - ORDER.indexOf(b.domainId));
+}
+
 function renderDoneState(blueprint) {
-  const domains = blueprint.domains || [];
+  const domains = buildMergedDomains(blueprint);
 
   // Aggregate stats across all domains
   let totalCaps = 0, complete = 0, inProgress = 0, notStarted = 0;
@@ -239,7 +251,6 @@ function renderDoneState(blueprint) {
 
   for (const domain of domains) {
     const caps  = domain.capabilities || [];
-    if (!caps.length) continue;
     const color = DOMAIN_COLORS[domain.domainId] || '#5CC5A7';
     const icon  = DOMAIN_ICONS[domain.domainId]  || '●';
     const { label, cls, pct } = domainStatusFromCaps(caps);
@@ -499,6 +510,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!stateResp.ok) throw new Error('Failed to load workspace state');
     const state = await stateResp.json();
 
+    _enabledDomains = (state.domains || []).filter(d => d.enabled);
     renderProfile(state);
     renderDomainBadges(state.domains || []);
 

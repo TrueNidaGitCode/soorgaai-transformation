@@ -658,14 +658,6 @@
   margin: 0 0 0.3rem;
 }
 
-.ws-done-main__sub {
-  font-size: 0.84rem;
-  color: rgba(255,255,255,0.45);
-  margin: 0;
-  font-style: italic;
-  line-height: 1.5;
-}
-
 /* Capability cards */
 .ws-done-caps {
   display: flex;

@@ -176,9 +176,6 @@ function domainStatusFromCaps(caps) {
 }
 
 function renderDoneState(blueprint) {
-  const objEl = document.getElementById('ws-done-objective');
-  if (objEl) objEl.textContent = blueprint.businessObjective || '';
-
   const domains = blueprint.domains || [];
 
   // Aggregate stats across all domains

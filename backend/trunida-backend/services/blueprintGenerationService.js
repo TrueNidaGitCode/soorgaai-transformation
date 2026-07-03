@@ -2131,6 +2131,24 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
       capBlueprint.sections, capBlueprint.automotiveBlueprint, enterpriseContext
     );
 
+    // DEBUG: log extra fields so we can confirm LLM is generating them
+    sections.forEach(sec => {
+      const b = sec.brief || {};
+      const extras = ['datasets','recommendations','coverageSummary','relationshipMap',
+                      'inputDatasets','pipelineStages','prepRecommendations','dataStats','readinessSummary',
+                      'projectSystems','archRecommendations','archStats','healthTimeline',
+                      'skillsMatrix','roleDistribution','trainingModules','adoptionLifecycle',
+                      'assessmentDimensions','teamRoles','lifecycleStages','adoptionRecommendations'];
+      const found = extras.filter(k => b[k] !== undefined);
+      if (found.length) {
+        console.log(`[transformationGen][debug] ${sec.title} extras:`, JSON.stringify(
+          Object.fromEntries(found.map(k => [k, Array.isArray(b[k]) ? `Array(${b[k].length})` : typeof b[k]])),
+        ));
+      } else {
+        console.log(`[transformationGen][debug] ${sec.title}: NO extra fields in brief`);
+      }
+    });
+
     await TransformationBlueprint.updateOne(
       { _id: blueprintId },
       {

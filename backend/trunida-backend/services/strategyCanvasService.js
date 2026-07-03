@@ -246,14 +246,25 @@ export function getDomainCapabilityBlueprint(capabilityId, kbPath, industry = 'A
   const pillars          = parsePillarSections(coreContent);
   const industrySections = industryContent ? parseIndustrySections(industryContent) : [];
 
+  const STANDARD_SUBSECTIONS = new Set(['Definition', 'Key Principles', 'Leadership Question']);
+
   const sections = pillars.map(pillar => {
     const match        = findIndustryMatch(pillar.title, industrySections);
     const automotiveText = match ? extractParagraphText(match.content, 150) : '';
+
+    // Collect non-standard subsections (Consultant Reasoning Process, Output Structure, etc.)
+    // so prompt builders can inject them as consultant methodology guidance.
+    const consultantGuide = Object.entries(pillar.subsections)
+      .filter(([key, val]) => !STANDARD_SUBSECTIONS.has(key) && val && val.trim())
+      .map(([key, val]) => `[${key}]\n${val.trim()}`)
+      .join('\n\n');
+
     return {
       title:              pillar.title,
       definition:         pillar.subsections['Definition']           || '',
       keyPrinciples:      extractBulletList(pillar.subsections['Key Principles'] || ''),
       leadershipQuestion: extractLeadershipQuestion(pillar.subsections['Leadership Question'] || ''),
+      consultantGuide:    consultantGuide || '',
       industryContext:    match ? match.content : null,
       automotiveText,
       source:             match ? 'both' : 'core',

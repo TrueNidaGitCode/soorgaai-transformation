@@ -1633,9 +1633,11 @@ function buildOutputFormat(parsedSections) {
 // CTO extras (strategicPillars etc.) are injected into this call when enabled.
 
 function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext }) {
-  const sectionList   = parsedSections.map((s, i) =>
-    `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`
-  ).join('\n\n');
+  const sectionList   = parsedSections.map((s, i) => {
+    let entry = `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`;
+    if (s.consultantGuide) entry += `\n\n   CONSULTANT METHODOLOGY:\n${s.consultantGuide}`;
+    return entry;
+  }).join('\n\n');
   const sectionTitles = parsedSections.map(s => `"${s.title}"`).join(', ');
 
   const templateInstructions = BLUEPRINT_CONFIG.generate.ctoExtras
@@ -1735,9 +1737,11 @@ async function runBriefGeneration(cap, companyProfile, businessObjective, indust
 // CTO extras are injected into Step 2 when enabled.
 
 function buildEssayPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext }) {
-  const sectionList   = parsedSections.map((s, i) =>
-    `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`
-  ).join('\n\n');
+  const sectionList   = parsedSections.map((s, i) => {
+    let entry = `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`;
+    if (s.consultantGuide) entry += `\n\n   CONSULTANT METHODOLOGY:\n${s.consultantGuide}`;
+    return entry;
+  }).join('\n\n');
   const sectionTitles = parsedSections.map(s => `"${s.title}"`).join(', ');
 
   const systemPrompt = `You are SoorgaAI, a senior enterprise AI strategy advisor writing for a CTO audience.

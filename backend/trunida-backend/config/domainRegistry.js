@@ -20,12 +20,6 @@ export const DOMAINS = [
     kbPath:  'AI_Use_Cases',
   },
   {
-    id:      'skills-workforce',
-    name:    'Skills & Workforce',
-    enabled: true,
-    kbPath:  'Skills_Workforce',
-  },
-  {
     id:      'data-readiness',
     name:    'Data Readiness',
     enabled: true,
@@ -36,6 +30,12 @@ export const DOMAINS = [
     name:    'Technology Infrastructure',
     enabled: true,
     kbPath:  'Technology_Infrastructure',
+  },
+  {
+    id:      'skills-workforce',
+    name:    'Skills & Workforce',
+    enabled: true,
+    kbPath:  'Skills_Workforce',
   },
   {
     id:      'governance-security',

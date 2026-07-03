@@ -5894,7 +5894,7 @@ function setErrorVisible(visible, msg = '') {
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
-const DOMAIN_ORDER = ['ai-strategy','ai-use-cases','skills-workforce','data-readiness','technology-infrastructure','governance-security'];
+const DOMAIN_ORDER = ['ai-strategy','ai-use-cases','data-readiness','technology-infrastructure','skills-workforce','governance-security'];
 
 async function augmentBlueprintWithMissingDomains(blueprint) {
   try {

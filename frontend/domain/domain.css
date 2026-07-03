@@ -8344,10 +8344,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0; /* allow grid cell to shrink so overflow-x on wrap triggers */
 }
 
 .ala-lifecycle-wrap {
   overflow-x: auto;
+  min-width: 0;
 }
 
 .ala-lifecycle {
@@ -8360,7 +8362,7 @@
 
 .ala-lifecycle__stage {
   flex: 1;
-  min-width: 0;
+  min-width: 130px; /* triggers horizontal scroll before cards squish to nothing */
   display: flex;
   flex-direction: column;
   gap: 0.3rem;

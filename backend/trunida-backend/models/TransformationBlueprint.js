@@ -80,7 +80,7 @@ const briefSchema = new mongoose.Schema({
   secondaryClassification:  { type: classificationSchema,       default: undefined },
   classificationCards:      { type: [classificationCardSchema], default: [] },
   classificationInsight:    { type: String,   default: '' },
-}, { _id: false });
+}, { _id: false, strict: false });
 
 const sectionSchema = new mongoose.Schema({
   title:    { type: String, required: true },

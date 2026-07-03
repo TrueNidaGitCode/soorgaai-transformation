@@ -174,7 +174,7 @@ const briefSchema = new mongoose.Schema({
   secondaryClassification:  { type: classificationSchema,       default: undefined },
   classificationCards:      { type: [classificationCardSchema], default: [] },
   classificationInsight:    { type: String,   default: '' },
-}, { _id: false });
+}, { _id: false, strict: false });
 
 // ── Future format slots (schema-ready, not yet populated) ─────────────────────
 

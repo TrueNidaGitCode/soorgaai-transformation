@@ -5199,7 +5199,7 @@ async function pollForCapabilityCompletion(capabilityId) {
         if (freshCap) break;
       }
 
-      if (freshCap && freshCap.status !== 'in-progress' && freshCap.status !== 'pending') {
+      if (freshCap && freshCap.status !== 'in-progress' && freshCap.status !== 'pending' && freshCap.status !== 'generating') {
         _blueprint = freshBp;
         renderHeader(freshBp);
         renderDomainTabs(freshBp);

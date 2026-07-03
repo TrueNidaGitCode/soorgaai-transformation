@@ -433,8 +433,51 @@ export async function regenerateTransformationCapabilityHandler(req, res) {
     const { blueprintId, domainId, capabilityId } = req.params;
     const userId = req.user._id;
 
-    const bp = await TransformationBlueprint.findOne({ _id: blueprintId, userId }).lean();
+    const bp = await TransformationBlueprint.findOne({ _id: blueprintId, userId });
     if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    // Ensure the domain + capability exist in MongoDB before the async runs.
+    // They may be missing when the domain was added after blueprint creation and
+    // the user regenerates directly from domain.html (synthetic frontend-only entry).
+    const domainDef = enabledDomains().find(d => d.id === domainId);
+    if (!domainDef) return res.status(400).json({ error: `Unknown domain: ${domainId}` });
+
+    let modified = false;
+    let existingDomain = bp.domains.find(d => d.domainId === domainId);
+
+    if (!existingDomain) {
+      const caps = getDomainCapabilities(domainDef.kbPath);
+      bp.domains.push({
+        domainId:     domainDef.id,
+        domainName:   domainDef.name,
+        status:       'pending',
+        capabilities: caps.map(c => ({
+          capabilityId:   c.id,
+          capabilityName: c.name,
+          status:         'pending',
+          sections:       [],
+        })),
+      });
+      modified = true;
+      existingDomain = bp.domains[bp.domains.length - 1];
+    } else {
+      const hasCap = (existingDomain.capabilities || []).some(c => c.capabilityId === capabilityId);
+      if (!hasCap) {
+        const caps   = getDomainCapabilities(domainDef.kbPath);
+        const capDef = caps.find(c => c.id === capabilityId);
+        if (!capDef) return res.status(400).json({ error: `Unknown capability: ${capabilityId}` });
+        existingDomain.capabilities = existingDomain.capabilities || [];
+        existingDomain.capabilities.push({
+          capabilityId:   capDef.id,
+          capabilityName: capDef.name,
+          status:         'pending',
+          sections:       [],
+        });
+        modified = true;
+      }
+    }
+
+    if (modified) await bp.save();
 
     res.json({ ok: true });
 

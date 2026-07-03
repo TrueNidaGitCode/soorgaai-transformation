@@ -17,6 +17,7 @@ import {
   getTransformationBlueprint,
   updateTransformationSection,
   regenerateSpecificDomains,
+  removeGovernanceEthicsCapability,
 } from '../controllers/strategyCanvasController.js';
 import { ask } from '../controllers/advisorController.js';
 import { exportBlueprintPDF } from '../controllers/pdfExportController.js';
@@ -58,5 +59,8 @@ router.post(
   '/transformation-blueprint/:blueprintId/regenerate-domains',
   protect, regenerateSpecificDomains
 );
+
+// ── One-time cleanup ──────────────────────────────────────────────────────────
+router.post('/admin/remove-governance-ethics', protect, removeGovernanceEthicsCapability);
 
 export default router;

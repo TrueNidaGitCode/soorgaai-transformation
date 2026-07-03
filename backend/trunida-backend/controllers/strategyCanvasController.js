@@ -754,3 +754,32 @@ export async function updateTransformationSection(req, res) {
     res.status(500).json({ error: 'Failed to update section.' });
   }
 }
+
+/**
+ * POST /strategy-canvas/admin/remove-governance-ethics
+ * One-time cleanup: removes the AI Governance & Ethics capability from the
+ * calling user's TransformationBlueprint (AI Strategy domain).
+ */
+export async function removeGovernanceEthicsCapability(req, res) {
+  try {
+    const userId = req.user._id;
+    const result = await TransformationBlueprint.updateMany(
+      { userId, 'domains.domainId': 'ai-strategy' },
+      {
+        $pull: {
+          'domains.$[dom].capabilities': { capabilityId: 'ai-governance-ethics' },
+        },
+      },
+      { arrayFilters: [{ 'dom.domainId': 'ai-strategy' }] }
+    );
+    return res.json({
+      ok: true,
+      matched: result.matchedCount,
+      modified: result.modifiedCount,
+      message: 'AI Governance & Ethics capability removed from AI Strategy domain.',
+    });
+  } catch (err) {
+    console.error('removeGovernanceEthicsCapability error:', err);
+    res.status(500).json({ error: 'Cleanup failed.' });
+  }
+}

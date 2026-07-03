@@ -146,32 +146,131 @@ function updateProgressCard(domainId, capId, status) {
 
 // ── Done state ────────────────────────────────────────────────────────────────
 
+const DOMAIN_COLORS = {
+  'ai-strategy':               '#5CC5A7',
+  'ai-use-cases':              '#818cf8',
+  'skills-workforce':          '#f59e0b',
+  'data-readiness':            '#38bdf8',
+  'technology-infrastructure': '#34d399',
+  'governance-security':       '#f87171',
+};
+
+function doneStatusLabel(s) {
+  if (s === 'completed')                              return 'Complete';
+  if (s === 'in-progress' || s === 'generating')     return 'In Progress';
+  return 'Not Started';
+}
+function doneStatusCls(s) {
+  if (s === 'completed')                              return 'complete';
+  if (s === 'in-progress' || s === 'generating')     return 'in-progress';
+  return 'not-started';
+}
+function doneStatusPct(s) {
+  if (s === 'completed')                              return 100;
+  if (s === 'in-progress' || s === 'generating')     return 50;
+  return 0;
+}
+
 function renderDoneState(blueprint) {
   const objEl = document.getElementById('ws-done-objective');
-  if (objEl) objEl.textContent = `"${blueprint.businessObjective || ''}"`;
+  if (objEl) objEl.textContent = blueprint.businessObjective || '';
 
-  const container = document.getElementById('ws-done-domains');
-  if (!container) return;
-  container.innerHTML = '';
+  const domains = blueprint.domains || [];
 
-  for (const domain of (blueprint.domains || [])) {
-    const caps  = domain.capabilities || [];
-    const total = caps.length;
-    const done  = caps.filter(c => c.status === 'completed').length;
-    const pct   = total ? Math.round((done / total) * 100) : 0;
+  // Aggregate stats across all domains
+  let totalCaps = 0, complete = 0, inProgress = 0, notStarted = 0;
+  for (const d of domains) {
+    for (const c of (d.capabilities || [])) {
+      totalCaps++;
+      const s = c.status || 'pending';
+      if (s === 'completed')                          complete++;
+      else if (s === 'in-progress' || s === 'generating') inProgress++;
+      else                                            notStarted++;
+    }
+  }
+  const started = inProgress + complete;
+  const pct = totalCaps ? Math.round((complete / totalCaps) * 100) : 0;
 
-    const card = document.createElement('div');
-    card.className = 'ws-done-domain';
-    card.innerHTML = `
-      <div class="ws-done-domain__row">
-        <span class="ws-done-domain__name">${domain.domainName}</span>
-        <span class="ws-done-domain__count">${done}/${total} capabilities</span>
-      </div>
-      <div class="ws-done-domain__bar">
-        <div class="ws-done-domain__bar-fill" style="width:${pct}%"></div>
-      </div>
-    `;
-    container.appendChild(card);
+  // Sidebar — summary
+  const summaryEl = document.getElementById('ws-done-caps-summary');
+  if (summaryEl) summaryEl.textContent = `${started} of ${totalCaps} Capabilities Started`;
+
+  // Sidebar — ring
+  const r = 46, circ = +(2 * Math.PI * r).toFixed(2);
+  const ringFillEl = document.getElementById('ws-done-ring-fill');
+  if (ringFillEl) {
+    ringFillEl.style.strokeDasharray  = circ;
+    ringFillEl.style.strokeDashoffset = (circ - (pct / 100) * circ).toFixed(2);
+  }
+  const ringPctEl = document.getElementById('ws-done-ring-pct');
+  if (ringPctEl) ringPctEl.textContent = `${pct}%`;
+
+  // Sidebar — progress bar
+  const progFillEl = document.getElementById('ws-done-prog-fill');
+  if (progFillEl) progFillEl.style.width = `${pct}%`;
+  const progPctEl = document.getElementById('ws-done-prog-pct');
+  if (progPctEl) progPctEl.textContent = `${pct}%`;
+
+  // Sidebar — status breakdown
+  const statusList = document.getElementById('ws-done-status-list');
+  if (statusList) {
+    statusList.innerHTML = '';
+    [
+      { label: 'Complete',    count: complete,    color: '#5CC5A7' },
+      { label: 'In Progress', count: inProgress,  color: '#f59e0b' },
+      { label: 'Not Started', count: notStarted,  color: 'rgba(255,255,255,0.2)' },
+    ].forEach(({ label, count, color }) => {
+      const li = document.createElement('li');
+      li.className = 'ws-done-status-item';
+      li.innerHTML = `
+        <span class="ws-done-status-dot" style="background:${color}"></span>
+        <span class="ws-done-status-label">${label}</span>
+        <span class="ws-done-status-count">${count}</span>
+      `;
+      statusList.appendChild(li);
+    });
+  }
+
+  // Right panel — capability cards grouped by domain
+  const capsEl = document.getElementById('ws-done-caps');
+  if (!capsEl) return;
+  capsEl.innerHTML = '';
+
+  for (const domain of domains) {
+    const caps = domain.capabilities || [];
+    if (!caps.length) continue;
+    const color = DOMAIN_COLORS[domain.domainId] || '#5CC5A7';
+
+    const header = document.createElement('p');
+    header.className = 'ws-done-domain-header';
+    header.textContent = domain.domainName;
+    capsEl.appendChild(header);
+
+    for (const cap of caps) {
+      const name     = cap.name || cap.capabilityName || '';
+      const initials = name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+      const lbl      = doneStatusLabel(cap.status);
+      const cls      = doneStatusCls(cap.status);
+      const capPct   = doneStatusPct(cap.status);
+
+      const card = document.createElement('div');
+      card.className = 'ws-done-cap-card';
+      card.innerHTML = `
+        <div class="ws-done-cap-icon" style="background:${color}22;color:${color};border:1.5px solid ${color}55">${initials}</div>
+        <div class="ws-done-cap-body">
+          <p class="ws-done-cap-name">${name}</p>
+          <div class="ws-done-cap-footer">
+            <span class="ws-done-cap-badge ws-done-cap-badge--${cls}">${lbl}</span>
+            <div class="ws-done-cap-prog">
+              <span class="ws-done-cap-pct">${capPct}%</span>
+              <div class="ws-done-cap-bar"><div class="ws-done-cap-bar-fill" style="width:${capPct}%;background:${color}"></div></div>
+            </div>
+          </div>
+        </div>
+        <span class="ws-done-cap-arrow">→</span>
+      `;
+      capsEl.appendChild(card);
+    }
   }
 }
 

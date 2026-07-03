@@ -92,21 +92,61 @@
 
     <!-- ── STATE 3: Blueprint ready ────────────────────────────────────── -->
     <div id="ws-done" style="display:none">
-      <div class="ws-card ws-done-card">
-        <div class="ws-done-card__header">
-          <div class="ws-done-check" aria-hidden="true">✓</div>
-          <div>
-            <h2 class="ws-done-card__title">Your Blueprint is Ready</h2>
-            <p id="ws-done-objective" class="ws-done-card__objective"></p>
+      <div class="ws-done-layout">
+
+        <!-- LEFT: Progress sidebar -->
+        <aside class="ws-done-sidebar ws-card">
+          <p class="ws-done-sidebar__label">Company AI Blueprint</p>
+          <p id="ws-done-caps-summary" class="ws-done-sidebar__summary">Loading…</p>
+
+          <div class="ws-done-ring-wrap">
+            <svg class="ws-done-ring" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ws-done-ring__track" cx="60" cy="60" r="46"/>
+              <circle id="ws-done-ring-fill" class="ws-done-ring__fill" cx="60" cy="60" r="46"/>
+            </svg>
+            <div class="ws-done-ring-inner">
+              <span id="ws-done-ring-pct" class="ws-done-ring-inner__pct">0%</span>
+              <span class="ws-done-ring-inner__sub">Overall</span>
+            </div>
+          </div>
+
+          <div class="ws-done-prog-row">
+            <span class="ws-done-prog-label">Overall Progress</span>
+            <span id="ws-done-prog-pct" class="ws-done-prog-val">0%</span>
+          </div>
+          <div class="ws-done-prog-bar">
+            <div id="ws-done-prog-fill" class="ws-done-prog-bar__fill"></div>
+          </div>
+
+          <ul id="ws-done-status-list" class="ws-done-status-list"></ul>
+
+          <div class="ws-done-kb-card">
+            <span class="ws-done-kb-card__icon">📚</span>
+            <div class="ws-done-kb-card__text">
+              <p class="ws-done-kb-card__title">Powered by Industry Knowledge</p>
+              <p class="ws-done-kb-card__body">SoorgaAI's cross-industry knowledge base and proven frameworks accelerate your AI transformation.</p>
+            </div>
+          </div>
+        </aside>
+
+        <!-- RIGHT: Blueprint capabilities -->
+        <div class="ws-done-main ws-card">
+          <div class="ws-done-main__header">
+            <div class="ws-done-check" aria-hidden="true">✓</div>
+            <div>
+              <h2 class="ws-done-main__title">Your Blueprint is Ready</h2>
+              <p id="ws-done-objective" class="ws-done-main__sub"></p>
+            </div>
+          </div>
+
+          <div id="ws-done-caps" class="ws-done-caps"></div>
+
+          <div class="ws-done-actions">
+            <a href="/domain/domain.html" class="ws-open-btn">Open Full Blueprint</a>
+            <button id="ws-new-blueprint" class="ws-new-btn">New Blueprint</button>
           </div>
         </div>
 
-        <div id="ws-done-domains" class="ws-done-domains"></div>
-
-        <div class="ws-done-actions">
-          <a href="/domain/domain.html" class="ws-open-btn">Open Full Blueprint</a>
-          <button id="ws-new-blueprint" class="ws-new-btn">New Blueprint</button>
-        </div>
       </div>
     </div>
 

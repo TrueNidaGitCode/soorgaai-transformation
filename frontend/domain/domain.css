@@ -2658,9 +2658,9 @@
 
 .ws-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 1.75rem 2rem 1.25rem;
+  padding: 1rem 2rem;
   border-bottom: 1px solid rgba(255,255,255,0.07);
   gap: 1rem;
   flex-wrap: wrap;
@@ -2670,30 +2670,8 @@
   font-size: 1.15rem;
   font-weight: 800;
   color: #fff;
-  margin: 0 0 0.45rem;
+  margin: 0;
   letter-spacing: -0.01em;
-}
-
-.ws-header__details {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem 1.5rem;
-}
-
-.ws-header__detail {
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.5);
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.ws-header__detail-label {
-  font-weight: 600;
-  color: rgba(255,255,255,0.35);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 0.7rem;
 }
 
 .ws-header__right {
@@ -2772,39 +2750,99 @@
   padding: 0.3rem 0.75rem;
 }
 
-/* ── Domain Navigation Tabs (top-level, above capability tabs) ────────────── */
+/* ── Domain Sidebar (left navigation) ────────────────────────────────────── */
 
-.domain-nav {
+.ws-domain-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.01);
+  padding: 1.25rem 0.75rem;
   display: flex;
-  overflow-x: auto;
-  gap: 0;
-  padding: 0 2rem;
-  border-bottom: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.02);
-  scrollbar-width: none;
+  flex-direction: column;
+  gap: 0.2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.25s ease, padding 0.25s ease;
+  position: sticky;
+  top: 64px;
+  align-self: start;
+  height: calc(100vh - 64px);
 }
-.domain-nav::-webkit-scrollbar { display: none; }
 
-.domain-nav__tab {
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: rgba(255,255,255,0.45);
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  padding: 0.85rem 1.25rem;
-  white-space: nowrap;
-  transition: color 0.2s, border-color 0.2s;
-  font-family: inherit;
-  position: relative;
-  top: 1px;
+.ws-domain-sidebar--collapsed {
+  width: 56px;
+  padding: 1.25rem 0.4rem;
 }
-.domain-nav__tab:hover { color: rgba(255,255,255,0.85); }
-.domain-nav__tab.is-active {
+
+.ws-domain-sidebar__label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  margin: 0 0 0.6rem;
+  padding: 0 0.4rem;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+.ws-domain-sidebar--collapsed .ws-domain-sidebar__label { opacity: 0; }
+
+.ws-domain-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.6rem 0.65rem;
+  text-align: left;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ws-domain-item:hover {
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.85);
+}
+.ws-domain-item.is-active {
+  background: rgba(92,197,167,0.1);
+  border-color: rgba(92,197,167,0.2);
   color: #5CC5A7;
-  border-bottom-color: #5CC5A7;
+}
+
+.ws-domain-item__icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+  line-height: 1;
+}
+
+.ws-domain-item__name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.2s;
+}
+
+.ws-domain-sidebar--collapsed .ws-domain-item {
+  justify-content: center;
+  padding: 0.6rem 0;
+  gap: 0;
+}
+.ws-domain-sidebar--collapsed .ws-domain-item__name {
+  opacity: 0;
+  max-width: 0;
+  flex: 0;
 }
 
 /* ── Capability Navigation Tabs ───────────────────────────────────────────── */
@@ -2859,6 +2897,23 @@
 /* ── Workspace Body ────────────────────────────────────────────────────────── */
 
 .ws-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Right panel (wraps cap-nav + content area) ─────────────────────────── */
+
+.ws-right-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Content area (blueprint + AI panel side by side) ───────────────────── */
+
+.ws-content-area {
   display: flex;
   flex: 1;
   min-height: 0;

@@ -30,6 +30,17 @@ function getToken() { return localStorage.getItem('token'); }
 
 const BLUEPRINT_VIEW_MODE = 'cto';
 
+// ── Domain sidebar maps ───────────────────────────────────────────────────────
+
+const DOMAIN_ICONS_MAP = {
+  'ai-strategy':               '🎯',
+  'ai-use-cases':              '💡',
+  'skills-workforce':          '🧠',
+  'data-readiness':            '📊',
+  'technology-infrastructure': '⚙️',
+  'governance-security':       '🔒',
+};
+
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let _blueprint           = null;
@@ -70,35 +81,7 @@ function calcCompletion(blueprint) {
 // ── Workspace header ──────────────────────────────────────────────────────────
 
 function renderHeader(blueprint) {
-  const details = document.getElementById('ws-header-details');
   const statusEl = document.getElementById('ws-header-status');
-
-  if (details) {
-    details.innerHTML = `
-      <span class="ws-header__detail">
-        <span class="ws-header__detail-label">Objective</span>
-        ${blueprint.businessObjective || '—'}
-      </span>
-      <span class="ws-header__detail">
-        <span class="ws-header__detail-label">Industry</span>
-        ${blueprint.industry || 'Automotive'}
-      </span>
-      ${blueprint.companyName ? `
-      <span class="ws-header__detail">
-        <span class="ws-header__detail-label">Company</span>
-        ${blueprint.companyName}
-      </span>` : ''}
-      <span class="ws-header__detail">
-        <span class="ws-header__detail-label">Generated</span>
-        ${fmtDate(blueprint.generatedAt)}
-      </span>
-      <span class="ws-header__detail">
-        <span class="ws-header__detail-label">Updated</span>
-        ${fmtDate(blueprint.updatedAt)}
-      </span>
-    `;
-  }
-
   if (statusEl) {
     const pct = calcCompletion(blueprint);
     statusEl.innerHTML = `<span class="ws-completion-pill">⚡ ${pct}% Generated</span>`;
@@ -121,15 +104,20 @@ function currentCap() {
 function renderDomainTabs(blueprint) {
   const nav = document.getElementById('domain-nav');
   if (!nav) return;
-  nav.innerHTML = '';
+  nav.innerHTML = '<p class="ws-domain-sidebar__label">Domains</p>';
 
   (blueprint.domains || []).forEach((domain, idx) => {
-    const tab = document.createElement('button');
-    tab.className = `domain-nav__tab${idx === _selectedDomainIdx ? ' is-active' : ''}`;
-    tab.dataset.idx = idx;
-    tab.textContent = domain.domainName;
-    tab.addEventListener('click', () => selectDomain(idx));
-    nav.appendChild(tab);
+    const icon = DOMAIN_ICONS_MAP[domain.domainId] || '●';
+    const item = document.createElement('button');
+    item.className = `ws-domain-item${idx === _selectedDomainIdx ? ' is-active' : ''}`;
+    item.dataset.idx = idx;
+    item.title = domain.domainName;
+    item.innerHTML = `
+      <span class="ws-domain-item__icon">${icon}</span>
+      <span class="ws-domain-item__name">${domain.domainName}</span>
+    `;
+    item.addEventListener('click', () => selectDomain(idx));
+    nav.appendChild(item);
   });
 }
 
@@ -139,7 +127,7 @@ function selectDomain(idx) {
   _refineTargetSection = null;
   clearSuggestionCard();
 
-  document.querySelectorAll('.domain-nav__tab').forEach((t, i) => {
+  document.querySelectorAll('.ws-domain-item').forEach((t, i) => {
     t.classList.toggle('is-active', i === idx);
   });
 
@@ -5250,13 +5238,15 @@ function toggleAssistant() {
 
 function setAssistantOpen(open) {
   _assistantOpen = open;
-  const panel  = document.getElementById('ai-panel');
-  const btn    = document.getElementById('btn-ai-assistant');
-  const wsBody = document.getElementById('ws-body');
+  const panel   = document.getElementById('ai-panel');
+  const btn     = document.getElementById('btn-ai-assistant');
+  const wsBody  = document.getElementById('ws-body');
+  const sidebar = document.getElementById('domain-nav');
 
-  if (panel)  panel.style.display  = open ? '' : 'none';
-  if (btn)    btn.classList.toggle('is-open', open);
-  if (wsBody) wsBody.classList.toggle('assistant-open', open);
+  if (panel)   panel.style.display = open ? '' : 'none';
+  if (btn)     btn.classList.toggle('is-open', open);
+  if (wsBody)  wsBody.classList.toggle('assistant-open', open);
+  if (sidebar) sidebar.classList.toggle('ws-domain-sidebar--collapsed', open);
 
   if (open) updateAssistantContext();
 }

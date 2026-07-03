@@ -95,18 +95,11 @@
   ══════════════════════════════════════════════════════════════════════════ -->
   <main id="screen-workspace" class="screen screen--workspace" style="display:none" aria-label="Company Blueprint Workspace">
 
-    <!-- Workspace header -->
+    <!-- Workspace header (simplified — no objective/metadata row) -->
     <header class="ws-header">
-      <div class="ws-header__meta">
-        <h1 class="ws-header__title">AI Transformation Blueprint</h1>
-        <div class="ws-header__details" id="ws-header-details">
-          <!-- Populated by blueprintWorkspace.js -->
-        </div>
-      </div>
+      <h1 class="ws-header__title">AI Transformation Blueprint</h1>
       <div class="ws-header__right">
-        <div id="ws-header-status">
-          <!-- Completion pill populated by blueprintWorkspace.js -->
-        </div>
+        <div id="ws-header-status"></div>
         <button id="btn-export-pdf" class="btn-export-pdf" aria-label="Export blueprint as PDF">
           <span id="btn-export-pdf-text">Export PDF</span>
           <span id="btn-export-pdf-loader" class="btn-export-pdf-loader" style="display:none"></span>
@@ -117,59 +110,70 @@
       </div>
     </header>
 
-    <!-- Domain navigation tabs (top level) -->
-    <nav class="domain-nav" id="domain-nav" aria-label="Domain navigation">
-      <!-- Populated by blueprintWorkspace.js -->
-    </nav>
-
-    <!-- Capability navigation tabs (within selected domain) -->
-    <nav class="cap-nav" id="cap-nav" aria-label="Capability navigation">
-      <!-- Populated by blueprintWorkspace.js -->
-    </nav>
-
-    <!-- Split: blueprint content (full-width or 70%) + AI assistant (30%) -->
+    <!-- Workspace body: domain sidebar (left) + capability area (right) -->
     <div class="ws-body" id="ws-body">
 
-      <!-- Blueprint content area -->
-      <section class="bp-content" id="bp-content" aria-label="Blueprint content">
-        <!-- Populated by blueprintWorkspace.js -->
-      </section>
+      <!-- LEFT: Domain sidebar — collapses to icons when AI assistant opens -->
+      <nav class="ws-domain-sidebar" id="domain-nav" aria-label="Domain navigation">
+        <p class="ws-domain-sidebar__label">Domains</p>
+        <!-- Items populated by blueprintWorkspace.js -->
+      </nav>
 
-      <!-- AI Assistant panel (hidden by default) -->
-      <aside class="ai-panel" id="ai-panel" style="display:none" aria-label="AI Assistant">
-        <div class="ai-panel__header">
-          <h2 class="ai-panel__title">AI Assistant</h2>
-          <button id="btn-close-assistant" class="ai-panel__close" aria-label="Close AI Assistant">✕</button>
+      <!-- RIGHT: capability tabs + blueprint content + AI panel -->
+      <div class="ws-right-panel">
+
+        <!-- Capability navigation tabs (within selected domain) -->
+        <nav class="cap-nav" id="cap-nav" aria-label="Capability navigation">
+          <!-- Populated by blueprintWorkspace.js -->
+        </nav>
+
+        <!-- Content area: blueprint + AI panel side by side -->
+        <div class="ws-content-area">
+
+          <!-- Blueprint content area -->
+          <section class="bp-content" id="bp-content" aria-label="Blueprint content">
+            <!-- Populated by blueprintWorkspace.js -->
+          </section>
+
+          <!-- AI Assistant panel (hidden by default) -->
+          <aside class="ai-panel" id="ai-panel" style="display:none" aria-label="AI Assistant">
+            <div class="ai-panel__header">
+              <h2 class="ai-panel__title">AI Assistant</h2>
+              <button id="btn-close-assistant" class="ai-panel__close" aria-label="Close AI Assistant">✕</button>
+            </div>
+
+            <div id="ai-panel-context" class="ai-panel__context" aria-live="polite" style="display:none">
+              <!-- Context badge populated by blueprintWorkspace.js -->
+            </div>
+
+            <div id="ai-chat-messages" class="chat-messages" role="log" aria-live="polite">
+              <!-- Chat messages and suggestion cards injected by advisor logic -->
+            </div>
+
+            <div id="ai-chat-error" class="chat-error" style="display:none" role="alert">
+              <span id="ai-chat-error-text">We couldn't process that. Please try again.</span>
+              <button id="ai-chat-retry" class="chat-retry-btn">Retry</button>
+            </div>
+
+            <form id="ai-chat-form" class="chat-input-form" novalidate>
+              <textarea
+                id="ai-chat-input"
+                class="chat-input"
+                rows="3"
+                placeholder="Ask a question or describe what you'd like to refine… (Shift+Enter for new line)"
+                aria-label="AI Assistant message"
+              ></textarea>
+              <button type="submit" id="ai-chat-send" class="chat-send-btn" aria-label="Send message">
+                <span id="ai-chat-send-icon">→</span>
+                <span id="ai-chat-send-loader" class="chat-send-loader" style="display:none"></span>
+              </button>
+            </form>
+
+          </aside>
         </div>
 
-        <div id="ai-panel-context" class="ai-panel__context" aria-live="polite" style="display:none">
-          <!-- Context badge populated by blueprintWorkspace.js -->
-        </div>
+      </div>
 
-        <div id="ai-chat-messages" class="chat-messages" role="log" aria-live="polite">
-          <!-- Chat messages and suggestion cards injected by advisor logic -->
-        </div>
-
-        <div id="ai-chat-error" class="chat-error" style="display:none" role="alert">
-          <span id="ai-chat-error-text">We couldn't process that. Please try again.</span>
-          <button id="ai-chat-retry" class="chat-retry-btn">Retry</button>
-        </div>
-
-        <form id="ai-chat-form" class="chat-input-form" novalidate>
-          <textarea
-            id="ai-chat-input"
-            class="chat-input"
-            rows="3"
-            placeholder="Ask a question or describe what you'd like to refine… (Shift+Enter for new line)"
-            aria-label="AI Assistant message"
-          ></textarea>
-          <button type="submit" id="ai-chat-send" class="chat-send-btn" aria-label="Send message">
-            <span id="ai-chat-send-icon">→</span>
-            <span id="ai-chat-send-loader" class="chat-send-loader" style="display:none"></span>
-          </button>
-        </form>
-
-      </aside>
     </div>
 
   </main>

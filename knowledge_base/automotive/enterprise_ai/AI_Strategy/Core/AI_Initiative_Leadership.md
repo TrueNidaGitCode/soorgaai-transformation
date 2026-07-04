@@ -123,52 +123,51 @@ Leadership commitment demonstrates accountability through active participation, 
 
 # Output Structure
 
-Present the assessment using the following three sections.
+Present the assessment using the following three distinct sections. Each section answers a different executive question and must not repeat the other sections' content.
 
-## Vision
+## Vision → What future operating model are we creating?
 
 Generate:
 
-- Vision Statement (maximum three sentences)
-- Three Transformation Pillars
-- Three measurable Success Metrics
-- Four 90-Day Priority Actions
+- Vision Statement: maximum three sentences describing the future state — where the organization will be once this initiative is operational, not how it gets there
+- Three Transformation Pillars: business-level outcomes this initiative creates (what changes, not how to deploy)
+- Three Business Outcome Metrics: headline KPIs for this initiative drawn from Business Value Definition and Implementation Prioritization — these business metrics appear here only, not in Alignment or Commitment
+- Four 90-Day Milestones: strategic milestone labels on the path from approval to operational adoption
 
 ---
 
-## Alignment
+## Alignment → How will the organization work together to achieve it?
 
 Generate:
 
-- Strategic Position (maximum two sentences)
-- Four Alignment Initiatives
-- Three Alignment Success Metrics
+- Strategic Position: maximum two sentences on who must align and why for this initiative
+- Four Cross-Functional Collaboration Initiatives: concrete actions different teams must take together to deliver this initiative
+- Three Organizational Coordination Metrics: measure HOW WELL TEAMS ARE ALIGNED — stakeholder ownership, cross-functional participation, governance cadence, decision-making speed — NOT business outcomes from Vision
 
-Focus on how teams collaborate to successfully deliver the selected AI initiative.
+Focus on WHO does WHAT and HOW teams coordinate. Do not repeat business KPIs from Vision.
 
 ---
 
-## Commitment
+## Commitment → How will leadership fund, govern, and sustain it?
 
 Generate:
 
-- Strategic Position (maximum two sentences)
-- Three Executive Commitment Pillars
-- Governance Structure
-- Three Commitment Success Metrics
+- Strategic Position: maximum two sentences on the leadership mandate for this initiative
+- Three Executive Commitment Pillars: Investment, Governance, and Leadership Accountability actions for this initiative
+- Governance Structure: four named roles or bodies overseeing this initiative from pilot to adoption
+- Three Leadership Investment Metrics: measure executive sponsorship, funding commitment, governance review frequency, or named accountability — NOT business outcomes from Vision or coordination metrics from Alignment
 
-Focus on leadership actions that ensure successful implementation.
+Focus on how leadership invests, governs, and holds the initiative accountable. Do not repeat business KPIs or team coordination metrics.
 
 ---
 
 ## Key Principles
 
-- Continue from the previously prioritized AI initiative.
-- Build leadership around the selected implementation recommendation.
-- Focus on successful execution rather than AI strategy creation.
+- Continue from the previously prioritized AI initiative — never introduce a new one.
+- Vision defines the destination (future operating model); Alignment defines the organization; Commitment defines leadership investment.
+- Each section adds a new leadership perspective — do not repeat terms, metrics, or themes across Vision, Alignment, and Commitment.
 - Keep recommendations practical and implementation-oriented.
-- Ensure every recommendation supports measurable business outcomes.
-- Keep outputs concise and executive-friendly.
+- Keep outputs concise and understandable within 30 seconds by a Project Manager.
 
 ---
 
@@ -182,13 +181,12 @@ Focus on leadership actions that ensure successful implementation.
 
 Before completing this capability verify that:
 
-- Previous AI initiative is referenced.
-- Business value is reflected in the vision.
-- Implementation priority is considered.
-- Vision describes the future operating model.
-- Alignment identifies collaboration required for implementation.
-- Commitment defines leadership responsibilities.
-- Success metrics align with previous business KPIs.
+- The same AI initiative from AI Opportunity Discovery, AI Use Case Classification, Business Value Definition, and AI Implementation Prioritization is named throughout.
+- Vision describes the future operating model (where we will be), not how to implement.
+- Vision's three business KPIs are drawn from the journey and appear only in Vision — not in Alignment or Commitment.
+- Alignment metrics measure organizational coordination (team coverage, ownership, cadence) — not business outcomes.
+- Commitment metrics measure leadership investment and governance (sponsors, funding, review cadence) — not business outcomes.
+- No metric value or initiative name is repeated across all three sections.
 - Output is understandable within 30 seconds by a Project Manager.
 
 ---

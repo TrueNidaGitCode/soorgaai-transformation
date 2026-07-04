@@ -64,27 +64,35 @@ const SECTION_TEMPLATES = {
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Vision" sections only:
 
-JOURNEY RULE: Look up "Recommended Implementation" and "Primary AI Classification" in the TRANSFORMATION JOURNEY block.
-The Vision MUST be built around that specific named AI initiative — not a generic AI strategy.
-Name the initiative explicitly in strategicPosition and in every strategicPillar.
-The three pillars should describe HOW this initiative changes day-to-day engineering operations.
-kpiHighlights must align with the "Target KPIs" already defined for this initiative in the journey.
-timelineSteps must represent the 90-day launch actions for THIS initiative specifically.
+JOURNEY RULE: This Vision MUST continue from the exact initiative already established across all four AI Use Cases capabilities:
+- AI Opportunity Discovery → the selected AI initiative
+- AI Use Case Classification → primary and secondary classification
+- Business Value Definition → expected business value areas
+- AI Implementation Prioritization → priority quadrant and recommended implementation
+
+Use "Selected AI Initiative", "Recommended Implementation", "Primary Classification", "Expected Business Value", and "Target KPIs" from the TRANSFORMATION CONTEXT block. Name the initiative explicitly throughout — never substitute a different AI opportunity.
+
+Vision defines the FUTURE OPERATING MODEL — where the organization will be once this initiative is successfully implemented and embedded into everyday operations.
+Focus on WHAT CHANGES for the business (transformed outcomes, improved capabilities, new ways of working), NOT on how to implement or deploy the technology.
+Strategic pillars must describe business-level transformation, not deployment activities.
+
+This is the ONLY section that defines business outcome metrics. Alignment and Commitment sections must NOT repeat these KPIs.
 
 5. strategicPillars (exactly 3 items)
-   Extract 3 distinct strategic themes from the strategicPosition as named pillars.
-   Each item: { "title": "<2–4 word noun phrase>", "description": "<1 outcome sentence>", "businessImpactTag": "<1–3 word impact label>" }
-   Example tags: "Engineering Velocity", "Release Predictability", "Cost Reduction"
+   Three distinct business transformation outcomes this initiative creates.
+   Each item: { "title": "<2–4 word noun phrase>", "description": "<1 sentence describing the business outcome>", "businessImpactTag": "<1–3 word impact label>" }
+   Pillars must describe WHAT CHANGES (business outcomes), not HOW to implement.
+   Example tags: "Engineering Velocity", "Release Predictability", "Traceability Accuracy"
 
 6. kpiHighlights (exactly 3 items)
-   Extract 3 hero success metrics to display as large-number KPI cards.
+   The 3 headline business outcome metrics for this initiative. Draw directly from "Target KPIs" and "Expected Business Value" in the TRANSFORMATION CONTEXT.
    Each item: { "value": "<number with unit e.g. 75%, 4+, 2×, 18mo>", "label": "<2–4 word metric name>", "description": "<1 short sentence, ≤8 words>" }
-   Values must be specific and quantified. Labels must be scannable in 1 second.
+   Values must be specific and quantified. These business KPIs appear here only — do not repeat them in Alignment or Commitment.
 
 7. timelineSteps (exactly 4 items)
-   Condense the 4 most critical priority actions into short 3–5 word action labels for a horizontal timeline.
-   Each item is a plain string. Must be directive and scannable.
-   Example: ["Define 3-Year AI Vision", "Establish Measurable Outcomes", "Deploy AI Council", "Assign Accountable Owners"]
+   Four strategic milestones on the 90-day path from approval to operational adoption of THIS initiative.
+   Each item is a plain string, 3–5 words. Must be milestone labels (outcomes), not deployment tasks.
+   Example: ["Secure Executive Sponsorship", "Align Engineering Teams", "Launch Pilot Initiative", "Measure First Outcomes"]
 
    Add all three to the brief object for Vision sections:
    "strategicPillars": [...], "kpiHighlights": [...], "timelineSteps": [...]`,
@@ -94,26 +102,36 @@ timelineSteps must represent the 90-day launch actions for THIS initiative speci
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Alignment" sections only:
 
-JOURNEY RULE: The alignment plan is for implementing the specific AI initiative named in the TRANSFORMATION JOURNEY block ("Recommended Implementation").
-spokeNodes must be the actual engineering teams needed to deliver THIS initiative (e.g. Systems Engineering, Software Engineering, Verification & Validation, DevOps/Toolchain, AI/Data Team, Project Management).
-The 4 alignmentInitiatives must describe concrete collaboration actions specific to launching THIS named initiative — not generic AI alignment.
-Do NOT write generic stakeholder alignment — every item must reference what each team does to support THIS initiative.
+JOURNEY RULE: Alignment describes HOW THE ORGANIZATION WORKS TOGETHER to deliver the specific AI initiative named in the TRANSFORMATION CONTEXT ("Selected AI Initiative" and "Recommended Implementation"). Build directly on:
+- AI Opportunity Discovery → the initiative's scope and context
+- AI Use Case Classification → which discipline (e.g. engineering, product, data) owns it
+- Business Value Definition → which teams benefit and bear responsibility
+- AI Implementation Prioritization → which teams are critical to the recommended starting point
+
+spokeNodes must be the actual engineering teams needed to deliver THIS initiative specifically.
+The 4 alignmentInitiatives must describe concrete collaboration actions for THIS initiative — not generic AI alignment.
+Do NOT repeat any business outcome metrics, revenue targets, or KPI values from Vision.
+Alignment metrics measure ORGANIZATIONAL COORDINATION: who owns what, how teams are connected, how decisions are made — not business results.
 
 5. kpiHighlights (exactly 3 items)
-   Extract 3 measurable alignment outcomes to display as stacked large-number metrics.
-   Each item: { "value": "<number with unit e.g. 90%, 100%, 4+>", "label": "<2–5 word metric name>", "description": "" }
-   Values must reflect leadership, stakeholder, or governance alignment targets.
-   Example: { "value": "90%", "label": "Leadership Alignment Score", "description": "" }
+   Three metrics that measure how well the organization is aligning around THIS initiative.
+   Each item: { "value": "<number with unit e.g. 6, 100%, bi-weekly>", "label": "<2–5 word metric name>", "description": "" }
+   Must reflect organizational coordination quality — NOT business outcomes from Vision.
+   Acceptable topics: stakeholder ownership coverage, cross-functional teams engaged, governance cadence, decision-making speed, role clarity.
+   Example: { "value": "6", "label": "Teams Formally Engaged", "description": "" }
+   Example: { "value": "100%", "label": "Roles Assigned", "description": "" }
+   Example: { "value": "Weekly", "label": "Coordination Cadence", "description": "" }
 
 6. alignmentInitiatives (exactly 4 items)
-   Extract 4 concrete alignment initiatives — the first 3 will display as equal cards, the 4th as a full-width card.
-   Each item: { "title": "<3–6 word initiative name>", "description": "<2–3 sentences explaining what it is and why it matters>" }
-   Examples: "Common AI Vocabulary & Learning", "Cross-Functional AI Workshops", "Executive Ownership Framework", "AI Program Liaisons"
+   Four concrete cross-functional collaboration actions needed to align teams around THIS initiative.
+   The first 3 display as equal cards, the 4th as a full-width card.
+   Each item: { "title": "<3–6 word initiative name>", "description": "<2–3 sentences explaining what it is and why it matters for THIS initiative>" }
+   Each initiative should identify a different team or dimension of collaboration.
 
 7. spokeNodes (5–6 items)
-   Identify the key stakeholder groups that must align around the AI transformation agenda.
-   Each item is a plain string, 2–5 words. These will be rendered as nodes on a spoke wheel diagram.
-   Examples: ["Technology Leadership", "Engineering Teams", "Business Stakeholders", "Architecture & Platform Teams", "Delivery & Program Management", "Customer Representatives"]
+   The specific stakeholder groups that must coordinate to deliver THIS initiative.
+   Each item is a plain string, 2–5 words. Rendered as nodes on a spoke wheel diagram.
+   Name the real teams (e.g. "Systems Engineering", "Verification & Validation", "AI/Data Team") — not generic labels.
 
    Add all three to the brief object for Alignment sections:
    "kpiHighlights": [...], "alignmentInitiatives": [...], "spokeNodes": [...]`,
@@ -170,28 +188,36 @@ SECTION-SPECIFIC EXTRAS — "Strategic Roadmap Design" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Commitment" sections only:
 
-JOURNEY RULE: Leadership commitment is for ensuring the specific AI initiative named in the TRANSFORMATION JOURNEY block ("Recommended Implementation") reaches operational adoption.
-commitmentPillars actions must be specific to what leaders must commit to for THIS initiative — not generic AI governance.
-kpiHighlights must reuse the same metrics from "Target KPIs" in the journey — do not invent new KPIs.
-The governance structure must identify who owns and oversees THIS initiative's delivery specifically.
+JOURNEY RULE: Commitment answers HOW LEADERSHIP FUNDS, GOVERNS, AND SUSTAINS the specific AI initiative named in the TRANSFORMATION CONTEXT ("Selected AI Initiative" and "Recommended Implementation"). Build directly on:
+- AI Implementation Prioritization → the recommended starting point and its priority classification
+- Business Value Definition → the expected ROI that justifies the leadership investment
+
+commitmentPillars must describe concrete executive actions — investment decisions, governance structure, and accountability mechanisms for THIS initiative.
+The governance structure must name who owns and oversees THIS initiative's delivery.
+Do NOT repeat business outcome KPIs (revenue, efficiency, cost savings) from Vision.
+Do NOT repeat organizational coordination metrics (team engagement, role assignments) from Alignment.
+Commitment metrics measure LEADERSHIP INVESTMENT AND GOVERNANCE HEALTH, not business results.
 
 5. commitmentPillars (exactly 3 items)
-   Extract 3 executive commitment themes (e.g. Investment, Governance, Leadership Engagement).
+   Three executive commitment areas: one for Investment, one for Governance, one for Leadership Accountability.
    Each item: { "title": "<1–3 word pillar name>", "actions": ["<action item 1>", "<action item 2>", "<action item 3>"] }
-   Actions must be concrete, scannable 3–8 word bullet items describing what leaders commit to doing.
+   Actions must be concrete, scannable 3–8 word bullet items describing what leaders commit to doing for THIS initiative.
    IMPORTANT: Never use "CTO" as a pillar title — use "Leadership" instead.
-   Example: { "title": "Investment", "actions": ["AI skill development funding", "AI tooling investments", "25% increase in AI initiative budget"] }
+   Example: { "title": "Investment", "actions": ["Approve dedicated initiative budget", "Fund pilot team resources", "Commit tooling procurement"] }
 
 6. governanceNodes (exactly 4 items)
-   Identify the 4 governance roles/bodies forming the oversight structure.
-   Each item: { "title": "<role or body name>", "description": "<1 sentence on their responsibility>" }
+   The 4 governance roles or bodies that will oversee THIS initiative from pilot to operational adoption.
+   Each item: { "title": "<role or body name>", "description": "<1 sentence on their specific responsibility for this initiative>" }
    IMPORTANT: Never use "CTO" as a node title — use "Leadership Oversight" instead.
-   Example: { "title": "Leadership Oversight", "description": "Executive sponsorship and strategic direction for AI transformation." }
 
 7. kpiHighlights (exactly 3 items)
-   Extract 3 concrete commitment outcomes as large-number KPI cards.
-   Each item: { "value": "<number with unit e.g. 25%, 100%, 85%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
-   Example: { "value": "25%", "label": "Increase in AI Initiative Funding", "description": "Year-over-year budget growth committed by leadership." }
+   Three metrics that measure LEADERSHIP INVESTMENT AND GOVERNANCE for THIS initiative — not business outcomes.
+   Each item: { "value": "<number with unit>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+   Acceptable topics: executive sponsors named, funding approved, governance review frequency, named initiative owner, leadership accountability score.
+   Do NOT reuse business outcome metrics from Vision (revenue, efficiency, traceability %, test coverage).
+   Example: { "value": "1", "label": "Named Initiative Owner", "description": "Single accountable leader from senior leadership." }
+   Example: { "value": "Monthly", "label": "Governance Review Cadence", "description": "Executive review of initiative progress and blockers." }
+   Example: { "value": "3", "label": "Executive Sponsors", "description": "Senior leaders formally committed to initiative success." }
 
    Add all three to the brief object for Commitment sections:
    "commitmentPillars": [...], "governanceNodes": [...], "kpiHighlights": [...]`,

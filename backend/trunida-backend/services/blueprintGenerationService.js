@@ -2335,6 +2335,11 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
   const domains           = enabledDomains();
   const enterpriseCtxMap  = await preloadEnterpriseContextMap(companyProfile.orgName || '');
 
+  // Single journey chain spanning all domains — each capability receives the
+  // full context of everything generated before it across the entire blueprint.
+  // Domain order in domainRegistry.js defines the chain sequence.
+  const journeyContextParts = [];
+
   for (const domain of domains) {
     const caps = getDomainCapabilities(domain.kbPath);
     if (!caps.length) {
@@ -2352,10 +2357,6 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
       { _id: blueprintId, 'domains.domainId': domain.id },
       { $set: { 'domains.$.status': 'generating' } }
     );
-
-    // Accumulates prior capability outputs as journey context within this domain.
-    // Reset per domain so each domain builds its own independent narrative.
-    const journeyContextParts = [];
 
     for (const cap of caps) {
       try {

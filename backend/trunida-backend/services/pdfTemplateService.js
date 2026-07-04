@@ -1585,30 +1585,6 @@ function buildAIUseCaseClassificationLayout(section) {
     wrap.appendChild(pc);
   }
 
-  // 3 Classification type cards
-  if (b.classificationCards && b.classificationCards.length) {
-    const lbl = document.createElement('p'); lbl.className = 'brief-label'; lbl.textContent = 'AI Classification Types';
-    wrap.appendChild(lbl);
-    const row = document.createElement('div'); row.className = 'clf-pdf-row';
-    b.classificationCards.forEach(function(cc) {
-      const isPrimary = b.primaryClassification && b.primaryClassification.name === cc.type;
-      const card = document.createElement('div');
-      card.className = 'clf-pdf-card' + (isPrimary ? ' clf-pdf-card--active' : '');
-      const t = document.createElement('p'); t.className = 'clf-pdf-card__type'; t.textContent = cc.type || '';
-      const p = document.createElement('p'); p.className = 'clf-pdf-card__purpose'; p.textContent = cc.purpose || '';
-      card.appendChild(t); card.appendChild(p);
-      if (cc.characteristics && cc.characteristics.length) {
-        const chars = document.createElement('div'); chars.className = 'clf-pdf-card__chars';
-        cc.characteristics.forEach(function(ch) {
-          const chip = document.createElement('span'); chip.className = 'clf-pdf-chip'; chip.textContent = ch; chars.appendChild(chip);
-        });
-        card.appendChild(chars);
-      }
-      row.appendChild(card);
-    });
-    wrap.appendChild(row);
-  }
-
   // Classification Insight
   if (b.classificationInsight) {
     const ci = document.createElement('div'); ci.className = 'vision-statement';

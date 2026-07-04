@@ -1920,7 +1920,6 @@ function buildClassificationView(section) {
   const b              = section.brief || {};
   const primaryClass   = b.primaryClassification   || null;
   const secondaryClass = b.secondaryClassification || null;
-  const cards          = b.classificationCards     || [];
   const insight        = b.classificationInsight   || '';
 
   const ICONS   = { 'Productivity AI': '⚡', 'Functional AI': '⚙', 'Product AI': '🚗' };
@@ -1959,37 +1958,6 @@ function buildClassificationView(section) {
     banner.appendChild(mkCell('Primary Classification', primaryClass, false));
     if (secondaryClass) banner.appendChild(mkCell('Secondary Classification', secondaryClass, true));
     wrap.appendChild(banner);
-  }
-
-  // ── Three Category Cards ──────────────────────────────────────────────────
-  if (cards.length) {
-    const grid = document.createElement('div');
-    grid.className = 'cls-cards';
-
-    for (const card of cards) {
-      const colorKey = COLORS[card.type] || 'functional';
-      const el = document.createElement('div');
-      el.className = `cls-card cls-card--${colorKey}`;
-      el.innerHTML = `
-        <div class="cls-card__header">
-          <span class="cls-card__icon">${ICONS[card.type] || '●'}</span>
-          <span class="cls-card__type">${card.type}</span>
-        </div>
-        <div class="cls-card__section">
-          <p class="cls-card__section-label">Purpose</p>
-          <p class="cls-card__purpose">${card.purpose}</p>
-        </div>
-        <div class="cls-card__section">
-          <p class="cls-card__section-label">Characteristics</p>
-          <ul class="cls-card__list">${(card.characteristics || []).map(c => `<li>${c}</li>`).join('')}</ul>
-        </div>
-        <div class="cls-card__section">
-          <p class="cls-card__section-label">Automotive Examples</p>
-          <ul class="cls-card__list">${(card.examples || []).map(e => `<li>${e}</li>`).join('')}</ul>
-        </div>`;
-      grid.appendChild(el);
-    }
-    wrap.appendChild(grid);
   }
 
   // ── Insight Footer ────────────────────────────────────────────────────────

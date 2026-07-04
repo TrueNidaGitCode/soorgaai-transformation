@@ -476,16 +476,11 @@ SECTION-SPECIFIC EXTRAS — "AI Use Case Classification" sections only:
 6. secondaryClassification (include only if a second classification clearly applies — otherwise omit or set to null)
    Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence>", "businessOutcome": "<1 sentence>" }
 
-7. classificationCards (exactly 3 items, in this fixed order: Productivity AI, Functional AI, Product AI)
-   Each card describes one category with company-specific examples.
-   Each item: { "type": "Productivity AI" | "Functional AI" | "Product AI", "purpose": "<1 sentence>", "characteristics": ["<3-word label>", "<3-word label>", "<3-word label>"], "examples": ["<example 1>", "<example 2>", "<example 3>", "<example 4>"] }
-   Characteristics must be 2–4 word scannable labels. Examples must reflect the company's industry context.
-
-8. classificationInsight (1 sentence)
+7. classificationInsight (1 sentence)
    A concise insight for this company explaining how classification guides the next steps: business value assessment, prioritization, and implementation planning.
 
    Add all to the brief object:
-   "primaryClassification": {...}, "secondaryClassification": {...} or null, "classificationCards": [...], "classificationInsight": "..."`,
+   "primaryClassification": {...}, "secondaryClassification": {...} or null, "classificationInsight": "..."`,
   },
 
   'Critical Data Identification': {
@@ -968,17 +963,6 @@ function parseBriefOutput(rawSections, validTitles) {
       const secondaryClassification = b.secondaryClassification && typeof b.secondaryClassification === 'object'
         ? { name: String(b.secondaryClassification.name || '').trim(), rationale: String(b.secondaryClassification.rationale || '').trim(), businessOutcome: String(b.secondaryClassification.businessOutcome || '').trim() }
         : null;
-
-      const rawClassificationCards = Array.isArray(b.classificationCards) ? b.classificationCards : [];
-      const classificationCards = rawClassificationCards
-        .filter(c => c && typeof c === 'object' && String(c.type || '').trim())
-        .map(c => ({
-          type:            String(c.type    || '').trim(),
-          purpose:         String(c.purpose || '').trim(),
-          characteristics: Array.isArray(c.characteristics) ? c.characteristics.map(String).filter(Boolean) : [],
-          examples:        Array.isArray(c.examples)        ? c.examples.map(String).filter(Boolean)        : [],
-        }))
-        .slice(0, 3);
 
       const classificationInsight = typeof b.classificationInsight === 'string'
         ? b.classificationInsight.trim() : '';
@@ -1477,7 +1461,6 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(prioritizationInsight                ? { prioritizationInsight }     : {}),
           ...(primaryClassification                ? { primaryClassification }   : {}),
           ...(secondaryClassification              ? { secondaryClassification } : {}),
-          ...(classificationCards.length           ? { classificationCards }     : {}),
           ...(classificationInsight                ? { classificationInsight }   : {}),
           ...(businessProblems.length     ? { businessProblems }     : {}),
           ...(workflowSteps.length        ? { workflowSteps }        : {}),
@@ -1986,7 +1969,7 @@ OUTPUT — valid JSON only, no markdown fences:
       // AI Use Cases extras
       'valueCategories', 'kpiPills', 'businessValueInsight',
       'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
-      'primaryClassification', 'secondaryClassification', 'classificationCards', 'classificationInsight',
+      'primaryClassification', 'secondaryClassification', 'classificationInsight',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
     ];
     for (const key of extraKeys) {
@@ -2088,7 +2071,7 @@ OUTPUT — valid JSON only, no markdown fences:
       // AI Use Cases extras
       'valueCategories', 'kpiPills', 'businessValueInsight',
       'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
-      'primaryClassification', 'secondaryClassification', 'classificationCards', 'classificationInsight',
+      'primaryClassification', 'secondaryClassification', 'classificationInsight',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
       // Data Readiness extras
       'datasets', 'recommendations', 'coverageSummary', 'relationshipMap',

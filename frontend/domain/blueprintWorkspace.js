@@ -377,6 +377,9 @@ function renderBlueprintContent(blueprint, capIdx) {
   sectionsEl.className = 'bp-sections';
 
   for (const section of cap.sections) {
+    // Skip the preamble section when a capability has sub-sections (Vision/Alignment/Commitment).
+    // Pillar #1 shares the capability name and exists to give the LLM context, not as a display card.
+    if (cap.sections.length > 1 && resolveCapName(section.title) === resolveCapName(cap.capabilityName)) continue;
     const card = buildSectionCard(blueprint, cap, section);
     sectionsEl.appendChild(card);
   }

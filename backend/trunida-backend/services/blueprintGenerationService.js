@@ -2137,8 +2137,15 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
   const domain = getDomain(domainId);
   if (!domain) throw new Error(`Domain not found in registry: ${domainId}`);
 
+  // Old blueprints may store capability IDs that were renamed. Map them to the
+  // current KB ID so they can still be regenerated.
+  const LEGACY_CAP_ID_MAP = {
+    'ai-use-case-prioritization': 'ai-implementation-prioritization',
+  };
+  const resolvedCapabilityId = LEGACY_CAP_ID_MAP[capabilityId] ?? capabilityId;
+
   const caps = getDomainCapabilities(domain.kbPath);
-  const cap  = caps.find(c => c.id === capabilityId);
+  const cap  = caps.find(c => c.id === resolvedCapabilityId);
   if (!cap) throw new Error(`Capability not found: ${capabilityId} in ${domain.kbPath}`);
 
   try {
@@ -2155,7 +2162,7 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
 
     // Build journey context from capabilities already completed before this one
     const blueprintDoc   = await TransformationBlueprint.findById(blueprintId).lean();
-    const journeyContext = buildJourneyContextForRegen(blueprintDoc, domainId, capabilityId);
+    const journeyContext = buildJourneyContextForRegen(blueprintDoc, domainId, resolvedCapabilityId);
     console.log(`[transformationGen] Journey context for ${cap.name}: ${journeyContext ? 'AVAILABLE' : 'NONE'}`);
 
     const sections = await runBriefGeneration(

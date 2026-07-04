@@ -446,13 +446,13 @@ function buildPillarsGrid(pillars) {
   return grid;
 }
 
-function buildKpiHighlights(highlights) {
+function buildKpiHighlights(highlights, label = 'Success Metrics') {
   const wrap = document.createElement('div');
   wrap.className = 'kpi-highlights-wrap';
 
   const heading = document.createElement('p');
   heading.className = 'brief-label';
-  heading.textContent = 'Success Metrics';
+  heading.textContent = label;
   wrap.appendChild(heading);
 
   const block = document.createElement('div');
@@ -670,7 +670,7 @@ function buildAlignmentLayout(section) {
 
   // 3. KPI highlights — full-width horizontal cards at the bottom
   if (b.kpiHighlights?.length) {
-    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights, 'Alignment Indicators'));
   }
 
   return wrap;
@@ -1085,9 +1085,9 @@ function buildCommitmentLayout(section) {
     wrap.appendChild(govSection);
   }
 
-  // 4. Success Metrics — KPI highlight cards at the bottom
+  // 4. Commitment Indicators — KPI highlight cards at the bottom
   if (b.kpiHighlights?.length) {
-    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights, 'Commitment Indicators'));
   }
 
   return wrap;
@@ -2434,15 +2434,9 @@ function buildVisionLayout(section) {
     wrap.appendChild(buildPillarsGrid(b.strategicPillars));
   }
 
-  // 3. KPI Highlights — large-number cards (falls back to plain metrics list)
+  // 3. Business Outcome Metrics — large-number KPI cards
   if (b.kpiHighlights?.length) {
-    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
-  }
-
-  // 4. Horizontal Timeline
-  const timelineSource = b.timelineSteps?.length ? b.timelineSteps : b.priorityActions || [];
-  if (timelineSource.length) {
-    wrap.appendChild(buildHorizontalTimeline(timelineSource));
+    wrap.appendChild(buildKpiHighlights(b.kpiHighlights, 'Business Outcomes'));
   }
 
   return wrap;

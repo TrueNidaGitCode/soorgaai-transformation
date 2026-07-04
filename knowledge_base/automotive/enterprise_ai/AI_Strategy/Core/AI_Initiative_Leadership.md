@@ -129,10 +129,9 @@ Present the assessment using the following three distinct sections. Each section
 
 Generate:
 
-- Vision Statement: maximum three sentences describing the future state — where the organization will be once this initiative is operational, not how it gets there
-- Three Transformation Pillars: business-level outcomes this initiative creates (what changes, not how to deploy)
-- Three Business Outcome Metrics: headline KPIs for this initiative drawn from Business Value Definition and Implementation Prioritization — these business metrics appear here only, not in Alignment or Commitment
-- Four 90-Day Milestones: strategic milestone labels on the path from approval to operational adoption
+- Vision Statement: maximum three sentences describing the target operating model — the transformed state of the organization once this initiative is embedded in everyday operations. Describe WHERE the organization will be, not HOW it gets there. No implementation steps or deployment phases.
+- Three Transformation Pillars: distinct business-level outcomes this initiative creates once fully adopted (what changes, not how to deploy)
+- Three Business Outcome Metrics (labelled "Business Outcomes"): headline KPIs drawn from Business Value Definition and Implementation Prioritization — these business metrics appear here only, not in Alignment or Commitment
 
 ---
 
@@ -142,7 +141,7 @@ Generate:
 
 - Strategic Position: maximum two sentences on who must align and why for this initiative
 - Four Cross-Functional Collaboration Initiatives: concrete actions different teams must take together to deliver this initiative
-- Three Organizational Coordination Metrics: measure HOW WELL TEAMS ARE ALIGNED — stakeholder ownership, cross-functional participation, governance cadence, decision-making speed — NOT business outcomes from Vision
+- Three Alignment Indicators: measure HOW WELL TEAMS ARE ALIGNED — stakeholder ownership, cross-functional participation, governance cadence, decision-making speed — NOT business outcomes from Vision
 
 Focus on WHO does WHAT and HOW teams coordinate. Do not repeat business KPIs from Vision.
 
@@ -155,7 +154,7 @@ Generate:
 - Strategic Position: maximum two sentences on the leadership mandate for this initiative
 - Three Executive Commitment Pillars: Investment, Governance, and Leadership Accountability actions for this initiative
 - Governance Structure: four named roles or bodies overseeing this initiative from pilot to adoption
-- Three Leadership Investment Metrics: measure executive sponsorship, funding commitment, governance review frequency, or named accountability — NOT business outcomes from Vision or coordination metrics from Alignment
+- Three Commitment Indicators: measure executive sponsorship, funding commitment, governance review frequency, or named accountability — NOT business outcomes from Vision or coordination metrics from Alignment. Actions must be executive-level; no technology-specific items (model building, platform setup, toolchain integration).
 
 Focus on how leadership invests, governs, and holds the initiative accountable. Do not repeat business KPIs or team coordination metrics.
 

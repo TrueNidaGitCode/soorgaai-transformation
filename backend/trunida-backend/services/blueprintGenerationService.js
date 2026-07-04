@@ -72,16 +72,16 @@ JOURNEY RULE: This Vision MUST continue from the exact initiative already establ
 
 Use "Selected AI Initiative", "Recommended Implementation", "Primary Classification", "Expected Business Value", and "Target KPIs" from the TRANSFORMATION CONTEXT block. Name the initiative explicitly throughout — never substitute a different AI opportunity.
 
-Vision defines the FUTURE OPERATING MODEL — where the organization will be once this initiative is successfully implemented and embedded into everyday operations.
-Focus on WHAT CHANGES for the business (transformed outcomes, improved capabilities, new ways of working), NOT on how to implement or deploy the technology.
-Strategic pillars must describe business-level transformation, not deployment activities.
+Vision defines the TARGET OPERATING MODEL — the future state of the organization once this initiative is fully adopted. It describes WHERE the organization will be, not HOW it gets there.
+The Vision Statement (strategicPosition) must answer: "What will our engineering environment look like once this initiative is embedded in daily operations?" Describe transformed outcomes, new capabilities, and improved ways of working — never describe implementation steps, deployment phases, or technology choices.
+Strategic pillars must describe WHAT CHANGES at the business level (e.g. automated traceability, predictable delivery, continuous quality visibility) — not how to build or deploy the AI system.
 
 This is the ONLY section that defines business outcome metrics. Alignment and Commitment sections must NOT repeat these KPIs.
 
 5. strategicPillars (exactly 3 items)
-   Three distinct business transformation outcomes this initiative creates.
-   Each item: { "title": "<2–4 word noun phrase>", "description": "<1 sentence describing the business outcome>", "businessImpactTag": "<1–3 word impact label>" }
-   Pillars must describe WHAT CHANGES (business outcomes), not HOW to implement.
+   Three distinct business transformation outcomes this initiative creates — each one a different dimension of the future operating model.
+   Each item: { "title": "<2–4 word noun phrase>", "description": "<1 sentence describing the business outcome once the initiative is operational>", "businessImpactTag": "<1–3 word impact label>" }
+   Pillars describe WHAT CHANGES for the business, not HOW to implement. No deployment tasks, technology steps, or implementation milestones.
    Example tags: "Engineering Velocity", "Release Predictability", "Traceability Accuracy"
 
 6. kpiHighlights (exactly 3 items)
@@ -89,13 +89,8 @@ This is the ONLY section that defines business outcome metrics. Alignment and Co
    Each item: { "value": "<number with unit e.g. 75%, 4+, 2×, 18mo>", "label": "<2–4 word metric name>", "description": "<1 short sentence, ≤8 words>" }
    Values must be specific and quantified. These business KPIs appear here only — do not repeat them in Alignment or Commitment.
 
-7. timelineSteps (exactly 4 items)
-   Four strategic milestones on the 90-day path from approval to operational adoption of THIS initiative.
-   Each item is a plain string, 3–5 words. Must be milestone labels (outcomes), not deployment tasks.
-   Example: ["Secure Executive Sponsorship", "Align Engineering Teams", "Launch Pilot Initiative", "Measure First Outcomes"]
-
-   Add all three to the brief object for Vision sections:
-   "strategicPillars": [...], "kpiHighlights": [...], "timelineSteps": [...]`,
+   Add both to the brief object for Vision sections:
+   "strategicPillars": [...], "kpiHighlights": [...]`,
   },
 
   Alignment: {
@@ -192,18 +187,20 @@ JOURNEY RULE: Commitment answers HOW LEADERSHIP FUNDS, GOVERNS, AND SUSTAINS the
 - AI Implementation Prioritization → the recommended starting point and its priority classification
 - Business Value Definition → the expected ROI that justifies the leadership investment
 
-commitmentPillars must describe concrete executive actions — investment decisions, governance structure, and accountability mechanisms for THIS initiative.
+commitmentPillars must describe concrete executive actions — investment decisions, governance appointments, and accountability structures for THIS initiative.
 The governance structure must name who owns and oversees THIS initiative's delivery.
 Do NOT repeat business outcome KPIs (revenue, efficiency, cost savings) from Vision.
 Do NOT repeat organizational coordination metrics (team engagement, role assignments) from Alignment.
+Do NOT include technology-specific actions (model selection, AI platform configuration, toolchain integration, data pipeline setup). All actions must be executive-level decisions, not engineering tasks.
 Commitment metrics measure LEADERSHIP INVESTMENT AND GOVERNANCE HEALTH, not business results.
 
 5. commitmentPillars (exactly 3 items)
    Three executive commitment areas: one for Investment, one for Governance, one for Leadership Accountability.
    Each item: { "title": "<1–3 word pillar name>", "actions": ["<action item 1>", "<action item 2>", "<action item 3>"] }
-   Actions must be concrete, scannable 3–8 word bullet items describing what leaders commit to doing for THIS initiative.
+   Actions must be executive-level commitments: budget approval, governance appointment, accountability enforcement, resource allocation, review scheduling.
+   Do NOT include technical actions (building models, configuring tools, setting up pipelines) — those belong in project delivery, not leadership commitment.
    IMPORTANT: Never use "CTO" as a pillar title — use "Leadership" instead.
-   Example: { "title": "Investment", "actions": ["Approve dedicated initiative budget", "Fund pilot team resources", "Commit tooling procurement"] }
+   Example: { "title": "Investment", "actions": ["Approve dedicated initiative budget", "Allocate implementation team resources", "Commit to quarterly funding review"] }
 
 6. governanceNodes (exactly 4 items)
    The 4 governance roles or bodies that will oversee THIS initiative from pilot to operational adoption.

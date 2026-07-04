@@ -5977,6 +5977,18 @@ function setErrorVisible(visible, msg = '') {
 
 const DOMAIN_ORDER = ['ai-use-cases','ai-strategy','data-readiness','technology-infrastructure','skills-workforce','governance-security'];
 
+// Capability IDs that have been retired and should never appear in the workspace,
+// even if they are stored in older blueprints in the database.
+const RETIRED_CAPABILITY_IDS = new Set(['business-strategy-alignment']);
+
+function stripRetiredCapabilities(blueprint) {
+  for (const dom of blueprint.domains || []) {
+    dom.capabilities = (dom.capabilities || []).filter(
+      c => !RETIRED_CAPABILITY_IDS.has(c.capabilityId)
+    );
+  }
+}
+
 async function augmentBlueprintWithMissingDomains(blueprint) {
   try {
     const resp = await fetch(`${API_BASE}/workspace/domains`);
@@ -5994,6 +6006,7 @@ async function augmentBlueprintWithMissingDomains(blueprint) {
 
 async function initWorkspace(blueprint) {
   await augmentBlueprintWithMissingDomains(blueprint);
+  stripRetiredCapabilities(blueprint);
 
   _blueprint         = blueprint;
   _selectedDomainIdx = 0;

@@ -64,6 +64,13 @@ const SECTION_TEMPLATES = {
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Vision" sections only:
 
+JOURNEY RULE: Look up "Recommended Implementation" and "Primary AI Classification" in the TRANSFORMATION JOURNEY block.
+The Vision MUST be built around that specific named AI initiative — not a generic AI strategy.
+Name the initiative explicitly in strategicPosition and in every strategicPillar.
+The three pillars should describe HOW this initiative changes day-to-day engineering operations.
+kpiHighlights must align with the "Target KPIs" already defined for this initiative in the journey.
+timelineSteps must represent the 90-day launch actions for THIS initiative specifically.
+
 5. strategicPillars (exactly 3 items)
    Extract 3 distinct strategic themes from the strategicPosition as named pillars.
    Each item: { "title": "<2–4 word noun phrase>", "description": "<1 outcome sentence>", "businessImpactTag": "<1–3 word impact label>" }
@@ -86,6 +93,11 @@ SECTION-SPECIFIC EXTRAS — "Vision" sections only:
   Alignment: {
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Alignment" sections only:
+
+JOURNEY RULE: The alignment plan is for implementing the specific AI initiative named in the TRANSFORMATION JOURNEY block ("Recommended Implementation").
+spokeNodes must be the actual engineering teams needed to deliver THIS initiative (e.g. Systems Engineering, Software Engineering, Verification & Validation, DevOps/Toolchain, AI/Data Team, Project Management).
+The 4 alignmentInitiatives must describe concrete collaboration actions specific to launching THIS named initiative — not generic AI alignment.
+Do NOT write generic stakeholder alignment — every item must reference what each team does to support THIS initiative.
 
 5. kpiHighlights (exactly 3 items)
    Extract 3 measurable alignment outcomes to display as stacked large-number metrics.
@@ -157,6 +169,11 @@ SECTION-SPECIFIC EXTRAS — "Strategic Roadmap Design" sections only:
   Commitment: {
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Commitment" sections only:
+
+JOURNEY RULE: Leadership commitment is for ensuring the specific AI initiative named in the TRANSFORMATION JOURNEY block ("Recommended Implementation") reaches operational adoption.
+commitmentPillars actions must be specific to what leaders must commit to for THIS initiative — not generic AI governance.
+kpiHighlights must reuse the same metrics from "Target KPIs" in the journey — do not invent new KPIs.
+The governance structure must identify who owns and oversees THIS initiative's delivery specifically.
 
 5. commitmentPillars (exactly 3 items)
    Extract 3 executive commitment themes (e.g. Investment, Governance, Leadership Engagement).
@@ -2330,6 +2347,7 @@ function extractJourneyContext(capabilityName, sections) {
     if (b.transformationImplication)     lines.push(`Transformation Implication: ${b.transformationImplication}`);
     if (b.valueCategories?.length)      lines.push(`Business Value Areas: ${b.valueCategories.map(v => v.title).join(', ')}`);
     if (b.kpiPills?.length)             lines.push(`Target KPIs: ${b.kpiPills.join(', ')}`);
+    if (b.recommendedStartingPoint)     lines.push(`Recommended Implementation: ${b.recommendedStartingPoint}`);
   }
   return lines.join('\n');
 }

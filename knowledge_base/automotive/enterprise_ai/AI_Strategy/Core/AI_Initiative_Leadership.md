@@ -2,124 +2,203 @@
 
 ## Purpose
 
-AI Initiative Leadership defines how executive leadership drives and sustains AI transformation across the organization. Successful AI initiatives require more than technology investments; they require a shared vision, organizational alignment, and long-term commitment.
+AI Initiative Leadership is the first capability in the AI Strategy domain.
 
-AI Initiative Leadership provides the foundation for ensuring that AI investments support business objectives and deliver measurable value.
+Building upon the identified AI initiative, its business value, and implementation priority, this capability defines how the initiative will be successfully led from pilot to operational adoption.
+
+Successful AI implementation requires more than technology. It requires a clear vision, stakeholder alignment, and sustained leadership commitment to ensure the initiative delivers measurable business outcomes.
+
+The outcome of this capability is a shared leadership approach that guides execution throughout the AI implementation journey.
 
 ---
 
-# Core Principles
+# 1. AI Initiative Leadership
 
-Successful AI transformations are built upon three universal pillars:
+## Definition
+
+AI Initiative Leadership is the structured process of defining how an identified AI initiative will be successfully introduced, adopted, and sustained within the project or organization.
+
+Rather than focusing on AI technology, it establishes the leadership direction, collaboration model, and execution commitment required to achieve the expected business outcomes.
+
+This capability transforms an approved AI initiative into a shared implementation vision supported by aligned stakeholders and accountable leadership.
+
+---
+
+## Consultant Reasoning Process
+
+For every AI initiative, reason using the following sequence.
+
+1. Review the identified AI initiative from previous capabilities.
+2. Review the implementation recommendation.
+3. Review the expected business value and KPIs.
+4. Define the future operating model enabled by the AI initiative.
+5. Identify the stakeholders required for successful implementation.
+6. Define leadership responsibilities for implementation.
+7. Recommend governance actions that sustain execution.
+8. Summarise how leadership enables successful AI adoption.
+
+Always continue from the previously prioritised AI initiative.
+
+---
+
+# Leadership Framework
+
+Successful AI implementation is built upon three leadership pillars.
 
 1. Vision
 2. Alignment
 3. Commitment
 
-These pillars guide leadership decisions throughout the AI transformation journey.
+These pillars guide implementation from pilot to operational adoption.
 
 ---
 
-# 1. Vision
+# 2. Vision
 
 ## Definition
 
-Vision provides the strategic direction for AI transformation and serves as the organization's North Star. It ensures that AI initiatives and tactical objectives contribute toward a common business outcome.
+Vision defines the desired future operating model created by the AI initiative.
 
-## Key Principles
+Rather than describing AI technology, the vision explains how people, processes, and business outcomes will improve after successful implementation.
 
-* Define a clear long-term aspiration.
-* Focus on customer and business value.
-* Include measurable outcomes.
-* Establish a realistic time horizon.
-* Align AI ambitions with business strategy.
-* Define success metrics tied to business outcomes — revenue impact, cost reduction, time-to-market, quality improvement.
+The vision should clearly communicate what success looks like and provide a shared destination for everyone involved in the initiative.
 
-## Leadership Question
+### Key Principles
 
-**Why are we investing in AI, and what future state are we trying to create?**
+- Build directly upon the selected AI initiative.
+- Describe measurable business improvements.
+- Focus on operational outcomes rather than technology.
+- Keep the vision practical and achievable.
+- Align with previously defined business value.
+
+### Leadership Question
+
+**What will our project look like once this AI initiative has been successfully implemented?**
 
 ---
 
-# 2. Alignment
+# 3. Alignment
 
 ## Definition
 
-Alignment ensures that leadership teams share a common understanding of the AI transformation and their respective responsibilities.
+Alignment ensures that everyone involved in implementing the AI initiative understands their role, responsibilities, and contribution toward achieving the shared vision.
 
-Successful AI initiatives require close collaboration across business and technical functions.
+Successful implementation requires coordinated execution across business, engineering, product, and delivery teams.
 
-## Key Principles
+### Key Principles
 
-* Build a common AI vocabulary.
-* Clarify executive responsibilities.
-* Encourage cross-functional collaboration.
-* Create shared ownership.
-* Invest in executive education and continuous learning.
+- Define implementation ownership.
+- Clarify stakeholder responsibilities.
+- Establish a common understanding of the AI initiative.
+- Encourage cross-functional collaboration.
+- Remove implementation barriers early.
 
-## Leadership Question
+### Leadership Question
 
-**Does our leadership team share a common understanding of the AI opportunity and their role in delivering it?**
+**Who must work together to successfully implement this AI initiative, and what role does each stakeholder play?**
 
 ---
 
-# 3. Commitment
+# 4. Commitment
 
 ## Definition
 
-Commitment transforms strategy into execution through individual and collective accountability.
+Commitment ensures the AI initiative receives the leadership attention, governance, and resources required to move from pilot implementation to sustainable operational adoption.
 
-AI transformation requires sustained leadership attention, meaningful investment, and active participation.
+Leadership commitment demonstrates accountability through active participation, continuous monitoring, and ongoing investment in successful execution.
+
+### Key Principles
+
+- Assign clear implementation ownership.
+- Monitor progress against agreed KPIs.
+- Review business outcomes regularly.
+- Support continuous improvement.
+- Reinforce accountability throughout implementation.
+
+### Leadership Question
+
+**How will leadership ensure this AI initiative remains a priority until measurable business value is achieved?**
+
+---
+
+# Output Structure
+
+Present the assessment using the following three sections.
+
+## Vision
+
+Generate:
+
+- Vision Statement (maximum three sentences)
+- Three Transformation Pillars
+- Three measurable Success Metrics
+- Four 90-Day Priority Actions
+
+---
+
+## Alignment
+
+Generate:
+
+- Strategic Position (maximum two sentences)
+- Four Alignment Initiatives
+- Three Alignment Success Metrics
+
+Focus on how teams collaborate to successfully deliver the selected AI initiative.
+
+---
+
+## Commitment
+
+Generate:
+
+- Strategic Position (maximum two sentences)
+- Three Executive Commitment Pillars
+- Governance Structure
+- Three Commitment Success Metrics
+
+Focus on leadership actions that ensure successful implementation.
+
+---
 
 ## Key Principles
 
-* Build a compelling business case.
-* Invest in foundational capabilities.
-* Establish executive governance.
-* Demonstrate leadership through active involvement.
-* Promote continuous learning and experimentation.
+- Continue from the previously prioritized AI initiative.
+- Build leadership around the selected implementation recommendation.
+- Focus on successful execution rather than AI strategy creation.
+- Keep recommendations practical and implementation-oriented.
+- Ensure every recommendation supports measurable business outcomes.
+- Keep outputs concise and executive-friendly.
+
+---
 
 ## Leadership Question
 
-**Are we prepared to invest the time, resources, and leadership attention required for successful AI transformation?**
+**How should leadership guide this AI initiative from implementation to sustained business value?**
 
 ---
 
-# AI Initiative Leadership Framework
+## Quality Checklist
 
-```
-Vision
-Define the destination.
+Before completing this capability verify that:
 
-↓
-
-Alignment
-Bring the organization together.
-
-↓
-
-Commitment
-Drive execution and accountability.
-```
+- Previous AI initiative is referenced.
+- Business value is reflected in the vision.
+- Implementation priority is considered.
+- Vision describes the future operating model.
+- Alignment identifies collaboration required for implementation.
+- Commitment defines leadership responsibilities.
+- Success metrics align with previous business KPIs.
+- Output is understandable within 30 seconds by a Project Manager.
 
 ---
 
-# CTO Perspective
+## Expected Outcome
 
-AI Initiative Leadership helps executive teams answer three fundamental questions:
+At the completion of this capability the Project Manager should clearly understand:
 
-| Pillar     | Executive Question                    |
-| ---------- | ------------------------------------- |
-| Vision     | What future are we creating?          |
-| Alignment  | Is the organization moving together?  |
-| Commitment | Are we committed to making it happen? |
-
----
-
-# Key Takeaways
-
-* AI transformation starts with leadership, not technology.
-* Vision provides direction.
-* Alignment creates shared ownership.
-* Commitment ensures execution.
-* Successful AI initiatives integrate business strategy, people, and technology to deliver measurable outcomes.
+- What future state the AI initiative will create.
+- How teams should align to deliver it.
+- What leadership commitment is required.
+- How implementation success will be measured.
+- How leadership will sustain long-term business value.

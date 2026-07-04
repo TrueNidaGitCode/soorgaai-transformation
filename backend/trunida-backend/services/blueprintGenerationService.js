@@ -2299,9 +2299,9 @@ function extractJourneyContext(capabilityName, sections) {
     if (b.businessProblems?.length)     lines.push(`Business Problems: ${b.businessProblems.join(', ')}`);
     if (b.workflowSteps?.length)        lines.push(`Current Workflow: ${b.workflowSteps.join(' → ')}`);
     if (b.highEffortActivities?.length) lines.push(`High-Effort Activities: ${b.highEffortActivities.join(', ')}`);
-    if (b.primaryClassification?.name)  lines.push(`Primary AI Classification: ${b.primaryClassification.name}${b.primaryClassification.description ? ` — ${b.primaryClassification.description}` : ''}`);
+    if (b.primaryClassification?.name)  lines.push(`Primary AI Classification: ${b.primaryClassification.name}${b.primaryClassification.rationale ? ` — ${b.primaryClassification.rationale}` : ''}`);
     if (b.secondaryClassification?.name) lines.push(`Secondary AI Classification: ${b.secondaryClassification.name}`);
-    if (b.transformationImplication)        lines.push(`Classification Insight: ${b.transformationImplication}`);
+    if (b.transformationImplication)     lines.push(`Transformation Implication: ${b.transformationImplication}`);
     if (b.valueCategories?.length)      lines.push(`Business Value Areas: ${b.valueCategories.map(v => v.title).join(', ')}`);
     if (b.kpiPills?.length)             lines.push(`Target KPIs: ${b.kpiPills.join(', ')}`);
   }

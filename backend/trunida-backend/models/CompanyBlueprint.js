@@ -121,7 +121,7 @@ const sdlcStageSchema = new mongoose.Schema({
 const valueCategorySchema       = new mongoose.Schema({ title: String, focus: String, outcomes: [String] }, { _id: false });
 const priorityQuadrantSchema    = new mongoose.Schema({ id: String, label: String, initiatives: [String] }, { _id: false });
 const dimensionCardSchema       = new mongoose.Schema({ title: String, bullets: [String] }, { _id: false });
-const classificationSchema      = new mongoose.Schema({ name: String, description: String }, { _id: false });
+const classificationSchema      = new mongoose.Schema({ name: String, rationale: String, businessOutcome: String }, { _id: false });
 const classificationCardSchema  = new mongoose.Schema({ type: String, purpose: String, characteristics: [String], examples: [String] }, { _id: false });
 
 const briefSchema = new mongoose.Schema({

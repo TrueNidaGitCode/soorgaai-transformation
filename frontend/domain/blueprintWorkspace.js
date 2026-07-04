@@ -2116,6 +2116,10 @@ function buildPrioritizationView(section) {
   wrap.className = 'pri-view';
 
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'pri-view__position';
     pos.textContent = b.strategicPosition;
@@ -2420,6 +2424,10 @@ function buildDataArchitectureLayout(section) {
 
   // Strategic position
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'dae-view__position';
     pos.textContent = b.strategicPosition;
@@ -2690,6 +2698,10 @@ function buildAIDataPreparationLayout(section) {
 
   // Strategic position
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'adp-view__position';
     pos.textContent = b.strategicPosition;
@@ -2933,6 +2945,10 @@ function buildCriticalDataLayout(section) {
 
   // Strategic position
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'cdi-view__position';
     pos.textContent = b.strategicPosition;
@@ -3302,6 +3318,10 @@ function buildSystemIntegrationLayout(section) {
 
   // Strategic position
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'sia-view__position';
     pos.textContent = b.strategicPosition;
@@ -3468,6 +3488,10 @@ function buildPlatformReadinessLayout(section) {
 
   // Strategic position
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'apr-view__position';
     pos.textContent = b.strategicPosition;
@@ -3800,6 +3824,10 @@ function buildComputeDeploymentLayout(section) {
 
   // Strategic position
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'cds-view__position';
     pos.textContent = b.strategicPosition;
@@ -4144,6 +4172,10 @@ function buildAIEngineeringEnablementLayout(section) {
 
   // Strategic position
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'aee-view__position';
     pos.textContent = b.strategicPosition;
@@ -4445,6 +4477,10 @@ function buildAISkillsAssessmentLayout(section) {
     wrap.appendChild(badge);
   }
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'asa-view__position';
     pos.textContent = b.strategicPosition;
@@ -4635,6 +4671,10 @@ function buildAITeamReadinessLayout(section) {
     wrap.appendChild(badge);
   }
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'atr-view__position';
     pos.textContent = b.strategicPosition;
@@ -4807,6 +4847,10 @@ function buildAILearningAdoptionLayout(section) {
     wrap.appendChild(badge);
   }
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const pos = document.createElement('p');
     pos.className = 'ala-view__position';
     pos.textContent = b.strategicPosition;

@@ -37,7 +37,7 @@ The AI Use Cases domain consists of four core intelligence areas that work toget
 | AI Opportunity Discovery   | Identify and document AI opportunities surfaced from business pain points      |
 | AI Use Case Classification | Classify AI opportunities by type: Productivity, Functional, or Product AI    |
 | Business Value Definition  | Define and quantify the measurable business outcomes of each AI use case       |
-| AI Use Case Prioritization | Score and rank AI use cases across value, feasibility, data, and org impact   |
+| AI Implementation Prioritization | Score and rank AI use cases across value, feasibility, data, and org impact   |
 
 ---
 
@@ -54,7 +54,7 @@ Processing:
 1. **AI Opportunity Discovery** — Bug pre-analysis is identified as a high-effort, knowledge-intensive process suitable for AI assistance.
 2. **AI Use Case Classification** — Classified as Productivity AI (reduces engineer effort) and Functional AI (improves defect management processes).
 3. **Business Value Definition** — Outcomes defined: reduce analysis time from 8 hours to 2 hours (Engineering Productivity); improve defect assignment accuracy from 85% to 95% (Engineering Excellence); reduce Mean Time to Resolution by 40% (Project & Operational Performance); increase engineering capacity by reducing repetitive analysis activities (Customer & Product Value).
-4. **AI Use Case Prioritization** — Scored: Business Value High, Implementation Feasibility High, Strategic Alignment High, Organizational Readiness Medium. Recommendation: high-priority pilot.
+4. **AI Implementation Prioritization** — Scored: Business Value High, Implementation Feasibility High, Strategic Alignment High, Organizational Readiness Medium. Recommendation: high-priority pilot.
 
 ---
 
@@ -222,4 +222,4 @@ Prioritize
 * AI_Opportunity_Discovery.md
 * AI_Use_Case_Classification.md
 * Business_Value_Definition.md
-* AI_Use_Case_Prioritization.md
+* AI_Implementation_Prioritization.md

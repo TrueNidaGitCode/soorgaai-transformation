@@ -439,9 +439,9 @@ SECTION-SPECIFIC EXTRAS — "Business Value Definition" sections only:
    "valueCategories": [...], "kpiPills": [...], "businessValueInsight": "..."`,
   },
 
-  'AI Use Case Prioritization': {
+  'AI Implementation Prioritization': {
     promptInstruction: `
-SECTION-SPECIFIC EXTRAS — "AI Use Case Prioritization" sections only:
+SECTION-SPECIFIC EXTRAS — "AI Implementation Prioritization" sections only:
 
 5. recommendedStartingPoint (1 sentence)
    A concise recommendation for where to begin, emphasising high business value combined with high implementation feasibility for this specific company.

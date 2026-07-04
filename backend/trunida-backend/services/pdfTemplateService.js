@@ -2467,7 +2467,7 @@ function buildSectionContent(section) {
   // AI Use Cases
   if (t === 'AI Opportunity Discovery')          return buildAIOpportunityDiscoveryLayout(section);
   if (t === 'Business Value Definition')         return buildBusinessValueDefinitionLayout(section);
-  if (t === 'AI Use Case Prioritization')        return buildAIUseCasePrioritizationLayout(section);
+  if (t === 'AI Implementation Prioritization')        return buildAIUseCasePrioritizationLayout(section);
   if (t === 'AI Use Case Classification')        return buildAIUseCaseClassificationLayout(section);
   // Data Readiness
   if (t === 'Critical Data Identification')      return buildCriticalDataIdentificationLayout(section);
@@ -3331,7 +3331,7 @@ html, body {
 .bvd-pdf-insight__icon { font-size: 0.7rem; color: rgba(129,140,248,0.7); flex-shrink: 0; margin-top: 0.15rem; }
 .bvd-pdf-insight__text { font-size: 0.77rem; color: rgba(255,255,255,0.72); line-height: 1.55; margin: 0; }
 
-/* ── AI Use Case Prioritization layout ───────────────────────────────── */
+/* ── AI Implementation Prioritization layout ───────────────────────────────── */
 .pri-pdf-banner { display: flex; align-items: flex-start; gap: 0.65rem; background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25); border-radius: 0.5rem; padding: 0.75rem 1rem; }
 .pri-pdf-banner__star { font-size: 1rem; color: #fbbf24; flex-shrink: 0; line-height: 1; }
 .pri-pdf-banner__title { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(251,191,36,0.7); margin: 0 0 0.2rem; }

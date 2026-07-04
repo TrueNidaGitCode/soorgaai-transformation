@@ -5023,7 +5023,7 @@ function buildSectionCard(blueprint, cap, section) {
       card.appendChild(buildClassificationView(section));
     } else if (section.title === 'Business Value Definition') {
       card.appendChild(buildBusinessValueDefinitionView(section));
-    } else if (section.title === 'AI Use Case Prioritization') {
+    } else if (section.title === 'AI Implementation Prioritization') {
       card.appendChild(buildPrioritizationView(section));
     } else if (section.title === 'Critical Data Identification') {
       card.appendChild(buildCriticalDataLayout(section));

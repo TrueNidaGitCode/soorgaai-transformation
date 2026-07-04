@@ -1632,7 +1632,7 @@ function buildOutputFormat(parsedSections) {
 // Generates section.brief in a single LLM call per capability.
 // CTO extras (strategicPillars etc.) are injected into this call when enabled.
 
-function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext }) {
+function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null }) {
   const sectionList   = parsedSections.map((s, i) => {
     let entry = `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`;
     if (s.consultantGuide) entry += `\n\n   CONSULTANT METHODOLOGY:\n${s.consultantGuide}`;
@@ -1699,7 +1699,11 @@ HARD RULES:
 
 ${buildOutputFormat(parsedSections)}`;
 
-  const userMessage = `${enterpriseContext ? `${enterpriseContext}\n\n` : ''}CAPABILITY SECTIONS TO GENERATE (${parsedSections.length} sections):
+  const journeyBlock = journeyContext
+    ? `TRANSFORMATION JOURNEY — PRIOR CAPABILITIES:\n${journeyContext}\n\nBuild directly on the opportunity and context established above. The specific AI opportunity identified in discovery is the use case being assessed here — do not invent a different one.\n\n`
+    : '';
+
+  const userMessage = `${enterpriseContext ? `${enterpriseContext}\n\n` : ''}${journeyBlock}CAPABILITY SECTIONS TO GENERATE (${parsedSections.length} sections):
 
 ${sectionList}
 
@@ -1711,7 +1715,7 @@ Generate the Strategy Brief JSON for all ${parsedSections.length} sections: ${se
   return { systemPrompt, userMessage };
 }
 
-async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext) {
+async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null) {
   const { systemPrompt, userMessage } = buildBriefPrompt({
     companyName:         companyProfile.companyName,
     industry,
@@ -1722,6 +1726,7 @@ async function runBriefGeneration(cap, companyProfile, businessObjective, indust
     parsedSections,
     automotiveBlueprint: automotiveBlueprint || '',
     enterpriseContext:   enterpriseContext || '',
+    journeyContext:      journeyContext || null,
   });
 
   const timeoutMs = Math.max(120_000, parsedSections.length * 60_000);
@@ -1736,7 +1741,7 @@ async function runBriefGeneration(cap, companyProfile, businessObjective, indust
 // Step 2 extracts the structured brief from that prose.
 // CTO extras are injected into Step 2 when enabled.
 
-function buildEssayPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext }) {
+function buildEssayPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null }) {
   const sectionList   = parsedSections.map((s, i) => {
     let entry = `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`;
     if (s.consultantGuide) entry += `\n\n   CONSULTANT METHODOLOGY:\n${s.consultantGuide}`;
@@ -1761,7 +1766,11 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanati
   ]
 }`;
 
-  const userMessage = `${enterpriseContext ? `${enterpriseContext}\n\n` : ''}COMPANY CONTEXT:
+  const journeyBlock = journeyContext
+    ? `TRANSFORMATION JOURNEY — PRIOR CAPABILITIES:\n${journeyContext}\n\nBuild directly on the opportunity and context established above.\n\n`
+    : '';
+
+  const userMessage = `${enterpriseContext ? `${enterpriseContext}\n\n` : ''}${journeyBlock}COMPANY CONTEXT:
 - Organisation: ${companyName}
 - Industry: ${industry}
 - Executive Role: ${role}
@@ -1831,7 +1840,7 @@ Extract the structured Strategy Brief for all ${parsedSections.length} sections.
   return { systemPrompt, userMessage };
 }
 
-async function runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext) {
+async function runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null) {
   const { systemPrompt, userMessage } = buildEssayPrompt({
     companyName:         companyProfile.companyName,
     industry,
@@ -1842,6 +1851,7 @@ async function runEssayGeneration(cap, companyProfile, businessObjective, indust
     parsedSections,
     automotiveBlueprint: automotiveBlueprint || '',
     enterpriseContext:   enterpriseContext || '',
+    journeyContext:      journeyContext || null,
   });
 
   // Essays are longer — allow 90 s per section
@@ -2292,6 +2302,29 @@ export async function generateBlueprintAsync(blueprintId, userId, businessObject
   console.log(`[blueprintGen] Blueprint ${blueprintId} generation complete`);
 }
 
+// ── Journey context helpers ───────────────────────────────────────────────────
+
+// Extracts the key brief fields from a completed capability's sections and formats
+// them as a structured context block for use in subsequent capability prompts.
+// Keeps only fields that are meaningful for downstream capabilities.
+function extractJourneyContext(capabilityName, sections) {
+  const lines = [`[${capabilityName}]`];
+  for (const s of sections) {
+    const b = s.brief || {};
+    if (b.strategicPosition)            lines.push(`Strategic Position: ${b.strategicPosition}`);
+    if (b.aiOpportunities?.length)      lines.push(`Identified AI Opportunities: ${b.aiOpportunities.join(', ')}`);
+    if (b.businessProblems?.length)     lines.push(`Business Problems: ${b.businessProblems.join(', ')}`);
+    if (b.workflowSteps?.length)        lines.push(`Current Workflow: ${b.workflowSteps.join(' → ')}`);
+    if (b.highEffortActivities?.length) lines.push(`High-Effort Activities: ${b.highEffortActivities.join(', ')}`);
+    if (b.primaryClassification?.name)  lines.push(`Primary AI Classification: ${b.primaryClassification.name}${b.primaryClassification.description ? ` — ${b.primaryClassification.description}` : ''}`);
+    if (b.secondaryClassification?.name) lines.push(`Secondary AI Classification: ${b.secondaryClassification.name}`);
+    if (b.classificationInsight)        lines.push(`Classification Insight: ${b.classificationInsight}`);
+    if (b.valueCategories?.length)      lines.push(`Business Value Areas: ${b.valueCategories.map(v => v.title).join(', ')}`);
+    if (b.kpiPills?.length)             lines.push(`Target KPIs: ${b.kpiPills.join(', ')}`);
+  }
+  return lines.join('\n');
+}
+
 // ── Multi-domain transformation generation ────────────────────────────────────
 
 // Generates all enabled domains → capabilities in the TransformationBlueprint.
@@ -2320,6 +2353,10 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
       { $set: { 'domains.$.status': 'generating' } }
     );
 
+    // Accumulates prior capability outputs as journey context within this domain.
+    // Reset per domain so each domain builds its own independent narrative.
+    const journeyContextParts = [];
+
     for (const cap of caps) {
       try {
         // Mark capability in-progress
@@ -2344,20 +2381,26 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         // Reuse the existing generation pipeline
         const capObj = { id: cap.id, name: cap.name, objective: cap.objective };
         const enterpriseContext = enterpriseCtxMap.get(cap.id) ?? null;
+        const journeyContext    = journeyContextParts.length
+          ? journeyContextParts.join('\n\n')
+          : null;
 
         let sections;
         if (BLUEPRINT_CONFIG.generate.essay) {
           const essays = await runEssayGeneration(
             capObj, companyProfile, businessObjective, industry,
-            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext
+            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext
           );
           sections = await runBriefExtraction(capObj, parsedSections, essays);
         } else {
           sections = await runBriefGeneration(
             capObj, companyProfile, businessObjective, industry,
-            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext
+            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext
           );
         }
+
+        // Feed this capability's output into the journey context for the next capability
+        journeyContextParts.push(extractJourneyContext(cap.name, sections));
 
         await TransformationBlueprint.updateOne(
           { _id: blueprintId },

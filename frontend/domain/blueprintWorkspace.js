@@ -1951,7 +1951,8 @@ function buildClassificationView(section) {
       cell.innerHTML = `
         <span class="cls-banner__label">${label}</span>
         <span class="cls-banner__name cls-name--${COLORS[cls.name] || 'functional'}">${cls.name}</span>
-        <span class="cls-banner__desc">${cls.description}</span>`;
+        ${cls.rationale      ? `<span class="cls-banner__rationale">${cls.rationale}</span>`       : ''}
+        ${cls.businessOutcome ? `<span class="cls-banner__outcome">${cls.businessOutcome}</span>` : ''}`;
       return cell;
     };
 

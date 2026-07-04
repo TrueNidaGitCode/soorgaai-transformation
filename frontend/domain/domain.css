@@ -4712,10 +4712,17 @@
 .cls-name--functional   { color: #5B8DEF; }
 .cls-name--product      { color: #5CC5A7; }
 
-.cls-banner__desc {
+.cls-banner__rationale {
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.55);
   line-height: 1.4;
+}
+
+.cls-banner__outcome {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.35);
+  line-height: 1.4;
+  font-style: italic;
 }
 
 .cls-cards {

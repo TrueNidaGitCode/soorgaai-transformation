@@ -1579,8 +1579,9 @@ function buildAIUseCaseClassificationLayout(section) {
     const pc = document.createElement('div'); pc.className = 'clf-pdf-primary';
     const label = document.createElement('p'); label.className = 'clf-pdf-primary__label'; label.textContent = 'Primary Classification';
     const name = document.createElement('p'); name.className = 'clf-pdf-primary__name'; name.textContent = b.primaryClassification.name || '';
-    const desc = document.createElement('p'); desc.className = 'clf-pdf-primary__desc'; desc.textContent = b.primaryClassification.description || '';
-    pc.appendChild(label); pc.appendChild(name); pc.appendChild(desc);
+    const rationale = document.createElement('p'); rationale.className = 'clf-pdf-primary__desc'; rationale.textContent = b.primaryClassification.rationale || '';
+    const outcome = document.createElement('p'); outcome.className = 'clf-pdf-primary__outcome'; outcome.textContent = b.primaryClassification.businessOutcome || '';
+    pc.appendChild(label); pc.appendChild(name); pc.appendChild(rationale); pc.appendChild(outcome);
     wrap.appendChild(pc);
   }
 

@@ -471,10 +471,10 @@ SECTION-SPECIFIC EXTRAS — "AI Use Case Classification" sections only:
 
 5. primaryClassification
    The primary AI classification for this company's most relevant AI use case.
-   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "description": "<1 sentence on the primary value this classification delivers for this company>" }
+   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence explaining why this classification applies to this company's initiative>", "businessOutcome": "<1 sentence on the primary business outcome this classification will deliver>" }
 
 6. secondaryClassification (include only if a second classification clearly applies — otherwise omit or set to null)
-   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "description": "<1 sentence>" }
+   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence>", "businessOutcome": "<1 sentence>" }
 
 7. classificationCards (exactly 3 items, in this fixed order: Productivity AI, Functional AI, Product AI)
    Each card describes one category with company-specific examples.
@@ -962,11 +962,11 @@ function parseBriefOutput(rawSections, validTitles) {
         ? b.prioritizationInsight.trim() : '';
 
       const primaryClassification = b.primaryClassification && typeof b.primaryClassification === 'object'
-        ? { name: String(b.primaryClassification.name || '').trim(), description: String(b.primaryClassification.description || '').trim() }
+        ? { name: String(b.primaryClassification.name || '').trim(), rationale: String(b.primaryClassification.rationale || '').trim(), businessOutcome: String(b.primaryClassification.businessOutcome || '').trim() }
         : null;
 
       const secondaryClassification = b.secondaryClassification && typeof b.secondaryClassification === 'object'
-        ? { name: String(b.secondaryClassification.name || '').trim(), description: String(b.secondaryClassification.description || '').trim() }
+        ? { name: String(b.secondaryClassification.name || '').trim(), rationale: String(b.secondaryClassification.rationale || '').trim(), businessOutcome: String(b.secondaryClassification.businessOutcome || '').trim() }
         : null;
 
       const rawClassificationCards = Array.isArray(b.classificationCards) ? b.classificationCards : [];

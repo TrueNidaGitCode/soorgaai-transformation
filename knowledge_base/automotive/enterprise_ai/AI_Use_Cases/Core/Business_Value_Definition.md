@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Business Value Definition establishes the expected business outcomes of an AI use case before implementation begins. It ensures that every AI initiative is aligned with project and business objectives, supported by measurable success criteria, and justified by the value it is expected to deliver.
+Business Value Definition is the third capability in the AI Transformation Journey.
 
-Rather than focusing on AI capabilities, this capability defines the outcomes that matter most to stakeholders and provides a clear basis for measuring success after deployment.
+Building upon the identified AI initiative and its classification, this capability defines the measurable business value expected from the initiative before implementation begins.
 
-The outcome of this capability is a Business Value Statement with measurable success metrics.
+Rather than evaluating AI technology, it establishes why the initiative is worth investing in, who benefits, and how success will be measured. The outcome is a clear Business Value Statement that guides prioritisation, investment decisions, and implementation planning.
 
 ---
 
@@ -14,72 +14,149 @@ The outcome of this capability is a Business Value Statement with measurable suc
 
 ## Definition
 
-Successful AI initiatives are driven by business outcomes rather than technology adoption. Before implementation, Project Managers should define how the AI use case will improve business performance and establish the metrics that will demonstrate success.
+Business Value Definition is the structured process of identifying the measurable outcomes an AI initiative is expected to deliver.
 
-Business value should be expressed as measurable improvements across productivity, operational performance, customer impact, and business growth. These outcomes form the foundation for investment decisions, implementation planning, and continuous value tracking.
+It translates the identified AI opportunity and its classification into tangible business improvements, ensuring that implementation decisions are driven by business impact rather than technology adoption.
+
+The outcome of this capability is a prioritised set of value areas supported by measurable success metrics.
+
+## Consultant Reasoning Process
+
+For every AI initiative, reason using the following sequence.
+
+1. Review the identified AI opportunity from the previous capability.
+2. Review the primary and secondary AI classifications.
+3. Identify where the greatest business value will be created.
+4. Separate primary value areas from supporting value areas.
+5. Recommend measurable success metrics for each value area.
+6. Summarise the expected business impact in a single insight.
+
+Always define business value for the same AI initiative identified in previous capabilities.
 
 ## Business Value Framework
 
-### Productivity Improvement
+### Step 1 — Review the AI Initiative
 
-Measure how AI increases the efficiency and effectiveness of individuals and teams.
+Consider:
+- Business objective
+- Primary classification
+- Secondary classification
+- Expected organisational impact
 
-Typical outcomes include:
+### Step 2 — Identify Business Value Areas
 
+Determine where the initiative delivers the greatest measurable value.
+
+**Engineering Productivity**
+
+Use when the initiative primarily helps engineers complete activities more efficiently.
+
+Typical outcomes:
 - Reduced manual effort
-- Faster task completion
+- Faster engineering activities
 - Increased engineering capacity
-- Improved knowledge accessibility
 
----
+**Engineering Excellence**
 
-### Operational Excellence
+Use when the initiative improves quality, consistency, or delivery processes.
 
-Measure how AI improves engineering and business processes.
+Typical outcomes:
+- Improved traceability
+- Increased test coverage
+- Reduced defects
+- Standardised execution
 
-Typical outcomes include:
+**Project & Operational Performance**
 
-- Reduced process cycle time
-- Improved quality and consistency
-- Lower operational costs
-- Reduced errors and rework
-- Faster decision making
+Use when the initiative improves project execution, delivery performance, or operational decisions.
 
----
+Typical outcomes:
+- Faster issue resolution
+- Improved delivery predictability
+- Reduced rework
+- Better resource utilisation
 
-### Customer & Business Impact
+**Customer & Product Value**
 
-Measure how AI contributes to customer satisfaction and organizational success.
+Use when the initiative delivers measurable improvements to product quality or customer experience.
 
-Typical outcomes include:
-
-- Improved customer experience
-- Higher product or service quality
-- Increased customer retention
-- Revenue growth
+Typical outcomes:
+- Improved customer satisfaction
+- Higher product quality
 - Competitive differentiation
+- Revenue growth
 
----
+### Step 3 — Define Success Measures
 
-### Success Measurement
+For every selected value area:
+- Identify current baseline if known.
+- Recommend measurable target outcomes.
+- Define success metrics that can be tracked after implementation.
 
-Define how business value will be monitored after implementation.
+## Output Structure
 
-Typical considerations include:
+Present the assessment using the following four sections.
 
-- Establish current baseline performance.
-- Define measurable target outcomes.
-- Track value continuously using agreed business metrics.
-- Review outcomes and refine AI initiatives over time.
+### 1. Strategic Position
+
+Summarise the business value being evaluated. Maximum three sentences.
+
+### 2. Business Value Areas
+
+Present exactly four business value areas in this fixed order:
+1. Engineering Productivity
+2. Engineering Excellence
+3. Project & Operational Performance
+4. Customer & Product Value
+
+For each area provide:
+- A one-line focus statement (e.g. "Improve engineering team efficiency")
+- Four concise expected outcomes specific to this company (3–6 words each)
+
+### 3. Key Performance Indicators
+
+Recommend exactly six measurable KPI names for this initiative.
+
+Each KPI should be a short metric label in title case (e.g. "Effort Reduction", "Cycle Time Improvement", "Quality Score").
+
+Make every KPI specific to the company context.
+
+### 4. Business Value Insight
+
+Provide one to two sentences explaining:
+- The primary expected business outcome
+- How value will be measured and tracked
+
+Lead with the most important business outcome first.
 
 ## Key Principles
 
-- Define business outcomes before implementation begins.
-- Align AI initiatives with project and organizational objectives.
-- Focus on measurable outcomes rather than AI capabilities.
-- Establish baseline and target metrics for every AI initiative.
-- Continuously monitor business value after deployment.
+- Continue from the previously classified AI initiative.
+- Focus on business outcomes rather than AI capabilities.
+- Present all four value areas — vary the focus and outcomes to reflect the specific initiative.
+- Recommend meaningful, trackable success metrics.
+- Keep outputs concise and executive-friendly.
 
 ## Leadership Question
 
-**What measurable business outcomes will demonstrate that this AI initiative has successfully achieved its intended purpose?**
+**What measurable business outcomes will justify investing in this AI initiative, and how will success be demonstrated?**
+
+## Quality Checklist
+
+Before completing this capability verify that:
+
+- Previous AI initiative and classification are referenced
+- All four business value areas are present
+- Each value area has a focus statement and four outcomes
+- Exactly six KPI names are provided
+- Business value insight is specific and outcome-led
+- Output is understandable within 30 seconds by a Project Manager
+
+## Expected Outcome
+
+At the completion of this capability the Project Manager should clearly understand:
+
+- Why this AI initiative creates business value
+- Which value areas matter most
+- How success should be measured
+- How the initiative is prepared for prioritisation

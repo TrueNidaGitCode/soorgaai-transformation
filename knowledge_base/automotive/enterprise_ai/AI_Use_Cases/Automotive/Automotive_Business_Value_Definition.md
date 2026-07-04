@@ -2,138 +2,210 @@
 
 **Layer:** Automotive
 **Extends:** Core/Business_Value_Definition.md
-**Version:** 2.0
+**Version:** 3.0
 
 ---
 
-## Purpose
+# Purpose
 
-This document applies the Core Business Value Definition framework to automotive software engineering and product development. It helps Project Managers and Product Managers define measurable business outcomes for AI initiatives by focusing on engineering productivity, software quality, delivery performance, and customer value.
+This layer enriches the Core Business Value Definition capability with automotive software engineering knowledge.
 
-Automotive software programs involve complex engineering workflows, large volumes of historical data, and cross-functional collaboration. Clearly defining business value ensures AI initiatives are aligned with engineering objectives and that success can be measured using meaningful project and operational metrics.
+It provides automotive-specific business value areas, KPI recommendations, engineering benchmarks, and common value patterns to help Project Managers consistently define measurable business outcomes for AI initiatives.
 
-> For the universal business value framework, refer to: `Core/Business_Value_Definition.md`
+The consultant methodology, reasoning process, and output structure are inherited from the Core Business Value Definition capability.
 
 ---
 
-## AI Use Case Business Value Definition in Automotive
+# Automotive Business Value Areas
 
-Business value in automotive AI initiatives should be defined using measurable engineering and business outcomes rather than technical capabilities. Every AI initiative should improve an aspect of software delivery, engineering effectiveness, operational performance, or customer experience.
+## Engineering Productivity
 
-Project Managers should establish baseline performance, define target outcomes, and identify the metrics that will be used to measure success throughout implementation and operation.
+Use this value area when the AI initiative primarily assists engineers in completing engineering activities more efficiently.
 
-### Automotive Business Value Framework
+Typical AI Initiatives
 
-#### Engineering Productivity
+- AI Bug Analysis Assistant
+- Engineering Knowledge Assistant
+- Requirements Summarization
+- Engineering Documentation Assistant
+- AI Meeting Assistant
 
-Measure how AI improves the efficiency of engineering teams.
-
-Typical outcomes include:
+Typical Business Outcomes
 
 - Reduced engineering effort
-- Faster defect analysis
-- Accelerated requirements review
-- Reduced documentation effort
-- Improved engineering knowledge reuse
+- Faster engineering analysis
 - Increased engineering capacity
+- Reduced repetitive work
+- Improved knowledge accessibility
+
+Typical KPIs
+
+- Engineering hours saved
+- Manual effort reduction
+- Cycle time reduction
+- Engineering productivity
+- Knowledge reuse rate
 
 ---
 
-#### Engineering Excellence
+## Engineering Excellence
 
-Measure how AI improves engineering quality and delivery performance.
+Use this value area when the AI initiative improves engineering quality, consistency, or software delivery processes.
 
-Typical outcomes include:
+Typical AI Initiatives
 
-- Reduced defect leakage
-- Improved defect classification accuracy
-- Better requirements quality
+- AI Traceability Mapping
+- Test Coverage Analytics
+- Test Case Recommendation
+- Regression Impact Analysis
+- Root Cause Recommendation
+- Requirements Validation
+
+Typical Business Outcomes
+
+- Improved traceability
 - Increased test coverage
-- Faster release readiness assessment
-- Improved decision consistency
+- Better engineering quality
+- Improved compliance
+- Reduced defects
+- Standardized engineering processes
+
+Typical KPIs
+
+- Traceability completeness
+- Test coverage percentage
+- Defect leakage
+- Audit readiness
+- Process compliance
+- Test effectiveness
+- Quality score
 
 ---
 
-#### Project & Operational Performance
+## Project & Operational Performance
 
-Measure how AI improves project execution and operational efficiency.
+Use this value area when the AI initiative improves project execution, delivery performance, or engineering operations.
 
-Typical outcomes include:
+Typical AI Initiatives
 
-- Reduced issue turnaround time
+- Release Readiness Assessment
+- Project Risk Prediction
+- Intelligent Defect Prioritization
+- Engineering Dashboard
+- Delivery Health Monitoring
+
+Typical Business Outcomes
+
+- Faster issue resolution
 - Improved delivery predictability
-- Lower rework effort
-- Reduced operational costs
-- Better resource utilisation
-- Faster engineering decision making
+- Lower operational costs
+- Reduced rework
+- Better resource utilization
+- Improved engineering decisions
+
+Typical KPIs
+
+- Mean Time to Resolution (MTTR)
+- Delivery predictability
+- Cycle time
+- Rework effort
+- Resource utilization
+- Schedule adherence
+- Delivery velocity
 
 ---
 
-#### Customer & Product Value
+## Customer & Product Value
 
-Measure how AI contributes to product quality and customer satisfaction.
+Use this value area when the AI initiative delivers measurable improvements to vehicle quality or customer experience.
 
-Typical outcomes include:
+Typical AI Initiatives
+
+- Predictive Maintenance
+- Intelligent Vehicle Assistant
+- Vehicle Health Monitoring
+- Driver Personalization
+- AI Diagnostics
+- Connected Vehicle Intelligence
+
+Typical Business Outcomes
 
 - Improved software quality
 - Reduced field defects
-- Faster customer issue resolution
-- Higher customer satisfaction
-- Improved vehicle reliability
-- Enhanced intelligent product capabilities
+- Improved customer satisfaction
+- Enhanced vehicle reliability
+- Increased product differentiation
+
+Typical KPIs
+
+- Customer satisfaction
+- Field defect rate
+- First-time resolution
+- Vehicle reliability
+- Feature adoption
+- Customer retention
 
 ---
 
-#### Success Measurement
+# Automotive Value Mapping
 
-Define measurable success criteria before implementation begins.
+Use the following mappings to determine the most appropriate business value areas.
 
-Typical considerations include:
-
-- Establish current baseline performance.
-- Define target improvements for each KPI.
-- Track business outcomes throughout the project lifecycle.
-- Review results after deployment and identify improvement opportunities.
-- Continuously refine AI initiatives based on measured outcomes.
-
-### Key Principles
-
-- Define engineering and business outcomes before implementation.
-- Measure value using objective project and engineering metrics.
-- Balance productivity improvements with quality and customer outcomes.
-- Establish baseline and target KPIs for every AI initiative.
-- Continuously monitor and optimise business value after deployment.
-
-### Leadership Question
-
-**What measurable improvements in engineering performance, project delivery, software quality, or customer outcomes will demonstrate the success of this AI initiative?**
+| AI Initiative Type | Primary Value Area | Supporting Value Area |
+|-------------------|-------------------|-----------------------|
+| Productivity AI | Engineering Productivity | Engineering Excellence |
+| Functional AI | Engineering Excellence | Project & Operational Performance |
+| Product AI | Customer & Product Value | Engineering Excellence |
 
 ---
 
-## Typical Automotive Business Value Metrics
+# Common Automotive Business Value Patterns
 
-| Engineering Area | Example KPIs |
-|---|---|
-| Defect Management | Defect analysis time, assignment accuracy, Mean Time to Resolution (MTTR), defect backlog reduction |
-| Requirements Engineering | Review effort, traceability completeness, requirements quality |
-| Test Engineering | Test case generation effort, test coverage, regression execution time, defect leakage |
-| Diagnostics | Root cause analysis time, diagnostic accuracy, issue resolution time |
-| Software Development | Code review effort, development productivity, documentation effort |
-| Project Management | Schedule predictability, delivery velocity, project risk reduction |
-| Supplier Quality | Supplier issue resolution time, non-conformance rate, supplier performance |
-| Customer Support | Customer issue resolution time, first-time resolution rate, customer satisfaction |
+| AI Initiative | Primary Business Value | Supporting Business Value |
+|---------------|-----------------------|---------------------------|
+| AI Traceability Mapping | Engineering Excellence | Engineering Productivity |
+| AI Test Case Recommendation | Engineering Excellence | Engineering Productivity |
+| AI Bug Analysis | Engineering Productivity | Project & Operational Performance |
+| Engineering Knowledge Assistant | Engineering Productivity | Engineering Excellence |
+| Regression Impact Analysis | Engineering Excellence | Project & Operational Performance |
+| Release Risk Prediction | Project & Operational Performance | Engineering Excellence |
+| Predictive Maintenance | Customer & Product Value | Engineering Excellence |
+| Intelligent Vehicle Assistant | Customer & Product Value | Engineering Productivity |
 
 ---
 
-## Example Business Value Statement
+# Typical Automotive KPI Targets
 
-**AI Initiative:** AI-Assisted Bug Analysis
+These values represent typical improvement ranges observed in automotive engineering transformation initiatives. Use them as guidance when defining measurable business outcomes.
 
-### Expected Business Outcomes
+| KPI | Typical Improvement |
+|-----|---------------------|
+| Manual Engineering Effort | 20–50% reduction |
+| Engineering Analysis Time | 30–70% reduction |
+| Mean Time to Resolution (MTTR) | 20–40% reduction |
+| Traceability Completeness | >95% |
+| Test Coverage | 90–98% |
+| Defect Classification Accuracy | 90–95% |
+| Root Cause Recommendation Accuracy | 80–90% |
+| Requirements Review Time | 30–60% reduction |
+| Test Design Effort | 30–50% reduction |
+| Audit Preparation Time | 50–80% reduction |
 
-- Reduce manual defect pre-analysis effort from **8 hours to 2 hours**.
-- Improve defect assignment accuracy from **85% to 95%**.
-- Reduce Mean Time to Resolution (MTTR) by **40%**.
-- Improve consistency of defect analysis across engineering teams.
-- Enable junior engineers to perform defect analysis with greater confidence and accuracy.
-- Increase engineering capacity by reducing repetitive analysis activities.
+---
+
+# Automotive Business Value Principles
+
+When generating business value recommendations:
+
+- Prioritize measurable engineering outcomes.
+- Balance productivity improvements with engineering quality.
+- Consider impacts across the complete software development lifecycle.
+- Recommend KPIs that Project Managers can realistically measure.
+- Align business value with the AI initiative classification identified in the previous capability.
+- Ensure the selected value areas naturally support prioritization and implementation planning.
+
+---
+
+# Leadership Question
+
+**Which measurable engineering, operational, or customer outcomes will best demonstrate the success of this automotive AI initiative, and how should they be measured?**

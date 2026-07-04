@@ -2,15 +2,11 @@
 
 ## Purpose
 
-AI Use Case Classification is the second capability in the AI Use Case domain. It categorizes every AI opportunity based on where AI creates value within the organization. Classification establishes the context for business value assessment, prioritization, technology selection, and implementation planning.
+AI Use Case Classification is the second capability in the AI transformation journey.
 
-AI opportunities generally fall into three categories:
+Building upon the identified AI opportunity, this capability determines where the initiative creates the greatest business value within the organisation. The classification establishes the strategic context for Business Value Definition, Prioritisation, AI Strategy, and Implementation Planning.
 
-- **Productivity AI** — Improves the productivity of individuals and teams.
-- **Functional AI** — Enhances the effectiveness of business functions and engineering processes.
-- **Product AI** — Creates new value by embedding AI capabilities into products and customer experiences.
-
-A single AI opportunity may belong to more than one category. In such cases, the primary classification should reflect where the greatest business value is expected to be realized.
+Every AI initiative should have one primary classification that reflects its dominant business objective. Secondary classifications may be identified when the initiative delivers additional value across multiple organisational areas.
 
 ---
 
@@ -18,60 +14,138 @@ A single AI opportunity may belong to more than one category. In such cases, the
 
 ## Definition
 
-AI use cases create value at different levels of an organization. Some help individuals complete their work more efficiently, others improve the performance of business processes, while others deliver new capabilities directly to customers.
+AI Use Case Classification is the structured process of determining the primary purpose of an AI initiative.
 
-Classifying AI opportunities provides a common language for understanding the purpose of each use case and ensures that subsequent business value assessment and prioritization are based on the appropriate context.
+Rather than describing AI technologies, the classification explains who benefits most, why the initiative exists, and how success should be measured.
+
+The outcome of this capability is a clearly classified AI initiative that guides all subsequent transformation decisions.
+
+## Consultant Reasoning Process
+
+For every identified AI opportunity, reason using the following sequence.
+
+1. Review the AI opportunity identified in the previous capability.
+2. Identify who receives the greatest business value.
+3. Determine the primary AI classification.
+4. Identify any supporting secondary classifications.
+5. Explain why the initiative belongs to the selected classification.
+6. Describe how the classification influences future Business Value Definition and implementation.
+
+Always classify the same AI opportunity identified during AI Opportunity Discovery.
 
 ## Classification Framework
 
-### Productivity AI
+### Step 1 — Understand the AI Opportunity
 
-**Primary Goal:** Improve the productivity of individuals or teams by reducing manual effort and accelerating routine activities.
+Review the previously identified AI opportunity and identify:
 
-**Typical Characteristics**
-* Team or individual focused
-* AI augments existing work
-* Quick implementation
-* Immediate productivity improvements
+- Business objective
+- Primary users
+- Expected business outcome
+- Organisational impact
 
-**Common Examples:** Document summarization, AI coding assistants, meeting summaries, knowledge assistants, AI-assisted bug analysis.
+### Step 2 — Determine the Primary Classification
 
----
+Classify the initiative according to where the greatest business value is delivered.
 
-### Functional AI
+**Productivity AI**
 
-**Primary Goal:** Improve the quality, consistency, and effectiveness of business functions or engineering processes.
+Improves the productivity of individuals and engineering teams.
 
-**Typical Characteristics**
-* Process focused
-* Improves operational performance
-* Requires workflow integration
-* Benefits multiple teams
+Typical outcomes:
+- Reduced manual effort
+- Faster execution
+- Improved engineering efficiency
 
-**Common Examples:** Intelligent defect triage, requirements analysis, test optimization, risk prediction, supplier quality analysis.
+**Functional AI**
 
----
+Improves engineering processes and operational performance.
 
-### Product AI
+Typical outcomes:
+- Better process quality
+- Standardised execution
+- Cross-team effectiveness
 
-**Primary Goal:** Deliver new customer value by embedding AI capabilities into products and services.
+**Product AI**
 
-**Typical Characteristics**
-* Customer focused
-* Product differentiation
-* New intelligent capabilities
-* Long-term strategic investment
+Creates new customer value by embedding AI into products and services.
 
-**Common Examples:** Predictive maintenance, intelligent virtual assistants, personalized customer experiences, AI-powered diagnostics, smart product recommendations.
+Typical outcomes:
+- Enhanced customer experience
+- Product differentiation
+- Intelligent product capabilities
+
+### Step 3 — Explain the Classification
+
+Explain why the initiative belongs to the selected classification.
+
+Where appropriate, identify secondary classifications that support the overall business objective.
+
+Focus on business reasoning rather than AI terminology.
+
+## Output Structure
+
+Present the assessment using the following four output fields.
+
+### 1. Strategic Position
+
+Summarise the identified AI initiative and explain why classification is required.
+
+Maximum three sentences.
+
+### 2. Primary Classification
+
+Present:
+- AI Classification (Productivity AI, Functional AI, or Product AI)
+- Business Objective
+- Primary Business Outcome
+
+Keep concise and executive-friendly.
+
+### 3. Secondary Classification
+
+Present any supporting classification. Explain why it complements the primary classification.
+
+If no secondary classification applies, omit or set to null.
+
+### 4. Classification Insight
+
+Provide a concise consultant recommendation explaining:
+- Why this classification matters
+- What it means for future Business Value Definition
+- How it influences implementation priorities
+
+Maximum three sentences.
 
 ## Key Principles
 
-* Classify AI opportunities based on who receives the primary value.
-* A single AI opportunity may belong to multiple categories.
-* Identify the primary classification before assigning secondary classifications.
-* Use classification to guide business value definition and prioritization.
-* Review classifications as business objectives and AI capabilities evolve.
+- Continue from the previously identified AI opportunity.
+- Classify business value rather than technology.
+- Identify one primary classification.
+- Use secondary classifications only where they provide additional context.
+- Explain the business implications of the classification.
+- Keep outputs concise and executive-friendly.
 
 ## Leadership Question
 
-**Who receives the greatest benefit from this AI opportunity — our teams, our business processes, or our customers?**
+**Where does the identified AI initiative create the greatest business value — engineering productivity, business process effectiveness, or customer value — and how should that influence the transformation journey?**
+
+## Quality Checklist
+
+Before completing this capability verify that:
+
+- Previous AI opportunity is referenced
+- Primary classification is identified
+- Secondary classification is validated or omitted
+- Business reasoning is clearly explained
+- Classification supports future Business Value Definition
+- Output is understandable within 30 seconds by a Project Manager
+
+## Expected Outcome
+
+At the completion of this capability the Project Manager should clearly understand:
+
+- What type of AI initiative is being implemented
+- Why it was classified that way
+- Who benefits the most
+- How the classification guides the next stage of Business Value Definition

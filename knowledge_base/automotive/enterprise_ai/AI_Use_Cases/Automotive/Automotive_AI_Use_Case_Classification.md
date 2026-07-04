@@ -2,107 +2,191 @@
 
 **Layer:** Automotive
 **Extends:** Core/AI_Use_Case_Classification.md
-**Version:** 2.0
+**Version:** 3.0
 
 ---
 
-## Purpose
+# Purpose
 
-This document applies the Core AI Use Case Classification framework to automotive software engineering and product development. It helps Project Managers and Product Managers classify AI opportunities based on where they create value within automotive programs.
+This layer enriches the Core AI Use Case Classification capability with automotive software engineering knowledge.
 
-Automotive AI initiatives typically deliver value at three levels:
+It provides automotive-specific AI initiative classifications, engineering examples, business contexts, and expected outcomes to help classify AI initiatives consistently across the software-defined vehicle lifecycle.
 
-- **Engineering Team Productivity** — Improving the efficiency of engineers and delivery teams.
-- **Engineering Function Excellence** — Enhancing software engineering processes and operational effectiveness.
-- **Customer Product Innovation** — Delivering AI-powered capabilities directly to vehicle users or customers.
-
-Correct classification helps organizations set appropriate expectations, identify stakeholders, define success measures, and plan AI initiatives more effectively.
-
-> For the universal classification framework, refer to: `Core/AI_Use_Case_Classification.md`
+The classification methodology, consultant reasoning process, and output structure are inherited from the Core Asset.
 
 ---
 
-## AI Use Case Classification in Automotive
+# Automotive Classification Context
 
-Automotive AI opportunities span the entire vehicle software lifecycle, from requirements engineering and software development to validation, diagnostics, production, and connected vehicle services.
+Automotive AI initiatives typically create value in one of three areas:
 
-Classifying AI opportunities helps distinguish initiatives that improve engineering productivity, optimize engineering processes, or create intelligent customer-facing vehicle capabilities. Some initiatives may span multiple categories, but the primary classification should always reflect where the greatest value is expected to be realized.
+## Engineering Team Productivity
 
-### Classification Framework
+AI assists engineers in performing day-to-day engineering activities more efficiently.
 
-#### Productivity AI
+Typical outcomes include:
 
-**Primary Goal:** Improve the productivity of engineering teams by reducing manual effort and accelerating software delivery activities.
+- Reduced manual effort
+- Faster engineering execution
+- Improved knowledge accessibility
+- Higher engineering productivity
 
-**Typical Automotive Examples**
-* AI-assisted defect pre-analysis
-* Engineering document summarisation
-* Requirements summarisation
-* AI coding assistants
-* Test report summarisation
-* Knowledge assistants for engineering teams
-* Automated meeting summaries
+Typical stakeholders
 
----
-
-#### Functional AI
-
-**Primary Goal:** Improve the effectiveness, quality, and consistency of automotive engineering processes.
-
-**Typical Automotive Examples**
-* Intelligent defect triage
-* Root cause classification
-* Requirements traceability analysis
-* Test case generation
-* Regression impact analysis
-* Supplier quality analysis
-* Release readiness assessment
-* Engineering risk prediction
+- Test Engineers
+- Software Developers
+- System Engineers
+- Integration Engineers
+- Project Managers
 
 ---
 
-#### Product AI
+## Engineering Function Excellence
 
-**Primary Goal:** Deliver intelligent capabilities that enhance the customer or driver experience.
+AI strengthens engineering processes across multiple teams and improves operational performance.
 
-**Typical Automotive Examples**
-* Predictive maintenance
-* Intelligent vehicle assistants
-* Driver personalisation
-* AI-powered diagnostics
-* Smart navigation recommendations
-* Vehicle health monitoring
-* Driver behaviour insights
-* Connected vehicle intelligence
+Typical outcomes include:
 
-### Key Principles
+- Process standardization
+- Improved engineering quality
+- Better traceability
+- Reduced delivery risk
+- Cross-team collaboration
 
-* Begin by identifying who receives the greatest value from the AI solution.
-* Productivity AI improves engineering team efficiency.
-* Functional AI improves engineering and business processes.
-* Product AI delivers value directly to customers and vehicle users.
-* A single automotive AI initiative may span multiple classifications.
-* Use the primary classification to guide business value assessment and implementation planning.
+Typical stakeholders
 
-### Leadership Question
-
-**Does this AI opportunity primarily improve engineering productivity, strengthen engineering processes, or create new value for vehicle users and customers?**
+- QA Managers
+- Engineering Managers
+- Release Managers
+- Quality Managers
+- Program Managers
 
 ---
 
-## Typical Automotive AI Use Case Classifications
+## Customer Product Innovation
 
-| Automotive AI Opportunity | Primary Classification | Secondary Classification |
-|---|---|---|
-| AI Bug Analysis Assistant | Productivity AI | Functional AI |
-| Intelligent Defect Triage | Functional AI | Productivity AI |
-| Requirements Summarisation | Productivity AI | — |
-| Requirements Traceability Validation | Functional AI | Productivity AI |
-| AI Test Case Generation | Functional AI | Productivity AI |
-| Regression Impact Analysis | Functional AI | — |
+AI delivers intelligent capabilities directly to vehicle users.
+
+Typical outcomes include:
+
+- Improved customer experience
+- Intelligent vehicle behaviour
+- Connected vehicle services
+- Product differentiation
+
+Typical stakeholders
+
+- Product Management
+- Customer Experience
+- Connected Vehicle Teams
+- OEM Business Units
+
+---
+
+# Typical Automotive AI Initiative Classification
+
+## Productivity AI
+
+Examples
+
+- AI Engineering Knowledge Assistant
+- Engineering Document Summarization
+- AI Bug Analysis Assistant
+- Requirements Summarization
+- Test Report Summarization
+- AI Meeting Assistant
+
+Typical success measures
+
+- Engineering hours saved
+- Manual effort reduction
+- Faster analysis
+- Increased engineer productivity
+
+---
+
+## Functional AI
+
+Examples
+
+- Requirements Traceability
+- AI Test Case Recommendation
+- Regression Impact Analysis
+- Defect Classification
+- Root Cause Recommendation
+- Release Readiness Assessment
+- Coverage Analytics
+
+Typical success measures
+
+- Process efficiency
+- Quality improvement
+- Reduced defects
+- Improved traceability
+- Delivery predictability
+
+---
+
+## Product AI
+
+Examples
+
+- Predictive Maintenance
+- Intelligent Vehicle Assistant
+- Vehicle Health Monitoring
+- Driver Personalization
+- Smart Diagnostics
+- Connected Vehicle Intelligence
+
+Typical success measures
+
+- Customer satisfaction
+- Product adoption
+- Feature usage
+- Customer retention
+
+---
+
+# Automotive Classification Guidance
+
+When classifying an automotive AI initiative:
+
+- Identify who receives the greatest business value.
+- Prioritize engineering productivity for team-focused assistants.
+- Prioritize Functional AI for process-wide engineering improvements.
+- Prioritize Product AI for customer-facing intelligent capabilities.
+- Select one primary classification.
+- Add secondary classifications only when they influence implementation strategy.
+
+---
+
+# Common Automotive Classification Patterns
+
+| AI Initiative | Primary | Secondary |
+|---------------|---------|-----------|
+| AI Traceability Mapping | Productivity AI | Functional AI |
+| AI Test Case Recommendation | Functional AI | Productivity AI |
+| Defect Classification | Functional AI | Productivity AI |
 | Engineering Knowledge Assistant | Productivity AI | Functional AI |
 | Release Risk Prediction | Functional AI | — |
 | Predictive Maintenance | Product AI | Functional AI |
-| AI Vehicle Assistant | Product AI | — |
-| Intelligent Vehicle Diagnostics | Product AI | Functional AI |
-| Driver Personalisation | Product AI | — |
+| Vehicle Assistant | Product AI | — |
+| Smart Diagnostics | Product AI | Functional AI |
+
+---
+
+# Automotive Principles
+
+When generating recommendations:
+
+- Use automotive engineering terminology.
+- Consider the complete software development lifecycle.
+- Align the classification with where measurable business value is created.
+- Focus on engineering outcomes before AI technology.
+- Ensure the classification supports Business Value Definition and Prioritization.
+
+---
+
+# Leadership Question
+
+**Where does this AI initiative create the greatest value within an automotive program—engineering teams, engineering processes, or vehicle users—and how should that influence the transformation strategy?**

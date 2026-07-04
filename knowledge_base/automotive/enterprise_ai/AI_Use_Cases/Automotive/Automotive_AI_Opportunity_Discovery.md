@@ -2,73 +2,198 @@
 
 **Layer:** Automotive
 **Extends:** Core/AI_Opportunity_Discovery.md
-**Version:** 2.0
+**Version:** 3.0
 
 ---
 
-## Purpose
+# Purpose
 
-This document applies the Core AI Opportunity Discovery framework to automotive software engineering and product development. It helps Project Managers and Product Managers identify high-value AI opportunities within vehicle development programs by understanding automotive business challenges, engineering workflows, and recurring activities where AI can improve productivity, quality, and delivery performance.
+This layer enriches the Core AI Opportunity Discovery capability with automotive software engineering knowledge.
 
-Automotive software development involves complex engineering processes, large volumes of technical data, cross-functional collaboration, and strict quality and safety requirements. These characteristics make automotive projects well suited for AI-assisted engineering and decision support.
+It provides domain-specific business challenges, engineering workflows, and common AI opportunities found throughout the automotive software development lifecycle.
 
-> For the universal discovery framework, refer to: `Core/AI_Opportunity_Discovery.md`
+The discovery methodology, consultant reasoning process, and output structure are inherited from the Core Asset.
 
 ---
 
-## AI Opportunity Discovery in Automotive
+# Automotive Business Context
 
-AI opportunities in automotive engineering are typically found in activities that require significant manual effort, expert knowledge, and the analysis of large volumes of engineering information. These opportunities span the entire software development lifecycle — from requirements engineering and software development to testing, diagnostics, release management, and field support.
+Automotive software development is characterised by:
 
-Project Managers should focus on recurring engineering activities that slow delivery, reduce software quality, increase project cost, or depend heavily on experienced engineers. AI can augment engineering teams by improving knowledge access, accelerating analysis, supporting decision-making, and reducing repetitive manual work.
+- Complex software-defined vehicle architectures
+- Safety-critical engineering processes
+- Large volumes of engineering knowledge
+- Cross-functional collaboration
+- Multi-supplier ecosystems
+- Strict quality and compliance requirements
+- Long product development lifecycles
 
-### Discovery Framework
+These characteristics create significant opportunities for AI-assisted engineering.
 
-When discovering AI opportunities in automotive projects, consider the following:
+---
 
-**Identify Business Challenges**
+# Typical Automotive Business Challenges
 
-Look for engineering or delivery challenges such as:
+Common business problems include:
 
-* Slow defect analysis and triage
-* Delays in requirements analysis and traceability
-* Manual test design and regression planning
-* Time-consuming diagnostics and log analysis
-* Supplier quality issues and non-conformance management
-* Limited project visibility and delivery risk assessment
+## Requirements Engineering
 
-**Analyse Engineering Workflows**
+- Requirement ambiguity
+- Requirement traceability
+- Requirement impact analysis
+- Change management
 
-Identify activities that:
+---
 
-* Require expert engineering judgement
-* Consume significant engineering effort
-* Depend on multiple engineering tools and data sources
-* Involve repetitive analysis or documentation
-* Require collaboration across multiple teams or suppliers
+## Software Development
 
-**Recognise Automotive AI Opportunities**
+- Code understanding
+- Legacy software maintenance
+- Documentation effort
+- Architecture consistency
 
-Strong AI opportunities commonly involve:
+---
 
-* Defect summarisation and classification
-* Root cause recommendation
-* Intelligent ticket routing and assignment
-* Requirements analysis and traceability validation
-* Test case generation and coverage analysis
-* Regression impact analysis
-* Diagnostic log analysis
-* Engineering document summarisation
-* Project health insights and risk prediction
+## Software Testing
 
-### Key Principles
+- Manual test case design
+- Test coverage visibility
+- Regression planning
+- Test result analysis
+- Traceability validation
 
-* Start with engineering and business challenges before selecting AI technologies.
-* Focus on high-effort, knowledge-intensive engineering activities.
-* Prioritise opportunities that improve productivity, quality, delivery speed, or customer satisfaction.
-* Leverage historical engineering knowledge and project data wherever available.
-* Position AI as an engineering assistant that augments expert decision-making rather than replacing engineers.
+---
 
-### Leadership Question
+## Defect Management
 
-**Which recurring engineering activities consume the most expert effort, delay software delivery, or impact product quality, and where can AI provide the greatest business value?**
+- Defect triage
+- Duplicate defect detection
+- Root cause analysis
+- Defect prioritisation
+- Ticket assignment
+
+---
+
+## Diagnostics
+
+- Vehicle log analysis
+- Fault pattern recognition
+- Customer issue investigation
+- ECU diagnostics
+
+---
+
+## Project Management
+
+- Delivery risk assessment
+- Resource planning
+- Project health monitoring
+- Engineering productivity
+- Knowledge sharing
+
+---
+
+# Typical Engineering Workflows
+
+Examples include:
+
+Requirements
+→ Design
+→ Development
+→ Testing
+→ Integration
+→ Release
+
+or
+
+Customer Issue
+→ Defect Analysis
+→ Root Cause
+→ Fix
+→ Validation
+→ Release
+
+or
+
+User Story
+→ Acceptance Criteria
+→ Test Design
+→ Traceability
+→ Test Execution
+→ Coverage Analysis
+
+These workflows provide context for AI Opportunity Discovery.
+
+---
+
+# Common High-Effort Activities
+
+Examples include:
+
+- Requirements analysis
+- Manual traceability
+- Test case design
+- Coverage calculation
+- Defect investigation
+- Root cause analysis
+- Log analysis
+- Engineering documentation
+- Knowledge retrieval
+- Release reporting
+
+---
+
+# Typical AI Opportunities
+
+Common AI opportunities include:
+
+### Requirements
+
+- Requirement summarisation
+- Requirement classification
+- Traceability analysis
+
+### Testing
+
+- AI Test Case Recommendation
+- Traceability Mapping
+- Coverage Analytics
+- Regression Impact Analysis
+
+### Defect Management
+
+- Defect Summarisation
+- Duplicate Detection
+- Root Cause Recommendation
+- Intelligent Assignment
+
+### Diagnostics
+
+- Log Analysis
+- Fault Classification
+- Diagnostic Recommendation
+
+### Project Management
+
+- Project Health Insights
+- Delivery Risk Prediction
+- AI Status Reporting
+- Knowledge Assistant
+
+---
+
+# Automotive Principles
+
+When generating recommendations:
+
+- Use automotive engineering terminology.
+- Recommend AI that augments engineering teams.
+- Consider ASPICE, ISO 26262 and engineering governance where relevant.
+- Prioritise improvements in quality, productivity and delivery performance.
+- Recommend opportunities that fit naturally into existing engineering workflows.
+
+---
+
+# Leadership Question
+
+**Which engineering activities create the greatest delivery risk, quality concerns or engineering effort, and where can AI create the highest measurable value?**

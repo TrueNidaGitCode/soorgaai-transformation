@@ -1920,7 +1920,7 @@ function buildClassificationView(section) {
   const b              = section.brief || {};
   const primaryClass   = b.primaryClassification   || null;
   const secondaryClass = b.secondaryClassification || null;
-  const insight        = b.classificationInsight   || '';
+  const insight        = b.transformationImplication   || '';
 
   const ICONS   = { 'Productivity AI': '⚡', 'Functional AI': '⚙', 'Product AI': '🚗' };
   const COLORS  = { 'Productivity AI': 'productivity', 'Functional AI': 'functional', 'Product AI': 'product' };
@@ -1966,7 +1966,7 @@ function buildClassificationView(section) {
     footer.className = 'cls-insight';
     footer.innerHTML = `
       <span class="cls-insight__icon">□</span>
-      <p class="cls-insight__text"><strong>Classification Insight</strong> — ${insight}</p>`;
+      <p class="cls-insight__text"><strong>Transformation Implication</strong> — ${insight}</p>`;
     wrap.appendChild(footer);
   }
 

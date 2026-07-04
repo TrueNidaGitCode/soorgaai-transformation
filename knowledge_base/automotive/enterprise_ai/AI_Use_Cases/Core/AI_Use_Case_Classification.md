@@ -108,7 +108,7 @@ Present any supporting classification. Explain why it complements the primary cl
 
 If no secondary classification applies, omit or set to null.
 
-### 4. Classification Insight
+### 4. Transformation Implication
 
 Provide a concise consultant recommendation explaining:
 - Why this classification matters

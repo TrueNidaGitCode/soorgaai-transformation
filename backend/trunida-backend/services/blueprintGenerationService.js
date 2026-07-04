@@ -476,11 +476,11 @@ SECTION-SPECIFIC EXTRAS — "AI Use Case Classification" sections only:
 6. secondaryClassification (include only if a second classification clearly applies — otherwise omit or set to null)
    Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence>", "businessOutcome": "<1 sentence>" }
 
-7. classificationInsight (1 sentence)
+7. transformationImplication (1 sentence)
    A concise insight for this company explaining how classification guides the next steps: business value assessment, prioritization, and implementation planning.
 
    Add all to the brief object:
-   "primaryClassification": {...}, "secondaryClassification": {...} or null, "classificationInsight": "..."`,
+   "primaryClassification": {...}, "secondaryClassification": {...} or null, "transformationImplication": "..."`,
   },
 
   'Critical Data Identification': {
@@ -964,8 +964,8 @@ function parseBriefOutput(rawSections, validTitles) {
         ? { name: String(b.secondaryClassification.name || '').trim(), rationale: String(b.secondaryClassification.rationale || '').trim(), businessOutcome: String(b.secondaryClassification.businessOutcome || '').trim() }
         : null;
 
-      const classificationInsight = typeof b.classificationInsight === 'string'
-        ? b.classificationInsight.trim() : '';
+      const transformationImplication = typeof b.transformationImplication === 'string'
+        ? b.transformationImplication.trim() : '';
 
       const businessProblems     = Array.isArray(b.businessProblems)
         ? b.businessProblems.map(String).filter(Boolean).slice(0, 6) : [];
@@ -1461,7 +1461,7 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(prioritizationInsight                ? { prioritizationInsight }     : {}),
           ...(primaryClassification                ? { primaryClassification }   : {}),
           ...(secondaryClassification              ? { secondaryClassification } : {}),
-          ...(classificationInsight                ? { classificationInsight }   : {}),
+          ...(transformationImplication                ? { transformationImplication }   : {}),
           ...(businessProblems.length     ? { businessProblems }     : {}),
           ...(workflowSteps.length        ? { workflowSteps }        : {}),
           ...(highEffortActivities.length ? { highEffortActivities } : {}),
@@ -1969,7 +1969,7 @@ OUTPUT — valid JSON only, no markdown fences:
       // AI Use Cases extras
       'valueCategories', 'kpiPills', 'businessValueInsight',
       'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
-      'primaryClassification', 'secondaryClassification', 'classificationInsight',
+      'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
     ];
     for (const key of extraKeys) {
@@ -2071,7 +2071,7 @@ OUTPUT — valid JSON only, no markdown fences:
       // AI Use Cases extras
       'valueCategories', 'kpiPills', 'businessValueInsight',
       'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
-      'primaryClassification', 'secondaryClassification', 'classificationInsight',
+      'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
       // Data Readiness extras
       'datasets', 'recommendations', 'coverageSummary', 'relationshipMap',
@@ -2301,7 +2301,7 @@ function extractJourneyContext(capabilityName, sections) {
     if (b.highEffortActivities?.length) lines.push(`High-Effort Activities: ${b.highEffortActivities.join(', ')}`);
     if (b.primaryClassification?.name)  lines.push(`Primary AI Classification: ${b.primaryClassification.name}${b.primaryClassification.description ? ` — ${b.primaryClassification.description}` : ''}`);
     if (b.secondaryClassification?.name) lines.push(`Secondary AI Classification: ${b.secondaryClassification.name}`);
-    if (b.classificationInsight)        lines.push(`Classification Insight: ${b.classificationInsight}`);
+    if (b.transformationImplication)        lines.push(`Classification Insight: ${b.transformationImplication}`);
     if (b.valueCategories?.length)      lines.push(`Business Value Areas: ${b.valueCategories.map(v => v.title).join(', ')}`);
     if (b.kpiPills?.length)             lines.push(`Target KPIs: ${b.kpiPills.join(', ')}`);
   }

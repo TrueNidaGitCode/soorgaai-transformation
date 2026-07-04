@@ -127,7 +127,7 @@ const briefSchema = new mongoose.Schema({
   primaryClassification:    { type: classificationSchema,       default: undefined },
   secondaryClassification:  { type: classificationSchema,       default: undefined },
   classificationCards:      { type: [classificationCardSchema], default: [] },
-  classificationInsight:    { type: String,   default: '' },
+  transformationImplication: { type: String,   default: '' },
   // Data Readiness: Critical Data Identification extras
   datasets:                 { type: [datasetSchema],            default: [] },
   recommendations:          { type: [drRecommendationSchema],   default: [] },

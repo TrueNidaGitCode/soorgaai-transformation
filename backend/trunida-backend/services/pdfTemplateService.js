@@ -1585,11 +1585,11 @@ function buildAIUseCaseClassificationLayout(section) {
     wrap.appendChild(pc);
   }
 
-  // Classification Insight
-  if (b.classificationInsight) {
+  // Transformation Implication
+  if (b.transformationImplication) {
     const ci = document.createElement('div'); ci.className = 'vision-statement';
-    const ciL = document.createElement('p'); ciL.className = 'brief-label'; ciL.textContent = 'Classification Insight';
-    const ciT = document.createElement('p'); ciT.className = 'vision-statement__text'; ciT.textContent = b.classificationInsight;
+    const ciL = document.createElement('p'); ciL.className = 'brief-label'; ciL.textContent = 'Transformation Implication';
+    const ciT = document.createElement('p'); ciT.className = 'vision-statement__text'; ciT.textContent = b.transformationImplication;
     ci.appendChild(ciL); ci.appendChild(ciT); wrap.appendChild(ci);
   }
 

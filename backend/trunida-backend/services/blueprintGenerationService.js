@@ -2153,9 +2153,14 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
       ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
       : null;
 
+    // Build journey context from capabilities already completed before this one
+    const blueprintDoc   = await TransformationBlueprint.findById(blueprintId).lean();
+    const journeyContext = buildJourneyContextForRegen(blueprintDoc, domainId, capabilityId);
+    console.log(`[transformationGen] Journey context for ${cap.name}: ${journeyContext ? 'AVAILABLE' : 'NONE'}`);
+
     const sections = await runBriefGeneration(
       cap, companyProfile, businessObjective, industry,
-      capBlueprint.sections, capBlueprint.automotiveBlueprint, enterpriseContext
+      capBlueprint.sections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext
     );
 
     // DEBUG: log extra fields so we can confirm LLM is generating them
@@ -2320,6 +2325,33 @@ function extractJourneyContext(capabilityName, sections) {
     if (b.kpiPills?.length)             lines.push(`Target KPIs: ${b.kpiPills.join(', ')}`);
   }
   return lines.join('\n');
+}
+
+// Builds the journey context string for a single-capability regeneration call.
+// Iterates the blueprint's domains/capabilities in KB-defined order, collecting
+// extractJourneyContext output for every capability that completed before the
+// target capability. Mirrors the journeyContextParts accumulator in generateTransformationAsync.
+function buildJourneyContextForRegen(blueprint, currentDomainId, currentCapabilityId) {
+  if (!blueprint) return null;
+  const parts = [];
+
+  for (const domEntry of enabledDomains()) {
+    const domDoc = (blueprint.domains || []).find(d => d.domainId === domEntry.id);
+    const kbCaps = getDomainCapabilities(domEntry.kbPath);
+
+    for (const kbCap of kbCaps) {
+      if (domEntry.id === currentDomainId && kbCap.id === currentCapabilityId) break;
+
+      const dbCap = domDoc?.capabilities?.find(c => c.capabilityId === kbCap.id);
+      if (dbCap?.status === 'completed' && dbCap.sections?.length) {
+        parts.push(extractJourneyContext(dbCap.capabilityName, dbCap.sections));
+      }
+    }
+
+    if (domEntry.id === currentDomainId) break;
+  }
+
+  return parts.length > 0 ? parts.join('\n\n') : null;
 }
 
 // ── Multi-domain transformation generation ────────────────────────────────────

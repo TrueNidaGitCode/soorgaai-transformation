@@ -89,7 +89,9 @@ Present the assessment using the following four output fields.
 
 ### 1. Strategic Position
 
-Summarise the identified AI initiative and explain why classification is required.
+Open by naming the specific AI initiative being classified (e.g. "AI Traceability Mapping is classified as...").
+
+Explain why this initiative requires classification and what it will do for the organisation.
 
 Maximum three sentences.
 

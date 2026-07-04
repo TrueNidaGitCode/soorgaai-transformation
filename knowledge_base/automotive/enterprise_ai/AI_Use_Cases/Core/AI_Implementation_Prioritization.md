@@ -1,88 +1,213 @@
-# AI Use Case Prioritization
+# AI Implementation Prioritization
 
 ## Purpose
 
-AI Use Case Prioritization helps Project Managers and Product Managers determine which AI opportunities should be implemented first. It balances expected business value with implementation feasibility to create a practical AI adoption roadmap.
+AI Implementation Prioritization is the fourth capability in the AI Transformation Journey.
 
-Rather than pursuing every AI opportunity simultaneously, organizations should focus on initiatives that deliver meaningful business outcomes, are feasible to implement, and support broader project and business objectives.
+Building upon the identified AI opportunity, its classification, and expected business value, this capability determines how the AI initiative should be prioritized for implementation.
 
-The outcome of this capability is a prioritized list of AI use cases that maximizes impact while minimizing implementation risk.
+Rather than selecting between multiple AI opportunities, it evaluates whether the identified AI initiative is ready for implementation by balancing business value, implementation feasibility, strategic alignment, and organizational readiness.
+
+The outcome of this capability is an implementation priority recommendation that guides roadmap planning and AI strategy development.
 
 ---
 
-# 1. AI Use Case Prioritization
+# 1. AI Implementation Prioritization
 
 ## Definition
 
-Not all AI opportunities deliver the same value or require the same level of effort. Prioritization evaluates each AI use case by considering both its potential business impact and the organization's ability to successfully implement it.
+AI Implementation Prioritization is the structured process of determining the most appropriate implementation priority for an AI initiative.
 
-A balanced AI portfolio should include quick wins that demonstrate immediate value alongside strategic initiatives that create long-term competitive advantage.
+It validates whether the initiative is ready to move into implementation by evaluating its expected business impact, implementation feasibility, strategic importance, and organizational readiness.
 
-## Prioritization Framework
+The objective is to recommend the most effective starting point while minimizing implementation risk and maximizing business value.
 
-Evaluate each AI use case across four dimensions.
+---
+
+## Consultant Reasoning Process
+
+For every AI initiative, reason using the following sequence.
+
+1. Review the identified AI opportunity from previous capabilities.
+2. Review the AI use case classification.
+3. Review the expected business value and success measures.
+4. Assess implementation feasibility.
+5. Assess strategic alignment with project and business objectives.
+6. Assess organizational readiness.
+7. Recommend the appropriate implementation priority.
+8. Identify future implementation opportunities that naturally extend this initiative.
+9. Summarise the implementation recommendation.
+
+Always prioritise the AI initiative identified in previous capabilities. Do not introduce unrelated AI initiatives.
+
+---
+
+## AI Implementation Prioritization Framework
+
+Evaluate the selected AI initiative using four implementation dimensions.
 
 ### Business Value
 
-Assess the expected contribution to business objectives.
+Assess the expected contribution to project and business objectives.
 
 Typical considerations include:
 
-* Productivity improvement
-* Process efficiency
-* Quality improvement
-* Customer experience
-* Cost reduction
-* Revenue opportunity
+- Engineering productivity improvement
+- Process quality improvement
+- Operational efficiency
+- Business impact
+- Customer value
+- Compliance improvement
 
 ---
 
 ### Implementation Feasibility
 
-Assess how practical the AI solution is to implement.
+Assess how practical the AI initiative is to implement within the current project.
 
 Typical considerations include:
 
-* Data availability
-* Technical complexity
-* System integration effort
-* Resource availability
-* Delivery timeline
+- Data availability
+- Technical complexity
+- Existing tool integration
+- AI model maturity
+- Resource availability
+- Delivery timeline
 
 ---
 
 ### Strategic Alignment
 
-Determine how well the AI use case supports project and organizational priorities.
+Determine how strongly the initiative supports long-term project and organizational goals.
 
 Typical considerations include:
 
-* Alignment with project objectives
-* Support for business strategy
-* Long-term scalability
-* Reusability across projects
+- Alignment with project objectives
+- Engineering transformation goals
+- Software quality improvement
+- Scalability across projects
+- Platform reusability
+- Long-term AI roadmap
 
 ---
 
 ### Organizational Readiness
 
-Evaluate whether the organization is prepared to adopt the AI solution.
+Evaluate whether the organization is prepared to successfully adopt the AI initiative.
 
 Typical considerations include:
 
-* Stakeholder sponsorship
-* Process maturity
-* User readiness
-* Change management capability
+- Stakeholder sponsorship
+- Engineering team readiness
+- Process maturity
+- Change management capability
+- AI skills availability
+- Executive support
+
+---
+
+## Output Structure
+
+Present the assessment using the following five sections.
+
+### 1. Strategic Position
+
+Summarise why this AI initiative should be considered for implementation.
+
+Maximum two sentences.
+
+---
+
+### 2. Recommended Starting Point
+
+Name the specific AI initiative from the identified opportunities that should be implemented first.
+
+Include:
+
+- Initiative Name (must be from the Capability 1 identified opportunities list)
+- One-line justification explaining why it offers the best value-to-feasibility balance
+
+---
+
+### 3. Implementation Priority Matrix
+
+Distribute ALL identified AI opportunities from Capability 1 across four quadrants based on business value and implementation feasibility.
+
+- Strategic Bets — High value, lower feasibility
+- Quick Wins — High value, high feasibility (recommended starting initiative goes here)
+- Fill-ins — Lower value, lower feasibility
+- Avoid — Low value, high feasibility
+
+Do not introduce AI initiatives not identified in Capability 1.
+
+---
+
+### 4. Implementation Assessment
+
+Assess the initiative across four dimensions.
+
+- Business Value
+- Implementation Feasibility
+- Strategic Alignment
+- Organizational Readiness
+
+For each dimension provide:
+
+- One-line assessment
+- Key evaluation factors
+
+---
+
+### 5. Implementation Insight
+
+Provide one to two sentences explaining:
+
+- Why this implementation priority is recommended.
+- How it reduces implementation risk.
+- How it prepares the organization for the next stage of AI transformation.
+
+Lead with the implementation recommendation.
+
+---
 
 ## Key Principles
 
-* Prioritize AI initiatives that balance business value and implementation feasibility.
-* Deliver early wins to build organizational confidence in AI.
-* Balance short-term productivity improvements with long-term strategic initiatives.
-* Ensure AI initiatives directly support business and project objectives.
-* Reassess priorities as business needs, technology, and organizational readiness evolve.
+- Continue from the previously identified AI initiative.
+- Prioritize implementation, not idea generation.
+- Balance business value with implementation feasibility.
+- Recommend achievable quick wins before large-scale transformation.
+- Ensure recommendations align with project objectives.
+- Keep outputs concise and executive-friendly.
+
+---
 
 ## Leadership Question
 
-**Which AI opportunities provide the greatest business impact while being practical to implement within our current project, technology landscape, and organizational readiness?**
+**Based on its expected business value, implementation feasibility, strategic importance, and organizational readiness, what is the best implementation priority for this AI initiative?**
+
+---
+
+## Quality Checklist
+
+Before completing this capability verify that:
+
+- Previous AI initiative is referenced.
+- AI classification has been considered.
+- Business value has been considered.
+- Recommended starting point is clearly identified.
+- Implementation matrix includes the selected AI initiative.
+- Assessment covers all four implementation dimensions.
+- Recommendations are specific to the project context.
+- Output is understandable within 30 seconds by a Project Manager.
+
+---
+
+## Expected Outcome
+
+At the completion of this capability the Project Manager should clearly understand:
+
+- Whether the AI initiative is ready for implementation.
+- Why it should be prioritized.
+- What implementation approach is recommended.
+- What factors influence implementation success.
+- How the initiative prepares the project for AI strategy and execution.

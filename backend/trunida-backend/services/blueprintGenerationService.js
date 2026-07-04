@@ -422,18 +422,22 @@ SECTION-SPECIFIC EXTRAS — "AI Opportunity Discovery" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Business Value Definition" sections only:
 
+JOURNEY RULE: Look up the primary AI initiative named in the "Primary AI Classification" or strategicPosition of the previous capability in the TRANSFORMATION JOURNEY block.
+The strategicPosition, all value categories, KPIs, and insight MUST be specific to that named initiative (e.g. "AI Traceability Mapping reduces manual traceability effort by...").
+Do NOT describe generic AI value — describe the value of THIS specific initiative for this company.
+
 5. valueCategories (exactly 4 items in this fixed order)
-   Each card describes how this AI use case creates value in one dimension for this company.
+   Each card explains how the primary named initiative creates value in one dimension for this company.
    Order: [0] Engineering Productivity, [1] Engineering Excellence, [2] Project & Operational Performance, [3] Customer & Product Value
-   Each item: { "title": "<category name>", "focus": "<short phrase, e.g. 'Improve engineering team efficiency'>", "outcomes": ["<outcome 1>", "<outcome 2>", "<outcome 3>", "<outcome 4>"] }
-   "outcomes" must be 4 concise company-specific expected outcomes (3–6 words each).
-   "focus" must be short and match the format "Improve [area]" (max 6 words).
+   Each item: { "title": "<category name>", "focus": "<short phrase specific to this initiative, e.g. 'Automate traceability mapping'>", "outcomes": ["<outcome 1>", "<outcome 2>", "<outcome 3>", "<outcome 4>"] }
+   "outcomes" must be 4 concise initiative-specific expected outcomes (3–6 words each).
+   "focus" must be short and initiative-specific (max 6 words).
 
 6. kpiPills (exactly 6 items)
-   Short metric names for the primary measurable KPIs for this AI use case. Each item is a short string (2–5 words) in title case, e.g. "Effort Reduction", "Cycle Time Improvement", "Quality Improvement". Make them specific to this company's context.
+   Short metric names for the primary measurable KPIs for THIS named initiative. Each item is a short string (2–5 words) in title case. Make every KPI specific to what this initiative measures.
 
 7. businessValueInsight (1–2 sentences)
-   A clear, specific statement on how value will be measured and tracked for this AI use case. Lead with the primary expected business outcome.
+   Name the initiative explicitly. State its primary business outcome and how success will be measured for this company.
 
    Add all to the brief object:
    "valueCategories": [...], "kpiPills": [...], "businessValueInsight": "..."`,
@@ -443,23 +447,28 @@ SECTION-SPECIFIC EXTRAS — "Business Value Definition" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Implementation Prioritization" sections only:
 
+JOURNEY RULE: This capability answers "which AI initiative should we implement first?"
+Use ONLY the initiatives from the "Identified AI Opportunities" list in the TRANSFORMATION JOURNEY block — do NOT invent new initiatives.
+Place the primary classified initiative (from Capability 2) in its correct quadrant — Quick Wins if high value + high feasibility, Strategic Bets if high value + lower feasibility.
+Distribute the remaining identified opportunities across the other quadrants based on their relative value and feasibility.
+
 5. recommendedStartingPoint (1 sentence)
-   A concise recommendation for where to begin, emphasising high business value combined with high implementation feasibility for this specific company.
+   Name the specific AI initiative that should be implemented first (from the identified opportunities list) and state why it offers the best balance of business value and implementation feasibility.
 
 6. priorityQuadrants (exactly 4 items in this fixed order)
-   Classify specific AI initiatives for this company into a 2×2 Business Value vs Implementation Feasibility matrix.
+   Distribute ALL identified AI opportunities from Capability 1 across the 2×2 matrix. Use ONLY initiatives from the "Identified AI Opportunities" journey context — do not add unrelated ones.
    Order: [0] Strategic Bets (High Value, Low Feasibility), [1] Quick Wins (High Value, High Feasibility), [2] Fill-ins (Low Value, Low Feasibility), [3] Avoid (Low Value, High Feasibility)
-   Each item: { "id": "<strategic-bets|quick-wins|fill-ins|avoid>", "label": "<quadrant name>", "initiatives": ["<initiative 1>", "<initiative 2>", "<initiative 3>"] }
-   Use 2–4 short initiative names (3–6 words each) specific to this company's industry and context. "Avoid" may use generic low-value examples.
+   Each item: { "id": "<strategic-bets|quick-wins|fill-ins|avoid>", "label": "<quadrant name>", "initiatives": ["<initiative name from identified list>"] }
+   The "Avoid" quadrant may remain empty ([]) if all identified opportunities have positive value.
 
 7. dimensionCards (exactly 4 items in this fixed order)
-   Each card lists 3 company-specific considerations for the given evaluation dimension.
+   Assess the RECOMMENDED STARTING INITIATIVE (from item 5) across the four dimensions. Bullets must be specific to that initiative and this company.
    Order: [0] Business Value, [1] Implementation Feasibility, [2] Strategic Alignment, [3] Organizational Readiness
-   Each item: { "title": "<dimension name>", "bullets": ["<consideration 1>", "<consideration 2>", "<consideration 3>"] }
-   Bullets must be concise 2–4 word labels tailored to this company's industry and use case context.
+   Each item: { "title": "<dimension name>", "bullets": ["<assessment 1>", "<assessment 2>", "<assessment 3>"] }
+   Bullets must be concise 2–4 word labels specific to this initiative and company context.
 
 8. prioritizationInsight (1 sentence)
-   A concise insight for this company explaining how to sequence AI initiatives to build momentum while working toward long-term transformation.
+   Name the recommended initiative explicitly. State why implementing it first builds momentum and prepares the organization for AI transformation.
 
    Add all to the brief object:
    "recommendedStartingPoint": "...", "priorityQuadrants": [...], "dimensionCards": [...], "prioritizationInsight": "..."`,
@@ -469,15 +478,20 @@ SECTION-SPECIFIC EXTRAS — "AI Implementation Prioritization" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Use Case Classification" sections only:
 
+JOURNEY RULE: Review the "Identified AI Opportunities" list in the TRANSFORMATION JOURNEY block.
+Select the FIRST listed opportunity as the primary initiative to classify.
+The strategicPosition MUST open by naming this initiative explicitly (e.g. "AI Traceability Mapping is classified as...").
+All classification rationale and outcomes must be specific to that named initiative — not a generic description of the company.
+
 5. primaryClassification
-   The primary AI classification for this company's most relevant AI use case.
-   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence explaining why this classification applies to this company's initiative>", "businessOutcome": "<1 sentence on the primary business outcome this classification will deliver>" }
+   Classify the primary initiative identified above.
+   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence explaining why THIS specific initiative belongs to this classification>", "businessOutcome": "<1 sentence on the primary business outcome THIS initiative will deliver>" }
 
 6. secondaryClassification (include only if a second classification clearly applies — otherwise omit or set to null)
    Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence>", "businessOutcome": "<1 sentence>" }
 
 7. transformationImplication (1 sentence)
-   A concise insight for this company explaining how classification guides the next steps: business value assessment, prioritization, and implementation planning.
+   A concise insight explaining how classifying THIS specific initiative guides the next steps: business value assessment, prioritization, and implementation planning.
 
    Add all to the brief object:
    "primaryClassification": {...}, "secondaryClassification": {...} or null, "transformationImplication": "..."`,

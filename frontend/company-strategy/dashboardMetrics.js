@@ -12,7 +12,6 @@
 // Canonical capability order — ids match backend toCapabilityId() output.
 export const CAPABILITIES = [
   { id: 'ai-initiative-leadership',    name: 'AI Initiative Leadership' },
-  { id: 'business-strategy-alignment', name: 'Business Strategy Alignment' },
   { id: 'ai-center-of-excellence',     name: 'AI Center of Excellence' },
   { id: 'ai-performance-management',   name: 'AI Performance Management' },
   { id: 'ai-governance-ethics',        name: 'AI Governance & Ethics' },

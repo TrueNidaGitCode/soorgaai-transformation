@@ -37,7 +37,6 @@ The AI Strategy domain consists of four core intelligence areas.
 | Domain                      | Primary Objective                        |
 | --------------------------- | ---------------------------------------- |
 | AI Initiative Leadership    | Lead AI transformation                   |
-| Business Strategy Alignment | Connect AI with business objectives      |
 | AI Operating Model          | Organize people, capabilities, and delivery teams for AI outcomes |
 | AI ROI                      | Measure AI business value and investment returns                  |
 

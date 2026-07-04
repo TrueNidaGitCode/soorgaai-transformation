@@ -388,7 +388,6 @@ export function resetSection(sectionTitle) {
 
 const LIVE_CAPABILITIES = new Set([
   'ai-initiative-leadership',
-  'business-strategy-alignment',
   'ai-operating-model',
   'ai-roi',
   'ai-governance-ethics',

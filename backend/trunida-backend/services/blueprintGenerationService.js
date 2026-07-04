@@ -224,17 +224,26 @@ Commitment metrics measure LEADERSHIP INVESTMENT AND GOVERNANCE HEALTH, not busi
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Solution-Centric Organization" sections only:
 
+JOURNEY RULE: This section organizes the specific AI initiative already established across the journey:
+- AI Opportunity Discovery → the selected initiative and the business problem it solves
+- AI Use Case Classification → its primary classification and discipline
+- Business Value Definition → its expected business value areas and KPIs
+- AI Implementation Prioritization → its recommended starting point and priority
+- AI Initiative Leadership → the vision, aligned teams, and leadership commitment for this initiative
+
+Use "Selected AI Initiative" and "Recommended Implementation" from the TRANSFORMATION CONTEXT. Name the initiative explicitly — do NOT introduce a different AI opportunity.
+The solutionPortfolio must present the SAME initiative structured as an owned business solution (not a portfolio of 3 different initiatives).
+
 5. solutionPortfolio (exactly 3 items)
-   Define 3 AI solutions that directly implement the Strategic Position stated above for this section.
-   Solutions MUST be derived from the Strategic Position text — name each solution after a specific AI initiative, capability, or workflow described in that text.
-   Each item: { "name": "<2–4 word solution name>", "businessOwner": "<role title e.g. Diagnostics Program Lead>", "deliveryTeam": "<teams comma-separated e.g. AI/ML Engineering, Domain Engineering>", "kpis": ["<KPI metric 1>", "<KPI metric 2>"] }
-   Do NOT use generic names like "AI Platform" or "Data Services" — every solution name must reflect the company's specific engineering context.
-   Example for an automotive engineering services company with a diagnostics objective: { "name": "AI Defect Triage", "businessOwner": "Engineering Delivery Lead", "deliveryTeam": "AI/ML Engineering, Domain Engineering", "kpis": ["Triage Effort Reduction", "Classification Accuracy"] }
+   Three views of the selected AI initiative as a deliverable solution — each card represents a different dimension of the same initiative (e.g. core solution, data enabler, integration layer), or three named workstreams within it.
+   Each item: { "name": "<2–4 word solution name>", "businessOwner": "<role title e.g. Test Engineering Manager>", "deliveryTeam": "<teams comma-separated e.g. AI/ML Engineering, Verification & Validation>", "kpis": ["<KPI metric 1>", "<KPI metric 2>"] }
+   Names must be specific to the initiative — not generic labels like "AI Platform" or "Data Services".
+   KPIs must link back to "Target KPIs" and "Expected Business Value" from the TRANSFORMATION CONTEXT.
 
 6. kpiHighlights (exactly 3 items)
-   Extract 3 portfolio-level success metrics showing organizational alignment and dependency reduction.
+   Three portfolio-level success metrics showing how the initiative is organized for delivery impact.
    Each item: { "value": "<number with unit e.g. 100%, 30%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
-   Example: { "value": "100%", "label": "Solutions Linked to Business Outcomes", "description": "Every AI initiative tied to a named business outcome." }
+   Draw from "Target KPIs" in the TRANSFORMATION CONTEXT — do not invent new metrics.
 
    Add both to the brief object:
    "solutionPortfolio": [...], "kpiHighlights": [...]`,
@@ -244,16 +253,23 @@ SECTION-SPECIFIC EXTRAS — "Solution-Centric Organization" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Cross-Functional Delivery Teams" sections only:
 
+JOURNEY RULE: The delivery team is for the specific AI initiative named in the TRANSFORMATION CONTEXT ("Selected AI Initiative"). Build on:
+- AI Use Case Classification → which discipline owns the initiative (e.g. engineering, product, data)
+- AI Initiative Leadership / Alignment → which teams were aligned in the spoke wheel (spokeNodes)
+- AI Implementation Prioritization → the recommended starting point that defines team priorities
+
+Team roles must be specific to delivering THIS initiative — not a generic AI team. Name real disciplines relevant to the initiative.
+
 5. teamRoles (5 to 7 items)
-   Define the key roles forming the cross-functional AI delivery team structure.
-   Each item: { "title": "<role name>", "description": "<1 sentence on their specific responsibility>" }
-   Include roles such as: Product Owner, Business Lead, Data/AI Specialist, Engineering Lead, Domain Expert, Architect, QA/Test.
-   Descriptions must reflect the company's industry context (e.g. automotive engineering, vehicle software).
+   The cross-functional roles needed to deliver THIS specific AI initiative from pilot to operational adoption.
+   Each item: { "title": "<role name>", "description": "<1 sentence on their specific responsibility for this initiative>" }
+   Include business, product, AI/data, engineering, and domain roles appropriate for this initiative's engineering context.
+   Descriptions must reference what each role does for THIS initiative specifically.
 
 6. kpiHighlights (exactly 3 items)
-   Extract 3 team effectiveness metrics reflecting delivery speed and onboarding outcomes.
+   Three team effectiveness metrics for THIS initiative's delivery team.
    Each item: { "value": "<number with unit e.g. +3, 20%, 100%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
-   Example: { "value": "20%", "label": "Cycle Time Reduction", "description": "Faster delivery through cross-functional collaboration." }
+   Focus on delivery speed, coverage, or collaboration quality for THIS initiative.
 
    Add both to the brief object:
    "teamRoles": [...], "kpiHighlights": [...]`,
@@ -263,16 +279,22 @@ SECTION-SPECIFIC EXTRAS — "Cross-Functional Delivery Teams" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "End-to-End Ownership" sections only:
 
+JOURNEY RULE: End-to-end ownership is for delivering and sustaining the specific AI initiative named in the TRANSFORMATION CONTEXT ("Selected AI Initiative"). Connect to:
+- AI Implementation Prioritization → the recommended starting point defines the first lifecycle stage priorities
+- AI Initiative Leadership / Commitment → the governance structure and accountability model from Commitment
+- Business Value Definition → the business value measurement stage should reference the agreed KPIs
+
+Every lifecycle stage must name the specific team or role from the delivery team. Do not use generic placeholder names.
+
 5. lifecycleStages (exactly 6 items)
-   Define the 6 stages of the AI solution lifecycle ownership loop in order.
-   Stages must be: Idea, Build, Test, Deploy, Monitor, Improve
-   Each item: { "stage": "<stage name>", "teamResponsibility": "<1–2 key roles e.g. Product Owner, Business Lead>", "keyActivities": "<5–10 word activity description>" }
-   Example: { "stage": "Deploy", "teamResponsibility": "Engineering Lead, DevOps", "keyActivities": "Release to production with minimal risk" }
+   Six stages of the AI solution lifecycle for THIS initiative, with specific ownership and expected outcomes.
+   Stages in order: Opportunity Definition, Solution Design, AI Development, Validation, Deployment, Business Value Measurement
+   Each item: { "stage": "<stage name>", "teamResponsibility": "<1–2 specific roles from the delivery team>", "keyActivities": "<5–10 word activity description specific to this initiative>" }
+   Activities must reference what happens for THIS initiative at each stage — not generic AI lifecycle steps.
 
 6. kpiHighlights (exactly 3 items)
-   Extract 3 ownership continuity metrics (e.g. single-team ownership, incident resolution speed, improvement cycles).
+   Three ownership continuity metrics showing how end-to-end ownership improves THIS initiative's delivery outcomes.
    Each item: { "value": "<number with unit e.g. 100%, 40%, 2+>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
-   Example: { "value": "40%", "label": "Faster Incident Resolution", "description": "Single-team ownership accelerates fixes and learning." }
 
    Add both to the brief object:
    "lifecycleStages": [...], "kpiHighlights": [...]`,

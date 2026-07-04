@@ -2,139 +2,188 @@
 
 ## Purpose
 
-The AI Operating Model enables organizations to organize people, capabilities, and ways of working to successfully deliver AI business outcomes.
+AI Operating Model is a capability in the AI Strategy domain.
 
-Successful AI transformation requires more than technology investments. Organizations need cross-functional teams that combine business ownership, domain expertise, and technical capabilities to design, develop, deploy, and continuously improve AI-enabled products and services.
+Building upon the selected AI initiative, its expected business value, implementation priority, and leadership commitment established in AI Initiative Leadership, this capability defines how the initiative should be organized and delivered.
 
-Rather than treating AI initiatives as isolated projects, the AI Operating Model establishes long-lived delivery teams that support sustainable business transformation.
+Rather than treating the AI initiative as an isolated project, it establishes a solution-centric delivery model with clear ownership, cross-functional collaboration, and end-to-end accountability to ensure successful implementation and continuous business value realization.
 
----
-
-# Core Principles
-
-A successful AI Operating Model is built upon three fundamental principles:
-
-1. Solution-Centric Organization
-2. Cross-Functional Delivery Teams
-3. End-to-End Ownership
-
-Together, these principles help organizations translate business strategy into measurable business outcomes.
+The outcome of this capability is a practical delivery operating model that enables Project Managers to execute the selected AI initiative with clarity and accountability.
 
 ---
 
-# 1. Solution-Centric Organization
+# 1. AI Operating Model
 
 ## Definition
 
-AI initiatives should be organized around business solutions that create meaningful customer and organizational value.
+AI Operating Model is the structured process of organizing people, roles, responsibilities, and ways of working required to successfully deliver the selected AI initiative.
 
-Rather than aligning work solely to organizational functions, organizations should focus on cohesive business problems and opportunities that can be transformed through AI.
+It translates the implementation recommendation into an executable operating model by defining who owns the solution, which capabilities are required, how delivery teams collaborate, and how ownership is maintained throughout the solution lifecycle.
 
-## Key Principles
-
-* Organize around business outcomes.
-* Align AI initiatives with strategic priorities.
-* Minimize unnecessary dependencies.
-* Focus on customer and business value.
-* Create clear ownership for AI solutions.
-
-## Leadership Question
-
-**Are our AI initiatives organized around meaningful business solutions?**
+The objective is to establish a delivery model that maximizes business value while minimizing organizational complexity and delivery risk.
 
 ---
 
-# 2. Cross-Functional Delivery Teams
+## Consultant Reasoning Process
+
+For every AI initiative, reason using the following sequence.
+
+1. Review the selected AI initiative from AI Opportunity Discovery.
+2. Review the implementation priority and recommended starting point from AI Implementation Prioritization.
+3. Review the leadership vision, alignment, and commitment established in AI Initiative Leadership.
+4. Identify the business solution to be delivered.
+5. Recommend the business owner and delivery ownership.
+6. Define the cross-functional delivery team required.
+7. Define ownership across the complete delivery lifecycle.
+8. Summarize the recommended operating model.
+
+Always organize the exact AI initiative established in previous capabilities. Do not introduce unrelated initiatives.
+
+---
+
+## Operating Model Framework
+
+The AI Operating Model is structured around three delivery principles that together ensure the initiative is organized, staffed, and sustained for successful implementation.
+
+1. Solution-Centric Organization — Organize delivery around the business solution, not the org chart.
+2. Cross-Functional Delivery Teams — Build multidisciplinary teams capable of delivering the complete AI solution.
+3. End-to-End Ownership — Maintain accountability throughout the complete solution lifecycle.
+
+---
+
+# 2. Solution-Centric Organization
 
 ## Definition
 
-Successful AI solutions require collaboration between business and technical experts.
+Solution-Centric Organization defines how the AI initiative is structured as a deliverable business solution with clear ownership, business objectives, and measurable outcomes.
 
-Cross-functional delivery teams combine the skills needed to design, develop, deploy, and improve AI-enabled solutions throughout their lifecycle.
+Rather than assigning the initiative to a functional department, delivery is organized around the specific AI solution being built — ensuring the team understands what they are delivering, who benefits, and how success is measured.
 
-Team composition may vary depending on the solution being developed while maintaining a shared focus on business outcomes.
+### Key Principles
 
-## Key Principles
+- Name the business solution explicitly.
+- Assign a Business Owner accountable for the outcome.
+- Define the primary stakeholders and their relationship to the solution.
+- Link every delivery KPI to the business value already established in the journey.
+- Focus on customer and business outcomes, not technical deliverables.
 
-* Combine business and technical expertise.
-* Build multidisciplinary teams.
-* Adapt team composition to solution needs.
-* Encourage collaboration and shared accountability.
-* Promote agile and iterative delivery.
+### Leadership Question
 
-## Leadership Question
-
-**Do our teams have the right mix of capabilities to successfully deliver AI solutions?**
+**Who owns this AI solution, what business outcome does it deliver, and how will success be measured?**
 
 ---
 
-# 3. End-to-End Ownership
+# 3. Cross-Functional Delivery Teams
 
 ## Definition
 
-AI delivery teams should maintain ownership throughout the entire solution lifecycle.
+Cross-Functional Delivery Teams defines the multidisciplinary team required to successfully implement the AI initiative from development through operational adoption.
 
-Long-lived teams improve continuity, accelerate learning, and enable continuous improvement by maintaining responsibility from concept through production and ongoing optimization.
+No single engineering function can deliver an AI initiative alone. Successful implementation requires business, data, engineering, and domain expertise working together within a defined team structure with clear responsibilities.
+
+### Key Principles
+
+- Include business, product, AI/data, engineering, and domain roles.
+- Align team composition to the complexity of the specific AI initiative.
+- Assign clear responsibilities to each role.
+- Ensure the team can deliver from pilot through operational adoption.
+- Keep team size practical and focused on the initiative.
+
+### Leadership Question
+
+**Who must be on the delivery team, and what is each person responsible for delivering?**
+
+---
+
+# 4. End-to-End Ownership
+
+## Definition
+
+End-to-End Ownership ensures the same delivery team maintains accountability across the complete AI solution lifecycle — from initial opportunity definition through continuous improvement after deployment.
+
+Handoffs between teams are a primary cause of delivery failures, lost knowledge, and reduced business value. Maintaining consistent ownership across the lifecycle preserves engineering knowledge, accelerates problem resolution, and drives continuous improvement.
+
+### Key Principles
+
+- Maintain the same core team from pilot to operational adoption.
+- Define the primary owner and expected outcome for every lifecycle stage.
+- Reduce unnecessary handoffs between teams.
+- Ensure ownership extends beyond deployment to business value measurement.
+- Use lifecycle ownership to drive continuous improvement.
+
+### Leadership Question
+
+**How does the delivery team maintain accountability from opportunity definition through continuous improvement after deployment?**
+
+---
+
+## Output Structure
+
+Present the assessment using the following three sections.
+
+### Solution-Centric Organization
+
+Generate:
+
+- Strategic Position: maximum two sentences describing how the AI initiative is organized as a solution
+- Three named AI solutions derived from the selected initiative (not generic platform solutions)
+- Three portfolio-level success metrics linked to business value from the journey
+
+### Cross-Functional Delivery Teams
+
+Generate:
+
+- Strategic Position: maximum two sentences on team design for this initiative
+- Five to seven delivery roles with specific responsibilities for this initiative
+- Three team effectiveness metrics
+
+### End-to-End Ownership
+
+Generate:
+
+- Strategic Position: maximum two sentences on ownership philosophy for this initiative
+- Six lifecycle stages with primary owner and expected outcome for each
+- Three ownership continuity metrics
+
+---
 
 ## Key Principles
 
-* Maintain long-term ownership.
-* Support continuous delivery and improvement.
-* Reduce unnecessary handoffs.
-* Capture and apply lessons learned.
-* Scale successful capabilities across the organization.
-* Measure ownership continuity by tracking whether solution teams remain intact from development through production and improvement cycles.
+- Continue from the selected AI initiative — never introduce a new one.
+- Organize delivery around the business solution, not the org chart.
+- Build cross-functional teams around customer outcomes.
+- Maintain ownership throughout the solution lifecycle.
+- Reduce unnecessary handoffs between teams.
+- Every recommendation must be practical and executable for a Project Manager.
 
-## Product Owner Continuity
-
-The Product Owner is the single most critical knowledge carrier on an AI delivery team.
-
-They hold the business context, the decision history, the customer relationship, and the evolving understanding of what the solution must become. When a Product Owner leaves or rotates mid-program, this institutional knowledge is lost — and it cannot be fully recovered through documentation alone.
-
-AI programs should treat Product Owner continuity as a governance commitment, not an HR default. Product Owners should be assigned for the full planned lifecycle of the solution — from opportunity identification through production and the first improvement cycle. Rotation or reassignment during active delivery requires a formal knowledge transfer period of at least 6–8 weeks with the incoming Product Owner shadowing before taking ownership.
-
-Organisations that invest in Product Owner stability consistently deliver AI solutions faster, with fewer requirement changes, and with higher business value attribution than those that rotate Product Owners across programs.
+---
 
 ## Leadership Question
 
-**Do our teams own AI solutions from concept to continuous improvement?**
+**How should this AI initiative be organized, owned, and delivered to maximize business value while ensuring clear accountability throughout its lifecycle?**
 
 ---
 
-# AI Operating Model Framework
+## Quality Checklist
 
-```text
-Business Strategy
-        ↓
-Business Solutions
-        ↓
-Cross-Functional Delivery Teams
-        ↓
-End-to-End Ownership
-        ↓
-Continuous Improvement
-        ↓
-Business Outcomes
-```
+Before completing this capability verify that:
+
+- The selected AI initiative from the journey is named throughout — no new initiative introduced.
+- Solution ownership is clearly identified with a named business owner.
+- Cross-functional delivery team is defined with automotive-relevant roles.
+- End-to-end ownership covers all lifecycle stages from opportunity to improvement.
+- Business KPIs link back to values established in Business Value Definition.
+- Output is practical and executable for a Project Manager.
+- Output is understandable within 30 seconds.
 
 ---
 
-# Executive Perspective
+## Expected Outcome
 
-The AI Operating Model helps executive teams answer three fundamental questions.
+At the completion of this capability the Project Manager should clearly understand:
 
-| Principle                     | Executive Question                                          |
-| ----------------------------- | ----------------------------------------------------------- |
-| Solution-Centric Organization | Are we focused on the right business opportunities?         |
-| Cross-Functional Delivery Teams | Do our teams have the capabilities to deliver AI outcomes? |
-| End-to-End Ownership          | Can our teams continuously improve AI business solutions?   |
-
----
-
-# Key Takeaways
-
-* AI transformation should be organized around business solutions.
-* Cross-functional teams combine business and technical expertise.
-* Team composition should adapt to the needs of the solution.
-* Long-lived ownership accelerates learning and continuous improvement.
-* Successful AI operating models translate business strategy into measurable business outcomes.
+- How the AI initiative is organized as a deliverable business solution.
+- Who owns the engineering and business outcomes.
+- Which cross-functional capabilities are required for this specific initiative.
+- How ownership is maintained throughout the complete delivery lifecycle.
+- How the operating model supports continuous business value realization.

@@ -1,189 +1,221 @@
-# Automotive AI Operating Model
+# Automotive AI Delivery Operating Model
 
 **Layer:** Automotive
 
 **Extends:** Core/AI_Operating_Model.md
 
-**Version:** 1.0
+**Version:** 2.0
 
 ---
 
 ## Purpose
 
-This document applies the Core AI Operating Model framework — Solution-Centric Organization, Cross-Functional Delivery Teams, and End-to-End Ownership — to the specific business and operational context of the automotive industry.
+This document applies the Core AI Delivery Operating Model framework to automotive software engineering and product development.
+
+It helps Project Managers organize automotive AI initiatives by defining solution ownership, cross-functional delivery teams, and end-to-end accountability required to successfully deliver measurable engineering and business outcomes.
+
+Automotive AI initiatives often span multiple engineering disciplines including Requirements Engineering, Systems Engineering, Software Development, Verification & Validation, DevOps, Data Engineering, and Project Management. An effective delivery operating model enables these teams to collaborate efficiently while integrating naturally into existing automotive engineering processes.
 
 > For the universal operating model framework, refer to:
-> `Core/AI_Operating_Model.md`
+> `Core/AI_Delivery_Operating_Model.md`
 
 ---
 
-## Automotive Operating Context
+# Automotive AI Delivery Operating Model
 
-The automotive industry is evolving rapidly as organizations respond to increasing product complexity, software-defined vehicles, connected mobility, electrification, changing customer expectations, and global competition.
+## Definition
 
-Traditional functional structures alone may not provide the speed and collaboration required to deliver modern AI-enabled business capabilities.
+Automotive AI Delivery Operating Model is the structured process of organizing people, responsibilities, and engineering workflows required to successfully implement an automotive AI initiative.
 
-Automotive organizations need flexible operating models that combine engineering, manufacturing, business, and digital expertise to solve complex business problems while maintaining quality, safety, and operational excellence.
+It translates an approved AI initiative into a practical delivery model by defining solution ownership, assembling the appropriate cross-functional engineering team, and maintaining accountability throughout the implementation lifecycle.
 
-Artificial Intelligence provides an opportunity to improve collaboration, accelerate decision-making, automate complex activities, and continuously improve business outcomes across the automotive value chain.
-
-An effective AI Operating Model enables organizations to organize people and capabilities around business solutions while supporting long-term ownership and continuous improvement.
+The objective is to deliver AI capabilities that integrate seamlessly into existing automotive engineering processes while creating measurable engineering and business value.
 
 ---
 
-## Solution-Centric Organization in Automotive
+## Consultant Reasoning Process
 
-Automotive AI initiatives should be organized around meaningful business solutions rather than isolated technology projects or organizational silos.
+For every automotive AI initiative, reason using the following sequence.
 
-Business strategy determines which opportunities should be prioritized, while the operating model provides the structure to successfully deliver them.
+1. Review the selected AI initiative.
+2. Review the expected engineering and business value.
+3. Identify the engineering solution to be delivered.
+4. Recommend business and technical ownership.
+5. Define the required cross-functional delivery team.
+6. Establish ownership throughout the engineering lifecycle.
+7. Recommend a delivery operating model that integrates with existing engineering practices.
 
-### Automotive Solution Areas
-
-* Product engineering excellence.
-* Software-defined vehicle development.
-* Vehicle quality improvement.
-* Manufacturing optimization.
-* Supply chain resilience.
-* Connected vehicle services.
-* After-sales excellence.
-* Enterprise productivity.
-
-**Automotive Solution Principle:**
-
-AI transformation should organize teams around business solutions that create measurable customer and organizational value.
-
-### Solution Priority Guidance
-
-Not all solution areas deliver equal value. Automotive AI programs should prioritise based on business impact, organisational readiness, and time-to-value.
-
-| Priority | Solution Area | Rationale |
-| -------- | ------------- | --------- |
-| 1 | Software-defined vehicle development | Highest strategic differentiation; fastest competitive impact |
-| 2 | Product engineering excellence | Broad engineering productivity gains measurable within 6–12 months |
-| 3 | Vehicle quality improvement | Direct cost and customer satisfaction impact |
-| 4 | Manufacturing optimisation | Operational efficiency with high ROI visibility |
-| 5 | Enterprise productivity | Foundation for scaling AI across the organisation |
-
-**Leadership Question:**
-
-*Are we organizing our AI initiatives around the automotive business problems that matter most?*
+Always organize the AI initiative identified in previous capabilities. Do not introduce unrelated automotive AI solutions.
 
 ---
 
-## Cross-Functional Delivery Teams in Automotive
+## Automotive Delivery Operating Model Framework
 
-Successful automotive AI solutions require collaboration across business, engineering, manufacturing, and digital functions.
+Evaluate the selected AI initiative using three operating model principles.
 
-Team composition should adapt to the business solution while combining the expertise required to design, develop, deploy, and continuously improve AI-enabled capabilities.
+### Solution-Centric Organization
 
-### Cross-Functional Capabilities
+Organize delivery around the engineering solution rather than functional departments.
 
-| Capability Area             | Strategic Contribution               |
-| --------------------------- | ------------------------------------ |
-| Product Management          | Customer and business priorities     |
-| Systems Engineering         | Vehicle and system expertise         |
-| Software Engineering        | Digital product delivery             |
-| Verification and Validation | Quality and reliability              |
-| Manufacturing               | Production optimization              |
-| Supply Chain                | Planning and operational resilience  |
-| Data and AI                 | Analytics and intelligent automation |
-| Business Domain Experts     | Process and operational knowledge    |
+Typical considerations include:
 
-### Cross-Functional Principles
+- Engineering solution ownership
+- Business objectives
+- Engineering stakeholders
+- Delivery KPIs
+- Engineering and customer outcomes
 
-* Build multidisciplinary teams.
-* Combine business and technical expertise.
-* Adapt team composition to solution needs.
-* Encourage collaboration and shared accountability.
-* Promote agile and iterative delivery.
+Typical automotive solution areas include:
 
-### Team Composition Guidance
-
-A minimum viable cross-functional AI delivery team for an automotive program should include:
-
-| Role | Responsibility |
-| ---- | -------------- |
-| Business Domain Owner | Defines business objectives and success criteria |
-| Systems or Software Engineer | Provides automotive engineering domain expertise |
-| Data & AI Engineer | Builds and maintains AI models and data pipelines |
-| Product or Delivery Manager | Coordinates delivery and manages stakeholder communication |
-
-Teams scale with program complexity. Larger programs should add specialist roles — V&V, Cybersecurity, Data Governance — as the solution matures beyond pilot phase.
-
-### Delivery Benchmarks
-
-| Team Metric | Target |
-| ----------- | ------ |
-| Business-to-technical ratio | Minimum 1 business domain expert per 3 technical members |
-| Sprint cadence | 2–4 week delivery cycles with demonstrable output each sprint |
-| Time to first valuable output | Demonstrable AI capability within 90 days of team formation |
-
-**Leadership Question:**
-
-*Do our teams have the right combination of automotive and digital capabilities to successfully deliver AI solutions?*
+- Requirements Engineering
+- Software Development
+- Verification & Validation
+- Diagnostics
+- Release Management
+- Engineering Productivity
+- Quality Engineering
+- Connected Vehicle Services
 
 ---
 
-## End-to-End Ownership in Automotive
+### Cross-Functional Delivery Teams
 
-Automotive AI solutions should maintain continuity throughout their lifecycle.
+Assemble multidisciplinary teams capable of delivering the complete AI solution.
 
-Long-lived delivery teams improve collaboration, accelerate learning, and support continuous improvement by maintaining responsibility from opportunity identification through deployment and operational optimization.
+Typical team members include:
 
-### End-to-End Ownership Priorities
+- Product Owner
+- Project Manager
+- Systems Engineer
+- Software Engineer
+- Verification & Validation Engineer
+- AI / Data Engineer
+- DevOps Engineer
+- Solution Architect
+- Automotive Domain Expert
 
-* Maintain business ownership.
-* Support continuous delivery.
-* Reduce unnecessary handoffs.
-* Capture operational learning.
-* Continuously improve AI capabilities.
-* Scale successful solutions across the enterprise.
+Team composition should adapt to the complexity of the AI initiative while ensuring business, engineering, and technical expertise are represented.
 
-### Lifecycle Perspective
+---
 
-```
-Business Opportunity
-        ↓
+### End-to-End Ownership
+
+Maintain ownership throughout the complete engineering lifecycle.
+
+Typical lifecycle stages include:
+
+- AI Opportunity Definition
+- Solution Design
+- AI Development
+- Engineering Validation
+- Production Deployment
+- Business Value Measurement
+- Continuous Improvement
+
+Ownership should remain with the same delivery team wherever practical to preserve engineering knowledge, reduce handoffs, and accelerate continuous improvement.
+
+---
+
+## Key Principles
+
+- Organize delivery around engineering solutions.
+- Assign clear business and technical ownership.
+- Build multidisciplinary engineering teams.
+- Integrate AI delivery into existing Agile, SAFe, ASPICE, and engineering processes.
+- Minimize unnecessary handoffs across engineering functions.
+- Continuously measure engineering and business outcomes.
+- Reuse successful delivery models across vehicle programs and engineering domains.
+
+---
+
+## Leadership Question
+
+**How should this automotive AI initiative be organized, owned, and delivered to maximize engineering value while integrating seamlessly into existing automotive development processes?**
+
+---
+
+## Typical Automotive Delivery Roles
+
+| Role | Primary Responsibility |
+|------|-------------------------|
+| Product Owner | Defines business priorities and accepts delivered capability |
+| Project Manager | Plans, coordinates, and governs delivery |
+| Systems Engineer | Provides requirements and systems expertise |
+| Software Engineer | Integrates AI into engineering workflows |
+| AI / Data Engineer | Develops AI models and supporting data pipelines |
+| Verification & Validation Engineer | Validates AI outputs and engineering quality |
+| DevOps Engineer | Deploys and operates AI services |
+| Automotive Domain Expert | Ensures compliance with engineering standards |
+| Solution Architect | Defines overall solution architecture |
+
+---
+
+## Example Automotive Delivery Model
+
+**AI Initiative:** AI Traceability Mapping
+
+### Solution Owner
+
+Test Engineering Manager
+
+### Project Owner
+
+Project Manager
+
+### Cross-Functional Delivery Team
+
+- Product Owner
+- Systems Engineer
+- AI Engineer
+- Test Automation Engineer
+- Verification & Validation Engineer
+- DevOps Engineer
+- Automotive Domain Expert
+
+### Primary KPIs
+
+- Acceptance Criteria Traceability Rate
+- Test Case Coverage Percentage
+- Manual Effort Reduction
+- Coverage Reporting Timeliness
+- Defects from Untested Criteria
+
+### Delivery Lifecycle
+
+Opportunity Definition
+
+↓
+
 Solution Design
-        ↓
-Development
-        ↓
-Deployment
-        ↓
+
+↓
+
+AI Development
+
+↓
+
+Engineering Validation
+
+↓
+
+Production Deployment
+
+↓
+
+Business Value Measurement
+
+↓
+
 Continuous Improvement
-        ↓
-Business Value
-```
-
-### Ownership Target State
-
-End-to-end ownership is established when:
-
-* Each AI solution has a named owner accountable from concept through production.
-* Solution teams are not disbanded after initial deployment — they own the solution through continuous improvement cycles.
-* Handoffs between development, deployment, and operations are eliminated or minimised to same-team transitions.
-* Each solution has a defined improvement backlog and quarterly business value assessment.
-
-### Continuity Benchmarks
-
-| Ownership Metric | Target |
-| ---------------- | ------ |
-| Handoff reduction | > 50% reduction in cross-team handoffs within 12 months of operating model adoption |
-| Team continuity | > 80% of AI solutions maintained by their original delivery team through production |
-| Time-to-improvement | Average time from issue identification to deployed fix < 30 days |
-| Value review cadence | Quarterly capability and business value review for all production AI solutions |
-
-**Leadership Question:**
-
-*Do our teams maintain ownership of AI solutions throughout the automotive business lifecycle?*
 
 ---
 
-## Key Takeaways
+## Expected Outcome
 
-* Automotive AI transformation requires flexible operating models.
-* Business strategy should determine which opportunities to pursue.
-* AI initiatives should be organized around business solutions.
-* Cross-functional teams combine automotive and digital expertise.
-* Long-term ownership improves quality, learning, and scalability.
-* Successful automotive AI operating models transform business strategy into measurable customer and business outcomes.
+At the completion of this capability the Project Manager should clearly understand:
+
+- How the automotive AI initiative should be organized.
+- Who owns the engineering and business outcomes.
+- Which cross-functional engineering capabilities are required.
+- How ownership is maintained throughout delivery.
+- How the delivery model supports continuous engineering improvement and measurable business value.

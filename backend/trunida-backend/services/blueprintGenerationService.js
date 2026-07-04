@@ -1646,7 +1646,7 @@ function buildOutputFormat(parsedSections) {
 // Generates section.brief in a single LLM call per capability.
 // CTO extras (strategicPillars etc.) are injected into this call when enabled.
 
-function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null }) {
+function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null }) {
   const sectionList   = parsedSections.map((s, i) => {
     let entry = `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`;
     if (s.consultantGuide) entry += `\n\n   CONSULTANT METHODOLOGY:\n${s.consultantGuide}`;
@@ -1713,8 +1713,12 @@ HARD RULES:
 
 ${buildOutputFormat(parsedSections)}`;
 
-  const journeyBlock = journeyContext
-    ? `TRANSFORMATION JOURNEY — PRIOR CAPABILITIES:\n${journeyContext}\n\nBuild directly on the opportunity and context established above. The specific AI opportunity identified in discovery is the use case being assessed here — do not invent a different one.\n\n`
+  const ctxBlock      = transformationCtx ? formatTransformationContext(transformationCtx) : '';
+  const insightsBlock = journeyContext
+    ? `\n\n==============================\nPREVIOUS CAPABILITY INSIGHTS\n==============================\n${journeyContext}`
+    : '';
+  const journeyBlock  = (ctxBlock || insightsBlock)
+    ? `${ctxBlock}${insightsBlock}\n\nBuild directly on the initiative and context established above. Do not invent a different AI opportunity or initiative.\n\n`
     : '';
 
   const userMessage = `${enterpriseContext ? `${enterpriseContext}\n\n` : ''}${journeyBlock}CAPABILITY SECTIONS TO GENERATE (${parsedSections.length} sections):
@@ -1729,7 +1733,7 @@ Generate the Strategy Brief JSON for all ${parsedSections.length} sections: ${se
   return { systemPrompt, userMessage };
 }
 
-async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null) {
+async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null) {
   const { systemPrompt, userMessage } = buildBriefPrompt({
     companyName:         companyProfile.companyName,
     industry,
@@ -1741,6 +1745,7 @@ async function runBriefGeneration(cap, companyProfile, businessObjective, indust
     automotiveBlueprint: automotiveBlueprint || '',
     enterpriseContext:   enterpriseContext || '',
     journeyContext:      journeyContext || null,
+    transformationCtx:   transformationCtx || null,
   });
 
   const timeoutMs = Math.max(120_000, parsedSections.length * 60_000);
@@ -1755,7 +1760,7 @@ async function runBriefGeneration(cap, companyProfile, businessObjective, indust
 // Step 2 extracts the structured brief from that prose.
 // CTO extras are injected into Step 2 when enabled.
 
-function buildEssayPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null }) {
+function buildEssayPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null }) {
   const sectionList   = parsedSections.map((s, i) => {
     let entry = `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`;
     if (s.consultantGuide) entry += `\n\n   CONSULTANT METHODOLOGY:\n${s.consultantGuide}`;
@@ -1780,8 +1785,12 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanati
   ]
 }`;
 
-  const journeyBlock = journeyContext
-    ? `TRANSFORMATION JOURNEY — PRIOR CAPABILITIES:\n${journeyContext}\n\nBuild directly on the opportunity and context established above.\n\n`
+  const ctxBlock      = transformationCtx ? formatTransformationContext(transformationCtx) : '';
+  const insightsBlock = journeyContext
+    ? `\n\n==============================\nPREVIOUS CAPABILITY INSIGHTS\n==============================\n${journeyContext}`
+    : '';
+  const journeyBlock  = (ctxBlock || insightsBlock)
+    ? `${ctxBlock}${insightsBlock}\n\nBuild directly on the initiative and context established above. Do not invent a different AI opportunity or initiative.\n\n`
     : '';
 
   const userMessage = `${enterpriseContext ? `${enterpriseContext}\n\n` : ''}${journeyBlock}COMPANY CONTEXT:
@@ -1854,7 +1863,7 @@ Extract the structured Strategy Brief for all ${parsedSections.length} sections.
   return { systemPrompt, userMessage };
 }
 
-async function runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null) {
+async function runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null) {
   const { systemPrompt, userMessage } = buildEssayPrompt({
     companyName:         companyProfile.companyName,
     industry,
@@ -1866,6 +1875,7 @@ async function runEssayGeneration(cap, companyProfile, businessObjective, indust
     automotiveBlueprint: automotiveBlueprint || '',
     enterpriseContext:   enterpriseContext || '',
     journeyContext:      journeyContext || null,
+    transformationCtx:   transformationCtx || null,
   });
 
   // Essays are longer — allow 90 s per section
@@ -2177,14 +2187,15 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
       ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
       : null;
 
-    // Build journey context from capabilities already completed before this one
-    const blueprintDoc   = await TransformationBlueprint.findById(blueprintId).lean();
-    const journeyContext = buildJourneyContextForRegen(blueprintDoc, domainId, resolvedCapabilityId);
-    console.log(`[transformationGen] Journey context for ${cap.name}: ${journeyContext ? 'AVAILABLE' : 'NONE'}`);
+    // Build both context structures from capabilities completed before this one
+    const blueprintDoc      = await TransformationBlueprint.findById(blueprintId).lean();
+    const journeyContext    = buildJourneyContextForRegen(blueprintDoc, domainId, resolvedCapabilityId);
+    const transformationCtx = buildTransformationCtxForRegen(blueprintDoc, domainId, resolvedCapabilityId, businessObjective);
+    console.log(`[transformationGen] Journey context for ${cap.name}: ${journeyContext ? 'AVAILABLE' : 'NONE'} | Ctx initiative: ${transformationCtx.selectedInitiative || 'none'}`);
 
     const sections = await runBriefGeneration(
       cap, companyProfile, businessObjective, industry,
-      capBlueprint.sections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext
+      capBlueprint.sections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext, transformationCtx
     );
 
     // DEBUG: log extra fields so we can confirm LLM is generating them
@@ -2352,6 +2363,93 @@ function extractJourneyContext(capabilityName, sections) {
   return lines.join('\n');
 }
 
+// Updates the shared transformation context object from a single capability's sections.
+// Called after each capability in the journey chain so downstream capabilities always
+// know the selected initiative, classification, value areas, and implementation priority.
+function updateTransformationContext(ctx, capabilityName, sections) {
+  for (const s of sections) {
+    const b = s.brief || {};
+    // C1: first identified opportunity becomes the selected initiative
+    if (b.aiOpportunities?.length && !ctx.selectedInitiative)
+      ctx.selectedInitiative = b.aiOpportunities[0];
+    // C2: classification details
+    if (b.primaryClassification?.name)
+      ctx.primaryClassification = b.primaryClassification.name;
+    if (b.secondaryClassification?.name)
+      ctx.secondaryClassification = b.secondaryClassification.name;
+    if (b.transformationImplication)
+      ctx.transformationImplication = b.transformationImplication;
+    // C3: value areas and KPIs
+    if (b.valueCategories?.length)
+      ctx.businessValueAreas = b.valueCategories.map(v => v.title);
+    if (b.kpiPills?.length)
+      ctx.targetKPIs = b.kpiPills;
+    // C4: priority quadrant and implementation recommendation
+    if (b.recommendedStartingPoint)
+      ctx.recommendedImplementation = b.recommendedStartingPoint;
+    if (b.priorityQuadrants?.length && ctx.selectedInitiative) {
+      const keyword = ctx.selectedInitiative.toLowerCase().split(' ')[0];
+      for (const q of b.priorityQuadrants) {
+        const hit = (q.initiatives || []).some(
+          i => i && (i.toLowerCase().includes(keyword) || keyword.includes(i.toLowerCase().split(' ')[0]))
+        );
+        if (hit) { ctx.implementationPriority = q.label; break; }
+      }
+    }
+  }
+}
+
+// Serialises the transformation context into the structured block prepended to every LLM prompt.
+function formatTransformationContext(ctx) {
+  const entries = [
+    ctx.businessObjective         && `Business Objective\n${ctx.businessObjective}`,
+    ctx.selectedInitiative        && `Selected AI Initiative\n${ctx.selectedInitiative}`,
+    ctx.primaryClassification     && `Primary Classification\n${ctx.primaryClassification}`,
+    ctx.secondaryClassification   && `Secondary Classification\n${ctx.secondaryClassification}`,
+    ctx.businessValueAreas?.length && `Expected Business Value\n${ctx.businessValueAreas.join('\n')}`,
+    ctx.targetKPIs?.length        && `Target KPIs\n${ctx.targetKPIs.join('\n')}`,
+    ctx.implementationPriority    && `Implementation Priority\n${ctx.implementationPriority}`,
+    ctx.recommendedImplementation && `Recommended Implementation\n${ctx.recommendedImplementation}`,
+    ctx.transformationImplication && `Transformation Implication\n${ctx.transformationImplication}`,
+  ].filter(Boolean);
+
+  if (!entries.length) return '';
+  return ['==============================', 'TRANSFORMATION CONTEXT', '==============================', '', ...entries].join('\n');
+}
+
+// Builds the transformation context for a single-capability regeneration by replaying
+// updateTransformationContext over all capabilities completed before the target.
+function buildTransformationCtxForRegen(blueprint, currentDomainId, resolvedCapabilityId, businessObjective) {
+  const ctx = {
+    businessObjective:       businessObjective || '',
+    selectedInitiative:      '',
+    primaryClassification:   '',
+    secondaryClassification: '',
+    businessValueAreas:      [],
+    targetKPIs:              [],
+    implementationPriority:  '',
+    recommendedImplementation: '',
+    transformationImplication: '',
+  };
+  if (!blueprint) return ctx;
+
+  for (const domEntry of enabledDomains()) {
+    const domDoc = (blueprint.domains || []).find(d => d.domainId === domEntry.id);
+    const kbCaps = getDomainCapabilities(domEntry.kbPath);
+
+    for (const kbCap of kbCaps) {
+      if (domEntry.id === currentDomainId && kbCap.id === resolvedCapabilityId) break;
+      const dbCap = domDoc?.capabilities?.find(c => c.capabilityId === kbCap.id);
+      if (dbCap?.status === 'completed' && dbCap.sections?.length)
+        updateTransformationContext(ctx, dbCap.capabilityName, dbCap.sections);
+    }
+
+    if (domEntry.id === currentDomainId) break;
+  }
+
+  return ctx;
+}
+
 // Builds the journey context string for a single-capability regeneration call.
 // Iterates the blueprint's domains/capabilities in KB-defined order, collecting
 // extractJourneyContext output for every capability that completed before the
@@ -2393,6 +2491,21 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
   // full context of everything generated before it across the entire blueprint.
   // Domain order in domainRegistry.js defines the chain sequence.
   const journeyContextParts = [];
+
+  // Transformation Context: a structured key-facts block that accumulates the
+  // selected initiative, classification, KPIs, and priority so every downstream
+  // capability knows exactly what was decided — without having to infer it.
+  const transformationCtx = {
+    businessObjective:       businessObjective || '',
+    selectedInitiative:      '',
+    primaryClassification:   '',
+    secondaryClassification: '',
+    businessValueAreas:      [],
+    targetKPIs:              [],
+    implementationPriority:  '',
+    recommendedImplementation: '',
+    transformationImplication: '',
+  };
 
   for (const domain of domains) {
     const caps = getDomainCapabilities(domain.kbPath);
@@ -2444,18 +2557,19 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         if (BLUEPRINT_CONFIG.generate.essay) {
           const essays = await runEssayGeneration(
             capObj, companyProfile, businessObjective, industry,
-            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext
+            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext, transformationCtx
           );
           sections = await runBriefExtraction(capObj, parsedSections, essays);
         } else {
           sections = await runBriefGeneration(
             capObj, companyProfile, businessObjective, industry,
-            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext
+            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext, transformationCtx
           );
         }
 
-        // Feed this capability's output into the journey context for the next capability
+        // Feed this capability's output into both accumulators for the next capability
         journeyContextParts.push(extractJourneyContext(cap.name, sections));
+        updateTransformationContext(transformationCtx, cap.name, sections);
 
         await TransformationBlueprint.updateOne(
           { _id: blueprintId },

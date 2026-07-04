@@ -21,6 +21,14 @@ const API_BASE = window.CONFIG?.API_BASE
 
 function getToken() { return localStorage.getItem('token'); }
 
+// ── Capability name aliases ───────────────────────────────────────────────────
+// Maps old DB-stored names to current display names so existing blueprints
+// show the correct name without requiring regeneration.
+const CAPABILITY_NAME_ALIASES = {
+  'AI Use Case Prioritization': 'AI Implementation Prioritization',
+};
+function resolveCapName(name) { return CAPABILITY_NAME_ALIASES[name] || name; }
+
 // ── View mode ─────────────────────────────────────────────────────────────────
 // Controls which renderer the product ships. Match this to BLUEPRINT_CONFIG.activeView
 // in backend/config/blueprintConfig.js when toggling between views.
@@ -198,7 +206,7 @@ function renderCapabilityTabs(blueprint) {
     tab.dataset.idx = idx;
 
     const dotClass = `cap-nav__tab-dot--${cap.status === 'in-progress' ? 'progress' : cap.status}`;
-    tab.innerHTML = `<span class="cap-nav__tab-dot ${dotClass}" aria-hidden="true"></span>${cap.capabilityName}`;
+    tab.innerHTML = `<span class="cap-nav__tab-dot ${dotClass}" aria-hidden="true"></span>${resolveCapName(cap.capabilityName)}`;
 
     tab.addEventListener('click', () => selectCapability(idx));
     nav.appendChild(tab);
@@ -297,7 +305,7 @@ function renderBlueprintContent(blueprint, capIdx) {
   header.className = 'bp-cap-header';
   const capTitle = document.createElement('h2');
   capTitle.className = 'bp-cap-title';
-  capTitle.textContent = cap.capabilityName;
+  capTitle.textContent = resolveCapName(cap.capabilityName);
   header.appendChild(capTitle);
   if (cap.status === 'completed') {
     const regenBtn = document.createElement('button');
@@ -5007,8 +5015,8 @@ function buildSectionCard(blueprint, cap, section) {
   // Header
   const header = document.createElement('div');
   header.className = 'bp-section__header';
-  const titleHtml = section.title !== cap.capabilityName
-    ? `<h3 class="bp-section__title">${section.title}</h3>`
+  const titleHtml = resolveCapName(section.title) !== resolveCapName(cap.capabilityName)
+    ? `<h3 class="bp-section__title">${resolveCapName(section.title)}</h3>`
     : '';
   header.innerHTML = `
     ${titleHtml}
@@ -5067,7 +5075,7 @@ function buildSectionCard(blueprint, cap, section) {
       card.appendChild(buildClassificationView(section));
     } else if (section.title === 'Business Value Definition') {
       card.appendChild(buildBusinessValueDefinitionView(section));
-    } else if (section.title === 'AI Implementation Prioritization') {
+    } else if (section.title === 'AI Implementation Prioritization' || section.title === 'AI Use Case Prioritization') {
       card.appendChild(buildPrioritizationView(section));
     } else if (section.title === 'Critical Data Identification') {
       card.appendChild(buildCriticalDataLayout(section));

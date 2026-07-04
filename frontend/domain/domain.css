@@ -3154,10 +3154,9 @@
 
 /* 1. Vision Statement */
 .vision-statement__text {
-  font-size: 1.08rem;
-  font-weight: 500;
-  color: rgba(255,255,255,0.88);
-  line-height: 1.75;
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.65;
   margin: 0;
 }
 

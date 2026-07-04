@@ -1,147 +1,209 @@
-# Automotive AI Use Case Prioritization
+# Automotive AI Implementation Prioritization
 
 **Layer:** Automotive
-**Extends:** Core/AI_Use_Case_Prioritization.md
-**Version:** 2.0
+**Extends:** Core/AI_Implementation_Prioritization.md
+**Version:** 3.0
 
 ---
 
 ## Purpose
 
-This document applies the Core AI Use Case Prioritization framework to automotive software engineering and product development. It helps Project Managers and Product Managers prioritize AI opportunities based on engineering impact, implementation feasibility, strategic importance, and organizational readiness.
+This document applies the Core AI Implementation Prioritization framework to automotive software engineering and product development.
 
-Automotive software programs often generate numerous AI opportunities across requirements engineering, software development, testing, diagnostics, and project management. Prioritization ensures that engineering teams focus on AI initiatives that deliver measurable value while remaining practical to implement within existing programs.
+Building upon the previously identified AI initiative, its classification, and expected business value, this capability helps Project Managers determine the most appropriate implementation priority within an automotive software program.
 
-> For the universal prioritization framework, refer to: `Core/AI_Use_Case_Prioritization.md`
+Rather than identifying new AI opportunities, it evaluates whether the selected AI initiative should be implemented immediately, phased into the roadmap, or deferred based on engineering impact, implementation feasibility, strategic importance, and organizational readiness.
 
----
-
-## AI Use Case Prioritization in Automotive
-
-Automotive AI initiatives should be prioritized by balancing engineering value with implementation complexity. While many opportunities may appear valuable, successful AI adoption typically begins with initiatives that leverage existing engineering data, integrate into established workflows, and solve recurring engineering challenges.
-
-Project Managers should establish an AI implementation roadmap that delivers quick wins while building the organizational capability to support larger, more strategic AI initiatives.
-
-### Prioritization Framework
-
-#### Business Value
-
-Prioritize AI opportunities that deliver measurable improvements to engineering and project outcomes.
-
-Typical considerations include:
-
-* Reduced engineering effort
-* Faster software delivery
-* Improved software quality
-* Reduced defect leakage
-* Better project visibility
-* Improved customer satisfaction
+> For the universal implementation prioritization framework, refer to:
+> `Core/AI_Implementation_Prioritization.md`
 
 ---
 
-#### Implementation Feasibility
+# AI Implementation Prioritization in Automotive
 
-Assess how easily the AI solution can be developed and integrated into existing engineering environments.
+Automotive software programs operate within complex engineering environments involving multiple development teams, safety requirements, established engineering toolchains, and large volumes of historical project data.
 
-Typical considerations include:
+Once an AI initiative has been identified, the next decision is determining how it should be introduced into the engineering organization with the highest probability of success.
 
-* Availability of historical engineering data
-* Quality of Jira, Polarion, DOORS, ALM or test data
-* Integration with existing engineering tools
-* AI model complexity
-* Development effort
-* Infrastructure readiness
+Successful implementation usually begins with initiatives that:
 
----
+- solve recurring engineering problems
+- use existing engineering data
+- integrate naturally into current engineering workflows
+- require minimal organizational disruption
+- produce measurable business outcomes within a short timeframe
 
-#### Strategic Alignment
-
-Ensure the AI initiative supports both project objectives and broader organisational goals.
-
-Typical considerations include:
-
-* Alignment with project milestones
-* Support for quality improvement initiatives
-* Contribution to software-defined vehicle programs
-* Reusability across multiple vehicle programs
-* Alignment with enterprise AI strategy
+Project Managers should evaluate implementation readiness before committing engineering investment.
 
 ---
 
-#### Organisational Readiness
+## Consultant Reasoning Process
 
-Evaluate whether engineering teams are prepared to adopt and operationalise the AI solution.
+For every automotive AI initiative:
 
-Typical considerations include:
+1. Review the AI opportunity identified in previous capabilities.
+2. Review its primary and secondary AI classifications.
+3. Review the expected business value and KPIs.
+4. Assess implementation feasibility within the current engineering environment.
+5. Assess alignment with project delivery objectives.
+6. Evaluate organizational readiness across engineering teams.
+7. Recommend the most appropriate implementation priority.
+8. Identify logical future AI initiatives that naturally extend the selected implementation.
+9. Summarize the implementation recommendation.
 
-* Executive sponsorship
-* Engineering team acceptance
-* Process maturity
-* Availability of AI skills
-* Change management readiness
+Always prioritize the AI initiative identified in previous capabilities.
 
-### Key Principles
-
-* Begin with engineering workflows that have high manual effort and readily available historical data.
-* Prioritize AI initiatives that integrate naturally into existing engineering processes.
-* Deliver quick wins to build confidence and encourage wider AI adoption.
-* Balance short-term productivity improvements with long-term engineering transformation.
-* Select AI opportunities that can be reused across projects, vehicle platforms, or engineering teams.
-
-### Leadership Question
-
-**Which AI opportunities deliver the greatest engineering impact while being practical to implement using our existing engineering data, tools, and team capabilities?**
+Do not replace it with unrelated automotive AI examples.
 
 ---
 
-## Typical Automotive AI Prioritization
+## Automotive Implementation Framework
 
-| AI Opportunity | Business Value | Feasibility | Typical Priority |
-|---|---|---|---|
-| AI Bug Pre-analysis | High | High | High |
-| Engineering Knowledge Assistant | High | High | High |
-| Requirements Summarisation | Medium | High | High |
-| Intelligent Defect Triage | High | Medium | High |
-| Test Case Generation | High | Medium | High |
-| Regression Impact Analysis | High | Medium | Medium |
-| Release Risk Prediction | High | Medium | Medium |
-| Supplier Quality Intelligence | Medium | Medium | Medium |
-| Predictive Maintenance | High | Low | Medium |
-| AI Vehicle Assistant | High | Low | Low |
-| Driver Personalisation | Medium | Low | Low |
+### Step 1 — Evaluate Engineering Business Value
+
+Determine whether the AI initiative creates measurable improvements in engineering performance.
+
+Typical considerations:
+
+- Engineering productivity
+- Software quality
+- Test effectiveness
+- Delivery predictability
+- Engineering compliance
+- Customer quality
 
 ---
 
-## Recommended AI Adoption Roadmap
+### Step 2 — Evaluate Implementation Feasibility
 
-### Phase 1 — Quick Wins
+Determine whether the organization can realistically implement the initiative using existing engineering assets.
 
-Focus on Productivity AI initiatives that use existing engineering data and require minimal process change.
+Typical considerations:
 
-Examples:
-* AI Bug Pre-analysis
-* Requirements Summarisation
-* Engineering Knowledge Assistant
-* Meeting and Documentation Summaries
+- Historical engineering data availability
+- Jira / Polarion / DOORS / ALM quality
+- Existing engineering workflows
+- Integration complexity
+- AI model maturity
+- Engineering resources
 
-### Phase 2 — Process Transformation
+---
 
-Expand into Functional AI initiatives that improve engineering processes and decision-making.
+### Step 3 — Evaluate Strategic Alignment
 
-Examples:
-* Intelligent Defect Triage
-* Test Optimisation
-* Regression Impact Analysis
-* Release Risk Prediction
-* Supplier Quality Intelligence
+Determine whether the initiative supports long-term engineering and business objectives.
 
-### Phase 3 — Product Innovation
+Typical considerations:
 
-Invest in Product AI initiatives that create new customer-facing capabilities and competitive differentiation.
+- Project objectives
+- Release milestones
+- Engineering excellence
+- Software-defined vehicle initiatives
+- Enterprise AI roadmap
+- Reusability across projects
 
-Examples:
-* Predictive Maintenance
-* Intelligent Vehicle Assistant
-* AI Diagnostics
-* Driver Personalisation
-* Connected Vehicle Intelligence
+---
+
+### Step 4 — Evaluate Organizational Readiness
+
+Assess whether engineering teams are prepared to successfully adopt the AI initiative.
+
+Typical considerations:
+
+- Executive sponsorship
+- Engineering ownership
+- Process maturity
+- AI capability
+- Change readiness
+- Cross-functional collaboration
+
+---
+
+## Typical Automotive Implementation Priorities
+
+The following illustrates how implementation priorities are commonly assigned within automotive software programs.
+
+| Implementation Priority | Typical Characteristics | Automotive Examples |
+|---|---|---|
+| **Quick Wins** | High value, high feasibility, minimal workflow change | AI Bug Pre-analysis, Engineering Knowledge Assistant, Requirements Summarization |
+| **Strategic Investments** | High business value requiring broader integration | Intelligent Defect Triage, Test Case Generation, Regression Impact Analysis |
+| **Incremental Improvements** | Moderate value delivered through phased adoption | Release Risk Prediction, Supplier Quality Intelligence |
+| **Future Opportunities** | High strategic potential requiring significant organizational maturity | Predictive Maintenance, Intelligent Vehicle Assistant, Connected Vehicle Intelligence |
+
+---
+
+## Recommended Automotive Implementation Approach
+
+### Phase 1 — Engineering Productivity
+
+Implement AI initiatives that deliver measurable value with minimal disruption.
+
+Typical examples:
+
+- AI Bug Pre-analysis
+- Engineering Knowledge Assistant
+- Requirements Summarization
+- Meeting Summaries
+
+Expected outcome:
+
+- Faster engineering activities
+- Reduced manual effort
+- Improved engineering confidence
+
+---
+
+### Phase 2 — Engineering Process Transformation
+
+Expand into AI initiatives that improve engineering processes and delivery performance.
+
+Typical examples:
+
+- Intelligent Defect Triage
+- Test Case Generation
+- Regression Impact Analysis
+- Release Risk Prediction
+- Traceability Validation
+
+Expected outcome:
+
+- Higher engineering quality
+- Improved delivery predictability
+- Better engineering governance
+
+---
+
+### Phase 3 — Intelligent Product Capabilities
+
+Implement AI initiatives that differentiate automotive products and customer experiences.
+
+Typical examples:
+
+- Predictive Maintenance
+- Intelligent Diagnostics
+- Vehicle Assistant
+- Driver Personalization
+- Connected Vehicle Intelligence
+
+Expected outcome:
+
+- Enhanced customer experience
+- Improved software quality
+- Competitive differentiation
+
+---
+
+## Key Principles
+
+- Continue from the AI initiative identified in previous capabilities.
+- Prioritize implementation readiness rather than discovering additional AI opportunities.
+- Deliver engineering quick wins before enterprise-scale transformation.
+- Balance implementation risk with measurable business value.
+- Build organizational confidence through incremental AI adoption.
+- Ensure every implementation contributes to the long-term AI transformation roadmap.
+
+---
+
+## Leadership Question
+
+**Given the identified AI initiative, what implementation priority delivers the greatest engineering value while remaining practical within our current automotive engineering environment?**

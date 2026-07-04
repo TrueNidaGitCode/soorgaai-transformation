@@ -2022,8 +2022,12 @@ function buildBusinessValueDefinitionView(section) {
   const wrap = document.createElement('div');
   wrap.className = 'bvd-view';
 
-  // Intro quote (strategic position)
+  // Strategic Position
   if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
     const quote = document.createElement('div');
     quote.className = 'bvd-quote';
     const p = document.createElement('p');
@@ -2057,6 +2061,10 @@ function buildBusinessValueDefinitionView(section) {
 
   // KPI pills
   if (kpiPills.length) {
+    const kpiLabel = document.createElement('p');
+    kpiLabel.className = 'brief-label';
+    kpiLabel.textContent = 'Key Performance Indicators';
+    wrap.appendChild(kpiLabel);
     const pillsWrap = document.createElement('div');
     pillsWrap.className = 'bvd-kpi-pills';
     kpiPills.forEach(pill => {
@@ -2070,6 +2078,10 @@ function buildBusinessValueDefinitionView(section) {
 
   // Insight footer
   if (insight) {
+    const insightLabel = document.createElement('p');
+    insightLabel.className = 'brief-label';
+    insightLabel.textContent = 'Business Value Insight';
+    wrap.appendChild(insightLabel);
     const footer = document.createElement('div');
     footer.className = 'bvd-insight';
     const icon = document.createElement('span');

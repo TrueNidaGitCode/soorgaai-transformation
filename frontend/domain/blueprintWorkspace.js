@@ -29,6 +29,17 @@ const CAPABILITY_NAME_ALIASES = {
 };
 function resolveCapName(name) { return CAPABILITY_NAME_ALIASES[name] || name; }
 
+// ── Capability accent colours ─────────────────────────────────────────────────
+// Each capability step in the journey gets its own accent colour. The colour is
+// set as --cap-accent on .ws-right-panel so it flows into the tab underline,
+// step badge, brief-labels, and the cap-header left bar.
+const CAP_ACCENT_COLORS = ['#5CC5A7', '#818CF8', '#F59E0B', '#60A5FA', '#F472B6', '#34D399'];
+
+function applyCapAccent(capIdx) {
+  const color = CAP_ACCENT_COLORS[capIdx % CAP_ACCENT_COLORS.length];
+  document.querySelector('.ws-right-panel')?.style.setProperty('--cap-accent', color);
+}
+
 // ── View mode ─────────────────────────────────────────────────────────────────
 // Controls which renderer the product ships. Match this to BLUEPRINT_CONFIG.activeView
 // in backend/config/blueprintConfig.js when toggling between views.
@@ -195,22 +206,42 @@ function selectDomain(idx) {
 // ── Capability tabs ───────────────────────────────────────────────────────────
 
 function renderCapabilityTabs(blueprint) {
-  const nav = document.getElementById('cap-nav');
+  const nav    = document.getElementById('cap-nav');
+  const header = document.getElementById('cap-journey-header');
   if (!nav) return;
   nav.innerHTML = '';
 
-  const dom = (blueprint.domains || [])[_selectedDomainIdx];
-  (dom?.capabilities || []).forEach((cap, idx) => {
+  const dom  = (blueprint.domains || [])[_selectedDomainIdx];
+  const caps = dom?.capabilities || [];
+
+  // Journey header: label + "Step N of M" counter
+  if (header) {
+    if (caps.length) {
+      header.innerHTML =
+        `<span class="cap-journey-label">Transformation Journey</span>` +
+        `<span class="cap-step-counter">Step ${_selectedCapIndex + 1} of ${caps.length}</span>`;
+    } else {
+      header.innerHTML = '';
+    }
+  }
+
+  caps.forEach((cap, idx) => {
     const tab = document.createElement('button');
     tab.className = `cap-nav__tab${idx === _selectedCapIndex ? ' is-active' : ''}`;
     tab.dataset.idx = idx;
 
-    const dotClass = `cap-nav__tab-dot--${cap.status === 'in-progress' ? 'progress' : cap.status}`;
-    tab.innerHTML = `<span class="cap-nav__tab-dot ${dotClass}" aria-hidden="true"></span>${resolveCapName(cap.capabilityName)}`;
+    const dotClass  = `cap-nav__tab-dot--${cap.status === 'in-progress' ? 'progress' : cap.status}`;
+    const stepLabel = String(idx + 1).padStart(2, '0');
+    tab.innerHTML =
+      `<span class="cap-nav__step-badge" aria-hidden="true">${stepLabel}</span>` +
+      `<span class="cap-nav__tab-dot ${dotClass}" aria-hidden="true"></span>` +
+      resolveCapName(cap.capabilityName);
 
     tab.addEventListener('click', () => selectCapability(idx));
     nav.appendChild(tab);
   });
+
+  applyCapAccent(_selectedCapIndex);
 }
 
 // ── One-time feedback card ─────────────────────────────────────────────────────
@@ -279,6 +310,14 @@ function selectCapability(idx) {
   document.querySelectorAll('.cap-nav__tab').forEach((t, i) => {
     t.classList.toggle('is-active', i === idx);
   });
+
+  // Update step counter in journey header
+  const caps = currentDomain()?.capabilities || [];
+  const counter = document.querySelector('.cap-step-counter');
+  if (counter && caps.length) counter.textContent = `Step ${idx + 1} of ${caps.length}`;
+
+  // Apply per-capability accent colour
+  applyCapAccent(idx);
 
   renderBlueprintContent(_blueprint, idx);
   // Chat is blueprint-wide — no restoreChat() on tab switch, history stays visible

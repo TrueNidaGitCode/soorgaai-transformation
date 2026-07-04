@@ -2914,8 +2914,8 @@
 }
 .cap-nav__tab:hover { color: rgba(255,255,255,0.8); }
 .cap-nav__tab.is-active {
-  color: #5CC5A7;
-  border-bottom-color: #5CC5A7;
+  color: var(--cap-accent, #5CC5A7);
+  border-bottom-color: var(--cap-accent, #5CC5A7);
 }
 
 .cap-nav__tab-dot {
@@ -8845,4 +8845,93 @@
   letter-spacing: 0.11em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.52);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Capability accent colour system
+   --cap-accent is set on .ws-right-panel by JS when a capability tab is selected.
+   Each of the 4 tab slots has a distinct colour; the variable flows down into
+   the tab underline, step badge, brief-label, cap-header accent bar, and dot.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.ws-right-panel { --cap-accent: #5CC5A7; }
+
+/* ── Journey header (label + step counter above the tab row) ── */
+
+.cap-journey-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 2rem 0;
+  min-height: 2rem;
+}
+
+.cap-journey-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+}
+
+.cap-step-counter {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--cap-accent);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09);
+  padding: 0.15rem 0.6rem;
+  border-radius: 20px;
+  transition: color 0.25s;
+}
+
+/* ── Step number badge inside each tab ── */
+
+.cap-nav__step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.57rem;
+  font-weight: 700;
+  margin-right: 0.42rem;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+  vertical-align: middle;
+  transition: background 0.2s, color 0.2s;
+  position: relative;
+  top: -1px;
+}
+
+.cap-nav__tab.is-active .cap-nav__step-badge {
+  background: var(--cap-accent);
+  color: #0d1117;
+}
+
+/* Active tab dot also picks up the accent */
+.cap-nav__tab.is-active .cap-nav__tab-dot--completed,
+.cap-nav__tab.is-active .cap-nav__tab-dot--progress {
+  background: var(--cap-accent);
+}
+
+/* Inactive tabs: slightly more readable than before */
+.cap-nav__tab { color: rgba(255,255,255,0.52); }
+
+/* ── Capability header — accent left bar ── */
+
+.bp-cap-header {
+  border-left: 3px solid var(--cap-accent, #5CC5A7);
+  padding-left: 1.1rem;
+  transition: border-color 0.25s;
+}
+
+/* ── Brief section labels inherit accent ── */
+
+.brief-label {
+  color: var(--cap-accent);
+  opacity: 0.75;
+  transition: color 0.25s;
 }

@@ -457,9 +457,9 @@ Distribute the remaining identified opportunities across the other quadrants bas
 
 6. priorityQuadrants (exactly 4 items in this fixed order)
    Distribute ALL identified AI opportunities from Capability 1 across the 2×2 matrix. Use ONLY initiatives from the "Identified AI Opportunities" journey context — do not add unrelated ones.
-   Order: [0] Strategic Bets (High Value, Low Feasibility), [1] Quick Wins (High Value, High Feasibility), [2] Fill-ins (Low Value, Low Feasibility), [3] Avoid (Low Value, High Feasibility)
-   Each item: { "id": "<strategic-bets|quick-wins|fill-ins|avoid>", "label": "<quadrant name>", "initiatives": ["<initiative name from identified list>"] }
-   The "Avoid" quadrant may remain empty ([]) if all identified opportunities have positive value.
+   Order: [0] Strategic Bets (High Value, Low Feasibility), [1] Quick Wins (High Value, High Feasibility), [2] Fill-ins (Low Value, Low Feasibility), [3] Future Opportunities (Low Value, High Feasibility)
+   Each item: { "id": "<strategic-bets|quick-wins|fill-ins|future-opportunities>", "label": "<quadrant name>", "initiatives": ["<initiative name from identified list>"] }
+   The "Future Opportunities" quadrant holds initiatives that are feasible but currently lower priority — do NOT leave it empty if there are remaining identified opportunities to place.
 
 7. dimensionCards (exactly 4 items in this fixed order)
    Assess the RECOMMENDED STARTING INITIATIVE (from item 5) across the four dimensions. Bullets must be specific to that initiative and this company.

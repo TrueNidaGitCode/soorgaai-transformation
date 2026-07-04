@@ -2184,12 +2184,13 @@ function buildPrioritizationView(section) {
     });
     matBody.appendChild(xHeader);
 
-    // 2×2 grid — order: [0] Strategic Bets (top-left), [1] Quick Wins (top-right), [2] Fill-ins (bottom-left), [3] Avoid (bottom-right)
+    // 2×2 grid — order: [0] Strategic Bets (top-left), [1] Quick Wins (top-right), [2] Fill-ins (bottom-left), [3] Future Opportunities (bottom-right)
     const QUADRANT_CLASS = {
-      'quick-wins':     'pri-quadrant--quick-wins',
-      'strategic-bets': 'pri-quadrant--strategic-bets',
-      'fill-ins':       'pri-quadrant--fill-ins',
-      'avoid':          'pri-quadrant--avoid',
+      'quick-wins':          'pri-quadrant--quick-wins',
+      'strategic-bets':      'pri-quadrant--strategic-bets',
+      'fill-ins':            'pri-quadrant--fill-ins',
+      'future-opportunities': 'pri-quadrant--avoid',
+      'avoid':               'pri-quadrant--avoid', // legacy fallback
     };
     const grid = document.createElement('div');
     grid.className = 'pri-matrix-grid';

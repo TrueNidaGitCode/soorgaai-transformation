@@ -136,7 +136,7 @@ Distribute ALL identified AI opportunities from Capability 1 across four quadran
 - Strategic Bets — High value, lower feasibility
 - Quick Wins — High value, high feasibility (recommended starting initiative goes here)
 - Fill-ins — Lower value, lower feasibility
-- Avoid — Low value, high feasibility
+- Future Opportunities — Feasible but currently lower priority; hold for later phases
 
 Do not introduce AI initiatives not identified in Capability 1.
 

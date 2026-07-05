@@ -404,18 +404,32 @@ SECTION-SPECIFIC EXTRAS — "Operational Excellence" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Customer Value" sections only:
 
-5. flywheelStages (exactly 5 items)
-   A self-reinforcing customer value flywheel where each stage feeds the next.
-   Stages should follow this progression concept: better experience → higher adoption → more engagement → higher satisfaction → recurring revenue (adapt names to the company context).
-   Each item: { "name": "<stage name, 2–4 words>", "points": ["<characteristic or outcome 1>", "<characteristic or outcome 2>", "<characteristic or outcome 3>"] }
-   Example item: { "name": "Better Experience", "points": ["Faster issue resolution", "Personalised AI support", "Intuitive interfaces"] }
+5. valueJourney (exactly 5 short stage names — strings only)
+   A value progression showing how this AI initiative creates customer value through engineering improvement.
+   Each item is a short 2–4 word stage name showing the chain from engineering work to business outcome.
+   The progression must follow this logic: Engineering Capability → Product Quality → Customer Confidence → Business Relationship → Future Growth
+   Adapt stage names to be specific to THIS initiative and its domain.
+   Example: ["Engineering Improvement", "Higher Product Quality", "Greater Customer Confidence", "Better Business Relationship", "Future Growth"]
+   Example (traceability initiative): ["Traceability Excellence", "Defect-Free Delivery", "Customer Confidence", "Stronger Partnership", "Contract Growth"]
 
-6. kpiHighlights (exactly 3 items)
-   Three customer value or satisfaction success metrics.
-   Each item: { "value": "<number with unit e.g. 30%, 90%, 15%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+6. valueDimensions (exactly 5 items)
+   Five business outcome cards answering "What does my customer receive?" from this AI initiative.
+   Each item: { "name": "<outcome area name>", "points": ["<customer benefit 1>", "<customer benefit 2>", "<customer benefit 3>"] }
+   Outcome areas should be: Product Quality, Delivery Confidence, Customer Transparency, Customer Trust, Business Growth (adapt if needed)
+   Points: concise 3–6 word customer benefit statements — NOT internal engineering improvements.
+   Write from the customer's perspective: what they see, receive, or experience.
+   Example: { "name": "Customer Transparency", "points": ["Real-time dashboards", "KPI visibility", "Audit-ready reporting"] }
+   Example: { "name": "Business Growth", "points": ["Higher renewal probability", "Stronger competitive position", "Additional engagement opportunities"] }
 
-   Add both to the brief object:
-   "flywheelStages": [...], "kpiHighlights": [...]`,
+7. customerKpis (exactly 6 items)
+   Six customer outcome KPIs — NOT internal engineering or adoption metrics.
+   Each item: { "value": "<number with unit e.g. 95%, 40%, +15%>", "label": "<2–4 word metric name>", "description": "<1 short sentence ≤10 words, customer perspective>" }
+   Metrics must measure what the CUSTOMER experiences: satisfaction, delivery, compliance, defects, renewal, win rate.
+   Typical labels: Customer Satisfaction, On-Time Delivery, Audit Compliance, Defect Reduction, Contract Renewal Rate, Proposal Win Rate
+   Adapt labels to the specific customer outcomes of THIS initiative.
+
+   Add all three to the brief object:
+   "valueJourney": [...], "valueDimensions": [...], "customerKpis": [...]`,
   },
 
   // ── AI Governance & Ethics capability ─────────────────────────────────────
@@ -1061,6 +1075,16 @@ function parseBriefOutput(rawSections, validTitles) {
         }))
         .slice(0, 5);
 
+      const valueJourney    = (Array.isArray(b.valueJourney)    ? b.valueJourney    : []).map(String).filter(Boolean).slice(0, 5);
+      const valueDimensions = (Array.isArray(b.valueDimensions) ? b.valueDimensions : [])
+        .filter(d => d && typeof d === 'object' && String(d.name || '').trim())
+        .map(d => ({ name: String(d.name || '').trim(), points: Array.isArray(d.points) ? d.points.map(String).filter(Boolean) : [] }))
+        .slice(0, 5);
+      const customerKpis = (Array.isArray(b.customerKpis) ? b.customerKpis : [])
+        .filter(k => k && typeof k === 'object' && String(k.label || '').trim())
+        .map(k => ({ value: String(k.value || '').trim(), label: String(k.label || '').trim(), description: String(k.description || '').trim() }))
+        .slice(0, 6);
+
       const rawWaterfallItems = Array.isArray(b.waterfallItems) ? b.waterfallItems : [];
       const waterfallItems = rawWaterfallItems
         .filter(it => it && typeof it === 'object' && String(it.category || '').trim())
@@ -1638,6 +1662,9 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(transformationRows.length   ? { transformationRows }   : {}),
           ...(impactAreas.length          ? { impactAreas }          : {}),
           ...(pmDashboard.length          ? { pmDashboard }          : {}),
+          ...(valueJourney.length         ? { valueJourney }         : {}),
+          ...(valueDimensions.length      ? { valueDimensions }      : {}),
+          ...(customerKpis.length         ? { customerKpis }         : {}),
           ...(waterfallItems.length       ? { waterfallItems }       : {}),
           ...(sdlcStages.length           ? { sdlcStages }           : {}),
           ...(flywheelStages.length       ? { flywheelStages }       : {}),
@@ -2171,6 +2198,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'solutionComponents', 'teamGroups', 'teamRoles',
       'lifecycleStages', 'roiSummary', 'costItems', 'valueItems', 'impactTimeline',
       'transformationRows', 'impactAreas', 'pmDashboard',
+      'valueJourney', 'valueDimensions', 'customerKpis',
       'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',
@@ -2275,6 +2303,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'solutionComponents', 'teamGroups', 'teamRoles',
       'lifecycleStages', 'roiSummary', 'costItems', 'valueItems', 'impactTimeline',
       'transformationRows', 'impactAreas', 'pmDashboard',
+      'valueJourney', 'valueDimensions', 'customerKpis',
       'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',

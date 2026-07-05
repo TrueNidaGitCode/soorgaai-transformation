@@ -1994,15 +1994,95 @@ function buildCustomerValueLayout(section) {
   const wrap = document.createElement('div');
   wrap.className = 'customer-value-layout';
 
+  // 1. Strategic Position
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  if (b.flywheelStages?.length) {
-    wrap.appendChild(buildDiagramSection('Customer Value Flywheel', buildPillChain(b.flywheelStages, 'name')));
-    wrap.appendChild(buildDetailSection('Customer Value Details', buildPillarBulletCards(b.flywheelStages, 'name')));
+  // 2. Customer Value Journey — vertical progression flow
+  const journey = Array.isArray(b.valueJourney) ? b.valueJourney : [];
+  if (journey.length) {
+    const sec = document.createElement('div');
+    sec.className = 'roi-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Customer Value Journey';
+    sec.appendChild(lbl);
+
+    const flow = document.createElement('div');
+    flow.className = 'cv-journey';
+    journey.forEach((stage, i) => {
+      const node = document.createElement('div');
+      node.className = 'cv-journey__stage'; node.textContent = stage;
+      flow.appendChild(node);
+      if (i < journey.length - 1) {
+        const arrow = document.createElement('div');
+        arrow.className = 'cv-journey__arrow'; arrow.textContent = '↓';
+        flow.appendChild(arrow);
+      }
+    });
+    sec.appendChild(flow);
+    wrap.appendChild(sec);
   }
 
-  if (b.kpiHighlights?.length) {
-    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+  // 3. Customer Value Dimensions — 5 outcome cards
+  const dims = Array.isArray(b.valueDimensions) ? b.valueDimensions : [];
+  if (dims.length) {
+    const sec = document.createElement('div');
+    sec.className = 'roi-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Customer Value Dimensions';
+    sec.appendChild(lbl);
+
+    const grid = document.createElement('div');
+    grid.className = 'cv-value-grid';
+    dims.forEach(dim => {
+      const card = document.createElement('div');
+      card.className = 'cv-value-card';
+      const title = document.createElement('p');
+      title.className = 'cv-value-card__title'; title.textContent = dim.name || '—';
+      card.appendChild(title);
+      const ul = document.createElement('ul');
+      ul.className = 'cv-value-card__list';
+      (dim.points || []).forEach(pt => {
+        const li = document.createElement('li'); li.textContent = pt;
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+    wrap.appendChild(sec);
+  }
+
+  // 4. Customer Success Metrics — up to 6 customer outcome KPIs
+  const custKpis = Array.isArray(b.customerKpis) && b.customerKpis.length ? b.customerKpis : (b.kpiHighlights || []);
+  if (custKpis.length) {
+    const sec = document.createElement('div');
+    sec.className = 'roi-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Customer Success Metrics';
+    sec.appendChild(lbl);
+
+    const grid = document.createElement('div');
+    grid.className = 'cv-kpi-grid';
+    custKpis.forEach(k => {
+      const card = document.createElement('div');
+      card.className = 'kpi-highlight-card';
+      const val = document.createElement('p');
+      val.className = 'kpi-highlight-card__value'; val.textContent = k.value || '—';
+      const label = document.createElement('p');
+      label.className = 'kpi-highlight-card__label'; label.textContent = k.label || '';
+      const desc = document.createElement('p');
+      desc.className = 'kpi-highlight-card__desc'; desc.textContent = k.description || '';
+      card.appendChild(val); card.appendChild(label); card.appendChild(desc);
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+    wrap.appendChild(sec);
+  }
+
+  // Fallback: old flywheel for legacy blueprints
+  if (!journey.length && b.flywheelStages?.length) {
+    wrap.appendChild(buildDiagramSection('Customer Value Flywheel', buildPillChain(b.flywheelStages, 'name')));
+    wrap.appendChild(buildDetailSection('Customer Value Details', buildPillarBulletCards(b.flywheelStages, 'name')));
   }
 
   return wrap;

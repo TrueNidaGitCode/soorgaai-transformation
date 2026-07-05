@@ -4891,6 +4891,99 @@
   margin: 0;
 }
 
+/* ── AI ROI — Customer Value redesign ───────────────────────────────────── */
+
+.cv-journey {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 1rem;
+  background: rgba(99,102,241,0.06);
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 10px;
+}
+
+.cv-journey__stage {
+  background: rgba(99,102,241,0.15);
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 8px;
+  padding: 0.55rem 2rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  text-align: center;
+  min-width: 240px;
+}
+
+.cv-journey__arrow {
+  font-size: 1.1rem;
+  color: rgba(99,102,241,0.55);
+  line-height: 1.6;
+  user-select: none;
+}
+
+.cv-value-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 0.625rem;
+}
+
+.cv-value-card {
+  background: rgba(52,211,153,0.05);
+  border: 1px solid rgba(52,211,153,0.18);
+  border-top: 2px solid rgba(52,211,153,0.55);
+  border-radius: 8px;
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cv-value-card__title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(52,211,153,0.82);
+  margin: 0;
+}
+
+.cv-value-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.cv-value-card__list li {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.75);
+  padding-left: 0.85rem;
+  position: relative;
+}
+
+.cv-value-card__list li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+  color: rgba(52,211,153,0.55);
+}
+
+.cv-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.625rem;
+}
+
+@media (max-width: 640px) {
+  .cv-journey__stage { min-width: 180px; padding: 0.5rem 1rem; }
+  .cv-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ── Layout wrappers ─────────────────────────────────────────────────────────
    One wrapper per section type — all share the same column layout. ─────── */
 

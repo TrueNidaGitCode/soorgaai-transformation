@@ -952,10 +952,28 @@ function parseBriefOutput(rawSections, validTitles) {
         .map(s => ({
           name:          String(s.name          || '').trim(),
           businessOwner: String(s.businessOwner || '').trim(),
-          deliveryTeam:  String(s.deliveryTeam  || '').trim(),
+          deliveryTeam:  Array.isArray(s.deliveryTeam) ? s.deliveryTeam.map(String).filter(Boolean) : String(s.deliveryTeam || '').trim(),
           kpis:          Array.isArray(s.kpis) ? s.kpis.map(String).filter(Boolean) : [],
         }))
         .slice(0, 3);
+
+      const rawSolutionComponents = Array.isArray(b.solutionComponents) ? b.solutionComponents : [];
+      const solutionComponents = rawSolutionComponents
+        .filter(c => c && typeof c === 'object' && String(c.name || '').trim())
+        .map(c => ({
+          name:    String(c.name    || '').trim(),
+          purpose: String(c.purpose || '').trim(),
+        }))
+        .slice(0, 3);
+
+      const rawTeamGroups = Array.isArray(b.teamGroups) ? b.teamGroups : [];
+      const teamGroups = rawTeamGroups
+        .filter(g => g && typeof g === 'object' && String(g.group || '').trim())
+        .map(g => ({
+          group: String(g.group || '').trim(),
+          roles: Array.isArray(g.roles) ? g.roles.map(String).filter(Boolean) : [],
+        }))
+        .slice(0, 5);
 
       const rawTeamRoles = Array.isArray(b.teamRoles) ? b.teamRoles : [];
       const teamRoles = rawTeamRoles
@@ -1543,6 +1561,8 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(matrixQuadrants.length      ? { matrixQuadrants }      : {}),
           ...(quarterlyPlan.length        ? { quarterlyPlan }        : {}),
           ...(solutionPortfolio.length    ? { solutionPortfolio }    : {}),
+          ...(solutionComponents.length   ? { solutionComponents }   : {}),
+          ...(teamGroups.length           ? { teamGroups }           : {}),
           ...(teamRoles.length            ? { teamRoles }            : {}),
           ...(lifecycleStages.length      ? { lifecycleStages }      : {}),
           // AI ROI extras
@@ -2076,7 +2096,7 @@ OUTPUT — valid JSON only, no markdown fences:
     const extraKeys = [
       'strategicPillars', 'kpiHighlights', 'timelineSteps', 'alignmentInitiatives',
       'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
-      'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'teamRoles',
+      'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'solutionComponents', 'teamGroups', 'teamRoles',
       'lifecycleStages', 'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',
@@ -2178,7 +2198,7 @@ OUTPUT — valid JSON only, no markdown fences:
     const extraKeys = [
       'strategicPillars', 'kpiHighlights', 'timelineSteps', 'alignmentInitiatives',
       'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
-      'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'teamRoles',
+      'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'solutionComponents', 'teamGroups', 'teamRoles',
       'lifecycleStages', 'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',

@@ -23,7 +23,9 @@ const commitmentPillarSchema    = new mongoose.Schema({ title: String, actions: 
 const funnelStageSchema         = new mongoose.Schema({ count: String, label: String }, { _id: false });
 const matrixQuadrantSchema      = new mongoose.Schema({ title: String, initiatives: [String] }, { _id: false });
 const quarterlyPlanItemSchema   = new mongoose.Schema({ quarter: String, initiatives: [String] }, { _id: false });
-const solutionPortfolioItemSchema = new mongoose.Schema({ name: String, businessOwner: String, deliveryTeam: String, kpis: [String] }, { _id: false });
+const solutionPortfolioItemSchema = new mongoose.Schema({ name: String, businessOwner: String, deliveryTeam: mongoose.Schema.Types.Mixed, kpis: [String] }, { _id: false });
+const solutionComponentSchema   = new mongoose.Schema({ name: String, purpose: String }, { _id: false });
+const teamGroupSchema           = new mongoose.Schema({ group: String, roles: [String] }, { _id: false });
 const teamRoleSchema            = new mongoose.Schema({ title: String, description: String }, { _id: false });
 const lifecycleStageSchema      = new mongoose.Schema({ stage: String, teamResponsibility: String, keyActivities: String }, { _id: false });
 const pillarBulletSchema        = new mongoose.Schema({ name: String, points: [String] }, { _id: false });
@@ -102,7 +104,9 @@ const briefSchema = new mongoose.Schema({
   matrixQuadrants:      { type: [matrixQuadrantSchema],      default: [] },
   quarterlyPlan:        { type: [quarterlyPlanItemSchema],   default: [] },
   solutionPortfolio:    { type: [solutionPortfolioItemSchema], default: [] },
-  teamRoles:            { type: [teamRoleSchema],             default: [] },
+  solutionComponents:   { type: [solutionComponentSchema],    default: [] },
+  teamGroups:           { type: [teamGroupSchema],             default: [] },
+  teamRoles:            { type: [teamRoleSchema],              default: [] },
   lifecycleStages:      { type: [lifecycleStageSchema],       default: [] },
   waterfallItems:       { type: [waterfallItemSchema],        default: [] },
   sdlcStages:           { type: [sdlcStageSchema],            default: [] },

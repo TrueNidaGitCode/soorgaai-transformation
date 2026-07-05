@@ -6888,11 +6888,21 @@
 /* Preparation Blueprint summary strip */
 
 .adp-prep-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 1rem;
+}
+
+.adp-prep-summary .brief-label {
+  margin: 0;
+}
+
+.adp-prep-summary__cells {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.6rem;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  padding-top: 1rem;
 }
 
 .adp-prep-summary__cell {
@@ -6991,7 +7001,7 @@
   .adp-body {
     grid-template-columns: 1fr;
   }
-  .adp-prep-summary {
+  .adp-prep-summary__cells {
     grid-template-columns: 1fr 1fr;
   }
 }

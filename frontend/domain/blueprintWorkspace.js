@@ -3205,6 +3205,10 @@ function buildAIDataPreparationLayout(section) {
     const strip = document.createElement('div');
     strip.className = 'adp-prep-summary';
 
+    const stripLbl = document.createElement('p');
+    stripLbl.className = 'brief-label'; stripLbl.textContent = 'Preparation Summary';
+    strip.appendChild(stripLbl);
+
     const stats = hasNewSummary ? [
       { value: prepSummary.workPackages,    label: 'Work Packages' },
       { value: prepSummary.repositories,    label: 'Engineering Repositories' },
@@ -3217,14 +3221,16 @@ function buildAIDataPreparationLayout(section) {
       { value: prepSummary.implementationPriority || '—', label: 'Implementation Priority', isText: true },
     ];
 
+    const cells = document.createElement('div'); cells.className = 'adp-prep-summary__cells';
     stats.forEach(stat => {
       const cell = document.createElement('div'); cell.className = 'adp-prep-summary__cell';
       const val  = document.createElement('p');
       val.className = stat.isText ? 'adp-prep-summary__value adp-prep-summary__value--text' : 'adp-prep-summary__value';
       val.textContent = stat.value ?? '—';
       const lbl2 = document.createElement('p'); lbl2.className = 'adp-prep-summary__label'; lbl2.textContent = stat.label;
-      cell.appendChild(val); cell.appendChild(lbl2); strip.appendChild(cell);
+      cell.appendChild(val); cell.appendChild(lbl2); cells.appendChild(cell);
     });
+    strip.appendChild(cells);
 
     wrap.appendChild(strip);
   } else {
@@ -3250,34 +3256,10 @@ function buildAIDataPreparationLayout(section) {
     }
   }
 
-  // ── Ready to Proceed? ─────────────────────────────────────────────────────
-
-  const readyCard = document.createElement('div');
-  readyCard.className = 'adp-ready-card';
-
-  const readyLbl = document.createElement('p');
-  readyLbl.className = 'brief-label'; readyLbl.textContent = 'Ready to Proceed?';
-  readyCard.appendChild(readyLbl);
-
-  const readyBody = document.createElement('div');
-  readyBody.className = 'adp-ready-card__body';
-
-  const nextRow = document.createElement('div'); nextRow.className = 'adp-ready-card__row';
-  const nextLbl = document.createElement('span'); nextLbl.className = 'adp-ready-card__meta-label'; nextLbl.textContent = 'Next Capability';
-  const nextVal = document.createElement('p');   nextVal.className = 'adp-ready-card__next';       nextVal.textContent = 'Data Architecture Enablement';
-  nextRow.appendChild(nextLbl); nextRow.appendChild(nextVal); readyBody.appendChild(nextRow);
-
-  const goalRow = document.createElement('div'); goalRow.className = 'adp-ready-card__row';
-  const goalLbl = document.createElement('span'); goalLbl.className = 'adp-ready-card__meta-label'; goalLbl.textContent = 'Goal';
-  const goalVal = document.createElement('p');   goalVal.className = 'adp-ready-card__goal';       goalVal.textContent = 'Design how these prepared datasets will flow securely into AI applications.';
-  goalRow.appendChild(goalLbl); goalRow.appendChild(goalVal); readyBody.appendChild(goalRow);
-
-  readyCard.appendChild(readyBody);
-  wrap.appendChild(readyCard);
-
   // ── Leadership question footer ────────────────────────────────────────────
 
-  if (leadershipQ) {
+  if (false) {
+    // Ready to Proceed and Leadership Question removed
     const footer = document.createElement('div');
     footer.className = 'adp-leadership';
     footer.innerHTML = `<span class="adp-leadership__icon">?</span><p class="adp-leadership__text">${leadershipQ}</p>`;

@@ -2217,7 +2217,7 @@ OUTPUT — valid JSON only, no markdown fences:
     await CompanyBlueprint.updateOne(
       { _id: blueprintId, userId, 'capabilities.capabilityId': capabilityId },
       { $set: setFields },
-      { arrayFilters: [{ 'cap.capabilityId': capabilityId }, { 'sec.title': ns.title }] }
+      { strict: false, arrayFilters: [{ 'cap.capabilityId': capabilityId }, { 'sec.title': ns.title }] }
     );
 
     // Return only the extra/visual fields — never overwrite strategicPosition
@@ -2338,6 +2338,7 @@ OUTPUT — valid JSON only, no markdown fences:
       { _id: blueprintId, userId },
       { $set: setFields },
       {
+        strict: false,
         arrayFilters: [
           { 'dom.domainId':      domainId },
           { 'cap.capabilityId': capabilityId },

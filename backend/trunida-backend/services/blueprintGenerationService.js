@@ -234,19 +234,26 @@ JOURNEY RULE: This section organizes the specific AI initiative already establis
 Use "Selected AI Initiative" and "Recommended Implementation" from the TRANSFORMATION CONTEXT. Name the initiative explicitly — do NOT introduce a different AI opportunity.
 The solutionPortfolio must present the SAME initiative structured as an owned business solution (not a portfolio of 3 different initiatives).
 
-5. solutionPortfolio (exactly 3 items)
-   Three views of the selected AI initiative as a deliverable solution — each card represents a different dimension of the same initiative (e.g. core solution, data enabler, integration layer), or three named workstreams within it.
-   Each item: { "name": "<2–4 word solution name>", "businessOwner": "<role title e.g. Test Engineering Manager>", "deliveryTeam": "<teams comma-separated e.g. AI/ML Engineering, Verification & Validation>", "kpis": ["<KPI metric 1>", "<KPI metric 2>"] }
-   Names must be specific to the initiative — not generic labels like "AI Platform" or "Data Services".
-   KPIs must link back to "Target KPIs" and "Expected Business Value" from the TRANSFORMATION CONTEXT.
+5. solutionPortfolio (exactly 1 item — the single AI initiative as a business solution)
+   One entry representing the complete AI initiative. Do NOT create multiple portfolio items.
+   Item: { "name": "<exact initiative name from TRANSFORMATION CONTEXT>", "businessOwner": "<role title e.g. Test Engineering Manager>", "deliveryTeam": ["<team 1>", "<team 2>", "<team 3>", "<team 4>"], "kpis": ["<KPI 1>", "<KPI 2>", "<KPI 3>"] }
+   - name: must be the exact "Selected AI Initiative" from TRANSFORMATION CONTEXT
+   - businessOwner: the single role accountable for business outcomes
+   - deliveryTeam: array of 4–6 short team/discipline names (e.g. ["Testing", "AI/ML", "Requirements", "QA"])
+   - kpis: array of 3–4 metric names drawn from "Target KPIs" in TRANSFORMATION CONTEXT
 
-6. kpiHighlights (exactly 3 items)
-   Three portfolio-level success metrics showing how the initiative is organized for delivery impact.
+6. solutionComponents (exactly 3 items — distinct capabilities of the same AI initiative)
+   Three sub-capabilities that together compose the AI initiative. Not separate solutions — components of ONE solution.
+   Each item: { "name": "<capability name, 2–4 words>", "purpose": "<1 sentence describing what this component does>" }
+   Example: { "name": "Acceptance Criteria Mapping", "purpose": "Automatically connect requirements to test cases." }
+
+7. kpiHighlights (exactly 3 items)
+   Three portfolio-level success metrics for this initiative.
    Each item: { "value": "<number with unit e.g. 100%, 30%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
    Draw from "Target KPIs" in the TRANSFORMATION CONTEXT — do not invent new metrics.
 
-   Add both to the brief object:
-   "solutionPortfolio": [...], "kpiHighlights": [...]`,
+   Add all three to the brief object:
+   "solutionPortfolio": [...], "solutionComponents": [...], "kpiHighlights": [...]`,
   },
 
   'Cross-Functional Delivery Teams': {

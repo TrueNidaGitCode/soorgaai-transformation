@@ -1095,113 +1095,6 @@ function buildCommitmentLayout(section) {
 
 // ── AI Operating Model — Solution-Centric Organization ────────────────────────
 
-function buildSolutionPortfolioTree(solutions) {
-  const NS = 'http://www.w3.org/2000/svg';
-  const W = 460, H = 240;
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svg.setAttribute('role', 'img');
-  svg.setAttribute('aria-label', 'Solution portfolio hierarchy diagram');
-  svg.classList.add('solution-portfolio-tree');
-
-  const trunc = (s, n) => (s && s.length > n) ? s.slice(0, n) + '…' : (s || '');
-
-  function mkRect(x, y, w, h, rx, fill, stroke) {
-    const r = document.createElementNS(NS, 'rect');
-    r.setAttribute('x', x); r.setAttribute('y', y);
-    r.setAttribute('width', w); r.setAttribute('height', h);
-    r.setAttribute('rx', rx);
-    r.setAttribute('fill', fill);
-    if (stroke) { r.setAttribute('stroke', stroke); r.setAttribute('stroke-width', '1.5'); }
-    return r;
-  }
-
-  function mkText(x, y, text, size, fill, weight) {
-    const t = document.createElementNS(NS, 'text');
-    t.setAttribute('x', x); t.setAttribute('y', y);
-    t.setAttribute('text-anchor', 'middle');
-    t.setAttribute('dominant-baseline', 'middle');
-    t.setAttribute('font-size', size);
-    t.setAttribute('fill', fill);
-    if (weight) t.setAttribute('font-weight', weight);
-    t.textContent = text;
-    return t;
-  }
-
-  function mkLine(x1, y1, x2, y2) {
-    const l = document.createElementNS(NS, 'line');
-    l.setAttribute('x1', x1); l.setAttribute('y1', y1);
-    l.setAttribute('x2', x2); l.setAttribute('y2', y2);
-    l.setAttribute('stroke', 'rgba(99,102,241,0.4)');
-    l.setAttribute('stroke-width', '1.5');
-    return l;
-  }
-
-  function mkDot(cx, cy) {
-    const c = document.createElementNS(NS, 'circle');
-    c.setAttribute('cx', cx); c.setAttribute('cy', cy);
-    c.setAttribute('r', '3');
-    c.setAttribute('fill', 'rgba(129,140,248,0.85)');
-    return c;
-  }
-
-  // Root node
-  const rootCx = W / 2, rootY = 8, rootW = 160, rootH = 36;
-  svg.appendChild(mkRect(rootCx - rootW / 2, rootY, rootW, rootH, '18',
-    'rgba(99,102,241,0.12)', 'rgba(99,102,241,0.5)'));
-  svg.appendChild(mkText(rootCx, rootY + rootH / 2, 'Solution Portfolio', '11',
-    'rgba(255,255,255,0.9)', '600'));
-
-  // Root → junction → 3 children
-  const rootBot = rootY + rootH;
-  const childCxs = [78, W / 2, W - 78];
-  const childW = 124, childH = 30, childY = 78;
-  const juncY = (rootBot + childY) / 2;
-
-  svg.appendChild(mkLine(rootCx, rootBot, rootCx, juncY));
-  svg.appendChild(mkLine(childCxs[0], juncY, childCxs[2], juncY));
-  childCxs.forEach(cx => {
-    svg.appendChild(mkLine(cx, juncY, cx, childY));
-    svg.appendChild(mkDot(cx, juncY));
-  });
-
-  const subW = 124, subH = 34;
-  const subYs = [118, 158, 198];
-
-  childCxs.forEach((cx, i) => {
-    const sol = solutions[i] || {};
-    const subEntries = [
-      { label: 'Owner',  value: sol.businessOwner || '—' },
-      { label: 'Team',   value: sol.deliveryTeam  || '—' },
-      { label: 'KPI',    value: (sol.kpis || []).join(' · ') || '—' },
-    ];
-
-    // Child node
-    svg.appendChild(mkRect(cx - childW / 2, childY, childW, childH, '15',
-      'rgba(99,102,241,0.1)', 'rgba(99,102,241,0.4)'));
-    svg.appendChild(mkText(cx, childY + childH / 2, trunc(sol.name || `Solution ${i + 1}`, 17),
-      '9.5', 'rgba(255,255,255,0.88)', '600'));
-
-    // Child → first sub-node
-    svg.appendChild(mkLine(cx, childY + childH, cx, subYs[0]));
-    svg.appendChild(mkDot(cx, childY + childH));
-
-    // Sub-nodes: label (small, dim) + value (slightly larger, bright)
-    subEntries.forEach(({ label, value }, j) => {
-      const sy = subYs[j];
-      if (j > 0) svg.appendChild(mkLine(cx, subYs[j - 1] + subH, cx, sy));
-      svg.appendChild(mkRect(cx - subW / 2, sy, subW, subH, '10',
-        'rgba(99,102,241,0.07)', 'rgba(99,102,241,0.28)'));
-      // Label row
-      svg.appendChild(mkText(cx, sy + 11, label, '7', 'rgba(255,255,255,0.42)'));
-      // Value row
-      svg.appendChild(mkText(cx, sy + 24, trunc(value, 18), '8', 'rgba(255,255,255,0.85)', '500'));
-    });
-  });
-
-  return svg;
-}
-
 function buildSolutionCentricLayout(section) {
   const b = section.brief || {};
   const wrap = document.createElement('div');
@@ -1218,64 +1111,100 @@ function buildSolutionCentricLayout(section) {
   stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
   wrap.appendChild(stmt);
 
-  if (b.solutionPortfolio?.length) {
-    // 2. Solution Portfolio Map — tree diagram
-    const mapSection = document.createElement('div');
-    mapSection.className = 'solution-portfolio-section';
-    const mapLbl = document.createElement('p');
-    mapLbl.className = 'brief-label'; mapLbl.textContent = 'Solution Portfolio Map';
-    mapSection.appendChild(mapLbl);
-    const treeWrap = document.createElement('div');
-    treeWrap.className = 'solution-portfolio-tree-wrap';
-    treeWrap.appendChild(buildSolutionPortfolioTree(b.solutionPortfolio));
-    mapSection.appendChild(treeWrap);
-    wrap.appendChild(mapSection);
+  // 2. Solution Portfolio — single solution card
+  const sol = Array.isArray(b.solutionPortfolio) ? b.solutionPortfolio[0] : null;
+  if (sol) {
+    const portSection = document.createElement('div');
+    portSection.className = 'solution-portfolio-section';
+    const portLbl = document.createElement('p');
+    portLbl.className = 'brief-label'; portLbl.textContent = 'Solution Portfolio';
+    portSection.appendChild(portLbl);
 
-    // 3. Solution Details Section — 3-col cards
-    const detailSection = document.createElement('div');
-    detailSection.className = 'solution-portfolio-section';
-    const detailLbl = document.createElement('p');
-    detailLbl.className = 'brief-label'; detailLbl.textContent = 'Solution Details Section';
-    detailSection.appendChild(detailLbl);
-    const grid = document.createElement('div');
-    grid.className = 'solution-portfolio-grid';
-    b.solutionPortfolio.forEach(sol => {
-      const card = document.createElement('div');
-      card.className = 'solution-portfolio-card';
+    const card = document.createElement('div');
+    card.className = 'sol-main-card';
 
-      const name = document.createElement('p');
-      name.className = 'solution-portfolio-card__name';
-      name.textContent = sol.name;
-      card.appendChild(name);
+    const solName = document.createElement('p');
+    solName.className = 'sol-main-card__name';
+    solName.textContent = sol.name || '—';
+    card.appendChild(solName);
 
-      [['Business Owner', sol.businessOwner], ['Delivery Team', sol.deliveryTeam]].forEach(([label, value]) => {
-        if (!value) return;
-        const row = document.createElement('div');
-        row.className = 'solution-portfolio-card__row';
-        const rl = document.createElement('span');
-        rl.className = 'solution-portfolio-card__row-label'; rl.textContent = label;
-        const rv = document.createElement('span');
-        rv.className = 'solution-portfolio-card__row-value'; rv.textContent = value;
-        row.appendChild(rl); row.appendChild(rv);
-        card.appendChild(row);
+    const meta = document.createElement('div');
+    meta.className = 'sol-main-card__meta';
+
+    // Owner row
+    if (sol.businessOwner) {
+      const ownerRow = document.createElement('div');
+      ownerRow.className = 'sol-meta-row';
+      ownerRow.innerHTML = `<span class="sol-meta-label">Owner</span><span class="sol-meta-value">${sol.businessOwner}</span>`;
+      meta.appendChild(ownerRow);
+    }
+
+    // Delivery Team chips
+    const teams = Array.isArray(sol.deliveryTeam)
+      ? sol.deliveryTeam
+      : String(sol.deliveryTeam || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (teams.length) {
+      const teamRow = document.createElement('div');
+      teamRow.className = 'sol-meta-row sol-meta-row--chips';
+      const teamLabel = document.createElement('span');
+      teamLabel.className = 'sol-meta-label'; teamLabel.textContent = 'Delivery Team';
+      const chips = document.createElement('div');
+      chips.className = 'sol-chips';
+      teams.forEach(t => {
+        const chip = document.createElement('span');
+        chip.className = 'sol-team-chip'; chip.textContent = t;
+        chips.appendChild(chip);
       });
+      teamRow.appendChild(teamLabel); teamRow.appendChild(chips);
+      meta.appendChild(teamRow);
+    }
 
-      if (sol.kpis?.length) {
-        const kpisRow = document.createElement('div');
-        kpisRow.className = 'solution-portfolio-card__kpis';
-        const kl = document.createElement('span');
-        kl.className = 'solution-portfolio-card__row-label'; kl.textContent = 'KPIs';
-        const kv = document.createElement('p');
-        kv.className = 'solution-portfolio-card__kpis-list';
-        kv.textContent = sol.kpis.join(' · ');
-        kpisRow.appendChild(kl); kpisRow.appendChild(kv);
-        card.appendChild(kpisRow);
-      }
+    // KPI chips
+    const kpis = Array.isArray(sol.kpis) ? sol.kpis : [];
+    if (kpis.length) {
+      const kpiRow = document.createElement('div');
+      kpiRow.className = 'sol-meta-row sol-meta-row--chips';
+      const kpiLabel = document.createElement('span');
+      kpiLabel.className = 'sol-meta-label'; kpiLabel.textContent = 'KPIs';
+      const chips = document.createElement('div');
+      chips.className = 'sol-chips';
+      kpis.forEach(k => {
+        const chip = document.createElement('span');
+        chip.className = 'sol-kpi-chip'; chip.textContent = k;
+        chips.appendChild(chip);
+      });
+      kpiRow.appendChild(kpiLabel); kpiRow.appendChild(chips);
+      meta.appendChild(kpiRow);
+    }
 
+    card.appendChild(meta);
+    portSection.appendChild(card);
+    wrap.appendChild(portSection);
+  }
+
+  // 3. Solution Components — capability cards
+  const components = Array.isArray(b.solutionComponents) ? b.solutionComponents : [];
+  if (components.length) {
+    const compSection = document.createElement('div');
+    compSection.className = 'solution-portfolio-section';
+    const compLbl = document.createElement('p');
+    compLbl.className = 'brief-label'; compLbl.textContent = 'Solution Components';
+    compSection.appendChild(compLbl);
+
+    const grid = document.createElement('div');
+    grid.className = 'sol-components-grid';
+    components.forEach(comp => {
+      const card = document.createElement('div');
+      card.className = 'sol-component-card';
+      card.innerHTML = `
+        <span class="sol-component-card__type">Capability</span>
+        <p class="sol-component-card__name">${comp.name || '—'}</p>
+        <span class="sol-component-card__purpose-label">Purpose</span>
+        <p class="sol-component-card__purpose">${comp.purpose || '—'}</p>`;
       grid.appendChild(card);
     });
-    detailSection.appendChild(grid);
-    wrap.appendChild(detailSection);
+    compSection.appendChild(grid);
+    wrap.appendChild(compSection);
   }
 
   // 4. Success Metrics

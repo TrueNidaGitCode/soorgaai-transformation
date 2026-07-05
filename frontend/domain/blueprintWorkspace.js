@@ -3165,83 +3165,73 @@ function buildAIDataPreparationLayout(section) {
 // ── Data Readiness — Critical Data Identification ─────────────────────────────
 
 function buildCriticalDataLayout(section) {
-  const b               = section.brief || {};
-  const datasets        = b.datasets        || [];
-  const relationshipMap = b.relationshipMap || {};
-  const recommendations = b.recommendations || [];
-  const coverage        = b.coverageSummary || {};
-  const leadershipQ     = b.leadershipValidation?.context || b.successMetrics?.[0] || '';
+  const b = section.brief || {};
+  const datasets            = Array.isArray(b.datasets)            ? b.datasets            : [];
+  const traceabilityChain   = Array.isArray(b.traceabilityChain)   ? b.traceabilityChain   : [];
+  const collectionOrder     = Array.isArray(b.collectionOrder)     ? b.collectionOrder     : [];
+  const implementationRoadmap = Array.isArray(b.implementationRoadmap) ? b.implementationRoadmap : [];
+  // Legacy fallbacks
+  const relationshipMap     = b.relationshipMap || {};
+  const recommendations     = Array.isArray(b.recommendations)     ? b.recommendations     : [];
+  const coverage            = b.coverageSummary || {};
+  const leadershipQ         = b.leadershipValidation?.context || b.successMetrics?.[0] || '';
+
+  const PRIORITY_CLASS = { HIGH: 'cdi-badge--high', MEDIUM: 'cdi-badge--medium', LOW: 'cdi-badge--low' };
 
   const wrap = document.createElement('div');
   wrap.className = 'cdi-view';
 
-  // Strategic position
-  if (b.strategicPosition) {
-    const posLabel = document.createElement('p');
-    posLabel.className = 'brief-label';
-    posLabel.textContent = 'Strategic Position';
-    wrap.appendChild(posLabel);
-    const pos = document.createElement('p');
-    pos.className = 'cdi-view__position';
-    pos.textContent = b.strategicPosition;
-    wrap.appendChild(pos);
-  }
+  // Strategic Position
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  // Two-panel body
+  // Two-panel body: 70 / 30
   const body = document.createElement('div');
   body.className = 'cdi-body';
 
-  // LEFT: Dataset cards
+  // ── LEFT (70%): Critical Data Blueprint ──────────────────────────────────────
   const leftPanel = document.createElement('div');
   leftPanel.className = 'cdi-left';
 
-  const datasetLbl = document.createElement('p');
-  datasetLbl.className = 'brief-label';
-  datasetLbl.textContent = 'Critical Datasets';
-  leftPanel.appendChild(datasetLbl);
+  if (datasets.length) {
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Critical Data Blueprint';
+    leftPanel.appendChild(lbl);
 
-  const PRIORITY_CLASS = { HIGH: 'cdi-badge--high', MEDIUM: 'cdi-badge--medium', LOW: 'cdi-badge--low' };
-  const AVAIL_CLASS    = { AVAILABLE: 'cdi-avail--available', MISSING: 'cdi-avail--missing', PARTIAL: 'cdi-avail--partial' };
+    datasets.forEach(ds => {
+      const card = document.createElement('div');
+      card.className = 'cdi-dataset-card';
 
-  datasets.forEach(ds => {
-    const card = document.createElement('div');
-    card.className = 'cdi-dataset-card';
+      const name = document.createElement('p');
+      name.className = 'cdi-dataset-card__name'; name.textContent = ds.name || '—';
+      card.appendChild(name);
 
-    const badges = document.createElement('div');
-    badges.className = 'cdi-dataset-card__badges';
-    const priB = document.createElement('span');
-    priB.className = `cdi-badge ${PRIORITY_CLASS[ds.priority] || 'cdi-badge--medium'}`;
-    priB.textContent = ds.priority || 'MEDIUM';
-    const availB = document.createElement('span');
-    availB.className = `cdi-avail ${AVAIL_CLASS[ds.availability] || ''}`;
-    availB.textContent = ds.availability || '';
-    badges.appendChild(priB);
-    badges.appendChild(availB);
-    card.appendChild(badges);
+      const addInfoRow = (label, value, isBadge) => {
+        if (!value) return;
+        const row = document.createElement('div');
+        row.className = 'cdi-dataset-card__info-row';
+        const lbl2 = document.createElement('span');
+        lbl2.className = 'cdi-dataset-card__info-label'; lbl2.textContent = label;
+        row.appendChild(lbl2);
+        if (isBadge) {
+          const badge = document.createElement('span');
+          badge.className = `cdi-badge ${PRIORITY_CLASS[value] || 'cdi-badge--medium'}`;
+          badge.textContent = value;
+          row.appendChild(badge);
+        } else {
+          const val = document.createElement('span');
+          val.className = 'cdi-dataset-card__info-value'; val.textContent = value;
+          row.appendChild(val);
+        }
+        card.appendChild(row);
+      };
 
-    const name = document.createElement('p');
-    name.className = 'cdi-dataset-card__name';
-    name.textContent = ds.name;
-    card.appendChild(name);
+      addInfoRow('Purpose',        ds.purpose,       false);
+      addInfoRow('Typical Source', ds.typicalSource, false);
+      addInfoRow('Priority',       ds.priority,      true);
 
-    if (ds.purpose) {
-      const purp = document.createElement('p');
-      purp.className = 'cdi-dataset-card__purpose';
-      purp.textContent = ds.purpose;
-      card.appendChild(purp);
-    }
-
-    if (ds.category) {
-      const cat = document.createElement('span');
-      cat.className = 'cdi-dataset-card__category';
-      cat.textContent = ds.category;
-      card.appendChild(cat);
-    }
-
-    leftPanel.appendChild(card);
-  });
-
-  if (!datasets.length) {
+      leftPanel.appendChild(card);
+    });
+  } else {
     const empty = document.createElement('p');
     empty.className = 'cdi-empty';
     empty.textContent = 'Dataset analysis will appear after blueprint generation.';
@@ -3250,127 +3240,156 @@ function buildCriticalDataLayout(section) {
 
   body.appendChild(leftPanel);
 
-  // RIGHT: Relationship map + recommendations + coverage
+  // ── RIGHT (30%): Traceability + Collection Order + Roadmap ───────────────────
   const rightPanel = document.createElement('div');
   rightPanel.className = 'cdi-right';
 
-  // Relationship map
-  const hasRelMap = [relationshipMap.dataSource, relationshipMap.dependentData,
-                     relationshipMap.relatedData, relationshipMap.targetData].some(a => a?.length);
-  if (hasRelMap) {
-    const relSection = document.createElement('div');
-    relSection.className = 'cdi-relmap';
-    const relLbl = document.createElement('p');
-    relLbl.className = 'brief-label';
-    relLbl.textContent = 'Data Relationship Map';
-    relSection.appendChild(relLbl);
+  // Engineering Traceability chain
+  const chainToRender = traceabilityChain.length ? traceabilityChain : null;
+  if (chainToRender) {
+    const sec = document.createElement('div');
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Engineering Traceability';
+    sec.appendChild(lbl);
 
-    const relGrid = document.createElement('div');
-    relGrid.className = 'cdi-relmap__grid';
-
-    const REL_NODES = [
-      { key: 'dataSource',    label: 'Data Source',     icon: '◉' },
-      { key: 'dependentData', label: 'Dependent Data',  icon: '◈' },
-      { key: 'relatedData',   label: 'Related Data',    icon: '◇' },
-      { key: 'targetData',    label: 'Target Data',     icon: '◆' },
-    ];
-
-    REL_NODES.forEach((node, i) => {
-      const items = relationshipMap[node.key] || [];
-      const nodeEl = document.createElement('div');
-      nodeEl.className = `cdi-relnode cdi-relnode--${node.key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
-
-      const nodeHeader = document.createElement('div');
-      nodeHeader.className = 'cdi-relnode__header';
-      nodeHeader.innerHTML = `<span class="cdi-relnode__icon">${node.icon}</span><span class="cdi-relnode__label">${node.label}</span>`;
-      nodeEl.appendChild(nodeHeader);
-
-      if (items.length) {
-        const list = document.createElement('ul');
-        list.className = 'cdi-relnode__list';
-        items.slice(0, 3).forEach(item => {
-          const li = document.createElement('li');
-          li.textContent = item;
-          list.appendChild(li);
-        });
-        nodeEl.appendChild(list);
-      }
-
-      relGrid.appendChild(nodeEl);
-
-      // Arrow connector between nodes (skip after last)
-      if (i < REL_NODES.length - 1) {
+    const chain = document.createElement('div');
+    chain.className = 'cdi-traceability';
+    chainToRender.forEach((node, i) => {
+      const el = document.createElement('div');
+      el.className = i === 0 ? 'cdi-traceability__node cdi-traceability__node--start'
+                   : i === chainToRender.length - 1 ? 'cdi-traceability__node cdi-traceability__node--end'
+                   : 'cdi-traceability__node';
+      el.textContent = node;
+      chain.appendChild(el);
+      if (i < chainToRender.length - 1) {
         const arrow = document.createElement('div');
-        arrow.className = 'cdi-relmap__arrow';
-        arrow.textContent = '→';
-        relGrid.appendChild(arrow);
+        arrow.className = 'cdi-traceability__arrow'; arrow.textContent = '↓';
+        chain.appendChild(arrow);
       }
     });
-
-    relSection.appendChild(relGrid);
-    rightPanel.appendChild(relSection);
+    sec.appendChild(chain);
+    rightPanel.appendChild(sec);
+  } else {
+    // Legacy: Data Relationship Map
+    const hasRelMap = [relationshipMap.dataSource, relationshipMap.dependentData,
+                       relationshipMap.relatedData, relationshipMap.targetData].some(a => a?.length);
+    if (hasRelMap) {
+      const relSection = document.createElement('div');
+      relSection.className = 'cdi-relmap';
+      const relLbl = document.createElement('p');
+      relLbl.className = 'brief-label'; relLbl.textContent = 'Data Relationship Map';
+      relSection.appendChild(relLbl);
+      const relGrid = document.createElement('div');
+      relGrid.className = 'cdi-relmap__grid';
+      [
+        { key: 'dataSource', label: 'Data Source', icon: '◉' },
+        { key: 'dependentData', label: 'Dependent Data', icon: '◈' },
+        { key: 'relatedData', label: 'Related Data', icon: '◇' },
+        { key: 'targetData', label: 'Target Data', icon: '◆' },
+      ].forEach((node, i, arr) => {
+        const items = relationshipMap[node.key] || [];
+        const nodeEl = document.createElement('div');
+        nodeEl.className = `cdi-relnode cdi-relnode--${node.key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+        nodeEl.innerHTML = `<div class="cdi-relnode__header"><span class="cdi-relnode__icon">${node.icon}</span><span class="cdi-relnode__label">${node.label}</span></div>`;
+        if (items.length) {
+          const ul = document.createElement('ul'); ul.className = 'cdi-relnode__list';
+          items.slice(0, 3).forEach(item => { const li = document.createElement('li'); li.textContent = item; ul.appendChild(li); });
+          nodeEl.appendChild(ul);
+        }
+        relGrid.appendChild(nodeEl);
+        if (i < arr.length - 1) { const a = document.createElement('div'); a.className = 'cdi-relmap__arrow'; a.textContent = '→'; relGrid.appendChild(a); }
+      });
+      relSection.appendChild(relGrid);
+      rightPanel.appendChild(relSection);
+    }
   }
 
-  // AI Recommendations
-  if (recommendations.length) {
+  // Recommended Collection Order
+  if (collectionOrder.length) {
+    const sec = document.createElement('div');
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Recommended Collection Order';
+    sec.appendChild(lbl);
+
+    collectionOrder.forEach((item, i) => {
+      const row = document.createElement('div');
+      row.className = 'cdi-collection-row';
+      const num = document.createElement('span');
+      num.className = 'cdi-collection-row__num'; num.textContent = i + 1;
+      const content = document.createElement('div');
+      content.className = 'cdi-collection-row__content';
+      const name = document.createElement('p');
+      name.className = 'cdi-collection-row__name'; name.textContent = item.name;
+      content.appendChild(name);
+      if (item.reason) {
+        const reason = document.createElement('p');
+        reason.className = 'cdi-collection-row__reason'; reason.textContent = item.reason;
+        content.appendChild(reason);
+      }
+      row.appendChild(num); row.appendChild(content);
+      sec.appendChild(row);
+    });
+    rightPanel.appendChild(sec);
+  } else if (recommendations.length) {
+    // Legacy: plain recommendations
     const recSection = document.createElement('div');
     recSection.className = 'cdi-recs';
     const recLbl = document.createElement('p');
-    recLbl.className = 'brief-label';
-    recLbl.textContent = 'Data Collection Recommendations';
+    recLbl.className = 'brief-label'; recLbl.textContent = 'Data Collection Recommendations';
     recSection.appendChild(recLbl);
-
     recommendations.forEach((rec, i) => {
       const row = document.createElement('div');
       row.className = 'cdi-rec-row';
-      const num = document.createElement('span');
-      num.className = 'cdi-rec-row__num';
-      num.textContent = i + 1;
-      const text = document.createElement('p');
-      text.className = 'cdi-rec-row__text';
-      text.textContent = rec.text;
-      const priB = document.createElement('span');
-      priB.className = `cdi-badge ${PRIORITY_CLASS[rec.priority] || 'cdi-badge--medium'}`;
-      priB.textContent = rec.priority || 'MEDIUM';
-      row.appendChild(num);
-      row.appendChild(text);
-      row.appendChild(priB);
+      const num = document.createElement('span'); num.className = 'cdi-rec-row__num'; num.textContent = i + 1;
+      const text = document.createElement('p'); text.className = 'cdi-rec-row__text'; text.textContent = rec.text;
+      const badge = document.createElement('span');
+      badge.className = `cdi-badge ${PRIORITY_CLASS[rec.priority] || 'cdi-badge--medium'}`; badge.textContent = rec.priority || 'MEDIUM';
+      row.appendChild(num); row.appendChild(text); row.appendChild(badge);
       recSection.appendChild(row);
     });
-
     rightPanel.appendChild(recSection);
   }
 
-  // Coverage summary
-  if (coverage.criticalDatasets || coverage.confidence) {
+  // Implementation Roadmap
+  if (implementationRoadmap.length) {
+    const sec = document.createElement('div');
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Implementation Roadmap';
+    sec.appendChild(lbl);
+
+    const roadmap = document.createElement('div');
+    roadmap.className = 'cdi-roadmap';
+    implementationRoadmap.forEach(step => {
+      const row = document.createElement('div');
+      row.className = `cdi-roadmap__step cdi-roadmap__step--${step.status === 'ready' ? 'ready' : 'pending'}`;
+      const icon = document.createElement('span');
+      icon.className = 'cdi-roadmap__icon'; icon.textContent = step.status === 'ready' ? '✓' : '↓';
+      const label = document.createElement('p');
+      label.className = 'cdi-roadmap__label'; label.textContent = step.step;
+      row.appendChild(icon); row.appendChild(label);
+      roadmap.appendChild(row);
+    });
+    sec.appendChild(roadmap);
+    rightPanel.appendChild(sec);
+  } else if (coverage.criticalDatasets || coverage.confidence) {
+    // Legacy: coverage summary
     const covSection = document.createElement('div');
     covSection.className = 'cdi-coverage';
     const covLbl = document.createElement('p');
-    covLbl.className = 'brief-label';
-    covLbl.textContent = 'Coverage Summary';
+    covLbl.className = 'brief-label'; covLbl.textContent = 'Coverage Summary';
     covSection.appendChild(covLbl);
-
     const covStats = document.createElement('div');
     covStats.className = 'cdi-coverage__stats';
-
     [
       { value: coverage.criticalDatasets || 0, label: 'Datasets Identified' },
-      { value: coverage.missingData || 0,       label: 'Missing or Partial' },
-      { value: `${coverage.confidence || 0}%`,  label: 'Data Confidence' },
+      { value: coverage.missingData || 0, label: 'Missing or Partial' },
+      { value: `${coverage.confidence || 0}%`, label: 'Data Confidence' },
     ].forEach(stat => {
-      const cell = document.createElement('div');
-      cell.className = 'cdi-coverage__cell';
-      const val = document.createElement('p');
-      val.className = 'cdi-coverage__value';
-      val.textContent = stat.value;
-      const lbl = document.createElement('p');
-      lbl.className = 'cdi-coverage__label';
-      lbl.textContent = stat.label;
-      cell.appendChild(val);
-      cell.appendChild(lbl);
-      covStats.appendChild(cell);
+      const cell = document.createElement('div'); cell.className = 'cdi-coverage__cell';
+      const val = document.createElement('p'); val.className = 'cdi-coverage__value'; val.textContent = stat.value;
+      const lbl2 = document.createElement('p'); lbl2.className = 'cdi-coverage__label'; lbl2.textContent = stat.label;
+      cell.appendChild(val); cell.appendChild(lbl2); covStats.appendChild(cell);
     });
-
     covSection.appendChild(covStats);
     rightPanel.appendChild(covSection);
   }

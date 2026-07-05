@@ -6000,7 +6000,7 @@
 
 .cdi-body {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: 1.25rem;
 }
 
@@ -6019,18 +6019,11 @@
   padding: 0.7rem 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.4rem;
   transition: border-color 0.2s;
 }
 .cdi-dataset-card:hover {
   border-color: rgba(92,197,167,0.35);
-}
-
-.cdi-dataset-card__badges {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.1rem;
 }
 
 .cdi-badge {
@@ -6045,38 +6038,34 @@
 .cdi-badge--medium { background: rgba(234,179,8,0.18); color: #fbbf24; border: 1px solid rgba(234,179,8,0.3); }
 .cdi-badge--low    { background: rgba(92,197,167,0.15);color: #5CC5A7; border: 1px solid rgba(92,197,167,0.3); }
 
-.cdi-avail {
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  padding: 0.15rem 0.45rem;
-  border-radius: 4px;
-  text-transform: uppercase;
-}
-.cdi-avail--available { background: rgba(92,197,167,0.12); color: #5CC5A7; }
-.cdi-avail--missing   { background: rgba(239,68,68,0.12);  color: #f87171; }
-.cdi-avail--partial   { background: rgba(234,179,8,0.12);  color: #fbbf24; }
-
 .cdi-dataset-card__name {
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.83rem;
+  font-weight: 700;
   color: #fff;
   margin: 0;
 }
 
-.cdi-dataset-card__purpose {
-  font-size: 0.76rem;
-  color: rgba(255,255,255,0.6);
-  margin: 0;
-  line-height: 1.4;
+.cdi-dataset-card__info-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
-.cdi-dataset-card__category {
-  font-size: 0.62rem;
-  color: rgba(255,255,255,0.35);
+.cdi-dataset-card__info-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.38);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 0.1rem;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  min-width: 4.5rem;
+}
+
+.cdi-dataset-card__info-value {
+  font-size: 0.76rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.4;
+  margin: 0;
 }
 
 .cdi-empty {
@@ -6086,15 +6075,149 @@
   margin: 0;
 }
 
-/* RIGHT — Relationship map, recommendations, coverage */
+/* RIGHT — Traceability, collection order, roadmap */
 
 .cdi-right {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 1.25rem;
 }
 
-/* Relationship map */
+/* Engineering Traceability chain */
+
+.cdi-traceability {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.cdi-traceability__node {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.75);
+  font-weight: 500;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cdi-traceability__node--start {
+  background: rgba(92,197,167,0.12);
+  border-color: rgba(92,197,167,0.35);
+  color: #5CC5A7;
+  font-weight: 700;
+}
+
+.cdi-traceability__node--end {
+  background: rgba(96,165,250,0.1);
+  border-color: rgba(96,165,250,0.3);
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.cdi-traceability__arrow {
+  color: rgba(255,255,255,0.3);
+  font-size: 0.85rem;
+  padding: 0.1rem 0.75rem;
+  line-height: 1;
+}
+
+/* Recommended Collection Order */
+
+.cdi-collection-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.cdi-collection-row:last-child { border-bottom: none; }
+
+.cdi-collection-row__num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(92,197,167,0.18);
+  color: #5CC5A7;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.cdi-collection-row__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.cdi-collection-row__name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  margin: 0;
+}
+
+.cdi-collection-row__reason {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.48);
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Implementation Roadmap */
+
+.cdi-roadmap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cdi-roadmap__step {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.cdi-roadmap__step--ready {
+  background: rgba(92,197,167,0.07);
+  border-color: rgba(92,197,167,0.2);
+}
+
+.cdi-roadmap__step--pending {
+  background: rgba(255,255,255,0.02);
+}
+
+.cdi-roadmap__icon {
+  font-size: 0.85rem;
+  font-weight: 700;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.cdi-roadmap__step--ready  .cdi-roadmap__icon { color: #5CC5A7; }
+.cdi-roadmap__step--pending .cdi-roadmap__icon { color: rgba(255,255,255,0.3); }
+
+.cdi-roadmap__label {
+  font-size: 0.76rem;
+  color: rgba(255,255,255,0.7);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.cdi-roadmap__step--ready .cdi-roadmap__label { color: rgba(255,255,255,0.88); font-weight: 500; }
+
+/* Relationship map (legacy) */
 
 .cdi-relmap {
   display: flex;

@@ -621,25 +621,36 @@ All classification rationale and outcomes must be specific to that named initiat
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Critical Data Identification" sections only:
 
-5. datasets (exactly 7 items)
-   Identify the 7 critical datasets required for this AI use case, one per data category.
-   Each item: { "name": "<dataset name, 2–4 words>", "purpose": "<1 sentence, ≤10 words>", "priority": "HIGH|MEDIUM|LOW", "availability": "AVAILABLE|MISSING|PARTIAL", "category": "Business|Product|System|Engineering|Operational|Supporting|Relationships" }
+5. datasets (exactly 6 items — one per data category)
+   The minimum critical datasets required to implement this AI use case.
+   Categories: Business & Program, Product, System & Software, Engineering, Operational, Supporting Knowledge.
+   Each item: { "name": "<2–4 word dataset name specific to this initiative>", "purpose": "<why this data is needed, ≤10 words, business reason not technical>", "typicalSource": "<tool or system where it typically exists, e.g. IBM DOORS / Polarion, Jira, TestRail, GitHub, CANoe, Teamcenter>", "priority": "HIGH|MEDIUM|LOW" }
+   - name: specific to THIS use case and domain
+   - purpose: why this data matters for the AI — not what the data is
+   - typicalSource: realistic engineering tool name(s) — use automotive tools for automotive context
+   - priority: HIGH = AI cannot function without it, MEDIUM = important but workaround possible, LOW = adds value but not blocking
 
-6. relationshipMap
-   Classify the identified datasets into 4 relationship roles.
-   Object: { "dataSource": ["<dataset 1>", "<dataset 2>"], "dependentData": ["..."], "relatedData": ["..."], "targetData": ["..."] }
-   dataSource = primary input datasets; dependentData = derived metrics/features; relatedData = contextual/reference data; targetData = final model outputs.
+6. traceabilityChain (exactly 6 short strings)
+   The engineering data flow from business objective through to AI output.
+   Must start with "Business Objective" and end with "AI Insight".
+   The 4 middle nodes should reflect the actual data chain for THIS use case.
+   Example: ["Business Objective", "Requirements", "Test Cases", "Test Results", "Defects", "AI Insight"]
+   Example (diagnostics): ["Business Objective", "ECU Logs", "DTCs", "Failure Patterns", "Root Cause", "AI Insight"]
 
-7. recommendations (exactly 3 items)
-   The 3 highest-priority data collection or preparation actions for this project.
-   Each item: { "text": "<action, ≤12 words>", "priority": "HIGH|MEDIUM|LOW" }
+7. collectionOrder (exactly 5 items)
+   Recommended order for collecting datasets — most critical first.
+   Each item: { "name": "<dataset name — must match a name from datasets>", "reason": "<why collect this first, ≤10 words, practical not governance>" }
+   Reason must be a practical implementation reason: e.g. "Foundation for all AI reasoning", "Links requirements to validation outcomes".
 
-8. coverageSummary
-   Object: { "criticalDatasets": <number 1–7>, "missingData": <number 0–7>, "confidence": <number 0–100> }
-   criticalDatasets = total datasets identified; missingData = count with availability MISSING or PARTIAL; confidence = estimated % confidence that identified data is sufficient.
+8. implementationRoadmap (exactly 5 items)
+   Step-by-step path showing which data is ready vs. still needed.
+   Each item: { "step": "<short action label, 3–5 words>", "status": "ready|pending" }
+   - "ready": data likely exists and is accessible in typical engineering systems
+   - "pending": data needs to be collected, extracted, or prepared
+   The last item must always be: { "step": "Ready for AI Data Preparation", "status": "pending" }
 
    Add all to the brief object:
-   "datasets": [...], "relationshipMap": {...}, "recommendations": [...], "coverageSummary": {...}`,
+   "datasets": [...], "traceabilityChain": [...], "collectionOrder": [...], "implementationRoadmap": [...]`,
   },
 
   'AI Data Preparation': {
@@ -1196,14 +1207,35 @@ function parseBriefOutput(rawSections, validTitles) {
       const datasets = rawDatasets
         .filter(d => d && typeof d === 'object' && String(d.name || '').trim())
         .map(d => ({
-          name:         String(d.name         || '').trim(),
-          purpose:      String(d.purpose      || '').trim(),
-          priority:     String(d.priority     || 'MEDIUM').trim(),
-          availability: String(d.availability || 'UNKNOWN').trim(),
-          category:     String(d.category     || '').trim(),
+          name:          String(d.name          || '').trim(),
+          purpose:       String(d.purpose       || '').trim(),
+          typicalSource: String(d.typicalSource || '').trim(),
+          priority:      String(d.priority      || 'MEDIUM').trim(),
+          availability:  String(d.availability  || '').trim(),
+          category:      String(d.category      || '').trim(),
         }))
-        .slice(0, 7);
+        .slice(0, 6);
 
+      const traceabilityChain = (Array.isArray(b.traceabilityChain) ? b.traceabilityChain : [])
+        .map(String).filter(Boolean).slice(0, 6);
+
+      const collectionOrder = (Array.isArray(b.collectionOrder) ? b.collectionOrder : [])
+        .filter(r => r && typeof r === 'object' && String(r.name || '').trim())
+        .map(r => ({
+          name:   String(r.name   || '').trim(),
+          reason: String(r.reason || '').trim(),
+        }))
+        .slice(0, 5);
+
+      const implementationRoadmap = (Array.isArray(b.implementationRoadmap) ? b.implementationRoadmap : [])
+        .filter(r => r && typeof r === 'object' && String(r.step || '').trim())
+        .map(r => ({
+          step:   String(r.step   || '').trim(),
+          status: ['ready', 'pending'].includes(r.status) ? r.status : 'pending',
+        }))
+        .slice(0, 5);
+
+      // Legacy parsers — kept for backward compatibility with old blueprints
       const rawRelMap = b.relationshipMap && typeof b.relationshipMap === 'object' ? b.relationshipMap : {};
       const relationshipMap = {
         dataSource:    Array.isArray(rawRelMap.dataSource)    ? rawRelMap.dataSource.map(String).filter(Boolean)    : [],
@@ -1688,7 +1720,11 @@ function parseBriefOutput(rawSections, validTitles) {
               ? { spokeNodes: b.spokeNodes.map(String).filter(Boolean).slice(0, 6) }
               : {}),
           // Data Readiness: Critical Data Identification extras
-          ...(datasets.length                          ? { datasets }         : {}),
+          ...(datasets.length                          ? { datasets }              : {}),
+          ...(traceabilityChain.length                 ? { traceabilityChain }     : {}),
+          ...(collectionOrder.length                   ? { collectionOrder }       : {}),
+          ...(implementationRoadmap.length             ? { implementationRoadmap } : {}),
+          // Legacy CDI fields — kept for backward compat
           ...(recommendations.length                   ? { recommendations }  : {}),
           ...(coverageSummary.criticalDatasets         ? { coverageSummary }  : {}),
           ...((relationshipMap.dataSource.length || relationshipMap.dependentData.length ||
@@ -2202,6 +2238,9 @@ OUTPUT — valid JSON only, no markdown fences:
       'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
+      // Data Readiness: CDI extras
+      'datasets', 'traceabilityChain', 'collectionOrder', 'implementationRoadmap',
+      'recommendations', 'coverageSummary', 'relationshipMap',
     ];
     for (const key of extraKeys) {
       if (b[key] !== undefined) {
@@ -2308,7 +2347,8 @@ OUTPUT — valid JSON only, no markdown fences:
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
       // Data Readiness extras
-      'datasets', 'recommendations', 'coverageSummary', 'relationshipMap',
+      'datasets', 'traceabilityChain', 'collectionOrder', 'implementationRoadmap',
+      'recommendations', 'coverageSummary', 'relationshipMap',
       'inputDatasets', 'pipelineStages', 'prepRecommendations', 'dataStats', 'readinessSummary',
       'projectSystems', 'archRecommendations', 'archStats', 'healthTimeline',
       // Technology Infrastructure extras

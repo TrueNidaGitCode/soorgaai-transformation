@@ -2632,266 +2632,312 @@ function buildVisionLayout(section) {
 // ── Data Readiness — Data Architecture Enablement ─────────────────────────────
 
 function buildDataArchitectureLayout(section) {
-  const b                  = section.brief || {};
-  const projectSystems     = b.projectSystems      || [];
-  const archRecs           = b.archRecommendations || [];
-  const archStats          = b.archStats           || {};
-  const healthTimeline     = b.healthTimeline      || [];
-  const leadershipQ        = b.leadershipValidation?.context || '';
+  const b             = section.brief || {};
+  const archLayers    = Array.isArray(b.archLayers)    ? b.archLayers    : [];
+  const archDecisions = Array.isArray(b.archDecisions) ? b.archDecisions : [];
+  const techStack     = Array.isArray(b.techStack)     ? b.techStack     : [];
+  const archSummary   = b.archSummary || {};
+  // Legacy fallbacks
+  const projectSystems = Array.isArray(b.projectSystems)     ? b.projectSystems     : [];
+  const archRecs       = Array.isArray(b.archRecommendations) ? b.archRecommendations : [];
+  const archStats      = b.archStats     || {};
+  const healthTimeline = Array.isArray(b.healthTimeline) ? b.healthTimeline : [];
+  const leadershipQ    = b.leadershipValidation?.context || '';
 
-  const CONN_CLASS  = { Connected: 'dae-conn--connected', Partial: 'dae-conn--partial', Disconnected: 'dae-conn--disconnected' };
-  const HEALTH_CLASS = { Healthy: 'dae-health--healthy', 'Needs Attention': 'dae-health--attention', Pending: 'dae-health--pending', Critical: 'dae-health--critical' };
-  const HEALTH_ICON  = { Healthy: '◉', 'Needs Attention': '◈', Pending: '◷', Critical: '◎' };
+  const PRIORITY_PIP  = { High: 'dae-pip--high', Medium: 'dae-pip--medium', Low: 'dae-pip--low' };
+  const DAE_IMPL_SEQ  = ['Connect Project Systems', 'Build Integration Layer', 'Create AI Data Store', 'Deploy AI Assistant', 'Scale Across Projects'];
+  const isNewFormat   = archLayers.length > 0;
 
   const wrap = document.createElement('div');
   wrap.className = 'dae-view';
 
-  // Architecture Health badge (top-right)
-  if (archStats.architectureReadiness) {
-    const badge = document.createElement('div');
-    badge.className = 'dae-health-badge';
-    badge.textContent = `ARCHITECTURE HEALTH: ${archStats.architectureReadiness}% HEALTHY`;
-    wrap.appendChild(badge);
-  }
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  // Strategic position
-  if (b.strategicPosition) {
-    const posLabel = document.createElement('p');
-    posLabel.className = 'brief-label';
-    posLabel.textContent = 'Strategic Position';
-    wrap.appendChild(posLabel);
-    const pos = document.createElement('p');
-    pos.className = 'dae-view__position';
-    pos.textContent = b.strategicPosition;
-    wrap.appendChild(pos);
-  }
-
-  // ── Upper body: 2-column (Systems | Network + Recs) ──────────────────────
+  // ── Upper body: Blueprint (left) | Flow (right) ───────────────────────────
 
   const upperBody = document.createElement('div');
   upperBody.className = 'dae-upper';
 
-  // LEFT: Project Systems list
-  const sysCol = document.createElement('div');
-  sysCol.className = 'dae-sys-col';
+  // LEFT: Architecture Blueprint — 4 layer cards
+  const blueprintCol = document.createElement('div');
+  blueprintCol.className = 'dae-blueprint-col';
 
-  const sysLbl = document.createElement('p');
-  sysLbl.className = 'brief-label';
-  sysLbl.textContent = 'Project Systems';
-  sysCol.appendChild(sysLbl);
+  if (isNewFormat) {
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Architecture Blueprint';
+    blueprintCol.appendChild(lbl);
 
-  projectSystems.forEach(sys => {
-    const card = document.createElement('div');
-    card.className = `dae-sys-card ${CONN_CLASS[sys.connectionStatus] || 'dae-conn--disconnected'}`;
+    const grid = document.createElement('div');
+    grid.className = 'dae-layer-grid';
 
-    const name = document.createElement('p');
-    name.className = 'dae-sys-card__name';
-    name.textContent = sys.name;
-    card.appendChild(name);
-
-    const conn = document.createElement('p');
-    conn.className = 'dae-sys-card__conn';
-    conn.textContent = `Connection Status: ${sys.connectionStatus}`;
-    card.appendChild(conn);
-
-    sysCol.appendChild(card);
-  });
-
-  if (!projectSystems.length) {
-    const empty = document.createElement('p');
-    empty.className = 'dae-empty';
-    empty.textContent = 'System list will appear after generation.';
-    sysCol.appendChild(empty);
-  }
-
-  upperBody.appendChild(sysCol);
-
-  // RIGHT: Network diagram + Recommendations
-  const rightCol = document.createElement('div');
-  rightCol.className = 'dae-right-col';
-
-  // Network diagram
-  const netSection = document.createElement('div');
-  netSection.className = 'dae-network';
-
-  const netLbl = document.createElement('p');
-  netLbl.className = 'brief-label';
-  netLbl.textContent = 'Data Architecture Network';
-  netSection.appendChild(netLbl);
-
-  // Build network from projectSystems — connected/partial/disconnected links
-  const netDiagram = document.createElement('div');
-  netDiagram.className = 'dae-net-diagram';
-
-  // Top row: source nodes (one per system, up to 4)
-  const netTop = document.createElement('div');
-  netTop.className = 'dae-net-row dae-net-row--top';
-  projectSystems.forEach(sys => {
-    const node = document.createElement('div');
-    node.className = `dae-net-node ${CONN_CLASS[sys.connectionStatus] || 'dae-conn--disconnected'}`;
-    node.innerHTML = `<span class="dae-net-node__icon">▣</span><span class="dae-net-node__name">${sys.name}</span>`;
-    netTop.appendChild(node);
-  });
-  netDiagram.appendChild(netTop);
-
-  // Connector arrows down to hub
-  const netArrows = document.createElement('div');
-  netArrows.className = 'dae-net-arrows';
-  projectSystems.forEach(sys => {
-    const arrow = document.createElement('div');
-    arrow.className = `dae-net-arrow ${CONN_CLASS[sys.connectionStatus] || 'dae-conn--disconnected'}`;
-    netArrows.appendChild(arrow);
-  });
-  netDiagram.appendChild(netArrows);
-
-  // Hub
-  const netHub = document.createElement('div');
-  netHub.className = 'dae-net-hub';
-  netHub.innerHTML = '<span class="dae-net-hub__icon">⬡</span><span class="dae-net-hub__label">AI Data Hub</span>';
-  netDiagram.appendChild(netHub);
-
-  // Legend
-  const legend = document.createElement('div');
-  legend.className = 'dae-net-legend';
-  [
-    { cls: 'dae-conn--connected',    label: 'Healthy' },
-    { cls: 'dae-conn--partial',      label: 'Limited' },
-    { cls: 'dae-conn--disconnected', label: 'Missing' },
-  ].forEach(item => {
-    const dot = document.createElement('span');
-    dot.className = `dae-net-legend__dot ${item.cls}`;
-    const lbl = document.createElement('span');
-    lbl.className = 'dae-net-legend__label';
-    lbl.textContent = item.label;
-    legend.appendChild(dot);
-    legend.appendChild(lbl);
-  });
-  netDiagram.appendChild(legend);
-
-  netSection.appendChild(netDiagram);
-  rightCol.appendChild(netSection);
-
-  // AI Recommendations grid
-  if (archRecs.length) {
-    const recSection = document.createElement('div');
-    recSection.className = 'dae-recs';
-
-    const recLbl = document.createElement('p');
-    recLbl.className = 'brief-label';
-    recLbl.textContent = 'AI Recommendations';
-    recSection.appendChild(recLbl);
-
-    const recGrid = document.createElement('div');
-    recGrid.className = 'dae-rec-grid';
-
-    const IMPACT_CLASS = { High: 'dae-impact--high', Medium: 'dae-impact--medium', Low: 'dae-impact--low' };
-
-    archRecs.forEach(rec => {
+    archLayers.forEach((layer, i) => {
       const card = document.createElement('div');
-      card.className = 'dae-rec-card';
+      card.className = `dae-layer-card dae-layer-card--${i}`;
 
-      const title = document.createElement('p');
-      title.className = 'dae-rec-card__title';
-      title.textContent = rec.title;
-      card.appendChild(title);
+      const name = document.createElement('p');
+      name.className = 'dae-layer-card__name'; name.textContent = layer.name;
+      card.appendChild(name);
 
-      const meta = document.createElement('div');
-      meta.className = 'dae-rec-card__meta';
-      meta.innerHTML = `
-        <span class="dae-rec-meta-row">Impact: <strong class="${IMPACT_CLASS[rec.impact] || ''}">${rec.impact}</strong></span>
-        <span class="dae-rec-meta-row">Estimated Effort: <strong>${rec.effort}</strong></span>`;
-      card.appendChild(meta);
+      if (layer.purpose) {
+        const purposeLabel = document.createElement('span');
+        purposeLabel.className = 'dae-layer-card__field-label'; purposeLabel.textContent = 'Purpose';
+        card.appendChild(purposeLabel);
+        const purpose = document.createElement('p');
+        purpose.className = 'dae-layer-card__purpose'; purpose.textContent = layer.purpose;
+        card.appendChild(purpose);
+      }
 
-      recGrid.appendChild(card);
+      if (layer.recommended?.length) {
+        const recLabel = document.createElement('span');
+        recLabel.className = 'dae-layer-card__field-label';
+        recLabel.textContent = i === 0 ? 'Recommended Systems' : 'Recommended Technologies';
+        card.appendChild(recLabel);
+        const tags = document.createElement('div');
+        tags.className = 'dae-layer-card__tags';
+        layer.recommended.forEach(item => {
+          const tag = document.createElement('span');
+          tag.className = 'dae-layer-card__tag'; tag.textContent = item;
+          tags.appendChild(tag);
+        });
+        card.appendChild(tags);
+      }
+
+      if (layer.whyNeeded) {
+        const whyLabel = document.createElement('span');
+        whyLabel.className = 'dae-layer-card__field-label'; whyLabel.textContent = 'Why Needed';
+        card.appendChild(whyLabel);
+        const why = document.createElement('p');
+        why.className = 'dae-layer-card__why'; why.textContent = layer.whyNeeded;
+        card.appendChild(why);
+      }
+
+      grid.appendChild(card);
     });
 
-    recSection.appendChild(recGrid);
-    rightCol.appendChild(recSection);
+    blueprintCol.appendChild(grid);
+  } else {
+    // Legacy: project systems
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Project Systems';
+    blueprintCol.appendChild(lbl);
+    const CONN_CLASS = { Connected: 'dae-conn--connected', Partial: 'dae-conn--partial', Disconnected: 'dae-conn--disconnected' };
+    projectSystems.forEach(sys => {
+      const card = document.createElement('div');
+      card.className = `dae-sys-card ${CONN_CLASS[sys.connectionStatus] || 'dae-conn--disconnected'}`;
+      const nm = document.createElement('p'); nm.className = 'dae-sys-card__name'; nm.textContent = sys.name;
+      const conn = document.createElement('p'); conn.className = 'dae-sys-card__conn'; conn.textContent = `Connection Status: ${sys.connectionStatus}`;
+      card.appendChild(nm); card.appendChild(conn); blueprintCol.appendChild(card);
+    });
+    if (!projectSystems.length) {
+      const empty = document.createElement('p'); empty.className = 'dae-empty'; empty.textContent = 'System list will appear after generation.';
+      blueprintCol.appendChild(empty);
+    }
   }
 
-  upperBody.appendChild(rightCol);
+  upperBody.appendChild(blueprintCol);
+
+  // RIGHT: Architecture Flow — vertical chain
+  const flowCol = document.createElement('div');
+  flowCol.className = 'dae-flow-col';
+
+  const flowLbl = document.createElement('p');
+  flowLbl.className = 'brief-label'; flowLbl.textContent = 'Architecture Flow';
+  flowCol.appendChild(flowLbl);
+
+  const flow = document.createElement('div');
+  flow.className = 'dae-flow';
+
+  if (isNewFormat && archLayers.length) {
+    archLayers.forEach((layer, i) => {
+      const node = document.createElement('div');
+      node.className = `dae-flow__node dae-flow__node--${i}`;
+      const nName = document.createElement('p');
+      nName.className = 'dae-flow__node-name'; nName.textContent = layer.name;
+      node.appendChild(nName);
+      if (layer.recommended?.length) {
+        const nSubs = document.createElement('p');
+        nSubs.className = 'dae-flow__node-subs';
+        nSubs.textContent = layer.recommended.slice(0, 3).join(' · ');
+        node.appendChild(nSubs);
+      }
+      flow.appendChild(node);
+      if (i < archLayers.length - 1) {
+        const arr = document.createElement('div'); arr.className = 'dae-flow__arrow'; arr.textContent = '↓';
+        flow.appendChild(arr);
+      }
+    });
+  } else {
+    // Legacy: static flow nodes
+    ['Source Systems', 'Integration Layer', 'AI Data Hub', 'AI Applications'].forEach((name, i, arr) => {
+      const node = document.createElement('div'); node.className = 'dae-flow__node';
+      const nName = document.createElement('p'); nName.className = 'dae-flow__node-name'; nName.textContent = name;
+      node.appendChild(nName); flow.appendChild(node);
+      if (i < arr.length - 1) {
+        const arrow = document.createElement('div'); arrow.className = 'dae-flow__arrow'; arrow.textContent = '↓';
+        flow.appendChild(arrow);
+      }
+    });
+  }
+
+  flowCol.appendChild(flow);
+  upperBody.appendChild(flowCol);
   wrap.appendChild(upperBody);
 
-  // ── Stats bar ─────────────────────────────────────────────────────────────
+  // ── Middle: Decisions (left) | Tech Stack (right) ────────────────────────
 
-  const hasStats = archStats.architectureReadiness || archStats.automation ||
-                   archStats.connectedSystems || archStats.disconnectedSystems;
-  if (hasStats) {
-    const statsBar = document.createElement('div');
-    statsBar.className = 'dae-stats-bar';
+  const middleBody = document.createElement('div');
+  middleBody.className = 'dae-middle';
 
+  // Decisions
+  const decisionsCol = document.createElement('div');
+  decisionsCol.className = 'dae-decisions-col';
+
+  const decisionsToRender = archDecisions.length ? archDecisions : null;
+  if (decisionsToRender) {
+    const dLbl = document.createElement('p');
+    dLbl.className = 'brief-label'; dLbl.textContent = 'Recommended Architecture Decisions';
+    decisionsCol.appendChild(dLbl);
+
+    decisionsToRender.forEach(dec => {
+      const card = document.createElement('div');
+      card.className = 'dae-decision-card';
+
+      const decLabel = document.createElement('span'); decLabel.className = 'dae-decision-card__field-label'; decLabel.textContent = 'Decision';
+      card.appendChild(decLabel);
+      const decText = document.createElement('p'); decText.className = 'dae-decision-card__decision'; decText.textContent = dec.decision;
+      card.appendChild(decText);
+
+      const benLabel = document.createElement('span'); benLabel.className = 'dae-decision-card__field-label'; benLabel.textContent = 'Benefit';
+      card.appendChild(benLabel);
+      const benText = document.createElement('p'); benText.className = 'dae-decision-card__benefit'; benText.textContent = dec.benefit;
+      card.appendChild(benText);
+
+      if (dec.priority) {
+        const pip = document.createElement('span');
+        pip.className = `dae-pip ${PRIORITY_PIP[dec.priority] || 'dae-pip--medium'}`;
+        pip.textContent = dec.priority;
+        card.appendChild(pip);
+      }
+
+      decisionsCol.appendChild(card);
+    });
+  } else if (archRecs.length) {
+    // Legacy
+    const dLbl = document.createElement('p'); dLbl.className = 'brief-label'; dLbl.textContent = 'AI Recommendations';
+    decisionsCol.appendChild(dLbl);
+    const IMPACT_CLASS = { High: 'dae-impact--high', Medium: 'dae-impact--medium', Low: 'dae-impact--low' };
+    const recGrid = document.createElement('div'); recGrid.className = 'dae-rec-grid';
+    archRecs.forEach(rec => {
+      const card = document.createElement('div'); card.className = 'dae-rec-card';
+      const title = document.createElement('p'); title.className = 'dae-rec-card__title'; title.textContent = rec.title;
+      const meta = document.createElement('div'); meta.className = 'dae-rec-card__meta';
+      meta.innerHTML = `<span class="dae-rec-meta-row">Impact: <strong class="${IMPACT_CLASS[rec.impact] || ''}">${rec.impact}</strong></span><span class="dae-rec-meta-row">Effort: <strong>${rec.effort}</strong></span>`;
+      card.appendChild(title); card.appendChild(meta); recGrid.appendChild(card);
+    });
+    decisionsCol.appendChild(recGrid);
+  }
+
+  middleBody.appendChild(decisionsCol);
+
+  // Tech Stack table
+  const techCol = document.createElement('div');
+  techCol.className = 'dae-tech-col';
+
+  if (techStack.length) {
+    const tLbl = document.createElement('p');
+    tLbl.className = 'brief-label'; tLbl.textContent = 'AI Technology Recommendation';
+    techCol.appendChild(tLbl);
+
+    const table = document.createElement('div');
+    table.className = 'dae-tech-table';
+
+    const header = document.createElement('div');
+    header.className = 'dae-tech-table__row dae-tech-table__row--header';
+    ['Architecture Layer', 'Recommendation'].forEach(h => {
+      const cell = document.createElement('span'); cell.className = 'dae-tech-table__cell'; cell.textContent = h;
+      header.appendChild(cell);
+    });
+    table.appendChild(header);
+
+    techStack.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'dae-tech-table__row';
+      const layer = document.createElement('span'); layer.className = 'dae-tech-table__cell dae-tech-table__cell--layer'; layer.textContent = item.layer;
+      const rec   = document.createElement('span'); rec.className   = 'dae-tech-table__cell dae-tech-table__cell--rec';   rec.textContent   = item.recommendation;
+      row.appendChild(layer); row.appendChild(rec); table.appendChild(row);
+    });
+
+    techCol.appendChild(table);
+  }
+
+  middleBody.appendChild(techCol);
+  wrap.appendChild(middleBody);
+
+  // ── Implementation Sequence ───────────────────────────────────────────────
+
+  const implSection = document.createElement('div');
+  implSection.className = 'dae-impl-section';
+
+  const implLbl = document.createElement('p');
+  implLbl.className = 'brief-label'; implLbl.textContent = 'Recommended Implementation Sequence';
+  implSection.appendChild(implLbl);
+
+  const implRow = document.createElement('div');
+  implRow.className = 'dae-impl-row';
+
+  DAE_IMPL_SEQ.forEach((step, i) => {
+    const stepEl = document.createElement('div');
+    stepEl.className = 'dae-impl-step';
+    const num = document.createElement('span'); num.className = 'dae-impl-step__num'; num.textContent = i + 1;
+    const label = document.createElement('p'); label.className = 'dae-impl-step__label'; label.textContent = step;
+    stepEl.appendChild(num); stepEl.appendChild(label);
+    implRow.appendChild(stepEl);
+    if (i < DAE_IMPL_SEQ.length - 1) {
+      const arr = document.createElement('span'); arr.className = 'dae-impl-row__arrow'; arr.textContent = '→';
+      implRow.appendChild(arr);
+    }
+  });
+
+  implSection.appendChild(implRow);
+  wrap.appendChild(implSection);
+
+  // ── Architecture Summary strip ────────────────────────────────────────────
+
+  const hasSummary = archSummary.sourceSystems || archSummary.integrationPoints;
+  if (hasSummary) {
+    const strip = document.createElement('div');
+    strip.className = 'dae-arch-summary';
+
+    [
+      { value: archSummary.sourceSystems,     label: 'Source Systems' },
+      { value: archSummary.integrationPoints, label: 'Integration Points' },
+      { value: archSummary.aiStorage  || '—', label: 'AI Storage',   isText: true },
+      { value: archSummary.aiConsumers || '—', label: 'AI Consumers', isText: true },
+    ].forEach(stat => {
+      const cell = document.createElement('div'); cell.className = 'dae-arch-summary__cell';
+      const val  = document.createElement('p');
+      val.className = stat.isText ? 'dae-arch-summary__value dae-arch-summary__value--text' : 'dae-arch-summary__value';
+      val.textContent = stat.value ?? '—';
+      const lbl2 = document.createElement('p'); lbl2.className = 'dae-arch-summary__label'; lbl2.textContent = stat.label;
+      cell.appendChild(val); cell.appendChild(lbl2); strip.appendChild(cell);
+    });
+
+    wrap.appendChild(strip);
+  } else if (archStats.architectureReadiness) {
+    // Legacy stats bar
+    const statsBar = document.createElement('div'); statsBar.className = 'dae-stats-bar';
     [
       { value: `${archStats.architectureReadiness || 0}%`, label: 'Architecture Readiness' },
       { value: `${archStats.automation || 0}%`,            label: 'Automation' },
-      { value: archStats.connectedSystems || 0,            label: 'Connected Systems' },
-      { value: archStats.disconnectedSystems || 0,         label: 'Disconnected Systems' },
+      { value: archStats.connectedSystems    || 0,          label: 'Connected Systems' },
+      { value: archStats.disconnectedSystems || 0,          label: 'Disconnected Systems' },
     ].forEach(stat => {
-      const cell = document.createElement('div');
-      cell.className = 'dae-stat-cell';
-      const val = document.createElement('p');
-      val.className = 'dae-stat-cell__value';
-      val.textContent = stat.value;
-      const lbl = document.createElement('p');
-      lbl.className = 'dae-stat-cell__label';
-      lbl.textContent = stat.label;
-      cell.appendChild(val);
-      cell.appendChild(lbl);
-      statsBar.appendChild(cell);
+      const cell = document.createElement('div'); cell.className = 'dae-stat-cell';
+      const val = document.createElement('p'); val.className = 'dae-stat-cell__value'; val.textContent = stat.value;
+      const lbl = document.createElement('p'); lbl.className = 'dae-stat-cell__label'; lbl.textContent = stat.label;
+      cell.appendChild(val); cell.appendChild(lbl); statsBar.appendChild(cell);
     });
-
     wrap.appendChild(statsBar);
-  }
-
-  // ── Architecture Health Timeline ──────────────────────────────────────────
-
-  if (healthTimeline.length) {
-    const timelineSection = document.createElement('div');
-    timelineSection.className = 'dae-timeline';
-
-    const timelineLbl = document.createElement('p');
-    timelineLbl.className = 'dae-timeline__heading';
-    timelineLbl.textContent = 'Architecture Health Timeline';
-    timelineSection.appendChild(timelineLbl);
-
-    const timelineRows = document.createElement('div');
-    timelineRows.className = 'dae-timeline__rows';
-
-    healthTimeline.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'dae-timeline-row';
-
-      const iconWrap = document.createElement('div');
-      iconWrap.className = `dae-timeline-row__icon ${HEALTH_CLASS[item.health] || 'dae-health--pending'}`;
-      iconWrap.textContent = HEALTH_ICON[item.health] || '◷';
-      row.appendChild(iconWrap);
-
-      const text = document.createElement('div');
-      text.className = 'dae-timeline-row__text';
-
-      const stageName = document.createElement('p');
-      stageName.className = 'dae-timeline-row__stage';
-      stageName.textContent = item.stage;
-      text.appendChild(stageName);
-
-      if (item.status) {
-        const stageStatus = document.createElement('p');
-        stageStatus.className = 'dae-timeline-row__status';
-        stageStatus.textContent = item.status;
-        text.appendChild(stageStatus);
-      }
-
-      row.appendChild(text);
-
-      const healthPill = document.createElement('span');
-      healthPill.className = `dae-health-pill ${HEALTH_CLASS[item.health] || 'dae-health--pending'}`;
-      healthPill.textContent = item.health;
-      row.appendChild(healthPill);
-
-      timelineRows.appendChild(row);
-    });
-
-    timelineSection.appendChild(timelineRows);
-    wrap.appendChild(timelineSection);
   }
 
   // ── Leadership question footer ────────────────────────────────────────────

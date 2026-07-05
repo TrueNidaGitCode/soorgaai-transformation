@@ -64,6 +64,10 @@ const projectSystemSchema       = new mongoose.Schema({ name: String, connection
 const archRecommendationSchema  = new mongoose.Schema({ title: String, impact: String, effort: String }, { _id: false });
 const archStatsSchema           = new mongoose.Schema({ architectureReadiness: Number, automation: Number, connectedSystems: Number, disconnectedSystems: Number }, { _id: false });
 const healthTimelineSchema      = new mongoose.Schema({ stage: String, status: String, health: String }, { _id: false });
+const archLayerSchema           = new mongoose.Schema({ name: String, purpose: String, recommended: [String], whyNeeded: String }, { _id: false });
+const archDecisionSchema        = new mongoose.Schema({ decision: String, benefit: String, priority: String }, { _id: false });
+const techStackItemSchema       = new mongoose.Schema({ layer: String, recommendation: String }, { _id: false });
+const archSummarySchema         = new mongoose.Schema({ sourceSystems: Number, integrationPoints: Number, aiStorage: String, aiConsumers: String }, { _id: false });
 
 // ── Technology Infrastructure sub-schemas ─────────────────────────────────────
 const connectedSystemSchema         = new mongoose.Schema({ name: String, integrationMethod: String, status: String, healthIndicator: String }, { _id: false });
@@ -176,6 +180,10 @@ const briefSchema = new mongoose.Schema({
   archRecommendations:      { type: [archRecommendationSchema], default: [] },
   archStats:                { type: archStatsSchema,            default: undefined },
   healthTimeline:           { type: [healthTimelineSchema],     default: [] },
+  archLayers:               { type: [archLayerSchema],          default: [] },
+  archDecisions:            { type: [archDecisionSchema],       default: [] },
+  techStack:                { type: [techStackItemSchema],      default: [] },
+  archSummary:              { type: archSummarySchema,          default: undefined },
   // Technology Infrastructure: System Integration & Architecture extras
   integrationReadiness:     { type: Number,   default: 0 },
   connectedSystems:         { type: [connectedSystemSchema],          default: [] },

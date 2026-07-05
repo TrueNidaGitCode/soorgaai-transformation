@@ -685,24 +685,32 @@ SECTION-SPECIFIC EXTRAS — "AI Data Preparation" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Data Architecture Enablement" sections only:
 
-5. projectSystems (up to 4 items)
-   The engineering or project systems containing data relevant to this AI use case.
-   Each item: { "name": "<system name, 2–4 words>", "connectionStatus": "Connected|Partial|Disconnected" }
+5. archLayers (exactly 4 items — fixed order: Source Systems, Integration Layer, AI Data Store, AI Applications)
+   Each item describes one layer of the recommended AI architecture for this use case.
+   Fields:
+   - "name": "Source Systems" | "Integration Layer" | "AI Data Store" | "AI Applications"
+   - "purpose": "<one sentence, what this layer does, ≤10 words>"
+   - "recommended": ["<tool or technology 1>", "<tool or technology 2>", "<tool or technology 3>", "<tool or technology 4>"] — 3–4 specific technologies or tools appropriate for this AI use case
+   - "whyNeeded": "<one sentence explaining why this layer is needed for AI, ≤12 words>"
+   Example: { "name": "Source Systems", "purpose": "Where project data originates.", "recommended": ["Jira", "Confluence", "GitHub", "Polarion"], "whyNeeded": "Provides the engineering artifacts AI needs to function." }
 
-6. archRecommendations (up to 4 items)
-   The highest-priority architecture improvement actions for this project.
-   Each item: { "title": "<action, ≤6 words>", "impact": "High|Medium|Low", "effort": "Low|Medium|High" }
+6. archDecisions (exactly 4 items)
+   The most important architecture decisions the team should make for this AI use case.
+   Each item: { "decision": "<specific architectural choice, ≤10 words>", "benefit": "<why this matters, ≤8 words>", "priority": "High|Medium|Low" }
+   Example: { "decision": "Use REST APIs instead of manual exports.", "benefit": "Real-time synchronization.", "priority": "High" }
 
-7. archStats
-   Key architecture health metrics for this project.
-   Object: { "architectureReadiness": <0–100>, "automation": <0–100>, "connectedSystems": <count>, "disconnectedSystems": <count> }
+7. techStack (exactly 6–7 items — one per architecture layer)
+   The recommended technology stack for this AI use case.
+   Each item: { "layer": "<layer name, 2–3 words>", "recommendation": "<specific technology or tool names, ≤8 words>" }
+   Cover: Source Systems, Integration, Processing, AI Storage, AI Framework, LLM, Deployment.
+   Example: { "layer": "AI Storage", "recommendation": "PostgreSQL + Pinecone (Vector DB)" }
 
-8. healthTimeline (exactly 4 items, fixed order: Source Systems, Integration, AI Data Hub, AI Application)
-   Current health status of each architecture layer for this project.
-   Each item: { "stage": "Source Systems|Integration|AI Data Hub|AI Application", "status": "<1-line description, ≤6 words>", "health": "Healthy|Needs Attention|Pending|Critical" }
+8. archSummary
+   Key planning totals derived from the above.
+   Object: { "sourceSystems": <count of source systems recommended>, "integrationPoints": <count of integration methods>, "aiStorage": "<primary storage technology, ≤5 words>", "aiConsumers": "<list of AI consumers, ≤6 words>" }
 
    Add all to the brief object:
-   "projectSystems": [...], "archRecommendations": [...], "archStats": {...}, "healthTimeline": [...]`,
+   "archLayers": [...], "archDecisions": [...], "techStack": [...], "archSummary": {...}`,
   },
 
   'System Integration & Architecture': {
@@ -1355,6 +1363,47 @@ function parseBriefOutput(rawSections, validTitles) {
         estimatedDuration:        String(rawPrepSummary.estimatedDuration       || '').trim(),
       };
 
+      // ── Data Readiness: Data Architecture Enablement parsers ─────────────────
+
+      const ARCH_LAYER_NAMES = ['Source Systems', 'Integration Layer', 'AI Data Store', 'AI Applications'];
+      const rawArchLayers = Array.isArray(b.archLayers) ? b.archLayers : [];
+      const archLayers = ARCH_LAYER_NAMES.map(layerName => {
+        const found = rawArchLayers.find(l => l && String(l.name || '').trim() === layerName);
+        return {
+          name:        layerName,
+          purpose:     String(found?.purpose     || '').trim(),
+          recommended: (Array.isArray(found?.recommended) ? found.recommended : []).map(String).filter(Boolean).slice(0, 4),
+          whyNeeded:   String(found?.whyNeeded   || '').trim(),
+        };
+      });
+
+      const rawArchDecisions = Array.isArray(b.archDecisions) ? b.archDecisions : [];
+      const archDecisions = rawArchDecisions
+        .filter(d => d && typeof d === 'object' && String(d.decision || '').trim())
+        .map(d => ({
+          decision: String(d.decision || '').trim(),
+          benefit:  String(d.benefit  || '').trim(),
+          priority: String(d.priority || 'Medium').trim(),
+        }))
+        .slice(0, 4);
+
+      const rawTechStack = Array.isArray(b.techStack) ? b.techStack : [];
+      const techStack = rawTechStack
+        .filter(t => t && typeof t === 'object' && String(t.layer || '').trim())
+        .map(t => ({
+          layer:          String(t.layer          || '').trim(),
+          recommendation: String(t.recommendation || '').trim(),
+        }))
+        .slice(0, 7);
+
+      const rawArchSummary = b.archSummary && typeof b.archSummary === 'object' ? b.archSummary : {};
+      const archSummary = {
+        sourceSystems:     parseInt(rawArchSummary.sourceSystems,     10) || 0,
+        integrationPoints: parseInt(rawArchSummary.integrationPoints, 10) || 0,
+        aiStorage:         String(rawArchSummary.aiStorage     || '').trim(),
+        aiConsumers:       String(rawArchSummary.aiConsumers   || '').trim(),
+      };
+
       // ── Technology Infrastructure: System Integration & Architecture parsers ──
 
       const integrationReadiness = parseInt(b.integrationReadiness, 10) || 0;
@@ -1793,6 +1842,11 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(archRecommendations.length     ? { archRecommendations }  : {}),
           ...(archStats.architectureReadiness? { archStats }            : {}),
           ...(healthTimeline.length          ? { healthTimeline }       : {}),
+          // Data Readiness: Data Architecture Enablement extras
+          ...(archLayers.some(l => l.recommended.length) ? { archLayers }    : {}),
+          ...(archDecisions.length                        ? { archDecisions }  : {}),
+          ...(techStack.length                            ? { techStack }      : {}),
+          ...(archSummary.sourceSystems                   ? { archSummary }    : {}),
           // Technology Infrastructure: System Integration & Architecture extras
           ...(integrationReadiness             ? { integrationReadiness } : {}),
           ...(connectedSystems.length          ? { connectedSystems }     : {}),
@@ -2404,6 +2458,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'inputDatasets', 'pipelineStages', 'prepRecommendations', 'dataStats', 'readinessSummary',
       'prepActivities', 'prepWorkPackages', 'firstSteps', 'prepSummary',
       'projectSystems', 'archRecommendations', 'archStats', 'healthTimeline',
+      'archLayers', 'archDecisions', 'techStack', 'archSummary',
       // Technology Infrastructure extras
       'integrationReadiness', 'connectedSystems', 'integrationSummary',
       'platformReadiness', 'capabilityAssessment', 'platformStack', 'platformRecommendations', 'platformSummary',

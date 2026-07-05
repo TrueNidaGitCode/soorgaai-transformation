@@ -60,6 +60,9 @@ const DOMAIN_ICONS_MAP = {
   'governance-security':       `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`,
 };
 
+// ── Retired capabilities (filtered from all render paths) ─────────────────────
+const RETIRED_CAPABILITY_IDS = new Set(['business-strategy-alignment']);
+
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let _blueprint           = null;
@@ -212,7 +215,7 @@ function renderCapabilityTabs(blueprint) {
   nav.innerHTML = '';
 
   const dom  = (blueprint.domains || [])[_selectedDomainIdx];
-  const caps = dom?.capabilities || [];
+  const caps = (dom?.capabilities || []).filter(c => !RETIRED_CAPABILITY_IDS.has(c.capabilityId));
 
   // Journey header: label + "Step N of M" counter
   if (header) {
@@ -1346,32 +1349,29 @@ function buildCrossFunctionalLayout(section) {
       grid.appendChild(card);
     });
     teamSection.appendChild(grid);
-  } else {
-    // Legacy: show static org chart SVG + role list
-    teamSection.appendChild(buildTeamHierarchySvg());
-    if (legacyRoles.length) {
-      const roleGrid = document.createElement('div');
-      roleGrid.className = 'team-groups-grid';
-      legacyRoles.forEach(role => {
-        const roleObj = typeof role === 'object' ? role : { role, responsibility: '' };
-        const card = document.createElement('div');
-        card.className = 'team-group-card';
-        const rName = document.createElement('p');
-        rName.className = 'team-group-card__label';
-        rName.textContent = roleObj.role || roleObj.name || String(role);
-        card.appendChild(rName);
-        if (roleObj.responsibility) {
-          const ul = document.createElement('ul');
-          ul.className = 'team-group-card__roles';
-          const li = document.createElement('li');
-          li.textContent = roleObj.responsibility;
-          ul.appendChild(li);
-          card.appendChild(ul);
-        }
-        roleGrid.appendChild(card);
-      });
-      teamSection.appendChild(roleGrid);
-    }
+  } else if (legacyRoles.length) {
+    // Legacy flat teamRoles — render each as a single-role group card
+    const roleGrid = document.createElement('div');
+    roleGrid.className = 'team-groups-grid';
+    legacyRoles.forEach(role => {
+      const roleObj = typeof role === 'object' ? role : { title: String(role), description: '' };
+      const card = document.createElement('div');
+      card.className = 'team-group-card';
+      const rName = document.createElement('p');
+      rName.className = 'team-group-card__label';
+      rName.textContent = roleObj.title || roleObj.role || roleObj.name || String(role);
+      card.appendChild(rName);
+      if (roleObj.description || roleObj.responsibility) {
+        const ul = document.createElement('ul');
+        ul.className = 'team-group-card__roles';
+        const li = document.createElement('li');
+        li.textContent = roleObj.description || roleObj.responsibility;
+        ul.appendChild(li);
+        card.appendChild(ul);
+      }
+      roleGrid.appendChild(card);
+    });
+    teamSection.appendChild(roleGrid);
   }
   wrap.appendChild(teamSection);
 
@@ -5934,8 +5934,6 @@ const DOMAIN_ORDER = ['ai-use-cases','ai-strategy','data-readiness','technology-
 
 // Capability IDs that have been retired and should never appear in the workspace,
 // even if they are stored in older blueprints in the database.
-const RETIRED_CAPABILITY_IDS = new Set(['business-strategy-alignment']);
-
 function stripRetiredCapabilities(blueprint) {
   for (const dom of blueprint.domains || []) {
     dom.capabilities = (dom.capabilities || []).filter(

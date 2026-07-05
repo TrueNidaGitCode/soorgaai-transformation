@@ -1183,7 +1183,11 @@ function buildSolutionCentricLayout(section) {
   }
 
   // 3. Solution Components — capability cards
-  const components = Array.isArray(b.solutionComponents) ? b.solutionComponents : [];
+  // New blueprints: b.solutionComponents[]. Old blueprints: extra solutionPortfolio items as fallback.
+  let components = Array.isArray(b.solutionComponents) ? b.solutionComponents : [];
+  if (!components.length && Array.isArray(b.solutionPortfolio) && b.solutionPortfolio.length > 1) {
+    components = b.solutionPortfolio.slice(1).map(p => ({ name: p.name || '—', purpose: p.businessOwner ? `Owner: ${p.businessOwner}` : '' }));
+  }
   if (components.length) {
     const compSection = document.createElement('div');
     compSection.className = 'solution-portfolio-section';
@@ -1311,26 +1315,26 @@ function buildCrossFunctionalLayout(section) {
   wrap.appendChild(stmt);
 
   // 2. Functional Team Groups
-  const groups = Array.isArray(b.teamGroups) ? b.teamGroups : [];
-  if (groups.length) {
-    const groupsSection = document.createElement('div');
-    groupsSection.className = 'team-structure-section';
-    const groupsLbl = document.createElement('p');
-    groupsLbl.className = 'brief-label'; groupsLbl.textContent = 'Delivery Team';
-    groupsSection.appendChild(groupsLbl);
+  // New blueprints: b.teamGroups[]. Old blueprints: flat b.teamRoles[] — wrap each into a single group per role.
+  const groups = Array.isArray(b.teamGroups) && b.teamGroups.length ? b.teamGroups : null;
+  const legacyRoles = Array.isArray(b.teamRoles) ? b.teamRoles : [];
 
+  const teamSection = document.createElement('div');
+  teamSection.className = 'team-structure-section';
+  const teamLbl = document.createElement('p');
+  teamLbl.className = 'brief-label'; teamLbl.textContent = 'Delivery Team';
+  teamSection.appendChild(teamLbl);
+
+  if (groups) {
     const grid = document.createElement('div');
     grid.className = 'team-groups-grid';
-
     groups.forEach(g => {
       const card = document.createElement('div');
       card.className = 'team-group-card';
-
       const label = document.createElement('p');
       label.className = 'team-group-card__label';
       label.textContent = g.group || '—';
       card.appendChild(label);
-
       const roleList = document.createElement('ul');
       roleList.className = 'team-group-card__roles';
       (g.roles || []).forEach(r => {
@@ -1341,10 +1345,35 @@ function buildCrossFunctionalLayout(section) {
       card.appendChild(roleList);
       grid.appendChild(card);
     });
-
-    groupsSection.appendChild(grid);
-    wrap.appendChild(groupsSection);
+    teamSection.appendChild(grid);
+  } else {
+    // Legacy: show static org chart SVG + role list
+    teamSection.appendChild(buildTeamHierarchySvg());
+    if (legacyRoles.length) {
+      const roleGrid = document.createElement('div');
+      roleGrid.className = 'team-groups-grid';
+      legacyRoles.forEach(role => {
+        const roleObj = typeof role === 'object' ? role : { role, responsibility: '' };
+        const card = document.createElement('div');
+        card.className = 'team-group-card';
+        const rName = document.createElement('p');
+        rName.className = 'team-group-card__label';
+        rName.textContent = roleObj.role || roleObj.name || String(role);
+        card.appendChild(rName);
+        if (roleObj.responsibility) {
+          const ul = document.createElement('ul');
+          ul.className = 'team-group-card__roles';
+          const li = document.createElement('li');
+          li.textContent = roleObj.responsibility;
+          ul.appendChild(li);
+          card.appendChild(ul);
+        }
+        roleGrid.appendChild(card);
+      });
+      teamSection.appendChild(roleGrid);
+    }
   }
+  wrap.appendChild(teamSection);
 
   // 4. Success Metrics
   if (b.kpiHighlights?.length) {

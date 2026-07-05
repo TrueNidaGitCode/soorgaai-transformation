@@ -1711,13 +1711,98 @@ function buildFinancialPerformanceLayout(section) {
   const wrap = document.createElement('div');
   wrap.className = 'financial-performance-layout';
 
+  // 1. Strategic Position
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  if (b.waterfallItems?.length) {
-    // Value Waterfall Visualization
-    wrap.appendChild(buildDiagramSection('Value Waterfall Visualization', buildWaterfallSvg(b.waterfallItems)));
+  // 2. Executive ROI Summary — 4-column stat row
+  if (b.roiSummary) {
+    const roiSec = document.createElement('div');
+    roiSec.className = 'roi-section';
+    const roiLbl = document.createElement('p');
+    roiLbl.className = 'brief-label'; roiLbl.textContent = 'Executive ROI Summary';
+    roiSec.appendChild(roiLbl);
 
-    // Financial Breakdown — one card per waterfall item (title + description)
+    const roiRow = document.createElement('div');
+    roiRow.className = 'roi-summary-row';
+    [
+      { label: 'Investment',    value: b.roiSummary.investment,    mod: '' },
+      { label: 'Annual Value',  value: b.roiSummary.annualValue,   mod: '' },
+      { label: 'Payback',       value: b.roiSummary.payback,       mod: '' },
+      { label: 'Recommendation',value: b.roiSummary.recommendation,mod: (() => {
+          const r = String(b.roiSummary.recommendation || '').toLowerCase();
+          return r === 'proceed' ? 'roi-summary-card--proceed' : r.startsWith('pilot') ? 'roi-summary-card--pilot' : r === 'reassess' ? 'roi-summary-card--reassess' : '';
+        })() },
+    ].forEach(f => {
+      const card = document.createElement('div');
+      card.className = 'roi-summary-card' + (f.mod ? ' ' + f.mod : '');
+      const val = document.createElement('p');
+      val.className = 'roi-summary-card__value'; val.textContent = f.value || '—';
+      const lbl = document.createElement('p');
+      lbl.className = 'roi-summary-card__label'; lbl.textContent = f.label;
+      card.appendChild(val); card.appendChild(lbl);
+      roiRow.appendChild(card);
+    });
+
+    roiSec.appendChild(roiRow);
+    wrap.appendChild(roiSec);
+  }
+
+  // 3. Where money goes / where value comes from — two-column
+  const costItems  = Array.isArray(b.costItems)  ? b.costItems  : [];
+  const valueItems = Array.isArray(b.valueItems) ? b.valueItems : [];
+  if (costItems.length || valueItems.length) {
+    const cvGrid = document.createElement('div');
+    cvGrid.className = 'roi-cost-value-grid';
+
+    const buildCol = (cls, header, items) => {
+      const col = document.createElement('div');
+      col.className = cls;
+      const hdr = document.createElement('p');
+      hdr.className = 'roi-col-header'; hdr.textContent = header;
+      col.appendChild(hdr);
+      const ul = document.createElement('ul');
+      ul.className = 'roi-col-list';
+      items.forEach(item => {
+        const li = document.createElement('li'); li.textContent = item;
+        ul.appendChild(li);
+      });
+      col.appendChild(ul);
+      return col;
+    };
+
+    cvGrid.appendChild(buildCol('roi-cost-col',  'Where the Money Goes',       costItems));
+    cvGrid.appendChild(buildCol('roi-value-col', 'Where the Value Comes From', valueItems));
+    wrap.appendChild(cvGrid);
+  }
+
+  // 4. Financial Impact Timeline — horizontal flow
+  const timeline = Array.isArray(b.impactTimeline) ? b.impactTimeline : [];
+  if (timeline.length) {
+    const tlSec = document.createElement('div');
+    tlSec.className = 'roi-section';
+    const tlLbl = document.createElement('p');
+    tlLbl.className = 'brief-label'; tlLbl.textContent = 'Financial Impact Timeline';
+    tlSec.appendChild(tlLbl);
+
+    const tlFlow = document.createElement('div');
+    tlFlow.className = 'roi-timeline';
+    timeline.forEach((stage, i) => {
+      const node = document.createElement('div');
+      node.className = 'roi-timeline__stage'; node.textContent = stage;
+      tlFlow.appendChild(node);
+      if (i < timeline.length - 1) {
+        const arrow = document.createElement('span');
+        arrow.className = 'roi-timeline__arrow'; arrow.textContent = '→';
+        tlFlow.appendChild(arrow);
+      }
+    });
+    tlSec.appendChild(tlFlow);
+    wrap.appendChild(tlSec);
+  }
+
+  // Fallback: old waterfall for blueprints generated before redesign
+  if (!b.roiSummary && b.waterfallItems?.length) {
+    wrap.appendChild(buildDiagramSection('Value Waterfall Visualization', buildWaterfallSvg(b.waterfallItems)));
     const list = document.createElement('div');
     list.className = 'detail-bullet-list';
     b.waterfallItems.filter(it => it.description).forEach(it => {
@@ -1734,6 +1819,7 @@ function buildFinancialPerformanceLayout(section) {
     wrap.appendChild(buildDetailSection('Financial Breakdown', list));
   }
 
+  // 5. Success Metrics
   if (b.kpiHighlights?.length) {
     wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   }

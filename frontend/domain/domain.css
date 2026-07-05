@@ -4565,6 +4565,140 @@
   display: block;
 }
 
+/* ── AI ROI — Financial Performance redesign ─────────────────────────────── */
+
+.roi-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.roi-summary-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.625rem;
+}
+
+.roi-summary-card {
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 10px;
+  padding: 1rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.roi-summary-card--proceed  { border-color: rgba(52,211,153,0.35); background: rgba(52,211,153,0.08); }
+.roi-summary-card--pilot    { border-color: rgba(251,191,36,0.35);  background: rgba(251,191,36,0.08); }
+.roi-summary-card--reassess { border-color: rgba(239,68,68,0.35);   background: rgba(239,68,68,0.08); }
+
+.roi-summary-card__value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  margin: 0;
+}
+.roi-summary-card--proceed  .roi-summary-card__value { color: rgba(52,211,153,0.92); }
+.roi-summary-card--pilot    .roi-summary-card__value { color: rgba(251,191,36,0.92); }
+.roi-summary-card--reassess .roi-summary-card__value { color: rgba(239,68,68,0.92); }
+
+.roi-summary-card__label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.42);
+  margin: 0;
+}
+
+.roi-cost-value-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.roi-cost-col,
+.roi-value-col {
+  padding: 1rem 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.roi-cost-col  { background: rgba(99,102,241,0.07); border-right: 1px solid rgba(99,102,241,0.18); }
+.roi-value-col { background: rgba(52,211,153,0.04); }
+
+.roi-col-header {
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(99,102,241,0.85);
+  margin: 0 0 0.25rem;
+}
+.roi-value-col .roi-col-header { color: rgba(52,211,153,0.72); }
+
+.roi-col-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.roi-col-list li {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.78);
+  padding-left: 0.9rem;
+  position: relative;
+}
+
+.roi-col-list li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+  color: rgba(99,102,241,0.6);
+}
+.roi-value-col .roi-col-list li::before { color: rgba(52,211,153,0.6); }
+
+.roi-timeline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.875rem 1rem;
+  background: rgba(99,102,241,0.07);
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 10px;
+}
+
+.roi-timeline__stage {
+  background: rgba(99,102,241,0.16);
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+}
+
+.roi-timeline__arrow {
+  font-size: 0.85rem;
+  color: rgba(99,102,241,0.55);
+  padding: 0 0.1rem;
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  .roi-summary-row      { grid-template-columns: repeat(2, 1fr); }
+  .roi-cost-value-grid  { grid-template-columns: 1fr; }
+  .roi-cost-col         { border-right: none; border-bottom: 1px solid rgba(99,102,241,0.18); }
+}
+
 /* ── Layout wrappers ─────────────────────────────────────────────────────────
    One wrapper per section type — all share the same column layout. ─────── */
 

@@ -334,20 +334,34 @@ Every lifecycle stage must name the specific team or role from the delivery team
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Financial Performance" sections only:
 
-5. waterfallItems (exactly 6 items, in this order)
-   A value waterfall showing the ROI progression from investment to return.
-   Items must be in this fixed sequence: Initial Investment, Automation Savings, Productivity Gains, Revenue Growth, Financial Return, Total
-   Each item: { "category": "<category name>", "value": "<numeric string e.g. -8, 2>", "type": "negative|positive|total", "description": "<1 short sentence describing this value element, ≤12 words>" }
-   Rules: Initial Investment must use type "negative"; Total must use type "total"; all others use "positive".
-   Values should be realistic relative numbers in $M that show a clear investment-to-return progression; Total value should roughly equal the sum of all positive values minus the absolute investment.
-   Example item: { "category": "Automation Savings", "value": "2", "type": "positive", "description": "Reduced manual effort and faster process throughput." }
+5. roiSummary (exactly 1 object)
+   Four headline figures for the executive ROI summary row.
+   { "investment": "<total estimated investment e.g. ₹15 Lakhs, $50K, €40K>", "annualValue": "<expected annual value or savings e.g. ₹38 Lakhs, $120K>", "payback": "<estimated payback period e.g. 5 Months, 8 Months>", "recommendation": "Proceed" }
+   - investment and annualValue: realistic figures scaled to the initiative (a single AI traceability tool is not a $10M investment)
+   - payback: short text like "5 Months" — derive from investment ÷ annual value
+   - recommendation: must be exactly one of "Proceed", "Pilot First", "Reassess"
 
-6. kpiHighlights (exactly 3 items)
-   Three headline financial performance KPIs.
-   Each item: { "value": "<number with unit e.g. 25%, 3×, $2M>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+6. costItems (exactly 5 short strings)
+   Where the investment goes. 2–3 word labels only — no sentences.
+   Example: ["AI Development", "Tool Integration", "Infrastructure", "Training", "Change Management"]
+   Adapt to what this specific initiative actually requires.
 
-   Add both to the brief object:
-   "waterfallItems": [...], "kpiHighlights": [...]`,
+7. valueItems (exactly 5 short strings)
+   Where the business value comes from. 3–5 word labels only — no sentences.
+   Example: ["Productivity Gain", "Manual Effort Reduction", "Rework Reduction", "Faster Delivery", "Higher Delivery Capacity"]
+   Adapt to the actual benefits of this initiative.
+
+8. impactTimeline (exactly 5 short stage names)
+   The financial value progression from investment to business impact. Short stage names only.
+   Example: ["Investment", "Productivity", "Savings", "ROI", "Scale"]
+   Adapt the stage names to reflect the actual financial journey of this initiative.
+
+9. kpiHighlights (exactly 3 items)
+   Three headline financial KPIs. Typical: Projected ROI %, Payback Period, Margin Improvement or Cost Savings.
+   Each item: { "value": "<number with unit e.g. 150%, 5 Months, 25%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+
+   Add all five to the brief object:
+   "roiSummary": {...}, "costItems": [...], "valueItems": [...], "impactTimeline": [...], "kpiHighlights": [...]`,
   },
 
   'Operational Excellence': {
@@ -996,6 +1010,18 @@ function parseBriefOutput(rawSections, validTitles) {
 
       // ── AI ROI parsers ─────────────────────────────────────────────────────
 
+      const roiSummaryRaw = b.roiSummary && typeof b.roiSummary === 'object' ? b.roiSummary : null;
+      const roiSummary = roiSummaryRaw ? {
+        investment:     String(roiSummaryRaw.investment     || '').trim(),
+        annualValue:    String(roiSummaryRaw.annualValue    || '').trim(),
+        payback:        String(roiSummaryRaw.payback        || '').trim(),
+        recommendation: String(roiSummaryRaw.recommendation || '').trim(),
+      } : null;
+
+      const costItems     = (Array.isArray(b.costItems)     ? b.costItems     : []).map(String).filter(Boolean).slice(0, 5);
+      const valueItems    = (Array.isArray(b.valueItems)    ? b.valueItems    : []).map(String).filter(Boolean).slice(0, 5);
+      const impactTimeline= (Array.isArray(b.impactTimeline)? b.impactTimeline: []).map(String).filter(Boolean).slice(0, 5);
+
       const rawWaterfallItems = Array.isArray(b.waterfallItems) ? b.waterfallItems : [];
       const waterfallItems = rawWaterfallItems
         .filter(it => it && typeof it === 'object' && String(it.category || '').trim())
@@ -1566,6 +1592,10 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(teamRoles.length            ? { teamRoles }            : {}),
           ...(lifecycleStages.length      ? { lifecycleStages }      : {}),
           // AI ROI extras
+          ...(roiSummary                  ? { roiSummary }           : {}),
+          ...(costItems.length            ? { costItems }            : {}),
+          ...(valueItems.length           ? { valueItems }           : {}),
+          ...(impactTimeline.length       ? { impactTimeline }       : {}),
           ...(waterfallItems.length       ? { waterfallItems }       : {}),
           ...(sdlcStages.length           ? { sdlcStages }           : {}),
           ...(flywheelStages.length       ? { flywheelStages }       : {}),
@@ -2097,7 +2127,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'strategicPillars', 'kpiHighlights', 'timelineSteps', 'alignmentInitiatives',
       'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
       'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'solutionComponents', 'teamGroups', 'teamRoles',
-      'lifecycleStages', 'waterfallItems', 'sdlcStages', 'flywheelStages',
+      'lifecycleStages', 'roiSummary', 'costItems', 'valueItems', 'impactTimeline', 'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',
       // AI Use Cases extras
@@ -2199,7 +2229,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'strategicPillars', 'kpiHighlights', 'timelineSteps', 'alignmentInitiatives',
       'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
       'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'solutionComponents', 'teamGroups', 'teamRoles',
-      'lifecycleStages', 'waterfallItems', 'sdlcStages', 'flywheelStages',
+      'lifecycleStages', 'roiSummary', 'costItems', 'valueItems', 'impactTimeline', 'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',
       // AI Use Cases extras

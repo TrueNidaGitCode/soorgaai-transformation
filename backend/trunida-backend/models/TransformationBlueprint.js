@@ -28,6 +28,7 @@ const solutionComponentSchema   = new mongoose.Schema({ name: String, purpose: S
 const teamGroupSchema           = new mongoose.Schema({ group: String, roles: [String] }, { _id: false });
 const teamRoleSchema            = new mongoose.Schema({ title: String, description: String }, { _id: false });
 const lifecycleStageSchema      = new mongoose.Schema({ stage: String, teamResponsibility: String, keyActivities: String }, { _id: false });
+const roiSummarySchema          = new mongoose.Schema({ investment: String, annualValue: String, payback: String, recommendation: String }, { _id: false });
 const pillarBulletSchema        = new mongoose.Schema({ name: String, points: [String] }, { _id: false });
 const stageBulletSchema         = new mongoose.Schema({ stage: String, points: [String] }, { _id: false });
 const waterfallItemSchema       = new mongoose.Schema({ category: String, value: String, type: String, description: String }, { _id: false });
@@ -108,6 +109,10 @@ const briefSchema = new mongoose.Schema({
   teamGroups:           { type: [teamGroupSchema],             default: [] },
   teamRoles:            { type: [teamRoleSchema],              default: [] },
   lifecycleStages:      { type: [lifecycleStageSchema],       default: [] },
+  roiSummary:           { type: roiSummarySchema,             default: undefined },
+  costItems:            { type: [String],                    default: [] },
+  valueItems:           { type: [String],                    default: [] },
+  impactTimeline:       { type: [String],                    default: [] },
   waterfallItems:       { type: [waterfallItemSchema],        default: [] },
   sdlcStages:           { type: [sdlcStageSchema],            default: [] },
   flywheelStages:       { type: [pillarBulletSchema],         default: [] },

@@ -1837,47 +1837,7 @@ function buildOperationalExcellenceLayout(section) {
   // 1. Strategic Position
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  // 2. Operational Improvement Dashboard — Before → After table
-  const txRows = Array.isArray(b.transformationRows) ? b.transformationRows : [];
-  if (txRows.length) {
-    const sec = document.createElement('div');
-    sec.className = 'roi-section';
-    const lbl = document.createElement('p');
-    lbl.className = 'brief-label'; lbl.textContent = 'Operational Improvement Dashboard';
-    sec.appendChild(lbl);
-
-    const table = document.createElement('div');
-    table.className = 'oe-transformation-table';
-
-    const hdr = document.createElement('div');
-    hdr.className = 'oe-transform-header';
-    ['oe-transform-header__current', 'oe-transform-header__arrow', 'oe-transform-header__future'].forEach((cls, i) => {
-      const cell = document.createElement('div');
-      cell.className = cls;
-      if (i === 0) cell.textContent = 'Current State';
-      if (i === 2) cell.textContent = 'Future State';
-      hdr.appendChild(cell);
-    });
-    table.appendChild(hdr);
-
-    txRows.forEach(row => {
-      const r = document.createElement('div');
-      r.className = 'oe-transform-row';
-      const cur = document.createElement('div');
-      cur.className = 'oe-transform-row__current'; cur.textContent = row.currentState || '—';
-      const arr = document.createElement('div');
-      arr.className = 'oe-transform-row__arrow'; arr.textContent = '→';
-      const fut = document.createElement('div');
-      fut.className = 'oe-transform-row__future'; fut.textContent = row.futureState || '—';
-      r.appendChild(cur); r.appendChild(arr); r.appendChild(fut);
-      table.appendChild(r);
-    });
-
-    sec.appendChild(table);
-    wrap.appendChild(sec);
-  }
-
-  // 3. Improvement Scorecard — Area / Before AI / After AI / Business Benefit
+  // 2. Improvement Scorecard — Area / Before AI / After AI / Business Benefit
   const scorecard = Array.isArray(b.improvementScorecard) ? b.improvementScorecard : [];
   if (scorecard.length) {
     const sec = document.createElement('div');
@@ -1947,7 +1907,7 @@ function buildOperationalExcellenceLayout(section) {
   }
 
   // Fallback: old SDLC layout for legacy blueprints
-  if (!txRows.length) {
+  if (!scorecard.length) {
     if (b.sdlcStages?.length) {
       wrap.appendChild(buildDiagramSection('SDLC Performance Dashboard', buildSdlcPipeline(b.sdlcStages)));
       const list = document.createElement('div');

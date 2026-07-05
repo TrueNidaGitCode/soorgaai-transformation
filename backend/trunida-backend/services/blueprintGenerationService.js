@@ -368,16 +368,7 @@ SECTION-SPECIFIC EXTRAS — "Financial Performance" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Operational Excellence" sections only:
 
-5. transformationRows (exactly 5 items)
-   Before AI vs After AI comparison showing the operational shift this initiative creates.
-   Each item: { "currentState": "<2–5 word current state>", "futureState": "<2–5 word future state>" }
-   - currentState: what happens today — manual, spreadsheet-based, periodic, reactive, disconnected
-   - futureState: what AI enables — automated, real-time, continuous, predictive, integrated
-   Both sides must be specific to THIS initiative and its domain. Do not use generic IT language.
-   Example: { "currentState": "Manual Traceability", "futureState": "AI Traceability Mapping" }
-   Example: { "currentState": "Spreadsheet Reporting", "futureState": "Real-time Dashboard" }
-
-6. improvementScorecard (exactly 5 items)
+5. improvementScorecard (exactly 5 items)
    A PM-level improvement scorecard showing the operational area, current state, AI-enabled future state, and the business benefit in one row.
    Each item: { "area": "<2–4 word area name>", "beforeAI": "<2–4 word current state>", "afterAI": "<2–4 word AI-enabled state>", "businessBenefit": "<3–6 word tangible outcome>" }
    - area: the key operational domain affected (e.g. Traceability, Coverage, Compliance, Reporting, Gap Detection)
@@ -389,8 +380,8 @@ SECTION-SPECIFIC EXTRAS — "Operational Excellence" sections only:
    Example: { "area": "Compliance", "beforeAI": "Manual evidence", "afterAI": "Auto reports", "businessBenefit": "Audit ready" }
    Example: { "area": "Gap Detection", "beforeAI": "Reactive", "afterAI": "Continuous", "businessBenefit": "Earlier defect prevention" }
 
-   Add both to the brief object:
-   "transformationRows": [...], "improvementScorecard": [...]`,
+   Add to the brief object:
+   "improvementScorecard": [...]`,
   },
 
   'Customer Value': {

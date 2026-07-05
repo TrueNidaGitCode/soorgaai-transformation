@@ -267,11 +267,16 @@ JOURNEY RULE: The delivery team is for the specific AI initiative named in the T
 
 Team roles must be specific to delivering THIS initiative — not a generic AI team. Name real disciplines relevant to the initiative.
 
-5. teamRoles (5 to 7 items)
-   The cross-functional roles needed to deliver THIS specific AI initiative from pilot to operational adoption.
-   Each item: { "title": "<role name>", "description": "<1 sentence on their specific responsibility for this initiative>" }
-   Include business, product, AI/data, engineering, and domain roles appropriate for this initiative's engineering context.
-   Descriptions must reference what each role does for THIS initiative specifically.
+5. teamGroups (3 to 5 items — functional groups, not individuals)
+   Organise the delivery team into functional groups as a Project Manager naturally thinks about people.
+   Each item: { "group": "<function name e.g. Business, Engineering, Domain, Quality>", "roles": ["<role title>", "<role title>"] }
+   - group: the function label (2–10 chars, noun, capitalised — e.g. "Business", "Engineering", "Domain", "Quality", "Data")
+   - roles: 1–3 specific role titles within that function relevant to THIS initiative
+   Do NOT list the same role in multiple groups.
+   Example: { "group": "Business", "roles": ["Test Engineering Manager", "Project Manager"] }
+   Example: { "group": "Engineering", "roles": ["AI/ML Engineer", "Data Engineer"] }
+   Example: { "group": "Domain", "roles": ["Requirements Lead", "V&V Engineer"] }
+   Example: { "group": "Quality", "roles": ["QA Lead"] }
 
 6. kpiHighlights (exactly 3 items)
    Three team effectiveness metrics for THIS initiative's delivery team.
@@ -279,7 +284,7 @@ Team roles must be specific to delivering THIS initiative — not a generic AI t
    Focus on delivery speed, coverage, or collaboration quality for THIS initiative.
 
    Add both to the brief object:
-   "teamRoles": [...], "kpiHighlights": [...]`,
+   "teamGroups": [...], "kpiHighlights": [...]`,
   },
 
   'End-to-End Ownership': {

@@ -1310,44 +1310,40 @@ function buildCrossFunctionalLayout(section) {
   stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
   wrap.appendChild(stmt);
 
-  // 2. Team Composition Model — SVG hierarchy (centered, full-width panel)
-  const compSection = document.createElement('div');
-  compSection.className = 'team-composition-section';
-  const compLbl = document.createElement('p');
-  compLbl.className = 'brief-label'; compLbl.textContent = 'Team Composition Model';
-  compSection.appendChild(compLbl);
-  const svgWrap = document.createElement('div');
-  svgWrap.className = 'team-hierarchy-wrap';
-  svgWrap.appendChild(buildTeamHierarchySvg());
-  compSection.appendChild(svgWrap);
-  wrap.appendChild(compSection);
+  // 2. Functional Team Groups
+  const groups = Array.isArray(b.teamGroups) ? b.teamGroups : [];
+  if (groups.length) {
+    const groupsSection = document.createElement('div');
+    groupsSection.className = 'team-structure-section';
+    const groupsLbl = document.createElement('p');
+    groupsLbl.className = 'brief-label'; groupsLbl.textContent = 'Delivery Team';
+    groupsSection.appendChild(groupsLbl);
 
-  // 3. Team Structure Details — role list below, separate section
-  if (b.teamRoles?.length) {
-    const detailSection = document.createElement('div');
-    detailSection.className = 'team-structure-section';
-    const detailLbl = document.createElement('p');
-    detailLbl.className = 'brief-label'; detailLbl.textContent = 'Team Structure Details';
-    detailSection.appendChild(detailLbl);
-    const roleList = document.createElement('div');
-    roleList.className = 'team-role-list';
-    b.teamRoles.forEach(role => {
-      const item = document.createElement('div');
-      item.className = 'team-role-item';
-      const title = document.createElement('p');
-      title.className = 'team-role-item__title';
-      title.textContent = role.title;
-      item.appendChild(title);
-      if (role.description) {
-        const desc = document.createElement('p');
-        desc.className = 'team-role-item__desc';
-        desc.textContent = role.description;
-        item.appendChild(desc);
-      }
-      roleList.appendChild(item);
+    const grid = document.createElement('div');
+    grid.className = 'team-groups-grid';
+
+    groups.forEach(g => {
+      const card = document.createElement('div');
+      card.className = 'team-group-card';
+
+      const label = document.createElement('p');
+      label.className = 'team-group-card__label';
+      label.textContent = g.group || '—';
+      card.appendChild(label);
+
+      const roleList = document.createElement('ul');
+      roleList.className = 'team-group-card__roles';
+      (g.roles || []).forEach(r => {
+        const li = document.createElement('li');
+        li.textContent = r;
+        roleList.appendChild(li);
+      });
+      card.appendChild(roleList);
+      grid.appendChild(card);
     });
-    detailSection.appendChild(roleList);
-    wrap.appendChild(detailSection);
+
+    groupsSection.appendChild(grid);
+    wrap.appendChild(groupsSection);
   }
 
   // 4. Success Metrics

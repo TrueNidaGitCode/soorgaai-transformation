@@ -3291,10 +3291,12 @@ function buildAIDataPreparationLayout(section) {
 
 function buildCriticalDataLayout(section) {
   const b = section.brief || {};
-  const datasets            = Array.isArray(b.datasets)            ? b.datasets            : [];
-  const traceabilityChain   = Array.isArray(b.traceabilityChain)   ? b.traceabilityChain   : [];
-  const collectionOrder     = Array.isArray(b.collectionOrder)     ? b.collectionOrder     : [];
+  const datasets              = Array.isArray(b.datasets)              ? b.datasets              : [];
+  const traceabilityChain     = Array.isArray(b.traceabilityChain)     ? b.traceabilityChain     : [];
+  const collectionOrder       = Array.isArray(b.collectionOrder)       ? b.collectionOrder       : [];
   const implementationRoadmap = Array.isArray(b.implementationRoadmap) ? b.implementationRoadmap : [];
+  const consultantGuidance    = b.consultantGuidance || '';
+  const aiRecommendation      = b.aiRecommendation   || '';
   // Legacy fallbacks
   const relationshipMap     = b.relationshipMap || {};
   const recommendations     = Array.isArray(b.recommendations)     ? b.recommendations     : [];
@@ -3330,10 +3332,12 @@ function buildCriticalDataLayout(section) {
       name.className = 'cdi-dataset-card__name'; name.textContent = ds.name || '—';
       card.appendChild(name);
 
-      const addInfoRow = (label, value, isBadge) => {
+      const addInfoRow = (label, value, isBadge, isOutput = false) => {
         if (!value) return;
         const row = document.createElement('div');
-        row.className = 'cdi-dataset-card__info-row';
+        row.className = isOutput
+          ? 'cdi-dataset-card__info-row cdi-dataset-card__info-row--output'
+          : 'cdi-dataset-card__info-row';
         const lbl2 = document.createElement('span');
         lbl2.className = 'cdi-dataset-card__info-label'; lbl2.textContent = label;
         row.appendChild(lbl2);
@@ -3350,9 +3354,10 @@ function buildCriticalDataLayout(section) {
         card.appendChild(row);
       };
 
-      addInfoRow('Purpose',        ds.purpose,       false);
-      addInfoRow('Typical Source', ds.typicalSource, false);
-      addInfoRow('Priority',       ds.priority,      true);
+      addInfoRow('Purpose',                   ds.purpose,          false);
+      addInfoRow('Recommended Source System', ds.typicalSource,    false);
+      addInfoRow('Expected AI Output',        ds.expectedAIOutput, false, true);
+      addInfoRow('Priority',                  ds.priority,         true);
 
       leftPanel.appendChild(card);
     });
@@ -3444,7 +3449,8 @@ function buildCriticalDataLayout(section) {
       const content = document.createElement('div');
       content.className = 'cdi-collection-row__content';
       const name = document.createElement('p');
-      name.className = 'cdi-collection-row__name'; name.textContent = item.name;
+      // Show action (verb phrase) if available, fall back to dataset name
+      name.className = 'cdi-collection-row__name'; name.textContent = item.action || item.name;
       content.appendChild(name);
       if (item.reason) {
         const reason = document.createElement('p');
@@ -3479,7 +3485,7 @@ function buildCriticalDataLayout(section) {
   if (implementationRoadmap.length) {
     const sec = document.createElement('div');
     const lbl = document.createElement('p');
-    lbl.className = 'brief-label'; lbl.textContent = 'Implementation Roadmap';
+    lbl.className = 'brief-label'; lbl.textContent = 'Data Collection Roadmap';
     sec.appendChild(lbl);
 
     const roadmap = document.createElement('div');
@@ -3521,6 +3527,36 @@ function buildCriticalDataLayout(section) {
 
   body.appendChild(rightPanel);
   wrap.appendChild(body);
+
+  // Consultant Guidance
+  if (consultantGuidance) {
+    const cg = document.createElement('div');
+    cg.className = 'cdi-consultant-guidance';
+    const cgHeader = document.createElement('div');
+    cgHeader.className = 'cdi-consultant-guidance__header';
+    const cgIcon = document.createElement('span'); cgIcon.className = 'cdi-consultant-guidance__icon'; cgIcon.textContent = '◆';
+    const cgTitle = document.createElement('span'); cgTitle.className = 'cdi-consultant-guidance__title'; cgTitle.textContent = 'Consultant Guidance';
+    cgHeader.appendChild(cgIcon); cgHeader.appendChild(cgTitle);
+    cg.appendChild(cgHeader);
+    const cgText = document.createElement('p'); cgText.className = 'cdi-consultant-guidance__text'; cgText.textContent = consultantGuidance;
+    cg.appendChild(cgText);
+    wrap.appendChild(cg);
+  }
+
+  // AI Recommendation
+  if (aiRecommendation) {
+    const ar = document.createElement('div');
+    ar.className = 'cdi-ai-recommendation';
+    const arHeader = document.createElement('div');
+    arHeader.className = 'cdi-ai-recommendation__header';
+    const arIcon = document.createElement('span'); arIcon.className = 'cdi-ai-recommendation__icon'; arIcon.textContent = '⬡';
+    const arTitle = document.createElement('span'); arTitle.className = 'cdi-ai-recommendation__title'; arTitle.textContent = 'AI Recommendation';
+    arHeader.appendChild(arIcon); arHeader.appendChild(arTitle);
+    ar.appendChild(arHeader);
+    const arText = document.createElement('p'); arText.className = 'cdi-ai-recommendation__text'; arText.textContent = aiRecommendation;
+    ar.appendChild(arText);
+    wrap.appendChild(ar);
+  }
 
   // Leadership question footer
   if (leadershipQ) {

@@ -624,11 +624,12 @@ SECTION-SPECIFIC EXTRAS — "Critical Data Identification" sections only:
 5. datasets (exactly 6 items — one per data category)
    The minimum critical datasets required to implement this AI use case.
    Categories: Business & Program, Product, System & Software, Engineering, Operational, Supporting Knowledge.
-   Each item: { "name": "<2–4 word dataset name specific to this initiative>", "purpose": "<why this data is needed, ≤10 words, business reason not technical>", "typicalSource": "<tool or system where it typically exists, e.g. IBM DOORS / Polarion, Jira, TestRail, GitHub, CANoe, Teamcenter>", "priority": "HIGH|MEDIUM|LOW" }
+   Each item: { "name": "<2–4 word dataset name specific to this initiative>", "purpose": "<why this data is needed, ≤10 words, business reason not technical>", "typicalSource": "<tool or system where it typically exists, e.g. IBM DOORS / Polarion, Jira, TestRail, GitHub, CANoe, Teamcenter>", "priority": "HIGH|MEDIUM|LOW", "expectedAIOutput": "<what AI will produce from this dataset, ≤10 words, concrete output not description>" }
    - name: specific to THIS use case and domain
    - purpose: why this data matters for the AI — not what the data is
    - typicalSource: realistic engineering tool name(s) — use automotive tools for automotive context
    - priority: HIGH = AI cannot function without it, MEDIUM = important but workaround possible, LOW = adds value but not blocking
+   - expectedAIOutput: the concrete AI deliverable — e.g. "Structured user stories linked to acceptance criteria", "Searchable test case knowledge base", "Automated traceability map"
 
 6. traceabilityChain (exactly 6 short strings)
    The engineering data flow from business objective through to AI output.
@@ -639,18 +640,29 @@ SECTION-SPECIFIC EXTRAS — "Critical Data Identification" sections only:
 
 7. collectionOrder (exactly 5 items)
    Recommended order for collecting datasets — most critical first.
-   Each item: { "name": "<dataset name — must match a name from datasets>", "reason": "<why collect this first, ≤10 words, practical not governance>" }
-   Reason must be a practical implementation reason: e.g. "Foundation for all AI reasoning", "Links requirements to validation outcomes".
+   Each item: { "name": "<dataset name — must match a name from datasets>", "action": "<verb phrase describing the implementation action, ≤7 words — e.g. 'Export User Stories from Jira', 'Connect Test Repository', 'Extract Acceptance Criteria'>", "reason": "<why this step comes here, ≤8 words, practical not governance>" }
+   - action must be specific and implementation-oriented, starting with a verb
+   - reason must explain WHY this step is in this position in the sequence
 
 8. implementationRoadmap (exactly 5 items)
-   Step-by-step path showing which data is ready vs. still needed.
+   Step-by-step path showing progress toward data readiness.
    Each item: { "step": "<short action label, 3–5 words>", "status": "ready|pending" }
    - "ready": data likely exists and is accessible in typical engineering systems
    - "pending": data needs to be collected, extracted, or prepared
    The last item must always be: { "step": "Ready for AI Data Preparation", "status": "pending" }
 
-   Add all to the brief object:
-   "datasets": [...], "traceabilityChain": [...], "collectionOrder": [...], "implementationRoadmap": [...]`,
+9. consultantGuidance (string, 2–3 sentences)
+   Expert consulting advice specific to THIS use case and industry context.
+   Start with the minimum viable data scope. Then explain the phased expansion strategy.
+   Example: "Start with the minimum data required to deliver business value rather than attempting to integrate every engineering repository. Prioritize user stories, acceptance criteria, and test cases first. Once reliable traceability is established, expand by incorporating execution results, defects, and engineering standards."
+
+10. aiRecommendation (string, 2–3 sentences)
+    A specific, actionable AI implementation recommendation.
+    Name specific tools and integrations. Explain the phased delivery logic.
+    Example: "Begin implementation with Jira and TestRail integration to establish automated traceability between user stories, acceptance criteria, and test cases. Delay integration of secondary knowledge sources until the core traceability workflow is operational. This phased approach minimizes implementation effort while delivering measurable business value within the first release."
+
+    Add all to the brief object:
+    "datasets": [...], "traceabilityChain": [...], "collectionOrder": [...], "implementationRoadmap": [...], "consultantGuidance": "...", "aiRecommendation": "..."`,
   },
 
   'AI Data Preparation': {
@@ -1215,12 +1227,13 @@ function parseBriefOutput(rawSections, validTitles) {
       const datasets = rawDatasets
         .filter(d => d && typeof d === 'object' && String(d.name || '').trim())
         .map(d => ({
-          name:          String(d.name          || '').trim(),
-          purpose:       String(d.purpose       || '').trim(),
-          typicalSource: String(d.typicalSource || '').trim(),
-          priority:      String(d.priority      || 'MEDIUM').trim(),
-          availability:  String(d.availability  || '').trim(),
-          category:      String(d.category      || '').trim(),
+          name:             String(d.name             || '').trim(),
+          purpose:          String(d.purpose          || '').trim(),
+          typicalSource:    String(d.typicalSource    || '').trim(),
+          priority:         String(d.priority         || 'MEDIUM').trim(),
+          availability:     String(d.availability     || '').trim(),
+          category:         String(d.category         || '').trim(),
+          expectedAIOutput: String(d.expectedAIOutput || '').trim(),
         }))
         .slice(0, 6);
 
@@ -1228,12 +1241,16 @@ function parseBriefOutput(rawSections, validTitles) {
         .map(String).filter(Boolean).slice(0, 6);
 
       const collectionOrder = (Array.isArray(b.collectionOrder) ? b.collectionOrder : [])
-        .filter(r => r && typeof r === 'object' && String(r.name || '').trim())
+        .filter(r => r && typeof r === 'object' && (String(r.name || '').trim() || String(r.action || '').trim()))
         .map(r => ({
           name:   String(r.name   || '').trim(),
+          action: String(r.action || '').trim(),
           reason: String(r.reason || '').trim(),
         }))
         .slice(0, 5);
+
+      const consultantGuidance = String(b.consultantGuidance || '').trim();
+      const aiRecommendation   = String(b.aiRecommendation   || '').trim();
 
       const implementationRoadmap = (Array.isArray(b.implementationRoadmap) ? b.implementationRoadmap : [])
         .filter(r => r && typeof r === 'object' && String(r.step || '').trim())
@@ -1821,6 +1838,8 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(traceabilityChain.length                 ? { traceabilityChain }     : {}),
           ...(collectionOrder.length                   ? { collectionOrder }       : {}),
           ...(implementationRoadmap.length             ? { implementationRoadmap } : {}),
+          ...(consultantGuidance                       ? { consultantGuidance }    : {}),
+          ...(aiRecommendation                         ? { aiRecommendation }      : {}),
           // Legacy CDI fields — kept for backward compat
           ...(recommendations.length                   ? { recommendations }  : {}),
           ...(coverageSummary.criticalDatasets         ? { coverageSummary }  : {}),
@@ -2347,6 +2366,7 @@ OUTPUT — valid JSON only, no markdown fences:
       // Data Readiness: CDI extras
       'datasets', 'traceabilityChain', 'collectionOrder', 'implementationRoadmap',
       'recommendations', 'coverageSummary', 'relationshipMap',
+      'consultantGuidance', 'aiRecommendation',
     ];
     for (const key of extraKeys) {
       if (b[key] !== undefined) {
@@ -2455,6 +2475,7 @@ OUTPUT — valid JSON only, no markdown fences:
       // Data Readiness extras
       'datasets', 'traceabilityChain', 'collectionOrder', 'implementationRoadmap',
       'recommendations', 'coverageSummary', 'relationshipMap',
+      'consultantGuidance', 'aiRecommendation',
       'inputDatasets', 'pipelineStages', 'prepRecommendations', 'dataStats', 'readinessSummary',
       'prepActivities', 'prepWorkPackages', 'firstSteps', 'prepSummary',
       'projectSystems', 'archRecommendations', 'archStats', 'healthTimeline',

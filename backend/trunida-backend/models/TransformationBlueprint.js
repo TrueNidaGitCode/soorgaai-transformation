@@ -45,8 +45,8 @@ const classificationSchema      = new mongoose.Schema({ name: String, rationale:
 const classificationCardSchema  = new mongoose.Schema({ type: String, purpose: String, characteristics: [String], examples: [String] }, { _id: false });
 
 // ── Data Readiness sub-schemas ────────────────────────────────────────────────
-const datasetSchema                  = new mongoose.Schema({ name: String, purpose: String, typicalSource: String, priority: String, availability: String, category: String }, { _id: false });
-const collectionOrderItemSchema      = new mongoose.Schema({ name: String, reason: String }, { _id: false });
+const datasetSchema                  = new mongoose.Schema({ name: String, purpose: String, typicalSource: String, priority: String, availability: String, category: String, expectedAIOutput: String }, { _id: false });
+const collectionOrderItemSchema      = new mongoose.Schema({ name: String, action: String, reason: String }, { _id: false });
 const implementationRoadmapItemSchema = new mongoose.Schema({ step: String, status: String }, { _id: false });
 const drRecommendationSchema    = new mongoose.Schema({ text: String, priority: String }, { _id: false });
 const coverageSummarySchema     = new mongoose.Schema({ criticalDatasets: Number, missingData: Number, confidence: Number }, { _id: false });
@@ -165,6 +165,8 @@ const briefSchema = new mongoose.Schema({
   collectionOrder:          { type: [collectionOrderItemSchema],       default: [] },
   implementationRoadmap:    { type: [implementationRoadmapItemSchema], default: [] },
   relationshipMap:          { type: relationshipMapSchema,      default: undefined },
+  consultantGuidance:       { type: String, default: '' },
+  aiRecommendation:         { type: String, default: '' },
   // Data Readiness: AI Data Preparation extras
   inputDatasets:            { type: [inputDatasetSchema],       default: [] },
   pipelineStages:           { type: [pipelineStageSchema],      default: [] },

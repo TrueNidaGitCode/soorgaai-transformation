@@ -6399,6 +6399,105 @@
   font-style: italic;
 }
 
+/* Expected AI Output row — amber highlight */
+
+.cdi-dataset-card__info-row--output {
+  background: rgba(197,155,52,0.06);
+  border: 1px solid rgba(197,155,52,0.15);
+  border-radius: 5px;
+  padding: 0.3rem 0.5rem;
+  margin: 0.1rem 0;
+}
+
+.cdi-dataset-card__info-row--output .cdi-dataset-card__info-label {
+  color: rgba(197,155,52,0.75);
+}
+
+.cdi-dataset-card__info-row--output .cdi-dataset-card__info-value {
+  color: rgba(255,255,255,0.85);
+  font-style: italic;
+}
+
+/* Consultant Guidance block */
+
+.cdi-consultant-guidance {
+  background: rgba(92,197,167,0.05);
+  border: 1px solid rgba(92,197,167,0.2);
+  border-left: 3px solid #5CC5A7;
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.cdi-consultant-guidance__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cdi-consultant-guidance__icon {
+  font-size: 0.75rem;
+  color: #5CC5A7;
+  flex-shrink: 0;
+}
+
+.cdi-consultant-guidance__title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #5CC5A7;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cdi-consultant-guidance__text {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* AI Recommendation block */
+
+.cdi-ai-recommendation {
+  background: rgba(197,155,52,0.05);
+  border: 1px solid rgba(197,155,52,0.2);
+  border-left: 3px solid #C59B34;
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.cdi-ai-recommendation__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cdi-ai-recommendation__icon {
+  font-size: 0.9rem;
+  color: #C59B34;
+  flex-shrink: 0;
+}
+
+.cdi-ai-recommendation__title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #C59B34;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cdi-ai-recommendation__text {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.6;
+  margin: 0;
+}
+
 @media (max-width: 900px) {
   .cdi-body {
     grid-template-columns: 1fr;

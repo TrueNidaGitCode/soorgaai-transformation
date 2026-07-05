@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Assess whether the project's data architecture can reliably support the selected AI use case.
+Design a practical data architecture that enables the selected AI use case by connecting project systems, preparing reusable AI-ready data, and making it securely accessible to AI applications.
 
-This capability helps project managers understand how data flows across project systems, identify integration gaps, and ensure AI can securely access the prepared data without manual bottlenecks.
+Rather than designing enterprise-wide architecture, this capability helps project managers decide how data should flow from engineering tools into an AI knowledge layer that supports scalable AI implementation.
 
 ---
 
@@ -12,106 +12,190 @@ This capability helps project managers understand how data flows across project 
 
 ## Definition
 
-Data Architecture Enablement evaluates whether the project's data sources, integrations, pipelines, storage, and automation are capable of delivering AI-ready data reliably and efficiently.
+Data Architecture Enablement defines the project-level architecture required to deliver AI-ready information to AI applications.
 
-Rather than designing enterprise infrastructure, this capability focuses on enabling seamless data flow from project systems to AI applications.
+It identifies where data resides, how it should be extracted, transformed, stored, synchronized, secured, and consumed by AI while minimizing manual effort and enabling future AI use cases.
 
-## Framework
+The objective is to create a reusable AI data foundation rather than point-to-point integrations for a single solution.
 
-### Data Sources
+---
 
-Identify where the required project data resides.
+# Consultant Guidance
 
-Typical examples: Requirements repository, project management tools, source code repositories, test management systems, operational systems.
+When designing the project architecture, the AI should help answer practical implementation questions such as:
 
-### Data Connectivity
+- Which systems contain the required data?
+- How should the data be extracted?
+- Should the data be synchronized or retrieved on demand?
+- Where should AI-ready data be stored?
+- Which storage technology best fits this AI use case?
+- How frequently should the data be updated?
+- Which integrations should be automated?
+- How can the architecture support future AI initiatives?
 
-Assess how data is exchanged between systems.
+The AI should recommend a pragmatic architecture that balances implementation effort, scalability, and long-term reuse.
 
-Typical examples: APIs, database connections, file transfers, webhooks, messaging services.
+---
 
-### Data Pipelines
+# Framework
 
-Evaluate how data moves from source systems to AI.
+## 1. Source Systems
 
-Typical examples: ETL pipelines, scheduled synchronization, event-driven pipelines, streaming.
+Identify the systems containing the critical project data.
 
-### Data Storage
+Typical examples
 
-Assess where prepared data is stored for AI consumption.
+- Requirements management
+- Project management
+- Source code repositories
+- Test management
+- Document repositories
+- Operational systems
 
-Typical examples: Data warehouse, data lake, relational database, object storage.
+---
 
-### Automation
+## 2. Data Extraction
 
-Determine whether data movement is automated or requires manual intervention.
+Define how information should be collected from source systems.
 
-Typical examples: Automated synchronization, scheduled jobs, manual exports, manual uploads.
+Typical approaches
 
-### Scalability
+- REST APIs
+- Database queries
+- Event streams
+- Scheduled exports
+- Webhooks
+- SDK integrations
 
-Evaluate whether the architecture can support future AI growth.
+---
 
-Typical examples: Increased data volume, additional AI use cases, higher processing frequency.
+## 3. AI Data Store
+
+Define where AI-ready information should be organized.
+
+The AI should recommend the most appropriate storage based on the selected AI use case.
+
+Typical options
+
+- Relational database
+- Vector database
+- Knowledge graph
+- Document database
+- Object storage
+- Hybrid architecture
+
+---
+
+## 4. Data Synchronization
+
+Determine how information remains current.
+
+Typical approaches
+
+- Real-time synchronization
+- Scheduled synchronization
+- Event-driven updates
+- On-demand retrieval
+
+---
+
+## 5. AI Access Layer
+
+Define how AI applications consume prepared information.
+
+Typical examples
+
+- Retrieval APIs
+- Semantic Search
+- RAG pipelines
+- MCP servers
+- AI service layer
+
+---
+
+## 6. Governance & Security
+
+Ensure AI accesses information securely.
+
+Typical considerations
+
+- Access control
+- Authentication
+- Authorization
+- Encryption
+- Audit logging
+- Data ownership
+
+---
 
 ## Key Principles
 
-- Keep data close to where it is created.
-- Minimize manual data movement.
-- Prefer automated integrations.
-- Design reusable data pipelines.
-- Build architecture that scales with AI adoption.
+- Build only the architecture required for the selected AI use case.
+- Keep source systems as the system of record.
+- Minimize duplicated data.
+- Organize reusable AI-ready datasets.
+- Separate operational systems from AI consumption.
+- Prefer automated synchronization over manual processes.
+- Design architectures that can support additional AI initiatives.
+
+---
 
 ## Leadership Question
 
-**Can our project architecture reliably deliver AI-ready data when it is needed?**
+**Do we have a practical and scalable architecture that can reliably deliver AI-ready information to our AI applications?**
 
 ---
 
 # Decision Criteria
 
-The AI evaluates architecture readiness based on:
+The AI evaluates architecture recommendations based on:
 
-- Data source availability
-- Integration capability
-- Pipeline reliability
-- Storage readiness
-- Automation level
+- Source system accessibility
+- Integration complexity
+- Data freshness requirements
+- AI retrieval performance
+- Security requirements
 - Scalability
+- Reusability
+- Implementation effort
 
 ---
 
 # AI Reasoning Process
 
 ```text
-Prepared Data
+Selected AI Use Case
         ↓
 Identify Source Systems
         ↓
-Assess Connectivity
+Determine Extraction Method
         ↓
-Evaluate Data Pipelines
+Recommend AI Data Store
         ↓
-Assess Storage
+Define Synchronization Strategy
         ↓
-Identify Automation Gaps
+Design AI Access Layer
         ↓
-Generate Architecture Recommendations
+Recommend Governance Controls
+        ↓
+Generate Architecture Blueprint
 ```
 
 ---
 
 # Blueprint Output
 
-The generated blueprint includes:
+For every AI use case, the AI generates a project-specific Data Architecture Enablement Blueprint containing:
 
-- Data Source Inventory
-- Integration Assessment
-- Pipeline Readiness
-- Storage Assessment
-- Automation Opportunities
-- Architecture Readiness Score
-- Recommended Improvements
+- AI Use Case
+- Source System Inventory
+- Data Extraction Strategy
+- Recommended AI Data Store
+- Synchronization Strategy
+- AI Access Architecture
+- Governance Recommendations
+- Architecture Diagram
+- Implementation Roadmap
 - AI Recommendation
 
 ---
@@ -120,20 +204,24 @@ The generated blueprint includes:
 
 After completing this capability, the project team should have:
 
-- A clear understanding of project data flow.
-- Identified architecture bottlenecks.
-- Recommended integration improvements.
-- Increased automation opportunities.
-- A project architecture ready to support AI implementation.
+- A recommended AI architecture for the selected use case.
+- A clear data flow from source systems to AI.
+- Appropriate storage recommendations.
+- Defined synchronization strategy.
+- AI access architecture.
+- Governance considerations.
+- A roadmap for implementation.
+- A reusable foundation for future AI initiatives.
 
 ---
 
 # AI Prompt Guidance
 
-When generating the blueprint, the AI should:
+When generating the Data Architecture Enablement blueprint, the AI should:
 
-- Identify the systems containing the required data.
-- Assess how data flows between systems.
-- Highlight manual processes and bottlenecks.
-- Recommend practical integration improvements.
-- Focus on project-level architecture rather than enterprise infrastructure.
+- Start with the selected AI use case.
+- Recommend an architecture rather than assess the current one.
+- Suggest practical technologies appropriate for the project.
+- Explain why each architectural decision is recommended.
+- Balance simplicity with scalability.
+- Produce implementation-ready recommendations.

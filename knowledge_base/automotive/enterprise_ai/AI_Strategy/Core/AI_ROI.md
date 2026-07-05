@@ -2,19 +2,11 @@
 
 ## Purpose
 
-AI ROI ensures that AI initiatives deliver measurable business value and that AI investments remain aligned with strategic business objectives.
+AI ROI is the final capability in the AI Transformation Journey.
 
-Successful AI organizations measure ROI across financial, operational, and customer dimensions to demonstrate sustainable value creation and guide future investments.
+Building upon the identified AI initiative, its expected business value, implementation priority, leadership, and operating model, this capability evaluates whether the AI initiative represents a sound business investment.
 
----
-
-# Core Principles
-
-Successful AI organizations measure ROI across three dimensions:
-
-1. Financial Performance
-2. Operational Excellence
-3. Customer Value
+Rather than measuring ROI after deployment, this capability helps Project Managers estimate the expected financial return, operational improvements, and customer value before implementation. The outcome is a clear business case that supports investment decisions and executive approval.
 
 ---
 
@@ -22,21 +14,86 @@ Successful AI organizations measure ROI across three dimensions:
 
 ## Definition
 
-Financial Performance measures how AI contributes to profitability, enterprise value, and long-term business growth.
+Financial Performance evaluates whether the expected benefits of the AI initiative justify the required investment.
 
-AI investments should generate measurable financial returns while improving the organization's competitive position.
+It estimates the investment required, expected savings, payback period, projected return on investment (ROI), and overall financial viability.
 
-## Key Principles
+The objective is to determine whether the AI initiative represents a worthwhile business investment.
 
-* Measure profitability improvements.
-* Track shareholder value creation.
-* Monitor revenue growth.
-* Evaluate cost efficiency and scalability.
-* Establish a financial baseline before AI program initiation to enable credible before-and-after ROI measurement.
+## Consultant Reasoning Process
+
+For every AI initiative:
+
+1. Review the selected AI initiative.
+2. Estimate implementation investment.
+3. Estimate recurring operating costs.
+4. Estimate expected financial benefits.
+5. Estimate payback period.
+6. Estimate projected ROI.
+7. Recommend whether the investment should proceed.
+
+---
+
+## Executive ROI Summary
+
+Present a concise executive summary using the following structure.
+
+### Strategic Position
+
+Summarise why this AI initiative represents a worthwhile financial investment.
+
+Maximum two sentences.
+
+---
+
+### Executive ROI Summary
+
+Present:
+
+- Estimated Investment
+- Expected Annual Benefits
+- Estimated Payback Period
+- Projected ROI
+- Investment Recommendation
+
+Investment recommendation should be one of:
+
+- Proceed
+- Pilot First
+- Reassess
+
+---
+
+### Financial Breakdown
+
+Summarise:
+
+#### Investment
+
+Typical considerations include:
+
+- AI development
+- Tool integration
+- Infrastructure
+- Training
+- Change management
+
+#### Financial Benefits
+
+Typical considerations include:
+
+- Productivity improvement
+- Manual effort reduction
+- Reduced rework
+- Reduced operational cost
+- Increased delivery capacity
+- Improved project margin
+
+---
 
 ## Leadership Question
 
-**Are our AI investments creating measurable financial value?**
+**Does the expected financial return justify the investment required for this AI initiative?**
 
 ---
 
@@ -44,21 +101,55 @@ AI investments should generate measurable financial returns while improving the 
 
 ## Definition
 
-Operational Excellence measures how AI improves productivity, efficiency, and organizational effectiveness.
+Operational Excellence evaluates how the AI initiative improves engineering efficiency, delivery performance, and operational effectiveness.
 
-AI should simplify processes, reduce manual effort, and accelerate business operations.
+Rather than focusing on financial return alone, this dimension demonstrates how AI transforms day-to-day project execution.
 
-## Key Principles
+## Consultant Reasoning Process
 
-* Improve workforce productivity.
-* Reduce operational costs.
-* Accelerate business processes.
-* Increase automation and efficiency.
-* Define operational baseline metrics — cycle time, defect rate, productivity — before scaling AI programs so gains are measurable.
+Assess expected improvements in:
+
+- Engineering productivity
+- Process automation
+- Delivery speed
+- Quality improvement
+- Reporting automation
+- Operational scalability
+
+---
+
+## Output Structure
+
+### Strategic Position
+
+Summarise how the AI initiative improves operational performance.
+
+Maximum two sentences.
+
+---
+
+### Operational Improvements
+
+Assess expected improvements across areas such as:
+
+- Productivity
+- Cycle Time
+- Automation
+- Quality
+- Compliance
+- Decision Making
+
+---
+
+### Success Metrics
+
+Recommend measurable KPIs relevant to the selected AI initiative.
+
+---
 
 ## Leadership Question
 
-**Are our AI initiatives making the organization more efficient?**
+**How will this AI initiative improve engineering efficiency and delivery performance?**
 
 ---
 
@@ -66,59 +157,78 @@ AI should simplify processes, reduce manual effort, and accelerate business oper
 
 ## Definition
 
-Customer Value measures how AI improves customer engagement, experience, and business growth.
+Customer Value evaluates how the AI initiative improves customer outcomes, strengthens delivery confidence, and increases long-term business value.
 
-AI transformation should create better products, services, and interactions that strengthen customer relationships.
+Successful AI initiatives should create measurable value for both the organization and its customers.
 
-## Key Principles
+## Consultant Reasoning Process
 
-* Increase digital adoption.
-* Improve customer experiences.
-* Grow digital revenue channels.
-* Strengthen customer loyalty.
-* Establish a customer metric baseline and track improvement on a quarterly cadence after AI deployment.
+Assess expected impact on:
+
+- Product quality
+- Customer confidence
+- Delivery predictability
+- Transparency
+- Competitive differentiation
+- Future business opportunities
+
+---
+
+## Output Structure
+
+### Strategic Position
+
+Summarise the expected customer value.
+
+Maximum two sentences.
+
+---
+
+### Customer Value Chain
+
+Describe how the initiative improves:
+
+Business Capability
+↓
+
+Engineering Quality
+↓
+
+Customer Confidence
+↓
+
+Business Growth
+
+---
+
+### Success Metrics
+
+Recommend measurable customer KPIs.
+
+---
 
 ## Leadership Question
 
-**Are our AI initiatives improving customer outcomes and business growth?**
+**How will this AI initiative strengthen customer value and long-term business success?**
 
 ---
 
-# AI ROI Framework
+# Key Principles
 
-```text
-Financial Performance
-Measure business and shareholder value.
-
-↓
-
-Operational Excellence
-Measure productivity and efficiency gains.
-
-↓
-
-Customer Value
-Measure customer impact and growth.
-```
+- Continue from the previously selected AI initiative.
+- Build the business case before implementation.
+- Estimate investment and expected return.
+- Balance financial, operational, and customer outcomes.
+- Keep recommendations concise and executive-friendly.
 
 ---
 
-# CTO Perspective
+# Expected Outcome
 
-AI ROI helps executive teams answer three fundamental questions:
+At the completion of this capability the Project Manager should clearly understand:
 
-| Dimension              | Executive Question                            |
-| ---------------------- | --------------------------------------------- |
-| Financial Performance  | Are AI investments creating financial value?  |
-| Operational Excellence | Is AI improving organizational efficiency?    |
-| Customer Value         | Is AI enhancing customer outcomes and growth? |
-
----
-
-# Key Takeaways
-
-* AI ROI should balance financial, operational, and customer outcomes.
-* Financial metrics demonstrate enterprise value creation.
-* Operational metrics measure efficiency and productivity gains.
-* Customer metrics capture growth and experience improvements.
-* AI investments are successful when they create sustainable business value across all three dimensions.
+- The estimated investment required.
+- The expected financial return.
+- The operational improvements expected.
+- The customer value created.
+- Whether the AI initiative represents a worthwhile investment.

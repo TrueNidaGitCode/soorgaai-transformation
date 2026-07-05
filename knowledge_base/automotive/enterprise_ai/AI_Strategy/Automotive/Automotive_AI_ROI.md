@@ -1,135 +1,189 @@
 # Automotive AI ROI
 
-**Layer:** Automotive
-**Extends:** Core/AI_ROI.md
-**Version:** 1.1
+**Layer:** Automotive  
+**Extends:** Core/AI_ROI.md  
+**Version:** 2.0
 
 ---
 
-## Purpose
+# Purpose
 
-Automotive AI ROI ensures that AI investments create measurable business value across engineering, operations, and customer-facing capabilities while supporting the organisation's strategic objectives.
+This document applies the Core AI ROI framework to automotive software engineering and product development.
 
-Successful automotive organisations use AI to improve engineering productivity, operational performance, and customer experiences. AI investments should strengthen competitiveness and accelerate the transition toward software-defined and intelligent mobility.
+It helps Project Managers and Product Managers evaluate whether an AI initiative represents a worthwhile business investment by estimating the expected financial return, operational improvements, and customer value before implementation.
 
-> For the universal AI ROI framework, refer to: `Core/AI_ROI.md`
+Automotive AI initiatives should not be justified solely by technical capability. They should demonstrate measurable business value, improve engineering performance, strengthen customer outcomes, and support long-term competitive advantage.
 
----
-
-## Financial Performance in Automotive
-
-AI investments should generate measurable financial returns while improving the organisation's competitive position across engineering, manufacturing, and enterprise operations.
-
-### Key Focus Areas
-
-* Measure engineering cost efficiency improvements.
-* Track program cost reduction through AI-assisted development.
-* Monitor warranty and quality cost savings.
-* Evaluate technology investment payback periods.
-* Track digital and software service revenue growth.
-
-### Automotive Financial Benchmarks
-
-| Financial KPI | Benchmark Target |
-| ------------- | ---------------- |
-| Engineering cost per feature | 15–25% reduction within 18 months of AI program initiation |
-| Program engineering cost reduction | 10–20% reduction through AI-assisted development workflows |
-| Warranty and maintenance savings | 10–20% reduction through predictive quality and maintenance AI |
-| Technology investment payback | Positive ROI achieved within 18–24 months |
-| Digital and subscription revenue | 15–25% year-on-year growth |
-
-**Leadership Question:**
-
-*Are our AI investments creating measurable financial value for the organisation?*
+> For the universal AI ROI framework, refer to:
+> `Core/AI_ROI.md`
 
 ---
 
-## Operational Excellence in Automotive
+# AI ROI in Automotive
 
-AI should improve productivity, quality, and execution speed across the automotive value chain — from product engineering through manufacturing and supply chain.
+Automotive AI initiatives should build a clear business case before implementation.
 
-### Key Focus Areas
+Project Managers should estimate the investment required, expected benefits, implementation risks, and projected return. The objective is to prioritize AI initiatives that deliver measurable engineering value while supporting organizational strategy.
 
-* Improve engineering productivity across product and software development teams.
-* Accelerate delivery cycles for software-defined vehicle programs.
-* Increase test automation coverage and reduce manual validation effort.
-* Improve manufacturing efficiency and reduce unplanned downtime.
-* Strengthen supply chain forecast accuracy and resilience.
+Successful AI investments create value across three dimensions:
 
-### Automotive Operational Benchmarks
-
-| Operational KPI | Benchmark Target |
-| --------------- | ---------------- |
-| Engineering productivity | 20–35% increase in output per engineer through AI tooling |
-| Feature-to-production cycle time | 25–35% reduction in end-to-end delivery lead time |
-| Test automation coverage | Target 60–80% automated coverage within 12 months |
-| Defect escape rate | 20–40% reduction through AI-assisted V&V |
-| Manufacturing OEE | 5–15% improvement in Overall Equipment Effectiveness |
-| Supply chain forecast accuracy | 15–25% improvement through AI-enabled demand planning |
-
-**Leadership Question:**
-
-*Is AI improving operational performance across engineering and enterprise functions?*
+- Financial Performance
+- Operational Excellence
+- Customer Value
 
 ---
 
-## Customer Value in Automotive
+# Financial Performance
 
-AI should strengthen customer relationships while supporting connected, software-enabled services and improving the vehicle ownership experience.
+Financial Performance evaluates whether the expected benefits justify the investment required for the AI initiative.
 
-### Key Focus Areas
+Typical considerations include:
 
-* Improve connected vehicle service adoption and engagement.
-* Increase OTA update reliability and deployment success rate.
-* Reduce warranty claims through proactive quality and service AI.
-* Grow digital and subscription revenue streams.
-* Strengthen customer loyalty through AI-enhanced personalisation.
+### Investment
 
-### Automotive Customer Benchmarks
+- AI solution development
+- Toolchain integration
+- Infrastructure and cloud services
+- Data preparation
+- Training and change management
 
-| Customer KPI | Benchmark Target |
-| ------------ | ---------------- |
-| Connected service adoption | 30–50% growth in active users within 12 months |
-| OTA update success rate | Target > 95% successful deployment rate |
-| Customer satisfaction | 10–20% improvement through AI-enhanced service delivery |
-| Warranty claims reduction | 15–25% reduction through predictive service and quality AI |
-| Digital and subscription revenue | 15–25% year-on-year revenue growth |
+### Financial Benefits
 
-**Leadership Question:**
+- Reduced engineering effort
+- Lower defect correction cost
+- Reduced warranty cost
+- Improved delivery efficiency
+- Higher engineering capacity
+- Improved project profitability
 
-*Are our AI investments improving customer experiences and enabling future business growth?*
+### Executive ROI Summary
+
+Estimate:
+
+- Total Investment
+- Expected Annual Savings
+- Expected Payback Period
+- Projected ROI
+- Investment Recommendation
+
+Investment Recommendation should be one of:
+
+- Proceed
+- Pilot First
+- Reassess
+
+### Leadership Question
+
+**Does this AI initiative create sufficient engineering and business value to justify the required investment?**
 
 ---
 
-## Automotive AI ROI Framework
+# Operational Excellence
+
+Operational Excellence evaluates how AI improves engineering productivity, delivery performance, and software quality.
+
+Typical considerations include:
+
+- Engineering productivity
+- Test automation
+- Traceability
+- Software quality
+- Delivery predictability
+- Process automation
+- Compliance
+- Decision support
+
+### Typical Automotive KPIs
+
+- Engineering Productivity Improvement
+- Test Cycle Time Reduction
+- Manual Effort Reduction
+- Defect Leakage Reduction
+- Release Predictability
+- Compliance Automation
+- Reporting Automation
+
+### Leadership Question
+
+**How will this AI initiative improve engineering performance and delivery execution?**
+
+---
+
+# Customer Value
+
+Customer Value evaluates how the AI initiative improves customer confidence, product quality, and long-term business growth.
+
+Typical considerations include:
+
+- Product quality
+- Vehicle reliability
+- Customer transparency
+- Delivery confidence
+- Faster issue resolution
+- Competitive differentiation
+- Future business opportunities
+
+### Customer Value Chain
+
+```
+Engineering Excellence
+        ↓
+Higher Product Quality
+        ↓
+Greater Customer Confidence
+        ↓
+Long-Term Business Growth
+```
+
+### Typical Automotive KPIs
+
+- Customer Satisfaction
+- On-Time Delivery
+- Customer Defect Reduction
+- Audit Compliance
+- Proposal Win Rate
+- Customer Renewal Rate
+
+### Leadership Question
+
+**How will this AI initiative improve customer outcomes and strengthen long-term business relationships?**
+
+---
+
+# Automotive AI ROI Framework
 
 ```text
+AI Initiative
+        ↓
 Financial Performance
-Measure business value and investment returns.
-
-↓
-
+(Investment vs Return)
+        ↓
 Operational Excellence
-Measure engineering and operational productivity.
-
-↓
-
+(Engineering Performance)
+        ↓
 Customer Value
-Measure customer outcomes and business growth.
-
-↓
-
-Sustainable Competitive Advantage
+(Customer & Business Outcomes)
+        ↓
+Investment Recommendation
 ```
 
 ---
 
-## Key Takeaways
+# Automotive ROI Principles
 
-* Automotive AI ROI should balance financial, operational, and customer outcomes.
-* Financial performance demonstrates business value creation and investment efficiency.
-* Operational performance measures engineering and enterprise productivity gains.
-* Customer value captures growth, experience improvements, and loyalty.
-* AI investments should support software-defined and intelligent mobility.
-* Success should be measured through quantifiable business outcomes that align with strategic objectives.
-* Sustainable competitive advantage is created when AI delivers measurable value across the automotive value chain.
+- Build the business case before implementation.
+- Estimate investment and expected return using available engineering data.
+- Balance financial return with engineering and customer outcomes.
+- Demonstrate measurable business value for every AI initiative.
+- Prioritize initiatives with faster payback and scalable business impact.
+- Present recommendations in a concise, executive-friendly format.
+
+---
+
+# Key Takeaways
+
+- Automotive AI investments should be justified through a clear business case.
+- Financial Performance demonstrates whether the investment is worthwhile.
+- Operational Excellence measures improvements in engineering productivity and delivery performance.
+- Customer Value evaluates improvements in product quality, customer confidence, and competitive advantage.
+- Project Managers should use AI ROI to support investment decisions, secure stakeholder approval, and guide AI adoption.

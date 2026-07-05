@@ -2,9 +2,26 @@
 
 ## Purpose
 
-Prepare the identified datasets so they can be effectively consumed by AI solutions.
+Prepare the critical datasets identified for the selected AI use case so they become consistent, structured, connected, and ready for AI consumption.
 
-Rather than simply collecting data, this capability helps project managers transform raw project data into clean, standardized, integrated, and AI-ready datasets.
+This capability helps project managers transform raw project data into AI-ready assets by defining the preparation activities required before AI implementation begins. Rather than recommending infrastructure or AI technologies, it focuses on improving the quality, consistency, and usability of project data.
+
+---
+
+# Consultant Guidance
+
+As an AI consultant, your objective is to produce a practical data preparation blueprint that enables successful AI implementation.
+
+Do not attempt to cleanse or assess the customer's actual data. Instead:
+
+- Review the AI use case and previously identified critical datasets.
+- Identify the preparation activities required for each dataset.
+- Explain why each activity is necessary.
+- Recommend a logical sequence for preparing the data.
+- Highlight dependencies between preparation activities.
+- Produce an implementation roadmap that the project team can execute.
+
+The output should help a project manager understand **what data preparation work must be completed before AI development begins.**
 
 ---
 
@@ -12,107 +29,195 @@ Rather than simply collecting data, this capability helps project managers trans
 
 ## Definition
 
-AI Data Preparation is the process of transforming identified project data into a format suitable for AI development and deployment.
+AI Data Preparation defines the activities required to convert critical project data into AI-ready datasets.
 
-It ensures that the required data is accurate, complete, consistent, connected, and enriched with sufficient context to enable reliable AI outcomes.
+Rather than focusing on technology or storage, it identifies how each dataset should be cleaned, standardized, connected, enriched, and validated so AI systems can use it reliably.
 
-## Framework
+---
 
-### Data Quality
+# Preparation Framework
 
-Ensure data is accurate, complete, consistent, and free from duplicates or invalid records.
+The AI prepares data across six dimensions.
 
-Typical examples: Missing values, duplicate records, inconsistent formats, invalid entries.
+---
 
-### Data Standardization
+## 1. Data Quality
 
-Standardize data formats, naming conventions, structures, and units across all datasets.
+Improve the accuracy and completeness of identified datasets.
 
-Typical examples: Naming conventions, date formats, units of measurement, identifiers.
+Typical preparation activities include:
 
-### Data Integration
+- Remove duplicate records
+- Resolve missing information
+- Correct inconsistent values
+- Validate mandatory fields
+- Eliminate obsolete records
 
-Combine related data from multiple repositories to create a unified view for AI.
+---
 
-Typical examples: Requirements linked to tests, defects linked to source code, logs linked to incidents.
+## 2. Data Standardization
 
-### Data Enrichment
+Create consistent structures across all datasets.
 
-Enhance datasets with additional metadata and contextual information that improves AI understanding.
+Typical preparation activities include:
 
-Typical examples: Labels, classifications, tags, ownership, priority, timestamps.
+- Standardize naming conventions
+- Normalize identifiers
+- Standardize formats
+- Align units
+- Define common metadata
 
-### Data Traceability
+---
 
-Preserve relationships between datasets throughout the AI lifecycle.
+## 3. Data Integration
 
-Typical examples: Requirement → Test Case → Defect → Change Request.
+Connect related datasets so AI understands the complete business context.
 
-### AI Validation
+Typical preparation activities include:
 
-Verify that prepared data satisfies the requirements of the selected AI use case.
+- Link related records
+- Merge complementary datasets
+- Define common keys
+- Resolve inconsistent references
+- Create unified project views
 
-Typical examples: Coverage validation, completeness checks, AI readiness assessment.
+---
 
-## Key Principles
+## 4. Data Enrichment
 
-- Prepare data for the selected AI use case rather than generic reporting.
-- Improve data quality before AI implementation.
-- Standardize data to enable consistent AI reasoning.
-- Preserve traceability across related datasets.
-- Validate data readiness before model development.
+Improve AI reasoning by adding useful context.
 
-## Leadership Question
+Typical preparation activities include:
 
-**Is our project data sufficiently prepared for reliable AI implementation?**
+- Add business classifications
+- Define ownership
+- Assign priorities
+- Add lifecycle status
+- Include timestamps
+- Add descriptive metadata
+
+---
+
+## 5. Data Traceability
+
+Preserve relationships between datasets.
+
+Typical preparation activities include:
+
+- Maintain parent-child relationships
+- Preserve engineering traceability
+- Link upstream and downstream artifacts
+- Validate relationship completeness
+
+---
+
+## 6. AI Readiness Validation
+
+Confirm that prepared data supports the selected AI use case.
+
+Typical preparation activities include:
+
+- Verify completeness
+- Review preparation coverage
+- Confirm relationship integrity
+- Validate business context
+- Ensure AI can consume the prepared data
+
+---
+
+# Core Principles
+
+Successful AI data preparation follows five principles.
+
+### Prepare for the AI Use Case
+
+Prepare only the data required for the selected AI use case.
+
+---
+
+### Improve Before You Build
+
+Improve data quality before investing in AI models.
+
+---
+
+### Preserve Business Context
+
+Maintain relationships between datasets so AI understands business meaning.
+
+---
+
+### Standardize for Reuse
+
+Create reusable preparation standards that support future AI initiatives.
+
+---
+
+### Validate AI Readiness
+
+Confirm that prepared data is ready before implementation begins.
+
+---
+
+# Leadership Question
+
+**Have we prepared the identified datasets so AI can use them reliably?**
 
 ---
 
 # Decision Criteria
 
-The AI evaluates data preparation using:
+The AI prioritizes preparation activities based on:
 
-- Data quality
-- Data completeness
-- Standardization
-- Integration readiness
-- Traceability
-- AI suitability
+- Business value
+- AI use case relevance
+- Data quality impact
+- Preparation effort
+- Dependency order
+- Business risk
+- Reusability
 
 ---
 
 # AI Reasoning Process
 
 ```text
-Critical Data
+Critical Datasets
         ↓
-Assess Data Quality
+Identify Preparation Activities
+        ↓
+Improve Data Quality
         ↓
 Standardize Data
         ↓
 Integrate Related Data
         ↓
-Enrich Context
+Enrich Business Context
+        ↓
+Preserve Traceability
         ↓
 Validate AI Readiness
         ↓
-Generate Preparation Plan
+Generate Preparation Roadmap
 ```
 
 ---
 
 # Blueprint Output
 
-The generated blueprint includes:
+For every AI use case, generate an AI Data Preparation Blueprint containing:
 
-- Data Quality Assessment
-- Standardization Recommendations
-- Integration Opportunities
-- Data Enrichment Suggestions
-- Traceability Assessment
-- AI Readiness Score
+- Business Objective
+- Critical Dataset
+- Required Preparation Activities
+- Data Quality Improvements
+- Standardization Activities
+- Integration Activities
+- Enrichment Activities
+- Traceability Activities
+- AI Readiness Validation
 - Preparation Roadmap
-- AI Recommendations
+- Consultant Recommendation
 
 ---
 
@@ -120,11 +225,14 @@ The generated blueprint includes:
 
 After completing this capability, the project team should have:
 
-- Clean and standardized datasets.
-- Integrated project data.
-- Preserved relationships between datasets.
-- AI-ready data for implementation.
-- A prioritized data preparation roadmap.
+- A prioritized data preparation roadmap
+- Clearly defined preparation activities
+- Standardized datasets
+- Integrated business context
+- Preserved traceability
+- AI-ready project data
+
+The output becomes the direct input for **Data Architecture Enablement**.
 
 ---
 
@@ -132,8 +240,10 @@ After completing this capability, the project team should have:
 
 When generating the blueprint, the AI should:
 
-- Assess the quality of identified datasets.
-- Recommend practical preparation activities.
-- Highlight quality gaps and risks.
+- Focus on preparation activities rather than technology.
+- Recommend practical actions that project teams can execute.
+- Explain why each preparation activity is required.
+- Organize activities into a logical implementation sequence.
 - Preserve relationships between datasets.
 - Tailor recommendations to the selected AI use case.
+- Produce consultant-style implementation guidance rather than generic data management advice.

@@ -1,133 +1,239 @@
 # Automotive Data Architecture Enablement
 
-## Purpose
+## Layer
 
-Provide automotive-specific guidance for enabling reliable data flow across engineering systems required to support AI implementation.
+Automotive
 
-> For the universal framework, refer to: `Core/Data Architecture Enablement.md`
+**Extends:** Core/Data_Architecture_Enablement.md
 
----
-
-## Data Architecture Enablement in Automotive
-
-### Engineering Data Sources
-
-Identify the engineering systems containing the required project data.
-
-Typical examples:
-
-- Requirements Management
-- Change Management
-- Source Code Repository
-- Test Management
-- Build Systems
-- Diagnostics Systems
-- Product Lifecycle Management
+Version: 2.0
 
 ---
 
-### Engineering Connectivity
+# Purpose
 
-Assess how engineering tools exchange data.
+Extend the Core Data Architecture Enablement capability with automotive engineering guidance.
 
-Typical examples:
+This layer helps project managers design an AI-ready architecture that connects engineering tools, preserves engineering traceability, and enables AI applications across the automotive development lifecycle.
+
+For the universal architecture framework, refer to:
+
+Core/Data_Architecture_Enablement.md
+
+---
+
+# Data Architecture Enablement in Automotive
+
+## Definition
+
+Automotive Data Architecture Enablement designs the engineering data architecture required to support AI across requirements engineering, software development, verification & validation, diagnostics, manufacturing, and field operations.
+
+The AI recommends how engineering information should flow from existing engineering repositories into reusable AI knowledge stores while maintaining end-to-end traceability.
+
+---
+
+# Consultant Guidance
+
+For every automotive AI use case, the AI should recommend:
+
+- Which engineering tools should be connected
+- Which engineering artifacts should be extracted
+- Recommended synchronization approach
+- Recommended AI storage technology
+- Engineering traceability architecture
+- Security considerations
+- Reusable architecture for future AI initiatives
+
+Recommendations should align with the engineering lifecycle instead of individual tools.
+
+---
+
+# Automotive Framework
+
+## 1. Engineering Source Systems
+
+Typical systems include
+
+- IBM DOORS
+- Polarion
+- Codebeamer
+- Jira
+- Azure DevOps
+- GitHub
+- GitLab
+- Jenkins
+- Teamcenter
+- Windchill
+- CANoe
+- ETAS INCA
+- TestRail
+- Vector vTESTstudio
+
+---
+
+## 2. Engineering Data Extraction
+
+Typical methods
 
 - REST APIs
 - OSLC integrations
 - Database connectors
-- Message queues
-- File-based integration
+- Event streaming
+- CI/CD integration
+- Scheduled synchronization
 
 ---
 
-### Engineering Data Pipelines
+## 3. Automotive AI Data Store
 
-Evaluate how engineering data is collected and synchronized.
+The AI recommends storage depending on the use case.
 
-Typical examples:
+Examples
 
-- Continuous synchronization
-- Nightly ETL
-- Event-driven updates
-- Manual exports
+### Engineering Copilot
 
----
+Vector Database
 
-### Engineering Data Storage
+Engineering documentation
 
-Assess where engineering data is consolidated for AI consumption.
+Requirements
 
-Typical examples:
+Design documents
 
-- Engineering Data Lake
-- Project Database
-- Analytics Repository
-- Central Engineering Warehouse
+Knowledge articles
 
 ---
 
-### Engineering Automation
+### Engineering Analytics
 
-Evaluate the level of automation across engineering workflows.
+Relational Database
 
-Typical examples:
+Project metrics
 
-- Automated requirement synchronization
-- CI/CD pipeline integration
-- Automated test result ingestion
-- Automated diagnostic log collection
+Test metrics
+
+Defect history
+
+Quality KPIs
 
 ---
 
-### Engineering Scalability
+### Root Cause Analysis
 
-Assess whether the architecture can support increasing engineering data and additional AI use cases.
+Knowledge Graph
 
-Typical examples:
+Requirements
 
-- Multi-project support
-- Multi-vehicle programs
-- Continuous engineering data updates
-- Large-scale validation data
+Architecture
 
-### Key Principles
+Software Components
 
-- Integrate engineering systems instead of duplicating data.
-- Automate engineering data movement wherever possible.
-- Preserve engineering traceability during integration.
-- Support continuous engineering updates.
-- Enable reusable engineering pipelines.
+Tests
 
-### Leadership Question
+Defects
 
-**Can our engineering systems reliably provide AI-ready data throughout the product development lifecycle?**
+Vehicle diagnostics
+
+---
+
+### Enterprise AI Platform
+
+Hybrid Architecture
+
+Vector DB
+
+Knowledge Graph
+
+Relational Database
+
+Object Storage
+
+---
+
+## 4. Engineering Synchronization
+
+Possible strategies
+
+- Real-time updates
+- Event-driven synchronization
+- Nightly synchronization
+- Incremental synchronization
+- On-demand retrieval
+
+---
+
+## 5. AI Consumption Layer
+
+Typical AI consumers
+
+- Engineering Copilot
+- Test Engineering Assistant
+- Requirements Assistant
+- Quality Analytics
+- Root Cause Analysis
+- Program Management Assistant
+- Executive Dashboard
+
+---
+
+## 6. Engineering Governance
+
+Recommendations include
+
+- Role-based access
+- Repository ownership
+- Engineering audit logs
+- Version management
+- Traceability preservation
+- Compliance with ASPICE
+- Compliance with ISO 26262
 
 ---
 
 ## Automotive Best Practices
 
-- Integrate engineering repositories through standard interfaces.
-- Minimize manual engineering data transfers.
-- Synchronize engineering artifacts automatically.
-- Preserve end-to-end engineering traceability.
-- Design reusable engineering data pipelines.
+- Keep engineering repositories as systems of record.
+- Build reusable AI knowledge stores.
+- Preserve requirement-to-test traceability.
+- Separate transactional systems from AI retrieval.
+- Prefer APIs over manual exports.
+- Synchronize incrementally where possible.
+- Reuse architecture across multiple engineering AI solutions.
 
 ---
 
-## AI Blueprint Generation
+## Leadership Question
 
-The generated automotive blueprint includes:
-
-- Engineering System Inventory
-- Integration Assessment
-- Data Pipeline Assessment
-- Storage Readiness
-- Automation Assessment
-- Engineering Architecture Score
-- Recommended Integration Improvements
+**Have we designed an AI-ready engineering architecture that enables scalable AI across the automotive development lifecycle?**
 
 ---
 
-## Expected Outcome
+# Automotive Blueprint Output
 
-The project team receives an automotive-specific architecture enablement roadmap that ensures engineering data flows reliably between development tools and AI applications while maintaining traceability and minimizing manual effort.
+The generated blueprint includes:
+
+- Engineering Tool Landscape
+- Source System Inventory
+- Engineering Data Flow
+- Recommended AI Storage Architecture
+- Synchronization Strategy
+- AI Consumption Architecture
+- Governance Recommendations
+- Technology Recommendations
+- Implementation Roadmap
+- AI Recommendation
+
+---
+
+# Expected Outcome
+
+After completing this capability, the project team should have:
+
+- A recommended automotive AI architecture.
+- Engineering system integration strategy.
+- AI storage recommendations.
+- Engineering synchronization strategy.
+- Traceability-preserving architecture.
+- Governance model.
+- Technology implementation roadmap.
+- A scalable architecture for future automotive AI initiatives.

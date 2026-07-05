@@ -1,269 +1,271 @@
-﻿# Automotive Layer – Critical Data Identification
+﻿# Critical Data Identification
 
 ## Purpose
 
-Extend the Core Asset with automotive-specific engineering knowledge to help identify the critical data required for implementing AI use cases across the automotive product development lifecycle.
+Identify the minimum business and engineering data required to successfully implement the selected AI use case.
 
-This layer specializes the generic Data Readiness methodology by mapping it to automotive engineering artifacts, tools, processes, and traceability relationships.
+Rather than cataloging every available dataset, this capability helps project managers determine **what data is required**, **why it is needed**, and **where it is likely to exist**. The outcome is a practical data blueprint that guides data collection and prepares the project for AI implementation.
 
 ---
 
-## Critical Data Identification in Automotive
+# 1. Critical Data Identification
 
 ## Definition
 
-Critical Data Identification for Automotive determines the engineering, product, vehicle, software, validation, manufacturing, and field data required to successfully implement an automotive AI use case.
+Critical Data Identification determines the minimum set of datasets required to deliver the selected AI use case.
 
-The AI maps the selected AI use case to the relevant engineering lifecycle and identifies the minimum automotive data required for successful implementation.
+The AI analyses the business objective and proposed solution, identifies the data needed to support that solution, explains the purpose of each dataset, recommends likely source systems, and highlights important relationships that must be maintained.
+
+The objective is not to perform a system assessment, but to provide a clear roadmap for collecting the right data before AI implementation begins.
+
+---
+
+## Consultant Guidance
+
+When facilitating this capability, the consultant should:
+
+- Understand the selected AI use case and expected business outcome.
+- Identify only the datasets that directly contribute to delivering the solution.
+- Explain why each dataset is required.
+- Recommend where the data is likely to exist.
+- Highlight dependencies between datasets.
+- Avoid requesting exhaustive inventories of project data.
+- Focus on providing a practical starting point for implementation.
+
+---
 
 ## Framework
 
-The AI identifies critical automotive data by analysing the following dimensions.
+The AI identifies critical data across six dimensions.
 
 ### 1. Business Data
 
-Business information that defines project objectives and business outcomes.
+Information that explains **why** the AI solution is required and how success will be measured.
 
-**Typical examples**
+Typical examples
 
 - Business objectives
-- Program milestones
-- Project KPIs
-- Cost targets
-- Quality objectives
-- Customer requirements
-- Warranty cost
-- Service metrics
+- Business processes
+- Customer requests
+- Service tickets
+- Business KPIs
+- Financial measures
 
 ---
 
 ### 2. Product Data
 
-Information describing the vehicle or product being developed.
+Information describing **what** is being developed, delivered, or supported.
 
-**Typical examples**
+Typical examples
 
-- Vehicle platform
-- Vehicle model
-- Vehicle variant
-- Product hierarchy
+- Products
 - Features
-- ECU allocation
-- Software release
-- Hardware version
-- Vehicle configuration
+- Modules
+- Product hierarchy
+- Releases
+- Configurations
+- Variants
 
 ---
 
 ### 3. System Data
 
-Information describing the system architecture and technical design.
+Information describing **how** the product is organised and integrated.
 
-**Typical examples**
+Typical examples
 
-- Functional architecture
-- System architecture
-- Software architecture
-- AUTOSAR architecture
-- ECU architecture
-- Network topology
-- Interface specifications
-- CAN/LIN/FlexRay/Ethernet communication
-- Signal definitions
+- Architecture
+- Components
+- Interfaces
+- APIs
+- Communication flows
+- Dependencies
 
 ---
 
 ### 4. Engineering Data
 
-Engineering artifacts generated throughout the product development lifecycle.
+Engineering artefacts created during delivery.
 
-**Typical examples**
+Typical examples
 
-#### Requirements Engineering
-
-- Customer Requirements
-- System Requirements
-- Software Requirements
-- Safety Requirements
-- Cybersecurity Requirements
-
-#### Design
-
-- System Design
-- Software Design
-- Architecture Models
-- UML/SysML Models
-
-#### Development
-
-- Source Code
-- Git Commits
-- Merge Requests
-- Code Reviews
-- Build History
-
-#### Verification & Validation
-
-- Test Plans
-- Test Cases
-- Test Execution Results
-- Validation Reports
-- Coverage Reports
-
-#### Quality
-
+- Requirements
+- Design documents
+- Source code
+- Test cases
+- Test results
 - Defects
-- Root Cause Analysis
-- Change Requests
-- Problem Reports
+- Build history
+- Change requests
 
 ---
 
 ### 5. Operational Data
 
-Data generated during product operation and field usage.
+Information generated while operating or supporting the product.
 
-**Typical examples**
+Typical examples
 
-- Vehicle telemetry
-- ECU logs
-- CAN logs
-- Diagnostic Trouble Codes (DTCs)
 - Runtime logs
-- Calibration data
-- OTA update history
-- Manufacturing quality data
-- Warranty claims
-- Service history
-- Customer complaints
+- Telemetry
+- Monitoring data
+- Performance metrics
+- User feedback
+- Production incidents
 
 ---
 
-### 6. Supporting Data
+### 6. Supporting Knowledge
 
-Knowledge sources that improve AI reasoning.
+Reference information that improves AI reasoning.
 
-**Typical examples**
+Typical examples
 
-- Engineering standards
-- ISO 26262
-- ASPICE work products
-- Cybersecurity guidelines
-- Design guidelines
-- Coding standards
-- Lessons learned
-- Engineering wiki
-- Technical documentation
+- Standards
+- Procedures
+- Best practices
+- User manuals
+- Knowledge articles
+- Reference documentation
 
 ---
 
-### 7. Critical Relationships
+## Data Blueprint
 
-Automotive engineering depends heavily on traceability between artifacts.
+For every required dataset, the AI recommends:
 
-The AI identifies and preserves these relationships.
+- Dataset Name
+- Business Purpose
+- Why AI Needs It
+- Likely Source System
+- Primary Owner
+- Downstream Dependencies
 
-**Typical examples**
+Example
 
-- Customer Requirement → System Requirement
-- System Requirement → Software Requirement
-- Requirement → Architecture
-- Architecture → Software Component
-- Software Component → Source Code
-- Requirement → Test Case
-- Test Case → Test Result
-- Test Result → Defect
-- Defect → Root Cause
-- Defect → Change Request
-- Change Request → Software Release
-- Software Release → Vehicle Variant
-- Vehicle → ECU
-- ECU → Diagnostic Log
-- Diagnostic Log → Warranty Claim
-- Warranty Claim → Service Record
-
-Maintaining end-to-end traceability significantly improves AI reasoning, root cause analysis, impact analysis, and decision support.
+| Dataset | Purpose | Likely Source | Owner |
+|---------|----------|---------------|-------|
+| Requirements | Defines expected functionality | Requirements Management Tool | Business Analyst |
+| Test Cases | Validates requirements | Test Management Tool | Test Lead |
+| Defects | Identifies quality issues | Defect Tracking Tool | QA Lead |
 
 ---
 
-## Automotive Best Practices
+## Critical Relationships
 
-The AI follows these automotive-specific principles when identifying critical data.
+The AI identifies relationships that preserve business context.
 
-- Begin with the engineering problem rather than the available tools.
-- Identify only the engineering artifacts required for the selected AI use case.
-- Preserve end-to-end traceability across the V-Model or Agile development lifecycle.
-- Combine product, system, software, validation, and field data to provide complete engineering context.
-- Reuse engineering artifacts wherever possible to support multiple AI use cases.
-- Include historical engineering data to improve AI learning and prediction accuracy.
+Typical examples
 
----
+Business Objective
 
-## Common Automotive Engineering Tools
+↓
 
-The AI should recognize common engineering repositories and map the required data accordingly.
+Business Process
 
-### Requirements Management
+↓
 
-- IBM DOORS
-- Polarion
-- Codebeamer
+Requirement
 
-### Project & Defect Management
+↓
 
-- Jira
-- Azure DevOps
+Design
 
-### Source Code Management
+↓
 
-- GitHub
-- GitLab
-- Bitbucket
+Implementation
 
-### Continuous Integration
+↓
 
-- Jenkins
-- GitLab CI
-- Azure Pipelines
+Test Case
 
-### Test Management
+↓
 
-- Polarion Test
-- TestRail
-- Vector vTESTstudio
-- dSPACE AutomationDesk
+Test Result
 
-### Diagnostics & Vehicle Engineering
+↓
 
-- Vector CANoe
-- Vector CANalyzer
-- ETAS INCA
-- ETAS MDA
-- ATI Vision
+Defect
 
-### Product Lifecycle Management
+↓
 
-- Siemens Teamcenter
-- PTC Windchill
-- Dassault 3DEXPERIENCE
+Change Request
+
+↓
+
+Business KPI
+
+Maintaining these relationships enables more accurate AI reasoning, impact analysis, and recommendations.
 
 ---
 
-# AI Blueprint Generation
+## Key Principles
 
-For every automotive AI use case, the AI generates an automotive-specific Critical Data Identification blueprint containing:
+- Start with the AI use case.
+- Identify only the minimum data required.
+- Explain why each dataset is important.
+- Recommend likely source systems.
+- Preserve relationships between datasets.
+- Build a reusable data foundation for future AI initiatives.
+
+---
+
+## Leadership Question
+
+**Have we identified the minimum data required to successfully implement this AI use case?**
+
+---
+
+# Decision Criteria
+
+The AI prioritises datasets using the following criteria:
+
+- Business value
+- Relevance to the AI use case
+- Importance for AI reasoning
+- Reusability
+- Relationship with other datasets
+- Ease of collection
+
+---
+
+# AI Reasoning Process
+
+```text
+Business Objective
+        ↓
+Understand AI Use Case
+        ↓
+Identify Required Decisions
+        ↓
+Identify Critical Data
+        ↓
+Recommend Data Sources
+        ↓
+Map Relationships
+        ↓
+Generate Data Collection Blueprint
+```
+
+---
+
+# Blueprint Output
+
+The generated blueprint includes:
 
 - Business Objective
-- Required Automotive Business Data
+- AI Use Case
+- Required Business Data
 - Required Product Data
 - Required System Data
 - Required Engineering Data
 - Required Operational Data
-- Supporting Engineering Knowledge
-- Engineering Traceability Map
-- Missing Engineering Data
-- Recommended Data Collection Activities
-- AI Recommendation
+- Supporting Knowledge
+- Recommended Source Systems
+- Data Relationships
+- Data Collection Priorities
+- AI Recommendations
 
 ---
 
@@ -271,8 +273,24 @@ For every automotive AI use case, the AI generates an automotive-specific Critic
 
 After completing this capability, the project team should have:
 
-- A complete view of the automotive engineering data required for the selected AI use case.
-- Identification of missing engineering artifacts and repositories.
-- End-to-end traceability between product, system, software, testing, and field data.
-- A prioritized engineering data collection plan.
-- A strong foundation for AI Data Preparation and subsequent AI implementation.
+- A clear understanding of the data required for the AI use case.
+- A prioritized list of datasets.
+- Recommended source systems for each dataset.
+- Identified ownership responsibilities.
+- Preserved relationships between datasets.
+- A practical data collection blueprint.
+- A strong foundation for AI Data Preparation.
+
+---
+
+# AI Prompt Guidance
+
+When generating the blueprint, the AI should:
+
+- Start with the selected AI use case.
+- Infer the required datasets.
+- Explain why each dataset is needed.
+- Recommend likely source systems.
+- Preserve relationships between datasets.
+- Focus on implementation rather than assessment.
+- Tailor recommendations to the project context.

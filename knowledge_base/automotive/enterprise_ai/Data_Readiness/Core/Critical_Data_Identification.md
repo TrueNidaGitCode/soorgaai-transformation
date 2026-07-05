@@ -2,9 +2,24 @@
 
 ## Purpose
 
-Identify the minimum set of data required to successfully implement the selected AI use case.
+Critical Data Identification helps project managers determine the minimum data required to successfully implement an AI use case.
 
-Rather than collecting all available information, this capability helps project managers focus on the data that directly contributes to achieving the intended business outcome. The goal is to ensure AI initiatives are built on the right data, reducing implementation risk while maximizing business value.
+Rather than cataloging every available dataset, this capability focuses on identifying the information that directly enables the desired business outcome. By understanding what data is required, why it is needed, and how it relates to other datasets, project teams can reduce implementation risk and build a strong foundation for AI.
+
+---
+
+# Consultant Guidance
+
+Many AI initiatives fail because teams begin by collecting every available dataset instead of identifying the information required to solve the business problem.
+
+As an AI consultant, your objective is not to perform a technical assessment of existing systems. Instead, guide the project manager by answering four practical questions:
+
+1. What information does this AI use case require?
+2. Why is each dataset important?
+3. How are the datasets connected?
+4. What additional data should be considered before implementation?
+
+The output should act as a blueprint that gives the project manager a clear direction for data collection before moving into AI Data Preparation.
 
 ---
 
@@ -12,220 +27,290 @@ Rather than collecting all available information, this capability helps project 
 
 ## Definition
 
-Critical Data Identification determines the minimum business, product, system, engineering, operational, and supporting data required to successfully implement the selected AI use case.
+Critical Data Identification determines the minimum business, product, system, engineering, operational, and supporting data required to implement the selected AI use case successfully.
 
-Rather than cataloging all available data, this capability identifies only the information that directly contributes to achieving the desired business outcome. The AI analyses the selected AI use case, identifies the required data, explains why it is needed, and highlights dependencies that must be preserved to enable effective AI implementation.
+Rather than documenting every available repository, the capability focuses on identifying the data that directly contributes to business outcomes while preserving the relationships that enable AI reasoning.
+
+---
 
 ## Framework
 
-The AI identifies critical data by analysing the following dimensions.
+The AI identifies critical data across six dimensions.
 
-### 1. Business Data
+### Business Data
 
-Business context that explains **why** the AI solution is needed and the business outcomes it is expected to achieve.
+Business information that explains why the AI solution exists and what outcome it should achieve.
 
-**Typical examples**
+Typical examples
 
 - Business objectives
 - Business processes
+- KPIs
 - Customer information
-- Service requests
 - Financial metrics
-- Business KPIs
+- Service requests
 
 ---
 
-### 2. Product Data
+### Product Data
 
-Information describing **what** is being developed, delivered, or supported.
+Information describing what is being developed, delivered, or supported.
 
-**Typical examples**
+Typical examples
 
-- Product hierarchy
+- Products
 - Features
 - Modules
+- Product hierarchy
 - Product variants
-- Product configurations
-- Product releases
-- Product lifecycle
+- Releases
+- Configurations
 
 ---
 
-### 3. System Data
+### System Data
 
-Information describing **how** the product is designed, organized, and integrated.
+Information describing how the product or solution is designed and integrated.
 
-**Typical examples**
+Typical examples
 
-- Functional architecture
-- Logical architecture
-- Physical architecture
+- Architecture
 - Components
 - Interfaces
+- APIs
 - Dependencies
 - Communication flows
 
 ---
 
-### 4. Engineering Data
+### Engineering Data
 
 Artifacts generated throughout the engineering lifecycle.
 
-**Typical examples**
+Typical examples
 
 - Requirements
 - Design documents
 - Source code
-- Test plans
 - Test cases
-- Test results
-- Defects
-- Build history
+- Test execution
+- Defort reports
 - Change requests
+- Build history
 
 ---
 
-### 5. Operational Data
+### Operational Data
 
-Information generated while operating, monitoring, or supporting the product.
+Information generated while operating or supporting the product.
 
-**Typical examples**
+Typical examples
 
-- Runtime logs
+- Logs
 - Telemetry
-- Performance metrics
+- Runtime metrics
 - Production incidents
-- Monitoring data
 - User feedback
+- Monitoring information
 
 ---
 
-### 6. Supporting Data
+### Supporting Knowledge
 
-Additional knowledge that improves AI reasoning and decision-making.
+Knowledge sources that improve AI reasoning.
 
-**Typical examples**
+Typical examples
 
 - Standards
 - Procedures
-- Best practices
 - User manuals
+- Best practices
 - Knowledge articles
-- Reference documentation
-- External datasets
+- Engineering documentation
+- Reference material
 
 ---
 
-### 7. Critical Relationships
+## Critical Data Relationships
 
-Relationships between datasets that provide context for AI reasoning.
+AI produces better recommendations when relationships between datasets are preserved.
 
-**Typical examples**
+Typical relationships include
 
-- Business Process → Product Feature
-- Product Feature → System Component
-- System Component → Requirement
-- Requirement → Design
-- Requirement → Test Case
-- Test Case → Test Result
-- Test Result → Defect
-- Defect → Change Request
-- Product → Operational Data
+Business Process
+→ Product Feature
 
-Maintaining these relationships preserves business and engineering context, enabling AI to generate more accurate insights, recommendations, and decisions.
+Product Feature
+→ System Component
 
-## Key Principles
+System Component
+→ Requirement
 
-- **Start with Business Value** — Identify data based on the business outcome the AI solution is expected to deliver rather than the data that is most readily available.
-- **Focus on Critical Data** — Prioritize the minimum viable data required to successfully implement the AI use case. Avoid unnecessary data collection.
-- **Preserve Business Context** — Maintain relationships between datasets so the AI can understand the complete business and engineering context.
-- **Enable Data Reuse** — Prepare data in a standardized and reusable manner so it can support multiple AI initiatives instead of a single implementation.
-- **Enable AI Consumption** — Organize data in a format that can be efficiently prepared and consumed by AI solutions.
+Requirement
+→ Design
 
-## Leadership Question
+Requirement
+→ Test Case
 
-**Have we identified all critical data required to successfully implement this AI use case?**
+Test Case
+→ Test Result
+
+Test Result
+→ Defect
+
+Defect
+→ Change Request
+
+Operational Data
+→ Business KPI
 
 ---
 
-# Decision Criteria
+# Consultant Output
 
-The AI prioritizes critical data based on the following criteria:
+For every AI use case, generate the following blueprint.
 
-- Business value
-- Relevance to the selected AI use case
-- Data availability
-- Data quality
-- Dependencies between datasets
-- Expected impact on AI performance
-- Reusability across future AI initiatives
+## 1. Business Objective
+
+What business problem is being solved?
+
+---
+
+## 2. Required Datasets
+
+For each dataset identify
+
+- Dataset Name
+- Data Category
+- Why it is required
+- Business value enabled
+
+---
+
+## 3. Data Relationship Overview
+
+Describe how the identified datasets interact to support the AI solution.
+
+Focus on preserving business context and engineering traceability.
+
+---
+
+## 4. Additional Data to Consider
+
+Recommend datasets that may further improve AI performance.
+
+Examples
+
+- Historical information
+- Feedback loops
+- External reference data
+- Industry standards
+- Operational metrics
+
+---
+
+## 5. Data Collection Priorities
+
+Recommend where the project manager should begin collecting information.
+
+Prioritize activities according to
+
+High
+
+Medium
+
+Low
+
+based on expected implementation value.
+
+---
+
+# Key Principles
+
+- Start from the business objective.
+- Identify only the data required for the AI use case.
+- Preserve relationships between datasets.
+- Prioritize business value over data volume.
+- Build reusable datasets for future AI initiatives.
+- Think in terms of information needed rather than systems available.
+
+---
+
+# Leadership Question
+
+**Have we identified the minimum information required to successfully implement this AI use case?**
 
 ---
 
 # AI Reasoning Process
 
-The AI follows a structured reasoning process to identify the critical data required for the selected AI use case.
-
-```text
 Business Objective
-        ↓
-Understand the AI Use Case
-        ↓
-Identify Business Decisions
-        ↓
-Determine Critical Data
-        ↓
-Classify Data
-        ↓
-Map Critical Relationships
-        ↓
-Identify Missing Data
-        ↓
-Generate Data Collection Recommendations
-```
+
+↓
+
+Understand AI Use Case
+
+↓
+
+Identify Required Decisions
+
+↓
+
+Determine Required Information
+
+↓
+
+Group into Critical Datasets
+
+↓
+
+Map Relationships
+
+↓
+
+Recommend Data Collection Priorities
+
+↓
+
+Generate Critical Data Blueprint
 
 ---
 
 # Blueprint Output
 
-For every AI use case, the AI generates a project-specific **Critical Data Identification Blueprint** containing:
+The generated blueprint includes
 
 - Business Objective
-- Critical Business Data
-- Critical Product Data
-- Critical System Data
-- Critical Engineering Data
-- Critical Operational Data
-- Supporting Data
-- Critical Relationships
-- Missing or Unavailable Data
-- Data Collection Recommendations
+- Required Datasets
+- Data Categories
+- Why Each Dataset Matters
+- Data Relationship Overview
+- Additional Data Recommendations
+- Data Collection Priorities
 - AI Recommendation
 
 ---
 
 # Expected Outcome
 
-After completing this capability, the project team should have:
+After completing this capability the project team should have
 
-- A clear understanding of the minimum data required for the selected AI use case.
-- Identification of missing or unavailable data.
-- A structured view of business, product, system, engineering, operational, and supporting data.
-- Traceability between related datasets.
-- Prioritized data collection recommendations.
-- A strong foundation for the next capability: **AI Data Preparation**.
+- A clear understanding of what information the AI solution requires
+- A prioritized list of datasets
+- Understanding of relationships between datasets
+- Practical guidance for collecting the required information
+- A solid foundation for AI Data Preparation
 
 ---
 
 # AI Prompt Guidance
 
-When generating the Critical Data Identification blueprint, the AI should:
+When generating the blueprint, the AI should
 
-- Start with the business objective and AI use case.
-- Infer the required data rather than asking users to list all available data.
-- Prioritize critical data over exhaustive data inventories.
-- Explain why each dataset is required.
-- Highlight missing data and associated implementation risks.
-- Preserve relationships and traceability between datasets.
-- Recommend practical next steps for data collection.
-- Tailor all recommendations to the user's project context.
+- Begin with the selected AI use case.
+- Infer the required information.
+- Explain why each dataset is needed.
+- Preserve business and engineering context.
+- Recommend practical data collection activities.
+- Avoid assessing existing systems or implementation status.
+- Produce guidance that a project manager can immediately execute.

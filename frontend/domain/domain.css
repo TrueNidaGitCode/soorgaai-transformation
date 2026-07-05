@@ -4699,6 +4699,198 @@
   .roi-cost-col         { border-right: none; border-bottom: 1px solid rgba(99,102,241,0.18); }
 }
 
+/* ── AI ROI — Operational Excellence redesign ────────────────────────────── */
+
+.oe-transformation-table {
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.oe-transform-header {
+  display: grid;
+  grid-template-columns: 1fr 2.5rem 1fr;
+}
+
+.oe-transform-header__current,
+.oe-transform-header__future {
+  padding: 0.6rem 1rem;
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid rgba(99,102,241,0.15);
+}
+
+.oe-transform-header__current {
+  background: rgba(239,68,68,0.08);
+  color: rgba(239,68,68,0.72);
+}
+
+.oe-transform-header__arrow {
+  background: rgba(99,102,241,0.06);
+  border-left: 1px solid rgba(99,102,241,0.12);
+  border-right: 1px solid rgba(99,102,241,0.12);
+  border-bottom: 1px solid rgba(99,102,241,0.15);
+}
+
+.oe-transform-header__future {
+  background: rgba(52,211,153,0.07);
+  color: rgba(52,211,153,0.72);
+}
+
+.oe-transform-row {
+  display: grid;
+  grid-template-columns: 1fr 2.5rem 1fr;
+  border-bottom: 1px solid rgba(99,102,241,0.08);
+}
+.oe-transform-row:last-child { border-bottom: none; }
+
+.oe-transform-row__current {
+  padding: 0.55rem 1rem;
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.65);
+  background: rgba(239,68,68,0.04);
+}
+
+.oe-transform-row__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  color: rgba(99,102,241,0.55);
+  background: rgba(99,102,241,0.05);
+  border-left: 1px solid rgba(99,102,241,0.1);
+  border-right: 1px solid rgba(99,102,241,0.1);
+}
+
+.oe-transform-row__future {
+  padding: 0.55rem 1rem;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  background: rgba(52,211,153,0.04);
+}
+
+.oe-impact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 0.625rem;
+}
+
+.oe-impact-card {
+  background: rgba(99,102,241,0.08);
+  border: 1px solid rgba(99,102,241,0.18);
+  border-top: 2px solid var(--cap-accent, rgba(99,102,241,0.7));
+  border-radius: 8px;
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.oe-impact-card__title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cap-accent, rgba(99,102,241,0.88));
+  margin: 0;
+}
+
+.oe-impact-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.oe-impact-card__list li {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.75);
+  padding-left: 0.85rem;
+  position: relative;
+}
+
+.oe-impact-card__list li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+  color: var(--cap-accent, rgba(99,102,241,0.55));
+}
+
+.pm-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+  gap: 0.625rem;
+}
+
+.pm-dashboard-card {
+  background: rgba(15,15,35,0.55);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 10px;
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.pm-dashboard-card__area {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(129,140,248,0.92);
+  margin: 0;
+}
+
+.pm-dashboard-card__question {
+  font-size: 0.74rem;
+  color: rgba(255,255,255,0.42);
+  font-style: italic;
+  margin: 0;
+}
+
+.pm-dashboard-card__divider {
+  height: 1px;
+  background: rgba(99,102,241,0.15);
+  margin: 0.1rem 0;
+}
+
+.pm-dashboard-card__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.pm-dashboard-card__row-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0;
+}
+.pm-dashboard-card__row-label--current { color: rgba(239,68,68,0.7); }
+.pm-dashboard-card__row-label--ai      { color: rgba(129,140,248,0.7); }
+.pm-dashboard-card__row-label--kpi     { color: rgba(52,211,153,0.7); }
+
+.pm-dashboard-card__row-text {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.72);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.pm-dashboard-card__kpi-value {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: rgba(52,211,153,0.92);
+  margin: 0;
+}
+
 /* ── Layout wrappers ─────────────────────────────────────────────────────────
    One wrapper per section type — all share the same column layout. ─────── */
 

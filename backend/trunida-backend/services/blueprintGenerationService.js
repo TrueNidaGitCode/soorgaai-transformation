@@ -368,18 +368,36 @@ SECTION-SPECIFIC EXTRAS — "Financial Performance" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Operational Excellence" sections only:
 
-5. sdlcStages (exactly 5 items, in this order)
-   The five SDLC stages showing how AI enhances each phase.
-   Stages must be in this fixed sequence: Plan, Develop, Test, Deploy, Operate
-   Each item: { "stage": "<stage name>", "aiTool": "<AI tool or capability name e.g. AI Planning Assistant, AI Copilot>", "description": "<1 sentence on how AI improves this stage, ≤12 words>" }
-   Example item: { "stage": "Plan", "aiTool": "AI Planning Assistant", "description": "Intelligent resource allocation and proactive risk assessment at scale." }
+5. transformationRows (exactly 5 items)
+   Before AI vs After AI comparison showing the operational shift this initiative creates.
+   Each item: { "currentState": "<2–5 word current state>", "futureState": "<2–5 word future state>" }
+   - currentState: what happens today — manual, spreadsheet-based, periodic, reactive, disconnected
+   - futureState: what AI enables — automated, real-time, continuous, predictive, integrated
+   Both sides must be specific to THIS initiative and its domain. Do not use generic IT language.
+   Example: { "currentState": "Manual Traceability", "futureState": "AI Traceability Mapping" }
+   Example: { "currentState": "Spreadsheet Reporting", "futureState": "Real-time Dashboard" }
 
-6. kpiHighlights (exactly 3 items)
-   Three delivery performance metrics demonstrating operational improvement.
-   Each item: { "value": "<number with unit e.g. 40%, 2×, 50%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+6. impactAreas (exactly 5 items)
+   Five business capability areas where this AI initiative creates operational improvement.
+   Each item: { "name": "<area name>", "points": ["<2–4 word improvement>", "<2–4 word improvement>", "<2–4 word improvement>"] }
+   Areas should be business capabilities, NOT SDLC phases. Use areas like:
+   Engineering Productivity, Software Quality, Delivery Performance, Decision Support, Continuous Improvement
+   Adapt area names to the specific initiative if needed.
+   Points: concise 3–5 word improvement statements — specific to this initiative.
+   Example: { "name": "Engineering Productivity", "points": ["Less manual work", "Faster delivery cycles", "More engineering capacity"] }
 
-   Add both to the brief object:
-   "sdlcStages": [...], "kpiHighlights": [...]`,
+7. pmDashboard (exactly 5 items)
+   Five PM-focused cards answering the questions every Project Manager asks about operational impact.
+   Each item: { "area": "<same area name as impactAreas>", "question": "<e.g. How much faster?, How much better?>", "currentChallenge": "<1 sentence on current pain point>", "aiImprovement": "<1 sentence on what AI changes>", "expectedKpi": "<e.g. +35% Productivity, 80% Reduction>" }
+   - area must match impactAreas
+   - question should be natural PM language
+   - currentChallenge: honest 1-sentence description of the problem today
+   - aiImprovement: 1 sentence on the specific improvement this initiative delivers
+   - expectedKpi: single bold metric with value — NOT a sentence
+   Example: { "area": "Software Quality", "question": "How much better?", "currentChallenge": "Manual traceability validation misses gaps under deadline pressure.", "aiImprovement": "Automatic acceptance criteria mapping catches gaps at source.", "expectedKpi": "95% Traceability Coverage" }
+
+   Add all three to the brief object:
+   "transformationRows": [...], "impactAreas": [...], "pmDashboard": [...]`,
   },
 
   'Customer Value': {
@@ -1022,6 +1040,27 @@ function parseBriefOutput(rawSections, validTitles) {
       const valueItems    = (Array.isArray(b.valueItems)    ? b.valueItems    : []).map(String).filter(Boolean).slice(0, 5);
       const impactTimeline= (Array.isArray(b.impactTimeline)? b.impactTimeline: []).map(String).filter(Boolean).slice(0, 5);
 
+      const transformationRows = (Array.isArray(b.transformationRows) ? b.transformationRows : [])
+        .filter(r => r && typeof r === 'object' && (r.currentState || r.futureState))
+        .map(r => ({ currentState: String(r.currentState || '').trim(), futureState: String(r.futureState || '').trim() }))
+        .slice(0, 5);
+
+      const impactAreas = (Array.isArray(b.impactAreas) ? b.impactAreas : [])
+        .filter(a => a && typeof a === 'object' && String(a.name || '').trim())
+        .map(a => ({ name: String(a.name || '').trim(), points: Array.isArray(a.points) ? a.points.map(String).filter(Boolean) : [] }))
+        .slice(0, 5);
+
+      const pmDashboard = (Array.isArray(b.pmDashboard) ? b.pmDashboard : [])
+        .filter(c => c && typeof c === 'object' && String(c.area || '').trim())
+        .map(c => ({
+          area:             String(c.area             || '').trim(),
+          question:         String(c.question         || '').trim(),
+          currentChallenge: String(c.currentChallenge || '').trim(),
+          aiImprovement:    String(c.aiImprovement    || '').trim(),
+          expectedKpi:      String(c.expectedKpi      || '').trim(),
+        }))
+        .slice(0, 5);
+
       const rawWaterfallItems = Array.isArray(b.waterfallItems) ? b.waterfallItems : [];
       const waterfallItems = rawWaterfallItems
         .filter(it => it && typeof it === 'object' && String(it.category || '').trim())
@@ -1596,6 +1635,9 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(costItems.length            ? { costItems }            : {}),
           ...(valueItems.length           ? { valueItems }           : {}),
           ...(impactTimeline.length       ? { impactTimeline }       : {}),
+          ...(transformationRows.length   ? { transformationRows }   : {}),
+          ...(impactAreas.length          ? { impactAreas }          : {}),
+          ...(pmDashboard.length          ? { pmDashboard }          : {}),
           ...(waterfallItems.length       ? { waterfallItems }       : {}),
           ...(sdlcStages.length           ? { sdlcStages }           : {}),
           ...(flywheelStages.length       ? { flywheelStages }       : {}),
@@ -2127,7 +2169,9 @@ OUTPUT — valid JSON only, no markdown fences:
       'strategicPillars', 'kpiHighlights', 'timelineSteps', 'alignmentInitiatives',
       'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
       'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'solutionComponents', 'teamGroups', 'teamRoles',
-      'lifecycleStages', 'roiSummary', 'costItems', 'valueItems', 'impactTimeline', 'waterfallItems', 'sdlcStages', 'flywheelStages',
+      'lifecycleStages', 'roiSummary', 'costItems', 'valueItems', 'impactTimeline',
+      'transformationRows', 'impactAreas', 'pmDashboard',
+      'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',
       // AI Use Cases extras
@@ -2229,7 +2273,9 @@ OUTPUT — valid JSON only, no markdown fences:
       'strategicPillars', 'kpiHighlights', 'timelineSteps', 'alignmentInitiatives',
       'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
       'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'solutionComponents', 'teamGroups', 'teamRoles',
-      'lifecycleStages', 'roiSummary', 'costItems', 'valueItems', 'impactTimeline', 'waterfallItems', 'sdlcStages', 'flywheelStages',
+      'lifecycleStages', 'roiSummary', 'costItems', 'valueItems', 'impactTimeline',
+      'transformationRows', 'impactAreas', 'pmDashboard',
+      'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',
       // AI Use Cases extras

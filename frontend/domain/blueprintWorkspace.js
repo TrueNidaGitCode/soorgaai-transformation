@@ -1834,13 +1834,137 @@ function buildOperationalExcellenceLayout(section) {
   const wrap = document.createElement('div');
   wrap.className = 'operational-excellence-layout';
 
+  // 1. Strategic Position
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  if (b.sdlcStages?.length) {
-    // SDLC Performance Dashboard
-    wrap.appendChild(buildDiagramSection('SDLC Performance Dashboard', buildSdlcPipeline(b.sdlcStages)));
+  // 2. Operational Improvement Dashboard — Before → After table
+  const txRows = Array.isArray(b.transformationRows) ? b.transformationRows : [];
+  if (txRows.length) {
+    const sec = document.createElement('div');
+    sec.className = 'roi-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Operational Improvement Dashboard';
+    sec.appendChild(lbl);
 
-    // SDLC Stage Details
+    const table = document.createElement('div');
+    table.className = 'oe-transformation-table';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'oe-transform-header';
+    ['oe-transform-header__current', 'oe-transform-header__arrow', 'oe-transform-header__future'].forEach((cls, i) => {
+      const cell = document.createElement('div');
+      cell.className = cls;
+      if (i === 0) cell.textContent = 'Current State';
+      if (i === 2) cell.textContent = 'Future State';
+      hdr.appendChild(cell);
+    });
+    table.appendChild(hdr);
+
+    txRows.forEach(row => {
+      const r = document.createElement('div');
+      r.className = 'oe-transform-row';
+      const cur = document.createElement('div');
+      cur.className = 'oe-transform-row__current'; cur.textContent = row.currentState || '—';
+      const arr = document.createElement('div');
+      arr.className = 'oe-transform-row__arrow'; arr.textContent = '→';
+      const fut = document.createElement('div');
+      fut.className = 'oe-transform-row__future'; fut.textContent = row.futureState || '—';
+      r.appendChild(cur); r.appendChild(arr); r.appendChild(fut);
+      table.appendChild(r);
+    });
+
+    sec.appendChild(table);
+    wrap.appendChild(sec);
+  }
+
+  // 3. Operational Impact Areas — 5 business capability cards
+  const impactAreas = Array.isArray(b.impactAreas) ? b.impactAreas : [];
+  if (impactAreas.length) {
+    const sec = document.createElement('div');
+    sec.className = 'roi-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Operational Impact Areas';
+    sec.appendChild(lbl);
+
+    const grid = document.createElement('div');
+    grid.className = 'oe-impact-grid';
+    impactAreas.forEach(area => {
+      const card = document.createElement('div');
+      card.className = 'oe-impact-card';
+      const title = document.createElement('p');
+      title.className = 'oe-impact-card__title'; title.textContent = area.name || '—';
+      card.appendChild(title);
+      const ul = document.createElement('ul');
+      ul.className = 'oe-impact-card__list';
+      (area.points || []).forEach(pt => {
+        const li = document.createElement('li'); li.textContent = pt;
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+    wrap.appendChild(sec);
+  }
+
+  // 4. Operational KPI Dashboard — PM-focused question cards
+  const pmDash = Array.isArray(b.pmDashboard) ? b.pmDashboard : [];
+  if (pmDash.length) {
+    const sec = document.createElement('div');
+    sec.className = 'roi-section';
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Operational KPI Dashboard';
+    sec.appendChild(lbl);
+
+    const grid = document.createElement('div');
+    grid.className = 'pm-dashboard-grid';
+
+    pmDash.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'pm-dashboard-card';
+
+      const area = document.createElement('p');
+      area.className = 'pm-dashboard-card__area'; area.textContent = item.area || '—';
+      card.appendChild(area);
+
+      if (item.question) {
+        const q = document.createElement('p');
+        q.className = 'pm-dashboard-card__question'; q.textContent = item.question;
+        card.appendChild(q);
+      }
+
+      const divider = document.createElement('div');
+      divider.className = 'pm-dashboard-card__divider';
+      card.appendChild(divider);
+
+      const addRow = (cls, labelText, valueText, isKpi) => {
+        if (!valueText) return;
+        const row = document.createElement('div');
+        row.className = 'pm-dashboard-card__row';
+        const lbl2 = document.createElement('p');
+        lbl2.className = `pm-dashboard-card__row-label pm-dashboard-card__row-label--${cls}`;
+        lbl2.textContent = labelText;
+        const val = document.createElement('p');
+        val.className = isKpi ? 'pm-dashboard-card__kpi-value' : 'pm-dashboard-card__row-text';
+        val.textContent = valueText;
+        row.appendChild(lbl2); row.appendChild(val);
+        card.appendChild(row);
+      };
+
+      addRow('current', 'Current',        item.currentChallenge, false);
+      addRow('ai',      'AI Improvement',  item.aiImprovement,    false);
+      addRow('kpi',     'Expected KPI',    item.expectedKpi,      true);
+
+      grid.appendChild(card);
+    });
+
+    sec.appendChild(grid);
+    wrap.appendChild(sec);
+  }
+
+  // Fallback: old SDLC layout for legacy blueprints
+  if (!txRows.length && b.sdlcStages?.length) {
+    wrap.appendChild(buildDiagramSection('SDLC Performance Dashboard', buildSdlcPipeline(b.sdlcStages)));
     const list = document.createElement('div');
     list.className = 'detail-bullet-list';
     b.sdlcStages.forEach(stage => {
@@ -1857,10 +1981,7 @@ function buildOperationalExcellenceLayout(section) {
       list.appendChild(card);
     });
     wrap.appendChild(buildDetailSection('SDLC Stage Details', list));
-  }
-
-  if (b.kpiHighlights?.length) {
-    wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
+    if (b.kpiHighlights?.length) wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   }
 
   return wrap;

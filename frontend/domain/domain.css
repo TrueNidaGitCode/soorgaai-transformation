@@ -7347,6 +7347,18 @@
 /* ── Architecture Summary strip ── */
 
 .dae-arch-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 1rem;
+}
+
+.dae-arch-summary .brief-label {
+  margin: 0;
+}
+
+.dae-arch-summary__cells {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
@@ -7577,7 +7589,7 @@
   .dae-upper  { grid-template-columns: 1fr; }
   .dae-middle { grid-template-columns: 1fr; }
   .dae-layer-grid { grid-template-columns: 1fr; }
-  .dae-arch-summary { grid-template-columns: repeat(2, 1fr); }
+  .dae-arch-summary__cells { grid-template-columns: repeat(2, 1fr); }
   .dae-impl-row { overflow-x: auto; }
   .dae-dec-table__row { grid-template-columns: 1fr; }
   .dae-pattern-row { max-width: 100%; }

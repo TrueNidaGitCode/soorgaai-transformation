@@ -2971,6 +2971,11 @@ function buildDataArchitectureLayout(section) {
     const strip = document.createElement('div');
     strip.className = 'dae-arch-summary';
 
+    const stripLbl = document.createElement('p');
+    stripLbl.className = 'brief-label'; stripLbl.textContent = 'Architecture Summary';
+    strip.appendChild(stripLbl);
+
+    const cells = document.createElement('div'); cells.className = 'dae-arch-summary__cells';
     [
       { value: archSummary.sourceSystems,     label: 'Source Systems' },
       { value: archSummary.integrationPoints, label: 'Integration Points' },
@@ -2982,8 +2987,9 @@ function buildDataArchitectureLayout(section) {
       val.className = stat.isText ? 'dae-arch-summary__value dae-arch-summary__value--text' : 'dae-arch-summary__value';
       val.textContent = stat.value ?? '—';
       const lbl2 = document.createElement('p'); lbl2.className = 'dae-arch-summary__label'; lbl2.textContent = stat.label;
-      cell.appendChild(val); cell.appendChild(lbl2); strip.appendChild(cell);
+      cell.appendChild(val); cell.appendChild(lbl2); cells.appendChild(cell);
     });
+    strip.appendChild(cells);
 
     wrap.appendChild(strip);
   } else if (archStats.architectureReadiness) {

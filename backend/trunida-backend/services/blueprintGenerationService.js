@@ -657,28 +657,22 @@ SECTION-SPECIFIC EXTRAS — "Critical Data Identification" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Data Preparation" sections only:
 
-5. inputDatasets (up to 4 items)
-   The key datasets from the previous step that are being prepared for AI.
-   Each item: { "name": "<dataset name, 2–4 words>", "status": "AVAILABLE|MISSING|IN PROGRESS" }
+5. prepActivities (exactly 5 items)
+   The engineering datasets requiring preparation and the specific work needed for each.
+   Each item: { "name": "<dataset/artifact name, 2–4 words>", "preparationActivity": "<specific action, ≤6 words>", "businessPurpose": "<why this enables AI, ≤8 words>", "recommendedOwner": "<engineering role, 2–3 words>", "priority": "HIGH|MEDIUM|LOW" }
+   Example: { "name": "Requirements Repository", "preparationActivity": "Standardize Requirement IDs", "businessPurpose": "Enable consistent AI reasoning", "recommendedOwner": "Requirements Engineer", "priority": "HIGH" }
 
-6. pipelineStages (exactly 4 items, fixed order: Raw Data, Quality Check, Standardization, Integration)
-   The current preparation status of each pipeline stage for this project's data.
-   Each item: { "stage": "Raw Data|Quality Check|Standardization|Integration", "status": "Completed|Needs Attention|In Progress|Pending" }
+6. firstSteps (exactly 4 items)
+   The recommended first implementation steps in order of priority.
+   Each item: { "action": "<specific action, ≤8 words>", "owner": "<role title, 2–3 words>" }
+   Example: { "action": "Standardize requirement identifiers", "owner": "Requirements Lead" }
 
-7. prepRecommendations (exactly 3 items)
-   The 3 highest-priority data preparation actions for this project.
-   Each item: { "text": "<action, ≤12 words>", "priority": "HIGH|MEDIUM|LOW", "effort": "LOW|MEDIUM|HIGH", "impact": "<expected outcome, ≤8 words>" }
-
-8. dataStats
-   Key data health metrics for this project.
-   Object: { "missingData": <count 0–10>, "dataQuality": <score 0–100>, "traceability": <score 0–100> }
-
-9. readinessSummary
-   Four dimension readiness scores as percentages (0–100).
-   Object: { "quality": <0–100>, "standardization": <0–100>, "integration": <0–100>, "aiReadiness": <0–100> }
+7. prepSummary
+   Planning totals derived from the above.
+   Object: { "preparationActivities": <count of prepActivities>, "engineeringRepositories": <distinct repository count, 3–8>, "recommendedOwners": <distinct owner count, 3–7>, "implementationPriority": "High|Medium|Low" }
 
    Add all to the brief object:
-   "inputDatasets": [...], "pipelineStages": [...], "prepRecommendations": [...], "dataStats": {...}, "readinessSummary": {...}`,
+   "prepActivities": [...], "firstSteps": [...], "prepSummary": {...}`,
   },
 
   'Data Architecture Enablement': {
@@ -1307,6 +1301,35 @@ function parseBriefOutput(rawSections, validTitles) {
         aiReadiness:     parseInt(rawReadiness.aiReadiness,     10) || 0,
       };
 
+      const rawPrepActivities = Array.isArray(b.prepActivities) ? b.prepActivities : [];
+      const prepActivities = rawPrepActivities
+        .filter(a => a && typeof a === 'object' && String(a.name || '').trim())
+        .map(a => ({
+          name:                String(a.name                || '').trim(),
+          preparationActivity: String(a.preparationActivity || '').trim(),
+          businessPurpose:     String(a.businessPurpose     || '').trim(),
+          recommendedOwner:    String(a.recommendedOwner    || '').trim(),
+          priority:            String(a.priority            || 'MEDIUM').trim(),
+        }))
+        .slice(0, 5);
+
+      const rawFirstSteps = Array.isArray(b.firstSteps) ? b.firstSteps : [];
+      const firstSteps = rawFirstSteps
+        .filter(s => s && typeof s === 'object' && String(s.action || '').trim())
+        .map(s => ({
+          action: String(s.action || '').trim(),
+          owner:  String(s.owner  || '').trim(),
+        }))
+        .slice(0, 4);
+
+      const rawPrepSummary = b.prepSummary && typeof b.prepSummary === 'object' ? b.prepSummary : {};
+      const prepSummary = {
+        preparationActivities:  parseInt(rawPrepSummary.preparationActivities,  10) || 0,
+        engineeringRepositories: parseInt(rawPrepSummary.engineeringRepositories, 10) || 0,
+        recommendedOwners:       parseInt(rawPrepSummary.recommendedOwners,       10) || 0,
+        implementationPriority:  String(rawPrepSummary.implementationPriority || '').trim(),
+      };
+
       // ── Technology Infrastructure: System Integration & Architecture parsers ──
 
       const integrationReadiness = parseInt(b.integrationReadiness, 10) || 0;
@@ -1736,6 +1759,9 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(prepRecommendations.length  ? { prepRecommendations }  : {}),
           ...(dataStats.dataQuality       ? { dataStats }            : {}),
           ...(readinessSummary.aiReadiness? { readinessSummary }     : {}),
+          ...(prepActivities.length       ? { prepActivities }       : {}),
+          ...(firstSteps.length           ? { firstSteps }           : {}),
+          ...(prepSummary.preparationActivities ? { prepSummary }    : {}),
           // Data Readiness: Data Architecture Enablement extras
           ...(projectSystems.length          ? { projectSystems }       : {}),
           ...(archRecommendations.length     ? { archRecommendations }  : {}),
@@ -2350,6 +2376,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'datasets', 'traceabilityChain', 'collectionOrder', 'implementationRoadmap',
       'recommendations', 'coverageSummary', 'relationshipMap',
       'inputDatasets', 'pipelineStages', 'prepRecommendations', 'dataStats', 'readinessSummary',
+      'prepActivities', 'firstSteps', 'prepSummary',
       'projectSystems', 'archRecommendations', 'archStats', 'healthTimeline',
       // Technology Infrastructure extras
       'integrationReadiness', 'connectedSystems', 'integrationSummary',

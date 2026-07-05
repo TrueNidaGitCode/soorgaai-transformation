@@ -2909,245 +2909,252 @@ function buildDataArchitectureLayout(section) {
 // ── Data Readiness — AI Data Preparation ──────────────────────────────────────
 
 function buildAIDataPreparationLayout(section) {
-  const b                = section.brief || {};
-  const inputDatasets    = b.inputDatasets       || [];
-  const pipelineStages   = b.pipelineStages      || [];
-  const prepRecs         = b.prepRecommendations || [];
-  const dataStats        = b.dataStats           || {};
-  const readiness        = b.readinessSummary    || {};
-  const leadershipQ      = b.leadershipValidation?.context || '';
+  const b              = section.brief || {};
+  const prepActivities = Array.isArray(b.prepActivities) ? b.prepActivities : [];
+  const firstSteps     = Array.isArray(b.firstSteps)     ? b.firstSteps     : [];
+  const prepSummary    = b.prepSummary || {};
+  // Legacy fallbacks
+  const inputDatasets  = Array.isArray(b.inputDatasets)  ? b.inputDatasets  : [];
+  const pipelineStages = Array.isArray(b.pipelineStages) ? b.pipelineStages : [];
+  const prepRecs       = Array.isArray(b.prepRecommendations) ? b.prepRecommendations : [];
+  const readiness      = b.readinessSummary || {};
+  const leadershipQ    = b.leadershipValidation?.context || '';
+
+  const PRIORITY_CLASS = { HIGH: 'cdi-badge--high', MEDIUM: 'cdi-badge--medium', LOW: 'cdi-badge--low' };
+  const ADP_ROADMAP = ['Identify Critical Data', 'Clean', 'Standardize', 'Integrate', 'Enrich', 'Validate', 'AI Ready'];
 
   const wrap = document.createElement('div');
   wrap.className = 'adp-view';
 
-  // Top-right AI Readiness badge
-  if (readiness.aiReadiness) {
-    const badge = document.createElement('div');
-    badge.className = 'adp-readiness-badge';
-    badge.textContent = `AI READINESS: ${readiness.aiReadiness}%`;
-    wrap.appendChild(badge);
-  }
-
-  // Strategic position
-  if (b.strategicPosition) {
-    const posLabel = document.createElement('p');
-    posLabel.className = 'brief-label';
-    posLabel.textContent = 'Strategic Position';
-    wrap.appendChild(posLabel);
-    const pos = document.createElement('p');
-    pos.className = 'adp-view__position';
-    pos.textContent = b.strategicPosition;
-    wrap.appendChild(pos);
-  }
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
   // Three-column body
   const body = document.createElement('div');
   body.className = 'adp-body';
 
-  // ── LEFT: Input Datasets ──────────────────────────────────────────────────
+  // ── LEFT: Data Preparation Activities ────────────────────────────────────
 
   const leftCol = document.createElement('div');
   leftCol.className = 'adp-col adp-col--left';
 
-  const leftLbl = document.createElement('p');
-  leftLbl.className = 'brief-label';
-  leftLbl.textContent = 'Input Datasets';
-  leftCol.appendChild(leftLbl);
+  if (prepActivities.length) {
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Data Preparation Activities';
+    leftCol.appendChild(lbl);
 
-  const STATUS_ICON = { AVAILABLE: '◉', MISSING: '◎', 'IN PROGRESS': '◷' };
-  const STATUS_CLASS = { AVAILABLE: 'adp-status--available', MISSING: 'adp-status--missing', 'IN PROGRESS': 'adp-status--progress' };
+    prepActivities.forEach(act => {
+      const card = document.createElement('div');
+      card.className = 'adp-activity-card';
 
-  inputDatasets.forEach(ds => {
-    const card = document.createElement('div');
-    card.className = 'adp-dataset-card';
+      const name = document.createElement('p');
+      name.className = 'adp-activity-card__name'; name.textContent = act.name || '—';
+      card.appendChild(name);
 
-    const icon = document.createElement('div');
-    icon.className = 'adp-dataset-card__icon';
-    icon.textContent = STATUS_ICON[ds.status] || '◉';
-    card.appendChild(icon);
+      const addRow = (label, value, isBadge) => {
+        if (!value) return;
+        const row = document.createElement('div');
+        row.className = 'adp-activity-card__row';
+        const lbl2 = document.createElement('span');
+        lbl2.className = 'adp-activity-card__label'; lbl2.textContent = label;
+        row.appendChild(lbl2);
+        if (isBadge) {
+          const badge = document.createElement('span');
+          badge.className = `cdi-badge ${PRIORITY_CLASS[value] || 'cdi-badge--medium'}`;
+          badge.textContent = value;
+          row.appendChild(badge);
+        } else {
+          const val = document.createElement('span');
+          val.className = 'adp-activity-card__value'; val.textContent = value;
+          row.appendChild(val);
+        }
+        card.appendChild(row);
+      };
 
-    const name = document.createElement('p');
-    name.className = 'adp-dataset-card__name';
-    name.textContent = ds.name;
-    card.appendChild(name);
+      addRow('Preparation Activity', act.preparationActivity, false);
+      addRow('Business Purpose',     act.businessPurpose,     false);
+      addRow('Recommended Owner',    act.recommendedOwner,    false);
+      addRow('Priority',             act.priority,            true);
 
-    const statusBadge = document.createElement('span');
-    statusBadge.className = `adp-status ${STATUS_CLASS[ds.status] || 'adp-status--available'}`;
-    statusBadge.textContent = ds.status;
-    card.appendChild(statusBadge);
-
-    leftCol.appendChild(card);
-  });
-
-  if (!inputDatasets.length) {
-    const empty = document.createElement('p');
-    empty.className = 'adp-empty';
-    empty.textContent = 'Dataset list will appear after generation.';
-    leftCol.appendChild(empty);
+      leftCol.appendChild(card);
+    });
+  } else {
+    // Legacy: input datasets
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Input Datasets';
+    leftCol.appendChild(lbl);
+    const STATUS_ICON  = { AVAILABLE: '◉', MISSING: '◎', 'IN PROGRESS': '◷' };
+    const STATUS_CLASS = { AVAILABLE: 'adp-status--available', MISSING: 'adp-status--missing', 'IN PROGRESS': 'adp-status--progress' };
+    inputDatasets.forEach(ds => {
+      const card = document.createElement('div');
+      card.className = 'adp-dataset-card';
+      const icon = document.createElement('div');
+      icon.className = 'adp-dataset-card__icon'; icon.textContent = STATUS_ICON[ds.status] || '◉';
+      card.appendChild(icon);
+      const name = document.createElement('p');
+      name.className = 'adp-dataset-card__name'; name.textContent = ds.name;
+      card.appendChild(name);
+      const badge = document.createElement('span');
+      badge.className = `adp-status ${STATUS_CLASS[ds.status] || 'adp-status--available'}`; badge.textContent = ds.status;
+      card.appendChild(badge);
+      leftCol.appendChild(card);
+    });
+    if (!inputDatasets.length) {
+      const empty = document.createElement('p');
+      empty.className = 'adp-empty'; empty.textContent = 'Preparation activities will appear after generation.';
+      leftCol.appendChild(empty);
+    }
   }
 
   body.appendChild(leftCol);
 
-  // ── CENTER: Pipeline circles ──────────────────────────────────────────────
+  // ── CENTER: Preparation Roadmap ───────────────────────────────────────────
 
   const centerCol = document.createElement('div');
   centerCol.className = 'adp-col adp-col--center';
 
   const centerLbl = document.createElement('p');
-  centerLbl.className = 'brief-label';
-  centerLbl.textContent = 'AI Data Preparation Pipeline';
+  centerLbl.className = 'brief-label'; centerLbl.textContent = 'Preparation Roadmap';
   centerCol.appendChild(centerLbl);
 
-  const circleGrid = document.createElement('div');
-  circleGrid.className = 'adp-pipeline-grid';
+  const roadmap = document.createElement('div');
+  roadmap.className = 'adp-roadmap';
 
-  const STAGE_STATUS_CLASS = {
-    'Completed':       'adp-circle--completed',
-    'Needs Attention': 'adp-circle--attention',
-    'In Progress':     'adp-circle--progress',
-    'Pending':         'adp-circle--pending',
-  };
-
-  pipelineStages.forEach(stage => {
-    const cell = document.createElement('div');
-    cell.className = 'adp-pipeline-cell';
-
-    const circle = document.createElement('div');
-    circle.className = `adp-circle ${STAGE_STATUS_CLASS[stage.status] || 'adp-circle--pending'}`;
-
-    const stageName = document.createElement('p');
-    stageName.className = 'adp-circle__name';
-    stageName.textContent = stage.stage;
-    circle.appendChild(stageName);
-
-    const stageStatus = document.createElement('p');
-    stageStatus.className = 'adp-circle__status';
-    stageStatus.textContent = stage.status;
-    circle.appendChild(stageStatus);
-
-    cell.appendChild(circle);
-    circleGrid.appendChild(cell);
+  ADP_ROADMAP.forEach((step, i) => {
+    const node = document.createElement('div');
+    node.className = i === 0 ? 'adp-roadmap__node adp-roadmap__node--start'
+                   : i === ADP_ROADMAP.length - 1 ? 'adp-roadmap__node adp-roadmap__node--end'
+                   : 'adp-roadmap__node';
+    node.textContent = step;
+    roadmap.appendChild(node);
+    if (i < ADP_ROADMAP.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.className = 'adp-roadmap__arrow'; arrow.textContent = '↓';
+      roadmap.appendChild(arrow);
+    }
   });
 
-  centerCol.appendChild(circleGrid);
+  centerCol.appendChild(roadmap);
   body.appendChild(centerCol);
 
-  // ── RIGHT: Recommendations + Stats ───────────────────────────────────────
+  // ── RIGHT: Implementation Guidance ───────────────────────────────────────
 
   const rightCol = document.createElement('div');
   rightCol.className = 'adp-col adp-col--right';
 
-  if (prepRecs.length) {
-    const recLbl = document.createElement('p');
-    recLbl.className = 'brief-label';
-    recLbl.textContent = 'AI Recommendations';
-    rightCol.appendChild(recLbl);
+  if (firstSteps.length) {
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'Recommended First Steps';
+    rightCol.appendChild(lbl);
 
-    const PRIORITY_CLASS = { HIGH: 'adp-badge--high', MEDIUM: 'adp-badge--medium', LOW: 'adp-badge--low' };
+    firstSteps.forEach((step, i) => {
+      const row = document.createElement('div');
+      row.className = 'adp-step-row';
 
+      const num = document.createElement('span');
+      num.className = 'adp-step-row__num'; num.textContent = i + 1;
+
+      const content = document.createElement('div');
+      content.className = 'adp-step-row__content';
+
+      const action = document.createElement('p');
+      action.className = 'adp-step-row__action'; action.textContent = step.action;
+      content.appendChild(action);
+
+      if (step.owner) {
+        const ownerWrap = document.createElement('div');
+        ownerWrap.className = 'adp-step-row__owner-wrap';
+        const ownerLabel = document.createElement('span');
+        ownerLabel.className = 'adp-step-row__owner-label'; ownerLabel.textContent = 'Owner';
+        const ownerVal = document.createElement('span');
+        ownerVal.className = 'adp-step-row__owner'; ownerVal.textContent = step.owner;
+        ownerWrap.appendChild(ownerLabel); ownerWrap.appendChild(ownerVal);
+        content.appendChild(ownerWrap);
+      }
+
+      row.appendChild(num); row.appendChild(content);
+      rightCol.appendChild(row);
+
+      if (i < firstSteps.length - 1) {
+        const div = document.createElement('div');
+        div.className = 'adp-step-divider';
+        rightCol.appendChild(div);
+      }
+    });
+  } else {
+    // Legacy: recommendations
+    const lbl = document.createElement('p');
+    lbl.className = 'brief-label'; lbl.textContent = 'AI Recommendations';
+    rightCol.appendChild(lbl);
     prepRecs.forEach(rec => {
       const recCard = document.createElement('div');
       recCard.className = 'adp-rec-card';
-
-      const bullet = document.createElement('span');
-      bullet.className = 'adp-rec-card__bullet';
-      rightCol.appendChild; // placeholder
+      const bullet = document.createElement('span'); bullet.className = 'adp-rec-card__bullet';
       recCard.appendChild(bullet);
-
-      const recBody = document.createElement('div');
-      recBody.className = 'adp-rec-card__body';
-
-      const recText = document.createElement('p');
-      recText.className = 'adp-rec-card__text';
-      recText.textContent = rec.text;
+      const recBody = document.createElement('div'); recBody.className = 'adp-rec-card__body';
+      const recText = document.createElement('p'); recText.className = 'adp-rec-card__text'; recText.textContent = rec.text;
       recBody.appendChild(recText);
-
-      const recMeta = document.createElement('div');
-      recMeta.className = 'adp-rec-card__meta';
-      recMeta.innerHTML = `
-        <span>Priority: <strong>${rec.priority}</strong></span>
-        <span>Effort: <strong>${rec.effort}</strong></span>
-        ${rec.impact ? `<span>Expected Impact: <em>${rec.impact}</em></span>` : ''}`;
+      const recMeta = document.createElement('div'); recMeta.className = 'adp-rec-card__meta';
+      recMeta.innerHTML = `<span>Priority: <strong>${rec.priority}</strong></span><span>Effort: <strong>${rec.effort}</strong></span>${rec.impact ? `<span>Expected Impact: <em>${rec.impact}</em></span>` : ''}`;
       recBody.appendChild(recMeta);
-
       recCard.appendChild(recBody);
       rightCol.appendChild(recCard);
     });
   }
 
-  // Data stats
-  if (dataStats.dataQuality || dataStats.traceability || dataStats.missingData !== undefined) {
-    const statsDivider = document.createElement('div');
-    statsDivider.className = 'adp-stats-divider';
-    rightCol.appendChild(statsDivider);
-
-    const statsBlock = document.createElement('div');
-    statsBlock.className = 'adp-stats-block';
-
-    [
-      { value: dataStats.missingData ?? 0, label: 'Missing Data', isCount: true },
-      { value: dataStats.dataQuality  ?? 0, label: 'Data Quality',  isCount: false },
-      { value: dataStats.traceability ?? 0, label: 'Traceability',  isCount: false },
-    ].forEach(stat => {
-      const statEl = document.createElement('div');
-      statEl.className = 'adp-stat';
-      const valEl = document.createElement('p');
-      valEl.className = 'adp-stat__value';
-      valEl.textContent = stat.isCount ? stat.value : `${stat.value}`;
-      const lblEl = document.createElement('p');
-      lblEl.className = 'adp-stat__label';
-      lblEl.textContent = stat.label;
-      statEl.appendChild(valEl);
-      statEl.appendChild(lblEl);
-      statsBlock.appendChild(statEl);
-    });
-
-    rightCol.appendChild(statsBlock);
-  }
-
   body.appendChild(rightCol);
   wrap.appendChild(body);
 
-  // ── Readiness Summary 2×2 grid ────────────────────────────────────────────
+  // ── Preparation Blueprint summary strip ───────────────────────────────────
 
-  const hasReadiness = readiness.quality || readiness.standardization ||
-                       readiness.integration || readiness.aiReadiness;
-  if (hasReadiness) {
-    const readinessSection = document.createElement('div');
-    readinessSection.className = 'adp-readiness';
-
-    const readinessLbl = document.createElement('p');
-    readinessLbl.className = 'adp-readiness__label';
-    readinessLbl.textContent = 'Readiness Summary';
-    readinessSection.appendChild(readinessLbl);
-
-    const readinessGrid = document.createElement('div');
-    readinessGrid.className = 'adp-readiness-grid';
+  const hasSummary = prepSummary.preparationActivities || prepSummary.engineeringRepositories;
+  if (hasSummary) {
+    const strip = document.createElement('div');
+    strip.className = 'adp-prep-summary';
 
     [
-      { label: 'Quality',          value: readiness.quality },
-      { label: 'Standardization',  value: readiness.standardization },
-      { label: 'Integration',      value: readiness.integration },
-      { label: 'AI Readiness',     value: readiness.aiReadiness },
-    ].forEach(item => {
+      { value: prepSummary.preparationActivities,  label: 'Preparation Activities' },
+      { value: prepSummary.engineeringRepositories, label: 'Engineering Repositories' },
+      { value: prepSummary.recommendedOwners,       label: 'Recommended Owners' },
+      { value: prepSummary.implementationPriority || '—', label: 'Implementation Priority', isText: true },
+    ].forEach(stat => {
       const cell = document.createElement('div');
-      cell.className = 'adp-readiness-cell';
-
-      const cellLabel = document.createElement('p');
-      cellLabel.className = 'adp-readiness-cell__label';
-      cellLabel.textContent = item.label;
-      cell.appendChild(cellLabel);
-
-      const cellValue = document.createElement('p');
-      cellValue.className = 'adp-readiness-cell__value';
-      cellValue.textContent = `${item.value || 0}%`;
-      cell.appendChild(cellValue);
-
-      readinessGrid.appendChild(cell);
+      cell.className = 'adp-prep-summary__cell';
+      const val = document.createElement('p');
+      val.className = stat.isText ? 'adp-prep-summary__value adp-prep-summary__value--text' : 'adp-prep-summary__value';
+      val.textContent = stat.value ?? '—';
+      const lbl2 = document.createElement('p');
+      lbl2.className = 'adp-prep-summary__label'; lbl2.textContent = stat.label;
+      cell.appendChild(val); cell.appendChild(lbl2);
+      strip.appendChild(cell);
     });
 
-    readinessSection.appendChild(readinessGrid);
-    wrap.appendChild(readinessSection);
+    wrap.appendChild(strip);
+  } else {
+    // Legacy: readiness 2×2 grid
+    const hasReadiness = readiness.quality || readiness.standardization || readiness.integration || readiness.aiReadiness;
+    if (hasReadiness) {
+      const readinessSection = document.createElement('div');
+      readinessSection.className = 'adp-readiness';
+      const readinessLbl = document.createElement('p');
+      readinessLbl.className = 'adp-readiness__label'; readinessLbl.textContent = 'Readiness Summary';
+      readinessSection.appendChild(readinessLbl);
+      const readinessGrid = document.createElement('div');
+      readinessGrid.className = 'adp-readiness-grid';
+      [
+        { label: 'Quality', value: readiness.quality },
+        { label: 'Standardization', value: readiness.standardization },
+        { label: 'Integration', value: readiness.integration },
+        { label: 'AI Readiness', value: readiness.aiReadiness },
+      ].forEach(item => {
+        const cell = document.createElement('div'); cell.className = 'adp-readiness-cell';
+        const cellLabel = document.createElement('p'); cellLabel.className = 'adp-readiness-cell__label'; cellLabel.textContent = item.label;
+        const cellValue = document.createElement('p'); cellValue.className = 'adp-readiness-cell__value'; cellValue.textContent = `${item.value || 0}%`;
+        cell.appendChild(cellLabel); cell.appendChild(cellValue);
+        readinessGrid.appendChild(cell);
+      });
+      readinessSection.appendChild(readinessGrid);
+      wrap.appendChild(readinessSection);
+    }
   }
 
   // ── Leadership question footer ────────────────────────────────────────────

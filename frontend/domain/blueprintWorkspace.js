@@ -1963,24 +1963,26 @@ function buildOperationalExcellenceLayout(section) {
   }
 
   // Fallback: old SDLC layout for legacy blueprints
-  if (!txRows.length && b.sdlcStages?.length) {
-    wrap.appendChild(buildDiagramSection('SDLC Performance Dashboard', buildSdlcPipeline(b.sdlcStages)));
-    const list = document.createElement('div');
-    list.className = 'detail-bullet-list';
-    b.sdlcStages.forEach(stage => {
-      const card = document.createElement('div');
-      card.className = 'detail-bullet-card';
-      const t = document.createElement('p');
-      t.className = 'detail-bullet-card__title'; t.textContent = stage.stage;
-      card.appendChild(t);
-      if (stage.description) {
-        const d = document.createElement('p');
-        d.className = 'detail-bullet-card__desc'; d.textContent = stage.description;
-        card.appendChild(d);
-      }
-      list.appendChild(card);
-    });
-    wrap.appendChild(buildDetailSection('SDLC Stage Details', list));
+  if (!txRows.length) {
+    if (b.sdlcStages?.length) {
+      wrap.appendChild(buildDiagramSection('SDLC Performance Dashboard', buildSdlcPipeline(b.sdlcStages)));
+      const list = document.createElement('div');
+      list.className = 'detail-bullet-list';
+      b.sdlcStages.forEach(stage => {
+        const card = document.createElement('div');
+        card.className = 'detail-bullet-card';
+        const t = document.createElement('p');
+        t.className = 'detail-bullet-card__title'; t.textContent = stage.stage;
+        card.appendChild(t);
+        if (stage.description) {
+          const d = document.createElement('p');
+          d.className = 'detail-bullet-card__desc'; d.textContent = stage.description;
+          card.appendChild(d);
+        }
+        list.appendChild(card);
+      });
+      wrap.appendChild(buildDetailSection('SDLC Stage Details', list));
+    }
     if (b.kpiHighlights?.length) wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   }
 

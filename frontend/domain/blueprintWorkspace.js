@@ -1877,89 +1877,73 @@ function buildOperationalExcellenceLayout(section) {
     wrap.appendChild(sec);
   }
 
-  // 3. Operational Impact Areas — 5 business capability cards
-  const impactAreas = Array.isArray(b.impactAreas) ? b.impactAreas : [];
-  if (impactAreas.length) {
+  // 3. Improvement Scorecard — Area / Before AI / After AI / Business Benefit
+  const scorecard = Array.isArray(b.improvementScorecard) ? b.improvementScorecard : [];
+  if (scorecard.length) {
     const sec = document.createElement('div');
     sec.className = 'roi-section';
     const lbl = document.createElement('p');
-    lbl.className = 'brief-label'; lbl.textContent = 'Operational Impact Areas';
+    lbl.className = 'brief-label'; lbl.textContent = 'Improvement Scorecard';
     sec.appendChild(lbl);
 
-    const grid = document.createElement('div');
-    grid.className = 'oe-impact-grid';
-    impactAreas.forEach(area => {
-      const card = document.createElement('div');
-      card.className = 'oe-impact-card';
-      const title = document.createElement('p');
-      title.className = 'oe-impact-card__title'; title.textContent = area.name || '—';
-      card.appendChild(title);
-      const ul = document.createElement('ul');
-      ul.className = 'oe-impact-card__list';
-      (area.points || []).forEach(pt => {
-        const li = document.createElement('li'); li.textContent = pt;
-        ul.appendChild(li);
-      });
-      card.appendChild(ul);
-      grid.appendChild(card);
+    const table = document.createElement('div');
+    table.className = 'oe-scorecard';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'oe-scorecard__row oe-scorecard__row--header';
+    ['Area', 'Before AI', 'After AI', 'Business Benefit'].forEach(h => {
+      const cell = document.createElement('div');
+      cell.className = 'oe-scorecard__cell'; cell.textContent = h;
+      hdr.appendChild(cell);
     });
-    sec.appendChild(grid);
+    table.appendChild(hdr);
+
+    scorecard.forEach(row => {
+      const r = document.createElement('div');
+      r.className = 'oe-scorecard__row';
+      [
+        { text: row.area,            cls: 'oe-scorecard__cell--area' },
+        { text: row.beforeAI,        cls: 'oe-scorecard__cell--before' },
+        { text: row.afterAI,         cls: 'oe-scorecard__cell--after' },
+        { text: row.businessBenefit, cls: 'oe-scorecard__cell--benefit' },
+      ].forEach(({ text, cls }) => {
+        const cell = document.createElement('div');
+        cell.className = `oe-scorecard__cell ${cls}`; cell.textContent = text || '—';
+        r.appendChild(cell);
+      });
+      table.appendChild(r);
+    });
+
+    sec.appendChild(table);
     wrap.appendChild(sec);
   }
 
-  // 4. Operational KPI Dashboard — PM-focused question cards
-  const pmDash = Array.isArray(b.pmDashboard) ? b.pmDashboard : [];
-  if (pmDash.length) {
-    const sec = document.createElement('div');
-    sec.className = 'roi-section';
-    const lbl = document.createElement('p');
-    lbl.className = 'brief-label'; lbl.textContent = 'Operational KPI Dashboard';
-    sec.appendChild(lbl);
-
-    const grid = document.createElement('div');
-    grid.className = 'pm-dashboard-grid';
-
-    pmDash.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'pm-dashboard-card';
-
-      const area = document.createElement('p');
-      area.className = 'pm-dashboard-card__area'; area.textContent = item.area || '—';
-      card.appendChild(area);
-
-      if (item.question) {
-        const q = document.createElement('p');
-        q.className = 'pm-dashboard-card__question'; q.textContent = item.question;
-        card.appendChild(q);
-      }
-
-      const divider = document.createElement('div');
-      divider.className = 'pm-dashboard-card__divider';
-      card.appendChild(divider);
-
-      const addRow = (cls, labelText, valueText, isKpi) => {
-        if (!valueText) return;
-        const row = document.createElement('div');
-        row.className = 'pm-dashboard-card__row';
-        const lbl2 = document.createElement('p');
-        lbl2.className = `pm-dashboard-card__row-label pm-dashboard-card__row-label--${cls}`;
-        lbl2.textContent = labelText;
-        const val = document.createElement('p');
-        val.className = isKpi ? 'pm-dashboard-card__kpi-value' : 'pm-dashboard-card__row-text';
-        val.textContent = valueText;
-        row.appendChild(lbl2); row.appendChild(val);
-        card.appendChild(row);
-      };
-
-      addRow('current', 'Current',        item.currentChallenge, false);
-      addRow('ai',      'AI Improvement',  item.aiImprovement,    false);
-      addRow('kpi',     'Expected KPI',    item.expectedKpi,      true);
-
-      grid.appendChild(card);
-    });
-
-    sec.appendChild(grid);
-    wrap.appendChild(sec);
+  // Fallback: old impact areas + PM dashboard for blueprints generated before scorecard redesign
+  if (!scorecard.length) {
+    const impactAreas = Array.isArray(b.impactAreas) ? b.impactAreas : [];
+    if (impactAreas.length) {
+      const sec = document.createElement('div');
+      sec.className = 'roi-section';
+      const lbl2 = document.createElement('p');
+      lbl2.className = 'brief-label'; lbl2.textContent = 'Operational Impact Areas';
+      sec.appendChild(lbl2);
+      const grid = document.createElement('div');
+      grid.className = 'oe-impact-grid';
+      impactAreas.forEach(area => {
+        const card = document.createElement('div');
+        card.className = 'oe-impact-card';
+        const title = document.createElement('p');
+        title.className = 'oe-impact-card__title'; title.textContent = area.name || '—';
+        card.appendChild(title);
+        const ul = document.createElement('ul');
+        ul.className = 'oe-impact-card__list';
+        (area.points || []).forEach(pt => { const li = document.createElement('li'); li.textContent = pt; ul.appendChild(li); });
+        card.appendChild(ul);
+        grid.appendChild(card);
+      });
+      sec.appendChild(grid);
+      wrap.appendChild(sec);
+    }
   }
 
   // Fallback: old SDLC layout for legacy blueprints

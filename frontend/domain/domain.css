@@ -4891,6 +4891,70 @@
   margin: 0;
 }
 
+/* ── AI ROI — Improvement Scorecard ─────────────────────────────────────── */
+
+.oe-scorecard {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.8125rem;
+}
+
+.oe-scorecard__row {
+  display: grid;
+  grid-template-columns: 1.4fr 1.3fr 1.3fr 2fr;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.oe-scorecard__row:last-child {
+  border-bottom: none;
+}
+
+.oe-scorecard__row--header {
+  background: #f8fafc;
+}
+
+.oe-scorecard__row--header .oe-scorecard__cell {
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.oe-scorecard__row:not(.oe-scorecard__row--header):hover {
+  background: #f8fafc;
+}
+
+.oe-scorecard__cell {
+  padding: 0.7rem 1rem;
+  border-right: 1px solid #e2e8f0;
+  line-height: 1.4;
+}
+
+.oe-scorecard__cell:last-child {
+  border-right: none;
+}
+
+.oe-scorecard__cell--area {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.oe-scorecard__cell--before {
+  color: #94a3b8;
+}
+
+.oe-scorecard__cell--after {
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.oe-scorecard__cell--benefit {
+  color: #059669;
+  font-weight: 500;
+}
+
 /* ── AI ROI — Customer Value redesign ───────────────────────────────────── */
 
 .cv-journey {

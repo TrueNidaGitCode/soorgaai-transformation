@@ -30,7 +30,8 @@ const teamRoleSchema            = new mongoose.Schema({ title: String, descripti
 const lifecycleStageSchema      = new mongoose.Schema({ stage: String, teamResponsibility: String, keyActivities: String }, { _id: false });
 const roiSummarySchema          = new mongoose.Schema({ investment: String, annualValue: String, payback: String, recommendation: String }, { _id: false });
 const transformationRowSchema   = new mongoose.Schema({ currentState: String, futureState: String }, { _id: false });
-const pmDashboardCardSchema     = new mongoose.Schema({ area: String, question: String, currentChallenge: String, aiImprovement: String, expectedKpi: String }, { _id: false });
+const pmDashboardCardSchema          = new mongoose.Schema({ area: String, question: String, currentChallenge: String, aiImprovement: String, expectedKpi: String }, { _id: false });
+const improvementScorecardItemSchema = new mongoose.Schema({ area: String, beforeAI: String, afterAI: String, businessBenefit: String }, { _id: false });
 const pillarBulletSchema        = new mongoose.Schema({ name: String, points: [String] }, { _id: false });
 const stageBulletSchema         = new mongoose.Schema({ stage: String, points: [String] }, { _id: false });
 const waterfallItemSchema       = new mongoose.Schema({ category: String, value: String, type: String, description: String }, { _id: false });
@@ -114,7 +115,8 @@ const briefSchema = new mongoose.Schema({
   roiSummary:           { type: roiSummarySchema,             default: undefined },
   transformationRows:   { type: [transformationRowSchema],    default: [] },
   impactAreas:          { type: [pillarBulletSchema],         default: [] },
-  pmDashboard:          { type: [pmDashboardCardSchema],      default: [] },
+  pmDashboard:          { type: [pmDashboardCardSchema],           default: [] },
+  improvementScorecard: { type: [improvementScorecardItemSchema],  default: [] },
   valueJourney:         { type: [String],                     default: [] },
   valueDimensions:      { type: [pillarBulletSchema],         default: [] },
   customerKpis:         { type: [kpiHighlightSchema],         default: [] },

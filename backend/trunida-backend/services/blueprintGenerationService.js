@@ -377,27 +377,20 @@ SECTION-SPECIFIC EXTRAS — "Operational Excellence" sections only:
    Example: { "currentState": "Manual Traceability", "futureState": "AI Traceability Mapping" }
    Example: { "currentState": "Spreadsheet Reporting", "futureState": "Real-time Dashboard" }
 
-6. impactAreas (exactly 5 items)
-   Five business capability areas where this AI initiative creates operational improvement.
-   Each item: { "name": "<area name>", "points": ["<2–4 word improvement>", "<2–4 word improvement>", "<2–4 word improvement>"] }
-   Areas should be business capabilities, NOT SDLC phases. Use areas like:
-   Engineering Productivity, Software Quality, Delivery Performance, Decision Support, Continuous Improvement
-   Adapt area names to the specific initiative if needed.
-   Points: concise 3–5 word improvement statements — specific to this initiative.
-   Example: { "name": "Engineering Productivity", "points": ["Less manual work", "Faster delivery cycles", "More engineering capacity"] }
+6. improvementScorecard (exactly 5 items)
+   A PM-level improvement scorecard showing the operational area, current state, AI-enabled future state, and the business benefit in one row.
+   Each item: { "area": "<2–4 word area name>", "beforeAI": "<2–4 word current state>", "afterAI": "<2–4 word AI-enabled state>", "businessBenefit": "<3–6 word tangible outcome>" }
+   - area: the key operational domain affected (e.g. Traceability, Coverage, Compliance, Reporting, Gap Detection)
+   - beforeAI: concise description of the inefficient current state — short noun phrase only
+   - afterAI: what AI enables — short noun phrase only
+   - businessBenefit: the measurable or tangible outcome for the business (e.g. "80% effort reduction", "Faster quality decisions", "Audit ready")
+   Areas must be specific to THIS initiative. Do not use generic labels.
+   Example: { "area": "Traceability", "beforeAI": "Manual", "afterAI": "Automated", "businessBenefit": "80% effort reduction" }
+   Example: { "area": "Compliance", "beforeAI": "Manual evidence", "afterAI": "Auto reports", "businessBenefit": "Audit ready" }
+   Example: { "area": "Gap Detection", "beforeAI": "Reactive", "afterAI": "Continuous", "businessBenefit": "Earlier defect prevention" }
 
-7. pmDashboard (exactly 5 items)
-   Five PM-focused cards answering the questions every Project Manager asks about operational impact.
-   Each item: { "area": "<same area name as impactAreas>", "question": "<e.g. How much faster?, How much better?>", "currentChallenge": "<1 sentence on current pain point>", "aiImprovement": "<1 sentence on what AI changes>", "expectedKpi": "<e.g. +35% Productivity, 80% Reduction>" }
-   - area must match impactAreas
-   - question should be natural PM language
-   - currentChallenge: honest 1-sentence description of the problem today
-   - aiImprovement: 1 sentence on the specific improvement this initiative delivers
-   - expectedKpi: single bold metric with value — NOT a sentence
-   Example: { "area": "Software Quality", "question": "How much better?", "currentChallenge": "Manual traceability validation misses gaps under deadline pressure.", "aiImprovement": "Automatic acceptance criteria mapping catches gaps at source.", "expectedKpi": "95% Traceability Coverage" }
-
-   Add all three to the brief object:
-   "transformationRows": [...], "impactAreas": [...], "pmDashboard": [...]`,
+   Add both to the brief object:
+   "transformationRows": [...], "improvementScorecard": [...]`,
   },
 
   'Customer Value': {
@@ -1075,6 +1068,16 @@ function parseBriefOutput(rawSections, validTitles) {
         }))
         .slice(0, 5);
 
+      const improvementScorecard = (Array.isArray(b.improvementScorecard) ? b.improvementScorecard : [])
+        .filter(r => r && typeof r === 'object' && String(r.area || '').trim())
+        .map(r => ({
+          area:            String(r.area            || '').trim(),
+          beforeAI:        String(r.beforeAI        || '').trim(),
+          afterAI:         String(r.afterAI         || '').trim(),
+          businessBenefit: String(r.businessBenefit || '').trim(),
+        }))
+        .slice(0, 5);
+
       const valueJourney    = (Array.isArray(b.valueJourney)    ? b.valueJourney    : []).map(String).filter(Boolean).slice(0, 5);
       const valueDimensions = (Array.isArray(b.valueDimensions) ? b.valueDimensions : [])
         .filter(d => d && typeof d === 'object' && String(d.name || '').trim())
@@ -1660,6 +1663,7 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(valueItems.length           ? { valueItems }           : {}),
           ...(impactTimeline.length       ? { impactTimeline }       : {}),
           ...(transformationRows.length   ? { transformationRows }   : {}),
+          ...(improvementScorecard.length ? { improvementScorecard } : {}),
           ...(impactAreas.length          ? { impactAreas }          : {}),
           ...(pmDashboard.length          ? { pmDashboard }          : {}),
           ...(valueJourney.length         ? { valueJourney }         : {}),
@@ -2197,7 +2201,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
       'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'solutionComponents', 'teamGroups', 'teamRoles',
       'lifecycleStages', 'roiSummary', 'costItems', 'valueItems', 'impactTimeline',
-      'transformationRows', 'impactAreas', 'pmDashboard',
+      'transformationRows', 'improvementScorecard', 'impactAreas', 'pmDashboard',
       'valueJourney', 'valueDimensions', 'customerKpis',
       'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
@@ -2302,7 +2306,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'spokeNodes', 'funnelStages', 'commitmentPillars', 'governanceNodes',
       'matrixQuadrants', 'quarterlyPlan', 'solutionPortfolio', 'solutionComponents', 'teamGroups', 'teamRoles',
       'lifecycleStages', 'roiSummary', 'costItems', 'valueItems', 'impactTimeline',
-      'transformationRows', 'impactAreas', 'pmDashboard',
+      'transformationRows', 'improvementScorecard', 'impactAreas', 'pmDashboard',
       'valueJourney', 'valueDimensions', 'customerKpis',
       'waterfallItems', 'sdlcStages', 'flywheelStages',
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',

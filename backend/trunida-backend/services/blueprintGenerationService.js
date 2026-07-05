@@ -707,22 +707,37 @@ SECTION-SPECIFIC EXTRAS — "Data Architecture Enablement" sections only:
    Example: { "name": "Source Systems", "purpose": "Where project data originates.", "recommended": ["Jira", "Confluence", "GitHub", "Polarion"], "whyNeeded": "Provides the engineering artifacts AI needs to function." }
 
 6. archDecisions (exactly 4 items)
-   The most important architecture decisions the team should make for this AI use case.
-   Each item: { "decision": "<specific architectural choice, ≤10 words>", "benefit": "<why this matters, ≤8 words>", "priority": "High|Medium|Low" }
-   Example: { "decision": "Use REST APIs instead of manual exports.", "benefit": "Real-time synchronization.", "priority": "High" }
+   Mini design recommendations for the team — one per key architecture decision area.
+   Each item: { "decisionArea": "<area name, 1–3 words — e.g. Data Model, Integration, Storage, Security>", "recommendation": "<specific recommendation, ≤10 words>", "why": "<business or technical reason, ≤10 words>" }
+   Example: { "decisionArea": "Data Model", "recommendation": "Use a unified traceability schema", "why": "Enables reusable AI insights across projects" }
+   Cover areas relevant to this AI use case: data model, integration pattern, storage choice, security or compliance, query strategy, etc.
 
-7. techStack (exactly 6–7 items — one per architecture layer)
-   The recommended technology stack for this AI use case.
-   Each item: { "layer": "<layer name, 2–3 words>", "recommendation": "<specific technology or tool names, ≤8 words>" }
-   Cover: Source Systems, Integration, Processing, AI Storage, AI Framework, LLM, Deployment.
-   Example: { "layer": "AI Storage", "recommendation": "PostgreSQL + Pinecone (Vector DB)" }
+7. techStack (exactly 6 items — one per architecture layer, fixed layer names)
+   Technology recommendations organized by layer.
+   Use EXACTLY these 6 layer names in this order: "Source Systems", "Integration", "Storage", "Processing", "AI Models", "Applications"
+   Each item: { "layer": "<one of the 6 fixed names above>", "recommendation": "<specific technology or tool names, comma-separated if multiple, ≤8 words total>" }
+   Example: { "layer": "Storage", "recommendation": "PostgreSQL, Neo4j, Pinecone" }
 
 8. archSummary
    Key planning totals derived from the above.
    Object: { "sourceSystems": <count of source systems recommended>, "integrationPoints": <count of integration methods>, "aiStorage": "<primary storage technology, ≤5 words>", "aiConsumers": "<list of AI consumers, ≤6 words>" }
 
-   Add all to the brief object:
-   "archLayers": [...], "archDecisions": [...], "techStack": [...], "archSummary": {...}`,
+9. archPattern (exactly 6 strings)
+   The recommended end-to-end implementation architecture pattern for this AI use case.
+   Each string is a node label describing one stage of the architecture, from data source to user output.
+   Must start with the data source type and end with the user-facing application.
+   Example (engineering AI): ["Project Systems", "Integration Layer", "Central AI Data Store", "Vector Search", "LLM", "Dashboard"]
+   Example (automotive diagnostics): ["ECU & Sensors", "Data Pipeline", "Diagnostic Data Lake", "Semantic Search", "AI Inference", "Technician Portal"]
+   Keep each node label 2–4 words.
+
+10. archConsultantGuidance (string, 2–3 sentences)
+    Expert consulting advice on HOW to implement this architecture for this specific use case.
+    Explain the phased build-up: start simple, add complexity only when needed.
+    Name the starting point and the conditions under which to expand.
+    Example: "Build the architecture incrementally. Begin by connecting project systems through standard APIs and storing normalized engineering data in a relational database. Introduce graph and vector databases only when relationship reasoning and semantic search become business requirements."
+
+    Add all to the brief object:
+    "archLayers": [...], "archDecisions": [...], "techStack": [...], "archSummary": {...}, "archPattern": [...], "archConsultantGuidance": "..."`,
   },
 
   'System Integration & Architecture': {
@@ -1396,14 +1411,19 @@ function parseBriefOutput(rawSections, validTitles) {
 
       const rawArchDecisions = Array.isArray(b.archDecisions) ? b.archDecisions : [];
       const archDecisions = rawArchDecisions
-        .filter(d => d && typeof d === 'object' && String(d.decision || '').trim())
+        .filter(d => d && typeof d === 'object' && (String(d.decisionArea || d.decision || '').trim()))
         .map(d => ({
-          decision: String(d.decision || '').trim(),
-          benefit:  String(d.benefit  || '').trim(),
-          priority: String(d.priority || 'Medium').trim(),
+          decisionArea:   String(d.decisionArea  || d.decision || '').trim(),
+          recommendation: String(d.recommendation || d.benefit  || '').trim(),
+          why:            String(d.why            || '').trim(),
+          // keep legacy fields for old blueprints
+          decision:       String(d.decision  || '').trim(),
+          benefit:        String(d.benefit   || '').trim(),
+          priority:       String(d.priority  || '').trim(),
         }))
         .slice(0, 4);
 
+      const TECH_STACK_LAYERS = ['Source Systems', 'Integration', 'Storage', 'Processing', 'AI Models', 'Applications'];
       const rawTechStack = Array.isArray(b.techStack) ? b.techStack : [];
       const techStack = rawTechStack
         .filter(t => t && typeof t === 'object' && String(t.layer || '').trim())
@@ -1420,6 +1440,9 @@ function parseBriefOutput(rawSections, validTitles) {
         aiStorage:         String(rawArchSummary.aiStorage     || '').trim(),
         aiConsumers:       String(rawArchSummary.aiConsumers   || '').trim(),
       };
+
+      const archPattern           = (Array.isArray(b.archPattern) ? b.archPattern : []).map(String).filter(Boolean).slice(0, 6);
+      const archConsultantGuidance = String(b.archConsultantGuidance || '').trim();
 
       // ── Technology Infrastructure: System Integration & Architecture parsers ──
 
@@ -1862,10 +1885,12 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(archStats.architectureReadiness? { archStats }            : {}),
           ...(healthTimeline.length          ? { healthTimeline }       : {}),
           // Data Readiness: Data Architecture Enablement extras
-          ...(archLayers.some(l => l.recommended.length) ? { archLayers }    : {}),
-          ...(archDecisions.length                        ? { archDecisions }  : {}),
-          ...(techStack.length                            ? { techStack }      : {}),
-          ...(archSummary.sourceSystems                   ? { archSummary }    : {}),
+          ...(archLayers.some(l => l.recommended.length) ? { archLayers }             : {}),
+          ...(archDecisions.length                        ? { archDecisions }          : {}),
+          ...(techStack.length                            ? { techStack }              : {}),
+          ...(archSummary.sourceSystems                   ? { archSummary }            : {}),
+          ...(archPattern.length                          ? { archPattern }            : {}),
+          ...(archConsultantGuidance                      ? { archConsultantGuidance } : {}),
           // Technology Infrastructure: System Integration & Architecture extras
           ...(integrationReadiness             ? { integrationReadiness } : {}),
           ...(connectedSystems.length          ? { connectedSystems }     : {}),
@@ -2479,7 +2504,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'inputDatasets', 'pipelineStages', 'prepRecommendations', 'dataStats', 'readinessSummary',
       'prepActivities', 'prepWorkPackages', 'firstSteps', 'prepSummary',
       'projectSystems', 'archRecommendations', 'archStats', 'healthTimeline',
-      'archLayers', 'archDecisions', 'techStack', 'archSummary',
+      'archLayers', 'archDecisions', 'techStack', 'archSummary', 'archPattern', 'archConsultantGuidance',
       // Technology Infrastructure extras
       'integrationReadiness', 'connectedSystems', 'integrationSummary',
       'platformReadiness', 'capabilityAssessment', 'platformStack', 'platformRecommendations', 'platformSummary',

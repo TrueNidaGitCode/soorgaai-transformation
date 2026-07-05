@@ -7434,12 +7434,153 @@
   line-height: 1.5;
 }
 
+/* Architecture Decisions table */
+
+.dae-dec-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dae-dec-table__row {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1.4fr;
+}
+
+.dae-dec-table__row--header {
+  background: rgba(197,155,52,0.1);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.dae-dec-table__row:not(.dae-dec-table__row--header) {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.dae-dec-table__row:last-child { border-bottom: none; }
+
+.dae-dec-table__cell {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.75rem;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+.dae-dec-table__cell:last-child { border-right: none; }
+
+.dae-dec-table__row--header .dae-dec-table__cell {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dae-dec-table__cell--area {
+  color: rgba(255,255,255,0.55);
+  font-weight: 600;
+}
+
+.dae-dec-table__cell--rec {
+  color: rgba(255,255,255,0.9);
+  font-weight: 500;
+}
+
+.dae-dec-table__cell--why {
+  color: rgba(255,255,255,0.5);
+  font-style: italic;
+}
+
+/* Architecture Pattern */
+
+.dae-pattern-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.dae-pattern-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  max-width: 320px;
+}
+
+.dae-pattern-node {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dae-pattern-node--0 { background: rgba(92,197,167,0.09);  border-color: rgba(92,197,167,0.3); }
+.dae-pattern-node--1 { background: rgba(197,155,52,0.09);  border-color: rgba(197,155,52,0.3); }
+.dae-pattern-node--2 { background: rgba(96,165,250,0.09);  border-color: rgba(96,165,250,0.3); }
+.dae-pattern-node--3 { background: rgba(167,139,250,0.09); border-color: rgba(167,139,250,0.3); }
+.dae-pattern-node--4 { background: rgba(251,191,36,0.09);  border-color: rgba(251,191,36,0.3); }
+.dae-pattern-node--5 { background: rgba(248,113,113,0.09); border-color: rgba(248,113,113,0.3); }
+
+.dae-pattern-node__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  margin: 0;
+}
+
+.dae-pattern-row__arrow {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.2);
+  padding: 0.2rem 1.1rem;
+  line-height: 1;
+}
+
+/* Consultant Guidance block */
+
+.dae-consultant-guidance {
+  background: rgba(92,197,167,0.05);
+  border: 1px solid rgba(92,197,167,0.2);
+  border-left: 3px solid #5CC5A7;
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.dae-consultant-guidance__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dae-consultant-guidance__icon {
+  font-size: 0.75rem;
+  color: #5CC5A7;
+}
+
+.dae-consultant-guidance__title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #5CC5A7;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dae-consultant-guidance__text {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.6;
+  margin: 0;
+}
+
 @media (max-width: 1000px) {
   .dae-upper  { grid-template-columns: 1fr; }
   .dae-middle { grid-template-columns: 1fr; }
   .dae-layer-grid { grid-template-columns: 1fr; }
   .dae-arch-summary { grid-template-columns: repeat(2, 1fr); }
   .dae-impl-row { overflow-x: auto; }
+  .dae-dec-table__row { grid-template-columns: 1fr; }
+  .dae-pattern-row { max-width: 100%; }
 }
 
 /* ── Technology Infrastructure — AI Compute & Deployment Strategy ────────── */

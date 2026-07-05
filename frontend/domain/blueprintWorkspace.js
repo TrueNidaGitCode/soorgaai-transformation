@@ -2633,10 +2633,12 @@ function buildVisionLayout(section) {
 
 function buildDataArchitectureLayout(section) {
   const b             = section.brief || {};
-  const archLayers    = Array.isArray(b.archLayers)    ? b.archLayers    : [];
-  const archDecisions = Array.isArray(b.archDecisions) ? b.archDecisions : [];
-  const techStack     = Array.isArray(b.techStack)     ? b.techStack     : [];
-  const archSummary   = b.archSummary || {};
+  const archLayers             = Array.isArray(b.archLayers)    ? b.archLayers    : [];
+  const archDecisions          = Array.isArray(b.archDecisions) ? b.archDecisions : [];
+  const techStack              = Array.isArray(b.techStack)     ? b.techStack     : [];
+  const archSummary            = b.archSummary || {};
+  const archPattern            = Array.isArray(b.archPattern)   ? b.archPattern   : [];
+  const archConsultantGuidance = b.archConsultantGuidance || '';
   // Legacy fallbacks
   const projectSystems = Array.isArray(b.projectSystems)     ? b.projectSystems     : [];
   const archRecs       = Array.isArray(b.archRecommendations) ? b.archRecommendations : [];
@@ -2664,7 +2666,7 @@ function buildDataArchitectureLayout(section) {
 
   if (isNewFormat) {
     const lbl = document.createElement('p');
-    lbl.className = 'brief-label'; lbl.textContent = 'Architecture Blueprint';
+    lbl.className = 'brief-label'; lbl.textContent = 'Recommended AI Architecture';
     blueprintCol.appendChild(lbl);
 
     const grid = document.createElement('div');
@@ -2792,35 +2794,52 @@ function buildDataArchitectureLayout(section) {
   const decisionsCol = document.createElement('div');
   decisionsCol.className = 'dae-decisions-col';
 
-  const decisionsToRender = archDecisions.length ? archDecisions : null;
-  if (decisionsToRender) {
+  const isNewDecisions = archDecisions.length && archDecisions[0].decisionArea;
+  if (archDecisions.length) {
     const dLbl = document.createElement('p');
     dLbl.className = 'brief-label'; dLbl.textContent = 'Recommended Architecture Decisions';
     decisionsCol.appendChild(dLbl);
 
-    decisionsToRender.forEach(dec => {
-      const card = document.createElement('div');
-      card.className = 'dae-decision-card';
+    if (isNewDecisions) {
+      // Table layout: Decision Area | Recommendation | Why
+      const table = document.createElement('div');
+      table.className = 'dae-dec-table';
 
-      const decLabel = document.createElement('span'); decLabel.className = 'dae-decision-card__field-label'; decLabel.textContent = 'Decision';
-      card.appendChild(decLabel);
-      const decText = document.createElement('p'); decText.className = 'dae-decision-card__decision'; decText.textContent = dec.decision;
-      card.appendChild(decText);
+      const header = document.createElement('div');
+      header.className = 'dae-dec-table__row dae-dec-table__row--header';
+      ['Decision Area', 'Recommendation', 'Why'].forEach(h => {
+        const cell = document.createElement('span'); cell.className = 'dae-dec-table__cell'; cell.textContent = h;
+        header.appendChild(cell);
+      });
+      table.appendChild(header);
 
-      const benLabel = document.createElement('span'); benLabel.className = 'dae-decision-card__field-label'; benLabel.textContent = 'Benefit';
-      card.appendChild(benLabel);
-      const benText = document.createElement('p'); benText.className = 'dae-decision-card__benefit'; benText.textContent = dec.benefit;
-      card.appendChild(benText);
+      archDecisions.forEach(dec => {
+        const row = document.createElement('div'); row.className = 'dae-dec-table__row';
+        const area = document.createElement('span'); area.className = 'dae-dec-table__cell dae-dec-table__cell--area'; area.textContent = dec.decisionArea;
+        const rec  = document.createElement('span'); rec.className  = 'dae-dec-table__cell dae-dec-table__cell--rec';  rec.textContent  = dec.recommendation;
+        const why  = document.createElement('span'); why.className  = 'dae-dec-table__cell dae-dec-table__cell--why';  why.textContent  = dec.why;
+        row.appendChild(area); row.appendChild(rec); row.appendChild(why);
+        table.appendChild(row);
+      });
 
-      if (dec.priority) {
-        const pip = document.createElement('span');
-        pip.className = `dae-pip ${PRIORITY_PIP[dec.priority] || 'dae-pip--medium'}`;
-        pip.textContent = dec.priority;
-        card.appendChild(pip);
-      }
-
-      decisionsCol.appendChild(card);
-    });
+      decisionsCol.appendChild(table);
+    } else {
+      // Legacy card layout
+      archDecisions.forEach(dec => {
+        const card = document.createElement('div'); card.className = 'dae-decision-card';
+        const decLabel = document.createElement('span'); decLabel.className = 'dae-decision-card__field-label'; decLabel.textContent = 'Decision';
+        const decText  = document.createElement('p');    decText.className  = 'dae-decision-card__decision';   decText.textContent  = dec.decision;
+        const benLabel = document.createElement('span'); benLabel.className = 'dae-decision-card__field-label'; benLabel.textContent = 'Benefit';
+        const benText  = document.createElement('p');    benText.className  = 'dae-decision-card__benefit';    benText.textContent  = dec.benefit;
+        card.appendChild(decLabel); card.appendChild(decText); card.appendChild(benLabel); card.appendChild(benText);
+        if (dec.priority) {
+          const pip = document.createElement('span');
+          pip.className = `dae-pip ${PRIORITY_PIP[dec.priority] || 'dae-pip--medium'}`; pip.textContent = dec.priority;
+          card.appendChild(pip);
+        }
+        decisionsCol.appendChild(card);
+      });
+    }
   } else if (archRecs.length) {
     // Legacy
     const dLbl = document.createElement('p'); dLbl.className = 'brief-label'; dLbl.textContent = 'AI Recommendations';
@@ -2872,6 +2891,50 @@ function buildDataArchitectureLayout(section) {
 
   middleBody.appendChild(techCol);
   wrap.appendChild(middleBody);
+
+  // ── Architecture Pattern ──────────────────────────────────────────────────
+
+  const patternNodes = archPattern.length ? archPattern : (isNewFormat ? archLayers.map(l => l.name) : []);
+  if (patternNodes.length) {
+    const patternSection = document.createElement('div');
+    patternSection.className = 'dae-pattern-section';
+
+    const patternLbl = document.createElement('p');
+    patternLbl.className = 'brief-label'; patternLbl.textContent = 'Architecture Pattern';
+    patternSection.appendChild(patternLbl);
+
+    const patternRow = document.createElement('div');
+    patternRow.className = 'dae-pattern-row';
+
+    patternNodes.forEach((node, i) => {
+      const nodeEl = document.createElement('div'); nodeEl.className = `dae-pattern-node dae-pattern-node--${i}`;
+      const nodeLabel = document.createElement('p'); nodeLabel.className = 'dae-pattern-node__label'; nodeLabel.textContent = node;
+      nodeEl.appendChild(nodeLabel);
+      patternRow.appendChild(nodeEl);
+      if (i < patternNodes.length - 1) {
+        const arr = document.createElement('span'); arr.className = 'dae-pattern-row__arrow'; arr.textContent = '↓';
+        patternRow.appendChild(arr);
+      }
+    });
+
+    patternSection.appendChild(patternRow);
+    wrap.appendChild(patternSection);
+  }
+
+  // ── Consultant Guidance ───────────────────────────────────────────────────
+
+  if (archConsultantGuidance) {
+    const cg = document.createElement('div');
+    cg.className = 'dae-consultant-guidance';
+    const cgHeader = document.createElement('div'); cgHeader.className = 'dae-consultant-guidance__header';
+    const cgIcon  = document.createElement('span'); cgIcon.className  = 'dae-consultant-guidance__icon';  cgIcon.textContent  = '◆';
+    const cgTitle = document.createElement('span'); cgTitle.className = 'dae-consultant-guidance__title'; cgTitle.textContent = 'Consultant Guidance';
+    cgHeader.appendChild(cgIcon); cgHeader.appendChild(cgTitle);
+    cg.appendChild(cgHeader);
+    const cgText = document.createElement('p'); cgText.className = 'dae-consultant-guidance__text'; cgText.textContent = archConsultantGuidance;
+    cg.appendChild(cgText);
+    wrap.appendChild(cg);
+  }
 
   // ── Implementation Sequence ───────────────────────────────────────────────
 
@@ -2938,15 +3001,6 @@ function buildDataArchitectureLayout(section) {
       cell.appendChild(val); cell.appendChild(lbl); statsBar.appendChild(cell);
     });
     wrap.appendChild(statsBar);
-  }
-
-  // ── Leadership question footer ────────────────────────────────────────────
-
-  if (leadershipQ) {
-    const footer = document.createElement('div');
-    footer.className = 'dae-leadership';
-    footer.innerHTML = `<span class="dae-leadership__icon">?</span><p class="dae-leadership__text">${leadershipQ}</p>`;
-    wrap.appendChild(footer);
   }
 
   return wrap;

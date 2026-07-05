@@ -2909,19 +2909,27 @@ function buildDataArchitectureLayout(section) {
 // ── Data Readiness — AI Data Preparation ──────────────────────────────────────
 
 function buildAIDataPreparationLayout(section) {
-  const b              = section.brief || {};
-  const prepActivities = Array.isArray(b.prepActivities) ? b.prepActivities : [];
-  const firstSteps     = Array.isArray(b.firstSteps)     ? b.firstSteps     : [];
-  const prepSummary    = b.prepSummary || {};
+  const b                = section.brief || {};
+  const prepWorkPackages = Array.isArray(b.prepWorkPackages) ? b.prepWorkPackages : [];
+  const firstSteps       = Array.isArray(b.firstSteps)       ? b.firstSteps       : [];
+  const prepSummary      = b.prepSummary || {};
   // Legacy fallbacks
-  const inputDatasets  = Array.isArray(b.inputDatasets)  ? b.inputDatasets  : [];
-  const pipelineStages = Array.isArray(b.pipelineStages) ? b.pipelineStages : [];
-  const prepRecs       = Array.isArray(b.prepRecommendations) ? b.prepRecommendations : [];
-  const readiness      = b.readinessSummary || {};
-  const leadershipQ    = b.leadershipValidation?.context || '';
+  const prepActivities   = Array.isArray(b.prepActivities)   ? b.prepActivities   : [];
+  const inputDatasets    = Array.isArray(b.inputDatasets)     ? b.inputDatasets    : [];
+  const prepRecs         = Array.isArray(b.prepRecommendations) ? b.prepRecommendations : [];
+  const readiness        = b.readinessSummary || {};
+  const leadershipQ      = b.leadershipValidation?.context || '';
 
   const PRIORITY_CLASS = { HIGH: 'cdi-badge--high', MEDIUM: 'cdi-badge--medium', LOW: 'cdi-badge--low' };
-  const ADP_ROADMAP = ['Identify Critical Data', 'Clean', 'Standardize', 'Integrate', 'Enrich', 'Validate', 'AI Ready'];
+  const ADP_ROADMAP = [
+    { stage: 'Identify',    outcome: 'Know which datasets are required' },
+    { stage: 'Clean',       outcome: 'Remove incorrect information' },
+    { stage: 'Standardize', outcome: 'Common naming and formats' },
+    { stage: 'Integrate',   outcome: 'Connect related repositories' },
+    { stage: 'Enrich',      outcome: 'Add business context' },
+    { stage: 'Validate',    outcome: 'Verify AI readiness' },
+    { stage: 'AI Ready',    outcome: 'Data prepared for implementation' },
+  ];
 
   const wrap = document.createElement('div');
   wrap.className = 'adp-view';
@@ -2932,48 +2940,84 @@ function buildAIDataPreparationLayout(section) {
   const body = document.createElement('div');
   body.className = 'adp-body';
 
-  // ── LEFT: Data Preparation Activities ────────────────────────────────────
+  // ── LEFT: Preparation Work Packages ──────────────────────────────────────
 
   const leftCol = document.createElement('div');
   leftCol.className = 'adp-col adp-col--left';
 
-  if (prepActivities.length) {
+  const activePackages = prepWorkPackages.length ? prepWorkPackages : prepActivities;
+  const isNewFormat    = prepWorkPackages.length > 0;
+
+  if (activePackages.length) {
     const lbl = document.createElement('p');
-    lbl.className = 'brief-label'; lbl.textContent = 'Data Preparation Activities';
+    lbl.className = 'brief-label';
+    lbl.textContent = 'Preparation Work Packages';
     leftCol.appendChild(lbl);
 
-    prepActivities.forEach(act => {
+    activePackages.forEach(pkg => {
       const card = document.createElement('div');
-      card.className = 'adp-activity-card';
+      card.className = 'adp-wp-card';
 
       const name = document.createElement('p');
-      name.className = 'adp-activity-card__name'; name.textContent = act.name || '—';
+      name.className = 'adp-wp-card__name';
+      name.textContent = pkg.name || '—';
       card.appendChild(name);
 
-      const addRow = (label, value, isBadge) => {
-        if (!value) return;
-        const row = document.createElement('div');
-        row.className = 'adp-activity-card__row';
-        const lbl2 = document.createElement('span');
-        lbl2.className = 'adp-activity-card__label'; lbl2.textContent = label;
-        row.appendChild(lbl2);
-        if (isBadge) {
-          const badge = document.createElement('span');
-          badge.className = `cdi-badge ${PRIORITY_CLASS[value] || 'cdi-badge--medium'}`;
-          badge.textContent = value;
-          row.appendChild(badge);
-        } else {
-          const val = document.createElement('span');
-          val.className = 'adp-activity-card__value'; val.textContent = value;
-          row.appendChild(val);
-        }
-        card.appendChild(row);
-      };
+      // Work Package bullets (new format) or single activity (legacy)
+      if (isNewFormat && Array.isArray(pkg.workPackage) && pkg.workPackage.length) {
+        const wpLabel = document.createElement('span');
+        wpLabel.className = 'adp-wp-card__field-label'; wpLabel.textContent = 'Work Package';
+        card.appendChild(wpLabel);
+        const ul = document.createElement('ul');
+        ul.className = 'adp-wp-card__work-list';
+        pkg.workPackage.forEach(item => {
+          const li = document.createElement('li');
+          li.className = 'adp-wp-card__work-item'; li.textContent = item;
+          ul.appendChild(li);
+        });
+        card.appendChild(ul);
+      } else if (pkg.preparationActivity) {
+        const row = document.createElement('div'); row.className = 'adp-wp-card__row';
+        const lbl2 = document.createElement('span'); lbl2.className = 'adp-wp-card__field-label'; lbl2.textContent = 'Preparation Activity';
+        const val = document.createElement('span'); val.className = 'adp-wp-card__value'; val.textContent = pkg.preparationActivity;
+        row.appendChild(lbl2); row.appendChild(val); card.appendChild(row);
+      }
 
-      addRow('Preparation Activity', act.preparationActivity, false);
-      addRow('Business Purpose',     act.businessPurpose,     false);
-      addRow('Recommended Owner',    act.recommendedOwner,    false);
-      addRow('Priority',             act.priority,            true);
+      // Why AI Needs This (new) or Business Purpose (legacy)
+      const whyText = isNewFormat ? pkg.whyAINeeds : pkg.businessPurpose;
+      const whyLabel = isNewFormat ? 'Why AI Needs This' : 'Business Purpose';
+      if (whyText) {
+        const whyRow = document.createElement('div'); whyRow.className = 'adp-wp-card__why-row';
+        const wLbl = document.createElement('span'); wLbl.className = 'adp-wp-card__field-label'; wLbl.textContent = whyLabel;
+        card.appendChild(wLbl);
+        const wVal = document.createElement('p'); wVal.className = 'adp-wp-card__why'; wVal.textContent = whyText;
+        card.appendChild(wVal);
+      }
+
+      // Deliverable (new format only)
+      if (isNewFormat && pkg.deliverable) {
+        const delRow = document.createElement('div'); delRow.className = 'adp-wp-card__row';
+        const dLbl = document.createElement('span'); dLbl.className = 'adp-wp-card__field-label'; dLbl.textContent = 'Deliverable';
+        const dVal = document.createElement('span'); dVal.className = 'adp-wp-card__deliverable'; dVal.textContent = pkg.deliverable;
+        delRow.appendChild(dLbl); delRow.appendChild(dVal); card.appendChild(delRow);
+      }
+
+      // Owner + Priority row
+      const metaRow = document.createElement('div'); metaRow.className = 'adp-wp-card__meta-row';
+      if (pkg.recommendedOwner) {
+        const ownerWrap = document.createElement('div'); ownerWrap.className = 'adp-wp-card__row';
+        const oLbl = document.createElement('span'); oLbl.className = 'adp-wp-card__field-label'; oLbl.textContent = 'Primary Owner';
+        const oVal = document.createElement('span'); oVal.className = 'adp-wp-card__value'; oVal.textContent = pkg.recommendedOwner;
+        ownerWrap.appendChild(oLbl); ownerWrap.appendChild(oVal);
+        metaRow.appendChild(ownerWrap);
+      }
+      if (pkg.priority) {
+        const badge = document.createElement('span');
+        badge.className = `cdi-badge ${PRIORITY_CLASS[pkg.priority] || 'cdi-badge--medium'}`;
+        badge.textContent = pkg.priority;
+        metaRow.appendChild(badge);
+      }
+      if (metaRow.children.length) card.appendChild(metaRow);
 
       leftCol.appendChild(card);
     });
@@ -2985,22 +3029,16 @@ function buildAIDataPreparationLayout(section) {
     const STATUS_ICON  = { AVAILABLE: '◉', MISSING: '◎', 'IN PROGRESS': '◷' };
     const STATUS_CLASS = { AVAILABLE: 'adp-status--available', MISSING: 'adp-status--missing', 'IN PROGRESS': 'adp-status--progress' };
     inputDatasets.forEach(ds => {
-      const card = document.createElement('div');
-      card.className = 'adp-dataset-card';
-      const icon = document.createElement('div');
-      icon.className = 'adp-dataset-card__icon'; icon.textContent = STATUS_ICON[ds.status] || '◉';
-      card.appendChild(icon);
-      const name = document.createElement('p');
-      name.className = 'adp-dataset-card__name'; name.textContent = ds.name;
-      card.appendChild(name);
-      const badge = document.createElement('span');
-      badge.className = `adp-status ${STATUS_CLASS[ds.status] || 'adp-status--available'}`; badge.textContent = ds.status;
-      card.appendChild(badge);
+      const card = document.createElement('div'); card.className = 'adp-dataset-card';
+      const icon = document.createElement('div'); icon.className = 'adp-dataset-card__icon'; icon.textContent = STATUS_ICON[ds.status] || '◉';
+      const nm   = document.createElement('p');   nm.className   = 'adp-dataset-card__name'; nm.textContent = ds.name;
+      const bdg  = document.createElement('span'); bdg.className = `adp-status ${STATUS_CLASS[ds.status] || 'adp-status--available'}`; bdg.textContent = ds.status;
+      card.appendChild(icon); card.appendChild(nm); card.appendChild(bdg);
       leftCol.appendChild(card);
     });
     if (!inputDatasets.length) {
       const empty = document.createElement('p');
-      empty.className = 'adp-empty'; empty.textContent = 'Preparation activities will appear after generation.';
+      empty.className = 'adp-empty'; empty.textContent = 'Preparation work packages will appear after generation.';
       leftCol.appendChild(empty);
     }
   }
@@ -3019,12 +3057,17 @@ function buildAIDataPreparationLayout(section) {
   const roadmap = document.createElement('div');
   roadmap.className = 'adp-roadmap';
 
-  ADP_ROADMAP.forEach((step, i) => {
+  ADP_ROADMAP.forEach((item, i) => {
     const node = document.createElement('div');
     node.className = i === 0 ? 'adp-roadmap__node adp-roadmap__node--start'
                    : i === ADP_ROADMAP.length - 1 ? 'adp-roadmap__node adp-roadmap__node--end'
                    : 'adp-roadmap__node';
-    node.textContent = step;
+    const stage = document.createElement('span');
+    stage.className = 'adp-roadmap__stage'; stage.textContent = item.stage;
+    node.appendChild(stage);
+    const outcome = document.createElement('span');
+    outcome.className = 'adp-roadmap__outcome'; outcome.textContent = item.outcome;
+    node.appendChild(outcome);
     roadmap.appendChild(node);
     if (i < ADP_ROADMAP.length - 1) {
       const arrow = document.createElement('div');
@@ -3036,7 +3079,7 @@ function buildAIDataPreparationLayout(section) {
   centerCol.appendChild(roadmap);
   body.appendChild(centerCol);
 
-  // ── RIGHT: Implementation Guidance ───────────────────────────────────────
+  // ── RIGHT: Recommended First Steps ───────────────────────────────────────
 
   const rightCol = document.createElement('div');
   rightCol.className = 'adp-col adp-col--right';
@@ -3060,16 +3103,22 @@ function buildAIDataPreparationLayout(section) {
       action.className = 'adp-step-row__action'; action.textContent = step.action;
       content.appendChild(action);
 
-      if (step.owner) {
-        const ownerWrap = document.createElement('div');
-        ownerWrap.className = 'adp-step-row__owner-wrap';
-        const ownerLabel = document.createElement('span');
-        ownerLabel.className = 'adp-step-row__owner-label'; ownerLabel.textContent = 'Owner';
-        const ownerVal = document.createElement('span');
-        ownerVal.className = 'adp-step-row__owner'; ownerVal.textContent = step.owner;
-        ownerWrap.appendChild(ownerLabel); ownerWrap.appendChild(ownerVal);
-        content.appendChild(ownerWrap);
+      if (step.why) {
+        const why = document.createElement('p');
+        why.className = 'adp-step-row__why'; why.textContent = step.why;
+        content.appendChild(why);
       }
+
+      const addMeta = (labelText, value, cls) => {
+        if (!value) return;
+        const wrap = document.createElement('div'); wrap.className = 'adp-step-row__meta-row';
+        const lbl2 = document.createElement('span'); lbl2.className = 'adp-step-row__owner-label'; lbl2.textContent = labelText;
+        const val  = document.createElement('span'); val.className = cls; val.textContent = value;
+        wrap.appendChild(lbl2); wrap.appendChild(val); content.appendChild(wrap);
+      };
+
+      addMeta('Owner',           step.owner,          'adp-step-row__owner');
+      addMeta('Expected Output', step.expectedOutput,  'adp-step-row__output');
 
       row.appendChild(num); row.appendChild(content);
       rightCol.appendChild(row);
@@ -3086,8 +3135,7 @@ function buildAIDataPreparationLayout(section) {
     lbl.className = 'brief-label'; lbl.textContent = 'AI Recommendations';
     rightCol.appendChild(lbl);
     prepRecs.forEach(rec => {
-      const recCard = document.createElement('div');
-      recCard.className = 'adp-rec-card';
+      const recCard = document.createElement('div'); recCard.className = 'adp-rec-card';
       const bullet = document.createElement('span'); bullet.className = 'adp-rec-card__bullet';
       recCard.appendChild(bullet);
       const recBody = document.createElement('div'); recBody.className = 'adp-rec-card__body';
@@ -3095,37 +3143,41 @@ function buildAIDataPreparationLayout(section) {
       recBody.appendChild(recText);
       const recMeta = document.createElement('div'); recMeta.className = 'adp-rec-card__meta';
       recMeta.innerHTML = `<span>Priority: <strong>${rec.priority}</strong></span><span>Effort: <strong>${rec.effort}</strong></span>${rec.impact ? `<span>Expected Impact: <em>${rec.impact}</em></span>` : ''}`;
-      recBody.appendChild(recMeta);
-      recCard.appendChild(recBody);
-      rightCol.appendChild(recCard);
+      recBody.appendChild(recMeta); recCard.appendChild(recBody); rightCol.appendChild(recCard);
     });
   }
 
   body.appendChild(rightCol);
   wrap.appendChild(body);
 
-  // ── Preparation Blueprint summary strip ───────────────────────────────────
+  // ── Preparation Summary strip ─────────────────────────────────────────────
 
-  const hasSummary = prepSummary.preparationActivities || prepSummary.engineeringRepositories;
-  if (hasSummary) {
+  const hasNewSummary    = prepSummary.workPackages || prepSummary.repositories;
+  const hasLegacySummary = prepSummary.preparationActivities || prepSummary.engineeringRepositories;
+
+  if (hasNewSummary || hasLegacySummary) {
     const strip = document.createElement('div');
     strip.className = 'adp-prep-summary';
 
-    [
-      { value: prepSummary.preparationActivities,  label: 'Preparation Activities' },
+    const stats = hasNewSummary ? [
+      { value: prepSummary.workPackages,    label: 'Work Packages' },
+      { value: prepSummary.repositories,    label: 'Engineering Repositories' },
+      { value: prepSummary.deliverables,    label: 'AI-ready Deliverables' },
+      { value: prepSummary.estimatedDuration || '—', label: 'Estimated Duration', isText: true },
+    ] : [
+      { value: prepSummary.preparationActivities,   label: 'Preparation Activities' },
       { value: prepSummary.engineeringRepositories, label: 'Engineering Repositories' },
       { value: prepSummary.recommendedOwners,       label: 'Recommended Owners' },
       { value: prepSummary.implementationPriority || '—', label: 'Implementation Priority', isText: true },
-    ].forEach(stat => {
-      const cell = document.createElement('div');
-      cell.className = 'adp-prep-summary__cell';
-      const val = document.createElement('p');
+    ];
+
+    stats.forEach(stat => {
+      const cell = document.createElement('div'); cell.className = 'adp-prep-summary__cell';
+      const val  = document.createElement('p');
       val.className = stat.isText ? 'adp-prep-summary__value adp-prep-summary__value--text' : 'adp-prep-summary__value';
       val.textContent = stat.value ?? '—';
-      const lbl2 = document.createElement('p');
-      lbl2.className = 'adp-prep-summary__label'; lbl2.textContent = stat.label;
-      cell.appendChild(val); cell.appendChild(lbl2);
-      strip.appendChild(cell);
+      const lbl2 = document.createElement('p'); lbl2.className = 'adp-prep-summary__label'; lbl2.textContent = stat.label;
+      cell.appendChild(val); cell.appendChild(lbl2); strip.appendChild(cell);
     });
 
     wrap.appendChild(strip);
@@ -3133,13 +3185,10 @@ function buildAIDataPreparationLayout(section) {
     // Legacy: readiness 2×2 grid
     const hasReadiness = readiness.quality || readiness.standardization || readiness.integration || readiness.aiReadiness;
     if (hasReadiness) {
-      const readinessSection = document.createElement('div');
-      readinessSection.className = 'adp-readiness';
-      const readinessLbl = document.createElement('p');
-      readinessLbl.className = 'adp-readiness__label'; readinessLbl.textContent = 'Readiness Summary';
+      const readinessSection = document.createElement('div'); readinessSection.className = 'adp-readiness';
+      const readinessLbl = document.createElement('p'); readinessLbl.className = 'adp-readiness__label'; readinessLbl.textContent = 'Readiness Summary';
       readinessSection.appendChild(readinessLbl);
-      const readinessGrid = document.createElement('div');
-      readinessGrid.className = 'adp-readiness-grid';
+      const readinessGrid = document.createElement('div'); readinessGrid.className = 'adp-readiness-grid';
       [
         { label: 'Quality', value: readiness.quality },
         { label: 'Standardization', value: readiness.standardization },
@@ -3149,13 +3198,36 @@ function buildAIDataPreparationLayout(section) {
         const cell = document.createElement('div'); cell.className = 'adp-readiness-cell';
         const cellLabel = document.createElement('p'); cellLabel.className = 'adp-readiness-cell__label'; cellLabel.textContent = item.label;
         const cellValue = document.createElement('p'); cellValue.className = 'adp-readiness-cell__value'; cellValue.textContent = `${item.value || 0}%`;
-        cell.appendChild(cellLabel); cell.appendChild(cellValue);
-        readinessGrid.appendChild(cell);
+        cell.appendChild(cellLabel); cell.appendChild(cellValue); readinessGrid.appendChild(cell);
       });
-      readinessSection.appendChild(readinessGrid);
-      wrap.appendChild(readinessSection);
+      readinessSection.appendChild(readinessGrid); wrap.appendChild(readinessSection);
     }
   }
+
+  // ── Ready to Proceed? ─────────────────────────────────────────────────────
+
+  const readyCard = document.createElement('div');
+  readyCard.className = 'adp-ready-card';
+
+  const readyLbl = document.createElement('p');
+  readyLbl.className = 'brief-label'; readyLbl.textContent = 'Ready to Proceed?';
+  readyCard.appendChild(readyLbl);
+
+  const readyBody = document.createElement('div');
+  readyBody.className = 'adp-ready-card__body';
+
+  const nextRow = document.createElement('div'); nextRow.className = 'adp-ready-card__row';
+  const nextLbl = document.createElement('span'); nextLbl.className = 'adp-ready-card__meta-label'; nextLbl.textContent = 'Next Capability';
+  const nextVal = document.createElement('p');   nextVal.className = 'adp-ready-card__next';       nextVal.textContent = 'Data Architecture Enablement';
+  nextRow.appendChild(nextLbl); nextRow.appendChild(nextVal); readyBody.appendChild(nextRow);
+
+  const goalRow = document.createElement('div'); goalRow.className = 'adp-ready-card__row';
+  const goalLbl = document.createElement('span'); goalLbl.className = 'adp-ready-card__meta-label'; goalLbl.textContent = 'Goal';
+  const goalVal = document.createElement('p');   goalVal.className = 'adp-ready-card__goal';       goalVal.textContent = 'Design how these prepared datasets will flow securely into AI applications.';
+  goalRow.appendChild(goalLbl); goalRow.appendChild(goalVal); readyBody.appendChild(goalRow);
+
+  readyCard.appendChild(readyBody);
+  wrap.appendChild(readyCard);
 
   // ── Leadership question footer ────────────────────────────────────────────
 

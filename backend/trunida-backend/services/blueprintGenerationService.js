@@ -657,22 +657,28 @@ SECTION-SPECIFIC EXTRAS — "Critical Data Identification" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Data Preparation" sections only:
 
-5. prepActivities (exactly 5 items)
-   The engineering datasets requiring preparation and the specific work needed for each.
-   Each item: { "name": "<dataset/artifact name, 2–4 words>", "preparationActivity": "<specific action, ≤6 words>", "businessPurpose": "<why this enables AI, ≤8 words>", "recommendedOwner": "<engineering role, 2–3 words>", "priority": "HIGH|MEDIUM|LOW" }
-   Example: { "name": "Requirements Repository", "preparationActivity": "Standardize Requirement IDs", "businessPurpose": "Enable consistent AI reasoning", "recommendedOwner": "Requirements Engineer", "priority": "HIGH" }
+5. prepWorkPackages (exactly 5 items)
+   Each item is a preparation work package for a specific engineering dataset.
+   Fields:
+   - "name": "<repository/dataset name, 2–4 words>"
+   - "workPackage": ["<action 1, ≤7 words>", "<action 2, ≤7 words>", "<action 3, ≤7 words>"] — exactly 3 specific preparation actions
+   - "whyAINeeds": "<one sentence explaining why AI requires this data to be prepared, ≤15 words>"
+   - "recommendedOwner": "<engineering role, 2–3 words>"
+   - "deliverable": "<AI-ready output name, 3–5 words — e.g. 'Standardized Requirements Dataset'>"
+   - "priority": "HIGH|MEDIUM|LOW"
+   Example: { "name": "Requirements Repository", "workPackage": ["Standardize requirement IDs", "Remove duplicate requirements", "Add metadata tags"], "whyAINeeds": "Ensures requirements can be linked consistently with test cases and defects.", "recommendedOwner": "Requirements Engineer", "deliverable": "AI-ready Requirements Dataset", "priority": "HIGH" }
 
 6. firstSteps (exactly 4 items)
-   The recommended first implementation steps in order of priority.
-   Each item: { "action": "<specific action, ≤8 words>", "owner": "<role title, 2–3 words>" }
-   Example: { "action": "Standardize requirement identifiers", "owner": "Requirements Lead" }
+   The first 4 executable implementation steps in priority order.
+   Each item: { "action": "<specific action, ≤8 words>", "why": "<why this step matters, ≤10 words>", "owner": "<role title, 2–3 words>", "expectedOutput": "<tangible result, 3–5 words>" }
+   Example: { "action": "Standardize requirement identifiers", "why": "Enables traceability across all repositories", "owner": "Requirements Lead", "expectedOutput": "Unified Requirement Dataset" }
 
 7. prepSummary
    Planning totals derived from the above.
-   Object: { "preparationActivities": <count of prepActivities>, "engineeringRepositories": <distinct repository count, 3–8>, "recommendedOwners": <distinct owner count, 3–7>, "implementationPriority": "High|Medium|Low" }
+   Object: { "workPackages": <total count of prepWorkPackages>, "repositories": <distinct repository/system count, 3–8>, "deliverables": <count of AI-ready deliverables>, "estimatedDuration": "<e.g. '2 Weeks', '3–4 Weeks', '1 Month'>" }
 
    Add all to the brief object:
-   "prepActivities": [...], "firstSteps": [...], "prepSummary": {...}`,
+   "prepWorkPackages": [...], "firstSteps": [...], "prepSummary": {...}`,
   },
 
   'Data Architecture Enablement': {
@@ -1313,21 +1319,40 @@ function parseBriefOutput(rawSections, validTitles) {
         }))
         .slice(0, 5);
 
+      const rawPrepWorkPackages = Array.isArray(b.prepWorkPackages) ? b.prepWorkPackages : [];
+      const prepWorkPackages = rawPrepWorkPackages
+        .filter(w => w && typeof w === 'object' && String(w.name || '').trim())
+        .map(w => ({
+          name:             String(w.name             || '').trim(),
+          workPackage:      (Array.isArray(w.workPackage) ? w.workPackage : []).map(String).filter(Boolean).slice(0, 3),
+          whyAINeeds:       String(w.whyAINeeds       || '').trim(),
+          recommendedOwner: String(w.recommendedOwner || '').trim(),
+          deliverable:      String(w.deliverable      || '').trim(),
+          priority:         String(w.priority         || 'MEDIUM').trim(),
+        }))
+        .slice(0, 5);
+
       const rawFirstSteps = Array.isArray(b.firstSteps) ? b.firstSteps : [];
       const firstSteps = rawFirstSteps
         .filter(s => s && typeof s === 'object' && String(s.action || '').trim())
         .map(s => ({
-          action: String(s.action || '').trim(),
-          owner:  String(s.owner  || '').trim(),
+          action:         String(s.action         || '').trim(),
+          why:            String(s.why            || '').trim(),
+          owner:          String(s.owner          || '').trim(),
+          expectedOutput: String(s.expectedOutput || '').trim(),
         }))
         .slice(0, 4);
 
       const rawPrepSummary = b.prepSummary && typeof b.prepSummary === 'object' ? b.prepSummary : {};
       const prepSummary = {
-        preparationActivities:  parseInt(rawPrepSummary.preparationActivities,  10) || 0,
-        engineeringRepositories: parseInt(rawPrepSummary.engineeringRepositories, 10) || 0,
-        recommendedOwners:       parseInt(rawPrepSummary.recommendedOwners,       10) || 0,
-        implementationPriority:  String(rawPrepSummary.implementationPriority || '').trim(),
+        preparationActivities:   parseInt(rawPrepSummary.preparationActivities,   10) || 0,
+        engineeringRepositories:  parseInt(rawPrepSummary.engineeringRepositories,  10) || 0,
+        recommendedOwners:        parseInt(rawPrepSummary.recommendedOwners,        10) || 0,
+        implementationPriority:   String(rawPrepSummary.implementationPriority  || '').trim(),
+        workPackages:             parseInt(rawPrepSummary.workPackages,             10) || 0,
+        repositories:             parseInt(rawPrepSummary.repositories,             10) || 0,
+        deliverables:             parseInt(rawPrepSummary.deliverables,             10) || 0,
+        estimatedDuration:        String(rawPrepSummary.estimatedDuration       || '').trim(),
       };
 
       // ── Technology Infrastructure: System Integration & Architecture parsers ──
@@ -1760,8 +1785,9 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(dataStats.dataQuality       ? { dataStats }            : {}),
           ...(readinessSummary.aiReadiness? { readinessSummary }     : {}),
           ...(prepActivities.length       ? { prepActivities }       : {}),
+          ...(prepWorkPackages.length     ? { prepWorkPackages }     : {}),
           ...(firstSteps.length           ? { firstSteps }           : {}),
-          ...(prepSummary.preparationActivities ? { prepSummary }    : {}),
+          ...(prepSummary.workPackages || prepSummary.preparationActivities ? { prepSummary } : {}),
           // Data Readiness: Data Architecture Enablement extras
           ...(projectSystems.length          ? { projectSystems }       : {}),
           ...(archRecommendations.length     ? { archRecommendations }  : {}),
@@ -2376,7 +2402,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'datasets', 'traceabilityChain', 'collectionOrder', 'implementationRoadmap',
       'recommendations', 'coverageSummary', 'relationshipMap',
       'inputDatasets', 'pipelineStages', 'prepRecommendations', 'dataStats', 'readinessSummary',
-      'prepActivities', 'firstSteps', 'prepSummary',
+      'prepActivities', 'prepWorkPackages', 'firstSteps', 'prepSummary',
       'projectSystems', 'archRecommendations', 'archStats', 'healthTimeline',
       // Technology Infrastructure extras
       'integrationReadiness', 'connectedSystems', 'integrationSummary',

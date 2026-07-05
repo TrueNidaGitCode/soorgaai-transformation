@@ -57,8 +57,9 @@ const prepRecommendationSchema  = new mongoose.Schema({ text: String, priority: 
 const dataStatsSchema           = new mongoose.Schema({ missingData: Number, dataQuality: Number, traceability: Number }, { _id: false });
 const readinessSummarySchema    = new mongoose.Schema({ quality: Number, standardization: Number, integration: Number, aiReadiness: Number }, { _id: false });
 const prepActivitySchema        = new mongoose.Schema({ name: String, preparationActivity: String, businessPurpose: String, recommendedOwner: String, priority: String }, { _id: false });
-const firstStepSchema           = new mongoose.Schema({ action: String, owner: String }, { _id: false });
-const prepSummarySchema         = new mongoose.Schema({ preparationActivities: Number, engineeringRepositories: Number, recommendedOwners: Number, implementationPriority: String }, { _id: false });
+const prepWorkPackageSchema     = new mongoose.Schema({ name: String, workPackage: [String], whyAINeeds: String, recommendedOwner: String, deliverable: String, priority: String }, { _id: false });
+const firstStepSchema           = new mongoose.Schema({ action: String, why: String, owner: String, expectedOutput: String }, { _id: false });
+const prepSummarySchema         = new mongoose.Schema({ preparationActivities: Number, engineeringRepositories: Number, recommendedOwners: Number, implementationPriority: String, workPackages: Number, repositories: Number, deliverables: Number, estimatedDuration: String }, { _id: false });
 const projectSystemSchema       = new mongoose.Schema({ name: String, connectionStatus: String }, { _id: false });
 const archRecommendationSchema  = new mongoose.Schema({ title: String, impact: String, effort: String }, { _id: false });
 const archStatsSchema           = new mongoose.Schema({ architectureReadiness: Number, automation: Number, connectedSystems: Number, disconnectedSystems: Number }, { _id: false });
@@ -167,6 +168,7 @@ const briefSchema = new mongoose.Schema({
   dataStats:                { type: dataStatsSchema,            default: undefined },
   readinessSummary:         { type: readinessSummarySchema,     default: undefined },
   prepActivities:           { type: [prepActivitySchema],       default: [] },
+  prepWorkPackages:         { type: [prepWorkPackageSchema],    default: [] },
   firstSteps:               { type: [firstStepSchema],          default: [] },
   prepSummary:              { type: prepSummarySchema,          default: undefined },
   // Data Readiness: Data Architecture Enablement extras

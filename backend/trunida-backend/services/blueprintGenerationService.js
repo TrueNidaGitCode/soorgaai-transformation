@@ -248,9 +248,14 @@ The solutionPortfolio must present the SAME initiative structured as an owned bu
    Example: { "name": "Acceptance Criteria Mapping", "purpose": "Automatically connect requirements to test cases." }
 
 7. kpiHighlights (exactly 3 items)
-   Three portfolio-level success metrics for this initiative.
-   Each item: { "value": "<number with unit e.g. 100%, 30%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
-   Draw from "Target KPIs" in the TRANSFORMATION CONTEXT — do not invent new metrics.
+   Three metrics that measure whether the OPERATING MODEL is working — not whether the AI solution is successful.
+   These must be distinct from business outcome metrics (Traceability Rate, Coverage %, Manual Effort Reduction) which belong in Business Value Definition.
+   Measure solution ownership and portfolio management effectiveness instead.
+   Each item: { "value": "<number with unit e.g. 100%, 3>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+   Acceptable topics: solutions with named owners, AI solutions in active delivery, portfolio review completion, ownership clarity.
+   Example: { "value": "100%", "label": "Solutions with Named Owners", "description": "Every AI initiative has a single accountable owner." }
+   Example: { "value": "1", "label": "AI Solutions in Active Delivery", "description": "Focused delivery on the prioritized initiative." }
+   Example: { "value": "Quarterly", "label": "Portfolio Review Cadence", "description": "Regular leadership review of delivery status." }
 
    Add all three to the brief object:
    "solutionPortfolio": [...], "solutionComponents": [...], "kpiHighlights": [...]`,
@@ -279,9 +284,14 @@ Team roles must be specific to delivering THIS initiative — not a generic AI t
    Example: { "group": "Quality", "roles": ["QA Lead"] }
 
 6. kpiHighlights (exactly 3 items)
-   Three team effectiveness metrics for THIS initiative's delivery team.
-   Each item: { "value": "<number with unit e.g. +3, 20%, 100%>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
-   Focus on delivery speed, coverage, or collaboration quality for THIS initiative.
+   Three metrics that measure whether the CROSS-FUNCTIONAL TEAM STRUCTURE is working — not the AI solution's outcomes.
+   Do NOT use business outcome metrics (Traceability Rate, Coverage %, Manual Effort) — those belong in Business Value Definition.
+   Measure team collaboration and delivery effectiveness instead.
+   Each item: { "value": "<number with unit e.g. 100%, 4+>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+   Acceptable topics: cross-functional coverage, team adoption rate, sprint delivery predictability, functions represented, onboarding speed.
+   Example: { "value": "100%", "label": "Cross-Functional Coverage", "description": "All required disciplines represented in the team." }
+   Example: { "value": "4", "label": "Functions Represented", "description": "Business, engineering, domain, and quality all present." }
+   Example: { "value": "85%", "label": "Sprint Delivery Predictability", "description": "Consistent delivery against committed sprint goals." }
 
    Add both to the brief object:
    "teamGroups": [...], "kpiHighlights": [...]`,
@@ -305,8 +315,14 @@ Every lifecycle stage must name the specific team or role from the delivery team
    Activities must reference what happens for THIS initiative at each stage — not generic AI lifecycle steps.
 
 6. kpiHighlights (exactly 3 items)
-   Three ownership continuity metrics showing how end-to-end ownership improves THIS initiative's delivery outcomes.
-   Each item: { "value": "<number with unit e.g. 100%, 40%, 2+>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+   Three metrics that measure whether END-TO-END OWNERSHIP is working — not whether the AI solution is delivering value.
+   Do NOT use business outcome metrics (Traceability Rate, Coverage %, Manual Effort) — those belong in Business Value Definition.
+   Measure team continuity, improvement cadence, and governance health instead.
+   Each item: { "value": "<number with unit e.g. 100%, quarterly>", "label": "<2–5 word metric name>", "description": "<1 short sentence ≤10 words>" }
+   Acceptable topics: team continuity rate, mean time to improvement, quarterly value reviews, handoff frequency, ownership retention across lifecycle.
+   Example: { "value": "100%", "label": "Team Continuity Rate", "description": "Same core team from pilot through operational adoption." }
+   Example: { "value": "< 2 weeks", "label": "Mean Time to Improvement", "description": "Speed of acting on feedback after deployment." }
+   Example: { "value": "Quarterly", "label": "Value Review Cadence", "description": "Leadership reviews delivery outcomes every quarter." }
 
    Add both to the brief object:
    "lifecycleStages": [...], "kpiHighlights": [...]`,

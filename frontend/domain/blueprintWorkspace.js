@@ -4268,38 +4268,46 @@ function buildDeploymentCanvasSvg(scores) {
 }
 
 function buildComputeDeploymentLayout(section) {
-  const b                       = section.brief || {};
-  const workloadProfile         = b.workloadProfile || [];
+  const b = section.brief || {};
+
+  // New fields
+  const deploymentBlocks      = b.deploymentBlocks      || [];
+  const cdsDeploymentFlow     = b.cdsDeploymentFlow     || [];
+  const techRecommendations   = b.techRecommendations   || [];
+  const deploymentDecisions   = b.deploymentDecisions   || [];
+  const cdsImplSequence       = b.cdsImplSequence       || [];
+  const infraItems            = b.infraItems            || [];
+  const cdsConsultantGuidance = b.cdsConsultantGuidance || '';
+  const cdsAIRecommendation   = b.cdsAIRecommendation   || '';
+  const leadershipQ           = b.leadershipValidation?.context || '';
+
+  // Legacy fields (kept for old blueprints)
+  const workloadProfile           = b.workloadProfile           || [];
   const deploymentRecommendations = b.deploymentRecommendations || [];
-  const deploymentScores        = b.deploymentScores || {};
-  const deploymentKpis          = b.deploymentKpis || {};
-  const leadershipQ             = b.leadershipValidation?.context || '';
+  const deploymentScores          = b.deploymentScores          || {};
 
-  const PRIORITY_CLASS = {
-    CRITICAL: 'cds-priority--critical',
-    HIGH:     'cds-priority--high',
-    MEDIUM:   'cds-priority--medium',
-    LOW:      'cds-priority--low',
-  };
+  const isNewFormat = deploymentBlocks.length > 0 || techRecommendations.length > 0;
 
-  const IMPACT_CLASS = {
-    High:   'cds-impact--high',
-    Medium: 'cds-impact--medium',
-    Low:    'cds-impact--low',
+  const CDS_FLOW_NODES = [
+    'Engineering Repositories', 'Integration Layer', 'AI Data Store',
+    'LLM Inference', 'AI Application', 'Engineering Users',
+  ];
+  const CDS_IMPL_STEPS = [
+    'Prepare AI Data', 'Provision Infrastructure', 'Deploy AI Platform',
+    'Deploy AI Assistant', 'Pilot with Engineering Team', 'Scale to Organisation',
+  ];
+
+  const BLOCK_ACCENT = {
+    'AI Workload':      '#5CC5A7',
+    'Deployment Model': '#818cf8',
+    'Compute Strategy': '#fbbf24',
+    'Scaling Strategy': '#f87171',
   };
 
   const wrap = document.createElement('div');
   wrap.className = 'cds-view';
 
-  // Deployment readiness badge (top-right)
-  if (b.deploymentReadiness) {
-    const badge = document.createElement('div');
-    badge.className = 'cds-readiness-badge';
-    badge.textContent = `DEPLOYMENT READINESS: ${b.deploymentReadiness}%`;
-    wrap.appendChild(badge);
-  }
-
-  // Strategic position
+  // ── 1. Strategic Position ─────────────────────────────────────────────────
   if (b.strategicPosition) {
     const posLabel = document.createElement('p');
     posLabel.className = 'brief-label';
@@ -4311,185 +4319,333 @@ function buildComputeDeploymentLayout(section) {
     wrap.appendChild(pos);
   }
 
-  // ── Two-column body ───────────────────────────────────────────────────────
+  if (isNewFormat) {
+    // ── 2. Recommended Deployment Architecture ────────────────────────────────
+    if (deploymentBlocks.length) {
+      const archLbl = document.createElement('p');
+      archLbl.className = 'brief-label';
+      archLbl.textContent = 'Recommended Deployment Architecture';
+      wrap.appendChild(archLbl);
 
-  const body = document.createElement('div');
-  body.className = 'cds-body';
+      const archGrid = document.createElement('div');
+      archGrid.className = 'cds-arch-grid';
 
-  // LEFT: AI Workload Profile cards
-  const workloadCol = document.createElement('div');
-  workloadCol.className = 'cds-workload-col';
+      deploymentBlocks.forEach(block => {
+        const card = document.createElement('div');
+        card.className = 'cds-arch-block';
+        const accent = BLOCK_ACCENT[block.blockType] || '#5CC5A7';
+        card.style.borderTop = `3px solid ${accent}`;
 
-  const workloadLbl = document.createElement('p');
-  workloadLbl.className = 'brief-label';
-  workloadLbl.textContent = 'AI Workload Profile';
-  workloadCol.appendChild(workloadLbl);
+        const type = document.createElement('p');
+        type.className = 'cds-arch-block__type';
+        type.style.color = accent;
+        type.textContent = block.blockType;
+        card.appendChild(type);
 
-  workloadProfile.forEach(wl => {
-    const card = document.createElement('div');
-    card.className = 'cds-workload-card';
+        const name = document.createElement('p');
+        name.className = 'cds-arch-block__name';
+        name.textContent = block.name;
+        card.appendChild(name);
 
-    const name = document.createElement('p');
-    name.className = 'cds-workload-card__name';
-    name.textContent = wl.workloadType;
-    card.appendChild(name);
+        if (block.why) {
+          const why = document.createElement('p');
+          why.className = 'cds-arch-block__why';
+          why.textContent = block.why;
+          card.appendChild(why);
+        }
 
-    [
-      ['Compute Requirement',     wl.computeRequirement],
-      ['Performance Requirement', wl.performanceRequirement],
-      ['Scalability Requirement', wl.scalabilityRequirement],
-    ].forEach(([label, value]) => {
-      if (!value) return;
-      const row = document.createElement('p');
-      row.className = 'cds-workload-card__spec';
-      row.innerHTML = `<span class="cds-workload-card__spec-label">${label}:</span> ${value}`;
-      card.appendChild(row);
-    });
+        archGrid.appendChild(card);
+      });
 
-    const badge = document.createElement('span');
-    badge.className = `cds-priority ${PRIORITY_CLASS[wl.priority] || 'cds-priority--medium'}`;
-    badge.textContent = `PRIORITY: ${wl.priority || 'MEDIUM'}`;
-    card.appendChild(badge);
+      wrap.appendChild(archGrid);
+    }
 
-    workloadCol.appendChild(card);
-  });
+    // ── 3 + 4. Middle row: Deployment Flow + Technology Recommendations ───────
+    const midRow = document.createElement('div');
+    midRow.className = 'cds-mid-row';
 
-  if (!workloadProfile.length) {
-    const empty = document.createElement('p');
-    empty.className = 'cds-empty';
-    empty.textContent = 'Workload profile will appear after generation.';
-    workloadCol.appendChild(empty);
-  }
+    // LEFT: Deployment Flow vertical chain
+    const flowCol = document.createElement('div');
+    flowCol.className = 'cds-flow-col';
 
-  body.appendChild(workloadCol);
+    const flowLbl = document.createElement('p');
+    flowLbl.className = 'brief-label';
+    flowLbl.textContent = 'Deployment Flow';
+    flowCol.appendChild(flowLbl);
 
-  // RIGHT: Canvas + Recommendations
-  const rightCol = document.createElement('div');
-  rightCol.className = 'cds-right-col';
-
-  // Deployment Decision Canvas SVG
-  const canvasSection = document.createElement('div');
-  canvasSection.className = 'cds-canvas-section';
-  const canvasLbl = document.createElement('p');
-  canvasLbl.className = 'brief-label';
-  canvasLbl.textContent = 'Deployment Decision Canvas';
-  canvasSection.appendChild(canvasLbl);
-  const canvasPannel = document.createElement('div');
-  canvasPannel.className = 'cds-canvas-panel';
-  canvasPannel.appendChild(buildDeploymentCanvasSvg(deploymentScores));
-  canvasSection.appendChild(canvasPannel);
-  rightCol.appendChild(canvasSection);
-
-  // AI Recommendations grid
-  if (deploymentRecommendations.length) {
-    const recsSection = document.createElement('div');
-    recsSection.className = 'cds-recs-section';
-    const recsLbl = document.createElement('p');
-    recsLbl.className = 'brief-label';
-    recsLbl.textContent = 'AI Recommendations';
-    recsSection.appendChild(recsLbl);
-
-    const recsGrid = document.createElement('div');
-    recsGrid.className = 'cds-recs-grid';
-
-    deploymentRecommendations.forEach(rec => {
-      const card = document.createElement('div');
-      card.className = 'cds-rec-card';
-
-      const text = document.createElement('p');
-      text.className = 'cds-rec-card__text';
-      text.textContent = rec.text;
-      card.appendChild(text);
-
-      const impactRow = document.createElement('div');
-      impactRow.className = 'cds-rec-card__impact-row';
-      impactRow.innerHTML = `Impact: <span class="cds-impact ${IMPACT_CLASS[rec.impact] || 'cds-impact--medium'}">${rec.impact || 'Medium'}</span>`;
-      card.appendChild(impactRow);
-
-      if (rec.reason) {
-        const reason = document.createElement('p');
-        reason.className = 'cds-rec-card__reason';
-        reason.textContent = `Reason: ${rec.reason}`;
-        card.appendChild(reason);
+    const flowNodes = cdsDeploymentFlow.length ? cdsDeploymentFlow : CDS_FLOW_NODES;
+    const flowChain = document.createElement('div');
+    flowChain.className = 'cds-flow-chain';
+    flowNodes.forEach((node, i) => {
+      const nodeEl = document.createElement('div');
+      nodeEl.className = `cds-flow-node cds-flow-node--${i}`;
+      nodeEl.textContent = node;
+      flowChain.appendChild(nodeEl);
+      if (i < flowNodes.length - 1) {
+        const arrow = document.createElement('div');
+        arrow.className = 'cds-flow-arrow';
+        arrow.textContent = '↓';
+        flowChain.appendChild(arrow);
       }
+    });
+    flowCol.appendChild(flowChain);
+    midRow.appendChild(flowCol);
 
-      recsGrid.appendChild(card);
+    // RIGHT: Technology Recommendations table
+    if (techRecommendations.length) {
+      const techCol = document.createElement('div');
+      techCol.className = 'cds-tech-col';
+
+      const techLbl = document.createElement('p');
+      techLbl.className = 'brief-label';
+      techLbl.textContent = 'Technology Recommendations';
+      techCol.appendChild(techLbl);
+
+      const techTable = document.createElement('table');
+      techTable.className = 'cds-tech-table';
+
+      const tHead = document.createElement('thead');
+      tHead.innerHTML = '<tr><th>Layer</th><th>Recommendation</th><th>Why</th></tr>';
+      techTable.appendChild(tHead);
+
+      const tBody = document.createElement('tbody');
+      techRecommendations.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.layer || ''}</td><td>${r.recommendation || ''}</td><td>${r.why || ''}</td>`;
+        tBody.appendChild(tr);
+      });
+      techTable.appendChild(tBody);
+      techCol.appendChild(techTable);
+      midRow.appendChild(techCol);
+    }
+
+    wrap.appendChild(midRow);
+
+    // ── 5. Deployment Decisions ───────────────────────────────────────────────
+    if (deploymentDecisions.length) {
+      const decLbl = document.createElement('p');
+      decLbl.className = 'brief-label';
+      decLbl.textContent = 'Deployment Decisions';
+      wrap.appendChild(decLbl);
+
+      const decGrid = document.createElement('div');
+      decGrid.className = 'cds-dec-grid';
+
+      deploymentDecisions.forEach(d => {
+        const card = document.createElement('div');
+        card.className = 'cds-dec-card';
+
+        const dtype = document.createElement('p');
+        dtype.className = 'cds-dec-card__type';
+        dtype.textContent = d.decisionType;
+        card.appendChild(dtype);
+
+        const choice = document.createElement('p');
+        choice.className = 'cds-dec-card__choice';
+        choice.textContent = d.choice;
+        card.appendChild(choice);
+
+        if (d.reason) {
+          const reason = document.createElement('p');
+          reason.className = 'cds-dec-card__reason';
+          reason.textContent = d.reason;
+          card.appendChild(reason);
+        }
+
+        decGrid.appendChild(card);
+      });
+
+      wrap.appendChild(decGrid);
+    }
+
+    // ── 6. Implementation Sequence ────────────────────────────────────────────
+    {
+      const implLbl = document.createElement('p');
+      implLbl.className = 'brief-label';
+      implLbl.textContent = 'Implementation Sequence';
+      wrap.appendChild(implLbl);
+
+      const implSteps = cdsImplSequence.length ? cdsImplSequence : CDS_IMPL_STEPS;
+      const implSeq = document.createElement('div');
+      implSeq.className = 'cds-impl-seq';
+
+      implSteps.forEach((step, i) => {
+        const item = document.createElement('div');
+        item.className = 'cds-impl-step';
+
+        const num = document.createElement('span');
+        num.className = 'cds-impl-step__num';
+        num.textContent = i + 1;
+        item.appendChild(num);
+
+        const label = document.createElement('span');
+        label.className = 'cds-impl-step__label';
+        label.textContent = step;
+        item.appendChild(label);
+
+        implSeq.appendChild(item);
+      });
+
+      wrap.appendChild(implSeq);
+    }
+
+    // ── 7. Expected Infrastructure ────────────────────────────────────────────
+    if (infraItems.length) {
+      const infraLbl = document.createElement('p');
+      infraLbl.className = 'brief-label';
+      infraLbl.textContent = 'Expected Infrastructure';
+      wrap.appendChild(infraLbl);
+
+      const infraTable = document.createElement('table');
+      infraTable.className = 'cds-infra-table';
+
+      const iHead = document.createElement('thead');
+      iHead.innerHTML = '<tr><th>Component</th><th>Recommendation</th></tr>';
+      infraTable.appendChild(iHead);
+
+      const iBody = document.createElement('tbody');
+      infraItems.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${item.item || ''}</td><td>${item.recommendation || ''}</td>`;
+        iBody.appendChild(tr);
+      });
+      infraTable.appendChild(iBody);
+      wrap.appendChild(infraTable);
+    }
+
+    // ── 8. Consultant Guidance ────────────────────────────────────────────────
+    if (cdsConsultantGuidance) {
+      const cg = document.createElement('div');
+      cg.className = 'cds-consultant-guidance';
+      const cgTitle = document.createElement('p');
+      cgTitle.className = 'cds-consultant-guidance__title';
+      cgTitle.textContent = 'Consultant Guidance';
+      cg.appendChild(cgTitle);
+      const cgText = document.createElement('p');
+      cgText.className = 'cds-consultant-guidance__text';
+      cgText.textContent = cdsConsultantGuidance;
+      cg.appendChild(cgText);
+      wrap.appendChild(cg);
+    }
+
+    // ── 9. AI Recommendation ──────────────────────────────────────────────────
+    if (cdsAIRecommendation) {
+      const ar = document.createElement('div');
+      ar.className = 'cds-ai-recommendation';
+      const arTitle = document.createElement('p');
+      arTitle.className = 'cds-ai-recommendation__title';
+      arTitle.textContent = 'AI Recommendation';
+      ar.appendChild(arTitle);
+      const arText = document.createElement('p');
+      arText.className = 'cds-ai-recommendation__text';
+      arText.textContent = cdsAIRecommendation;
+      ar.appendChild(arText);
+      wrap.appendChild(ar);
+    }
+
+  } else {
+    // ── Legacy layout (old blueprints) ────────────────────────────────────────
+    if (b.deploymentReadiness) {
+      const badge = document.createElement('div');
+      badge.className = 'cds-readiness-badge';
+      badge.textContent = `DEPLOYMENT READINESS: ${b.deploymentReadiness}%`;
+      wrap.appendChild(badge);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'cds-body';
+
+    const workloadCol = document.createElement('div');
+    workloadCol.className = 'cds-workload-col';
+    const workloadLbl = document.createElement('p');
+    workloadLbl.className = 'brief-label';
+    workloadLbl.textContent = 'AI Workload Profile';
+    workloadCol.appendChild(workloadLbl);
+
+    workloadProfile.forEach(wl => {
+      const card = document.createElement('div');
+      card.className = 'cds-workload-card';
+      const wlName = document.createElement('p');
+      wlName.className = 'cds-workload-card__name';
+      wlName.textContent = wl.workloadType;
+      card.appendChild(wlName);
+      [['Compute Requirement', wl.computeRequirement], ['Performance Requirement', wl.performanceRequirement], ['Scalability Requirement', wl.scalabilityRequirement]].forEach(([lbl, val]) => {
+        if (!val) return;
+        const row = document.createElement('p');
+        row.className = 'cds-workload-card__spec';
+        row.innerHTML = `<span class="cds-workload-card__spec-label">${lbl}:</span> ${val}`;
+        card.appendChild(row);
+      });
+      const PRIORITY_CLASS = { CRITICAL: 'cds-priority--critical', HIGH: 'cds-priority--high', MEDIUM: 'cds-priority--medium', LOW: 'cds-priority--low' };
+      const badge = document.createElement('span');
+      badge.className = `cds-priority ${PRIORITY_CLASS[wl.priority] || 'cds-priority--medium'}`;
+      badge.textContent = `PRIORITY: ${wl.priority || 'MEDIUM'}`;
+      card.appendChild(badge);
+      workloadCol.appendChild(card);
     });
 
-    recsSection.appendChild(recsGrid);
-    rightCol.appendChild(recsSection);
+    body.appendChild(workloadCol);
+
+    const rightCol = document.createElement('div');
+    rightCol.className = 'cds-right-col';
+
+    if (deploymentRecommendations.length) {
+      const recsSection = document.createElement('div');
+      recsSection.className = 'cds-recs-section';
+      const recsLbl = document.createElement('p');
+      recsLbl.className = 'brief-label';
+      recsLbl.textContent = 'AI Recommendations';
+      recsSection.appendChild(recsLbl);
+      const recsGrid = document.createElement('div');
+      recsGrid.className = 'cds-recs-grid';
+      const IMPACT_CLASS = { High: 'cds-impact--high', Medium: 'cds-impact--medium', Low: 'cds-impact--low' };
+      deploymentRecommendations.forEach(rec => {
+        const card = document.createElement('div');
+        card.className = 'cds-rec-card';
+        const text = document.createElement('p');
+        text.className = 'cds-rec-card__text';
+        text.textContent = rec.text;
+        card.appendChild(text);
+        const impactRow = document.createElement('div');
+        impactRow.className = 'cds-rec-card__impact-row';
+        impactRow.innerHTML = `Impact: <span class="cds-impact ${IMPACT_CLASS[rec.impact] || 'cds-impact--medium'}">${rec.impact || 'Medium'}</span>`;
+        card.appendChild(impactRow);
+        if (rec.reason) {
+          const reason = document.createElement('p');
+          reason.className = 'cds-rec-card__reason';
+          reason.textContent = `Reason: ${rec.reason}`;
+          card.appendChild(reason);
+        }
+        recsGrid.appendChild(card);
+      });
+      recsSection.appendChild(recsGrid);
+      rightCol.appendChild(recsSection);
+    }
+
+    body.appendChild(rightCol);
+    wrap.appendChild(body);
+
+    if (deploymentScores.computeFit || deploymentScores.deploymentConfidence) {
+      const scoresBar = document.createElement('div');
+      scoresBar.className = 'cds-scores-bar';
+      [{ value: `${deploymentScores.computeFit || 0}%`, label: 'Compute Fit' }, { value: deploymentScores.estimatedScalability || '—', label: 'Estimated Scalability' }, { value: `${deploymentScores.deploymentConfidence || 0}%`, label: 'Deployment Confidence' }].forEach(stat => {
+        const cell = document.createElement('div');
+        cell.className = 'cds-score-cell';
+        const val = document.createElement('p');
+        val.className = 'cds-score-cell__value';
+        val.textContent = stat.value;
+        const lbl = document.createElement('p');
+        lbl.className = 'cds-score-cell__label';
+        lbl.textContent = stat.label;
+        cell.appendChild(val);
+        cell.appendChild(lbl);
+        scoresBar.appendChild(cell);
+      });
+      wrap.appendChild(scoresBar);
+    }
   }
 
-  body.appendChild(rightCol);
-  wrap.appendChild(body);
-
-  // ── Deployment Scores bar ─────────────────────────────────────────────────
-
-  if (deploymentScores.computeFit || deploymentScores.deploymentConfidence || deploymentScores.estimatedScalability) {
-    const scoresBar = document.createElement('div');
-    scoresBar.className = 'cds-scores-bar';
-
-    [
-      { value: `${deploymentScores.computeFit || 0}%`,           label: 'Compute Fit' },
-      { value: deploymentScores.estimatedScalability || '—',     label: 'Estimated Scalability' },
-      { value: `${deploymentScores.deploymentConfidence || 0}%`, label: 'Deployment Confidence' },
-    ].forEach(stat => {
-      const cell = document.createElement('div');
-      cell.className = 'cds-score-cell';
-      const val = document.createElement('p');
-      val.className = 'cds-score-cell__value';
-      val.textContent = stat.value;
-      const lbl = document.createElement('p');
-      lbl.className = 'cds-score-cell__label';
-      lbl.textContent = stat.label;
-      cell.appendChild(val);
-      cell.appendChild(lbl);
-      scoresBar.appendChild(cell);
-    });
-
-    wrap.appendChild(scoresBar);
-  }
-
-  // ── Deployment Summary KPIs ───────────────────────────────────────────────
-
-  const hasKpis = deploymentKpis.compute || deploymentKpis.deployment ||
-                  deploymentKpis.latency || deploymentKpis.scalability;
-  if (hasKpis) {
-    const kpiSection = document.createElement('div');
-    kpiSection.className = 'cds-kpi-section';
-    const kpiLbl = document.createElement('p');
-    kpiLbl.className = 'cds-kpi-section__label';
-    kpiLbl.textContent = 'Deployment Summary KPIs';
-    kpiSection.appendChild(kpiLbl);
-
-    const kpiBar = document.createElement('div');
-    kpiBar.className = 'cds-kpi-bar';
-
-    [
-      { label: 'Compute',     value: deploymentKpis.compute },
-      { label: 'Deployment',  value: deploymentKpis.deployment },
-      { label: 'Latency',     value: deploymentKpis.latency },
-      { label: 'Scalability', value: deploymentKpis.scalability },
-    ].filter(k => k.value).forEach(kpi => {
-      const item = document.createElement('div');
-      item.className = 'cds-kpi-item';
-      const label = document.createElement('p');
-      label.className = 'cds-kpi-item__label';
-      label.textContent = kpi.label;
-      const value = document.createElement('p');
-      value.className = 'cds-kpi-item__value';
-      value.textContent = kpi.value;
-      item.appendChild(label);
-      item.appendChild(value);
-      kpiBar.appendChild(item);
-    });
-
-    kpiSection.appendChild(kpiBar);
-    wrap.appendChild(kpiSection);
-  }
-
-  // ── Leadership question footer ────────────────────────────────────────────
-
+  // ── Leadership question footer (retained) ─────────────────────────────────
   if (leadershipQ) {
     const footer = document.createElement('div');
     footer.className = 'cds-leadership';

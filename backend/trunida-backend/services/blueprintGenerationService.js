@@ -793,28 +793,38 @@ SECTION-SPECIFIC EXTRAS — "AI Platform Readiness" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Compute & Deployment Strategy" sections only:
 
-5. deploymentReadiness (number 0–100)
-   The overall deployment readiness score as a percentage reflecting how prepared the infrastructure is for this AI use case.
+5. deploymentBlocks (exactly 4 items)
+   The 4 building blocks of the recommended deployment architecture. Use these fixed blockTypes in this exact order: AI Workload, Deployment Model, Compute Strategy, Scaling Strategy.
+   Each item: { "blockType": "<AI Workload|Deployment Model|Compute Strategy|Scaling Strategy>", "name": "<specific recommendation for this use case, 3–5 words>", "why": "<1-sentence rationale, ≤12 words>" }
 
-6. workloadProfile (exactly 4 items)
-   Profile of the distinct AI workloads required by this use case, covering different processing modes.
-   Each item: { "workloadType": "<2–4 word workload name>", "computeRequirement": "Low|Medium|High|Very High", "performanceRequirement": "<e.g. Low Latency|High Throughput|Batch Processing|Real-time>", "scalabilityRequirement": "Low|Moderate|High|Critical", "priority": "LOW|MEDIUM|HIGH|CRITICAL" }
-   Priority must reflect engineering importance. One item should be CRITICAL.
+6. cdsDeploymentFlow (exactly 6 strings in this fixed order)
+   The 6 nodes of the end-to-end AI deployment flow. Use these exact names:
+   ["Engineering Repositories", "Integration Layer", "AI Data Store", "LLM Inference", "AI Application", "Engineering Users"]
 
-7. deploymentRecommendations (exactly 3 items)
-   The top 3 AI-recommended deployment actions to maximise compute fit and operational confidence.
-   Each item: { "text": "<recommendation, ≤8 words>", "impact": "High|Medium|Low", "reason": "<1 sentence explaining why, ≤12 words>" }
+7. techRecommendations (exactly 5 items)
+   Technology recommendations for each deployment layer. Use these fixed layer names in order: Infrastructure, AI Platform, Data Layer, Integration, Monitoring.
+   Each item: { "layer": "<layer name>", "recommendation": "<specific tool or service, ≤6 words>", "why": "<1-sentence rationale, ≤10 words>" }
 
-8. deploymentScores
-   Key deployment quality metrics for this AI use case.
-   Object: { "computeFit": <0–100>, "deploymentConfidence": <0–100>, "estimatedScalability": "Low|Moderate|High|Critical" }
+8. deploymentDecisions (4–5 items)
+   Key deployment decisions the PM must make or confirm for this AI use case.
+   Each item: { "decisionType": "<decision category, ≤4 words>", "choice": "<recommended option, ≤5 words>", "reason": "<1-sentence rationale, ≤10 words>" }
 
-9. deploymentKpis
-   Summary deployment KPIs for the recommended strategy.
-   Object: { "compute": "<e.g. GPU|CPU|TPU|Mixed>", "deployment": "<e.g. Cloud|Hybrid|Edge|On-Premise>", "latency": "<e.g. Low|Medium|High>", "scalability": "<e.g. Low|Moderate|High|Critical>" }
+9. cdsImplSequence (exactly 6 strings in this fixed order)
+   The 6 implementation steps for deploying this AI use case. Use these exact labels:
+   ["Prepare AI Data", "Provision Infrastructure", "Deploy AI Platform", "Deploy AI Assistant", "Pilot with Engineering Team", "Scale to Organisation"]
+
+10. infraItems (4–5 items)
+   Expected infrastructure components required for this AI deployment.
+   Each item: { "item": "<component name, ≤4 words>", "recommendation": "<specific sizing or tool, ≤8 words>" }
+
+11. cdsConsultantGuidance
+   2–3 sentences of phased deployment guidance from a senior technology consultant. Focus on sequencing, risk management, and what to validate before each phase.
+
+12. cdsAIRecommendation
+   1–2 sentences identifying the most critical deployment decision or risk specific to this use case and what the PM should do about it.
 
    Add all to the brief object:
-   "deploymentReadiness": <number>, "workloadProfile": [...], "deploymentRecommendations": [...], "deploymentScores": {...}, "deploymentKpis": {...}`,
+   "deploymentBlocks": [...], "cdsDeploymentFlow": [...], "techRecommendations": [...], "deploymentDecisions": [...], "cdsImplSequence": [...], "infraItems": [...], "cdsConsultantGuidance": "...", "cdsAIRecommendation": "..."`,
   },
 
   'AI Engineering Enablement': {
@@ -1520,44 +1530,55 @@ function parseBriefOutput(rawSections, validTitles) {
 
       // ── Technology Infrastructure: AI Compute & Deployment Strategy parsers ──
 
-      const deploymentReadiness = parseInt(b.deploymentReadiness, 10) || 0;
-
-      const rawWorkloadProfile = Array.isArray(b.workloadProfile) ? b.workloadProfile : [];
-      const workloadProfile = rawWorkloadProfile
-        .filter(w => w && typeof w === 'object' && String(w.workloadType || '').trim())
-        .map(w => ({
-          workloadType:            String(w.workloadType            || '').trim(),
-          computeRequirement:      String(w.computeRequirement      || '').trim(),
-          performanceRequirement:  String(w.performanceRequirement  || '').trim(),
-          scalabilityRequirement:  String(w.scalabilityRequirement  || '').trim(),
-          priority:                String(w.priority                || 'MEDIUM').trim().toUpperCase(),
+      const rawDeploymentBlocks = Array.isArray(b.deploymentBlocks) ? b.deploymentBlocks : [];
+      const deploymentBlocks = rawDeploymentBlocks
+        .filter(d => d && typeof d === 'object' && String(d.blockType || '').trim())
+        .map(d => ({
+          blockType: String(d.blockType || '').trim(),
+          name:      String(d.name      || '').trim(),
+          why:       String(d.why       || '').trim(),
         }))
         .slice(0, 4);
 
-      const rawDeploymentRecs = Array.isArray(b.deploymentRecommendations) ? b.deploymentRecommendations : [];
-      const deploymentRecommendations = rawDeploymentRecs
-        .filter(r => r && typeof r === 'object' && String(r.text || '').trim())
+      const CDS_FLOW_NODES = ['Engineering Repositories', 'Integration Layer', 'AI Data Store', 'LLM Inference', 'AI Application', 'Engineering Users'];
+      const rawCdsFlow = Array.isArray(b.cdsDeploymentFlow) ? b.cdsDeploymentFlow : [];
+      const cdsDeploymentFlow = CDS_FLOW_NODES.map((node, i) => String(rawCdsFlow[i] || node).trim());
+
+      const rawTechRecs = Array.isArray(b.techRecommendations) ? b.techRecommendations : [];
+      const techRecommendations = rawTechRecs
+        .filter(r => r && typeof r === 'object' && String(r.layer || '').trim())
         .map(r => ({
-          text:   String(r.text   || '').trim(),
-          impact: String(r.impact || 'Medium').trim(),
-          reason: String(r.reason || '').trim(),
+          layer:          String(r.layer          || '').trim(),
+          recommendation: String(r.recommendation || '').trim(),
+          why:            String(r.why            || '').trim(),
         }))
-        .slice(0, 3);
+        .slice(0, 5);
 
-      const rawDeploymentScores = b.deploymentScores && typeof b.deploymentScores === 'object' ? b.deploymentScores : {};
-      const deploymentScores = {
-        computeFit:           parseInt(rawDeploymentScores.computeFit,           10) || 0,
-        deploymentConfidence: parseInt(rawDeploymentScores.deploymentConfidence, 10) || 0,
-        estimatedScalability: String(rawDeploymentScores.estimatedScalability   || '').trim(),
-      };
+      const rawDeployDecisions = Array.isArray(b.deploymentDecisions) ? b.deploymentDecisions : [];
+      const deploymentDecisions = rawDeployDecisions
+        .filter(d => d && typeof d === 'object' && String(d.decisionType || '').trim())
+        .map(d => ({
+          decisionType: String(d.decisionType || '').trim(),
+          choice:       String(d.choice       || '').trim(),
+          reason:       String(d.reason       || '').trim(),
+        }))
+        .slice(0, 5);
 
-      const rawDeploymentKpis = b.deploymentKpis && typeof b.deploymentKpis === 'object' ? b.deploymentKpis : {};
-      const deploymentKpis = {
-        compute:    String(rawDeploymentKpis.compute    || '').trim(),
-        deployment: String(rawDeploymentKpis.deployment || '').trim(),
-        latency:    String(rawDeploymentKpis.latency    || '').trim(),
-        scalability: String(rawDeploymentKpis.scalability || '').trim(),
-      };
+      const CDS_IMPL_STEPS = ['Prepare AI Data', 'Provision Infrastructure', 'Deploy AI Platform', 'Deploy AI Assistant', 'Pilot with Engineering Team', 'Scale to Organisation'];
+      const rawCdsImpl = Array.isArray(b.cdsImplSequence) ? b.cdsImplSequence : [];
+      const cdsImplSequence = CDS_IMPL_STEPS.map((step, i) => String(rawCdsImpl[i] || step).trim());
+
+      const rawInfraItems = Array.isArray(b.infraItems) ? b.infraItems : [];
+      const infraItems = rawInfraItems
+        .filter(i => i && typeof i === 'object' && String(i.item || '').trim())
+        .map(i => ({
+          item:           String(i.item           || '').trim(),
+          recommendation: String(i.recommendation || '').trim(),
+        }))
+        .slice(0, 5);
+
+      const cdsConsultantGuidance = String(b.cdsConsultantGuidance || '').trim();
+      const cdsAIRecommendation   = String(b.cdsAIRecommendation   || '').trim();
 
       // ── Technology Infrastructure: AI Engineering Enablement parsers ─────────
 
@@ -1904,11 +1925,14 @@ function parseBriefOutput(rawSections, validTitles) {
           ...((platformSummary.development || platformSummary.monitoring)
               ? { platformSummary } : {}),
           // Technology Infrastructure: AI Compute & Deployment Strategy extras
-          ...(deploymentReadiness                  ? { deploymentReadiness }         : {}),
-          ...(workloadProfile.length               ? { workloadProfile }             : {}),
-          ...(deploymentRecommendations.length     ? { deploymentRecommendations }   : {}),
-          ...(deploymentScores.computeFit          ? { deploymentScores }            : {}),
-          ...((deploymentKpis.compute || deploymentKpis.deployment) ? { deploymentKpis } : {}),
+          ...(deploymentBlocks.length         ? { deploymentBlocks }         : {}),
+          ...(cdsDeploymentFlow.length        ? { cdsDeploymentFlow }        : {}),
+          ...(techRecommendations.length      ? { techRecommendations }      : {}),
+          ...(deploymentDecisions.length      ? { deploymentDecisions }      : {}),
+          ...(cdsImplSequence.length          ? { cdsImplSequence }          : {}),
+          ...(infraItems.length               ? { infraItems }               : {}),
+          ...(cdsConsultantGuidance           ? { cdsConsultantGuidance }    : {}),
+          ...(cdsAIRecommendation             ? { cdsAIRecommendation }      : {}),
           // Technology Infrastructure: AI Engineering Enablement extras
           ...(engineeringReadiness                      ? { engineeringReadiness }          : {}),
           ...(engineeringCapabilities.some(c => c.score)? { engineeringCapabilities }       : {}),
@@ -2508,7 +2532,8 @@ OUTPUT — valid JSON only, no markdown fences:
       // Technology Infrastructure extras
       'integrationReadiness', 'connectedSystems', 'integrationSummary',
       'platformReadiness', 'capabilityAssessment', 'platformStack', 'platformRecommendations', 'platformSummary',
-      'deploymentReadiness', 'workloadProfile', 'deploymentRecommendations', 'deploymentScores', 'deploymentKpis',
+      'deploymentBlocks', 'cdsDeploymentFlow', 'techRecommendations', 'deploymentDecisions',
+      'cdsImplSequence', 'infraItems', 'cdsConsultantGuidance', 'cdsAIRecommendation',
       'engineeringReadiness', 'engineeringCapabilities', 'engineeringLifecycle', 'engineeringRecommendations',
       'automationStats', 'engineeringSummary',
       // Skills & Workforce extras

@@ -7931,6 +7931,341 @@
   }
 }
 
+/* ── CDS New Format: Recommended Deployment Architecture ──────────────────────── */
+
+.cds-arch-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.cds-arch-block {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cds-arch-block__type {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.cds-arch-block__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.cds-arch-block__why {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ── CDS Mid Row: Deployment Flow + Tech Recommendations ───────────────────────── */
+
+.cds-mid-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.cds-flow-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cds-flow-chain {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.cds-flow-node {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  text-align: center;
+}
+
+.cds-flow-node--0 { border-color: rgba(92,197,167,0.4);  color: #5CC5A7; }
+.cds-flow-node--1 { border-color: rgba(99,102,241,0.35); color: #818cf8; }
+.cds-flow-node--2 { border-color: rgba(234,179,8,0.35);  color: #fbbf24; }
+.cds-flow-node--3 { border-color: rgba(239,68,68,0.3);   color: #f87171; }
+.cds-flow-node--4 { border-color: rgba(16,185,129,0.35); color: #34d399; }
+.cds-flow-node--5 { border-color: rgba(168,85,247,0.35); color: #c084fc; }
+
+.cds-flow-arrow {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.2);
+  text-align: center;
+  padding: 0.1rem 0;
+  line-height: 1;
+}
+
+.cds-tech-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cds-tech-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.cds-tech-table th {
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.4);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.cds-tech-table td {
+  padding: 0.5rem 0.75rem;
+  color: rgba(255,255,255,0.78);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.cds-tech-table td:first-child {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.73rem;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.cds-tech-table td:last-child {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.73rem;
+}
+
+.cds-tech-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── CDS Deployment Decisions ─────────────────────────────────────────────────── */
+
+.cds-dec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 0.65rem;
+}
+
+.cds-dec-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 9px;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: border-color 0.2s;
+}
+
+.cds-dec-card:hover {
+  border-color: rgba(99,102,241,0.3);
+}
+
+.cds-dec-card__type {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin: 0;
+}
+
+.cds-dec-card__choice {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.cds-dec-card__reason {
+  font-size: 0.73rem;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+  line-height: 1.45;
+  font-style: italic;
+}
+
+/* ── CDS Implementation Sequence ──────────────────────────────────────────────── */
+
+.cds-impl-seq {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.cds-impl-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.85rem 0.5rem;
+  background: rgba(255,255,255,0.02);
+  border-right: 1px solid rgba(255,255,255,0.07);
+  gap: 0.4rem;
+}
+
+.cds-impl-step:last-child {
+  border-right: none;
+}
+
+.cds-impl-step__num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(92,197,167,0.15);
+  color: #5CC5A7;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cds-impl-step__label {
+  font-size: 0.73rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.4;
+}
+
+/* ── CDS Expected Infrastructure ──────────────────────────────────────────────── */
+
+.cds-infra-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.cds-infra-table th {
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.4);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.cds-infra-table td {
+  padding: 0.5rem 0.75rem;
+  color: rgba(255,255,255,0.78);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.cds-infra-table td:first-child {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.73rem;
+  white-space: nowrap;
+  font-weight: 500;
+  width: 35%;
+}
+
+.cds-infra-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── CDS Consultant Guidance ──────────────────────────────────────────────────── */
+
+.cds-consultant-guidance {
+  border-left: 3px solid #5CC5A7;
+  background: rgba(92,197,167,0.05);
+  border-radius: 0 8px 8px 0;
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cds-consultant-guidance__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+  margin: 0;
+}
+
+.cds-consultant-guidance__text {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── CDS AI Recommendation ────────────────────────────────────────────────────── */
+
+.cds-ai-recommendation {
+  border-left: 3px solid #C59B34;
+  background: rgba(197,155,52,0.05);
+  border-radius: 0 8px 8px 0;
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cds-ai-recommendation__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #C59B34;
+  margin: 0;
+}
+
+.cds-ai-recommendation__text {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .cds-arch-grid { grid-template-columns: repeat(2, 1fr); }
+  .cds-mid-row   { grid-template-columns: 1fr; }
+  .cds-impl-seq  { flex-wrap: wrap; }
+  .cds-impl-step { flex: 0 0 calc(33% - 1px); }
+}
+
 /* ── Technology Infrastructure — System Integration & Architecture ───────────── */
 
 .sia-view {

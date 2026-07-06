@@ -2,9 +2,11 @@
 
 ## Purpose
 
-Determine the most appropriate compute environment and deployment strategy for the selected AI use case.
+Recommend the optimal compute environment and deployment strategy required to build, deploy, and operate the selected AI use case.
 
-Rather than selecting infrastructure based on existing technology preferences, this capability helps project managers align AI workloads with performance, latency, scalability, and operational requirements.
+Building on the AI-ready data architecture established in the Data Readiness domain, this capability helps project managers choose the right deployment approach based on workload characteristics, business objectives, performance expectations, security requirements, and operational constraints.
+
+Rather than selecting infrastructure based on existing technology preferences, the AI recommends the deployment strategy that delivers the best balance of business value, scalability, performance, and cost.
 
 ---
 
@@ -12,129 +14,223 @@ Rather than selecting infrastructure based on existing technology preferences, t
 
 ## Definition
 
-AI Compute & Deployment Strategy is the process of evaluating the infrastructure requirements of an AI use case and recommending the most suitable deployment approach.
+AI Compute & Deployment Strategy determines where and how an AI solution should run.
 
-The AI analyses workload characteristics, performance expectations, operational constraints, and deployment environments to recommend where and how the AI solution should run.
+The AI analyses the selected AI use case, prepared data architecture, expected workload, response time requirements, security constraints, and operational goals to recommend the most appropriate compute infrastructure and deployment model.
 
-## Framework
-
-### AI Workload
-
-Identify the type of AI workload that will be executed.
-
-Typical examples: Model training, batch inference, real-time inference, analytics, document processing, conversational AI.
+The objective is not simply to provision infrastructure, but to ensure the AI solution can reliably support current business needs while scaling for future adoption.
 
 ---
 
-### Compute Requirements
+# Consultant Guidance
 
-Determine the compute resources required to execute the workload efficiently.
+Project managers often assume every AI solution requires expensive GPU infrastructure or large cloud deployments.
 
-Typical examples: CPU, GPU, AI accelerators, memory-intensive workloads, storage-intensive workloads.
+In reality, compute requirements vary significantly depending on the AI use case.
 
----
+For example:
 
-### Deployment Environment
+- AI assistants using enterprise documents may require LLM inference but minimal training infrastructure.
+- Predictive analytics often execute efficiently on standard CPU infrastructure.
+- Computer vision and GenAI solutions frequently benefit from GPU acceleration.
+- Batch reporting workloads rarely require real-time infrastructure.
 
-Recommend the most appropriate deployment location.
+Start with the simplest deployment architecture that satisfies business objectives.
 
-Typical examples: Public cloud, private cloud, on-premises infrastructure, hybrid environment, edge devices.
-
----
-
-### Performance Requirements
-
-Assess the expected processing performance.
-
-Typical examples: Response time, throughput, concurrent users, processing capacity.
+Scale infrastructure only when business usage, response time, or AI workload justifies additional investment.
 
 ---
 
-### Scalability Requirements
+# Framework
 
-Determine how the infrastructure should scale as AI adoption grows.
-
-Typical examples: Elastic scaling, high availability, workload distribution, multi-region deployment.
+The AI evaluates deployment strategy across six dimensions.
 
 ---
 
-### Operational Constraints
+## 1. AI Workload Profile
 
-Identify project-specific constraints that influence deployment decisions.
+Determine the primary workload the AI solution will perform.
 
-Typical examples: Budget, existing infrastructure, network connectivity, operational dependencies.
+Typical examples
 
-## Key Principles
+- Conversational AI
+- AI Assistant
+- Document Intelligence
+- Predictive Analytics
+- Recommendation Engine
+- Computer Vision
+- Batch Processing
+- Real-Time Decision Support
+- Generative AI
 
-- Select infrastructure based on workload requirements rather than technology preference.
-- Balance performance, scalability, and operational cost.
-- Consider deployment flexibility from the beginning.
-- Design infrastructure that supports future AI expansion.
-- Optimize infrastructure for business outcomes.
+---
 
-## Leadership Question
+## 2. Compute Strategy
 
-**Does our deployment strategy provide the right balance of performance, scalability, and operational efficiency for this AI use case?**
+Recommend the compute resources required.
+
+Typical examples
+
+- CPU
+- GPU
+- AI Accelerators
+- Serverless Compute
+- Containerized Services
+- High Memory Compute
+- Distributed Processing
+
+---
+
+## 3. Deployment Model
+
+Recommend where the AI solution should operate.
+
+Typical examples
+
+- Public Cloud
+- Private Cloud
+- On-Premises
+- Hybrid Cloud
+- Edge Computing
+- SaaS AI Platform
+
+---
+
+## 4. Performance Requirements
+
+Determine operational expectations.
+
+Typical examples
+
+- Response time
+- Concurrent users
+- Batch processing windows
+- Throughput
+- Availability
+- Disaster recovery
+
+---
+
+## 5. Scalability Strategy
+
+Determine how infrastructure should evolve.
+
+Typical examples
+
+- Auto Scaling
+- Kubernetes
+- Load Balancing
+- Multi-region deployment
+- High Availability
+- Elastic Compute
+
+---
+
+## 6. Business Constraints
+
+Consider project-specific factors influencing deployment.
+
+Typical examples
+
+- Budget
+- Data residency
+- Security
+- Compliance
+- Existing cloud strategy
+- Internal IT capability
+- Operational support
+
+---
+
+# Key Principles
+
+- Select infrastructure based on business requirements rather than technology trends.
+- Match compute capability to AI workload characteristics.
+- Prefer simple deployment architectures before introducing complexity.
+- Balance performance, scalability, security, and operational cost.
+- Design deployment strategies that can evolve as AI adoption grows.
+- Reuse existing enterprise infrastructure whenever practical.
+
+---
+
+# Leadership Question
+
+**What deployment strategy provides the best balance of business value, performance, scalability, security, and operational cost for this AI use case?**
 
 ---
 
 # Decision Criteria
 
-The AI evaluates deployment strategy based on:
+The AI evaluates deployment strategy using:
 
-- Workload characteristics
-- Compute requirements
-- Deployment environment
+- AI workload characteristics
+- Compute intensity
+- Data architecture
 - Performance expectations
-- Scalability needs
-- Operational constraints
+- Scalability requirements
+- Security requirements
+- Compliance constraints
+- Operational maturity
+- Budget considerations
 
 ---
 
 # AI Reasoning Process
 
 ```text
-Understand AI Use Case
+Selected AI Use Case
         ↓
-Identify Workload Type
+Review AI Data Architecture
         ↓
-Assess Compute Requirements
+Determine AI Workload
         ↓
-Evaluate Deployment Options
+Estimate Compute Requirements
         ↓
-Compare Performance & Scalability
+Evaluate Deployment Models
         ↓
-Generate Deployment Recommendation
+Assess Performance & Scalability
+        ↓
+Recommend Compute & Deployment Strategy
 ```
 
 ---
 
 # Blueprint Output
 
-The generated blueprint includes:
+For every AI use case, the AI generates a project-specific **AI Compute & Deployment Blueprint** containing:
 
 - AI Workload Assessment
-- Recommended Compute Resources
-- Recommended Deployment Environment
-- Performance Considerations
-- Scalability Assessment
-- Infrastructure Recommendation
-- AI Deployment Summary
+- Recommended Deployment Model
+- Recommended Compute Environment
+- Performance Expectations
+- Scalability Strategy
+- Security Considerations
+- Infrastructure Cost Considerations
+- Deployment Roadmap
+- AI Recommendation
 
 ---
 
 # Expected Outcome
 
-After completing this capability, the project team should have a clear deployment strategy that aligns infrastructure decisions with workload requirements, performance expectations, and future scalability.
+After completing this capability, the project team should have:
+
+- A recommended deployment strategy aligned to the selected AI use case.
+- A compute environment sized appropriately for expected workloads.
+- A deployment model balancing business needs, cost, security, and scalability.
+- A deployment roadmap supporting future AI expansion.
+- A strong foundation for the next capability: **AI Platform Readiness**.
 
 ---
 
 # AI Prompt Guidance
 
-When generating the blueprint, the AI should:
+When generating the AI Compute & Deployment Blueprint, the AI should:
 
-- Identify the workload characteristics of the selected AI use case.
-- Recommend appropriate compute resources.
-- Suggest the optimal deployment environment.
-- Highlight performance and scalability considerations.
-- Explain the rationale behind the recommendation.
+- Understand the selected AI use case and business objective.
+- Leverage the outputs from Data Architecture Enablement.
+- Recommend the simplest deployment architecture that satisfies business needs.
+- Explain why the proposed deployment model is appropriate.
+- Consider cost, scalability, performance, security, and operational complexity.
+- Avoid recommending unnecessary infrastructure.
+- Tailor all recommendations to the user's project context.

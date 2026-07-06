@@ -80,6 +80,10 @@ const workloadProfileSchema         = new mongoose.Schema({ workloadType: String
 const deploymentRecommendationSchema = new mongoose.Schema({ text: String, impact: String, reason: String }, { _id: false });
 const deploymentScoresSchema        = new mongoose.Schema({ computeFit: Number, deploymentConfidence: Number, estimatedScalability: String }, { _id: false });
 const deploymentKpisSchema          = new mongoose.Schema({ compute: String, deployment: String, latency: String, scalability: String }, { _id: false });
+const deploymentBlockSchema         = new mongoose.Schema({ blockType: String, name: String, why: String }, { _id: false });
+const techRecommendationSchema      = new mongoose.Schema({ layer: String, recommendation: String, why: String }, { _id: false });
+const deploymentDecisionSchema      = new mongoose.Schema({ decisionType: String, choice: String, reason: String }, { _id: false });
+const infraItemSchema               = new mongoose.Schema({ item: String, recommendation: String }, { _id: false });
 const engineeringCapabilitySchema   = new mongoose.Schema({ name: String, status: String, score: Number }, { _id: false });
 const engineeringLifecycleSchema    = new mongoose.Schema({ stage: String, readiness: Number, automation: String }, { _id: false });
 const engineeringRecommendationSchema = new mongoose.Schema({ text: String, priority: String, businessImpact: String }, { _id: false });
@@ -204,6 +208,15 @@ const briefSchema = new mongoose.Schema({
   deploymentRecommendations: { type: [deploymentRecommendationSchema], default: [] },
   deploymentScores:         { type: deploymentScoresSchema,           default: undefined },
   deploymentKpis:           { type: deploymentKpisSchema,             default: undefined },
+  // Technology Infrastructure: AI Compute & Deployment Strategy new-format extras
+  deploymentBlocks:         { type: [deploymentBlockSchema],          default: [] },
+  cdsDeploymentFlow:        { type: [String],                         default: [] },
+  techRecommendations:      { type: [techRecommendationSchema],       default: [] },
+  deploymentDecisions:      { type: [deploymentDecisionSchema],       default: [] },
+  cdsImplSequence:          { type: [String],                         default: [] },
+  infraItems:               { type: [infraItemSchema],                default: [] },
+  cdsConsultantGuidance:    { type: String,                           default: '' },
+  cdsAIRecommendation:      { type: String,                           default: '' },
   // Technology Infrastructure: AI Engineering Enablement extras
   engineeringReadiness:     { type: Number,   default: 0 },
   engineeringCapabilities:  { type: [engineeringCapabilitySchema],    default: [] },

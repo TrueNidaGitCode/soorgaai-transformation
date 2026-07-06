@@ -4274,12 +4274,13 @@ function buildComputeDeploymentLayout(section) {
   const deploymentBlocks      = b.deploymentBlocks      || [];
   const cdsDeploymentFlow     = b.cdsDeploymentFlow     || [];
   const techRecommendations   = b.techRecommendations   || [];
+  const cdsArchRationale      = b.cdsArchRationale      || [];
   const deploymentDecisions   = b.deploymentDecisions   || [];
   const cdsImplSequence       = b.cdsImplSequence       || [];
   const infraItems            = b.infraItems            || [];
+  const cdsInvestmentEstimate = b.cdsInvestmentEstimate || [];
   const cdsConsultantGuidance = b.cdsConsultantGuidance || '';
   const cdsAIRecommendation   = b.cdsAIRecommendation   || '';
-  const leadershipQ           = b.leadershipValidation?.context || '';
 
   // Legacy fields (kept for old blueprints)
   const workloadProfile           = b.workloadProfile           || [];
@@ -4342,12 +4343,22 @@ function buildComputeDeploymentLayout(section) {
         type.textContent = block.blockType;
         card.appendChild(type);
 
+        const recLabel = document.createElement('p');
+        recLabel.className = 'cds-arch-block__field-label';
+        recLabel.textContent = 'Recommendation';
+        card.appendChild(recLabel);
+
         const name = document.createElement('p');
         name.className = 'cds-arch-block__name';
         name.textContent = block.name;
         card.appendChild(name);
 
         if (block.why) {
+          const whyLabel = document.createElement('p');
+          whyLabel.className = 'cds-arch-block__field-label';
+          whyLabel.textContent = 'Why Recommended';
+          card.appendChild(whyLabel);
+
           const why = document.createElement('p');
           why.className = 'cds-arch-block__why';
           why.textContent = block.why;
@@ -4370,7 +4381,7 @@ function buildComputeDeploymentLayout(section) {
 
     const flowLbl = document.createElement('p');
     flowLbl.className = 'brief-label';
-    flowLbl.textContent = 'Deployment Flow';
+    flowLbl.textContent = 'Recommended Deployment Flow';
     flowCol.appendChild(flowLbl);
 
     const flowNodes = cdsDeploymentFlow.length ? cdsDeploymentFlow : CDS_FLOW_NODES;
@@ -4405,13 +4416,13 @@ function buildComputeDeploymentLayout(section) {
       techTable.className = 'cds-tech-table';
 
       const tHead = document.createElement('thead');
-      tHead.innerHTML = '<tr><th>Layer</th><th>Recommendation</th><th>Why</th></tr>';
+      tHead.innerHTML = '<tr><th>Layer</th><th>Recommended Technology</th><th>Selection Rationale</th></tr>';
       techTable.appendChild(tHead);
 
       const tBody = document.createElement('tbody');
       techRecommendations.forEach(r => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${r.layer || ''}</td><td>${r.recommendation || ''}</td><td>${r.why || ''}</td>`;
+        tr.innerHTML = `<td>${r.layer || ''}</td><td>${r.recommendation || ''}</td><td>${r.selectionRationale || ''}</td>`;
         tBody.appendChild(tr);
       });
       techTable.appendChild(tBody);
@@ -4420,6 +4431,24 @@ function buildComputeDeploymentLayout(section) {
     }
 
     wrap.appendChild(midRow);
+
+    // ── Why this Architecture? ────────────────────────────────────────────────
+    if (cdsArchRationale.length) {
+      const ratLbl = document.createElement('p');
+      ratLbl.className = 'brief-label';
+      ratLbl.textContent = 'Why this Architecture?';
+      wrap.appendChild(ratLbl);
+
+      const ratList = document.createElement('ul');
+      ratList.className = 'cds-arch-rationale';
+      cdsArchRationale.forEach(point => {
+        const li = document.createElement('li');
+        li.className = 'cds-arch-rationale__item';
+        li.textContent = point;
+        ratList.appendChild(li);
+      });
+      wrap.appendChild(ratList);
+    }
 
     // ── 5. Deployment Decisions ───────────────────────────────────────────────
     if (deploymentDecisions.length) {
@@ -4513,7 +4542,32 @@ function buildComputeDeploymentLayout(section) {
       wrap.appendChild(infraTable);
     }
 
-    // ── 8. Consultant Guidance ────────────────────────────────────────────────
+    // ── 8. Estimated Investment ────────────────────────────────────────────────
+    if (cdsInvestmentEstimate.length) {
+      const investLbl = document.createElement('p');
+      investLbl.className = 'brief-label';
+      investLbl.textContent = 'Estimated Infrastructure Investment';
+      wrap.appendChild(investLbl);
+
+      const investTable = document.createElement('table');
+      investTable.className = 'cds-investment-table';
+
+      const vHead = document.createElement('thead');
+      vHead.innerHTML = '<tr><th>Area</th><th>Estimate</th></tr>';
+      investTable.appendChild(vHead);
+
+      const vBody = document.createElement('tbody');
+      cdsInvestmentEstimate.forEach(row => {
+        const tr = document.createElement('tr');
+        const levelClass = row.estimate === 'High' ? 'cds-invest--high' : row.estimate === 'Low' ? 'cds-invest--low' : 'cds-invest--medium';
+        tr.innerHTML = `<td>${row.area || ''}</td><td><span class="cds-invest-badge ${levelClass}">${row.estimate || 'Medium'}</span></td>`;
+        vBody.appendChild(tr);
+      });
+      investTable.appendChild(vBody);
+      wrap.appendChild(investTable);
+    }
+
+    // ── 9. Consultant Guidance ────────────────────────────────────────────────
     if (cdsConsultantGuidance) {
       const cg = document.createElement('div');
       cg.className = 'cds-consultant-guidance';
@@ -4643,14 +4697,6 @@ function buildComputeDeploymentLayout(section) {
       });
       wrap.appendChild(scoresBar);
     }
-  }
-
-  // ── Leadership question footer (retained) ─────────────────────────────────
-  if (leadershipQ) {
-    const footer = document.createElement('div');
-    footer.className = 'cds-leadership';
-    footer.innerHTML = `<span class="cds-leadership__icon">?</span><p class="cds-leadership__text">${leadershipQ}</p>`;
-    wrap.appendChild(footer);
   }
 
   return wrap;

@@ -795,7 +795,7 @@ SECTION-SPECIFIC EXTRAS — "AI Compute & Deployment Strategy" sections only:
 
 5. deploymentBlocks (exactly 4 items)
    The 4 building blocks of the recommended deployment architecture. Use these fixed blockTypes in this exact order: AI Workload, Deployment Model, Compute Strategy, Scaling Strategy.
-   Each item: { "blockType": "<AI Workload|Deployment Model|Compute Strategy|Scaling Strategy>", "name": "<specific recommendation for this use case, 3–5 words>", "why": "<1-sentence rationale, ≤12 words>" }
+   Each item: { "blockType": "<AI Workload|Deployment Model|Compute Strategy|Scaling Strategy>", "name": "<specific recommendation for this use case, 3–5 words>", "why": "<1-sentence outcome-focused rationale, ≤12 words — what it delivers, not what risk it avoids>" }
 
 6. cdsDeploymentFlow (exactly 6 strings in this fixed order)
    The 6 nodes of the end-to-end AI deployment flow. Use these exact names:
@@ -803,28 +803,36 @@ SECTION-SPECIFIC EXTRAS — "AI Compute & Deployment Strategy" sections only:
 
 7. techRecommendations (exactly 5 items)
    Technology recommendations for each deployment layer. Use these fixed layer names in order: Infrastructure, AI Platform, Data Layer, Integration, Monitoring.
-   Each item: { "layer": "<layer name>", "recommendation": "<specific tool or service, ≤6 words>", "why": "<1-sentence rationale, ≤10 words>" }
+   Each item: { "layer": "<layer name>", "recommendation": "<specific tool or service, ≤6 words>", "selectionRationale": "<why this is the right choice for this use case, ≤12 words>" }
 
-8. deploymentDecisions (4–5 items)
-   Key deployment decisions the PM must make or confirm for this AI use case.
-   Each item: { "decisionType": "<decision category, ≤4 words>", "choice": "<recommended option, ≤5 words>", "reason": "<1-sentence rationale, ≤10 words>" }
+8. cdsArchRationale (exactly 5 strings)
+   5 concise executive-level reasons why this architecture is the right strategic choice. Each string ≤12 words, outcome-focused, suitable for a PM presenting to stakeholders.
 
-9. cdsImplSequence (exactly 6 strings in this fixed order)
-   The 6 implementation steps for deploying this AI use case. Use these exact labels:
+9. deploymentDecisions (exactly 5 items)
+   Key architectural decisions. Use these fixed decision types in this exact order: Deployment Model, Compute Platform, Integration Pattern, Security Model, Data Residency.
+   Each item: { "decisionType": "<Deployment Model|Compute Platform|Integration Pattern|Security Model|Data Residency>", "choice": "<recommended option, ≤5 words>", "reason": "<1-sentence rationale, ≤10 words>" }
+
+10. cdsImplSequence (exactly 6 strings in this fixed order)
+   The 6 implementation steps. Use these exact labels:
    ["Prepare AI Data", "Provision Infrastructure", "Deploy AI Platform", "Deploy AI Assistant", "Pilot with Engineering Team", "Scale to Organisation"]
 
-10. infraItems (4–5 items)
-   Expected infrastructure components required for this AI deployment.
-   Each item: { "item": "<component name, ≤4 words>", "recommendation": "<specific sizing or tool, ≤8 words>" }
+11. infraItems (4–6 items)
+   Expected infrastructure components. Recommend capabilities and platforms only — NOT sizing, node counts, or specific resource numbers.
+   Each item: { "item": "<component capability, ≤4 words>", "recommendation": "<specific platform or service name, ≤6 words>" }
 
-11. cdsConsultantGuidance
-   2–3 sentences of phased deployment guidance from a senior technology consultant. Focus on sequencing, risk management, and what to validate before each phase.
+12. cdsInvestmentEstimate (exactly 5 items)
+   Investment level classification for each area. Use these fixed areas in this order: Cloud Infrastructure, AI Platform, Integration, Operations, Overall Complexity.
+   Each item: { "area": "<area name>", "estimate": "<Low|Medium|High>" }
+   Base the estimate on typical complexity and market rates — never include specific cost figures.
 
-12. cdsAIRecommendation
-   1–2 sentences identifying the most critical deployment decision or risk specific to this use case and what the PM should do about it.
+13. cdsConsultantGuidance
+   2–3 sentences of action-oriented phased deployment guidance. Begin with recommending a pilot using managed cloud AI services and a small dataset. State what to validate before scaling.
+
+14. cdsAIRecommendation
+   1–2 sentences making a positive, outcome-focused architecture recommendation. State clearly what to adopt and what it delivers. Close with how to de-risk through a pilot. Do NOT lead with a risk or a caution.
 
    Add all to the brief object:
-   "deploymentBlocks": [...], "cdsDeploymentFlow": [...], "techRecommendations": [...], "deploymentDecisions": [...], "cdsImplSequence": [...], "infraItems": [...], "cdsConsultantGuidance": "...", "cdsAIRecommendation": "..."`,
+   "deploymentBlocks": [...], "cdsDeploymentFlow": [...], "techRecommendations": [...], "cdsArchRationale": [...], "deploymentDecisions": [...], "cdsImplSequence": [...], "infraItems": [...], "cdsInvestmentEstimate": [...], "cdsConsultantGuidance": "...", "cdsAIRecommendation": "..."`,
   },
 
   'AI Engineering Enablement': {
@@ -1548,9 +1556,9 @@ function parseBriefOutput(rawSections, validTitles) {
       const techRecommendations = rawTechRecs
         .filter(r => r && typeof r === 'object' && String(r.layer || '').trim())
         .map(r => ({
-          layer:          String(r.layer          || '').trim(),
-          recommendation: String(r.recommendation || '').trim(),
-          why:            String(r.why            || '').trim(),
+          layer:             String(r.layer             || '').trim(),
+          recommendation:    String(r.recommendation    || '').trim(),
+          selectionRationale: String(r.selectionRationale || r.why || '').trim(),
         }))
         .slice(0, 5);
 
@@ -1576,6 +1584,19 @@ function parseBriefOutput(rawSections, validTitles) {
           recommendation: String(i.recommendation || '').trim(),
         }))
         .slice(0, 5);
+
+      const rawCdsArchRationale = Array.isArray(b.cdsArchRationale) ? b.cdsArchRationale : [];
+      const cdsArchRationale = rawCdsArchRationale
+        .map(s => String(s || '').trim())
+        .filter(Boolean)
+        .slice(0, 5);
+
+      const CDS_INVEST_AREAS = ['Cloud Infrastructure', 'AI Platform', 'Integration', 'Operations', 'Overall Complexity'];
+      const rawCdsInvest = Array.isArray(b.cdsInvestmentEstimate) ? b.cdsInvestmentEstimate : [];
+      const cdsInvestmentEstimate = CDS_INVEST_AREAS.map(area => {
+        const found = rawCdsInvest.find(i => i && String(i.area || '').trim() === area);
+        return { area, estimate: found ? String(found.estimate || 'Medium').trim() : 'Medium' };
+      });
 
       const cdsConsultantGuidance = String(b.cdsConsultantGuidance || '').trim();
       const cdsAIRecommendation   = String(b.cdsAIRecommendation   || '').trim();
@@ -1928,9 +1949,11 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(deploymentBlocks.length         ? { deploymentBlocks }         : {}),
           ...(cdsDeploymentFlow.length        ? { cdsDeploymentFlow }        : {}),
           ...(techRecommendations.length      ? { techRecommendations }      : {}),
+          ...(cdsArchRationale.length         ? { cdsArchRationale }         : {}),
           ...(deploymentDecisions.length      ? { deploymentDecisions }      : {}),
           ...(cdsImplSequence.length          ? { cdsImplSequence }          : {}),
           ...(infraItems.length               ? { infraItems }               : {}),
+          ...(cdsInvestmentEstimate.length    ? { cdsInvestmentEstimate }    : {}),
           ...(cdsConsultantGuidance           ? { cdsConsultantGuidance }    : {}),
           ...(cdsAIRecommendation             ? { cdsAIRecommendation }      : {}),
           // Technology Infrastructure: AI Engineering Enablement extras
@@ -2532,8 +2555,9 @@ OUTPUT — valid JSON only, no markdown fences:
       // Technology Infrastructure extras
       'integrationReadiness', 'connectedSystems', 'integrationSummary',
       'platformReadiness', 'capabilityAssessment', 'platformStack', 'platformRecommendations', 'platformSummary',
-      'deploymentBlocks', 'cdsDeploymentFlow', 'techRecommendations', 'deploymentDecisions',
-      'cdsImplSequence', 'infraItems', 'cdsConsultantGuidance', 'cdsAIRecommendation',
+      'deploymentBlocks', 'cdsDeploymentFlow', 'techRecommendations', 'cdsArchRationale',
+      'deploymentDecisions', 'cdsImplSequence', 'infraItems', 'cdsInvestmentEstimate',
+      'cdsConsultantGuidance', 'cdsAIRecommendation',
       'engineeringReadiness', 'engineeringCapabilities', 'engineeringLifecycle', 'engineeringRecommendations',
       'automationStats', 'engineeringSummary',
       // Skills & Workforce extras

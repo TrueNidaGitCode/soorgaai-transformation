@@ -81,7 +81,8 @@ const deploymentRecommendationSchema = new mongoose.Schema({ text: String, impac
 const deploymentScoresSchema        = new mongoose.Schema({ computeFit: Number, deploymentConfidence: Number, estimatedScalability: String }, { _id: false });
 const deploymentKpisSchema          = new mongoose.Schema({ compute: String, deployment: String, latency: String, scalability: String }, { _id: false });
 const deploymentBlockSchema         = new mongoose.Schema({ blockType: String, name: String, why: String }, { _id: false });
-const techRecommendationSchema      = new mongoose.Schema({ layer: String, recommendation: String, why: String }, { _id: false });
+const techRecommendationSchema      = new mongoose.Schema({ layer: String, recommendation: String, selectionRationale: String }, { _id: false });
+const cdsInvestmentEstimateSchema   = new mongoose.Schema({ area: String, estimate: String }, { _id: false });
 const deploymentDecisionSchema      = new mongoose.Schema({ decisionType: String, choice: String, reason: String }, { _id: false });
 const infraItemSchema               = new mongoose.Schema({ item: String, recommendation: String }, { _id: false });
 const engineeringCapabilitySchema   = new mongoose.Schema({ name: String, status: String, score: Number }, { _id: false });
@@ -215,6 +216,8 @@ const briefSchema = new mongoose.Schema({
   deploymentDecisions:      { type: [deploymentDecisionSchema],       default: [] },
   cdsImplSequence:          { type: [String],                         default: [] },
   infraItems:               { type: [infraItemSchema],                default: [] },
+  cdsArchRationale:         { type: [String],                         default: [] },
+  cdsInvestmentEstimate:    { type: [cdsInvestmentEstimateSchema],    default: [] },
   cdsConsultantGuidance:    { type: String,                           default: '' },
   cdsAIRecommendation:      { type: String,                           default: '' },
   // Technology Infrastructure: AI Engineering Enablement extras

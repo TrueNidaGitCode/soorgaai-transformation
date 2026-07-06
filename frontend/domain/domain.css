@@ -7957,6 +7957,15 @@
   margin: 0;
 }
 
+.cds-arch-block__field-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin: 0.35rem 0 0.1rem;
+}
+
 .cds-arch-block__name {
   font-size: 0.85rem;
   font-weight: 600;
@@ -8202,6 +8211,85 @@
 .cds-infra-table tr:last-child td {
   border-bottom: none;
 }
+
+/* ── CDS Why this Architecture? ──────────────────────────────────────────────── */
+
+.cds-arch-rationale {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.cds-arch-rationale__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.5;
+}
+
+.cds-arch-rationale__item::before {
+  content: '→';
+  color: #5CC5A7;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+/* ── CDS Estimated Investment ─────────────────────────────────────────────────── */
+
+.cds-investment-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  max-width: 480px;
+}
+
+.cds-investment-table th {
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.4);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.cds-investment-table td {
+  padding: 0.45rem 0.75rem;
+  color: rgba(255,255,255,0.78);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: middle;
+}
+
+.cds-investment-table td:first-child {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.cds-investment-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cds-invest-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+}
+
+.cds-invest--high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+.cds-invest--medium { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.25); }
+.cds-invest--low    { background: rgba(92,197,167,0.12); color: #5CC5A7; border: 1px solid rgba(92,197,167,0.25); }
 
 /* ── CDS Consultant Guidance ──────────────────────────────────────────────────── */
 

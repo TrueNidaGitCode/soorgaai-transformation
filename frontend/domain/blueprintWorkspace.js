@@ -208,6 +208,15 @@ function selectDomain(idx) {
 
 // ── Capability tabs ───────────────────────────────────────────────────────────
 
+const DOMAIN_SHORT_LABELS = {
+  'ai-use-cases':               'AI Use Cases',
+  'ai-strategy':                'AI Strategy',
+  'data-readiness':             'Data Readiness',
+  'technology-infrastructure':  'Technology',
+  'skills-workforce':           'Skills',
+  'governance-security':        'Governance',
+};
+
 function renderCapabilityTabs(blueprint) {
   const nav    = document.getElementById('cap-nav');
   const header = document.getElementById('cap-journey-header');
@@ -217,15 +226,29 @@ function renderCapabilityTabs(blueprint) {
   const dom  = (blueprint.domains || [])[_selectedDomainIdx];
   const caps = (dom?.capabilities || []).filter(c => !RETIRED_CAPABILITY_IDS.has(c.capabilityId));
 
-  // Journey header: label + "Step N of M" counter
+  // Journey header: cross-domain progress chain + capability step counter
   if (header) {
-    if (caps.length) {
-      header.innerHTML =
-        `<span class="cap-journey-label">Transformation Journey</span>` +
-        `<span class="cap-step-counter">Step ${_selectedCapIndex + 1} of ${caps.length}</span>`;
-    } else {
-      header.innerHTML = '';
-    }
+    const activeDomainId = dom?.domainId || '';
+    const enabledDoms = (blueprint.domains || []).filter(d =>
+      DOMAIN_ORDER.includes(d.domainId) && d.domainId !== 'governance-security'
+    );
+
+    // Build domain chain HTML
+    const chainParts = enabledDoms.map((d, i) => {
+      const isActive    = d.domainId === activeDomainId;
+      const isCompleted = d.status === 'completed' || (!isActive && enabledDoms.slice(0, i).every(pd => pd.status === 'completed') === false && i < enabledDoms.findIndex(pd => pd.domainId === activeDomainId));
+      const isDone      = d.status === 'completed';
+      const label       = DOMAIN_SHORT_LABELS[d.domainId] || d.domainName;
+      const cls         = isActive ? 'dj-node dj-node--active' : isDone ? 'dj-node dj-node--done' : 'dj-node dj-node--pending';
+      const dot         = isDone ? '✓' : isActive ? '●' : '○';
+      return `<span class="${cls}"><span class="dj-node__dot">${dot}</span><span class="dj-node__label">${label}</span></span>`;
+    });
+
+    const chainHtml = chainParts.join('<span class="dj-arrow">→</span>');
+
+    header.innerHTML =
+      `<div class="dj-chain">${chainHtml}</div>` +
+      (caps.length ? `<span class="cap-step-counter">Step ${_selectedCapIndex + 1} of ${caps.length}</span>` : '');
   }
 
   caps.forEach((cap, idx) => {

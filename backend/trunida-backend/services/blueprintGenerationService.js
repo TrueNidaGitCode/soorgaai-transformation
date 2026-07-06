@@ -2747,6 +2747,25 @@ function extractJourneyContext(capabilityName, sections) {
     if (b.valueCategories?.length)      lines.push(`Business Value Areas: ${b.valueCategories.map(v => v.title).join(', ')}`);
     if (b.kpiPills?.length)             lines.push(`Target KPIs: ${b.kpiPills.join(', ')}`);
     if (b.recommendedStartingPoint)     lines.push(`Recommended Implementation: ${b.recommendedStartingPoint}`);
+    // ── Data Readiness carry-forward ──────────────────────────────────────────
+    if (b.datasets?.length)
+      lines.push(`Critical Datasets Identified: ${b.datasets.map(d => `${d.name}${d.typicalSource ? ` (${d.typicalSource})` : ''}`).join(', ')}`);
+    if (b.traceabilityChain?.length)
+      lines.push(`Engineering Traceability Chain: ${b.traceabilityChain.join(' → ')}`);
+    if (b.prepWorkPackages?.length)
+      lines.push(`Data Preparation Repositories: ${b.prepWorkPackages.map(p => p.name).join(', ')}`);
+    if (b.prepSummary?.estimatedDuration)
+      lines.push(`Data Preparation Duration: ${b.prepSummary.estimatedDuration}`);
+    if (b.archLayers?.length)
+      lines.push(`Recommended Architecture Layers: ${b.archLayers.map(l => `${l.name}: ${(l.recommended || []).join(', ')}`).join('; ')}`);
+    if (b.archDecisions?.length)
+      lines.push(`Architecture Decisions: ${b.archDecisions.map(d => `${d.decisionArea || d.decision}: ${d.recommendation || d.benefit}`).join('; ')}`);
+    if (b.techStack?.length)
+      lines.push(`Approved Technology Stack: ${b.techStack.map(t => `${t.layer}: ${t.recommendation}`).join(' | ')}`);
+    if (b.archPattern?.length)
+      lines.push(`Architecture Pattern: ${b.archPattern.join(' → ')}`);
+    if (b.archConsultantGuidance)
+      lines.push(`Architecture Guidance: ${b.archConsultantGuidance}`);
   }
   return lines.join('\n');
 }
@@ -2784,6 +2803,16 @@ function updateTransformationContext(ctx, capabilityName, sections) {
         if (hit) { ctx.implementationPriority = q.label; break; }
       }
     }
+    // C5: Data Readiness outputs — carried into Technology Infrastructure
+    if (!ctx.dataReadiness) ctx.dataReadiness = { datasets: [], archPattern: [], techStack: [], archDecisions: [] };
+    if (b.datasets?.length && !ctx.dataReadiness.datasets.length)
+      ctx.dataReadiness.datasets = b.datasets.map(d => `${d.name}${d.typicalSource ? ` (${d.typicalSource})` : ''}`);
+    if (b.archPattern?.length && !ctx.dataReadiness.archPattern.length)
+      ctx.dataReadiness.archPattern = b.archPattern;
+    if (b.techStack?.length && !ctx.dataReadiness.techStack.length)
+      ctx.dataReadiness.techStack = b.techStack.map(t => ({ layer: t.layer, recommendation: t.recommendation }));
+    if (b.archDecisions?.length && !ctx.dataReadiness.archDecisions.length)
+      ctx.dataReadiness.archDecisions = b.archDecisions.map(d => ({ area: d.decisionArea || d.decision, recommendation: d.recommendation || d.benefit }));
   }
 }
 
@@ -2800,6 +2829,22 @@ function formatTransformationContext(ctx) {
     ctx.recommendedImplementation && `Recommended Implementation\n${ctx.recommendedImplementation}`,
     ctx.transformationImplication && `Transformation Implication\n${ctx.transformationImplication}`,
   ].filter(Boolean);
+
+  // Data Readiness outputs — injected prominently when moving into Technology Infrastructure
+  const dr = ctx.dataReadiness;
+  if (dr) {
+    const drEntries = [
+      dr.datasets?.length      && `Critical Datasets Identified\n${dr.datasets.map(d => `- ${d}`).join('\n')}`,
+      dr.archPattern?.length   && `Recommended Architecture Pattern\n${dr.archPattern.join(' → ')}`,
+      dr.techStack?.length     && `Approved Technology Stack\n${dr.techStack.map(t => `- ${t.layer}: ${t.recommendation}`).join('\n')}`,
+      dr.archDecisions?.length && `Architecture Decisions\n${dr.archDecisions.map(d => `- ${d.area}: ${d.recommendation}`).join('\n')}`,
+    ].filter(Boolean);
+
+    if (drEntries.length) {
+      entries.push('--- DATA READINESS OUTPUTS (use these as the foundation) ---');
+      entries.push(...drEntries);
+    }
+  }
 
   if (!entries.length) return '';
   return ['==============================', 'TRANSFORMATION CONTEXT', '==============================', '', ...entries].join('\n');
@@ -2818,6 +2863,7 @@ function buildTransformationCtxForRegen(blueprint, currentDomainId, resolvedCapa
     implementationPriority:  '',
     recommendedImplementation: '',
     transformationImplication: '',
+    dataReadiness:           { datasets: [], archPattern: [], techStack: [], archDecisions: [] },
   };
   if (!blueprint) return ctx;
 
@@ -2893,6 +2939,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
     implementationPriority:  '',
     recommendedImplementation: '',
     transformationImplication: '',
+    dataReadiness:           { datasets: [], archPattern: [], techStack: [], archDecisions: [] },
   };
 
   for (const domain of domains) {

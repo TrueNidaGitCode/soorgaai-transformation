@@ -756,6 +756,35 @@ export async function updateTransformationSection(req, res) {
 }
 
 /**
+ * POST /strategy-canvas/admin/remove-ai-engineering-enablement
+ * One-time cleanup: removes the AI Engineering Enablement capability from the
+ * calling user's TransformationBlueprint (Technology Infrastructure domain).
+ */
+export async function removeAIEngineeringEnablement(req, res) {
+  try {
+    const userId = req.user._id;
+    const result = await TransformationBlueprint.updateMany(
+      { userId, 'domains.domainId': 'technology-infrastructure' },
+      {
+        $pull: {
+          'domains.$[dom].capabilities': { capabilityId: 'ai-engineering-enablement' },
+        },
+      },
+      { arrayFilters: [{ 'dom.domainId': 'technology-infrastructure' }] }
+    );
+    return res.json({
+      ok: true,
+      matched: result.matchedCount,
+      modified: result.modifiedCount,
+      message: 'AI Engineering Enablement capability removed from Technology Infrastructure domain.',
+    });
+  } catch (err) {
+    console.error('removeAIEngineeringEnablement error:', err);
+    res.status(500).json({ error: 'Cleanup failed.' });
+  }
+}
+
+/**
  * POST /strategy-canvas/admin/remove-governance-ethics
  * One-time cleanup: removes the AI Governance & Ethics capability from the
  * calling user's TransformationBlueprint (AI Strategy domain).

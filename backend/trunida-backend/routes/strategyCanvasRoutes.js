@@ -18,6 +18,7 @@ import {
   updateTransformationSection,
   regenerateSpecificDomains,
   removeGovernanceEthicsCapability,
+  removeAIEngineeringEnablement,
 } from '../controllers/strategyCanvasController.js';
 import { ask } from '../controllers/advisorController.js';
 import { exportBlueprintPDF } from '../controllers/pdfExportController.js';
@@ -61,6 +62,7 @@ router.post(
 );
 
 // ── One-time cleanup ──────────────────────────────────────────────────────────
-router.post('/admin/remove-governance-ethics', protect, removeGovernanceEthicsCapability);
+router.post('/admin/remove-governance-ethics',           protect, removeGovernanceEthicsCapability);
+router.post('/admin/remove-ai-engineering-enablement',  protect, removeAIEngineeringEnablement);
 
 export default router;

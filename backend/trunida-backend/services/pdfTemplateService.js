@@ -2630,6 +2630,9 @@ function renderBlueprint(bp) {
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
   });
 
+  // Retired capabilities — same set as the UI
+  var RETIRED_CAPABILITY_IDS = { 'business-strategy-alignment': true };
+
   // Executive summary
   var execContainer = document.getElementById('exec-content');
   if (execContainer) buildExecContent(bp, execContainer, tocEntries);
@@ -2638,7 +2641,7 @@ function renderBlueprint(bp) {
   var capRoot = document.getElementById('capabilities-root');
   if (capRoot) {
     (bp.domains || []).forEach(function(domain) {
-      var completedCaps = (domain.capabilities || []).filter(function(c) { return c.status === 'completed'; });
+      var completedCaps = (domain.capabilities || []).filter(function(c) { return c.status === 'completed' && !RETIRED_CAPABILITY_IDS[c.capabilityId]; });
       if (!completedCaps.length) return;
 
       tocEntries.push({ title: domain.domainName, level: 0 });
@@ -3556,6 +3559,7 @@ function buildAppendixPageHTML(blueprint) {
 
   const APPENDIX_DOMAIN_ORDER = ['ai-use-cases','ai-strategy','data-readiness','technology-infrastructure','skills-workforce','governance-security'];
   const APPENDIX_DOMAIN_NAMES = { 'governance-security': 'Governance & Ethics' };
+  const APPENDIX_RETIRED_CAPS = new Set(['business-strategy-alignment']);
   const appendixDomains = (blueprint.domains || []).slice().sort((a, b) => {
     const ai = APPENDIX_DOMAIN_ORDER.indexOf(a.domainId);
     const bi = APPENDIX_DOMAIN_ORDER.indexOf(b.domainId);
@@ -3563,7 +3567,7 @@ function buildAppendixPageHTML(blueprint) {
   });
   const capRows = appendixDomains.flatMap(domain => {
     const displayName = APPENDIX_DOMAIN_NAMES[domain.domainId] || domain.domainName || '—';
-    return (domain.capabilities || []).map(cap => {
+    return (domain.capabilities || []).filter(cap => !APPENDIX_RETIRED_CAPS.has(cap.capabilityId)).map(cap => {
       const done = cap.status === 'completed';
       return `<tr>
         <td>${displayName}</td>

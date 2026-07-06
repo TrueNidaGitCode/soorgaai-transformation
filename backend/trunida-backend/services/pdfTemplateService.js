@@ -2300,6 +2300,137 @@ function buildARCPLegacyPDFLayout(b) {
 // ── Skills & Workforce: AI Learning & Adoption ────────────────────────────────
 
 function buildAILearningAdoptionLayout(section) {
+  var b = section.brief || {};
+  var isNewFormat = !!(b.alaConsultantGuidance || (b.roleLearningJourney && b.roleLearningJourney.length));
+  return isNewFormat ? buildALANewLayoutPdf(section) : buildALALegacyLayoutPdf(section);
+}
+
+function buildALANewLayoutPdf(section) {
+  var b                 = section.brief || {};
+  var roleLearning      = b.roleLearningJourney || [];
+  var adoptionRoadmap   = b.adoptionRoadmap     || [];
+  var enablementActions = b.enablementActions   || [];
+  var enablementSummary = b.enablementSummary   || {};
+  var learningResources = b.learningResources   || [];
+
+  var IMPACT_CLS = { High: 'alan-impact--high', Medium: 'alan-impact--medium', Low: 'alan-impact--low' };
+  var PRI_CLS    = { High: 'alan-pri--high', Medium: 'alan-pri--medium', Low: 'alan-pri--low' };
+
+  var wrap = document.createElement('div'); wrap.className = 'alan-view';
+
+  var badge = document.createElement('div'); badge.className = 'alan-badge'; badge.textContent = 'AI ENABLEMENT PLAN'; wrap.appendChild(badge);
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  var body = document.createElement('div'); body.className = 'alan-body';
+
+  // LEFT: Role-Based Learning Journey
+  var leftCol = document.createElement('div'); leftCol.className = 'alan-roles-col';
+  leftCol.appendChild(ndLbl('Role-Based Learning Journey'));
+  roleLearning.forEach(function(r) {
+    var card = document.createElement('div'); card.className = 'alan-role-card';
+    var roleName = document.createElement('p'); roleName.className = 'alan-role-card__name'; roleName.textContent = r.role; card.appendChild(roleName);
+    if (r.learningPath && r.learningPath.length) {
+      var pathLbl = document.createElement('p'); pathLbl.className = 'alan-role-card__path-label'; pathLbl.textContent = 'Learning Path'; card.appendChild(pathLbl);
+      var pills = document.createElement('div'); pills.className = 'alan-role-card__pills';
+      r.learningPath.forEach(function(topic) { var pill = document.createElement('span'); pill.className = 'alan-role-card__pill'; pill.textContent = topic; pills.appendChild(pill); });
+      card.appendChild(pills);
+    }
+    if (r.businessOutcome) {
+      var outLbl = document.createElement('p'); outLbl.className = 'alan-role-card__outcome-label'; outLbl.textContent = 'Business Outcome'; card.appendChild(outLbl);
+      var outText = document.createElement('p'); outText.className = 'alan-role-card__outcome'; outText.textContent = r.businessOutcome; card.appendChild(outText);
+    }
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // CENTER: AI Adoption Roadmap
+  var centerCol = document.createElement('div'); centerCol.className = 'alan-roadmap-col';
+  centerCol.appendChild(ndLbl('AI Adoption Roadmap'));
+  adoptionRoadmap.forEach(function(st, idx) {
+    var stageEl = document.createElement('div'); stageEl.className = 'alan-roadmap-stage';
+    var stageName = document.createElement('p'); stageName.className = 'alan-roadmap-stage__name'; stageName.textContent = st.stage; stageEl.appendChild(stageName);
+    if (st.goal) {
+      var goalRow = document.createElement('div'); goalRow.className = 'alan-roadmap-stage__row';
+      var goalLbl = document.createElement('span'); goalLbl.className = 'alan-roadmap-stage__field-label'; goalLbl.textContent = 'Goal';
+      var goalVal = document.createElement('span'); goalVal.className = 'alan-roadmap-stage__value'; goalVal.textContent = st.goal;
+      goalRow.appendChild(goalLbl); goalRow.appendChild(goalVal); stageEl.appendChild(goalRow);
+    }
+    if (st.expectedOutput) {
+      var outRow = document.createElement('div'); outRow.className = 'alan-roadmap-stage__row';
+      var outLbl = document.createElement('span'); outLbl.className = 'alan-roadmap-stage__field-label'; outLbl.textContent = 'Output';
+      var outVal = document.createElement('span'); outVal.className = 'alan-roadmap-stage__value'; outVal.textContent = st.expectedOutput;
+      outRow.appendChild(outLbl); outRow.appendChild(outVal); stageEl.appendChild(outRow);
+    }
+    centerCol.appendChild(stageEl);
+    if (idx < adoptionRoadmap.length - 1) { var arr = document.createElement('div'); arr.className = 'alan-roadmap-arrow'; arr.textContent = '↓'; centerCol.appendChild(arr); }
+  });
+  body.appendChild(centerCol);
+
+  // RIGHT: AI Enablement Actions
+  var rightCol = document.createElement('div'); rightCol.className = 'alan-actions-col';
+  rightCol.appendChild(ndLbl('AI Enablement Actions'));
+  enablementActions.forEach(function(a) {
+    var card = document.createElement('div'); card.className = 'alan-action-card';
+    var actionTitle = document.createElement('p'); actionTitle.className = 'alan-action-card__action'; actionTitle.textContent = a.action; card.appendChild(actionTitle);
+    [{ label: 'Owner', value: a.owner }, { label: 'Business Impact', value: a.businessImpact, cls: IMPACT_CLS[a.businessImpact] }, { label: 'Timeline', value: a.timeline }].forEach(function(item) {
+      if (!item.value) return;
+      var row = document.createElement('div'); row.className = 'alan-action-card__row';
+      var lbl = document.createElement('span'); lbl.className = 'alan-action-card__field-label'; lbl.textContent = item.label + ':';
+      var val = document.createElement('span'); val.className = item.cls ? 'alan-action-card__value ' + item.cls : 'alan-action-card__value'; val.textContent = item.value;
+      row.appendChild(lbl); row.appendChild(val); card.appendChild(row);
+    });
+    rightCol.appendChild(card);
+  });
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Bottom strip: Capability Development Summary
+  var summaryStats = [{ label: 'Project Roles', value: enablementSummary.projectRoles }, { label: 'Learning Paths', value: enablementSummary.learningPaths }, { label: 'AI Tools', value: enablementSummary.aiTools }, { label: 'Adoption Activities', value: enablementSummary.adoptionActivities }].filter(function(e) { return e.value !== undefined && e.value !== null; });
+  if (summaryStats.length) {
+    wrap.appendChild(ndLbl('Capability Development Summary'));
+    var strip = document.createElement('div'); strip.className = 'alan-summary-strip';
+    summaryStats.forEach(function(e) {
+      var cell = document.createElement('div'); cell.className = 'alan-summary-cell';
+      var val = document.createElement('p'); val.className = 'alan-summary-cell__value'; val.textContent = e.value;
+      var lbl = document.createElement('p'); lbl.className = 'alan-summary-cell__label'; lbl.textContent = e.label;
+      cell.appendChild(val); cell.appendChild(lbl); strip.appendChild(cell);
+    });
+    wrap.appendChild(strip);
+  }
+
+  // Learning Resources
+  if (learningResources.length) {
+    wrap.appendChild(ndLbl('Recommended Learning Resources'));
+    var resList = document.createElement('div'); resList.className = 'alan-resources';
+    learningResources.forEach(function(r) {
+      var item = document.createElement('div'); item.className = 'alan-resource-item';
+      var name = document.createElement('p'); name.className = 'alan-resource-item__name'; name.textContent = r.name; item.appendChild(name);
+      var meta = document.createElement('div'); meta.className = 'alan-resource-item__meta';
+      if (r.audience) { var aud = document.createElement('span'); aud.className = 'alan-resource-item__audience'; aud.textContent = r.audience; meta.appendChild(aud); }
+      if (r.priority) { var pri = document.createElement('span'); pri.className = 'alan-resource-item__priority ' + (PRI_CLS[r.priority] || 'alan-pri--medium'); pri.textContent = r.priority; meta.appendChild(pri); }
+      item.appendChild(meta); resList.appendChild(item);
+    });
+    wrap.appendChild(resList);
+  }
+
+  // Consultant Guidance
+  if (b.alaConsultantGuidance) {
+    var cg = document.createElement('div'); cg.className = 'alan-consultant-guidance';
+    cg.innerHTML = '<span class="alan-cg__icon">◆</span><p class="alan-cg__text">' + b.alaConsultantGuidance + '</p>';
+    wrap.appendChild(cg);
+  }
+
+  // AI Recommendation
+  if (b.alaAIRecommendation) {
+    var ar = document.createElement('div'); ar.className = 'alan-ai-recommendation';
+    ar.innerHTML = '<span class="alan-ar__icon">⬡</span><p class="alan-ar__text">' + b.alaAIRecommendation + '</p>';
+    wrap.appendChild(ar);
+  }
+
+  return wrap;
+}
+
+function buildALALegacyLayoutPdf(section) {
   var b               = section.brief || {};
   var learningPillars = b.learningPillars          || [];
   var adoptionLifecycle = b.adoptionLifecycle       || [];
@@ -2308,7 +2439,6 @@ function buildAILearningAdoptionLayout(section) {
   var adoptionSummary = b.adoptionReadinessSummary  || [];
 
   var PILLAR_CLS = { Ready: 'ala-pillar--ready', 'In Progress': 'ala-pillar--progress', 'Not Started': 'ala-pillar--notstarted' };
-  var PCLS       = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
   var SUMCLS     = { Ready: 'ala-sum--ready', 'In Progress': 'ala-sum--progress', Emerging: 'ala-sum--emerging', Developing: 'ala-sum--developing' };
 
   var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
@@ -2317,7 +2447,6 @@ function buildAILearningAdoptionLayout(section) {
 
   var body = ndBody(3);
 
-  // LEFT: learning pillar cards
   var leftCol = ndCol();
   leftCol.appendChild(ndLbl('Learning Pillars'));
   learningPillars.forEach(function(pillar) {
@@ -2329,7 +2458,6 @@ function buildAILearningAdoptionLayout(section) {
   });
   body.appendChild(leftCol);
 
-  // CENTER: adoption lifecycle stages with readiness bars
   var centerCol = ndCol();
   centerCol.appendChild(ndLbl('Adoption Lifecycle'));
   if (adoptionLifecycle.length) {
@@ -2357,7 +2485,6 @@ function buildAILearningAdoptionLayout(section) {
   }
   body.appendChild(centerCol);
 
-  // RIGHT: recommendations + stats
   var rightCol = ndCol();
   if (adoptionRecs.length) {
     rightCol.appendChild(ndLbl('AI Recommendations'));
@@ -2368,7 +2495,6 @@ function buildAILearningAdoptionLayout(section) {
   body.appendChild(rightCol);
   wrap.appendChild(body);
 
-  // Adoption readiness summary grid
   if (adoptionSummary.some(function(c) { return c.status; })) {
     wrap.appendChild(ndLbl('Adoption Readiness Summary'));
     var grid = document.createElement('div'); grid.className = 'ala-summary-grid';
@@ -2628,6 +2754,8 @@ const BROWSER_FUNCTIONS = [
   buildAIComputeDeploymentLayout,
   buildAISkillsAssessmentLayout,
   buildAILearningAdoptionLayout,
+  buildALANewLayoutPdf,
+  buildALALegacyLayoutPdf,
   buildSectionContent,
   buildExecContent,
   renderBlueprint,

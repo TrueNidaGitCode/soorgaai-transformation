@@ -5552,6 +5552,266 @@ function buildARCPLegacyLayout(b) {
 
 // ── Layout: AI Learning & Adoption ────────────────────────────────────────────
 function buildAILearningAdoptionLayout(section) {
+  const b = section.brief || {};
+  const isNewFormat = !!(b.alaConsultantGuidance || (b.roleLearningJourney && b.roleLearningJourney.length));
+  return isNewFormat ? buildALANewLayout(section) : buildALALegacyLayout(section);
+}
+
+function buildALANewLayout(section) {
+  const b                  = section.brief || {};
+  const roleLearning       = b.roleLearningJourney  || [];
+  const adoptionRoadmap    = b.adoptionRoadmap       || [];
+  const enablementActions  = b.enablementActions     || [];
+  const enablementSummary  = b.enablementSummary     || {};
+  const learningResources  = b.learningResources     || [];
+
+  const IMPACT_CLASS = { High: 'alan-impact--high', Medium: 'alan-impact--medium', Low: 'alan-impact--low' };
+  const PRI_CLASS    = { High: 'alan-pri--high',    Medium: 'alan-pri--medium',    Low: 'alan-pri--low' };
+
+  const wrap = document.createElement('div');
+  wrap.className = 'alan-view';
+
+  // Top badge
+  const badge = document.createElement('div');
+  badge.className = 'alan-badge';
+  badge.textContent = 'AI ENABLEMENT PLAN';
+  wrap.appendChild(badge);
+
+  // Strategic Position
+  if (b.strategicPosition) {
+    const posLabel = document.createElement('p');
+    posLabel.className = 'brief-label';
+    posLabel.textContent = 'Strategic Position';
+    wrap.appendChild(posLabel);
+    const pos = document.createElement('p');
+    pos.className = 'alan-position';
+    pos.textContent = b.strategicPosition;
+    wrap.appendChild(pos);
+  }
+
+  const body = document.createElement('div');
+  body.className = 'alan-body';
+
+  // ── LEFT (45%): Role-Based Learning Journey ───────────────────────────────
+  const leftCol = document.createElement('div');
+  leftCol.className = 'alan-roles-col';
+  const leftLbl = document.createElement('p');
+  leftLbl.className = 'brief-label';
+  leftLbl.textContent = 'Role-Based Learning Journey';
+  leftCol.appendChild(leftLbl);
+  roleLearning.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'alan-role-card';
+
+    const roleName = document.createElement('p');
+    roleName.className = 'alan-role-card__name';
+    roleName.textContent = r.role;
+    card.appendChild(roleName);
+
+    if (r.learningPath && r.learningPath.length) {
+      const pathLbl = document.createElement('p');
+      pathLbl.className = 'alan-role-card__path-label';
+      pathLbl.textContent = 'Learning Path';
+      card.appendChild(pathLbl);
+      const pills = document.createElement('div');
+      pills.className = 'alan-role-card__pills';
+      r.learningPath.forEach(topic => {
+        const pill = document.createElement('span');
+        pill.className = 'alan-role-card__pill';
+        pill.textContent = topic;
+        pills.appendChild(pill);
+      });
+      card.appendChild(pills);
+    }
+
+    if (r.businessOutcome) {
+      const outLbl = document.createElement('p');
+      outLbl.className = 'alan-role-card__outcome-label';
+      outLbl.textContent = 'Business Outcome';
+      card.appendChild(outLbl);
+      const outText = document.createElement('p');
+      outText.className = 'alan-role-card__outcome';
+      outText.textContent = r.businessOutcome;
+      card.appendChild(outText);
+    }
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // ── CENTER (20%): AI Adoption Roadmap ─────────────────────────────────────
+  const centerCol = document.createElement('div');
+  centerCol.className = 'alan-roadmap-col';
+  const centerLbl = document.createElement('p');
+  centerLbl.className = 'brief-label';
+  centerLbl.textContent = 'AI Adoption Roadmap';
+  centerCol.appendChild(centerLbl);
+  adoptionRoadmap.forEach((st, idx) => {
+    const stageEl = document.createElement('div');
+    stageEl.className = 'alan-roadmap-stage';
+    const stageName = document.createElement('p');
+    stageName.className = 'alan-roadmap-stage__name';
+    stageName.textContent = st.stage;
+    stageEl.appendChild(stageName);
+    if (st.goal) {
+      const goalRow = document.createElement('div');
+      goalRow.className = 'alan-roadmap-stage__row';
+      const goalLbl = document.createElement('span');
+      goalLbl.className = 'alan-roadmap-stage__field-label';
+      goalLbl.textContent = 'Goal';
+      const goalVal = document.createElement('span');
+      goalVal.className = 'alan-roadmap-stage__value';
+      goalVal.textContent = st.goal;
+      goalRow.appendChild(goalLbl);
+      goalRow.appendChild(goalVal);
+      stageEl.appendChild(goalRow);
+    }
+    if (st.expectedOutput) {
+      const outRow = document.createElement('div');
+      outRow.className = 'alan-roadmap-stage__row';
+      const outLbl = document.createElement('span');
+      outLbl.className = 'alan-roadmap-stage__field-label';
+      outLbl.textContent = 'Output';
+      const outVal = document.createElement('span');
+      outVal.className = 'alan-roadmap-stage__value';
+      outVal.textContent = st.expectedOutput;
+      outRow.appendChild(outLbl);
+      outRow.appendChild(outVal);
+      stageEl.appendChild(outRow);
+    }
+    centerCol.appendChild(stageEl);
+    if (idx < adoptionRoadmap.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.className = 'alan-roadmap-arrow';
+      arrow.textContent = '↓';
+      centerCol.appendChild(arrow);
+    }
+  });
+  body.appendChild(centerCol);
+
+  // ── RIGHT (35%): AI Enablement Actions ───────────────────────────────────
+  const rightCol = document.createElement('div');
+  rightCol.className = 'alan-actions-col';
+  const rightLbl = document.createElement('p');
+  rightLbl.className = 'brief-label';
+  rightLbl.textContent = 'AI Enablement Actions';
+  rightCol.appendChild(rightLbl);
+  enablementActions.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'alan-action-card';
+    const actionTitle = document.createElement('p');
+    actionTitle.className = 'alan-action-card__action';
+    actionTitle.textContent = a.action;
+    card.appendChild(actionTitle);
+
+    const rows = [
+      { label: 'Owner',           value: a.owner },
+      { label: 'Business Impact', value: a.businessImpact, cls: IMPACT_CLASS[a.businessImpact] },
+      { label: 'Timeline',        value: a.timeline },
+    ];
+    rows.forEach(({ label, value, cls }) => {
+      if (!value) return;
+      const row = document.createElement('div');
+      row.className = 'alan-action-card__row';
+      const lbl = document.createElement('span');
+      lbl.className = 'alan-action-card__field-label';
+      lbl.textContent = `${label}:`;
+      row.appendChild(lbl);
+      const val = document.createElement('span');
+      val.className = cls ? `alan-action-card__value ${cls}` : 'alan-action-card__value';
+      val.textContent = value;
+      row.appendChild(val);
+      card.appendChild(row);
+    });
+    rightCol.appendChild(card);
+  });
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // ── Bottom Strip: Capability Development Summary ──────────────────────────
+  const summaryStats = [
+    { label: 'Project Roles',       value: enablementSummary.projectRoles },
+    { label: 'Learning Paths',      value: enablementSummary.learningPaths },
+    { label: 'AI Tools',            value: enablementSummary.aiTools },
+    { label: 'Adoption Activities', value: enablementSummary.adoptionActivities },
+  ].filter(e => e.value !== undefined && e.value !== null);
+  if (summaryStats.length) {
+    const stripLbl = document.createElement('p');
+    stripLbl.className = 'brief-label';
+    stripLbl.textContent = 'Capability Development Summary';
+    wrap.appendChild(stripLbl);
+    const strip = document.createElement('div');
+    strip.className = 'alan-summary-strip';
+    summaryStats.forEach(e => {
+      const cell = document.createElement('div');
+      cell.className = 'alan-summary-cell';
+      const val = document.createElement('p');
+      val.className = 'alan-summary-cell__value';
+      val.textContent = e.value;
+      const lbl = document.createElement('p');
+      lbl.className = 'alan-summary-cell__label';
+      lbl.textContent = e.label;
+      cell.appendChild(val);
+      cell.appendChild(lbl);
+      strip.appendChild(cell);
+    });
+    wrap.appendChild(strip);
+  }
+
+  // ── Recommended Learning Resources ───────────────────────────────────────
+  if (learningResources.length) {
+    const resLbl = document.createElement('p');
+    resLbl.className = 'brief-label';
+    resLbl.textContent = 'Recommended Learning Resources';
+    wrap.appendChild(resLbl);
+    const resList = document.createElement('div');
+    resList.className = 'alan-resources';
+    learningResources.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'alan-resource-item';
+      const name = document.createElement('p');
+      name.className = 'alan-resource-item__name';
+      name.textContent = r.name;
+      item.appendChild(name);
+      const metaRow = document.createElement('div');
+      metaRow.className = 'alan-resource-item__meta';
+      if (r.audience) {
+        const audSpan = document.createElement('span');
+        audSpan.className = 'alan-resource-item__audience';
+        audSpan.textContent = r.audience;
+        metaRow.appendChild(audSpan);
+      }
+      if (r.priority) {
+        const priSpan = document.createElement('span');
+        priSpan.className = `alan-resource-item__priority ${PRI_CLASS[r.priority] || 'alan-pri--medium'}`;
+        priSpan.textContent = r.priority;
+        metaRow.appendChild(priSpan);
+      }
+      item.appendChild(metaRow);
+      resList.appendChild(item);
+    });
+    wrap.appendChild(resList);
+  }
+
+  // ── Consultant Guidance ───────────────────────────────────────────────────
+  if (b.alaConsultantGuidance) {
+    const cg = document.createElement('div');
+    cg.className = 'alan-consultant-guidance';
+    cg.innerHTML = `<span class="alan-cg__icon">◆</span><p class="alan-cg__text">${b.alaConsultantGuidance}</p>`;
+    wrap.appendChild(cg);
+  }
+
+  // ── AI Recommendation ─────────────────────────────────────────────────────
+  if (b.alaAIRecommendation) {
+    const ar = document.createElement('div');
+    ar.className = 'alan-ai-recommendation';
+    ar.innerHTML = `<span class="alan-ar__icon">⬡</span><p class="alan-ar__text">${b.alaAIRecommendation}</p>`;
+    wrap.appendChild(ar);
+  }
+
+  return wrap;
+}
+
+function buildALALegacyLayout(section) {
   const b                    = section.brief || {};
   const learningPillars      = b.learningPillars          || [];
   const adoptionLifecycle    = b.adoptionLifecycle         || [];
@@ -5587,7 +5847,6 @@ function buildAILearningAdoptionLayout(section) {
   const body = document.createElement('div');
   body.className = 'ala-body';
 
-  // LEFT: Learning Pillars
   const leftCol = document.createElement('div');
   leftCol.className = 'ala-pillars-col';
   const leftLbl = document.createElement('p');
@@ -5622,7 +5881,6 @@ function buildAILearningAdoptionLayout(section) {
   }
   body.appendChild(leftCol);
 
-  // CENTER: Adoption Lifecycle
   const centerCol = document.createElement('div');
   centerCol.className = 'ala-lifecycle-col';
   const lifecycleLbl = document.createElement('p');
@@ -5635,7 +5893,6 @@ function buildAILearningAdoptionLayout(section) {
   centerCol.appendChild(lifecycleWrap);
   body.appendChild(centerCol);
 
-  // RIGHT: Recommendations + Stats
   const rightCol = document.createElement('div');
   rightCol.className = 'ala-recs-col';
   const recsLbl = document.createElement('p');
@@ -5691,7 +5948,6 @@ function buildAILearningAdoptionLayout(section) {
   body.appendChild(rightCol);
   wrap.appendChild(body);
 
-  // Adoption Readiness Summary grid
   if (adoptionSummary.some(c => c.status)) {
     const sumLbl = document.createElement('p');
     sumLbl.className = 'brief-label';

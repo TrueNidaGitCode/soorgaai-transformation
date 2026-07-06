@@ -991,27 +991,60 @@ roles are already assigned. Use forward-looking language: "requires", "should", 
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Learning & Adoption" sections only:
 
-5. adoptionReadiness (number 0–100)
-   The overall adoption readiness score as a percentage for this AI use case.
+Build on the project roles identified in AI Roles & Capability Planning.
+Generate a practical, immediately actionable AI enablement plan — not a generic training list.
 
-6. learningPillars (exactly 4 items, fixed order: AI Literacy, Engineering Learning, AI Tool Adoption, Human-AI Collaboration)
-   Each item: { "name": "AI Literacy|Engineering Learning|AI Tool Adoption|Human-AI Collaboration", "description": "<focus phrase, ≤5 words>", "status": "Ready|In Progress|Not Started" }
+5. roleLearningJourney (4 to 7 items)
+   Role-specific learning paths. ALWAYS start with Project Manager.
+   Order: PM → BA → AI Solution Architect → Data Engineer → AI Engineer → Test/Platform roles.
+   Each item: {
+     "role": "<role name>",
+     "learningPath": ["<topic 1>", "<topic 2>", "<topic 3>"],
+     "businessOutcome": "<one sentence: what this enables the role to do in delivery>"
+   }
+   learningPath: 3 specific topics relevant to that role's AI responsibilities. Not generic.
 
-7. adoptionLifecycle (exactly 5 items, fixed order: Awareness, Learning, Experimentation, Integration, Mastery)
-   Each item: { "stage": "Awareness|Learning|Experimentation|Integration|Mastery", "currentStatus": "<2–4 word status>", "readiness": <0–100>, "keyActivities": ["<≤5 word activity>", "<≤5 word activity>", "<≤5 word activity>"] }
-   Readiness values must increase stage by stage — Mastery must be 100.
+6. adoptionRoadmap (exactly 5 items, fixed order)
+   Stages: Foundation, Role Training, Pilot Project, Daily AI Usage, Continuous Improvement
+   Each item: {
+     "stage": "Foundation|Role Training|Pilot Project|Daily AI Usage|Continuous Improvement",
+     "goal": "<one action phrase, ≤8 words>",
+     "expectedOutput": "<one concrete deliverable, ≤6 words>"
+   }
 
-8. adoptionRecommendations (exactly 3 items)
-   Each item: { "title": "<action, 2–5 words>", "priority": "High|Medium|Low", "expectedOutcome": "<outcome, ≤5 words>" }
+7. enablementActions (exactly 3 items)
+   Concrete implementation actions. Give the PM an implementation plan.
+   Each item: {
+     "action": "<verb-first phrase, 3–5 words>",
+     "owner": "<specific role name>",
+     "businessImpact": "High|Medium|Low",
+     "timeline": "Sprint 1|Sprint 2|Sprint 3"
+   }
 
-9. adoptionStats
-   Object: { "teamsTrained": <count>, "toolsAdopted": <count>, "adoptionRate": "<percentage e.g. 68%>" }
+8. enablementSummary
+   Object: {
+     "projectRoles": <count of roleLearningJourney items>,
+     "learningPaths": <total count of all learningPath topics across all roles summed>,
+     "aiTools": <count of distinct AI tools or tool categories referenced>,
+     "adoptionActivities": <count of adoptionRoadmap stages plus enablementActions combined>
+   }
 
-10. adoptionReadinessSummary (exactly 4 items, fixed order: AI Literacy, Tool Adoption, Collaboration, Knowledge Sharing)
-    Each item: { "category": "AI Literacy|Tool Adoption|Collaboration|Knowledge Sharing", "status": "Ready|In Progress|Emerging|Developing" }
+9. learningResources (3 to 5 items)
+   Specific learning topics or resources for this initiative. Order: High priority first.
+   Each item: {
+     "name": "<topic or resource name, 2–4 words>",
+     "audience": "<specific role name or 'Everyone'>",
+     "priority": "High|Medium|Low"
+   }
+
+10. alaConsultantGuidance (string, 2–3 sentences)
+    Lead with practical enablement over classroom training. Focus on embedding AI into real project activities. Plain text.
+
+11. alaAIRecommendation (string, 2–3 sentences)
+    PM-centric planning tone. Name specific roles. Explain delivery impact. Plain text.
 
    Add all to the brief object:
-   "adoptionReadiness": <number>, "learningPillars": [...], "adoptionLifecycle": [...], "adoptionRecommendations": [...], "adoptionStats": {...}, "adoptionReadinessSummary": [...]`,
+   "roleLearningJourney": [...], "adoptionRoadmap": [...], "enablementActions": [...], "enablementSummary": {...}, "learningResources": [...], "alaConsultantGuidance": "...", "alaAIRecommendation": "..."`,
   },
 
 };
@@ -1923,6 +1956,61 @@ function parseBriefOutput(rawSections, validTitles) {
         return { category: catName, status: found ? String(found.status || '').trim() : '' };
       });
 
+      // ── Skills & Workforce: AI Learning & Adoption new-format parsers ─────────
+
+      const rawRoleLearningJourney = Array.isArray(b.roleLearningJourney) ? b.roleLearningJourney : [];
+      const roleLearningJourney = rawRoleLearningJourney
+        .filter(r => r && typeof r === 'object' && String(r.role || '').trim())
+        .map(r => ({
+          role:            String(r.role            || '').trim(),
+          learningPath:    Array.isArray(r.learningPath) ? r.learningPath.map(String).filter(Boolean).slice(0, 4) : [],
+          businessOutcome: String(r.businessOutcome || '').trim(),
+        }))
+        .slice(0, 7);
+
+      const ALAN_ROADMAP_STAGES = ['Foundation', 'Role Training', 'Pilot Project', 'Daily AI Usage', 'Continuous Improvement'];
+      const rawAdoptionRoadmap = Array.isArray(b.adoptionRoadmap) ? b.adoptionRoadmap : [];
+      const adoptionRoadmap = ALAN_ROADMAP_STAGES.map(stageName => {
+        const found = rawAdoptionRoadmap.find(st => st && String(st.stage || '').trim() === stageName);
+        return {
+          stage:          stageName,
+          goal:           found ? String(found.goal           || '').trim() : '',
+          expectedOutput: found ? String(found.expectedOutput || '').trim() : '',
+        };
+      });
+
+      const rawEnablementActions = Array.isArray(b.enablementActions) ? b.enablementActions : [];
+      const enablementActions = rawEnablementActions
+        .filter(a => a && typeof a === 'object' && String(a.action || '').trim())
+        .map(a => ({
+          action:         String(a.action         || '').trim(),
+          owner:          String(a.owner          || '').trim(),
+          businessImpact: String(a.businessImpact || 'Medium').trim(),
+          timeline:       String(a.timeline       || '').trim(),
+        }))
+        .slice(0, 3);
+
+      const rawEnablementSummary = b.enablementSummary && typeof b.enablementSummary === 'object' ? b.enablementSummary : {};
+      const enablementSummary = {
+        projectRoles:        parseInt(rawEnablementSummary.projectRoles,        10) || 0,
+        learningPaths:       parseInt(rawEnablementSummary.learningPaths,       10) || 0,
+        aiTools:             parseInt(rawEnablementSummary.aiTools,             10) || 0,
+        adoptionActivities:  parseInt(rawEnablementSummary.adoptionActivities,  10) || 0,
+      };
+
+      const rawLearningResources = Array.isArray(b.learningResources) ? b.learningResources : [];
+      const learningResources = rawLearningResources
+        .filter(r => r && typeof r === 'object' && String(r.name || '').trim())
+        .map(r => ({
+          name:     String(r.name     || '').trim(),
+          audience: String(r.audience || '').trim(),
+          priority: String(r.priority || 'Medium').trim(),
+        }))
+        .slice(0, 5);
+
+      const alaConsultantGuidance = String(b.alaConsultantGuidance || '').trim();
+      const alaAIRecommendation   = String(b.alaAIRecommendation   || '').trim();
+
       return {
         title: String(s.title || '').trim(),
         brief: {
@@ -2069,7 +2157,15 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(skillsRecommendations.length                 ? { skillsRecommendations }        : {}),
           ...((skillsStats.available || skillsStats.gaps)  ? { skillsStats }                 : {}),
           ...(skillsCategorySummary.some(c => c.status)    ? { skillsCategorySummary }       : {}),
-          // Skills & Workforce: AI Learning & Adoption extras
+          // Skills & Workforce: AI Learning & Adoption new-format extras
+          ...(roleLearningJourney.length                              ? { roleLearningJourney }   : {}),
+          ...(adoptionRoadmap.some(st => st.goal)                    ? { adoptionRoadmap }        : {}),
+          ...(enablementActions.length                               ? { enablementActions }      : {}),
+          ...(enablementSummary.projectRoles                         ? { enablementSummary }      : {}),
+          ...(learningResources.length                               ? { learningResources }      : {}),
+          ...(alaConsultantGuidance                                  ? { alaConsultantGuidance }  : {}),
+          ...(alaAIRecommendation                                    ? { alaAIRecommendation }    : {}),
+          // Skills & Workforce: AI Learning & Adoption legacy extras (kept for existing blueprints)
           ...(adoptionReadiness                            ? { adoptionReadiness }           : {}),
           ...(learningPillars.some(p => p.description)     ? { learningPillars }            : {}),
           ...(adoptionLifecycle.some(st => st.readiness)   ? { adoptionLifecycle }          : {}),
@@ -2657,6 +2753,7 @@ OUTPUT — valid JSON only, no markdown fences:
       // Skills & Workforce extras
       'projectRoles', 'responsibilityJourney', 'capabilityPriorities', 'workforceStats', 'arcpConsultantGuidance', 'arcpAIRecommendation',
       'skillsReadiness', 'requiredSkills', 'skillsMatrix', 'skillsRecommendations', 'skillsStats', 'skillsCategorySummary',
+      'roleLearningJourney', 'adoptionRoadmap', 'enablementActions', 'enablementSummary', 'learningResources', 'alaConsultantGuidance', 'alaAIRecommendation',
       'adoptionReadiness', 'learningPillars', 'adoptionLifecycle', 'adoptionRecommendations',
       'adoptionStats', 'adoptionReadinessSummary',
     ];

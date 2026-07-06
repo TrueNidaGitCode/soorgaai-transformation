@@ -2,99 +2,147 @@
 
 ## Purpose
 
-Provide automotive-specific guidance for preparing engineering teams to adopt AI technologies, integrate AI into engineering workflows, and build practical AI capabilities across the vehicle development lifecycle.
+Provide automotive-specific guidance for developing AI capabilities across engineering teams and accelerating AI adoption throughout the automotive software development lifecycle.
 
 > For the universal framework, refer to: `Core/AI Learning & Adoption.md`
 
 ---
 
-## AI Learning & Adoption in Automotive
+# AI Learning & Adoption in Automotive
 
-### AI Literacy
+## AI Foundation Learning
 
-Develop foundational AI knowledge for automotive engineering teams.
+Establish the fundamental AI knowledge required for engineering teams before introducing AI into automotive development workflows.
 
 Typical examples:
 
 - Generative AI fundamentals
-- Responsible AI
+- Responsible AI for engineering
 - Prompt engineering
-- AI-assisted engineering concepts
+- AI limitations and verification
+- AI ethics and security awareness
 
 ---
 
-### Engineering Learning
+## Automotive Role-Based Capability Development
 
-Identify project-specific learning based on automotive engineering activities.
+Define the AI capabilities required by engineering roles involved in automotive software development.
 
 Typical examples:
 
-- AI-assisted requirements analysis
-- Defect analysis
-- Diagnostics
-- Software development
-- Verification and validation
+- AI-assisted requirements engineering
+- AI-supported software development
+- AI-assisted verification and validation
+- AI-supported diagnostics
+- AI-enabled project management
+- AI-assisted systems engineering
 
 ---
 
-### AI Tool Adoption
+## Automotive AI Tool Enablement
 
-Recommend AI tools that improve engineering productivity.
+Recommend AI tools that enhance engineering productivity across the automotive development lifecycle.
 
 Typical examples:
 
+- Engineering copilots
 - AI coding assistants
-- Document copilots
-- Requirements assistants
-- Test generation tools
-- Engineering knowledge assistants
-
----
-
-### Human–AI Collaboration
-
-Define how engineers collaborate with AI throughout development.
-
-Typical examples:
-
-- AI-generated requirements
-- AI-supported design reviews
-- AI-assisted debugging
+- AI document assistants
 - AI-powered test generation
-- Engineering validation
+- AI diagnostic assistants
+- AI knowledge assistants
 
 ---
 
-### Knowledge Sharing
+## Human-AI Collaboration
 
-Promote reuse of AI knowledge across engineering programs.
+Define how engineers and AI should collaborate while maintaining engineering quality, safety, and compliance.
 
 Typical examples:
 
-- Prompt libraries
-- Engineering playbooks
-- Reusable AI workflows
+- AI-generated engineering recommendations
+- Human review and approval
+- AI-assisted design reviews
+- AI-supported defect analysis
+- Engineering validation workflows
+- Continuous feedback to improve AI outputs
+
+---
+
+## Engineering Knowledge Sharing
+
+Promote continuous sharing and reuse of AI knowledge across engineering organizations.
+
+Typical examples:
+
+- Engineering prompt libraries
+- AI playbooks
 - Lessons learned
-- Engineering best practices
+- Engineering communities of practice
+- Reusable AI workflows
+- Knowledge repositories
 
-### Key Principles
+---
 
-- Learn AI through real engineering projects.
-- Embed AI into existing engineering workflows.
-- Keep engineers responsible for technical decisions.
-- Promote practical experimentation.
-- Share successful AI practices across teams.
+## Automotive AI Adoption Roadmap
 
-### Leadership Question
+Define a phased adoption approach for introducing AI into automotive engineering activities.
 
-**Is our engineering team prepared to effectively adopt AI across the automotive development lifecycle?**
+Typical examples:
+
+- Pilot within a single engineering team
+- Expand across verification and validation
+- Integrate AI into software development
+- Scale across vehicle programs
+- Standardize engineering AI practices
+- Continuously improve AI adoption
+
+---
+
+## Key Principles
+
+- Build AI capability through practical engineering activities.
+- Align learning with engineering roles and project responsibilities.
+- Integrate AI into existing automotive development workflows.
+- Keep engineers accountable for engineering decisions.
+- Encourage continuous learning and knowledge sharing.
+- Scale AI adoption incrementally across engineering organizations.
+
+---
+
+## Leadership Question
+
+**How do we enable our engineering teams to confidently adopt AI while maintaining engineering quality, safety, and compliance throughout the automotive development lifecycle?**
 
 ---
 
 ## Automotive Best Practices
 
-- Begin with high-value engineering use cases.
-- Encourage engineers to experiment with AI assistants.
-- Develop reusable prompt libraries.
-- Validate AI recommendations through engineering reviews.
-- Continuously improve AI-assisted engineering practices.
+- Begin AI adoption with high-value engineering use cases.
+- Develop role-specific AI capabilities for engineering teams.
+- Integrate AI into existing engineering workflows instead of creating parallel processes.
+- Build reusable engineering prompt libraries and AI playbooks.
+- Encourage continuous learning through real engineering projects.
+- Measure adoption through engineering productivity and quality improvements.
+- Continuously refine AI practices using engineering feedback.
+
+---
+
+## AI Blueprint Generation
+
+The generated automotive blueprint includes:
+
+- Engineering Learning Roadmap
+- Role-Based AI Capability Plan
+- Automotive AI Tool Recommendations
+- Human-AI Collaboration Model
+- Engineering Knowledge Sharing Strategy
+- AI Adoption Roadmap
+- Recommended Learning Priorities
+- Automotive AI Recommendations
+
+---
+
+## Expected Outcome
+
+The project team receives an automotive-specific AI learning and adoption roadmap that equips engineering teams with the knowledge, practical skills, AI tools, and adoption practices required to successfully integrate AI into software development, systems engineering, verification, validation, diagnostics, and continuous engineering activities while maintaining automotive quality and compliance.

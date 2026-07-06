@@ -108,6 +108,12 @@ const adoptionLifecycleStageSchema  = new mongoose.Schema({ stage: String, curre
 const adoptionRecommendationSchema  = new mongoose.Schema({ title: String, priority: String, expectedOutcome: String }, { _id: false });
 const adoptionStatsSchema           = new mongoose.Schema({ teamsTrained: Number, toolsAdopted: Number, adoptionRate: String }, { _id: false });
 const adoptionReadinessSummarySchema = new mongoose.Schema({ category: String, status: String }, { _id: false });
+// AI Learning & Adoption new-format schemas
+const roleLearningSchema            = new mongoose.Schema({ role: String, learningPath: [String], businessOutcome: String }, { _id: false });
+const adoptionRoadmapStageSchema    = new mongoose.Schema({ stage: String, goal: String, expectedOutput: String }, { _id: false });
+const enablementActionSchema        = new mongoose.Schema({ action: String, owner: String, businessImpact: String, timeline: String }, { _id: false });
+const enablementSummarySchema       = new mongoose.Schema({ projectRoles: Number, learningPaths: Number, aiTools: Number, adoptionActivities: Number }, { _id: false });
+const learningResourceSchema        = new mongoose.Schema({ name: String, audience: String, priority: String }, { _id: false });
 
 const briefSchema = new mongoose.Schema({
   strategicPosition:    { type: String, default: '' },
@@ -253,7 +259,15 @@ const briefSchema = new mongoose.Schema({
   workforceStats:           { type: workforceStatsSchema,             default: undefined },
   arcpConsultantGuidance:   { type: String },
   arcpAIRecommendation:     { type: String },
-  // Skills & Workforce: AI Learning & Adoption extras
+  // Skills & Workforce: AI Learning & Adoption new-format extras
+  roleLearningJourney:      { type: [roleLearningSchema],            default: [] },
+  adoptionRoadmap:          { type: [adoptionRoadmapStageSchema],    default: [] },
+  enablementActions:        { type: [enablementActionSchema],        default: [] },
+  enablementSummary:        { type: enablementSummarySchema,         default: undefined },
+  learningResources:        { type: [learningResourceSchema],        default: [] },
+  alaConsultantGuidance:    { type: String },
+  alaAIRecommendation:      { type: String },
+  // Skills & Workforce: AI Learning & Adoption legacy extras (backwards compat)
   adoptionReadiness:        { type: Number,   default: 0 },
   learningPillars:          { type: [learningPillarSchema],           default: [] },
   adoptionLifecycle:        { type: [adoptionLifecycleStageSchema],   default: [] },

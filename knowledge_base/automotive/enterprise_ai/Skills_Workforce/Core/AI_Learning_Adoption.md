@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Prepare the project team to effectively adopt AI by identifying the knowledge, learning activities, and AI-assisted ways of working required for the selected AI use case.
+Enable the project team to successfully adopt AI by defining role-specific learning pathways, practical enablement activities, and adoption strategies required to deliver the selected AI initiative.
 
-Rather than recommending generic AI training, this capability helps project managers define targeted learning plans and adoption activities that accelerate successful AI implementation.
+Rather than recommending generic AI training, this capability helps project managers build AI capability across the project team through targeted learning, hands-on experience, and continuous adoption aligned to project responsibilities.
 
 ---
 
@@ -12,71 +12,123 @@ Rather than recommending generic AI training, this capability helps project mana
 
 ## Definition
 
-AI Learning & Adoption is the process of identifying the learning, training, and AI-assisted working practices required for the project team to successfully implement and adopt an AI solution.
+AI Learning & Adoption is the process of identifying the knowledge, practical skills, AI tools, and adoption activities required for project roles to effectively implement, use, and continuously improve AI solutions.
 
-The AI analyzes the selected use case, recommends project-specific learning priorities, identifies adoption challenges, and generates an implementation-focused learning plan.
+Building on the defined project roles and AI capabilities, the AI recommends structured learning pathways, role-based enablement plans, and adoption strategies that accelerate AI proficiency while maintaining governance and engineering quality.
+
+---
 
 ## Framework
 
-### AI Literacy
+### AI Foundation Learning
 
-Identify the foundational AI knowledge required by the project team.
+Define the fundamental AI knowledge required by each project role before AI implementation begins.
 
 Typical examples:
 
-AI fundamentals, Generative AI concepts, responsible AI, AI limitations, prompt engineering fundamentals.
+- AI fundamentals
+- Generative AI concepts
+- Responsible AI
+- Prompt engineering fundamentals
+- AI limitations and risks
 
 ---
 
-### Project-Specific Learning
+### Role-Based Capability Development
 
-Identify learning activities directly related to the selected AI use case.
+Identify the AI skills each project role must develop to perform its responsibilities effectively.
 
 Typical examples:
 
-Business workflows, AI-assisted bug analysis, document analysis, requirements engineering, customer support automation.
+- AI-assisted project management
+- AI solution design
+- Data engineering for AI
+- AI model development
+- AI-assisted testing
+- AI operations
 
 ---
 
-### AI Tool Adoption
+### AI Tool Enablement
 
-Assess how AI tools will be integrated into daily project activities.
+Recommend the AI platforms, copilots, and engineering tools that should become part of daily work.
 
 Typical examples:
 
-AI coding assistants, AI-powered analytics, AI copilots, document assistants, engineering assistants.
+- AI coding assistants
+- AI document assistants
+- AI analytics tools
+- Prompt libraries
+- Engineering copilots
+- Knowledge assistants
 
 ---
 
-### Human–AI Collaboration
+### Human-AI Collaboration
 
-Define how people and AI will work together throughout the project lifecycle.
+Define how project teams should collaborate with AI throughout the delivery lifecycle.
 
 Typical examples:
 
-AI-generated recommendations, human validation, collaborative decision making, engineering reviews, feedback loops.
+- AI-generated recommendations
+- Human validation
+- Engineering reviews
+- Decision support
+- Feedback loops
+- Continuous AI improvement
 
 ---
 
-### Knowledge Sharing
+### Continuous Learning & Knowledge Sharing
 
-Encourage continuous sharing of AI knowledge across the project team.
+Establish mechanisms that encourage continuous AI capability development across the project team.
 
 Typical examples:
 
-Playbooks, reusable prompts, lessons learned, best practices, internal knowledge repositories.
+- AI playbooks
+- Reusable prompts
+- Community of practice
+- Knowledge repositories
+- Lessons learned
+- Internal AI showcases
+
+---
+
+### Adoption Roadmap
+
+Define a phased approach for introducing AI capabilities into daily project execution.
+
+Typical examples:
+
+- Pilot adoption
+- Team onboarding
+- AI champions
+- Incremental rollout
+- Adoption measurement
+- Continuous optimization
+
+---
 
 ## Key Principles
 
-- Learn AI through practical project use cases.
-- Focus on adoption rather than theory.
-- Integrate AI into everyday engineering activities.
-- Keep humans responsible for final decisions.
-- Encourage continuous knowledge sharing.
+- Develop AI capabilities through practical project experience.
+- Align learning with project roles and responsibilities.
+- Integrate AI naturally into existing engineering workflows.
+- Keep humans accountable for final decisions.
+- Encourage continuous learning and knowledge sharing.
+- Improve adoption incrementally through measurable outcomes.
+
+---
 
 ## Leadership Question
 
-**Is our project team prepared to effectively adopt and work with AI throughout this implementation?**
+**How do we equip our project team with the knowledge, tools, and practical experience required to successfully adopt AI throughout the project lifecycle?**
+
+---
+
+# Consultant Guidance
+
+Successful AI adoption is driven by practical enablement rather than classroom training alone. Prioritize role-specific capability development, introduce AI through real project activities, and encourage continuous learning through reusable knowledge, coaching, and shared best practices. Organizations that embed AI into everyday engineering work achieve significantly higher adoption and long-term value than those relying solely on formal training programs.
 
 ---
 
@@ -85,15 +137,17 @@ Playbooks, reusable prompts, lessons learned, best practices, internal knowledge
 ```text
 Understand AI Use Case
         ↓
-Identify Required Learning
+Identify Project Roles
         ↓
-Recommend AI Tools
+Determine Required AI Capabilities
         ↓
-Define Human–AI Collaboration
+Recommend Learning Pathways
         ↓
-Generate Learning Plan
+Identify AI Tools
         ↓
-Recommend Adoption Actions
+Define Human-AI Collaboration
+        ↓
+Generate Adoption Roadmap
 ```
 
 ---
@@ -102,15 +156,31 @@ Recommend Adoption Actions
 
 For every AI use case, the AI generates:
 
-- AI Literacy Recommendations
-- Project-Specific Learning Plan
-- Recommended AI Tools
-- Human–AI Collaboration Plan
-- Knowledge Sharing Activities
+- Role-Based Learning Plan
+- AI Foundation Recommendations
+- AI Tool Enablement Plan
+- Human-AI Collaboration Model
+- Knowledge Sharing Strategy
 - AI Adoption Roadmap
+- Recommended Learning Priorities
+- AI Recommendations
 
 ---
 
 # Expected Outcome
 
-After completing this capability, the project team receives a practical learning and adoption plan that prepares team members to confidently integrate AI into their daily work and successfully implement the selected AI use case.
+After completing this capability, the project team receives a structured AI learning and adoption roadmap that enables every project role to confidently apply AI in daily work, accelerate implementation, and continuously improve AI capabilities throughout the project lifecycle.
+
+---
+
+# AI Prompt Guidance
+
+When generating the blueprint, the AI should:
+
+- Build upon the roles identified in AI Roles & Capability Planning.
+- Recommend role-specific AI learning pathways.
+- Suggest practical AI tools that support daily project activities.
+- Define effective Human-AI collaboration practices.
+- Recommend phased AI adoption activities.
+- Focus on practical enablement rather than theoretical training.
+- Encourage continuous learning and reuse of AI knowledge across the project team.

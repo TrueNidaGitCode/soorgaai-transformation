@@ -3941,7 +3941,10 @@ function buildPlatformReadinessLayout(section) {
   const platformRecommendations = b.platformRecommendations || [];
   const platformSummary         = b.platformSummary         || {};
 
-  const isNewFormat = platformCapabilities.some(c => c.purpose) || platformBlueprintLayers.some(l => l.recommendation);
+  const isNewFormat = platformCapabilities.some(c => c.purpose) ||
+                      platformBlueprintLayers.some(l => l.recommendation) ||
+                      platformRecs.length > 0 ||
+                      !!aprConsultantGuidance;
 
   const APR_IMPL_STEPS = [
     'Establish Development Workspace', 'Build Knowledge Platform', 'Configure Prompt Management',

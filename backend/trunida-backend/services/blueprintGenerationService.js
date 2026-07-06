@@ -764,29 +764,36 @@ SECTION-SPECIFIC EXTRAS — "System Integration & Architecture" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Platform Readiness" sections only:
 
-5. platformReadiness (number 0–100)
-   The overall AI platform readiness score as a percentage for this AI use case.
+5. platformCapabilities (exactly 6 items in this fixed order)
+   The 6 platform capability building blocks the PM should establish for this AI use case.
+   Use these fixed names in this exact order: AI Development Workspace, Prompt & Model Management, Knowledge Platform, Deployment & Automation, Monitoring & Governance, Collaboration & Reuse.
+   Each item: { "name": "<fixed name>", "purpose": "<1 sentence on what this enables, ≤10 words>", "capabilities": ["<specific tool or service, ≤4 words>", ...3–5 items], "businessValue": "<1 sentence on business outcome, ≤10 words>" }
 
-6. capabilityAssessment (exactly 4 items)
-   The 4 most critical platform capability areas relevant to this AI use case.
-   Each item: { "name": "<capability name, 2–5 words>", "score": <0–100>, "status": "READY|PARTIAL|MISSING" }
-   Rule: READY = score ≥ 75, PARTIAL = score 40–74, MISSING = score < 40.
+6. platformBlueprintLayers (exactly 7 items in this fixed order)
+   The vertical AI platform blueprint — each layer with its recommended technology for this use case.
+   Use these fixed layer names in this exact order: Engineering Users, AI Applications, Prompt & Model Services, Knowledge Platform, Deployment Services, Monitoring & Governance, Development Workspace.
+   Each item: { "layer": "<fixed layer name>", "recommendation": "<specific technology or service, ≤6 words>" }
 
-7. platformStack (exactly 6 items, in this fixed order)
-   Readiness assessment for each layer of the AI platform stack.
-   Each item: { "layer": "AI Applications|AI Model & Prompt Management|Knowledge & Retrieval Services|AI Deployment & Automation|AI Monitoring & Evaluation|AI Development Environment", "score": <0–100>, "status": "READY|PARTIAL|MISSING" }
-   Use EXACTLY these layer names. Rule: READY = score ≥ 75, PARTIAL = score 40–74, MISSING = score < 40.
+7. platformRecs (3–4 items)
+   The highest-priority platform implementation recommendations for this AI use case.
+   Each item: { "recommendation": "<action title, ≤8 words>", "why": "<1 sentence rationale, ≤10 words>", "priority": "HIGH|MEDIUM|LOW", "implementationPhase": "Phase 1|Phase 2|Phase 3" }
 
-8. platformRecommendations (exactly 3 items)
-   The 3 highest-priority actions to improve platform readiness for this AI use case.
-   Each item: { "text": "<action, ≤10 words>", "priority": "HIGH|MEDIUM|LOW", "benefit": "<expected outcome, ≤8 words>" }
+8. aprImplRoadmap (exactly 6 strings in this fixed order)
+   The 6-step platform implementation roadmap. Use these exact labels:
+   ["Establish Development Workspace", "Build Knowledge Platform", "Configure Prompt Management", "Deploy AI Services", "Enable Monitoring", "Scale Across Projects"]
 
-9. platformSummary
-   Summary status of the 4 key platform areas for this AI use case.
-   Object: { "development": "<Ready|Partial|Needs Improvement|Missing>", "knowledge": "<Ready|Partial|Needs Improvement|Missing>", "deployment": "<Ready|Partial|Needs Improvement|Missing>", "monitoring": "<Ready|Partial|Needs Improvement|Missing>" }
+9. aprStackLayers (exactly 6 items in this fixed order)
+   The recommended AI stack by layer. Use these fixed layer names in order: AI Development, Prompt Management, Knowledge, Deployment, Monitoring, Collaboration.
+   Each item: { "layer": "<fixed layer name>", "recommendation": "<specific technology or service, ≤6 words>" }
+
+10. aprConsultantGuidance
+   2–3 sentences of action-oriented platform guidance. Start with the minimum platform required to support the pilot AI use case. Emphasise building reusable capabilities from the start.
+
+11. aprAIRecommendation
+   1–2 sentences with a positive, outcome-focused platform recommendation. State what to establish and what it delivers. Do NOT lead with a risk or caution.
 
    Add all to the brief object:
-   "platformReadiness": <number>, "capabilityAssessment": [...], "platformStack": [...], "platformRecommendations": [...], "platformSummary": {...}`,
+   "platformCapabilities": [...], "platformBlueprintLayers": [...], "platformRecs": [...], "aprImplRoadmap": [...], "aprStackLayers": [...], "aprConsultantGuidance": "...", "aprAIRecommendation": "..."`,
   },
 
   'AI Compute & Deployment Strategy': {
@@ -1488,46 +1495,62 @@ function parseBriefOutput(rawSections, validTitles) {
 
       // ── Technology Infrastructure: AI Platform Readiness parsers ─────────────
 
-      const platformReadiness = parseInt(b.platformReadiness, 10) || 0;
-
-      const rawCapabilityAssessment = Array.isArray(b.capabilityAssessment) ? b.capabilityAssessment : [];
-      const capabilityAssessment = rawCapabilityAssessment
-        .filter(c => c && typeof c === 'object' && String(c.name || '').trim())
-        .map(c => ({
-          name:   String(c.name   || '').trim(),
-          score:  parseInt(c.score, 10) || 0,
-          status: String(c.status || 'PARTIAL').trim().toUpperCase(),
-        }))
-        .slice(0, 4);
-
-      const PLATFORM_STACK_LAYERS = [
-        'AI Applications',
-        'AI Model & Prompt Management',
-        'Knowledge & Retrieval Services',
-        'AI Deployment & Automation',
-        'AI Monitoring & Evaluation',
-        'AI Development Environment',
+      const APR_CAP_NAMES = [
+        'AI Development Workspace', 'Prompt & Model Management', 'Knowledge Platform',
+        'Deployment & Automation', 'Monitoring & Governance', 'Collaboration & Reuse',
       ];
-      const rawPlatformStack = Array.isArray(b.platformStack) ? b.platformStack : [];
-      const platformStack = PLATFORM_STACK_LAYERS.map(layerName => {
-        const found = rawPlatformStack.find(l => l && String(l.layer || '').trim() === layerName);
+      const rawPlatformCaps = Array.isArray(b.platformCapabilities) ? b.platformCapabilities : [];
+      const platformCapabilities = APR_CAP_NAMES.map((capName, idx) => {
+        const found = rawPlatformCaps.find(c => c && String(c.name || '').trim().toLowerCase() === capName.toLowerCase())
+                   || rawPlatformCaps[idx];
         return {
-          layer:  layerName,
-          score:  found ? parseInt(found.score, 10) || 0 : 0,
-          status: found ? String(found.status || 'MISSING').trim().toUpperCase() : 'MISSING',
+          name:          capName,
+          purpose:       String((found && found.purpose)      || '').trim(),
+          capabilities:  Array.isArray(found && found.capabilities) ? found.capabilities.map(s => String(s || '').trim()).filter(Boolean).slice(0, 5) : [],
+          businessValue: String((found && found.businessValue) || '').trim(),
         };
       });
 
-      const rawPlatformRecs = Array.isArray(b.platformRecommendations) ? b.platformRecommendations : [];
-      const platformRecommendations = rawPlatformRecs
-        .filter(r => r && typeof r === 'object' && String(r.text || '').trim())
-        .map(r => ({
-          text:     String(r.text     || '').trim(),
-          priority: String(r.priority || 'MEDIUM').trim().toUpperCase(),
-          benefit:  String(r.benefit  || '').trim(),
-        }))
-        .slice(0, 3);
+      const APR_BLUEPRINT_LAYERS = [
+        'Engineering Users', 'AI Applications', 'Prompt & Model Services',
+        'Knowledge Platform', 'Deployment Services', 'Monitoring & Governance', 'Development Workspace',
+      ];
+      const rawBlueprintLayers = Array.isArray(b.platformBlueprintLayers) ? b.platformBlueprintLayers : [];
+      const platformBlueprintLayers = APR_BLUEPRINT_LAYERS.map((layerName, idx) => {
+        const found = rawBlueprintLayers.find(l => l && String(l.layer || '').trim().toLowerCase() === layerName.toLowerCase())
+                   || rawBlueprintLayers[idx];
+        return { layer: layerName, recommendation: String((found && found.recommendation) || '').trim() };
+      });
 
+      const rawPlatformRecs = Array.isArray(b.platformRecs) ? b.platformRecs : [];
+      const platformRecs = rawPlatformRecs
+        .filter(r => r && typeof r === 'object' && String(r.recommendation || '').trim())
+        .map(r => ({
+          recommendation:      String(r.recommendation      || '').trim(),
+          why:                 String(r.why                 || '').trim(),
+          priority:            String(r.priority            || 'MEDIUM').trim().toUpperCase(),
+          implementationPhase: String(r.implementationPhase || 'Phase 1').trim(),
+        }))
+        .slice(0, 4);
+
+      const APR_IMPL_STEPS = [
+        'Establish Development Workspace', 'Build Knowledge Platform', 'Configure Prompt Management',
+        'Deploy AI Services', 'Enable Monitoring', 'Scale Across Projects',
+      ];
+      const rawAprImplRoadmap = Array.isArray(b.aprImplRoadmap) ? b.aprImplRoadmap : [];
+      const aprImplRoadmap = APR_IMPL_STEPS.map((step, i) => String(rawAprImplRoadmap[i] || step).trim());
+
+      const APR_STACK_LAYERS = ['AI Development', 'Prompt Management', 'Knowledge', 'Deployment', 'Monitoring', 'Collaboration'];
+      const rawAprStack = Array.isArray(b.aprStackLayers) ? b.aprStackLayers : [];
+      const aprStackLayers = APR_STACK_LAYERS.map(layerName => {
+        const found = rawAprStack.find(l => l && String(l.layer || '').trim() === layerName);
+        return { layer: layerName, recommendation: String((found && found.recommendation) || '').trim() };
+      });
+
+      const aprConsultantGuidance = String(b.aprConsultantGuidance || '').trim();
+      const aprAIRecommendation   = String(b.aprAIRecommendation   || '').trim();
+
+      // kept for legacy blueprints
       const rawPlatformSummary = b.platformSummary && typeof b.platformSummary === 'object' ? b.platformSummary : {};
       const platformSummary = {
         development: String(rawPlatformSummary.development || '').trim(),
@@ -1939,12 +1962,13 @@ function parseBriefOutput(rawSections, validTitles) {
           ...((integrationSummary.integration || integrationSummary.reliability)
               ? { integrationSummary } : {}),
           // Technology Infrastructure: AI Platform Readiness extras
-          ...(platformReadiness                    ? { platformReadiness }           : {}),
-          ...(capabilityAssessment.length          ? { capabilityAssessment }        : {}),
-          ...(platformStack.length                 ? { platformStack }               : {}),
-          ...(platformRecommendations.length       ? { platformRecommendations }     : {}),
-          ...((platformSummary.development || platformSummary.monitoring)
-              ? { platformSummary } : {}),
+          ...(platformCapabilities.some(c => c.purpose)           ? { platformCapabilities }    : {}),
+          ...(platformBlueprintLayers.some(l => l.recommendation) ? { platformBlueprintLayers } : {}),
+          ...(platformRecs.length                                  ? { platformRecs }            : {}),
+          ...(aprImplRoadmap.length                                ? { aprImplRoadmap }          : {}),
+          ...(aprStackLayers.some(l => l.recommendation)          ? { aprStackLayers }          : {}),
+          ...(aprConsultantGuidance                                ? { aprConsultantGuidance }   : {}),
+          ...(aprAIRecommendation                                  ? { aprAIRecommendation }     : {}),
           // Technology Infrastructure: AI Compute & Deployment Strategy extras
           ...(deploymentBlocks.length         ? { deploymentBlocks }         : {}),
           ...(cdsDeploymentFlow.length        ? { cdsDeploymentFlow }        : {}),
@@ -2554,7 +2578,8 @@ OUTPUT — valid JSON only, no markdown fences:
       'archLayers', 'archDecisions', 'techStack', 'archSummary', 'archPattern', 'archConsultantGuidance',
       // Technology Infrastructure extras
       'integrationReadiness', 'connectedSystems', 'integrationSummary',
-      'platformReadiness', 'capabilityAssessment', 'platformStack', 'platformRecommendations', 'platformSummary',
+      'platformCapabilities', 'platformBlueprintLayers', 'platformRecs', 'aprImplRoadmap',
+      'aprStackLayers', 'aprConsultantGuidance', 'aprAIRecommendation',
       'deploymentBlocks', 'cdsDeploymentFlow', 'techRecommendations', 'cdsArchRationale',
       'deploymentDecisions', 'cdsImplSequence', 'infraItems', 'cdsInvestmentEstimate',
       'cdsConsultantGuidance', 'cdsAIRecommendation',

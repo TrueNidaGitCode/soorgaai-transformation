@@ -47,12 +47,12 @@ function buildPillarsGrid(pillars) {
   return grid;
 }
 
-function buildKpiHighlights(highlights) {
+function buildKpiHighlights(highlights, label) {
   const wrap = document.createElement('div');
   wrap.className = 'kpi-highlights-wrap';
   const heading = document.createElement('p');
   heading.className = 'brief-label';
-  heading.textContent = 'Success Metrics';
+  heading.textContent = label || 'Success Metrics';
   wrap.appendChild(heading);
   const block = document.createElement('div');
   block.className = 'kpi-highlights';
@@ -646,67 +646,68 @@ function buildSolutionPortfolioTree(solutions) {
 }
 
 function buildSolutionCentricLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
+  var b = section.brief || {};
+  var wrap = document.createElement('div');
   wrap.className = 'solution-centric-layout';
 
-  const stmt = document.createElement('div');
-  stmt.className = 'vision-statement';
-  const stmtLbl = document.createElement('p');
-  stmtLbl.className = 'brief-label'; stmtLbl.textContent = 'Strategic Position';
-  const stmtTxt = document.createElement('p');
-  stmtTxt.className = 'vision-statement__text'; stmtTxt.textContent = b.strategicPosition || '—';
-  stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
-  wrap.appendChild(stmt);
+  var stmt = document.createElement('div'); stmt.className = 'vision-statement';
+  var stmtLbl = document.createElement('p'); stmtLbl.className = 'brief-label'; stmtLbl.textContent = 'Strategic Position';
+  var stmtTxt = document.createElement('p'); stmtTxt.className = 'vision-statement__text'; stmtTxt.textContent = b.strategicPosition || '—';
+  stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt); wrap.appendChild(stmt);
 
-  if (b.solutionPortfolio && b.solutionPortfolio.length) {
-    const mapSection = document.createElement('div');
-    mapSection.className = 'solution-portfolio-section';
-    const mapLbl = document.createElement('p');
-    mapLbl.className = 'brief-label'; mapLbl.textContent = 'Solution Portfolio Map';
-    mapSection.appendChild(mapLbl);
-    const treeWrap = document.createElement('div');
-    treeWrap.className = 'solution-portfolio-tree-wrap';
-    treeWrap.appendChild(buildSolutionPortfolioTree(b.solutionPortfolio));
-    mapSection.appendChild(treeWrap);
-    wrap.appendChild(mapSection);
+  // New format: single solution main card
+  var sol = Array.isArray(b.solutionPortfolio) ? b.solutionPortfolio[0] : null;
+  if (sol) {
+    var portSec = document.createElement('div'); portSec.className = 'solution-portfolio-section';
+    var portLbl = document.createElement('p'); portLbl.className = 'brief-label'; portLbl.textContent = 'Solution Portfolio';
+    portSec.appendChild(portLbl);
+    var mainCard = document.createElement('div'); mainCard.className = 'sol-main-card';
+    var solName = document.createElement('p'); solName.className = 'sol-main-card__name'; solName.textContent = sol.name || '—';
+    mainCard.appendChild(solName);
+    var meta = document.createElement('div'); meta.className = 'sol-main-card__meta';
+    if (sol.businessOwner) {
+      var ownerRow = document.createElement('div'); ownerRow.className = 'sol-meta-row';
+      ownerRow.innerHTML = '<span class="sol-meta-label">Owner</span><span class="sol-meta-value">' + sol.businessOwner + '</span>';
+      meta.appendChild(ownerRow);
+    }
+    var teams = Array.isArray(sol.deliveryTeam) ? sol.deliveryTeam : String(sol.deliveryTeam || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    if (teams.length) {
+      var teamRow = document.createElement('div'); teamRow.className = 'sol-meta-row sol-meta-row--chips';
+      var teamLabel = document.createElement('span'); teamLabel.className = 'sol-meta-label'; teamLabel.textContent = 'Delivery Team';
+      var chips = document.createElement('div'); chips.className = 'sol-chips';
+      teams.forEach(function(t) { var chip = document.createElement('span'); chip.className = 'sol-team-chip'; chip.textContent = t; chips.appendChild(chip); });
+      teamRow.appendChild(teamLabel); teamRow.appendChild(chips); meta.appendChild(teamRow);
+    }
+    var kpis = Array.isArray(sol.kpis) ? sol.kpis : [];
+    if (kpis.length) {
+      var kpiRow = document.createElement('div'); kpiRow.className = 'sol-meta-row sol-meta-row--chips';
+      var kpiLabel = document.createElement('span'); kpiLabel.className = 'sol-meta-label'; kpiLabel.textContent = 'KPIs';
+      var kpiChips = document.createElement('div'); kpiChips.className = 'sol-chips';
+      kpis.forEach(function(k) { var chip = document.createElement('span'); chip.className = 'sol-kpi-chip'; chip.textContent = k; kpiChips.appendChild(chip); });
+      kpiRow.appendChild(kpiLabel); kpiRow.appendChild(kpiChips); meta.appendChild(kpiRow);
+    }
+    mainCard.appendChild(meta); portSec.appendChild(mainCard); wrap.appendChild(portSec);
+  }
 
-    const detailSection = document.createElement('div');
-    detailSection.className = 'solution-portfolio-section';
-    const detailLbl = document.createElement('p');
-    detailLbl.className = 'brief-label'; detailLbl.textContent = 'Solution Details';
-    detailSection.appendChild(detailLbl);
-    const grid = document.createElement('div');
-    grid.className = 'solution-portfolio-grid';
-    b.solutionPortfolio.forEach(function(sol) {
-      const card = document.createElement('div');
-      card.className = 'solution-portfolio-card';
-      const name = document.createElement('p');
-      name.className = 'solution-portfolio-card__name'; name.textContent = sol.name;
-      card.appendChild(name);
-      [['Business Owner', sol.businessOwner], ['Delivery Team', sol.deliveryTeam]].forEach(function(pair) {
-        if (!pair[1]) return;
-        const row = document.createElement('div');
-        row.className = 'solution-portfolio-card__row';
-        const rl = document.createElement('span');
-        rl.className = 'solution-portfolio-card__row-label'; rl.textContent = pair[0];
-        const rv = document.createElement('span');
-        rv.className = 'solution-portfolio-card__row-value'; rv.textContent = pair[1];
-        row.appendChild(rl); row.appendChild(rv); card.appendChild(row);
-      });
-      if (sol.kpis && sol.kpis.length) {
-        const kpisRow = document.createElement('div');
-        kpisRow.className = 'solution-portfolio-card__kpis';
-        const kl = document.createElement('span');
-        kl.className = 'solution-portfolio-card__row-label'; kl.textContent = 'KPIs';
-        const kv = document.createElement('p');
-        kv.className = 'solution-portfolio-card__kpis-list'; kv.textContent = sol.kpis.join(' · ');
-        kpisRow.appendChild(kl); kpisRow.appendChild(kv); card.appendChild(kpisRow);
-      }
-      grid.appendChild(card);
+  // Solution Components grid
+  var components = Array.isArray(b.solutionComponents) ? b.solutionComponents : [];
+  if (!components.length && Array.isArray(b.solutionPortfolio) && b.solutionPortfolio.length > 1) {
+    components = b.solutionPortfolio.slice(1).map(function(p) { return { name: p.name || '—', purpose: p.businessOwner ? 'Owner: ' + p.businessOwner : '' }; });
+  }
+  if (components.length) {
+    var compSec = document.createElement('div'); compSec.className = 'solution-portfolio-section';
+    var compLbl = document.createElement('p'); compLbl.className = 'brief-label'; compLbl.textContent = 'Solution Components';
+    compSec.appendChild(compLbl);
+    var compGrid = document.createElement('div'); compGrid.className = 'sol-components-grid';
+    components.forEach(function(comp) {
+      var card = document.createElement('div'); card.className = 'sol-component-card';
+      card.innerHTML = '<span class="sol-component-card__type">Capability</span>' +
+        '<p class="sol-component-card__name">' + (comp.name || '—') + '</p>' +
+        '<span class="sol-component-card__purpose-label">Purpose</span>' +
+        '<p class="sol-component-card__purpose">' + (comp.purpose || '—') + '</p>';
+      compGrid.appendChild(card);
     });
-    detailSection.appendChild(grid);
-    wrap.appendChild(detailSection);
+    compSec.appendChild(compGrid); wrap.appendChild(compSec);
   }
 
   if (b.kpiHighlights && b.kpiHighlights.length) wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
@@ -773,55 +774,59 @@ function buildTeamHierarchySvg() {
 }
 
 function buildCrossFunctionalLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
+  var b = section.brief || {};
+  var wrap = document.createElement('div');
   wrap.className = 'cross-functional-layout';
 
-  const stmt = document.createElement('div');
-  stmt.className = 'vision-statement';
-  const stmtLbl = document.createElement('p');
-  stmtLbl.className = 'brief-label'; stmtLbl.textContent = 'Strategic Position';
-  const stmtTxt = document.createElement('p');
-  stmtTxt.className = 'vision-statement__text'; stmtTxt.textContent = b.strategicPosition || '—';
-  stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt);
-  wrap.appendChild(stmt);
+  var stmt = document.createElement('div'); stmt.className = 'vision-statement';
+  var stmtLbl = document.createElement('p'); stmtLbl.className = 'brief-label'; stmtLbl.textContent = 'Strategic Position';
+  var stmtTxt = document.createElement('p'); stmtTxt.className = 'vision-statement__text'; stmtTxt.textContent = b.strategicPosition || '—';
+  stmt.appendChild(stmtLbl); stmt.appendChild(stmtTxt); wrap.appendChild(stmt);
 
-  const compSection = document.createElement('div');
-  compSection.className = 'team-composition-section';
-  const compLbl = document.createElement('p');
-  compLbl.className = 'brief-label'; compLbl.textContent = 'Team Composition Model';
-  compSection.appendChild(compLbl);
-  const svgWrap = document.createElement('div');
-  svgWrap.className = 'team-hierarchy-wrap';
-  svgWrap.appendChild(buildTeamHierarchySvg());
-  compSection.appendChild(svgWrap);
-  wrap.appendChild(compSection);
+  var teamSec = document.createElement('div'); teamSec.className = 'team-structure-section';
+  var teamLbl = document.createElement('p'); teamLbl.className = 'brief-label'; teamLbl.textContent = 'Delivery Team';
+  teamSec.appendChild(teamLbl);
 
-  if (b.teamRoles && b.teamRoles.length) {
-    const detailSection = document.createElement('div');
-    detailSection.className = 'team-structure-section';
-    const detailLbl = document.createElement('p');
-    detailLbl.className = 'brief-label'; detailLbl.textContent = 'Team Structure Details';
-    detailSection.appendChild(detailLbl);
-    const roleList = document.createElement('div');
-    roleList.className = 'team-role-list';
-    b.teamRoles.forEach(function(role) {
-      const item = document.createElement('div');
-      item.className = 'team-role-item';
-      const title = document.createElement('p');
-      title.className = 'team-role-item__title'; title.textContent = role.title;
-      item.appendChild(title);
-      if (role.description) {
-        const desc = document.createElement('p');
-        desc.className = 'team-role-item__desc'; desc.textContent = role.description;
-        item.appendChild(desc);
-      }
-      roleList.appendChild(item);
+  var groups = (Array.isArray(b.teamGroups) && b.teamGroups.length) ? b.teamGroups : null;
+  var legacyRoles = Array.isArray(b.teamRoles) ? b.teamRoles : [];
+
+  if (groups) {
+    // New format: teamGroups grid
+    var grid = document.createElement('div'); grid.className = 'team-groups-grid';
+    groups.forEach(function(g) {
+      var card = document.createElement('div'); card.className = 'team-group-card';
+      var glbl = document.createElement('p'); glbl.className = 'team-group-card__label'; glbl.textContent = g.group || '—';
+      card.appendChild(glbl);
+      var roleList = document.createElement('ul'); roleList.className = 'team-group-card__roles';
+      (g.roles || []).forEach(function(r) { var li = document.createElement('li'); li.textContent = r; roleList.appendChild(li); });
+      card.appendChild(roleList); grid.appendChild(card);
     });
-    detailSection.appendChild(roleList);
-    wrap.appendChild(detailSection);
+    teamSec.appendChild(grid);
+  } else if (legacyRoles.length) {
+    // Legacy: flat teamRoles as group cards
+    var roleGrid = document.createElement('div'); roleGrid.className = 'team-groups-grid';
+    legacyRoles.forEach(function(role) {
+      var roleObj = typeof role === 'object' ? role : { title: String(role), description: '' };
+      var card = document.createElement('div'); card.className = 'team-group-card';
+      var rName = document.createElement('p'); rName.className = 'team-group-card__label'; rName.textContent = roleObj.title || roleObj.role || roleObj.name || String(role);
+      card.appendChild(rName);
+      if (roleObj.description || roleObj.responsibility) {
+        var ul = document.createElement('ul'); ul.className = 'team-group-card__roles';
+        var li = document.createElement('li'); li.textContent = roleObj.description || roleObj.responsibility;
+        ul.appendChild(li); card.appendChild(ul);
+      }
+      roleGrid.appendChild(card);
+    });
+    teamSec.appendChild(roleGrid);
+  } else {
+    // Oldest legacy: SVG hierarchy + no teamRoles
+    var compSec = document.createElement('div'); compSec.className = 'team-composition-section';
+    var svgWrap = document.createElement('div'); svgWrap.className = 'team-hierarchy-wrap';
+    svgWrap.appendChild(buildTeamHierarchySvg());
+    compSec.appendChild(svgWrap); teamSec.appendChild(compSec);
   }
 
+  wrap.appendChild(teamSec);
   if (b.kpiHighlights && b.kpiHighlights.length) wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   return wrap;
 }
@@ -1095,69 +1100,220 @@ function buildDetailSection(label, listEl) {
 }
 
 function buildFinancialPerformanceLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
+  var b = section.brief || {};
+  var wrap = document.createElement('div');
   wrap.className = 'financial-performance-layout';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.waterfallItems && b.waterfallItems.length) {
-    wrap.appendChild(buildDiagramSection('Value Waterfall Visualization', buildWaterfallSvg(b.waterfallItems)));
-    const list = document.createElement('div');
-    list.className = 'detail-bullet-list';
-    b.waterfallItems.filter(function(it) { return it.description; }).forEach(function(it) {
-      const card = document.createElement('div');
-      card.className = 'detail-bullet-card';
-      const t = document.createElement('p');
-      t.className = 'detail-bullet-card__title'; t.textContent = it.category;
-      card.appendChild(t);
-      const d = document.createElement('p');
-      d.className = 'detail-bullet-card__desc'; d.textContent = it.description;
-      card.appendChild(d);
-      list.appendChild(card);
+
+  // New format: ROI Summary 4-col stat row
+  if (b.roiSummary) {
+    var roiSec = document.createElement('div'); roiSec.className = 'roi-section';
+    var roiLbl = document.createElement('p'); roiLbl.className = 'brief-label'; roiLbl.textContent = 'Executive ROI Summary';
+    roiSec.appendChild(roiLbl);
+    var roiRow = document.createElement('div'); roiRow.className = 'roi-summary-row';
+    [
+      { label: 'Investment',     value: b.roiSummary.investment },
+      { label: 'Annual Value',   value: b.roiSummary.annualValue },
+      { label: 'Payback',        value: b.roiSummary.payback },
+      { label: 'Recommendation', value: b.roiSummary.recommendation },
+    ].forEach(function(f) {
+      var card = document.createElement('div');
+      var r = String(f.value || '').toLowerCase();
+      var mod = r === 'proceed' ? 'roi-summary-card--proceed' : r.indexOf('pilot') === 0 ? 'roi-summary-card--pilot' : r === 'reassess' ? 'roi-summary-card--reassess' : '';
+      card.className = 'roi-summary-card' + (mod ? ' ' + mod : '');
+      var val = document.createElement('p'); val.className = 'roi-summary-card__value'; val.textContent = f.value || '—';
+      var lbl = document.createElement('p'); lbl.className = 'roi-summary-card__label'; lbl.textContent = f.label;
+      card.appendChild(val); card.appendChild(lbl); roiRow.appendChild(card);
     });
-    wrap.appendChild(buildDetailSection('Financial Breakdown', list));
+    roiSec.appendChild(roiRow); wrap.appendChild(roiSec);
   }
+
+  // Cost / Value two-column
+  var costItems  = Array.isArray(b.costItems)  ? b.costItems  : [];
+  var valueItems = Array.isArray(b.valueItems) ? b.valueItems : [];
+  if (costItems.length || valueItems.length) {
+    var cvGrid = document.createElement('div'); cvGrid.className = 'roi-cost-value-grid';
+    function buildRoiCol(cls, header, items) {
+      var col = document.createElement('div'); col.className = cls;
+      var hdr = document.createElement('p'); hdr.className = 'roi-col-header'; hdr.textContent = header;
+      col.appendChild(hdr);
+      var ul = document.createElement('ul'); ul.className = 'roi-col-list';
+      items.forEach(function(item) { var li = document.createElement('li'); li.textContent = item; ul.appendChild(li); });
+      col.appendChild(ul); return col;
+    }
+    cvGrid.appendChild(buildRoiCol('roi-cost-col',  'Where the Money Goes',       costItems));
+    cvGrid.appendChild(buildRoiCol('roi-value-col', 'Where the Value Comes From', valueItems));
+    wrap.appendChild(cvGrid);
+  }
+
+  // Financial Impact Timeline
+  var timeline = Array.isArray(b.impactTimeline) ? b.impactTimeline : [];
+  if (timeline.length) {
+    var tlSec = document.createElement('div'); tlSec.className = 'roi-section';
+    var tlLbl = document.createElement('p'); tlLbl.className = 'brief-label'; tlLbl.textContent = 'Financial Impact Timeline';
+    tlSec.appendChild(tlLbl);
+    var tlFlow = document.createElement('div'); tlFlow.className = 'roi-timeline';
+    timeline.forEach(function(stage, i) {
+      var node = document.createElement('div'); node.className = 'roi-timeline__stage'; node.textContent = stage;
+      tlFlow.appendChild(node);
+      if (i < timeline.length - 1) {
+        var arrow = document.createElement('span'); arrow.className = 'roi-timeline__arrow'; arrow.textContent = '→';
+        tlFlow.appendChild(arrow);
+      }
+    });
+    tlSec.appendChild(tlFlow); wrap.appendChild(tlSec);
+  }
+
+  // Fallback: old waterfall
+  if (!b.roiSummary && b.waterfallItems && b.waterfallItems.length) {
+    wrap.appendChild(buildDiagramSection('Value Waterfall Visualization', buildWaterfallSvg(b.waterfallItems)));
+    var wfList = document.createElement('div'); wfList.className = 'detail-bullet-list';
+    b.waterfallItems.filter(function(it) { return it.description; }).forEach(function(it) {
+      var card = document.createElement('div'); card.className = 'detail-bullet-card';
+      var t = document.createElement('p'); t.className = 'detail-bullet-card__title'; t.textContent = it.category;
+      card.appendChild(t);
+      var d = document.createElement('p'); d.className = 'detail-bullet-card__desc'; d.textContent = it.description;
+      card.appendChild(d); wfList.appendChild(card);
+    });
+    wrap.appendChild(buildDetailSection('Financial Breakdown', wfList));
+  }
+
   if (b.kpiHighlights && b.kpiHighlights.length) wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   return wrap;
 }
 
 function buildOperationalExcellenceLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
+  var b = section.brief || {};
+  var wrap = document.createElement('div');
   wrap.className = 'operational-excellence-layout';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.sdlcStages && b.sdlcStages.length) {
-    wrap.appendChild(buildDiagramSection('SDLC Performance Dashboard', buildSdlcPipeline(b.sdlcStages)));
-    const list = document.createElement('div');
-    list.className = 'detail-bullet-list';
-    b.sdlcStages.forEach(function(stage) {
-      const card = document.createElement('div');
-      card.className = 'detail-bullet-card';
-      const t = document.createElement('p');
-      t.className = 'detail-bullet-card__title'; t.textContent = stage.stage;
-      card.appendChild(t);
-      if (stage.description) {
-        const d = document.createElement('p');
-        d.className = 'detail-bullet-card__desc'; d.textContent = stage.description;
-        card.appendChild(d);
-      }
-      list.appendChild(card);
+
+  // New format: Improvement Scorecard table
+  var scorecard = Array.isArray(b.improvementScorecard) ? b.improvementScorecard : [];
+  if (scorecard.length) {
+    var sec = document.createElement('div'); sec.className = 'roi-section';
+    var lbl = document.createElement('p'); lbl.className = 'brief-label'; lbl.textContent = 'Improvement Scorecard';
+    sec.appendChild(lbl);
+    var table = document.createElement('div'); table.className = 'oe-scorecard';
+    var hdr = document.createElement('div'); hdr.className = 'oe-scorecard__row oe-scorecard__row--header';
+    ['Area', 'Before AI', 'After AI', 'Business Benefit'].forEach(function(h) {
+      var cell = document.createElement('div'); cell.className = 'oe-scorecard__cell'; cell.textContent = h;
+      hdr.appendChild(cell);
     });
-    wrap.appendChild(buildDetailSection('SDLC Stage Details', list));
+    table.appendChild(hdr);
+    scorecard.forEach(function(row) {
+      var r = document.createElement('div'); r.className = 'oe-scorecard__row';
+      [
+        { text: row.area,            cls: 'oe-scorecard__cell--area' },
+        { text: row.beforeAI,        cls: 'oe-scorecard__cell--before' },
+        { text: row.afterAI,         cls: 'oe-scorecard__cell--after' },
+        { text: row.businessBenefit, cls: 'oe-scorecard__cell--benefit' },
+      ].forEach(function(f) {
+        var cell = document.createElement('div'); cell.className = 'oe-scorecard__cell ' + f.cls; cell.textContent = f.text || '—';
+        r.appendChild(cell);
+      });
+      table.appendChild(r);
+    });
+    sec.appendChild(table); wrap.appendChild(sec);
+  } else {
+    // Fallback: legacy SDLC / impact areas
+    var impactAreas = Array.isArray(b.impactAreas) ? b.impactAreas : [];
+    if (impactAreas.length) {
+      var impSec = document.createElement('div'); impSec.className = 'roi-section';
+      var impLbl = document.createElement('p'); impLbl.className = 'brief-label'; impLbl.textContent = 'Operational Impact Areas';
+      impSec.appendChild(impLbl);
+      var impGrid = document.createElement('div'); impGrid.className = 'oe-impact-grid';
+      impactAreas.forEach(function(area) {
+        var card = document.createElement('div'); card.className = 'oe-impact-card';
+        var title = document.createElement('p'); title.className = 'oe-impact-card__title'; title.textContent = area.name || '—';
+        card.appendChild(title);
+        var ul = document.createElement('ul'); ul.className = 'oe-impact-card__list';
+        (area.points || []).forEach(function(pt) { var li = document.createElement('li'); li.textContent = pt; ul.appendChild(li); });
+        card.appendChild(ul); impGrid.appendChild(card);
+      });
+      impSec.appendChild(impGrid); wrap.appendChild(impSec);
+    }
+    if (b.sdlcStages && b.sdlcStages.length) {
+      wrap.appendChild(buildDiagramSection('SDLC Performance Dashboard', buildSdlcPipeline(b.sdlcStages)));
+      var sdlcList = document.createElement('div'); sdlcList.className = 'detail-bullet-list';
+      b.sdlcStages.forEach(function(stage) {
+        var card = document.createElement('div'); card.className = 'detail-bullet-card';
+        var t = document.createElement('p'); t.className = 'detail-bullet-card__title'; t.textContent = stage.stage;
+        card.appendChild(t);
+        if (stage.description) { var d = document.createElement('p'); d.className = 'detail-bullet-card__desc'; d.textContent = stage.description; card.appendChild(d); }
+        sdlcList.appendChild(card);
+      });
+      wrap.appendChild(buildDetailSection('SDLC Stage Details', sdlcList));
+    }
+    if (b.kpiHighlights && b.kpiHighlights.length) wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   }
-  if (b.kpiHighlights && b.kpiHighlights.length) wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   return wrap;
 }
 
 function buildCustomerValueLayout(section) {
-  const b = section.brief || {};
-  const wrap = document.createElement('div');
+  var b = section.brief || {};
+  var wrap = document.createElement('div');
   wrap.className = 'customer-value-layout';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-  if (b.flywheelStages && b.flywheelStages.length) {
+
+  // New format: Customer Value Journey vertical flow
+  var journey = Array.isArray(b.valueJourney) ? b.valueJourney : [];
+  if (journey.length) {
+    var jSec = document.createElement('div'); jSec.className = 'roi-section';
+    var jLbl = document.createElement('p'); jLbl.className = 'brief-label'; jLbl.textContent = 'Customer Value Journey';
+    jSec.appendChild(jLbl);
+    var flow = document.createElement('div'); flow.className = 'cv-journey';
+    journey.forEach(function(stage, i) {
+      var node = document.createElement('div'); node.className = 'cv-journey__stage'; node.textContent = stage;
+      flow.appendChild(node);
+      if (i < journey.length - 1) {
+        var arrow = document.createElement('div'); arrow.className = 'cv-journey__arrow'; arrow.textContent = '↓';
+        flow.appendChild(arrow);
+      }
+    });
+    jSec.appendChild(flow); wrap.appendChild(jSec);
+  }
+
+  // Value Dimensions grid
+  var dims = Array.isArray(b.valueDimensions) ? b.valueDimensions : [];
+  if (dims.length) {
+    var dSec = document.createElement('div'); dSec.className = 'roi-section';
+    var dLbl = document.createElement('p'); dLbl.className = 'brief-label'; dLbl.textContent = 'Customer Value Dimensions';
+    dSec.appendChild(dLbl);
+    var dGrid = document.createElement('div'); dGrid.className = 'cv-value-grid';
+    dims.forEach(function(dim) {
+      var card = document.createElement('div'); card.className = 'cv-value-card';
+      var title = document.createElement('p'); title.className = 'cv-value-card__title'; title.textContent = dim.name || '—';
+      card.appendChild(title);
+      var ul = document.createElement('ul'); ul.className = 'cv-value-card__list';
+      (dim.points || []).forEach(function(pt) { var li = document.createElement('li'); li.textContent = pt; ul.appendChild(li); });
+      card.appendChild(ul); dGrid.appendChild(card);
+    });
+    dSec.appendChild(dGrid); wrap.appendChild(dSec);
+  }
+
+  // Customer KPIs
+  var custKpis = (Array.isArray(b.customerKpis) && b.customerKpis.length) ? b.customerKpis : (b.kpiHighlights || []);
+  if (custKpis.length) {
+    var kSec = document.createElement('div'); kSec.className = 'roi-section';
+    var kLbl = document.createElement('p'); kLbl.className = 'brief-label'; kLbl.textContent = 'Customer Success Metrics';
+    kSec.appendChild(kLbl);
+    var kGrid = document.createElement('div'); kGrid.className = 'cv-kpi-grid';
+    custKpis.forEach(function(k) {
+      var card = document.createElement('div'); card.className = 'kpi-highlight-card';
+      var val = document.createElement('p'); val.className = 'kpi-highlight-card__value'; val.textContent = k.value || '—';
+      var label = document.createElement('p'); label.className = 'kpi-highlight-card__label'; label.textContent = k.label || '';
+      var desc = document.createElement('p'); desc.className = 'kpi-highlight-card__desc'; desc.textContent = k.description || '';
+      card.appendChild(val); card.appendChild(label); card.appendChild(desc); kGrid.appendChild(card);
+    });
+    kSec.appendChild(kGrid); wrap.appendChild(kSec);
+  }
+
+  // Fallback: legacy flywheel
+  if (!journey.length && b.flywheelStages && b.flywheelStages.length) {
     wrap.appendChild(buildDiagramSection('Customer Value Flywheel', buildPillChain(b.flywheelStages, 'name')));
     wrap.appendChild(buildDetailSection('Customer Value Details', buildPillarBulletCards(b.flywheelStages, 'name')));
   }
-  if (b.kpiHighlights && b.kpiHighlights.length) wrap.appendChild(buildKpiHighlights(b.kpiHighlights));
   return wrap;
 }
 
@@ -1557,11 +1713,31 @@ function buildAIUseCasePrioritizationLayout(section) {
     wrap.appendChild(matWrap);
   }
 
+  // Evaluation Dimension Cards
+  var dimCards = b.dimensionCards || [];
+  if (dimCards.length) {
+    var dimLbl = document.createElement('p'); dimLbl.className = 'brief-label'; dimLbl.textContent = 'Evaluation Dimensions';
+    wrap.appendChild(dimLbl);
+    var dimRow = document.createElement('div'); dimRow.className = 'pri-dim-cards';
+    dimCards.forEach(function(d) {
+      var card = document.createElement('div'); card.className = 'pri-dim-card';
+      var title = document.createElement('p'); title.className = 'pri-dim-card__title'; title.textContent = d.title;
+      card.appendChild(title);
+      if (d.bullets && d.bullets.length) {
+        var ul = document.createElement('ul'); ul.className = 'pri-dim-card__bullets';
+        d.bullets.forEach(function(b2) { var li = document.createElement('li'); li.textContent = b2; ul.appendChild(li); });
+        card.appendChild(ul);
+      }
+      dimRow.appendChild(card);
+    });
+    wrap.appendChild(dimRow);
+  }
+
   // Prioritization Insight
   if (insight) {
-    const ins = document.createElement('div'); ins.className = 'vision-statement';
-    const insL = document.createElement('p'); insL.className = 'brief-label'; insL.textContent = 'Prioritization Insight';
-    const insT = document.createElement('p'); insT.className = 'vision-statement__text'; insT.textContent = insight;
+    var ins = document.createElement('div'); ins.className = 'vision-statement';
+    var insL = document.createElement('p'); insL.className = 'brief-label'; insL.textContent = 'Prioritization Insight';
+    var insT = document.createElement('p'); insT.className = 'vision-statement__text'; insT.textContent = insight;
     ins.appendChild(insL); ins.appendChild(insT); wrap.appendChild(ins);
   }
 
@@ -1569,27 +1745,37 @@ function buildAIUseCasePrioritizationLayout(section) {
 }
 
 function buildAIUseCaseClassificationLayout(section) {
-  const b    = section.brief || {};
-  const wrap = document.createElement('div');
+  var b    = section.brief || {};
+  var wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  // Primary classification highlight
+  // Classification Banner — primary + secondary side by side
   if (b.primaryClassification) {
-    const pc = document.createElement('div'); pc.className = 'clf-pdf-primary';
-    const label = document.createElement('p'); label.className = 'clf-pdf-primary__label'; label.textContent = 'Primary Classification';
-    const name = document.createElement('p'); name.className = 'clf-pdf-primary__name'; name.textContent = b.primaryClassification.name || '';
-    const rationale = document.createElement('p'); rationale.className = 'clf-pdf-primary__desc'; rationale.textContent = b.primaryClassification.rationale || '';
-    const outcome = document.createElement('p'); outcome.className = 'clf-pdf-primary__outcome'; outcome.textContent = b.primaryClassification.businessOutcome || '';
-    pc.appendChild(label); pc.appendChild(name); pc.appendChild(rationale); pc.appendChild(outcome);
-    wrap.appendChild(pc);
+    var COLORS = { 'Productivity AI': 'productivity', 'Functional AI': 'functional', 'Product AI': 'product' };
+    var banner = document.createElement('div'); banner.className = 'cls-banner';
+
+    function mkCell(labelText, cls, isSec) {
+      var cell = document.createElement('div');
+      cell.className = 'cls-banner__cell' + (isSec ? ' cls-banner__cell--secondary' : '');
+      var lbl = document.createElement('span'); lbl.className = 'cls-banner__label'; lbl.textContent = labelText;
+      var nm  = document.createElement('span'); nm.className  = 'cls-banner__name cls-name--' + (COLORS[cls.name] || 'functional'); nm.textContent = cls.name || '';
+      cell.appendChild(lbl); cell.appendChild(nm);
+      if (cls.rationale) { var rat = document.createElement('span'); rat.className = 'cls-banner__rationale'; rat.textContent = cls.rationale; cell.appendChild(rat); }
+      if (cls.businessOutcome) { var out = document.createElement('span'); out.className = 'cls-banner__outcome'; out.textContent = cls.businessOutcome; cell.appendChild(out); }
+      return cell;
+    }
+
+    banner.appendChild(mkCell('Primary Classification', b.primaryClassification, false));
+    if (b.secondaryClassification) banner.appendChild(mkCell('Secondary Classification', b.secondaryClassification, true));
+    wrap.appendChild(banner);
   }
 
   // Transformation Implication
   if (b.transformationImplication) {
-    const ci = document.createElement('div'); ci.className = 'vision-statement';
-    const ciL = document.createElement('p'); ciL.className = 'brief-label'; ciL.textContent = 'Transformation Implication';
-    const ciT = document.createElement('p'); ciT.className = 'vision-statement__text'; ciT.textContent = b.transformationImplication;
+    var ci = document.createElement('div'); ci.className = 'vision-statement';
+    var ciL = document.createElement('p'); ciL.className = 'brief-label'; ciL.textContent = 'Transformation Implication';
+    var ciT = document.createElement('p'); ciT.className = 'vision-statement__text'; ciT.textContent = b.transformationImplication;
     ci.appendChild(ciL); ci.appendChild(ciT); wrap.appendChild(ci);
   }
 
@@ -1657,133 +1843,299 @@ function ndStatBlock(items) {
 // ── Data Readiness: Critical Data Identification ───────────────────────────────
 
 function buildCriticalDataIdentificationLayout(section) {
-  var b               = section.brief || {};
-  var datasets        = b.datasets        || [];
-  var recommendations = b.recommendations || [];
-  var coverage        = b.coverageSummary  || {};
-  var relMap          = b.relationshipMap  || {};
+  var b = section.brief || {};
+  var datasets              = Array.isArray(b.datasets)              ? b.datasets              : [];
+  var traceabilityChain     = Array.isArray(b.traceabilityChain)     ? b.traceabilityChain     : [];
+  var collectionOrder       = Array.isArray(b.collectionOrder)       ? b.collectionOrder       : [];
+  var implementationRoadmap = Array.isArray(b.implementationRoadmap) ? b.implementationRoadmap : [];
+  var consultantGuidance    = b.consultantGuidance || '';
+  var aiRecommendation      = b.aiRecommendation   || '';
+  // Legacy fallbacks
+  var relationshipMap   = b.relationshipMap || {};
+  var recommendations   = Array.isArray(b.recommendations) ? b.recommendations : [];
+  var coverage          = b.coverageSummary || {};
+  var PRIORITY_CLASS    = { HIGH: 'cdi-badge--high', MEDIUM: 'cdi-badge--medium', LOW: 'cdi-badge--low' };
 
   var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  var PBADGE = { HIGH: 'nd-pri--high', MEDIUM: 'nd-pri--medium', LOW: 'nd-pri--low' };
-  var ABADGE = { AVAILABLE: 'cdi-avail--available', MISSING: 'cdi-avail--missing', PARTIAL: 'cdi-avail--partial' };
+  var body = document.createElement('div'); body.className = 'cdi-body';
 
-  var body = ndBody(2);
-
-  // LEFT: dataset cards
-  var leftCol = ndCol();
-  leftCol.appendChild(ndLbl('Critical Datasets'));
-  datasets.forEach(function(ds) {
-    var card = document.createElement('div'); card.className = 'cdi-card';
-    var top = document.createElement('div'); top.className = 'cdi-card__top';
-    var priK = String(ds.priority || 'MEDIUM').toUpperCase();
-    var pri = document.createElement('span'); pri.className = 'cdi-badge nd-pri ' + (PBADGE[priK] || 'nd-pri--medium'); pri.textContent = ds.priority || 'MEDIUM';
-    var avlK = String(ds.availability || '').toUpperCase();
-    var avl = document.createElement('span'); avl.className = 'cdi-avail ' + (ABADGE[avlK] || ''); avl.textContent = ds.availability || '';
-    top.appendChild(pri); top.appendChild(avl); card.appendChild(top);
-    var name = document.createElement('p'); name.className = 'cdi-card__name'; name.textContent = ds.name || ''; card.appendChild(name);
-    if (ds.purpose) { var purp = document.createElement('p'); purp.className = 'cdi-card__purpose'; purp.textContent = ds.purpose; card.appendChild(purp); }
-    if (ds.category) { var cat = document.createElement('span'); cat.className = 'cdi-card__cat'; cat.textContent = ds.category; card.appendChild(cat); }
-    leftCol.appendChild(card);
-  });
-  body.appendChild(leftCol);
-
-  // RIGHT: relationship map + recommendations + coverage
-  var rightCol = ndCol();
-  var hasRel = [relMap.dataSource, relMap.dependentData, relMap.relatedData, relMap.targetData].some(function(a) { return a && a.length; });
-  if (hasRel) {
-    rightCol.appendChild(ndLbl('Data Relationship Map'));
-    var relFlow = document.createElement('div'); relFlow.className = 'cdi-relmap';
-    [{ key: 'dataSource', label: 'Data Source', icon: '◉' }, { key: 'dependentData', label: 'Dependent', icon: '◈' },
-     { key: 'relatedData', label: 'Related', icon: '◇' }, { key: 'targetData', label: 'Target', icon: '◆' }].forEach(function(node, i) {
-      var items = relMap[node.key] || [];
-      var nodeEl = document.createElement('div'); nodeEl.className = 'cdi-relnode';
-      var hdr = document.createElement('div'); hdr.className = 'cdi-relnode__hdr'; hdr.textContent = node.icon + ' ' + node.label; nodeEl.appendChild(hdr);
-      if (items.length) {
-        var ul = document.createElement('ul'); ul.className = 'cdi-relnode__list';
-        items.slice(0, 3).forEach(function(t) { var li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
-        nodeEl.appendChild(ul);
+  // LEFT: dataset cards (new format with typicalSource + expectedAIOutput)
+  var leftPanel = document.createElement('div'); leftPanel.className = 'cdi-left';
+  if (datasets.length) {
+    var dsLbl = document.createElement('p'); dsLbl.className = 'brief-label'; dsLbl.textContent = 'Critical Data Blueprint';
+    leftPanel.appendChild(dsLbl);
+    datasets.forEach(function(ds) {
+      var card = document.createElement('div'); card.className = 'cdi-dataset-card';
+      var name = document.createElement('p'); name.className = 'cdi-dataset-card__name'; name.textContent = ds.name || '—';
+      card.appendChild(name);
+      function addRow(label, value, isBadge, isOutput) {
+        if (!value) return;
+        var row = document.createElement('div');
+        row.className = isOutput ? 'cdi-dataset-card__info-row cdi-dataset-card__info-row--output' : 'cdi-dataset-card__info-row';
+        var lbl = document.createElement('span'); lbl.className = 'cdi-dataset-card__info-label'; lbl.textContent = label;
+        row.appendChild(lbl);
+        if (isBadge) {
+          var badge = document.createElement('span'); badge.className = 'cdi-badge ' + (PRIORITY_CLASS[value] || 'cdi-badge--medium'); badge.textContent = value;
+          row.appendChild(badge);
+        } else {
+          var val = document.createElement('span'); val.className = 'cdi-dataset-card__info-value'; val.textContent = value;
+          row.appendChild(val);
+        }
+        card.appendChild(row);
       }
-      relFlow.appendChild(nodeEl);
-      if (i < 3) { var arr = document.createElement('div'); arr.className = 'cdi-relmap__arr'; arr.textContent = '→'; relFlow.appendChild(arr); }
+      addRow('Purpose',                   ds.purpose,          false, false);
+      addRow('Recommended Source System', ds.typicalSource,    false, false);
+      addRow('Expected AI Output',        ds.expectedAIOutput, false, true);
+      addRow('Priority',                  ds.priority,         true,  false);
+      leftPanel.appendChild(card);
     });
-    rightCol.appendChild(relFlow);
   }
-  if (recommendations.length) {
-    rightCol.appendChild(ndLbl('Data Collection Recommendations'));
+  body.appendChild(leftPanel);
+
+  // RIGHT: Traceability chain / legacy relmap + Collection Order + Roadmap
+  var rightPanel = document.createElement('div'); rightPanel.className = 'cdi-right';
+
+  if (traceabilityChain.length) {
+    var tcLbl = document.createElement('p'); tcLbl.className = 'brief-label'; tcLbl.textContent = 'Engineering Traceability';
+    rightPanel.appendChild(tcLbl);
+    var chain = document.createElement('div'); chain.className = 'cdi-traceability';
+    traceabilityChain.forEach(function(node, i) {
+      var el = document.createElement('div');
+      el.className = i === 0 ? 'cdi-traceability__node cdi-traceability__node--start'
+                   : i === traceabilityChain.length - 1 ? 'cdi-traceability__node cdi-traceability__node--end'
+                   : 'cdi-traceability__node';
+      el.textContent = node; chain.appendChild(el);
+      if (i < traceabilityChain.length - 1) {
+        var arr = document.createElement('div'); arr.className = 'cdi-traceability__arrow'; arr.textContent = '↓'; chain.appendChild(arr);
+      }
+    });
+    rightPanel.appendChild(chain);
+  } else {
+    // Legacy: relationship map
+    var hasRel = [relationshipMap.dataSource, relationshipMap.dependentData, relationshipMap.relatedData, relationshipMap.targetData].some(function(a) { return a && a.length; });
+    if (hasRel) {
+      var relLbl = document.createElement('p'); relLbl.className = 'brief-label'; relLbl.textContent = 'Data Relationship Map';
+      rightPanel.appendChild(relLbl);
+      var relFlow = document.createElement('div'); relFlow.className = 'cdi-relmap';
+      [{ key: 'dataSource', label: 'Data Source', icon: '◉' }, { key: 'dependentData', label: 'Dependent', icon: '◈' },
+       { key: 'relatedData', label: 'Related', icon: '◇' }, { key: 'targetData', label: 'Target', icon: '◆' }].forEach(function(nd, i) {
+        var items = relationshipMap[nd.key] || [];
+        var nodeEl = document.createElement('div'); nodeEl.className = 'cdi-relnode';
+        var hdr = document.createElement('div'); hdr.className = 'cdi-relnode__hdr'; hdr.textContent = nd.icon + ' ' + nd.label; nodeEl.appendChild(hdr);
+        if (items.length) { var ul = document.createElement('ul'); ul.className = 'cdi-relnode__list'; items.slice(0,3).forEach(function(t) { var li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); nodeEl.appendChild(ul); }
+        relFlow.appendChild(nodeEl);
+        if (i < 3) { var ar = document.createElement('div'); ar.className = 'cdi-relmap__arr'; ar.textContent = '→'; relFlow.appendChild(ar); }
+      });
+      rightPanel.appendChild(relFlow);
+    }
+  }
+
+  if (collectionOrder.length) {
+    var coLbl = document.createElement('p'); coLbl.className = 'brief-label'; coLbl.textContent = 'Recommended Collection Order';
+    rightPanel.appendChild(coLbl);
+    collectionOrder.forEach(function(item, i) {
+      var row = document.createElement('div'); row.className = 'cdi-collection-row';
+      var num = document.createElement('span'); num.className = 'cdi-collection-row__num'; num.textContent = i + 1;
+      var content = document.createElement('div'); content.className = 'cdi-collection-row__content';
+      var nm = document.createElement('p'); nm.className = 'cdi-collection-row__name'; nm.textContent = item.action || item.name;
+      content.appendChild(nm);
+      if (item.reason) { var reason = document.createElement('p'); reason.className = 'cdi-collection-row__reason'; reason.textContent = item.reason; content.appendChild(reason); }
+      row.appendChild(num); row.appendChild(content); rightPanel.appendChild(row);
+    });
+  } else if (recommendations.length) {
+    var recLbl = document.createElement('p'); recLbl.className = 'brief-label'; recLbl.textContent = 'Data Collection Recommendations';
+    rightPanel.appendChild(recLbl);
+    var PBADGE = { HIGH: 'nd-pri--high', MEDIUM: 'nd-pri--medium', LOW: 'nd-pri--low' };
     recommendations.forEach(function(rec, i) {
       var row = document.createElement('div'); row.className = 'cdi-rec-row';
       var num = document.createElement('span'); num.className = 'cdi-rec-row__num'; num.textContent = i + 1;
       var txt = document.createElement('p'); txt.className = 'cdi-rec-row__text'; txt.textContent = rec.text || '';
-      var priK2 = String(rec.priority || 'MEDIUM').toUpperCase();
-      var pri2 = document.createElement('span'); pri2.className = 'cdi-badge nd-pri ' + (PBADGE[priK2] || 'nd-pri--medium'); pri2.textContent = rec.priority || 'MEDIUM';
-      row.appendChild(num); row.appendChild(txt); row.appendChild(pri2); rightCol.appendChild(row);
+      var priK = String(rec.priority || 'MEDIUM').toUpperCase();
+      var pri = document.createElement('span'); pri.className = 'cdi-badge nd-pri ' + (PBADGE[priK] || 'nd-pri--medium'); pri.textContent = rec.priority || 'MEDIUM';
+      row.appendChild(num); row.appendChild(txt); row.appendChild(pri); rightPanel.appendChild(row);
     });
   }
-  if (coverage.criticalDatasets !== undefined || coverage.confidence) {
-    rightCol.appendChild(ndLbl('Coverage Summary'));
-    rightCol.appendChild(ndScoresBar([
+
+  if (implementationRoadmap.length) {
+    var rmLbl = document.createElement('p'); rmLbl.className = 'brief-label'; rmLbl.textContent = 'Data Collection Roadmap';
+    rightPanel.appendChild(rmLbl);
+    var roadmap = document.createElement('div'); roadmap.className = 'cdi-roadmap';
+    implementationRoadmap.forEach(function(step) {
+      var row = document.createElement('div'); row.className = 'cdi-roadmap__step cdi-roadmap__step--' + (step.status === 'ready' ? 'ready' : 'pending');
+      var icon = document.createElement('span'); icon.className = 'cdi-roadmap__icon'; icon.textContent = step.status === 'ready' ? '✓' : '↓';
+      var label = document.createElement('p'); label.className = 'cdi-roadmap__label'; label.textContent = step.step;
+      row.appendChild(icon); row.appendChild(label); roadmap.appendChild(row);
+    });
+    rightPanel.appendChild(roadmap);
+  } else if (coverage.criticalDatasets !== undefined || coverage.confidence) {
+    var covLbl = document.createElement('p'); covLbl.className = 'brief-label'; covLbl.textContent = 'Coverage Summary';
+    rightPanel.appendChild(covLbl);
+    rightPanel.appendChild(ndScoresBar([
       { value: String(coverage.criticalDatasets || 0), label: 'Datasets Identified' },
       { value: String(coverage.missingData || 0),       label: 'Missing or Partial' },
       { value: (coverage.confidence || 0) + '%',        label: 'Data Confidence' },
     ]));
   }
-  body.appendChild(rightCol);
+
+  body.appendChild(rightPanel);
   wrap.appendChild(body);
+
+  if (consultantGuidance) {
+    var cg = document.createElement('div'); cg.className = 'cdi-consultant-guidance';
+    var cgHdr = document.createElement('div'); cgHdr.className = 'cdi-consultant-guidance__header';
+    var cgIcon = document.createElement('span'); cgIcon.className = 'cdi-consultant-guidance__icon'; cgIcon.textContent = '◆';
+    var cgTitle = document.createElement('span'); cgTitle.className = 'cdi-consultant-guidance__title'; cgTitle.textContent = 'Consultant Guidance';
+    cgHdr.appendChild(cgIcon); cgHdr.appendChild(cgTitle); cg.appendChild(cgHdr);
+    var cgTxt = document.createElement('p'); cgTxt.className = 'cdi-consultant-guidance__text'; cgTxt.textContent = consultantGuidance;
+    cg.appendChild(cgTxt); wrap.appendChild(cg);
+  }
+  if (aiRecommendation) {
+    var ar = document.createElement('div'); ar.className = 'cdi-ai-recommendation';
+    var arHdr = document.createElement('div'); arHdr.className = 'cdi-ai-recommendation__header';
+    var arIcon = document.createElement('span'); arIcon.className = 'cdi-ai-recommendation__icon'; arIcon.textContent = '⬡';
+    var arTitle = document.createElement('span'); arTitle.className = 'cdi-ai-recommendation__title'; arTitle.textContent = 'AI Recommendation';
+    arHdr.appendChild(arIcon); arHdr.appendChild(arTitle); ar.appendChild(arHdr);
+    var arTxt = document.createElement('p'); arTxt.className = 'cdi-ai-recommendation__text'; arTxt.textContent = aiRecommendation;
+    ar.appendChild(arTxt); wrap.appendChild(ar);
+  }
   return wrap;
 }
 
 // ── Data Readiness: AI Data Preparation ───────────────────────────────────────
 
 function buildAIDataPreparationLayout(section) {
-  var b             = section.brief || {};
-  var inputDatasets = b.inputDatasets      || [];
-  var pipelineStages = b.pipelineStages    || [];
-  var prepRecs      = b.prepRecommendations || [];
-  var dataStats     = b.dataStats          || {};
-  var readiness     = b.readinessSummary   || {};
+  var b              = section.brief || {};
+  var prepWorkPackages = Array.isArray(b.prepWorkPackages) ? b.prepWorkPackages : [];
+  var firstSteps       = Array.isArray(b.firstSteps)       ? b.firstSteps       : [];
+  var prepSummary      = b.prepSummary || {};
+  // Legacy fallbacks
+  var prepActivities   = Array.isArray(b.prepActivities)   ? b.prepActivities   : [];
+  var inputDatasets    = Array.isArray(b.inputDatasets)     ? b.inputDatasets    : [];
+  var prepRecs         = Array.isArray(b.prepRecommendations) ? b.prepRecommendations : [];
+  var readiness        = b.readinessSummary || {};
 
-  var SICON  = { AVAILABLE: '◉', MISSING: '◎', 'IN PROGRESS': '◷' };
-  var SCLS   = { AVAILABLE: 'adp-status--available', MISSING: 'adp-status--missing', 'IN PROGRESS': 'adp-status--progress' };
-  var PSTCLS = { Completed: 'adp-circle--completed', 'Needs Attention': 'adp-circle--attention', 'In Progress': 'adp-circle--progress', Pending: 'adp-circle--pending' };
+  var PRIORITY_CLASS = { HIGH: 'cdi-badge--high', MEDIUM: 'cdi-badge--medium', LOW: 'cdi-badge--low' };
+  var ADP_ROADMAP = [
+    { stage: 'Identify',    outcome: 'Know which datasets are required' },
+    { stage: 'Clean',       outcome: 'Remove incorrect information' },
+    { stage: 'Standardize', outcome: 'Common naming and formats' },
+    { stage: 'Integrate',   outcome: 'Connect related repositories' },
+    { stage: 'Enrich',      outcome: 'Add business context' },
+    { stage: 'Validate',    outcome: 'Verify AI readiness' },
+    { stage: 'AI Ready',    outcome: 'Data prepared for implementation' },
+  ];
 
   var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
-  if (readiness.aiReadiness) { wrap.appendChild(ndBadge('AI READINESS: ' + readiness.aiReadiness + '%')); }
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  var body = ndBody(3);
+  var body = document.createElement('div'); body.className = 'adp-body';
 
-  // LEFT: input dataset cards
-  var leftCol = ndCol();
-  leftCol.appendChild(ndLbl('Input Datasets'));
-  inputDatasets.forEach(function(ds) {
-    var card = document.createElement('div'); card.className = 'adp-ds-card';
-    var icon = document.createElement('div'); icon.className = 'adp-ds-card__icon'; icon.textContent = SICON[ds.status] || '◉'; card.appendChild(icon);
-    var name = document.createElement('p'); name.className = 'adp-ds-card__name'; name.textContent = ds.name; card.appendChild(name);
-    var badge = document.createElement('span'); badge.className = 'adp-ds-status ' + (SCLS[ds.status] || 'adp-status--available'); badge.textContent = ds.status; card.appendChild(badge);
-    leftCol.appendChild(card);
-  });
+  // LEFT: Work Packages (new) or input datasets (legacy)
+  var leftCol = document.createElement('div'); leftCol.className = 'adp-col adp-col--left';
+  var activePackages = prepWorkPackages.length ? prepWorkPackages : prepActivities;
+  var isNewFmt = prepWorkPackages.length > 0;
+
+  if (activePackages.length) {
+    var wpLbl = document.createElement('p'); wpLbl.className = 'brief-label'; wpLbl.textContent = 'Preparation Work Packages';
+    leftCol.appendChild(wpLbl);
+    activePackages.forEach(function(pkg) {
+      var card = document.createElement('div'); card.className = 'adp-wp-card';
+      var nm = document.createElement('p'); nm.className = 'adp-wp-card__name'; nm.textContent = pkg.name || '—';
+      card.appendChild(nm);
+      if (isNewFmt && Array.isArray(pkg.workPackage) && pkg.workPackage.length) {
+        var wl = document.createElement('span'); wl.className = 'adp-wp-card__field-label'; wl.textContent = 'Work Package'; card.appendChild(wl);
+        var ul = document.createElement('ul'); ul.className = 'adp-wp-card__work-list';
+        pkg.workPackage.forEach(function(item) { var li = document.createElement('li'); li.className = 'adp-wp-card__work-item'; li.textContent = item; ul.appendChild(li); });
+        card.appendChild(ul);
+      } else if (pkg.preparationActivity) {
+        var paRow = document.createElement('div'); paRow.className = 'adp-wp-card__row';
+        var paLbl = document.createElement('span'); paLbl.className = 'adp-wp-card__field-label'; paLbl.textContent = 'Preparation Activity';
+        var paVal = document.createElement('span'); paVal.className = 'adp-wp-card__value'; paVal.textContent = pkg.preparationActivity;
+        paRow.appendChild(paLbl); paRow.appendChild(paVal); card.appendChild(paRow);
+      }
+      var whyText = isNewFmt ? pkg.whyAINeeds : pkg.businessPurpose;
+      var whyLabel = isNewFmt ? 'Why AI Needs This' : 'Business Purpose';
+      if (whyText) {
+        var whyLbl = document.createElement('span'); whyLbl.className = 'adp-wp-card__field-label'; whyLbl.textContent = whyLabel; card.appendChild(whyLbl);
+        var whyVal = document.createElement('p'); whyVal.className = 'adp-wp-card__why'; whyVal.textContent = whyText; card.appendChild(whyVal);
+      }
+      if (isNewFmt && pkg.deliverable) {
+        var delRow = document.createElement('div'); delRow.className = 'adp-wp-card__row';
+        var delLbl = document.createElement('span'); delLbl.className = 'adp-wp-card__field-label'; delLbl.textContent = 'Deliverable';
+        var delVal = document.createElement('span'); delVal.className = 'adp-wp-card__deliverable'; delVal.textContent = pkg.deliverable;
+        delRow.appendChild(delLbl); delRow.appendChild(delVal); card.appendChild(delRow);
+      }
+      var metaRow = document.createElement('div'); metaRow.className = 'adp-wp-card__meta-row';
+      if (pkg.recommendedOwner) {
+        var owRow = document.createElement('div'); owRow.className = 'adp-wp-card__row';
+        var owLbl = document.createElement('span'); owLbl.className = 'adp-wp-card__field-label'; owLbl.textContent = 'Primary Owner';
+        var owVal = document.createElement('span'); owVal.className = 'adp-wp-card__value'; owVal.textContent = pkg.recommendedOwner;
+        owRow.appendChild(owLbl); owRow.appendChild(owVal); metaRow.appendChild(owRow);
+      }
+      if (pkg.priority) {
+        var badge = document.createElement('span'); badge.className = 'cdi-badge ' + (PRIORITY_CLASS[pkg.priority] || 'cdi-badge--medium'); badge.textContent = pkg.priority;
+        metaRow.appendChild(badge);
+      }
+      if (metaRow.children.length) card.appendChild(metaRow);
+      leftCol.appendChild(card);
+    });
+  } else {
+    // Fallback: input datasets
+    var dsLbl = document.createElement('p'); dsLbl.className = 'brief-label'; dsLbl.textContent = 'Input Datasets'; leftCol.appendChild(dsLbl);
+    var SICON = { AVAILABLE: '◉', MISSING: '◎', 'IN PROGRESS': '◷' };
+    var SCLS  = { AVAILABLE: 'adp-status--available', MISSING: 'adp-status--missing', 'IN PROGRESS': 'adp-status--progress' };
+    inputDatasets.forEach(function(ds) {
+      var card = document.createElement('div'); card.className = 'adp-ds-card';
+      var ico = document.createElement('div'); ico.className = 'adp-ds-card__icon'; ico.textContent = SICON[ds.status] || '◉';
+      var dnm = document.createElement('p');   dnm.className = 'adp-ds-card__name'; dnm.textContent = ds.name;
+      var bdg = document.createElement('span'); bdg.className = 'adp-ds-status ' + (SCLS[ds.status] || 'adp-status--available'); bdg.textContent = ds.status;
+      card.appendChild(ico); card.appendChild(dnm); card.appendChild(bdg); leftCol.appendChild(card);
+    });
+  }
   body.appendChild(leftCol);
 
-  // CENTER: pipeline circles
-  var centerCol = ndCol();
-  centerCol.appendChild(ndLbl('AI Data Preparation Pipeline'));
-  var pGrid = document.createElement('div'); pGrid.className = 'adp-pipeline-grid';
-  pipelineStages.forEach(function(stage) {
-    var cell = document.createElement('div'); cell.className = 'adp-pipeline-cell';
-    var circle = document.createElement('div'); circle.className = 'adp-circle ' + (PSTCLS[stage.status] || 'adp-circle--pending');
-    var sn = document.createElement('p'); sn.className = 'adp-circle__name'; sn.textContent = stage.stage; circle.appendChild(sn);
-    var ss = document.createElement('p'); ss.className = 'adp-circle__status'; ss.textContent = stage.status; circle.appendChild(ss);
-    cell.appendChild(circle); pGrid.appendChild(cell);
+  // CENTER: Preparation Roadmap (static)
+  var centerCol = document.createElement('div'); centerCol.className = 'adp-col adp-col--center';
+  var roadmapLbl = document.createElement('p'); roadmapLbl.className = 'brief-label'; roadmapLbl.textContent = 'Preparation Roadmap';
+  centerCol.appendChild(roadmapLbl);
+  var roadmap = document.createElement('div'); roadmap.className = 'adp-roadmap';
+  ADP_ROADMAP.forEach(function(item, i) {
+    var node = document.createElement('div');
+    node.className = i === 0 ? 'adp-roadmap__node adp-roadmap__node--start' : i === ADP_ROADMAP.length - 1 ? 'adp-roadmap__node adp-roadmap__node--end' : 'adp-roadmap__node';
+    var stg = document.createElement('span'); stg.className = 'adp-roadmap__stage'; stg.textContent = item.stage; node.appendChild(stg);
+    var out = document.createElement('span'); out.className = 'adp-roadmap__outcome'; out.textContent = item.outcome; node.appendChild(out);
+    roadmap.appendChild(node);
+    if (i < ADP_ROADMAP.length - 1) { var arrow = document.createElement('div'); arrow.className = 'adp-roadmap__arrow'; arrow.textContent = '↓'; roadmap.appendChild(arrow); }
   });
-  centerCol.appendChild(pGrid);
+  centerCol.appendChild(roadmap);
   body.appendChild(centerCol);
 
-  // RIGHT: recommendations + data stats
-  var rightCol = ndCol();
-  if (prepRecs.length) {
-    rightCol.appendChild(ndLbl('AI Recommendations'));
+  // RIGHT: First Steps (new) or recommendations (legacy)
+  var rightCol = document.createElement('div'); rightCol.className = 'adp-col adp-col--right';
+  if (firstSteps.length) {
+    var fsLbl = document.createElement('p'); fsLbl.className = 'brief-label'; fsLbl.textContent = 'Recommended First Steps'; rightCol.appendChild(fsLbl);
+    firstSteps.forEach(function(step, i) {
+      var row = document.createElement('div'); row.className = 'adp-step-row';
+      var num = document.createElement('span'); num.className = 'adp-step-row__num'; num.textContent = i + 1;
+      var content = document.createElement('div'); content.className = 'adp-step-row__content';
+      var action = document.createElement('p'); action.className = 'adp-step-row__action'; action.textContent = step.action; content.appendChild(action);
+      if (step.why) { var why = document.createElement('p'); why.className = 'adp-step-row__why'; why.textContent = step.why; content.appendChild(why); }
+      function addMeta(labelText, value, cls) {
+        if (!value) return;
+        var mRow = document.createElement('div'); mRow.className = 'adp-step-row__meta-row';
+        var ml = document.createElement('span'); ml.className = 'adp-step-row__owner-label'; ml.textContent = labelText;
+        var mv = document.createElement('span'); mv.className = cls; mv.textContent = value;
+        mRow.appendChild(ml); mRow.appendChild(mv); content.appendChild(mRow);
+      }
+      addMeta('Owner', step.owner, 'adp-step-row__owner');
+      addMeta('Expected Output', step.expectedOutput, 'adp-step-row__output');
+      row.appendChild(num); row.appendChild(content); rightCol.appendChild(row);
+      if (i < firstSteps.length - 1) { var div = document.createElement('div'); div.className = 'adp-step-divider'; rightCol.appendChild(div); }
+    });
+  } else if (prepRecs.length) {
+    var recLbl = document.createElement('p'); recLbl.className = 'brief-label'; recLbl.textContent = 'AI Recommendations'; rightCol.appendChild(recLbl);
     prepRecs.forEach(function(rec) {
       var card = document.createElement('div'); card.className = 'adp-rec-card';
       var txt = document.createElement('p'); txt.className = 'adp-rec-card__text'; txt.textContent = rec.text; card.appendChild(txt);
@@ -1792,13 +2144,35 @@ function buildAIDataPreparationLayout(section) {
       rightCol.appendChild(card);
     });
   }
-  var dsEntries = [{ label: 'Missing Data', value: dataStats.missingData }, { label: 'Data Quality', value: dataStats.dataQuality }, { label: 'Traceability', value: dataStats.traceability }].filter(function(e) { return e.value !== undefined; }).map(function(e) { return { label: e.label, value: String(e.value) }; });
-  if (dsEntries.length) { rightCol.appendChild(ndStatBlock(dsEntries)); }
   body.appendChild(rightCol);
   wrap.appendChild(body);
 
-  // Readiness 4-cell grid
-  if (readiness.quality || readiness.standardization || readiness.integration || readiness.aiReadiness) {
+  // Preparation Summary strip (new) or readiness grid (legacy)
+  var hasNewSummary = prepSummary.workPackages || prepSummary.repositories;
+  var hasLegacySummary = prepSummary.preparationActivities || prepSummary.engineeringRepositories;
+  if (hasNewSummary || hasLegacySummary) {
+    var strip = document.createElement('div'); strip.className = 'adp-prep-summary';
+    var stripLbl = document.createElement('p'); stripLbl.className = 'brief-label'; stripLbl.textContent = 'Preparation Summary'; strip.appendChild(stripLbl);
+    var stats = hasNewSummary ? [
+      { value: prepSummary.workPackages,             label: 'Work Packages' },
+      { value: prepSummary.repositories,             label: 'Engineering Repositories' },
+      { value: prepSummary.deliverables,             label: 'AI-ready Deliverables' },
+      { value: prepSummary.estimatedDuration || '—', label: 'Estimated Duration', isText: true },
+    ] : [
+      { value: prepSummary.preparationActivities,         label: 'Preparation Activities' },
+      { value: prepSummary.engineeringRepositories,        label: 'Engineering Repositories' },
+      { value: prepSummary.recommendedOwners,              label: 'Recommended Owners' },
+      { value: prepSummary.implementationPriority || '—',  label: 'Implementation Priority', isText: true },
+    ];
+    var cells = document.createElement('div'); cells.className = 'adp-prep-summary__cells';
+    stats.forEach(function(stat) {
+      var cell = document.createElement('div'); cell.className = 'adp-prep-summary__cell';
+      var val = document.createElement('p'); val.className = stat.isText ? 'adp-prep-summary__value adp-prep-summary__value--text' : 'adp-prep-summary__value'; val.textContent = stat.value != null ? stat.value : '—';
+      var slbl = document.createElement('p'); slbl.className = 'adp-prep-summary__label'; slbl.textContent = stat.label;
+      cell.appendChild(val); cell.appendChild(slbl); cells.appendChild(cell);
+    });
+    strip.appendChild(cells); wrap.appendChild(strip);
+  } else if (readiness.quality || readiness.standardization || readiness.integration || readiness.aiReadiness) {
     wrap.appendChild(ndLbl('Readiness Summary'));
     wrap.appendChild(ndSummaryGrid([
       { label: 'Quality', value: (readiness.quality || 0) + '%' },
@@ -1814,73 +2188,207 @@ function buildAIDataPreparationLayout(section) {
 
 function buildDataArchitectureEnablementLayout(section) {
   var b              = section.brief || {};
-  var projectSystems = b.projectSystems      || [];
-  var archRecs       = b.archRecommendations || [];
-  var archStats      = b.archStats           || {};
-  var healthTimeline = b.healthTimeline      || [];
+  var archLayers     = Array.isArray(b.archLayers)    ? b.archLayers    : [];
+  var archDecisions  = Array.isArray(b.archDecisions) ? b.archDecisions : [];
+  var techStack      = Array.isArray(b.techStack)     ? b.techStack     : [];
+  var archSummary    = b.archSummary || {};
+  var archPattern    = Array.isArray(b.archPattern)   ? b.archPattern   : [];
+  var archConsultantGuidance = b.archConsultantGuidance || '';
+  // Legacy fallbacks
+  var projectSystems = Array.isArray(b.projectSystems)      ? b.projectSystems      : [];
+  var archRecs       = Array.isArray(b.archRecommendations)  ? b.archRecommendations : [];
+  var archStats      = b.archStats || {};
+  var healthTimeline = Array.isArray(b.healthTimeline)       ? b.healthTimeline       : [];
 
-  var CCLS = { Connected: 'dae-conn--connected', Partial: 'dae-conn--partial', Disconnected: 'dae-conn--disconnected' };
-  var HCLS = { Healthy: 'dae-health--healthy', 'Needs Attention': 'dae-health--attention', Pending: 'dae-health--pending', Critical: 'dae-health--critical' };
-  var HICON = { Healthy: '◉', 'Needs Attention': '◈', Pending: '◷', Critical: '◎' };
+  var PRIORITY_PIP = { High: 'dae-pip--high', Medium: 'dae-pip--medium', Low: 'dae-pip--low' };
+  var DAE_IMPL_SEQ = ['Connect Project Systems', 'Build Integration Layer', 'Create AI Data Store', 'Deploy AI Assistant', 'Scale Across Projects'];
+  var isNewFormat  = archLayers.length > 0;
 
-  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
-  if (archStats.architectureReadiness) { wrap.appendChild(ndBadge('ARCHITECTURE HEALTH: ' + archStats.architectureReadiness + '% HEALTHY')); }
+  var wrap = document.createElement('div'); wrap.className = 'dae-view';
   wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  var body = ndBody(2);
+  // ── Upper: Blueprint (left) | Flow (right) ────────────────────────────────
+  var upperBody = document.createElement('div'); upperBody.className = 'dae-upper';
 
-  // LEFT: project system cards
-  var leftCol = ndCol();
-  leftCol.appendChild(ndLbl('Project Systems'));
-  projectSystems.forEach(function(sys) {
-    var card = document.createElement('div'); card.className = 'dae-sys-card ' + (CCLS[sys.connectionStatus] || 'dae-conn--disconnected');
-    var name = document.createElement('p'); name.className = 'dae-sys-card__name'; name.textContent = sys.name; card.appendChild(name);
-    var conn = document.createElement('p'); conn.className = 'dae-sys-card__conn'; conn.textContent = 'Connection: ' + (sys.connectionStatus || 'Unknown'); card.appendChild(conn);
-    leftCol.appendChild(card);
-  });
-  body.appendChild(leftCol);
-
-  // RIGHT: network hub diagram + recs
-  var rightCol = ndCol();
-  if (projectSystems.length) {
-    rightCol.appendChild(ndLbl('Data Architecture Network'));
-    var netDiag = document.createElement('div'); netDiag.className = 'dae-net-diagram';
-    var topRow = document.createElement('div'); topRow.className = 'dae-net-row';
-    projectSystems.slice(0, 4).forEach(function(sys) {
-      var node = document.createElement('div'); node.className = 'dae-net-node ' + (CCLS[sys.connectionStatus] || 'dae-conn--disconnected');
-      node.textContent = sys.name; topRow.appendChild(node);
+  // LEFT: Architecture layers (new) or project systems (legacy)
+  var blueprintCol = document.createElement('div'); blueprintCol.className = 'dae-blueprint-col';
+  if (isNewFormat) {
+    var bpLbl = document.createElement('p'); bpLbl.className = 'brief-label'; bpLbl.textContent = 'Recommended AI Architecture'; blueprintCol.appendChild(bpLbl);
+    var grid = document.createElement('div'); grid.className = 'dae-layer-grid';
+    archLayers.forEach(function(layer, i) {
+      var card = document.createElement('div'); card.className = 'dae-layer-card dae-layer-card--' + i;
+      var nm = document.createElement('p'); nm.className = 'dae-layer-card__name'; nm.textContent = layer.name; card.appendChild(nm);
+      if (layer.purpose) {
+        var pLbl = document.createElement('span'); pLbl.className = 'dae-layer-card__field-label'; pLbl.textContent = 'Purpose'; card.appendChild(pLbl);
+        var pTxt = document.createElement('p'); pTxt.className = 'dae-layer-card__purpose'; pTxt.textContent = layer.purpose; card.appendChild(pTxt);
+      }
+      if (Array.isArray(layer.recommended) && layer.recommended.length) {
+        var rLbl = document.createElement('span'); rLbl.className = 'dae-layer-card__field-label'; rLbl.textContent = i === 0 ? 'Recommended Systems' : 'Recommended Technologies'; card.appendChild(rLbl);
+        var tags = document.createElement('div'); tags.className = 'dae-layer-card__tags';
+        layer.recommended.forEach(function(t) { var tag = document.createElement('span'); tag.className = 'dae-layer-card__tag'; tag.textContent = t; tags.appendChild(tag); });
+        card.appendChild(tags);
+      }
+      if (layer.whyNeeded) {
+        var wLbl = document.createElement('span'); wLbl.className = 'dae-layer-card__field-label'; wLbl.textContent = 'Why Needed'; card.appendChild(wLbl);
+        var wTxt = document.createElement('p'); wTxt.className = 'dae-layer-card__why'; wTxt.textContent = layer.whyNeeded; card.appendChild(wTxt);
+      }
+      grid.appendChild(card);
     });
-    netDiag.appendChild(topRow);
-    var arrows = document.createElement('div'); arrows.className = 'dae-net-arrows';
-    projectSystems.slice(0, 4).forEach(function() {
-      var a = document.createElement('div'); a.className = 'dae-net-arrow'; a.textContent = '↓'; arrows.appendChild(a);
+    blueprintCol.appendChild(grid);
+  } else {
+    var sysLbl = document.createElement('p'); sysLbl.className = 'brief-label'; sysLbl.textContent = 'Project Systems'; blueprintCol.appendChild(sysLbl);
+    var CCLS = { Connected: 'dae-conn--connected', Partial: 'dae-conn--partial', Disconnected: 'dae-conn--disconnected' };
+    projectSystems.forEach(function(sys) {
+      var card = document.createElement('div'); card.className = 'dae-sys-card ' + (CCLS[sys.connectionStatus] || 'dae-conn--disconnected');
+      var snm = document.createElement('p'); snm.className = 'dae-sys-card__name'; snm.textContent = sys.name;
+      var sconn = document.createElement('p'); sconn.className = 'dae-sys-card__conn'; sconn.textContent = 'Connection Status: ' + sys.connectionStatus;
+      card.appendChild(snm); card.appendChild(sconn); blueprintCol.appendChild(card);
     });
-    netDiag.appendChild(arrows);
-    var hub = document.createElement('div'); hub.className = 'dae-net-hub'; hub.textContent = '⬡  AI Data Hub'; netDiag.appendChild(hub);
-    var legend = document.createElement('div'); legend.className = 'dae-net-legend';
-    [{ cls: 'dae-conn--connected', label: 'Healthy' }, { cls: 'dae-conn--partial', label: 'Limited' }, { cls: 'dae-conn--disconnected', label: 'Missing' }].forEach(function(leg) {
-      var dot = document.createElement('span'); dot.className = 'dae-net-legend__dot ' + leg.cls;
-      var lbl = document.createElement('span'); lbl.className = 'dae-net-legend__lbl'; lbl.textContent = leg.label;
-      legend.appendChild(dot); legend.appendChild(lbl);
-    });
-    netDiag.appendChild(legend);
-    rightCol.appendChild(netDiag);
   }
-  if (archRecs.length) {
-    rightCol.appendChild(ndLbl('AI Recommendations'));
-    var ICLS = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
+  upperBody.appendChild(blueprintCol);
+
+  // RIGHT: Architecture Flow vertical chain
+  var flowCol = document.createElement('div'); flowCol.className = 'dae-flow-col';
+  var flowLbl = document.createElement('p'); flowLbl.className = 'brief-label'; flowLbl.textContent = 'Architecture Flow'; flowCol.appendChild(flowLbl);
+  var flow = document.createElement('div'); flow.className = 'dae-flow';
+  if (isNewFormat && archLayers.length) {
+    archLayers.forEach(function(layer, i) {
+      var node = document.createElement('div'); node.className = 'dae-flow__node dae-flow__node--' + i;
+      var nName = document.createElement('p'); nName.className = 'dae-flow__node-name'; nName.textContent = layer.name; node.appendChild(nName);
+      if (Array.isArray(layer.recommended) && layer.recommended.length) {
+        var nSubs = document.createElement('p'); nSubs.className = 'dae-flow__node-subs'; nSubs.textContent = layer.recommended.slice(0, 3).join(' · '); node.appendChild(nSubs);
+      }
+      flow.appendChild(node);
+      if (i < archLayers.length - 1) { var arr = document.createElement('div'); arr.className = 'dae-flow__arrow'; arr.textContent = '↓'; flow.appendChild(arr); }
+    });
+  } else {
+    ['Source Systems', 'Integration Layer', 'AI Data Hub', 'AI Applications'].forEach(function(name, i, list) {
+      var node = document.createElement('div'); node.className = 'dae-flow__node';
+      var nName = document.createElement('p'); nName.className = 'dae-flow__node-name'; nName.textContent = name; node.appendChild(nName); flow.appendChild(node);
+      if (i < list.length - 1) { var arrow = document.createElement('div'); arrow.className = 'dae-flow__arrow'; arrow.textContent = '↓'; flow.appendChild(arrow); }
+    });
+  }
+  flowCol.appendChild(flow); upperBody.appendChild(flowCol);
+  wrap.appendChild(upperBody);
+
+  // ── Middle: Decisions (left) | Tech Stack (right) ───────────────────────
+  var middleBody = document.createElement('div'); middleBody.className = 'dae-middle';
+
+  var decisionsCol = document.createElement('div'); decisionsCol.className = 'dae-decisions-col';
+  var isNewDecisions = archDecisions.length && archDecisions[0].decisionArea;
+  if (archDecisions.length) {
+    var dLbl = document.createElement('p'); dLbl.className = 'brief-label'; dLbl.textContent = 'Recommended Architecture Decisions'; decisionsCol.appendChild(dLbl);
+    if (isNewDecisions) {
+      var table = document.createElement('div'); table.className = 'dae-dec-table';
+      var hrow = document.createElement('div'); hrow.className = 'dae-dec-table__row dae-dec-table__row--header';
+      ['Decision Area', 'Recommendation', 'Why'].forEach(function(h) { var cell = document.createElement('span'); cell.className = 'dae-dec-table__cell'; cell.textContent = h; hrow.appendChild(cell); });
+      table.appendChild(hrow);
+      archDecisions.forEach(function(dec) {
+        var row = document.createElement('div'); row.className = 'dae-dec-table__row';
+        var area = document.createElement('span'); area.className = 'dae-dec-table__cell dae-dec-table__cell--area'; area.textContent = dec.decisionArea;
+        var rec  = document.createElement('span'); rec.className  = 'dae-dec-table__cell dae-dec-table__cell--rec';  rec.textContent  = dec.recommendation;
+        var why  = document.createElement('span'); why.className  = 'dae-dec-table__cell dae-dec-table__cell--why';  why.textContent  = dec.why;
+        row.appendChild(area); row.appendChild(rec); row.appendChild(why); table.appendChild(row);
+      });
+      decisionsCol.appendChild(table);
+    } else {
+      archDecisions.forEach(function(dec) {
+        var card = document.createElement('div'); card.className = 'dae-decision-card';
+        var decLbl = document.createElement('span'); decLbl.className = 'dae-decision-card__field-label'; decLbl.textContent = 'Decision';
+        var decTxt = document.createElement('p');    decTxt.className  = 'dae-decision-card__decision';   decTxt.textContent  = dec.decision;
+        var benLbl = document.createElement('span'); benLbl.className = 'dae-decision-card__field-label'; benLbl.textContent = 'Benefit';
+        var benTxt = document.createElement('p');    benTxt.className  = 'dae-decision-card__benefit';    benTxt.textContent  = dec.benefit;
+        card.appendChild(decLbl); card.appendChild(decTxt); card.appendChild(benLbl); card.appendChild(benTxt);
+        if (dec.priority) { var pip = document.createElement('span'); pip.className = 'dae-pip ' + (PRIORITY_PIP[dec.priority] || 'dae-pip--medium'); pip.textContent = dec.priority; card.appendChild(pip); }
+        decisionsCol.appendChild(card);
+      });
+    }
+  } else if (archRecs.length) {
+    var recLbl = document.createElement('p'); recLbl.className = 'brief-label'; recLbl.textContent = 'AI Recommendations'; decisionsCol.appendChild(recLbl);
     archRecs.forEach(function(rec) {
       var card = document.createElement('div'); card.className = 'dae-rec-card';
-      var title = document.createElement('p'); title.className = 'dae-rec-card__title'; title.textContent = rec.title || ''; card.appendChild(title);
-      var meta = document.createElement('p'); meta.className = 'dae-rec-card__meta'; meta.innerHTML = 'Impact: <span class="nd-pri ' + (ICLS[rec.impact] || 'nd-pri--medium') + '">' + (rec.impact || '') + '</span>' + (rec.effort ? '  ·  Effort: <strong>' + rec.effort + '</strong>' : ''); card.appendChild(meta);
-      rightCol.appendChild(card);
+      var title = document.createElement('p'); title.className = 'dae-rec-card__title'; title.textContent = rec.title; card.appendChild(title);
+      var meta = document.createElement('p'); meta.className = 'dae-rec-card__meta'; meta.textContent = 'Impact: ' + rec.impact + (rec.effort ? '  ·  Effort: ' + rec.effort : ''); card.appendChild(meta);
+      decisionsCol.appendChild(card);
     });
   }
-  body.appendChild(rightCol);
-  wrap.appendChild(body);
+  middleBody.appendChild(decisionsCol);
 
-  // Stats bar
-  if (archStats.architectureReadiness || archStats.automation || archStats.connectedSystems || archStats.disconnectedSystems) {
+  var techCol = document.createElement('div'); techCol.className = 'dae-tech-col';
+  if (techStack.length) {
+    var tLbl = document.createElement('p'); tLbl.className = 'brief-label'; tLbl.textContent = 'AI Technology Recommendation'; techCol.appendChild(tLbl);
+    var tTable = document.createElement('div'); tTable.className = 'dae-tech-table';
+    var tHrow = document.createElement('div'); tHrow.className = 'dae-tech-table__row dae-tech-table__row--header';
+    ['Architecture Layer', 'Recommendation'].forEach(function(h) { var cell = document.createElement('span'); cell.className = 'dae-tech-table__cell'; cell.textContent = h; tHrow.appendChild(cell); });
+    tTable.appendChild(tHrow);
+    techStack.forEach(function(item) {
+      var row = document.createElement('div'); row.className = 'dae-tech-table__row';
+      var lCell = document.createElement('span'); lCell.className = 'dae-tech-table__cell dae-tech-table__cell--layer'; lCell.textContent = item.layer;
+      var rCell = document.createElement('span'); rCell.className = 'dae-tech-table__cell dae-tech-table__cell--rec';   rCell.textContent = item.recommendation;
+      row.appendChild(lCell); row.appendChild(rCell); tTable.appendChild(row);
+    });
+    techCol.appendChild(tTable);
+  }
+  middleBody.appendChild(techCol);
+  wrap.appendChild(middleBody);
+
+  // ── Architecture Pattern ──────────────────────────────────────────────────
+  var patternNodes = archPattern.length ? archPattern : (isNewFormat ? archLayers.map(function(l) { return l.name; }) : []);
+  if (patternNodes.length) {
+    var patternSection = document.createElement('div'); patternSection.className = 'dae-pattern-section';
+    var patternLbl = document.createElement('p'); patternLbl.className = 'brief-label'; patternLbl.textContent = 'Architecture Pattern'; patternSection.appendChild(patternLbl);
+    var patternRow = document.createElement('div'); patternRow.className = 'dae-pattern-row';
+    patternNodes.forEach(function(node, i) {
+      var nodeEl = document.createElement('div'); nodeEl.className = 'dae-pattern-node dae-pattern-node--' + i;
+      var nodeLabel = document.createElement('p'); nodeLabel.className = 'dae-pattern-node__label'; nodeLabel.textContent = node; nodeEl.appendChild(nodeLabel); patternRow.appendChild(nodeEl);
+      if (i < patternNodes.length - 1) { var arr = document.createElement('span'); arr.className = 'dae-pattern-row__arrow'; arr.textContent = '↓'; patternRow.appendChild(arr); }
+    });
+    patternSection.appendChild(patternRow); wrap.appendChild(patternSection);
+  }
+
+  // ── Consultant Guidance ───────────────────────────────────────────────────
+  if (archConsultantGuidance) {
+    var cg = document.createElement('div'); cg.className = 'dae-consultant-guidance';
+    var cgHeader = document.createElement('div'); cgHeader.className = 'dae-consultant-guidance__header';
+    var cgIcon   = document.createElement('span'); cgIcon.className   = 'dae-consultant-guidance__icon';  cgIcon.textContent  = '◆';
+    var cgTitle  = document.createElement('span'); cgTitle.className  = 'dae-consultant-guidance__title'; cgTitle.textContent = 'Consultant Guidance';
+    cgHeader.appendChild(cgIcon); cgHeader.appendChild(cgTitle); cg.appendChild(cgHeader);
+    var cgText = document.createElement('p'); cgText.className = 'dae-consultant-guidance__text'; cgText.textContent = archConsultantGuidance; cg.appendChild(cgText);
+    wrap.appendChild(cg);
+  }
+
+  // ── Implementation Sequence (static) ─────────────────────────────────────
+  var implSection = document.createElement('div'); implSection.className = 'dae-impl-section';
+  var implLbl = document.createElement('p'); implLbl.className = 'brief-label'; implLbl.textContent = 'Recommended Implementation Sequence'; implSection.appendChild(implLbl);
+  var implRow = document.createElement('div'); implRow.className = 'dae-impl-row';
+  DAE_IMPL_SEQ.forEach(function(step, i) {
+    var stepEl = document.createElement('div'); stepEl.className = 'dae-impl-step';
+    var num = document.createElement('span'); num.className = 'dae-impl-step__num'; num.textContent = i + 1;
+    var label = document.createElement('p'); label.className = 'dae-impl-step__label'; label.textContent = step;
+    stepEl.appendChild(num); stepEl.appendChild(label); implRow.appendChild(stepEl);
+    if (i < DAE_IMPL_SEQ.length - 1) { var arr = document.createElement('span'); arr.className = 'dae-impl-row__arrow'; arr.textContent = '→'; implRow.appendChild(arr); }
+  });
+  implSection.appendChild(implRow); wrap.appendChild(implSection);
+
+  // ── Architecture Summary strip (new) or stats bar (legacy) ───────────────
+  var hasSummary = archSummary.sourceSystems || archSummary.integrationPoints;
+  if (hasSummary) {
+    var strip = document.createElement('div'); strip.className = 'dae-arch-summary';
+    var stripLbl = document.createElement('p'); stripLbl.className = 'brief-label'; stripLbl.textContent = 'Architecture Summary'; strip.appendChild(stripLbl);
+    var cells = document.createElement('div'); cells.className = 'dae-arch-summary__cells';
+    [
+      { value: archSummary.sourceSystems,      label: 'Source Systems' },
+      { value: archSummary.integrationPoints,  label: 'Integration Points' },
+      { value: archSummary.aiStorage  || '—',  label: 'AI Storage',   isText: true },
+      { value: archSummary.aiConsumers || '—', label: 'AI Consumers', isText: true },
+    ].forEach(function(stat) {
+      var cell = document.createElement('div'); cell.className = 'dae-arch-summary__cell';
+      var val  = document.createElement('p'); val.className = stat.isText ? 'dae-arch-summary__value dae-arch-summary__value--text' : 'dae-arch-summary__value'; val.textContent = stat.value != null ? stat.value : '—';
+      var slbl = document.createElement('p'); slbl.className = 'dae-arch-summary__label'; slbl.textContent = stat.label;
+      cell.appendChild(val); cell.appendChild(slbl); cells.appendChild(cell);
+    });
+    strip.appendChild(cells); wrap.appendChild(strip);
+  } else if (archStats.architectureReadiness || archStats.connectedSystems) {
     wrap.appendChild(ndScoresBar([
       { value: (archStats.architectureReadiness || 0) + '%', label: 'Architecture Readiness' },
       { value: (archStats.automation || 0) + '%',            label: 'Automation' },
@@ -1888,88 +2396,182 @@ function buildDataArchitectureEnablementLayout(section) {
       { value: String(archStats.disconnectedSystems || 0),   label: 'Disconnected' },
     ]));
   }
-
-  // Health timeline
-  if (healthTimeline.length) {
-    wrap.appendChild(ndLbl('Architecture Health Timeline'));
-    var timelineWrap = document.createElement('div'); timelineWrap.className = 'dae-timeline';
-    healthTimeline.forEach(function(item) {
-      var row = document.createElement('div'); row.className = 'dae-timeline-row';
-      var icon = document.createElement('div'); icon.className = 'dae-timeline-row__icon ' + (HCLS[item.health] || 'dae-health--pending'); icon.textContent = HICON[item.health] || '◷'; row.appendChild(icon);
-      var txt = document.createElement('div'); txt.className = 'dae-timeline-row__text';
-      var stage = document.createElement('p'); stage.className = 'dae-timeline-row__stage'; stage.textContent = item.stage; txt.appendChild(stage);
-      if (item.status) { var st = document.createElement('p'); st.className = 'dae-timeline-row__status'; st.textContent = item.status; txt.appendChild(st); }
-      row.appendChild(txt);
-      var pill = document.createElement('span'); pill.className = 'dae-health-pill ' + (HCLS[item.health] || 'dae-health--pending'); pill.textContent = item.health; row.appendChild(pill);
-      timelineWrap.appendChild(row);
-    });
-    wrap.appendChild(timelineWrap);
-  }
   return wrap;
 }
 
 // ── Technology Infrastructure: System Integration & Architecture ───────────────
 
 function buildSystemIntegrationLayout(section) {
-  var b                  = section.brief || {};
-  var connectedSystems   = b.connectedSystems   || [];
+  var b = section.brief || {};
+
+  // New fields
+  var siaEngineeringSystems  = Array.isArray(b.siaEngineeringSystems)  ? b.siaEngineeringSystems  : [];
+  var siaWorkflowSteps       = Array.isArray(b.siaWorkflowSteps)       ? b.siaWorkflowSteps       : [];
+  var siaIntegrationPriorities = Array.isArray(b.siaIntegrationPriorities) ? b.siaIntegrationPriorities : [];
+  var siaArchLayers          = Array.isArray(b.siaArchLayers)          ? b.siaArchLayers          : [];
+  var siaImplSequence        = Array.isArray(b.siaImplSequence)        ? b.siaImplSequence        : [];
+  var siaIntegrationPrinciples = Array.isArray(b.siaIntegrationPrinciples) ? b.siaIntegrationPrinciples : [];
+  var siaConsultantGuidance  = b.siaConsultantGuidance || '';
+  var siaAIRecommendation    = b.siaAIRecommendation   || '';
+  // Legacy
+  var connectedSystems   = Array.isArray(b.connectedSystems)   ? b.connectedSystems   : [];
   var integrationSummary = b.integrationSummary || {};
 
-  var SCLS = { CONNECTED: 'sia-card--connected', PARTIAL: 'sia-card--partial', MISSING: 'sia-card--missing' };
-  var SBADGE = { CONNECTED: 'nd-pri--low', PARTIAL: 'nd-pri--medium', MISSING: 'nd-pri--high' };
+  var isNewFormat = siaEngineeringSystems.length > 0 || !!siaConsultantGuidance;
 
-  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
-  if (b.integrationReadiness) { wrap.appendChild(ndBadge('INTEGRATION READINESS: ' + b.integrationReadiness + '%')); }
-  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  var SIA_IMPL_STEPS = [
+    'Connect Engineering Systems', 'Standardize Data Exchange',
+    'Embed AI into Existing Workflows', 'Enable Secure Monitoring', 'Scale Across Engineering Programs',
+  ];
+  var PRIORITY_COLOR = { HIGH: '#f87171', MEDIUM: '#fbbf24', LOW: '#5CC5A7' };
+  var ARCH_ACCENT    = ['#5CC5A7', '#818cf8', '#fbbf24', '#c084fc', '#fb923c'];
 
-  var body = ndBody(2);
+  var wrap = document.createElement('div'); wrap.className = 'sia-view';
 
-  // LEFT: connected system cards (2-per-row grid)
-  var leftCol = ndCol();
-  leftCol.appendChild(ndLbl('Connected Systems'));
-  var sysGrid = document.createElement('div'); sysGrid.className = 'sia-sys-grid';
-  connectedSystems.forEach(function(sys) {
-    var status = String(sys.status || 'MISSING').toUpperCase();
-    var card = document.createElement('div'); card.className = 'sia-sys-card ' + (SCLS[status] || 'sia-card--missing');
-    var name = document.createElement('p'); name.className = 'sia-sys-card__name'; name.textContent = sys.name; card.appendChild(name);
-    if (sys.integrationMethod) { var method = document.createElement('p'); method.className = 'sia-sys-card__method'; method.textContent = sys.integrationMethod; card.appendChild(method); }
-    var badge = document.createElement('span'); badge.className = 'sia-status nd-pri ' + (SBADGE[status] || 'nd-pri--medium'); badge.textContent = status; card.appendChild(badge);
-    if (sys.healthIndicator) { var health = document.createElement('span'); health.className = 'sia-health'; health.textContent = sys.healthIndicator; card.appendChild(health); }
-    sysGrid.appendChild(card);
-  });
-  leftCol.appendChild(sysGrid);
-  body.appendChild(leftCol);
+  if (b.strategicPosition) {
+    var posLabel = document.createElement('p'); posLabel.className = 'brief-label'; posLabel.textContent = 'Strategic Position'; wrap.appendChild(posLabel);
+    var pos = document.createElement('p'); pos.className = 'sia-view__position'; pos.textContent = b.strategicPosition; wrap.appendChild(pos);
+  }
 
-  // RIGHT: integration architecture visual (hub+spoke DOM)
-  var rightCol = ndCol();
-  rightCol.appendChild(ndLbl('AI Integration Architecture'));
-  var archPanel = document.createElement('div'); archPanel.className = 'sia-arch-panel';
-  var spokeRow = document.createElement('div'); spokeRow.className = 'sia-spoke-row';
-  connectedSystems.slice(0, 4).forEach(function(sys) {
-    var status = String(sys.status || 'MISSING').toUpperCase();
-    var node = document.createElement('div'); node.className = 'sia-spoke-node sia-spoke-node--' + status.toLowerCase();
-    var icon = document.createElement('span'); icon.className = 'sia-spoke-node__icon'; icon.textContent = '▣';
-    var lbl = document.createElement('span'); lbl.className = 'sia-spoke-node__name'; lbl.textContent = sys.name;
-    node.appendChild(icon); node.appendChild(lbl); spokeRow.appendChild(node);
-  });
-  archPanel.appendChild(spokeRow);
-  var connectors = document.createElement('div'); connectors.className = 'sia-connectors';
-  connectedSystems.slice(0, 4).forEach(function() { var c = document.createElement('div'); c.className = 'sia-connector-line'; connectors.appendChild(c); });
-  archPanel.appendChild(connectors);
-  var hub = document.createElement('div'); hub.className = 'sia-hub'; hub.textContent = 'AI Integration Hub'; archPanel.appendChild(hub);
-  rightCol.appendChild(archPanel);
-  body.appendChild(rightCol);
-  wrap.appendChild(body);
+  if (isNewFormat) {
+    // ── Two-column body ──────────────────────────────────────────────────────
+    var body = document.createElement('div'); body.className = 'sia-main-body';
 
-  // Integration summary 4-cell grid
-  var hasSummary = integrationSummary.integration || integrationSummary.automation || integrationSummary.reliability || integrationSummary.scalability;
-  if (hasSummary) {
-    wrap.appendChild(ndSummaryGrid([
-      { label: 'Integration', value: integrationSummary.integration },
-      { label: 'Automation',  value: integrationSummary.automation },
-      { label: 'Reliability', value: integrationSummary.reliability },
-      { label: 'Scalability', value: integrationSummary.scalability },
-    ]));
+    var leftCol = document.createElement('div'); leftCol.className = 'sia-blueprint-col';
+    var bpLbl = document.createElement('p'); bpLbl.className = 'brief-label'; bpLbl.textContent = 'Integration Blueprint'; leftCol.appendChild(bpLbl);
+    var sysGrid = document.createElement('div'); sysGrid.className = 'sia-blueprint-grid';
+    siaEngineeringSystems.forEach(function(sys) {
+      var card = document.createElement('div'); card.className = 'sia-system-card';
+      var nm = document.createElement('p'); nm.className = 'sia-system-card__name'; nm.textContent = sys.name; card.appendChild(nm);
+      [
+        { label: 'Purpose',             value: sys.purpose },
+        { label: 'Integration Pattern', value: sys.integrationPattern },
+        { label: 'AI Interaction',      value: sys.aiInteraction },
+        { label: 'Expected Outcome',    value: sys.expectedOutcome },
+      ].forEach(function(field) {
+        if (!field.value) return;
+        var fl = document.createElement('p'); fl.className = 'sia-system-card__field-label'; fl.textContent = field.label; card.appendChild(fl);
+        var vt = document.createElement('p'); vt.className = 'sia-system-card__value'; vt.textContent = field.value; card.appendChild(vt);
+      });
+      sysGrid.appendChild(card);
+    });
+    leftCol.appendChild(sysGrid);
+    body.appendChild(leftCol);
+
+    var rightCol = document.createElement('div'); rightCol.className = 'sia-right-col';
+    var wfLbl = document.createElement('p'); wfLbl.className = 'brief-label'; wfLbl.textContent = 'Embedded AI Workflow'; rightCol.appendChild(wfLbl);
+    var wfChain = document.createElement('div'); wfChain.className = 'sia-workflow-chain';
+    var wfSteps = siaWorkflowSteps.length ? siaWorkflowSteps : ['Engineer', 'Engineering Tool', 'AI Service', 'Recommendation', 'Engineer Decision'];
+    wfSteps.forEach(function(step, i) {
+      var node = document.createElement('div'); node.className = 'sia-workflow-node'; node.textContent = step; wfChain.appendChild(node);
+      if (i < wfSteps.length - 1) { var arrow = document.createElement('div'); arrow.className = 'sia-workflow-arrow'; arrow.textContent = '↓'; wfChain.appendChild(arrow); }
+    });
+    rightCol.appendChild(wfChain);
+
+    if (siaIntegrationPriorities.length) {
+      var prioLbl = document.createElement('p'); prioLbl.className = 'brief-label'; prioLbl.style.marginTop = '1.25rem'; prioLbl.textContent = 'Recommended Integration Priorities'; rightCol.appendChild(prioLbl);
+      var prioList = document.createElement('div'); prioList.className = 'sia-priorities';
+      siaIntegrationPriorities.forEach(function(p) {
+        var item = document.createElement('div'); item.className = 'sia-priority-item';
+        var header = document.createElement('div'); header.className = 'sia-priority-item__header';
+        var num = document.createElement('span'); num.className = 'sia-priority-item__num'; num.textContent = p.order; header.appendChild(num);
+        var iName = document.createElement('span'); iName.className = 'sia-priority-item__name'; iName.textContent = p.name; header.appendChild(iName);
+        var pColor = PRIORITY_COLOR[p.priority] || '#fbbf24';
+        var badge = document.createElement('span'); badge.className = 'sia-priority-badge'; badge.style.color = pColor; badge.style.borderColor = pColor + '55'; badge.textContent = p.priority; header.appendChild(badge);
+        item.appendChild(header);
+        if (p.businessBenefit) { var benefit = document.createElement('p'); benefit.className = 'sia-priority-item__benefit'; benefit.textContent = p.businessBenefit; item.appendChild(benefit); }
+        prioList.appendChild(item);
+      });
+      rightCol.appendChild(prioList);
+    }
+    body.appendChild(rightCol);
+    wrap.appendChild(body);
+
+    // ── Architecture Blueprint (full-width) ─────────────────────────────────
+    var hasArchTech = siaArchLayers.some(function(l) { return l.technologies && l.technologies.length; });
+    if (hasArchTech) {
+      var archLbl = document.createElement('p'); archLbl.className = 'brief-label'; archLbl.textContent = 'Integration Architecture Blueprint'; wrap.appendChild(archLbl);
+      var archChain = document.createElement('div'); archChain.className = 'sia-arch-chain';
+      siaArchLayers.forEach(function(layer, i) {
+        var layerEl = document.createElement('div'); layerEl.className = 'sia-arch-layer'; layerEl.style.borderTop = '2px solid ' + (ARCH_ACCENT[i] || '#5CC5A7');
+        var lName = document.createElement('p'); lName.className = 'sia-arch-layer__name'; lName.style.color = ARCH_ACCENT[i] || '#5CC5A7'; lName.textContent = layer.name; layerEl.appendChild(lName);
+        if (Array.isArray(layer.technologies) && layer.technologies.length) {
+          var techRow = document.createElement('div'); techRow.className = 'sia-arch-techs';
+          layer.technologies.forEach(function(tech) { var pill = document.createElement('span'); pill.className = 'sia-tech-pill'; pill.textContent = tech; techRow.appendChild(pill); });
+          layerEl.appendChild(techRow);
+        }
+        archChain.appendChild(layerEl);
+        if (i < siaArchLayers.length - 1) { var arr = document.createElement('div'); arr.className = 'sia-arch-arrow'; arr.textContent = '↓'; archChain.appendChild(arr); }
+      });
+      wrap.appendChild(archChain);
+    }
+
+    // ── Integration Principles ──────────────────────────────────────────────
+    if (siaIntegrationPrinciples.length) {
+      var princLbl = document.createElement('p'); princLbl.className = 'brief-label'; princLbl.textContent = 'Integration Principles'; wrap.appendChild(princLbl);
+      var princGrid = document.createElement('div'); princGrid.className = 'sia-principles';
+      siaIntegrationPrinciples.forEach(function(principle) { var item = document.createElement('div'); item.className = 'sia-principle-item'; item.textContent = principle; princGrid.appendChild(item); });
+      wrap.appendChild(princGrid);
+    }
+
+    // ── Implementation Sequence ─────────────────────────────────────────────
+    var seqLbl = document.createElement('p'); seqLbl.className = 'brief-label'; seqLbl.textContent = 'Recommended Implementation Sequence'; wrap.appendChild(seqLbl);
+    var seqSteps = siaImplSequence.length ? siaImplSequence : SIA_IMPL_STEPS;
+    var seq = document.createElement('div'); seq.className = 'sia-impl-seq';
+    seqSteps.forEach(function(step, i) {
+      var item = document.createElement('div'); item.className = 'sia-impl-step';
+      var num = document.createElement('span'); num.className = 'sia-impl-step__num'; num.textContent = i + 1; item.appendChild(num);
+      var lbl = document.createElement('span'); lbl.className = 'sia-impl-step__label'; lbl.textContent = step; item.appendChild(lbl);
+      seq.appendChild(item);
+    });
+    wrap.appendChild(seq);
+
+    // ── Consultant Guidance ─────────────────────────────────────────────────
+    if (siaConsultantGuidance) {
+      var cg = document.createElement('div'); cg.className = 'sia-consultant-guidance';
+      var cgTitle = document.createElement('p'); cgTitle.className = 'sia-consultant-guidance__title'; cgTitle.textContent = 'Consultant Guidance'; cg.appendChild(cgTitle);
+      var cgText = document.createElement('p'); cgText.className = 'sia-consultant-guidance__text'; cgText.textContent = siaConsultantGuidance; cg.appendChild(cgText);
+      wrap.appendChild(cg);
+    }
+
+    // ── AI Recommendation ───────────────────────────────────────────────────
+    if (siaAIRecommendation) {
+      var ar = document.createElement('div'); ar.className = 'sia-ai-recommendation';
+      var arTitle = document.createElement('p'); arTitle.className = 'sia-ai-recommendation__title'; arTitle.textContent = 'AI Recommendation'; ar.appendChild(arTitle);
+      var arText = document.createElement('p'); arText.className = 'sia-ai-recommendation__text'; arText.textContent = siaAIRecommendation; ar.appendChild(arText);
+      wrap.appendChild(ar);
+    }
+
+  } else {
+    // ── Legacy layout ────────────────────────────────────────────────────────
+    if (b.integrationReadiness) {
+      var rdBadge = document.createElement('div'); rdBadge.className = 'sia-readiness-badge'; rdBadge.textContent = 'INTEGRATION READINESS: ' + b.integrationReadiness + '%'; wrap.appendChild(rdBadge);
+    }
+    var legBody = document.createElement('div'); legBody.className = 'sia-body';
+    var legLeft = document.createElement('div'); legLeft.className = 'sia-systems-col';
+    var legSysLbl = document.createElement('p'); legSysLbl.className = 'brief-label'; legSysLbl.textContent = 'Connected Systems'; legLeft.appendChild(legSysLbl);
+    var legGrid = document.createElement('div'); legGrid.className = 'sia-sys-grid';
+    connectedSystems.forEach(function(sys) {
+      var status = (sys.status || 'MISSING').toUpperCase();
+      var card = document.createElement('div'); card.className = 'sia-sys-card sia-sys-card--' + status.toLowerCase();
+      var nm = document.createElement('p'); nm.className = 'sia-sys-card__name'; nm.textContent = sys.name; card.appendChild(nm);
+      if (sys.integrationMethod) { var method = document.createElement('p'); method.className = 'sia-sys-card__method'; method.textContent = 'Integration Method: ' + sys.integrationMethod; card.appendChild(method); }
+      legGrid.appendChild(card);
+    });
+    legLeft.appendChild(legGrid); legBody.appendChild(legLeft);
+    var legRight = document.createElement('div'); legRight.className = 'sia-arch-col';
+    var legArchLbl = document.createElement('p'); legArchLbl.className = 'brief-label'; legArchLbl.textContent = 'AI Integration Architecture'; legRight.appendChild(legArchLbl);
+    legBody.appendChild(legRight); wrap.appendChild(legBody);
+
+    var hasSummary = integrationSummary.integration || integrationSummary.automation || integrationSummary.reliability || integrationSummary.scalability;
+    if (hasSummary) {
+      wrap.appendChild(ndSummaryGrid([
+        { label: 'Integration', value: integrationSummary.integration },
+        { label: 'Automation',  value: integrationSummary.automation },
+        { label: 'Reliability', value: integrationSummary.reliability },
+        { label: 'Scalability', value: integrationSummary.scalability },
+      ]));
+    }
   }
   return wrap;
 }
@@ -1977,71 +2579,207 @@ function buildSystemIntegrationLayout(section) {
 // ── Technology Infrastructure: AI Platform Readiness ──────────────────────────
 
 function buildAIPlatformReadinessLayout(section) {
-  var b                    = section.brief || {};
-  var capabilityAssessment = b.capabilityAssessment    || [];
-  var platformStack        = b.platformStack           || [];
-  var platformRecs         = b.platformRecommendations || [];
-  var platformSummary      = b.platformSummary         || {};
+  var b = section.brief || {};
 
-  var SICON = { 'AI Applications': '⊞', 'AI Model & Prompt Management': '⚙', 'Knowledge & Retrieval Services': '◻', 'AI Deployment & Automation': '▷', 'AI Monitoring & Evaluation': '△', 'AI Development Environment': '⌨' };
-  var SCLS = { READY: 'apr-status--ready', PARTIAL: 'apr-status--partial', MISSING: 'apr-status--missing' };
-  var SBADGE = { READY: 'nd-pri--low', PARTIAL: 'nd-pri--medium', MISSING: 'nd-pri--high' };
-  var PCLS = { HIGH: 'nd-pri--high', MEDIUM: 'nd-pri--medium', LOW: 'nd-pri--low' };
+  // New fields
+  var platformCapabilities    = Array.isArray(b.platformCapabilities)    ? b.platformCapabilities    : [];
+  var platformBlueprintLayers = Array.isArray(b.platformBlueprintLayers) ? b.platformBlueprintLayers : [];
+  var platformRecs            = Array.isArray(b.platformRecs)            ? b.platformRecs            : [];
+  var aprImplRoadmap          = Array.isArray(b.aprImplRoadmap)          ? b.aprImplRoadmap          : [];
+  var aprStackLayers          = Array.isArray(b.aprStackLayers)          ? b.aprStackLayers          : [];
+  var aprConsultantGuidance   = b.aprConsultantGuidance || '';
+  var aprAIRecommendation     = b.aprAIRecommendation   || '';
+  // Legacy fields
+  var capabilityAssessment    = Array.isArray(b.capabilityAssessment)    ? b.capabilityAssessment    : [];
+  var platformStack           = Array.isArray(b.platformStack)           ? b.platformStack           : [];
+  var platformRecommendations = Array.isArray(b.platformRecommendations) ? b.platformRecommendations : [];
+  var platformSummary         = b.platformSummary || {};
 
-  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
-  if (b.platformReadiness) { wrap.appendChild(ndBadge('PLATFORM READINESS: ' + b.platformReadiness + '%')); }
-  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  var isNewFormat = platformCapabilities.some(function(c) { return c.purpose; }) ||
+                    platformBlueprintLayers.some(function(l) { return l.recommendation; }) ||
+                    platformRecs.length > 0 || !!aprConsultantGuidance;
 
-  var body = ndBody(3);
+  var APR_IMPL_STEPS = [
+    'Establish Development Workspace', 'Build Knowledge Platform', 'Configure Prompt Management',
+    'Deploy AI Services', 'Enable Monitoring', 'Scale Across Projects',
+  ];
+  var APR_BLUEPRINT_LAYERS = [
+    'Engineering Users', 'AI Applications', 'Prompt & Model Services',
+    'Knowledge Platform', 'Deployment Services', 'Monitoring & Governance', 'Development Workspace',
+  ];
+  var LAYER_ACCENT    = ['#c084fc', '#5CC5A7', '#818cf8', '#fbbf24', '#34d399', '#f87171', '#94a3b8'];
+  var PRIORITY_COLOR  = { HIGH: '#f87171', MEDIUM: '#fbbf24', LOW: '#5CC5A7' };
+  var STATUS_CLASS    = { READY: 'apr-status--ready', PARTIAL: 'apr-status--partial', MISSING: 'apr-status--missing' };
+  var PRIORITY_CLASS  = { HIGH: 'apr-priority--high', MEDIUM: 'apr-priority--medium', LOW: 'apr-priority--low' };
+  var STACK_ICONS     = { 'AI Applications': '⊞', 'AI Model & Prompt Management': '⚙', 'Knowledge & Retrieval Services': '◻', 'AI Deployment & Automation': '▷', 'AI Monitoring & Evaluation': '△', 'AI Development Environment': '⌨' };
 
-  // LEFT: capability assessment cards
-  var leftCol = ndCol();
-  leftCol.appendChild(ndLbl('Platform Capability Assessment'));
-  capabilityAssessment.forEach(function(cap) {
-    var status = String(cap.status || 'PARTIAL').toUpperCase();
-    var card = document.createElement('div'); card.className = 'apr-cap-card apr-cap-card--' + status.toLowerCase();
-    var name = document.createElement('p'); name.className = 'apr-cap-card__name'; name.textContent = cap.name; card.appendChild(name);
-    var score = document.createElement('p'); score.className = 'apr-cap-card__score'; score.textContent = (cap.score || 0) + '%'; card.appendChild(score);
-    var badge = document.createElement('span'); badge.className = 'apr-status nd-pri ' + (SBADGE[status] || 'nd-pri--medium'); badge.textContent = status; card.appendChild(badge);
-    leftCol.appendChild(card);
-  });
-  body.appendChild(leftCol);
+  var wrap = document.createElement('div'); wrap.className = 'apr-view';
 
-  // CENTER: platform stack rows
-  var centerCol = ndCol();
-  centerCol.appendChild(ndLbl('AI Platform Stack'));
-  var stackList = document.createElement('div'); stackList.className = 'apr-stack-list';
-  platformStack.forEach(function(layer) {
-    var status = String(layer.status || 'MISSING').toUpperCase();
-    var row = document.createElement('div'); row.className = 'apr-stack-row apr-stack-row--' + status.toLowerCase();
-    var icon = document.createElement('div'); icon.className = 'apr-stack-row__icon'; icon.textContent = SICON[layer.layer] || '●'; row.appendChild(icon);
-    var info = document.createElement('div'); info.className = 'apr-stack-row__info';
-    var lname = document.createElement('p'); lname.className = 'apr-stack-row__name'; lname.textContent = layer.layer; info.appendChild(lname);
-    var lscore = document.createElement('p'); lscore.className = 'apr-stack-row__score'; lscore.textContent = (layer.score || 0) + '%'; info.appendChild(lscore);
-    row.appendChild(info);
-    var badge = document.createElement('span'); badge.className = 'apr-status nd-pri ' + (SCLS[status] || 'apr-status--missing'); badge.textContent = status; row.appendChild(badge);
-    stackList.appendChild(row);
-  });
-  centerCol.appendChild(stackList);
-  body.appendChild(centerCol);
-
-  // RIGHT: recommendations
-  var rightCol = ndCol();
-  if (platformRecs.length) {
-    rightCol.appendChild(ndLbl('AI Recommendations'));
-    rightCol.appendChild(ndRecList(platformRecs, function(r) { return { text: r.text, priority: r.priority, sub: r.benefit ? 'Benefit: ' + r.benefit : '' }; }));
+  if (b.strategicPosition) {
+    var posLabel = document.createElement('p'); posLabel.className = 'brief-label'; posLabel.textContent = 'Strategic Position'; wrap.appendChild(posLabel);
+    var pos = document.createElement('p'); pos.className = 'apr-view__position'; pos.textContent = b.strategicPosition; wrap.appendChild(pos);
   }
-  body.appendChild(rightCol);
-  wrap.appendChild(body);
 
-  // Platform summary 4-cell grid
-  if (platformSummary.development || platformSummary.knowledge || platformSummary.deployment || platformSummary.monitoring) {
-    wrap.appendChild(ndSummaryGrid([
-      { label: 'Development', value: platformSummary.development },
-      { label: 'Knowledge',   value: platformSummary.knowledge },
-      { label: 'Deployment',  value: platformSummary.deployment },
-      { label: 'Monitoring',  value: platformSummary.monitoring },
-    ]));
+  if (isNewFormat) {
+    // ── Main Body: LEFT capabilities | RIGHT blueprint chain ──────────────────
+    var body = document.createElement('div'); body.className = 'apr-main-body';
+
+    var leftCol = document.createElement('div'); leftCol.className = 'apr-cap-list-col';
+    var capLbl = document.createElement('p'); capLbl.className = 'brief-label'; capLbl.textContent = 'Recommended AI Platform'; leftCol.appendChild(capLbl);
+    var capList = document.createElement('div'); capList.className = 'apr-cap-list';
+    platformCapabilities.forEach(function(cap) {
+      var card = document.createElement('div'); card.className = 'apr-cap2-card';
+      var nm = document.createElement('p'); nm.className = 'apr-cap2-card__name'; nm.textContent = cap.name; card.appendChild(nm);
+      if (cap.purpose) {
+        var pfl = document.createElement('p'); pfl.className = 'apr-cap2-card__field-label'; pfl.textContent = 'Purpose'; card.appendChild(pfl);
+        var ptx = document.createElement('p'); ptx.className = 'apr-cap2-card__purpose'; ptx.textContent = cap.purpose; card.appendChild(ptx);
+      }
+      if (Array.isArray(cap.capabilities) && cap.capabilities.length) {
+        var cfl = document.createElement('p'); cfl.className = 'apr-cap2-card__field-label'; cfl.textContent = 'Recommended Capabilities'; card.appendChild(cfl);
+        var ul = document.createElement('ul'); ul.className = 'apr-cap2-card__caps';
+        cap.capabilities.forEach(function(c) { var li = document.createElement('li'); li.textContent = c; ul.appendChild(li); });
+        card.appendChild(ul);
+      }
+      if (cap.businessValue) {
+        var vfl = document.createElement('p'); vfl.className = 'apr-cap2-card__field-label'; vfl.textContent = 'Business Value'; card.appendChild(vfl);
+        var vtx = document.createElement('p'); vtx.className = 'apr-cap2-card__value'; vtx.textContent = cap.businessValue; card.appendChild(vtx);
+      }
+      capList.appendChild(card);
+    });
+    leftCol.appendChild(capList); body.appendChild(leftCol);
+
+    var rightCol = document.createElement('div'); rightCol.className = 'apr-blueprint-col';
+    var bpLbl = document.createElement('p'); bpLbl.className = 'brief-label'; bpLbl.textContent = 'AI Platform Blueprint'; rightCol.appendChild(bpLbl);
+    var bpChain = document.createElement('div'); bpChain.className = 'apr-blueprint-chain';
+    var bpLayers = platformBlueprintLayers.length ? platformBlueprintLayers : APR_BLUEPRINT_LAYERS.map(function(layer) { return { layer: layer, recommendation: '' }; });
+    bpLayers.forEach(function(layerObj, i) {
+      var node = document.createElement('div'); node.className = 'apr-blueprint-node'; node.style.borderLeft = '3px solid ' + (LAYER_ACCENT[i] || '#5CC5A7');
+      var lName = document.createElement('p'); lName.className = 'apr-blueprint-node__layer'; lName.textContent = layerObj.layer; node.appendChild(lName);
+      if (layerObj.recommendation) { var rec = document.createElement('p'); rec.className = 'apr-blueprint-node__rec'; rec.textContent = layerObj.recommendation; node.appendChild(rec); }
+      bpChain.appendChild(node);
+      if (i < bpLayers.length - 1) { var arrow = document.createElement('div'); arrow.className = 'apr-blueprint-arrow'; arrow.textContent = '↓'; bpChain.appendChild(arrow); }
+    });
+    rightCol.appendChild(bpChain); body.appendChild(rightCol);
+    wrap.appendChild(body);
+
+    // ── Platform Recommendations ──────────────────────────────────────────────
+    if (platformRecs.length) {
+      var recsLbl = document.createElement('p'); recsLbl.className = 'brief-label'; recsLbl.textContent = 'AI Platform Recommendations'; wrap.appendChild(recsLbl);
+      var recsGrid = document.createElement('div'); recsGrid.className = 'apr-recs2-grid';
+      platformRecs.forEach(function(rec) {
+        var card = document.createElement('div'); card.className = 'apr-rec2-card';
+        var title = document.createElement('p'); title.className = 'apr-rec2-card__title'; title.textContent = rec.recommendation; card.appendChild(title);
+        if (rec.why) {
+          var wl = document.createElement('p'); wl.className = 'apr-rec2-card__field-label'; wl.textContent = 'Why'; card.appendChild(wl);
+          var wtx = document.createElement('p'); wtx.className = 'apr-rec2-card__why'; wtx.textContent = rec.why; card.appendChild(wtx);
+        }
+        var footer = document.createElement('div'); footer.className = 'apr-rec2-card__footer';
+        var pColor = PRIORITY_COLOR[rec.priority] || '#fbbf24';
+        var pBadge = document.createElement('span'); pBadge.className = 'apr-rec2-priority'; pBadge.style.color = pColor; pBadge.style.borderColor = pColor + '55'; pBadge.textContent = rec.priority || 'MEDIUM'; footer.appendChild(pBadge);
+        if (rec.implementationPhase) { var phase = document.createElement('span'); phase.className = 'apr-rec2-phase'; phase.textContent = rec.implementationPhase; footer.appendChild(phase); }
+        card.appendChild(footer); recsGrid.appendChild(card);
+      });
+      wrap.appendChild(recsGrid);
+    }
+
+    // ── Platform Implementation Roadmap ──────────────────────────────────────
+    var roadmapLbl = document.createElement('p'); roadmapLbl.className = 'brief-label'; roadmapLbl.textContent = 'Platform Implementation Roadmap'; wrap.appendChild(roadmapLbl);
+    var roadmapSteps = aprImplRoadmap.length ? aprImplRoadmap : APR_IMPL_STEPS;
+    var roadmapSeq = document.createElement('div'); roadmapSeq.className = 'apr-impl-seq';
+    roadmapSteps.forEach(function(step, i) {
+      var item = document.createElement('div'); item.className = 'apr-impl-step';
+      var num = document.createElement('span'); num.className = 'apr-impl-step__num'; num.textContent = i + 1; item.appendChild(num);
+      var lbl = document.createElement('span'); lbl.className = 'apr-impl-step__label'; lbl.textContent = step; item.appendChild(lbl);
+      roadmapSeq.appendChild(item);
+    });
+    wrap.appendChild(roadmapSeq);
+
+    // ── Recommended AI Stack table ────────────────────────────────────────────
+    var hasStackRec = aprStackLayers.some(function(l) { return l.recommendation; });
+    if (hasStackRec) {
+      var stackLbl = document.createElement('p'); stackLbl.className = 'brief-label'; stackLbl.textContent = 'Recommended AI Stack'; wrap.appendChild(stackLbl);
+      var stackTable = document.createElement('table'); stackTable.className = 'apr-stack2-table';
+      var thead = document.createElement('thead'); thead.innerHTML = '<tr><th>Layer</th><th>Recommendation</th></tr>'; stackTable.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      aprStackLayers.forEach(function(layer) {
+        var tr = document.createElement('tr');
+        var td1 = document.createElement('td'); td1.textContent = layer.layer;
+        var td2 = document.createElement('td'); td2.textContent = layer.recommendation || '—';
+        tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
+      });
+      stackTable.appendChild(tbody); wrap.appendChild(stackTable);
+    }
+
+    // ── Consultant Guidance ───────────────────────────────────────────────────
+    if (aprConsultantGuidance) {
+      var cg = document.createElement('div'); cg.className = 'apr-consultant-guidance';
+      var cgTitle = document.createElement('p'); cgTitle.className = 'apr-consultant-guidance__title'; cgTitle.textContent = 'Consultant Guidance'; cg.appendChild(cgTitle);
+      var cgText = document.createElement('p'); cgText.className = 'apr-consultant-guidance__text'; cgText.textContent = aprConsultantGuidance; cg.appendChild(cgText);
+      wrap.appendChild(cg);
+    }
+
+    // ── AI Recommendation ─────────────────────────────────────────────────────
+    if (aprAIRecommendation) {
+      var ar = document.createElement('div'); ar.className = 'apr-ai-recommendation';
+      var arTitle = document.createElement('p'); arTitle.className = 'apr-ai-recommendation__title'; arTitle.textContent = 'AI Recommendation'; ar.appendChild(arTitle);
+      var arText = document.createElement('p'); arText.className = 'apr-ai-recommendation__text'; arText.textContent = aprAIRecommendation; ar.appendChild(arText);
+      wrap.appendChild(ar);
+    }
+
+  } else {
+    // ── Legacy layout ─────────────────────────────────────────────────────────
+    if (b.platformReadiness) {
+      var rdBadge = document.createElement('div'); rdBadge.className = 'apr-readiness-badge'; rdBadge.textContent = 'PLATFORM READINESS: ' + b.platformReadiness + '%'; wrap.appendChild(rdBadge);
+    }
+    var legBody = document.createElement('div'); legBody.className = 'apr-body';
+    var legLeft = document.createElement('div'); legLeft.className = 'apr-capability-col';
+    var legCapLbl = document.createElement('p'); legCapLbl.className = 'brief-label'; legCapLbl.textContent = 'Platform Capability Assessment'; legLeft.appendChild(legCapLbl);
+    capabilityAssessment.forEach(function(cap) {
+      var status = (cap.status || 'PARTIAL').toUpperCase();
+      var card = document.createElement('div'); card.className = 'apr-cap-card apr-cap-card--' + status.toLowerCase();
+      var nm = document.createElement('p'); nm.className = 'apr-cap-card__name'; nm.textContent = cap.name; card.appendChild(nm);
+      var sc = document.createElement('p'); sc.className = 'apr-cap-card__score'; sc.textContent = (cap.score || 0) + '%'; card.appendChild(sc);
+      var bdg = document.createElement('span'); bdg.className = 'apr-status ' + (STATUS_CLASS[status] || 'apr-status--partial'); bdg.textContent = status; card.appendChild(bdg);
+      legLeft.appendChild(card);
+    });
+    legBody.appendChild(legLeft);
+    var legCenter = document.createElement('div'); legCenter.className = 'apr-stack-col';
+    var legStackLbl = document.createElement('p'); legStackLbl.className = 'brief-label'; legStackLbl.textContent = 'AI Platform Stack'; legCenter.appendChild(legStackLbl);
+    var legStackList = document.createElement('div'); legStackList.className = 'apr-stack-list';
+    platformStack.forEach(function(layer) {
+      var status = (layer.status || 'MISSING').toUpperCase();
+      var row = document.createElement('div'); row.className = 'apr-stack-row apr-stack-row--' + status.toLowerCase();
+      var icon = document.createElement('div'); icon.className = 'apr-stack-row__icon'; icon.textContent = STACK_ICONS[layer.layer] || '●'; row.appendChild(icon);
+      var info = document.createElement('div'); info.className = 'apr-stack-row__info';
+      var lname = document.createElement('p'); lname.className = 'apr-stack-row__name'; lname.textContent = layer.layer; info.appendChild(lname);
+      var lscore = document.createElement('p'); lscore.className = 'apr-stack-row__score'; lscore.textContent = (layer.score || 0) + '%'; info.appendChild(lscore);
+      row.appendChild(info);
+      var bdg = document.createElement('span'); bdg.className = 'apr-status ' + (STATUS_CLASS[status] || 'apr-status--missing'); bdg.textContent = status; row.appendChild(bdg);
+      legStackList.appendChild(row);
+    });
+    legCenter.appendChild(legStackList); legBody.appendChild(legCenter);
+    var legRight = document.createElement('div'); legRight.className = 'apr-recs-col';
+    var legRecsLbl = document.createElement('p'); legRecsLbl.className = 'brief-label'; legRecsLbl.textContent = 'AI Recommendations'; legRight.appendChild(legRecsLbl);
+    var legRecsList = document.createElement('div'); legRecsList.className = 'apr-recs-list';
+    platformRecommendations.forEach(function(rec) {
+      var item = document.createElement('div'); item.className = 'apr-rec-item';
+      var text = document.createElement('p'); text.className = 'apr-rec-item__text'; text.textContent = rec.text; item.appendChild(text);
+      var priority = document.createElement('p'); priority.className = 'apr-rec-item__meta';
+      var pk = (rec.priority || 'MEDIUM').toUpperCase();
+      priority.textContent = 'Priority: ' + (rec.priority || 'MEDIUM'); item.appendChild(priority);
+      if (rec.benefit) { var benefit = document.createElement('p'); benefit.className = 'apr-rec-item__benefit'; benefit.textContent = 'Expected Benefit: ' + rec.benefit; item.appendChild(benefit); }
+      legRecsList.appendChild(item);
+    });
+    legRight.appendChild(legRecsList); legBody.appendChild(legRight); wrap.appendChild(legBody);
+
+    if (platformSummary.development || platformSummary.knowledge || platformSummary.deployment || platformSummary.monitoring) {
+      wrap.appendChild(ndSummaryGrid([
+        { label: 'Development', value: platformSummary.development },
+        { label: 'Knowledge',   value: platformSummary.knowledge },
+        { label: 'Deployment',  value: platformSummary.deployment },
+        { label: 'Monitoring',  value: platformSummary.monitoring },
+      ]));
+    }
   }
   return wrap;
 }
@@ -2049,82 +2787,215 @@ function buildAIPlatformReadinessLayout(section) {
 // ── Technology Infrastructure: AI Compute & Deployment Strategy ───────────────
 
 function buildAIComputeDeploymentLayout(section) {
-  var b                  = section.brief || {};
-  var workloadProfile    = b.workloadProfile          || [];
-  var deploymentRecs     = b.deploymentRecommendations || [];
-  var deploymentScores   = b.deploymentScores         || {};
-  var deploymentKpis     = b.deploymentKpis           || {};
+  var b = section.brief || {};
 
-  var PCLS  = { CRITICAL: 'nd-pri--high', HIGH: 'nd-pri--high', MEDIUM: 'nd-pri--medium', LOW: 'nd-pri--low' };
-  var ICLS  = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
+  // New fields
+  var deploymentBlocks      = Array.isArray(b.deploymentBlocks)      ? b.deploymentBlocks      : [];
+  var cdsDeploymentFlow     = Array.isArray(b.cdsDeploymentFlow)     ? b.cdsDeploymentFlow     : [];
+  var techRecommendations   = Array.isArray(b.techRecommendations)   ? b.techRecommendations   : [];
+  var cdsArchRationale      = Array.isArray(b.cdsArchRationale)      ? b.cdsArchRationale      : [];
+  var deploymentDecisions   = Array.isArray(b.deploymentDecisions)   ? b.deploymentDecisions   : [];
+  var cdsImplSequence       = Array.isArray(b.cdsImplSequence)       ? b.cdsImplSequence       : [];
+  var infraItems            = Array.isArray(b.infraItems)            ? b.infraItems            : [];
+  var cdsInvestmentEstimate = Array.isArray(b.cdsInvestmentEstimate) ? b.cdsInvestmentEstimate : [];
+  var cdsConsultantGuidance = b.cdsConsultantGuidance || '';
+  var cdsAIRecommendation   = b.cdsAIRecommendation   || '';
+  // Legacy fields
+  var workloadProfile           = Array.isArray(b.workloadProfile)           ? b.workloadProfile           : [];
+  var deploymentRecommendations = Array.isArray(b.deploymentRecommendations) ? b.deploymentRecommendations : [];
+  var deploymentScores          = b.deploymentScores || {};
 
-  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
-  if (b.deploymentReadiness) { wrap.appendChild(ndBadge('DEPLOYMENT READINESS: ' + b.deploymentReadiness + '%')); }
-  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  var isNewFormat = deploymentBlocks.length > 0 || techRecommendations.length > 0;
 
-  var body = ndBody(2);
+  var CDS_FLOW_NODES = ['Engineering Repositories', 'Integration Layer', 'AI Data Store', 'LLM Inference', 'AI Application', 'Engineering Users'];
+  var CDS_IMPL_STEPS = ['Prepare AI Data', 'Provision Infrastructure', 'Deploy AI Platform', 'Deploy AI Assistant', 'Pilot with Engineering Team', 'Scale to Organisation'];
+  var BLOCK_ACCENT = { 'AI Workload': '#5CC5A7', 'Deployment Model': '#818cf8', 'Compute Strategy': '#fbbf24', 'Scaling Strategy': '#f87171' };
 
-  // LEFT: workload profile cards
-  var leftCol = ndCol();
-  leftCol.appendChild(ndLbl('AI Workload Profile'));
-  workloadProfile.forEach(function(wl) {
-    var card = document.createElement('div'); card.className = 'cds-wl-card';
-    var name = document.createElement('p'); name.className = 'cds-wl-card__name'; name.textContent = wl.workloadType; card.appendChild(name);
-    [['Compute', wl.computeRequirement], ['Performance', wl.performanceRequirement], ['Scalability', wl.scalabilityRequirement]].forEach(function(pair) {
-      if (!pair[1]) return;
-      var spec = document.createElement('p'); spec.className = 'cds-wl-card__spec'; spec.innerHTML = '<span class="cds-wl-card__spec-label">' + pair[0] + ':</span> ' + pair[1]; card.appendChild(spec);
-    });
-    var priK = String(wl.priority || 'MEDIUM').toUpperCase();
-    var badge = document.createElement('span'); badge.className = 'nd-pri ' + (PCLS[priK] || 'nd-pri--medium'); badge.textContent = 'PRIORITY: ' + (wl.priority || 'MEDIUM'); card.appendChild(badge);
-    leftCol.appendChild(card);
-  });
-  body.appendChild(leftCol);
+  var wrap = document.createElement('div'); wrap.className = 'cds-view';
 
-  // RIGHT: deployment canvas (4-node hub) + rec cards
-  var rightCol = ndCol();
-  rightCol.appendChild(ndLbl('Deployment Decision Canvas'));
-  var canvas = document.createElement('div'); canvas.className = 'cds-canvas';
-  var canvasNodes = document.createElement('div'); canvasNodes.className = 'cds-canvas__nodes';
-  [{ label: 'Public Cloud', sub: 'Cloud Native' }, { label: 'Private Cloud', sub: 'On-Premise' }, { label: 'Hybrid Cloud', sub: 'Mixed' }, { label: 'Edge Deployment', sub: 'Distributed' }].forEach(function(n) {
-    var node = document.createElement('div'); node.className = 'cds-canvas__node';
-    var nl = document.createElement('p'); nl.className = 'cds-canvas__node-label'; nl.textContent = n.label; node.appendChild(nl);
-    var ns = document.createElement('p'); ns.className = 'cds-canvas__node-sub'; ns.textContent = n.sub; node.appendChild(ns);
-    canvasNodes.appendChild(node);
-  });
-  var canvasHub = document.createElement('div'); canvasHub.className = 'cds-canvas__hub';
-  canvasHub.innerHTML = '<p class="cds-canvas__hub-label">AI Decision</p><p class="cds-canvas__hub-sub">Engine</p>';
-  if (deploymentScores.deploymentConfidence) { canvasHub.innerHTML += '<p class="cds-canvas__hub-conf">Confidence: ' + deploymentScores.deploymentConfidence + '%</p>'; }
-  canvas.appendChild(canvasHub); canvas.appendChild(canvasNodes); rightCol.appendChild(canvas);
-  if (deploymentRecs.length) {
-    rightCol.appendChild(ndLbl('AI Recommendations'));
-    var recGrid = document.createElement('div'); recGrid.className = 'cds-rec-grid';
-    deploymentRecs.forEach(function(rec) {
-      var card = document.createElement('div'); card.className = 'cds-rec-card';
-      var txt = document.createElement('p'); txt.className = 'cds-rec-card__text'; txt.textContent = rec.text; card.appendChild(txt);
-      var impact = document.createElement('div'); impact.className = 'cds-rec-card__impact-row';
-      impact.innerHTML = 'Impact: <span class="nd-pri ' + (ICLS[rec.impact] || 'nd-pri--medium') + '">' + (rec.impact || 'Medium') + '</span>'; card.appendChild(impact);
-      if (rec.reason) { var reason = document.createElement('p'); reason.className = 'cds-rec-card__reason'; reason.textContent = rec.reason; card.appendChild(reason); }
-      recGrid.appendChild(card);
-    });
-    rightCol.appendChild(recGrid);
-  }
-  body.appendChild(rightCol);
-  wrap.appendChild(body);
-
-  // Scores bar
-  if (deploymentScores.computeFit || deploymentScores.deploymentConfidence || deploymentScores.estimatedScalability) {
-    wrap.appendChild(ndScoresBar([
-      { value: (deploymentScores.computeFit || 0) + '%',             label: 'Compute Fit' },
-      { value: deploymentScores.estimatedScalability || '—',         label: 'Est. Scalability' },
-      { value: (deploymentScores.deploymentConfidence || 0) + '%',   label: 'Deployment Confidence' },
-    ]));
+  if (b.strategicPosition) {
+    var posLabel = document.createElement('p'); posLabel.className = 'brief-label'; posLabel.textContent = 'Strategic Position'; wrap.appendChild(posLabel);
+    var pos = document.createElement('p'); pos.className = 'cds-view__position'; pos.textContent = b.strategicPosition; wrap.appendChild(pos);
   }
 
-  // KPI bar
-  var kpiItems = [{ label: 'Compute', value: deploymentKpis.compute }, { label: 'Deployment', value: deploymentKpis.deployment }, { label: 'Latency', value: deploymentKpis.latency }, { label: 'Scalability', value: deploymentKpis.scalability }].filter(function(k) { return k.value; });
-  if (kpiItems.length) {
-    var kpiLbl = document.createElement('p'); kpiLbl.className = 'brief-label'; kpiLbl.textContent = 'Deployment Summary KPIs'; wrap.appendChild(kpiLbl);
-    wrap.appendChild(ndSummaryGrid(kpiItems.map(function(k) { return { label: k.label, value: k.value }; })));
+  if (isNewFormat) {
+    // ── Recommended Deployment Architecture ──────────────────────────────────
+    if (deploymentBlocks.length) {
+      var archLbl = document.createElement('p'); archLbl.className = 'brief-label'; archLbl.textContent = 'Recommended Deployment Architecture'; wrap.appendChild(archLbl);
+      var archGrid = document.createElement('div'); archGrid.className = 'cds-arch-grid';
+      deploymentBlocks.forEach(function(block) {
+        var card = document.createElement('div'); card.className = 'cds-arch-block';
+        var accent = BLOCK_ACCENT[block.blockType] || '#5CC5A7';
+        card.style.borderTop = '3px solid ' + accent;
+        var type = document.createElement('p'); type.className = 'cds-arch-block__type'; type.style.color = accent; type.textContent = block.blockType; card.appendChild(type);
+        var recLabel = document.createElement('p'); recLabel.className = 'cds-arch-block__field-label'; recLabel.textContent = 'Recommendation'; card.appendChild(recLabel);
+        var nm = document.createElement('p'); nm.className = 'cds-arch-block__name'; nm.textContent = block.name; card.appendChild(nm);
+        if (block.why) {
+          var whyLabel = document.createElement('p'); whyLabel.className = 'cds-arch-block__field-label'; whyLabel.textContent = 'Why Recommended'; card.appendChild(whyLabel);
+          var why = document.createElement('p'); why.className = 'cds-arch-block__why'; why.textContent = block.why; card.appendChild(why);
+        }
+        archGrid.appendChild(card);
+      });
+      wrap.appendChild(archGrid);
+    }
+
+    // ── Middle: Deployment Flow (left) + Tech Recommendations table (right) ──
+    var midRow = document.createElement('div'); midRow.className = 'cds-mid-row';
+
+    var flowCol = document.createElement('div'); flowCol.className = 'cds-flow-col';
+    var flowLbl = document.createElement('p'); flowLbl.className = 'brief-label'; flowLbl.textContent = 'Recommended Deployment Flow'; flowCol.appendChild(flowLbl);
+    var flowNodes = cdsDeploymentFlow.length ? cdsDeploymentFlow : CDS_FLOW_NODES;
+    var flowChain = document.createElement('div'); flowChain.className = 'cds-flow-chain';
+    flowNodes.forEach(function(node, i) {
+      var nodeEl = document.createElement('div'); nodeEl.className = 'cds-flow-node cds-flow-node--' + i; nodeEl.textContent = node; flowChain.appendChild(nodeEl);
+      if (i < flowNodes.length - 1) { var arrow = document.createElement('div'); arrow.className = 'cds-flow-arrow'; arrow.textContent = '↓'; flowChain.appendChild(arrow); }
+    });
+    flowCol.appendChild(flowChain); midRow.appendChild(flowCol);
+
+    if (techRecommendations.length) {
+      var techCol = document.createElement('div'); techCol.className = 'cds-tech-col';
+      var techLbl = document.createElement('p'); techLbl.className = 'brief-label'; techLbl.textContent = 'Technology Recommendations'; techCol.appendChild(techLbl);
+      var techTable = document.createElement('table'); techTable.className = 'cds-tech-table';
+      var tHead = document.createElement('thead'); tHead.innerHTML = '<tr><th>Layer</th><th>Recommended Technology</th><th>Selection Rationale</th></tr>'; techTable.appendChild(tHead);
+      var tBody = document.createElement('tbody');
+      techRecommendations.forEach(function(r) {
+        var tr = document.createElement('tr');
+        var td1 = document.createElement('td'); td1.textContent = r.layer || '';
+        var td2 = document.createElement('td'); td2.textContent = r.recommendation || '';
+        var td3 = document.createElement('td'); td3.textContent = r.selectionRationale || '';
+        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tBody.appendChild(tr);
+      });
+      techTable.appendChild(tBody); techCol.appendChild(techTable); midRow.appendChild(techCol);
+    }
+    wrap.appendChild(midRow);
+
+    // ── Why this Architecture? ────────────────────────────────────────────────
+    if (cdsArchRationale.length) {
+      var ratLbl = document.createElement('p'); ratLbl.className = 'brief-label'; ratLbl.textContent = 'Why this Architecture?'; wrap.appendChild(ratLbl);
+      var ratList = document.createElement('ul'); ratList.className = 'cds-arch-rationale';
+      cdsArchRationale.forEach(function(point) { var li = document.createElement('li'); li.className = 'cds-arch-rationale__item'; li.textContent = point; ratList.appendChild(li); });
+      wrap.appendChild(ratList);
+    }
+
+    // ── Deployment Decisions ──────────────────────────────────────────────────
+    if (deploymentDecisions.length) {
+      var decLbl = document.createElement('p'); decLbl.className = 'brief-label'; decLbl.textContent = 'Deployment Decisions'; wrap.appendChild(decLbl);
+      var decGrid = document.createElement('div'); decGrid.className = 'cds-dec-grid';
+      deploymentDecisions.forEach(function(d) {
+        var card = document.createElement('div'); card.className = 'cds-dec-card';
+        var dtype = document.createElement('p'); dtype.className = 'cds-dec-card__type'; dtype.textContent = d.decisionType; card.appendChild(dtype);
+        var choice = document.createElement('p'); choice.className = 'cds-dec-card__choice'; choice.textContent = d.choice; card.appendChild(choice);
+        if (d.reason) { var reason = document.createElement('p'); reason.className = 'cds-dec-card__reason'; reason.textContent = d.reason; card.appendChild(reason); }
+        decGrid.appendChild(card);
+      });
+      wrap.appendChild(decGrid);
+    }
+
+    // ── Implementation Sequence ───────────────────────────────────────────────
+    var implLbl = document.createElement('p'); implLbl.className = 'brief-label'; implLbl.textContent = 'Implementation Sequence'; wrap.appendChild(implLbl);
+    var implSteps = cdsImplSequence.length ? cdsImplSequence : CDS_IMPL_STEPS;
+    var implSeq = document.createElement('div'); implSeq.className = 'cds-impl-seq';
+    implSteps.forEach(function(step, i) {
+      var item = document.createElement('div'); item.className = 'cds-impl-step';
+      var num = document.createElement('span'); num.className = 'cds-impl-step__num'; num.textContent = i + 1; item.appendChild(num);
+      var lbl = document.createElement('span'); lbl.className = 'cds-impl-step__label'; lbl.textContent = step; item.appendChild(lbl);
+      implSeq.appendChild(item);
+    });
+    wrap.appendChild(implSeq);
+
+    // ── Expected Infrastructure table ─────────────────────────────────────────
+    if (infraItems.length) {
+      var infraLbl = document.createElement('p'); infraLbl.className = 'brief-label'; infraLbl.textContent = 'Expected Infrastructure'; wrap.appendChild(infraLbl);
+      var infraTable = document.createElement('table'); infraTable.className = 'cds-infra-table';
+      var iHead = document.createElement('thead'); iHead.innerHTML = '<tr><th>Component</th><th>Recommendation</th></tr>'; infraTable.appendChild(iHead);
+      var iBody = document.createElement('tbody');
+      infraItems.forEach(function(item) {
+        var tr = document.createElement('tr');
+        var td1 = document.createElement('td'); td1.textContent = item.item || '';
+        var td2 = document.createElement('td'); td2.textContent = item.recommendation || '';
+        tr.appendChild(td1); tr.appendChild(td2); iBody.appendChild(tr);
+      });
+      infraTable.appendChild(iBody); wrap.appendChild(infraTable);
+    }
+
+    // ── Estimated Infrastructure Investment ───────────────────────────────────
+    if (cdsInvestmentEstimate.length) {
+      var investLbl = document.createElement('p'); investLbl.className = 'brief-label'; investLbl.textContent = 'Estimated Infrastructure Investment'; wrap.appendChild(investLbl);
+      var investTable = document.createElement('table'); investTable.className = 'cds-investment-table';
+      var vHead = document.createElement('thead'); vHead.innerHTML = '<tr><th>Area</th><th>Estimate</th></tr>'; investTable.appendChild(vHead);
+      var vBody = document.createElement('tbody');
+      cdsInvestmentEstimate.forEach(function(row) {
+        var tr = document.createElement('tr');
+        var levelClass = row.estimate === 'High' ? 'cds-invest--high' : row.estimate === 'Low' ? 'cds-invest--low' : 'cds-invest--medium';
+        var td1 = document.createElement('td'); td1.textContent = row.area || '';
+        var td2 = document.createElement('td'); var bdg = document.createElement('span'); bdg.className = 'cds-invest-badge ' + levelClass; bdg.textContent = row.estimate || 'Medium'; td2.appendChild(bdg);
+        tr.appendChild(td1); tr.appendChild(td2); vBody.appendChild(tr);
+      });
+      investTable.appendChild(vBody); wrap.appendChild(investTable);
+    }
+
+    // ── Consultant Guidance ───────────────────────────────────────────────────
+    if (cdsConsultantGuidance) {
+      var cg = document.createElement('div'); cg.className = 'cds-consultant-guidance';
+      var cgTitle = document.createElement('p'); cgTitle.className = 'cds-consultant-guidance__title'; cgTitle.textContent = 'Consultant Guidance'; cg.appendChild(cgTitle);
+      var cgText = document.createElement('p'); cgText.className = 'cds-consultant-guidance__text'; cgText.textContent = cdsConsultantGuidance; cg.appendChild(cgText);
+      wrap.appendChild(cg);
+    }
+
+    // ── AI Recommendation ─────────────────────────────────────────────────────
+    if (cdsAIRecommendation) {
+      var ar = document.createElement('div'); ar.className = 'cds-ai-recommendation';
+      var arTitle = document.createElement('p'); arTitle.className = 'cds-ai-recommendation__title'; arTitle.textContent = 'AI Recommendation'; ar.appendChild(arTitle);
+      var arText = document.createElement('p'); arText.className = 'cds-ai-recommendation__text'; arText.textContent = cdsAIRecommendation; ar.appendChild(arText);
+      wrap.appendChild(ar);
+    }
+
+  } else {
+    // ── Legacy layout ─────────────────────────────────────────────────────────
+    if (b.deploymentReadiness) {
+      var rdBadge = document.createElement('div'); rdBadge.className = 'cds-readiness-badge'; rdBadge.textContent = 'DEPLOYMENT READINESS: ' + b.deploymentReadiness + '%'; wrap.appendChild(rdBadge);
+    }
+    var legBody = document.createElement('div'); legBody.className = 'cds-body';
+    var workloadCol = document.createElement('div'); workloadCol.className = 'cds-workload-col';
+    var workloadLbl = document.createElement('p'); workloadLbl.className = 'brief-label'; workloadLbl.textContent = 'AI Workload Profile'; workloadCol.appendChild(workloadLbl);
+    var PCLS = { CRITICAL: 'cds-priority--critical', HIGH: 'cds-priority--high', MEDIUM: 'cds-priority--medium', LOW: 'cds-priority--low' };
+    workloadProfile.forEach(function(wl) {
+      var card = document.createElement('div'); card.className = 'cds-workload-card';
+      var wlName = document.createElement('p'); wlName.className = 'cds-workload-card__name'; wlName.textContent = wl.workloadType; card.appendChild(wlName);
+      [['Compute Requirement', wl.computeRequirement], ['Performance Requirement', wl.performanceRequirement], ['Scalability Requirement', wl.scalabilityRequirement]].forEach(function(pair) {
+        if (!pair[1]) return;
+        var row = document.createElement('p'); row.className = 'cds-workload-card__spec'; row.innerHTML = '<span class="cds-workload-card__spec-label">' + pair[0] + ':</span> ' + pair[1]; card.appendChild(row);
+      });
+      var badge = document.createElement('span'); badge.className = 'cds-priority ' + (PCLS[String(wl.priority || 'MEDIUM').toUpperCase()] || 'cds-priority--medium'); badge.textContent = 'PRIORITY: ' + (wl.priority || 'MEDIUM'); card.appendChild(badge);
+      workloadCol.appendChild(card);
+    });
+    legBody.appendChild(workloadCol);
+    var legRight = document.createElement('div'); legRight.className = 'cds-right-col';
+    if (deploymentRecommendations.length) {
+      var recsSection = document.createElement('div'); recsSection.className = 'cds-recs-section';
+      var recsLbl = document.createElement('p'); recsLbl.className = 'brief-label'; recsLbl.textContent = 'AI Recommendations'; recsSection.appendChild(recsLbl);
+      var recsGrid = document.createElement('div'); recsGrid.className = 'cds-recs-grid';
+      var ICLS = { High: 'cds-impact--high', Medium: 'cds-impact--medium', Low: 'cds-impact--low' };
+      deploymentRecommendations.forEach(function(rec) {
+        var card = document.createElement('div'); card.className = 'cds-rec-card';
+        var text = document.createElement('p'); text.className = 'cds-rec-card__text'; text.textContent = rec.text; card.appendChild(text);
+        var impactRow = document.createElement('div'); impactRow.className = 'cds-rec-card__impact-row'; impactRow.innerHTML = 'Impact: <span class="cds-impact ' + (ICLS[rec.impact] || 'cds-impact--medium') + '">' + (rec.impact || 'Medium') + '</span>'; card.appendChild(impactRow);
+        if (rec.reason) { var reason = document.createElement('p'); reason.className = 'cds-rec-card__reason'; reason.textContent = 'Reason: ' + rec.reason; card.appendChild(reason); }
+        recsGrid.appendChild(card);
+      });
+      recsSection.appendChild(recsGrid); legRight.appendChild(recsSection);
+    }
+    legBody.appendChild(legRight); wrap.appendChild(legBody);
+    if (deploymentScores.computeFit || deploymentScores.deploymentConfidence) {
+      var scoresBar = document.createElement('div'); scoresBar.className = 'cds-scores-bar';
+      [{ value: (deploymentScores.computeFit || 0) + '%', label: 'Compute Fit' }, { value: deploymentScores.estimatedScalability || '—', label: 'Estimated Scalability' }, { value: (deploymentScores.deploymentConfidence || 0) + '%', label: 'Deployment Confidence' }].forEach(function(stat) {
+        var cell = document.createElement('div'); cell.className = 'cds-score-cell';
+        var val = document.createElement('p'); val.className = 'cds-score-cell__value'; val.textContent = stat.value;
+        var lbl = document.createElement('p'); lbl.className = 'cds-score-cell__label'; lbl.textContent = stat.label;
+        cell.appendChild(val); cell.appendChild(lbl); scoresBar.appendChild(cell);
+      });
+      wrap.appendChild(scoresBar);
+    }
   }
   return wrap;
 }
@@ -3505,6 +4376,407 @@ html, body {
   page-break-inside: avoid;
   break-inside: avoid;
 }
+
+/* ── ROI / Financial Performance ─────────────────────────────────────────── */
+.roi-section { margin-bottom: 1rem; }
+.roi-summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.roi-summary-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.75rem; text-align: center; border-top: 3px solid #5CC5A7; }
+.roi-summary-card--proceed { border-top-color: #5CC5A7; }
+.roi-summary-card--pilot   { border-top-color: #fbbf24; }
+.roi-summary-card--reassess { border-top-color: #f87171; }
+.roi-summary-card__label { font-size: 0.6rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.25rem; }
+.roi-summary-card__value { font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0; }
+.roi-summary-card__sub   { font-size: 0.65rem; color: rgba(255,255,255,0.5); margin: 0.2rem 0 0; }
+.roi-cost-value-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+.roi-cost-col, .roi-value-col { background: rgba(255,255,255,0.04); border-radius: 6px; padding: 0.75rem; }
+.roi-col-header { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.5); margin: 0 0 0.5rem; }
+.roi-col-list { list-style: none; padding: 0; margin: 0; }
+.roi-col-list li { font-size: 0.72rem; color: rgba(255,255,255,0.8); padding: 0.2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.roi-col-list li:last-child { border: none; }
+.roi-timeline { display: flex; gap: 0; align-items: stretch; }
+.roi-timeline__stage { flex: 1; background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.6rem 0.5rem; text-align: center; }
+.roi-timeline__stage-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; color: rgba(255,255,255,0.5); margin: 0 0 0.2rem; }
+.roi-timeline__stage-value { font-size: 0.75rem; color: #fff; margin: 0 0 0.2rem; }
+.roi-timeline__stage-kpi   { font-size: 0.62rem; color: #5CC5A7; margin: 0; }
+.roi-timeline__arrow { display: flex; align-items: center; padding: 0 0.25rem; color: rgba(255,255,255,0.3); font-size: 1rem; }
+
+/* ── Operational Excellence ──────────────────────────────────────────────── */
+.oe-scorecard { width: 100%; border-collapse: collapse; font-size: 0.7rem; margin-bottom: 1rem; }
+.oe-scorecard__row { display: grid; grid-template-columns: 2fr 1.5fr 1.5fr 2fr; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.oe-scorecard__row--header { background: rgba(255,255,255,0.07); font-weight: 600; }
+.oe-scorecard__cell { padding: 0.4rem 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.68rem; }
+.oe-scorecard__cell--area   { color: rgba(255,255,255,0.9); font-weight: 600; }
+.oe-scorecard__cell--before { color: #f87171; }
+.oe-scorecard__cell--after  { color: #5CC5A7; }
+.oe-scorecard__cell--benefit { color: rgba(255,255,255,0.7); }
+.oe-impact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.oe-impact-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.6rem; }
+.oe-impact-card__title { font-size: 0.72rem; font-weight: 600; color: #fff; margin: 0 0 0.3rem; }
+.oe-impact-card__list { list-style: none; padding: 0; margin: 0; }
+.oe-impact-card__list li { font-size: 0.65rem; color: rgba(255,255,255,0.7); padding: 0.15rem 0; }
+
+/* ── Customer Value ──────────────────────────────────────────────────────── */
+.cv-journey { display: flex; flex-direction: column; gap: 0; margin-bottom: 1rem; }
+.cv-journey__stage { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.6rem 0.75rem; }
+.cv-journey__stage-name { font-size: 0.75rem; font-weight: 600; color: #fff; margin: 0 0 0.2rem; }
+.cv-journey__stage-value { font-size: 0.67rem; color: #5CC5A7; margin: 0; }
+.cv-journey__arrow { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8rem; padding: 0.1rem 0; }
+.cv-value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.cv-value-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.6rem; }
+.cv-value-card__title { font-size: 0.72rem; font-weight: 600; color: #fff; margin: 0 0 0.25rem; }
+.cv-value-card__list { list-style: none; padding: 0; margin: 0; }
+.cv-value-card__list li { font-size: 0.64rem; color: rgba(255,255,255,0.7); padding: 0.15rem 0; }
+.cv-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+.kpi-highlight-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.6rem; text-align: center; }
+.kpi-highlight-card__value { font-size: 1.1rem; font-weight: 700; color: #5CC5A7; margin: 0 0 0.15rem; }
+.kpi-highlight-card__label { font-size: 0.62rem; color: rgba(255,255,255,0.6); margin: 0 0 0.15rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.kpi-highlight-card__desc  { font-size: 0.62rem; color: rgba(255,255,255,0.5); margin: 0; }
+
+/* ── Solution-Centric ────────────────────────────────────────────────────── */
+.sol-main-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+.sol-main-card__name { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem; }
+.sol-meta-row { display: flex; gap: 0.5rem; align-items: baseline; margin-bottom: 0.3rem; font-size: 0.7rem; }
+.sol-meta-row--chips { flex-wrap: wrap; }
+.sol-meta-label { color: rgba(255,255,255,0.5); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; min-width: 6rem; }
+.sol-meta-value { color: rgba(255,255,255,0.85); }
+.sol-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.sol-team-chip { background: rgba(92,197,167,0.15); color: #5CC5A7; font-size: 0.62rem; padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid rgba(92,197,167,0.3); }
+.sol-kpi-chip  { background: rgba(129,140,248,0.15); color: #818cf8; font-size: 0.62rem; padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid rgba(129,140,248,0.3); }
+.sol-components-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.sol-component-card { background: rgba(255,255,255,0.04); border-radius: 6px; padding: 0.6rem; border: 1px solid rgba(255,255,255,0.07); }
+.sol-component-card__type { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.4); margin: 0 0 0.2rem; }
+.sol-component-card__name { font-size: 0.72rem; font-weight: 600; color: #fff; margin: 0 0 0.25rem; }
+.sol-component-card__purpose-label { font-size: 0.6rem; color: rgba(255,255,255,0.4); margin: 0 0 0.15rem; }
+.sol-component-card__purpose { font-size: 0.67rem; color: rgba(255,255,255,0.7); margin: 0; }
+
+/* ── Cross-functional Teams ──────────────────────────────────────────────── */
+.team-groups-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.team-group-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.7rem; }
+.team-group-card__label { font-size: 0.65rem; font-weight: 700; color: #5CC5A7; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.4rem; }
+.team-group-card__roles { list-style: none; padding: 0; margin: 0; }
+.team-group-card__roles li { font-size: 0.68rem; color: rgba(255,255,255,0.8); padding: 0.15rem 0; }
+
+/* ── Prioritization dim-cards ────────────────────────────────────────────── */
+.pri-dim-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.pri-dim-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.65rem; }
+.pri-dim-card__title { font-size: 0.7rem; font-weight: 600; color: #fff; margin: 0 0 0.35rem; }
+.pri-dim-card__bullets { list-style: none; padding: 0; margin: 0; }
+.pri-dim-card__bullets li { font-size: 0.64rem; color: rgba(255,255,255,0.7); padding: 0.1rem 0; }
+
+/* ── Classification banner ───────────────────────────────────────────────── */
+.cls-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.cls-banner__cell { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 1rem; }
+.cls-banner__cell--secondary { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+.cls-banner__label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.45); margin: 0 0 0.35rem; }
+.cls-banner__name { font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem; }
+.cls-name--productivity { color: #5CC5A7; }
+.cls-name--functional   { color: #818cf8; }
+.cls-name--product      { color: #fbbf24; }
+.cls-banner__rationale { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin: 0 0 0.5rem; }
+.cls-banner__outcome { font-size: 0.68rem; color: rgba(255,255,255,0.6); margin: 0; }
+
+/* ── CDI new layout ──────────────────────────────────────────────────────── */
+.cdi-body { display: grid; grid-template-columns: 70fr 30fr; gap: 1rem; margin-bottom: 1rem; }
+.cdi-left, .cdi-right { display: flex; flex-direction: column; gap: 0.5rem; }
+.cdi-dataset-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.7rem; }
+.cdi-dataset-card__name { font-size: 0.78rem; font-weight: 700; color: #fff; margin: 0 0 0.35rem; }
+.cdi-dataset-card__info-row { display: flex; gap: 0.5rem; align-items: baseline; font-size: 0.68rem; margin-bottom: 0.2rem; }
+.cdi-dataset-card__info-row--output { background: rgba(92,197,167,0.08); border-radius: 4px; padding: 0.2rem 0.35rem; }
+.cdi-dataset-card__info-label { font-size: 0.6rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.05em; min-width: 5rem; }
+.cdi-dataset-card__info-value { color: rgba(255,255,255,0.8); }
+.cdi-badge { font-size: 0.6rem; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.cdi-badge--high   { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+.cdi-badge--medium { background: rgba(251,191,36,0.15);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.cdi-badge--low    { background: rgba(92,197,167,0.15);  color: #5CC5A7; border: 1px solid rgba(92,197,167,0.3); }
+.cdi-traceability { display: flex; flex-direction: column; gap: 0; }
+.cdi-traceability__node { background: rgba(255,255,255,0.05); border-radius: 5px; padding: 0.4rem 0.6rem; font-size: 0.67rem; color: rgba(255,255,255,0.85); }
+.cdi-traceability__node--start { border-left: 3px solid #5CC5A7; }
+.cdi-traceability__node--end   { border-left: 3px solid #818cf8; }
+.cdi-traceability__arrow { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.75rem; padding: 0.05rem 0; }
+.cdi-collection-row { display: flex; gap: 0.4rem; align-items: flex-start; padding: 0.35rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.cdi-collection-row:last-child { border: none; }
+.cdi-collection-row__num { min-width: 1.2rem; height: 1.2rem; background: #5CC5A7; border-radius: 50%; color: #000; font-size: 0.6rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.1rem; }
+.cdi-collection-row__content { flex: 1; }
+.cdi-collection-row__name   { font-size: 0.7rem; font-weight: 600; color: #fff; margin: 0 0 0.1rem; }
+.cdi-collection-row__reason { font-size: 0.64rem; color: rgba(255,255,255,0.6); margin: 0; }
+.cdi-roadmap { display: flex; flex-direction: column; gap: 0.1rem; }
+.cdi-roadmap__step { display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem; border-radius: 4px; }
+.cdi-roadmap__step--ready   { background: rgba(92,197,167,0.08); }
+.cdi-roadmap__step--pending { background: rgba(255,255,255,0.03); }
+.cdi-roadmap__icon  { font-size: 0.75rem; }
+.cdi-roadmap__label { font-size: 0.67rem; color: rgba(255,255,255,0.8); }
+.cdi-consultant-guidance { background: rgba(92,197,167,0.07); border: 1px solid rgba(92,197,167,0.2); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; }
+.cdi-consultant-guidance__header { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+.cdi-consultant-guidance__icon  { color: #5CC5A7; font-size: 0.8rem; }
+.cdi-consultant-guidance__title { font-size: 0.7rem; font-weight: 700; color: #5CC5A7; text-transform: uppercase; letter-spacing: 0.05em; }
+.cdi-consultant-guidance__text  { font-size: 0.68rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
+.cdi-ai-recommendation { background: rgba(129,140,248,0.07); border: 1px solid rgba(129,140,248,0.2); border-radius: 6px; padding: 0.75rem; }
+.cdi-ai-recommendation__header { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+.cdi-ai-recommendation__icon  { color: #818cf8; font-size: 0.8rem; }
+.cdi-ai-recommendation__title { font-size: 0.7rem; font-weight: 700; color: #818cf8; text-transform: uppercase; letter-spacing: 0.05em; }
+.cdi-ai-recommendation__text  { font-size: 0.68rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
+
+/* ── ADP new layout ──────────────────────────────────────────────────────── */
+.adp-body { display: grid; grid-template-columns: 40fr 25fr 35fr; gap: 1rem; margin-bottom: 1rem; }
+.adp-col { display: flex; flex-direction: column; gap: 0.5rem; }
+.adp-wp-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.7rem; }
+.adp-wp-card__name { font-size: 0.78rem; font-weight: 700; color: #fff; margin: 0 0 0.35rem; }
+.adp-wp-card__field-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.45); display: block; margin-top: 0.3rem; margin-bottom: 0.1rem; }
+.adp-wp-card__work-list { list-style: disc; padding-left: 1rem; margin: 0; }
+.adp-wp-card__work-item { font-size: 0.67rem; color: rgba(255,255,255,0.8); padding: 0.1rem 0; }
+.adp-wp-card__value { font-size: 0.68rem; color: rgba(255,255,255,0.8); }
+.adp-wp-card__why { font-size: 0.67rem; color: rgba(255,255,255,0.7); margin: 0; }
+.adp-wp-card__deliverable { font-size: 0.67rem; color: #5CC5A7; }
+.adp-wp-card__meta-row { display: flex; align-items: center; gap: 0.5rem; justify-content: space-between; margin-top: 0.3rem; }
+.adp-wp-card__row { display: flex; gap: 0.4rem; align-items: baseline; }
+.adp-roadmap { display: flex; flex-direction: column; gap: 0; }
+.adp-roadmap__node { background: rgba(255,255,255,0.04); border-radius: 5px; padding: 0.4rem 0.6rem; display: flex; flex-direction: column; }
+.adp-roadmap__node--start { border-left: 3px solid #5CC5A7; }
+.adp-roadmap__node--end   { border-left: 3px solid #818cf8; background: rgba(92,197,167,0.08); }
+.adp-roadmap__stage   { font-size: 0.72rem; font-weight: 600; color: #fff; }
+.adp-roadmap__outcome { font-size: 0.62rem; color: rgba(255,255,255,0.55); }
+.adp-roadmap__arrow { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.75rem; padding: 0.05rem 0; }
+.adp-step-row { display: flex; gap: 0.5rem; align-items: flex-start; }
+.adp-step-row__num { min-width: 1.4rem; height: 1.4rem; background: #5CC5A7; border-radius: 50%; color: #000; font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.1rem; }
+.adp-step-row__content { flex: 1; }
+.adp-step-row__action { font-size: 0.72rem; font-weight: 600; color: #fff; margin: 0 0 0.15rem; }
+.adp-step-row__why    { font-size: 0.65rem; color: rgba(255,255,255,0.65); margin: 0 0 0.15rem; }
+.adp-step-row__meta-row { display: flex; gap: 0.5rem; align-items: baseline; font-size: 0.62rem; }
+.adp-step-row__owner-label { color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.04em; }
+.adp-step-row__owner  { color: #5CC5A7; }
+.adp-step-row__output { color: rgba(255,255,255,0.65); }
+.adp-step-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 0.35rem 0; }
+.adp-prep-summary { margin-top: 0.75rem; }
+.adp-prep-summary__cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+.adp-prep-summary__cell { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.5rem; text-align: center; }
+.adp-prep-summary__value { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 0.15rem; }
+.adp-prep-summary__value--text { font-size: 0.75rem; color: #5CC5A7; }
+.adp-prep-summary__label { font-size: 0.6rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+
+/* ── DAE new layout ──────────────────────────────────────────────────────── */
+.dae-view { display: flex; flex-direction: column; gap: 0.75rem; }
+.dae-view__position { font-size: 0.72rem; color: rgba(255,255,255,0.7); margin: 0 0 0.5rem; }
+.dae-upper { display: grid; grid-template-columns: 60fr 40fr; gap: 1rem; }
+.dae-blueprint-col, .dae-flow-col { display: flex; flex-direction: column; gap: 0.4rem; }
+.dae-layer-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+.dae-layer-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.6rem; border-left: 3px solid #5CC5A7; }
+.dae-layer-card--0 { border-left-color: #5CC5A7; }
+.dae-layer-card--1 { border-left-color: #818cf8; }
+.dae-layer-card--2 { border-left-color: #fbbf24; }
+.dae-layer-card--3 { border-left-color: #c084fc; }
+.dae-layer-card__name { font-size: 0.75rem; font-weight: 700; color: #fff; margin: 0 0 0.25rem; }
+.dae-layer-card__field-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.4); display: block; margin-top: 0.25rem; margin-bottom: 0.1rem; }
+.dae-layer-card__purpose { font-size: 0.67rem; color: rgba(255,255,255,0.75); margin: 0; }
+.dae-layer-card__tags { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+.dae-layer-card__tag { background: rgba(255,255,255,0.08); border-radius: 3px; padding: 0.1rem 0.3rem; font-size: 0.6rem; color: rgba(255,255,255,0.75); }
+.dae-layer-card__why { font-size: 0.65rem; color: rgba(255,255,255,0.6); margin: 0; }
+.dae-flow { display: flex; flex-direction: column; gap: 0; }
+.dae-flow__node { background: rgba(255,255,255,0.05); border-radius: 5px; padding: 0.4rem 0.6rem; }
+.dae-flow__node--0 { border-left: 2px solid #5CC5A7; }
+.dae-flow__node--1 { border-left: 2px solid #818cf8; }
+.dae-flow__node--2 { border-left: 2px solid #fbbf24; }
+.dae-flow__node--3 { border-left: 2px solid #c084fc; }
+.dae-flow__node-name { font-size: 0.7rem; font-weight: 600; color: #fff; margin: 0; }
+.dae-flow__node-subs { font-size: 0.6rem; color: rgba(255,255,255,0.5); margin: 0.1rem 0 0; }
+.dae-flow__arrow { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.75rem; padding: 0.05rem 0; }
+.dae-middle { display: grid; grid-template-columns: 55fr 45fr; gap: 1rem; }
+.dae-decisions-col, .dae-tech-col { display: flex; flex-direction: column; gap: 0.4rem; }
+.dae-dec-table { display: flex; flex-direction: column; gap: 0; }
+.dae-dec-table__row { display: grid; grid-template-columns: 2fr 2.5fr 2.5fr; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.dae-dec-table__row--header { background: rgba(255,255,255,0.07); font-weight: 600; }
+.dae-dec-table__cell { padding: 0.4rem 0.5rem; font-size: 0.67rem; color: rgba(255,255,255,0.8); }
+.dae-dec-table__cell--area { font-weight: 600; color: rgba(255,255,255,0.95); }
+.dae-dec-table__cell--rec  { color: #5CC5A7; }
+.dae-dec-table__cell--why  { color: rgba(255,255,255,0.65); }
+.dae-tech-table { display: flex; flex-direction: column; gap: 0; }
+.dae-tech-table__row { display: grid; grid-template-columns: 1fr 2fr; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.dae-tech-table__row--header { background: rgba(255,255,255,0.07); font-weight: 600; }
+.dae-tech-table__cell { padding: 0.4rem 0.5rem; font-size: 0.67rem; color: rgba(255,255,255,0.8); }
+.dae-tech-table__cell--layer { font-weight: 600; }
+.dae-tech-table__cell--rec   { color: #5CC5A7; }
+.dae-pattern-section { margin-top: 0.5rem; }
+.dae-pattern-row { display: flex; flex-direction: column; gap: 0; }
+.dae-pattern-node { background: rgba(255,255,255,0.05); border-radius: 5px; padding: 0.35rem 0.6rem; }
+.dae-pattern-node__label { font-size: 0.68rem; color: rgba(255,255,255,0.85); margin: 0; }
+.dae-pattern-row__arrow { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.75rem; padding: 0.05rem 0; display: block; }
+.dae-consultant-guidance { background: rgba(92,197,167,0.07); border: 1px solid rgba(92,197,167,0.2); border-radius: 6px; padding: 0.75rem; }
+.dae-consultant-guidance__header { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
+.dae-consultant-guidance__icon  { color: #5CC5A7; }
+.dae-consultant-guidance__title { font-size: 0.7rem; font-weight: 700; color: #5CC5A7; text-transform: uppercase; letter-spacing: 0.05em; }
+.dae-consultant-guidance__text  { font-size: 0.68rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
+.dae-impl-section { margin-top: 0.5rem; }
+.dae-impl-row { display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; }
+.dae-impl-step { display: flex; align-items: center; gap: 0.3rem; background: rgba(255,255,255,0.05); border-radius: 5px; padding: 0.3rem 0.5rem; }
+.dae-impl-step__num { min-width: 1.1rem; height: 1.1rem; background: #5CC5A7; border-radius: 50%; color: #000; font-size: 0.55rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.dae-impl-step__label { font-size: 0.62rem; color: rgba(255,255,255,0.8); }
+.dae-impl-row__arrow { color: rgba(255,255,255,0.3); font-size: 0.75rem; }
+.dae-arch-summary { margin-top: 0.5rem; }
+.dae-arch-summary__cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+.dae-arch-summary__cell { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.5rem; text-align: center; }
+.dae-arch-summary__value { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 0.15rem; }
+.dae-arch-summary__value--text { font-size: 0.72rem; color: #5CC5A7; }
+.dae-arch-summary__label { font-size: 0.6rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+.dae-pip { font-size: 0.6rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600; }
+.dae-pip--high   { background: rgba(248,113,113,0.15); color: #f87171; }
+.dae-pip--medium { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+.dae-pip--low    { background: rgba(92,197,167,0.15);  color: #5CC5A7; }
+.dae-decision-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.6rem; margin-bottom: 0.4rem; }
+.dae-decision-card__field-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.4); display: block; margin-bottom: 0.1rem; }
+.dae-decision-card__decision { font-size: 0.7rem; color: #fff; margin: 0 0 0.3rem; font-weight: 600; }
+.dae-decision-card__benefit  { font-size: 0.67rem; color: rgba(255,255,255,0.7); margin: 0; }
+
+/* ── SIA new layout ──────────────────────────────────────────────────────── */
+.sia-view { display: flex; flex-direction: column; gap: 0.75rem; }
+.sia-view__position { font-size: 0.72rem; color: rgba(255,255,255,0.7); margin: 0 0 0.5rem; }
+.sia-main-body { display: grid; grid-template-columns: 65fr 35fr; gap: 1rem; }
+.sia-blueprint-col, .sia-right-col { display: flex; flex-direction: column; gap: 0.4rem; }
+.sia-blueprint-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+.sia-system-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.7rem; }
+.sia-system-card__name { font-size: 0.78rem; font-weight: 700; color: #fff; margin: 0 0 0.35rem; }
+.sia-system-card__field-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.4); margin: 0.25rem 0 0.1rem; display: block; }
+.sia-system-card__value { font-size: 0.67rem; color: rgba(255,255,255,0.75); margin: 0; }
+.sia-workflow-chain { display: flex; flex-direction: column; gap: 0; }
+.sia-workflow-node { background: rgba(255,255,255,0.05); border-radius: 5px; padding: 0.35rem 0.6rem; font-size: 0.68rem; color: rgba(255,255,255,0.85); text-align: center; }
+.sia-workflow-arrow { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.75rem; }
+.sia-priorities { display: flex; flex-direction: column; gap: 0.35rem; }
+.sia-priority-item { background: rgba(255,255,255,0.04); border-radius: 5px; padding: 0.45rem; }
+.sia-priority-item__header { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; }
+.sia-priority-item__num  { min-width: 1.2rem; height: 1.2rem; background: rgba(92,197,167,0.2); border-radius: 50%; color: #5CC5A7; font-size: 0.6rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.sia-priority-item__name { font-size: 0.7rem; font-weight: 600; color: #fff; flex: 1; }
+.sia-priority-badge { font-size: 0.58rem; padding: 0.1rem 0.3rem; border-radius: 3px; border: 1px solid; font-weight: 600; }
+.sia-priority-item__benefit { font-size: 0.63rem; color: rgba(255,255,255,0.6); margin: 0; }
+.sia-arch-chain { display: flex; flex-direction: column; gap: 0.1rem; }
+.sia-arch-layer { background: rgba(255,255,255,0.04); border-radius: 5px; padding: 0.5rem; }
+.sia-arch-layer__name { font-size: 0.68rem; font-weight: 700; margin: 0 0 0.25rem; }
+.sia-arch-techs { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+.sia-tech-pill { background: rgba(255,255,255,0.08); border-radius: 3px; padding: 0.1rem 0.3rem; font-size: 0.6rem; color: rgba(255,255,255,0.75); }
+.sia-arch-arrow { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.75rem; }
+.sia-principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+.sia-principle-item { background: rgba(255,255,255,0.05); border-radius: 5px; padding: 0.45rem; font-size: 0.65rem; color: rgba(255,255,255,0.8); }
+.sia-impl-seq { display: flex; flex-direction: column; gap: 0.2rem; }
+.sia-impl-step { display: flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.04); border-radius: 5px; padding: 0.3rem 0.5rem; }
+.sia-impl-step__num { min-width: 1.1rem; height: 1.1rem; background: #5CC5A7; border-radius: 50%; color: #000; font-size: 0.55rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.sia-impl-step__label { font-size: 0.65rem; color: rgba(255,255,255,0.8); }
+.sia-consultant-guidance { background: rgba(92,197,167,0.07); border: 1px solid rgba(92,197,167,0.2); border-radius: 6px; padding: 0.75rem; }
+.sia-consultant-guidance__title { font-size: 0.7rem; font-weight: 700; color: #5CC5A7; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.35rem; }
+.sia-consultant-guidance__text  { font-size: 0.68rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
+.sia-ai-recommendation { background: rgba(129,140,248,0.07); border: 1px solid rgba(129,140,248,0.2); border-radius: 6px; padding: 0.75rem; }
+.sia-ai-recommendation__title { font-size: 0.7rem; font-weight: 700; color: #818cf8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.35rem; }
+.sia-ai-recommendation__text  { font-size: 0.68rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
+.sia-readiness-badge { background: rgba(92,197,167,0.15); color: #5CC5A7; border-radius: 5px; padding: 0.3rem 0.6rem; font-size: 0.65rem; font-weight: 700; display: inline-block; margin-bottom: 0.5rem; }
+
+/* ── APR new layout ──────────────────────────────────────────────────────── */
+.apr-view { display: flex; flex-direction: column; gap: 0.75rem; }
+.apr-view__position { font-size: 0.72rem; color: rgba(255,255,255,0.7); margin: 0 0 0.5rem; }
+.apr-main-body { display: grid; grid-template-columns: 55fr 45fr; gap: 1rem; }
+.apr-cap-list-col, .apr-blueprint-col { display: flex; flex-direction: column; gap: 0.4rem; }
+.apr-cap-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.apr-cap2-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.7rem; }
+.apr-cap2-card__name { font-size: 0.78rem; font-weight: 700; color: #fff; margin: 0 0 0.25rem; }
+.apr-cap2-card__field-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.4); display: block; margin-top: 0.25rem; margin-bottom: 0.1rem; }
+.apr-cap2-card__purpose { font-size: 0.67rem; color: rgba(255,255,255,0.75); margin: 0; }
+.apr-cap2-card__caps { list-style: disc; padding-left: 1rem; margin: 0; }
+.apr-cap2-card__caps li { font-size: 0.64rem; color: rgba(255,255,255,0.7); padding: 0.1rem 0; }
+.apr-cap2-card__value { font-size: 0.67rem; color: #5CC5A7; margin: 0; }
+.apr-blueprint-chain { display: flex; flex-direction: column; gap: 0.1rem; }
+.apr-blueprint-node { background: rgba(255,255,255,0.04); border-radius: 5px; padding: 0.4rem 0.6rem; }
+.apr-blueprint-node__layer { font-size: 0.7rem; font-weight: 600; color: #fff; margin: 0; }
+.apr-blueprint-node__rec   { font-size: 0.63rem; color: rgba(255,255,255,0.6); margin: 0.15rem 0 0; }
+.apr-blueprint-arrow { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.75rem; }
+.apr-recs2-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.apr-rec2-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.65rem; }
+.apr-rec2-card__title { font-size: 0.72rem; font-weight: 600; color: #fff; margin: 0 0 0.25rem; }
+.apr-rec2-card__field-label { font-size: 0.6rem; text-transform: uppercase; color: rgba(255,255,255,0.4); display: block; margin: 0.2rem 0 0.1rem; }
+.apr-rec2-card__why { font-size: 0.65rem; color: rgba(255,255,255,0.7); margin: 0; }
+.apr-rec2-card__footer { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem; }
+.apr-rec2-priority { font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 3px; border: 1px solid; font-weight: 600; }
+.apr-rec2-phase { font-size: 0.6rem; color: rgba(255,255,255,0.5); }
+.apr-impl-seq { display: flex; flex-direction: column; gap: 0.2rem; }
+.apr-impl-step { display: flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.04); border-radius: 5px; padding: 0.3rem 0.5rem; }
+.apr-impl-step__num { min-width: 1.1rem; height: 1.1rem; background: #5CC5A7; border-radius: 50%; color: #000; font-size: 0.55rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.apr-impl-step__label { font-size: 0.65rem; color: rgba(255,255,255,0.8); }
+.apr-stack2-table { width: 100%; border-collapse: collapse; font-size: 0.68rem; }
+.apr-stack2-table th, .apr-stack2-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.07); text-align: left; }
+.apr-stack2-table th { background: rgba(255,255,255,0.07); font-weight: 600; color: rgba(255,255,255,0.9); }
+.apr-stack2-table td { color: rgba(255,255,255,0.75); }
+.apr-consultant-guidance { background: rgba(92,197,167,0.07); border: 1px solid rgba(92,197,167,0.2); border-radius: 6px; padding: 0.75rem; }
+.apr-consultant-guidance__title { font-size: 0.7rem; font-weight: 700; color: #5CC5A7; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.35rem; }
+.apr-consultant-guidance__text  { font-size: 0.68rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
+.apr-ai-recommendation { background: rgba(129,140,248,0.07); border: 1px solid rgba(129,140,248,0.2); border-radius: 6px; padding: 0.75rem; }
+.apr-ai-recommendation__title { font-size: 0.7rem; font-weight: 700; color: #818cf8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.35rem; }
+.apr-ai-recommendation__text  { font-size: 0.68rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
+.apr-readiness-badge { background: rgba(92,197,167,0.15); color: #5CC5A7; border-radius: 5px; padding: 0.3rem 0.6rem; font-size: 0.65rem; font-weight: 700; display: inline-block; margin-bottom: 0.5rem; }
+
+/* ── CDS new layout ──────────────────────────────────────────────────────── */
+.cds-view { display: flex; flex-direction: column; gap: 0.75rem; }
+.cds-view__position { font-size: 0.72rem; color: rgba(255,255,255,0.7); margin: 0 0 0.5rem; }
+.cds-arch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; }
+.cds-arch-block { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.65rem; }
+.cds-arch-block__type { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 0.35rem; }
+.cds-arch-block__field-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.4); margin: 0.2rem 0 0.1rem; display: block; }
+.cds-arch-block__name { font-size: 0.75rem; font-weight: 600; color: #fff; margin: 0 0 0.25rem; }
+.cds-arch-block__why { font-size: 0.65rem; color: rgba(255,255,255,0.65); margin: 0; }
+.cds-mid-row { display: grid; grid-template-columns: 30fr 70fr; gap: 1rem; margin-bottom: 0.5rem; }
+.cds-flow-col, .cds-tech-col { display: flex; flex-direction: column; gap: 0.4rem; }
+.cds-flow-chain { display: flex; flex-direction: column; gap: 0.1rem; }
+.cds-flow-node { background: rgba(255,255,255,0.05); border-radius: 5px; padding: 0.35rem 0.6rem; font-size: 0.68rem; color: rgba(255,255,255,0.85); text-align: center; }
+.cds-flow-arrow { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.75rem; }
+.cds-tech-table { width: 100%; border-collapse: collapse; font-size: 0.67rem; }
+.cds-tech-table th, .cds-tech-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.07); text-align: left; }
+.cds-tech-table th { background: rgba(255,255,255,0.07); font-weight: 600; color: rgba(255,255,255,0.9); }
+.cds-tech-table td { color: rgba(255,255,255,0.75); }
+.cds-arch-rationale { padding-left: 1.2rem; margin: 0 0 0.5rem; }
+.cds-arch-rationale__item { font-size: 0.68rem; color: rgba(255,255,255,0.75); padding: 0.15rem 0; }
+.cds-dec-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; }
+.cds-dec-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.6rem; }
+.cds-dec-card__type   { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.45); margin: 0 0 0.2rem; }
+.cds-dec-card__choice { font-size: 0.75rem; font-weight: 700; color: #fff; margin: 0 0 0.2rem; }
+.cds-dec-card__reason { font-size: 0.65rem; color: rgba(255,255,255,0.65); margin: 0; }
+.cds-impl-seq { display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 0.5rem; }
+.cds-impl-step { display: flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.04); border-radius: 5px; padding: 0.3rem 0.5rem; }
+.cds-impl-step__num { min-width: 1.1rem; height: 1.1rem; background: #5CC5A7; border-radius: 50%; color: #000; font-size: 0.55rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.cds-impl-step__label { font-size: 0.65rem; color: rgba(255,255,255,0.8); }
+.cds-infra-table { width: 100%; border-collapse: collapse; font-size: 0.68rem; margin-bottom: 0.5rem; }
+.cds-infra-table th, .cds-infra-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.07); text-align: left; }
+.cds-infra-table th { background: rgba(255,255,255,0.07); font-weight: 600; color: rgba(255,255,255,0.9); }
+.cds-infra-table td { color: rgba(255,255,255,0.75); }
+.cds-investment-table { width: 100%; border-collapse: collapse; font-size: 0.68rem; margin-bottom: 0.5rem; }
+.cds-investment-table th, .cds-investment-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.07); text-align: left; }
+.cds-investment-table th { background: rgba(255,255,255,0.07); font-weight: 600; color: rgba(255,255,255,0.9); }
+.cds-invest-badge { font-size: 0.62rem; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 600; }
+.cds-invest--high   { background: rgba(248,113,113,0.15); color: #f87171; }
+.cds-invest--medium { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+.cds-invest--low    { background: rgba(92,197,167,0.15);  color: #5CC5A7; }
+.cds-consultant-guidance { background: rgba(92,197,167,0.07); border: 1px solid rgba(92,197,167,0.2); border-radius: 6px; padding: 0.75rem; }
+.cds-consultant-guidance__title { font-size: 0.7rem; font-weight: 700; color: #5CC5A7; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.35rem; }
+.cds-consultant-guidance__text  { font-size: 0.68rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
+.cds-ai-recommendation { background: rgba(129,140,248,0.07); border: 1px solid rgba(129,140,248,0.2); border-radius: 6px; padding: 0.75rem; }
+.cds-ai-recommendation__title { font-size: 0.7rem; font-weight: 700; color: #818cf8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.35rem; }
+.cds-ai-recommendation__text  { font-size: 0.68rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
+.cds-readiness-badge { background: rgba(92,197,167,0.15); color: #5CC5A7; border-radius: 5px; padding: 0.3rem 0.6rem; font-size: 0.65rem; font-weight: 700; display: inline-block; margin-bottom: 0.5rem; }
+.cds-scores-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem; }
+.cds-score-cell { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.5rem; text-align: center; }
+.cds-score-cell__value { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 0.15rem; }
+.cds-score-cell__label { font-size: 0.6rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+.cds-workload-col, .cds-right-col { display: flex; flex-direction: column; gap: 0.4rem; }
+.cds-workload-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.7rem; }
+.cds-workload-card__name { font-size: 0.75rem; font-weight: 700; color: #fff; margin: 0 0 0.3rem; }
+.cds-workload-card__spec { font-size: 0.67rem; color: rgba(255,255,255,0.75); margin: 0.1rem 0; }
+.cds-workload-card__spec-label { color: rgba(255,255,255,0.45); }
+.cds-priority { font-size: 0.6rem; padding: 0.15rem 0.4rem; border-radius: 3px; font-weight: 600; margin-top: 0.3rem; display: inline-block; }
+.cds-priority--critical, .cds-priority--high   { background: rgba(248,113,113,0.15); color: #f87171; }
+.cds-priority--medium { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+.cds-priority--low    { background: rgba(92,197,167,0.15);  color: #5CC5A7; }
+.cds-body { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.cds-recs-section { display: flex; flex-direction: column; gap: 0.4rem; }
+.cds-recs-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+.cds-rec-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.6rem; }
+.cds-rec-card__text { font-size: 0.7rem; color: rgba(255,255,255,0.85); margin: 0 0 0.25rem; }
+.cds-rec-card__impact-row { font-size: 0.65rem; color: rgba(255,255,255,0.6); margin-bottom: 0.2rem; }
+.cds-rec-card__reason { font-size: 0.63rem; color: rgba(255,255,255,0.55); margin: 0; }
+.cds-impact--high   { color: #f87171; font-weight: 600; }
+.cds-impact--medium { color: #fbbf24; font-weight: 600; }
+.cds-impact--low    { color: #5CC5A7; font-weight: 600; }
 `;
 }
 

@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Assess whether the organization's systems and application architecture can seamlessly integrate with the selected AI solution.
+Design how the AI solution will integrate with existing business applications, engineering tools, workflows, and users to ensure seamless adoption with minimal disruption.
 
-This capability helps project managers identify integration requirements, system dependencies, and architectural considerations that enable reliable AI adoption without disrupting existing business processes.
+Rather than building isolated AI solutions, this capability helps project managers define how AI becomes part of day-to-day operations by integrating with existing systems, processes, and user experiences.
 
 ---
 
@@ -12,129 +12,212 @@ This capability helps project managers identify integration requirements, system
 
 ## Definition
 
-System Integration & Architecture is the process of evaluating how AI solutions interact with existing business systems, applications, and services.
+System Integration & Architecture defines how AI solutions interact with enterprise applications, engineering tools, business workflows, and end users.
 
-The AI identifies integration points, assesses architectural compatibility, and recommends practical approaches for connecting AI with existing enterprise ecosystems.
+The AI identifies the systems requiring integration, recommends appropriate integration patterns, defines user interaction points, and proposes a scalable architecture that enables AI adoption while preserving existing business processes.
 
-## Framework
-
-### Business Systems
-
-Identify the business applications that provide or consume data for the AI solution.
-
-Typical examples: ERP, CRM, PLM, HR systems, finance systems, customer portals.
+Unlike Data Architecture Enablement, which focuses on moving data into AI, this capability focuses on embedding AI into operational workflows and enterprise applications.
 
 ---
 
-### Application Integration
+## 1. Business & Engineering Systems
 
-Assess how AI communicates with existing applications.
+Identify the applications that will consume or interact with the AI solution.
 
-Typical examples: REST APIs, GraphQL APIs, webhooks, messaging services, database connectors.
+Typical examples
 
----
-
-### Data Exchange
-
-Evaluate how information is exchanged between systems.
-
-Typical examples: Real-time APIs, batch processing, event-driven messaging, file-based integration.
-
----
-
-### Workflow Integration
-
-Assess how AI fits into existing business processes.
-
-Typical examples: Approval workflows, automated notifications, task creation, business process automation.
+- ERP
+- CRM
+- PLM
+- ALM
+- Requirements Management
+- Project Management
+- Test Management
+- Source Code Repository
+- Document Management
+- Collaboration Platforms
 
 ---
 
-### Architecture Scalability
+## 2. Integration Patterns
 
-Evaluate whether the application architecture can support increasing AI usage.
+Determine how AI will communicate with existing systems.
 
-Typical examples: Modular services, reusable APIs, event-driven architecture, distributed applications.
+Typical examples
+
+- REST APIs
+- GraphQL APIs
+- Webhooks
+- Event-driven messaging
+- SDK integration
+- Plugin architecture
+- Middleware
+- API Gateway
 
 ---
 
-### Integration Reliability
+## 3. Workflow Integration
 
-Assess whether integrations are reliable and maintainable.
+Define where AI becomes part of the user's daily workflow.
 
-Typical examples: Error handling, retry mechanisms, monitoring, service availability.
+Typical examples
+
+- Requirement authoring
+- Design review
+- Code generation
+- Test design
+- Test execution
+- Defect analysis
+- Project reporting
+- Knowledge search
+- Decision support
+
+---
+
+## 4. User Experience Integration
+
+Determine how users access AI capabilities.
+
+Typical examples
+
+- Web application
+- IDE extension
+- Microsoft Teams
+- Slack
+- Email assistant
+- Embedded AI panel
+- Mobile application
+
+---
+
+## 5. Security & Governance Integration
+
+Ensure AI integrates with existing enterprise governance.
+
+Typical examples
+
+- Single Sign-On (SSO)
+- Role-Based Access Control (RBAC)
+- Audit Logging
+- Identity Management
+- Data Access Policies
+- API Security
+
+---
+
+## 6. Operational Reliability
+
+Ensure integrations remain reliable as adoption grows.
+
+Typical examples
+
+- API monitoring
+- Error handling
+- Retry mechanisms
+- High availability
+- Version management
+- Performance monitoring
+
+---
+
+## Consultant Guidance
+
+The AI recommends integrations that maximise user adoption while minimising disruption to existing business processes.
+
+Preference should always be given to integrating AI into applications that employees already use rather than introducing entirely new user interfaces.
+
+Reusable APIs and standardised integration patterns should be prioritised to support future AI initiatives.
+
+---
 
 ## Key Principles
 
 - Integrate AI into existing business workflows.
-- Minimize disruption to existing systems.
-- Prefer standardized integration mechanisms.
-- Design reusable integration services.
-- Build scalable application architectures.
+- Reuse existing enterprise applications whenever possible.
+- Minimise changes to established engineering processes.
+- Prefer API-first and event-driven integration patterns.
+- Standardise reusable integration services.
+- Ensure secure and governed system connectivity.
+- Design integrations that support future AI initiatives.
+
+---
 
 ## Leadership Question
 
-**Can our existing systems and architecture reliably support this AI solution?**
+**How will our AI solution integrate with existing systems and workflows to maximise business adoption?**
 
 ---
 
-# Decision Criteria
+## Decision Criteria
 
-The AI evaluates:
+The AI evaluates integration strategy using:
 
-- System compatibility
-- Integration readiness
-- Data exchange mechanisms
+- Business systems involved
+- Integration complexity
 - Workflow impact
-- Scalability
-- Reliability
+- User experience
+- Security requirements
+- Operational reliability
+- Reusability across future AI initiatives
 
 ---
 
-# AI Reasoning Process
+## AI Reasoning Process
 
 ```text
 Understand AI Use Case
         ↓
 Identify Business Systems
         ↓
-Evaluate Integration Points
+Identify User Workflows
         ↓
-Assess Data Exchange
+Select Integration Pattern
         ↓
-Review Workflow Impact
+Define User Experience
         ↓
-Generate Integration Recommendations
+Recommend Integration Architecture
+        ↓
+Generate System Integration Blueprint
 ```
 
 ---
 
-# Blueprint Output
+## Blueprint Output
 
-The generated blueprint includes:
+The AI generates a project-specific System Integration Blueprint containing:
 
-- System Inventory
-- Integration Assessment
-- Workflow Impact Analysis
-- Architecture Readiness
-- Integration Risks
-- Recommended Integration Strategy
-- AI Recommendations
-
----
-
-# Expected Outcome
-
-After completing this capability, the project team should understand how the AI solution integrates with existing systems, identify architectural gaps, and receive practical recommendations for seamless implementation.
+- Business & Engineering System Inventory
+- Recommended Integration Architecture
+- User Workflow Integration
+- Integration Pattern Recommendations
+- User Experience Recommendations
+- Security & Governance Integration
+- Integration Roadmap
+- Consultant Guidance
+- AI Recommendation
 
 ---
 
-# AI Prompt Guidance
+## Expected Outcome
 
-When generating the blueprint, the AI should:
+After completing this capability, the project team should have:
 
-- Identify systems affected by the AI use case.
-- Recommend appropriate integration mechanisms.
-- Highlight architectural dependencies.
-- Identify potential bottlenecks.
-- Focus on practical implementation guidance.
+- A clear understanding of how the AI solution integrates with existing business and engineering systems.
+- A recommended integration architecture.
+- Defined user interaction points.
+- Standardised integration patterns.
+- A phased integration roadmap.
+- A scalable approach that supports future AI initiatives.
+
+---
+
+## AI Prompt Guidance
+
+When generating the System Integration & Architecture blueprint, the AI should:
+
+- Identify the enterprise systems involved in the selected AI use case.
+- Recommend practical integration patterns rather than custom point-to-point connections.
+- Explain where users will interact with AI in their daily workflow.
+- Recommend secure and reusable integration approaches.
+- Tailor recommendations to the project's technology landscape.
+- Focus on adoption and operational integration rather than data movement.

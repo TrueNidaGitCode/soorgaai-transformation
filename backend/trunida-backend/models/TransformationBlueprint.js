@@ -99,6 +99,10 @@ const skillsMatrixEntrySchema       = new mongoose.Schema({ category: String, re
 const skillsRecommendationSchema    = new mongoose.Schema({ title: String, priority: String, expectedBenefit: String }, { _id: false });
 const skillsStatsSchema             = new mongoose.Schema({ available: Number, gaps: Number, critical: Number }, { _id: false });
 const skillsCategorySummarySchema   = new mongoose.Schema({ category: String, status: String }, { _id: false });
+// AI Roles & Capability Planning (new format)
+const projectRoleSchema             = new mongoose.Schema({ name: String, primaryResponsibility: String, aiCapabilities: [String], priority: String }, { _id: false });
+const capabilityPrioritySchema      = new mongoose.Schema({ priority: Number, role: String, capability: String, why: String }, { _id: false });
+const workforceStatsSchema          = new mongoose.Schema({ requiredRoles: Number, criticalRoles: Number, aiCapabilities: Number, developmentPriority: String }, { _id: false });
 const requiredRoleSchema            = new mongoose.Schema({ name: String, responsibility: String, availability: String, priority: String }, { _id: false });
 const teamRecommendationSchema      = new mongoose.Schema({ title: String, priority: String, impact: String }, { _id: false });
 const teamStatsSchema               = new mongoose.Schema({ required: Number, available: Number, missing: Number }, { _id: false });
@@ -239,13 +243,20 @@ const briefSchema = new mongoose.Schema({
   cdsInvestmentEstimate:    { type: [cdsInvestmentEstimateSchema],    default: [] },
   cdsConsultantGuidance:    { type: String,                           default: '' },
   cdsAIRecommendation:      { type: String,                           default: '' },
-  // Skills & Workforce: AI Skills Assessment extras
+  // Skills & Workforce: AI Roles & Capability Planning (legacy fields kept for backwards compat)
   skillsReadiness:          { type: Number,   default: 0 },
   requiredSkills:           { type: [requiredSkillSchema],            default: [] },
   skillsMatrix:             { type: [skillsMatrixEntrySchema],        default: [] },
   skillsRecommendations:    { type: [skillsRecommendationSchema],     default: [] },
   skillsStats:              { type: skillsStatsSchema,                default: undefined },
   skillsCategorySummary:    { type: [skillsCategorySummarySchema],    default: [] },
+  // AI Roles & Capability Planning (new format fields)
+  projectRoles:             { type: [projectRoleSchema],              default: [] },
+  responsibilityJourney:    { type: [String],                         default: [] },
+  capabilityPriorities:     { type: [capabilityPrioritySchema],       default: [] },
+  workforceStats:           { type: workforceStatsSchema,             default: undefined },
+  arcpConsultantGuidance:   { type: String },
+  arcpAIRecommendation:     { type: String },
   // Skills & Workforce: AI Team Readiness extras
   teamReadiness:            { type: Number,   default: 0 },
   requiredRoles:            { type: [requiredRoleSchema],             default: [] },

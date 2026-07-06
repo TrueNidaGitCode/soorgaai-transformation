@@ -9819,6 +9819,345 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   SKILLS & WORKFORCE — AI ROLES & CAPABILITY PLANNING  (arcp-*)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.arcp-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.arcp-view__position {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.55;
+  padding-right: 1.5rem;
+}
+
+/* 3-column body: 45% | 25% | 30% */
+.arcp-body {
+  display: grid;
+  grid-template-columns: 45fr 25fr 30fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+/* ── Left: Role Cards ────────────────────────────────────────────────────── */
+
+.arcp-roles-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.arcp-role-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-left: 3px solid #5CC5A7;
+  border-radius: 0.45rem;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.arcp-role-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.arcp-role-card__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #5CC5A7;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.arcp-pri-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.arcp-pri--high   { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+.arcp-pri--medium { background: rgba(251,191,36,0.12);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.arcp-pri--low    { background: rgba(92,197,167,0.12);  color: #5CC5A7; border: 1px solid rgba(92,197,167,0.3); }
+
+.arcp-role-card__field-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin: 0.2rem 0 0.1rem;
+}
+
+.arcp-role-card__field-value {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.72);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.arcp-role-card__caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.1rem;
+}
+
+.arcp-cap-pill {
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.4rem;
+}
+
+/* ── Center: Responsibility Journey ─────────────────────────────────────── */
+
+.arcp-journey-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.arcp-journey-chain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.arcp-journey-node {
+  width: 100%;
+  background: rgba(92,197,167,0.07);
+  border: 1px solid rgba(92,197,167,0.25);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.8);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.arcp-journey-arrow {
+  font-size: 0.75rem;
+  color: rgba(92,197,167,0.5);
+  line-height: 1.4;
+  text-align: center;
+  padding: 0.1rem 0;
+}
+
+/* ── Right: Capability Development Priorities ────────────────────────────── */
+
+.arcp-priorities-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.arcp-pri-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.arcp-pri-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.4rem;
+  padding: 0.55rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.arcp-pri-item__header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.arcp-pri-item__num {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+  white-space: nowrap;
+}
+
+.arcp-pri-item__role {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+}
+
+.arcp-pri-item__capability {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.65);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.arcp-pri-item__why {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.38);
+  font-style: italic;
+  margin: 0;
+}
+
+/* ── Stats strip ─────────────────────────────────────────────────────────── */
+
+.arcp-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.arcp-stat-cell {
+  padding: 0.7rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  border-right: 1px solid rgba(255,255,255,0.07);
+}
+.arcp-stat-cell:last-child { border-right: none; }
+
+.arcp-stat-cell__value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  margin: 0;
+}
+
+.arcp-stat-cell__label {
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* ── Consultant Guidance (teal) ──────────────────────────────────────────── */
+
+.arcp-consultant-guidance {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  background: rgba(92,197,167,0.06);
+  border: 1px solid rgba(92,197,167,0.2);
+  border-left: 3px solid #5CC5A7;
+  border-radius: 0.5rem;
+  padding: 0.85rem 1rem;
+}
+
+.arcp-guidance__icon {
+  font-size: 0.85rem;
+  color: #5CC5A7;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.arcp-guidance__text {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── AI Recommendation (amber) ───────────────────────────────────────────── */
+
+.arcp-ai-recommendation {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  background: rgba(251,191,36,0.05);
+  border: 1px solid rgba(251,191,36,0.18);
+  border-left: 3px solid #fbbf24;
+  border-radius: 0.5rem;
+  padding: 0.85rem 1rem;
+}
+
+.arcp-rec__icon {
+  font-size: 0.85rem;
+  color: #fbbf24;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.arcp-rec__text {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Next Capability footer ──────────────────────────────────────────────── */
+
+.arcp-next-capability {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.arcp-next__label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin: 0;
+}
+
+.arcp-next__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #5CC5A7;
+  margin: 0;
+}
+
+.arcp-next__goal {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .arcp-body { grid-template-columns: 45fr 25fr 30fr; }
+  .arcp-stats-strip { grid-template-columns: repeat(2, 1fr); }
+  .arcp-stat-cell:nth-child(2) { border-right: none; }
+  .arcp-stat-cell:nth-child(1),
+  .arcp-stat-cell:nth-child(2) { border-bottom: 1px solid rgba(255,255,255,0.07); }
+}
+
+@media (max-width: 900px) {
+  .arcp-body { grid-template-columns: 1fr; }
+  .arcp-stats-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    SKILLS & WORKFORCE — AI TEAM READINESS  (atr-*)
    ═══════════════════════════════════════════════════════════════════════════════ */
 

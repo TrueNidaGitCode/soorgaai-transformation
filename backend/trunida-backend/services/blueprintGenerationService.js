@@ -948,29 +948,32 @@ SECTION-SPECIFIC EXTRAS — "AI Compute & Deployment Strategy" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Roles & Capability Planning" sections only:
 
-5. skillsReadiness (number 0–100)
-   The overall skills readiness score as a percentage for this AI use case.
+5. projectRoles (4 to 7 items)
+   The key project roles required to deliver this AI use case.
+   Each item: { "name": "<role title>", "primaryResponsibility": "<2–5 words describing their main duty>", "aiCapabilities": ["<cap1>", "<cap2>", "<cap3>"], "priority": "High|Medium|Low" }
+   Order by priority descending. Include at least 3 High-priority roles. AI capabilities must be role-specific, not generic.
 
-6. requiredSkills (4 to 6 items)
-   The most critical skills required for this AI use case across all four categories.
-   Each item: { "name": "<skill name, 2–4 words>", "category": "Business|AI & Data|Engineering|Domain", "priority": "High|Medium|Low", "availability": "Available|Partial|Missing" }
-   Include at least one skill per category. Priority must reflect criticality to delivery.
+6. responsibilityJourney (5 to 7 items)
+   The ordered accountability chain from governance sponsor through to continuous improvement.
+   Each item is a role name string (e.g. "Executive Sponsor", "Project Manager", "AI Engineer", "Test Engineer", "Operations Team").
+   This is a linear flow — each role hands off to the next.
 
-7. skillsMatrix (exactly 4 items, fixed order: Business Skills, AI & Data Skills, Engineering Skills, Domain Expertise)
-   Each item: { "category": "Business Skills|AI & Data Skills|Engineering Skills|Domain Expertise", "readiness": <0–100>, "required": <count 1–10>, "missing": <count 0–5> }
-   "missing" must be ≤ "required". Readiness reflects realistic skill availability for this project.
+7. capabilityPriorities (3 to 4 items)
+   Workforce development priorities — which roles need which AI capabilities first and why.
+   Each item: { "priority": <1|2|3|4>, "role": "<role name>", "capability": "<specific AI capability, 2–4 words>", "why": "<reason, ≤8 words>" }
+   Order from most to least critical for delivery success.
 
-8. skillsRecommendations (exactly 3 items)
-   Each item: { "title": "<action, 2–5 words>", "priority": "High|Medium|Low", "expectedBenefit": "<outcome, ≤8 words>" }
+8. workforceStats
+   Object: { "requiredRoles": <total count of projectRoles>, "criticalRoles": <count of High-priority roles>, "aiCapabilities": <total count of all aiCapabilities across all roles summed>, "developmentPriority": "High|Medium|Low" }
 
-9. skillsStats
-   Object: { "available": <count of skills marked Available>, "gaps": <count of Partial or Missing skills>, "critical": <count of High-priority Missing skills> }
+9. arcpConsultantGuidance (string, 2–3 sentences)
+   Consulting-style workforce planning guidance for project managers. Focus on role-based capability development rather than generic training. Plain text.
 
-10. skillsCategorySummary (exactly 4 items, fixed order: Business, AI & Data, Engineering, Domain)
-    Each item: { "category": "Business|AI & Data|Engineering|Domain", "status": "Ready|Strong|Partial|Needs Improvement" }
+10. arcpAIRecommendation (string, 2–3 sentences)
+    Executive AI recommendation. Name specific roles to prioritise first and explain the delivery impact. Plain text.
 
    Add all to the brief object:
-   "skillsReadiness": <number>, "requiredSkills": [...], "skillsMatrix": [...], "skillsRecommendations": [...], "skillsStats": {...}, "skillsCategorySummary": [...]`,
+   "projectRoles": [...], "responsibilityJourney": [...], "capabilityPriorities": [...], "workforceStats": {...}, "arcpConsultantGuidance": "...", "arcpAIRecommendation": "..."`,
   },
 
   'AI Team Readiness': {
@@ -1791,6 +1794,48 @@ function parseBriefOutput(rawSections, validTitles) {
 
       // ── Skills & Workforce: AI Roles & Capability Planning parsers ──────────
 
+      // New format (projectRoles)
+      const rawProjectRoles = Array.isArray(b.projectRoles) ? b.projectRoles : [];
+      const projectRoles = rawProjectRoles
+        .filter(r => r && typeof r === 'object' && String(r.name || '').trim())
+        .map(r => ({
+          name:                  String(r.name                  || '').trim(),
+          primaryResponsibility: String(r.primaryResponsibility || '').trim(),
+          aiCapabilities:        Array.isArray(r.aiCapabilities)
+            ? r.aiCapabilities.map(c => String(c || '').trim()).filter(Boolean)
+            : [],
+          priority:              String(r.priority || 'Medium').trim(),
+        }))
+        .slice(0, 7);
+
+      const responsibilityJourney = Array.isArray(b.responsibilityJourney)
+        ? b.responsibilityJourney.map(s => String(s || '').trim()).filter(Boolean).slice(0, 7)
+        : [];
+
+      const rawCapPriorities = Array.isArray(b.capabilityPriorities) ? b.capabilityPriorities : [];
+      const capabilityPriorities = rawCapPriorities
+        .filter(p => p && typeof p === 'object' && String(p.role || '').trim())
+        .map(p => ({
+          priority:   parseInt(p.priority, 10) || 1,
+          role:       String(p.role       || '').trim(),
+          capability: String(p.capability || '').trim(),
+          why:        String(p.why        || '').trim(),
+        }))
+        .sort((a, c) => a.priority - c.priority)
+        .slice(0, 4);
+
+      const rawWorkforceStats = b.workforceStats && typeof b.workforceStats === 'object' ? b.workforceStats : {};
+      const workforceStats = {
+        requiredRoles:       parseInt(rawWorkforceStats.requiredRoles,       10) || 0,
+        criticalRoles:       parseInt(rawWorkforceStats.criticalRoles,       10) || 0,
+        aiCapabilities:      parseInt(rawWorkforceStats.aiCapabilities,      10) || 0,
+        developmentPriority: String(rawWorkforceStats.developmentPriority   || '').trim(),
+      };
+
+      const arcpConsultantGuidance = String(b.arcpConsultantGuidance || '').trim();
+      const arcpAIRecommendation   = String(b.arcpAIRecommendation   || '').trim();
+
+      // Legacy fields (old format blueprints that haven't regenerated)
       const skillsReadiness = parseInt(b.skillsReadiness, 10) || 0;
 
       const rawRequiredSkills = Array.isArray(b.requiredSkills) ? b.requiredSkills : [];
@@ -2063,7 +2108,14 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(cdsInvestmentEstimate.length    ? { cdsInvestmentEstimate }    : {}),
           ...(cdsConsultantGuidance           ? { cdsConsultantGuidance }    : {}),
           ...(cdsAIRecommendation             ? { cdsAIRecommendation }      : {}),
-          // Skills & Workforce: AI Skills Assessment extras
+          // Skills & Workforce: AI Roles & Capability Planning extras (new format)
+          ...(projectRoles.length                                        ? { projectRoles }             : {}),
+          ...(responsibilityJourney.length                               ? { responsibilityJourney }   : {}),
+          ...(capabilityPriorities.length                                ? { capabilityPriorities }    : {}),
+          ...((workforceStats.requiredRoles || workforceStats.aiCapabilities) ? { workforceStats }    : {}),
+          ...(arcpConsultantGuidance                                     ? { arcpConsultantGuidance }  : {}),
+          ...(arcpAIRecommendation                                       ? { arcpAIRecommendation }    : {}),
+          // Legacy fields (kept for existing blueprints that haven't regenerated)
           ...(skillsReadiness                              ? { skillsReadiness }              : {}),
           ...(requiredSkills.length                        ? { requiredSkills }               : {}),
           ...(skillsMatrix.some(m => m.readiness)          ? { skillsMatrix }                : {}),
@@ -2662,6 +2714,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'deploymentDecisions', 'cdsImplSequence', 'infraItems', 'cdsInvestmentEstimate',
       'cdsConsultantGuidance', 'cdsAIRecommendation',
       // Skills & Workforce extras
+      'projectRoles', 'responsibilityJourney', 'capabilityPriorities', 'workforceStats', 'arcpConsultantGuidance', 'arcpAIRecommendation',
       'skillsReadiness', 'requiredSkills', 'skillsMatrix', 'skillsRecommendations', 'skillsStats', 'skillsCategorySummary',
       'teamReadiness', 'requiredRoles', 'teamRecommendations', 'teamStats', 'teamCoverageSummary',
       'adoptionReadiness', 'learningPillars', 'adoptionLifecycle', 'adoptionRecommendations',
@@ -2944,6 +2997,17 @@ function extractJourneyContext(capabilityName, sections) {
       lines.push(`Deployment Guidance: ${b.cdsConsultantGuidance}`);
     if (b.cdsAIRecommendation)
       lines.push(`Deployment AI Recommendation: ${b.cdsAIRecommendation}`);
+    // ── Skills & Workforce: AI Roles & Capability Planning carry-forward ─────────
+    if (b.projectRoles?.length)
+      lines.push(`Required Project Roles: ${b.projectRoles.map(r => `${r.name} (${r.primaryResponsibility})`).join(', ')}`);
+    if (b.responsibilityJourney?.length)
+      lines.push(`Responsibility Journey: ${b.responsibilityJourney.join(' → ')}`);
+    if (b.capabilityPriorities?.length)
+      lines.push(`Capability Development Priorities: ${b.capabilityPriorities.map(p => `${p.role}: ${p.capability}`).join(', ')}`);
+    if (b.arcpConsultantGuidance)
+      lines.push(`Workforce Guidance: ${b.arcpConsultantGuidance}`);
+    if (b.arcpAIRecommendation)
+      lines.push(`Workforce AI Recommendation: ${b.arcpAIRecommendation}`);
   }
   return lines.join('\n');
 }

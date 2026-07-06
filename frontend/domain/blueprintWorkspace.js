@@ -5205,18 +5205,242 @@ function buildAdoptionLifecycleDiagram(lifecycle) {
   return wrap;
 }
 
-// ── Layout: AI Skills Assessment ──────────────────────────────────────────────
+// ── Layout: AI Roles & Capability Planning ────────────────────────────────────
 function buildAISkillsAssessmentLayout(section) {
-  const b                  = section.brief || {};
-  const requiredSkills     = b.requiredSkills       || [];
-  const skillsMatrix       = b.skillsMatrix         || [];
-  const skillsRecs         = b.skillsRecommendations || [];
-  const skillsStats        = b.skillsStats          || {};
-  const skillsCatSummary   = b.skillsCategorySummary || [];
-  const leadershipQ        = b.leadershipValidation?.context || '';
+  const b = section.brief || {};
+  const isNewFormat = !!(b.arcpConsultantGuidance || (b.projectRoles && b.projectRoles.length));
+  return isNewFormat ? buildARCPNewLayout(b) : buildARCPLegacyLayout(b);
+}
 
-  const AVAIL_COLOR = { Available: 'asa-skill--available', Partial: 'asa-skill--partial', Missing: 'asa-skill--missing' };
-  const PRI_CLASS   = { High: 'asa-priority--high', Medium: 'asa-priority--medium', Low: 'asa-priority--low' };
+function buildARCPNewLayout(b) {
+  const projectRoles          = b.projectRoles          || [];
+  const responsibilityJourney = b.responsibilityJourney || [];
+  const capabilityPriorities  = b.capabilityPriorities  || [];
+  const workforceStats        = b.workforceStats        || {};
+
+  const PRI_CLASS = { High: 'arcp-pri--high', Medium: 'arcp-pri--medium', Low: 'arcp-pri--low' };
+
+  const wrap = document.createElement('div');
+  wrap.className = 'arcp-view';
+
+  // Header: blueprint label + strategic position
+  const blueprintLabel = document.createElement('p');
+  blueprintLabel.className = 'brief-label';
+  blueprintLabel.textContent = 'AI Workforce Blueprint';
+  wrap.appendChild(blueprintLabel);
+
+  if (b.strategicPosition) {
+    const pos = document.createElement('p');
+    pos.className = 'arcp-view__position';
+    pos.textContent = b.strategicPosition;
+    wrap.appendChild(pos);
+  }
+
+  // 3-column body
+  const body = document.createElement('div');
+  body.className = 'arcp-body';
+
+  // ── LEFT (45%): Required Project Roles ──────────────────────────────────
+  const leftCol = document.createElement('div');
+  leftCol.className = 'arcp-roles-col';
+  const leftLbl = document.createElement('p');
+  leftLbl.className = 'brief-label';
+  leftLbl.textContent = 'Required Project Roles';
+  leftCol.appendChild(leftLbl);
+
+  projectRoles.forEach(role => {
+    const card = document.createElement('div');
+    card.className = 'arcp-role-card';
+
+    const header = document.createElement('div');
+    header.className = 'arcp-role-card__header';
+    const name = document.createElement('p');
+    name.className = 'arcp-role-card__name';
+    name.textContent = role.name;
+    const pri = document.createElement('span');
+    pri.className = `arcp-pri-badge ${PRI_CLASS[role.priority] || 'arcp-pri--medium'}`;
+    pri.textContent = (role.priority || 'MEDIUM').toUpperCase();
+    header.appendChild(name);
+    header.appendChild(pri);
+    card.appendChild(header);
+
+    if (role.primaryResponsibility) {
+      const respLabel = document.createElement('p');
+      respLabel.className = 'arcp-role-card__field-label';
+      respLabel.textContent = 'Primary Responsibility';
+      card.appendChild(respLabel);
+      const resp = document.createElement('p');
+      resp.className = 'arcp-role-card__field-value';
+      resp.textContent = role.primaryResponsibility;
+      card.appendChild(resp);
+    }
+
+    if (role.aiCapabilities && role.aiCapabilities.length) {
+      const capLabel = document.createElement('p');
+      capLabel.className = 'arcp-role-card__field-label';
+      capLabel.textContent = 'AI Capability';
+      card.appendChild(capLabel);
+      const capList = document.createElement('div');
+      capList.className = 'arcp-role-card__caps';
+      role.aiCapabilities.forEach(cap => {
+        const pill = document.createElement('span');
+        pill.className = 'arcp-cap-pill';
+        pill.textContent = cap;
+        capList.appendChild(pill);
+      });
+      card.appendChild(capList);
+    }
+
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // ── CENTER (25%): AI Responsibility Journey ──────────────────────────────
+  const centerCol = document.createElement('div');
+  centerCol.className = 'arcp-journey-col';
+  const journeyLbl = document.createElement('p');
+  journeyLbl.className = 'brief-label';
+  journeyLbl.textContent = 'AI Responsibility Journey';
+  centerCol.appendChild(journeyLbl);
+
+  if (responsibilityJourney.length) {
+    const chain = document.createElement('div');
+    chain.className = 'arcp-journey-chain';
+    responsibilityJourney.forEach((role, i) => {
+      const node = document.createElement('div');
+      node.className = 'arcp-journey-node';
+      node.textContent = role;
+      chain.appendChild(node);
+      if (i < responsibilityJourney.length - 1) {
+        const arrow = document.createElement('div');
+        arrow.className = 'arcp-journey-arrow';
+        arrow.textContent = '↓';
+        chain.appendChild(arrow);
+      }
+    });
+    centerCol.appendChild(chain);
+  }
+  body.appendChild(centerCol);
+
+  // ── RIGHT (30%): Capability Development Priorities ───────────────────────
+  const rightCol = document.createElement('div');
+  rightCol.className = 'arcp-priorities-col';
+  const rightLbl = document.createElement('p');
+  rightLbl.className = 'brief-label';
+  rightLbl.textContent = 'Capability Development Priorities';
+  rightCol.appendChild(rightLbl);
+
+  if (capabilityPriorities.length) {
+    const priList = document.createElement('div');
+    priList.className = 'arcp-pri-list';
+    capabilityPriorities.forEach(item => {
+      const priItem = document.createElement('div');
+      priItem.className = 'arcp-pri-item';
+
+      const priHeader = document.createElement('div');
+      priHeader.className = 'arcp-pri-item__header';
+      const num = document.createElement('span');
+      num.className = 'arcp-pri-item__num';
+      num.textContent = `Priority ${item.priority}`;
+      const roleName = document.createElement('span');
+      roleName.className = 'arcp-pri-item__role';
+      roleName.textContent = item.role;
+      priHeader.appendChild(num);
+      priHeader.appendChild(roleName);
+      priItem.appendChild(priHeader);
+
+      if (item.capability) {
+        const capEl = document.createElement('p');
+        capEl.className = 'arcp-pri-item__capability';
+        capEl.textContent = item.capability;
+        priItem.appendChild(capEl);
+      }
+      if (item.why) {
+        const whyEl = document.createElement('p');
+        whyEl.className = 'arcp-pri-item__why';
+        whyEl.textContent = item.why;
+        priItem.appendChild(whyEl);
+      }
+
+      priList.appendChild(priItem);
+    });
+    rightCol.appendChild(priList);
+  }
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Stats strip
+  const statsData = [
+    { label: 'Required Roles',      value: workforceStats.requiredRoles },
+    { label: 'Critical Roles',      value: workforceStats.criticalRoles },
+    { label: 'AI Capabilities',     value: workforceStats.aiCapabilities },
+    { label: 'Development Priority', value: workforceStats.developmentPriority },
+  ].filter(s => s.value !== undefined && s.value !== null && s.value !== 0 && s.value !== '');
+
+  if (statsData.length) {
+    const strip = document.createElement('div');
+    strip.className = 'arcp-stats-strip';
+    statsData.forEach(s => {
+      const cell = document.createElement('div');
+      cell.className = 'arcp-stat-cell';
+      const val = document.createElement('p');
+      val.className = 'arcp-stat-cell__value';
+      val.textContent = s.value;
+      const lbl = document.createElement('p');
+      lbl.className = 'arcp-stat-cell__label';
+      lbl.textContent = s.label;
+      cell.appendChild(val);
+      cell.appendChild(lbl);
+      strip.appendChild(cell);
+    });
+    wrap.appendChild(strip);
+  }
+
+  // Consultant Guidance (teal)
+  if (b.arcpConsultantGuidance) {
+    const guidance = document.createElement('div');
+    guidance.className = 'arcp-consultant-guidance';
+    guidance.innerHTML = `<span class="arcp-guidance__icon">◆</span><p class="arcp-guidance__text">${b.arcpConsultantGuidance}</p>`;
+    wrap.appendChild(guidance);
+  }
+
+  // AI Recommendation (amber)
+  if (b.arcpAIRecommendation) {
+    const rec = document.createElement('div');
+    rec.className = 'arcp-ai-recommendation';
+    rec.innerHTML = `<span class="arcp-rec__icon">⬡</span><p class="arcp-rec__text">${b.arcpAIRecommendation}</p>`;
+    wrap.appendChild(rec);
+  }
+
+  // Next Capability footer
+  const footer = document.createElement('div');
+  footer.className = 'arcp-next-capability';
+  const nextLabel = document.createElement('p');
+  nextLabel.className = 'arcp-next__label';
+  nextLabel.textContent = 'Next Capability';
+  const nextName = document.createElement('p');
+  nextName.className = 'arcp-next__name';
+  nextName.textContent = 'AI Team Readiness';
+  const nextGoal = document.createElement('p');
+  nextGoal.className = 'arcp-next__goal';
+  nextGoal.textContent = 'Goal: Assess whether team structure and resourcing are aligned to successfully deliver AI effectively.';
+  footer.appendChild(nextLabel);
+  footer.appendChild(nextName);
+  footer.appendChild(nextGoal);
+  wrap.appendChild(footer);
+
+  return wrap;
+}
+
+function buildARCPLegacyLayout(b) {
+  const requiredSkills   = b.requiredSkills        || [];
+  const skillsMatrix     = b.skillsMatrix          || [];
+  const skillsRecs       = b.skillsRecommendations || [];
+  const skillsStats      = b.skillsStats           || {};
+  const skillsCatSummary = b.skillsCategorySummary || [];
+
+  const AVAIL_COLOR  = { Available: 'asa-skill--available', Partial: 'asa-skill--partial', Missing: 'asa-skill--missing' };
+  const PRI_CLASS    = { High: 'asa-priority--high', Medium: 'asa-priority--medium', Low: 'asa-priority--low' };
   const STATUS_CLASS = { Ready: 'asa-cat--ready', Strong: 'asa-cat--strong', Partial: 'asa-cat--partial', 'Needs Improvement': 'asa-cat--needs' };
 
   const wrap = document.createElement('div');
@@ -5242,40 +5466,31 @@ function buildAISkillsAssessmentLayout(section) {
   const body = document.createElement('div');
   body.className = 'asa-body';
 
-  // LEFT: Required Skills
   const leftCol = document.createElement('div');
   leftCol.className = 'asa-skills-col';
   const leftLbl = document.createElement('p');
   leftLbl.className = 'brief-label';
   leftLbl.textContent = 'Required Skills';
   leftCol.appendChild(leftLbl);
-  if (requiredSkills.length) {
-    requiredSkills.forEach(sk => {
-      const card = document.createElement('div');
-      card.className = `asa-skill-card ${AVAIL_COLOR[sk.availability] || 'asa-skill--partial'}`;
-      const name = document.createElement('p');
-      name.className = 'asa-skill-card__name';
-      name.textContent = sk.name;
-      card.appendChild(name);
-      const meta = document.createElement('p');
-      meta.className = 'asa-skill-card__meta';
-      meta.textContent = `${sk.category} · ${sk.availability}`;
-      card.appendChild(meta);
-      const pri = document.createElement('span');
-      pri.className = `asa-priority ${PRI_CLASS[sk.priority] || 'asa-priority--medium'}`;
-      pri.textContent = sk.priority;
-      card.appendChild(pri);
-      leftCol.appendChild(card);
-    });
-  } else {
-    const empty = document.createElement('p');
-    empty.className = 'asa-empty';
-    empty.textContent = 'Skills data will appear after generation.';
-    leftCol.appendChild(empty);
-  }
+  requiredSkills.forEach(sk => {
+    const card = document.createElement('div');
+    card.className = `asa-skill-card ${AVAIL_COLOR[sk.availability] || 'asa-skill--partial'}`;
+    const name = document.createElement('p');
+    name.className = 'asa-skill-card__name';
+    name.textContent = sk.name;
+    card.appendChild(name);
+    const meta = document.createElement('p');
+    meta.className = 'asa-skill-card__meta';
+    meta.textContent = `${sk.category} · ${sk.availability}`;
+    card.appendChild(meta);
+    const pri = document.createElement('span');
+    pri.className = `asa-priority ${PRI_CLASS[sk.priority] || 'asa-priority--medium'}`;
+    pri.textContent = sk.priority;
+    card.appendChild(pri);
+    leftCol.appendChild(card);
+  });
   body.appendChild(leftCol);
 
-  // CENTER: Skills Matrix
   const centerCol = document.createElement('div');
   centerCol.className = 'asa-matrix-col';
   const matrixLbl = document.createElement('p');
@@ -5309,37 +5524,31 @@ function buildAISkillsAssessmentLayout(section) {
   }
   body.appendChild(centerCol);
 
-  // RIGHT: Recommendations + Stats
   const rightCol = document.createElement('div');
   rightCol.className = 'asa-recs-col';
   const recsLbl = document.createElement('p');
   recsLbl.className = 'brief-label';
   recsLbl.textContent = 'AI Recommendations';
   rightCol.appendChild(recsLbl);
-  if (skillsRecs.length) {
-    const recsList = document.createElement('div');
-    recsList.className = 'asa-recs-list';
-    skillsRecs.forEach(rec => {
-      const item = document.createElement('div');
-      item.className = 'asa-rec-item';
-      const title = document.createElement('p');
-      title.className = 'asa-rec-item__title';
-      title.textContent = rec.title;
-      item.appendChild(title);
-      const meta = document.createElement('p');
-      meta.className = 'asa-rec-item__meta';
-      meta.innerHTML = `Priority: <span class="asa-priority ${PRI_CLASS[rec.priority] || 'asa-priority--medium'}">${rec.priority || 'Medium'}</span>`;
-      item.appendChild(meta);
-      if (rec.expectedBenefit) {
-        const ben = document.createElement('p');
-        ben.className = 'asa-rec-item__benefit';
-        ben.textContent = rec.expectedBenefit;
-        item.appendChild(ben);
-      }
-      recsList.appendChild(item);
-    });
-    rightCol.appendChild(recsList);
-  }
+  skillsRecs.forEach(rec => {
+    const item = document.createElement('div');
+    item.className = 'asa-rec-item';
+    const title = document.createElement('p');
+    title.className = 'asa-rec-item__title';
+    title.textContent = rec.title;
+    item.appendChild(title);
+    const meta = document.createElement('p');
+    meta.className = 'asa-rec-item__meta';
+    meta.innerHTML = `Priority: <span class="asa-priority ${PRI_CLASS[rec.priority] || 'asa-priority--medium'}">${rec.priority || 'Medium'}</span>`;
+    item.appendChild(meta);
+    if (rec.expectedBenefit) {
+      const ben = document.createElement('p');
+      ben.className = 'asa-rec-item__benefit';
+      ben.textContent = rec.expectedBenefit;
+      item.appendChild(ben);
+    }
+    rightCol.appendChild(item);
+  });
   const statsEntries = [
     { label: 'Available', value: skillsStats.available },
     { label: 'Gaps',      value: skillsStats.gaps },
@@ -5365,7 +5574,6 @@ function buildAISkillsAssessmentLayout(section) {
   body.appendChild(rightCol);
   wrap.appendChild(body);
 
-  // Category Summary grid
   if (skillsCatSummary.some(c => c.status)) {
     const sumLbl = document.createElement('p');
     sumLbl.className = 'brief-label';
@@ -5389,13 +5597,6 @@ function buildAISkillsAssessmentLayout(section) {
       grid.appendChild(cell);
     });
     wrap.appendChild(grid);
-  }
-
-  if (leadershipQ) {
-    const footer = document.createElement('div');
-    footer.className = 'asa-leadership';
-    footer.innerHTML = `<span class="asa-leadership__icon">?</span><p class="asa-leadership__text">${leadershipQ}</p>`;
-    wrap.appendChild(footer);
   }
   return wrap;
 }

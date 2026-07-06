@@ -2133,14 +2133,103 @@ function buildAIComputeDeploymentLayout(section) {
 // ── Skills & Workforce: AI Roles & Capability Planning ────────────────────────
 
 function buildAISkillsAssessmentLayout(section) {
-  var b              = section.brief || {};
+  var b = section.brief || {};
+  var isNewFormat = !!(b.arcpConsultantGuidance || (b.projectRoles && b.projectRoles.length));
+  return isNewFormat ? buildARCPNewPDFLayout(b) : buildARCPLegacyPDFLayout(b);
+}
+
+function buildARCPNewPDFLayout(b) {
+  var projectRoles          = b.projectRoles          || [];
+  var responsibilityJourney = b.responsibilityJourney || [];
+  var capabilityPriorities  = b.capabilityPriorities  || [];
+  var workforceStats        = b.workforceStats        || {};
+
+  var PCLS = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
+
+  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
+  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+
+  var body = document.createElement('div'); body.className = 'nd-body nd-body--3col arcp-body-pdf';
+  body.style.gridTemplateColumns = '45fr 25fr 30fr';
+
+  // LEFT: role cards
+  var leftCol = ndCol();
+  leftCol.appendChild(ndLbl('Required Project Roles'));
+  projectRoles.forEach(function(role) {
+    var card = document.createElement('div'); card.className = 'arcp-role-card-pdf';
+    var header = document.createElement('div'); header.className = 'arcp-role-card-pdf__header';
+    var name = document.createElement('p'); name.className = 'arcp-role-card-pdf__name'; name.textContent = role.name; header.appendChild(name);
+    var pri = document.createElement('span'); pri.className = 'nd-pri ' + (PCLS[role.priority] || 'nd-pri--medium'); pri.textContent = (role.priority || 'Medium').toUpperCase(); header.appendChild(pri);
+    card.appendChild(header);
+    if (role.primaryResponsibility) {
+      var rl = document.createElement('p'); rl.className = 'arcp-role-card-pdf__sub-lbl'; rl.textContent = 'Primary Responsibility'; card.appendChild(rl);
+      var rv = document.createElement('p'); rv.className = 'arcp-role-card-pdf__sub-val'; rv.textContent = role.primaryResponsibility; card.appendChild(rv);
+    }
+    if (role.aiCapabilities && role.aiCapabilities.length) {
+      var cl = document.createElement('p'); cl.className = 'arcp-role-card-pdf__sub-lbl'; cl.textContent = 'AI Capability'; card.appendChild(cl);
+      var caps = document.createElement('div'); caps.className = 'arcp-role-card-pdf__caps';
+      role.aiCapabilities.forEach(function(cap) {
+        var pill = document.createElement('span'); pill.className = 'arcp-cap-pill-pdf'; pill.textContent = cap; caps.appendChild(pill);
+      });
+      card.appendChild(caps);
+    }
+    leftCol.appendChild(card);
+  });
+  body.appendChild(leftCol);
+
+  // CENTER: responsibility journey chain
+  var centerCol = ndCol();
+  centerCol.appendChild(ndLbl('AI Responsibility Journey'));
+  if (responsibilityJourney.length) {
+    var chain = document.createElement('div'); chain.className = 'arcp-journey-chain-pdf';
+    responsibilityJourney.forEach(function(role, i) {
+      var node = document.createElement('div'); node.className = 'arcp-journey-node-pdf'; node.textContent = role; chain.appendChild(node);
+      if (i < responsibilityJourney.length - 1) {
+        var arrow = document.createElement('div'); arrow.className = 'arcp-journey-arrow-pdf'; arrow.textContent = '↓'; chain.appendChild(arrow);
+      }
+    });
+    centerCol.appendChild(chain);
+  }
+  body.appendChild(centerCol);
+
+  // RIGHT: capability priorities
+  var rightCol = ndCol();
+  rightCol.appendChild(ndLbl('Capability Development Priorities'));
+  capabilityPriorities.forEach(function(item) {
+    var priItem = document.createElement('div'); priItem.className = 'arcp-pri-item-pdf';
+    var hdr = document.createElement('div'); hdr.className = 'arcp-pri-item-pdf__header';
+    var num = document.createElement('span'); num.className = 'arcp-pri-item-pdf__num'; num.textContent = 'Priority ' + item.priority; hdr.appendChild(num);
+    var rn = document.createElement('span'); rn.className = 'arcp-pri-item-pdf__role'; rn.textContent = item.role; hdr.appendChild(rn);
+    priItem.appendChild(hdr);
+    if (item.capability) { var cap = document.createElement('p'); cap.className = 'arcp-pri-item-pdf__cap'; cap.textContent = item.capability; priItem.appendChild(cap); }
+    if (item.why) { var why = document.createElement('p'); why.className = 'arcp-pri-item-pdf__why'; why.textContent = item.why; priItem.appendChild(why); }
+    rightCol.appendChild(priItem);
+  });
+  body.appendChild(rightCol);
+  wrap.appendChild(body);
+
+  // Stats strip
+  var statsEntries = [
+    { label: 'Required Roles',      value: workforceStats.requiredRoles },
+    { label: 'Critical Roles',      value: workforceStats.criticalRoles },
+    { label: 'AI Capabilities',     value: workforceStats.aiCapabilities },
+    { label: 'Development Priority', value: workforceStats.developmentPriority },
+  ].filter(function(s) { return s.value !== undefined && s.value !== null && s.value !== 0 && s.value !== ''; })
+   .map(function(s) { return { label: s.label, value: String(s.value) }; });
+  if (statsEntries.length) { wrap.appendChild(ndStatBlock(statsEntries)); }
+
+  if (b.arcpConsultantGuidance) { wrap.appendChild(buildConsultantGuidanceBlock(b.arcpConsultantGuidance)); }
+  if (b.arcpAIRecommendation)   { wrap.appendChild(buildAIRecommendationBlock(b.arcpAIRecommendation)); }
+  return wrap;
+}
+
+function buildARCPLegacyPDFLayout(b) {
   var requiredSkills = b.requiredSkills         || [];
   var skillsMatrix   = b.skillsMatrix           || [];
   var skillsRecs     = b.skillsRecommendations  || [];
   var skillsStats    = b.skillsStats            || {};
   var skillsCatSum   = b.skillsCategorySummary  || [];
 
-  var ACLS  = { Available: 'nd-pri--low', Partial: 'nd-pri--medium', Missing: 'nd-pri--high' };
   var PCLS  = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
   var CATCLS = { Ready: 'asa-cat--ready', Strong: 'asa-cat--strong', Partial: 'asa-cat--partial', 'Needs Improvement': 'asa-cat--needs' };
 
@@ -2150,19 +2239,17 @@ function buildAISkillsAssessmentLayout(section) {
 
   var body = ndBody(3);
 
-  // LEFT: required skill cards
   var leftCol = ndCol();
   leftCol.appendChild(ndLbl('Required Skills'));
   requiredSkills.forEach(function(sk) {
     var card = document.createElement('div'); card.className = 'asa-skill-card';
     var name = document.createElement('p'); name.className = 'asa-skill-card__name'; name.textContent = sk.name; card.appendChild(name);
-    var meta = document.createElement('p'); meta.className = 'asa-skill-card__meta'; meta.textContent = (sk.category || '') + (sk.category && sk.availability ? ' · ' : '') + (sk.availability || ''); card.appendChild(meta);
+    var meta = document.createElement('p'); meta.className = 'asa-skill-card__meta'; meta.textContent = (sk.category || '') + (sk.availability ? ' · ' + sk.availability : ''); card.appendChild(meta);
     var pri = document.createElement('span'); pri.className = 'nd-pri ' + (PCLS[sk.priority] || 'nd-pri--medium'); pri.textContent = sk.priority; card.appendChild(pri);
     leftCol.appendChild(card);
   });
   body.appendChild(leftCol);
 
-  // CENTER: skills matrix with progress bars
   var centerCol = ndCol();
   centerCol.appendChild(ndLbl('Skills Matrix'));
   if (skillsMatrix.length) {
@@ -2179,7 +2266,6 @@ function buildAISkillsAssessmentLayout(section) {
   }
   body.appendChild(centerCol);
 
-  // RIGHT: recommendations + stats
   var rightCol = ndCol();
   if (skillsRecs.length) {
     rightCol.appendChild(ndLbl('AI Recommendations'));
@@ -2190,7 +2276,6 @@ function buildAISkillsAssessmentLayout(section) {
   body.appendChild(rightCol);
   wrap.appendChild(body);
 
-  // Category summary grid
   if (skillsCatSum.some(function(c) { return c.status; })) {
     wrap.appendChild(ndLbl('Skills Category Summary'));
     var grid = document.createElement('div'); grid.className = 'asa-summary-grid';
@@ -3132,7 +3217,24 @@ html, body {
 .cds-rec-card__impact-row { font-size: 0.67rem; color: rgba(255,255,255,0.42); }
 .cds-rec-card__reason { font-size: 0.65rem; color: rgba(255,255,255,0.36); margin: 0; font-style: italic; }
 
-/* ── ASA: AI Roles & Capability Planning ─────────────────────── */
+/* ── ARCP: AI Roles & Capability Planning (new format) ───────── */
+.arcp-role-card-pdf { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-left: 2px solid #5CC5A7; border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.arcp-role-card-pdf__header { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+.arcp-role-card-pdf__name { font-size: 0.76rem; font-weight: 600; color: #5CC5A7; margin: 0; }
+.arcp-role-card-pdf__sub-lbl { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.32); margin: 0.15rem 0 0.05rem; }
+.arcp-role-card-pdf__sub-val { font-size: 0.7rem; color: rgba(255,255,255,0.68); margin: 0; }
+.arcp-role-card-pdf__caps { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+.arcp-cap-pill-pdf { font-size: 0.6rem; color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.2rem; padding: 0.08rem 0.35rem; }
+.arcp-journey-chain-pdf { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.arcp-journey-node-pdf { width: 100%; background: rgba(92,197,167,0.06); border: 1px solid rgba(92,197,167,0.22); border-radius: 0.35rem; padding: 0.35rem 0.5rem; font-size: 0.68rem; font-weight: 500; color: rgba(255,255,255,0.78); text-align: center; }
+.arcp-journey-arrow-pdf { font-size: 0.7rem; color: rgba(92,197,167,0.45); padding: 0.08rem 0; text-align: center; }
+.arcp-pri-item-pdf { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.45rem 0.6rem; display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 0.4rem; }
+.arcp-pri-item-pdf__header { display: flex; align-items: baseline; gap: 0.35rem; }
+.arcp-pri-item-pdf__num { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #5CC5A7; }
+.arcp-pri-item-pdf__role { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.82); }
+.arcp-pri-item-pdf__cap { font-size: 0.68rem; color: rgba(255,255,255,0.62); margin: 0; }
+.arcp-pri-item-pdf__why { font-size: 0.62rem; color: rgba(255,255,255,0.35); font-style: italic; margin: 0; }
+/* ── ASA: Legacy skills assessment (backwards compat) ───────── */
 .asa-skill-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.45rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; }
 .asa-skill-card__name { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
 .asa-skill-card__meta { font-size: 0.65rem; color: rgba(255,255,255,0.45); margin: 0; }

@@ -3045,6 +3045,15 @@ function extractJourneyContext(capabilityName, sections) {
       lines.push(`Workforce Guidance: ${b.arcpConsultantGuidance}`);
     if (b.arcpAIRecommendation)
       lines.push(`Workforce AI Recommendation: ${b.arcpAIRecommendation}`);
+    // ── Skills & Workforce: AI Learning & Adoption carry-forward ─────────────────
+    if (b.roleLearningJourney?.length)
+      lines.push(`Role Learning Paths: ${b.roleLearningJourney.map(r => `${r.role}: ${(r.learningPath || []).join(', ')}`).join('; ')}`);
+    if (b.adoptionRoadmap?.some(st => st.goal))
+      lines.push(`AI Adoption Roadmap: ${b.adoptionRoadmap.filter(st => st.goal).map(st => `${st.stage} (${st.goal})`).join(' → ')}`);
+    if (b.alaConsultantGuidance)
+      lines.push(`Enablement Guidance: ${b.alaConsultantGuidance}`);
+    if (b.alaAIRecommendation)
+      lines.push(`Enablement AI Recommendation: ${b.alaAIRecommendation}`);
   }
   return lines.join('\n');
 }

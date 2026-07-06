@@ -764,33 +764,67 @@ SECTION-SPECIFIC EXTRAS — "System Integration & Architecture" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Platform Readiness" sections only:
 
+CRITICAL PLATFORM FOCUS RULE:
+AI Platform Readiness is about establishing SHARED PLATFORM SERVICES — NOT about solving a specific AI use case.
+Every field below must describe what the platform provides to ALL AI initiatives, not what the current AI use case achieves.
+❌ Do NOT mention the specific AI use case outcome (e.g. traceability, defect detection, test generation) in any field below.
+❌ Do NOT describe use-case-specific integrations (e.g. "integrate with Jira", "connect to TestRail").
+✅ Write as if this platform will support 10 different AI initiatives across the organisation.
+
+CRITICAL STRATEGIC POSITION OVERRIDE:
+The strategicPosition for this section must describe the purpose of the shared AI platform — NOT the AI use case outcome.
+It must answer: "What does this platform enable for ALL engineering teams?"
+Example format: "Establish a standardised AI platform that enables engineering teams to develop, deploy, monitor, and continuously improve AI solutions using shared services, reusable knowledge assets, and governed AI operations."
+Do NOT write about specific AI use cases, traceability, defect detection, or any domain-specific outcome.
+
 5. platformCapabilities (exactly 6 items in this fixed order)
-   The 6 platform capability building blocks the PM should establish for this AI use case.
+   The 6 shared platform capability areas every AI initiative will use.
    Use these fixed names in this exact order: AI Development Workspace, Prompt & Model Management, Knowledge Platform, Deployment & Automation, Monitoring & Governance, Collaboration & Reuse.
-   Each item: { "name": "<fixed name>", "purpose": "<1 sentence on what this enables, ≤10 words>", "capabilities": ["<specific tool or service, ≤4 words>", ...3–5 items], "businessValue": "<1 sentence on business outcome, ≤10 words>" }
+   Each item:
+   - purpose: 1 sentence on what shared platform service this provides (platform-level, not use-case-specific), ≤12 words
+   - capabilities: 3–5 specific managed services or platform tools that implement this capability (e.g. "Azure AI Studio", "MLflow", "pgvector"), ≤4 words each
+   - businessValue: 1 sentence on the platform benefit delivered to all AI initiatives — must be PLATFORM-centric, NOT use-case-specific.
+     ✅ Good: "Accelerates governed AI development and experimentation across teams."
+     ✅ Good: "Reduces operational overhead through standardised AI deployment."
+     ❌ Bad: "Enables AI-driven traceability and gap mapping." (use-case specific)
+     ❌ Bad: "Powers test generation accuracy." (use-case specific)
+   Each item: { "name": "<fixed name>", "purpose": "<platform service description>", "capabilities": ["<tool/service>", ...], "businessValue": "<platform benefit>" }
 
 6. platformBlueprintLayers (exactly 7 items in this fixed order)
-   The vertical AI platform blueprint — each layer with its recommended technology for this use case.
+   The AI platform architecture blueprint showing which platform technology implements each layer.
+   IMPORTANT: This shows the PLATFORM LAYERS, not an application architecture or data flow.
    Use these fixed layer names in this exact order: Engineering Users, AI Applications, Prompt & Model Services, Knowledge Platform, Deployment Services, Monitoring & Governance, Development Workspace.
-   Each item: { "layer": "<fixed layer name>", "recommendation": "<specific technology or service, ≤6 words>" }
+   recommendation = the managed platform technology that implements this layer (e.g. "Azure AI Foundry", "pgvector + Azure Search", "Azure Monitor + Prometheus").
+   Do NOT recommend enterprise application tools (Jira, TestRail, DOORS, Neo4j) — those belong in System Integration.
+   Each item: { "layer": "<fixed layer name>", "recommendation": "<managed platform technology, ≤6 words>" }
 
 7. platformRecs (3–4 items)
-   The highest-priority platform implementation recommendations for this AI use case.
-   Each item: { "recommendation": "<action title, ≤8 words>", "why": "<1 sentence rationale, ≤10 words>", "priority": "HIGH|MEDIUM|LOW", "implementationPhase": "Phase 1|Phase 2|Phase 3" }
+   The highest-priority platform ESTABLISHMENT actions — reusable across any AI initiative.
+   These must be platform-building actions, not use-case solutions.
+   ✅ Good: "Establish a shared AI development workspace.", "Implement prompt and model lifecycle management.", "Build a reusable enterprise knowledge platform.", "Enable automated AI deployment.", "Introduce AI monitoring and governance."
+   ❌ Bad: "Deploy a unified knowledge graph for traceability." (use-case specific)
+   Each item: { "recommendation": "<platform action, ≤8 words>", "why": "<platform rationale, ≤10 words>", "priority": "HIGH|MEDIUM|LOW", "implementationPhase": "Phase 1|Phase 2|Phase 3" }
 
 8. aprImplRoadmap (exactly 6 strings in this fixed order)
    The 6-step platform implementation roadmap. Use these exact labels:
    ["Establish Development Workspace", "Build Knowledge Platform", "Configure Prompt Management", "Deploy AI Services", "Enable Monitoring", "Scale Across Projects"]
 
 9. aprStackLayers (exactly 6 items in this fixed order)
-   The recommended AI stack by layer. Use these fixed layer names in order: AI Development, Prompt Management, Knowledge, Deployment, Monitoring, Collaboration.
-   Each item: { "layer": "<fixed layer name>", "recommendation": "<specific technology or service, ≤6 words>" }
+   The recommended AI platform stack — which managed technology implements each platform layer.
+   Use these fixed layer names in order: AI Development, Prompt Management, Knowledge, Deployment, Monitoring, Collaboration.
+   Each item: { "layer": "<fixed layer name>", "recommendation": "<managed platform technology, ≤6 words>" }
 
 10. aprConsultantGuidance
-   2–3 sentences of action-oriented platform guidance. Start with the minimum platform required to support the pilot AI use case. Emphasise building reusable capabilities from the start.
+   2–3 sentences of action-oriented platform guidance.
+   Focus on: establishing core platform capabilities first, then enabling individual AI use cases on top of that foundation.
+   ✅ Good: "Establish the core AI platform capabilities first — development workspace, prompt management, knowledge retrieval, deployment automation, and monitoring. Once these shared services are operational, onboard individual AI use cases as consumers of the platform."
+   ❌ Do NOT recommend specific enterprise tool integrations (Jira, TestRail, DOORS).
+   ❌ Do NOT focus on the specific AI use case.
 
 11. aprAIRecommendation
-   1–2 sentences with a positive, outcome-focused platform recommendation. State what to establish and what it delivers. Do NOT lead with a risk or caution.
+   1–2 sentences. Describe the platform as a reusable, shared foundation for all AI initiatives — not a solution to the specific use case.
+   ✅ Good: "Build a reusable AI platform that standardises development, knowledge retrieval, deployment automation, monitoring, and collaboration. A shared platform foundation accelerates future AI initiatives while improving governance and reducing implementation effort."
+   ❌ Do NOT mention the specific AI use case, technology, or domain-specific outcome.
 
    Add all to the brief object:
    "platformCapabilities": [...], "platformBlueprintLayers": [...], "platformRecs": [...], "aprImplRoadmap": [...], "aprStackLayers": [...], "aprConsultantGuidance": "...", "aprAIRecommendation": "..."`,

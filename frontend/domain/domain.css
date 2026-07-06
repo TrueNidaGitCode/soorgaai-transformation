@@ -8354,6 +8354,324 @@
   .cds-impl-step { flex: 0 0 calc(33% - 1px); }
 }
 
+/* ── Technology Infrastructure — AI Platform Readiness (New Format) ──────────── */
+
+.apr-main-body {
+  display: grid;
+  grid-template-columns: 65% 35%;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+/* LEFT: capability cards list */
+.apr-cap-list-col { display: flex; flex-direction: column; gap: 0; }
+
+.apr-cap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.apr-cap2-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.apr-cap2-card__name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  margin: 0 0 0.25rem;
+}
+
+.apr-cap2-card__field-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin: 0.3rem 0 0.1rem;
+}
+
+.apr-cap2-card__purpose,
+.apr-cap2-card__value {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.apr-cap2-card__caps {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.apr-cap2-card__caps li {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.4;
+}
+
+/* RIGHT: AI Platform Blueprint chain */
+.apr-blueprint-col { display: flex; flex-direction: column; gap: 0; }
+
+.apr-blueprint-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.apr-blueprint-node {
+  padding: 0.7rem 0.9rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0;
+}
+
+.apr-blueprint-node__layer {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  margin: 0;
+}
+
+.apr-blueprint-node__rec {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.apr-blueprint-arrow {
+  text-align: center;
+  color: rgba(255,255,255,0.25);
+  font-size: 0.85rem;
+  line-height: 1.2;
+  padding: 0.05rem 0;
+}
+
+/* Recommendations grid */
+.apr-recs2-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.85rem;
+}
+
+.apr-rec2-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.apr-rec2-card__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.apr-rec2-card__field-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin: 0.2rem 0 0.1rem;
+}
+
+.apr-rec2-card__why {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+}
+
+.apr-rec2-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.apr-rec2-priority {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 0.1rem 0.45rem;
+}
+
+.apr-rec2-phase {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  padding: 0.1rem 0.5rem;
+}
+
+/* Implementation sequence (shared style with CDS) */
+.apr-impl-seq {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.apr-impl-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  position: relative;
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+}
+
+.apr-impl-step + .apr-impl-step::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1.1rem;
+  width: 1px;
+  height: 1.4rem;
+  background: rgba(255,255,255,0.15);
+}
+
+.apr-impl-step__num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(92,197,167,0.15);
+  border: 1px solid rgba(92,197,167,0.4);
+  color: #5CC5A7;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.apr-impl-step__label {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.35;
+}
+
+/* AI Stack table */
+.apr-stack2-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+
+.apr-stack2-table th {
+  text-align: left;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.apr-stack2-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.75);
+  vertical-align: top;
+}
+
+.apr-stack2-table td:first-child {
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  white-space: nowrap;
+  width: 30%;
+}
+
+/* Consultant Guidance */
+.apr-consultant-guidance {
+  border-left: 3px solid #5CC5A7;
+  background: rgba(92,197,167,0.05);
+  border-radius: 0 8px 8px 0;
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.apr-consultant-guidance__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+  margin: 0;
+}
+
+.apr-consultant-guidance__text {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* AI Recommendation */
+.apr-ai-recommendation {
+  border-left: 3px solid #C59B34;
+  background: rgba(197,155,52,0.05);
+  border-radius: 0 8px 8px 0;
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.apr-ai-recommendation__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #C59B34;
+  margin: 0;
+}
+
+.apr-ai-recommendation__text {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .apr-main-body { grid-template-columns: 1fr; }
+  .apr-recs2-grid { grid-template-columns: 1fr; }
+  .apr-impl-seq   { flex-wrap: wrap; }
+  .apr-impl-step  { flex: 0 0 calc(33% - 1px); }
+}
+
 /* ── Technology Infrastructure — System Integration & Architecture ───────────── */
 
 .sia-view {

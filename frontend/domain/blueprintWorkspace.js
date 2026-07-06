@@ -3924,46 +3924,49 @@ function buildSystemIntegrationLayout(section) {
 // ── Technology Infrastructure — AI Platform Readiness ────────────────────────
 
 function buildPlatformReadinessLayout(section) {
-  const b                      = section.brief || {};
-  const capabilityAssessment   = b.capabilityAssessment   || [];
-  const platformStack          = b.platformStack          || [];
+  const b = section.brief || {};
+
+  // New fields
+  const platformCapabilities    = b.platformCapabilities    || [];
+  const platformBlueprintLayers = b.platformBlueprintLayers || [];
+  const platformRecs            = b.platformRecs            || [];
+  const aprImplRoadmap          = b.aprImplRoadmap          || [];
+  const aprStackLayers          = b.aprStackLayers          || [];
+  const aprConsultantGuidance   = b.aprConsultantGuidance   || '';
+  const aprAIRecommendation     = b.aprAIRecommendation     || '';
+
+  // Legacy fields
+  const capabilityAssessment    = b.capabilityAssessment    || [];
+  const platformStack           = b.platformStack           || [];
   const platformRecommendations = b.platformRecommendations || [];
-  const platformSummary        = b.platformSummary        || {};
-  const leadershipQ            = b.leadershipValidation?.context || '';
+  const platformSummary         = b.platformSummary         || {};
 
-  const STATUS_CLASS = {
-    READY:   'apr-status--ready',
-    PARTIAL: 'apr-status--partial',
-    MISSING: 'apr-status--missing',
-  };
+  const isNewFormat = platformCapabilities.some(c => c.purpose) || platformBlueprintLayers.some(l => l.recommendation);
 
-  const PRIORITY_CLASS = {
-    HIGH:   'apr-priority--high',
-    MEDIUM: 'apr-priority--medium',
-    LOW:    'apr-priority--low',
-  };
+  const APR_IMPL_STEPS = [
+    'Establish Development Workspace', 'Build Knowledge Platform', 'Configure Prompt Management',
+    'Deploy AI Services', 'Enable Monitoring', 'Scale Across Projects',
+  ];
+  const APR_BLUEPRINT_LAYERS = [
+    'Engineering Users', 'AI Applications', 'Prompt & Model Services',
+    'Knowledge Platform', 'Deployment Services', 'Monitoring & Governance', 'Development Workspace',
+  ];
+  const LAYER_ACCENT = ['#c084fc', '#5CC5A7', '#818cf8', '#fbbf24', '#34d399', '#f87171', '#94a3b8'];
+  const PRIORITY_COLOR = { HIGH: '#f87171', MEDIUM: '#fbbf24', LOW: '#5CC5A7' };
 
+  // Legacy constants (kept for old blueprints)
+  const STATUS_CLASS = { READY: 'apr-status--ready', PARTIAL: 'apr-status--partial', MISSING: 'apr-status--missing' };
+  const PRIORITY_CLASS = { HIGH: 'apr-priority--high', MEDIUM: 'apr-priority--medium', LOW: 'apr-priority--low' };
   const STACK_ICONS = {
-    'AI Applications':                '⊞',
-    'AI Model & Prompt Management':   '⚙',
-    'Knowledge & Retrieval Services': '◻',
-    'AI Deployment & Automation':     '▷',
-    'AI Monitoring & Evaluation':     '△',
-    'AI Development Environment':     '⌨',
+    'AI Applications': '⊞', 'AI Model & Prompt Management': '⚙',
+    'Knowledge & Retrieval Services': '◻', 'AI Deployment & Automation': '▷',
+    'AI Monitoring & Evaluation': '△', 'AI Development Environment': '⌨',
   };
 
   const wrap = document.createElement('div');
   wrap.className = 'apr-view';
 
-  // Platform readiness badge (top-right)
-  if (b.platformReadiness) {
-    const badge = document.createElement('div');
-    badge.className = 'apr-readiness-badge';
-    badge.textContent = `PLATFORM READINESS: ${b.platformReadiness}%`;
-    wrap.appendChild(badge);
-  }
-
-  // Strategic position
+  // ── 1. Strategic Position ─────────────────────────────────────────────────
   if (b.strategicPosition) {
     const posLabel = document.createElement('p');
     posLabel.className = 'brief-label';
@@ -3975,184 +3978,367 @@ function buildPlatformReadinessLayout(section) {
     wrap.appendChild(pos);
   }
 
-  // ── Three-column body ─────────────────────────────────────────────────────
+  if (isNewFormat) {
+    // ── 2. Main Body: LEFT capabilities + RIGHT blueprint chain ────────────────
+    const body = document.createElement('div');
+    body.className = 'apr-main-body';
 
-  const body = document.createElement('div');
-  body.className = 'apr-body';
+    // LEFT: 6 capability cards
+    const leftCol = document.createElement('div');
+    leftCol.className = 'apr-cap-list-col';
 
-  // LEFT: Platform Capability Assessment cards
-  const leftCol = document.createElement('div');
-  leftCol.className = 'apr-capability-col';
+    const capLbl = document.createElement('p');
+    capLbl.className = 'brief-label';
+    capLbl.textContent = 'Recommended AI Platform';
+    leftCol.appendChild(capLbl);
 
-  const capLbl = document.createElement('p');
-  capLbl.className = 'brief-label';
-  capLbl.textContent = 'Platform Capability Assessment';
-  leftCol.appendChild(capLbl);
+    const capList = document.createElement('div');
+    capList.className = 'apr-cap-list';
 
-  capabilityAssessment.forEach(cap => {
-    const status = (cap.status || 'PARTIAL').toUpperCase();
-    const card = document.createElement('div');
-    card.className = `apr-cap-card apr-cap-card--${status.toLowerCase()}`;
+    platformCapabilities.forEach(cap => {
+      const card = document.createElement('div');
+      card.className = 'apr-cap2-card';
 
-    const name = document.createElement('p');
-    name.className = 'apr-cap-card__name';
-    name.textContent = cap.name;
-    card.appendChild(name);
+      const name = document.createElement('p');
+      name.className = 'apr-cap2-card__name';
+      name.textContent = cap.name;
+      card.appendChild(name);
 
-    const score = document.createElement('p');
-    score.className = 'apr-cap-card__score';
-    score.textContent = `${cap.score}%`;
-    card.appendChild(score);
-
-    const badge = document.createElement('span');
-    badge.className = `apr-status ${STATUS_CLASS[status] || 'apr-status--partial'}`;
-    badge.textContent = status;
-    card.appendChild(badge);
-
-    leftCol.appendChild(card);
-  });
-
-  if (!capabilityAssessment.length) {
-    const empty = document.createElement('p');
-    empty.className = 'apr-empty';
-    empty.textContent = 'Capability assessment will appear after generation.';
-    leftCol.appendChild(empty);
-  }
-
-  body.appendChild(leftCol);
-
-  // CENTER: AI Platform Stack (6 fixed layers)
-  const centerCol = document.createElement('div');
-  centerCol.className = 'apr-stack-col';
-
-  const stackLbl = document.createElement('p');
-  stackLbl.className = 'brief-label';
-  stackLbl.textContent = 'AI Platform Stack';
-  centerCol.appendChild(stackLbl);
-
-  const stackList = document.createElement('div');
-  stackList.className = 'apr-stack-list';
-
-  platformStack.forEach(layer => {
-    const status = (layer.status || 'MISSING').toUpperCase();
-    const row = document.createElement('div');
-    row.className = `apr-stack-row apr-stack-row--${status.toLowerCase()}`;
-
-    const icon = document.createElement('div');
-    icon.className = 'apr-stack-row__icon';
-    icon.textContent = STACK_ICONS[layer.layer] || '●';
-    row.appendChild(icon);
-
-    const info = document.createElement('div');
-    info.className = 'apr-stack-row__info';
-
-    const name = document.createElement('p');
-    name.className = 'apr-stack-row__name';
-    name.textContent = layer.layer;
-    info.appendChild(name);
-
-    const scoreEl = document.createElement('p');
-    scoreEl.className = 'apr-stack-row__score';
-    scoreEl.textContent = `${layer.score}%`;
-    info.appendChild(scoreEl);
-
-    row.appendChild(info);
-
-    const badge = document.createElement('span');
-    badge.className = `apr-status ${STATUS_CLASS[status] || 'apr-status--missing'}`;
-    badge.textContent = status;
-    row.appendChild(badge);
-
-    stackList.appendChild(row);
-  });
-
-  centerCol.appendChild(stackList);
-  body.appendChild(centerCol);
-
-  // RIGHT: AI Recommendations
-  const rightCol = document.createElement('div');
-  rightCol.className = 'apr-recs-col';
-
-  const recsLbl = document.createElement('p');
-  recsLbl.className = 'brief-label';
-  recsLbl.textContent = 'AI Recommendations';
-  rightCol.appendChild(recsLbl);
-
-  const recsList = document.createElement('div');
-  recsList.className = 'apr-recs-list';
-
-  platformRecommendations.forEach(rec => {
-    const item = document.createElement('div');
-    item.className = 'apr-rec-item';
-
-    const text = document.createElement('p');
-    text.className = 'apr-rec-item__text';
-    text.textContent = rec.text;
-    item.appendChild(text);
-
-    const priority = document.createElement('p');
-    priority.className = 'apr-rec-item__meta';
-    const priorityKey = (rec.priority || 'MEDIUM').toUpperCase();
-    priority.innerHTML = `Priority: <span class="apr-priority ${PRIORITY_CLASS[priorityKey] || 'apr-priority--medium'}">${rec.priority || 'MEDIUM'}</span>`;
-    item.appendChild(priority);
-
-    if (rec.benefit) {
-      const benefit = document.createElement('p');
-      benefit.className = 'apr-rec-item__benefit';
-      benefit.textContent = `Expected Benefit: ${rec.benefit}`;
-      item.appendChild(benefit);
-    }
-
-    recsList.appendChild(item);
-  });
-
-  rightCol.appendChild(recsList);
-  body.appendChild(rightCol);
-
-  wrap.appendChild(body);
-
-  // ── Bottom 2×2 summary grid ───────────────────────────────────────────────
-
-  const hasSummary = platformSummary.development || platformSummary.knowledge ||
-                     platformSummary.deployment  || platformSummary.monitoring;
-  if (hasSummary) {
-    const summaryGrid = document.createElement('div');
-    summaryGrid.className = 'apr-summary-grid';
-
-    [
-      { label: 'Development', value: platformSummary.development },
-      { label: 'Knowledge',   value: platformSummary.knowledge },
-      { label: 'Deployment',  value: platformSummary.deployment },
-      { label: 'Monitoring',  value: platformSummary.monitoring },
-    ].forEach(item => {
-      const cell = document.createElement('div');
-      cell.className = 'apr-summary-cell';
-
-      const label = document.createElement('p');
-      label.className = 'apr-summary-cell__label';
-      label.textContent = item.label;
-      cell.appendChild(label);
-
-      if (item.value) {
-        const value = document.createElement('p');
-        value.className = 'apr-summary-cell__value';
-        value.textContent = item.value;
-        cell.appendChild(value);
+      if (cap.purpose) {
+        const fl = document.createElement('p');
+        fl.className = 'apr-cap2-card__field-label';
+        fl.textContent = 'Purpose';
+        card.appendChild(fl);
+        const purpose = document.createElement('p');
+        purpose.className = 'apr-cap2-card__purpose';
+        purpose.textContent = cap.purpose;
+        card.appendChild(purpose);
       }
 
-      summaryGrid.appendChild(cell);
+      if (cap.capabilities && cap.capabilities.length) {
+        const cl = document.createElement('p');
+        cl.className = 'apr-cap2-card__field-label';
+        cl.textContent = 'Recommended Capabilities';
+        card.appendChild(cl);
+        const ul = document.createElement('ul');
+        ul.className = 'apr-cap2-card__caps';
+        cap.capabilities.forEach(c => {
+          const li = document.createElement('li');
+          li.textContent = c;
+          ul.appendChild(li);
+        });
+        card.appendChild(ul);
+      }
+
+      if (cap.businessValue) {
+        const vl = document.createElement('p');
+        vl.className = 'apr-cap2-card__field-label';
+        vl.textContent = 'Business Value';
+        card.appendChild(vl);
+        const val = document.createElement('p');
+        val.className = 'apr-cap2-card__value';
+        val.textContent = cap.businessValue;
+        card.appendChild(val);
+      }
+
+      capList.appendChild(card);
     });
 
-    wrap.appendChild(summaryGrid);
-  }
+    leftCol.appendChild(capList);
+    body.appendChild(leftCol);
 
-  // ── Leadership question footer ────────────────────────────────────────────
+    // RIGHT: Vertical blueprint chain
+    const rightCol = document.createElement('div');
+    rightCol.className = 'apr-blueprint-col';
 
-  if (leadershipQ) {
-    const footer = document.createElement('div');
-    footer.className = 'apr-leadership';
-    footer.innerHTML = `<span class="apr-leadership__icon">?</span><p class="apr-leadership__text">${leadershipQ}</p>`;
-    wrap.appendChild(footer);
+    const bpLbl = document.createElement('p');
+    bpLbl.className = 'brief-label';
+    bpLbl.textContent = 'AI Platform Blueprint';
+    rightCol.appendChild(bpLbl);
+
+    const bpChain = document.createElement('div');
+    bpChain.className = 'apr-blueprint-chain';
+
+    const bpLayers = platformBlueprintLayers.length
+      ? platformBlueprintLayers
+      : APR_BLUEPRINT_LAYERS.map(layer => ({ layer, recommendation: '' }));
+
+    bpLayers.forEach((layerObj, i) => {
+      const node = document.createElement('div');
+      node.className = 'apr-blueprint-node';
+      node.style.borderLeft = `3px solid ${LAYER_ACCENT[i] || '#5CC5A7'}`;
+
+      const layerName = document.createElement('p');
+      layerName.className = 'apr-blueprint-node__layer';
+      layerName.textContent = layerObj.layer;
+      node.appendChild(layerName);
+
+      if (layerObj.recommendation) {
+        const rec = document.createElement('p');
+        rec.className = 'apr-blueprint-node__rec';
+        rec.textContent = layerObj.recommendation;
+        node.appendChild(rec);
+      }
+
+      bpChain.appendChild(node);
+
+      if (i < bpLayers.length - 1) {
+        const arrow = document.createElement('div');
+        arrow.className = 'apr-blueprint-arrow';
+        arrow.textContent = '↓';
+        bpChain.appendChild(arrow);
+      }
+    });
+
+    rightCol.appendChild(bpChain);
+    body.appendChild(rightCol);
+    wrap.appendChild(body);
+
+    // ── 3. AI Platform Recommendations ───────────────────────────────────────
+    if (platformRecs.length) {
+      const recsLbl = document.createElement('p');
+      recsLbl.className = 'brief-label';
+      recsLbl.textContent = 'AI Platform Recommendations';
+      wrap.appendChild(recsLbl);
+
+      const recsGrid = document.createElement('div');
+      recsGrid.className = 'apr-recs2-grid';
+
+      platformRecs.forEach(rec => {
+        const card = document.createElement('div');
+        card.className = 'apr-rec2-card';
+
+        const title = document.createElement('p');
+        title.className = 'apr-rec2-card__title';
+        title.textContent = rec.recommendation;
+        card.appendChild(title);
+
+        if (rec.why) {
+          const wl = document.createElement('p');
+          wl.className = 'apr-rec2-card__field-label';
+          wl.textContent = 'Why';
+          card.appendChild(wl);
+          const why = document.createElement('p');
+          why.className = 'apr-rec2-card__why';
+          why.textContent = rec.why;
+          card.appendChild(why);
+        }
+
+        const footer = document.createElement('div');
+        footer.className = 'apr-rec2-card__footer';
+
+        const pColor = PRIORITY_COLOR[rec.priority] || '#fbbf24';
+        const pBadge = document.createElement('span');
+        pBadge.className = 'apr-rec2-priority';
+        pBadge.style.color = pColor;
+        pBadge.style.borderColor = `${pColor}55`;
+        pBadge.textContent = rec.priority || 'MEDIUM';
+        footer.appendChild(pBadge);
+
+        if (rec.implementationPhase) {
+          const phase = document.createElement('span');
+          phase.className = 'apr-rec2-phase';
+          phase.textContent = rec.implementationPhase;
+          footer.appendChild(phase);
+        }
+
+        card.appendChild(footer);
+        recsGrid.appendChild(card);
+      });
+
+      wrap.appendChild(recsGrid);
+    }
+
+    // ── 4. Platform Implementation Roadmap ────────────────────────────────────
+    {
+      const roadmapLbl = document.createElement('p');
+      roadmapLbl.className = 'brief-label';
+      roadmapLbl.textContent = 'Platform Implementation Roadmap';
+      wrap.appendChild(roadmapLbl);
+
+      const steps = aprImplRoadmap.length ? aprImplRoadmap : APR_IMPL_STEPS;
+      const seq = document.createElement('div');
+      seq.className = 'apr-impl-seq';
+
+      steps.forEach((step, i) => {
+        const item = document.createElement('div');
+        item.className = 'apr-impl-step';
+
+        const num = document.createElement('span');
+        num.className = 'apr-impl-step__num';
+        num.textContent = i + 1;
+        item.appendChild(num);
+
+        const label = document.createElement('span');
+        label.className = 'apr-impl-step__label';
+        label.textContent = step;
+        item.appendChild(label);
+
+        seq.appendChild(item);
+      });
+
+      wrap.appendChild(seq);
+    }
+
+    // ── 5. Recommended AI Stack table ─────────────────────────────────────────
+    if (aprStackLayers.some(l => l.recommendation)) {
+      const stackLbl = document.createElement('p');
+      stackLbl.className = 'brief-label';
+      stackLbl.textContent = 'Recommended AI Stack';
+      wrap.appendChild(stackLbl);
+
+      const stackTable = document.createElement('table');
+      stackTable.className = 'apr-stack2-table';
+
+      const thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th>Layer</th><th>Recommendation</th></tr>';
+      stackTable.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      aprStackLayers.forEach(layer => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${layer.layer}</td><td>${layer.recommendation || '—'}</td>`;
+        tbody.appendChild(tr);
+      });
+      stackTable.appendChild(tbody);
+      wrap.appendChild(stackTable);
+    }
+
+    // ── 6. Consultant Guidance ────────────────────────────────────────────────
+    if (aprConsultantGuidance) {
+      const cg = document.createElement('div');
+      cg.className = 'apr-consultant-guidance';
+      const cgTitle = document.createElement('p');
+      cgTitle.className = 'apr-consultant-guidance__title';
+      cgTitle.textContent = 'Consultant Guidance';
+      cg.appendChild(cgTitle);
+      const cgText = document.createElement('p');
+      cgText.className = 'apr-consultant-guidance__text';
+      cgText.textContent = aprConsultantGuidance;
+      cg.appendChild(cgText);
+      wrap.appendChild(cg);
+    }
+
+    // ── 7. AI Recommendation ──────────────────────────────────────────────────
+    if (aprAIRecommendation) {
+      const ar = document.createElement('div');
+      ar.className = 'apr-ai-recommendation';
+      const arTitle = document.createElement('p');
+      arTitle.className = 'apr-ai-recommendation__title';
+      arTitle.textContent = 'AI Recommendation';
+      ar.appendChild(arTitle);
+      const arText = document.createElement('p');
+      arText.className = 'apr-ai-recommendation__text';
+      arText.textContent = aprAIRecommendation;
+      ar.appendChild(arText);
+      wrap.appendChild(ar);
+    }
+
+  } else {
+    // ── Legacy layout (old blueprints) ────────────────────────────────────────
+    if (b.platformReadiness) {
+      const badge = document.createElement('div');
+      badge.className = 'apr-readiness-badge';
+      badge.textContent = `PLATFORM READINESS: ${b.platformReadiness}%`;
+      wrap.appendChild(badge);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'apr-body';
+
+    const leftCol = document.createElement('div');
+    leftCol.className = 'apr-capability-col';
+    const capLbl = document.createElement('p');
+    capLbl.className = 'brief-label';
+    capLbl.textContent = 'Platform Capability Assessment';
+    leftCol.appendChild(capLbl);
+    capabilityAssessment.forEach(cap => {
+      const status = (cap.status || 'PARTIAL').toUpperCase();
+      const card = document.createElement('div');
+      card.className = `apr-cap-card apr-cap-card--${status.toLowerCase()}`;
+      const name = document.createElement('p');
+      name.className = 'apr-cap-card__name';
+      name.textContent = cap.name;
+      card.appendChild(name);
+      const score = document.createElement('p');
+      score.className = 'apr-cap-card__score';
+      score.textContent = `${cap.score}%`;
+      card.appendChild(score);
+      const badge = document.createElement('span');
+      badge.className = `apr-status ${STATUS_CLASS[status] || 'apr-status--partial'}`;
+      badge.textContent = status;
+      card.appendChild(badge);
+      leftCol.appendChild(card);
+    });
+    body.appendChild(leftCol);
+
+    const centerCol = document.createElement('div');
+    centerCol.className = 'apr-stack-col';
+    const stackLbl = document.createElement('p');
+    stackLbl.className = 'brief-label';
+    stackLbl.textContent = 'AI Platform Stack';
+    centerCol.appendChild(stackLbl);
+    const stackList = document.createElement('div');
+    stackList.className = 'apr-stack-list';
+    platformStack.forEach(layer => {
+      const status = (layer.status || 'MISSING').toUpperCase();
+      const row = document.createElement('div');
+      row.className = `apr-stack-row apr-stack-row--${status.toLowerCase()}`;
+      const icon = document.createElement('div');
+      icon.className = 'apr-stack-row__icon';
+      icon.textContent = STACK_ICONS[layer.layer] || '●';
+      row.appendChild(icon);
+      const info = document.createElement('div');
+      info.className = 'apr-stack-row__info';
+      const name = document.createElement('p');
+      name.className = 'apr-stack-row__name';
+      name.textContent = layer.layer;
+      info.appendChild(name);
+      const scoreEl = document.createElement('p');
+      scoreEl.className = 'apr-stack-row__score';
+      scoreEl.textContent = `${layer.score}%`;
+      info.appendChild(scoreEl);
+      row.appendChild(info);
+      const badge = document.createElement('span');
+      badge.className = `apr-status ${STATUS_CLASS[status] || 'apr-status--missing'}`;
+      badge.textContent = status;
+      row.appendChild(badge);
+      stackList.appendChild(row);
+    });
+    centerCol.appendChild(stackList);
+    body.appendChild(centerCol);
+
+    const rightCol = document.createElement('div');
+    rightCol.className = 'apr-recs-col';
+    const recsLbl = document.createElement('p');
+    recsLbl.className = 'brief-label';
+    recsLbl.textContent = 'AI Recommendations';
+    rightCol.appendChild(recsLbl);
+    const recsList = document.createElement('div');
+    recsList.className = 'apr-recs-list';
+    platformRecommendations.forEach(rec => {
+      const item = document.createElement('div');
+      item.className = 'apr-rec-item';
+      const text = document.createElement('p');
+      text.className = 'apr-rec-item__text';
+      text.textContent = rec.text;
+      item.appendChild(text);
+      const priority = document.createElement('p');
+      priority.className = 'apr-rec-item__meta';
+      const pk = (rec.priority || 'MEDIUM').toUpperCase();
+      priority.innerHTML = `Priority: <span class="apr-priority ${PRIORITY_CLASS[pk] || 'apr-priority--medium'}">${rec.priority || 'MEDIUM'}</span>`;
+      item.appendChild(priority);
+      if (rec.benefit) {
+        const benefit = document.createElement('p');
+        benefit.className = 'apr-rec-item__benefit';
+        benefit.textContent = `Expected Benefit: ${rec.benefit}`;
+        item.appendChild(benefit);
+      }
+      recsList.appendChild(item);
+    });
+    rightCol.appendChild(recsList);
+    body.appendChild(rightCol);
+    wrap.appendChild(body);
   }
 
   return wrap;

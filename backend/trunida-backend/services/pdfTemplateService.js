@@ -2622,6 +2622,14 @@ function buildExecContent(bp, container, tocEntries) {
 function renderBlueprint(bp) {
   var tocEntries = [];
 
+  // Sort domains to match UI order
+  var PDF_DOMAIN_ORDER = ['ai-use-cases','ai-strategy','data-readiness','technology-infrastructure','skills-workforce','governance-security'];
+  (bp.domains || []).sort(function(a, b) {
+    var ai = PDF_DOMAIN_ORDER.indexOf(a.domainId);
+    var bi = PDF_DOMAIN_ORDER.indexOf(b.domainId);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+
   // Executive summary
   var execContainer = document.getElementById('exec-content');
   if (execContainer) buildExecContent(bp, execContainer, tocEntries);

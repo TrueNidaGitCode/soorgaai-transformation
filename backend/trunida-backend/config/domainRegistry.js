@@ -39,8 +39,8 @@ export const DOMAINS = [
   },
   {
     id:      'governance-security',
-    name:    'Governance & Security',
-    enabled: false,
+    name:    'Governance & Ethics',
+    enabled: true,
     kbPath:  'Governance_Security',
   },
 ];

@@ -1,4 +1,4 @@
-# Governance & Security
+# Governance & Ethics
 
 **Domain:** Enterprise AI Transformation
 **Status:** Active
@@ -7,36 +7,35 @@
 
 ## Purpose
 
-Establish AI ethics, risk management, regulatory compliance, and enterprise security frameworks for responsible AI programs.
-
----
-
-## Capabilities
-
-| Capability | Objective |
-| ---------- | --------- |
-| AI Governance & Ethics | Build trusted AI through data privacy, ethical guidelines, model monitoring, regulatory compliance, and organizational adoption |
+Ensure AI initiatives are developed, deployed, and managed responsibly while protecting project data, maintaining stakeholder trust, and satisfying regulatory and organizational obligations throughout the delivery lifecycle. The Governance & Ethics domain helps delivery teams embed data privacy, ethical AI principles, model validation, regulatory compliance, and trust-building practices directly into project execution.
 
 ---
 
 ## Structure
 
-```
-Governance_Security/
-├── Core/
-│   ├── Governance_Security_Intelligence_Specification.md
-│   └── AI_Governance_Ethics.md
-└── Automotive/
-    └── Automotive_AI_Governance_Ethics.md
-```
+### Core
+
+Industry-agnostic Governance & Ethics knowledge, applicable across all enterprise AI programs.
+
+- `Core/Governance_Security_Intelligence_Specification.md` — capability overview and pipeline
+- `Core/AI_Governance_Ethics.md`
+
+### Automotive
+
+Automotive-specific extensions covering IP protection, functional safety, cybersecurity compliance, and OEM-supplier governance.
+
+- `Automotive/Automotive_AI_Governance_Ethics.md`
 
 ---
 
-## Key Topics
+## Capability Pipeline
 
-- Data privacy and secure AI architecture (DevSecOps)
-- Ethical AI guidelines and responsible AI development
-- Model validation, drift detection, and continuous monitoring
-- Regulatory compliance and AI risk management
-- Trust building and organizational AI adoption
-- Automotive-specific: OEM IP protection, ISO/SAE 21434, EU AI Act
+```text
+AI Governance & Ethics
+```
+
+## Dependencies
+
+- `../AI_Strategy/`
+- `../AI_Use_Cases/`
+- `../Skills_Workforce/`

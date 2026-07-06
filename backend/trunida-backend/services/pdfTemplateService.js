@@ -2673,7 +2673,14 @@ function renderBlueprint(bp) {
           secTitle.className = 'pdf-section-h3'; secTitle.textContent = section.title;
           secWrap.appendChild(secTitle);
 
-          secWrap.appendChild(buildSectionContent(section));
+          try {
+            secWrap.appendChild(buildSectionContent(section));
+          } catch (renderErr) {
+            var errP = document.createElement('p');
+            errP.style.cssText = 'color:rgba(255,80,80,0.65);font-size:0.7rem;margin:0.5rem 0;';
+            errP.textContent = '[Layout render error: ' + (renderErr.message || renderErr) + ']';
+            secWrap.appendChild(errP);
+          }
           capPage.appendChild(secWrap);
         });
 
@@ -2761,6 +2768,8 @@ const BROWSER_FUNCTIONS = [
   buildAIPlatformReadinessLayout,
   buildAIComputeDeploymentLayout,
   buildAISkillsAssessmentLayout,
+  buildARCPNewPDFLayout,
+  buildARCPLegacyPDFLayout,
   buildAILearningAdoptionLayout,
   buildALANewLayoutPdf,
   buildALALegacyLayoutPdf,
@@ -3280,6 +3289,54 @@ html, body {
 .cds-rec-card__impact-row { font-size: 0.67rem; color: rgba(255,255,255,0.42); }
 .cds-rec-card__reason { font-size: 0.65rem; color: rgba(255,255,255,0.36); margin: 0; font-style: italic; }
 
+/* ── ALA: AI Learning & Adoption (new format, alan-*) ───────── */
+.alan-view { position: relative; display: flex; flex-direction: column; gap: 1rem; }
+.alan-badge { display: inline-block; background: rgba(139,92,246,0.18); border: 1px solid rgba(139,92,246,0.45); color: #a78bfa; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; padding: 0.2rem 0.6rem; border-radius: 2rem; align-self: flex-start; }
+.alan-body { display: grid; grid-template-columns: 45fr 20fr 35fr; gap: 0.9rem; align-items: start; }
+.alan-roles-col { display: flex; flex-direction: column; gap: 0.5rem; }
+.alan-role-card { background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.alan-role-card__name { font-size: 0.72rem; font-weight: 700; color: #5eead4; margin: 0; text-transform: uppercase; letter-spacing: 0.04em; }
+.alan-role-card__path-label, .alan-role-card__outcome-label { font-size: 0.58rem; font-weight: 700; color: rgba(255,255,255,0.32); text-transform: uppercase; letter-spacing: 0.07em; margin: 0.15rem 0 0; }
+.alan-role-card__pills { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.alan-role-card__pill { background: rgba(94,234,212,0.12); border: 1px solid rgba(94,234,212,0.25); color: #5eead4; font-size: 0.6rem; font-weight: 600; padding: 0.12rem 0.4rem; border-radius: 2rem; }
+.alan-role-card__outcome { font-size: 0.68rem; color: rgba(255,255,255,0.58); margin: 0; font-style: italic; }
+.alan-roadmap-col { display: flex; flex-direction: column; gap: 0; }
+.alan-roadmap-stage { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.4rem; padding: 0.5rem 0.6rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.alan-roadmap-stage__name { font-size: 0.68rem; font-weight: 700; color: rgba(255,255,255,0.88); margin: 0; }
+.alan-roadmap-stage__row { display: flex; flex-direction: column; gap: 0.06rem; }
+.alan-roadmap-stage__field-label { font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.28); text-transform: uppercase; letter-spacing: 0.07em; }
+.alan-roadmap-stage__value { font-size: 0.62rem; color: rgba(255,255,255,0.58); }
+.alan-roadmap-arrow { text-align: center; font-size: 0.75rem; color: rgba(255,255,255,0.2); padding: 0.1rem 0; line-height: 1; }
+.alan-actions-col { display: flex; flex-direction: column; gap: 0.5rem; }
+.alan-action-card { background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.alan-action-card__action { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.88); margin: 0; }
+.alan-action-card__row { display: flex; align-items: baseline; gap: 0.35rem; }
+.alan-action-card__field-label { font-size: 0.58rem; font-weight: 700; color: rgba(255,255,255,0.28); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+.alan-action-card__value { font-size: 0.66rem; color: rgba(255,255,255,0.62); }
+.alan-impact--high  { color: #f87171; font-weight: 700; }
+.alan-impact--medium { color: #fbbf24; font-weight: 700; }
+.alan-impact--low   { color: #4ade80; font-weight: 700; }
+.alan-summary-strip { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.5rem; overflow: hidden; margin-top: 0.5rem; }
+.alan-summary-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; padding: 0.65rem 0.4rem; border-right: 1px solid rgba(255,255,255,0.07); text-align: center; }
+.alan-summary-cell:last-child { border-right: none; }
+.alan-summary-cell__value { font-size: 1.15rem; font-weight: 700; color: rgba(255,255,255,0.88); margin: 0; line-height: 1; }
+.alan-summary-cell__label { font-size: 0.56rem; color: rgba(255,255,255,0.36); text-transform: uppercase; letter-spacing: 0.07em; margin: 0; }
+.alan-resources { display: flex; flex-direction: column; gap: 0.4rem; }
+.alan-resource-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.4rem; padding: 0.4rem 0.65rem; gap: 0.6rem; }
+.alan-resource-item__name { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.8); margin: 0; flex: 1; }
+.alan-resource-item__meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.alan-resource-item__audience { font-size: 0.62rem; color: rgba(255,255,255,0.36); }
+.alan-resource-item__priority { font-size: 0.6rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.alan-pri--high   { background: rgba(248,113,113,0.15); color: #f87171; }
+.alan-pri--medium { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+.alan-pri--low    { background: rgba(74,222,128,0.15);  color: #4ade80; }
+.alan-consultant-guidance { display: flex; gap: 0.65rem; background: rgba(20,184,166,0.08); border: 1px solid rgba(20,184,166,0.22); border-radius: 0.5rem; padding: 0.75rem 0.9rem; align-items: flex-start; }
+.alan-cg__icon { color: #14b8a6; font-size: 0.85rem; flex-shrink: 0; margin-top: 0.05rem; }
+.alan-cg__text { font-size: 0.72rem; color: rgba(255,255,255,0.62); margin: 0; line-height: 1.5; }
+.alan-ai-recommendation { display: flex; gap: 0.65rem; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.22); border-radius: 0.5rem; padding: 0.75rem 0.9rem; align-items: flex-start; }
+.alan-ar__icon { color: #fbbf24; font-size: 0.85rem; flex-shrink: 0; margin-top: 0.05rem; }
+.alan-ar__text { font-size: 0.72rem; color: rgba(255,255,255,0.62); margin: 0; line-height: 1.5; }
+
 /* ── ARCP: AI Roles & Capability Planning (new format) ───────── */
 .arcp-role-card-pdf { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-left: 2px solid #5CC5A7; border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.2rem; }
 .arcp-role-card-pdf__header { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
@@ -3497,16 +3554,24 @@ function buildAppendixPageHTML(blueprint) {
       <span class="appendix-meta-val">${v}</span>
     </div>`).join('');
 
-  const capRows = (blueprint.domains || []).flatMap(domain =>
-    (domain.capabilities || []).map(cap => {
+  const APPENDIX_DOMAIN_ORDER = ['ai-use-cases','ai-strategy','data-readiness','technology-infrastructure','skills-workforce','governance-security'];
+  const APPENDIX_DOMAIN_NAMES = { 'governance-security': 'Governance & Ethics' };
+  const appendixDomains = (blueprint.domains || []).slice().sort((a, b) => {
+    const ai = APPENDIX_DOMAIN_ORDER.indexOf(a.domainId);
+    const bi = APPENDIX_DOMAIN_ORDER.indexOf(b.domainId);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+  const capRows = appendixDomains.flatMap(domain => {
+    const displayName = APPENDIX_DOMAIN_NAMES[domain.domainId] || domain.domainName || '—';
+    return (domain.capabilities || []).map(cap => {
       const done = cap.status === 'completed';
       return `<tr>
-        <td>${domain.domainName || '—'}</td>
+        <td>${displayName}</td>
         <td>${cap.capabilityName || '—'}</td>
         <td class="${done ? 'status-complete' : 'status-other'}">${done ? 'Complete' : (cap.status || '—')}</td>
       </tr>`;
-    })
-  ).join('');
+    });
+  }).join('');
 
   return `
 <div class="pdf-page">

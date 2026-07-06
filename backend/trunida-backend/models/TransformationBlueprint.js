@@ -101,8 +101,8 @@ const skillsStatsSchema             = new mongoose.Schema({ available: Number, g
 const skillsCategorySummarySchema   = new mongoose.Schema({ category: String, status: String }, { _id: false });
 // AI Roles & Capability Planning (new format)
 const projectRoleSchema             = new mongoose.Schema({ name: String, primaryResponsibility: String, aiCapabilities: [String], priority: String }, { _id: false });
-const capabilityPrioritySchema      = new mongoose.Schema({ priority: Number, role: String, capability: String, why: String }, { _id: false });
-const workforceStatsSchema          = new mongoose.Schema({ requiredRoles: Number, criticalRoles: Number, aiCapabilities: Number, developmentPriority: String }, { _id: false });
+const capabilityPrioritySchema      = new mongoose.Schema({ priority: Number, role: String, capability: String, businessOutcome: String }, { _id: false });
+const workforceStatsSchema          = new mongoose.Schema({ requiredRoles: Number, criticalRoles: Number, aiCapabilities: Number, implementationPriority: String }, { _id: false });
 const requiredRoleSchema            = new mongoose.Schema({ name: String, responsibility: String, availability: String, priority: String }, { _id: false });
 const teamRecommendationSchema      = new mongoose.Schema({ title: String, priority: String, impact: String }, { _id: false });
 const teamStatsSchema               = new mongoose.Schema({ required: Number, available: Number, missing: Number }, { _id: false });

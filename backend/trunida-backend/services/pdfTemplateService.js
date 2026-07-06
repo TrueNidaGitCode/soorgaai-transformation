@@ -2199,10 +2199,17 @@ function buildARCPNewPDFLayout(b) {
     var priItem = document.createElement('div'); priItem.className = 'arcp-pri-item-pdf';
     var hdr = document.createElement('div'); hdr.className = 'arcp-pri-item-pdf__header';
     var num = document.createElement('span'); num.className = 'arcp-pri-item-pdf__num'; num.textContent = 'Priority ' + item.priority; hdr.appendChild(num);
-    var rn = document.createElement('span'); rn.className = 'arcp-pri-item-pdf__role'; rn.textContent = item.role; hdr.appendChild(rn);
     priItem.appendChild(hdr);
-    if (item.capability) { var cap = document.createElement('p'); cap.className = 'arcp-pri-item-pdf__cap'; cap.textContent = item.capability; priItem.appendChild(cap); }
-    if (item.why) { var why = document.createElement('p'); why.className = 'arcp-pri-item-pdf__why'; why.textContent = item.why; priItem.appendChild(why); }
+    var addPdfRow = function(label, value, cls) {
+      if (!value) return;
+      var row = document.createElement('div'); row.className = 'arcp-pri-item-pdf__row';
+      var lbl = document.createElement('span'); lbl.className = 'arcp-pri-item-pdf__field-lbl'; lbl.textContent = label;
+      var val = document.createElement('span'); val.className = cls; val.textContent = value;
+      row.appendChild(lbl); row.appendChild(val); priItem.appendChild(row);
+    };
+    addPdfRow('Role', item.role, 'arcp-pri-item-pdf__role');
+    addPdfRow('Capability', item.capability, 'arcp-pri-item-pdf__cap');
+    addPdfRow('Business Outcome', item.businessOutcome, 'arcp-pri-item-pdf__outcome');
     rightCol.appendChild(priItem);
   });
   body.appendChild(rightCol);
@@ -2213,7 +2220,7 @@ function buildARCPNewPDFLayout(b) {
     { label: 'Required Roles',      value: workforceStats.requiredRoles },
     { label: 'Critical Roles',      value: workforceStats.criticalRoles },
     { label: 'AI Capabilities',     value: workforceStats.aiCapabilities },
-    { label: 'Development Priority', value: workforceStats.developmentPriority },
+    { label: 'Implementation Priority', value: workforceStats.implementationPriority },
   ].filter(function(s) { return s.value !== undefined && s.value !== null && s.value !== 0 && s.value !== ''; })
    .map(function(s) { return { label: s.label, value: String(s.value) }; });
   if (statsEntries.length) { wrap.appendChild(ndStatBlock(statsEntries)); }
@@ -3231,9 +3238,11 @@ html, body {
 .arcp-pri-item-pdf { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.45rem 0.6rem; display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 0.4rem; }
 .arcp-pri-item-pdf__header { display: flex; align-items: baseline; gap: 0.35rem; }
 .arcp-pri-item-pdf__num { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #5CC5A7; }
+.arcp-pri-item-pdf__row { display: flex; flex-direction: column; gap: 0.04rem; margin-top: 0.2rem; }
+.arcp-pri-item-pdf__field-lbl { font-size: 0.53rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.32); }
 .arcp-pri-item-pdf__role { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.82); }
 .arcp-pri-item-pdf__cap { font-size: 0.68rem; color: rgba(255,255,255,0.62); margin: 0; }
-.arcp-pri-item-pdf__why { font-size: 0.62rem; color: rgba(255,255,255,0.35); font-style: italic; margin: 0; }
+.arcp-pri-item-pdf__outcome { font-size: 0.62rem; color: rgba(255,255,255,0.42); margin: 0; line-height: 1.38; }
 /* ── ASA: Legacy skills assessment (backwards compat) ───────── */
 .asa-skill-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.45rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; }
 .asa-skill-card__name { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }

@@ -948,29 +948,40 @@ SECTION-SPECIFIC EXTRAS — "AI Compute & Deployment Strategy" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Roles & Capability Planning" sections only:
 
-5. projectRoles (4 to 7 items)
-   The key project roles required to deliver this AI use case.
-   Each item: { "name": "<role title>", "primaryResponsibility": "<2–5 words describing their main duty>", "aiCapabilities": ["<cap1>", "<cap2>", "<cap3>"], "priority": "High|Medium|Low" }
-   Order by priority descending. Include at least 3 High-priority roles. AI capabilities must be role-specific, not generic.
+IMPORTANT: This blueprint is generated BEFORE implementation. Write strategicPosition as a planning
+recommendation describing what needs to be in place — NOT as if the team is already fully staffed or
+roles are already assigned. Use forward-looking language: "requires", "should", "needs to".
 
-6. responsibilityJourney (5 to 7 items)
-   The ordered accountability chain from governance sponsor through to continuous improvement.
-   Each item is a role name string (e.g. "Executive Sponsor", "Project Manager", "AI Engineer", "Test Engineer", "Operations Team").
-   This is a linear flow — each role hands off to the next.
+5. projectRoles (5 to 8 items)
+   The project roles required to deliver this AI use case, ordered by responsibility hierarchy.
+   ALWAYS list Project Manager first. Then: Business Analyst → AI Solution Architect → Data Engineer →
+   AI Engineer → domain/test roles → platform roles.
+   Each item: { "name": "<role title>", "primaryResponsibility": "<2–5 words>", "aiCapabilities": ["<cap1>", "<cap2>", "<cap3>"], "priority": "High|Medium|Low" }
+   AI capabilities must be specific to that role's responsibilities. Project Manager MUST have High priority.
+
+6. responsibilityJourney (7 to 9 items)
+   The delivery accountability chain from business need through to business outcome.
+   ALWAYS start with "Business Need" and end with "Business Outcome".
+   Each item is a string. Reflect the delivery flow — not just a role list.
+   Example: ["Business Need", "Project Manager", "Business Analyst", "AI Solution Architect", "Data Engineer", "AI Engineer", "Engineering Team", "Business Outcome"]
 
 7. capabilityPriorities (3 to 4 items)
-   Workforce development priorities — which roles need which AI capabilities first and why.
-   Each item: { "priority": <1|2|3|4>, "role": "<role name>", "capability": "<specific AI capability, 2–4 words>", "why": "<reason, ≤8 words>" }
-   Order from most to least critical for delivery success.
+   Workforce development priorities — which roles need which AI capabilities and the delivery impact.
+   Each item: { "priority": <1|2|3|4>, "role": "<role name>", "capability": "<specific AI capability, 2–4 words>", "businessOutcome": "<one sentence describing delivery impact>" }
+   Always lead with Project Manager or AI Solution Architect as Priority 1.
 
 8. workforceStats
-   Object: { "requiredRoles": <total count of projectRoles>, "criticalRoles": <count of High-priority roles>, "aiCapabilities": <total count of all aiCapabilities across all roles summed>, "developmentPriority": "High|Medium|Low" }
+   Object: { "requiredRoles": <total count of projectRoles>, "criticalRoles": <count of High-priority roles>, "aiCapabilities": <total count of all aiCapabilities summed>, "implementationPriority": "High|Medium|Low" }
+   Note: the field is "implementationPriority" — not "developmentPriority".
 
 9. arcpConsultantGuidance (string, 2–3 sentences)
-   Consulting-style workforce planning guidance for project managers. Focus on role-based capability development rather than generic training. Plain text.
+   Lead with: strengthen existing project roles before introducing new specialist AI roles.
+   Focus on augmenting experienced teams with targeted AI capabilities rather than building new AI organisations. Plain text.
 
 10. arcpAIRecommendation (string, 2–3 sentences)
-    Executive AI recommendation. Name specific roles to prioritise first and explain the delivery impact. Plain text.
+    PM-accessible executive tone. Name specific roles starting with Project Manager. Use planning language
+    ("prioritise", "equip", "build capability"). Explain how these roles create the delivery foundation for
+    the broader team. Avoid "immediately" — this is a plan, not a crisis response. Plain text.
 
    Add all to the brief object:
    "projectRoles": [...], "responsibilityJourney": [...], "capabilityPriorities": [...], "workforceStats": {...}, "arcpConsultantGuidance": "...", "arcpAIRecommendation": "..."`,
@@ -1819,17 +1830,17 @@ function parseBriefOutput(rawSections, validTitles) {
           priority:   parseInt(p.priority, 10) || 1,
           role:       String(p.role       || '').trim(),
           capability: String(p.capability || '').trim(),
-          why:        String(p.why        || '').trim(),
+          businessOutcome: String(p.businessOutcome || p.why || '').trim(),
         }))
         .sort((a, c) => a.priority - c.priority)
         .slice(0, 4);
 
       const rawWorkforceStats = b.workforceStats && typeof b.workforceStats === 'object' ? b.workforceStats : {};
       const workforceStats = {
-        requiredRoles:       parseInt(rawWorkforceStats.requiredRoles,       10) || 0,
-        criticalRoles:       parseInt(rawWorkforceStats.criticalRoles,       10) || 0,
-        aiCapabilities:      parseInt(rawWorkforceStats.aiCapabilities,      10) || 0,
-        developmentPriority: String(rawWorkforceStats.developmentPriority   || '').trim(),
+        requiredRoles:        parseInt(rawWorkforceStats.requiredRoles,        10) || 0,
+        criticalRoles:        parseInt(rawWorkforceStats.criticalRoles,        10) || 0,
+        aiCapabilities:       parseInt(rawWorkforceStats.aiCapabilities,       10) || 0,
+        implementationPriority: String(rawWorkforceStats.implementationPriority || rawWorkforceStats.developmentPriority || '').trim(),
       };
 
       const arcpConsultantGuidance = String(b.arcpConsultantGuidance || '').trim();

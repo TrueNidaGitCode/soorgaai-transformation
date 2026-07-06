@@ -5342,25 +5342,27 @@ function buildARCPNewLayout(b) {
       const num = document.createElement('span');
       num.className = 'arcp-pri-item__num';
       num.textContent = `Priority ${item.priority}`;
-      const roleName = document.createElement('span');
-      roleName.className = 'arcp-pri-item__role';
-      roleName.textContent = item.role;
-      priHeader.appendChild(num);
-      priHeader.appendChild(roleName);
       priItem.appendChild(priHeader);
+      priHeader.appendChild(num);
 
-      if (item.capability) {
-        const capEl = document.createElement('p');
-        capEl.className = 'arcp-pri-item__capability';
-        capEl.textContent = item.capability;
-        priItem.appendChild(capEl);
-      }
-      if (item.why) {
-        const whyEl = document.createElement('p');
-        whyEl.className = 'arcp-pri-item__why';
-        whyEl.textContent = item.why;
-        priItem.appendChild(whyEl);
-      }
+      const addLabeledRow = (label, value, valueCls) => {
+        if (!value) return;
+        const row = document.createElement('div');
+        row.className = 'arcp-pri-item__row';
+        const lbl = document.createElement('span');
+        lbl.className = 'arcp-pri-item__field-label';
+        lbl.textContent = label;
+        const val = document.createElement('span');
+        val.className = valueCls;
+        val.textContent = value;
+        row.appendChild(lbl);
+        row.appendChild(val);
+        priItem.appendChild(row);
+      };
+
+      addLabeledRow('Role', item.role, 'arcp-pri-item__role');
+      addLabeledRow('Capability', item.capability, 'arcp-pri-item__capability');
+      addLabeledRow('Business Outcome', item.businessOutcome, 'arcp-pri-item__outcome');
 
       priList.appendChild(priItem);
     });
@@ -5374,7 +5376,7 @@ function buildARCPNewLayout(b) {
     { label: 'Required Roles',      value: workforceStats.requiredRoles },
     { label: 'Critical Roles',      value: workforceStats.criticalRoles },
     { label: 'AI Capabilities',     value: workforceStats.aiCapabilities },
-    { label: 'Development Priority', value: workforceStats.developmentPriority },
+    { label: 'Implementation Priority', value: workforceStats.implementationPriority },
   ].filter(s => s.value !== undefined && s.value !== null && s.value !== 0 && s.value !== '');
 
   if (statsData.length) {

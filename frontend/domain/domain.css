@@ -9998,6 +9998,21 @@
   white-space: nowrap;
 }
 
+.arcp-pri-item__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  margin-top: 0.25rem;
+}
+
+.arcp-pri-item__field-label {
+  font-size: 0.57rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+
 .arcp-pri-item__role {
   font-size: 0.75rem;
   font-weight: 600;
@@ -10011,11 +10026,11 @@
   line-height: 1.35;
 }
 
-.arcp-pri-item__why {
-  font-size: 0.65rem;
-  color: rgba(255,255,255,0.38);
-  font-style: italic;
+.arcp-pri-item__outcome {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.5);
   margin: 0;
+  line-height: 1.4;
 }
 
 /* ── Stats strip ─────────────────────────────────────────────────────────── */

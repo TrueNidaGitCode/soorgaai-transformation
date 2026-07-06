@@ -3775,12 +3775,13 @@ function buildSystemIntegrationLayout(section) {
 
   // New fields
   const siaEngineeringSystems    = b.siaEngineeringSystems    || [];
-  const siaWorkflowSteps         = b.siaWorkflowSteps         || [];
-  const siaIntegrationPriorities = b.siaIntegrationPriorities || [];
-  const siaArchLayers            = b.siaArchLayers            || [];
-  const siaImplSequence          = b.siaImplSequence          || [];
-  const siaConsultantGuidance    = b.siaConsultantGuidance    || '';
-  const siaAIRecommendation      = b.siaAIRecommendation      || '';
+  const siaWorkflowSteps           = b.siaWorkflowSteps           || [];
+  const siaIntegrationPriorities   = b.siaIntegrationPriorities   || [];
+  const siaArchLayers              = b.siaArchLayers              || [];
+  const siaImplSequence            = b.siaImplSequence            || [];
+  const siaIntegrationPrinciples   = b.siaIntegrationPrinciples   || [];
+  const siaConsultantGuidance      = b.siaConsultantGuidance      || '';
+  const siaAIRecommendation        = b.siaAIRecommendation        || '';
 
   // Legacy fields
   const connectedSystems   = b.connectedSystems   || [];
@@ -3789,11 +3790,11 @@ function buildSystemIntegrationLayout(section) {
   const isNewFormat = siaEngineeringSystems.length > 0 || !!siaConsultantGuidance;
 
   const SIA_IMPL_STEPS = [
-    'Connect Core Engineering Systems', 'Implement Standard APIs',
-    'Embed AI into Engineering Workflows', 'Enable Monitoring & Governance', 'Expand Across Programs',
+    'Connect Engineering Systems', 'Standardize Data Exchange',
+    'Embed AI into Existing Workflows', 'Enable Secure Monitoring', 'Scale Across Engineering Programs',
   ];
   const PRIORITY_COLOR = { HIGH: '#f87171', MEDIUM: '#fbbf24', LOW: '#5CC5A7' };
-  const ARCH_ACCENT = ['#5CC5A7', '#818cf8', '#fbbf24', '#c084fc'];
+  const ARCH_ACCENT = ['#5CC5A7', '#818cf8', '#fbbf24', '#c084fc', '#fb923c'];
 
   const wrap = document.createElement('div');
   wrap.className = 'sia-view';
@@ -3821,7 +3822,7 @@ function buildSystemIntegrationLayout(section) {
 
     const blueprintLbl = document.createElement('p');
     blueprintLbl.className = 'brief-label';
-    blueprintLbl.textContent = 'Engineering Integration Blueprint';
+    blueprintLbl.textContent = 'Integration Blueprint';
     leftCol.appendChild(blueprintLbl);
 
     const sysGrid = document.createElement('div');
@@ -3840,7 +3841,7 @@ function buildSystemIntegrationLayout(section) {
         { label: 'Purpose',             value: sys.purpose },
         { label: 'Integration Pattern', value: sys.integrationPattern },
         { label: 'AI Interaction',      value: sys.aiInteraction },
-        { label: 'Business Value',      value: sys.businessValue },
+        { label: 'Expected Outcome',    value: sys.expectedOutcome },
       ].forEach(({ label, value }) => {
         if (!value) return;
         const fl = document.createElement('p');
@@ -3866,7 +3867,7 @@ function buildSystemIntegrationLayout(section) {
     // Workflow flow
     const wfLbl = document.createElement('p');
     wfLbl.className = 'brief-label';
-    wfLbl.textContent = 'AI Workflow Integration';
+    wfLbl.textContent = 'Embedded AI Workflow';
     rightCol.appendChild(wfLbl);
 
     const wfChain = document.createElement('div');
@@ -3987,6 +3988,26 @@ function buildSystemIntegrationLayout(section) {
       });
 
       wrap.appendChild(archChain);
+    }
+
+    // ── Integration Principles ────────────────────────────────────────────
+    if (siaIntegrationPrinciples.length) {
+      const principleLbl = document.createElement('p');
+      principleLbl.className = 'brief-label';
+      principleLbl.textContent = 'Integration Principles';
+      wrap.appendChild(principleLbl);
+
+      const principlesGrid = document.createElement('div');
+      principlesGrid.className = 'sia-principles';
+
+      siaIntegrationPrinciples.forEach(principle => {
+        const item = document.createElement('div');
+        item.className = 'sia-principle-item';
+        item.textContent = principle;
+        principlesGrid.appendChild(item);
+      });
+
+      wrap.appendChild(principlesGrid);
     }
 
     // ── Recommended Implementation Sequence ───────────────────────────────

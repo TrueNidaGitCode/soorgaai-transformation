@@ -72,7 +72,7 @@ const archSummarySchema         = new mongoose.Schema({ sourceSystems: Number, i
 // ── Technology Infrastructure sub-schemas ─────────────────────────────────────
 const connectedSystemSchema         = new mongoose.Schema({ name: String, integrationMethod: String, status: String, healthIndicator: String }, { _id: false });
 const integrationSummarySchema      = new mongoose.Schema({ integration: String, automation: String, reliability: String, scalability: String }, { _id: false });
-const siaSystemSchema               = new mongoose.Schema({ name: String, purpose: String, integrationPattern: String, aiInteraction: String, businessValue: String }, { _id: false });
+const siaSystemSchema               = new mongoose.Schema({ name: String, purpose: String, integrationPattern: String, aiInteraction: String, expectedOutcome: String }, { _id: false });
 const siaPrioritySchema             = new mongoose.Schema({ order: Number, name: String, priority: String, businessBenefit: String }, { _id: false });
 const siaArchLayerSchema            = new mongoose.Schema({ name: String, technologies: [String] }, { _id: false });
 const capabilityAssessmentSchema    = new mongoose.Schema({ name: String, score: Number, status: String }, { _id: false });
@@ -210,8 +210,9 @@ const briefSchema = new mongoose.Schema({
   siaIntegrationPriorities: { type: [siaPrioritySchema],              default: [] },
   siaArchLayers:            { type: [siaArchLayerSchema],             default: [] },
   siaImplSequence:          { type: [String],                         default: [] },
-  siaConsultantGuidance:    { type: String,                           default: '' },
-  siaAIRecommendation:      { type: String,                           default: '' },
+  siaConsultantGuidance:      { type: String,   default: '' },
+  siaAIRecommendation:        { type: String,   default: '' },
+  siaIntegrationPrinciples:   { type: [String], default: [] },
   // Technology Infrastructure: AI Platform Readiness extras
   platformReadiness:        { type: Number,   default: 0 },
   capabilityAssessment:     { type: [capabilityAssessmentSchema],     default: [] },

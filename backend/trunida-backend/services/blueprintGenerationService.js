@@ -765,43 +765,65 @@ SECTION-SPECIFIC EXTRAS — "System Integration & Architecture" sections only:
 SECTION-SPECIFIC EXTRAS — "System Integration & Architecture" sections only:
 
 CONSULTING FOCUS RULE:
-This section describes what to BUILD and HOW to integrate — not an assessment of current readiness.
+This capability describes HOW AI integrates into existing engineering workflows — not an assessment of readiness.
 ❌ Do NOT use CONNECTED / PARTIAL / MISSING status labels.
 ❌ Do NOT report integration readiness percentages.
-✅ Recommend systems, patterns, and workflows as if designing the integration from scratch.
-✅ Focus on: what system, what pattern, where AI fits, and what business value it delivers.
+✅ Recommend integrations as if designing the architecture from scratch.
+✅ Focus on: how AI becomes another step inside the workflows engineers already use.
+
+CRITICAL STRATEGIC POSITION RULE:
+The strategicPosition must describe the ARCHITECTURAL OBJECTIVE of this integration — not the AI use case outcome.
+It must emphasise: (1) embedding AI into existing engineering workflows, (2) standardised integrations, (3) engineers staying inside their existing tools.
+❌ WRONG: "AI-driven traceability is embedded into test management tools to improve compliance."
+✅ CORRECT: "AI capabilities are embedded into existing engineering workflows through standardised integrations, enabling engineers to receive AI-generated insights directly within the tools they already use without changing established development processes."
 
 5. siaEngineeringSystems (3–5 items)
    The key engineering or business systems the AI solution should integrate with for this use case.
-   Each item: { "name": "<system name, e.g. Jira, Polarion, GitHub>", "purpose": "<1 sentence on what this system does, ≤10 words>", "integrationPattern": "<e.g. REST API, OSLC API, Webhook, SDK>", "aiInteraction": "<1 sentence on how AI uses this system, ≤10 words>", "businessValue": "<1 sentence on business outcome from integrating AI here, ≤10 words>" }
+   Each item: { "name": "<system name, e.g. Jira, Polarion, GitHub>", "purpose": "<1 sentence on what this system does, ≤10 words>", "integrationPattern": "<e.g. REST API, OSLC API, Webhook, SDK>", "aiInteraction": "<1 sentence on how AI uses this system, ≤10 words>", "expectedOutcome": "<Engineers receive [specific AI action] directly inside [system name]. ≤12 words>" }
+   Example expectedOutcome: "Engineers receive AI-generated traceability suggestions directly inside Jira."
 
 6. siaWorkflowSteps (4–6 strings)
-   A simple sequential workflow showing where AI fits into the engineering process.
-   Each string is a short step label (≤5 words), e.g. "Requirement Authoring", "AI Review", "Engineer Approval", "Repository Update".
-   The first step is the engineer action, the last step is the output or decision.
+   A sequential workflow showing AI as one embedded step inside the engineering process.
+   Each string is a short step label (≤6 words). Begin with an engineer action, include an "AI [action]" step in the middle, end with an engineer decision or system update.
+   Example: "Engineer creates User Story", "AI identifies missing traceability", "Engineer validates recommendation", "Coverage dashboard updates".
 
-7. siaIntegrationPriorities (3–5 items)
-   The highest-priority integration actions in recommended implementation order.
-   Each item: { "order": <1-5>, "name": "<integration action, ≤6 words>", "priority": "HIGH|MEDIUM|LOW", "businessBenefit": "<1 sentence, ≤10 words>" }
+7. siaIntegrationPriorities (4–5 items)
+   Strategic integration objectives in recommended implementation order — consulting-style, not technical tasks.
+   Each item: { "order": <1-5>, "name": "<consulting objective, ≤7 words>", "priority": "HIGH|MEDIUM|LOW", "businessBenefit": "<1 sentence on business outcome, ≤10 words>" }
+   Use these objectives as guidance (adapt to the use case):
+   1. Connect Core Engineering Systems (HIGH)
+   2. Establish Standard Integration Interfaces (HIGH)
+   3. Embed AI into Daily Engineering Workflows (HIGH)
+   4. Secure AI Data Exchange (MEDIUM)
+   5. Monitor Integration Health (MEDIUM)
 
-8. siaArchLayers (exactly 4 items in this fixed order)
-   The integration architecture blueprint — 4 fixed layers showing which technologies implement each layer.
-   Use these fixed layer names in this exact order: Engineering Systems, Integration Services, AI Platform, Business Applications.
+8. siaArchLayers (exactly 5 items in this fixed order)
+   The integration architecture — 5 fixed layers. Do NOT include the AI Platform layer (that belongs to AI Platform Readiness).
+   Use these fixed layer names in this exact order: Engineering Systems, Integration Layer, AI Services, Engineering Workflow, Business Decisions.
    Each item: { "name": "<fixed layer name>", "technologies": ["<tool or service, ≤3 words>", ...2–4 items] }
-   Example: Engineering Systems → ["Jira", "Polarion", "GitHub"], Integration Services → ["REST API", "Webhooks", "Event Bus"], AI Platform → ["Azure AI Foundry", "pgvector"], Business Applications → ["Web Portal", "Teams", "IDE Extension"]
+   Example: Engineering Systems → ["Jira", "Polarion", "GitHub"], Integration Layer → ["REST APIs", "Event Bus", "API Gateway"], AI Services → ["Claude API", "pgvector", "LangChain"], Engineering Workflow → ["Requirement Authoring", "Code Review", "Test Design"], Business Decisions → ["Engineering Dashboard", "Manager Reports", "Delivery Metrics"]
 
 9. siaImplSequence (exactly 5 strings in this fixed order)
    The 5-step implementation roadmap. Use these exact labels:
-   ["Connect Core Engineering Systems", "Implement Standard APIs", "Embed AI into Engineering Workflows", "Enable Monitoring & Governance", "Expand Across Programs"]
+   ["Connect Engineering Systems", "Standardize Data Exchange", "Embed AI into Existing Workflows", "Enable Secure Monitoring", "Scale Across Engineering Programs"]
 
-10. siaConsultantGuidance
-   2–3 sentences. Prioritise integrating AI with the systems that deliver greatest business value first. Focus on reusable APIs and standardised patterns. Do NOT mention specific data or infrastructure concerns.
+10. siaIntegrationPrinciples (4–5 strings)
+    The architectural principles that govern this integration approach. Each string is one principle (≤15 words).
+    Example principles:
+    - "Integrate AI into existing workflows before introducing new user interfaces."
+    - "Prefer API-first and event-driven integrations over manual synchronisation."
+    - "Minimise disruption to established engineering processes."
+    - "Reuse existing enterprise integration services wherever possible."
+    - "Preserve security, governance, and traceability across every integration."
 
-11. siaAIRecommendation
-   1–2 sentences. Recommend an API-first, workflow-embedded integration approach. Describe the business outcome — adoption, efficiency, or reuse across initiatives.
+11. siaConsultantGuidance
+    2–3 sentences. Guide the project manager on how to sequence integrations for maximum business impact. Focus on starting with the highest-value systems and building reusable integration services for future AI initiatives. Do NOT mention data preparation or infrastructure deployment concerns.
+
+12. siaAIRecommendation
+    1–2 sentences. Executive consulting tone. Recommend embedding AI directly into the engineering tools already used by project teams rather than introducing standalone applications. Describe how standardised, reusable integrations provide a foundation for every future AI initiative.
 
    Add all to the brief object:
-   "siaEngineeringSystems": [...], "siaWorkflowSteps": [...], "siaIntegrationPriorities": [...], "siaArchLayers": [...], "siaImplSequence": [...], "siaConsultantGuidance": "...", "siaAIRecommendation": "..."`,
+   "siaEngineeringSystems": [...], "siaWorkflowSteps": [...], "siaIntegrationPriorities": [...], "siaArchLayers": [...], "siaImplSequence": [...], "siaIntegrationPrinciples": [...], "siaConsultantGuidance": "...", "siaAIRecommendation": "..."`,
   },
 
   'AI Platform Readiness': {
@@ -1581,7 +1603,7 @@ function parseBriefOutput(rawSections, validTitles) {
           purpose:            String(s.purpose            || '').trim(),
           integrationPattern: String(s.integrationPattern || '').trim(),
           aiInteraction:      String(s.aiInteraction      || '').trim(),
-          businessValue:      String(s.businessValue      || '').trim(),
+          expectedOutcome:    String(s.expectedOutcome    || s.businessValue || '').trim(),
         }))
         .slice(0, 5);
 
@@ -1592,15 +1614,15 @@ function parseBriefOutput(rawSections, validTitles) {
       const siaIntegrationPriorities = rawSiaPriorities
         .filter(p => p && typeof p === 'object' && String(p.name || '').trim())
         .map(p => ({
-          order:          parseInt(p.order, 10) || 0,
-          name:           String(p.name          || '').trim(),
-          priority:       String(p.priority       || 'MEDIUM').trim().toUpperCase(),
-          businessBenefit: String(p.businessBenefit || '').trim(),
+          order:           parseInt(p.order, 10) || 0,
+          name:            String(p.name            || '').trim(),
+          priority:        String(p.priority         || 'MEDIUM').trim().toUpperCase(),
+          businessBenefit: String(p.businessBenefit  || '').trim(),
         }))
         .sort((a, b) => a.order - b.order)
         .slice(0, 5);
 
-      const SIA_ARCH_LAYERS = ['Engineering Systems', 'Integration Services', 'AI Platform', 'Business Applications'];
+      const SIA_ARCH_LAYERS = ['Engineering Systems', 'Integration Layer', 'AI Services', 'Engineering Workflow', 'Business Decisions'];
       const rawSiaArch = Array.isArray(b.siaArchLayers) ? b.siaArchLayers : [];
       const siaArchLayers = SIA_ARCH_LAYERS.map((layerName, idx) => {
         const found = rawSiaArch.find(l => l && String(l.name || '').trim().toLowerCase() === layerName.toLowerCase())
@@ -1614,11 +1636,14 @@ function parseBriefOutput(rawSections, validTitles) {
       });
 
       const SIA_IMPL_STEPS = [
-        'Connect Core Engineering Systems', 'Implement Standard APIs',
-        'Embed AI into Engineering Workflows', 'Enable Monitoring & Governance', 'Expand Across Programs',
+        'Connect Engineering Systems', 'Standardize Data Exchange',
+        'Embed AI into Existing Workflows', 'Enable Secure Monitoring', 'Scale Across Engineering Programs',
       ];
       const rawSiaImpl = Array.isArray(b.siaImplSequence) ? b.siaImplSequence : [];
       const siaImplSequence = SIA_IMPL_STEPS.map((step, i) => String(rawSiaImpl[i] || step).trim());
+
+      const siaIntegrationPrinciples = (Array.isArray(b.siaIntegrationPrinciples) ? b.siaIntegrationPrinciples : [])
+        .map(s => String(s || '').trim()).filter(Boolean).slice(0, 5);
 
       const siaConsultantGuidance = String(b.siaConsultantGuidance || '').trim();
       const siaAIRecommendation   = String(b.siaAIRecommendation   || '').trim();
@@ -2097,8 +2122,9 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(siaIntegrationPriorities.length            ? { siaIntegrationPriorities } : {}),
           ...(siaArchLayers.some(l => l.technologies.length) ? { siaArchLayers }        : {}),
           ...(siaImplSequence.length                     ? { siaImplSequence }          : {}),
-          ...(siaConsultantGuidance                      ? { siaConsultantGuidance }    : {}),
-          ...(siaAIRecommendation                        ? { siaAIRecommendation }      : {}),
+          ...(siaConsultantGuidance                      ? { siaConsultantGuidance }       : {}),
+          ...(siaAIRecommendation                        ? { siaAIRecommendation }         : {}),
+          ...(siaIntegrationPrinciples.length            ? { siaIntegrationPrinciples }    : {}),
           // Technology Infrastructure: AI Platform Readiness extras
           ...(platformCapabilities.some(c => c.purpose)           ? { platformCapabilities }    : {}),
           ...(platformBlueprintLayers.some(l => l.recommendation) ? { platformBlueprintLayers } : {}),
@@ -2717,7 +2743,7 @@ OUTPUT — valid JSON only, no markdown fences:
       // Technology Infrastructure extras
       'integrationReadiness', 'connectedSystems', 'integrationSummary',
       'siaEngineeringSystems', 'siaWorkflowSteps', 'siaIntegrationPriorities',
-      'siaArchLayers', 'siaImplSequence', 'siaConsultantGuidance', 'siaAIRecommendation',
+      'siaArchLayers', 'siaImplSequence', 'siaIntegrationPrinciples', 'siaConsultantGuidance', 'siaAIRecommendation',
       'platformCapabilities', 'platformBlueprintLayers', 'platformRecs', 'aprImplRoadmap',
       'aprStackLayers', 'aprConsultantGuidance', 'aprAIRecommendation',
       'deploymentBlocks', 'cdsDeploymentFlow', 'techRecommendations', 'cdsArchRationale',

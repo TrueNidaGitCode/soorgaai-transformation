@@ -20,6 +20,7 @@ import {
   removeGovernanceEthicsCapability,
   removeAIEngineeringEnablement,
   renameAISkillsAssessmentCapability,
+  removeAITeamReadiness,
 } from '../controllers/strategyCanvasController.js';
 import { ask } from '../controllers/advisorController.js';
 import { exportBlueprintPDF } from '../controllers/pdfExportController.js';
@@ -66,5 +67,6 @@ router.post(
 router.post('/admin/remove-governance-ethics',             protect, removeGovernanceEthicsCapability);
 router.post('/admin/remove-ai-engineering-enablement',    protect, removeAIEngineeringEnablement);
 router.post('/admin/rename-ai-skills-assessment',         protect, renameAISkillsAssessmentCapability);
+router.post('/admin/remove-ai-team-readiness',            protect, removeAITeamReadiness);
 
 export default router;

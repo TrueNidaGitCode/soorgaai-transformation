@@ -814,6 +814,30 @@ export async function removeGovernanceEthicsCapability(req, res) {
 }
 
 /**
+ * POST /strategy-canvas/admin/remove-ai-team-readiness
+ * One-time migration: removes the AI Team Readiness capability entirely from
+ * the calling user's TransformationBlueprint (capability has been retired).
+ */
+export async function removeAITeamReadiness(req, res) {
+  try {
+    const userId = req.user._id;
+    const result = await TransformationBlueprint.updateMany(
+      { userId, 'domains.capabilities.capabilityId': 'ai-team-readiness' },
+      { $pull: { 'domains.$[].capabilities': { capabilityId: 'ai-team-readiness' } } }
+    );
+    return res.json({
+      ok: true,
+      matched: result.matchedCount,
+      modified: result.modifiedCount,
+      message: 'AI Team Readiness capability removed from all blueprints.',
+    });
+  } catch (err) {
+    console.error('removeAITeamReadiness error:', err);
+    res.status(500).json({ error: 'Migration failed.' });
+  }
+}
+
+/**
  * POST /strategy-canvas/admin/rename-ai-skills-assessment
  * One-time migration: renames the AI Skills Assessment capability to
  * AI Roles & Capability Planning in the calling user's TransformationBlueprint.

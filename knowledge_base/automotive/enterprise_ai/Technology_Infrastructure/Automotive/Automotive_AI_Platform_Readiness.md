@@ -1,130 +1,315 @@
 # Automotive AI Platform Readiness
 
-## Purpose
+**Layer:** Automotive  
+**Extends:** Core/AI Platform Readiness.md  
+**Version:** 2.0
 
-Provide automotive-specific guidance for assessing whether the engineering organization has the AI platform capabilities required to develop, deploy, and operate AI solutions across the vehicle development lifecycle.
+---
+
+# Purpose
+
+Provide automotive-specific guidance for establishing the AI platform capabilities required to develop, deploy, operate, and continuously improve AI solutions across the automotive engineering lifecycle.
+
+Rather than focusing only on AI tooling, this capability recommends an integrated AI platform that supports engineering knowledge, software-defined vehicle (SDV) development, verification & validation, diagnostics, compliance, and enterprise collaboration.
 
 > For the universal framework, refer to: `Core/AI Platform Readiness.md`
 
 ---
 
-## AI Platform Readiness in Automotive
+# AI Platform Readiness in Automotive
 
-### Engineering AI Development
+## Definition
 
-Assess whether engineering teams have the required AI development environment.
+Automotive AI Platform Readiness identifies the platform capabilities required to successfully support AI solutions across product engineering, software development, verification & validation, manufacturing, diagnostics, and field operations.
 
-Typical examples:
-
-- Engineering AI workspaces
-- Prompt engineering tools
-- Notebook environments
-- AI development SDKs
+Based on the selected AI use case, prepared engineering data, and deployment architecture, the AI recommends an automotive AI platform blueprint that enables secure, scalable, and reusable AI services throughout the engineering lifecycle.
 
 ---
 
-### Engineering Model & Prompt Management
+# Automotive Platform Capability Framework
 
-Evaluate how engineering AI assets are managed.
+The AI recommends platform capabilities across the following areas.
 
-Typical examples:
+---
 
+## 1. AI Engineering Workspace
+
+### Objective
+
+Provide engineering teams with a standardized environment to develop, test, and validate AI solutions.
+
+### Typical Capabilities
+
+- AI development workspace
+- Prompt engineering studio
+- Jupyter notebooks
+- Engineering SDKs
+- API testing tools
+- Engineering sandbox environments
+
+### Automotive Examples
+
+- AI-assisted requirements engineering
+- AI-assisted software development
+- AI-assisted test generation
+- AI-assisted diagnostics
+- AI-assisted root cause analysis
+
+### Expected Outcome
+
+Engineering teams can rapidly prototype and validate AI solutions using a common engineering AI workspace.
+
+---
+
+## 2. Model & Prompt Lifecycle Management
+
+### Objective
+
+Manage AI models, prompts, experiments, and engineering workflows throughout the AI lifecycle.
+
+### Typical Capabilities
+
+- Prompt library
+- Prompt version control
 - Model registry
-- Prompt templates
-- Version management
 - Experiment tracking
+- Evaluation datasets
+- Prompt templates
+
+### Automotive Examples
+
+- Requirements analysis prompts
+- ASPICE assessment prompts
+- Test generation prompts
+- Diagnostic reasoning prompts
+- Root cause investigation prompts
+
+### Expected Outcome
+
+Engineering AI assets remain reusable, traceable, and continuously improved.
 
 ---
 
-### Engineering Knowledge Services
+## 3. Engineering Knowledge & Retrieval Platform
 
-Assess how engineering knowledge is made available to AI.
+### Objective
 
-Typical examples:
+Enable AI assistants to securely retrieve engineering knowledge from enterprise repositories.
 
-- Engineering vector database
-- Requirements knowledge base
-- Design documentation indexing
-- Engineering retrieval services
+### Typical Capabilities
+
+- Vector database
+- Knowledge indexing
+- Embedding services
+- Semantic search
+- Retrieval pipelines
+- Knowledge connectors
+
+### Automotive Knowledge Sources
+
+- Requirements repositories
+- Architecture documentation
+- ASPICE work products
+- ISO 26262 documentation
+- AUTOSAR documentation
+- Test repositories
+- Defect databases
+- Engineering Wiki
+- Lessons Learned
+- Service manuals
+
+### Expected Outcome
+
+AI assistants generate accurate engineering recommendations using trusted automotive knowledge.
 
 ---
 
-### AI Deployment & Engineering Automation
+## 4. AI Deployment & Engineering Automation
 
-Evaluate engineering deployment capabilities.
+### Objective
 
-Typical examples:
+Automate deployment, updates, and lifecycle management of engineering AI solutions.
+
+### Typical Capabilities
 
 - CI/CD integration
-- Automated model deployment
+- Model deployment
+- API management
+- Workflow automation
+- Container management
+- Release automation
+
+### Automotive Examples
+
+- Automated AI deployment
+- Continuous engineering knowledge updates
+- Prompt deployment
 - Engineering workflow automation
-- AI API deployment
+- AI service version management
+
+### Expected Outcome
+
+Engineering AI solutions are deployed consistently with minimal operational effort.
 
 ---
 
-### Engineering AI Monitoring
+## 5. AI Monitoring & Engineering Governance
 
-Assess operational monitoring of engineering AI solutions.
+### Objective
 
-Typical examples:
+Continuously monitor AI quality, engineering performance, compliance, and operational health.
 
-- Model performance
-- Response latency
-- Engineering feedback
-- AI evaluation dashboards
+### Typical Capabilities
 
----
+- AI performance monitoring
+- Prompt evaluation
+- Response quality assessment
+- Usage analytics
+- Audit logging
+- Human feedback
+- Guardrails
 
-### Engineering Collaboration & Reuse
+### Automotive Monitoring Areas
 
-Evaluate reuse of AI capabilities across engineering programs.
+- Engineering AI accuracy
+- Traceability quality
+- AI recommendation quality
+- Prompt effectiveness
+- Knowledge freshness
+- Compliance monitoring
+- Engineering adoption
 
-Typical examples:
+### Expected Outcome
 
-- Shared engineering prompts
-- Reusable AI components
-- Engineering knowledge repositories
-- Cross-project AI assets
-
-### Key Principles
-
-- Build reusable AI platform services.
-- Standardize engineering AI development.
-- Reuse engineering knowledge across projects.
-- Automate AI deployment wherever possible.
-- Continuously evaluate AI performance.
-
-### Leadership Question
-
-**Does our engineering organization have the AI platform capabilities required to efficiently deliver this automotive AI solution?**
+Engineering AI remains reliable, explainable, secure, and compliant throughout its lifecycle.
 
 ---
 
-## Automotive Best Practices
+## 6. Engineering Collaboration & AI Reuse
 
-- Reuse engineering prompts across vehicle programs.
-- Build centralized engineering knowledge services.
-- Standardize AI development workflows.
-- Automate engineering AI deployment.
-- Continuously monitor AI quality in engineering environments.
+### Objective
+
+Enable engineering teams to reuse AI capabilities across multiple vehicle programs and engineering domains.
+
+### Typical Capabilities
+
+- Shared prompt catalog
+- Engineering AI templates
+- Shared knowledge repositories
+- Reusable AI workflows
+- Collaboration workspaces
+- Engineering best practices
+
+### Automotive Examples
+
+Reusable AI assistants for:
+
+- Requirements Engineering
+- Software Development
+- Test Engineering
+- Functional Safety
+- Cybersecurity
+- Diagnostics
+- Quality Engineering
+- Program Management
+
+### Expected Outcome
+
+Engineering teams accelerate AI adoption through standardized and reusable AI capabilities.
 
 ---
 
-## AI Blueprint Generation
+# Automotive Best Practices
 
-The generated automotive blueprint includes:
+The AI follows these principles when recommending an automotive AI platform.
 
-- Engineering AI Development Assessment
-- Platform Capability Assessment
-- Knowledge Service Assessment
-- Deployment Assessment
-- Monitoring Assessment
-- Collaboration Assessment
-- AI Platform Readiness Score
-- Automotive Recommendations
+- Build reusable engineering AI services rather than project-specific assistants.
+- Integrate AI directly into existing engineering workflows.
+- Preserve engineering traceability across AI interactions.
+- Support software-defined vehicle development and continuous delivery.
+- Ensure compliance with automotive quality and safety standards.
+- Enable secure collaboration across globally distributed engineering teams.
+- Design the platform so future AI use cases can be onboarded with minimal additional effort.
 
 ---
 
-## Expected Outcome
+# Leadership Question
 
-The project team receives an automotive-specific AI platform readiness assessment with prioritized recommendations for improving engineering AI development, deployment, monitoring, and collaboration.
+**What AI platform capabilities should we establish to enable secure, scalable, and reusable AI across the automotive engineering lifecycle?**
+
+---
+
+# Consultant Guidance
+
+The AI recommends automotive AI platform capabilities using the following principles:
+
+- Begin with managed AI platform services to accelerate implementation.
+- Connect AI directly to existing engineering repositories instead of duplicating information.
+- Build reusable engineering AI assistants before creating specialized solutions.
+- Introduce governance, prompt management, and monitoring from the beginning.
+- Enable knowledge reuse across engineering disciplines and vehicle programs.
+- Expand the platform incrementally as additional engineering AI use cases are deployed.
+
+---
+
+# AI Reasoning Process
+
+```text
+Business Objective
+        ↓
+Automotive AI Use Case
+        ↓
+Prepared Engineering Data
+        ↓
+Deployment Architecture
+        ↓
+Identify Required Platform Capabilities
+        ↓
+Recommend Automotive AI Services
+        ↓
+Generate Automotive AI Platform Blueprint
+```
+
+---
+
+# Automotive AI Blueprint Generation
+
+For every automotive AI use case, the AI generates an Automotive AI Platform Blueprint containing:
+
+- Recommended AI Engineering Workspace
+- Engineering Prompt & Model Management Strategy
+- Engineering Knowledge Platform
+- AI Deployment & Automation Services
+- Monitoring & Governance Capabilities
+- Engineering Collaboration & Reuse Strategy
+- Recommended Automotive AI Platform Stack
+- Platform Implementation Roadmap
+- Consultant Guidance
+- AI Recommendation
+
+---
+
+# Expected Outcome
+
+After completing this capability, the project team should have:
+
+- A recommended automotive AI platform architecture.
+- A clear understanding of the engineering AI services required.
+- A prioritized roadmap for implementing automotive AI platform capabilities.
+- Recommended technologies aligned with engineering workflows and deployment strategy.
+- Reusable AI platform capabilities supporting multiple vehicle programs and engineering domains.
+- A strong foundation for the next capability: **System Integration & Architecture**.
+
+---
+
+# AI Prompt Guidance
+
+When generating the Automotive AI Platform Blueprint, the AI should:
+
+- Recommend platform capabilities based on the selected automotive AI use case.
+- Reuse outputs from Data Readiness and AI Compute & Deployment Strategy.
+- Recommend practical, enterprise-grade AI platform services suitable for automotive engineering.
+- Focus on reusable engineering AI capabilities rather than vendor-specific implementations.
+- Explain why each platform capability is required.
+- Provide a phased implementation roadmap that balances engineering productivity, governance, compliance, and scalability.
+- Tailor recommendations to the customer's engineering toolchain and software-defined vehicle strategy.

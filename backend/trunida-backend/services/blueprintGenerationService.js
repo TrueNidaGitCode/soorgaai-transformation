@@ -760,6 +760,50 @@ SECTION-SPECIFIC EXTRAS — "System Integration & Architecture" sections only:
    "integrationReadiness": <number>, "connectedSystems": [...], "integrationSummary": {...}`,
   },
 
+  'System Integration & Architecture': {
+    promptInstruction: `
+SECTION-SPECIFIC EXTRAS — "System Integration & Architecture" sections only:
+
+CONSULTING FOCUS RULE:
+This section describes what to BUILD and HOW to integrate — not an assessment of current readiness.
+❌ Do NOT use CONNECTED / PARTIAL / MISSING status labels.
+❌ Do NOT report integration readiness percentages.
+✅ Recommend systems, patterns, and workflows as if designing the integration from scratch.
+✅ Focus on: what system, what pattern, where AI fits, and what business value it delivers.
+
+5. siaEngineeringSystems (3–5 items)
+   The key engineering or business systems the AI solution should integrate with for this use case.
+   Each item: { "name": "<system name, e.g. Jira, Polarion, GitHub>", "purpose": "<1 sentence on what this system does, ≤10 words>", "integrationPattern": "<e.g. REST API, OSLC API, Webhook, SDK>", "aiInteraction": "<1 sentence on how AI uses this system, ≤10 words>", "businessValue": "<1 sentence on business outcome from integrating AI here, ≤10 words>" }
+
+6. siaWorkflowSteps (4–6 strings)
+   A simple sequential workflow showing where AI fits into the engineering process.
+   Each string is a short step label (≤5 words), e.g. "Requirement Authoring", "AI Review", "Engineer Approval", "Repository Update".
+   The first step is the engineer action, the last step is the output or decision.
+
+7. siaIntegrationPriorities (3–5 items)
+   The highest-priority integration actions in recommended implementation order.
+   Each item: { "order": <1-5>, "name": "<integration action, ≤6 words>", "priority": "HIGH|MEDIUM|LOW", "businessBenefit": "<1 sentence, ≤10 words>" }
+
+8. siaArchLayers (exactly 4 items in this fixed order)
+   The integration architecture blueprint — 4 fixed layers showing which technologies implement each layer.
+   Use these fixed layer names in this exact order: Engineering Systems, Integration Services, AI Platform, Business Applications.
+   Each item: { "name": "<fixed layer name>", "technologies": ["<tool or service, ≤3 words>", ...2–4 items] }
+   Example: Engineering Systems → ["Jira", "Polarion", "GitHub"], Integration Services → ["REST API", "Webhooks", "Event Bus"], AI Platform → ["Azure AI Foundry", "pgvector"], Business Applications → ["Web Portal", "Teams", "IDE Extension"]
+
+9. siaImplSequence (exactly 5 strings in this fixed order)
+   The 5-step implementation roadmap. Use these exact labels:
+   ["Connect Core Engineering Systems", "Implement Standard APIs", "Embed AI into Engineering Workflows", "Enable Monitoring & Governance", "Expand Across Programs"]
+
+10. siaConsultantGuidance
+   2–3 sentences. Prioritise integrating AI with the systems that deliver greatest business value first. Focus on reusable APIs and standardised patterns. Do NOT mention specific data or infrastructure concerns.
+
+11. siaAIRecommendation
+   1–2 sentences. Recommend an API-first, workflow-embedded integration approach. Describe the business outcome — adoption, efficiency, or reuse across initiatives.
+
+   Add all to the brief object:
+   "siaEngineeringSystems": [...], "siaWorkflowSteps": [...], "siaIntegrationPriorities": [...], "siaArchLayers": [...], "siaImplSequence": [...], "siaConsultantGuidance": "...", "siaAIRecommendation": "..."`,
+  },
+
   'AI Platform Readiness': {
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Platform Readiness" sections only:
@@ -1527,6 +1571,58 @@ function parseBriefOutput(rawSections, validTitles) {
         scalability: String(rawIntegrationSummary.scalability || '').trim(),
       };
 
+      // ── Technology Infrastructure: System Integration & Architecture new-format parsers ──
+
+      const rawSiaSystems = Array.isArray(b.siaEngineeringSystems) ? b.siaEngineeringSystems : [];
+      const siaEngineeringSystems = rawSiaSystems
+        .filter(s => s && typeof s === 'object' && String(s.name || '').trim())
+        .map(s => ({
+          name:               String(s.name               || '').trim(),
+          purpose:            String(s.purpose            || '').trim(),
+          integrationPattern: String(s.integrationPattern || '').trim(),
+          aiInteraction:      String(s.aiInteraction      || '').trim(),
+          businessValue:      String(s.businessValue      || '').trim(),
+        }))
+        .slice(0, 5);
+
+      const siaWorkflowSteps = (Array.isArray(b.siaWorkflowSteps) ? b.siaWorkflowSteps : [])
+        .map(s => String(s || '').trim()).filter(Boolean).slice(0, 6);
+
+      const rawSiaPriorities = Array.isArray(b.siaIntegrationPriorities) ? b.siaIntegrationPriorities : [];
+      const siaIntegrationPriorities = rawSiaPriorities
+        .filter(p => p && typeof p === 'object' && String(p.name || '').trim())
+        .map(p => ({
+          order:          parseInt(p.order, 10) || 0,
+          name:           String(p.name          || '').trim(),
+          priority:       String(p.priority       || 'MEDIUM').trim().toUpperCase(),
+          businessBenefit: String(p.businessBenefit || '').trim(),
+        }))
+        .sort((a, b) => a.order - b.order)
+        .slice(0, 5);
+
+      const SIA_ARCH_LAYERS = ['Engineering Systems', 'Integration Services', 'AI Platform', 'Business Applications'];
+      const rawSiaArch = Array.isArray(b.siaArchLayers) ? b.siaArchLayers : [];
+      const siaArchLayers = SIA_ARCH_LAYERS.map((layerName, idx) => {
+        const found = rawSiaArch.find(l => l && String(l.name || '').trim().toLowerCase() === layerName.toLowerCase())
+                   || rawSiaArch[idx];
+        return {
+          name:         layerName,
+          technologies: Array.isArray(found && found.technologies)
+            ? found.technologies.map(t => String(t || '').trim()).filter(Boolean).slice(0, 4)
+            : [],
+        };
+      });
+
+      const SIA_IMPL_STEPS = [
+        'Connect Core Engineering Systems', 'Implement Standard APIs',
+        'Embed AI into Engineering Workflows', 'Enable Monitoring & Governance', 'Expand Across Programs',
+      ];
+      const rawSiaImpl = Array.isArray(b.siaImplSequence) ? b.siaImplSequence : [];
+      const siaImplSequence = SIA_IMPL_STEPS.map((step, i) => String(rawSiaImpl[i] || step).trim());
+
+      const siaConsultantGuidance = String(b.siaConsultantGuidance || '').trim();
+      const siaAIRecommendation   = String(b.siaAIRecommendation   || '').trim();
+
       // ── Technology Infrastructure: AI Platform Readiness parsers ─────────────
 
       const APR_CAP_NAMES = [
@@ -1995,6 +2091,14 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(connectedSystems.length          ? { connectedSystems }     : {}),
           ...((integrationSummary.integration || integrationSummary.reliability)
               ? { integrationSummary } : {}),
+          // Technology Infrastructure: System Integration & Architecture new-format extras
+          ...(siaEngineeringSystems.length               ? { siaEngineeringSystems }    : {}),
+          ...(siaWorkflowSteps.length                    ? { siaWorkflowSteps }         : {}),
+          ...(siaIntegrationPriorities.length            ? { siaIntegrationPriorities } : {}),
+          ...(siaArchLayers.some(l => l.technologies.length) ? { siaArchLayers }        : {}),
+          ...(siaImplSequence.length                     ? { siaImplSequence }          : {}),
+          ...(siaConsultantGuidance                      ? { siaConsultantGuidance }    : {}),
+          ...(siaAIRecommendation                        ? { siaAIRecommendation }      : {}),
           // Technology Infrastructure: AI Platform Readiness extras
           ...(platformCapabilities.some(c => c.purpose)           ? { platformCapabilities }    : {}),
           ...(platformBlueprintLayers.some(l => l.recommendation) ? { platformBlueprintLayers } : {}),
@@ -2612,6 +2716,8 @@ OUTPUT — valid JSON only, no markdown fences:
       'archLayers', 'archDecisions', 'techStack', 'archSummary', 'archPattern', 'archConsultantGuidance',
       // Technology Infrastructure extras
       'integrationReadiness', 'connectedSystems', 'integrationSummary',
+      'siaEngineeringSystems', 'siaWorkflowSteps', 'siaIntegrationPriorities',
+      'siaArchLayers', 'siaImplSequence', 'siaConsultantGuidance', 'siaAIRecommendation',
       'platformCapabilities', 'platformBlueprintLayers', 'platformRecs', 'aprImplRoadmap',
       'aprStackLayers', 'aprConsultantGuidance', 'aprAIRecommendation',
       'deploymentBlocks', 'cdsDeploymentFlow', 'techRecommendations', 'cdsArchRationale',

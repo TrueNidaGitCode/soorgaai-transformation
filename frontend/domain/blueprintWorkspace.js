@@ -3634,7 +3634,7 @@ function buildCriticalDataLayout(section) {
   return wrap;
 }
 
-// ── Technology Infrastructure — System Integration & Architecture ─────────────
+// ── Technology Infrastructure — System Integration & Architecture (legacy SVG) ─
 
 function buildIntegrationArchitectureSvg(systems) {
   const NS = 'http://www.w3.org/2000/svg';
@@ -3771,29 +3771,34 @@ function buildIntegrationArchitectureSvg(systems) {
 }
 
 function buildSystemIntegrationLayout(section) {
-  const b                  = section.brief || {};
+  const b = section.brief || {};
+
+  // New fields
+  const siaEngineeringSystems    = b.siaEngineeringSystems    || [];
+  const siaWorkflowSteps         = b.siaWorkflowSteps         || [];
+  const siaIntegrationPriorities = b.siaIntegrationPriorities || [];
+  const siaArchLayers            = b.siaArchLayers            || [];
+  const siaImplSequence          = b.siaImplSequence          || [];
+  const siaConsultantGuidance    = b.siaConsultantGuidance    || '';
+  const siaAIRecommendation      = b.siaAIRecommendation      || '';
+
+  // Legacy fields
   const connectedSystems   = b.connectedSystems   || [];
   const integrationSummary = b.integrationSummary || {};
-  const leadershipQ        = b.leadershipValidation?.context || '';
 
-  const STATUS_CLASS = {
-    CONNECTED: 'sia-status--connected',
-    PARTIAL:   'sia-status--partial',
-    MISSING:   'sia-status--missing',
-  };
+  const isNewFormat = siaEngineeringSystems.length > 0 || !!siaConsultantGuidance;
+
+  const SIA_IMPL_STEPS = [
+    'Connect Core Engineering Systems', 'Implement Standard APIs',
+    'Embed AI into Engineering Workflows', 'Enable Monitoring & Governance', 'Expand Across Programs',
+  ];
+  const PRIORITY_COLOR = { HIGH: '#f87171', MEDIUM: '#fbbf24', LOW: '#5CC5A7' };
+  const ARCH_ACCENT = ['#5CC5A7', '#818cf8', '#fbbf24', '#c084fc'];
 
   const wrap = document.createElement('div');
   wrap.className = 'sia-view';
 
-  // Integration readiness badge (top-right)
-  if (b.integrationReadiness) {
-    const badge = document.createElement('div');
-    badge.className = 'sia-readiness-badge';
-    badge.textContent = `INTEGRATION READINESS: ${b.integrationReadiness}%`;
-    wrap.appendChild(badge);
-  }
-
-  // Strategic position
+  // ── Strategic Position ────────────────────────────────────────────────────
   if (b.strategicPosition) {
     const posLabel = document.createElement('p');
     posLabel.className = 'brief-label';
@@ -3805,117 +3810,297 @@ function buildSystemIntegrationLayout(section) {
     wrap.appendChild(pos);
   }
 
-  // ── Two-column body ───────────────────────────────────────────────────────
+  if (isNewFormat) {
+    // ── Two-column body (65 / 35) ─────────────────────────────────────────
+    const body = document.createElement('div');
+    body.className = 'sia-main-body';
 
-  const body = document.createElement('div');
-  body.className = 'sia-body';
+    // LEFT (65%): Engineering Integration Blueprint — system cards
+    const leftCol = document.createElement('div');
+    leftCol.className = 'sia-blueprint-col';
 
-  // LEFT: Connected Systems 2×2 grid
-  const leftCol = document.createElement('div');
-  leftCol.className = 'sia-systems-col';
+    const blueprintLbl = document.createElement('p');
+    blueprintLbl.className = 'brief-label';
+    blueprintLbl.textContent = 'Engineering Integration Blueprint';
+    leftCol.appendChild(blueprintLbl);
 
-  const sysLbl = document.createElement('p');
-  sysLbl.className = 'brief-label';
-  sysLbl.textContent = 'Connected Systems';
-  leftCol.appendChild(sysLbl);
+    const sysGrid = document.createElement('div');
+    sysGrid.className = 'sia-blueprint-grid';
 
-  const sysGrid = document.createElement('div');
-  sysGrid.className = 'sia-sys-grid';
+    siaEngineeringSystems.forEach(sys => {
+      const card = document.createElement('div');
+      card.className = 'sia-system-card';
 
-  connectedSystems.forEach(sys => {
-    const status = (sys.status || 'MISSING').toUpperCase();
-    const card = document.createElement('div');
-    card.className = `sia-sys-card sia-sys-card--${status.toLowerCase()}`;
+      const name = document.createElement('p');
+      name.className = 'sia-system-card__name';
+      name.textContent = sys.name;
+      card.appendChild(name);
 
-    const name = document.createElement('p');
-    name.className = 'sia-sys-card__name';
-    name.textContent = sys.name;
-    card.appendChild(name);
+      [
+        { label: 'Purpose',             value: sys.purpose },
+        { label: 'Integration Pattern', value: sys.integrationPattern },
+        { label: 'AI Interaction',      value: sys.aiInteraction },
+        { label: 'Business Value',      value: sys.businessValue },
+      ].forEach(({ label, value }) => {
+        if (!value) return;
+        const fl = document.createElement('p');
+        fl.className = 'sia-system-card__field-label';
+        fl.textContent = label;
+        card.appendChild(fl);
+        const vt = document.createElement('p');
+        vt.className = 'sia-system-card__value';
+        vt.textContent = value;
+        card.appendChild(vt);
+      });
 
-    if (sys.integrationMethod) {
-      const method = document.createElement('p');
-      method.className = 'sia-sys-card__method';
-      method.textContent = `Integration Method: ${sys.integrationMethod}`;
-      card.appendChild(method);
-    }
-
-    const badge = document.createElement('span');
-    badge.className = `sia-status ${STATUS_CLASS[status] || 'sia-status--missing'}`;
-    badge.textContent = status;
-    card.appendChild(badge);
-
-    sysGrid.appendChild(card);
-  });
-
-  if (!connectedSystems.length) {
-    const empty = document.createElement('p');
-    empty.className = 'sia-empty';
-    empty.textContent = 'System inventory will appear after generation.';
-    sysGrid.appendChild(empty);
-  }
-
-  leftCol.appendChild(sysGrid);
-  body.appendChild(leftCol);
-
-  // RIGHT: AI Integration Architecture SVG
-  const rightCol = document.createElement('div');
-  rightCol.className = 'sia-arch-col';
-
-  const archLbl = document.createElement('p');
-  archLbl.className = 'brief-label';
-  archLbl.textContent = 'AI Integration Architecture';
-  rightCol.appendChild(archLbl);
-
-  const archPanel = document.createElement('div');
-  archPanel.className = 'sia-arch-panel';
-  archPanel.appendChild(buildIntegrationArchitectureSvg(connectedSystems));
-  rightCol.appendChild(archPanel);
-
-  body.appendChild(rightCol);
-  wrap.appendChild(body);
-
-  // ── Bottom 2×2 summary grid ───────────────────────────────────────────────
-
-  const hasSummary = integrationSummary.integration || integrationSummary.automation ||
-                     integrationSummary.reliability || integrationSummary.scalability;
-  if (hasSummary) {
-    const summaryGrid = document.createElement('div');
-    summaryGrid.className = 'sia-summary-grid';
-
-    [
-      { label: 'Integration', value: integrationSummary.integration },
-      { label: 'Automation',  value: integrationSummary.automation },
-      { label: 'Reliability', value: integrationSummary.reliability },
-      { label: 'Scalability', value: integrationSummary.scalability },
-    ].forEach(item => {
-      const cell = document.createElement('div');
-      cell.className = 'sia-summary-cell';
-
-      const label = document.createElement('p');
-      label.className = 'sia-summary-cell__label';
-      label.textContent = item.label;
-      cell.appendChild(label);
-
-      if (item.value) {
-        const value = document.createElement('p');
-        value.className = 'sia-summary-cell__value';
-        value.textContent = item.value;
-        cell.appendChild(value);
-      }
-
-      summaryGrid.appendChild(cell);
+      sysGrid.appendChild(card);
     });
 
-    wrap.appendChild(summaryGrid);
-  }
+    leftCol.appendChild(sysGrid);
+    body.appendChild(leftCol);
 
-  // ── Leadership question footer ────────────────────────────────────────────
+    // RIGHT (35%): AI Workflow Integration + Integration Priorities
+    const rightCol = document.createElement('div');
+    rightCol.className = 'sia-right-col';
 
-  if (leadershipQ) {
-    const footer = document.createElement('div');
-    footer.className = 'sia-leadership';
-    footer.innerHTML = `<span class="sia-leadership__icon">?</span><p class="sia-leadership__text">${leadershipQ}</p>`;
-    wrap.appendChild(footer);
+    // Workflow flow
+    const wfLbl = document.createElement('p');
+    wfLbl.className = 'brief-label';
+    wfLbl.textContent = 'AI Workflow Integration';
+    rightCol.appendChild(wfLbl);
+
+    const wfChain = document.createElement('div');
+    wfChain.className = 'sia-workflow-chain';
+
+    const steps = siaWorkflowSteps.length ? siaWorkflowSteps : ['Engineer', 'Engineering Tool', 'AI Service', 'Recommendation', 'Engineer Decision'];
+    steps.forEach((step, i) => {
+      const node = document.createElement('div');
+      node.className = 'sia-workflow-node';
+      node.textContent = step;
+      wfChain.appendChild(node);
+
+      if (i < steps.length - 1) {
+        const arrow = document.createElement('div');
+        arrow.className = 'sia-workflow-arrow';
+        arrow.textContent = '↓';
+        wfChain.appendChild(arrow);
+      }
+    });
+
+    rightCol.appendChild(wfChain);
+
+    // Integration Priorities
+    if (siaIntegrationPriorities.length) {
+      const prioLbl = document.createElement('p');
+      prioLbl.className = 'brief-label';
+      prioLbl.style.marginTop = '1.25rem';
+      prioLbl.textContent = 'Recommended Integration Priorities';
+      rightCol.appendChild(prioLbl);
+
+      const prioList = document.createElement('div');
+      prioList.className = 'sia-priorities';
+
+      siaIntegrationPriorities.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'sia-priority-item';
+
+        const header = document.createElement('div');
+        header.className = 'sia-priority-item__header';
+
+        const num = document.createElement('span');
+        num.className = 'sia-priority-item__num';
+        num.textContent = p.order;
+        header.appendChild(num);
+
+        const itemName = document.createElement('span');
+        itemName.className = 'sia-priority-item__name';
+        itemName.textContent = p.name;
+        header.appendChild(itemName);
+
+        const pColor = PRIORITY_COLOR[p.priority] || '#fbbf24';
+        const badge = document.createElement('span');
+        badge.className = 'sia-priority-badge';
+        badge.style.color = pColor;
+        badge.style.borderColor = `${pColor}55`;
+        badge.textContent = p.priority;
+        header.appendChild(badge);
+
+        item.appendChild(header);
+
+        if (p.businessBenefit) {
+          const benefit = document.createElement('p');
+          benefit.className = 'sia-priority-item__benefit';
+          benefit.textContent = p.businessBenefit;
+          item.appendChild(benefit);
+        }
+
+        prioList.appendChild(item);
+      });
+
+      rightCol.appendChild(prioList);
+    }
+
+    body.appendChild(rightCol);
+    wrap.appendChild(body);
+
+    // ── Integration Architecture Blueprint (full-width) ───────────────────
+    if (siaArchLayers.some(l => l.technologies && l.technologies.length)) {
+      const archLbl = document.createElement('p');
+      archLbl.className = 'brief-label';
+      archLbl.textContent = 'Integration Architecture Blueprint';
+      wrap.appendChild(archLbl);
+
+      const archChain = document.createElement('div');
+      archChain.className = 'sia-arch-chain';
+
+      siaArchLayers.forEach((layer, i) => {
+        const layerEl = document.createElement('div');
+        layerEl.className = 'sia-arch-layer';
+        layerEl.style.borderTop = `2px solid ${ARCH_ACCENT[i] || '#5CC5A7'}`;
+
+        const layerName = document.createElement('p');
+        layerName.className = 'sia-arch-layer__name';
+        layerName.style.color = ARCH_ACCENT[i] || '#5CC5A7';
+        layerName.textContent = layer.name;
+        layerEl.appendChild(layerName);
+
+        if (layer.technologies && layer.technologies.length) {
+          const techRow = document.createElement('div');
+          techRow.className = 'sia-arch-techs';
+          layer.technologies.forEach(tech => {
+            const pill = document.createElement('span');
+            pill.className = 'sia-tech-pill';
+            pill.textContent = tech;
+            techRow.appendChild(pill);
+          });
+          layerEl.appendChild(techRow);
+        }
+
+        archChain.appendChild(layerEl);
+
+        if (i < siaArchLayers.length - 1) {
+          const arrow = document.createElement('div');
+          arrow.className = 'sia-arch-arrow';
+          arrow.textContent = '↓';
+          archChain.appendChild(arrow);
+        }
+      });
+
+      wrap.appendChild(archChain);
+    }
+
+    // ── Recommended Implementation Sequence ───────────────────────────────
+    {
+      const seqLbl = document.createElement('p');
+      seqLbl.className = 'brief-label';
+      seqLbl.textContent = 'Recommended Implementation Sequence';
+      wrap.appendChild(seqLbl);
+
+      const steps = siaImplSequence.length ? siaImplSequence : SIA_IMPL_STEPS;
+      const seq = document.createElement('div');
+      seq.className = 'sia-impl-seq';
+
+      steps.forEach((step, i) => {
+        const item = document.createElement('div');
+        item.className = 'sia-impl-step';
+
+        const num = document.createElement('span');
+        num.className = 'sia-impl-step__num';
+        num.textContent = i + 1;
+        item.appendChild(num);
+
+        const label = document.createElement('span');
+        label.className = 'sia-impl-step__label';
+        label.textContent = step;
+        item.appendChild(label);
+
+        seq.appendChild(item);
+      });
+
+      wrap.appendChild(seq);
+    }
+
+    // ── Consultant Guidance ───────────────────────────────────────────────
+    if (siaConsultantGuidance) {
+      const cg = document.createElement('div');
+      cg.className = 'sia-consultant-guidance';
+      const cgTitle = document.createElement('p');
+      cgTitle.className = 'sia-consultant-guidance__title';
+      cgTitle.textContent = 'Consultant Guidance';
+      cg.appendChild(cgTitle);
+      const cgText = document.createElement('p');
+      cgText.className = 'sia-consultant-guidance__text';
+      cgText.textContent = siaConsultantGuidance;
+      cg.appendChild(cgText);
+      wrap.appendChild(cg);
+    }
+
+    // ── AI Recommendation ─────────────────────────────────────────────────
+    if (siaAIRecommendation) {
+      const ar = document.createElement('div');
+      ar.className = 'sia-ai-recommendation';
+      const arTitle = document.createElement('p');
+      arTitle.className = 'sia-ai-recommendation__title';
+      arTitle.textContent = 'AI Recommendation';
+      ar.appendChild(arTitle);
+      const arText = document.createElement('p');
+      arText.className = 'sia-ai-recommendation__text';
+      arText.textContent = siaAIRecommendation;
+      ar.appendChild(arText);
+      wrap.appendChild(ar);
+    }
+
+  } else {
+    // ── Legacy layout ─────────────────────────────────────────────────────
+    if (b.integrationReadiness) {
+      const badge = document.createElement('div');
+      badge.className = 'sia-readiness-badge';
+      badge.textContent = `INTEGRATION READINESS: ${b.integrationReadiness}%`;
+      wrap.appendChild(badge);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'sia-body';
+
+    const leftCol = document.createElement('div');
+    leftCol.className = 'sia-systems-col';
+    const sysLbl = document.createElement('p');
+    sysLbl.className = 'brief-label';
+    sysLbl.textContent = 'Connected Systems';
+    leftCol.appendChild(sysLbl);
+    const sysGrid = document.createElement('div');
+    sysGrid.className = 'sia-sys-grid';
+    connectedSystems.forEach(sys => {
+      const status = (sys.status || 'MISSING').toUpperCase();
+      const card = document.createElement('div');
+      card.className = `sia-sys-card sia-sys-card--${status.toLowerCase()}`;
+      const name = document.createElement('p');
+      name.className = 'sia-sys-card__name';
+      name.textContent = sys.name;
+      card.appendChild(name);
+      if (sys.integrationMethod) {
+        const method = document.createElement('p');
+        method.className = 'sia-sys-card__method';
+        method.textContent = `Integration Method: ${sys.integrationMethod}`;
+        card.appendChild(method);
+      }
+      sysGrid.appendChild(card);
+    });
+    leftCol.appendChild(sysGrid);
+    body.appendChild(leftCol);
+
+    const rightCol = document.createElement('div');
+    rightCol.className = 'sia-arch-col';
+    const archLbl = document.createElement('p');
+    archLbl.className = 'brief-label';
+    archLbl.textContent = 'AI Integration Architecture';
+    rightCol.appendChild(archLbl);
+    const archPanel = document.createElement('div');
+    archPanel.className = 'sia-arch-panel';
+    archPanel.appendChild(buildIntegrationArchitectureSvg(connectedSystems));
+    rightCol.appendChild(archPanel);
+    body.appendChild(rightCol);
+    wrap.appendChild(body);
   }
 
   return wrap;

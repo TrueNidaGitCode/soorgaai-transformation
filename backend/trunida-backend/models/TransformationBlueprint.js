@@ -72,10 +72,17 @@ const archSummarySchema         = new mongoose.Schema({ sourceSystems: Number, i
 // ── Technology Infrastructure sub-schemas ─────────────────────────────────────
 const connectedSystemSchema         = new mongoose.Schema({ name: String, integrationMethod: String, status: String, healthIndicator: String }, { _id: false });
 const integrationSummarySchema      = new mongoose.Schema({ integration: String, automation: String, reliability: String, scalability: String }, { _id: false });
+const siaSystemSchema               = new mongoose.Schema({ name: String, purpose: String, integrationPattern: String, aiInteraction: String, businessValue: String }, { _id: false });
+const siaPrioritySchema             = new mongoose.Schema({ order: Number, name: String, priority: String, businessBenefit: String }, { _id: false });
+const siaArchLayerSchema            = new mongoose.Schema({ name: String, technologies: [String] }, { _id: false });
 const capabilityAssessmentSchema    = new mongoose.Schema({ name: String, score: Number, status: String }, { _id: false });
 const platformStackLayerSchema      = new mongoose.Schema({ layer: String, score: Number, status: String }, { _id: false });
 const platformRecommendationSchema  = new mongoose.Schema({ text: String, priority: String, benefit: String }, { _id: false });
 const platformSummarySchema         = new mongoose.Schema({ development: String, knowledge: String, deployment: String, monitoring: String }, { _id: false });
+const aprPlatformCapabilitySchema   = new mongoose.Schema({ name: String, purpose: String, capabilities: [String], businessValue: String }, { _id: false });
+const aprBlueprintLayerSchema       = new mongoose.Schema({ layer: String, recommendation: String }, { _id: false });
+const aprRecommendationSchema       = new mongoose.Schema({ recommendation: String, why: String, priority: String, implementationPhase: String }, { _id: false });
+const aprStackLayerSchema           = new mongoose.Schema({ layer: String, recommendation: String }, { _id: false });
 const workloadProfileSchema         = new mongoose.Schema({ workloadType: String, computeRequirement: String, performanceRequirement: String, scalabilityRequirement: String, priority: String }, { _id: false });
 const deploymentRecommendationSchema = new mongoose.Schema({ text: String, impact: String, reason: String }, { _id: false });
 const deploymentScoresSchema        = new mongoose.Schema({ computeFit: Number, deploymentConfidence: Number, estimatedScalability: String }, { _id: false });
@@ -197,12 +204,28 @@ const briefSchema = new mongoose.Schema({
   integrationReadiness:     { type: Number,   default: 0 },
   connectedSystems:         { type: [connectedSystemSchema],          default: [] },
   integrationSummary:       { type: integrationSummarySchema,         default: undefined },
+  // Technology Infrastructure: System Integration & Architecture new-format extras
+  siaEngineeringSystems:    { type: [siaSystemSchema],                default: [] },
+  siaWorkflowSteps:         { type: [String],                         default: [] },
+  siaIntegrationPriorities: { type: [siaPrioritySchema],              default: [] },
+  siaArchLayers:            { type: [siaArchLayerSchema],             default: [] },
+  siaImplSequence:          { type: [String],                         default: [] },
+  siaConsultantGuidance:    { type: String,                           default: '' },
+  siaAIRecommendation:      { type: String,                           default: '' },
   // Technology Infrastructure: AI Platform Readiness extras
   platformReadiness:        { type: Number,   default: 0 },
   capabilityAssessment:     { type: [capabilityAssessmentSchema],     default: [] },
   platformStack:            { type: [platformStackLayerSchema],       default: [] },
   platformRecommendations:  { type: [platformRecommendationSchema],   default: [] },
   platformSummary:          { type: platformSummarySchema,            default: undefined },
+  // Technology Infrastructure: AI Platform Readiness new-format extras
+  platformCapabilities:     { type: [aprPlatformCapabilitySchema],   default: [] },
+  platformBlueprintLayers:  { type: [aprBlueprintLayerSchema],       default: [] },
+  platformRecs:             { type: [aprRecommendationSchema],        default: [] },
+  aprImplRoadmap:           { type: [String],                        default: [] },
+  aprStackLayers:           { type: [aprStackLayerSchema],           default: [] },
+  aprConsultantGuidance:    { type: String,                          default: '' },
+  aprAIRecommendation:      { type: String,                          default: '' },
   // Technology Infrastructure: AI Compute & Deployment Strategy extras
   deploymentReadiness:      { type: Number,   default: 0 },
   workloadProfile:          { type: [workloadProfileSchema],          default: [] },

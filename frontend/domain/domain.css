@@ -8880,6 +8880,310 @@
   }
 }
 
+/* ── SIA new-format layout ───────────────────────────────────────────────────── */
+
+.sia-main-body {
+  display: grid;
+  grid-template-columns: 65% 35%;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* LEFT: Engineering Integration Blueprint */
+.sia-blueprint-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sia-blueprint-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.sia-system-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sia-system-card__name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  margin: 0 0 0.35rem;
+  line-height: 1.3;
+}
+
+.sia-system-card__field-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+  margin: 0.3rem 0 0;
+}
+
+.sia-system-card__value {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.78);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* RIGHT: AI Workflow Integration */
+.sia-right-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.sia-workflow-chain {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.sia-workflow-node {
+  background: rgba(92,197,167,0.08);
+  border: 1px solid rgba(92,197,167,0.25);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.85);
+  width: 100%;
+}
+
+.sia-workflow-arrow {
+  font-size: 0.85rem;
+  color: rgba(92,197,167,0.5);
+  padding: 0.1rem 1rem;
+}
+
+/* Integration Priorities */
+.sia-priorities {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.sia-priority-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 7px;
+  padding: 0.65rem 0.85rem;
+}
+
+.sia-priority-item__header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.3rem;
+}
+
+.sia-priority-item__num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(92,197,167,0.15);
+  color: #5CC5A7;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sia-priority-item__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+  flex: 1;
+}
+
+.sia-priority-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid;
+  border-radius: 4px;
+}
+
+.sia-priority-item__benefit {
+  font-size: 0.77rem;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Integration Architecture Blueprint */
+.sia-arch-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sia-arch-layer {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 0.85rem 1.1rem;
+}
+
+.sia-arch-layer__name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.sia-arch-techs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.sia-tech-pill {
+  font-size: 0.72rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 0.2rem 0.65rem;
+  color: rgba(255,255,255,0.72);
+}
+
+.sia-arch-arrow {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.2);
+  text-align: center;
+  padding: 0.25rem 0;
+}
+
+/* Implementation Sequence */
+.sia-impl-seq {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.sia-impl-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  position: relative;
+  padding: 0 0.5rem;
+}
+
+.sia-impl-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 13px;
+  right: -1px;
+  width: 50%;
+  height: 1px;
+  background: rgba(92,197,167,0.3);
+}
+
+.sia-impl-step:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  top: 13px;
+  left: -1px;
+  width: 50%;
+  height: 1px;
+  background: rgba(92,197,167,0.3);
+}
+
+.sia-impl-step__num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(92,197,167,0.15);
+  border: 1px solid rgba(92,197,167,0.4);
+  color: #5CC5A7;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sia-impl-step__label {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.4;
+}
+
+/* Consultant Guidance */
+.sia-consultant-guidance {
+  border-left: 3px solid #5CC5A7;
+  background: rgba(92,197,167,0.05);
+  border-radius: 0 8px 8px 0;
+  padding: 0.85rem 1.1rem;
+}
+
+.sia-consultant-guidance__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+  margin: 0 0 0.4rem;
+}
+
+.sia-consultant-guidance__text {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* AI Recommendation */
+.sia-ai-recommendation {
+  border-left: 3px solid #C59B34;
+  background: rgba(197,155,52,0.05);
+  border-radius: 0 8px 8px 0;
+  padding: 0.85rem 1.1rem;
+}
+
+.sia-ai-recommendation__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #C59B34;
+  margin: 0 0 0.4rem;
+}
+
+.sia-ai-recommendation__text {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .sia-main-body { grid-template-columns: 60% 40%; }
+}
+
+@media (max-width: 900px) {
+  .sia-main-body        { grid-template-columns: 1fr; }
+  .sia-impl-seq         { flex-wrap: wrap; }
+  .sia-impl-step        { flex: 0 0 calc(33% - 1rem); }
+  .sia-blueprint-grid   { grid-template-columns: 1fr; }
+}
+
 /* ── Technology Infrastructure — AI Platform Readiness ──────────────────────── */
 
 .apr-view {

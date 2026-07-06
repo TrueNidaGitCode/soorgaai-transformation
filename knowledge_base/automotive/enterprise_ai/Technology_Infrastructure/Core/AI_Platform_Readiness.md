@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Assess whether the organization has the AI platform capabilities required to efficiently develop, deploy, monitor, and manage the selected AI use case.
+Recommend the AI platform capabilities required to successfully build, deploy, operate, and continuously improve the selected AI use case.
 
-Rather than focusing on infrastructure alone, this capability helps project managers evaluate whether the necessary AI platform services are available to accelerate AI implementation and support long-term operations.
+Rather than assessing generic AI maturity, this capability provides project managers with a practical AI platform blueprint that identifies the services, tools, governance, and operational capabilities needed to support AI implementation from development through production.
 
 ---
 
@@ -12,129 +12,230 @@ Rather than focusing on infrastructure alone, this capability helps project mana
 
 ## Definition
 
-AI Platform Readiness is the process of evaluating whether the required AI platform capabilities are available to support the complete AI lifecycle.
+AI Platform Readiness defines the AI platform capabilities required to support the complete lifecycle of the selected AI use case.
 
-The AI assesses development environments, model management, knowledge services, deployment capabilities, monitoring, and collaboration tools to identify platform gaps and recommend improvements.
+Based on the business objective, prepared data, and deployment architecture, the AI recommends the platform services required for AI development, knowledge management, prompt engineering, deployment, monitoring, governance, and reuse.
 
-## Framework
-
-### AI Development Environment
-
-Assess whether teams have an environment for developing AI solutions.
-
-Typical examples: AI Studio, notebooks, prompt playgrounds, SDKs, development workspaces.
+The outcome is a recommended AI platform blueprint that accelerates implementation while minimizing operational complexity.
 
 ---
 
-### AI Model & Prompt Management
+# Platform Capability Framework
 
-Evaluate how AI models, prompts, and experiments are managed throughout their lifecycle.
-
-Typical examples: Model registry, prompt library, version control, experiment tracking.
+The AI recommends platform capabilities across the following areas.
 
 ---
 
-### Knowledge & Retrieval Services
+## 1. AI Development Workspace
 
-Assess whether AI can access organizational knowledge effectively.
+### Objective
 
-Typical examples: Vector databases, document indexing, embedding services, retrieval pipelines.
+Provide engineers with a standardized environment for developing, testing, and experimenting with AI solutions.
 
----
+Typical capabilities
 
-### AI Deployment & Automation
+- AI Studio
+- Prompt Playground
+- Jupyter Notebooks
+- SDKs
+- Development Workspaces
+- API Testing Tools
 
-Evaluate how AI solutions are deployed and updated.
+Expected outcome
 
-Typical examples: CI/CD pipelines, model deployment, API publishing, workflow automation.
-
----
-
-### AI Monitoring & Evaluation
-
-Assess the organization's ability to monitor AI quality and operational performance.
-
-Typical examples: Accuracy monitoring, latency tracking, evaluation frameworks, user feedback, operational dashboards.
+Development teams can rapidly prototype and validate AI solutions using a common development environment.
 
 ---
 
-### AI Collaboration & Reuse
+## 2. Model & Prompt Lifecycle Management
 
-Evaluate how AI assets are shared and reused across teams.
+### Objective
 
-Typical examples: Shared prompt catalog, reusable AI components, shared knowledge repositories, collaboration workspaces.
+Manage AI models, prompts, experiments, and versions throughout the AI lifecycle.
 
-## Key Principles
+Typical capabilities
 
-- Build reusable AI platform capabilities.
-- Standardize AI development practices.
-- Enable rapid deployment through automation.
-- Continuously monitor AI quality and performance.
-- Encourage reuse of AI assets across projects.
+- Prompt Library
+- Prompt Version Control
+- Model Registry
+- Experiment Tracking
+- Evaluation Datasets
+- Prompt Templates
 
-## Leadership Question
+Expected outcome
 
-**Do we have the AI platform capabilities required to efficiently build, deploy, and manage this AI solution?**
+AI assets remain reusable, traceable, and continuously improved.
 
 ---
 
-# Decision Criteria
+## 3. Knowledge & Retrieval Platform
 
-The AI evaluates platform readiness based on:
+### Objective
 
-- Development capabilities
-- Model management
-- Knowledge services
-- Deployment automation
-- Monitoring maturity
-- Collaboration and reuse
+Enable AI to securely access enterprise knowledge and engineering information.
+
+Typical capabilities
+
+- Vector Database
+- Embedding Service
+- Document Indexing
+- Retrieval Pipelines
+- Semantic Search
+- Knowledge Connectors
+
+Expected outcome
+
+AI assistants provide accurate responses using trusted organizational knowledge.
+
+---
+
+## 4. AI Deployment & Automation
+
+### Objective
+
+Automate AI deployment and operational management.
+
+Typical capabilities
+
+- CI/CD Pipelines
+- Model Deployment
+- API Gateway
+- Container Registry
+- Workflow Automation
+- Release Management
+
+Expected outcome
+
+AI solutions can be deployed consistently with minimal manual effort.
+
+---
+
+## 5. AI Monitoring & Governance
+
+### Objective
+
+Continuously monitor AI quality, performance, usage, and compliance.
+
+Typical capabilities
+
+- Performance Monitoring
+- Prompt Evaluation
+- Response Quality Assessment
+- Usage Analytics
+- Audit Logging
+- Guardrails
+- Human Feedback
+
+Expected outcome
+
+AI systems remain reliable, secure, and continuously improve over time.
+
+---
+
+## 6. AI Collaboration & Reuse
+
+### Objective
+
+Enable teams to share and reuse AI assets across multiple projects.
+
+Typical capabilities
+
+- Shared Prompt Catalog
+- Reusable AI Components
+- Shared Knowledge Bases
+- AI Templates
+- Best Practice Repository
+- Team Collaboration Workspace
+
+Expected outcome
+
+AI implementation becomes faster, more consistent, and scalable across the organization.
+
+---
+
+# Key Principles
+
+- Build reusable AI platform capabilities rather than project-specific solutions.
+- Standardize AI development practices across teams.
+- Enable rapid experimentation while maintaining governance.
+- Automate AI deployment and operational management.
+- Monitor AI quality throughout the lifecycle.
+- Promote reuse of AI assets across future initiatives.
+
+---
+
+# Leadership Question
+
+**What AI platform capabilities should we establish to successfully build, deploy, operate, and scale this AI solution?**
+
+---
+
+# Consultant Guidance
+
+The AI recommends platform capabilities using the following principles:
+
+- Start with managed AI platform services wherever practical.
+- Build reusable capabilities instead of one-off project solutions.
+- Introduce governance early without slowing experimentation.
+- Enable prompt, model, and knowledge reuse across projects.
+- Design the platform so future AI use cases require configuration rather than redevelopment.
 
 ---
 
 # AI Reasoning Process
 
 ```text
-Understand AI Use Case
+Business Objective
         ↓
-Assess Development Environment
+AI Use Case
         ↓
-Evaluate AI Platform Services
+Prepared Data
         ↓
-Identify Platform Gaps
+Deployment Architecture
         ↓
-Recommend Required Capabilities
+Identify Required Platform Capabilities
+        ↓
+Recommend AI Services
         ↓
 Generate AI Platform Blueprint
 ```
-
----
-
 # Blueprint Output
 
-The generated blueprint includes:
+For every AI use case, the AI generates an AI Platform Blueprint containing:
 
-- AI Development Assessment
-- Platform Capability Assessment
-- Knowledge Service Readiness
-- Deployment Readiness
-- Monitoring Readiness
-- Collaboration Assessment
-- AI Platform Readiness Score
-- Recommended Improvements
+- Recommended AI Development Workspace
+- Model & Prompt Management Strategy
+- Knowledge Platform Recommendation
+- AI Deployment Services
+- Monitoring & Governance Capabilities
+- Collaboration & Reuse Capabilities
+- Recommended AI Platform Stack
+- Platform Implementation Roadmap
+- Consultant Guidance
+- AI Recommendation
 
 ---
 
 # Expected Outcome
 
-After completing this capability, the project team should understand whether the existing AI platform can support the selected AI use case, identify missing capabilities, and receive prioritized recommendations for improving platform readiness.
+After completing this capability, the project team should have:
+
+- A recommended AI platform architecture.
+- A clear understanding of the platform services required.
+- A prioritized roadmap for implementing AI platform capabilities.
+- Recommended technologies that align with the deployment strategy.
+- Reusable platform capabilities that support future AI initiatives.
+- A strong foundation for the next capability: **System Integration & Architecture**.
 
 ---
 
 # AI Prompt Guidance
 
-When generating the blueprint, the AI should:
+When generating the AI Platform Blueprint, the AI should:
 
-- Assess platform capabilities required by the selected AI use case.
-- Identify missing platform services.
-- Recommend improvements that accelerate AI implementation.
-- Focus on practical project-level platform decisions.
+- Recommend platform capabilities based on the selected AI use case.
+- Reuse outputs from Data Readiness and Compute & Deployment Strategy.
+- Recommend practical managed platform services where appropriate.
+- Focus on reusable platform capabilities rather than vendor-specific products.
+- Explain why each platform capability is required.
+- Provide a phased implementation roadmap that balances speed, governance, and scalability.

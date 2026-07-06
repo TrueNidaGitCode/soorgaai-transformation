@@ -942,39 +942,6 @@ SECTION-SPECIFIC EXTRAS — "AI Compute & Deployment Strategy" sections only:
    "deploymentBlocks": [...], "cdsDeploymentFlow": [...], "techRecommendations": [...], "cdsArchRationale": [...], "deploymentDecisions": [...], "cdsImplSequence": [...], "infraItems": [...], "cdsInvestmentEstimate": [...], "cdsConsultantGuidance": "...", "cdsAIRecommendation": "..."`,
   },
 
-  'AI Engineering Enablement': {
-    promptInstruction: `
-SECTION-SPECIFIC EXTRAS — "AI Engineering Enablement" sections only:
-
-5. engineeringReadiness (number 0–100)
-   The overall engineering readiness score as a percentage for this AI use case.
-
-6. engineeringCapabilities (exactly 5 items, in this fixed order)
-   Assessment of the 5 key engineering capability areas for this AI use case.
-   Each item: { "name": "Development Environment|Workflow|Testing|Deployment|Monitoring", "status": "READY|PARTIAL|ATTENTION", "score": <0–100> }
-   Use EXACTLY these names in this order. Rule: READY = score ≥ 75, PARTIAL = score 50–74, ATTENTION = score < 50.
-
-7. engineeringLifecycle (exactly 6 items, in this fixed order)
-   Readiness and automation level for each stage of the AI engineering lifecycle.
-   Each item: { "stage": "Plan|Develop|Test|Deploy|Monitor|Improve", "readiness": <0–100>, "automation": "High|Medium|Low" }
-   Use EXACTLY these stage names in this order. Readiness must reflect realistic engineering maturity for this AI use case.
-
-8. engineeringRecommendations (exactly 3 items)
-   The 3 highest-priority actions to improve engineering enablement for this AI use case.
-   Each item: { "text": "<action, ≤10 words>", "priority": "HIGH|MEDIUM|LOW", "businessImpact": "Significant|Moderate|Minor" }
-
-9. automationStats
-   Key automation metrics summarising the engineering delivery capability for this AI use case.
-   Object: { "automation": "<percentage e.g. 85%>", "testing": "<percentage e.g. 92%>", "deployment": "<Ready|Partial|Not Ready>" }
-
-10. engineeringSummary
-    Summary health status of the 4 key engineering areas for this AI use case.
-    Object: { "development": "<Ready|Strong|Partial|Needs Attention>", "testing": "<Ready|Strong|Partial|Needs Attention>", "deployment": "<Ready|Strong|Partial|Needs Attention>", "continuousImprovement": "<Good|Strong|Partial|Needs Attention>" }
-
-   Add all to the brief object:
-   "engineeringReadiness": <number>, "engineeringCapabilities": [...], "engineeringLifecycle": [...], "engineeringRecommendations": [...], "automationStats": {...}, "engineeringSummary": {...}`,
-  },
-
   // ── Skills & Workforce domain ─────────────────────────────────────────────
 
   'AI Skills Assessment': {
@@ -1779,57 +1746,6 @@ function parseBriefOutput(rawSections, validTitles) {
       const cdsConsultantGuidance = String(b.cdsConsultantGuidance || '').trim();
       const cdsAIRecommendation   = String(b.cdsAIRecommendation   || '').trim();
 
-      // ── Technology Infrastructure: AI Engineering Enablement parsers ─────────
-
-      const engineeringReadiness = parseInt(b.engineeringReadiness, 10) || 0;
-
-      const ENG_CAP_NAMES = ['Development Environment', 'Workflow', 'Testing', 'Deployment', 'Monitoring'];
-      const rawEngCaps = Array.isArray(b.engineeringCapabilities) ? b.engineeringCapabilities : [];
-      const engineeringCapabilities = ENG_CAP_NAMES.map(capName => {
-        const found = rawEngCaps.find(c => c && String(c.name || '').trim() === capName);
-        return {
-          name:   capName,
-          status: found ? String(found.status || 'PARTIAL').trim().toUpperCase() : 'PARTIAL',
-          score:  found ? parseInt(found.score, 10) || 0 : 0,
-        };
-      });
-
-      const ENG_LIFECYCLE_STAGES = ['Plan', 'Develop', 'Test', 'Deploy', 'Monitor', 'Improve'];
-      const rawEngLifecycle = Array.isArray(b.engineeringLifecycle) ? b.engineeringLifecycle : [];
-      const engineeringLifecycle = ENG_LIFECYCLE_STAGES.map(stageName => {
-        const found = rawEngLifecycle.find(s => s && String(s.stage || '').trim() === stageName);
-        return {
-          stage:      stageName,
-          readiness:  found ? parseInt(found.readiness, 10) || 0 : 0,
-          automation: found ? String(found.automation || 'Low').trim() : 'Low',
-        };
-      });
-
-      const rawEngRecs = Array.isArray(b.engineeringRecommendations) ? b.engineeringRecommendations : [];
-      const engineeringRecommendations = rawEngRecs
-        .filter(r => r && typeof r === 'object' && String(r.text || '').trim())
-        .map(r => ({
-          text:           String(r.text           || '').trim(),
-          priority:       String(r.priority       || 'MEDIUM').trim().toUpperCase(),
-          businessImpact: String(r.businessImpact || 'Moderate').trim(),
-        }))
-        .slice(0, 3);
-
-      const rawAutoStats = b.automationStats && typeof b.automationStats === 'object' ? b.automationStats : {};
-      const automationStats = {
-        automation: String(rawAutoStats.automation || '').trim(),
-        testing:    String(rawAutoStats.testing    || '').trim(),
-        deployment: String(rawAutoStats.deployment || '').trim(),
-      };
-
-      const rawEngSummary = b.engineeringSummary && typeof b.engineeringSummary === 'object' ? b.engineeringSummary : {};
-      const engineeringSummary = {
-        development:           String(rawEngSummary.development           || '').trim(),
-        testing:               String(rawEngSummary.testing               || '').trim(),
-        deployment:            String(rawEngSummary.deployment            || '').trim(),
-        continuousImprovement: String(rawEngSummary.continuousImprovement || '').trim(),
-      };
-
       // ── Data Readiness: Data Architecture Enablement parsers ─────────────────
 
       const rawProjectSystems = Array.isArray(b.projectSystems) ? b.projectSystems : [];
@@ -2144,13 +2060,6 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(cdsInvestmentEstimate.length    ? { cdsInvestmentEstimate }    : {}),
           ...(cdsConsultantGuidance           ? { cdsConsultantGuidance }    : {}),
           ...(cdsAIRecommendation             ? { cdsAIRecommendation }      : {}),
-          // Technology Infrastructure: AI Engineering Enablement extras
-          ...(engineeringReadiness                      ? { engineeringReadiness }          : {}),
-          ...(engineeringCapabilities.some(c => c.score)? { engineeringCapabilities }       : {}),
-          ...(engineeringLifecycle.some(s => s.readiness)? { engineeringLifecycle }         : {}),
-          ...(engineeringRecommendations.length          ? { engineeringRecommendations }    : {}),
-          ...((automationStats.automation || automationStats.testing) ? { automationStats } : {}),
-          ...(engineeringSummary.development             ? { engineeringSummary }            : {}),
           // Skills & Workforce: AI Skills Assessment extras
           ...(skillsReadiness                              ? { skillsReadiness }              : {}),
           ...(requiredSkills.length                        ? { requiredSkills }               : {}),
@@ -2749,8 +2658,6 @@ OUTPUT — valid JSON only, no markdown fences:
       'deploymentBlocks', 'cdsDeploymentFlow', 'techRecommendations', 'cdsArchRationale',
       'deploymentDecisions', 'cdsImplSequence', 'infraItems', 'cdsInvestmentEstimate',
       'cdsConsultantGuidance', 'cdsAIRecommendation',
-      'engineeringReadiness', 'engineeringCapabilities', 'engineeringLifecycle', 'engineeringRecommendations',
-      'automationStats', 'engineeringSummary',
       // Skills & Workforce extras
       'skillsReadiness', 'requiredSkills', 'skillsMatrix', 'skillsRecommendations', 'skillsStats', 'skillsCategorySummary',
       'teamReadiness', 'requiredRoles', 'teamRecommendations', 'teamStats', 'teamCoverageSummary',

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SoorgaAI — Blueprint PDF Template Service
  *
  * Generates a self-contained HTML string for Puppeteer to render as an
@@ -2129,81 +2129,6 @@ function buildAIComputeDeploymentLayout(section) {
   return wrap;
 }
 
-// ── Technology Infrastructure: AI Engineering Enablement ──────────────────────
-
-function buildAIEngineeringEnablementLayout(section) {
-  var b                   = section.brief || {};
-  var engineeringCaps     = b.engineeringCapabilities    || [];
-  var engineeringLifecycle = b.engineeringLifecycle      || [];
-  var engineeringRecs     = b.engineeringRecommendations || [];
-  var automationStats     = b.automationStats            || {};
-  var engineeringSummary  = b.engineeringSummary         || {};
-
-  var SCLS   = { READY: 'aee-cap--ready', PARTIAL: 'aee-cap--partial', ATTENTION: 'aee-cap--attention' };
-  var SBADGE = { READY: 'nd-pri--low', PARTIAL: 'nd-pri--medium', ATTENTION: 'nd-pri--high' };
-  var PCLS   = { HIGH: 'nd-pri--high', MEDIUM: 'nd-pri--medium', LOW: 'nd-pri--low' };
-
-  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
-  if (b.engineeringReadiness) { wrap.appendChild(ndBadge('ENGINEERING READINESS: ' + b.engineeringReadiness + '%')); }
-  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-
-  var body = ndBody(3);
-
-  // LEFT: engineering capabilities
-  var leftCol = ndCol();
-  leftCol.appendChild(ndLbl('Engineering Capabilities'));
-  engineeringCaps.forEach(function(cap) {
-    var status = String(cap.status || 'PARTIAL').toUpperCase();
-    var card = document.createElement('div'); card.className = 'aee-cap-card ' + (SCLS[status] || 'aee-cap--partial');
-    var name = document.createElement('p'); name.className = 'aee-cap-card__name'; name.textContent = cap.name; card.appendChild(name);
-    var score = document.createElement('p'); score.className = 'aee-cap-card__score'; score.textContent = 'Readiness: ' + (cap.score || 0) + '%'; card.appendChild(score);
-    var badge = document.createElement('span'); badge.className = 'nd-pri ' + (SBADGE[status] || 'nd-pri--medium'); badge.textContent = status === 'ATTENTION' ? 'Needs Attention' : status.charAt(0) + status.slice(1).toLowerCase(); card.appendChild(badge);
-    leftCol.appendChild(card);
-  });
-  body.appendChild(leftCol);
-
-  // CENTER: lifecycle via pill chain
-  var centerCol = ndCol();
-  centerCol.appendChild(ndLbl('AI Engineering Lifecycle'));
-  if (engineeringLifecycle.length) {
-    var lcWrap = document.createElement('div'); lcWrap.className = 'aee-lifecycle-wrap';
-    engineeringLifecycle.forEach(function(stage, i) {
-      var stageEl = document.createElement('div'); stageEl.className = 'aee-lifecycle-stage';
-      var stageName = document.createElement('p'); stageName.className = 'aee-lifecycle-stage__name'; stageName.textContent = stage.stage; stageEl.appendChild(stageName);
-      var barTrack = document.createElement('div'); barTrack.className = 'aee-lifecycle-bar-track';
-      var barFill = document.createElement('div'); barFill.className = 'aee-lifecycle-bar-fill'; barFill.style.width = (stage.readiness || 0) + '%'; barTrack.appendChild(barFill); stageEl.appendChild(barTrack);
-      var pct = document.createElement('span'); pct.className = 'aee-lifecycle-stage__pct'; pct.textContent = (stage.readiness || 0) + '%'; stageEl.appendChild(pct);
-      if (stage.automation) { var auto = document.createElement('p'); auto.className = 'aee-lifecycle-stage__auto'; auto.textContent = stage.automation; stageEl.appendChild(auto); }
-      lcWrap.appendChild(stageEl);
-      if (i < engineeringLifecycle.length - 1) { var arr = document.createElement('div'); arr.className = 'aee-lifecycle-arrow'; arr.textContent = '↓'; lcWrap.appendChild(arr); }
-    });
-    centerCol.appendChild(lcWrap);
-  }
-  body.appendChild(centerCol);
-
-  // RIGHT: recommendations + automation stats
-  var rightCol = ndCol();
-  if (engineeringRecs.length) {
-    rightCol.appendChild(ndLbl('AI Recommendations'));
-    rightCol.appendChild(ndRecList(engineeringRecs, function(r) { return { text: r.text, priority: r.priority, sub: r.businessImpact ? 'Business Impact: ' + r.businessImpact : '' }; }));
-  }
-  var statsEntries = [{ label: 'Automation', value: automationStats.automation }, { label: 'Testing', value: automationStats.testing }, { label: 'Deployment', value: automationStats.deployment }].filter(function(e) { return e.value; });
-  if (statsEntries.length) { rightCol.appendChild(ndStatBlock(statsEntries)); }
-  body.appendChild(rightCol);
-  wrap.appendChild(body);
-
-  // Engineering health summary
-  if (engineeringSummary.development || engineeringSummary.testing || engineeringSummary.deployment || engineeringSummary.continuousImprovement) {
-    wrap.appendChild(ndLbl('Engineering Health Metrics'));
-    wrap.appendChild(ndSummaryGrid([
-      { label: 'Development',           value: engineeringSummary.development },
-      { label: 'Testing',               value: engineeringSummary.testing },
-      { label: 'Deployment',            value: engineeringSummary.deployment },
-      { label: 'Continuous Improvement', value: engineeringSummary.continuousImprovement },
-    ]));
-  }
-  return wrap;
-}
 
 // ── Skills & Workforce: AI Skills Assessment ───────────────────────────────────
 
@@ -2477,7 +2402,6 @@ function buildSectionContent(section) {
   if (t === 'System Integration & Architecture') return buildSystemIntegrationLayout(section);
   if (t === 'AI Platform Readiness')             return buildAIPlatformReadinessLayout(section);
   if (t === 'AI Compute & Deployment Strategy')  return buildAIComputeDeploymentLayout(section);
-  if (t === 'AI Engineering Enablement')         return buildAIEngineeringEnablementLayout(section);
   // Skills & Workforce
   if (t === 'AI Skills Assessment')              return buildAISkillsAssessmentLayout(section);
   if (t === 'AI Team Readiness')                 return buildAITeamReadinessLayout(section);
@@ -2689,7 +2613,6 @@ const BROWSER_FUNCTIONS = [
   buildSystemIntegrationLayout,
   buildAIPlatformReadinessLayout,
   buildAIComputeDeploymentLayout,
-  buildAIEngineeringEnablementLayout,
   buildAISkillsAssessmentLayout,
   buildAITeamReadinessLayout,
   buildAILearningAdoptionLayout,
@@ -3208,22 +3131,6 @@ html, body {
 .cds-rec-card__text { font-size: 0.74rem; font-weight: 500; color: rgba(255,255,255,0.82); margin: 0; line-height: 1.4; }
 .cds-rec-card__impact-row { font-size: 0.67rem; color: rgba(255,255,255,0.42); }
 .cds-rec-card__reason { font-size: 0.65rem; color: rgba(255,255,255,0.36); margin: 0; font-style: italic; }
-
-/* ── AEE: AI Engineering Enablement ──────────────────────────── */
-.aee-cap-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; border-left: 2px solid transparent; }
-.aee-cap--ready     { border-left-color: #34d399; }
-.aee-cap--partial   { border-left-color: #fbbf24; }
-.aee-cap--attention { border-left-color: #f87171; }
-.aee-cap-card__name  { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
-.aee-cap-card__score { font-size: 0.68rem; color: rgba(255,255,255,0.45); margin: 0; }
-.aee-lifecycle-wrap { display: flex; flex-direction: column; gap: 0.2rem; }
-.aee-lifecycle-stage { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.45rem 0.65rem; display: flex; flex-direction: column; gap: 0.18rem; }
-.aee-lifecycle-stage__name { font-size: 0.73rem; font-weight: 600; color: rgba(255,255,255,0.82); margin: 0; }
-.aee-lifecycle-bar-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
-.aee-lifecycle-bar-fill  { height: 100%; background: rgba(99,102,241,0.7); border-radius: 2px; }
-.aee-lifecycle-stage__pct  { font-size: 0.62rem; color: rgba(99,102,241,0.7); font-weight: 700; }
-.aee-lifecycle-stage__auto { font-size: 0.63rem; color: rgba(255,255,255,0.38); margin: 0; }
-.aee-lifecycle-arrow { text-align: center; font-size: 0.9rem; color: rgba(255,255,255,0.18); line-height: 1; }
 
 /* ── ASA: AI Skills Assessment ───────────────────────────────── */
 .asa-skill-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.45rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; }

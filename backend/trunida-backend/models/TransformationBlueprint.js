@@ -92,11 +92,6 @@ const techRecommendationSchema      = new mongoose.Schema({ layer: String, recom
 const cdsInvestmentEstimateSchema   = new mongoose.Schema({ area: String, estimate: String }, { _id: false });
 const deploymentDecisionSchema      = new mongoose.Schema({ decisionType: String, choice: String, reason: String }, { _id: false });
 const infraItemSchema               = new mongoose.Schema({ item: String, recommendation: String }, { _id: false });
-const engineeringCapabilitySchema   = new mongoose.Schema({ name: String, status: String, score: Number }, { _id: false });
-const engineeringLifecycleSchema    = new mongoose.Schema({ stage: String, readiness: Number, automation: String }, { _id: false });
-const engineeringRecommendationSchema = new mongoose.Schema({ text: String, priority: String, businessImpact: String }, { _id: false });
-const automationStatsSchema         = new mongoose.Schema({ automation: String, testing: String, deployment: String }, { _id: false });
-const engineeringSummarySchema      = new mongoose.Schema({ development: String, testing: String, deployment: String, continuousImprovement: String }, { _id: false });
 
 // ── Skills & Workforce sub-schemas ────────────────────────────────────────────
 const requiredSkillSchema           = new mongoose.Schema({ name: String, category: String, priority: String, availability: String }, { _id: false });
@@ -244,13 +239,6 @@ const briefSchema = new mongoose.Schema({
   cdsInvestmentEstimate:    { type: [cdsInvestmentEstimateSchema],    default: [] },
   cdsConsultantGuidance:    { type: String,                           default: '' },
   cdsAIRecommendation:      { type: String,                           default: '' },
-  // Technology Infrastructure: AI Engineering Enablement extras
-  engineeringReadiness:     { type: Number,   default: 0 },
-  engineeringCapabilities:  { type: [engineeringCapabilitySchema],    default: [] },
-  engineeringLifecycle:     { type: [engineeringLifecycleSchema],     default: [] },
-  engineeringRecommendations: { type: [engineeringRecommendationSchema], default: [] },
-  automationStats:          { type: automationStatsSchema,            default: undefined },
-  engineeringSummary:       { type: engineeringSummarySchema,         default: undefined },
   // Skills & Workforce: AI Skills Assessment extras
   skillsReadiness:          { type: Number,   default: 0 },
   requiredSkills:           { type: [requiredSkillSchema],            default: [] },

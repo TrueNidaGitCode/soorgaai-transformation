@@ -37,13 +37,12 @@ The Technology Infrastructure domain consists of four core capabilities that wor
 | AI Compute & Deployment Strategy  | Where should the AI solution run?                        |
 | AI Platform Readiness             | Do we have the right AI platform?                        |
 | System Integration & Architecture | Can AI integrate with our systems?                       |
-| AI Engineering Enablement         | Can engineering teams build and deploy AI efficiently?   |
 
 ---
 
 # Pipeline Overview
 
-A user identifies an AI use case. SoorgaAI processes it through the four capabilities in sequence.
+A user identifies an AI use case. SoorgaAI processes it through the three capabilities in sequence.
 
 Example input:
 
@@ -54,7 +53,6 @@ Processing:
 1. **AI Compute & Deployment Strategy** — Determines whether the model should run on cloud, on-premise, or edge infrastructure based on latency, data sensitivity, and cost requirements.
 2. **AI Platform Readiness** — Evaluates whether the team has access to the right MLOps platform, model registry, and deployment tooling.
 3. **System Integration & Architecture** — Assesses whether the AI model can connect to the test management system via APIs and receive real-time data feeds.
-4. **AI Engineering Enablement** — Confirms that engineering teams have the development environment, CI/CD pipelines, and skills needed to build and iterate on the AI solution.
 
 ---
 
@@ -87,16 +85,6 @@ Assess whether AI solutions can be integrated with existing enterprise systems, 
 Key question:
 
 **Can AI integrate with our systems?**
-
----
-
-## AI Engineering Enablement
-
-Assess whether engineering teams have the development environment, tooling, pipelines, and capabilities to build, test, and deploy AI solutions efficiently and consistently.
-
-Key question:
-
-**Can engineering teams build and deploy AI efficiently?**
 
 ---
 

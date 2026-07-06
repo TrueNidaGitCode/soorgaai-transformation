@@ -42,8 +42,6 @@ AI Compute & Deployment Strategy
 AI Platform Readiness
         ↓
 System Integration & Architecture
-        ↓
-AI Engineering Enablement
 ```
 
 ## Dependencies

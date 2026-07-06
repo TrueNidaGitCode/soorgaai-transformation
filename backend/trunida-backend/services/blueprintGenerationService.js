@@ -987,31 +987,6 @@ roles are already assigned. Use forward-looking language: "requires", "should", 
    "projectRoles": [...], "responsibilityJourney": [...], "capabilityPriorities": [...], "workforceStats": {...}, "arcpConsultantGuidance": "...", "arcpAIRecommendation": "..."`,
   },
 
-  'AI Team Readiness': {
-    promptInstruction: `
-SECTION-SPECIFIC EXTRAS — "AI Team Readiness" sections only:
-
-5. teamReadiness (number 0–100)
-   The overall team readiness score as a percentage for this AI use case.
-
-6. requiredRoles (4 to 6 items)
-   The key project roles required to deliver this AI use case.
-   Each item: { "name": "<role name, 2–4 words>", "responsibility": "<primary responsibility, ≤6 words>", "availability": "Available|Partial|Missing", "priority": "High|Medium|Low" }
-   Cover all four role categories: business leadership, AI specialists, engineering, domain expertise.
-
-7. teamRecommendations (exactly 3 items)
-   Each item: { "title": "<action, 2–5 words>", "priority": "High|Medium|Low", "impact": "<outcome, ≤8 words>" }
-
-8. teamStats
-   Object: { "required": <total roles count>, "available": <count of Available roles>, "missing": <count of Missing or Partial roles> }
-
-9. teamCoverageSummary (exactly 4 items, fixed order: Business, AI, Engineering, Domain)
-   Each item: { "category": "Business|AI|Engineering|Domain", "status": "Ready|Strong|Needs Support|Missing" }
-
-   Add all to the brief object:
-   "teamReadiness": <number>, "requiredRoles": [...], "teamRecommendations": [...], "teamStats": {...}, "teamCoverageSummary": [...]`,
-  },
-
   'AI Learning & Adoption': {
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Learning & Adoption" sections only:
@@ -1896,45 +1871,6 @@ function parseBriefOutput(rawSections, validTitles) {
         return { category: catName, status: found ? String(found.status || '').trim() : '' };
       });
 
-      // ── Skills & Workforce: AI Team Readiness parsers ─────────────────────────
-
-      const teamReadiness = parseInt(b.teamReadiness, 10) || 0;
-
-      const rawRequiredRoles = Array.isArray(b.requiredRoles) ? b.requiredRoles : [];
-      const requiredRoles = rawRequiredRoles
-        .filter(r => r && typeof r === 'object' && String(r.name || '').trim())
-        .map(r => ({
-          name:           String(r.name           || '').trim(),
-          responsibility: String(r.responsibility || '').trim(),
-          availability:   String(r.availability   || 'Partial').trim(),
-          priority:       String(r.priority       || 'Medium').trim(),
-        }))
-        .slice(0, 6);
-
-      const rawTeamRecs = Array.isArray(b.teamRecommendations) ? b.teamRecommendations : [];
-      const teamRecommendations = rawTeamRecs
-        .filter(r => r && typeof r === 'object' && String(r.title || '').trim())
-        .map(r => ({
-          title:    String(r.title    || '').trim(),
-          priority: String(r.priority || 'Medium').trim(),
-          impact:   String(r.impact   || '').trim(),
-        }))
-        .slice(0, 3);
-
-      const rawTeamStats = b.teamStats && typeof b.teamStats === 'object' ? b.teamStats : {};
-      const teamStats = {
-        required:  parseInt(rawTeamStats.required,  10) || 0,
-        available: parseInt(rawTeamStats.available, 10) || 0,
-        missing:   parseInt(rawTeamStats.missing,   10) || 0,
-      };
-
-      const TEAM_COVERAGE_CATS = ['Business', 'AI', 'Engineering', 'Domain'];
-      const rawTeamCoverage = Array.isArray(b.teamCoverageSummary) ? b.teamCoverageSummary : [];
-      const teamCoverageSummary = TEAM_COVERAGE_CATS.map(catName => {
-        const found = rawTeamCoverage.find(c => c && String(c.category || '').trim() === catName);
-        return { category: catName, status: found ? String(found.status || '').trim() : '' };
-      });
-
       // ── Skills & Workforce: AI Learning & Adoption parsers ───────────────────
 
       const adoptionReadiness = parseInt(b.adoptionReadiness, 10) || 0;
@@ -2133,12 +2069,6 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(skillsRecommendations.length                 ? { skillsRecommendations }        : {}),
           ...((skillsStats.available || skillsStats.gaps)  ? { skillsStats }                 : {}),
           ...(skillsCategorySummary.some(c => c.status)    ? { skillsCategorySummary }       : {}),
-          // Skills & Workforce: AI Team Readiness extras
-          ...(teamReadiness                                ? { teamReadiness }               : {}),
-          ...(requiredRoles.length                         ? { requiredRoles }               : {}),
-          ...(teamRecommendations.length                   ? { teamRecommendations }         : {}),
-          ...((teamStats.required || teamStats.available)  ? { teamStats }                  : {}),
-          ...(teamCoverageSummary.some(c => c.status)      ? { teamCoverageSummary }        : {}),
           // Skills & Workforce: AI Learning & Adoption extras
           ...(adoptionReadiness                            ? { adoptionReadiness }           : {}),
           ...(learningPillars.some(p => p.description)     ? { learningPillars }            : {}),
@@ -2727,7 +2657,6 @@ OUTPUT — valid JSON only, no markdown fences:
       // Skills & Workforce extras
       'projectRoles', 'responsibilityJourney', 'capabilityPriorities', 'workforceStats', 'arcpConsultantGuidance', 'arcpAIRecommendation',
       'skillsReadiness', 'requiredSkills', 'skillsMatrix', 'skillsRecommendations', 'skillsStats', 'skillsCategorySummary',
-      'teamReadiness', 'requiredRoles', 'teamRecommendations', 'teamStats', 'teamCoverageSummary',
       'adoptionReadiness', 'learningPillars', 'adoptionLifecycle', 'adoptionRecommendations',
       'adoptionStats', 'adoptionReadinessSummary',
     ];

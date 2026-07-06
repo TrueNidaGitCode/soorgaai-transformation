@@ -2297,84 +2297,6 @@ function buildARCPLegacyPDFLayout(b) {
   return wrap;
 }
 
-// ── Skills & Workforce: AI Team Readiness ─────────────────────────────────────
-
-function buildAITeamReadinessLayout(section) {
-  var b            = section.brief || {};
-  var requiredRoles = b.requiredRoles       || [];
-  var teamRecs     = b.teamRecommendations  || [];
-  var teamStats    = b.teamStats            || {};
-  var teamCoverage = b.teamCoverageSummary  || [];
-
-  var ACLS  = { Available: 'atr-role--available', Partial: 'atr-role--partial', Missing: 'atr-role--missing' };
-  var PCLS  = { High: 'nd-pri--high', Medium: 'nd-pri--medium', Low: 'nd-pri--low' };
-  var CCLS  = { Ready: 'atr-cov--ready', Strong: 'atr-cov--strong', 'Needs Support': 'atr-cov--needs', Missing: 'atr-cov--missing' };
-
-  var wrap = document.createElement('div'); wrap.className = 'new-domain-layout';
-  if (b.teamReadiness) { wrap.appendChild(ndBadge('TEAM READINESS: ' + b.teamReadiness + '%')); }
-  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-
-  var body = ndBody(3);
-
-  // LEFT: required role cards
-  var leftCol = ndCol();
-  leftCol.appendChild(ndLbl('Required Roles'));
-  requiredRoles.forEach(function(role) {
-    var card = document.createElement('div'); card.className = 'atr-role-card ' + (ACLS[role.availability] || 'atr-role--partial');
-    var name = document.createElement('p'); name.className = 'atr-role-card__name'; name.textContent = role.name; card.appendChild(name);
-    if (role.responsibility) { var resp = document.createElement('p'); resp.className = 'atr-role-card__resp'; resp.textContent = role.responsibility; card.appendChild(resp); }
-    var meta = document.createElement('span'); meta.className = 'nd-pri ' + (PCLS[role.priority] || 'nd-pri--medium'); meta.textContent = (role.availability || '') + (role.priority ? ' · ' + role.priority : ''); card.appendChild(meta);
-    leftCol.appendChild(card);
-  });
-  body.appendChild(leftCol);
-
-  // CENTER: team structure network (DOM hub-spoke)
-  var centerCol = ndCol();
-  centerCol.appendChild(ndLbl('Team Structure'));
-  var networkWrap = document.createElement('div'); networkWrap.className = 'atr-network-wrap';
-  var hub = document.createElement('div'); hub.className = 'atr-network-hub'; hub.innerHTML = '<p class="atr-hub__top">AI</p><p class="atr-hub__sub">PROJECT</p>'; networkWrap.appendChild(hub);
-  var rolesGrid = document.createElement('div'); rolesGrid.className = 'atr-network-grid';
-  var ACOLOR = { Available: '#5CC5A7', Partial: '#fbbf24', Missing: '#f87171' };
-  requiredRoles.slice(0, 6).forEach(function(role) {
-    var node = document.createElement('div'); node.className = 'atr-network-node';
-    node.style.borderColor = ACOLOR[role.availability] || '#6b7280';
-    node.style.color = ACOLOR[role.availability] || '#6b7280';
-    var words = role.name.split(' ');
-    var l1 = words.slice(0, 2).join(' ');
-    var l2 = words.slice(2).join(' ');
-    node.textContent = l2 ? l1 + '\n' + l2 : l1;
-    rolesGrid.appendChild(node);
-  });
-  networkWrap.appendChild(rolesGrid);
-  centerCol.appendChild(networkWrap);
-  body.appendChild(centerCol);
-
-  // RIGHT: recommendations + stats
-  var rightCol = ndCol();
-  if (teamRecs.length) {
-    rightCol.appendChild(ndLbl('AI Recommendations'));
-    rightCol.appendChild(ndRecList(teamRecs, function(r) { return { text: r.title, priority: r.priority, sub: r.impact }; }));
-  }
-  var statsEntries = [{ label: 'Required', value: teamStats.required }, { label: 'Available', value: teamStats.available }, { label: 'Missing', value: teamStats.missing }].filter(function(e) { return e.value !== undefined && e.value !== null; }).map(function(e) { return { label: e.label, value: String(e.value) }; });
-  if (statsEntries.length) { rightCol.appendChild(ndStatBlock(statsEntries)); }
-  body.appendChild(rightCol);
-  wrap.appendChild(body);
-
-  // Team coverage summary grid
-  if (teamCoverage.some(function(c) { return c.status; })) {
-    wrap.appendChild(ndLbl('Team Coverage Summary'));
-    var grid = document.createElement('div'); grid.className = 'atr-summary-grid';
-    teamCoverage.forEach(function(c) {
-      var cell = document.createElement('div'); cell.className = 'atr-summary-cell ' + (CCLS[c.status] || '');
-      var lbl = document.createElement('p'); lbl.className = 'atr-summary-cell__lbl'; lbl.textContent = c.category; cell.appendChild(lbl);
-      if (c.status) { var val = document.createElement('p'); val.className = 'atr-summary-cell__val'; val.textContent = c.status; cell.appendChild(val); }
-      grid.appendChild(cell);
-    });
-    wrap.appendChild(grid);
-  }
-  return wrap;
-}
-
 // ── Skills & Workforce: AI Learning & Adoption ────────────────────────────────
 
 function buildAILearningAdoptionLayout(section) {
@@ -2496,7 +2418,6 @@ function buildSectionContent(section) {
   if (t === 'AI Compute & Deployment Strategy')  return buildAIComputeDeploymentLayout(section);
   // Skills & Workforce
   if (t === 'AI Roles & Capability Planning' || t === 'AI Skills Assessment') return buildAISkillsAssessmentLayout(section);
-  if (t === 'AI Team Readiness')                 return buildAITeamReadinessLayout(section);
   if (t === 'AI Learning & Adoption')            return buildAILearningAdoptionLayout(section);
   // Default: strategic position only
   var div = document.createElement('div');
@@ -2706,7 +2627,6 @@ const BROWSER_FUNCTIONS = [
   buildAIPlatformReadinessLayout,
   buildAIComputeDeploymentLayout,
   buildAISkillsAssessmentLayout,
-  buildAITeamReadinessLayout,
   buildAILearningAdoptionLayout,
   buildSectionContent,
   buildExecContent,
@@ -3261,28 +3181,6 @@ html, body {
 .asa-cat--needs   { border-color: rgba(248,113,113,0.3); }
 .asa-summary-cell__lbl { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.7); margin: 0; }
 .asa-summary-cell__val { font-size: 0.62rem; color: rgba(255,255,255,0.42); margin: 0; }
-
-/* ── ATR: AI Team Readiness ──────────────────────────────────── */
-.atr-role-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; border-left: 2px solid transparent; }
-.atr-role--available { border-left-color: #5CC5A7; }
-.atr-role--partial   { border-left-color: #fbbf24; }
-.atr-role--missing   { border-left-color: #f87171; }
-.atr-role-card__name { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
-.atr-role-card__resp { font-size: 0.67rem; color: rgba(255,255,255,0.48); margin: 0; line-height: 1.4; }
-.atr-network-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.5rem; padding: 0.6rem; }
-.atr-network-hub { background: rgba(30,58,95,0.8); border: 1.5px solid rgba(99,162,241,0.4); border-radius: 50%; width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.atr-hub__top { font-size: 0.72rem; font-weight: 800; color: #fff; margin: 0; }
-.atr-hub__sub { font-size: 0.52rem; color: rgba(255,255,255,0.6); margin: 0; }
-.atr-network-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3rem; width: 100%; }
-.atr-network-node { background: rgba(255,255,255,0.03); border: 1.5px solid; border-radius: 0.35rem; padding: 0.25rem 0.35rem; font-size: 0.6rem; font-weight: 600; text-align: center; line-height: 1.3; white-space: pre-line; }
-.atr-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: 0.35rem; }
-.atr-summary-cell { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.4rem; padding: 0.45rem 0.6rem; }
-.atr-cov--ready   { border-color: rgba(52,211,153,0.3); }
-.atr-cov--strong  { border-color: rgba(52,211,153,0.25); }
-.atr-cov--needs   { border-color: rgba(251,191,36,0.3); }
-.atr-cov--missing { border-color: rgba(248,113,113,0.3); }
-.atr-summary-cell__lbl { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.7); margin: 0; }
-.atr-summary-cell__val { font-size: 0.62rem; color: rgba(255,255,255,0.42); margin: 0; }
 
 /* ── ALA: AI Learning & Adoption ─────────────────────────────── */
 .ala-pillar-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; border-left: 2px solid transparent; }

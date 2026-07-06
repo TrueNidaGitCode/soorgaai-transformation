@@ -5097,59 +5097,6 @@ function buildComputeDeploymentLayout(section) {
   return wrap;
 }
 
-// ── SVG: Team Network Diagram (AI Team Readiness) ─────────────────────────────
-function buildTeamNetworkSvg(roles) {
-  const W = 340, H = 280, cx = 170, cy = 140, R = 105;
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svg.setAttribute('width',  W);
-  svg.setAttribute('height', H);
-
-  const AVAIL_COLOR = { Available: '#5CC5A7', Partial: '#fbbf24', Missing: '#f87171' };
-  const DEF_COLOR = '#6b7280';
-  const mk = (tag, attrs) => {
-    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-    return el;
-  };
-
-  // Center hub
-  svg.appendChild(mk('circle', { cx, cy, r: 30, fill: '#1e3a5f' }));
-  const ht1 = mk('text', { x: cx, y: cy - 4, 'text-anchor': 'middle', fill: '#fff', 'font-size': 8.5, 'font-weight': 700 });
-  ht1.textContent = 'AI'; svg.appendChild(ht1);
-  const ht2 = mk('text', { x: cx, y: cy + 7, 'text-anchor': 'middle', fill: 'rgba(255,255,255,0.7)', 'font-size': 6.5 });
-  ht2.textContent = 'PROJECT'; svg.appendChild(ht2);
-
-  const visible = roles.slice(0, 6);
-  const n = visible.length || 1;
-  visible.forEach((role, i) => {
-    const angle = (2 * Math.PI * i / n) - Math.PI / 2;
-    const rx = Math.round(cx + R * Math.cos(angle));
-    const ry = Math.round(cy + R * Math.sin(angle));
-    const color = AVAIL_COLOR[role.availability] || DEF_COLOR;
-    const rW = 70, rH = 30;
-
-    svg.appendChild(mk('line', {
-      x1: Math.round(cx + 31 * Math.cos(angle)), y1: Math.round(cy + 31 * Math.sin(angle)),
-      x2: Math.round(rx - 36 * Math.cos(angle)), y2: Math.round(ry - 36 * Math.sin(angle)),
-      stroke: '#2a4a6b', 'stroke-width': 1.5,
-    }));
-    svg.appendChild(mk('rect', { x: rx - rW / 2, y: ry - rH / 2, width: rW, height: rH, rx: 5, fill: color, opacity: 0.15 }));
-    svg.appendChild(mk('rect', { x: rx - rW / 2, y: ry - rH / 2, width: rW, height: rH, rx: 5, fill: 'none', stroke: color, 'stroke-width': 1.5 }));
-
-    const words = role.name.split(' ');
-    const l1 = words.slice(0, 2).join(' ');
-    const l2 = words.slice(2).join(' ');
-    const t1 = mk('text', { x: rx, y: ry + (l2 ? -4 : 2), 'text-anchor': 'middle', fill: color, 'font-size': 6.5, 'font-weight': 600 });
-    t1.textContent = l1; svg.appendChild(t1);
-    if (l2) {
-      const t2 = mk('text', { x: rx, y: ry + 6, 'text-anchor': 'middle', fill: color, 'font-size': 6.5, 'font-weight': 600 });
-      t2.textContent = l2; svg.appendChild(t2);
-    }
-  });
-  return svg;
-}
-
 // ── Horizontal 5-stage Lifecycle (AI Learning & Adoption) ─────────────────────
 function buildAdoptionLifecycleDiagram(lifecycle) {
   const wrap = document.createElement('div');
@@ -5422,10 +5369,10 @@ function buildARCPNewLayout(b) {
   nextLabel.textContent = 'Next Capability';
   const nextName = document.createElement('p');
   nextName.className = 'arcp-next__name';
-  nextName.textContent = 'AI Team Readiness';
+  nextName.textContent = 'AI Learning & Adoption';
   const nextGoal = document.createElement('p');
   nextGoal.className = 'arcp-next__goal';
-  nextGoal.textContent = 'Goal: Assess whether team structure and resourcing are aligned to successfully deliver AI effectively.';
+  nextGoal.textContent = 'Goal: Design targeted learning programs and adoption strategies to build AI competency across the team.';
   footer.appendChild(nextLabel);
   footer.appendChild(nextName);
   footer.appendChild(nextGoal);
@@ -5599,181 +5546,6 @@ function buildARCPLegacyLayout(b) {
       grid.appendChild(cell);
     });
     wrap.appendChild(grid);
-  }
-  return wrap;
-}
-
-// ── Layout: AI Team Readiness ─────────────────────────────────────────────────
-function buildAITeamReadinessLayout(section) {
-  const b                = section.brief || {};
-  const requiredRoles    = b.requiredRoles       || [];
-  const teamRecs         = b.teamRecommendations || [];
-  const teamStats        = b.teamStats           || {};
-  const teamCoverage     = b.teamCoverageSummary  || [];
-  const leadershipQ      = b.leadershipValidation?.context || '';
-
-  const AVAIL_COLOR = { Available: 'atr-role--available', Partial: 'atr-role--partial', Missing: 'atr-role--missing' };
-  const PRI_CLASS   = { High: 'atr-priority--high', Medium: 'atr-priority--medium', Low: 'atr-priority--low' };
-  const STATUS_CLASS = { Ready: 'atr-cov--ready', Strong: 'atr-cov--strong', 'Needs Support': 'atr-cov--needs', Missing: 'atr-cov--missing' };
-
-  const wrap = document.createElement('div');
-  wrap.className = 'atr-view';
-
-  if (b.teamReadiness) {
-    const badge = document.createElement('div');
-    badge.className = 'atr-readiness-badge';
-    badge.textContent = `TEAM READINESS: ${b.teamReadiness}%`;
-    wrap.appendChild(badge);
-  }
-  if (b.strategicPosition) {
-    const posLabel = document.createElement('p');
-    posLabel.className = 'brief-label';
-    posLabel.textContent = 'Strategic Position';
-    wrap.appendChild(posLabel);
-    const pos = document.createElement('p');
-    pos.className = 'atr-view__position';
-    pos.textContent = b.strategicPosition;
-    wrap.appendChild(pos);
-  }
-
-  const body = document.createElement('div');
-  body.className = 'atr-body';
-
-  // LEFT: Required Roles
-  const leftCol = document.createElement('div');
-  leftCol.className = 'atr-roles-col';
-  const leftLbl = document.createElement('p');
-  leftLbl.className = 'brief-label';
-  leftLbl.textContent = 'Required Roles';
-  leftCol.appendChild(leftLbl);
-  if (requiredRoles.length) {
-    requiredRoles.forEach(role => {
-      const card = document.createElement('div');
-      card.className = `atr-role-card ${AVAIL_COLOR[role.availability] || 'atr-role--partial'}`;
-      const name = document.createElement('p');
-      name.className = 'atr-role-card__name';
-      name.textContent = role.name;
-      card.appendChild(name);
-      if (role.responsibility) {
-        const resp = document.createElement('p');
-        resp.className = 'atr-role-card__resp';
-        resp.textContent = role.responsibility;
-        card.appendChild(resp);
-      }
-      const pri = document.createElement('span');
-      pri.className = `atr-priority ${PRI_CLASS[role.priority] || 'atr-priority--medium'}`;
-      pri.textContent = `${role.availability} · ${role.priority}`;
-      card.appendChild(pri);
-      leftCol.appendChild(card);
-    });
-  } else {
-    const empty = document.createElement('p');
-    empty.className = 'atr-empty';
-    empty.textContent = 'Team roles will appear after generation.';
-    leftCol.appendChild(empty);
-  }
-  body.appendChild(leftCol);
-
-  // CENTER: Team Network SVG
-  const centerCol = document.createElement('div');
-  centerCol.className = 'atr-network-col';
-  const networkLbl = document.createElement('p');
-  networkLbl.className = 'brief-label';
-  networkLbl.textContent = 'Team Structure';
-  centerCol.appendChild(networkLbl);
-  const svgWrap = document.createElement('div');
-  svgWrap.className = 'atr-network-wrap';
-  svgWrap.appendChild(buildTeamNetworkSvg(requiredRoles));
-  centerCol.appendChild(svgWrap);
-  body.appendChild(centerCol);
-
-  // RIGHT: Recommendations + Stats
-  const rightCol = document.createElement('div');
-  rightCol.className = 'atr-recs-col';
-  const recsLbl = document.createElement('p');
-  recsLbl.className = 'brief-label';
-  recsLbl.textContent = 'AI Recommendations';
-  rightCol.appendChild(recsLbl);
-  if (teamRecs.length) {
-    const recsList = document.createElement('div');
-    recsList.className = 'atr-recs-list';
-    teamRecs.forEach(rec => {
-      const item = document.createElement('div');
-      item.className = 'atr-rec-item';
-      const title = document.createElement('p');
-      title.className = 'atr-rec-item__title';
-      title.textContent = rec.title;
-      item.appendChild(title);
-      const meta = document.createElement('p');
-      meta.className = 'atr-rec-item__meta';
-      meta.innerHTML = `Priority: <span class="atr-priority ${PRI_CLASS[rec.priority] || 'atr-priority--medium'}">${rec.priority || 'Medium'}</span>`;
-      item.appendChild(meta);
-      if (rec.impact) {
-        const imp = document.createElement('p');
-        imp.className = 'atr-rec-item__impact';
-        imp.textContent = rec.impact;
-        item.appendChild(imp);
-      }
-      recsList.appendChild(item);
-    });
-    rightCol.appendChild(recsList);
-  }
-  const statsEntries = [
-    { label: 'Required',  value: teamStats.required },
-    { label: 'Available', value: teamStats.available },
-    { label: 'Missing',   value: teamStats.missing },
-  ].filter(e => e.value !== undefined && e.value !== null);
-  if (statsEntries.length) {
-    const statsBlock = document.createElement('div');
-    statsBlock.className = 'atr-stats-block';
-    statsEntries.forEach(e => {
-      const row = document.createElement('div');
-      row.className = 'atr-stat-row';
-      const lbl = document.createElement('span');
-      lbl.className = 'atr-stat-row__label';
-      lbl.textContent = `${e.label}:`;
-      const val = document.createElement('span');
-      val.className = 'atr-stat-row__value';
-      val.textContent = e.value;
-      row.appendChild(lbl); row.appendChild(val);
-      statsBlock.appendChild(row);
-    });
-    rightCol.appendChild(statsBlock);
-  }
-  body.appendChild(rightCol);
-  wrap.appendChild(body);
-
-  // Team Coverage Summary grid
-  if (teamCoverage.some(c => c.status)) {
-    const sumLbl = document.createElement('p');
-    sumLbl.className = 'brief-label';
-    sumLbl.textContent = 'Team Coverage Summary';
-    wrap.appendChild(sumLbl);
-    const grid = document.createElement('div');
-    grid.className = 'atr-summary-grid';
-    teamCoverage.forEach(c => {
-      const cell = document.createElement('div');
-      cell.className = `atr-summary-cell ${STATUS_CLASS[c.status] || ''}`;
-      const catLbl = document.createElement('p');
-      catLbl.className = 'atr-summary-cell__label';
-      catLbl.textContent = c.category;
-      cell.appendChild(catLbl);
-      if (c.status) {
-        const val = document.createElement('p');
-        val.className = 'atr-summary-cell__value';
-        val.textContent = c.status;
-        cell.appendChild(val);
-      }
-      grid.appendChild(cell);
-    });
-    wrap.appendChild(grid);
-  }
-
-  if (leadershipQ) {
-    const footer = document.createElement('div');
-    footer.className = 'atr-leadership';
-    footer.innerHTML = `<span class="atr-leadership__icon">?</span><p class="atr-leadership__text">${leadershipQ}</p>`;
-    wrap.appendChild(footer);
   }
   return wrap;
 }
@@ -6038,8 +5810,6 @@ function buildSectionCard(blueprint, cap, section) {
       card.appendChild(buildComputeDeploymentLayout(section));
     } else if (section.title === 'AI Roles & Capability Planning' || section.title === 'AI Skills Assessment') {
       card.appendChild(buildAISkillsAssessmentLayout(section));
-    } else if (section.title === 'AI Team Readiness') {
-      card.appendChild(buildAITeamReadinessLayout(section));
     } else if (section.title === 'AI Learning & Adoption') {
       card.appendChild(buildAILearningAdoptionLayout(section));
     } else {

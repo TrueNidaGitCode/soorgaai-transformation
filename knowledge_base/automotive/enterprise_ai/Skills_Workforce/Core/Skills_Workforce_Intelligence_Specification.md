@@ -30,12 +30,11 @@ The domain does not cover technology selection, data preparation, or AI strategy
 
 # Knowledge Architecture
 
-The Skills & Workforce domain consists of three core capabilities that work together as an assessment and development pipeline.
+The Skills & Workforce domain consists of two core capabilities that work together as an assessment and development pipeline.
 
 | Domain                  | Primary Objective                                                                   |
 | ----------------------- | ----------------------------------------------------------------------------------- |
 | AI Roles & Capability Planning | Identify the roles, responsibilities, and AI capabilities required to deliver the initiative |
-| AI Team Readiness       | Assess whether team structure and resourcing are set up to deliver AI effectively   |
 | AI Learning & Adoption  | Design targeted learning programs and adoption strategies to build AI competency    |
 
 ---
@@ -51,8 +50,7 @@ Example input:
 Processing:
 
 1. **AI Roles & Capability Planning** — Identifies the project roles, AI responsibilities, and capability gaps required for the AI use case. Evaluates whether existing team members can fulfil each role and flags missing capabilities before implementation begins.
-2. **AI Team Readiness** — Assesses whether the team is structured correctly with clear AI roles, sufficient capacity, and the right collaboration model to deliver the initiative.
-3. **AI Learning & Adoption** — Designs a targeted learning pathway to close identified skill gaps, selects appropriate learning formats, and builds an adoption strategy to embed AI practices into the team's daily workflow.
+2. **AI Learning & Adoption** — Designs a targeted learning pathway to close identified skill gaps, selects appropriate learning formats, and builds an adoption strategy to embed AI practices into the team's daily workflow.
 
 ---
 
@@ -65,16 +63,6 @@ Identify the project roles, AI responsibilities, and capability gaps required to
 Key question:
 
 **Do we have the right roles, responsibilities, and AI capabilities required to deliver this initiative?**
-
----
-
-## AI Team Readiness
-
-Assess whether the team's composition, roles, responsibilities, capacity, and ways of working are aligned to successfully deliver, operate, and iterate on AI solutions.
-
-Key question:
-
-**Is our team structured and resourced to deliver AI effectively?**
 
 ---
 
@@ -181,11 +169,9 @@ The Skills & Workforce domain should enable delivery teams to:
 # Skills & Workforce Pipeline
 
 ```text
-Assess AI Skills
+AI Roles & Capability Planning
         ↓
-Evaluate Team Readiness
-        ↓
-Design Learning & Adoption
+AI Learning & Adoption
 ```
 
 ---
@@ -201,5 +187,4 @@ Design Learning & Adoption
 # Related Knowledge Assets
 
 * AI_Roles_Capability_Planning.md
-* AI_Team_Readiness.md
 * AI_Learning_Adoption.md

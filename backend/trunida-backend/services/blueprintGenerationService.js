@@ -2913,6 +2913,33 @@ function extractJourneyContext(capabilityName, sections) {
       lines.push(`Architecture Pattern: ${b.archPattern.join(' → ')}`);
     if (b.archConsultantGuidance)
       lines.push(`Architecture Guidance: ${b.archConsultantGuidance}`);
+    // ── Technology Infrastructure: System Integration & Architecture carry-forward ─
+    if (b.siaEngineeringSystems?.length)
+      lines.push(`Integration Systems: ${b.siaEngineeringSystems.map(s => `${s.name}${s.purpose ? ` (${s.purpose})` : ''}`).join(', ')}`);
+    if (b.siaIntegrationPrinciples?.length)
+      lines.push(`Integration Principles: ${b.siaIntegrationPrinciples.join('; ')}`);
+    if (b.siaConsultantGuidance)
+      lines.push(`Integration Guidance: ${b.siaConsultantGuidance}`);
+    if (b.siaAIRecommendation)
+      lines.push(`Integration AI Recommendation: ${b.siaAIRecommendation}`);
+    // ── Technology Infrastructure: AI Platform Readiness carry-forward ───────────
+    if (b.platformCapabilities?.some(c => c.purpose))
+      lines.push(`AI Platform Capabilities: ${b.platformCapabilities.filter(c => c.purpose).map(c => c.name).join(', ')}`);
+    if (b.platformRecs?.length)
+      lines.push(`Platform Recommendations: ${b.platformRecs.map(r => r.title || r.action || r).filter(Boolean).join(', ')}`);
+    if (b.aprConsultantGuidance)
+      lines.push(`Platform Guidance: ${b.aprConsultantGuidance}`);
+    if (b.aprAIRecommendation)
+      lines.push(`Platform AI Recommendation: ${b.aprAIRecommendation}`);
+    // ── Technology Infrastructure: AI Compute & Deployment Strategy carry-forward ─
+    if (b.deploymentBlocks?.length)
+      lines.push(`Deployment Building Blocks: ${b.deploymentBlocks.map(d => d.name).filter(Boolean).join(', ')}`);
+    if (b.cdsDeploymentFlow?.length)
+      lines.push(`Deployment Flow: ${b.cdsDeploymentFlow.join(' → ')}`);
+    if (b.cdsConsultantGuidance)
+      lines.push(`Deployment Guidance: ${b.cdsConsultantGuidance}`);
+    if (b.cdsAIRecommendation)
+      lines.push(`Deployment AI Recommendation: ${b.cdsAIRecommendation}`);
   }
   return lines.join('\n');
 }

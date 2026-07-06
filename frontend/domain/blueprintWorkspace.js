@@ -273,6 +273,8 @@ function renderCapabilityTabs(blueprint) {
 // ── One-time feedback card ─────────────────────────────────────────────────────
 
 const FB_LS_KEY = 'soorgaai_fb_done';
+const FEEDBACK_DELAY_MS = 3.5 * 60 * 1000; // show after ~3.5 min of workspace usage
+let _feedbackTimer = null;
 
 async function maybeShowFeedback() {
   if (_feedbackShown) return;
@@ -348,10 +350,6 @@ function selectCapability(idx) {
   renderBlueprintContent(_blueprint, idx);
   // Chat is blueprint-wide — no restoreChat() on tab switch, history stays visible
   updateAssistantContext();
-
-  // Trigger one-time feedback prompt on first AI ROI tab visit
-  const cap = (currentDomain()?.capabilities || [])[idx];
-  if (cap?.capabilityName === 'AI ROI') maybeShowFeedback();
 }
 
 // ── Blueprint content ─────────────────────────────────────────────────────────
@@ -6958,6 +6956,10 @@ async function initWorkspace(blueprint) {
 
   initAssistantButton();
   initChat();
+
+  // Start the one-time feedback timer for this workspace session
+  clearTimeout(_feedbackTimer);
+  _feedbackTimer = setTimeout(() => maybeShowFeedback(), FEEDBACK_DELAY_MS);
 }
 
 // Listen for 'blueprint:ready' from blueprintGenerate.js

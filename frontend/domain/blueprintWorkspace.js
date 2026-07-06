@@ -5833,7 +5833,7 @@ function buildSectionCard(blueprint, cap, section) {
       card.appendChild(buildPlatformReadinessLayout(section));
     } else if (section.title === 'AI Compute & Deployment Strategy') {
       card.appendChild(buildComputeDeploymentLayout(section));
-    } else if (section.title === 'AI Skills Assessment') {
+    } else if (section.title === 'AI Roles & Capability Planning' || section.title === 'AI Skills Assessment') {
       card.appendChild(buildAISkillsAssessmentLayout(section));
     } else if (section.title === 'AI Team Readiness') {
       card.appendChild(buildAITeamReadinessLayout(section));

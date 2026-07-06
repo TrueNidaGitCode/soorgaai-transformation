@@ -2130,7 +2130,7 @@ function buildAIComputeDeploymentLayout(section) {
 }
 
 
-// ── Skills & Workforce: AI Skills Assessment ───────────────────────────────────
+// ── Skills & Workforce: AI Roles & Capability Planning ────────────────────────
 
 function buildAISkillsAssessmentLayout(section) {
   var b              = section.brief || {};
@@ -2403,7 +2403,7 @@ function buildSectionContent(section) {
   if (t === 'AI Platform Readiness')             return buildAIPlatformReadinessLayout(section);
   if (t === 'AI Compute & Deployment Strategy')  return buildAIComputeDeploymentLayout(section);
   // Skills & Workforce
-  if (t === 'AI Skills Assessment')              return buildAISkillsAssessmentLayout(section);
+  if (t === 'AI Roles & Capability Planning' || t === 'AI Skills Assessment') return buildAISkillsAssessmentLayout(section);
   if (t === 'AI Team Readiness')                 return buildAITeamReadinessLayout(section);
   if (t === 'AI Learning & Adoption')            return buildAILearningAdoptionLayout(section);
   // Default: strategic position only
@@ -3132,7 +3132,7 @@ html, body {
 .cds-rec-card__impact-row { font-size: 0.67rem; color: rgba(255,255,255,0.42); }
 .cds-rec-card__reason { font-size: 0.65rem; color: rgba(255,255,255,0.36); margin: 0; font-style: italic; }
 
-/* ── ASA: AI Skills Assessment ───────────────────────────────── */
+/* ── ASA: AI Roles & Capability Planning ─────────────────────── */
 .asa-skill-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.45rem; padding: 0.45rem 0.65rem; display: flex; flex-direction: column; gap: 0.15rem; }
 .asa-skill-card__name { font-size: 0.76rem; font-weight: 600; color: rgba(255,255,255,0.88); margin: 0; }
 .asa-skill-card__meta { font-size: 0.65rem; color: rgba(255,255,255,0.45); margin: 0; }

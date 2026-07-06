@@ -812,3 +812,33 @@ export async function removeGovernanceEthicsCapability(req, res) {
     res.status(500).json({ error: 'Cleanup failed.' });
   }
 }
+
+/**
+ * POST /strategy-canvas/admin/rename-ai-skills-assessment
+ * One-time migration: renames the AI Skills Assessment capability to
+ * AI Roles & Capability Planning in the calling user's TransformationBlueprint.
+ */
+export async function renameAISkillsAssessmentCapability(req, res) {
+  try {
+    const userId = req.user._id;
+    const result = await TransformationBlueprint.updateMany(
+      { userId, 'domains.domainId': 'skills-workforce', 'domains.capabilities.capabilityId': 'ai-skills-assessment' },
+      {
+        $set: {
+          'domains.$[dom].capabilities.$[cap].capabilityId':   'ai-roles-capability-planning',
+          'domains.$[dom].capabilities.$[cap].capabilityName': 'AI Roles & Capability Planning',
+        },
+      },
+      { arrayFilters: [{ 'dom.domainId': 'skills-workforce' }, { 'cap.capabilityId': 'ai-skills-assessment' }] }
+    );
+    return res.json({
+      ok: true,
+      matched: result.matchedCount,
+      modified: result.modifiedCount,
+      message: 'AI Skills Assessment renamed to AI Roles & Capability Planning.',
+    });
+  } catch (err) {
+    console.error('renameAISkillsAssessmentCapability error:', err);
+    res.status(500).json({ error: 'Migration failed.' });
+  }
+}

@@ -944,9 +944,9 @@ SECTION-SPECIFIC EXTRAS — "AI Compute & Deployment Strategy" sections only:
 
   // ── Skills & Workforce domain ─────────────────────────────────────────────
 
-  'AI Skills Assessment': {
+  'AI Roles & Capability Planning': {
     promptInstruction: `
-SECTION-SPECIFIC EXTRAS — "AI Skills Assessment" sections only:
+SECTION-SPECIFIC EXTRAS — "AI Roles & Capability Planning" sections only:
 
 5. skillsReadiness (number 0–100)
    The overall skills readiness score as a percentage for this AI use case.
@@ -1026,6 +1026,9 @@ SECTION-SPECIFIC EXTRAS — "AI Learning & Adoption" sections only:
   },
 
 };
+
+// Legacy alias: existing blueprints stored with the old section title still match the template.
+SECTION_TEMPLATES['AI Skills Assessment'] = SECTION_TEMPLATES['AI Roles & Capability Planning'];
 
 // ── Shared output parser ──────────────────────────────────────────────────────
 // Normalises and validates the brief JSON returned by any LLM call.
@@ -1786,7 +1789,7 @@ function parseBriefOutput(rawSections, validTitles) {
         };
       });
 
-      // ── Skills & Workforce: AI Skills Assessment parsers ─────────────────────
+      // ── Skills & Workforce: AI Roles & Capability Planning parsers ──────────
 
       const skillsReadiness = parseInt(b.skillsReadiness, 10) || 0;
 
@@ -2703,6 +2706,7 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
   // current KB ID so they can still be regenerated.
   const LEGACY_CAP_ID_MAP = {
     'ai-use-case-prioritization': 'ai-implementation-prioritization',
+    'ai-skills-assessment': 'ai-roles-capability-planning',
   };
   const resolvedCapabilityId = LEGACY_CAP_ID_MAP[capabilityId] ?? capabilityId;
 

@@ -34,7 +34,7 @@ The Skills & Workforce domain consists of three core capabilities that work toge
 
 | Domain                  | Primary Objective                                                                   |
 | ----------------------- | ----------------------------------------------------------------------------------- |
-| AI Skills Assessment    | Identify current AI skill levels and prioritise the gaps that must be closed        |
+| AI Roles & Capability Planning | Identify the roles, responsibilities, and AI capabilities required to deliver the initiative |
 | AI Team Readiness       | Assess whether team structure and resourcing are set up to deliver AI effectively   |
 | AI Learning & Adoption  | Design targeted learning programs and adoption strategies to build AI competency    |
 
@@ -50,7 +50,7 @@ Example input:
 
 Processing:
 
-1. **AI Skills Assessment** — Identifies the technical and domain skills required for the AI use case. Evaluates current team skill levels and flags critical gaps in ML engineering, data analysis, and automotive domain knowledge.
+1. **AI Roles & Capability Planning** — Identifies the project roles, AI responsibilities, and capability gaps required for the AI use case. Evaluates whether existing team members can fulfil each role and flags missing capabilities before implementation begins.
 2. **AI Team Readiness** — Assesses whether the team is structured correctly with clear AI roles, sufficient capacity, and the right collaboration model to deliver the initiative.
 3. **AI Learning & Adoption** — Designs a targeted learning pathway to close identified skill gaps, selects appropriate learning formats, and builds an adoption strategy to embed AI practices into the team's daily workflow.
 
@@ -58,13 +58,13 @@ Processing:
 
 # Intelligence Services
 
-## AI Skills Assessment
+## AI Roles & Capability Planning
 
-Evaluate the current AI skills and knowledge within the team, identify gaps against the requirements of the selected AI use case, and prioritise the competencies that must be developed to support successful delivery.
+Identify the project roles, AI responsibilities, and capability gaps required to successfully deliver, operate, and sustain the selected AI use case. Determine whether existing team members can fulfil each role and recommend capability development before implementation begins.
 
 Key question:
 
-**Do we have the AI skills required to deliver this initiative?**
+**Do we have the right roles, responsibilities, and AI capabilities required to deliver this initiative?**
 
 ---
 
@@ -200,6 +200,6 @@ Design Learning & Adoption
 
 # Related Knowledge Assets
 
-* AI_Skills_Assessment.md
+* AI_Roles_Capability_Planning.md
 * AI_Team_Readiness.md
 * AI_Learning_Adoption.md

@@ -18,7 +18,7 @@ Assess and develop the human capabilities required to deliver, sustain, and scal
 Industry-agnostic Skills & Workforce knowledge, applicable across all enterprise AI programs.
 
 - `Core/Skills_Workforce_Intelligence_Specification.md` — capability overview and pipeline
-- `Core/AI_Skills_Assessment.md`
+- `Core/AI_Roles_Capability_Planning.md`
 - `Core/AI_Team_Readiness.md`
 - `Core/AI_Learning_Adoption.md`
 
@@ -26,7 +26,7 @@ Industry-agnostic Skills & Workforce knowledge, applicable across all enterprise
 
 Automotive-specific extensions covering AI skills for embedded software, ADAS, functional safety, ASPICE-governed programs, and OEM-supplier delivery models.
 
-- `Automotive/Automotive_AI_Skills_Assessment.md`
+- `Automotive/Automotive_AI_Roles_Capability_Planning.md`
 - `Automotive/Automotive_AI_Team_Readiness.md`
 - `Automotive/Automotive_AI_Learning_Adoption.md`
 
@@ -35,7 +35,7 @@ Automotive-specific extensions covering AI skills for embedded software, ADAS, f
 ## Capability Pipeline
 
 ```text
-AI Skills Assessment
+AI Roles & Capability Planning
         ↓
 AI Team Readiness
         ↓

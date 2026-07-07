@@ -38,7 +38,7 @@ function issueAppJWT(user) {
   return jwt.sign(
     { userId: user._id, role: user.role || 'user' },
     JWT_SECRET,
-    { expiresIn: '8h' }
+    { expiresIn: '30d' }
   );
 }
 

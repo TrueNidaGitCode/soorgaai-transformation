@@ -198,6 +198,11 @@ async function fetchTransformationBlueprint() {
   const resp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
+  // Must be checked before the generic !resp.ok fallthrough — otherwise an
+  // expired session gets silently treated as "no blueprint yet" and the user
+  // is dropped into the generate-a-new-blueprint screen instead of being
+  // told they've been logged out.
+  if (resp.status === 401) { window.handleSessionExpired(); throw new Error('SESSION_EXPIRED'); }
   if (resp.status === 404) return null;
   if (!resp.ok) throw new Error('Failed to load blueprint');
   return resp.json();
@@ -258,7 +263,7 @@ function initGenerateForm() {
         body: JSON.stringify({ businessObjective: objective }),
       });
 
-      if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
+      if (resp.status === 401) { window.handleSessionExpired(); return; }
       if (!resp.ok) {
         const { error } = await resp.json().catch(() => ({}));
         throw new Error(error || 'Failed to start blueprint generation.');
@@ -332,6 +337,7 @@ async function init() {
     initGenerateForm(); // keep form initialised in case user clicks New Blueprint
 
   } catch (err) {
+    if (err.message === 'SESSION_EXPIRED') return; // already redirecting home
     console.error('[blueprintGenerate] init error:', err);
     showScreen('screen-generate');
     initGenerateForm();

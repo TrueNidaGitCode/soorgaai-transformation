@@ -48,13 +48,13 @@ export const login = async (req, res) => {
     if (!isMatch) return res.status(400).json({ msg: "Invalid Credentials" });
 
     // Include role in JWT payload.
-    // 8h expiry: a strategy-workspace session is conversational and long-
-    // lived — a 1h token expired mid-conversation and surfaced as a raw
-    // "Invalid token" error in the advisor chat.
+    // 30d expiry: workspace sessions are conversational and revisited across
+    // days — a short-lived token expired mid-conversation (or overnight) and
+    // surfaced as a raw "Invalid token" error in the advisor chat.
     const token = jwt.sign(
       { userId: user._id, role: user.role || 'user' },
       process.env.JWT_SECRET,
-      { expiresIn: "8h" }
+      { expiresIn: "30d" }
     );
 
     return res.status(200).json({

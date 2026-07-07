@@ -299,7 +299,7 @@ async function triggerDomainRegeneration(blueprintId, domainId) {
         body:    JSON.stringify({ domainIds: [domainId] }),
       }
     );
-    if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
+    if (resp.status === 401) { window.handleSessionExpired(); return; }
     if (!resp.ok) throw new Error('Failed to start regeneration');
     const { transformationId } = await resp.json();
 
@@ -438,7 +438,7 @@ function initGenerateForm() {
         body:    JSON.stringify({ businessObjective: objective }),
       });
 
-      if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
+      if (resp.status === 401) { window.handleSessionExpired(); return; }
       if (!resp.ok) {
         const { error } = await resp.json().catch(() => ({}));
         throw new Error(error || 'Failed to start generation.');
@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Auth guard + profile redirect
     const profileResp = await fetch(`${API_BASE}/profile/me`, { headers: authHeaders() });
     if (profileResp.status === 404) { window.location.href = '/profile-setup/profile.html'; return; }
-    if (profileResp.status === 401) { logout(); return; }
+    if (profileResp.status === 401) { window.handleSessionExpired(); return; }
 
     // Load workspace state (profile + domain list with enabled flags)
     const stateResp = await fetch(`${API_BASE}/workspace/state`, { headers: authHeaders() });
@@ -521,6 +521,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (loadingEl) loadingEl.style.display = 'none';
     if (mainEl)    mainEl.style.display    = '';
+
+    if (bpResp.status === 401) { window.handleSessionExpired(); return; }
 
     if (bpResp.status === 404) {
       showState('ws-prompt');

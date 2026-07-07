@@ -139,7 +139,7 @@ async function regenerateDomain(blueprintId, domainId) {
         body:    JSON.stringify({ domainIds: [domainId] }),
       }
     );
-    if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
+    if (resp.status === 401) { window.handleSessionExpired(); return; }
     if (!resp.ok) throw new Error('Failed to start regeneration');
     // Redirect to workspace — it detects 'generating' status and shows the progress screen
     window.location.href = '/workspace/workspace.html';
@@ -6174,7 +6174,7 @@ async function triggerCapabilityRegeneration(cap, btn) {
       `${API_BASE}/strategy-canvas/transformation-blueprint/${_blueprint._id}/domain/${domainId}/capability/${cap.capabilityId}/regenerate`,
       { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` } }
     );
-    if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
+    if (resp.status === 401) { window.handleSessionExpired(); return; }
     if (!resp.ok) {
       const { error } = await resp.json().catch(() => ({}));
       throw new Error(error || 'Failed to start regeneration.');
@@ -6406,7 +6406,7 @@ async function handleChatSubmit(e, prefillText) {
       }),
     });
 
-    if (resp.status === 401) { window.location.href = '/login/login.html'; return; }
+    if (resp.status === 401) { window.handleSessionExpired(); return; }
     if (!resp.ok) {
       const { error } = await resp.json().catch(() => ({}));
       throw new Error(error || 'AI request failed.');

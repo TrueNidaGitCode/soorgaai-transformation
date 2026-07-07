@@ -273,7 +273,8 @@ function renderCapabilityTabs(blueprint) {
 // ── One-time feedback card ─────────────────────────────────────────────────────
 
 const FB_LS_KEY = 'soorgaai_fb_done';
-const FEEDBACK_DELAY_MS = 3.5 * 60 * 1000; // show after ~3.5 min of workspace usage
+const FEEDBACK_DELAY_MS = 3.5 * 60 * 1000; // show partway through a strategy-reading session
+
 let _feedbackTimer = null;
 
 async function maybeShowFeedback() {
@@ -6957,7 +6958,7 @@ async function initWorkspace(blueprint) {
   initAssistantButton();
   initChat();
 
-  // Start the one-time feedback timer for this workspace session
+  // Start the one-time feedback timer for this session
   clearTimeout(_feedbackTimer);
   _feedbackTimer = setTimeout(() => maybeShowFeedback(), FEEDBACK_DELAY_MS);
 }

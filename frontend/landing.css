@@ -287,31 +287,6 @@
   margin: 10px 0 0;
 }
 
-/* Example chips */
-.hero-prompt__chips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 18px;
-}
-
-.hero-prompt__chip {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12.5px;
-  padding: 7px 15px;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-}
-.hero-prompt__chip:hover {
-  border-color: var(--accent-green);
-  color: #fff;
-  background: rgba(92, 197, 167, 0.08);
-}
-
 /* ── Bottom note ────────────────────────────────────────────── */
 .bottom-note {
   text-align: center;

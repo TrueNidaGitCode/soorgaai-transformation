@@ -138,14 +138,6 @@ export function wireHeroPrompt() {
     const errEl = document.getElementById('hero-prompt-error');
     if (!form || !input) return;
 
-    document.querySelectorAll('.hero-prompt__chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            input.value = chip.dataset.text || '';
-            autogrow(input);
-            input.focus();
-        });
-    });
-
     // ChatGPT-style input: grow with content, Enter submits, Shift+Enter = newline
     input.addEventListener('input', () => autogrow(input));
     input.addEventListener('keydown', (e) => {

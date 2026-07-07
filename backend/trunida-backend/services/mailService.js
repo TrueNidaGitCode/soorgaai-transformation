@@ -29,6 +29,11 @@ const transporter = mailConfigured
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      // Fail fast instead of hanging the request when the host blocks
+      // outbound SMTP or the server is unreachable
+      connectionTimeout: 10000,
+      greetingTimeout:   10000,
+      socketTimeout:     15000,
     })
   : null;
 
@@ -38,6 +43,17 @@ export async function sendOtpEmail(to, code) {
     return;
   }
 
+  try {
+    await sendViaSmtp(to, code);
+  } catch (err) {
+    // Surface the exact failure class in server logs: ETIMEDOUT/ESOCKET =
+    // egress blocked or unreachable; EAUTH = bad credentials
+    console.error(`[mail] OTP send failed for ${to}: code=${err.code || 'n/a'} — ${err.message}`);
+    throw err;
+  }
+}
+
+async function sendViaSmtp(to, code) {
   await transporter.sendMail({
     from:    process.env.EMAIL_FROM || process.env.EMAIL_USER,
     to,

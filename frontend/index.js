@@ -26,15 +26,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /**
  * "Log in or sign up" modal — opens from the topbar Log in button.
- * Google goes straight to OAuth; email hands off to the login page
- * with the address prefilled.
+ * Google goes straight to OAuth. Email is passwordless: a 6-digit code is
+ * sent to the address, and verifying it signs the user in (creating the
+ * account on first use).
  */
 export function wireAuthModal() {
     const modal = document.getElementById('auth-modal');
     if (!modal) return;
 
-    const open  = () => { modal.style.display = ''; document.getElementById('auth-email')?.focus(); };
-    const close = () => { modal.style.display = 'none'; };
+    const stepEmail = document.getElementById('auth-step-email');
+    const stepCode  = document.getElementById('auth-step-code');
+    const errEl     = document.getElementById('auth-modal-error');
+    let currentEmail = '';
+    let resendTimer  = null;
+
+    const showError = (msg) => { if (errEl) { errEl.textContent = msg; errEl.style.display = ''; } };
+    const hideError = () => { if (errEl) errEl.style.display = 'none'; };
+
+    const showStep = (step) => {
+        hideError();
+        if (stepEmail) stepEmail.style.display = (step === 'email') ? '' : 'none';
+        if (stepCode)  stepCode.style.display  = (step === 'code')  ? '' : 'none';
+        (step === 'email'
+            ? document.getElementById('auth-email')
+            : document.getElementById('auth-code'))?.focus();
+    };
+
+    const open  = () => { modal.style.display = ''; showStep('email'); };
+    const close = () => { modal.style.display = 'none'; clearInterval(resendTimer); };
 
     document.getElementById('topbar-login')?.addEventListener('click', (e) => {
         e.preventDefault();
@@ -52,13 +71,117 @@ export function wireAuthModal() {
             || `${API_BASE()}/auth/oauth/google`;
     });
 
-    document.getElementById('auth-email-form')?.addEventListener('submit', (e) => {
+    // 60s resend cooldown, mirroring the backend's per-email limit
+    const startResendCooldown = () => {
+        const btn = document.getElementById('auth-code-resend');
+        if (!btn) return;
+        let left = 60;
+        btn.disabled = true;
+        btn.textContent = `Resend code (${left}s)`;
+        clearInterval(resendTimer);
+        resendTimer = setInterval(() => {
+            left -= 1;
+            if (left <= 0) {
+                clearInterval(resendTimer);
+                btn.disabled = false;
+                btn.textContent = 'Resend code';
+            } else {
+                btn.textContent = `Resend code (${left}s)`;
+            }
+        }, 1000);
+    };
+
+    const requestCode = async (email) => {
+        const resp = await fetch(`${API_BASE()}/users/email-otp/request`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+        if (!resp.ok) {
+            const { msg } = await resp.json().catch(() => ({}));
+            throw new Error(msg || 'Failed to send the code. Please try again.');
+        }
+    };
+
+    // Step 1 — send the code
+    document.getElementById('auth-email-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
+        hideError();
         const email = document.getElementById('auth-email')?.value?.trim() || '';
-        const target = email
-            ? `/login/login.html?email=${encodeURIComponent(email)}`
-            : '/login/login.html';
-        window.location.href = target;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showError('Please enter a valid email address.');
+            return;
+        }
+
+        const btn = document.getElementById('auth-email-continue');
+        if (btn) { btn.disabled = true; btn.textContent = 'Sending code…'; }
+
+        try {
+            await requestCode(email);
+            currentEmail = email;
+            const emailEl = document.getElementById('auth-code-email');
+            if (emailEl) emailEl.textContent = email;
+            const codeInput = document.getElementById('auth-code');
+            if (codeInput) codeInput.value = '';
+            showStep('code');
+            startResendCooldown();
+        } catch (err) {
+            showError(err.message);
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Continue'; }
+        }
+    });
+
+    // Step 2 — verify the code, sign in, and continue
+    document.getElementById('auth-code-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError();
+        const code = document.getElementById('auth-code')?.value?.trim() || '';
+        if (!/^\d{6}$/.test(code)) {
+            showError('Enter the 6-digit code from the email.');
+            return;
+        }
+
+        const btn = document.getElementById('auth-code-verify');
+        if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+
+        try {
+            const resp = await fetch(`${API_BASE()}/users/email-otp/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: currentEmail, code }),
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) throw new Error(data.msg || 'Verification failed. Please try again.');
+
+            localStorage.setItem('token',    data.token);
+            localStorage.setItem('userId',   data.userId);
+            localStorage.setItem('username', data.username);
+            localStorage.setItem('role',     data.role || 'user');
+
+            // Guest preview waiting? /try claims it into the account and forwards.
+            window.location.href = localStorage.getItem('soorgaai_guest_id')
+                ? '/try/try.html'
+                : '/workspace/workspace.html';
+        } catch (err) {
+            showError(err.message);
+            if (btn) { btn.disabled = false; btn.textContent = 'Verify & continue'; }
+        }
+    });
+
+    document.getElementById('auth-code-resend')?.addEventListener('click', async () => {
+        hideError();
+        try {
+            await requestCode(currentEmail);
+            startResendCooldown();
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+
+    document.getElementById('auth-code-back')?.addEventListener('click', () => {
+        clearInterval(resendTimer);
+        showStep('email');
     });
 }
 

@@ -1,4 +1,6 @@
 import { User } from "../models/user.js"; // ✅ Use named import (lowercase filename)
+import EmailOtp from "../models/EmailOtp.js";
+import { sendOtpEmail, mailConfigured } from "../services/mailService.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -92,6 +94,117 @@ export const getUserProfile = async (req, res) => {
   } catch (error) {
     console.error("❌ Error fetching user profile:", error);
     return res.status(500).json({ error: "Server error" });
+  }
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Email OTP sign-in (passwordless — powers the landing-page auth modal)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const OTP_TTL_MS         = 10 * 60 * 1000; // code valid for 10 minutes
+const OTP_RESEND_MS      = 60 * 1000;      // min gap between sends per email
+const OTP_MAX_ATTEMPTS   = 5;              // failed verifies before code dies
+
+const hashOtp = (code) => crypto.createHash('sha256').update(String(code)).digest('hex');
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// ✅ Request a sign-in code
+export const requestEmailOtp = async (req, res) => {
+  try {
+    const email = req.body.email?.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ msg: "A valid email address is required" });
+    }
+
+    if (!mailConfigured && process.env.NODE_ENV === 'production') {
+      return res.status(503).json({ msg: "Email sign-in is temporarily unavailable. Please continue with Google." });
+    }
+
+    // Resend cooldown
+    const existing = await EmailOtp.findOne({ email }).lean();
+    if (existing?.lastSentAt && Date.now() - new Date(existing.lastSentAt).getTime() < OTP_RESEND_MS) {
+      return res.status(429).json({ msg: "Code already sent — wait a minute before requesting another." });
+    }
+
+    const code = crypto.randomInt(100000, 1000000); // 6 digits, no leading zero
+    await EmailOtp.updateOne(
+      { email },
+      {
+        $set: {
+          codeHash:   hashOtp(code),
+          expiresAt:  new Date(Date.now() + OTP_TTL_MS),
+          attempts:   0,
+          lastSentAt: new Date(),
+        },
+      },
+      { upsert: true }
+    );
+
+    await sendOtpEmail(email, code);
+
+    return res.status(200).json({ msg: "Code sent" });
+  } catch (error) {
+    console.error("❌ Email OTP request error:", error);
+    return res.status(500).json({ msg: "Failed to send the code. Please try again." });
+  }
+};
+
+// ✅ Verify the code — logs in an existing account or creates one
+export const verifyEmailOtp = async (req, res) => {
+  try {
+    const email = req.body.email?.trim().toLowerCase();
+    const code  = String(req.body.code || '').trim();
+
+    if (!email || !code) {
+      return res.status(400).json({ msg: "Email and code are required" });
+    }
+
+    const otp = await EmailOtp.findOne({ email });
+    if (!otp || otp.expiresAt < new Date()) {
+      return res.status(400).json({ msg: "Code expired — request a new one." });
+    }
+    if (otp.attempts >= OTP_MAX_ATTEMPTS) {
+      await EmailOtp.deleteOne({ _id: otp._id });
+      return res.status(429).json({ msg: "Too many attempts — request a new code." });
+    }
+    if (otp.codeHash !== hashOtp(code)) {
+      await EmailOtp.updateOne({ _id: otp._id }, { $inc: { attempts: 1 } });
+      return res.status(400).json({ msg: "Incorrect code. Please check and try again." });
+    }
+
+    await EmailOtp.deleteOne({ _id: otp._id });
+
+    // Case-insensitive lookup so pre-existing mixed-case accounts still match
+    let user = await User.findOne({ email: { $regex: `^${escapeRegex(email)}$`, $options: 'i' } });
+    if (!user) {
+      user = new User({
+        name:          email.split('@')[0],
+        email,
+        authProvider:  'local',
+        emailVerified: true,
+        // no password — OTP / OAuth account
+      });
+      await user.save();
+    } else if (!user.emailVerified) {
+      user.emailVerified = true;
+      await user.save();
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role || 'user' },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    return res.status(200).json({
+      token,
+      userId:   user._id.toString(),
+      username: user.name,
+      role:     user.role || 'user',
+    });
+  } catch (error) {
+    console.error("❌ Email OTP verify error:", error);
+    return res.status(500).json({ msg: "Server Error" });
   }
 };
 

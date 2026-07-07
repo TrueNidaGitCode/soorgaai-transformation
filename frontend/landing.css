@@ -489,6 +489,40 @@
   transition: opacity 0.12s;
 }
 .auth-modal__continue:hover { opacity: 0.85; }
+.auth-modal__continue:disabled { opacity: 0.5; cursor: default; }
+
+.auth-modal__code {
+  text-align: center;
+  letter-spacing: 6px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.auth-modal__links {
+  margin: 18px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.auth-modal__link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth-modal__link:hover { color: var(--accent-green); }
+.auth-modal__link:disabled { color: rgba(255, 255, 255, 0.3); cursor: default; text-decoration: none; }
+
+.auth-modal .prompt__error { margin-top: 14px; }
 
 /* ── Mobile ─────────────────────────────────────────────────── */
 @media (max-width: 768px) {

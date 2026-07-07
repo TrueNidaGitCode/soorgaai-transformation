@@ -1,5 +1,5 @@
 {
-  "runAt": "2026-07-07T02:05:03.663Z",
+  "runAt": "2026-07-07T02:11:35.618Z",
   "rows": [
     {
       "kpi": "People Invited",
@@ -55,27 +55,32 @@
     {
       "name": "KUSHAL JOSHI",
       "email": "iamkushaljoshi@gmail.com",
-      "organization": "KPIT"
+      "organization": "KPIT",
+      "feedback": ""
     },
     {
       "name": "Pranesh Babykannan",
       "email": "pranesh.babykannan@kpit.com",
-      "organization": "KPIT"
+      "organization": "KPIT",
+      "feedback": "High Value"
     },
     {
       "name": "Test User",
       "email": "testuser@gmail.com",
-      "organization": ""
+      "organization": "",
+      "feedback": ""
     },
     {
       "name": "User Demo",
       "email": "userdemo@gmail.com",
-      "organization": ""
+      "organization": "",
+      "feedback": ""
     },
     {
       "name": "Vinay Padi",
       "email": "vinay.padi@gmail.com",
-      "organization": "KPIT"
+      "organization": "KPIT",
+      "feedback": ""
     }
   ]
 }

@@ -21,8 +21,9 @@
  *   High/Medium/Low-Value FB  — UserFeedback.rating counts (high/some/low)
  *   Enterprise Introductions  — manual input (no tracking exists in-app)
  *
- * Also prints a second section: Name / Email / Organization for every user
- * counted under "AI Strategies Generated", and saves it to
+ * Also prints a second section: Name / Email / Organization / Feedback for
+ * every user counted under "AI Strategies Generated" (feedback blank if they
+ * haven't submitted the one-time in-app feedback prompt), and saves it to
  * ../../reports/generators.csv + the "generators" key in latest.json.
  *
  * Usage:
@@ -103,7 +104,8 @@ async function main() {
   const loggedInToday = profiles.filter(p => new Date(p.createdAt) >= today);
 
   // Feedback
-  const feedback = await UserFeedback.find({}, { rating: 1, createdAt: 1 }).lean();
+  const feedback = await UserFeedback.find({}, { userId: 1, rating: 1, createdAt: 1 }).lean();
+  const feedbackByUserId = new Map(feedback.map(f => [String(f.userId), f.rating]));
   const countRating = (rating, sinceToday = false) =>
     feedback.filter(f => f.rating === rating && (!sinceToday || new Date(f.createdAt) >= today)).length;
 
@@ -131,10 +133,13 @@ async function main() {
   ).lean();
   const orgNameByUserId = new Map(generatorProfiles.map(p => [String(p.userId), p.orgName]));
 
+  const FEEDBACK_LABELS = { high: 'High Value', some: 'Medium Value', low: 'Low Value' };
+
   const generators = generatorUsers.map(u => ({
     name:         u.name || '',
     email:        u.email || '',
     organization: orgNameByUserId.get(String(u._id)) || companyNameByUserId.get(String(u._id)) || '',
+    feedback:     FEEDBACK_LABELS[feedbackByUserId.get(String(u._id))] || '',
   })).sort((a, b) => a.name.localeCompare(b.name));
 
   // Console table
@@ -145,9 +150,9 @@ async function main() {
   }
 
   console.log('\n--- Page 2: AI Strategy Generators ---');
-  console.log(pad('Name', 22) + pad('Email', 32) + 'Organization');
+  console.log(pad('Name', 22) + pad('Email', 32) + pad('Organization', 14) + 'Feedback');
   for (const g of generators) {
-    console.log(pad(g.name, 22) + pad(g.email, 32) + g.organization);
+    console.log(pad(g.name, 22) + pad(g.email, 32) + pad(g.organization, 14) + g.feedback);
   }
 
   // Persist snapshot
@@ -161,7 +166,7 @@ async function main() {
   if (csvHeaderNeeded) csvLines.unshift('runAt,kpi,target,today,total,status');
   fs.appendFileSync(HISTORY_CSV_PATH, csvLines.join('\n') + '\n');
 
-  const generatorsCsv = ['name,email,organization', ...generators.map(g => `"${g.name}","${g.email}","${g.organization}"`)];
+  const generatorsCsv = ['name,email,organization,feedback', ...generators.map(g => `"${g.name}","${g.email}","${g.organization}","${g.feedback}"`)];
   fs.writeFileSync(GENERATORS_CSV_PATH, generatorsCsv.join('\n') + '\n');
 
   console.log(`\nSnapshot saved: ${LATEST_JSON_PATH}`);

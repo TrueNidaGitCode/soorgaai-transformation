@@ -72,7 +72,14 @@ document.addEventListener("DOMContentLoaded", function () {
     
     // Setup form submission handler
     loginForm.addEventListener("submit", handleLogin);
-    
+
+    // Prefill email when handed off from the landing-page auth modal (?email=)
+    const prefillEmail = new URLSearchParams(window.location.search).get('email');
+    if (prefillEmail && emailInput && !emailInput.value) {
+        emailInput.value = prefillEmail;
+        passwordInput?.focus();
+    }
+
     // Clear error message on input
     emailInput?.addEventListener("input", () => hideError());
     passwordInput?.addEventListener("input", () => hideError());

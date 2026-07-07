@@ -13,7 +13,7 @@ const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';
 const NEW_BLUEPRINT_KEY  = 'soorgaai_new_blueprint';
 
-/* v8 ignore next 8 */
+/* v8 ignore next 9 */
 document.addEventListener('DOMContentLoaded', () => {
     renderStages(MATURITY_STAGES, document.querySelector('.stages'));
     wirePrimaryCta();
@@ -21,7 +21,46 @@ document.addEventListener('DOMContentLoaded', () => {
     wireSidebarBlueprints();
     wireTopbarAuth();
     wireHeroPrompt();
+    wireAuthModal();
 });
+
+/**
+ * "Log in or sign up" modal — opens from the topbar Log in button.
+ * Google goes straight to OAuth; email hands off to the login page
+ * with the address prefilled.
+ */
+export function wireAuthModal() {
+    const modal = document.getElementById('auth-modal');
+    if (!modal) return;
+
+    const open  = () => { modal.style.display = ''; document.getElementById('auth-email')?.focus(); };
+    const close = () => { modal.style.display = 'none'; };
+
+    document.getElementById('topbar-login')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        open();
+    });
+
+    document.getElementById('auth-modal-close')?.addEventListener('click', close);
+    document.getElementById('auth-modal-backdrop')?.addEventListener('click', close);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display !== 'none') close();
+    });
+
+    document.getElementById('auth-google')?.addEventListener('click', () => {
+        window.location.href = window.CONFIG?.AUTH?.OAUTH?.GOOGLE
+            || `${API_BASE()}/auth/oauth/google`;
+    });
+
+    document.getElementById('auth-email-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('auth-email')?.value?.trim() || '';
+        const target = email
+            ? `/login/login.html?email=${encodeURIComponent(email)}`
+            : '/login/login.html';
+        window.location.href = target;
+    });
+}
 
 /**
  * Sidebar: fixed on desktop, off-canvas drawer on mobile.

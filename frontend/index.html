@@ -19,179 +19,92 @@
   <title>SoorgaAI — AI Strategy Generator for Automotive Teams</title>
 
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="home.css">
+  <link rel="stylesheet" href="landing.css">
 
   <script src="login/config.js"></script>
-  <script type="module" src="login/authState.js"></script>
-  <script type="module" src="navbar/navbar.js"></script>
   <script type="module" src="index.js"></script>
 </head>
-<body data-nav-mode="anonymous">
+<body class="landing2">
 
-  <!-- Navbar: min-height reserved to prevent CLS -->
-  <div id="navbar-container" style="min-height:64px"></div>
-
-  <main>
-
-    <!-- ═══════════════════════════════════════════════════
-         HERO — 50/50 two-column layout
-         Left:  label · headline · description · CTAs
-         Right: product workflow preview
-    ════════════════════════════════════════════════════ -->
-    <section class="hero" aria-labelledby="hero-heading">
-
-      <!-- ── Left column ──────────────────────────────── -->
-      <div class="hero__left">
-
-        <div class="hero__badge hero__badge--label" role="img" aria-label="Product audience">
-          Built for Automotive Product Managers and Project Managers
-        </div>
-
-        <h1 id="hero-heading">
-          Turn Your Automotive Project<br>
-          <span class="hero__headline-accent">into an AI-Enabled Project</span>
-        </h1>
-
-        <div class="hero__desc-wrap">
-          <p class="hero__desc">
-            Most automotive engineering teams recognize the importance of AI but struggle to
-            identify where it can create business value.
-          </p>
-          <p class="hero__desc">
-            Generate a structured AI strategy tailored to your project, identify high-impact
-            opportunities, and create an executive-ready blueprint that can be refined and
-            shared with stakeholders.
-          </p>
-        </div>
-
-        <form id="hero-prompt-form" class="hero-prompt" aria-label="Generate your AI blueprint">
-          <textarea
-            id="hero-objective"
-            class="hero-prompt__input"
-            rows="3"
-            maxlength="2000"
-            placeholder="Describe your project and what you want AI to improve — e.g. &quot;We handle bug-ticket pre-analysis for an automotive OEM and want AI to cut triage time.&quot;"
-            aria-label="Your business objective"
-          ></textarea>
-          <div class="hero-prompt__bar">
-            <p id="hero-prompt-error" class="hero-prompt__error" role="alert" style="display:none"></p>
-            <button
-              type="submit"
-              id="cta-generate-roadmap"
-              class="cta-button cta-button--primary hero-prompt__submit"
-              data-cta="generate-roadmap"
-            >
-              Generate My AI Blueprint &rarr;
-            </button>
-          </div>
-        </form>
-
-        <div class="hero-prompt__chips" aria-label="Example objectives">
-          <button type="button" class="hero-prompt__chip" data-text="We are the testing team working on test case design and execution against JIRA user stories. We want AI to give us traceability and coverage of test cases against acceptance criteria.">Test-case traceability</button>
-          <button type="button" class="hero-prompt__chip" data-text="We handle pre-analysis of bug tickets from JIRA and field-reported issues. Analysis takes ~8 hours per cycle and we want AI to reduce triage time and improve ticket-classification accuracy.">Faster bug triage</button>
-          <button type="button" class="hero-prompt__chip" data-text="We deliver automotive application software in .NET deployed to the cloud, and want to use AI across the SDLC to improve team productivity and delivery quality.">SDLC productivity</button>
-        </div>
-
-        <p class="hero__trust">Free preview, no signup needed. <a href="/framework/framework.html" class="hero__trust-link">View the framework</a></p>
-
-      </div>
-
-      <!-- ── Right column — product workflow preview ──────────── -->
-      <aside class="hero__right" aria-label="Product workflow preview">
-        <div class="wf-panel">
-          <p class="wf-panel__label">See how it works</p>
-
-          <!-- Step 1: Business Objective -->
-          <div class="wf-step">
-            <div class="wf-step__track">
-              <div class="wf-step__dot"></div>
-              <div class="wf-step__line"></div>
-            </div>
-            <div class="wf-step__body">
-              <p class="wf-step__name">Business Objective</p>
-              <div class="wf-input-mock">
-                <p class="wf-input-mock__text">"Automate defect triage and root-cause analysis across our vehicle software programs…"</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 2: AI Strategy Generation -->
-          <div class="wf-step">
-            <div class="wf-step__track">
-              <div class="wf-step__dot"></div>
-              <div class="wf-step__line"></div>
-            </div>
-            <div class="wf-step__body">
-              <p class="wf-step__name">AI Strategy Generation</p>
-              <div class="wf-caps-mock">
-                <span class="wf-cap">AI Vision ✓</span>
-                <span class="wf-cap">Roadmap ✓</span>
-                <span class="wf-cap">Governance ✓</span>
-                <span class="wf-cap">AI ROI ✓</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 3: Company Blueprint -->
-          <div class="wf-step">
-            <div class="wf-step__track">
-              <div class="wf-step__dot"></div>
-              <div class="wf-step__line"></div>
-            </div>
-            <div class="wf-step__body">
-              <p class="wf-step__name">Company Blueprint</p>
-              <div class="wf-blueprint-mock">
-                <div class="wf-blueprint-mock__tabs">
-                  <span class="wf-mock-tab wf-mock-tab--active">AI Vision</span>
-                  <span class="wf-mock-tab">Roadmap</span>
-                  <span class="wf-mock-tab">AI ROI</span>
-                </div>
-                <div class="wf-blueprint-mock__content">
-                  <div class="wf-mock-line wf-mock-line--title"></div>
-                  <div class="wf-mock-line"></div>
-                  <div class="wf-mock-line wf-mock-line--short"></div>
-                  <div class="wf-mock-cards">
-                    <div class="wf-mock-card"></div>
-                    <div class="wf-mock-card"></div>
-                    <div class="wf-mock-card"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 4: PDF Export -->
-          <div class="wf-step">
-            <div class="wf-step__track">
-              <div class="wf-step__dot"></div>
-            </div>
-            <div class="wf-step__body">
-              <p class="wf-step__name">PDF Export</p>
-              <div class="wf-export-mock">
-                <span class="wf-export-mock__icon">↓</span>
-                <span class="wf-export-mock__label">Executive-Ready Blueprint · PDF</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </aside>
-
-    </section>
-
-  </main>
-
-  <!-- ═══════════════════════════════════════════════════
-       FOOTER
-  ════════════════════════════════════════════════════ -->
-  <footer class="site-footer">
-    <div class="container">
-      <p>&copy; 2025 SoorgaAI. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
+  <!-- ── Left sidebar (expanded by default, collapsible) ─────── -->
+  <aside id="side" class="side">
+    <div class="side__top">
+      <a href="/" class="side__logo" aria-label="SoorgaAI — home">Soorga<span>AI</span></a>
+      <button id="side-toggle" class="side__toggle" aria-label="Toggle sidebar" title="Toggle sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
     </div>
-  </footer>
 
-  <!-- CTA Router loaded last so CTARouter is available when onclick fires -->
-  <script src="shared/ctaRouter.js"></script>
+    <nav class="side__nav" aria-label="Site navigation">
+      <a href="/enterprise/enterprise.html" class="side__link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+        <span>Enterprise</span>
+      </a>
+      <a href="/framework/framework.html" class="side__link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Framework</span>
+      </a>
+      <a href="/pricing/pricing.html" class="side__link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Pricing</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- ── Main column ─────────────────────────────────────────── -->
+  <div class="main-col">
+
+    <header class="topbar">
+      <button id="side-toggle-mobile" class="side__toggle side__toggle--mobile" aria-label="Open menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div id="topbar-auth" class="topbar__auth">
+        <a href="/login/login.html" class="auth-btn auth-btn--solid">Log in</a>
+        <a href="/signup/signup.html" class="auth-btn auth-btn--outline">Sign up for free</a>
+      </div>
+    </header>
+
+    <main class="center">
+      <h1 class="center__heading">
+        Turn Your Automotive Project<br>
+        <span class="center__heading-accent">into an AI-Enabled Project</span>
+      </h1>
+
+      <p class="center__desc">
+        Most automotive engineering teams recognize the importance of AI but struggle to
+        identify where it can create business value.
+      </p>
+      <p class="center__desc">
+        Generate a structured AI strategy tailored to your project, identify high-impact
+        opportunities, and create an executive-ready blueprint that can be refined and
+        shared with stakeholders.
+      </p>
+
+      <form id="hero-prompt-form" class="prompt" aria-label="Generate your AI blueprint">
+        <textarea
+          id="hero-objective"
+          class="prompt__input"
+          rows="1"
+          maxlength="2000"
+          placeholder="Describe your project and what you want AI to improve…"
+          aria-label="Your business objective"
+        ></textarea>
+        <button type="submit" class="prompt__send" aria-label="Generate my blueprint" title="Generate my blueprint">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </form>
+      <p id="hero-prompt-error" class="prompt__error" role="alert" style="display:none"></p>
+
+      <div class="hero-prompt__chips" aria-label="Example objectives">
+        <button type="button" class="hero-prompt__chip" data-text="We are the testing team working on test case design and execution against JIRA user stories. We want AI to give us traceability and coverage of test cases against acceptance criteria.">Test-case traceability</button>
+        <button type="button" class="hero-prompt__chip" data-text="We handle pre-analysis of bug tickets from JIRA and field-reported issues. Analysis takes ~8 hours per cycle and we want AI to reduce triage time and improve ticket-classification accuracy.">Faster bug triage</button>
+        <button type="button" class="hero-prompt__chip" data-text="We deliver automotive application software in .NET deployed to the cloud, and want to use AI across the SDLC to improve team productivity and delivery quality.">SDLC productivity</button>
+      </div>
+    </main>
+
+    <p class="bottom-note">Free preview, no signup needed.</p>
+
+  </div>
 
 </body>
 </html>

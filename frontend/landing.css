@@ -153,6 +153,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow-y: auto; /* never let content become unreachable on short viewports */
 }
 
 .topbar {
@@ -160,7 +161,8 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  padding: 14px 20px;
+  padding: 12px 20px;
+  flex-shrink: 0;
 }
 
 .topbar__auth { display: flex; align-items: center; gap: 10px; }
@@ -195,23 +197,24 @@
 
 /* ── Center content ─────────────────────────────────────────── */
 .center {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 0 24px;
+  padding: 8px 24px;
   max-width: 760px;
   width: 100%;
-  margin: 0 auto;
+  /* margin:auto centers vertically in the remaining space but, unlike
+     flex justify-content:center, stays scrollable when content is taller
+     than the viewport */
+  margin: auto;
 }
 
 .center__heading {
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 800;
   line-height: 1.25;
   text-align: center;
-  margin: 0 0 18px;
+  margin: 0 0 14px;
 }
 
 .center__heading-accent {
@@ -222,14 +225,14 @@
 }
 
 .center__desc {
-  font-size: 14.5px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.55;
   color: rgba(255, 255, 255, 0.55);
   text-align: center;
   max-width: 620px;
   margin: 0 0 10px;
 }
-.center__desc:last-of-type { margin-bottom: 30px; }
+.center__desc:last-of-type { margin-bottom: 22px; }
 
 /* ── Prompt box (ChatGPT-style) ─────────────────────────────── */
 .prompt {
@@ -291,14 +294,14 @@
 .examples {
   width: 100%;
   max-width: 640px;
-  margin-top: 30px;
+  margin-top: 20px;
 }
 
 .examples__divider {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .examples__divider::before,
 .examples__divider::after {
@@ -320,11 +323,11 @@
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
-  padding: 18px 22px;
+  padding: 14px 18px;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 13.5px;
+  font-size: 13px;
   font-family: inherit;
-  line-height: 1.65;
+  line-height: 1.55;
   text-align: left;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
@@ -340,8 +343,9 @@
   text-align: center;
   font-size: 12.5px;
   color: rgba(255, 255, 255, 0.38);
-  padding: 14px 24px 18px;
+  padding: 10px 24px 12px;
   margin: 0;
+  flex-shrink: 0;
 }
 
 /* ── Mobile ─────────────────────────────────────────────────── */

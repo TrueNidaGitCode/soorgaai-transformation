@@ -86,7 +86,7 @@
           class="prompt__input"
           rows="1"
           maxlength="2000"
-          placeholder="Describe your project and what you want AI to improve — e.g. &quot;We handle bug-ticket pre-analysis for an automotive OEM and want AI to cut triage time.&quot;"
+          placeholder="Describe your project and what you want to improve"
           aria-label="Your business objective"
         ></textarea>
         <button type="submit" class="prompt__send" aria-label="Generate my blueprint" title="Generate my blueprint">
@@ -94,6 +94,18 @@
         </button>
       </form>
       <p id="hero-prompt-error" class="prompt__error" role="alert" style="display:none"></p>
+
+      <div class="examples">
+        <div class="examples__divider"><span>Example prompts</span></div>
+        <button type="button" class="example-card" id="example-card">
+          We manage a software maintenance and development program where teams spend considerable
+          effort analyzing defects, incidents, and support tickets from multiple sources. The current
+          process involves issue understanding, validation, triage, root-cause assessment,
+          prioritization, and assignment to the appropriate teams. We want to leverage AI to reduce
+          analysis effort, improve classification accuracy, accelerate ticket routing, and increase
+          overall delivery efficiency while maintaining quality and governance standards.
+        </button>
+      </div>
     </main>
 
     <p class="bottom-note">Free preview, no signup needed.</p>

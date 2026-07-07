@@ -138,6 +138,14 @@ export function wireHeroPrompt() {
     const errEl = document.getElementById('hero-prompt-error');
     if (!form || !input) return;
 
+    // Example prompt card fills the input
+    const example = document.getElementById('example-card');
+    example?.addEventListener('click', () => {
+        input.value = example.textContent.replace(/\s+/g, ' ').trim();
+        autogrow(input);
+        input.focus();
+    });
+
     // ChatGPT-style input: grow with content, Enter submits, Shift+Enter = newline
     input.addEventListener('input', () => autogrow(input));
     input.addEventListener('keydown', (e) => {

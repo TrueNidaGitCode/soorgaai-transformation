@@ -1,0 +1,54 @@
+{
+  "runAt": "2026-07-07T01:00:52.234Z",
+  "rows": [
+    {
+      "kpi": "People Invited",
+      "target": 50,
+      "today": 0,
+      "total": 0,
+      "status": "⬜"
+    },
+    {
+      "kpi": "People Logged In",
+      "target": 35,
+      "today": 0,
+      "total": 3,
+      "status": "🟨"
+    },
+    {
+      "kpi": "AI Strategies Generated",
+      "target": 30,
+      "today": 0,
+      "total": 4,
+      "status": "🟨"
+    },
+    {
+      "kpi": "High-Value Feedback",
+      "target": 10,
+      "today": 0,
+      "total": 1,
+      "status": "🟨"
+    },
+    {
+      "kpi": "Medium-Value Feedback",
+      "target": 15,
+      "today": 0,
+      "total": 0,
+      "status": "⬜"
+    },
+    {
+      "kpi": "Low-Value Feedback",
+      "target": 5,
+      "today": 0,
+      "total": 0,
+      "status": "⬜"
+    },
+    {
+      "kpi": "Enterprise Introductions",
+      "target": 5,
+      "today": 0,
+      "total": 0,
+      "status": "⬜"
+    }
+  ]
+}

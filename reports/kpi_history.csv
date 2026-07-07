@@ -1,0 +1,8 @@
+runAt,kpi,target,today,total,status
+2026-07-07T01:00:52.234Z,People Invited,50,0,0,⬜
+2026-07-07T01:00:52.234Z,People Logged In,35,0,3,🟨
+2026-07-07T01:00:52.234Z,AI Strategies Generated,30,0,4,🟨
+2026-07-07T01:00:52.234Z,High-Value Feedback,10,0,1,🟨
+2026-07-07T01:00:52.234Z,Medium-Value Feedback,15,0,0,⬜
+2026-07-07T01:00:52.234Z,Low-Value Feedback,5,0,0,⬜
+2026-07-07T01:00:52.234Z,Enterprise Introductions,5,0,0,⬜

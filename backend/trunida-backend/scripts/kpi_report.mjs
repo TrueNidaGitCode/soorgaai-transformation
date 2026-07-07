@@ -8,9 +8,10 @@
  *
  * KPI definitions:
  *   People Invited            — manual input (no tracking exists in-app)
- *   People Logged In          — distinct users with a UserProfile (org name
- *                               entered) who have NOT generated a completed
- *                               blueprint yet
+ *   People Logged In          — total distinct users with a UserProfile (org
+ *                               name entered) — cumulative funnel stage, not
+ *                               exclusive of users who also went on to
+ *                               generate a strategy
  *   AI Strategies Generated   — distinct users with >=1 completed blueprint,
  *                               counting both CompanyBlueprint (older,
  *                               single-domain flow) and TransformationBlueprint
@@ -81,10 +82,10 @@ async function main() {
     completedBlueprints.filter(b => new Date(b.createdAt) >= today).map(b => String(b.userId))
   );
 
-  // People Logged In — UserProfile exists, but no completed blueprint yet
+  // People Logged In — total distinct users with a UserProfile (cumulative,
+  // includes users who also went on to generate a strategy)
   const profiles = await UserProfile.find({}, { userId: 1, createdAt: 1 }).lean();
-  const loggedInOnly = profiles.filter(p => !generatedUserIds.has(String(p.userId)));
-  const loggedInOnlyToday = loggedInOnly.filter(p => new Date(p.createdAt) >= today);
+  const loggedInToday = profiles.filter(p => new Date(p.createdAt) >= today);
 
   // Feedback
   const feedback = await UserFeedback.find({}, { rating: 1, createdAt: 1 }).lean();
@@ -96,7 +97,7 @@ async function main() {
 
   const rows = [
     { kpi: 'People Invited',           target: 50, today: manual.peopleInvited.today,          total: manual.peopleInvited.total },
-    { kpi: 'People Logged In',         target: 35, today: loggedInOnlyToday.length,             total: loggedInOnly.length },
+    { kpi: 'People Logged In',         target: 35, today: loggedInToday.length,                 total: profiles.length },
     { kpi: 'AI Strategies Generated',  target: 30, today: generatedUserIdsToday.size,           total: generatedUserIds.size },
     { kpi: 'High-Value Feedback',      target: 10, today: countRating('high', true),            total: countRating('high') },
     { kpi: 'Medium-Value Feedback',    target: 15, today: countRating('some', true),            total: countRating('some') },

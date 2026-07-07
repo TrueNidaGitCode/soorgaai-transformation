@@ -1,5 +1,5 @@
 {
-  "runAt": "2026-07-07T01:53:15.293Z",
+  "runAt": "2026-07-07T01:59:36.533Z",
   "rows": [
     {
       "kpi": "People Invited",
@@ -12,7 +12,7 @@
       "kpi": "People Logged In",
       "target": 35,
       "today": 0,
-      "total": 2,
+      "total": 7,
       "status": "🟨"
     },
     {

@@ -1,25 +1,25 @@
 {
-  "runAt": "2026-07-07T01:00:52.234Z",
+  "runAt": "2026-07-07T01:53:15.293Z",
   "rows": [
     {
       "kpi": "People Invited",
       "target": 50,
       "today": 0,
-      "total": 0,
-      "status": "⬜"
+      "total": 3,
+      "status": "🟨"
     },
     {
       "kpi": "People Logged In",
       "target": 35,
       "today": 0,
-      "total": 3,
+      "total": 2,
       "status": "🟨"
     },
     {
       "kpi": "AI Strategies Generated",
       "target": 30,
       "today": 0,
-      "total": 4,
+      "total": 5,
       "status": "🟨"
     },
     {

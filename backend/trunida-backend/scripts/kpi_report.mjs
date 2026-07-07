@@ -2,16 +2,21 @@
  * SoorgaAI Business KPI Report — standalone, read-only.
  *
  * Does not touch any existing application code or routes. Reads MongoDB
- * (CompanyBlueprint, UserProfile, UserFeedback) plus manual figures from
- * ../../reports/kpi_manual_inputs.json, prints a table, and appends a
- * snapshot to ../../reports/kpi_history.csv + ../../reports/latest.json.
+ * (CompanyBlueprint, TransformationBlueprint, UserProfile, UserFeedback) plus
+ * manual figures from ../../reports/kpi_manual_inputs.json, prints a table,
+ * and appends a snapshot to ../../reports/kpi_history.csv + ../../reports/latest.json.
  *
  * KPI definitions:
  *   People Invited            — manual input (no tracking exists in-app)
  *   People Logged In          — distinct users with a UserProfile (org name
  *                               entered) who have NOT generated a completed
  *                               blueprint yet
- *   AI Strategies Generated   — distinct users with >=1 completed CompanyBlueprint
+ *   AI Strategies Generated   — distinct users with >=1 completed blueprint,
+ *                               counting both CompanyBlueprint (older,
+ *                               single-domain flow) and TransformationBlueprint
+ *                               (newer, multi-domain flow) — the app writes to
+ *                               either depending on which generation flow ran,
+ *                               so both must be counted to avoid undercounting
  *   High/Medium/Low-Value FB  — UserFeedback.rating counts (high/some/low)
  *   Enterprise Introductions  — manual input (no tracking exists in-app)
  *
@@ -57,14 +62,20 @@ function statusFor(total, target) {
 async function main() {
   await mongoose.connect(MONGO_URI, { dbName: DB_NAME });
 
-  const CompanyBlueprint = mongoose.model('CompanyBlueprint', new mongoose.Schema({}, { strict: false, timestamps: true }));
-  const UserProfile      = mongoose.model('UserProfile', new mongoose.Schema({}, { strict: false, timestamps: true }));
-  const UserFeedback     = mongoose.model('UserFeedback', new mongoose.Schema({}, { strict: false, timestamps: true }));
+  const CompanyBlueprint       = mongoose.model('CompanyBlueprint', new mongoose.Schema({}, { strict: false, timestamps: true }));
+  const TransformationBlueprint = mongoose.model('TransformationBlueprint', new mongoose.Schema({}, { strict: false, timestamps: true }), 'transformationblueprints');
+  const UserProfile           = mongoose.model('UserProfile', new mongoose.Schema({}, { strict: false, timestamps: true }));
+  const UserFeedback          = mongoose.model('UserFeedback', new mongoose.Schema({}, { strict: false, timestamps: true }));
 
   const today = startOfToday();
 
-  // AI Strategies Generated — distinct users with a completed blueprint
-  const completedBlueprints = await CompanyBlueprint.find({ status: 'completed' }, { userId: 1, createdAt: 1 }).lean();
+  // AI Strategies Generated — distinct users with a completed blueprint,
+  // counting across both blueprint models (see header comment above)
+  const [completedCompany, completedTransformation] = await Promise.all([
+    CompanyBlueprint.find({ status: 'completed' }, { userId: 1, createdAt: 1 }).lean(),
+    TransformationBlueprint.find({ status: 'completed' }, { userId: 1, createdAt: 1 }).lean(),
+  ]);
+  const completedBlueprints = [...completedCompany, ...completedTransformation];
   const generatedUserIds = new Set(completedBlueprints.map(b => String(b.userId)));
   const generatedUserIdsToday = new Set(
     completedBlueprints.filter(b => new Date(b.createdAt) >= today).map(b => String(b.userId))

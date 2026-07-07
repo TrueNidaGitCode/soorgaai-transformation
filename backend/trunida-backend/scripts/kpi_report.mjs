@@ -79,9 +79,11 @@ async function main() {
 
   // AI Strategies Generated — distinct users with a completed blueprint,
   // counting across both blueprint models (see header comment above)
+  // userId filter excludes anonymous guest previews (guest docs have no
+  // userId until claimed — unclaimed ones shouldn't count as user activity)
   const [completedCompany, completedTransformation] = await Promise.all([
-    CompanyBlueprint.find({ status: 'completed' }, { userId: 1, createdAt: 1, companyName: 1 }).lean(),
-    TransformationBlueprint.find({ status: 'completed' }, { userId: 1, createdAt: 1, companyName: 1 }).lean(),
+    CompanyBlueprint.find({ status: 'completed', userId: { $exists: true, $ne: null } }, { userId: 1, createdAt: 1, companyName: 1 }).lean(),
+    TransformationBlueprint.find({ status: 'completed', userId: { $exists: true, $ne: null } }, { userId: 1, createdAt: 1, companyName: 1 }).lean(),
   ]);
   const completedBlueprints = [...completedCompany, ...completedTransformation];
   const generatedUserIds = new Set(completedBlueprints.map(b => String(b.userId)));

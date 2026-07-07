@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>SoorgaAI — Your AI Blueprint Preview</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="try.css">
+  <script src="../login/config.js"></script>
+</head>
+<body class="try-page">
+
+  <nav class="try-nav">
+    <a href="/" class="try-nav__logo">Soorga<span>AI</span></a>
+    <button id="try-nav-signin" class="try-nav__signin">Sign in</button>
+  </nav>
+
+  <main class="try-main">
+
+    <!-- ── Loading ─────────────────────────────────────────── -->
+    <div id="try-loading" class="try-state">
+      <div class="try-spinner" aria-hidden="true"></div>
+      <p>Setting up your preview…</p>
+    </div>
+
+    <!-- ── Generation progress ─────────────────────────────── -->
+    <div id="try-progress" class="try-state" style="display:none">
+      <p class="try-kicker">Generating your preview</p>
+      <h1 class="try-title">Building your AI Use Cases blueprint</h1>
+      <p id="try-objective" class="try-objective"></p>
+      <div id="try-progress-caps" class="try-caps"></div>
+      <p class="try-progress-note">Usually takes about a minute. The full six-domain blueprint is unlocked when you sign in.</p>
+    </div>
+
+    <!-- ── Preview (completed) ─────────────────────────────── -->
+    <div id="try-preview" class="try-state" style="display:none">
+      <p class="try-kicker">Free preview — AI Use Cases domain</p>
+      <h1 class="try-title">Your AI Blueprint Preview</h1>
+      <p id="try-preview-objective" class="try-objective"></p>
+
+      <div id="try-domain-content"></div>
+
+      <h2 class="try-locked-heading">The rest of your blueprint</h2>
+      <p class="try-locked-sub">Sign in to generate the remaining five domains — free, takes seconds with Google or Microsoft.</p>
+      <div id="try-locked-domains" class="try-locked-grid"></div>
+    </div>
+
+    <!-- ── Error ───────────────────────────────────────────── -->
+    <div id="try-error" class="try-state" style="display:none">
+      <h1 class="try-title">Something went wrong</h1>
+      <p id="try-error-msg" class="try-objective">We couldn't generate your preview.</p>
+      <a href="/" class="try-cta-btn">Back to home</a>
+    </div>
+
+  </main>
+
+  <!-- Sticky unlock bar (shown with preview) -->
+  <div id="try-unlock-bar" class="try-unlock-bar" style="display:none">
+    <p><strong>This is 1 of 6 domains.</strong> Sign in to unlock AI Strategy, Data Readiness, Technology Infrastructure, Skills &amp; Workforce, and Governance — and keep this blueprint.</p>
+    <button id="try-unlock-btn" class="try-cta-btn">Sign in to unlock — it's free</button>
+  </div>
+
+  <script src="try.js"></script>
+</body>
+</html>

@@ -64,26 +64,35 @@
           </p>
         </div>
 
-        <div class="hero__ctas">
-          <button
-            id="cta-generate-roadmap"
-            class="cta-button cta-button--primary"
-            onclick="CTARouter.routeToWorkspace()"
-            data-cta="generate-roadmap"
-            aria-label="Generate My AI Strategy"
-          >
-            Generate My AI Strategy &rarr;
-          </button>
-          <a
-            href="/framework/framework.html"
-            class="cta-button cta-button--outline"
-            data-cta="explore-framework"
-          >
-            View the Framework
-          </a>
+        <form id="hero-prompt-form" class="hero-prompt" aria-label="Generate your AI blueprint">
+          <textarea
+            id="hero-objective"
+            class="hero-prompt__input"
+            rows="3"
+            maxlength="2000"
+            placeholder="Describe your project and what you want AI to improve — e.g. &quot;We handle bug-ticket pre-analysis for an automotive OEM and want AI to cut triage time.&quot;"
+            aria-label="Your business objective"
+          ></textarea>
+          <div class="hero-prompt__bar">
+            <p id="hero-prompt-error" class="hero-prompt__error" role="alert" style="display:none"></p>
+            <button
+              type="submit"
+              id="cta-generate-roadmap"
+              class="cta-button cta-button--primary hero-prompt__submit"
+              data-cta="generate-roadmap"
+            >
+              Generate My AI Blueprint &rarr;
+            </button>
+          </div>
+        </form>
+
+        <div class="hero-prompt__chips" aria-label="Example objectives">
+          <button type="button" class="hero-prompt__chip" data-text="We are the testing team working on test case design and execution against JIRA user stories. We want AI to give us traceability and coverage of test cases against acceptance criteria.">Test-case traceability</button>
+          <button type="button" class="hero-prompt__chip" data-text="We handle pre-analysis of bug tickets from JIRA and field-reported issues. Analysis takes ~8 hours per cycle and we want AI to reduce triage time and improve ticket-classification accuracy.">Faster bug triage</button>
+          <button type="button" class="hero-prompt__chip" data-text="We deliver automotive application software in .NET deployed to the cloud, and want to use AI across the SDLC to improve team productivity and delivery quality.">SDLC productivity</button>
         </div>
 
-        <p class="hero__trust">No AI expertise required.</p>
+        <p class="hero__trust">Free preview, no signup needed. <a href="/framework/framework.html" class="hero__trust-link">View the framework</a></p>
 
       </div>
 

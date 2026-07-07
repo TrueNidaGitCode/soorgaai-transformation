@@ -671,6 +671,45 @@ export async function streamTransformationProgress(req, res) {
 }
 
 /**
+ * POST /strategy-canvas/claim-guest-blueprint
+ * Body: { guestId }
+ * Attaches an anonymous preview blueprint to the signed-in user's account.
+ * Skipped (claimed: false) if the user already has a blueprint of their own,
+ * so a returning user's real blueprint is never displaced by a preview.
+ */
+export async function claimGuestBlueprint(req, res) {
+  try {
+    const { guestId } = req.body;
+    const userId      = req.user._id;
+
+    if (!guestId || typeof guestId !== 'string') {
+      return res.status(400).json({ error: 'guestId is required.' });
+    }
+
+    const existing = await TransformationBlueprint.findOne({ userId }).lean();
+    if (existing) {
+      return res.json({ claimed: false, reason: 'existing-blueprint' });
+    }
+
+    const claimed = await TransformationBlueprint.findOneAndUpdate(
+      { guestId, userId: null },
+      { $set: { userId }, $unset: { guestId: 1 } },
+      { new: true }
+    ).lean();
+
+    if (!claimed) {
+      return res.json({ claimed: false, reason: 'not-found' });
+    }
+
+    return res.json({ claimed: true, transformationId: claimed._id });
+
+  } catch (err) {
+    console.error('claimGuestBlueprint error:', err);
+    res.status(500).json({ error: 'Failed to claim preview blueprint.' });
+  }
+}
+
+/**
  * GET /strategy-canvas/transformation-blueprint
  * Returns the user's most recent TransformationBlueprint.
  */

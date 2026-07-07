@@ -7,11 +7,49 @@
 
 import { MATURITY_STAGES } from './data/maturityStages.js';
 
-/* v8 ignore next 4 */
+/* v8 ignore next 5 */
 document.addEventListener('DOMContentLoaded', () => {
     renderStages(MATURITY_STAGES, document.querySelector('.stages'));
     wirePrimaryCta();
+    wireHeroPrompt();
 });
+
+/**
+ * Wire the hero prompt composer (try-before-login entry point).
+ * Anonymous  → objective saved to sessionStorage, off to /try/try.html
+ * Signed in  → same save, off to the workspace (its form prefills from it)
+ */
+export function wireHeroPrompt() {
+    const form  = document.getElementById('hero-prompt-form');
+    const input = document.getElementById('hero-objective');
+    const errEl = document.getElementById('hero-prompt-error');
+    if (!form || !input) return;
+
+    document.querySelectorAll('.hero-prompt__chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            input.value = chip.dataset.text || '';
+            input.focus();
+        });
+    });
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const objective = input.value.trim();
+        if (!objective) {
+            if (errEl) {
+                errEl.textContent = 'Tell us about your project first.';
+                errEl.style.display = '';
+            }
+            input.focus();
+            return;
+        }
+        if (errEl) errEl.style.display = 'none';
+
+        sessionStorage.setItem('soorgaai_pending_objective', objective);
+        const token = localStorage.getItem('token');
+        window.location.href = token ? '/workspace/workspace.html' : '/try/try.html';
+    });
+}
 
 /**
  * Render maturity stages into the given container.

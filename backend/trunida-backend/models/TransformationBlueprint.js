@@ -304,11 +304,20 @@ const domainSchema = new mongoose.Schema({
 // ── Top-level document ────────────────────────────────────────────────────────
 
 const transformationBlueprintSchema = new mongoose.Schema({
+  // Absent for anonymous guest previews; set when the guest signs in and
+  // claims the blueprint (see claimGuestBlueprint).
   userId: {
     type:     mongoose.Schema.Types.ObjectId,
     ref:      'User',
-    required: true,
+    required: function () { return !this.guestId; },
     index:    true,
+  },
+  // Server-generated token for the anonymous try-before-login flow.
+  // Removed when the blueprint is claimed by a real account.
+  guestId: {
+    type:   String,
+    index:  true,
+    sparse: true,
   },
   businessObjective: { type: String, required: true },
   industry:          { type: String, default: 'Automotive' },

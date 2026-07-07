@@ -1,0 +1,303 @@
+/* ============================================================
+   SoorgaAI — Try (guest preview) page
+   Extends global style.css (dark theme tokens)
+   ============================================================ */
+
+.try-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Nav ────────────────────────────────────────────────────── */
+.try-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.try-nav__logo {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  text-decoration: none;
+}
+.try-nav__logo span { color: var(--accent-green); }
+
+.try-nav__signin {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.try-nav__signin:hover { border-color: var(--accent-green); color: #fff; }
+
+/* ── Main / states ──────────────────────────────────────────── */
+.try-main {
+  flex: 1;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 48px 24px 140px; /* bottom padding clears the sticky unlock bar */
+}
+
+.try-state { text-align: left; }
+
+#try-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-top: 15vh;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.try-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--accent-green);
+  border-radius: 50%;
+  animation: try-spin 0.8s linear infinite;
+}
+@keyframes try-spin { to { transform: rotate(360deg); } }
+
+.try-kicker {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent-green);
+  margin: 0 0 10px;
+}
+
+.try-title {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 14px;
+}
+
+.try-objective {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.55;
+  margin: 0 0 32px;
+  max-width: 640px;
+}
+
+/* ── Progress caps ──────────────────────────────────────────── */
+.try-caps { display: flex; flex-direction: column; gap: 10px; }
+
+.try-cap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 14.5px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.try-cap__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+.try-cap--in-progress .try-cap__dot {
+  background: var(--accent-green);
+  animation: try-pulse 1s ease-in-out infinite alternate;
+}
+.try-cap--completed .try-cap__dot { background: var(--accent-green); }
+.try-cap--completed { color: #fff; }
+.try-cap--error .try-cap__dot { background: #f87171; }
+
+@keyframes try-pulse { from { opacity: 0.4; } to { opacity: 1; } }
+
+.try-progress-note {
+  margin-top: 24px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Preview content ────────────────────────────────────────── */
+.try-cap-block {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 26px 28px;
+  margin-bottom: 22px;
+}
+
+.try-cap-block__name {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 18px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.try-cap-block__badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--accent-green);
+  background: rgba(92, 197, 167, 0.12);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.try-section { margin-bottom: 20px; }
+.try-section:last-child { margin-bottom: 0; }
+
+.try-section__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 8px;
+}
+
+.try-section__position {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.68);
+  margin: 0 0 12px;
+}
+
+.try-section__list-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 12px 0 6px;
+}
+
+.try-section__list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.try-section__list li {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.62);
+}
+.try-section__list li::marker { color: var(--accent-green); }
+
+/* ── Locked domains ─────────────────────────────────────────── */
+.try-locked-heading {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 44px 0 8px;
+}
+
+.try-locked-sub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 20px;
+}
+
+.try-locked-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.try-locked-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.try-locked-card:hover {
+  border-color: var(--accent-green);
+  background: rgba(92, 197, 167, 0.05);
+}
+
+.try-locked-card__lock { font-size: 16px; margin-bottom: 8px; }
+
+.try-locked-card__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 6px;
+}
+
+.try-locked-card__desc {
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Sticky unlock bar ──────────────────────────────────────── */
+.try-unlock-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 16px 24px;
+  background: rgba(13, 13, 13, 0.92);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(92, 197, 167, 0.25);
+  z-index: 100;
+}
+
+.try-unlock-bar p {
+  margin: 0;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 560px;
+}
+.try-unlock-bar strong { color: #fff; }
+
+.try-cta-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #5CC5A7, #3DAFD3);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 26px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+.try-cta-btn:hover {
+  opacity: 0.9;
+  box-shadow: 0 6px 24px rgba(92, 197, 167, 0.4);
+}
+
+@media (max-width: 640px) {
+  .try-title { font-size: 24px; }
+  .try-main  { padding: 32px 16px 170px; }
+  .try-unlock-bar { flex-direction: column; gap: 12px; text-align: center; }
+}

@@ -404,6 +404,14 @@ function initGenerateForm() {
   const form = document.getElementById('ws-gen-form');
   if (!form) return;
 
+  // Prefill from the landing-page hero prompt, if the user typed one there
+  const pendingObjective = sessionStorage.getItem('soorgaai_pending_objective');
+  if (pendingObjective) {
+    const input = document.getElementById('ws-gen-objective');
+    if (input && !input.value) input.value = pendingObjective;
+    sessionStorage.removeItem('soorgaai_pending_objective');
+  }
+
   // Example chips populate the textarea on click
   document.querySelectorAll('.ws-gen-example-chip').forEach(chip => {
     chip.addEventListener('click', () => {

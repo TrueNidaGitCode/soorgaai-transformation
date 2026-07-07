@@ -17,15 +17,21 @@ import strategyCanvasRoutes    from "./routes/strategyCanvasRoutes.js";
 import companyContextRoutes         from "./routes/companyContextRoutes.js";
 import enterpriseBlueprintRoutes    from "./routes/enterpriseBlueprintRoutes.js";
 import feedbackRoutes               from "./routes/feedbackRoutes.js";
+import guestRoutes                  from "./routes/guestRoutes.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
 import CompanyBlueprint from "./models/CompanyBlueprint.js";
+import TransformationBlueprint from "./models/TransformationBlueprint.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Behind Railway's proxy — needed so req.ip reflects the real client IP
+// (guest rate limiting keys off it) instead of the proxy's address.
+app.set('trust proxy', 1);
 
 // ✅ Middleware
 app.use(express.json());
@@ -90,6 +96,7 @@ app.use("/api/strategy-canvas",       strategyCanvasRoutes);
 app.use("/api/company-context",       companyContextRoutes);
 app.use("/api/enterprise-blueprint", enterpriseBlueprintRoutes);
 app.use("/api/feedback",             feedbackRoutes);
+app.use("/api/guest",                guestRoutes);
 app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
 
 // ✅ Health Check Route
@@ -175,6 +182,22 @@ async function recoverStuckBlueprints() {
         );
         if (blueprintResult.modifiedCount > 0 || capResult.modifiedCount > 0) {
             console.log(`[startup] Recovered ${blueprintResult.modifiedCount} stuck blueprint(s) and ${capResult.modifiedCount} stuck capability doc(s)`);
+        }
+
+        // Same recovery for multi-domain TransformationBlueprints (incl. guest
+        // previews) — a deploy mid-generation kills the in-process async run,
+        // and the SSE/progress UI would otherwise wait on 'generating' forever.
+        const tbResult = await TransformationBlueprint.updateMany(
+            { status: 'generating' },
+            { $set: { status: 'error', updatedAt: new Date() } }
+        );
+        const tbDomainResult = await TransformationBlueprint.updateMany(
+            { 'domains.status': 'generating' },
+            { $set: { 'domains.$[dom].status': 'error' } },
+            { arrayFilters: [{ 'dom.status': 'generating' }] }
+        );
+        if (tbResult.modifiedCount > 0 || tbDomainResult.modifiedCount > 0) {
+            console.log(`[startup] Recovered ${tbResult.modifiedCount} stuck transformation blueprint(s), ${tbDomainResult.modifiedCount} stuck domain doc(s)`);
         }
     } catch (err) {
         console.warn('[startup] Blueprint recovery failed (non-fatal):', err.message);

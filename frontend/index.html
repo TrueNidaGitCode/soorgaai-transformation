@@ -26,16 +26,19 @@
 </head>
 <body class="landing2">
 
-  <!-- ── Left sidebar (expanded by default, collapsible) ─────── -->
+  <!-- ── Left sidebar (fixed) ─────────────────────────────────── -->
   <aside id="side" class="side">
-    <div class="side__top">
-      <a href="/" class="side__logo" aria-label="SoorgaAI — home">Soorga<span>AI</span></a>
-      <button id="side-toggle" class="side__toggle" aria-label="Toggle sidebar" title="Toggle sidebar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
-    </div>
+    <a href="/" class="side__logo" aria-label="SoorgaAI — home">Soorga<span>AI</span></a>
 
-    <nav class="side__nav" aria-label="Site navigation">
+    <button id="side-create" class="side__create">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>Create blueprint</span>
+    </button>
+
+    <p class="side__label">Blueprints</p>
+    <div id="side-blueprints" class="side__bps" aria-label="Your blueprints"></div>
+
+    <div class="side__nav" role="navigation" aria-label="Site navigation">
       <a href="/enterprise/enterprise.html" class="side__link">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
         <span>Enterprise</span>
@@ -48,7 +51,7 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         <span>Pricing</span>
       </a>
-    </nav>
+    </div>
   </aside>
 
   <!-- ── Main column ─────────────────────────────────────────── -->

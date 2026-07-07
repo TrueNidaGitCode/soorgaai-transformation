@@ -15,6 +15,7 @@ import {
   startTransformationGeneration,
   streamTransformationProgress,
   getTransformationBlueprint,
+  listTransformationBlueprints,
   claimGuestBlueprint,
   updateTransformationSection,
   regenerateSpecificDomains,
@@ -47,6 +48,7 @@ router.post('/company-blueprint/:blueprintId/capability/:capabilityId/regenerate
 router.post('/generate-transformation',                                protect, startTransformationGeneration);
 router.get('/generate-transformation/:transformationId/stream',        protect, streamTransformationProgress);
 router.get('/transformation-blueprint',                                protect, getTransformationBlueprint);
+router.get('/transformation-blueprints',                               protect, listTransformationBlueprints);
 router.post('/claim-guest-blueprint',                                  protect, claimGuestBlueprint);
 router.patch(
   '/transformation-blueprint/:blueprintId/domain/:domainId/capability/:capabilityId/section/:sectionTitle',

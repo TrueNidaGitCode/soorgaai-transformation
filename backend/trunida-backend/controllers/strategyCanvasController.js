@@ -1,3 +1,4 @@
+import mongoose                   from 'mongoose';
 import UserProfile               from '../models/UserProfile.js';
 import CompanyBlueprint           from '../models/CompanyBlueprint.js';
 import TransformationBlueprint    from '../models/TransformationBlueprint.js';
@@ -710,13 +711,20 @@ export async function claimGuestBlueprint(req, res) {
 }
 
 /**
- * GET /strategy-canvas/transformation-blueprint
- * Returns the user's most recent TransformationBlueprint.
+ * GET /strategy-canvas/transformation-blueprint[?id=<blueprintId>]
+ * Returns the user's most recent TransformationBlueprint, or a specific one
+ * (still scoped to the user) when ?id= is given — used by the landing-page
+ * sidebar's blueprint history.
  */
 export async function getTransformationBlueprint(req, res) {
   try {
+    const { id } = req.query;
+    const query  = (id && mongoose.isValidObjectId(id))
+      ? { _id: id, userId: req.user._id }
+      : { userId: req.user._id };
+
     const bp = await TransformationBlueprint
-      .findOne({ userId: req.user._id })
+      .findOne(query)
       .sort({ createdAt: -1 })
       .lean();
 
@@ -725,6 +733,25 @@ export async function getTransformationBlueprint(req, res) {
   } catch (err) {
     console.error('getTransformationBlueprint error:', err);
     res.status(500).json({ error: 'Failed to load transformation blueprint.' });
+  }
+}
+
+/**
+ * GET /strategy-canvas/transformation-blueprints
+ * Lightweight list of the user's blueprints for the sidebar history —
+ * objective, status, and timestamps only (no domain content).
+ */
+export async function listTransformationBlueprints(req, res) {
+  try {
+    const blueprints = await TransformationBlueprint
+      .find({ userId: req.user._id }, { businessObjective: 1, status: 1, createdAt: 1, updatedAt: 1 })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({ blueprints });
+  } catch (err) {
+    console.error('listTransformationBlueprints error:', err);
+    res.status(500).json({ error: 'Failed to list transformation blueprints.' });
   }
 }
 

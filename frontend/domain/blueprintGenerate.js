@@ -195,7 +195,12 @@ function handleProgressMessage(msg, transformationId) {
 // ── API helpers ───────────────────────────────────────────────────────────────
 
 async function fetchTransformationBlueprint() {
-  const resp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
+  // Honor a specific blueprint picked from the landing-page sidebar
+  const openId = sessionStorage.getItem('soorgaai_open_blueprint_id');
+  const url = openId
+    ? `${API_BASE}/strategy-canvas/transformation-blueprint?id=${encodeURIComponent(openId)}`
+    : `${API_BASE}/strategy-canvas/transformation-blueprint`;
+  const resp = await fetch(url, {
     headers: { Authorization: `Bearer ${getToken()}` },
   });
   // Must be checked before the generic !resp.ok fallthrough — otherwise an

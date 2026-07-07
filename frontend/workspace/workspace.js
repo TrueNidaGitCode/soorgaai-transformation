@@ -434,6 +434,8 @@ function initGenerateForm() {
       if (errEl) { errEl.textContent = 'Please enter your transformation objective.'; errEl.style.display = ''; }
       return;
     }
+    // New generation supersedes any sidebar-selected blueprint
+    sessionStorage.removeItem('soorgaai_open_blueprint_id');
     if (errEl) errEl.style.display = 'none';
     if (submitBtn)  submitBtn.disabled       = true;
     if (submitText) submitText.style.display = 'none';
@@ -486,6 +488,7 @@ function bindNewBlueprintBtn() {
   if (!btn || btn.dataset.bound) return;
   btn.dataset.bound = '1';
   btn.addEventListener('click', () => {
+    sessionStorage.removeItem('soorgaai_open_blueprint_id');
     const input = document.getElementById('ws-gen-objective');
     if (input) input.value = '';
     _formBound = false;
@@ -522,10 +525,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderProfile(state);
     renderDomainBadges(state.domains || []);
 
-    // Check blueprint status
-    const bpResp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
-      headers: authHeaders(),
-    });
+    // "Create blueprint" from the landing sidebar — skip straight to the prompt
+    if (sessionStorage.getItem('soorgaai_new_blueprint')) {
+      sessionStorage.removeItem('soorgaai_new_blueprint');
+      sessionStorage.removeItem('soorgaai_open_blueprint_id');
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (mainEl)    mainEl.style.display    = '';
+      showState('ws-prompt');
+      initGenerateForm();
+      return;
+    }
+
+    // Check blueprint status — a specific blueprint if the landing sidebar
+    // picked one, otherwise the most recent
+    const openId = sessionStorage.getItem('soorgaai_open_blueprint_id');
+    const bpUrl  = openId
+      ? `${API_BASE}/strategy-canvas/transformation-blueprint?id=${encodeURIComponent(openId)}`
+      : `${API_BASE}/strategy-canvas/transformation-blueprint`;
+    const bpResp = await fetch(bpUrl, { headers: authHeaders() });
 
     if (loadingEl) loadingEl.style.display = 'none';
     if (mainEl)    mainEl.style.display    = '';
@@ -533,6 +550,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (bpResp.status === 401) { window.handleSessionExpired(); return; }
 
     if (bpResp.status === 404) {
+      sessionStorage.removeItem('soorgaai_open_blueprint_id'); // stale selection
       showState('ws-prompt');
       initGenerateForm();
       return;

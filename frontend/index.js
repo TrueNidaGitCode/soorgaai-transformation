@@ -9,31 +9,25 @@
 
 import { MATURITY_STAGES } from './data/maturityStages.js';
 
-const SIDE_COLLAPSED_KEY = 'soorgaai_side_collapsed';
+const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
+const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';
+const NEW_BLUEPRINT_KEY  = 'soorgaai_new_blueprint';
 
-/* v8 ignore next 7 */
+/* v8 ignore next 8 */
 document.addEventListener('DOMContentLoaded', () => {
     renderStages(MATURITY_STAGES, document.querySelector('.stages'));
     wirePrimaryCta();
     wireSidebar();
+    wireSidebarBlueprints();
     wireTopbarAuth();
     wireHeroPrompt();
 });
 
 /**
- * Sidebar: collapsible on desktop (state persisted), off-canvas on mobile.
+ * Sidebar: fixed on desktop, off-canvas drawer on mobile.
  */
 export function wireSidebar() {
     const body = document.body;
-
-    if (localStorage.getItem(SIDE_COLLAPSED_KEY) === '1') {
-        body.classList.add('side-collapsed');
-    }
-
-    document.getElementById('side-toggle')?.addEventListener('click', () => {
-        const collapsed = body.classList.toggle('side-collapsed');
-        localStorage.setItem(SIDE_COLLAPSED_KEY, collapsed ? '1' : '0');
-    });
 
     document.getElementById('side-toggle-mobile')?.addEventListener('click', () => {
         body.classList.toggle('side-open');
@@ -47,6 +41,79 @@ export function wireSidebar() {
             body.classList.remove('side-open');
         }
     });
+
+    // Create blueprint: signed-in → workspace in new-blueprint mode;
+    // anonymous → focus the prompt box (that IS the create flow here)
+    document.getElementById('side-create')?.addEventListener('click', () => {
+        if (localStorage.getItem('token')) {
+            sessionStorage.setItem(NEW_BLUEPRINT_KEY, '1');
+            sessionStorage.removeItem(OPEN_BLUEPRINT_KEY);
+            window.location.href = '/workspace/workspace.html';
+        } else {
+            document.getElementById('hero-objective')?.focus();
+            document.body.classList.remove('side-open');
+        }
+    });
+}
+
+/**
+ * Sidebar blueprint history.
+ * Signed-in  → list the user's blueprints; clicking one opens it in the workspace.
+ * Anonymous  → show the guest preview blueprint if one exists.
+ */
+export async function wireSidebarBlueprints() {
+    const wrap = document.getElementById('side-blueprints');
+    if (!wrap) return;
+
+    const token   = localStorage.getItem('token');
+    const guestId = localStorage.getItem('soorgaai_guest_id');
+
+    const empty = (msg) => { wrap.innerHTML = `<p class="side__bps-empty">${msg}</p>`; };
+
+    try {
+        if (token) {
+            const resp = await fetch(`${API_BASE()}/strategy-canvas/transformation-blueprints`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!resp.ok) { empty('No blueprints yet.'); return; }
+            const { blueprints } = await resp.json();
+            if (!blueprints?.length) { empty('No blueprints yet.'); return; }
+
+            wrap.innerHTML = '';
+            blueprints.forEach(bp => {
+                const btn = document.createElement('button');
+                btn.className = 'side__bp' + (bp.status === 'generating' ? ' side__bp--generating' : '');
+                btn.title = bp.businessObjective || '';
+                btn.textContent = (bp.status === 'generating' ? '⋯ ' : '') + truncate(bp.businessObjective, 46);
+                btn.addEventListener('click', () => {
+                    sessionStorage.setItem(OPEN_BLUEPRINT_KEY, bp._id);
+                    sessionStorage.removeItem(NEW_BLUEPRINT_KEY);
+                    window.location.href = '/workspace/workspace.html';
+                });
+                wrap.appendChild(btn);
+            });
+        } else if (guestId) {
+            const resp = await fetch(`${API_BASE()}/guest/blueprint/${encodeURIComponent(guestId)}`);
+            if (!resp.ok) { empty('No blueprints yet — describe your project to start.'); return; }
+            const bp = await resp.json();
+            const btn = document.createElement('button');
+            btn.className = 'side__bp';
+            btn.title = bp.businessObjective || '';
+            btn.textContent = 'Preview — ' + truncate(bp.businessObjective, 38);
+            btn.addEventListener('click', () => { window.location.href = '/try/try.html'; });
+            wrap.innerHTML = '';
+            wrap.appendChild(btn);
+        } else {
+            empty('No blueprints yet — describe your project to start.');
+        }
+    } catch {
+        empty('No blueprints yet.');
+    }
+}
+
+function truncate(s, n) {
+    const str = (s || '').trim();
+    return str.length > n ? str.slice(0, n - 1) + '…' : str;
 }
 
 /**

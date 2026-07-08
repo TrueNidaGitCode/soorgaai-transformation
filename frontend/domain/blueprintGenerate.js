@@ -408,8 +408,8 @@ async function init() {
     const bp = await fetchTransformationBlueprint();
 
     if (!bp) {
-      showScreen('screen-generate');
-      initGenerateForm();
+      // No blueprint yet — the landing page owns the prompt box
+      window.location.href = '/';
       return;
     }
 

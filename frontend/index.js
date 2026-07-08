@@ -166,10 +166,8 @@ export function wireAuthModal() {
             localStorage.setItem('username', data.username);
             localStorage.setItem('role',     data.role || 'user');
 
-            // Guest preview waiting? /try claims it into the account and forwards.
-            window.location.href = localStorage.getItem('soorgaai_guest_id')
-                ? '/try/try.html'
-                : '/workspace/workspace.html';
+            // The blueprint view claims any waiting guest preview on load
+            window.location.href = '/domain/domain.html';
         } catch (err) {
             showError(err.message);
             if (btn) { btn.disabled = false; btn.textContent = 'Verify & continue'; }
@@ -244,7 +242,7 @@ export async function wireSidebarBlueprints() {
                 btn.textContent = (bp.status === 'generating' ? '⋯ ' : '') + truncate(bp.businessObjective, 46);
                 btn.addEventListener('click', () => {
                     sessionStorage.setItem(OPEN_BLUEPRINT_KEY, bp._id);
-                    window.location.href = '/workspace/workspace.html';
+                    window.location.href = '/domain/domain.html';
                 });
                 wrap.appendChild(btn);
             });
@@ -256,7 +254,7 @@ export async function wireSidebarBlueprints() {
             btn.className = 'side__bp';
             btn.title = bp.businessObjective || '';
             btn.textContent = 'Preview — ' + truncate(bp.businessObjective, 38);
-            btn.addEventListener('click', () => { window.location.href = '/workspace/workspace.html'; });
+            btn.addEventListener('click', () => { window.location.href = '/domain/domain.html'; });
             wrap.innerHTML = '';
             wrap.appendChild(btn);
         } else {
@@ -292,7 +290,7 @@ export function wireTopbarAuth() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div id="profile-dropdown" class="profile-dropdown" style="display:none" role="menu">
-                <a href="/workspace/workspace.html" class="profile-dropdown__item" role="menuitem">My Workspace</a>
+                <a href="/domain/domain.html" class="profile-dropdown__item" role="menuitem">My Blueprint</a>
                 <button id="profile-logout" class="profile-dropdown__item profile-dropdown__item--danger" role="menuitem">Log out</button>
             </div>
         </div>`;

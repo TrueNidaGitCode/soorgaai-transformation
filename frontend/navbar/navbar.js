@@ -54,8 +54,8 @@ function setupNavbarHandlers() {
                 e.preventDefault();
                 const token = localStorage.getItem('token');
                 window.location.href = token
-                    ? '/workspace/workspace.html'
-                    : '/login/login.html?redirect=/workspace/workspace.html';
+                    ? '/domain/domain.html'
+                    : '/login/login.html?redirect=/domain/domain.html';
             };
         }
         return;

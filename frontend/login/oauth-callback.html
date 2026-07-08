@@ -130,7 +130,7 @@
         '<p class="oauth-cb__body">Taking you to your workspace…</p>';
 
       // Respect any pending redirect (set by login.html before the OAuth dance)
-      var destination = '/workspace/workspace.html';
+      var destination = '/domain/domain.html';
       try {
         var pending = localStorage.getItem('redirectAfterLogin');
         if (pending && pending.startsWith('/') && !pending.startsWith('//')) {

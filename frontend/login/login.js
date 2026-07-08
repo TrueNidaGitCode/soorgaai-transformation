@@ -115,7 +115,7 @@ function checkExistingAuth() {
             window.location.href = redirectUrl;
         } else {
             console.log('🔄 Redirecting to workspace');
-            window.location.href = '/workspace/workspace.html';
+            window.location.href = '/domain/domain.html';
         }
     }
 }
@@ -299,7 +299,7 @@ function redirectAfterLogin() {
 
     // 4. Default redirect to workspace
     console.log("✅ Redirecting to workspace");
-    window.location.href = '/workspace/workspace.html';
+    window.location.href = '/domain/domain.html';
 }
 
 /**

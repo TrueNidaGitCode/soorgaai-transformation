@@ -6284,10 +6284,8 @@ function initAssistantButton() {
 
   const newBlueprintBtn = document.getElementById('btn-new-blueprint');
   if (newBlueprintBtn) newBlueprintBtn.addEventListener('click', () => {
-    showScreen('screen-generate');
-    const assistantBtn = document.getElementById('btn-ai-assistant');
-    if (assistantBtn) assistantBtn.style.display = 'none';
-    setAssistantOpen(false);
+    // New blueprints start from the landing-page prompt box
+    window.location.href = '/';
   });
 
   const exportBtn = document.getElementById('btn-export-pdf');

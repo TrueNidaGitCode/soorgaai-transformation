@@ -3,161 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SoorgaAI — AI Transformation Workspace</title>
-  <link rel="stylesheet" href="../style.css">
-  <link rel="stylesheet" href="workspace.css">
-  <script src="../login/config.js"></script>
-  <script src="../login/sessionGuard.js"></script>
+  <meta name="robots" content="noindex">
+  <title>SoorgaAI</title>
+  <!-- Retired page — the blueprint view (domain.html) replaced the workspace
+       summary. This stub keeps old links and post-login redirects working. -->
+  <script>
+    (function () {
+      var token   = localStorage.getItem('token');
+      var guestId = localStorage.getItem('soorgaai_guest_id');
+      window.location.replace(token || guestId ? '/domain/domain.html' : '/');
+    })();
+  </script>
 </head>
-<body class="workspace-page">
-
-  <!-- ── Workspace Navbar ────────────────────────────────────────────────── -->
-  <nav class="workspace-nav" aria-label="Workspace navigation">
-    <div class="workspace-nav__logo">SOORGA<span>AI</span></div>
-    <div class="workspace-nav__right">
-      <span id="ws-username" class="workspace-nav__username"></span>
-      <button id="ws-logout" class="workspace-nav__logout">Logout</button>
-    </div>
-  </nav>
-
-  <!-- ── Loading ─────────────────────────────────────────────────────────── -->
-  <div id="ws-loading" class="ws-loading" aria-live="polite">
-    <div class="ws-spinner"></div>
-    <p>Loading your workspace…</p>
-  </div>
-
-  <!-- ── Main ───────────────────────────────────────────────────────────── -->
-  <main id="ws-main" class="workspace-main" style="display:none">
-
-    <!-- Guest login banner (guest preview mode only) -->
-    <div id="ws-guest-banner" class="ws-guest-banner" style="display:none" role="status">
-      <p><strong>You're previewing as a guest.</strong> Log in to save this blueprint to your account and unlock all six domains.</p>
-      <button id="ws-guest-banner-login" class="ws-guest-banner__btn">Log in — it's free</button>
-    </div>
-
-    <!-- User greeting (always visible) -->
-    <div class="ws-card ws-user-card">
-      <p class="ws-brand-label">SoorgaAI</p>
-      <p class="ws-welcome-heading">Welcome, <span id="ws-welcome-name"></span></p>
-      <p id="ws-user-context" class="ws-user-context"></p>
-    </div>
-
-    <!-- ── STATE 1: Prompt entry (no blueprint yet) ────────────────────── -->
-    <div id="ws-prompt" style="display:none">
-      <div class="ws-card ws-gen-card">
-        <div class="ws-gen-card__header">
-          <h2 class="ws-gen-card__title">Generate Your AI Transformation Blueprint</h2>
-          <p class="ws-gen-card__sub">Describe your AI transformation objective and we'll build a personalised blueprint across all active domains in one go.</p>
-        </div>
-
-        <form id="ws-gen-form" class="ws-gen-form" novalidate>
-          <label for="ws-gen-objective" class="ws-gen-label">What is your AI transformation objective?</label>
-          <textarea
-            id="ws-gen-objective"
-            class="ws-gen-textarea"
-            rows="4"
-            placeholder="Ask me to create your project blueprint."
-          ></textarea>
-          <div class="ws-gen-examples">
-            <div class="ws-gen-examples__divider">
-              <span class="ws-gen-examples__label">Example prompts</span>
-            </div>
-            <button type="button" class="ws-gen-example-chip" data-text="We manage a software maintenance and development program where teams spend considerable effort analyzing defects, incidents, and support tickets from multiple sources. The current process involves issue understanding, validation, triage, root-cause assessment, prioritization, and assignment to the appropriate teams. We want to leverage AI to reduce analysis effort, improve classification accuracy, accelerate ticket routing, and increase overall delivery efficiency while maintaining quality and governance standards.">We manage a software maintenance and development program where teams spend considerable effort analyzing defects, incidents, and support tickets from multiple sources. The current process involves issue understanding, validation, triage, root-cause assessment, prioritization, and assignment to the appropriate teams. We want to leverage AI to reduce analysis effort, improve classification accuracy, accelerate ticket routing, and increase overall delivery efficiency while maintaining quality and governance standards.</button>
-          </div>
-
-          <p id="ws-gen-error" class="ws-gen-error" style="display:none" role="alert"></p>
-
-          <!-- Domain badges — injected by workspace.js -->
-          <div class="ws-gen-domains">
-            <span class="ws-gen-domains__label">Will generate:</span>
-            <div id="ws-domain-badge-list" class="ws-gen-domains__badges"></div>
-          </div>
-
-          <button type="submit" id="ws-gen-submit" class="ws-gen-btn">
-            <span id="ws-gen-submit-text">Generate Blueprint</span>
-            <span id="ws-gen-submit-loader" class="ws-gen-btn__loader" style="display:none" aria-hidden="true">
-              <span class="ws-gen-btn__dot"></span><span class="ws-gen-btn__dot"></span><span class="ws-gen-btn__dot"></span>
-            </span>
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- ── STATE 2: Generation in progress ─────────────────────────────── -->
-    <div id="ws-progress" style="display:none" aria-live="polite">
-      <div class="ws-card ws-prog-card">
-        <div class="ws-prog-card__header">
-          <div class="ws-prog-spinner" aria-hidden="true"></div>
-          <div>
-            <h2 class="ws-prog-card__title">Building your blueprint…</h2>
-            <p id="ws-prog-objective" class="ws-prog-card__objective"></p>
-          </div>
-        </div>
-        <div id="ws-prog-domains" class="ws-prog-domains"></div>
-      </div>
-    </div>
-
-    <!-- ── STATE 3: Blueprint ready ────────────────────────────────────── -->
-    <div id="ws-done" style="display:none">
-      <div class="ws-done-layout">
-
-        <!-- LEFT: Progress sidebar -->
-        <aside class="ws-done-sidebar ws-card">
-          <p class="ws-done-sidebar__label">Company AI Blueprint</p>
-          <p id="ws-done-caps-summary" class="ws-done-sidebar__summary">Loading…</p>
-
-          <div class="ws-done-ring-wrap">
-            <svg class="ws-done-ring" viewBox="0 0 120 120" aria-hidden="true">
-              <circle class="ws-done-ring__track" cx="60" cy="60" r="46"/>
-              <circle id="ws-done-ring-fill" class="ws-done-ring__fill" cx="60" cy="60" r="46"/>
-            </svg>
-            <div class="ws-done-ring-inner">
-              <span id="ws-done-ring-pct" class="ws-done-ring-inner__pct">0%</span>
-              <span class="ws-done-ring-inner__sub">Overall</span>
-            </div>
-          </div>
-
-          <div class="ws-done-prog-row">
-            <span class="ws-done-prog-label">Overall Progress</span>
-            <span id="ws-done-prog-pct" class="ws-done-prog-val">0%</span>
-          </div>
-          <div class="ws-done-prog-bar">
-            <div id="ws-done-prog-fill" class="ws-done-prog-bar__fill"></div>
-          </div>
-
-          <ul id="ws-done-status-list" class="ws-done-status-list"></ul>
-
-          <div class="ws-done-kb-card">
-            <span class="ws-done-kb-card__icon">📚</span>
-            <div class="ws-done-kb-card__text">
-              <p class="ws-done-kb-card__title">Powered by Industry Knowledge</p>
-              <p class="ws-done-kb-card__body">SoorgaAI's cross-industry knowledge base and proven frameworks accelerate your AI transformation.</p>
-            </div>
-          </div>
-        </aside>
-
-        <!-- RIGHT: Blueprint capabilities -->
-        <div class="ws-done-main ws-card">
-          <div class="ws-done-main__header">
-            <div class="ws-done-check" aria-hidden="true">✓</div>
-            <div>
-              <h2 class="ws-done-main__title">Your Blueprint is Ready</h2>
-            </div>
-          </div>
-
-          <div id="ws-done-caps" class="ws-done-caps"></div>
-
-          <div class="ws-done-actions">
-            <a href="/domain/domain.html" class="ws-open-btn">Open Full Blueprint</a>
-            <button id="ws-new-blueprint" class="ws-new-btn">New Blueprint</button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-  </main>
-
-  <script type="module" src="workspace.js"></script>
-</body>
+<body></body>
 </html>

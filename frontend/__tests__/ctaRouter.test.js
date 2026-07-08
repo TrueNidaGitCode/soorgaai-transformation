@@ -23,21 +23,20 @@ describe('window.CTARouter — global exposure', () => {
 // ── Anonymous user — null token ───────────────────────────────────────────────
 
 describe('CTARouter.routeToWorkspace() — anonymous user (null token)', () => {
-  it('sets window.location.href to the login page with a redirect param', () => {
+  it('sets window.location.href to the landing page (prompt box)', () => {
     // localStorage cleared by setup.js — getItem('token') returns null
 
     window.CTARouter.routeToWorkspace();
 
-    expect(window.location.href).toBe('/login/login.html?redirect=/workspace/workspace.html');
+    expect(window.location.href).toBe('/');
   });
 
   it('does not navigate directly to the platform page when no token is present', () => {
-    // The redirect URL /login/...?redirect=/workspace/workspace.html contains the platform path as a
-    // query param, so we check the href is NOT equal to the bare platform URL.
+    // Anonymous users go to the landing prompt box, never the blueprint view.
     window.CTARouter.routeToWorkspace();
 
-    expect(window.location.href).not.toBe('/workspace/workspace.html');
-    expect(window.location.href).toContain('/login/');
+    expect(window.location.href).not.toBe('/domain/domain.html');
+    expect(window.location.href).toBe('/');
   });
 });
 
@@ -49,7 +48,7 @@ describe('CTARouter.routeToWorkspace() — empty string token', () => {
 
     window.CTARouter.routeToWorkspace();
 
-    expect(window.location.href).toBe('/login/login.html?redirect=/workspace/workspace.html');
+    expect(window.location.href).toBe('/');
   });
 });
 
@@ -64,19 +63,19 @@ describe('CTARouter.routeToWorkspace() — whitespace-only token', () => {
 
     window.CTARouter.routeToWorkspace();
 
-    expect(window.location.href).toBe('/workspace/workspace.html');
+    expect(window.location.href).toBe('/domain/domain.html');
   });
 });
 
 // ── Authenticated user ────────────────────────────────────────────────────────
 
 describe('CTARouter.routeToWorkspace() — authenticated user', () => {
-  it('sets window.location.href to /workspace/workspace.html for a valid JWT', () => {
+  it('sets window.location.href to /domain/domain.html for a valid JWT', () => {
     localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.sig');
 
     window.CTARouter.routeToWorkspace();
 
-    expect(window.location.href).toBe('/workspace/workspace.html');
+    expect(window.location.href).toBe('/domain/domain.html');
   });
 
   it('routes to platform for any non-empty token string', () => {
@@ -84,7 +83,7 @@ describe('CTARouter.routeToWorkspace() — authenticated user', () => {
 
     window.CTARouter.routeToWorkspace();
 
-    expect(window.location.href).toBe('/workspace/workspace.html');
+    expect(window.location.href).toBe('/domain/domain.html');
   });
 
   it('does not navigate to the login page when a valid token is present', () => {
@@ -102,13 +101,13 @@ describe('CTARouter.routeToWorkspace() — reads localStorage on every invocatio
   it('switches from platform to login route when token is removed between calls', () => {
     localStorage.setItem('token', 'jwt');
     window.CTARouter.routeToWorkspace();
-    expect(window.location.href).toBe('/workspace/workspace.html');
+    expect(window.location.href).toBe('/domain/domain.html');
 
     // Simulate token expiry / manual removal
     window.location.href = '';
     localStorage.removeItem('token');
 
     window.CTARouter.routeToWorkspace();
-    expect(window.location.href).toBe('/login/login.html?redirect=/workspace/workspace.html');
+    expect(window.location.href).toBe('/');
   });
 });

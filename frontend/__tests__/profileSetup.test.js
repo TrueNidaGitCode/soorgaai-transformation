@@ -86,7 +86,7 @@ describe('profile.js — profile already exists', () => {
     triggerDOMContentLoaded();
     await flushPromises();
 
-    expect(window.location.href).toContain('/workspace/workspace.html');
+    expect(window.location.href).toContain('/domain/domain.html');
   });
 });
 
@@ -172,7 +172,7 @@ describe('profile.js — successful profile creation', () => {
     // Flush: POST fetch + json response + redirect assignment
     await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
 
-    expect(window.location.href).toContain('/workspace/workspace.html');
+    expect(window.location.href).toContain('/domain/domain.html');
   });
 });
 

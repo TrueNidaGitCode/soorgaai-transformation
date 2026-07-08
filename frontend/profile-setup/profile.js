@@ -2,7 +2,7 @@
  * SoorgaAI — Profile Setup Page
  *
  * Guards: if no JWT → redirect to login.
- * On submit: POST /api/profile → redirect to /workspace/workspace.html.
+ * On submit: POST /api/profile → redirect to /domain/domain.html.
  */
 
 const API = window.CONFIG?.AUTH?.VERIFY
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (resp.ok) {
-      window.location.href = '/workspace/workspace.html';
+      window.location.href = '/domain/domain.html';
       return;
     }
   } catch { /* network error — continue to form */ }
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      window.location.href = '/workspace/workspace.html';
+      window.location.href = '/domain/domain.html';
 
     } catch (err) {
       showError('Network error. Please check your connection and try again.');

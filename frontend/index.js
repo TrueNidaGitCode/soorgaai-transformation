@@ -273,26 +273,61 @@ function truncate(s, n) {
 }
 
 /**
- * Topbar: signed-in visitors see "Open Workspace" plus a Log out option
- * instead of the Log in button.
+ * Topbar: signed-in visitors see their profile name with a dropdown
+ * (workspace + log out) instead of the Log in button.
  */
 export function wireTopbarAuth() {
     const wrap = document.getElementById('topbar-auth');
     if (!wrap) return;
-    if (localStorage.getItem('token')) {
-        wrap.innerHTML =
-            '<a href="/workspace/workspace.html" class="auth-btn auth-btn--workspace">Open Workspace &rarr;</a>' +
-            '<button id="topbar-logout" class="auth-btn auth-btn--outline">Log out</button>';
-        document.getElementById('topbar-logout')?.addEventListener('click', () => {
-            [
-                'token', 'username', 'userId', 'role', 'redirectAfterLogin',
-                'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
-                'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
-                'da_score', 'soorga_assessment_progress',
-            ].forEach(k => localStorage.removeItem(k));
-            window.location.reload();
-        });
-    }
+    if (!localStorage.getItem('token')) return;
+
+    const username = (localStorage.getItem('username') || 'Account').trim() || 'Account';
+    const initial  = username.charAt(0).toUpperCase();
+
+    wrap.innerHTML = `
+        <div class="profile-menu">
+            <button id="profile-btn" class="profile-btn" aria-haspopup="menu" aria-expanded="false">
+                <span class="profile-avatar" aria-hidden="true"></span>
+                <span class="profile-name"></span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div id="profile-dropdown" class="profile-dropdown" style="display:none" role="menu">
+                <a href="/workspace/workspace.html" class="profile-dropdown__item" role="menuitem">My Workspace</a>
+                <button id="profile-logout" class="profile-dropdown__item profile-dropdown__item--danger" role="menuitem">Log out</button>
+            </div>
+        </div>`;
+
+    // textContent keeps any odd characters in the stored name inert
+    wrap.querySelector('.profile-avatar').textContent = initial;
+    wrap.querySelector('.profile-name').textContent   = username;
+
+    const btn      = document.getElementById('profile-btn');
+    const dropdown = document.getElementById('profile-dropdown');
+    const setOpen  = (open) => {
+        if (dropdown) dropdown.style.display = open ? '' : 'none';
+        btn?.setAttribute('aria-expanded', String(open));
+    };
+
+    btn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setOpen(dropdown?.style.display === 'none');
+    });
+    document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) setOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setOpen(false);
+    });
+
+    document.getElementById('profile-logout')?.addEventListener('click', () => {
+        [
+            'token', 'username', 'userId', 'role', 'redirectAfterLogin',
+            'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
+            'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
+            'da_score', 'soorga_assessment_progress',
+        ].forEach(k => localStorage.removeItem(k));
+        window.location.reload();
+    });
 }
 
 /**

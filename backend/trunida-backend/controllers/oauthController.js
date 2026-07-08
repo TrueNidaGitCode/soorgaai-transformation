@@ -108,6 +108,10 @@ export const initiateGoogle = (req, res) => {
     state:         generateState(),
   });
 
+  // Preselect the account when the user already typed their Gmail address
+  const hint = req.query.login_hint;
+  if (hint && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(hint)) params.set('login_hint', hint);
+
   res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
 };
 

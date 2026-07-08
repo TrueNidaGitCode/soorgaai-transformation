@@ -102,13 +102,21 @@ export function wireAuthModal() {
         }
     };
 
-    // Step 1 — send the code
+    // Step 1 — send the code (or hand Gmail addresses straight to Google)
     document.getElementById('auth-email-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         hideError();
         const email = document.getElementById('auth-email')?.value?.trim() || '';
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             showError('Please enter a valid email address.');
+            return;
+        }
+
+        // Gmail accounts sign in with Google — same account, one less code
+        const domain = email.split('@')[1].toLowerCase();
+        if (domain === 'gmail.com' || domain === 'googlemail.com') {
+            const base = window.CONFIG?.AUTH?.OAUTH?.GOOGLE || `${API_BASE()}/auth/oauth/google`;
+            window.location.href = `${base}?login_hint=${encodeURIComponent(email)}`;
             return;
         }
 

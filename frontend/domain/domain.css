@@ -2856,6 +2856,9 @@
   cursor: not-allowed;
 }
 
+/* Queued while generating — dimmed but browsable */
+.ws-domain-item--queued { opacity: 0.55; }
+
 .ws-domain-group-row {
   display: flex;
   align-items: center;

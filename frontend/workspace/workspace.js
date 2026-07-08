@@ -326,21 +326,10 @@ async function triggerDomainsRegeneration(blueprintId, domainIds) {
     );
     if (resp.status === 401) { window.handleSessionExpired(); return; }
     if (!resp.ok) throw new Error('Failed to start regeneration');
-    const { transformationId } = await resp.json();
+    await resp.json().catch(() => ({}));
 
-    // Reload blueprint so progress cards reflect updated domain statuses
-    try {
-      const bpResp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
-        headers: authHeaders(),
-      });
-      if (bpResp.ok) {
-        const bp = await bpResp.json();
-        renderProgressDomains(bp.domains || []);
-      }
-    } catch { /* non-critical */ }
-
-    showState('ws-progress');
-    connectProgressStream(transformationId);
+    // The blueprint view renders live, filling in capabilities as they complete
+    window.location.href = '/domain/domain.html';
   } catch (err) {
     console.error('[workspace] domain regen error:', err);
     alert('Could not start generation. Please try again.');
@@ -467,7 +456,8 @@ function initGenerateForm() {
   });
 }
 
-// Kick off a new blueprint generation and switch to the progress state.
+// Kick off a new blueprint generation, then hand off to the blueprint view
+// (domain.html) which renders live, filling in capabilities as they complete.
 // Called with objectives handed over from the landing-page prompt box
 // (and by the legacy in-workspace form, kept as a fallback).
 async function startBlueprintGeneration(objective) {
@@ -486,23 +476,8 @@ async function startBlueprintGeneration(objective) {
     throw new Error(error || 'Failed to start generation.');
   }
 
-  const { transformationId } = await resp.json();
-
-  // Load blueprint shell so progress cards are pre-rendered as pending
-  try {
-    const bpResp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
-      headers: authHeaders(),
-    });
-    if (bpResp.ok) {
-      const bp = await bpResp.json();
-      renderProgressDomains(bp.domains || []);
-      const objEl = document.getElementById('ws-prog-objective');
-      if (objEl) objEl.textContent = `"${objective}"`;
-    }
-  } catch { /* non-critical */ }
-
-  showState('ws-progress');
-  connectProgressStream(transformationId);
+  await resp.json().catch(() => ({}));
+  window.location.href = '/domain/domain.html';
 }
 
 // ── New Blueprint button ──────────────────────────────────────────────────────
@@ -591,17 +566,14 @@ async function initGuestWorkspace(guestId) {
     if (!resp.ok) throw new Error('Failed to load preview blueprint');
     const bp = await resp.json();
 
-    if (loadingEl) loadingEl.style.display = 'none';
-    if (mainEl)    mainEl.style.display    = '';
-
     if (bp.status === 'generating') {
-      const objEl = document.getElementById('ws-prog-objective');
-      if (objEl) objEl.textContent = `"${bp.businessObjective || ''}"`;
-      renderProgressDomains(bp.domains || []);
-      showState('ws-progress');
-      connectGuestProgressStream(guestId);
+      // The blueprint view renders live while generation runs
+      window.location.href = '/domain/domain.html';
       return;
     }
+
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (mainEl)    mainEl.style.display    = '';
 
     renderDoneState(bp);
     showState('ws-done');
@@ -696,11 +668,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const bp = await bpResp.json();
 
     if (bp.status === 'generating') {
-      const objEl = document.getElementById('ws-prog-objective');
-      if (objEl) objEl.textContent = `"${bp.businessObjective || ''}"`;
-      renderProgressDomains(bp.domains || []);
-      showState('ws-progress');
-      connectProgressStream(bp._id);
+      // The blueprint view renders live while generation runs
+      window.location.href = '/domain/domain.html';
       return;
     }
 

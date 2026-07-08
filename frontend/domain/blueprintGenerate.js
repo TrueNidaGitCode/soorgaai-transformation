@@ -274,16 +274,10 @@ function initGenerateForm() {
         throw new Error(error || 'Failed to start blueprint generation.');
       }
 
-      const { transformationId } = await resp.json();
+      await resp.json().catch(() => ({}));
 
-      const objEl = document.getElementById('prog-objective');
-      if (objEl) objEl.textContent = `"${objective}"`;
-
-      // Fetch the shell blueprint (domains + capabilities pre-seeded as pending) for initial render
-      await initProgressFromBlueprint();
-
-      showScreen('screen-progress');
-      connectProgressStream(transformationId);
+      // Reload into the live blueprint view — capabilities appear as they complete
+      window.location.reload();
 
     } catch (err) {
       showError(errEl, err.message || 'Something went wrong. Please try again.');
@@ -305,6 +299,37 @@ function showError(el, msg) {
   if (!el) return;
   el.textContent = msg;
   el.style.display = 'block';
+}
+
+// ── Live updates while generating ─────────────────────────────────────────────
+// The workspace view renders immediately and fills in as capabilities complete.
+// This poller refetches the blueprint and hands each snapshot to
+// blueprintWorkspace via 'blueprint:update' until generation finishes.
+
+let _livePoll = null;
+
+async function fetchCurrentBlueprint(guestId) {
+  if (guestId) {
+    const resp = await fetch(`${API_BASE}/guest/blueprint/${encodeURIComponent(guestId)}`);
+    if (!resp.ok) return null;
+    return resp.json();
+  }
+  return fetchTransformationBlueprint().catch(() => null);
+}
+
+function startLiveUpdates(guestId) {
+  if (_livePoll) return;
+  _livePoll = setInterval(async () => {
+    const bp = await fetchCurrentBlueprint(guestId);
+    if (!bp) return;
+
+    document.dispatchEvent(new CustomEvent('blueprint:update', { detail: { blueprint: bp } }));
+
+    if (bp.status !== 'generating') {
+      clearInterval(_livePoll);
+      _livePoll = null;
+    }
+  }, 4000);
 }
 
 // ── Guest preview mode ────────────────────────────────────────────────────────
@@ -342,16 +367,13 @@ async function initGuest(guestId) {
     if (!resp.ok) throw new Error('Failed to load preview blueprint');
     const bp = await resp.json();
 
-    if (bp.status === 'generating') {
-      // Progress UI lives in the workspace
-      window.location.href = '/workspace/workspace.html';
-      return;
-    }
-
+    // Render immediately — completed capabilities are readable right away,
+    // the rest fill in live while generation continues
     document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
+    if (bp.status === 'generating') startLiveUpdates(guestId);
   } catch (err) {
     console.error('[blueprintGenerate] guest init error:', err);
-    window.location.href = '/workspace/workspace.html';
+    window.location.href = '/';
   }
 }
 
@@ -391,18 +413,10 @@ async function init() {
       return;
     }
 
-    if (bp.status === 'generating') {
-      // Reconnect to in-progress stream
-      const objEl = document.getElementById('prog-objective');
-      if (objEl) objEl.textContent = `"${bp.businessObjective || ''}"`;
-      renderProgressDomains(bp.domains || []);
-      showScreen('screen-progress');
-      connectProgressStream(bp._id);
-      return;
-    }
-
-    // Blueprint completed — workspace takes over
+    // Render immediately — completed capabilities are readable right away,
+    // the rest fill in live while generation continues
     document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
+    if (bp.status === 'generating') startLiveUpdates(null);
     initGenerateForm(); // keep form initialised in case user clicks New Blueprint
 
   } catch (err) {

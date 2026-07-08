@@ -141,8 +141,9 @@ async function regenerateDomains(blueprintId, domainIds) {
     );
     if (resp.status === 401) { window.handleSessionExpired(); return; }
     if (!resp.ok) throw new Error('Failed to start regeneration');
-    // Redirect to workspace — it detects 'generating' status and shows the progress screen
-    window.location.href = '/workspace/workspace.html';
+    // Stay here — on reload the page renders live, filling in capabilities
+    // as they complete
+    window.location.reload();
   } catch (err) {
     console.error('[blueprintWorkspace] domain regen error:', err);
     alert('Could not start generation. Please try again.');
@@ -158,7 +159,9 @@ function renderDomainTabs(blueprint) {
   const generated = [];
   const locked    = [];
   domains.forEach((domain, idx) => {
-    (isDomainNotStarted(domain) ? locked : generated).push({ domain, idx });
+    // A domain that is actively generating is browsable (shows live progress)
+    const isLockedDomain = isDomainNotStarted(domain) && domain.status !== 'generating';
+    (isLockedDomain ? locked : generated).push({ domain, idx });
   });
 
   const addLabel = (text) => {
@@ -168,20 +171,30 @@ function renderDomainTabs(blueprint) {
     nav.appendChild(p);
   };
 
+  const isGuest      = !!window.SOORGA_GUEST;
+  const isGenerating = blueprint.status === 'generating';
+
   const addItem = ({ domain, idx }, isLocked) => {
     const icon = DOMAIN_ICONS_MAP[domain.domainId] || '●';
+    // While the blueprint is generating, signed-in users may browse queued
+    // domains — they show a "generating in progress" placeholder
+    const clickable = !isLocked || (isGenerating && !isGuest);
+
     const item = document.createElement('button');
-    item.className = `ws-domain-item${idx === _selectedDomainIdx ? ' is-active' : ''}${isLocked ? ' ws-domain-item--locked' : ''}`;
+    item.className = `ws-domain-item${idx === _selectedDomainIdx ? ' is-active' : ''}` +
+      (isLocked ? (clickable ? ' ws-domain-item--queued' : ' ws-domain-item--locked') : '');
     item.dataset.idx = idx;
-    item.title = isLocked ? `${domain.domainName} — not generated yet` : domain.domainName;
+    item.title = isLocked
+      ? `${domain.domainName} — ${isGenerating && !isGuest ? 'generating' : 'not generated yet'}`
+      : domain.domainName;
     item.innerHTML = `
       <span class="ws-domain-item__icon">${icon}</span>
       <span class="ws-domain-item__name">${domain.domainName}</span>
     `;
-    if (isLocked) {
-      item.disabled = true;
-    } else {
+    if (clickable) {
       item.addEventListener('click', () => selectDomain(idx));
+    } else {
+      item.disabled = true;
     }
     nav.appendChild(item);
   };
@@ -194,18 +207,18 @@ function renderDomainTabs(blueprint) {
   if (locked.length) {
     const row = document.createElement('div');
     row.className = 'ws-domain-group-row';
-    const isGuest = !!window.SOORGA_GUEST;
     row.innerHTML = `
-      <p class="ws-domain-sidebar__label" style="margin:0">Not generated</p>
+      <p class="ws-domain-sidebar__label" style="margin:0">${isGenerating && !isGuest ? 'Generating…' : 'Not generated'}</p>
+      ${isGenerating ? '' : `
       <button id="domain-generate-rest" class="ws-domain-generate-all" ${isGuest ? 'disabled' : ''}
         title="${isGuest ? 'Log in to generate the remaining domains' : 'Generate all remaining domains'}">
         Generate
-      </button>
+      </button>`}
     `;
     nav.appendChild(row);
     locked.forEach(entry => addItem(entry, true));
 
-    if (!isGuest) {
+    if (!isGuest && !isGenerating) {
       const btn = nav.querySelector('#domain-generate-rest');
       btn?.addEventListener('click', () => {
         btn.disabled = true;
@@ -391,6 +404,9 @@ function renderBlueprintContent(blueprint, capIdx) {
   const cap = (dom?.capabilities || [])[capIdx];
   if (!cap) return;
 
+  // Regeneration is for signed-in users, and only when nothing is running
+  const canRegen = !window.SOORGA_GUEST && blueprint.status !== 'generating';
+
   // Capability title + regenerate button (always available for completed caps)
   const header = document.createElement('div');
   header.className = 'bp-cap-header';
@@ -398,7 +414,7 @@ function renderBlueprintContent(blueprint, capIdx) {
   capTitle.className = 'bp-cap-title';
   capTitle.textContent = resolveCapName(cap.capabilityName);
   header.appendChild(capTitle);
-  if (cap.status === 'completed') {
+  if (cap.status === 'completed' && canRegen) {
     const regenBtn = document.createElement('button');
     regenBtn.className = 'bp-cap-regen-btn';
     regenBtn.textContent = 'Regenerate';
@@ -410,17 +426,20 @@ function renderBlueprintContent(blueprint, capIdx) {
   if (cap.status !== 'completed' || !cap.sections?.length) {
     const empty = document.createElement('div');
     empty.className = 'bp-empty';
-    const isError = cap.status === 'error';
+    const isError      = cap.status === 'error';
+    const isGenerating = blueprint.status === 'generating' && !isError;
     empty.innerHTML = `
       <div class="bp-empty__icon">${isError ? '⚠' : '⟳'}</div>
-      <p class="bp-empty__title">${isError ? 'Generation failed for this capability' : 'Still generating…'}</p>
-      <p class="bp-empty__text">${isError ? 'The AI encountered an error generating this section.' : 'This section will appear when generation completes.'}</p>
+      <p class="bp-empty__title">${isError ? 'Generation failed for this capability' : (isGenerating ? 'Generating in progress…' : 'Not generated yet')}</p>
+      <p class="bp-empty__text">${isError ? 'The AI encountered an error generating this section.' : (isGenerating ? 'This capability is being generated — it will appear here automatically in a moment.' : 'This section will appear when generation completes.')}</p>
     `;
-    const regenBtn = document.createElement('button');
-    regenBtn.className = 'bp-regen-btn';
-    regenBtn.textContent = 'Regenerate';
-    regenBtn.addEventListener('click', () => triggerCapabilityRegeneration(cap, regenBtn));
-    empty.appendChild(regenBtn);
+    if (canRegen) {
+      const regenBtn = document.createElement('button');
+      regenBtn.className = 'bp-regen-btn';
+      regenBtn.textContent = 'Regenerate';
+      regenBtn.addEventListener('click', () => triggerCapabilityRegeneration(cap, regenBtn));
+      empty.appendChild(regenBtn);
+    }
     area.appendChild(empty);
     return;
   }
@@ -6995,4 +7014,42 @@ async function initWorkspace(blueprint) {
 document.addEventListener('blueprint:ready', (e) => {
   const { blueprint } = e.detail || {};
   if (blueprint) initWorkspace(blueprint);
+});
+
+// Live updates while generation runs — blueprintGenerate.js polls and emits
+// fresh snapshots; re-render only what actually changed so reading isn't
+// disturbed.
+function statusSnapshot(bp) {
+  return JSON.stringify((bp.domains || []).map(d => [
+    d.status,
+    (d.capabilities || []).map(c => [c.status, (c.sections || []).length]),
+  ]));
+}
+
+document.addEventListener('blueprint:update', (e) => {
+  const { blueprint } = e.detail || {};
+  if (!blueprint || !_blueprint) return;
+
+  stripRetiredCapabilities(blueprint);
+  blueprint.domains?.sort((a, b) => DOMAIN_ORDER.indexOf(a.domainId) - DOMAIN_ORDER.indexOf(b.domainId));
+
+  const before = statusSnapshot(_blueprint);
+  const after  = statusSnapshot(blueprint);
+
+  const selBefore = currentCap();
+  const selKey    = JSON.stringify([selBefore?.status, (selBefore?.sections || []).length]);
+
+  _blueprint.domains = blueprint.domains;
+  _blueprint.status  = blueprint.status;
+
+  if (before !== after) {
+    renderDomainTabs(_blueprint);
+    renderCapabilityTabs(_blueprint);
+  }
+
+  const selAfter    = currentCap();
+  const selKeyAfter = JSON.stringify([selAfter?.status, (selAfter?.sections || []).length]);
+  if (selKey !== selKeyAfter) {
+    renderBlueprintContent(_blueprint, _selectedCapIndex);
+  }
 });

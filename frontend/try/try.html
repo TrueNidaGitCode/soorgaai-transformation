@@ -4,42 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
-  <title>SoorgaAI — Your AI Blueprint Preview</title>
+  <title>SoorgaAI</title>
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="try.css">
   <script src="../login/config.js"></script>
 </head>
 <body class="try-page">
 
-  <nav class="try-nav">
-    <a href="/" class="try-nav__logo">Soorga<span>AI</span></a>
-    <button id="try-nav-signin" class="try-nav__signin">Sign in</button>
-  </nav>
-
   <main class="try-main">
-
-    <!-- ── Loading ─────────────────────────────────────────── -->
     <div id="try-loading" class="try-state">
       <div class="try-spinner" aria-hidden="true"></div>
-      <p>Setting up your preview…</p>
+      <p>Loading…</p>
     </div>
-
-    <!-- ── Generation progress ─────────────────────────────── -->
-    <div id="try-progress" class="try-state" style="display:none">
-      <p class="try-kicker">Generating your preview</p>
-      <h1 class="try-title">Building your AI Use Cases blueprint</h1>
-      <p id="try-objective" class="try-objective"></p>
-      <div id="try-progress-caps" class="try-caps"></div>
-      <p class="try-progress-note">Usually takes about a minute. The full six-domain blueprint is unlocked when you sign in.</p>
-    </div>
-
-    <!-- ── Error ───────────────────────────────────────────── -->
-    <div id="try-error" class="try-state" style="display:none">
-      <h1 class="try-title">Something went wrong</h1>
-      <p id="try-error-msg" class="try-objective">We couldn't generate your preview.</p>
-      <a href="/" class="try-cta-btn">Back to home</a>
-    </div>
-
   </main>
 
   <script src="try.js"></script>

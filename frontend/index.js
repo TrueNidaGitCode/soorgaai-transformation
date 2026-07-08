@@ -358,7 +358,7 @@ export function wireHeroPrompt() {
         }
     });
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const objective = input.value.trim();
         if (!objective) {
@@ -371,14 +371,52 @@ export function wireHeroPrompt() {
         }
         if (errEl) errEl.style.display = 'none';
 
-        sessionStorage.setItem('soorgaai_pending_objective', objective);
-        const token = localStorage.getItem('token');
-        if (token) {
-            // Workspace picks up the pending objective and starts generating
-            sessionStorage.removeItem(OPEN_BLUEPRINT_KEY);
-            window.location.href = '/workspace/workspace.html';
-        } else {
-            window.location.href = '/try/try.html';
+        const sendBtn = form.querySelector('.prompt__send');
+        if (sendBtn) sendBtn.disabled = true;
+
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                sessionStorage.removeItem(OPEN_BLUEPRINT_KEY);
+                const resp = await fetch(`${API_BASE()}/strategy-canvas/generate-transformation`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ businessObjective: objective }),
+                });
+                if (resp.status === 401) {
+                    // Stale session — restart as anonymous
+                    localStorage.removeItem('token');
+                    window.location.reload();
+                    return;
+                }
+                if (!resp.ok) {
+                    const { error } = await resp.json().catch(() => ({}));
+                    throw new Error(error || 'Failed to start generation. Please try again.');
+                }
+            } else {
+                const resp = await fetch(`${API_BASE()}/guest/generate-blueprint`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ businessObjective: objective }),
+                });
+                if (!resp.ok) {
+                    const { error } = await resp.json().catch(() => ({}));
+                    throw new Error(error || 'Failed to start generation. Please try again.');
+                }
+                const { guestId } = await resp.json();
+                localStorage.setItem('soorgaai_guest_id', guestId);
+            }
+
+            // Straight into the blueprint view — it renders live, filling in
+            // capabilities as they complete
+            window.location.href = '/domain/domain.html';
+
+        } catch (err) {
+            if (errEl) {
+                errEl.textContent = err.message;
+                errEl.style.display = '';
+            }
+            if (sendBtn) sendBtn.disabled = false;
         }
     });
 }

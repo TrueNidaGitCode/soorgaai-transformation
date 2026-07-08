@@ -3096,8 +3096,18 @@ function buildARCPNewPDFLayout(b) {
    .map(function(s) { return { label: s.label, value: String(s.value) }; });
   if (statsEntries.length) { wrap.appendChild(ndStatBlock(statsEntries)); }
 
-  if (b.arcpConsultantGuidance) { wrap.appendChild(buildConsultantGuidanceBlock(b.arcpConsultantGuidance)); }
-  if (b.arcpAIRecommendation)   { wrap.appendChild(buildAIRecommendationBlock(b.arcpAIRecommendation)); }
+  if (b.arcpConsultantGuidance) {
+    var cg = document.createElement('div'); cg.className = 'alan-consultant-guidance';
+    var cgIcon = document.createElement('span'); cgIcon.className = 'alan-cg__icon'; cgIcon.textContent = '◆'; cg.appendChild(cgIcon);
+    var cgText = document.createElement('p'); cgText.className = 'alan-cg__text'; cgText.textContent = b.arcpConsultantGuidance; cg.appendChild(cgText);
+    wrap.appendChild(cg);
+  }
+  if (b.arcpAIRecommendation) {
+    var ar = document.createElement('div'); ar.className = 'alan-ai-recommendation';
+    var arIcon = document.createElement('span'); arIcon.className = 'alan-ar__icon'; arIcon.textContent = '⬡'; ar.appendChild(arIcon);
+    var arText = document.createElement('p'); arText.className = 'alan-ar__text'; arText.textContent = b.arcpAIRecommendation; ar.appendChild(arText);
+    wrap.appendChild(ar);
+  }
   return wrap;
 }
 
@@ -4467,13 +4477,15 @@ html, body {
 .cls-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
 .cls-banner__cell { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 1rem; }
 .cls-banner__cell--secondary { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
-.cls-banner__label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.45); margin: 0 0 0.35rem; }
-.cls-banner__name { font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem; }
+/* display:block — these are spans; without it label/name/rationale/outcome
+   run together on one line in the rendered PDF */
+.cls-banner__label { display: block; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.45); margin: 0 0 0.35rem; }
+.cls-banner__name { display: block; font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem; }
 .cls-name--productivity { color: #5CC5A7; }
 .cls-name--functional   { color: #818cf8; }
 .cls-name--product      { color: #fbbf24; }
-.cls-banner__rationale { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin: 0 0 0.5rem; }
-.cls-banner__outcome { font-size: 0.68rem; color: rgba(255,255,255,0.6); margin: 0; }
+.cls-banner__rationale { display: block; font-size: 0.7rem; color: rgba(255,255,255,0.7); margin: 0 0 0.5rem; }
+.cls-banner__outcome { display: block; font-size: 0.68rem; color: rgba(255,255,255,0.6); margin: 0; }
 
 /* ── CDI new layout ──────────────────────────────────────────────────────── */
 .cdi-body { display: grid; grid-template-columns: 70fr 30fr; gap: 1rem; margin-bottom: 1rem; }
@@ -4786,7 +4798,8 @@ function buildCoverPageHTML(blueprint) {
   const company  = blueprint.companyName || 'Company';
   const industry = blueprint.industry    || '';
   const version  = blueprint.version     || '1.0';
-  const gen      = fmtDate(blueprint.generatedAt);
+  // TransformationBlueprint has no generatedAt field — createdAt is the generation time
+  const gen      = fmtDate(blueprint.generatedAt || blueprint.createdAt);
   const upd      = fmtDate(blueprint.updatedAt);
 
   const rows = [
@@ -4820,7 +4833,7 @@ function buildAppendixPageHTML(blueprint) {
     ['Company',      blueprint.companyName || '—'],
     ['Industry',     blueprint.industry    || '—'],
     ['Version',      blueprint.version     || '1.0'],
-    ['Generated',    fmtDate(blueprint.generatedAt)],
+    ['Generated',    fmtDate(blueprint.generatedAt || blueprint.createdAt)],
     ['Last Updated', fmtDate(blueprint.updatedAt)],
     ['Status',       (blueprint.status || '—').charAt(0).toUpperCase() + (blueprint.status || '—').slice(1)],
   ].map(([k, v]) => `

@@ -204,18 +204,6 @@ export function wireSidebar() {
         }
     });
 
-    // Create blueprint: signed-in → workspace in new-blueprint mode;
-    // anonymous → focus the prompt box (that IS the create flow here)
-    document.getElementById('side-create')?.addEventListener('click', () => {
-        if (localStorage.getItem('token')) {
-            sessionStorage.setItem(NEW_BLUEPRINT_KEY, '1');
-            sessionStorage.removeItem(OPEN_BLUEPRINT_KEY);
-            window.location.href = '/workspace/workspace.html';
-        } else {
-            document.getElementById('hero-objective')?.focus();
-            document.body.classList.remove('side-open');
-        }
-    });
 }
 
 /**
@@ -262,7 +250,7 @@ export async function wireSidebarBlueprints() {
             btn.className = 'side__bp';
             btn.title = bp.businessObjective || '';
             btn.textContent = 'Preview — ' + truncate(bp.businessObjective, 38);
-            btn.addEventListener('click', () => { window.location.href = '/try/try.html'; });
+            btn.addEventListener('click', () => { window.location.href = '/workspace/workspace.html'; });
             wrap.innerHTML = '';
             wrap.appendChild(btn);
         } else {
@@ -279,13 +267,25 @@ function truncate(s, n) {
 }
 
 /**
- * Topbar: signed-in visitors see "Open Workspace" instead of Log in / Sign up.
+ * Topbar: signed-in visitors see "Open Workspace" plus a Log out option
+ * instead of the Log in button.
  */
 export function wireTopbarAuth() {
     const wrap = document.getElementById('topbar-auth');
     if (!wrap) return;
     if (localStorage.getItem('token')) {
-        wrap.innerHTML = '<a href="/workspace/workspace.html" class="auth-btn auth-btn--workspace">Open Workspace &rarr;</a>';
+        wrap.innerHTML =
+            '<a href="/workspace/workspace.html" class="auth-btn auth-btn--workspace">Open Workspace &rarr;</a>' +
+            '<button id="topbar-logout" class="auth-btn auth-btn--outline">Log out</button>';
+        document.getElementById('topbar-logout')?.addEventListener('click', () => {
+            [
+                'token', 'username', 'userId', 'role', 'redirectAfterLogin',
+                'soorgaai_blueprint_v1', 'soorgaai_blueprint_activity_v1',
+                'soorgaai_executive_memory_v1', 'soorgaai_company_context_v1',
+                'da_score', 'soorga_assessment_progress',
+            ].forEach(k => localStorage.removeItem(k));
+            window.location.reload();
+        });
     }
 }
 
@@ -332,7 +332,15 @@ export function wireHeroPrompt() {
 
         sessionStorage.setItem('soorgaai_pending_objective', objective);
         const token = localStorage.getItem('token');
-        window.location.href = token ? '/workspace/workspace.html' : '/try/try.html';
+        if (token) {
+            // Land on the workspace generate form (prefilled), even if an
+            // older blueprint exists
+            sessionStorage.setItem(NEW_BLUEPRINT_KEY, '1');
+            sessionStorage.removeItem(OPEN_BLUEPRINT_KEY);
+            window.location.href = '/workspace/workspace.html';
+        } else {
+            window.location.href = '/try/try.html';
+        }
     });
 }
 

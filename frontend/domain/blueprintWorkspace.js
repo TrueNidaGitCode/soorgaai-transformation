@@ -129,14 +129,14 @@ function isDomainNotStarted(domain) {
   return caps.every(c => !c.status || c.status === 'pending');
 }
 
-async function regenerateDomain(blueprintId, domainId) {
+async function regenerateDomains(blueprintId, domainIds) {
   try {
     const resp = await fetch(
       `${API_BASE}/strategy-canvas/transformation-blueprint/${blueprintId}/regenerate-domains`,
       {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body:    JSON.stringify({ domainIds: [domainId] }),
+        body:    JSON.stringify({ domainIds }),
       }
     );
     if (resp.status === 401) { window.handleSessionExpired(); return; }
@@ -152,43 +152,68 @@ async function regenerateDomain(blueprintId, domainId) {
 function renderDomainTabs(blueprint) {
   const nav = document.getElementById('domain-nav');
   if (!nav) return;
-  nav.innerHTML = '<p class="ws-domain-sidebar__label">Domains</p>';
+  nav.innerHTML = '';
 
-  (blueprint.domains || []).forEach((domain, idx) => {
-    const icon         = DOMAIN_ICONS_MAP[domain.domainId] || '●';
-    const notStarted   = isDomainNotStarted(domain);
+  const domains   = blueprint.domains || [];
+  const generated = [];
+  const locked    = [];
+  domains.forEach((domain, idx) => {
+    (isDomainNotStarted(domain) ? locked : generated).push({ domain, idx });
+  });
 
-    // Wrapper so we can place the Generate chip without nesting buttons
-    const row = document.createElement('div');
-    row.className = 'ws-domain-row';
+  const addLabel = (text) => {
+    const p = document.createElement('p');
+    p.className = 'ws-domain-sidebar__label';
+    p.textContent = text;
+    nav.appendChild(p);
+  };
 
+  const addItem = ({ domain, idx }, isLocked) => {
+    const icon = DOMAIN_ICONS_MAP[domain.domainId] || '●';
     const item = document.createElement('button');
-    item.className = `ws-domain-item${idx === _selectedDomainIdx ? ' is-active' : ''}`;
+    item.className = `ws-domain-item${idx === _selectedDomainIdx ? ' is-active' : ''}${isLocked ? ' ws-domain-item--locked' : ''}`;
     item.dataset.idx = idx;
-    item.title = domain.domainName;
+    item.title = isLocked ? `${domain.domainName} — not generated yet` : domain.domainName;
     item.innerHTML = `
       <span class="ws-domain-item__icon">${icon}</span>
       <span class="ws-domain-item__name">${domain.domainName}</span>
     `;
-    item.addEventListener('click', () => selectDomain(idx));
-    row.appendChild(item);
-
-    if (notStarted) {
-      const chip = document.createElement('button');
-      chip.className = 'ws-domain-regen-chip';
-      chip.textContent = 'Generate';
-      chip.title = `Generate ${domain.domainName}`;
-      chip.addEventListener('click', (e) => {
-        e.stopPropagation();
-        chip.disabled = true;
-        chip.textContent = '…';
-        regenerateDomain(blueprint._id, domain.domainId);
-      });
-      row.appendChild(chip);
+    if (isLocked) {
+      item.disabled = true;
+    } else {
+      item.addEventListener('click', () => selectDomain(idx));
     }
+    nav.appendChild(item);
+  };
 
+  if (generated.length) {
+    addLabel('Generated');
+    generated.forEach(entry => addItem(entry, false));
+  }
+
+  if (locked.length) {
+    const row = document.createElement('div');
+    row.className = 'ws-domain-group-row';
+    const isGuest = !!window.SOORGA_GUEST;
+    row.innerHTML = `
+      <p class="ws-domain-sidebar__label" style="margin:0">Not generated</p>
+      <button id="domain-generate-rest" class="ws-domain-generate-all" ${isGuest ? 'disabled' : ''}
+        title="${isGuest ? 'Log in to generate the remaining domains' : 'Generate all remaining domains'}">
+        Generate
+      </button>
+    `;
     nav.appendChild(row);
-  });
+    locked.forEach(entry => addItem(entry, true));
+
+    if (!isGuest) {
+      const btn = nav.querySelector('#domain-generate-rest');
+      btn?.addEventListener('click', () => {
+        btn.disabled = true;
+        btn.textContent = '…';
+        regenerateDomains(blueprint._id, locked.map(e => e.domain.domainId));
+      });
+    }
+  }
 }
 
 function selectDomain(idx) {
@@ -197,8 +222,10 @@ function selectDomain(idx) {
   _refineTargetSection = null;
   clearSuggestionCard();
 
-  document.querySelectorAll('.ws-domain-item').forEach((t, i) => {
-    t.classList.toggle('is-active', i === idx);
+  // Match by stored index, not DOM order — the sidebar groups items into
+  // Generated / Not generated sections
+  document.querySelectorAll('.ws-domain-item').forEach((t) => {
+    t.classList.toggle('is-active', Number(t.dataset.idx) === idx);
   });
 
   renderCapabilityTabs(_blueprint);
@@ -6944,8 +6971,9 @@ async function initWorkspace(blueprint) {
   _selectedDomainIdx = 0;
   _selectedCapIndex  = 0;
 
+  // Guests browse read-only — assistant (and its authed API calls) stays hidden
   const assistantBtn = document.getElementById('btn-ai-assistant');
-  if (assistantBtn) assistantBtn.style.display = '';
+  if (assistantBtn && !window.SOORGA_GUEST) assistantBtn.style.display = '';
 
   renderHeader(blueprint);
   renderDomainTabs(blueprint);

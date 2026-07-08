@@ -45,29 +45,6 @@
 .side__toggle:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
 .side__toggle--mobile { display: none; }
 
-.side__create {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.12s, background 0.12s;
-}
-.side__create:hover {
-  border-color: var(--accent-green);
-  background: rgba(92, 197, 167, 0.09);
-}
-.side__create svg { flex-shrink: 0; color: var(--accent-green); }
-
 .side__label {
   font-size: 10.5px;
   font-weight: 800;

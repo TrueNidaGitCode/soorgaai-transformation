@@ -14,9 +14,14 @@ const API_BASE = window.CONFIG?.API_BASE
 
 function getToken() { return localStorage.getItem('token'); }
 function authHeaders() { return { Authorization: `Bearer ${getToken()}` }; }
+function getGuestId() { return localStorage.getItem('soorgaai_guest_id'); }
 
 // All enabled domains from workspace state — set during DOMContentLoaded
 let _enabledDomains = [];
+
+// Guest preview mode — set when an anonymous visitor with a guest blueprint
+// lands here. Read-only: generation is locked behind login.
+let _guestMode = false;
 
 function logout() {
   [
@@ -180,7 +185,8 @@ function domainStatusFromCaps(caps) {
 
 function buildMergedDomains(blueprint) {
   const bpMap  = Object.fromEntries((blueprint.domains || []).map(d => [d.domainId, d]));
-  const ORDER  = ['ai-strategy','ai-use-cases','skills-workforce','data-readiness','technology-infrastructure','governance-security'];
+  // AI Use Cases first — it's the domain guests generate in the free preview
+  const ORDER  = ['ai-use-cases','ai-strategy','data-readiness','technology-infrastructure','skills-workforce','governance-security'];
   const source = _enabledDomains.length ? _enabledDomains : (blueprint.domains || []).map(d => ({ domainId: d.domainId, title: d.domainName }));
   return source
     .map(ed => bpMap[ed.domainId] || { domainId: ed.domainId, domainName: ed.title, capabilities: [], status: 'pending' })
@@ -244,20 +250,19 @@ function renderDoneState(blueprint) {
     });
   }
 
-  // Right panel — one card per domain
+  // Right panel — domains split into Generated vs Not generated sections
   const capsEl = document.getElementById('ws-done-caps');
   if (!capsEl) return;
   capsEl.innerHTML = '';
 
-  for (const domain of domains) {
+  const domainCard = (domain, locked) => {
     const caps  = domain.capabilities || [];
     const color = DOMAIN_COLORS[domain.domainId] || '#5CC5A7';
     const icon  = DOMAIN_ICONS[domain.domainId]  || '●';
     const { label, cls, pct } = domainStatusFromCaps(caps);
-    const isNotStarted = cls === 'not-started';
 
     const card = document.createElement('div');
-    card.className = 'ws-done-cap-card';
+    card.className = 'ws-done-cap-card' + (locked ? ' ws-done-cap-card--locked' : '');
     card.innerHTML = `
       <div class="ws-done-cap-icon ws-done-cap-icon--domain" style="background:${color}1a;border:1.5px solid ${color}44">${icon}</div>
       <div class="ws-done-cap-body">
@@ -270,33 +275,53 @@ function renderDoneState(blueprint) {
           </div>
         </div>
       </div>
-      ${isNotStarted
-        ? `<button class="ws-done-cap-generate-btn" data-domain-id="${domain.domainId}" data-blueprint-id="${blueprint._id}">Generate</button>`
-        : '<span class="ws-done-cap-arrow">→</span>'}
+      ${locked ? '' : '<span class="ws-done-cap-arrow">→</span>'}
     `;
-    capsEl.appendChild(card);
+    return card;
+  };
+
+  const generatedDomains = domains.filter(d => domainStatusFromCaps(d.capabilities || []).cls !== 'not-started');
+  const lockedDomains    = domains.filter(d => domainStatusFromCaps(d.capabilities || []).cls === 'not-started');
+
+  if (generatedDomains.length) {
+    const h = document.createElement('p');
+    h.className = 'ws-done-group-label';
+    h.textContent = 'Generated';
+    capsEl.appendChild(h);
+    generatedDomains.forEach(d => capsEl.appendChild(domainCard(d, false)));
   }
 
-  // Bind "Generate" buttons on not-started domain cards
-  capsEl.querySelectorAll('.ws-done-cap-generate-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const { domainId, blueprintId: bpId } = btn.dataset;
-      triggerDomainRegeneration(bpId, domainId);
-    });
-  });
+  if (lockedDomains.length) {
+    const row = document.createElement('div');
+    row.className = 'ws-done-group-row';
+    row.innerHTML = `
+      <p class="ws-done-group-label">Not generated yet</p>
+      <button id="ws-generate-rest" class="ws-done-generate-all" ${_guestMode ? 'disabled' : ''}
+        title="${_guestMode ? 'Log in to generate the remaining domains' : 'Generate all remaining domains'}">
+        Generate remaining domains
+      </button>
+    `;
+    capsEl.appendChild(row);
+    lockedDomains.forEach(d => capsEl.appendChild(domainCard(d, true)));
+
+    if (!_guestMode) {
+      document.getElementById('ws-generate-rest')?.addEventListener('click', () => {
+        triggerDomainsRegeneration(blueprint._id, lockedDomains.map(d => d.domainId));
+      });
+    }
+  }
 }
 
 // ── Domain regeneration ───────────────────────────────────────────────────────
 
-async function triggerDomainRegeneration(blueprintId, domainId) {
+async function triggerDomainsRegeneration(blueprintId, domainIds) {
   try {
     const resp = await fetch(
       `${API_BASE}/strategy-canvas/transformation-blueprint/${blueprintId}/regenerate-domains`,
       {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body:    JSON.stringify({ domainIds: [domainId] }),
+        body:    JSON.stringify({ domainIds }),
       }
     );
     if (resp.status === 401) { window.handleSessionExpired(); return; }
@@ -488,19 +513,112 @@ function bindNewBlueprintBtn() {
   if (!btn || btn.dataset.bound) return;
   btn.dataset.bound = '1';
   btn.addEventListener('click', () => {
+    // New blueprints start from the landing-page prompt box
     sessionStorage.removeItem('soorgaai_open_blueprint_id');
-    const input = document.getElementById('ws-gen-objective');
-    if (input) input.value = '';
-    _formBound = false;
-    showState('ws-prompt');
-    initGenerateForm();
+    window.location.href = '/';
   });
+}
+
+// ── Guest preview mode ────────────────────────────────────────────────────────
+
+function goToLoginForGuest() {
+  localStorage.setItem('redirectAfterLogin', '/workspace/workspace.html');
+  window.location.href = '/login/login.html';
+}
+
+function showGuestChrome() {
+  // Navbar: no session to log out of — offer login instead
+  const logoutBtn = document.getElementById('ws-logout');
+  if (logoutBtn) {
+    logoutBtn.textContent = 'Log in';
+    logoutBtn.addEventListener('click', goToLoginForGuest);
+  }
+  const nameEl = document.getElementById('ws-welcome-name');
+  if (nameEl) nameEl.textContent = 'Guest';
+  const ctxEl = document.getElementById('ws-user-context');
+  if (ctxEl) ctxEl.textContent = 'Preview mode';
+
+  const banner = document.getElementById('ws-guest-banner');
+  if (banner) {
+    banner.style.display = '';
+    document.getElementById('ws-guest-banner-login')?.addEventListener('click', goToLoginForGuest);
+  }
+}
+
+function connectGuestProgressStream(guestId) {
+  const es = new EventSource(`${API_BASE}/guest/blueprint/${encodeURIComponent(guestId)}/stream`);
+
+  es.onmessage = async (evt) => {
+    let msg;
+    try { msg = JSON.parse(evt.data); } catch { return; }
+    if (msg.error) { es.close(); return; }
+
+    if (msg.domains) {
+      for (const d of msg.domains) {
+        for (const c of (d.capabilities || [])) updateProgressCard(d.domainId, c.id, c.status);
+      }
+    }
+
+    if (msg.done || msg.overallStatus === 'completed' || msg.overallStatus === 'error') {
+      es.close();
+      try {
+        const resp = await fetch(`${API_BASE}/guest/blueprint/${encodeURIComponent(guestId)}`);
+        if (resp.ok) {
+          const bp = await resp.json();
+          renderDoneState(bp);
+          showState('ws-done');
+          bindNewBlueprintBtn();
+        }
+      } catch { /* leave progress state showing */ }
+    }
+  };
+}
+
+async function initGuestWorkspace(guestId) {
+  _guestMode = true;
+  showGuestChrome();
+
+  const loadingEl = document.getElementById('ws-loading');
+  const mainEl    = document.getElementById('ws-main');
+
+  try {
+    const resp = await fetch(`${API_BASE}/guest/blueprint/${encodeURIComponent(guestId)}`);
+    if (resp.status === 404) {
+      // Stale/claimed guest id — back to the landing prompt
+      localStorage.removeItem('soorgaai_guest_id');
+      window.location.href = '/';
+      return;
+    }
+    if (!resp.ok) throw new Error('Failed to load preview blueprint');
+    const bp = await resp.json();
+
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (mainEl)    mainEl.style.display    = '';
+
+    if (bp.status === 'generating') {
+      const objEl = document.getElementById('ws-prog-objective');
+      if (objEl) objEl.textContent = `"${bp.businessObjective || ''}"`;
+      renderProgressDomains(bp.domains || []);
+      showState('ws-progress');
+      connectGuestProgressStream(guestId);
+      return;
+    }
+
+    renderDoneState(bp);
+    showState('ws-done');
+    bindNewBlueprintBtn();
+
+  } catch (err) {
+    console.error('[workspace] guest load error:', err);
+    if (loadingEl) loadingEl.innerHTML = '<p style="color:#ff6b6b">Failed to load your preview. Please refresh.</p>';
+  }
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (!getToken()) {
+    if (getGuestId()) { await initGuestWorkspace(getGuestId()); return; }
     window.location.href = '/login/login.html?redirect=/workspace/workspace.html';
     return;
   }
@@ -511,6 +629,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   const mainEl    = document.getElementById('ws-main');
 
   try {
+    // Fresh login with a guest preview waiting — claim it before anything else
+    // (works even if the user detours through profile setup below)
+    if (getGuestId()) {
+      try {
+        await fetch(`${API_BASE}/strategy-canvas/claim-guest-blueprint`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ guestId: getGuestId() }),
+        });
+      } catch { /* best-effort */ }
+      localStorage.removeItem('soorgaai_guest_id');
+    }
+
     // Auth guard + profile redirect
     const profileResp = await fetch(`${API_BASE}/profile/me`, { headers: authHeaders() });
     if (profileResp.status === 404) { window.location.href = '/profile-setup/profile.html'; return; }

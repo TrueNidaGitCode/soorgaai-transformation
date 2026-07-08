@@ -11,6 +11,13 @@
  * happened and sent home instead of left in a partial/confusing screen.
  */
 function handleSessionExpired() {
+  // Guest preview: there is no session to expire — a 401 just means the
+  // action needs an account. Nudge to log in without kicking them out.
+  if (!localStorage.getItem('token') && localStorage.getItem('soorgaai_guest_id')) {
+    alert('Log in to use this feature and save your work.');
+    return;
+  }
+
   localStorage.removeItem('token');
   localStorage.removeItem('username');
   localStorage.removeItem('userId');

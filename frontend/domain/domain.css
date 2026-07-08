@@ -2849,41 +2849,74 @@
   flex: 0;
 }
 
-/* ── Domain row wrapper (item + optional Generate chip) ─────────────────── */
+/* ── Domain sidebar: Generated / Not generated grouping ─────────────────── */
 
-.ws-domain-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+.ws-domain-item--locked {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.ws-domain-regen-chip {
-  align-self: flex-start;
-  margin-left: 2.4rem;
-  padding: 0.18rem 0.55rem;
-  font-size: 0.68rem;
+.ws-domain-group-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+}
+
+.ws-domain-generate-all {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.7rem;
   font-weight: 700;
   font-family: inherit;
-  color: #5CC5A7;
-  background: rgba(92,197,167,0.08);
-  border: 1px solid rgba(92,197,167,0.3);
+  color: #fff;
+  background: linear-gradient(135deg, #5CC5A7, #3DAFD3);
+  border: none;
   border-radius: 20px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: opacity 0.15s;
   white-space: nowrap;
-  overflow: hidden;
 }
-.ws-domain-regen-chip:hover:not(:disabled) {
-  background: rgba(92,197,167,0.16);
-  color: #7ed9c0;
+.ws-domain-generate-all:hover:not(:disabled) { opacity: 0.85; }
+.ws-domain-generate-all:disabled {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.4);
+  cursor: not-allowed;
 }
-.ws-domain-regen-chip:disabled {
-  opacity: 0.5;
-  cursor: default;
+.ws-domain-sidebar--collapsed .ws-domain-group-row { display: none; }
+
+/* ── Guest login banner ───────────────────────────────────────────────────── */
+
+.domain-guest-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  background: rgba(92, 197, 167, 0.08);
+  border-bottom: 1px solid rgba(92, 197, 167, 0.3);
+  padding: 0.7rem 1.5rem;
 }
-.ws-domain-sidebar--collapsed .ws-domain-regen-chip {
-  display: none;
+.domain-guest-banner p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.75);
 }
+.domain-guest-banner strong { color: #fff; }
+.domain-guest-banner__btn {
+  background: linear-gradient(135deg, #5CC5A7, #3DAFD3);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.45rem 1.1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.12s;
+}
+.domain-guest-banner__btn:hover { opacity: 0.88; }
 
 /* ── Capability Navigation Tabs ───────────────────────────────────────────── */
 

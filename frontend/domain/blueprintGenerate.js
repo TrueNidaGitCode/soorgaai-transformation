@@ -307,13 +307,77 @@ function showError(el, msg) {
   el.style.display = 'block';
 }
 
+// ── Guest preview mode ────────────────────────────────────────────────────────
+
+function guestGoToLogin() {
+  localStorage.setItem('redirectAfterLogin', '/domain/domain.html');
+  window.location.href = '/login/login.html';
+}
+
+async function initGuest(guestId) {
+  window.SOORGA_GUEST = true;
+
+  // Navbar: no session — offer login instead of logout
+  const usernameEl = document.getElementById('domain-username');
+  if (usernameEl) usernameEl.textContent = 'Guest preview';
+  const logoutBtn = document.getElementById('domain-logout');
+  if (logoutBtn) {
+    logoutBtn.textContent = 'Log in';
+    logoutBtn.addEventListener('click', guestGoToLogin);
+  }
+
+  const banner = document.getElementById('domain-guest-banner');
+  if (banner) {
+    banner.style.display = '';
+    document.getElementById('domain-guest-banner-login')?.addEventListener('click', guestGoToLogin);
+  }
+
+  try {
+    const resp = await fetch(`${API_BASE}/guest/blueprint/${encodeURIComponent(guestId)}`);
+    if (resp.status === 404) {
+      localStorage.removeItem('soorgaai_guest_id');
+      window.location.href = '/';
+      return;
+    }
+    if (!resp.ok) throw new Error('Failed to load preview blueprint');
+    const bp = await resp.json();
+
+    if (bp.status === 'generating') {
+      // Progress UI lives in the workspace
+      window.location.href = '/workspace/workspace.html';
+      return;
+    }
+
+    document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
+  } catch (err) {
+    console.error('[blueprintGenerate] guest init error:', err);
+    window.location.href = '/workspace/workspace.html';
+  }
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
 async function init() {
-  const token = getToken();
+  const token   = getToken();
+  const guestId = localStorage.getItem('soorgaai_guest_id');
+
+  if (!token && guestId) { await initGuest(guestId); return; }
+
   if (!token) {
     window.location.href = `/login/login.html?redirect=/domain/domain.html`;
     return;
+  }
+
+  // Fresh login with a guest preview waiting — claim it into this account
+  if (guestId) {
+    try {
+      await fetch(`${API_BASE}/strategy-canvas/claim-guest-blueprint`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ guestId }),
+      });
+    } catch { /* best-effort */ }
+    localStorage.removeItem('soorgaai_guest_id');
   }
 
   initNav();

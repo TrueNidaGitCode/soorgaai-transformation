@@ -11,7 +11,6 @@ import { MATURITY_STAGES } from './data/maturityStages.js';
 
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';
-const NEW_BLUEPRINT_KEY  = 'soorgaai_new_blueprint';
 
 /* v8 ignore next 9 */
 document.addEventListener('DOMContentLoaded', () => {
@@ -237,7 +236,6 @@ export async function wireSidebarBlueprints() {
                 btn.textContent = (bp.status === 'generating' ? '⋯ ' : '') + truncate(bp.businessObjective, 46);
                 btn.addEventListener('click', () => {
                     sessionStorage.setItem(OPEN_BLUEPRINT_KEY, bp._id);
-                    sessionStorage.removeItem(NEW_BLUEPRINT_KEY);
                     window.location.href = '/workspace/workspace.html';
                 });
                 wrap.appendChild(btn);
@@ -333,9 +331,7 @@ export function wireHeroPrompt() {
         sessionStorage.setItem('soorgaai_pending_objective', objective);
         const token = localStorage.getItem('token');
         if (token) {
-            // Land on the workspace generate form (prefilled), even if an
-            // older blueprint exists
-            sessionStorage.setItem(NEW_BLUEPRINT_KEY, '1');
+            // Workspace picks up the pending objective and starts generating
             sessionStorage.removeItem(OPEN_BLUEPRINT_KEY);
             window.location.href = '/workspace/workspace.html';
         } else {

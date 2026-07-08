@@ -429,14 +429,6 @@ function initGenerateForm() {
   const form = document.getElementById('ws-gen-form');
   if (!form) return;
 
-  // Prefill from the landing-page hero prompt, if the user typed one there
-  const pendingObjective = sessionStorage.getItem('soorgaai_pending_objective');
-  if (pendingObjective) {
-    const input = document.getElementById('ws-gen-objective');
-    if (input && !input.value) input.value = pendingObjective;
-    sessionStorage.removeItem('soorgaai_pending_objective');
-  }
-
   // Example chips populate the textarea on click
   document.querySelectorAll('.ws-gen-example-chip').forEach(chip => {
     chip.addEventListener('click', () => {
@@ -459,44 +451,13 @@ function initGenerateForm() {
       if (errEl) { errEl.textContent = 'Please enter your transformation objective.'; errEl.style.display = ''; }
       return;
     }
-    // New generation supersedes any sidebar-selected blueprint
-    sessionStorage.removeItem('soorgaai_open_blueprint_id');
     if (errEl) errEl.style.display = 'none';
     if (submitBtn)  submitBtn.disabled       = true;
     if (submitText) submitText.style.display = 'none';
     if (loader)     loader.style.display     = '';
 
     try {
-      const resp = await fetch(`${API_BASE}/strategy-canvas/generate-transformation`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body:    JSON.stringify({ businessObjective: objective }),
-      });
-
-      if (resp.status === 401) { window.handleSessionExpired(); return; }
-      if (!resp.ok) {
-        const { error } = await resp.json().catch(() => ({}));
-        throw new Error(error || 'Failed to start generation.');
-      }
-
-      const { transformationId } = await resp.json();
-
-      // Load blueprint shell so progress cards are pre-rendered as pending
-      try {
-        const bpResp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
-          headers: authHeaders(),
-        });
-        if (bpResp.ok) {
-          const bp = await bpResp.json();
-          renderProgressDomains(bp.domains || []);
-          const objEl = document.getElementById('ws-prog-objective');
-          if (objEl) objEl.textContent = `"${objective}"`;
-        }
-      } catch { /* non-critical */ }
-
-      showState('ws-progress');
-      connectProgressStream(transformationId);
-
+      await startBlueprintGeneration(objective);
     } catch (err) {
       if (errEl) { errEl.textContent = err.message || 'Something went wrong. Please try again.'; errEl.style.display = ''; }
       if (submitBtn)  submitBtn.disabled       = false;
@@ -504,6 +465,44 @@ function initGenerateForm() {
       if (loader)     loader.style.display     = 'none';
     }
   });
+}
+
+// Kick off a new blueprint generation and switch to the progress state.
+// Called with objectives handed over from the landing-page prompt box
+// (and by the legacy in-workspace form, kept as a fallback).
+async function startBlueprintGeneration(objective) {
+  // New generation supersedes any sidebar-selected blueprint
+  sessionStorage.removeItem('soorgaai_open_blueprint_id');
+
+  const resp = await fetch(`${API_BASE}/strategy-canvas/generate-transformation`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body:    JSON.stringify({ businessObjective: objective }),
+  });
+
+  if (resp.status === 401) { window.handleSessionExpired(); return; }
+  if (!resp.ok) {
+    const { error } = await resp.json().catch(() => ({}));
+    throw new Error(error || 'Failed to start generation.');
+  }
+
+  const { transformationId } = await resp.json();
+
+  // Load blueprint shell so progress cards are pre-rendered as pending
+  try {
+    const bpResp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint`, {
+      headers: authHeaders(),
+    });
+    if (bpResp.ok) {
+      const bp = await bpResp.json();
+      renderProgressDomains(bp.domains || []);
+      const objEl = document.getElementById('ws-prog-objective');
+      if (objEl) objEl.textContent = `"${objective}"`;
+    }
+  } catch { /* non-critical */ }
+
+  showState('ws-progress');
+  connectProgressStream(transformationId);
 }
 
 // ── New Blueprint button ──────────────────────────────────────────────────────
@@ -656,15 +655,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderProfile(state);
     renderDomainBadges(state.domains || []);
 
-    // "Create blueprint" from the landing sidebar — skip straight to the prompt
-    if (sessionStorage.getItem('soorgaai_new_blueprint')) {
-      sessionStorage.removeItem('soorgaai_new_blueprint');
-      sessionStorage.removeItem('soorgaai_open_blueprint_id');
+    // Objective handed over from the landing prompt box — generate right away
+    const pendingObjective = sessionStorage.getItem('soorgaai_pending_objective');
+    if (pendingObjective) {
+      sessionStorage.removeItem('soorgaai_pending_objective');
       if (loadingEl) loadingEl.style.display = 'none';
       if (mainEl)    mainEl.style.display    = '';
-      showState('ws-prompt');
-      initGenerateForm();
-      return;
+      try {
+        await startBlueprintGeneration(pendingObjective);
+        return;
+      } catch (err) {
+        console.error('[workspace] auto-generation failed:', err);
+        alert(err.message || 'Could not start generation. Please try again.');
+        window.location.href = '/';
+        return;
+      }
     }
 
     // Check blueprint status — a specific blueprint if the landing sidebar
@@ -681,9 +686,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (bpResp.status === 401) { window.handleSessionExpired(); return; }
 
     if (bpResp.status === 404) {
+      // No blueprint yet — the landing page owns the prompt box
       sessionStorage.removeItem('soorgaai_open_blueprint_id'); // stale selection
-      showState('ws-prompt');
-      initGenerateForm();
+      window.location.href = '/';
       return;
     }
 

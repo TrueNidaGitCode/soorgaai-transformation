@@ -662,22 +662,24 @@ Distribute the remaining identified opportunities across the other quadrants bas
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Use Case Classification" sections only:
 
-JOURNEY RULE: Review the "Identified AI Opportunities" list in the TRANSFORMATION JOURNEY block.
-Select the FIRST listed opportunity as the primary initiative to classify.
-All classification rationale and outcomes must be specific to that named initiative — not a generic description of the company.
+JOURNEY RULE: Use the "Identified AI Opportunities" list from the TRANSFORMATION JOURNEY block. Classify EVERY opportunity in that list — do not select only one.
 
-5. primaryClassification
-   Classify the primary initiative identified above.
-   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence that opens by naming the initiative explicitly (e.g. 'AI Traceability Mapping is classified as...') and explains why it belongs to this classification>", "businessOutcome": "<1 sentence on the primary business outcome THIS initiative will deliver>" }
+5. opportunityClassifications (one item per identified AI opportunity, in the same order as "Identified AI Opportunities")
+   Each item: { "opportunity": "<the AI opportunity name, copied verbatim from Identified AI Opportunities — do not reword, shorten, or paraphrase it>", "classification": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence, specific to this opportunity and company, stating the classification's primary business outcome — e.g. 'This initiative primarily boosts engineering productivity by reducing manual investigation and accelerating analysis through AI-driven similarity retrieval.'>" }
 
-6. secondaryClassification (include only if a second classification clearly applies — otherwise omit or set to null)
-   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence>", "businessOutcome": "<1 sentence>" }
+   Classification definitions:
+   - Productivity AI: improves internal engineering or operational efficiency (faster analysis, less manual effort)
+   - Functional AI: strengthens a core engineering or product function (quality, reliability, compliance, safety)
+   - Product AI: becomes part of the customer-facing product or vehicle capability
 
-7. transformationImplication (1 sentence)
-   A concise insight explaining how classifying THIS specific initiative guides the next steps: business value assessment, prioritization, and implementation planning.
+   Example:
+   [
+     { "opportunity": "Embedding-Based Similarity Matching", "classification": "Productivity AI", "rationale": "This initiative primarily boosts engineering productivity by reducing manual investigation and accelerating analysis through AI-driven similarity retrieval." },
+     { "opportunity": "Anomaly Detection on Diagnostic Traces", "classification": "Functional AI", "rationale": "This initiative strengthens diagnostic reliability by surfacing failure patterns before they reach manual review." }
+   ]
 
    Add all to the brief object:
-   "primaryClassification": {...}, "secondaryClassification": {...} or null, "transformationImplication": "..."`,
+   "opportunityClassifications": [...]`,
   },
 
   'Critical Data Identification': {
@@ -1413,6 +1415,17 @@ function parseBriefOutput(rawSections, validTitles) {
             .slice(0, 6)
         : [];
 
+      const opportunityClassifications = Array.isArray(b.opportunityClassifications)
+        ? b.opportunityClassifications
+            .filter(o => o && typeof o === 'object' && String(o.opportunity || '').trim() && String(o.classification || '').trim())
+            .map(o => ({
+              opportunity:    String(o.opportunity    || '').trim(),
+              classification: String(o.classification || '').trim(),
+              rationale:      String(o.rationale       || '').trim(),
+            }))
+            .slice(0, 8)
+        : [];
+
       const rawModelLifecycleStages = Array.isArray(b.modelLifecycleStages) ? b.modelLifecycleStages : [];
       const modelLifecycleStages = rawModelLifecycleStages
         .filter(s => s && typeof s === 'object' && String(s.stage || '').trim())
@@ -2141,6 +2154,7 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(workflowSteps.length        ? { workflowSteps }        : {}),
           ...(highEffortActivities.length ? { highEffortActivities } : {}),
           ...(aiOpportunities.length      ? { aiOpportunities }      : {}),
+          ...(opportunityClassifications.length ? { opportunityClassifications } : {}),
           ...(Array.isArray(b.spokeNodes) && b.spokeNodes.length
               ? { spokeNodes: b.spokeNodes.map(String).filter(Boolean).slice(0, 6) }
               : {}),
@@ -2697,7 +2711,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'valueCategories', 'kpiPills', 'businessValueInsight',
       'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
-      'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
+      'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities', 'opportunityClassifications',
       // Data Readiness: CDI extras
       'datasets', 'traceabilityChain', 'collectionOrder', 'implementationRoadmap',
       'recommendations', 'coverageSummary', 'relationshipMap',
@@ -2806,7 +2820,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'valueCategories', 'kpiPills', 'businessValueInsight',
       'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
-      'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities',
+      'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities', 'opportunityClassifications',
       // Data Readiness extras
       'datasets', 'traceabilityChain', 'collectionOrder', 'implementationRoadmap',
       'recommendations', 'coverageSummary', 'relationshipMap',
@@ -3058,6 +3072,7 @@ function extractJourneyContext(capabilityName, sections) {
     if (b.businessProblems?.length)     lines.push(`Business Problems: ${b.businessProblems.join(', ')}`);
     if (b.workflowSteps?.length)        lines.push(`Current Workflow: ${b.workflowSteps.join(' → ')}`);
     if (b.highEffortActivities?.length) lines.push(`High-Effort Activities: ${b.highEffortActivities.join(', ')}`);
+    if (b.opportunityClassifications?.length) lines.push(`AI Classifications: ${b.opportunityClassifications.map(o => `${o.opportunity} → ${o.classification}`).join('; ')}`);
     if (b.primaryClassification?.name)  lines.push(`Primary AI Classification: ${b.primaryClassification.name}${b.primaryClassification.rationale ? ` — ${b.primaryClassification.rationale}` : ''}`);
     if (b.secondaryClassification?.name) lines.push(`Secondary AI Classification: ${b.secondaryClassification.name}`);
     if (b.transformationImplication)     lines.push(`Transformation Implication: ${b.transformationImplication}`);
@@ -3144,6 +3159,10 @@ function updateTransformationContext(ctx, capabilityName, sections) {
     if (b.aiOpportunities?.length && !ctx.selectedInitiative)
       ctx.selectedInitiative = b.aiOpportunities[0]?.name || b.aiOpportunities[0];
     // C2: classification details
+    if (b.opportunityClassifications?.length && !ctx.primaryClassification) {
+      const match = b.opportunityClassifications.find(o => o.opportunity === ctx.selectedInitiative) || b.opportunityClassifications[0];
+      if (match?.classification) ctx.primaryClassification = match.classification;
+    }
     if (b.primaryClassification?.name)
       ctx.primaryClassification = b.primaryClassification.name;
     if (b.secondaryClassification?.name)

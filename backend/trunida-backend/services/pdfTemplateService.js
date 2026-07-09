@@ -1763,33 +1763,28 @@ function buildAIUseCaseClassificationLayout(section) {
   wrap.className = 'new-domain-layout';
   if (b.strategicPosition) wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  // Classification Banner — primary + secondary side by side
-  if (b.primaryClassification) {
-    var COLORS = { 'Productivity AI': 'productivity', 'Functional AI': 'functional', 'Product AI': 'product' };
-    var banner = document.createElement('div'); banner.className = 'cls-banner';
+  var COLORS = { 'Productivity AI': 'productivity', 'Functional AI': 'functional', 'Product AI': 'product' };
 
-    function mkCell(labelText, cls, isSec) {
-      var cell = document.createElement('div');
-      cell.className = 'cls-banner__cell' + (isSec ? ' cls-banner__cell--secondary' : '');
-      var lbl = document.createElement('span'); lbl.className = 'cls-banner__label'; lbl.textContent = labelText;
-      var nm  = document.createElement('span'); nm.className  = 'cls-banner__name cls-name--' + (COLORS[cls.name] || 'functional'); nm.textContent = cls.name || '';
-      cell.appendChild(lbl); cell.appendChild(nm);
-      if (cls.rationale) { var rat = document.createElement('span'); rat.className = 'cls-banner__rationale'; rat.textContent = cls.rationale; cell.appendChild(rat); }
-      if (cls.businessOutcome) { var out = document.createElement('span'); out.className = 'cls-banner__outcome'; out.textContent = cls.businessOutcome; cell.appendChild(out); }
-      return cell;
-    }
+  // Legacy blueprints only classified one (or two) initiatives; fold them into
+  // the same list shape so the render path below is uniform either way.
+  var items = (Array.isArray(b.opportunityClassifications) && b.opportunityClassifications.length)
+    ? b.opportunityClassifications
+    : [b.primaryClassification, b.secondaryClassification]
+        .filter(function(c) { return c && c.name; })
+        .map(function(c) { return { opportunity: '', classification: c.name, rationale: c.rationale || '' }; });
 
-    banner.appendChild(mkCell('Primary Classification', b.primaryClassification, false));
-    if (b.secondaryClassification) banner.appendChild(mkCell('Secondary Classification', b.secondaryClassification, true));
-    wrap.appendChild(banner);
-  }
-
-  // Transformation Implication
-  if (b.transformationImplication) {
-    var ci = document.createElement('div'); ci.className = 'vision-statement';
-    var ciL = document.createElement('p'); ciL.className = 'brief-label'; ciL.textContent = 'Transformation Implication';
-    var ciT = document.createElement('p'); ciT.className = 'vision-statement__text'; ciT.textContent = b.transformationImplication;
-    ci.appendChild(ciL); ci.appendChild(ciT); wrap.appendChild(ci);
+  if (items.length) {
+    var list = document.createElement('div'); list.className = 'cls-map-list';
+    items.forEach(function(item) {
+      var card = document.createElement('div');
+      card.className = 'cls-map-card cls-map-card--' + (COLORS[item.classification] || 'functional');
+      var cls = document.createElement('p'); cls.className = 'cls-map-card__classification cls-name--' + (COLORS[item.classification] || 'functional'); cls.textContent = item.classification || '';
+      card.appendChild(cls);
+      if (item.opportunity) { var opp = document.createElement('p'); opp.className = 'cls-map-card__opportunity'; opp.textContent = item.opportunity; card.appendChild(opp); }
+      if (item.rationale)   { var rat = document.createElement('p'); rat.className = 'cls-map-card__rationale'; rat.textContent = item.rationale; card.appendChild(rat); }
+      list.appendChild(card);
+    });
+    wrap.appendChild(list);
   }
 
   return wrap;
@@ -4488,19 +4483,18 @@ html, body {
 .pri-dim-card__bullets { list-style: none; padding: 0; margin: 0; }
 .pri-dim-card__bullets li { font-size: 0.64rem; color: rgba(255,255,255,0.7); padding: 0.1rem 0; }
 
-/* ── Classification banner ───────────────────────────────────────────────── */
-.cls-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-.cls-banner__cell { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 1rem; }
-.cls-banner__cell--secondary { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
-/* display:block — these are spans; without it label/name/rationale/outcome
-   run together on one line in the rendered PDF */
-.cls-banner__label { display: block; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.45); margin: 0 0 0.35rem; }
-.cls-banner__name { display: block; font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0 0 0.5rem; }
+/* ── Classification mapping cards ────────────────────────────────────────── */
 .cls-name--productivity { color: #5CC5A7; }
 .cls-name--functional   { color: #818cf8; }
 .cls-name--product      { color: #fbbf24; }
-.cls-banner__rationale { display: block; font-size: 0.7rem; color: rgba(255,255,255,0.7); margin: 0 0 0.5rem; }
-.cls-banner__outcome { display: block; font-size: 0.68rem; color: rgba(255,255,255,0.6); margin: 0; }
+.cls-map-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin-bottom: 1rem; }
+.cls-map-card { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 0.85rem 1rem; border-top: 3px solid; }
+.cls-map-card--productivity { border-top-color: #5CC5A7; }
+.cls-map-card--functional   { border-top-color: #818cf8; }
+.cls-map-card--product      { border-top-color: #fbbf24; }
+.cls-map-card__classification { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 0.35rem; }
+.cls-map-card__opportunity { font-size: 0.82rem; font-weight: 700; color: #fff; margin: 0 0 0.35rem; }
+.cls-map-card__rationale { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin: 0; }
 
 /* ── CDI new layout ──────────────────────────────────────────────────────── */
 .cdi-body { display: grid; grid-template-columns: 70fr 30fr; gap: 1rem; margin-bottom: 1rem; }

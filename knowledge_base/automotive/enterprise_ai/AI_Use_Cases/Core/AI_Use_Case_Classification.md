@@ -4,9 +4,9 @@
 
 AI Use Case Classification is the second capability in the AI transformation journey.
 
-Building upon the identified AI opportunity, this capability determines where the initiative creates the greatest business value within the organisation. The classification establishes the strategic context for Business Value Definition, Prioritisation, AI Strategy, and Implementation Planning.
+Building upon the AI opportunities identified in the previous capability, this capability determines where each initiative creates the greatest business value within the organisation. The classification establishes the strategic context for Business Value Definition, Prioritisation, AI Strategy, and Implementation Planning.
 
-Every AI initiative should have one primary classification that reflects its dominant business objective. Secondary classifications may be identified when the initiative delivers additional value across multiple organisational areas.
+Every identified AI opportunity is classified individually, in the same priority order it was discovered. Each opportunity gets exactly one classification that reflects its dominant business objective.
 
 ---
 
@@ -22,31 +22,29 @@ The outcome of this capability is a clearly classified AI initiative that guides
 
 ## Consultant Reasoning Process
 
-For every identified AI opportunity, reason using the following sequence.
+For EACH identified AI opportunity, reason using the following sequence.
 
 1. Review the AI opportunity identified in the previous capability.
-2. Identify who receives the greatest business value.
-3. Determine the primary AI classification.
-4. Identify any supporting secondary classifications.
-5. Explain why the initiative belongs to the selected classification.
-6. Describe how the classification influences future Business Value Definition and implementation.
+2. Identify who receives the greatest business value from this specific opportunity.
+3. Determine its AI classification.
+4. Explain why it belongs to the selected classification and what business outcome it drives.
 
-Always classify the same AI opportunity identified during AI Opportunity Discovery.
+Repeat for every opportunity in the "Identified AI Opportunities" list — do not classify only the first one.
 
 ## Classification Framework
 
 ### Step 1 — Understand the AI Opportunity
 
-Review the previously identified AI opportunity and identify:
+For each previously identified AI opportunity, identify:
 
 - Business objective
 - Primary users
 - Expected business outcome
 - Organisational impact
 
-### Step 2 — Determine the Primary Classification
+### Step 2 — Determine the Classification
 
-Classify the initiative according to where the greatest business value is delivered.
+Classify each opportunity according to where its greatest business value is delivered.
 
 **Productivity AI**
 
@@ -75,72 +73,51 @@ Typical outcomes:
 - Product differentiation
 - Intelligent product capabilities
 
-### Step 3 — Explain the Classification
+### Step 3 — Explain Each Classification
 
-Explain why the initiative belongs to the selected classification.
-
-Where appropriate, identify secondary classifications that support the overall business objective.
+For each opportunity, explain why it belongs to the selected classification and name the primary business outcome it drives — in one sentence.
 
 Focus on business reasoning rather than AI terminology.
 
 ## Output Structure
 
-Present the assessment using the following three output fields. Do not include a Strategic Position field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey, so the primary classification's rationale opens by naming the initiative instead of repeating it as a separate section.
+Present the assessment using a single output field. Do not include a Strategic Position field, a separate Secondary Classification section, or a Transformation Implication section — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey, and every opportunity is classified on equal footing rather than singling out one "primary" initiative.
 
-### 1. Primary Classification
+### 1. Opportunity Classifications
 
-Present:
-- AI Classification (Productivity AI, Functional AI, or Product AI)
-- Rationale, opening by naming the specific AI initiative being classified (e.g. "AI Traceability Mapping is classified as...")
-- Business Objective
-- Primary Business Outcome
+For every opportunity in the "Identified AI Opportunities" list, in the same order, present:
+- The opportunity name (copied verbatim — do not reword it)
+- Its AI Classification (Productivity AI, Functional AI, or Product AI)
+- One sentence stating the business outcome that classification delivers for this specific opportunity (e.g. "This initiative primarily boosts engineering productivity by reducing manual investigation and accelerating analysis through AI-driven similarity retrieval.")
 
-Keep concise and executive-friendly.
-
-### 2. Secondary Classification
-
-Present any supporting classification. Explain why it complements the primary classification.
-
-If no secondary classification applies, omit or set to null.
-
-### 3. Transformation Implication
-
-Provide a concise consultant recommendation explaining:
-- Why this classification matters
-- What it means for future Business Value Definition
-- How it influences implementation priorities
-
-Maximum three sentences.
+Keep each entry concise and executive-friendly — no separate rationale/outcome split, just the one sentence.
 
 ## Key Principles
 
-- Continue from the previously identified AI opportunity.
+- Classify every identified AI opportunity — not just the first.
 - Classify business value rather than technology.
-- Identify one primary classification.
-- Use secondary classifications only where they provide additional context.
-- Explain the business implications of the classification.
+- Each opportunity gets exactly one classification.
+- Keep the rationale to one sentence per opportunity, naming the business outcome.
 - Keep outputs concise and executive-friendly.
 
 ## Leadership Question
 
-**Where does the identified AI initiative create the greatest business value — engineering productivity, business process effectiveness, or customer value — and how should that influence the transformation journey?**
+**Where does each identified AI opportunity create the greatest business value — engineering productivity, business process effectiveness, or customer value — and how should that influence the transformation journey?**
 
 ## Quality Checklist
 
 Before completing this capability verify that:
 
-- Previous AI opportunity is referenced
-- Primary classification is identified
-- Secondary classification is validated or omitted
-- Business reasoning is clearly explained
-- Classification supports future Business Value Definition
+- Every identified AI opportunity is classified, not just the first
+- Each opportunity name is copied verbatim from the "Identified AI Opportunities" list
+- Each classification has exactly one rationale sentence naming the business outcome
 - Output is understandable within 30 seconds by a Project Manager
 
 ## Expected Outcome
 
 At the completion of this capability the Project Manager should clearly understand:
 
-- What type of AI initiative is being implemented
-- Why it was classified that way
-- Who benefits the most
-- How the classification guides the next stage of Business Value Definition
+- What type of AI initiative each identified opportunity is
+- Why each was classified that way
+- Who benefits the most from each
+- How the classifications guide the next stage of Business Value Definition

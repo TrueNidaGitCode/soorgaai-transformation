@@ -2222,13 +2222,17 @@ function buildTrustAdoptionLayout(section) {
 // ── AI Use Cases — Classification ────────────────────────────────────────────
 
 function buildClassificationView(section) {
-  const b              = section.brief || {};
-  const primaryClass   = b.primaryClassification   || null;
-  const secondaryClass = b.secondaryClassification || null;
-  const insight        = b.transformationImplication   || '';
+  const b = section.brief || {};
 
-  const ICONS   = { 'Productivity AI': '⚡', 'Functional AI': '⚙', 'Product AI': '🚗' };
-  const COLORS  = { 'Productivity AI': 'productivity', 'Functional AI': 'functional', 'Product AI': 'product' };
+  // Legacy blueprints only classified one (or two) initiatives; fold them into
+  // the same list shape so the render path below is uniform either way.
+  const items = Array.isArray(b.opportunityClassifications) && b.opportunityClassifications.length
+    ? b.opportunityClassifications
+    : [b.primaryClassification, b.secondaryClassification]
+        .filter(c => c && c.name)
+        .map(c => ({ opportunity: '', classification: c.name, rationale: c.rationale || '' }));
+
+  const COLORS = { 'Productivity AI': 'productivity', 'Functional AI': 'functional', 'Product AI': 'product' };
 
   const wrap = document.createElement('div');
   wrap.className = 'cls-view';
@@ -2244,35 +2248,19 @@ function buildClassificationView(section) {
     wrap.appendChild(pos);
   }
 
-  // ── Classification Banner ─────────────────────────────────────────────────
-  if (primaryClass) {
-    const banner = document.createElement('div');
-    banner.className = 'cls-banner';
-
-    const mkCell = (label, cls, isSec) => {
-      const cell = document.createElement('div');
-      cell.className = `cls-banner__cell${isSec ? ' cls-banner__cell--secondary' : ''}`;
-      cell.innerHTML = `
-        <span class="cls-banner__label">${label}</span>
-        <span class="cls-banner__name cls-name--${COLORS[cls.name] || 'functional'}">${cls.name}</span>
-        ${cls.rationale      ? `<span class="cls-banner__rationale">${cls.rationale}</span>`       : ''}
-        ${cls.businessOutcome ? `<span class="cls-banner__outcome">${cls.businessOutcome}</span>` : ''}`;
-      return cell;
-    };
-
-    banner.appendChild(mkCell('Primary Classification', primaryClass, false));
-    if (secondaryClass) banner.appendChild(mkCell('Secondary Classification', secondaryClass, true));
-    wrap.appendChild(banner);
-  }
-
-  // ── Insight Footer ────────────────────────────────────────────────────────
-  if (insight) {
-    const footer = document.createElement('div');
-    footer.className = 'cls-insight';
-    footer.innerHTML = `
-      <span class="cls-insight__icon">□</span>
-      <p class="cls-insight__text"><strong>Transformation Implication</strong> — ${insight}</p>`;
-    wrap.appendChild(footer);
+  if (items.length) {
+    const list = document.createElement('div');
+    list.className = 'cls-map-list';
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = `cls-map-card cls-map-card--${COLORS[item.classification] || 'functional'}`;
+      card.innerHTML = `
+        <p class="cls-map-card__classification cls-name--${COLORS[item.classification] || 'functional'}">${item.classification}</p>
+        ${item.opportunity ? `<p class="cls-map-card__opportunity">${item.opportunity}</p>` : ''}
+        ${item.rationale   ? `<p class="cls-map-card__rationale">${item.rationale}</p>`     : ''}`;
+      list.appendChild(card);
+    });
+    wrap.appendChild(list);
   }
 
   return wrap;

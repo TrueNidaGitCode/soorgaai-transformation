@@ -557,9 +557,24 @@ SECTION-SPECIFIC EXTRAS — "AI Opportunity Discovery" sections only:
    Example: ["Validate", "Assign", "Document"]
 
 8. aiOpportunities (4 to 6 items)
-   The specific AI capabilities matched to the company's high-effort activities.
-   Each item is a plain string, 2–4 words. Must be specific to the company context — not generic.
-   Example: ["Defect Summarisation", "Intelligent Classification", "Knowledge Retrieval", "Smart Assignment", "Risk Prediction"]
+   The specific AI TECHNIQUE matched to each of the company's high-effort activities — not a
+   restatement of the business problem in AI-flavoured words. Draw from the AI Approach Options
+   in the reference material below (retrieval/similarity matching, anomaly detection, computer
+   vision, predictive analytics, classification/triage, generative drafting, knowledge-capture
+   retrieval-augmented assistance, optimisation/scheduling) and name the technique explicitly,
+   applied to this company's actual context.
+   REJECT any item that is just the business problem reworded (e.g. "manual defect analysis" ->
+   "Defect Summarisation" is NOT acceptable — it doesn't say how). A reader must be able to tell
+   what kind of AI system this is.
+   Each item is a plain string, 3–6 words.
+   Example: ["Embedding-Based Historical Defect Matching", "Anomaly Detection on Diagnostic Traces", "Computer Vision Weld Inspection", "Retrieval-Augmented Compliance Assistant", "Predictive Failure Scoring"]
+
+   If the business objective states a constraint on data handling, security, governance, IP
+   protection, or restricts/forbids external AI services, this must materially shape
+   strategicPosition and priorityActions — name the deployment implication explicitly (e.g.
+   self-hosted open-weight models, a private/VPC-hosted inference endpoint, keeping
+   retrieval/knowledge-capture data inside the organisation's own infrastructure) rather than a
+   generic "compliant infrastructure" or "ensure compliance" placeholder.
 
    Add all four to the brief object:
    "businessProblems": [...], "workflowSteps": [...], "highEffortActivities": [...], "aiOpportunities": [...]`,

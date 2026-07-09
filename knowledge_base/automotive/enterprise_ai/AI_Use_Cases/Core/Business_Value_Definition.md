@@ -95,13 +95,9 @@ For every selected value area:
 
 ## Output Structure
 
-Present the assessment using the following four sections.
+Present the assessment using the following three sections. Do not include a Strategic Position field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey, so repeating it here is redundant.
 
-### 1. Strategic Position
-
-Summarise the business value being evaluated. Maximum three sentences.
-
-### 2. Business Value Areas
+### 1. Business Value Areas
 
 Present exactly four business value areas in this fixed order:
 1. Engineering Productivity
@@ -113,7 +109,7 @@ For each area provide:
 - A one-line focus statement (e.g. "Improve engineering team efficiency")
 - Four concise expected outcomes specific to this company (3–6 words each)
 
-### 3. Key Performance Indicators
+### 2. Key Performance Indicators
 
 Recommend exactly six measurable KPI names for this initiative.
 
@@ -121,7 +117,7 @@ Each KPI should be a short metric label in title case (e.g. "Effort Reduction", 
 
 Make every KPI specific to the company context.
 
-### 4. Business Value Insight
+### 3. Business Value Insight
 
 Provide one to two sentences explaining:
 - The primary expected business outcome

@@ -108,17 +108,9 @@ Typical considerations include:
 
 ## Output Structure
 
-Present the assessment using the following five sections.
+Present the assessment using the following four sections. Do not include a Strategic Position field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey, so repeating it here is redundant.
 
-### 1. Strategic Position
-
-Summarise why this AI initiative should be considered for implementation.
-
-Maximum two sentences.
-
----
-
-### 2. Recommended Starting Point
+### 1. Recommended Starting Point
 
 Name the specific AI initiative from the identified opportunities that should be implemented first.
 
@@ -129,7 +121,7 @@ Include:
 
 ---
 
-### 3. Implementation Priority Matrix
+### 2. Implementation Priority Matrix
 
 Distribute ALL identified AI opportunities from Capability 1 across four quadrants based on business value and implementation feasibility.
 
@@ -142,7 +134,7 @@ Do not introduce AI initiatives not identified in Capability 1.
 
 ---
 
-### 4. Implementation Assessment
+### 3. Implementation Assessment
 
 Assess the initiative across four dimensions.
 
@@ -158,7 +150,7 @@ For each dimension provide:
 
 ---
 
-### 5. Implementation Insight
+### 4. Implementation Insight
 
 Provide one to two sentences explaining:
 

@@ -1616,7 +1616,7 @@ function buildBusinessValueDefinitionLayout(section) {
 
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
-  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.strategicPosition) wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
   // Value category cards — 3-across top row + centred last card
   if (categories.length) {
@@ -1661,7 +1661,7 @@ function buildAIUseCasePrioritizationLayout(section) {
 
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
-  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.strategicPosition) wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
   // Recommended Starting Point banner
   if (recStart) {
@@ -1761,7 +1761,7 @@ function buildAIUseCaseClassificationLayout(section) {
   var b    = section.brief || {};
   var wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
-  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.strategicPosition) wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
   // Classification Banner — primary + secondary side by side
   if (b.primaryClassification) {

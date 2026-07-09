@@ -80,6 +80,16 @@ async function resolveIndustryFit(blueprintId, businessObjective) {
   return fit;
 }
 
+// Section titles that skip strategicPosition entirely — the AI Use Cases journey
+// (AI Opportunity Discovery → Classification → Business Value Definition → Prioritization)
+// already anchors on Opportunity Discovery's strategicPosition; repeating a near-identical
+// future-state statement on every downstream capability read as filler.
+const NO_STRATEGIC_POSITION_CAPABILITIES = new Set([
+  'AI Use Case Classification',
+  'Business Value Definition',
+  'AI Implementation Prioritization',
+]);
+
 // ── Section template config ───────────────────────────────────────────────────
 // Declares which section titles get extra LLM-generated fields (CTO view).
 // Add a new entry here when a new slide template needs section-specific data.
@@ -596,8 +606,8 @@ SECTION-SPECIFIC EXTRAS — "AI Opportunity Discovery" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Business Value Definition" sections only:
 
-JOURNEY RULE: Look up the primary AI initiative named in the "Primary AI Classification" or strategicPosition of the previous capability in the TRANSFORMATION JOURNEY block.
-The strategicPosition, all value categories, KPIs, and insight MUST be specific to that named initiative (e.g. "AI Traceability Mapping reduces manual traceability effort by...").
+JOURNEY RULE: Look up the primary AI initiative named in the "Primary AI Classification" or "Identified AI Opportunities" of the previous capabilities in the TRANSFORMATION JOURNEY block.
+All value categories, KPIs, and insight MUST be specific to that named initiative (e.g. "AI Traceability Mapping reduces manual traceability effort by...").
 Do NOT describe generic AI value — describe the value of THIS specific initiative for this company.
 
 5. valueCategories (exactly 4 items in this fixed order)
@@ -654,12 +664,11 @@ SECTION-SPECIFIC EXTRAS — "AI Use Case Classification" sections only:
 
 JOURNEY RULE: Review the "Identified AI Opportunities" list in the TRANSFORMATION JOURNEY block.
 Select the FIRST listed opportunity as the primary initiative to classify.
-The strategicPosition MUST open by naming this initiative explicitly (e.g. "AI Traceability Mapping is classified as...").
 All classification rationale and outcomes must be specific to that named initiative — not a generic description of the company.
 
 5. primaryClassification
    Classify the primary initiative identified above.
-   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence explaining why THIS specific initiative belongs to this classification>", "businessOutcome": "<1 sentence on the primary business outcome THIS initiative will deliver>" }
+   Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence that opens by naming the initiative explicitly (e.g. 'AI Traceability Mapping is classified as...') and explains why it belongs to this classification>", "businessOutcome": "<1 sentence on the primary business outcome THIS initiative will deliver>" }
 
 6. secondaryClassification (include only if a second classification clearly applies — otherwise omit or set to null)
    Object: { "name": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence>", "businessOutcome": "<1 sentence>" }
@@ -2294,11 +2303,13 @@ function buildOutputFormat(parsedSections) {
     const extraLines = extras.length
       ? ',\n        ' + extras.map(({ name, placeholder }) => `"${name}": ${placeholder}`).join(',\n        ')
       : '';
+    const positionLine = NO_STRATEGIC_POSITION_CAPABILITIES.has(s.title)
+      ? ''
+      : '        "strategicPosition": "<1-2 sentence future-state definition>",\n';
     return `    {
       "title": "${s.title}",
       "brief": {
-        "strategicPosition": "<1-2 sentence future-state definition>",
-        "priorityActions": ["<action 1>", "<action 2>", "<action 3>"],
+${positionLine}        "priorityActions": ["<action 1>", "<action 2>", "<action 3>"],
         "successMetrics": ["<KPI 1>", "<KPI 2>"],
         "leadershipValidation": {
           "status": "Not Yet Validated",
@@ -2330,6 +2341,30 @@ function buildBriefPrompt({ companyName, industry, role, businessObjective, cont
         .join('\n')
     : '';
 
+  const skipStrategicPosition = NO_STRATEGIC_POSITION_CAPABILITIES.has(capabilityName);
+  const coreFields = [
+    !skipStrategicPosition && `strategicPosition (1–2 sentences MAXIMUM)
+   Define the IDEAL FUTURE-STATE — what success looks like when this capability is fully executing.
+   Must be outcome-oriented and concrete. Must describe the target operating model.
+   Do NOT describe current problems or gaps.`,
+    `priorityActions (3 to 5 items)
+   Executable actions for the next 90 days only.
+   Must use strong verbs: Define, Deploy, Integrate, Implement, Establish, Launch, Assign.
+   Must directly impact delivery or capability execution.
+   Do NOT use: improve, enhance, explore, consider, leverage.`,
+    `successMetrics (2 to 4 items)
+   Measurable KPIs only. Must be quantifiable (%, time, cost, adoption rate, defect rate).
+   Must clearly state direction: increase / decrease / target value.
+   Must reflect real execution outcomes.
+   Do NOT use vague metrics like "improve quality" or "increase efficiency."`,
+    `leadershipValidation
+   An object with two fields:
+   - status: always set to "Not Yet Validated" for AI-generated blueprints
+   - context: one sentence describing what executive alignment or approval is needed
+     (e.g. "Requires CTO sign-off on AI investment allocation for ${industry} program")`,
+  ].filter(Boolean);
+  const coreFieldsBlock = coreFields.map((f, i) => `${i + 1}. ${f}`).join('\n\n');
+
   const systemPrompt = `You are SoorgaAI, an enterprise Strategy Co-Pilot for CTO-level decision making.
 
 Your job is to generate execution-ready future-state strategies for enterprise capabilities.
@@ -2346,31 +2381,10 @@ ${contextDoc ? `\nCOMPANY PROFILE:\n${contextDoc}` : ''}
 TASK:
 For EXACTLY these ${parsedSections.length} sections of the "${capabilityName}" capability — ${sectionTitles} — generate an execution-ready Strategy Brief.
 
-Each section must have 4 required fields:
+Each section must have ${coreFields.length} required fields:
 
-1. strategicPosition (1–2 sentences MAXIMUM)
-   Define the IDEAL FUTURE-STATE — what success looks like when this capability is fully executing.
-   Must be outcome-oriented and concrete. Must describe the target operating model.
-   Do NOT describe current problems or gaps.
-
-2. priorityActions (3 to 5 items)
-   Executable actions for the next 90 days only.
-   Must use strong verbs: Define, Deploy, Integrate, Implement, Establish, Launch, Assign.
-   Must directly impact delivery or capability execution.
-   Do NOT use: improve, enhance, explore, consider, leverage.
-
-3. successMetrics (2 to 4 items)
-   Measurable KPIs only. Must be quantifiable (%, time, cost, adoption rate, defect rate).
-   Must clearly state direction: increase / decrease / target value.
-   Must reflect real execution outcomes.
-   Do NOT use vague metrics like "improve quality" or "increase efficiency."
-
-4. leadershipValidation
-   An object with two fields:
-   - status: always set to "Not Yet Validated" for AI-generated blueprints
-   - context: one sentence describing what executive alignment or approval is needed
-     (e.g. "Requires CTO sign-off on AI investment allocation for ${industry} program")
-${templateInstructions}
+${coreFieldsBlock}
+${skipStrategicPosition ? '\nDo NOT include a strategicPosition field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey; repeating it here is redundant.\n' : ''}${templateInstructions}
 
 HARD RULES:
 - Do NOT include a Key Risk section

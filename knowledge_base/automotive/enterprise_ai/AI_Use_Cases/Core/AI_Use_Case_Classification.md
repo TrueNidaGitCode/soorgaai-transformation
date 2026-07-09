@@ -85,32 +85,25 @@ Focus on business reasoning rather than AI terminology.
 
 ## Output Structure
 
-Present the assessment using the following four output fields.
+Present the assessment using the following three output fields. Do not include a Strategic Position field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey, so the primary classification's rationale opens by naming the initiative instead of repeating it as a separate section.
 
-### 1. Strategic Position
-
-Open by naming the specific AI initiative being classified (e.g. "AI Traceability Mapping is classified as...").
-
-Explain why this initiative requires classification and what it will do for the organisation.
-
-Maximum three sentences.
-
-### 2. Primary Classification
+### 1. Primary Classification
 
 Present:
 - AI Classification (Productivity AI, Functional AI, or Product AI)
+- Rationale, opening by naming the specific AI initiative being classified (e.g. "AI Traceability Mapping is classified as...")
 - Business Objective
 - Primary Business Outcome
 
 Keep concise and executive-friendly.
 
-### 3. Secondary Classification
+### 2. Secondary Classification
 
 Present any supporting classification. Explain why it complements the primary classification.
 
 If no secondary classification applies, omit or set to null.
 
-### 4. Transformation Implication
+### 3. Transformation Implication
 
 Provide a concise consultant recommendation explaining:
 - Why this classification matters

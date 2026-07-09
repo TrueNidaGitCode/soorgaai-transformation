@@ -19,9 +19,9 @@ import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { enabledDomains } from '../config/domainRegistry.js';
 import { getDomainCapabilities } from '../services/strategyCanvasService.js';
 import { generateSpecificDomainsAsync } from '../services/blueprintGenerationService.js';
+import { MAX_OBJECTIVE_LENGTH } from '../config/objectiveLimits.js';
 
 const GUEST_PREVIEW_DOMAIN_IDS = ['ai-use-cases'];
-const MAX_OBJECTIVE_LENGTH = 2000;
 
 // ── Per-IP rate limit: N guest generations per rolling 24h ────────────────────
 const RATE_LIMIT_MAX  = 5;

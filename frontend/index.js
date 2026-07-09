@@ -12,6 +12,12 @@ import { MATURITY_STAGES } from './data/maturityStages.js';
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';
 
+// Must match backend/trunida-backend/config/objectiveLimits.js — a soft guide
+// here (never blocks typing/pasting) backed by a hard, clearly-messaged
+// rejection server-side. No silent truncation either way.
+const MAX_OBJECTIVE_LENGTH = 8000;
+const OBJECTIVE_COUNTER_THRESHOLD = 0.85; // start showing the counter at 85% of the limit
+
 /* v8 ignore next 9 */
 document.addEventListener('DOMContentLoaded', () => {
     renderStages(MATURITY_STAGES, document.querySelector('.stages'));
@@ -334,9 +340,10 @@ export function wireTopbarAuth() {
  * Signed in  → same save, off to the workspace (its form prefills from it)
  */
 export function wireHeroPrompt() {
-    const form  = document.getElementById('hero-prompt-form');
-    const input = document.getElementById('hero-objective');
-    const errEl = document.getElementById('hero-prompt-error');
+    const form     = document.getElementById('hero-prompt-form');
+    const input    = document.getElementById('hero-objective');
+    const errEl    = document.getElementById('hero-prompt-error');
+    const counter  = document.getElementById('hero-objective-counter');
     if (!form || !input) return;
 
     // Example prompt card fills the input
@@ -344,11 +351,15 @@ export function wireHeroPrompt() {
     example?.addEventListener('click', () => {
         input.value = example.textContent.replace(/\s+/g, ' ').trim();
         autogrow(input);
+        updateObjectiveCounter(input, counter);
         input.focus();
     });
 
     // ChatGPT-style input: grow with content, Enter submits, Shift+Enter = newline
-    input.addEventListener('input', () => autogrow(input));
+    input.addEventListener('input', () => {
+        autogrow(input);
+        updateObjectiveCounter(input, counter);
+    });
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -362,6 +373,14 @@ export function wireHeroPrompt() {
         if (!objective) {
             if (errEl) {
                 errEl.textContent = 'Tell us about your project first.';
+                errEl.style.display = '';
+            }
+            input.focus();
+            return;
+        }
+        if (objective.length > MAX_OBJECTIVE_LENGTH) {
+            if (errEl) {
+                errEl.textContent = `Your objective is ${objective.length.toLocaleString()} characters — please trim it to ${MAX_OBJECTIVE_LENGTH.toLocaleString()} or fewer. Nothing you typed has been lost; edit and resubmit.`;
                 errEl.style.display = '';
             }
             input.focus();
@@ -422,6 +441,20 @@ export function wireHeroPrompt() {
 function autogrow(el) {
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+}
+
+// Soft guidance only — never blocks typing/pasting. Stays hidden until the
+// user is actually approaching the limit, so it doesn't nag short objectives.
+function updateObjectiveCounter(input, counterEl) {
+    if (!counterEl) return;
+    const len = input.value.length;
+    if (len < MAX_OBJECTIVE_LENGTH * OBJECTIVE_COUNTER_THRESHOLD) {
+        counterEl.style.display = 'none';
+        return;
+    }
+    counterEl.style.display = '';
+    counterEl.textContent = `${len.toLocaleString()} / ${MAX_OBJECTIVE_LENGTH.toLocaleString()} characters`;
+    counterEl.classList.toggle('prompt__counter--over', len > MAX_OBJECTIVE_LENGTH);
 }
 
 /**

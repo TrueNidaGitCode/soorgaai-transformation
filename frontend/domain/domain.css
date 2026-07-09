@@ -2463,6 +2463,14 @@
   padding: 0.65rem 1rem;
 }
 
+.gen-objective-counter {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  text-align: right;
+  margin: 0.4rem 0.1rem 0;
+}
+.gen-objective-counter--over { color: #ff6b6b; }
+
 .gen-submit-btn {
   align-self: center;
   background: #5CC5A7;

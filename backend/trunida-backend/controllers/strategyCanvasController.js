@@ -15,6 +15,7 @@ import {
 } from '../services/blueprintGenerationService.js';
 import { autoCapture }      from '../services/knowledgeSuggestionService.js';
 import { enabledDomains }   from '../config/domainRegistry.js';
+import { MAX_OBJECTIVE_LENGTH } from '../config/objectiveLimits.js';
 
 const DEFAULT_INDUSTRY = 'Automotive';
 
@@ -156,6 +157,9 @@ export async function startBlueprintGeneration(req, res) {
     const { businessObjective } = req.body;
     if (!businessObjective || typeof businessObjective !== 'string' || !businessObjective.trim()) {
       return res.status(400).json({ error: 'businessObjective is required.' });
+    }
+    if (businessObjective.trim().length > MAX_OBJECTIVE_LENGTH) {
+      return res.status(400).json({ error: `Objective is too long (max ${MAX_OBJECTIVE_LENGTH} characters).` });
     }
 
     const userId     = req.user._id;
@@ -503,8 +507,12 @@ export async function regenerateTransformationCapabilityHandler(req, res) {
 export async function startTransformationGeneration(req, res) {
   try {
     const { businessObjective } = req.body;
-    if (!businessObjective?.trim()) {
+    const objective = businessObjective?.trim();
+    if (!objective) {
       return res.status(400).json({ error: 'businessObjective is required.' });
+    }
+    if (objective.length > MAX_OBJECTIVE_LENGTH) {
+      return res.status(400).json({ error: `Objective is too long (max ${MAX_OBJECTIVE_LENGTH} characters).` });
     }
 
     const userId = req.user._id;

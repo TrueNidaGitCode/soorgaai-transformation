@@ -226,10 +226,27 @@ async function loadBlueprintAndTransition(transformationId) {
 
 // ── Screen 1: form logic ──────────────────────────────────────────────────────
 
+// Must match backend/trunida-backend/config/objectiveLimits.js
+const MAX_OBJECTIVE_LENGTH = 8000;
+const OBJECTIVE_COUNTER_THRESHOLD = 0.85;
+
+function updateGenObjectiveCounter(input, counterEl) {
+  if (!counterEl) return;
+  const len = input.value.length;
+  if (len < MAX_OBJECTIVE_LENGTH * OBJECTIVE_COUNTER_THRESHOLD) {
+    counterEl.style.display = 'none';
+    return;
+  }
+  counterEl.style.display = '';
+  counterEl.textContent = `${len.toLocaleString()} / ${MAX_OBJECTIVE_LENGTH.toLocaleString()} characters`;
+  counterEl.classList.toggle('gen-objective-counter--over', len > MAX_OBJECTIVE_LENGTH);
+}
+
 function initGenerateForm() {
   const form         = document.getElementById('generate-form');
   const input        = document.getElementById('gen-objective');
   const errEl        = document.getElementById('gen-error');
+  const counterEl    = document.getElementById('gen-objective-counter');
   const submitBtn    = document.getElementById('gen-submit');
   const submitText   = document.getElementById('gen-submit-text');
   const submitLoader = document.getElementById('gen-submit-loader');
@@ -238,9 +255,12 @@ function initGenerateForm() {
   document.querySelectorAll('.gen-example-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       if (input) input.value = chip.dataset.text;
+      updateGenObjectiveCounter(input, counterEl);
       input?.focus();
     });
   });
+
+  input?.addEventListener('input', () => updateGenObjectiveCounter(input, counterEl));
 
   if (!form) return;
 
@@ -250,6 +270,10 @@ function initGenerateForm() {
 
     if (!objective) {
       showError(errEl, 'Please enter your business objective.');
+      return;
+    }
+    if (objective.length > MAX_OBJECTIVE_LENGTH) {
+      showError(errEl, `Your objective is ${objective.length.toLocaleString()} characters — please trim it to ${MAX_OBJECTIVE_LENGTH.toLocaleString()} or fewer. Nothing you typed has been lost; edit and resubmit.`);
       return;
     }
 

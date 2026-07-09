@@ -128,16 +128,21 @@ Examples: Manual Mapping, Coverage Validation, Report Generation
 
 ### 4. AI Opportunities
 
-Recommend AI opportunities that directly address the identified business problems, each naming the actual AI technique from the AI Approach Options above — not a paraphrase of the business problem.
+Recommend AI opportunities that directly address the identified business problems. Each opportunity has two parts: a **name** (the actual AI technique from the AI Approach Options above — not a paraphrase of the business problem) and a **why** (the reasoning that makes this the right technique for this specific situation).
 
 Rules:
 - Maximum five opportunities
 - One opportunity should solve one or more business problems
 - Name the technique explicitly, applied to the specific business context — a reader should be able to tell what kind of AI system this is, not just that "AI" is involved
-- A recommendation that only restates the business problem in different words (e.g. turning "manual defect analysis" into "Defect Summarisation") is not acceptable — it must add the "how"
+- A recommendation whose name only restates the business problem in different words (e.g. turning "manual defect analysis" into "Defect Summarisation") is not acceptable — it must add the "how"
+- The "why" must reference something specific about the company's actual data or workflow — not a generic statement of AI's benefits — and stay to one or two sentences
 - List in priority order — highest business value first
 
-Examples: Embedding-Based Historical Defect Matching, Anomaly Detection on Diagnostic Traces, Computer Vision Weld Inspection, Retrieval-Augmented Compliance Assistant, Predictive Failure Scoring
+Example:
+- Name: Embedding-Based Similarity Matching
+  Why: Historical defect descriptions are largely unstructured. Semantic retrieval finds similar failures even when keywords differ, improving engineer productivity and defect reuse.
+- Name: Anomaly Detection on Diagnostic Traces
+  Why: Trace and log deviations that precede failures follow patterns too subtle for manual review at scale, but are well suited to statistical anomaly detection.
 
 ## Key Principles
 

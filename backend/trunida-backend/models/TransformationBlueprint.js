@@ -38,6 +38,7 @@ const waterfallItemSchema       = new mongoose.Schema({ category: String, value:
 const sdlcStageSchema           = new mongoose.Schema({ stage: String, aiTool: String, description: String }, { _id: false });
 
 // ── AI Use Cases sub-schemas ──────────────────────────────────────────────────
+const aiOpportunitySchema       = new mongoose.Schema({ name: String, why: String }, { _id: false });
 const valueCategorySchema       = new mongoose.Schema({ title: String, focus: String, outcomes: [String] }, { _id: false });
 const priorityQuadrantSchema    = new mongoose.Schema({ id: String, label: String, initiatives: [String] }, { _id: false });
 const dimensionCardSchema       = new mongoose.Schema({ title: String, bullets: [String] }, { _id: false });
@@ -158,7 +159,7 @@ const briefSchema = new mongoose.Schema({
   businessProblems:         { type: [String], default: [] },
   workflowSteps:            { type: [String], default: [] },
   highEffortActivities:     { type: [String], default: [] },
-  aiOpportunities:          { type: [String], default: [] },
+  aiOpportunities:          { type: [aiOpportunitySchema], default: [] },
   valueCategories:          { type: [valueCategorySchema],      default: [] },
   kpiPills:                 { type: [String], default: [] },
   businessValueInsight:     { type: String,   default: '' },

@@ -557,17 +557,29 @@ SECTION-SPECIFIC EXTRAS — "AI Opportunity Discovery" sections only:
    Example: ["Validate", "Assign", "Document"]
 
 8. aiOpportunities (4 to 6 items)
-   The specific AI TECHNIQUE matched to each of the company's high-effort activities — not a
-   restatement of the business problem in AI-flavoured words. Draw from the AI Approach Options
+   Each item is an OBJECT with two fields: { "name": "...", "why": "..." } — not a plain string.
+
+   "name": the specific AI TECHNIQUE matched to one of the company's high-effort activities — not
+   a restatement of the business problem in AI-flavoured words. Draw from the AI Approach Options
    in the reference material below (retrieval/similarity matching, anomaly detection, computer
    vision, predictive analytics, classification/triage, generative drafting, knowledge-capture
    retrieval-augmented assistance, optimisation/scheduling) and name the technique explicitly,
-   applied to this company's actual context.
-   REJECT any item that is just the business problem reworded (e.g. "manual defect analysis" ->
+   applied to this company's actual context. 3–6 words.
+   REJECT any name that is just the business problem reworded (e.g. "manual defect analysis" ->
    "Defect Summarisation" is NOT acceptable — it doesn't say how). A reader must be able to tell
    what kind of AI system this is.
-   Each item is a plain string, 3–6 words.
-   Example: ["Embedding-Based Historical Defect Matching", "Anomaly Detection on Diagnostic Traces", "Computer Vision Weld Inspection", "Retrieval-Augmented Compliance Assistant", "Predictive Failure Scoring"]
+
+   "why": 1–2 sentences explaining why THIS technique fits THIS specific situation — the
+   characteristic of the data or workflow that makes it the right match (e.g. "Historical defect
+   descriptions are largely unstructured. Semantic retrieval finds similar failures even when
+   keywords differ, improving engineer productivity and defect reuse."). Must reference something
+   specific from the company's actual context, not a generic benefit of AI in general.
+
+   Example:
+   [
+     { "name": "Embedding-Based Similarity Matching", "why": "Historical defect descriptions are largely unstructured. Semantic retrieval finds similar failures even when keywords differ, improving engineer productivity and defect reuse." },
+     { "name": "Anomaly Detection on Diagnostic Traces", "why": "Trace and log deviations that precede failures follow patterns too subtle for manual review at scale, but are well suited to statistical anomaly detection." }
+   ]
 
    If the business objective states a constraint on data handling, security, governance, IP
    protection, or restricts/forbids external AI services, this must materially shape
@@ -1384,7 +1396,13 @@ function parseBriefOutput(rawSections, validTitles) {
       const highEffortActivities = Array.isArray(b.highEffortActivities)
         ? b.highEffortActivities.map(String).filter(Boolean).slice(0, 4) : [];
       const aiOpportunities      = Array.isArray(b.aiOpportunities)
-        ? b.aiOpportunities.map(String).filter(Boolean).slice(0, 6) : [];
+        ? b.aiOpportunities
+            .map(o => (o && typeof o === 'object')
+              ? { name: String(o.name || '').trim(), why: String(o.why || '').trim() }
+              : { name: String(o || '').trim(), why: '' })
+            .filter(o => o.name)
+            .slice(0, 6)
+        : [];
 
       const rawModelLifecycleStages = Array.isArray(b.modelLifecycleStages) ? b.modelLifecycleStages : [];
       const modelLifecycleStages = rawModelLifecycleStages
@@ -3022,7 +3040,7 @@ function extractJourneyContext(capabilityName, sections) {
   for (const s of sections) {
     const b = s.brief || {};
     if (b.strategicPosition)            lines.push(`Strategic Position: ${b.strategicPosition}`);
-    if (b.aiOpportunities?.length)      lines.push(`Identified AI Opportunities: ${b.aiOpportunities.join(', ')}`);
+    if (b.aiOpportunities?.length)      lines.push(`Identified AI Opportunities: ${b.aiOpportunities.map(o => o?.name || o).join(', ')}`);
     if (b.businessProblems?.length)     lines.push(`Business Problems: ${b.businessProblems.join(', ')}`);
     if (b.workflowSteps?.length)        lines.push(`Current Workflow: ${b.workflowSteps.join(' → ')}`);
     if (b.highEffortActivities?.length) lines.push(`High-Effort Activities: ${b.highEffortActivities.join(', ')}`);
@@ -3110,7 +3128,7 @@ function updateTransformationContext(ctx, capabilityName, sections) {
     const b = s.brief || {};
     // C1: first identified opportunity becomes the selected initiative
     if (b.aiOpportunities?.length && !ctx.selectedInitiative)
-      ctx.selectedInitiative = b.aiOpportunities[0];
+      ctx.selectedInitiative = b.aiOpportunities[0]?.name || b.aiOpportunities[0];
     // C2: classification details
     if (b.primaryClassification?.name)
       ctx.primaryClassification = b.primaryClassification.name;

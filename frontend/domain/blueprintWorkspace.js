@@ -2647,6 +2647,16 @@ function buildOpportunityDiscoveryView(section) {
   const mid      = Math.ceil(aiOpportunities.length / 2);
   const leftOpps = aiOpportunities.slice(0, mid);
   const rightOpps = aiOpportunities.slice(mid);
+  const renderOppCard = o => {
+    // Legacy blueprints store aiOpportunities as plain strings; new ones as { name, why }.
+    const name = (o && typeof o === 'object') ? (o.name || '') : o;
+    const why  = (o && typeof o === 'object') ? (o.why  || '') : '';
+    return `
+      <div class="opp-ai-card">
+        <p class="opp-ai-card__name">${name}</p>
+        ${why ? `<p class="opp-ai-card__why">${why}</p>` : ''}
+      </div>`;
+  };
   layer3.innerHTML = `
     <div class="opp-layer__header">
       <span class="opp-layer__dot opp-layer__dot--ai"></span>
@@ -2654,11 +2664,11 @@ function buildOpportunityDiscoveryView(section) {
     </div>
     <div class="opp-ai-hub">
       <div class="opp-ai-hub__side opp-ai-hub__left">
-        ${leftOpps.map(o => `<span class="opp-chip opp-chip--ai">${o}</span>`).join('')}
+        ${leftOpps.map(renderOppCard).join('')}
       </div>
       <div class="opp-ai-node">AI</div>
       <div class="opp-ai-hub__side opp-ai-hub__right">
-        ${rightOpps.map(o => `<span class="opp-chip opp-chip--ai">${o}</span>`).join('')}
+        ${rightOpps.map(renderOppCard).join('')}
       </div>
     </div>`;
   wrap.appendChild(layer3);

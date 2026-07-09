@@ -1582,12 +1582,25 @@ function buildAIOpportunityDiscoveryLayout(section) {
     const mid   = Math.ceil(aiOpportunities.length / 2);
     const left  = aiOpportunities.slice(0, mid);
     const right = aiOpportunities.slice(mid);
+    function makeOppCard(o) {
+      // Legacy blueprints store aiOpportunities as plain strings; new ones as { name, why }.
+      var name = (o && typeof o === 'object') ? (o.name || '') : o;
+      var why  = (o && typeof o === 'object') ? (o.why  || '') : '';
+      var card = document.createElement('div'); card.className = 'opp-pdf-ai-card';
+      var nameEl = document.createElement('p'); nameEl.className = 'opp-pdf-ai-card__name'; nameEl.textContent = name;
+      card.appendChild(nameEl);
+      if (why) {
+        var whyEl = document.createElement('p'); whyEl.className = 'opp-pdf-ai-card__why'; whyEl.textContent = why;
+        card.appendChild(whyEl);
+      }
+      return card;
+    }
     const hub = document.createElement('div'); hub.className = 'opp-pdf-hub';
     const leftCol = document.createElement('div'); leftCol.className = 'opp-pdf-hub__col';
-    left.forEach(function(o) { const c = document.createElement('span'); c.className = 'opp-pdf-chip opp-pdf-chip--ai'; c.textContent = o; leftCol.appendChild(c); });
+    left.forEach(function(o) { leftCol.appendChild(makeOppCard(o)); });
     const aiNode = document.createElement('div'); aiNode.className = 'opp-pdf-ai-node'; aiNode.textContent = 'AI';
     const rightCol = document.createElement('div'); rightCol.className = 'opp-pdf-hub__col';
-    right.forEach(function(o) { const c = document.createElement('span'); c.className = 'opp-pdf-chip opp-pdf-chip--ai'; c.textContent = o; rightCol.appendChild(c); });
+    right.forEach(function(o) { rightCol.appendChild(makeOppCard(o)); });
     hub.appendChild(leftCol); hub.appendChild(aiNode); hub.appendChild(rightCol);
     wrap.appendChild(makeLayer('opp-pdf-dot--ai', 'AI Opportunities', hub));
   }
@@ -4301,7 +4314,6 @@ html, body {
 .opp-pdf-chip { display: inline-block; font-size: 0.73rem; padding: 0.22rem 0.65rem; border-radius: 1rem; font-weight: 500; white-space: nowrap; }
 .opp-pdf-chip--problem { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); color: rgba(255,255,255,0.8); }
 .opp-pdf-chip--hea     { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3); color: rgba(255,255,255,0.8); }
-.opp-pdf-chip--ai      { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); color: rgba(255,255,255,0.8); }
 .opp-pdf-connector { text-align: center; font-size: 1rem; color: rgba(255,255,255,0.2); line-height: 1; margin: -0.2rem 0; }
 .opp-pdf-workflow { display: flex; flex-direction: column; gap: 0.5rem; }
 .opp-pdf-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
@@ -4311,6 +4323,9 @@ html, body {
 .opp-pdf-hub { display: flex; align-items: center; gap: 0.75rem; justify-content: center; }
 .opp-pdf-hub__col { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
 .opp-pdf-ai-node { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(52,211,153,0.15); border: 1.5px solid rgba(52,211,153,0.45); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #34d399; flex-shrink: 0; }
+.opp-pdf-ai-card { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25); border-radius: 0.5rem; padding: 0.45rem 0.7rem; }
+.opp-pdf-ai-card__name { font-size: 0.73rem; font-weight: 700; color: #34d399; margin: 0; line-height: 1.35; }
+.opp-pdf-ai-card__why { font-size: 0.66rem; font-weight: 400; color: rgba(255,255,255,0.6); margin: 0.2rem 0 0; line-height: 1.4; }
 
 /* ── Business Value Definition layout ────────────────────────────────── */
 .bvd-pdf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-top: 0.35rem; }

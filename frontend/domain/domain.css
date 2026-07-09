@@ -5957,11 +5957,6 @@
   border: 1px solid rgba(224,123,92,0.28);
   color: #E07B5C;
 }
-.opp-chip--ai {
-  background: rgba(92,197,167,0.08);
-  border: 1px solid rgba(92,197,167,0.22);
-  color: #5CC5A7;
-}
 .opp-chip--placeholder {
   opacity: 0.35;
   border-style: dashed;
@@ -6044,6 +6039,28 @@
   letter-spacing: 0.06em;
   box-shadow: 0 0 22px rgba(92,197,167,0.28);
   flex-shrink: 0;
+}
+.opp-ai-card {
+  width: 100%;
+  max-width: 280px;
+  background: rgba(92,197,167,0.08);
+  border: 1px solid rgba(92,197,167,0.22);
+  border-radius: 10px;
+  padding: 0.55rem 0.85rem;
+  text-align: left;
+}
+.opp-ai-card__name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  line-height: 1.35;
+}
+.opp-ai-card__why {
+  margin-top: 0.3rem;
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.45;
 }
 
 /* ── Data Readiness — Critical Data Identification ─────────────────────────── */

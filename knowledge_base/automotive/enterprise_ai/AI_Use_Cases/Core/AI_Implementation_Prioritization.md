@@ -36,7 +36,6 @@ Reason using the following sequence.
 6. Assess organizational readiness for it.
 7. Recommend the appropriate implementation priority.
 8. Sequence all opportunities — including the ones not starting first — into a phased roadmap.
-9. Summarise the implementation recommendation.
 
 Always prioritise only the AI opportunities identified in previous capabilities. Do not introduce unrelated AI initiatives.
 
@@ -108,7 +107,7 @@ Typical considerations include:
 
 ## Output Structure
 
-Present the assessment using the following five sections. Do not include a Strategic Position field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey, so repeating it here is redundant.
+Present the assessment using the following four sections. Do not include a Strategic Position field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey, so repeating it here is redundant.
 
 ### 1. Recommended Starting Point
 
@@ -154,19 +153,7 @@ Reject bare quality labels with no reason attached (e.g. "High feasibility" or "
 
 ---
 
-### 4. Implementation Insight
-
-Provide one to two sentences explaining:
-
-- Why this implementation priority is recommended.
-- How it reduces implementation risk.
-- How it prepares the organization for the next stage of AI transformation.
-
-Lead with the implementation recommendation. Reject a generic momentum claim (e.g. "This builds momentum for AI transformation" alone is not acceptable) — state the concrete reason this specific initiative, for this company, is the right one to prove value first.
-
----
-
-### 5. Implementation Roadmap
+### 4. Implementation Roadmap
 
 Sequence ALL identified opportunities — not just the recommended starting point — into 2 to 4 delivery phases, in chronological order.
 

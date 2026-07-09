@@ -675,13 +675,7 @@ Distribute the remaining identified opportunities across the other quadrants bas
    Opportunity Discovery, the bullets must reflect that constraint's real impact on feasibility — not
    ignore it.
 
-8. prioritizationInsight (1 sentence)
-   Name the recommended initiative explicitly. State why implementing it first builds momentum and prepares the organization for AI transformation.
-   REJECT a generic momentum claim (e.g. "This builds momentum for AI transformation" alone is NOT
-   acceptable) — state the concrete reason this specific initiative, for this company, is the right
-   one to prove value first.
-
-9. implementationPhases (2 to 4 items, in chronological order)
+8. implementationPhases (2 to 4 items, in chronological order)
    Sequence ALL identified opportunities from Capability 1 — not just the recommended starting point
    — into delivery phases. Every opportunity must appear in exactly one phase; do not drop any.
    Derive the sequence from priorityQuadrants: Quick Wins phase first (immediate), Strategic Bets next
@@ -695,7 +689,7 @@ Distribute the remaining identified opportunities across the other quadrants bas
    resource constraint, or a capability that must exist before the next phase is feasible).
 
    Add all to the brief object:
-   "recommendedStartingPoint": "...", "priorityQuadrants": [...], "dimensionCards": [...], "prioritizationInsight": "...", "implementationPhases": [...]`,
+   "recommendedStartingPoint": "...", "priorityQuadrants": [...], "dimensionCards": [...], "implementationPhases": [...]`,
   },
 
   'AI Use Case Classification': {
@@ -1436,9 +1430,6 @@ function parseBriefOutput(rawSections, validTitles) {
           bullets: Array.isArray(d.bullets) ? d.bullets.map(String).filter(Boolean) : [],
         }))
         .slice(0, 4);
-
-      const prioritizationInsight = typeof b.prioritizationInsight === 'string'
-        ? b.prioritizationInsight.trim() : '';
 
       const rawImplementationPhases = Array.isArray(b.implementationPhases) ? b.implementationPhases : [];
       const implementationPhases = rawImplementationPhases
@@ -2220,7 +2211,6 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(recommendedStartingPoint             ? { recommendedStartingPoint } : {}),
           ...(priorityQuadrants.length             ? { priorityQuadrants }        : {}),
           ...(dimensionCards.length                ? { dimensionCards }            : {}),
-          ...(prioritizationInsight                ? { prioritizationInsight }     : {}),
           ...(implementationPhases.length          ? { implementationPhases }      : {}),
           ...(primaryClassification                ? { primaryClassification }   : {}),
           ...(secondaryClassification              ? { secondaryClassification } : {}),
@@ -2784,7 +2774,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'adoptionStages',
       // AI Use Cases extras
       'valueCategories', 'opportunityValues', 'kpiPills', 'businessValueInsight',
-      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight', 'implementationPhases',
+      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'implementationPhases',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities', 'opportunityClassifications',
       // Data Readiness: CDI extras
@@ -2893,7 +2883,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'adoptionStages',
       // AI Use Cases extras
       'valueCategories', 'opportunityValues', 'kpiPills', 'businessValueInsight',
-      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight', 'implementationPhases',
+      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'implementationPhases',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities', 'opportunityClassifications',
       // Data Readiness extras

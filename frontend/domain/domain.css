@@ -5791,34 +5791,6 @@
   .pri-roadmap-arrow { transform: rotate(90deg); align-self: flex-start; margin-left: 1rem; }
 }
 
-.pri-insight {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  background: rgba(245,166,35,0.05);
-  border: 1px solid rgba(245,166,35,0.14);
-  border-radius: 6px;
-  padding: 0.85rem 1rem;
-}
-
-.pri-insight__icon {
-  font-size: 0.8rem;
-  flex-shrink: 0;
-  margin-top: 0.05rem;
-}
-
-.pri-insight__text {
-  font-size: 0.81rem;
-  color: rgba(255,255,255,0.5);
-  line-height: 1.55;
-  margin: 0;
-}
-
-.pri-insight__text strong {
-  color: rgba(255,255,255,0.72);
-  font-weight: 600;
-}
-
 @media (max-width: 900px) {
   .pri-matrix-grid { grid-template-columns: 1fr; }
   .pri-dim-cards   { grid-template-columns: repeat(2, 1fr); }

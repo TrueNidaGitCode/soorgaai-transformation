@@ -2412,7 +2412,6 @@ function buildPrioritizationView(section) {
   const quadrants      = b.priorityQuadrants        || [];
   const dimCards       = b.dimensionCards           || [];
   const phases         = b.implementationPhases     || [];
-  const insight        = b.prioritizationInsight    || '';
 
   const wrap = document.createElement('div');
   wrap.className = 'pri-view';
@@ -2599,16 +2598,6 @@ function buildPrioritizationView(section) {
     });
     roadmapSection.appendChild(track);
     wrap.appendChild(roadmapSection);
-  }
-
-  // Insight footer
-  if (insight) {
-    const footer = document.createElement('div');
-    footer.className = 'pri-insight';
-    footer.innerHTML = `
-      <span class="pri-insight__icon">💡</span>
-      <p class="pri-insight__text"><strong>Prioritization Insight</strong> — ${insight}</p>`;
-    wrap.appendChild(footer);
   }
 
   return wrap;

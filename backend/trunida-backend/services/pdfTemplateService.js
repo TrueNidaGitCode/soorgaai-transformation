@@ -1663,7 +1663,6 @@ function buildAIUseCasePrioritizationLayout(section) {
   const b         = section.brief || {};
   const recStart  = b.recommendedStartingPoint || '';
   const quadrants = b.priorityQuadrants        || [];
-  const insight   = b.prioritizationInsight    || '';
 
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
@@ -1773,14 +1772,6 @@ function buildAIUseCasePrioritizationLayout(section) {
       track.appendChild(phaseCard);
     });
     wrap.appendChild(track);
-  }
-
-  // Prioritization Insight
-  if (insight) {
-    var ins = document.createElement('div'); ins.className = 'vision-statement';
-    var insL = document.createElement('p'); insL.className = 'brief-label'; insL.textContent = 'Prioritization Insight';
-    var insT = document.createElement('p'); insT.className = 'vision-statement__text'; insT.textContent = insight;
-    ins.appendChild(insL); ins.appendChild(insT); wrap.appendChild(ins);
   }
 
   return wrap;

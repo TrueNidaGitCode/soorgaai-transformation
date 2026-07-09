@@ -5331,23 +5331,13 @@
   z-index: 0;
 }
 
-/* 3-column card grid (top row) */
+/* Card grid — one card per identified opportunity, wraps to fit any count */
 .bvd-cards-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.75rem;
   position: relative;
   z-index: 1;
-}
-
-/* Single centered card (bottom row) */
-.bvd-cards-row--center {
-  display: flex;
-  justify-content: center;
-}
-
-.bvd-cards-row--center .bvd-cat-card {
-  width: calc(33.33% - 0.25rem);
 }
 
 /* Value category card */
@@ -5381,6 +5371,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+}
+
+.bvd-cat-card__area {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245,166,35,0.75);
+  margin: 0;
+  text-align: center;
 }
 
 .bvd-cat-card__title {
@@ -5479,7 +5479,6 @@
 
 @media (max-width: 900px) {
   .bvd-cards-row              { grid-template-columns: 1fr; }
-  .bvd-cards-row--center .bvd-cat-card { width: 100%; }
 }
 
 /* ── AI Use Case Prioritization view ─────────────────────────────────────── */

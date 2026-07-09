@@ -40,6 +40,7 @@ const sdlcStageSchema           = new mongoose.Schema({ stage: String, aiTool: S
 // ── AI Use Cases sub-schemas ──────────────────────────────────────────────────
 const aiOpportunitySchema           = new mongoose.Schema({ name: String, why: String }, { _id: false });
 const opportunityClassificationSchema = new mongoose.Schema({ opportunity: String, classification: String, rationale: String }, { _id: false });
+const opportunityValueSchema    = new mongoose.Schema({ opportunity: String, valueArea: String, focus: String, outcomes: [String] }, { _id: false });
 const valueCategorySchema       = new mongoose.Schema({ title: String, focus: String, outcomes: [String] }, { _id: false });
 const priorityQuadrantSchema    = new mongoose.Schema({ id: String, label: String, initiatives: [String] }, { _id: false });
 const dimensionCardSchema       = new mongoose.Schema({ title: String, bullets: [String] }, { _id: false });
@@ -162,6 +163,7 @@ const briefSchema = new mongoose.Schema({
   highEffortActivities:     { type: [String], default: [] },
   aiOpportunities:          { type: [aiOpportunitySchema], default: [] },
   opportunityClassifications: { type: [opportunityClassificationSchema], default: [] },
+  opportunityValues:        { type: [opportunityValueSchema], default: [] },
   valueCategories:          { type: [valueCategorySchema],      default: [] },
   kpiPills:                 { type: [String], default: [] },
   businessValueInsight:     { type: String,   default: '' },

@@ -1609,28 +1609,34 @@ function buildAIOpportunityDiscoveryLayout(section) {
 }
 
 function buildBusinessValueDefinitionLayout(section) {
-  const b          = section.brief || {};
-  const categories = b.valueCategories     || [];
-  const kpiPills   = b.kpiPills            || [];
-  const insight    = b.businessValueInsight || '';
+  const b        = section.brief || {};
+  const kpiPills = b.kpiPills            || [];
+  const insight  = b.businessValueInsight || '';
+
+  // Legacy blueprints had exactly 4 fixed-dimension cards for one initiative;
+  // fold them into the same per-opportunity shape so the render path is uniform either way.
+  const items = Array.isArray(b.opportunityValues) && b.opportunityValues.length
+    ? b.opportunityValues
+    : (b.valueCategories || []).map(function(c) { return { opportunity: '', valueArea: c.title, focus: c.focus, outcomes: c.outcomes }; });
 
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
   if (b.strategicPosition) wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
 
-  // Value category cards — 3-across top row + centred last card
-  if (categories.length) {
-    const lbl = document.createElement('p'); lbl.className = 'brief-label'; lbl.textContent = 'Value Categories';
+  // Value cards — one per identified opportunity
+  if (items.length) {
+    const lbl = document.createElement('p'); lbl.className = 'brief-label'; lbl.textContent = 'Business Value Map';
     wrap.appendChild(lbl);
     const grid = document.createElement('div'); grid.className = 'bvd-pdf-grid';
-    categories.forEach(function(cat) {
+    items.forEach(function(item) {
       const card = document.createElement('div'); card.className = 'bvd-pdf-card';
-      const title = document.createElement('p'); title.className = 'bvd-pdf-card__title'; title.textContent = cat.title || '';
-      const focus = document.createElement('p'); focus.className = 'bvd-pdf-card__focus'; focus.textContent = cat.focus || '';
+      if (item.valueArea) { const area = document.createElement('p'); area.className = 'bvd-pdf-card__area'; area.textContent = item.valueArea; card.appendChild(area); }
+      const title = document.createElement('p'); title.className = 'bvd-pdf-card__title'; title.textContent = item.opportunity || item.title || '';
+      const focus = document.createElement('p'); focus.className = 'bvd-pdf-card__focus'; focus.textContent = item.focus || '';
       card.appendChild(title); card.appendChild(focus);
-      if (cat.outcomes && cat.outcomes.length) {
+      if (item.outcomes && item.outcomes.length) {
         const ul = document.createElement('ul'); ul.className = 'bvd-pdf-card__outcomes';
-        cat.outcomes.forEach(function(o) { const li = document.createElement('li'); li.textContent = o; ul.appendChild(li); });
+        item.outcomes.forEach(function(o) { const li = document.createElement('li'); li.textContent = o; ul.appendChild(li); });
         card.appendChild(ul);
       }
       grid.appendChild(card);
@@ -4325,6 +4331,7 @@ html, body {
 /* ── Business Value Definition layout ────────────────────────────────── */
 .bvd-pdf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-top: 0.35rem; }
 .bvd-pdf-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.55rem; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.bvd-pdf-card__area { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(255,200,60,0.75); margin: 0; }
 .bvd-pdf-card__title { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.9); margin: 0; }
 .bvd-pdf-card__focus { font-size: 0.72rem; color: rgba(255,200,60,0.85); margin: 0; line-height: 1.4; }
 .bvd-pdf-card__outcomes { list-style: none; display: flex; flex-direction: column; gap: 0.2rem; margin: 0; padding: 0; }

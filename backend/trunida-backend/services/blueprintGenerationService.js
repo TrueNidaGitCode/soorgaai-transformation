@@ -606,28 +606,31 @@ SECTION-SPECIFIC EXTRAS — "AI Opportunity Discovery" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Business Value Definition" sections only:
 
-JOURNEY RULE: Look up the primary AI initiative named in the "Primary AI Classification" or "Identified AI Opportunities" of the previous capabilities in the TRANSFORMATION JOURNEY block.
-All value categories, KPIs, and insight MUST be specific to that named initiative (e.g. "AI Traceability Mapping reduces manual traceability effort by...").
-Do NOT describe generic AI value — describe the value of THIS specific initiative for this company.
+JOURNEY RULE: Use the "Identified AI Opportunities" list from the TRANSFORMATION JOURNEY block. Define business value for EVERY opportunity in that list — do not select only one.
+Do NOT describe generic AI value — describe the value each specific opportunity creates for this company.
 
-5. valueCategories (exactly 4 items in this fixed order)
-   Each card explains how the primary named initiative creates value in one dimension for this company.
-   Order: [0] Engineering Productivity, [1] Engineering Excellence, [2] Project & Operational Performance, [3] Customer & Product Value
-   Each item: { "title": "<category name>", "focus": "<short phrase specific to this initiative, e.g. 'Automate traceability mapping'>", "outcomes": ["<outcome 1>", "<outcome 2>", "<outcome 3>", "<outcome 4>"] }
-   "outcomes" must be 4 concise initiative-specific expected outcomes (3–6 words each).
-   "focus" must be short and initiative-specific (max 6 words).
+5. opportunityValues (one item per identified AI opportunity, in the same order as "Identified AI Opportunities")
+   Each item: { "opportunity": "<the AI opportunity name, copied verbatim from Identified AI Opportunities — do not reword, shorten, or paraphrase it>", "valueArea": "Engineering Productivity" | "Engineering Excellence" | "Project & Operational Performance" | "Customer & Product Value", "focus": "<short phrase naming what this opportunity actually automates or changes, max 6 words, e.g. 'Automate traceability mapping via semantic linking'>", "outcomes": ["<outcome 1>", "<outcome 2>", "<outcome 3>"] }
+
+   valueArea: pick whichever of the four areas THIS opportunity's value is most concentrated in.
+   Multiple opportunities can share the same area if that's genuinely where their value lands — do
+   not force every opportunity into a different area.
+   outcomes: 2 to 3 concise expected outcomes (3–6 words each), specific to this opportunity.
+
    REJECT any "focus" or "outcome" that is a generic AI value statement with no mechanism (e.g.
-   "Improves efficiency" or "Reduces errors" is NOT acceptable). Each must name what the initiative
+   "Improves efficiency" or "Reduces errors" is NOT acceptable). Each must name what the opportunity
    actually automates or changes (e.g. not "Automates work" but "Automates traceability mapping via
-   semantic linking"). A reader must be able to tell what this initiative specifically does, not just
+   semantic linking"). A reader must be able to tell what this specific opportunity does, not just
    that it's beneficial.
 
 6. kpiPills (exactly 6 items)
-   Short metric names for the primary measurable KPIs for THIS named initiative. Each item is a short string (2–5 words) in title case. Make every KPI specific to what this initiative measures.
+   Short metric names for the primary measurable KPIs created by these opportunities collectively. Each item is a short string (2–5 words) in title case. Make every KPI specific to what these opportunities measure — not generic engineering metrics.
 
 7. businessValueInsight (1–2 sentences)
-   Name the initiative explicitly. State its primary business outcome and how success will be measured for this company.
-   REJECT a generic value claim untethered to how the initiative works (e.g. "This will improve
+   Synthesise the combined business value across all identified opportunities — which one creates the
+   most leverage and why, or how they compound together. Do not restate a single opportunity's value
+   in isolation.
+   REJECT a generic value claim untethered to how the opportunities work (e.g. "This will improve
    productivity across the team" is NOT acceptable without saying which activity it changes and how).
 
 If a data handling, security, governance, IP, or external-AI-service constraint was established in
@@ -636,7 +639,7 @@ value that assumes unrestricted cloud-scale AI when the initiative is actually c
 private or self-hosted deployment.
 
    Add all to the brief object:
-   "valueCategories": [...], "kpiPills": [...], "businessValueInsight": "..."`,
+   "opportunityValues": [...], "kpiPills": [...], "businessValueInsight": "..."`,
   },
 
   'AI Implementation Prioritization': {
@@ -1461,6 +1464,18 @@ function parseBriefOutput(rawSections, validTitles) {
             .slice(0, 8)
         : [];
 
+      const opportunityValues = Array.isArray(b.opportunityValues)
+        ? b.opportunityValues
+            .filter(o => o && typeof o === 'object' && String(o.opportunity || '').trim() && String(o.valueArea || '').trim())
+            .map(o => ({
+              opportunity: String(o.opportunity || '').trim(),
+              valueArea:   String(o.valueArea   || '').trim(),
+              focus:       String(o.focus       || '').trim(),
+              outcomes:    Array.isArray(o.outcomes) ? o.outcomes.map(String).filter(Boolean).slice(0, 4) : [],
+            }))
+            .slice(0, 8)
+        : [];
+
       const rawModelLifecycleStages = Array.isArray(b.modelLifecycleStages) ? b.modelLifecycleStages : [];
       const modelLifecycleStages = rawModelLifecycleStages
         .filter(s => s && typeof s === 'object' && String(s.stage || '').trim())
@@ -2176,6 +2191,7 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(adoptionStages.length       ? { adoptionStages }       : {}),
           // AI Use Cases extras
           ...(valueCategories.length               ? { valueCategories }          : {}),
+          ...(opportunityValues.length              ? { opportunityValues }        : {}),
           ...(kpiPills.length                      ? { kpiPills }                 : {}),
           ...(businessValueInsight                 ? { businessValueInsight }     : {}),
           ...(recommendedStartingPoint             ? { recommendedStartingPoint } : {}),
@@ -2743,7 +2759,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',
       // AI Use Cases extras
-      'valueCategories', 'kpiPills', 'businessValueInsight',
+      'valueCategories', 'opportunityValues', 'kpiPills', 'businessValueInsight',
       'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities', 'opportunityClassifications',
@@ -2852,7 +2868,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'securityPillars', 'ethicsPillars', 'modelLifecycleStages', 'complianceControls',
       'adoptionStages',
       // AI Use Cases extras
-      'valueCategories', 'kpiPills', 'businessValueInsight',
+      'valueCategories', 'opportunityValues', 'kpiPills', 'businessValueInsight',
       'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities', 'opportunityClassifications',
@@ -3111,6 +3127,7 @@ function extractJourneyContext(capabilityName, sections) {
     if (b.primaryClassification?.name)  lines.push(`Primary AI Classification: ${b.primaryClassification.name}${b.primaryClassification.rationale ? ` — ${b.primaryClassification.rationale}` : ''}`);
     if (b.secondaryClassification?.name) lines.push(`Secondary AI Classification: ${b.secondaryClassification.name}`);
     if (b.transformationImplication)     lines.push(`Transformation Implication: ${b.transformationImplication}`);
+    if (b.opportunityValues?.length)    lines.push(`Business Value Map: ${b.opportunityValues.map(o => `${o.opportunity} → ${o.valueArea}`).join('; ')}`);
     if (b.valueCategories?.length)      lines.push(`Business Value Areas: ${b.valueCategories.map(v => v.title).join(', ')}`);
     if (b.kpiPills?.length)             lines.push(`Target KPIs: ${b.kpiPills.join(', ')}`);
     if (b.recommendedStartingPoint)     lines.push(`Recommended Implementation: ${b.recommendedStartingPoint}`);
@@ -3205,6 +3222,8 @@ function updateTransformationContext(ctx, capabilityName, sections) {
     if (b.transformationImplication)
       ctx.transformationImplication = b.transformationImplication;
     // C3: value areas and KPIs
+    if (b.opportunityValues?.length)
+      ctx.businessValueAreas = [...new Set(b.opportunityValues.map(o => o.valueArea).filter(Boolean))];
     if (b.valueCategories?.length)
       ctx.businessValueAreas = b.valueCategories.map(v => v.title);
     if (b.kpiPills?.length)

@@ -2268,7 +2268,7 @@ function buildClassificationView(section) {
 
 // ── AI Use Cases — Business Value Definition ──────────────────────────────────
 
-function buildBvdCatCard(cat) {
+function buildBvdOppCard(item) {
   const card = document.createElement('div');
   card.className = 'bvd-cat-card';
 
@@ -2279,22 +2279,29 @@ function buildBvdCatCard(cat) {
   const body = document.createElement('div');
   body.className = 'bvd-cat-card__body';
 
+  if (item.valueArea) {
+    const area = document.createElement('p');
+    area.className = 'bvd-cat-card__area';
+    area.textContent = item.valueArea;
+    body.appendChild(area);
+  }
+
   const title = document.createElement('p');
   title.className = 'bvd-cat-card__title';
-  title.textContent = cat.title;
+  title.textContent = item.opportunity || item.title || '';
   body.appendChild(title);
 
-  if (cat.focus) {
+  if (item.focus) {
     const focus = document.createElement('p');
     focus.className = 'bvd-cat-card__focus';
-    focus.innerHTML = `<span class="bvd-cat-card__focus-label">Focus: </span>${cat.focus}`;
+    focus.innerHTML = `<span class="bvd-cat-card__focus-label">Focus: </span>${item.focus}`;
     body.appendChild(focus);
   }
 
-  if (cat.outcomes?.length) {
+  if (item.outcomes?.length) {
     const ul = document.createElement('ul');
     ul.className = 'bvd-cat-card__outcomes';
-    cat.outcomes.forEach(o => {
+    item.outcomes.forEach(o => {
       const li = document.createElement('li');
       li.textContent = o;
       ul.appendChild(li);
@@ -2307,10 +2314,16 @@ function buildBvdCatCard(cat) {
 }
 
 function buildBusinessValueDefinitionView(section) {
-  const b          = section.brief || {};
-  const categories = b.valueCategories     || [];
-  const kpiPills   = b.kpiPills            || [];
-  const insight    = b.businessValueInsight || '';
+  const b = section.brief || {};
+
+  // Legacy blueprints had exactly 4 fixed-dimension cards for one initiative;
+  // fold them into the same per-opportunity shape so the render path is uniform either way.
+  const items = Array.isArray(b.opportunityValues) && b.opportunityValues.length
+    ? b.opportunityValues
+    : (b.valueCategories || []).map(c => ({ opportunity: '', valueArea: c.title, focus: c.focus, outcomes: c.outcomes }));
+
+  const kpiPills = b.kpiPills || [];
+  const insight  = b.businessValueInsight || '';
 
   const wrap = document.createElement('div');
   wrap.className = 'bvd-view';
@@ -2330,11 +2343,8 @@ function buildBusinessValueDefinitionView(section) {
     wrap.appendChild(quote);
   }
 
-  // Top row — first 3 categories connected by amber line
-  const topCats    = categories.slice(0, 3);
-  const bottomCats = categories.slice(3, 4);
-
-  function buildRow(cats, centered) {
+  // Value cards — one per identified opportunity, connected by an amber line
+  if (items.length) {
     const rowWrap = document.createElement('div');
     rowWrap.className = 'bvd-row-wrap';
 
@@ -2343,14 +2353,12 @@ function buildBusinessValueDefinitionView(section) {
     rowWrap.appendChild(line);
 
     const row = document.createElement('div');
-    row.className = centered ? 'bvd-cards-row bvd-cards-row--center' : 'bvd-cards-row';
-    cats.forEach(cat => row.appendChild(buildBvdCatCard(cat)));
+    row.className = 'bvd-cards-row';
+    items.forEach(item => row.appendChild(buildBvdOppCard(item)));
     rowWrap.appendChild(row);
-    return rowWrap;
-  }
 
-  if (topCats.length)    wrap.appendChild(buildRow(topCats, false));
-  if (bottomCats.length) wrap.appendChild(buildRow(bottomCats, true));
+    wrap.appendChild(rowWrap);
+  }
 
   // KPI pills
   if (kpiPills.length) {

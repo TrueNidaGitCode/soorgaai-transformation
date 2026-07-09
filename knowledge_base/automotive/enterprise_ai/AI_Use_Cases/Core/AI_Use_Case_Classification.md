@@ -92,6 +92,8 @@ For every opportunity in the "Identified AI Opportunities" list, in the same ord
 
 Keep each entry concise and executive-friendly — no separate rationale/outcome split, just the one sentence.
 
+Reject any sentence that only restates the classification label in generic terms (e.g. "This is a Productivity AI initiative that helps engineers work more efficiently" is not acceptable — it doesn't say how). Name the specific mechanism or characteristic of that opportunity that drives the outcome. If a data handling, security, or external-AI-service constraint was established during AI Opportunity Discovery, the outcome described here should stay consistent with it rather than implying unrestricted cloud-scale AI.
+
 ## Key Principles
 
 - Classify every identified AI opportunity — not just the first.

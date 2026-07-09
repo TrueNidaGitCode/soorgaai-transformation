@@ -119,6 +119,8 @@ Include:
 - Initiative Name (must be from the Capability 1 identified opportunities list)
 - One-line justification explaining why it offers the best value-to-feasibility balance
 
+Reject a generic justification (e.g. "It offers the best balance of value and feasibility" alone is not acceptable). Name the concrete reason specific to this company — existing data already structured for it, existing tooling that lowers the lift, or a constraint that rules out riskier options.
+
 ---
 
 ### 2. Implementation Priority Matrix
@@ -148,6 +150,8 @@ For each dimension provide:
 - One-line assessment
 - Key evaluation factors
 
+Reject bare quality labels with no reason attached (e.g. "High feasibility" or "Strong alignment" alone is not acceptable) — each factor must point at the specific fact that makes it true (e.g. "Existing embedding infra ready" rather than "High feasibility"). For Implementation Feasibility specifically, if a private or self-hosted deployment constraint was established during AI Opportunity Discovery, the assessment must reflect that constraint's real impact rather than ignore it.
+
 ---
 
 ### 4. Implementation Insight
@@ -158,7 +162,7 @@ Provide one to two sentences explaining:
 - How it reduces implementation risk.
 - How it prepares the organization for the next stage of AI transformation.
 
-Lead with the implementation recommendation.
+Lead with the implementation recommendation. Reject a generic momentum claim (e.g. "This builds momentum for AI transformation" alone is not acceptable) — state the concrete reason this specific initiative, for this company, is the right one to prove value first.
 
 ---
 

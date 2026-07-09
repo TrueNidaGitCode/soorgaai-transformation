@@ -616,12 +616,24 @@ Do NOT describe generic AI value — describe the value of THIS specific initiat
    Each item: { "title": "<category name>", "focus": "<short phrase specific to this initiative, e.g. 'Automate traceability mapping'>", "outcomes": ["<outcome 1>", "<outcome 2>", "<outcome 3>", "<outcome 4>"] }
    "outcomes" must be 4 concise initiative-specific expected outcomes (3–6 words each).
    "focus" must be short and initiative-specific (max 6 words).
+   REJECT any "focus" or "outcome" that is a generic AI value statement with no mechanism (e.g.
+   "Improves efficiency" or "Reduces errors" is NOT acceptable). Each must name what the initiative
+   actually automates or changes (e.g. not "Automates work" but "Automates traceability mapping via
+   semantic linking"). A reader must be able to tell what this initiative specifically does, not just
+   that it's beneficial.
 
 6. kpiPills (exactly 6 items)
    Short metric names for the primary measurable KPIs for THIS named initiative. Each item is a short string (2–5 words) in title case. Make every KPI specific to what this initiative measures.
 
 7. businessValueInsight (1–2 sentences)
    Name the initiative explicitly. State its primary business outcome and how success will be measured for this company.
+   REJECT a generic value claim untethered to how the initiative works (e.g. "This will improve
+   productivity across the team" is NOT acceptable without saying which activity it changes and how).
+
+If a data handling, security, governance, IP, or external-AI-service constraint was established in
+AI Opportunity Discovery, keep the value claims realistic for that constraint — do not describe
+value that assumes unrestricted cloud-scale AI when the initiative is actually constrained to a
+private or self-hosted deployment.
 
    Add all to the brief object:
    "valueCategories": [...], "kpiPills": [...], "businessValueInsight": "..."`,
@@ -638,6 +650,9 @@ Distribute the remaining identified opportunities across the other quadrants bas
 
 5. recommendedStartingPoint (1 sentence)
    Name the specific AI initiative that should be implemented first (from the identified opportunities list) and state why it offers the best balance of business value and implementation feasibility.
+   REJECT a generic justification (e.g. "It offers the best balance of value and feasibility" alone
+   is NOT acceptable) — name the concrete reason specific to this company (e.g. existing data already
+   structured for it, existing tooling that lowers the lift, or a constraint that rules out riskier options).
 
 6. priorityQuadrants (exactly 4 items in this fixed order)
    Distribute ALL identified AI opportunities from Capability 1 across the 2×2 matrix. Use ONLY initiatives from the "Identified AI Opportunities" journey context — do not add unrelated ones.
@@ -650,9 +665,18 @@ Distribute the remaining identified opportunities across the other quadrants bas
    Order: [0] Business Value, [1] Implementation Feasibility, [2] Strategic Alignment, [3] Organizational Readiness
    Each item: { "title": "<dimension name>", "bullets": ["<assessment 1>", "<assessment 2>", "<assessment 3>"] }
    Bullets must be concise 2–4 word labels specific to this initiative and company context.
+   REJECT bare quality labels with no reason attached (e.g. "High feasibility" or "Strong alignment"
+   alone is NOT acceptable) — each bullet must point at the specific fact that makes it true (e.g.
+   "Existing embedding infra ready" rather than "High feasibility"). For the Implementation Feasibility
+   dimension specifically, if a private/self-hosted deployment constraint was established in AI
+   Opportunity Discovery, the bullets must reflect that constraint's real impact on feasibility — not
+   ignore it.
 
 8. prioritizationInsight (1 sentence)
    Name the recommended initiative explicitly. State why implementing it first builds momentum and prepares the organization for AI transformation.
+   REJECT a generic momentum claim (e.g. "This builds momentum for AI transformation" alone is NOT
+   acceptable) — state the concrete reason this specific initiative, for this company, is the right
+   one to prove value first.
 
    Add all to the brief object:
    "recommendedStartingPoint": "...", "priorityQuadrants": [...], "dimensionCards": [...], "prioritizationInsight": "..."`,
@@ -671,6 +695,17 @@ JOURNEY RULE: Use the "Identified AI Opportunities" list from the TRANSFORMATION
    - Productivity AI: improves internal engineering or operational efficiency (faster analysis, less manual effort)
    - Functional AI: strengthens a core engineering or product function (quality, reliability, compliance, safety)
    - Product AI: becomes part of the customer-facing product or vehicle capability
+
+   REJECT any rationale that only restates the classification label in generic terms (e.g. "This is
+   a Productivity AI initiative that helps engineers work more efficiently" is NOT acceptable — it
+   doesn't say how). The rationale must name the specific mechanism or characteristic of THIS
+   opportunity that drives the outcome — a reader must be able to tell what makes this opportunity's
+   impact real, not just that "AI helps."
+
+   If a data handling, security, governance, IP, or external-AI-service constraint was established
+   in AI Opportunity Discovery, keep it in mind here too — do not describe an outcome that implies
+   unrestricted cloud-scale AI when the initiative is actually constrained to a private or self-hosted
+   deployment.
 
    Example:
    [

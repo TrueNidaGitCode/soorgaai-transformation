@@ -106,8 +106,10 @@ Present exactly four business value areas in this fixed order:
 4. Customer & Product Value
 
 For each area provide:
-- A one-line focus statement (e.g. "Improve engineering team efficiency")
+- A one-line focus statement naming what the initiative actually automates or changes (e.g. "Automate traceability mapping via semantic linking" — not "Improve engineering team efficiency")
 - Four concise expected outcomes specific to this company (3–6 words each)
+
+Reject any focus statement or outcome that is a generic AI value claim with no mechanism (e.g. "Improves efficiency" or "Reduces errors" alone is not acceptable). A reader must be able to tell what the initiative specifically does, not just that it's beneficial.
 
 ### 2. Key Performance Indicators
 
@@ -123,7 +125,7 @@ Provide one to two sentences explaining:
 - The primary expected business outcome
 - How value will be measured and tracked
 
-Lead with the most important business outcome first.
+Lead with the most important business outcome first. Reject a generic value claim untethered to how the initiative works (e.g. "This will improve productivity across the team" is not acceptable without saying which activity it changes and how). If a data handling, security, or external-AI-service constraint was established during AI Opportunity Discovery, keep the value claim realistic for that constraint rather than implying unrestricted cloud-scale AI.
 
 ## Key Principles
 

@@ -133,6 +133,8 @@ Generate:
 - Three Transformation Pillars: distinct business-level outcomes this initiative creates once fully adopted (what changes, not how to deploy)
 - Three Business Outcome Metrics (labelled "Business Outcomes"): headline KPIs drawn from Business Value Definition and Implementation Prioritization — these business metrics appear here only, not in Alignment or Commitment
 
+Reject a pillar that would be true of almost any AI initiative (e.g. "Engineering teams work more efficiently" alone is not acceptable). Name the specific mechanism this initiative's technique changes.
+
 ---
 
 ## Alignment → How will the organization work together to achieve it?
@@ -144,6 +146,8 @@ Generate:
 - Three Alignment Indicators: measure HOW WELL TEAMS ARE ALIGNED — stakeholder ownership, cross-functional participation, governance cadence, decision-making speed — NOT business outcomes from Vision
 
 Focus on WHO does WHAT and HOW teams coordinate. Do not repeat business KPIs from Vision.
+
+Reject a collaboration initiative that is generic team-alignment advice (e.g. "Hold regular sync meetings" alone is not acceptable). Name the specific decision or handoff this initiative requires between named teams.
 
 ---
 
@@ -157,6 +161,8 @@ Generate:
 - Three Commitment Indicators: measure executive sponsorship, funding commitment, governance review frequency, or named accountability — NOT business outcomes from Vision or coordination metrics from Alignment. Actions must be executive-level; no technology-specific items (model building, platform setup, toolchain integration).
 
 Focus on how leadership invests, governs, and holds the initiative accountable. Do not repeat business KPIs or team coordination metrics.
+
+Reject an action that is a boilerplate leadership platitude (e.g. "Support the AI initiative" alone is not acceptable). Name the specific decision, sign-off, or resource this initiative's recommended starting point actually needs from leadership.
 
 ---
 

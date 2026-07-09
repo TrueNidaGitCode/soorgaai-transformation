@@ -129,6 +129,8 @@ Generate:
 - Three named AI solutions derived from the selected initiative (not generic platform solutions)
 - Three portfolio-level success metrics linked to business value from the journey
 
+Reject a solution component that could describe any AI feature (e.g. "Uses AI to improve accuracy" alone is not acceptable). State the specific input it processes and output it produces for this initiative.
+
 ### Cross-Functional Delivery Teams
 
 Generate:
@@ -137,6 +139,8 @@ Generate:
 - Five to seven delivery roles with specific responsibilities for this initiative
 - Three team effectiveness metrics
 
+Reject a role list that would fit any AI project (e.g. "AI Engineer, Project Manager, QA" alone is not acceptable). The roles must reflect what this initiative's specific technique actually requires.
+
 ### End-to-End Ownership
 
 Generate:
@@ -144,6 +148,8 @@ Generate:
 - Strategic Position: maximum two sentences on ownership philosophy for this initiative
 - Six lifecycle stages with primary owner and expected outcome for each
 - Three ownership continuity metrics
+
+Reject a lifecycle activity that is just the stage name reworded (e.g. "Validation" becomes "Validate the AI model" — not acceptable). Name what is actually being validated or deployed for this specific technique.
 
 ---
 

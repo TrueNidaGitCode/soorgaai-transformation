@@ -185,6 +185,8 @@ For each dataset identify
 - Why it is required
 - Business value enabled
 
+Reject a "why it is required" that would apply to any AI project (e.g. "Needed for AI analysis" alone is not acceptable). Name the specific reasoning step or output the selected AI initiative's technique performs with this data.
+
 ---
 
 ## 3. Data Relationship Overview
@@ -227,7 +229,7 @@ based on expected implementation value.
 
 # Key Principles
 
-- Start from the business objective.
+- Continue from the specific AI initiative already selected in AI Opportunity Discovery — do not identify data for a different or generic AI use case.
 - Identify only the data required for the AI use case.
 - Preserve relationships between datasets.
 - Prioritize business value over data volume.

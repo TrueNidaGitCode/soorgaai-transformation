@@ -89,6 +89,8 @@ Typical considerations include:
 - Increased delivery capacity
 - Improved project margin
 
+Reject a cost or benefit item copied straight from the typical-considerations list with no adaptation — at least some items must reflect what this initiative's specific technique actually costs or saves, not a generic AI project checklist.
+
 ---
 
 ## Leadership Question
@@ -138,6 +140,8 @@ Assess expected improvements across areas such as:
 - Quality
 - Compliance
 - Decision Making
+
+Reject a before/after pair that would apply to any AI rollout (e.g. "Manual" → "Automated" with no specifics is not acceptable). The before-AI state must match the actual workflow step from AI Opportunity Discovery.
 
 ---
 
@@ -198,6 +202,8 @@ Customer Confidence
 ↓
 
 Business Growth
+
+Reject a customer benefit that is a generic happiness claim (e.g. "Better customer experience" alone is not acceptable). Trace it to the actual internal value this initiative creates, not a generic service promise.
 
 ---
 

@@ -156,6 +156,7 @@ AI implementation becomes faster, more consistent, and scalable across the organ
 # Key Principles
 
 - Build reusable AI platform capabilities rather than project-specific solutions.
+- Unlike other capabilities in this journey, do not name the specific selected AI initiative — the platform must stay reusable across every initiative. Instead, ground the platform's scope in the actual portfolio of opportunities and classifications identified in AI Opportunity Discovery and AI Use Case Classification, so the breadth of platform investment still traces back to what was really discovered rather than a generic, disconnected "any AI initiative" list.
 - Standardize AI development practices across teams.
 - Enable rapid experimentation while maintaining governance.
 - Automate AI deployment and operational management.
@@ -213,6 +214,8 @@ For every AI use case, the AI generates an AI Platform Blueprint containing:
 - Platform Implementation Roadmap
 - Consultant Guidance
 - AI Recommendation
+
+Reject platform capabilities that would be identical regardless of what was actually discovered in AI Opportunity Discovery — the scope and priority of platform investment should still trace back to the real number and variety of opportunities identified, even though no single initiative is named.
 
 ---
 

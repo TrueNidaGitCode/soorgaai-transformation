@@ -132,7 +132,7 @@ Reusable APIs and standardised integration patterns should be prioritised to sup
 
 ## Key Principles
 
-- Integrate AI into existing business workflows.
+- Integrate the specific AI initiative already selected in AI Opportunity Discovery into existing business workflows — do not design for a different or generic AI use case.
 - Reuse existing enterprise applications whenever possible.
 - Minimise changes to established engineering processes.
 - Prefer API-first and event-driven integration patterns.
@@ -195,6 +195,8 @@ The AI generates a project-specific System Integration Blueprint containing:
 - Integration Roadmap
 - Consultant Guidance
 - AI Recommendation
+
+Reject an AI-interaction description that would fit any AI feature (e.g. "AI analyzes the data" alone is not acceptable). Name the specific technique from the selected initiative operating on this system's data.
 
 ---
 

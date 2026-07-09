@@ -64,11 +64,12 @@ Typical examples:
 
 ## Key Principles
 
-- Design AI systems with security and privacy from the start.
+- Design security and privacy around the specific AI initiative already selected in AI Opportunity Discovery — not a generic AI security checklist. If a data handling, security, or external-AI-service constraint was established there, let it directly shape which controls are prioritized here.
 - Enforce access controls across all AI tools and data.
 - Embed security reviews into every AI deployment pipeline.
 - Maintain data governance aligned with applicable regulations.
 - Automate security controls wherever practical.
+- Reject a control that would appear in any AI security checklist with no connection to this initiative (e.g. "Encrypt data at rest" alone is not acceptable) — tie it to the actual data this initiative's technique touches.
 
 ---
 
@@ -134,11 +135,12 @@ Typical examples:
 
 ## Key Principles
 
-- Build AI systems that stakeholders and customers can understand and trust.
+- Build trust and explainability around the specific AI initiative already selected in AI Opportunity Discovery — not a generic responsible-AI checklist.
 - Maintain human oversight for critical and safety-relevant decisions.
 - Monitor and manage bias throughout the AI lifecycle.
 - Define clear accountability for AI-generated recommendations.
 - Promote responsible AI usage across the project team.
+- Reject a practice that would apply to any AI system (e.g. "Ensure fairness in AI decisions" alone is not acceptable) — name the specific bias or explainability risk this initiative's technique creates.
 
 ---
 
@@ -204,11 +206,12 @@ Typical examples:
 
 ## Key Principles
 
-- Validate every AI model against defined criteria before deployment.
+- Validate the specific AI initiative already selected in AI Opportunity Discovery against defined criteria before deployment — not a generic MLOps checklist.
 - Monitor performance continuously in production.
 - Detect and respond to model drift and degradation promptly.
 - Automate retraining where feasible.
 - Measure AI outcomes against agreed project success metrics.
+- Reject an activity that would apply to any AI model (e.g. "Monitor model performance" alone is not acceptable) — name the specific metric or failure mode relevant to this initiative's technique.
 
 ---
 
@@ -274,11 +277,12 @@ Typical examples:
 
 ## Key Principles
 
-- Plan compliance requirements into the AI initiative from day one.
+- Plan compliance requirements around the specific AI initiative already selected in AI Opportunity Discovery from day one — if a data handling, security, or external-AI-service constraint was established there, the controls must directly enforce it, not restate it generically.
 - Maintain an AI risk register reviewed regularly.
 - Map all AI programs to applicable customer and regulatory requirements.
 - Govern third-party AI tools through a formal assessment process.
 - Maintain audit trails for AI-generated outputs used in decisions.
+- Reject a control that would apply to any AI compliance program (e.g. "Maintain audit logs" alone is not acceptable) — name what specifically must be logged or reviewed for this initiative's technique.
 
 ---
 
@@ -344,11 +348,12 @@ Typical examples:
 
 ## Key Principles
 
-- Build trust through transparency, accountability, and measurable outcomes.
+- Build trust in the specific AI initiative already selected in AI Opportunity Discovery through transparency, accountability, and measurable outcomes — not a generic AI change-management plan.
 - Ensure all AI users complete responsible AI training before access.
 - Define and report AI business value on a regular cadence.
 - Encourage incremental adoption with clear feedback mechanisms.
 - Continuously improve governance practices based on team and stakeholder input.
+- Reject a characteristic that would apply to any AI rollout (e.g. "Build user confidence" alone is not acceptable) — name the specific way engineers will see or verify this initiative's technique working.
 
 ---
 

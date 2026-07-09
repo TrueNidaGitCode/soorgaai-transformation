@@ -131,7 +131,7 @@ Successful AI data preparation follows five principles.
 
 ### Prepare for the AI Use Case
 
-Prepare only the data required for the selected AI use case.
+Prepare only the data required for the specific AI initiative already selected in AI Opportunity Discovery — do not prepare data for a different or generic AI use case.
 
 ---
 
@@ -218,6 +218,8 @@ For every AI use case, generate an AI Data Preparation Blueprint containing:
 - AI Readiness Validation
 - Preparation Roadmap
 - Consultant Recommendation
+
+Reject a preparation activity that is generic data-hygiene advice (e.g. "Clean the data" alone is not acceptable). Name the specific transformation this dataset needs for the selected initiative's technique to work.
 
 ---
 

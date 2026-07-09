@@ -130,7 +130,7 @@ Typical considerations
 
 ## Key Principles
 
-- Build only the architecture required for the selected AI use case.
+- Build only the architecture required for the specific AI initiative already selected in AI Opportunity Discovery — do not design for a different or generic AI use case. If a data handling, security, or external-AI-service constraint was established there, the architecture must reflect its real impact rather than a generic "compliant infrastructure" placeholder.
 - Keep source systems as the system of record.
 - Minimize duplicated data.
 - Organize reusable AI-ready datasets.
@@ -197,6 +197,8 @@ For every AI use case, the AI generates a project-specific Data Architecture Ena
 - Architecture Diagram
 - Implementation Roadmap
 - AI Recommendation
+
+Reject a technology recommendation that names no actual technology (e.g. "Choose a suitable database" alone is not acceptable). Name the specific technology and the reason it fits this initiative's data shape.
 
 ---
 

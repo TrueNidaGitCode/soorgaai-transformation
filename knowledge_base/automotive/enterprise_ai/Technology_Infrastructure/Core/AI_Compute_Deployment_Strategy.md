@@ -144,6 +144,7 @@ Typical examples
 
 # Key Principles
 
+- Design the deployment strategy for the specific AI initiative already selected in AI Opportunity Discovery — do not design for a different or generic AI use case. If a data handling, security, governance, or external-AI-service constraint was established there, the deployment model, compute strategy, and security model must reflect that constraint's real impact rather than a generic "compliant infrastructure" placeholder.
 - Select infrastructure based on business requirements rather than technology trends.
 - Match compute capability to AI workload characteristics.
 - Prefer simple deployment architectures before introducing complexity.
@@ -208,6 +209,8 @@ For every AI use case, the AI generates a project-specific **AI Compute & Deploy
 - Infrastructure Cost Considerations
 - Deployment Roadmap
 - AI Recommendation
+
+Reject a rationale that would justify any AI deployment (e.g. "Improves reliability and performance" alone is not acceptable). Name the specific reason tied to this initiative's technique or its constraints.
 
 ---
 

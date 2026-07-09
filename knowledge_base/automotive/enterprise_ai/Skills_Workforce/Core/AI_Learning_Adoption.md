@@ -111,8 +111,8 @@ Typical examples:
 
 ## Key Principles
 
-- Develop AI capabilities through practical project experience.
-- Align learning with project roles and responsibilities.
+- Develop AI capabilities through practical project experience with the specific AI initiative already selected in AI Opportunity Discovery — do not plan generic AI training disconnected from it.
+- Align learning with project roles and responsibilities, building on the roles already identified in AI Roles & Capability Planning.
 - Integrate AI naturally into existing engineering workflows.
 - Keep humans accountable for final decisions.
 - Encourage continuous learning and knowledge sharing.
@@ -164,6 +164,8 @@ For every AI use case, the AI generates:
 - AI Adoption Roadmap
 - Recommended Learning Priorities
 - AI Recommendations
+
+Reject a learning topic that would apply to any AI project (e.g. "AI fundamentals" alone is not acceptable). Name the specific technique from the selected initiative this role needs to learn.
 
 ---
 

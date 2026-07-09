@@ -120,6 +120,9 @@ This is the ONLY section that defines business outcome metrics. Alignment and Co
    Each item: { "title": "<2–4 word noun phrase>", "description": "<1 sentence describing the business outcome once the initiative is operational>", "businessImpactTag": "<1–3 word impact label>" }
    Pillars describe WHAT CHANGES for the business, not HOW to implement. No deployment tasks, technology steps, or implementation milestones.
    Example tags: "Engineering Velocity", "Release Predictability", "Traceability Accuracy"
+   REJECT a description that would be true of almost any AI initiative (e.g. "Engineering teams work more
+   efficiently" is NOT acceptable) — name the specific mechanism THIS initiative changes (e.g. "Engineers
+   retrieve analogous historical defects in seconds instead of searching manually" for a retrieval initiative).
 
 6. kpiHighlights (exactly 3 items)
    The 3 headline business outcome metrics for this initiative. Draw directly from "Target KPIs" and "Expected Business Value" in the TRANSFORMATION CONTEXT.
@@ -159,6 +162,9 @@ Alignment metrics measure ORGANIZATIONAL COORDINATION: who owns what, how teams 
    The first 3 display as equal cards, the 4th as a full-width card.
    Each item: { "title": "<3–6 word initiative name>", "description": "<2–3 sentences explaining what it is and why it matters for THIS initiative>" }
    Each initiative should identify a different team or dimension of collaboration.
+   REJECT a description that only restates generic cross-team collaboration advice (e.g. "Regular meetings
+   ensure everyone stays aligned" is NOT acceptable) — name the specific decision or handoff THIS initiative
+   requires between named teams (e.g. what the AI/ML team needs from Requirements before retrieval can work).
 
 7. spokeNodes (5–6 items)
    The specific stakeholder groups that must coordinate to deliver THIS initiative.
@@ -238,6 +244,9 @@ Commitment metrics measure LEADERSHIP INVESTMENT AND GOVERNANCE HEALTH, not busi
    Do NOT include technical actions (building models, configuring tools, setting up pipelines) — those belong in project delivery, not leadership commitment.
    IMPORTANT: Never use "CTO" as a pillar title — use "Leadership" instead.
    Example: { "title": "Investment", "actions": ["Approve dedicated initiative budget", "Allocate implementation team resources", "Commit to quarterly funding review"] }
+   REJECT an action that is a boilerplate leadership platitude (e.g. "Support the AI initiative" is NOT
+   acceptable) — name the specific decision, sign-off, or resource this initiative's recommended starting
+   point actually needs from leadership.
 
 6. governanceNodes (exactly 4 items)
    The 4 governance roles or bodies that will oversee THIS initiative from pilot to operational adoption.
@@ -283,6 +292,8 @@ The solutionPortfolio must present the SAME initiative structured as an owned bu
    Three sub-capabilities that together compose the AI initiative. Not separate solutions — components of ONE solution.
    Each item: { "name": "<capability name, 2–4 words>", "purpose": "<1 sentence describing what this component does>" }
    Example: { "name": "Acceptance Criteria Mapping", "purpose": "Automatically connect requirements to test cases." }
+   REJECT a purpose that could describe any AI feature (e.g. "Uses AI to improve accuracy" is NOT
+   acceptable) — state the specific input it processes and output it produces for THIS initiative.
 
 7. kpiHighlights (exactly 3 items)
    Three metrics that measure whether the OPERATING MODEL is working — not whether the AI solution is successful.
@@ -308,6 +319,9 @@ JOURNEY RULE: The delivery team is for the specific AI initiative named in the T
 - AI Implementation Prioritization → the recommended starting point that defines team priorities
 
 Team roles must be specific to delivering THIS initiative — not a generic AI team. Name real disciplines relevant to the initiative.
+REJECT a role list that would fit any AI project (e.g. "AI Engineer, Project Manager, QA" alone is NOT
+acceptable) — the roles must reflect what THIS initiative's specific technique actually requires (e.g. a
+retrieval initiative needs someone who owns the historical defect corpus, not just a generic "Data Engineer").
 
 5. teamGroups (3 to 5 items — functional groups, not individuals)
    Organise the delivery team into functional groups as a Project Manager naturally thinks about people.
@@ -350,6 +364,8 @@ Every lifecycle stage must name the specific team or role from the delivery team
    Stages in order: Opportunity Definition, Solution Design, AI Development, Validation, Deployment, Business Value Measurement
    Each item: { "stage": "<stage name>", "teamResponsibility": "<1–2 specific roles from the delivery team>", "keyActivities": "<5–10 word activity description specific to this initiative>" }
    Activities must reference what happens for THIS initiative at each stage — not generic AI lifecycle steps.
+   REJECT an activity that is just the stage name reworded (e.g. "Validation" → "Validate the AI model" is
+   NOT acceptable) — name what is actually being validated/deployed/measured for THIS specific technique.
 
 6. kpiHighlights (exactly 3 items)
    Three metrics that measure whether END-TO-END OWNERSHIP is working — not whether the AI solution is delivering value.
@@ -371,6 +387,12 @@ Every lifecycle stage must name the specific team or role from the delivery team
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Financial Performance" sections only:
 
+JOURNEY RULE: This is the ROI case for the specific AI initiative named in the TRANSFORMATION CONTEXT
+("Selected AI Initiative"). Build on:
+- AI Implementation Prioritization → the recommended starting point and feasibility assessment
+- Business Value Definition → the expected business value areas and KPIs this ROI case must justify
+Name the initiative explicitly — never build a generic AI ROI case disconnected from the specific technique chosen.
+
 5. roiSummary (exactly 1 object)
    Four headline figures for the executive ROI summary row.
    { "investment": "<total estimated investment e.g. ₹15 Lakhs, $50K, €40K>", "annualValue": "<expected annual value or savings e.g. ₹38 Lakhs, $120K>", "payback": "<estimated payback period e.g. 5 Months, 8 Months>", "recommendation": "Proceed" }
@@ -382,6 +404,9 @@ SECTION-SPECIFIC EXTRAS — "Financial Performance" sections only:
    Where the investment goes. 2–3 word labels only — no sentences.
    Example: ["AI Development", "Tool Integration", "Infrastructure", "Training", "Change Management"]
    Adapt to what this specific initiative actually requires.
+   REJECT a generic cost bucket list reused across any AI project — at least 2 of the 5 items must reflect
+   what THIS initiative's specific technique actually costs (e.g. "Historical Data Curation" for a retrieval
+   initiative, not a generic "Infrastructure" line).
 
 7. valueItems (exactly 5 short strings)
    Where the business value comes from. 3–5 word labels only — no sentences.
@@ -405,6 +430,10 @@ SECTION-SPECIFIC EXTRAS — "Financial Performance" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Operational Excellence" sections only:
 
+JOURNEY RULE: This scorecard is for the specific AI initiative named in the TRANSFORMATION CONTEXT
+("Selected AI Initiative"). Build on AI Opportunity Discovery's identified business problems and current
+workflow — the "before AI" state must reflect the actual workflow already established in that capability.
+
 5. improvementScorecard (exactly 5 items)
    A PM-level improvement scorecard showing the operational area, current state, AI-enabled future state, and the business benefit in one row.
    Each item: { "area": "<2–4 word area name>", "beforeAI": "<2–4 word current state>", "afterAI": "<2–4 word AI-enabled state>", "businessBenefit": "<3–6 word tangible outcome>" }
@@ -416,14 +445,21 @@ SECTION-SPECIFIC EXTRAS — "Operational Excellence" sections only:
    Example: { "area": "Traceability", "beforeAI": "Manual", "afterAI": "Automated", "businessBenefit": "80% effort reduction" }
    Example: { "area": "Compliance", "beforeAI": "Manual evidence", "afterAI": "Auto reports", "businessBenefit": "Audit ready" }
    Example: { "area": "Gap Detection", "beforeAI": "Reactive", "afterAI": "Continuous", "businessBenefit": "Earlier defect prevention" }
+   REJECT a row that would apply to any AI rollout (e.g. "Efficiency" / "Manual" / "Automated" / "Faster"
+   with no specifics is NOT acceptable) — the beforeAI state must match the actual workflow step from AI
+   Opportunity Discovery, not a placeholder.
 
-   Add to the brief object:
+   Add all to the brief object:
    "improvementScorecard": [...]`,
   },
 
   'Customer Value': {
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Customer Value" sections only:
+
+JOURNEY RULE: This is the customer-facing value case for the specific AI initiative named in the
+TRANSFORMATION CONTEXT ("Selected AI Initiative"). Build on Business Value Definition's business value
+areas — the customer benefits described here must be a plausible external consequence of that internal value.
 
 5. valueJourney (exactly 5 short stage names — strings only)
    A value progression showing how this AI initiative creates customer value through engineering improvement.
@@ -441,6 +477,9 @@ SECTION-SPECIFIC EXTRAS — "Customer Value" sections only:
    Write from the customer's perspective: what they see, receive, or experience.
    Example: { "name": "Customer Transparency", "points": ["Real-time dashboards", "KPI visibility", "Audit-ready reporting"] }
    Example: { "name": "Business Growth", "points": ["Higher renewal probability", "Stronger competitive position", "Additional engagement opportunities"] }
+   REJECT a point that is a generic customer-happiness claim (e.g. "Better customer experience" alone is
+   NOT acceptable) — trace it to the actual internal value THIS initiative creates (e.g. faster defect
+   turnaround because retrieval speeds up root-cause analysis, not just "faster service").
 
 7. customerKpis (exactly 6 items)
    Six customer outcome KPIs — NOT internal engineering or adoption metrics.
@@ -459,11 +498,19 @@ SECTION-SPECIFIC EXTRAS — "Customer Value" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Data Privacy & Security" sections only:
 
+JOURNEY RULE: These security pillars protect the specific AI initiative named in the TRANSFORMATION
+CONTEXT ("Selected AI Initiative") — not a generic AI security checklist. If a data handling, security,
+governance, or external-AI-service constraint was established in AI Opportunity Discovery, it must
+directly shape which pillars and practices are prioritized here.
+
 5. securityPillars (exactly 4 items)
    Four security-by-design pillars that protect AI delivery.
    Cover these domains: pipeline/DevSecOps security, data protection/PII masking, access control, continuous monitoring.
    Each item: { "name": "<pillar name, 3–5 words>", "points": ["<security practice 1>", "<security practice 2>", "<security practice 3>"] }
    Example item: { "name": "DevSecOps Pipelines", "points": ["Automated vulnerability scanning", "Secure code review gates", "Container image hardening"] }
+   REJECT a practice that would appear in any AI security checklist with no connection to this initiative
+   (e.g. "Encrypt data at rest" alone is NOT acceptable) — tie it to the actual data this initiative's
+   technique touches (e.g. which specific dataset needs PII masking before retrieval can use it).
 
 6. kpiHighlights (exactly 3 items)
    Three security or compliance success metrics.
@@ -477,11 +524,17 @@ SECTION-SPECIFIC EXTRAS — "Data Privacy & Security" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Ethical AI Guidelines" sections only:
 
+JOURNEY RULE: These ethics pillars govern the specific AI initiative named in the TRANSFORMATION
+CONTEXT ("Selected AI Initiative") — not a generic responsible-AI checklist.
+
 5. ethicsPillars (exactly 4 items)
    Four responsible AI pillars forming the ethics framework.
    Pillars should cover: Fairness, Explainability, Transparency, Accountability (adapt names/content to company context).
    Each item: { "name": "<pillar name e.g. Fairness, Explainability>", "points": ["<practice or principle 1>", "<practice or principle 2>", "<practice or principle 3>"] }
    Example item: { "name": "Fairness", "points": ["Bias testing across demographic groups", "Diverse training data validation", "Regular fairness audits"] }
+   REJECT a practice that would apply to any AI system (e.g. "Ensure fairness in AI decisions" alone is
+   NOT acceptable) — name the specific bias or explainability risk this initiative's technique creates
+   (e.g. a retrieval system surfacing stale or unrepresentative historical cases).
 
 6. kpiHighlights (exactly 3 items)
    Three ethics governance or fairness metrics.
@@ -495,11 +548,17 @@ SECTION-SPECIFIC EXTRAS — "Ethical AI Guidelines" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Model Validation & Monitoring" sections only:
 
+JOURNEY RULE: This validation and monitoring loop is for the specific AI initiative named in the
+TRANSFORMATION CONTEXT ("Selected AI Initiative") — not a generic MLOps checklist.
+
 5. modelLifecycleStages (exactly 6 items, in this order)
    The six stages of the AI model lifecycle monitoring loop.
    Stages must be in this fixed sequence: Train, Validate, Deploy, Monitor, Detect Drift, Retrain
    Each item: { "stage": "<stage name>", "points": ["<key activity or practice 1>", "<key activity 2>", "<key activity 3>"] }
    Example item: { "stage": "Validate", "points": ["Performance benchmarking against baselines", "Bias and fairness checks", "Edge case stress testing"] }
+   REJECT an activity that would apply to any AI model (e.g. "Monitor model performance" alone is NOT
+   acceptable) — name the specific metric or failure mode relevant to this initiative's technique
+   (e.g. retrieval relevance drift as the historical case corpus grows, not generic "accuracy").
 
 6. kpiHighlights (exactly 3 items)
    Three model governance or reliability metrics.
@@ -513,11 +572,17 @@ SECTION-SPECIFIC EXTRAS — "Model Validation & Monitoring" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Regulatory Compliance" sections only:
 
+JOURNEY RULE: These controls govern the specific AI initiative named in the TRANSFORMATION CONTEXT
+("Selected AI Initiative"). If a data handling, security, governance, or external-AI-service constraint
+was established in AI Opportunity Discovery, the controls must directly enforce it, not restate it generically.
+
 5. complianceControls (exactly 4 items)
    Four compliance control categories forming the AI compliance framework.
    Cover these domains: audit trails and logging, documentation standards, delivery gate reviews, third-party validation/certification.
    Each item: { "name": "<control category name, 3–5 words>", "points": ["<control practice 1>", "<control practice 2>", "<control practice 3>"] }
    Example item: { "name": "Audit Trails & Logging", "points": ["Immutable decision audit logs", "Full data lineage tracking", "Automated compliance reporting"] }
+   REJECT a control that would apply to any AI compliance program (e.g. "Maintain audit logs" alone is
+   NOT acceptable) — name what specifically must be logged or reviewed for THIS initiative's technique.
 
 6. kpiHighlights (exactly 3 items)
    Three regulatory compliance or audit success metrics.
@@ -531,11 +596,16 @@ SECTION-SPECIFIC EXTRAS — "Regulatory Compliance" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Trust & Adoption" sections only:
 
+JOURNEY RULE: This trust and adoption flywheel is for the specific AI initiative named in the
+TRANSFORMATION CONTEXT ("Selected AI Initiative") — not a generic AI change-management plan.
+
 5. adoptionStages (exactly 5 items)
    A self-reinforcing trust and adoption flywheel.
    Stages should follow this progression: trust building → adoption → active usage → business value realisation → confidence/advocacy (adapt names to company context).
    Each item: { "name": "<stage name, 1–3 words e.g. Trust, Adoption, Usage>", "points": ["<stage characteristic or outcome 1>", "<characteristic 2>", "<characteristic 3>"] }
    Example item: { "name": "Trust", "points": ["Transparent AI decision explanations", "Consistent model reliability", "Stakeholder communication programme"] }
+   REJECT a characteristic that would apply to any AI rollout (e.g. "Build user confidence" alone is NOT
+   acceptable) — name the specific way engineers will see or verify this initiative's technique working.
 
 6. kpiHighlights (exactly 3 items)
    Three adoption or change management success metrics.
@@ -731,6 +801,11 @@ JOURNEY RULE: Use the "Identified AI Opportunities" list from the TRANSFORMATION
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Critical Data Identification" sections only:
 
+JOURNEY RULE: The datasets identified here must serve the specific AI initiative named in the
+TRANSFORMATION CONTEXT ("Selected AI Initiative") — not a generic AI data readiness checklist. If a
+data handling, security, or external-AI-service constraint was established in AI Opportunity Discovery,
+the recommended sources and expectedAIOutput must stay consistent with it.
+
 5. datasets (exactly 6 items — one per data category)
    The minimum critical datasets required to implement this AI use case.
    Categories: Business & Program, Product, System & Software, Engineering, Operational, Supporting Knowledge.
@@ -740,6 +815,8 @@ SECTION-SPECIFIC EXTRAS — "Critical Data Identification" sections only:
    - typicalSource: realistic engineering tool name(s) — use automotive tools for automotive context
    - priority: HIGH = AI cannot function without it, MEDIUM = important but workaround possible, LOW = adds value but not blocking
    - expectedAIOutput: the concrete AI deliverable — e.g. "Structured user stories linked to acceptance criteria", "Searchable test case knowledge base", "Automated traceability map"
+   REJECT a purpose that would apply to any AI project (e.g. "Needed for AI analysis" alone is NOT
+   acceptable) — name the specific reasoning step or output THIS initiative's technique performs with this data.
 
 6. traceabilityChain (exactly 6 short strings)
    The engineering data flow from business objective through to AI output.
@@ -779,6 +856,10 @@ SECTION-SPECIFIC EXTRAS — "Critical Data Identification" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Data Preparation" sections only:
 
+JOURNEY RULE: Prepare data for the specific AI initiative named in the TRANSFORMATION CONTEXT
+("Selected AI Initiative"), building on the critical datasets already identified in Critical Data
+Identification — do not introduce datasets that weren't already named there.
+
 5. prepWorkPackages (exactly 5 items)
    Each item is a preparation work package for a specific engineering dataset.
    Fields:
@@ -789,6 +870,8 @@ SECTION-SPECIFIC EXTRAS — "AI Data Preparation" sections only:
    - "deliverable": "<AI-ready output name, 3–5 words — e.g. 'Standardized Requirements Dataset'>"
    - "priority": "HIGH|MEDIUM|LOW"
    Example: { "name": "Requirements Repository", "workPackage": ["Standardize requirement IDs", "Remove duplicate requirements", "Add metadata tags"], "whyAINeeds": "Ensures requirements can be linked consistently with test cases and defects.", "recommendedOwner": "Requirements Engineer", "deliverable": "AI-ready Requirements Dataset", "priority": "HIGH" }
+   REJECT a workPackage action that is generic data-hygiene advice (e.g. "Clean the data" alone is NOT
+   acceptable) — name the specific transformation this dataset needs for THIS initiative's technique to work.
 
 6. firstSteps (exactly 4 items)
    The first 4 executable implementation steps in priority order.
@@ -807,6 +890,12 @@ SECTION-SPECIFIC EXTRAS — "AI Data Preparation" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "Data Architecture Enablement" sections only:
 
+JOURNEY RULE: This architecture serves the specific AI initiative named in the TRANSFORMATION CONTEXT
+("Selected AI Initiative"). If a data handling, security, governance, or external-AI-service constraint
+was established in AI Opportunity Discovery, the recommended technologies and archDecisions must
+reflect that constraint's real impact (e.g. self-hosted vector store instead of a third-party API)
+rather than a generic "compliant infrastructure" placeholder.
+
 5. archLayers (exactly 4 items — fixed order: Source Systems, Integration Layer, AI Data Store, AI Applications)
    Each item describes one layer of the recommended AI architecture for this use case.
    Fields:
@@ -821,6 +910,8 @@ SECTION-SPECIFIC EXTRAS — "Data Architecture Enablement" sections only:
    Each item: { "decisionArea": "<area name, 1–3 words — e.g. Data Model, Integration, Storage, Security>", "recommendation": "<specific recommendation, ≤10 words>", "why": "<business or technical reason, ≤10 words>" }
    Example: { "decisionArea": "Data Model", "recommendation": "Use a unified traceability schema", "why": "Enables reusable AI insights across projects" }
    Cover areas relevant to this AI use case: data model, integration pattern, storage choice, security or compliance, query strategy, etc.
+   REJECT a recommendation that names no actual technology (e.g. "Choose a suitable database" alone is
+   NOT acceptable) — name the specific technology and the reason it fits this initiative's data shape.
 
 7. techStack (exactly 6 items — one per architecture layer, fixed layer names)
    Technology recommendations organized by layer.
@@ -854,25 +945,8 @@ SECTION-SPECIFIC EXTRAS — "Data Architecture Enablement" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "System Integration & Architecture" sections only:
 
-5. integrationReadiness (number 0–100)
-   The overall system integration readiness score as a percentage for this AI use case.
-
-6. connectedSystems (exactly 4 items)
-   The 4 key systems that must integrate with this AI solution.
-   Each item: { "name": "<system name, 2–4 words>", "integrationMethod": "<e.g. REST API|Database|Webhook|Event Queue|Direct Integration>", "status": "CONNECTED|PARTIAL|MISSING", "healthIndicator": "Healthy|Degraded|Offline" }
-   Rule: CONNECTED = fully integrated or ready, PARTIAL = partially integrated, MISSING = not yet integrated.
-
-7. integrationSummary
-   Summary of integration health across 4 key dimensions for this AI use case.
-   Object: { "integration": "<Ready|Partial|Needs Improvement|Missing>", "automation": "<Ready|Partial|Needs Improvement|Missing>", "reliability": "<High|Medium|Low>", "scalability": "<Good|Moderate|Poor>" }
-
-   Add all to the brief object:
-   "integrationReadiness": <number>, "connectedSystems": [...], "integrationSummary": {...}`,
-  },
-
-  'System Integration & Architecture': {
-    promptInstruction: `
-SECTION-SPECIFIC EXTRAS — "System Integration & Architecture" sections only:
+JOURNEY RULE: This integration architecture is for the specific AI initiative named in the
+TRANSFORMATION CONTEXT ("Selected AI Initiative") — not a generic system integration exercise.
 
 CONSULTING FOCUS RULE:
 This capability describes HOW AI integrates into existing engineering workflows — not an assessment of readiness.
@@ -891,6 +965,8 @@ It must emphasise: (1) embedding AI into existing engineering workflows, (2) sta
    The key engineering or business systems the AI solution should integrate with for this use case.
    Each item: { "name": "<system name, e.g. Jira, Polarion, GitHub>", "purpose": "<1 sentence on what this system does, ≤10 words>", "integrationPattern": "<e.g. REST API, OSLC API, Webhook, SDK>", "aiInteraction": "<1 sentence on how AI uses this system, ≤10 words>", "expectedOutcome": "<Engineers receive [specific AI action] directly inside [system name]. ≤12 words>" }
    Example expectedOutcome: "Engineers receive AI-generated traceability suggestions directly inside Jira."
+   REJECT an aiInteraction that would fit any AI feature (e.g. "AI analyzes the data" alone is NOT
+   acceptable) — name the specific technique from the selected initiative operating on this system's data.
 
 6. siaWorkflowSteps (4–6 strings)
    A sequential workflow showing AI as one embedded step inside the engineering process.
@@ -939,6 +1015,15 @@ It must emphasise: (1) embedding AI into existing engineering workflows, (2) sta
   'AI Platform Readiness': {
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Platform Readiness" sections only:
+
+JOURNEY RULE (platform-scoped, not initiative-named): Unlike other capabilities, this one should NOT name
+the "Selected AI Initiative" — the platform must stay reusable across every initiative. Journey continuity
+here means something different: ground the platform's scope in the ACTUAL portfolio of opportunities
+identified in AI Opportunity Discovery and their classifications (e.g. if the "AI Classifications" list
+shows a mix of Productivity AI and Functional AI initiatives, the platform must be scoped to support that
+real mix — not a hypothetical, disconnected "any AI initiative" list). REJECT platform capabilities that
+would be identical regardless of what was actually discovered — the breadth and priority of platform
+investment should still trace back to the real number and variety of opportunities identified.
 
 CRITICAL PLATFORM FOCUS RULE:
 AI Platform Readiness is about establishing SHARED PLATFORM SERVICES — NOT about solving a specific AI use case.
@@ -1010,9 +1095,17 @@ Do NOT write about specific AI use cases, traceability, defect detection, or any
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Compute & Deployment Strategy" sections only:
 
+JOURNEY RULE: This deployment strategy is for the specific AI initiative named in the TRANSFORMATION
+CONTEXT ("Selected AI Initiative"). If a data handling, security, governance, or external-AI-service
+constraint was established in AI Opportunity Discovery, the deployment model, compute strategy, and
+security model must reflect that constraint's real impact (e.g. self-hosted/open-weight models, a
+private/VPC-hosted inference endpoint) rather than a generic "compliant infrastructure" placeholder.
+
 5. deploymentBlocks (exactly 4 items)
    The 4 building blocks of the recommended deployment architecture. Use these fixed blockTypes in this exact order: AI Workload, Deployment Model, Compute Strategy, Scaling Strategy.
    Each item: { "blockType": "<AI Workload|Deployment Model|Compute Strategy|Scaling Strategy>", "name": "<specific recommendation for this use case, 3–5 words>", "why": "<1-sentence outcome-focused rationale, ≤12 words — what it delivers, not what risk it avoids>" }
+   REJECT a "why" that would justify any AI deployment (e.g. "Improves reliability and performance" alone
+   is NOT acceptable) — name the specific reason tied to this initiative's technique or its constraints.
 
 6. cdsDeploymentFlow (exactly 6 strings in this fixed order)
    The 6 nodes of the end-to-end AI deployment flow. Use these exact names:
@@ -1058,6 +1151,9 @@ SECTION-SPECIFIC EXTRAS — "AI Compute & Deployment Strategy" sections only:
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Roles & Capability Planning" sections only:
 
+JOURNEY RULE: The roles and capabilities below are for delivering the specific AI initiative named in
+the TRANSFORMATION CONTEXT ("Selected AI Initiative") — not a generic AI project team.
+
 IMPORTANT: This blueprint is generated BEFORE implementation. Write strategicPosition as a planning
 recommendation describing what needs to be in place — NOT as if the team is already fully staffed or
 roles are already assigned. Use forward-looking language: "requires", "should", "needs to".
@@ -1068,6 +1164,8 @@ roles are already assigned. Use forward-looking language: "requires", "should", 
    AI Engineer → domain/test roles → platform roles.
    Each item: { "name": "<role title>", "primaryResponsibility": "<2–5 words>", "aiCapabilities": ["<cap1>", "<cap2>", "<cap3>"], "priority": "High|Medium|Low" }
    AI capabilities must be specific to that role's responsibilities. Project Manager MUST have High priority.
+   REJECT an aiCapability that would fit any AI project role (e.g. "AI tools knowledge" alone is NOT
+   acceptable) — name the specific technique from the selected initiative this role must understand or operate.
 
 6. responsibilityJourney (7 to 9 items)
    The delivery accountability chain from business need through to business outcome.
@@ -1101,7 +1199,9 @@ roles are already assigned. Use forward-looking language: "requires", "should", 
     promptInstruction: `
 SECTION-SPECIFIC EXTRAS — "AI Learning & Adoption" sections only:
 
-Build on the project roles identified in AI Roles & Capability Planning.
+JOURNEY RULE: This enablement plan is for the specific AI initiative named in the TRANSFORMATION
+CONTEXT ("Selected AI Initiative"). Build on the project roles identified in AI Roles & Capability
+Planning — do not introduce roles that weren't already named there.
 Generate a practical, immediately actionable AI enablement plan — not a generic training list.
 
 5. roleLearningJourney (4 to 7 items)
@@ -1113,6 +1213,8 @@ Generate a practical, immediately actionable AI enablement plan — not a generi
      "businessOutcome": "<one sentence: what this enables the role to do in delivery>"
    }
    learningPath: 3 specific topics relevant to that role's AI responsibilities. Not generic.
+   REJECT a topic that would apply to any AI project (e.g. "AI fundamentals" alone is NOT acceptable) —
+   name the specific technique from the selected initiative this role needs to learn.
 
 6. adoptionRoadmap (exactly 5 items, fixed order)
    Stages: Foundation, Role Training, Pilot Project, Daily AI Usage, Continuous Improvement

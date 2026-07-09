@@ -127,7 +127,7 @@ Project managers should first identify the minimum set of roles required for the
 
 ## Key Principles
 
-- Identify only the roles required for the selected AI use case.
+- Identify only the roles required for the specific AI initiative already selected in AI Opportunity Discovery — do not plan for a different or generic AI use case.
 - Assign clear AI responsibilities before implementation begins.
 - Develop AI capabilities based on role responsibilities rather than job titles.
 - Reuse existing project roles wherever practical.
@@ -172,6 +172,8 @@ For every AI use case, the AI generates:
 - Workforce Development Priorities
 - AI Workforce Blueprint
 - AI Recommendations
+
+Reject an AI capability that would fit any AI project role (e.g. "AI tools knowledge" alone is not acceptable). Name the specific technique from the selected initiative this role must understand or operate.
 
 ---
 

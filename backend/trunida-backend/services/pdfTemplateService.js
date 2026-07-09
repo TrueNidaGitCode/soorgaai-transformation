@@ -3559,7 +3559,16 @@ function renderBlueprint(bp) {
         capPage.appendChild(hr);
 
         (cap.sections || []).forEach(function(section) {
-          if (!section.brief || !section.brief.strategicPosition) return;
+          // "Has this section actually been generated?" used to be answered by checking
+          // strategicPosition alone, but AI Use Case Classification / Business Value
+          // Definition / AI Implementation Prioritization deliberately don't generate it
+          // (it would just repeat AI Opportunity Discovery's). priorityActions is still a
+          // required base field for every capability in every domain, so fall back to it.
+          var hasContent = section.brief && (
+            section.brief.strategicPosition ||
+            (section.brief.priorityActions && section.brief.priorityActions.length)
+          );
+          if (!hasContent) return;
           tocEntries.push({ title: section.title, level: 2 });
 
           var secWrap = document.createElement('div');

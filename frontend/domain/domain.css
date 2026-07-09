@@ -2929,6 +2929,25 @@
 }
 .domain-guest-banner__btn:hover { opacity: 0.88; }
 
+/* ── Industry-fit notice ─────────────────────────────────────────────────── */
+
+.domain-industryfit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(245, 158, 11, 0.08);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 0.7rem 1.5rem;
+}
+.domain-industryfit-banner p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.75);
+  max-width: 900px;
+  text-align: center;
+}
+.domain-industryfit-banner strong { color: #f59e0b; }
+
 /* ── Capability Navigation Tabs ───────────────────────────────────────────── */
 
 .cap-nav {

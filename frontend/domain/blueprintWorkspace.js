@@ -6980,6 +6980,23 @@ async function augmentBlueprintWithMissingDomains(blueprint) {
   } catch { /* non-critical — render with what we have */ }
 }
 
+// Shown once the objective has been classified as outside the automotive KB
+// (industryFit.checked && !industryFit.matched — see industryFitService.js).
+// Undefined/not-yet-checked never shows the banner, so it stays silent during
+// the brief window before the first-capability classification completes.
+function renderIndustryFitBanner(blueprint) {
+  const banner = document.getElementById('domain-industryfit-banner');
+  if (!banner) return;
+  const fit = blueprint.industryFit;
+  if (fit?.checked && fit.matched === false) {
+    const reasonEl = document.getElementById('domain-industryfit-reason');
+    if (reasonEl) reasonEl.textContent = fit.reason || '';
+    banner.style.display = '';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
 async function initWorkspace(blueprint) {
   await augmentBlueprintWithMissingDomains(blueprint);
   stripRetiredCapabilities(blueprint);
@@ -6992,6 +7009,7 @@ async function initWorkspace(blueprint) {
   const assistantBtn = document.getElementById('btn-ai-assistant');
   if (assistantBtn && !window.SOORGA_GUEST) assistantBtn.style.display = '';
 
+  renderIndustryFitBanner(blueprint);
   renderHeader(blueprint);
   renderDomainTabs(blueprint);
   renderCapabilityTabs(blueprint);
@@ -7039,6 +7057,13 @@ document.addEventListener('blueprint:update', (e) => {
 
   _blueprint.domains = blueprint.domains;
   _blueprint.status  = blueprint.status;
+
+  // Classification typically lands before the first capability completes,
+  // but re-check on every update in case it arrives slightly later.
+  if (blueprint.industryFit && !_blueprint.industryFit?.checked) {
+    _blueprint.industryFit = blueprint.industryFit;
+    renderIndustryFitBanner(_blueprint);
+  }
 
   if (before !== after) {
     renderDomainTabs(_blueprint);

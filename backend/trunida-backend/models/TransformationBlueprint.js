@@ -327,6 +327,17 @@ const transformationBlueprintSchema = new mongoose.Schema({
     enum:    ['generating', 'completed', 'error'],
     default: 'generating',
   },
+  // Classified once, lazily, by the first generation run (see
+  // resolveIndustryFit in blueprintGenerationService.js) and reused by every
+  // later run (e.g. "generate remaining domains") — checked distinguishes
+  // "not yet classified" from "classified as matched" so it's never
+  // re-classified or left ambiguous. When unmatched, generation falls back
+  // to core (industry-agnostic) KB grounding only, and the UI notifies the user.
+  industryFit: {
+    checked: { type: Boolean, default: false },
+    matched: { type: Boolean, default: true },
+    reason:  { type: String,  default: '' },
+  },
   domains: { type: [domainSchema], default: [] },
 }, { timestamps: true });
 

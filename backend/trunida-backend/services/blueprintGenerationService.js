@@ -32,6 +32,7 @@ import {
 import { BLUEPRINT_CONFIG }       from '../config/blueprintConfig.js';
 import { enabledDomains, getDomain } from '../config/domainRegistry.js';
 import { getCapabilityEnterpriseContext, preloadEnterpriseContextMap } from './enterpriseBlueprintService.js';
+import { detectIndustryFit } from './industryFitService.js';
 
 // ── Company profile helpers ───────────────────────────────────────────────────
 
@@ -51,6 +52,32 @@ async function loadCompanyProfile(userId) {
   } catch {
     return { companyName: 'Your Organisation', orgName: '', role: 'Executive', industry: 'Automotive', contextDoc: '' };
   }
+}
+
+// ── Industry fit (automotive KB grounding vs core-only) ───────────────────────
+// Classified once per blueprint, on its first generation run, and reused by
+// every later run against the same document (e.g. "generate remaining
+// domains") so the decision never flip-flops and never re-runs the LLM call.
+const NO_KB_FOLDER_INDUSTRY = 'General'; // no knowledge_base/.../General/ folder exists, so
+                                          // getDomainCapabilityBlueprint's file read fails
+                                          // closed to core-only content — exactly what we want.
+
+async function resolveIndustryFit(blueprintId, businessObjective) {
+  const bp = await TransformationBlueprint.findById(blueprintId, { industryFit: 1 }).lean();
+  if (bp?.industryFit?.checked) {
+    return { matched: bp.industryFit.matched !== false, reason: bp.industryFit.reason || '' };
+  }
+
+  const fit = await detectIndustryFit(businessObjective);
+  await TransformationBlueprint.updateOne(
+    { _id: blueprintId },
+    { $set: { industryFit: { checked: true, matched: fit.matched, reason: fit.reason } } }
+  ).catch(err => console.error('[industryFit] failed to persist result:', err.message));
+
+  if (!fit.matched) {
+    console.log(`[industryFit] ${blueprintId}: objective does not match automotive KB — core-only grounding. Reason: ${fit.reason}`);
+  }
+  return fit;
 }
 
 // ── Section template config ───────────────────────────────────────────────────
@@ -2788,6 +2815,8 @@ OUTPUT — valid JSON only, no markdown fences:
 export async function regenerateTransformationCapabilityAsync(blueprintId, domainId, capabilityId, userId, businessObjective) {
   const companyProfile = await loadCompanyProfile(userId);
   const industry       = companyProfile.industry || 'Automotive';
+  const industryFit       = await resolveIndustryFit(blueprintId, businessObjective);
+  const groundingIndustry = industryFit.matched ? industry : NO_KB_FOLDER_INDUSTRY;
 
   const domain = getDomain(domainId);
   if (!domain) throw new Error(`Domain not found in registry: ${domainId}`);
@@ -2811,7 +2840,7 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
       { arrayFilters: [{ 'dom.domainId': domainId }, { 'cap.capabilityId': capabilityId }] }
     );
 
-    const capBlueprint    = getDomainCapabilityBlueprint(cap.id, domain.kbPath, industry);
+    const capBlueprint    = getDomainCapabilityBlueprint(cap.id, domain.kbPath, groundingIndustry);
     const enterpriseContext = companyProfile.orgName
       ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
       : null;
@@ -2823,7 +2852,7 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
     console.log(`[transformationGen] Journey context for ${cap.name}: ${journeyContext ? 'AVAILABLE' : 'NONE'} | Ctx initiative: ${transformationCtx.selectedInitiative || 'none'}`);
 
     const sections = await runBriefGeneration(
-      cap, companyProfile, businessObjective, industry,
+      cap, companyProfile, businessObjective, groundingIndustry,
       capBlueprint.sections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext, transformationCtx
     );
 
@@ -3206,6 +3235,10 @@ function buildJourneyContextForRegen(blueprint, currentDomainId, currentCapabili
 export async function generateTransformationAsync(blueprintId, userId, businessObjective) {
   const companyProfile    = await loadCompanyProfile(userId);
   const industry          = companyProfile.industry || 'Automotive';
+  const industryFit       = await resolveIndustryFit(blueprintId, businessObjective);
+  // 'General' has no knowledge_base/.../General/ folder, so the industry-file
+  // read fails closed to core-only content — see NO_KB_FOLDER_INDUSTRY above.
+  const groundingIndustry = industryFit.matched ? industry : NO_KB_FOLDER_INDUSTRY;
   const domains           = enabledDomains();
   const enterpriseCtxMap  = await preloadEnterpriseContextMap(companyProfile.orgName || '');
 
@@ -3266,7 +3299,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         );
 
         // Build a capability-like object getDomainCapabilityBlueprint expects
-        const capBlueprint = getDomainCapabilityBlueprint(cap.id, domain.kbPath, industry);
+        const capBlueprint = getDomainCapabilityBlueprint(cap.id, domain.kbPath, groundingIndustry);
         const parsedSections = capBlueprint.sections;
 
         // Reuse the existing generation pipeline
@@ -3279,13 +3312,13 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         let sections;
         if (BLUEPRINT_CONFIG.generate.essay) {
           const essays = await runEssayGeneration(
-            capObj, companyProfile, businessObjective, industry,
+            capObj, companyProfile, businessObjective, groundingIndustry,
             parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext, transformationCtx
           );
           sections = await runBriefExtraction(capObj, parsedSections, essays);
         } else {
           sections = await runBriefGeneration(
-            capObj, companyProfile, businessObjective, industry,
+            capObj, companyProfile, businessObjective, groundingIndustry,
             parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext, transformationCtx
           );
         }
@@ -3346,6 +3379,8 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
   try {
   const companyProfile = await loadCompanyProfile(userId);
   const industry       = companyProfile.industry || 'Automotive';
+  const industryFit       = await resolveIndustryFit(blueprintId, businessObjective);
+  const groundingIndustry = industryFit.matched ? industry : NO_KB_FOLDER_INDUSTRY;
   const allDomains     = enabledDomains();
   const domains        = allDomains.filter(d => domainIds.includes(d.id));
 
@@ -3406,7 +3441,7 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
           { arrayFilters: [{ 'dom.domainId': domain.id }, { 'cap.capabilityId': cap.id }] }
         );
 
-        const capBlueprint   = getDomainCapabilityBlueprint(cap.id, domain.kbPath, industry);
+        const capBlueprint   = getDomainCapabilityBlueprint(cap.id, domain.kbPath, groundingIndustry);
         const parsedSections = capBlueprint.sections;
         const capObj         = { id: cap.id, name: cap.name, objective: cap.objective };
         const enterpriseContext = companyProfile.orgName
@@ -3416,13 +3451,13 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
         let sections;
         if (BLUEPRINT_CONFIG.generate.essay) {
           const essays = await runEssayGeneration(
-            capObj, companyProfile, businessObjective, industry,
+            capObj, companyProfile, businessObjective, groundingIndustry,
             parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext
           );
           sections = await runBriefExtraction(capObj, parsedSections, essays);
         } else {
           sections = await runBriefGeneration(
-            capObj, companyProfile, businessObjective, industry,
+            capObj, companyProfile, businessObjective, groundingIndustry,
             parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext
           );
         }

@@ -353,18 +353,9 @@ function selectCapability(idx) {
   _refineTargetSection = null;
   clearSuggestionCard();
 
-  // Update tab active state
-  document.querySelectorAll('.cap-nav__tab').forEach((t, i) => {
-    t.classList.toggle('is-active', i === idx);
-  });
-
-  // Update step counter in journey header
-  const caps = currentDomain()?.capabilities || [];
-  const counter = document.querySelector('.cap-step-counter');
-  if (counter && caps.length) counter.textContent = `Step ${idx + 1} of ${caps.length}`;
-
-  // Apply per-capability accent colour
-  applyCapAccent(idx);
+  // Re-render the step-tab bar so the active tab, meta labels, and accent
+  // colour all reflect the new selection.
+  renderCapabilityTabs(_blueprint);
 
   renderBlueprintContent(_blueprint, idx);
   // Chat is blueprint-wide — no restoreChat() on tab switch, history stays visible

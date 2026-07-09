@@ -262,51 +262,29 @@ function renderCapabilityTabs(blueprint) {
   const header = document.getElementById('cap-journey-header');
   if (!nav) return;
   nav.innerHTML = '';
+  if (header) header.innerHTML = '';
 
   const dom  = (blueprint.domains || [])[_selectedDomainIdx];
   const caps = (dom?.capabilities || []).filter(c => !RETIRED_CAPABILITY_IDS.has(c.capabilityId));
 
-  // Journey header: cross-domain progress chain + capability step counter
-  if (header) {
-    const activeDomainId = dom?.domainId || '';
-    const enabledDoms = (blueprint.domains || []).filter(d =>
-      DOMAIN_ORDER.includes(d.domainId) && d.domainId !== 'governance-security'
-    );
-
-    // Build domain chain HTML
-    const chainParts = enabledDoms.map((d, i) => {
-      const isActive    = d.domainId === activeDomainId;
-      const isCompleted = d.status === 'completed' || (!isActive && enabledDoms.slice(0, i).every(pd => pd.status === 'completed') === false && i < enabledDoms.findIndex(pd => pd.domainId === activeDomainId));
-      const isDone      = d.status === 'completed';
-      const label       = DOMAIN_SHORT_LABELS[d.domainId] || d.domainName;
-      const cls         = isActive ? 'dj-node dj-node--active' : isDone ? 'dj-node dj-node--done' : 'dj-node dj-node--pending';
-      const dot         = isDone ? '✓' : isActive ? '●' : '○';
-      return `<span class="${cls}"><span class="dj-node__dot">${dot}</span><span class="dj-node__label">${label}</span></span>`;
-    });
-
-    const chainHtml = chainParts.join('<span class="dj-arrow">→</span>');
-
-    header.innerHTML =
-      `<div class="dj-chain">${chainHtml}</div>` +
-      (caps.length ? `<span class="cap-step-counter">Step ${_selectedCapIndex + 1} of ${caps.length}</span>` : '');
-  }
+  const track = document.createElement('div');
+  track.className = 'cap-step-tabs';
+  track.style.setProperty('--cap-step-count', caps.length);
 
   caps.forEach((cap, idx) => {
+    const isActive = idx === _selectedCapIndex;
     const tab = document.createElement('button');
-    tab.className = `cap-nav__tab${idx === _selectedCapIndex ? ' is-active' : ''}`;
+    tab.className = `cap-step-tab${isActive ? ' is-active' : ''}`;
     tab.dataset.idx = idx;
-
-    const dotClass  = `cap-nav__tab-dot--${cap.status === 'in-progress' ? 'progress' : cap.status}`;
-    const stepLabel = String(idx + 1).padStart(2, '0');
-    tab.innerHTML =
-      `<span class="cap-nav__step-badge" aria-hidden="true">${stepLabel}</span>` +
-      `<span class="cap-nav__tab-dot ${dotClass}" aria-hidden="true"></span>` +
-      resolveCapName(cap.capabilityName);
-
+    tab.innerHTML = `
+      <span class="cap-step-tab__meta">STEP ${idx + 1} OF ${caps.length}</span>
+      <span class="cap-step-tab__name">${resolveCapName(cap.capabilityName)}</span>
+      <span class="cap-step-tab__status">${isActive ? '● CURRENTLY VIEWING' : 'VIEW STEP →'}</span>`;
     tab.addEventListener('click', () => selectCapability(idx));
-    nav.appendChild(tab);
+    track.appendChild(tab);
   });
 
+  nav.appendChild(track);
   applyCapAccent(_selectedCapIndex);
 }
 
@@ -407,7 +385,7 @@ function renderBlueprintContent(blueprint, capIdx) {
   // Regeneration is for signed-in users, and only when nothing is running
   const canRegen = !window.SOORGA_GUEST && blueprint.status !== 'generating';
 
-  // Capability title + regenerate button (always available for completed caps)
+  // Capability title + action buttons (always available for completed caps)
   const header = document.createElement('div');
   header.className = 'bp-cap-header';
   const capTitle = document.createElement('h2');
@@ -415,11 +393,22 @@ function renderBlueprintContent(blueprint, capIdx) {
   capTitle.textContent = resolveCapName(cap.capabilityName);
   header.appendChild(capTitle);
   if (cap.status === 'completed' && canRegen) {
+    const actions = document.createElement('div');
+    actions.className = 'bp-cap-actions';
+
+    const refineBtn = document.createElement('button');
+    refineBtn.className = 'bp-cap-refine-btn';
+    refineBtn.textContent = 'Refine with AI Assistant';
+    refineBtn.addEventListener('click', () => openAssistantForCapability(resolveCapName(cap.capabilityName)));
+    actions.appendChild(refineBtn);
+
     const regenBtn = document.createElement('button');
     regenBtn.className = 'bp-cap-regen-btn';
     regenBtn.textContent = 'Regenerate';
     regenBtn.addEventListener('click', () => triggerCapabilityRegeneration(cap, regenBtn));
-    header.appendChild(regenBtn);
+    actions.appendChild(regenBtn);
+
+    header.appendChild(actions);
   }
   area.appendChild(header);
 
@@ -2238,29 +2227,48 @@ function buildClassificationView(section) {
   wrap.className = 'cls-view';
 
   if (b.strategicPosition) {
-    const posLabel = document.createElement('p');
-    posLabel.className = 'brief-label';
-    posLabel.textContent = 'Strategic Position';
-    wrap.appendChild(posLabel);
-    const pos = document.createElement('p');
-    pos.className = 'cls-view__position';
-    pos.textContent = b.strategicPosition;
-    wrap.appendChild(pos);
+    wrap.appendChild(buildExecCallout('STRATEGIC POSITION', '', b.strategicPosition));
   }
 
   if (items.length) {
-    const list = document.createElement('div');
-    list.className = 'cls-map-list';
-    items.forEach(item => {
-      const card = document.createElement('div');
-      card.className = `cls-map-card cls-map-card--${COLORS[item.classification] || 'functional'}`;
-      card.innerHTML = `
-        <p class="cls-map-card__classification cls-name--${COLORS[item.classification] || 'functional'}">${item.classification}</p>
-        ${item.opportunity ? `<p class="cls-map-card__opportunity">${item.opportunity}</p>` : ''}
-        ${item.rationale   ? `<p class="cls-map-card__rationale">${item.rationale}</p>`     : ''}`;
-      list.appendChild(card);
-    });
-    wrap.appendChild(list);
+    // Legend: count of opportunities per archetype, e.g. "PRODUCTIVITY AI × 3"
+    const counts = new Map();
+    items.forEach(item => counts.set(item.classification, (counts.get(item.classification) || 0) + 1));
+    const legendHtml = [...counts.entries()]
+      .map(([cls, n]) => `<span class="cls-legend__item"><span class="cls-legend__dot cls-name--${COLORS[cls] || 'functional'}"></span><span class="cls-name--${COLORS[cls] || 'functional'}">${cls.toUpperCase()}</span> × ${n}</span>`)
+      .join('');
+
+    const summary = document.createElement('div');
+    summary.className = 'cls-summary';
+    summary.innerHTML = `
+      <span class="cls-summary__text">${items.length} use case${items.length === 1 ? '' : 's'} classified by AI archetype</span>
+      <span class="cls-legend">${legendHtml}</span>`;
+    wrap.appendChild(summary);
+
+    const table = document.createElement('table');
+    table.className = 'cls-table';
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th class="cls-table__num">N°</th>
+          <th>Use Case</th>
+          <th>Classification Rationale</th>
+          <th class="cls-table__archetype">Archetype</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map((item, i) => `
+          <tr>
+            <td class="cls-table__num">${String(i + 1).padStart(2, '0')}</td>
+            <td class="cls-table__usecase">${item.opportunity || '—'}</td>
+            <td class="cls-table__rationale">${item.rationale || ''}</td>
+            <td class="cls-table__archetype">
+              <span class="cls-legend__dot cls-name--${COLORS[item.classification] || 'functional'}"></span>
+              <span class="cls-name--${COLORS[item.classification] || 'functional'}">${(item.classification || '').toUpperCase()}</span>
+            </td>
+          </tr>`).join('')}
+      </tbody>`;
+    wrap.appendChild(table);
   }
 
   return wrap;
@@ -2270,46 +2278,12 @@ function buildClassificationView(section) {
 
 function buildBvdOppCard(item) {
   const card = document.createElement('div');
-  card.className = 'bvd-cat-card';
-
-  const dot = document.createElement('div');
-  dot.className = 'bvd-cat-card__dot';
-  card.appendChild(dot);
-
-  const body = document.createElement('div');
-  body.className = 'bvd-cat-card__body';
-
-  if (item.valueArea) {
-    const area = document.createElement('p');
-    area.className = 'bvd-cat-card__area';
-    area.textContent = item.valueArea;
-    body.appendChild(area);
-  }
-
-  const title = document.createElement('p');
-  title.className = 'bvd-cat-card__title';
-  title.textContent = item.opportunity || item.title || '';
-  body.appendChild(title);
-
-  if (item.focus) {
-    const focus = document.createElement('p');
-    focus.className = 'bvd-cat-card__focus';
-    focus.innerHTML = `<span class="bvd-cat-card__focus-label">Focus: </span>${item.focus}`;
-    body.appendChild(focus);
-  }
-
-  if (item.outcomes?.length) {
-    const ul = document.createElement('ul');
-    ul.className = 'bvd-cat-card__outcomes';
-    item.outcomes.forEach(o => {
-      const li = document.createElement('li');
-      li.textContent = o;
-      ul.appendChild(li);
-    });
-    body.appendChild(ul);
-  }
-
-  card.appendChild(body);
+  card.className = 'bvd-lever-card';
+  card.innerHTML = `
+    <span class="bvd-lever-card__dot"></span>
+    ${item.valueArea ? `<p class="bvd-lever-card__area">${item.valueArea.toUpperCase()}</p>` : ''}
+    <p class="bvd-lever-card__title">${item.opportunity || item.title || ''}</p>
+    ${item.outcomes?.length ? `<ul class="bvd-lever-card__outcomes">${item.outcomes.map(o => `<li>${o}</li>`).join('')}</ul>` : ''}`;
   return card;
 }
 
@@ -2328,77 +2302,39 @@ function buildBusinessValueDefinitionView(section) {
   const wrap = document.createElement('div');
   wrap.className = 'bvd-view';
 
-  // Strategic Position
   if (b.strategicPosition) {
-    const posLabel = document.createElement('p');
-    posLabel.className = 'brief-label';
-    posLabel.textContent = 'Strategic Position';
-    wrap.appendChild(posLabel);
-    const quote = document.createElement('div');
-    quote.className = 'bvd-quote';
-    const p = document.createElement('p');
-    p.className = 'bvd-quote__text';
-    p.textContent = b.strategicPosition;
-    quote.appendChild(p);
-    wrap.appendChild(quote);
+    wrap.appendChild(buildExecCallout('STRATEGIC POSITION', '', b.strategicPosition));
   }
 
-  // Value cards — one per identified opportunity, connected by an amber line
+  // Value levers
   if (items.length) {
-    const rowWrap = document.createElement('div');
-    rowWrap.className = 'bvd-row-wrap';
-
-    const line = document.createElement('div');
-    line.className = 'bvd-row-line';
-    rowWrap.appendChild(line);
-
+    const leverSection = document.createElement('div');
+    leverSection.appendChild(buildExhibitHeading('Value levers', 'What each initiative automates, and the value it unlocks'));
     const row = document.createElement('div');
-    row.className = 'bvd-cards-row';
+    row.className = 'bvd-lever-grid';
     items.forEach(item => row.appendChild(buildBvdOppCard(item)));
-    rowWrap.appendChild(row);
-
-    wrap.appendChild(rowWrap);
+    leverSection.appendChild(row);
+    wrap.appendChild(leverSection);
   }
 
-  // KPI pills
+  // KPI grid
   if (kpiPills.length) {
-    const kpiLabel = document.createElement('p');
-    kpiLabel.className = 'brief-label';
-    kpiLabel.textContent = 'Key Performance Indicators';
-    wrap.appendChild(kpiLabel);
-    const pillsWrap = document.createElement('div');
-    pillsWrap.className = 'bvd-kpi-pills';
-    kpiPills.forEach(pill => {
-      const span = document.createElement('span');
-      span.className = 'bvd-kpi-pill';
-      span.textContent = pill;
-      pillsWrap.appendChild(span);
-    });
-    wrap.appendChild(pillsWrap);
+    const kpiSection = document.createElement('div');
+    kpiSection.appendChild(buildExhibitHeading('Key performance indicators', ''));
+    const grid = document.createElement('div');
+    grid.className = 'bvd-kpi-grid';
+    grid.innerHTML = kpiPills.map((pill, i) => `
+      <div class="bvd-kpi-item">
+        <span class="bvd-kpi-item__num">${String(i + 1).padStart(2, '0')}</span>
+        <span class="bvd-kpi-item__label">${pill}</span>
+      </div>`).join('');
+    kpiSection.appendChild(grid);
+    wrap.appendChild(kpiSection);
   }
 
-  // Insight footer
+  // Business Value Insight
   if (insight) {
-    const insightLabel = document.createElement('p');
-    insightLabel.className = 'brief-label';
-    insightLabel.textContent = 'Business Value Insight';
-    wrap.appendChild(insightLabel);
-    const footer = document.createElement('div');
-    footer.className = 'bvd-insight';
-    const icon = document.createElement('span');
-    icon.className = 'bvd-insight__icon';
-    icon.textContent = '□';
-    const text = document.createElement('p');
-    text.className = 'bvd-insight__text';
-    const dotIdx = insight.indexOf('. ');
-    if (dotIdx !== -1) {
-      text.innerHTML = `<strong>${insight.slice(0, dotIdx + 1)}</strong> ${insight.slice(dotIdx + 2)}`;
-    } else {
-      text.innerHTML = `<strong>${insight}</strong>`;
-    }
-    footer.appendChild(icon);
-    footer.appendChild(text);
-    wrap.appendChild(footer);
+    wrap.appendChild(buildExecCallout('BUSINESS VALUE INSIGHT', '', insight));
   }
 
   return wrap;
@@ -2417,102 +2353,49 @@ function buildPrioritizationView(section) {
   wrap.className = 'pri-view';
 
   if (b.strategicPosition) {
-    const posLabel = document.createElement('p');
-    posLabel.className = 'brief-label';
-    posLabel.textContent = 'Strategic Position';
-    wrap.appendChild(posLabel);
-    const pos = document.createElement('p');
-    pos.className = 'pri-view__position';
-    pos.textContent = b.strategicPosition;
-    wrap.appendChild(pos);
+    wrap.appendChild(buildExecCallout('STRATEGIC POSITION', '', b.strategicPosition));
   }
 
-  // Recommended Starting Point banner
   if (recStart) {
-    const banner = document.createElement('div');
-    banner.className = 'pri-recommended';
-    banner.innerHTML = `
-      <span class="pri-recommended__icon">★</span>
-      <div>
-        <p class="pri-recommended__title">Recommended Starting Point</p>
-        <p class="pri-recommended__text">${recStart}</p>
-      </div>`;
-    wrap.appendChild(banner);
+    wrap.appendChild(buildExecCallout('★ RECOMMENDED STARTING POINT', '', recStart));
   }
 
   // 2×2 Priority Matrix
   if (quadrants.length) {
     const matSection = document.createElement('div');
-    matSection.className = 'pri-matrix-section';
-
-    const lbl = document.createElement('p');
-    lbl.className = 'brief-label';
-    lbl.textContent = 'Prioritization Matrix';
-    matSection.appendChild(lbl);
+    matSection.appendChild(buildExhibitHeading('Prioritization matrix', 'Business value vs. implementation feasibility'));
 
     const matWrap = document.createElement('div');
     matWrap.className = 'pri-matrix-wrap';
 
-    // Y-axis label
     const yAxis = document.createElement('div');
     yAxis.className = 'pri-y-axis';
-    ['High', 'Business Value', 'Low'].forEach((t, i) => {
-      const el = document.createElement('span');
-      el.className = i === 1 ? 'pri-axis-label' : 'pri-axis-tick';
-      el.textContent = t;
-      yAxis.appendChild(el);
-    });
+    yAxis.textContent = 'BUSINESS VALUE →';
     matWrap.appendChild(yAxis);
 
     const matBody = document.createElement('div');
     matBody.className = 'pri-matrix-body';
 
-    // X-axis top labels
-    const xHeader = document.createElement('div');
-    xHeader.className = 'pri-x-header';
-    ['Low Implementation Feasibility', 'High Implementation Feasibility'].forEach(t => {
-      const el = document.createElement('span');
-      el.textContent = t;
-      xHeader.appendChild(el);
-    });
-    matBody.appendChild(xHeader);
-
-    // 2×2 grid — order: [0] Strategic Bets (top-left), [1] Quick Wins (top-right), [2] Fill-ins (bottom-left), [3] Future Opportunities (bottom-right)
-    const QUADRANT_CLASS = {
-      'quick-wins':          'pri-quadrant--quick-wins',
-      'strategic-bets':      'pri-quadrant--strategic-bets',
-      'fill-ins':            'pri-quadrant--fill-ins',
-      'future-opportunities': 'pri-quadrant--avoid',
-      'avoid':               'pri-quadrant--avoid', // legacy fallback
-    };
+    // Order: [0] Strategic Bets (top-left), [1] Quick Wins (top-right), [2] Fill-ins (bottom-left), [3] Future Opportunities (bottom-right)
     const grid = document.createElement('div');
     grid.className = 'pri-matrix-grid';
     quadrants.forEach(q => {
+      // Highlight whichever quadrant contains the recommended starting point.
+      const isRecommended = recStart && (q.initiatives || []).some(init =>
+        init && recStart.toLowerCase().includes(init.toLowerCase())
+      );
       const cell = document.createElement('div');
-      cell.className = `pri-quadrant ${QUADRANT_CLASS[q.id] || 'pri-quadrant--fill-ins'}`;
-      const title = document.createElement('p');
-      title.className = 'pri-quadrant__label';
-      title.textContent = q.label;
-      cell.appendChild(title);
-      if (q.initiatives?.length) {
-        const items = document.createElement('p');
-        items.className = 'pri-quadrant__items';
-        items.textContent = q.initiatives.join(', ');
-        cell.appendChild(items);
-      }
+      cell.className = `pri-quadrant${isRecommended ? ' pri-quadrant--recommended' : ''}`;
+      cell.innerHTML = `
+        <p class="pri-quadrant__label">${isRecommended ? '★ ' : ''}${(q.label || '').toUpperCase()}</p>
+        ${q.initiatives?.length ? `<p class="pri-quadrant__items">${q.initiatives.join(', ')}</p>` : ''}`;
       grid.appendChild(cell);
     });
     matBody.appendChild(grid);
 
-    // X-axis bottom label
     const xAxis = document.createElement('div');
     xAxis.className = 'pri-x-axis';
-    ['Low', 'Implementation Feasibility', 'High'].forEach((t, i) => {
-      const el = document.createElement('span');
-      el.className = i === 1 ? 'pri-axis-label' : 'pri-axis-tick';
-      el.textContent = t;
-      xAxis.appendChild(el);
-    });
+    xAxis.textContent = 'IMPLEMENTATION FEASIBILITY →';
     matBody.appendChild(xAxis);
 
     matWrap.appendChild(matBody);
@@ -2523,30 +2406,15 @@ function buildPrioritizationView(section) {
   // Evaluation Dimension Cards
   if (dimCards.length) {
     const dimSection = document.createElement('div');
-    dimSection.className = 'pri-dim-section';
-    const dimLbl = document.createElement('p');
-    dimLbl.className = 'brief-label';
-    dimLbl.textContent = 'Evaluation Dimensions';
-    dimSection.appendChild(dimLbl);
+    dimSection.appendChild(buildExhibitHeading('Evaluation dimensions', 'Criteria behind the matrix placement, shown for the recommended starting point'));
     const dimRow = document.createElement('div');
     dimRow.className = 'pri-dim-cards';
     dimCards.forEach(d => {
       const card = document.createElement('div');
       card.className = 'pri-dim-card';
-      const title = document.createElement('p');
-      title.className = 'pri-dim-card__title';
-      title.textContent = d.title;
-      card.appendChild(title);
-      if (d.bullets?.length) {
-        const ul = document.createElement('ul');
-        ul.className = 'pri-dim-card__bullets';
-        d.bullets.forEach(bullet => {
-          const li = document.createElement('li');
-          li.textContent = bullet;
-          ul.appendChild(li);
-        });
-        card.appendChild(ul);
-      }
+      card.innerHTML = `
+        <p class="pri-dim-card__title">${d.title || ''}</p>
+        ${d.bullets?.length ? `<ul class="pri-dim-card__bullets">${d.bullets.map(bullet => `<li>${bullet}</li>`).join('')}</ul>` : ''}`;
       dimRow.appendChild(card);
     });
     dimSection.appendChild(dimRow);
@@ -2556,38 +2424,18 @@ function buildPrioritizationView(section) {
   // Implementation Roadmap — phased sequence of all identified opportunities
   if (phases.length) {
     const roadmapSection = document.createElement('div');
-    roadmapSection.className = 'pri-roadmap-section';
-    const roadmapLbl = document.createElement('p');
-    roadmapLbl.className = 'brief-label';
-    roadmapLbl.textContent = 'Implementation Roadmap';
-    roadmapSection.appendChild(roadmapLbl);
+    roadmapSection.appendChild(buildExhibitHeading('Implementation roadmap', `Sequenced rollout across ${phases.length} phase${phases.length === 1 ? '' : 's'}`));
 
     const track = document.createElement('div');
     track.className = 'pri-roadmap-track';
     phases.forEach((p, i) => {
       const phaseCard = document.createElement('div');
       phaseCard.className = 'pri-roadmap-phase';
-      const name = document.createElement('p');
-      name.className = 'pri-roadmap-phase__name';
-      name.textContent = p.phase || '';
-      phaseCard.appendChild(name);
-      if (p.initiatives?.length) {
-        const chips = document.createElement('div');
-        chips.className = 'pri-roadmap-phase__chips';
-        p.initiatives.forEach(init => {
-          const chip = document.createElement('span');
-          chip.className = 'pri-roadmap-chip';
-          chip.textContent = init;
-          chips.appendChild(chip);
-        });
-        phaseCard.appendChild(chips);
-      }
-      if (p.rationale) {
-        const rationale = document.createElement('p');
-        rationale.className = 'pri-roadmap-phase__rationale';
-        rationale.textContent = p.rationale;
-        phaseCard.appendChild(rationale);
-      }
+      phaseCard.innerHTML = `
+        <span class="pri-roadmap-phase__dot"></span>
+        <p class="pri-roadmap-phase__meta">${(p.phase || '').toUpperCase()}</p>
+        ${p.initiatives?.length ? `<p class="pri-roadmap-phase__name">${p.initiatives.join(' · ')}</p>` : ''}
+        ${p.rationale ? `<p class="pri-roadmap-phase__rationale">${p.rationale}</p>` : ''}`;
       track.appendChild(phaseCard);
       if (i < phases.length - 1) {
         const arrow = document.createElement('div');
@@ -2605,11 +2453,31 @@ function buildPrioritizationView(section) {
 
 // ── AI Use Cases — Opportunity Discovery ──────────────────────────────────────
 
-function buildOppConnector() {
-  const c = document.createElement('div');
-  c.className = 'opp-connector';
-  c.innerHTML = '<div class="opp-connector__line"></div><div class="opp-connector__arrow">▼</div>';
-  return c;
+// ── Shared "exhibit report" components (used across all 4 AI Use Cases views) ──
+
+// Section heading: optional "EXHIBIT N" eyebrow + serif title + gray subtitle, all inline.
+function buildExhibitHeading(title, subtitle, exhibitLabel) {
+  const wrap = document.createElement('div');
+  wrap.className = 'aiuc-heading';
+  wrap.innerHTML = `
+    ${exhibitLabel ? `<span class="aiuc-heading__exhibit">${exhibitLabel}</span>` : ''}
+    <h3 class="aiuc-heading__title">${title}</h3>
+    ${subtitle ? `<span class="aiuc-heading__subtitle">${subtitle}</span>` : ''}`;
+  return wrap;
+}
+
+// Executive callout: left label column (title + description) + right blockquote,
+// used for Strategic Position, Business Value Insight, Recommended Starting Point.
+function buildExecCallout(labelText, labelDesc, contentText) {
+  const wrap = document.createElement('div');
+  wrap.className = 'aiuc-callout';
+  wrap.innerHTML = `
+    <div class="aiuc-callout__label">
+      <p class="aiuc-callout__label-text">${labelText}</p>
+      ${labelDesc ? `<p class="aiuc-callout__label-desc">${labelDesc}</p>` : ''}
+    </div>
+    <blockquote class="aiuc-callout__content">${contentText}</blockquote>`;
+  return wrap;
 }
 
 function buildOpportunityDiscoveryView(section) {
@@ -2618,92 +2486,81 @@ function buildOpportunityDiscoveryView(section) {
   const workflowSteps        = b.workflowSteps        || [];
   const highEffortActivities = b.highEffortActivities || [];
   const aiOpportunities      = b.aiOpportunities      || [];
+  // Exact-match (case-insensitive) so a workflow step gets a HIGH EFFORT tag
+  // only when its text also appears in highEffortActivities.
+  const heaSet = new Set(highEffortActivities.map(a => a.trim().toLowerCase()));
 
   const wrap = document.createElement('div');
   wrap.className = 'opp-discovery';
 
   // Strategic position
   if (b.strategicPosition) {
-    const posLabel = document.createElement('p');
-    posLabel.className = 'brief-label';
-    posLabel.textContent = 'Strategic Position';
-    wrap.appendChild(posLabel);
-    const pos = document.createElement('p');
-    pos.className = 'opp-discovery__position';
-    pos.textContent = b.strategicPosition;
-    wrap.appendChild(pos);
+    wrap.appendChild(buildExecCallout(
+      'STRATEGIC POSITION',
+      'The target state this use case aims to establish',
+      b.strategicPosition,
+    ));
   }
 
-  // ── Layer 1: Business Problem ─────────────────────────────────────────────
+  // ── Business Problem ────────────────────────────────────────────────────
   const layer1 = document.createElement('div');
   layer1.className = 'opp-layer';
-  layer1.innerHTML = `
-    <div class="opp-layer__header">
-      <span class="opp-layer__dot opp-layer__dot--problem"></span>
-      <span class="opp-layer__title">Business Problem</span>
-    </div>
-    <div class="opp-chips">
-      ${businessProblems.length
-        ? businessProblems.map(p => `<span class="opp-chip opp-chip--problem">${p}</span>`).join('')
-        : '<span class="opp-chip opp-chip--problem opp-chip--placeholder">Generating…</span>'}
-    </div>`;
+  layer1.appendChild(buildExhibitHeading('Business problem', `${businessProblems.length || 'Several'} structural pain points in today's process`, 'EXHIBIT 1'));
+  const probGrid = document.createElement('div');
+  probGrid.className = 'opp-problem-grid';
+  probGrid.innerHTML = businessProblems.length
+    ? businessProblems.map((p, i) => `
+        <div class="opp-problem-card">
+          <span class="opp-problem-card__num">${String(i + 1).padStart(2, '0')}</span>
+          <p class="opp-problem-card__title">${p}</p>
+        </div>`).join('')
+    : '<p class="opp-empty-note">Generating…</p>';
+  layer1.appendChild(probGrid);
   wrap.appendChild(layer1);
 
-  wrap.appendChild(buildOppConnector());
-
-  // ── Layer 2: Current Workflow + High-Effort Activities ────────────────────
+  // ── Current Workflow ────────────────────────────────────────────────────
   const layer2 = document.createElement('div');
   layer2.className = 'opp-layer';
-  const stepsHtml = workflowSteps.map((step, i) =>
-    `<div class="opp-step">${step}</div>${i < workflowSteps.length - 1 ? '<div class="opp-step-arrow">→</div>' : ''}`
-  ).join('');
-  const heaHtml = highEffortActivities.length
-    ? `<div class="opp-workflow__hea-label">High-Effort Activities</div>
-       <div class="opp-hea-row">${highEffortActivities.map(a => `<div class="opp-hea">${a}</div>`).join('')}</div>`
-    : '';
-  layer2.innerHTML = `
-    <div class="opp-layer__header">
-      <span class="opp-layer__dot opp-layer__dot--workflow"></span>
-      <span class="opp-layer__title">Current Workflow</span>
-    </div>
-    <div class="opp-workflow">
-      <div class="opp-workflow__steps">${stepsHtml}</div>
-      ${heaHtml}
-    </div>`;
+  layer2.appendChild(buildExhibitHeading('Current workflow', 'As-is process, with high-effort activities flagged'));
+  const track = document.createElement('div');
+  track.className = 'opp-workflow-track';
+  workflowSteps.forEach((step, i) => {
+    const isHigh = heaSet.has(step.trim().toLowerCase());
+    const stepEl = document.createElement('div');
+    stepEl.className = 'opp-workflow-step';
+    stepEl.innerHTML = `
+      <span class="opp-workflow-step__num">${String(i + 1).padStart(2, '0')}</span>
+      <p class="opp-workflow-step__label">${step}</p>
+      ${isHigh ? '<span class="opp-workflow-step__flag">● HIGH EFFORT</span>' : ''}`;
+    track.appendChild(stepEl);
+    if (i < workflowSteps.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.className = 'opp-workflow-arrow';
+      arrow.textContent = '→';
+      track.appendChild(arrow);
+    }
+  });
+  layer2.appendChild(track);
   wrap.appendChild(layer2);
 
-  wrap.appendChild(buildOppConnector());
-
-  // ── Layer 3: AI Opportunities ─────────────────────────────────────────────
+  // ── AI Opportunities ────────────────────────────────────────────────────
   const layer3 = document.createElement('div');
   layer3.className = 'opp-layer';
-  const mid      = Math.ceil(aiOpportunities.length / 2);
-  const leftOpps = aiOpportunities.slice(0, mid);
-  const rightOpps = aiOpportunities.slice(mid);
-  const renderOppCard = o => {
+  layer3.appendChild(buildExhibitHeading('AI opportunities', `${aiOpportunities.length || 'Several'} candidate interventions identified against the workflow above`));
+  const oppGrid = document.createElement('div');
+  oppGrid.className = 'opp-ai-grid';
+  oppGrid.innerHTML = aiOpportunities.map((o, i) => {
     // Legacy blueprints store aiOpportunities as plain strings; new ones as { name, why }.
     const name = (o && typeof o === 'object') ? (o.name || '') : o;
     const why  = (o && typeof o === 'object') ? (o.why  || '') : '';
     return `
-      <div class="opp-ai-card">
-        <p class="opp-ai-card__name">${name}</p>
-        ${why ? `<p class="opp-ai-card__why">${why}</p>` : ''}
+      <div class="opp-ai-grid-card">
+        <span class="opp-ai-grid-card__num">${String(i + 1).padStart(2, '0')}</span>
+        <p class="opp-ai-grid-card__name">${name}</p>
+        ${why ? `<p class="opp-ai-grid-card__why">${why}</p>` : ''}
       </div>`;
-  };
-  layer3.innerHTML = `
-    <div class="opp-layer__header">
-      <span class="opp-layer__dot opp-layer__dot--ai"></span>
-      <span class="opp-layer__title">AI Opportunities</span>
-    </div>
-    <div class="opp-ai-hub">
-      <div class="opp-ai-hub__side opp-ai-hub__left">
-        ${leftOpps.map(renderOppCard).join('')}
-      </div>
-      <div class="opp-ai-node">AI</div>
-      <div class="opp-ai-hub__side opp-ai-hub__right">
-        ${rightOpps.map(renderOppCard).join('')}
-      </div>
-    </div>`;
+  }).join('');
+  layer3.appendChild(oppGrid);
   wrap.appendChild(layer3);
 
   return wrap;
@@ -6414,6 +6271,20 @@ function openAssistantForSection(sectionTitle) {
   const capName = cap?.capabilityName || 'this capability';
   setTimeout(() => {
     handleChatSubmit(null, `Please review the "${sectionTitle}" section in ${capName} and suggest specific improvements.`);
+  }, 80);
+}
+
+// Capability-level refine: opens the panel and pre-fills a starting prompt without
+// auto-sending, since a whole-capability review may span multiple sections.
+function openAssistantForCapability(capName) {
+  _refineTargetSection = null;
+  setAssistantOpen(true);
+  setTimeout(() => {
+    const input = document.getElementById('ai-chat-input');
+    if (input) {
+      input.value = `Please review "${capName}" and suggest specific improvements.`;
+      input.focus();
+    }
   }, 80);
 }
 

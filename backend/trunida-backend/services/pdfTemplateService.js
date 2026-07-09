@@ -1433,26 +1433,6 @@ function buildStatusTable(rows, cols) {
   return wrap;
 }
 
-function buildTagList(items, label) {
-  const wrap = document.createElement('div');
-  wrap.className = 'pdf-tag-list-wrap';
-  if (label) {
-    const lbl = document.createElement('p');
-    lbl.className = 'brief-label'; lbl.textContent = label;
-    wrap.appendChild(lbl);
-  }
-  const tagWrap = document.createElement('div');
-  tagWrap.className = 'pdf-tag-list';
-  items.forEach(function(item) {
-    const tag = document.createElement('span');
-    tag.className = 'pdf-tag';
-    tag.textContent = typeof item === 'string' ? item : (item.name || item.text || '');
-    tagWrap.appendChild(tag);
-  });
-  wrap.appendChild(tagWrap);
-  return wrap;
-}
-
 function buildPdfRecommendations(items, label) {
   const wrap = document.createElement('div');
   wrap.className = 'pdf-recommendations';
@@ -1502,107 +1482,111 @@ function buildSummaryGrid(entries) {
 
 // ── New-domain layout functions ───────────────────────────────────────────────
 
+// ── Shared "exhibit report" PDF helpers (used across all 4 AI Use Cases layouts) ──
+// Mirrors buildExhibitHeading/buildExecCallout in frontend/domain/blueprintWorkspace.js.
+
+function buildAiucHeading(title, subtitle, exhibitLabel) {
+  const wrap = document.createElement('div');
+  wrap.className = 'aiuc-pdf-heading';
+  const row = document.createElement('div'); row.className = 'aiuc-pdf-heading__row';
+  if (exhibitLabel) {
+    const ex = document.createElement('span'); ex.className = 'aiuc-pdf-heading__exhibit'; ex.textContent = exhibitLabel;
+    row.appendChild(ex);
+  }
+  const t = document.createElement('h3'); t.className = 'aiuc-pdf-heading__title'; t.textContent = title;
+  row.appendChild(t);
+  if (subtitle) {
+    const s = document.createElement('span'); s.className = 'aiuc-pdf-heading__subtitle'; s.textContent = subtitle;
+    row.appendChild(s);
+  }
+  wrap.appendChild(row);
+  return wrap;
+}
+
+function buildAiucCallout(labelText, labelDesc, contentText) {
+  const wrap = document.createElement('div'); wrap.className = 'aiuc-pdf-callout';
+  const label = document.createElement('div'); label.className = 'aiuc-pdf-callout__label';
+  const lt = document.createElement('p'); lt.className = 'aiuc-pdf-callout__label-text'; lt.textContent = labelText;
+  label.appendChild(lt);
+  if (labelDesc) {
+    const ld = document.createElement('p'); ld.className = 'aiuc-pdf-callout__label-desc'; ld.textContent = labelDesc;
+    label.appendChild(ld);
+  }
+  const content = document.createElement('blockquote'); content.className = 'aiuc-pdf-callout__content'; content.textContent = contentText;
+  wrap.appendChild(label); wrap.appendChild(content);
+  return wrap;
+}
+
 function buildAIOpportunityDiscoveryLayout(section) {
   const b                    = section.brief || {};
   const businessProblems     = b.businessProblems     || [];
   const workflowSteps        = b.workflowSteps        || [];
   const highEffortActivities = b.highEffortActivities || [];
   const aiOpportunities      = b.aiOpportunities      || [];
+  const heaSet = new Set(highEffortActivities.map(function(a) { return a.trim().toLowerCase(); }));
 
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
-  wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
-
-  function makeLayer(dotCls, title, content) {
-    const layer = document.createElement('div');
-    layer.className = 'opp-pdf-layer';
-    const hdr = document.createElement('div');
-    hdr.className = 'opp-pdf-header';
-    const dot = document.createElement('span');
-    dot.className = 'opp-pdf-dot ' + dotCls;
-    const lbl = document.createElement('span');
-    lbl.className = 'opp-pdf-title'; lbl.textContent = title;
-    hdr.appendChild(dot); hdr.appendChild(lbl);
-    layer.appendChild(hdr);
-    layer.appendChild(content);
-    return layer;
+  if (b.strategicPosition) {
+    wrap.appendChild(buildAiucCallout('Strategic Position', 'The target state this use case aims to establish', b.strategicPosition));
   }
 
-  function makeChips(items, cls) {
-    const row = document.createElement('div'); row.className = 'opp-pdf-chips';
-    items.forEach(function(t) {
-      const c = document.createElement('span'); c.className = 'opp-pdf-chip ' + cls; c.textContent = t;
-      row.appendChild(c);
-    });
-    return row;
-  }
-
-  function makeConnector() {
-    const d = document.createElement('div'); d.className = 'opp-pdf-connector'; d.textContent = '↓'; return d;
-  }
-
-  // Layer 1: Business Problems
+  // Business Problem
   if (businessProblems.length) {
-    wrap.appendChild(makeLayer('opp-pdf-dot--problem', 'Business Problem', makeChips(businessProblems, 'opp-pdf-chip--problem')));
-    wrap.appendChild(makeConnector());
+    wrap.appendChild(buildAiucHeading('Business problem', businessProblems.length + ' structural pain points in today\'s process', 'Exhibit 1'));
+    const grid = document.createElement('div'); grid.className = 'opp-pdf-problem-grid';
+    businessProblems.forEach(function(p, i) {
+      const card = document.createElement('div'); card.className = 'opp-pdf-problem-card';
+      const num = document.createElement('span'); num.className = 'opp-pdf-problem-card__num'; num.textContent = String(i + 1).padStart(2, '0');
+      const title = document.createElement('p'); title.className = 'opp-pdf-problem-card__title'; title.textContent = p;
+      card.appendChild(num); card.appendChild(title);
+      grid.appendChild(card);
+    });
+    wrap.appendChild(grid);
   }
 
-  // Layer 2: Current Workflow + High-Effort Activities
-  const layer2body = document.createElement('div');
-  layer2body.className = 'opp-pdf-workflow';
+  // Current Workflow
   if (workflowSteps.length) {
-    const stepsRow = document.createElement('div'); stepsRow.className = 'opp-pdf-steps';
+    wrap.appendChild(buildAiucHeading('Current workflow', 'As-is process, with high-effort activities flagged'));
+    const track = document.createElement('div'); track.className = 'opp-pdf-workflow-track';
     workflowSteps.forEach(function(step, i) {
-      const s = document.createElement('div'); s.className = 'opp-pdf-step'; s.textContent = step;
-      stepsRow.appendChild(s);
+      const isHigh = heaSet.has(step.trim().toLowerCase());
+      const stepEl = document.createElement('div'); stepEl.className = 'opp-pdf-workflow-step';
+      const num = document.createElement('span'); num.className = 'opp-pdf-workflow-step__num'; num.textContent = String(i + 1).padStart(2, '0');
+      const label = document.createElement('p'); label.className = 'opp-pdf-workflow-step__label'; label.textContent = step;
+      stepEl.appendChild(num); stepEl.appendChild(label);
+      if (isHigh) {
+        const flag = document.createElement('span'); flag.className = 'opp-pdf-workflow-step__flag'; flag.textContent = '● HIGH EFFORT';
+        stepEl.appendChild(flag);
+      }
+      track.appendChild(stepEl);
       if (i < workflowSteps.length - 1) {
-        const a = document.createElement('div'); a.className = 'opp-pdf-step-arrow'; a.textContent = '→';
-        stepsRow.appendChild(a);
+        const arrow = document.createElement('div'); arrow.className = 'opp-pdf-workflow-arrow'; arrow.textContent = '→';
+        track.appendChild(arrow);
       }
     });
-    layer2body.appendChild(stepsRow);
-  }
-  if (highEffortActivities.length) {
-    const heaLbl = document.createElement('p'); heaLbl.className = 'opp-pdf-hea-label'; heaLbl.textContent = 'High-Effort Activities';
-    const heaRow = document.createElement('div'); heaRow.className = 'opp-pdf-chips';
-    highEffortActivities.forEach(function(a) {
-      const c = document.createElement('span'); c.className = 'opp-pdf-chip opp-pdf-chip--hea'; c.textContent = a;
-      heaRow.appendChild(c);
-    });
-    layer2body.appendChild(heaLbl);
-    layer2body.appendChild(heaRow);
-  }
-  if (workflowSteps.length || highEffortActivities.length) {
-    wrap.appendChild(makeLayer('opp-pdf-dot--workflow', 'Current Workflow', layer2body));
-    wrap.appendChild(makeConnector());
+    wrap.appendChild(track);
   }
 
-  // Layer 3: AI Opportunities — hub layout (left | AI | right)
+  // AI Opportunities
   if (aiOpportunities.length) {
-    const mid   = Math.ceil(aiOpportunities.length / 2);
-    const left  = aiOpportunities.slice(0, mid);
-    const right = aiOpportunities.slice(mid);
-    function makeOppCard(o) {
+    wrap.appendChild(buildAiucHeading('AI opportunities', aiOpportunities.length + ' candidate interventions identified against the workflow above'));
+    const grid = document.createElement('div'); grid.className = 'opp-pdf-ai-grid';
+    aiOpportunities.forEach(function(o, i) {
       // Legacy blueprints store aiOpportunities as plain strings; new ones as { name, why }.
       var name = (o && typeof o === 'object') ? (o.name || '') : o;
       var why  = (o && typeof o === 'object') ? (o.why  || '') : '';
-      var card = document.createElement('div'); card.className = 'opp-pdf-ai-card';
-      var nameEl = document.createElement('p'); nameEl.className = 'opp-pdf-ai-card__name'; nameEl.textContent = name;
-      card.appendChild(nameEl);
+      var card = document.createElement('div'); card.className = 'opp-pdf-ai-grid-card';
+      var num = document.createElement('span'); num.className = 'opp-pdf-ai-grid-card__num'; num.textContent = String(i + 1).padStart(2, '0');
+      var nameEl = document.createElement('p'); nameEl.className = 'opp-pdf-ai-grid-card__name'; nameEl.textContent = name;
+      card.appendChild(num); card.appendChild(nameEl);
       if (why) {
-        var whyEl = document.createElement('p'); whyEl.className = 'opp-pdf-ai-card__why'; whyEl.textContent = why;
+        var whyEl = document.createElement('p'); whyEl.className = 'opp-pdf-ai-grid-card__why'; whyEl.textContent = why;
         card.appendChild(whyEl);
       }
-      return card;
-    }
-    const hub = document.createElement('div'); hub.className = 'opp-pdf-hub';
-    const leftCol = document.createElement('div'); leftCol.className = 'opp-pdf-hub__col';
-    left.forEach(function(o) { leftCol.appendChild(makeOppCard(o)); });
-    const aiNode = document.createElement('div'); aiNode.className = 'opp-pdf-ai-node'; aiNode.textContent = 'AI';
-    const rightCol = document.createElement('div'); rightCol.className = 'opp-pdf-hub__col';
-    right.forEach(function(o) { rightCol.appendChild(makeOppCard(o)); });
-    hub.appendChild(leftCol); hub.appendChild(aiNode); hub.appendChild(rightCol);
-    wrap.appendChild(makeLayer('opp-pdf-dot--ai', 'AI Opportunities', hub));
+      grid.appendChild(card);
+    });
+    wrap.appendChild(grid);
   }
 
   return wrap;
@@ -1621,19 +1605,17 @@ function buildBusinessValueDefinitionLayout(section) {
 
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
-  if (b.strategicPosition) wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.strategicPosition) wrap.appendChild(buildAiucCallout('Strategic Position', '', b.strategicPosition));
 
-  // Value cards — one per identified opportunity
+  // Value levers — one per identified opportunity
   if (items.length) {
-    const lbl = document.createElement('p'); lbl.className = 'brief-label'; lbl.textContent = 'Business Value Map';
-    wrap.appendChild(lbl);
+    wrap.appendChild(buildAiucHeading('Value levers', 'What each initiative automates, and the value it unlocks'));
     const grid = document.createElement('div'); grid.className = 'bvd-pdf-grid';
     items.forEach(function(item) {
       const card = document.createElement('div'); card.className = 'bvd-pdf-card';
-      if (item.valueArea) { const area = document.createElement('p'); area.className = 'bvd-pdf-card__area'; area.textContent = item.valueArea; card.appendChild(area); }
+      if (item.valueArea) { const area = document.createElement('p'); area.className = 'bvd-pdf-card__area'; area.textContent = item.valueArea.toUpperCase(); card.appendChild(area); }
       const title = document.createElement('p'); title.className = 'bvd-pdf-card__title'; title.textContent = item.opportunity || item.title || '';
-      const focus = document.createElement('p'); focus.className = 'bvd-pdf-card__focus'; focus.textContent = item.focus || '';
-      card.appendChild(title); card.appendChild(focus);
+      card.appendChild(title);
       if (item.outcomes && item.outcomes.length) {
         const ul = document.createElement('ul'); ul.className = 'bvd-pdf-card__outcomes';
         item.outcomes.forEach(function(o) { const li = document.createElement('li'); li.textContent = o; ul.appendChild(li); });
@@ -1644,16 +1626,23 @@ function buildBusinessValueDefinitionLayout(section) {
     wrap.appendChild(grid);
   }
 
-  // KPI pills
-  if (kpiPills.length) wrap.appendChild(buildTagList(kpiPills, 'Key Performance Indicators'));
+  // KPI grid
+  if (kpiPills.length) {
+    wrap.appendChild(buildAiucHeading('Key performance indicators', ''));
+    const grid = document.createElement('div'); grid.className = 'bvd-pdf-kpi-grid';
+    kpiPills.forEach(function(pill, i) {
+      const item = document.createElement('div'); item.className = 'bvd-pdf-kpi-item';
+      const num = document.createElement('span'); num.className = 'bvd-pdf-kpi-item__num'; num.textContent = String(i + 1).padStart(2, '0');
+      const label = document.createElement('span'); label.className = 'bvd-pdf-kpi-item__label'; label.textContent = pill;
+      item.appendChild(num); item.appendChild(label);
+      grid.appendChild(item);
+    });
+    wrap.appendChild(grid);
+  }
 
-  // Insight footer
+  // Business Value Insight
   if (insight) {
-    const footer = document.createElement('div'); footer.className = 'bvd-pdf-insight';
-    const icon = document.createElement('span'); icon.className = 'bvd-pdf-insight__icon'; icon.textContent = '◆';
-    const text = document.createElement('p'); text.className = 'bvd-pdf-insight__text'; text.textContent = insight;
-    footer.appendChild(icon); footer.appendChild(text);
-    wrap.appendChild(footer);
+    wrap.appendChild(buildAiucCallout('Business Value Insight', '', insight));
   }
 
   return wrap;
@@ -1666,76 +1655,47 @@ function buildAIUseCasePrioritizationLayout(section) {
 
   const wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
-  if (b.strategicPosition) wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.strategicPosition) wrap.appendChild(buildAiucCallout('Strategic Position', '', b.strategicPosition));
 
-  // Recommended Starting Point banner
   if (recStart) {
-    const banner = document.createElement('div'); banner.className = 'pri-pdf-banner';
-    const star = document.createElement('span'); star.className = 'pri-pdf-banner__star'; star.textContent = '★';
-    const inner = document.createElement('div');
-    const t = document.createElement('p'); t.className = 'pri-pdf-banner__title'; t.textContent = 'Recommended Starting Point';
-    const tx = document.createElement('p'); tx.className = 'pri-pdf-banner__text'; tx.textContent = recStart;
-    inner.appendChild(t); inner.appendChild(tx);
-    banner.appendChild(star); banner.appendChild(inner);
-    wrap.appendChild(banner);
+    wrap.appendChild(buildAiucCallout('★ Recommended Starting Point', '', recStart));
   }
 
   // 2×2 Priority Matrix
   if (quadrants.length) {
-    const matLbl = document.createElement('p'); matLbl.className = 'brief-label'; matLbl.textContent = 'Prioritization Matrix';
-    wrap.appendChild(matLbl);
+    wrap.appendChild(buildAiucHeading('Prioritization matrix', 'Business value vs. implementation feasibility'));
     const matWrap = document.createElement('div'); matWrap.className = 'pri-pdf-matrix-wrap';
 
-    const xHdr = document.createElement('div'); xHdr.className = 'pri-pdf-x-header';
-    const xEmpty = document.createElement('div'); xEmpty.className = 'pri-pdf-x-empty';
-    const xLow = document.createElement('span'); xLow.textContent = 'Low Feasibility';
-    const xHigh = document.createElement('span'); xHigh.textContent = 'High Feasibility';
-    xHdr.appendChild(xEmpty); xHdr.appendChild(xLow); xHdr.appendChild(xHigh);
-    matWrap.appendChild(xHdr);
+    const yAxis = document.createElement('div'); yAxis.className = 'pri-pdf-y-axis'; yAxis.textContent = 'BUSINESS VALUE →';
+    matWrap.appendChild(yAxis);
 
-    const Q_CLS = { 'strategic-bets': 'pri-pdf-q--bets', 'quick-wins': 'pri-pdf-q--wins', 'fill-ins': 'pri-pdf-q--fill', 'avoid': 'pri-pdf-q--avoid' };
+    const matBody = document.createElement('div'); matBody.className = 'pri-pdf-matrix-body';
     const grid = document.createElement('div'); grid.className = 'pri-pdf-grid';
-    // Y high-value row
-    const rowHigh = document.createElement('div'); rowHigh.className = 'pri-pdf-row';
-    const yHigh = document.createElement('div'); yHigh.className = 'pri-pdf-y-label'; yHigh.textContent = '↑ High Value';
-    rowHigh.appendChild(yHigh);
-    [quadrants[0], quadrants[1]].forEach(function(q) {
-      if (!q) return;
-      const cell = document.createElement('div'); cell.className = 'pri-pdf-q ' + (Q_CLS[q.id] || '');
-      const lbl = document.createElement('p'); lbl.className = 'pri-pdf-q__label'; lbl.textContent = q.label;
+    quadrants.forEach(function(q) {
+      const isRecommended = recStart && (q.initiatives || []).some(function(init) {
+        return init && recStart.toLowerCase().indexOf(init.toLowerCase()) !== -1;
+      });
+      const cell = document.createElement('div'); cell.className = 'pri-pdf-q' + (isRecommended ? ' pri-pdf-q--recommended' : '');
+      const lbl = document.createElement('p'); lbl.className = 'pri-pdf-q__label'; lbl.textContent = (isRecommended ? '★ ' : '') + (q.label || '').toUpperCase();
       cell.appendChild(lbl);
       if (q.initiatives && q.initiatives.length) {
-        const items = document.createElement('p'); items.className = 'pri-pdf-q__items'; items.textContent = q.initiatives.join(' · ');
+        const items = document.createElement('p'); items.className = 'pri-pdf-q__items'; items.textContent = q.initiatives.join(', ');
         cell.appendChild(items);
       }
-      rowHigh.appendChild(cell);
+      grid.appendChild(cell);
     });
-    grid.appendChild(rowHigh);
-    // Y low-value row
-    const rowLow = document.createElement('div'); rowLow.className = 'pri-pdf-row';
-    const yLow = document.createElement('div'); yLow.className = 'pri-pdf-y-label'; yLow.textContent = '↓ Low Value';
-    rowLow.appendChild(yLow);
-    [quadrants[2], quadrants[3]].forEach(function(q) {
-      if (!q) return;
-      const cell = document.createElement('div'); cell.className = 'pri-pdf-q ' + (Q_CLS[q.id] || '');
-      const lbl = document.createElement('p'); lbl.className = 'pri-pdf-q__label'; lbl.textContent = q.label;
-      cell.appendChild(lbl);
-      if (q.initiatives && q.initiatives.length) {
-        const items = document.createElement('p'); items.className = 'pri-pdf-q__items'; items.textContent = q.initiatives.join(' · ');
-        cell.appendChild(items);
-      }
-      rowLow.appendChild(cell);
-    });
-    grid.appendChild(rowLow);
-    matWrap.appendChild(grid);
+    matBody.appendChild(grid);
+    const xAxis = document.createElement('div'); xAxis.className = 'pri-pdf-x-axis'; xAxis.textContent = 'IMPLEMENTATION FEASIBILITY →';
+    matBody.appendChild(xAxis);
+
+    matWrap.appendChild(matBody);
     wrap.appendChild(matWrap);
   }
 
   // Evaluation Dimension Cards
   var dimCards = b.dimensionCards || [];
   if (dimCards.length) {
-    var dimLbl = document.createElement('p'); dimLbl.className = 'brief-label'; dimLbl.textContent = 'Evaluation Dimensions';
-    wrap.appendChild(dimLbl);
+    wrap.appendChild(buildAiucHeading('Evaluation dimensions', 'Criteria behind the matrix placement, shown for the recommended starting point'));
     var dimRow = document.createElement('div'); dimRow.className = 'pri-dim-cards';
     dimCards.forEach(function(d) {
       var card = document.createElement('div'); card.className = 'pri-dim-card';
@@ -1754,16 +1714,15 @@ function buildAIUseCasePrioritizationLayout(section) {
   // Implementation Roadmap — phased sequence of all identified opportunities
   var phases = b.implementationPhases || [];
   if (phases.length) {
-    var roadmapLbl = document.createElement('p'); roadmapLbl.className = 'brief-label'; roadmapLbl.textContent = 'Implementation Roadmap';
-    wrap.appendChild(roadmapLbl);
+    wrap.appendChild(buildAiucHeading('Implementation roadmap', 'Sequenced rollout across ' + phases.length + ' phase' + (phases.length === 1 ? '' : 's')));
     var track = document.createElement('div'); track.className = 'pri-pdf-roadmap-track';
     phases.forEach(function(p) {
       var phaseCard = document.createElement('div'); phaseCard.className = 'pri-pdf-roadmap-phase';
-      var name = document.createElement('p'); name.className = 'pri-pdf-roadmap-phase__name'; name.textContent = p.phase || '';
-      phaseCard.appendChild(name);
+      var meta = document.createElement('p'); meta.className = 'pri-pdf-roadmap-phase__meta'; meta.textContent = (p.phase || '').toUpperCase();
+      phaseCard.appendChild(meta);
       if (p.initiatives && p.initiatives.length) {
-        var items = document.createElement('p'); items.className = 'pri-pdf-roadmap-phase__items'; items.textContent = p.initiatives.join(' · ');
-        phaseCard.appendChild(items);
+        var name = document.createElement('p'); name.className = 'pri-pdf-roadmap-phase__name'; name.textContent = p.initiatives.join(' · ');
+        phaseCard.appendChild(name);
       }
       if (p.rationale) {
         var rationale = document.createElement('p'); rationale.className = 'pri-pdf-roadmap-phase__rationale'; rationale.textContent = p.rationale;
@@ -1781,7 +1740,7 @@ function buildAIUseCaseClassificationLayout(section) {
   var b    = section.brief || {};
   var wrap = document.createElement('div');
   wrap.className = 'new-domain-layout';
-  if (b.strategicPosition) wrap.appendChild(buildStrategicPositionBlock(b.strategicPosition));
+  if (b.strategicPosition) wrap.appendChild(buildAiucCallout('Strategic Position', '', b.strategicPosition));
 
   var COLORS = { 'Productivity AI': 'productivity', 'Functional AI': 'functional', 'Product AI': 'product' };
 
@@ -1794,17 +1753,42 @@ function buildAIUseCaseClassificationLayout(section) {
         .map(function(c) { return { opportunity: '', classification: c.name, rationale: c.rationale || '' }; });
 
   if (items.length) {
-    var list = document.createElement('div'); list.className = 'cls-map-list';
-    items.forEach(function(item) {
-      var card = document.createElement('div');
-      card.className = 'cls-map-card cls-map-card--' + (COLORS[item.classification] || 'functional');
-      var cls = document.createElement('p'); cls.className = 'cls-map-card__classification cls-name--' + (COLORS[item.classification] || 'functional'); cls.textContent = item.classification || '';
-      card.appendChild(cls);
-      if (item.opportunity) { var opp = document.createElement('p'); opp.className = 'cls-map-card__opportunity'; opp.textContent = item.opportunity; card.appendChild(opp); }
-      if (item.rationale)   { var rat = document.createElement('p'); rat.className = 'cls-map-card__rationale'; rat.textContent = item.rationale; card.appendChild(rat); }
-      list.appendChild(card);
+    // Legend: count of opportunities per archetype, e.g. "PRODUCTIVITY AI × 3"
+    var counts = {};
+    items.forEach(function(item) { counts[item.classification] = (counts[item.classification] || 0) + 1; });
+    var summary = document.createElement('div'); summary.className = 'cls-pdf-summary';
+    var summaryText = document.createElement('span'); summaryText.className = 'cls-pdf-summary__text';
+    summaryText.textContent = items.length + ' use case' + (items.length === 1 ? '' : 's') + ' classified by AI archetype';
+    summary.appendChild(summaryText);
+    var legend = document.createElement('span'); legend.className = 'cls-pdf-legend';
+    Object.keys(counts).forEach(function(cls) {
+      var colorCls = COLORS[cls] || 'functional';
+      var item = document.createElement('span'); item.className = 'cls-pdf-legend__item';
+      item.innerHTML = '<span class="cls-pdf-legend__dot cls-name--' + colorCls + '"></span>' +
+        '<span class="cls-name--' + colorCls + '">' + cls.toUpperCase() + '</span> × ' + counts[cls];
+      legend.appendChild(item);
     });
-    wrap.appendChild(list);
+    summary.appendChild(legend);
+    wrap.appendChild(summary);
+
+    var table = document.createElement('table'); table.className = 'cls-pdf-table';
+    var thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th class="cls-pdf-table__num">N°</th><th>Use Case</th><th>Classification Rationale</th><th class="cls-pdf-table__archetype">Archetype</th></tr>';
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    items.forEach(function(item, i) {
+      var colorCls = COLORS[item.classification] || 'functional';
+      var row = document.createElement('tr');
+      row.innerHTML =
+        '<td class="cls-pdf-table__num">' + String(i + 1).padStart(2, '0') + '</td>' +
+        '<td class="cls-pdf-table__usecase">' + (item.opportunity || '—') + '</td>' +
+        '<td class="cls-pdf-table__rationale">' + (item.rationale || '') + '</td>' +
+        '<td class="cls-pdf-table__archetype"><span class="cls-pdf-legend__dot cls-name--' + colorCls + '"></span>' +
+        '<span class="cls-name--' + colorCls + '">' + (item.classification || '').toUpperCase() + '</span></td>';
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
   }
 
   return wrap;
@@ -4010,10 +3994,6 @@ html, body {
 .pdf-status-table__row:nth-child(even) { background: rgba(255,255,255,0.015); }
 .pdf-status-table__cell { flex: 1; font-size: 0.79rem; color: rgba(255,255,255,0.72); line-height: 1.45; }
 
-.pdf-tag-list-wrap { display: flex; flex-direction: column; gap: 0.5rem; }
-.pdf-tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.pdf-tag { display: inline-block; font-size: 0.74rem; font-weight: 500; padding: 0.25rem 0.7rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.28); border-radius: 1rem; color: rgba(255,255,255,0.78); white-space: nowrap; }
-
 .pdf-recommendations { display: flex; flex-direction: column; gap: 0.5rem; }
 .pdf-rec-list { display: flex; flex-direction: column; gap: 0.4rem; }
 .pdf-rec-item { padding: 0.6rem 1rem 0.6rem 1.1rem; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-left: 2px solid rgba(99,102,241,0.45); border-radius: 0 0.45rem 0.45rem 0; display: flex; flex-direction: column; gap: 0.15rem; }
@@ -4317,76 +4297,74 @@ html, body {
 .ala-summary-cell__lbl { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.7); margin: 0; }
 .ala-summary-cell__val { font-size: 0.62rem; color: rgba(255,255,255,0.42); margin: 0; }
 
+/* ── Shared "exhibit report" PDF components (used by all 4 AI Use Cases layouts) ── */
+.aiuc-pdf-heading { margin: 1.4rem 0 0.7rem; }
+.aiuc-pdf-heading__row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
+.aiuc-pdf-heading__exhibit { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+.aiuc-pdf-heading__title { font-family: Georgia, 'Times New Roman', serif; font-size: 0.98rem; font-weight: 700; color: #fff; margin: 0; }
+.aiuc-pdf-heading__subtitle { font-size: 0.72rem; color: rgba(255,255,255,0.4); }
+.aiuc-pdf-callout { display: grid; grid-template-columns: 140px 1fr; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 0.3rem; }
+.aiuc-pdf-callout__label-text { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #34d399; margin: 0 0 0.2rem; }
+.aiuc-pdf-callout__label-desc { font-size: 0.68rem; color: rgba(255,255,255,0.4); line-height: 1.4; margin: 0; }
+.aiuc-pdf-callout__content { font-family: Georgia, 'Times New Roman', serif; font-size: 0.86rem; color: rgba(255,255,255,0.88); line-height: 1.5; margin: 0; padding-left: 0.85rem; border-left: 2px solid #34d399; }
+
 /* ── AI Opportunity Discovery layout ─────────────────────────────────── */
-.opp-pdf-layer { display: flex; flex-direction: column; gap: 0.55rem; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.65rem; padding: 0.85rem 1rem; }
-.opp-pdf-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.15rem; }
-.opp-pdf-dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; flex-shrink: 0; }
-.opp-pdf-dot--problem  { background: #f87171; }
-.opp-pdf-dot--workflow { background: #60a5fa; }
-.opp-pdf-dot--ai       { background: #34d399; }
-.opp-pdf-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
-.opp-pdf-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.opp-pdf-chip { display: inline-block; font-size: 0.73rem; padding: 0.22rem 0.65rem; border-radius: 1rem; font-weight: 500; white-space: nowrap; }
-.opp-pdf-chip--problem { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); color: rgba(255,255,255,0.8); }
-.opp-pdf-chip--hea     { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3); color: rgba(255,255,255,0.8); }
-.opp-pdf-connector { text-align: center; font-size: 1rem; color: rgba(255,255,255,0.2); line-height: 1; margin: -0.2rem 0; }
-.opp-pdf-workflow { display: flex; flex-direction: column; gap: 0.5rem; }
-.opp-pdf-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
-.opp-pdf-step { font-size: 0.73rem; padding: 0.22rem 0.65rem; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25); border-radius: 0.4rem; color: rgba(255,255,255,0.78); }
-.opp-pdf-step-arrow { font-size: 0.8rem; color: rgba(255,255,255,0.22); }
-.opp-pdf-hea-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(251,191,36,0.6); margin-top: 0.2rem; }
-.opp-pdf-hub { display: flex; align-items: center; gap: 0.75rem; justify-content: center; }
-.opp-pdf-hub__col { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
-.opp-pdf-ai-node { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(52,211,153,0.15); border: 1.5px solid rgba(52,211,153,0.45); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #34d399; flex-shrink: 0; }
-.opp-pdf-ai-card { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25); border-radius: 0.5rem; padding: 0.45rem 0.7rem; }
-.opp-pdf-ai-card__name { font-size: 0.73rem; font-weight: 700; color: #34d399; margin: 0; line-height: 1.35; }
-.opp-pdf-ai-card__why { font-size: 0.66rem; font-weight: 400; color: rgba(255,255,255,0.6); margin: 0.2rem 0 0; line-height: 1.4; }
+.opp-pdf-problem-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.9rem; }
+.opp-pdf-problem-card { display: flex; flex-direction: column; gap: 0.3rem; padding-top: 0.55rem; border-top: 1px solid rgba(255,255,255,0.08); }
+.opp-pdf-problem-card__num { font-size: 0.6rem; color: rgba(255,255,255,0.3); }
+.opp-pdf-problem-card__title { font-family: Georgia, 'Times New Roman', serif; font-size: 0.76rem; font-weight: 700; color: rgba(255,255,255,0.88); line-height: 1.35; margin: 0; }
+.opp-pdf-workflow-track { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 0.35rem; }
+.opp-pdf-workflow-step { flex: 1 1 110px; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08); }
+.opp-pdf-workflow-step__num { display: block; font-size: 0.6rem; color: rgba(255,255,255,0.3); margin-bottom: 0.2rem; }
+.opp-pdf-workflow-step__label { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.85); margin: 0; line-height: 1.3; }
+.opp-pdf-workflow-step__flag { display: block; margin-top: 0.25rem; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.04em; color: #f87171; }
+.opp-pdf-workflow-arrow { align-self: center; margin-top: 0.9rem; font-size: 0.7rem; color: rgba(255,255,255,0.2); }
+.opp-pdf-ai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.9rem; }
+.opp-pdf-ai-grid-card { display: flex; flex-direction: column; gap: 0.3rem; padding-top: 0.55rem; border-top: 1px solid rgba(255,255,255,0.08); }
+.opp-pdf-ai-grid-card__num { font-size: 0.6rem; color: rgba(255,255,255,0.3); }
+.opp-pdf-ai-grid-card__name { font-family: Georgia, 'Times New Roman', serif; font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.3; margin: 0; }
+.opp-pdf-ai-grid-card__why { font-size: 0.66rem; color: rgba(255,255,255,0.55); line-height: 1.4; margin: 0; }
 
 /* ── Business Value Definition layout ────────────────────────────────── */
-.bvd-pdf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-top: 0.35rem; }
-.bvd-pdf-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 0.55rem; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
-.bvd-pdf-card__area { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(255,200,60,0.75); margin: 0; }
-.bvd-pdf-card__title { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.9); margin: 0; }
-.bvd-pdf-card__focus { font-size: 0.72rem; color: rgba(255,200,60,0.85); margin: 0; line-height: 1.4; }
+.bvd-pdf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.9rem; margin-top: 0.35rem; }
+.bvd-pdf-card { display: flex; flex-direction: column; gap: 0.3rem; padding-top: 0.55rem; border-top: 2px solid rgba(52,211,153,0.35); }
+.bvd-pdf-card__area { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #34d399; margin: 0; }
+.bvd-pdf-card__title { font-family: Georgia, 'Times New Roman', serif; font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.9); margin: 0; line-height: 1.3; }
 .bvd-pdf-card__outcomes { list-style: none; display: flex; flex-direction: column; gap: 0.2rem; margin: 0; padding: 0; }
-.bvd-pdf-card__outcomes li { font-size: 0.7rem; color: rgba(255,255,255,0.55); line-height: 1.4; padding-left: 0.7rem; position: relative; }
-.bvd-pdf-card__outcomes li::before { content: '·'; position: absolute; left: 0; }
-.bvd-pdf-insight { display: flex; align-items: flex-start; gap: 0.6rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.2); border-radius: 0.5rem; padding: 0.75rem 0.9rem; margin-top: 0.2rem; }
-.bvd-pdf-insight__icon { font-size: 0.7rem; color: rgba(129,140,248,0.7); flex-shrink: 0; margin-top: 0.15rem; }
-.bvd-pdf-insight__text { font-size: 0.77rem; color: rgba(255,255,255,0.72); line-height: 1.55; margin: 0; }
+.bvd-pdf-card__outcomes li { font-size: 0.66rem; color: rgba(255,255,255,0.55); line-height: 1.4; padding-left: 0.7rem; position: relative; }
+.bvd-pdf-card__outcomes li::before { content: '·'; position: absolute; left: 0; color: rgba(255,255,255,0.3); }
+.bvd-pdf-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem 1rem; margin-top: 0.35rem; }
+.bvd-pdf-kpi-item { display: flex; align-items: baseline; gap: 0.4rem; padding-bottom: 0.35rem; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.bvd-pdf-kpi-item__num { font-size: 0.6rem; color: rgba(255,255,255,0.3); }
+.bvd-pdf-kpi-item__label { font-size: 0.72rem; color: rgba(255,255,255,0.75); }
 
 /* ── AI Implementation Prioritization layout ───────────────────────────────── */
-.pri-pdf-banner { display: flex; align-items: flex-start; gap: 0.65rem; background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25); border-radius: 0.5rem; padding: 0.75rem 1rem; }
-.pri-pdf-banner__star { font-size: 1rem; color: #fbbf24; flex-shrink: 0; line-height: 1; }
-.pri-pdf-banner__title { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(251,191,36,0.7); margin: 0 0 0.2rem; }
-.pri-pdf-banner__text { font-size: 0.79rem; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.5; }
-.pri-pdf-matrix-wrap { display: flex; flex-direction: column; gap: 0; margin-top: 0.35rem; }
-.pri-pdf-x-header { display: grid; grid-template-columns: 3.5rem 1fr 1fr; gap: 0.4rem; padding-bottom: 0.25rem; }
-.pri-pdf-x-empty { }
-.pri-pdf-x-header span { font-size: 0.62rem; font-weight: 600; text-align: center; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 0.05em; }
-.pri-pdf-grid { display: flex; flex-direction: column; gap: 0.4rem; }
-.pri-pdf-row { display: grid; grid-template-columns: 3.5rem 1fr 1fr; gap: 0.4rem; align-items: stretch; }
-.pri-pdf-y-label { font-size: 0.6rem; font-weight: 600; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.4rem; line-height: 1.3; }
-.pri-pdf-q { border-radius: 0.5rem; padding: 0.65rem 0.8rem; display: flex; flex-direction: column; gap: 0.3rem; }
-.pri-pdf-q--wins { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25); }
-.pri-pdf-q--bets { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.25); }
-.pri-pdf-q--fill { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
-.pri-pdf-q--avoid { background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.2); }
-.pri-pdf-q__label { font-size: 0.73rem; font-weight: 700; color: rgba(255,255,255,0.85); margin: 0; }
-.pri-pdf-q__items { font-size: 0.68rem; color: rgba(255,255,255,0.5); margin: 0; line-height: 1.5; }
+.pri-pdf-matrix-wrap { display: flex; align-items: stretch; gap: 0.6rem; margin-top: 0.35rem; }
+.pri-pdf-y-axis { display: flex; align-items: center; justify-content: center; width: 16px; flex-shrink: 0; font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.32); text-transform: uppercase; letter-spacing: 0.06em; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); }
+.pri-pdf-matrix-body { flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+.pri-pdf-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgba(255,255,255,0.12); border-radius: 0.5rem; overflow: hidden; }
+.pri-pdf-q { padding: 0.65rem 0.8rem; display: flex; flex-direction: column; gap: 0.25rem; border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); min-height: 60px; }
+.pri-pdf-q:nth-child(2n) { border-right: none; }
+.pri-pdf-q:nth-last-child(-n+2) { border-bottom: none; }
+.pri-pdf-q--recommended { background: rgba(52,211,153,0.07); }
+.pri-pdf-q__label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.4); margin: 0; }
+.pri-pdf-q--recommended .pri-pdf-q__label { color: #34d399; }
+.pri-pdf-q__items { font-family: Georgia, 'Times New Roman', serif; font-size: 0.74rem; font-weight: 700; color: rgba(255,255,255,0.85); line-height: 1.35; margin: 0; }
+.pri-pdf-x-axis { text-align: center; font-size: 0.58rem; font-weight: 700; color: rgba(255,255,255,0.32); text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* ── AI Use Case Classification layout ───────────────────────────────── */
-.clf-pdf-primary { background: rgba(129,140,248,0.08); border: 1px solid rgba(129,140,248,0.25); border-radius: 0.55rem; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.2rem; }
-.clf-pdf-primary__label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(129,140,248,0.7); margin: 0; }
-.clf-pdf-primary__name { font-size: 0.92rem; font-weight: 700; color: rgba(255,255,255,0.95); margin: 0; }
-.clf-pdf-primary__desc { font-size: 0.76rem; color: rgba(255,255,255,0.6); margin: 0; line-height: 1.5; }
-.clf-pdf-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.55rem; margin-top: 0.35rem; }
-.clf-pdf-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.55rem; padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.35rem; }
-.clf-pdf-card--active { background: rgba(129,140,248,0.09); border-color: rgba(129,140,248,0.35); }
-.clf-pdf-card__type { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.9); margin: 0; }
-.clf-pdf-card__purpose { font-size: 0.71rem; color: rgba(255,255,255,0.55); margin: 0; line-height: 1.45; }
-.clf-pdf-card__chars { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.1rem; }
-.clf-pdf-chip { display: inline-block; font-size: 0.67rem; padding: 0.15rem 0.5rem; background: rgba(129,140,248,0.1); border: 1px solid rgba(129,140,248,0.22); border-radius: 0.75rem; color: rgba(255,255,255,0.65); white-space: nowrap; }
+.cls-pdf-summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; padding-bottom: 0.5rem; }
+.cls-pdf-summary__text { font-size: 0.72rem; color: rgba(255,255,255,0.55); }
+.cls-pdf-legend { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+.cls-pdf-legend__item { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; color: rgba(255,255,255,0.55); margin-right: 0.9rem; }
+.cls-pdf-legend__dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 0.3rem; }
+.cls-pdf-table { width: 100%; border-collapse: collapse; }
+.cls-pdf-table thead th { text-align: left; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: rgba(255,255,255,0.32); padding: 0.4rem 0.55rem; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.cls-pdf-table tbody td { padding: 0.6rem 0.55rem; border-bottom: 1px solid rgba(255,255,255,0.07); vertical-align: top; }
+.cls-pdf-table__num { font-size: 0.62rem; color: rgba(255,255,255,0.3); width: 2rem; }
+.cls-pdf-table__usecase { font-family: Georgia, 'Times New Roman', serif; font-size: 0.76rem; font-weight: 700; color: rgba(255,255,255,0.92); line-height: 1.3; width: 22%; }
+.cls-pdf-table__rationale { font-size: 0.68rem; color: rgba(255,255,255,0.55); line-height: 1.45; }
+.cls-pdf-table__archetype { white-space: nowrap; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; }
 
 /* ── Page-break control ─────────────────────────────────────────────── */
 /* Keep section headings bound to their first content block */
@@ -4498,30 +4476,23 @@ html, body {
 .team-group-card__roles li { font-size: 0.68rem; color: rgba(255,255,255,0.8); padding: 0.15rem 0; }
 
 /* ── Prioritization dim-cards ────────────────────────────────────────────── */
-.pri-dim-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
-.pri-dim-card { background: rgba(255,255,255,0.05); border-radius: 6px; padding: 0.65rem; }
-.pri-dim-card__title { font-size: 0.7rem; font-weight: 600; color: #fff; margin: 0 0 0.35rem; }
-.pri-dim-card__bullets { list-style: none; padding: 0; margin: 0; }
-.pri-dim-card__bullets li { font-size: 0.64rem; color: rgba(255,255,255,0.7); padding: 0.1rem 0; }
+.pri-dim-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem; margin-bottom: 1rem; }
+.pri-dim-card { display: flex; flex-direction: column; gap: 0.3rem; padding-top: 0.55rem; border-top: 1px solid rgba(255,255,255,0.08); }
+.pri-dim-card__title { font-size: 0.58rem; font-weight: 700; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+.pri-dim-card__bullets { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.pri-dim-card__bullets li { font-size: 0.64rem; color: rgba(255,255,255,0.55); padding-left: 0.6rem; position: relative; line-height: 1.4; }
+.pri-dim-card__bullets li::before { content: '–'; position: absolute; left: 0; color: rgba(255,255,255,0.28); }
 
-.pri-pdf-roadmap-track { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.5rem; margin-bottom: 1rem; }
-.pri-pdf-roadmap-phase { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-top: 2px solid rgba(251,191,36,0.4); border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; gap: 0.3rem; }
-.pri-pdf-roadmap-phase__name { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.88); margin: 0; }
-.pri-pdf-roadmap-phase__items { font-size: 0.66rem; color: rgba(251,191,36,0.8); margin: 0; line-height: 1.4; }
-.pri-pdf-roadmap-phase__rationale { font-size: 0.66rem; color: rgba(255,255,255,0.55); margin: 0; line-height: 1.45; }
+.pri-pdf-roadmap-track { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+.pri-pdf-roadmap-phase { display: flex; flex-direction: column; gap: 0.3rem; padding-top: 0.55rem; border-top: 2px solid rgba(52,211,153,0.35); }
+.pri-pdf-roadmap-phase__meta { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.05em; color: rgba(255,255,255,0.35); margin: 0; }
+.pri-pdf-roadmap-phase__name { font-family: Georgia, 'Times New Roman', serif; font-size: 0.74rem; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.3; margin: 0; }
+.pri-pdf-roadmap-phase__rationale { font-size: 0.64rem; color: rgba(255,255,255,0.5); margin: 0; line-height: 1.4; }
 
-/* ── Classification mapping cards ────────────────────────────────────────── */
+/* ── Classification archetype colors ─────────────────────────────────────── */
 .cls-name--productivity { color: #5CC5A7; }
 .cls-name--functional   { color: #818cf8; }
 .cls-name--product      { color: #fbbf24; }
-.cls-map-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin-bottom: 1rem; }
-.cls-map-card { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 0.85rem 1rem; border-top: 3px solid; }
-.cls-map-card--productivity { border-top-color: #5CC5A7; }
-.cls-map-card--functional   { border-top-color: #818cf8; }
-.cls-map-card--product      { border-top-color: #fbbf24; }
-.cls-map-card__classification { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 0.35rem; }
-.cls-map-card__opportunity { font-size: 0.82rem; font-weight: 700; color: #fff; margin: 0 0 0.35rem; }
-.cls-map-card__rationale { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin: 0; }
 
 /* ── CDI new layout ──────────────────────────────────────────────────────── */
 .cdi-body { display: grid; grid-template-columns: 70fr 30fr; gap: 1rem; margin-bottom: 1rem; }

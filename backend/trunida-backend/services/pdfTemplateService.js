@@ -1752,6 +1752,29 @@ function buildAIUseCasePrioritizationLayout(section) {
     wrap.appendChild(dimRow);
   }
 
+  // Implementation Roadmap — phased sequence of all identified opportunities
+  var phases = b.implementationPhases || [];
+  if (phases.length) {
+    var roadmapLbl = document.createElement('p'); roadmapLbl.className = 'brief-label'; roadmapLbl.textContent = 'Implementation Roadmap';
+    wrap.appendChild(roadmapLbl);
+    var track = document.createElement('div'); track.className = 'pri-pdf-roadmap-track';
+    phases.forEach(function(p) {
+      var phaseCard = document.createElement('div'); phaseCard.className = 'pri-pdf-roadmap-phase';
+      var name = document.createElement('p'); name.className = 'pri-pdf-roadmap-phase__name'; name.textContent = p.phase || '';
+      phaseCard.appendChild(name);
+      if (p.initiatives && p.initiatives.length) {
+        var items = document.createElement('p'); items.className = 'pri-pdf-roadmap-phase__items'; items.textContent = p.initiatives.join(' · ');
+        phaseCard.appendChild(items);
+      }
+      if (p.rationale) {
+        var rationale = document.createElement('p'); rationale.className = 'pri-pdf-roadmap-phase__rationale'; rationale.textContent = p.rationale;
+        phaseCard.appendChild(rationale);
+      }
+      track.appendChild(phaseCard);
+    });
+    wrap.appendChild(track);
+  }
+
   // Prioritization Insight
   if (insight) {
     var ins = document.createElement('div'); ins.className = 'vision-statement';
@@ -4489,6 +4512,12 @@ html, body {
 .pri-dim-card__title { font-size: 0.7rem; font-weight: 600; color: #fff; margin: 0 0 0.35rem; }
 .pri-dim-card__bullets { list-style: none; padding: 0; margin: 0; }
 .pri-dim-card__bullets li { font-size: 0.64rem; color: rgba(255,255,255,0.7); padding: 0.1rem 0; }
+
+.pri-pdf-roadmap-track { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.5rem; margin-bottom: 1rem; }
+.pri-pdf-roadmap-phase { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-top: 2px solid rgba(251,191,36,0.4); border-radius: 0.5rem; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.pri-pdf-roadmap-phase__name { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.88); margin: 0; }
+.pri-pdf-roadmap-phase__items { font-size: 0.66rem; color: rgba(251,191,36,0.8); margin: 0; line-height: 1.4; }
+.pri-pdf-roadmap-phase__rationale { font-size: 0.66rem; color: rgba(255,255,255,0.55); margin: 0; line-height: 1.45; }
 
 /* ── Classification mapping cards ────────────────────────────────────────── */
 .cls-name--productivity { color: #5CC5A7; }

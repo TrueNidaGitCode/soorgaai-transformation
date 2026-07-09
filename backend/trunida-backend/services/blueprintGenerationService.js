@@ -681,8 +681,21 @@ Distribute the remaining identified opportunities across the other quadrants bas
    acceptable) — state the concrete reason this specific initiative, for this company, is the right
    one to prove value first.
 
+9. implementationPhases (2 to 4 items, in chronological order)
+   Sequence ALL identified opportunities from Capability 1 — not just the recommended starting point
+   — into delivery phases. Every opportunity must appear in exactly one phase; do not drop any.
+   Derive the sequence from priorityQuadrants: Quick Wins phase first (immediate), Strategic Bets next
+   (needs more investment/prep despite high value), Fill-ins opportunistically alongside an early phase
+   where they add cheap wins without competing for the same resources, Future Opportunities last
+   (deferred). Not every quadrant needs its own phase — merge quadrants into a phase where that reflects
+   a realistic delivery sequence.
+   Each item: { "phase": "<phase name + approximate timeframe, e.g. 'Phase 1 — Quick Wins (0-3 months)'>", "initiatives": ["<opportunity name from identified list>"], "rationale": "<1 sentence specific to this company>" }
+   REJECT a generic sequencing reason (e.g. "This phase focuses on quick wins" alone is NOT acceptable)
+   — name the concrete reason this company should sequence it here (e.g. an existing dependency, a
+   resource constraint, or a capability that must exist before the next phase is feasible).
+
    Add all to the brief object:
-   "recommendedStartingPoint": "...", "priorityQuadrants": [...], "dimensionCards": [...], "prioritizationInsight": "..."`,
+   "recommendedStartingPoint": "...", "priorityQuadrants": [...], "dimensionCards": [...], "prioritizationInsight": "...", "implementationPhases": [...]`,
   },
 
   'AI Use Case Classification': {
@@ -1426,6 +1439,16 @@ function parseBriefOutput(rawSections, validTitles) {
 
       const prioritizationInsight = typeof b.prioritizationInsight === 'string'
         ? b.prioritizationInsight.trim() : '';
+
+      const rawImplementationPhases = Array.isArray(b.implementationPhases) ? b.implementationPhases : [];
+      const implementationPhases = rawImplementationPhases
+        .filter(p => p && typeof p === 'object' && String(p.phase || '').trim())
+        .map(p => ({
+          phase:       String(p.phase || '').trim(),
+          initiatives: Array.isArray(p.initiatives) ? p.initiatives.map(String).filter(Boolean) : [],
+          rationale:   String(p.rationale || '').trim(),
+        }))
+        .slice(0, 4);
 
       const primaryClassification = b.primaryClassification && typeof b.primaryClassification === 'object'
         ? { name: String(b.primaryClassification.name || '').trim(), rationale: String(b.primaryClassification.rationale || '').trim(), businessOutcome: String(b.primaryClassification.businessOutcome || '').trim() }
@@ -2198,6 +2221,7 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(priorityQuadrants.length             ? { priorityQuadrants }        : {}),
           ...(dimensionCards.length                ? { dimensionCards }            : {}),
           ...(prioritizationInsight                ? { prioritizationInsight }     : {}),
+          ...(implementationPhases.length          ? { implementationPhases }      : {}),
           ...(primaryClassification                ? { primaryClassification }   : {}),
           ...(secondaryClassification              ? { secondaryClassification } : {}),
           ...(transformationImplication                ? { transformationImplication }   : {}),
@@ -2760,7 +2784,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'adoptionStages',
       // AI Use Cases extras
       'valueCategories', 'opportunityValues', 'kpiPills', 'businessValueInsight',
-      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
+      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight', 'implementationPhases',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities', 'opportunityClassifications',
       // Data Readiness: CDI extras
@@ -2869,7 +2893,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'adoptionStages',
       // AI Use Cases extras
       'valueCategories', 'opportunityValues', 'kpiPills', 'businessValueInsight',
-      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight',
+      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'prioritizationInsight', 'implementationPhases',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities', 'opportunityClassifications',
       // Data Readiness extras
@@ -3131,6 +3155,7 @@ function extractJourneyContext(capabilityName, sections) {
     if (b.valueCategories?.length)      lines.push(`Business Value Areas: ${b.valueCategories.map(v => v.title).join(', ')}`);
     if (b.kpiPills?.length)             lines.push(`Target KPIs: ${b.kpiPills.join(', ')}`);
     if (b.recommendedStartingPoint)     lines.push(`Recommended Implementation: ${b.recommendedStartingPoint}`);
+    if (b.implementationPhases?.length) lines.push(`Implementation Roadmap: ${b.implementationPhases.map(p => `${p.phase} (${p.initiatives.join(', ')})`).join('; ')}`);
     // ── Data Readiness carry-forward ──────────────────────────────────────────
     if (b.datasets?.length)
       lines.push(`Critical Datasets Identified: ${b.datasets.map(d => `${d.name}${d.typicalSource ? ` (${d.typicalSource})` : ''}`).join(', ')}`);

@@ -44,6 +44,7 @@ const opportunityValueSchema    = new mongoose.Schema({ opportunity: String, val
 const valueCategorySchema       = new mongoose.Schema({ title: String, focus: String, outcomes: [String] }, { _id: false });
 const priorityQuadrantSchema    = new mongoose.Schema({ id: String, label: String, initiatives: [String] }, { _id: false });
 const dimensionCardSchema       = new mongoose.Schema({ title: String, bullets: [String] }, { _id: false });
+const roadmapPhaseSchema        = new mongoose.Schema({ phase: String, initiatives: [String], rationale: String }, { _id: false });
 const classificationSchema      = new mongoose.Schema({ name: String, rationale: String, businessOutcome: String }, { _id: false });
 const classificationCardSchema  = new mongoose.Schema({ type: String, purpose: String, characteristics: [String], examples: [String] }, { _id: false });
 
@@ -171,6 +172,7 @@ const briefSchema = new mongoose.Schema({
   priorityQuadrants:        { type: [priorityQuadrantSchema],   default: [] },
   dimensionCards:           { type: [dimensionCardSchema],      default: [] },
   prioritizationInsight:    { type: String,   default: '' },
+  implementationPhases:     { type: [roadmapPhaseSchema],       default: [] },
   primaryClassification:    { type: classificationSchema,       default: undefined },
   secondaryClassification:  { type: classificationSchema,       default: undefined },
   classificationCards:      { type: [classificationCardSchema], default: [] },

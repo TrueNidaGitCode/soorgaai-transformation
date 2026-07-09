@@ -2411,6 +2411,7 @@ function buildPrioritizationView(section) {
   const recStart       = b.recommendedStartingPoint || '';
   const quadrants      = b.priorityQuadrants        || [];
   const dimCards       = b.dimensionCards           || [];
+  const phases         = b.implementationPhases     || [];
   const insight        = b.prioritizationInsight    || '';
 
   const wrap = document.createElement('div');
@@ -2551,6 +2552,53 @@ function buildPrioritizationView(section) {
     });
     dimSection.appendChild(dimRow);
     wrap.appendChild(dimSection);
+  }
+
+  // Implementation Roadmap — phased sequence of all identified opportunities
+  if (phases.length) {
+    const roadmapSection = document.createElement('div');
+    roadmapSection.className = 'pri-roadmap-section';
+    const roadmapLbl = document.createElement('p');
+    roadmapLbl.className = 'brief-label';
+    roadmapLbl.textContent = 'Implementation Roadmap';
+    roadmapSection.appendChild(roadmapLbl);
+
+    const track = document.createElement('div');
+    track.className = 'pri-roadmap-track';
+    phases.forEach((p, i) => {
+      const phaseCard = document.createElement('div');
+      phaseCard.className = 'pri-roadmap-phase';
+      const name = document.createElement('p');
+      name.className = 'pri-roadmap-phase__name';
+      name.textContent = p.phase || '';
+      phaseCard.appendChild(name);
+      if (p.initiatives?.length) {
+        const chips = document.createElement('div');
+        chips.className = 'pri-roadmap-phase__chips';
+        p.initiatives.forEach(init => {
+          const chip = document.createElement('span');
+          chip.className = 'pri-roadmap-chip';
+          chip.textContent = init;
+          chips.appendChild(chip);
+        });
+        phaseCard.appendChild(chips);
+      }
+      if (p.rationale) {
+        const rationale = document.createElement('p');
+        rationale.className = 'pri-roadmap-phase__rationale';
+        rationale.textContent = p.rationale;
+        phaseCard.appendChild(rationale);
+      }
+      track.appendChild(phaseCard);
+      if (i < phases.length - 1) {
+        const arrow = document.createElement('div');
+        arrow.className = 'pri-roadmap-arrow';
+        arrow.textContent = '→';
+        track.appendChild(arrow);
+      }
+    });
+    roadmapSection.appendChild(track);
+    wrap.appendChild(roadmapSection);
   }
 
   // Insight footer

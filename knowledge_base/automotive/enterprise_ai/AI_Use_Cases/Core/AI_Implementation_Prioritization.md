@@ -4,11 +4,11 @@
 
 AI Implementation Prioritization is the fourth capability in the AI Transformation Journey.
 
-Building upon the identified AI opportunity, its classification, and expected business value, this capability determines how the AI initiative should be prioritized for implementation.
+Building upon every AI opportunity identified, classified, and valued in the previous capabilities, this capability determines how ALL of them should be prioritized for implementation relative to one another.
 
-Rather than selecting between multiple AI opportunities, it evaluates whether the identified AI initiative is ready for implementation by balancing business value, implementation feasibility, strategic alignment, and organizational readiness.
+It positions every identified opportunity on a value-versus-feasibility matrix, deep-dives on whichever one should be implemented first by balancing business value, implementation feasibility, strategic alignment, and organizational readiness, and sequences all opportunities into an implementation roadmap.
 
-The outcome of this capability is an implementation priority recommendation that guides roadmap planning and AI strategy development.
+The outcome of this capability is a prioritized matrix and phased roadmap that guides delivery planning and AI strategy development.
 
 ---
 
@@ -16,29 +16,29 @@ The outcome of this capability is an implementation priority recommendation that
 
 ## Definition
 
-AI Implementation Prioritization is the structured process of determining the most appropriate implementation priority for an AI initiative.
+AI Implementation Prioritization is the structured process of ranking every identified AI opportunity against every other one, and sequencing them into a delivery order.
 
-It validates whether the initiative is ready to move into implementation by evaluating its expected business impact, implementation feasibility, strategic importance, and organizational readiness.
+It positions each opportunity on a value-versus-feasibility matrix, validates whether the single best starting point is ready to move into implementation by evaluating its expected business impact, implementation feasibility, strategic importance, and organizational readiness, and turns the full set of opportunities into a phased roadmap.
 
-The objective is to recommend the most effective starting point while minimizing implementation risk and maximizing business value.
+The objective is to recommend the most effective starting point and sequence while minimizing implementation risk and maximizing business value.
 
 ---
 
 ## Consultant Reasoning Process
 
-For every AI initiative, reason using the following sequence.
+Reason using the following sequence.
 
-1. Review the identified AI opportunity from previous capabilities.
-2. Review the AI use case classification.
-3. Review the expected business value and success measures.
-4. Assess implementation feasibility.
-5. Assess strategic alignment with project and business objectives.
-6. Assess organizational readiness.
+1. Review every AI opportunity, classification, and value area identified in previous capabilities.
+2. Place every opportunity on the value-versus-feasibility matrix.
+3. Identify which one offers the best starting point.
+4. Assess that starting point's implementation feasibility.
+5. Assess its strategic alignment with project and business objectives.
+6. Assess organizational readiness for it.
 7. Recommend the appropriate implementation priority.
-8. Identify future implementation opportunities that naturally extend this initiative.
+8. Sequence all opportunities — including the ones not starting first — into a phased roadmap.
 9. Summarise the implementation recommendation.
 
-Always prioritise the AI initiative identified in previous capabilities. Do not introduce unrelated AI initiatives.
+Always prioritise only the AI opportunities identified in previous capabilities. Do not introduce unrelated AI initiatives.
 
 ---
 
@@ -108,7 +108,7 @@ Typical considerations include:
 
 ## Output Structure
 
-Present the assessment using the following four sections. Do not include a Strategic Position field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey, so repeating it here is redundant.
+Present the assessment using the following five sections. Do not include a Strategic Position field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey, so repeating it here is redundant.
 
 ### 1. Recommended Starting Point
 
@@ -166,12 +166,31 @@ Lead with the implementation recommendation. Reject a generic momentum claim (e.
 
 ---
 
+### 5. Implementation Roadmap
+
+Sequence ALL identified opportunities — not just the recommended starting point — into 2 to 4 delivery phases, in chronological order.
+
+Derive the sequence from the Implementation Priority Matrix: Quick Wins phase first (immediate — high value, high feasibility), Strategic Bets next (needs more investment or preparation despite high value), Fill-ins opportunistically alongside an early phase where they add cheap wins without competing for the same resources, Future Opportunities last (deferred until the organization has matured on the earlier phases).
+
+For each phase provide:
+
+- A phase name and approximate timeframe (e.g. "Phase 1 — Quick Wins (0–3 months)")
+- Which opportunities from the identified list belong in this phase (do not invent new ones)
+- One sentence explaining why these opportunities are sequenced here specifically for this company
+
+Reject a generic sequencing reason (e.g. "This phase focuses on quick wins" alone is not acceptable) — name the concrete reason this company should sequence it here (e.g. an existing dependency, a resource constraint, or a capability that must exist before the next phase is feasible).
+
+Not every quadrant needs its own phase — merge quadrants into a phase where that reflects a realistic delivery sequence, but do not drop any identified opportunity from the roadmap.
+
+---
+
 ## Key Principles
 
-- Continue from the previously identified AI initiative.
+- Continue from the previously identified AI opportunities — rank and sequence all of them, not just one.
 - Prioritize implementation, not idea generation.
 - Balance business value with implementation feasibility.
 - Recommend achievable quick wins before large-scale transformation.
+- Sequence every identified opportunity into the roadmap — none should be left unaddressed.
 - Ensure recommendations align with project objectives.
 - Keep outputs concise and executive-friendly.
 
@@ -187,12 +206,12 @@ Lead with the implementation recommendation. Reject a generic momentum claim (e.
 
 Before completing this capability verify that:
 
-- Previous AI initiative is referenced.
-- AI classification has been considered.
-- Business value has been considered.
+- Every identified AI opportunity appears in the priority matrix, not just one.
+- AI classification and business value have been considered.
 - Recommended starting point is clearly identified.
-- Implementation matrix includes the selected AI initiative.
-- Assessment covers all four implementation dimensions.
+- Assessment covers all four implementation dimensions for the starting point.
+- Every identified opportunity is placed in a roadmap phase — none are dropped.
+- Roadmap phases are sequenced with a company-specific reason, not a generic label.
 - Recommendations are specific to the project context.
 - Output is understandable within 30 seconds by a Project Manager.
 
@@ -202,8 +221,8 @@ Before completing this capability verify that:
 
 At the completion of this capability the Project Manager should clearly understand:
 
-- Whether the AI initiative is ready for implementation.
-- Why it should be prioritized.
-- What implementation approach is recommended.
+- Where every identified opportunity sits on the value/feasibility matrix.
+- Which opportunity is ready for implementation first, and why.
+- What implementation approach is recommended for that starting point.
 - What factors influence implementation success.
-- How the initiative prepares the project for AI strategy and execution.
+- In what order and timeframe all opportunities should be delivered.

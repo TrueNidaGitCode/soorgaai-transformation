@@ -727,6 +727,13 @@ Distribute the remaining identified opportunities across the other quadrants bas
    is NOT acceptable) — name the concrete reason specific to this company (e.g. existing data already
    structured for it, existing tooling that lowers the lift, or a constraint that rules out riskier options).
 
+5b. recommendedInitiativeName (1 string)
+   The SAME initiative named in recommendedStartingPoint, but copied verbatim — exact characters,
+   no rewording — from its "name" field in the "Identified AI Opportunities" list. Every downstream
+   capability (Data Readiness, Technology Infrastructure, Skills & Workforce, Governance & Ethics, and
+   the rest of AI Strategy) is anchored to this exact string as "the" initiative going forward, so it
+   must match one of the identified opportunity names exactly.
+
 6. priorityQuadrants (exactly 4 items in this fixed order)
    Distribute ALL identified AI opportunities from Capability 1 across the 2×2 matrix. Use ONLY initiatives from the "Identified AI Opportunities" journey context — do not add unrelated ones.
    Order: [0] Strategic Bets (High Value, Low Feasibility), [1] Quick Wins (High Value, High Feasibility), [2] Fill-ins (Low Value, Low Feasibility), [3] Future Opportunities (Low Value, High Feasibility)
@@ -759,7 +766,7 @@ Distribute the remaining identified opportunities across the other quadrants bas
    resource constraint, or a capability that must exist before the next phase is feasible).
 
    Add all to the brief object:
-   "recommendedStartingPoint": "...", "priorityQuadrants": [...], "dimensionCards": [...], "implementationPhases": [...]`,
+   "recommendedStartingPoint": "...", "recommendedInitiativeName": "...", "priorityQuadrants": [...], "dimensionCards": [...], "implementationPhases": [...]`,
   },
 
   'AI Use Case Classification': {
@@ -1513,6 +1520,9 @@ function parseBriefOutput(rawSections, validTitles) {
 
       const recommendedStartingPoint = typeof b.recommendedStartingPoint === 'string'
         ? b.recommendedStartingPoint.trim() : '';
+
+      const recommendedInitiativeName = typeof b.recommendedInitiativeName === 'string'
+        ? b.recommendedInitiativeName.trim() : '';
 
       const rawPriorityQuadrants = Array.isArray(b.priorityQuadrants) ? b.priorityQuadrants : [];
       const priorityQuadrants = rawPriorityQuadrants
@@ -2311,6 +2321,7 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(kpiPills.length                      ? { kpiPills }                 : {}),
           ...(businessValueInsight                 ? { businessValueInsight }     : {}),
           ...(recommendedStartingPoint             ? { recommendedStartingPoint } : {}),
+          ...(recommendedInitiativeName             ? { recommendedInitiativeName } : {}),
           ...(priorityQuadrants.length             ? { priorityQuadrants }        : {}),
           ...(dimensionCards.length                ? { dimensionCards }            : {}),
           ...(implementationPhases.length          ? { implementationPhases }      : {}),
@@ -2876,7 +2887,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'adoptionStages',
       // AI Use Cases extras
       'valueCategories', 'opportunityValues', 'kpiPills', 'businessValueInsight',
-      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'implementationPhases',
+      'recommendedStartingPoint', 'recommendedInitiativeName', 'priorityQuadrants', 'dimensionCards', 'implementationPhases',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities', 'opportunityClassifications',
       // Data Readiness: CDI extras
@@ -2985,7 +2996,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'adoptionStages',
       // AI Use Cases extras
       'valueCategories', 'opportunityValues', 'kpiPills', 'businessValueInsight',
-      'recommendedStartingPoint', 'priorityQuadrants', 'dimensionCards', 'implementationPhases',
+      'recommendedStartingPoint', 'recommendedInitiativeName', 'priorityQuadrants', 'dimensionCards', 'implementationPhases',
       'primaryClassification', 'secondaryClassification', 'transformationImplication',
       'businessProblems', 'workflowSteps', 'highEffortActivities', 'aiOpportunities', 'opportunityClassifications',
       // Data Readiness extras
@@ -3327,10 +3338,14 @@ function updateTransformationContext(ctx, capabilityName, sections) {
     // C1: first identified opportunity becomes the selected initiative
     if (b.aiOpportunities?.length && !ctx.selectedInitiative)
       ctx.selectedInitiative = b.aiOpportunities[0]?.name || b.aiOpportunities[0];
-    // C2: classification details
-    if (b.opportunityClassifications?.length && !ctx.primaryClassification) {
-      const match = b.opportunityClassifications.find(o => o.opportunity === ctx.selectedInitiative) || b.opportunityClassifications[0];
-      if (match?.classification) ctx.primaryClassification = match.classification;
+    // C2: classification details — keep the full list so C4 can re-look-up the
+    // classification if the selected initiative is later corrected by Prioritization.
+    if (b.opportunityClassifications?.length) {
+      ctx._classificationsByOpportunity = b.opportunityClassifications;
+      if (!ctx.primaryClassification) {
+        const match = b.opportunityClassifications.find(o => o.opportunity === ctx.selectedInitiative) || b.opportunityClassifications[0];
+        if (match?.classification) ctx.primaryClassification = match.classification;
+      }
     }
     if (b.primaryClassification?.name)
       ctx.primaryClassification = b.primaryClassification.name;
@@ -3348,6 +3363,15 @@ function updateTransformationContext(ctx, capabilityName, sections) {
     // C4: priority quadrant and implementation recommendation
     if (b.recommendedStartingPoint)
       ctx.recommendedImplementation = b.recommendedStartingPoint;
+    // Prioritization is the authoritative "which initiative first" signal — override the
+    // placeholder captured in C1 (just whichever opportunity was listed first in AI
+    // Opportunity Discovery, before value/feasibility was known) so every downstream
+    // capability's "Selected AI Initiative" is the one actually recommended to build first.
+    if (b.recommendedInitiativeName && b.recommendedInitiativeName !== ctx.selectedInitiative) {
+      ctx.selectedInitiative = b.recommendedInitiativeName;
+      const match = ctx._classificationsByOpportunity?.find(o => o.opportunity === ctx.selectedInitiative);
+      if (match?.classification) ctx.primaryClassification = match.classification;
+    }
     if (b.priorityQuadrants?.length && ctx.selectedInitiative) {
       const keyword = ctx.selectedInitiative.toLowerCase().split(' ')[0];
       for (const q of b.priorityQuadrants) {

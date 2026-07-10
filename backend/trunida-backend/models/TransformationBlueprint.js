@@ -169,6 +169,7 @@ const briefSchema = new mongoose.Schema({
   kpiPills:                 { type: [String], default: [] },
   businessValueInsight:     { type: String,   default: '' },
   recommendedStartingPoint: { type: String,   default: '' },
+  recommendedInitiativeName: { type: String,  default: '' },
   priorityQuadrants:        { type: [priorityQuadrantSchema],   default: [] },
   dimensionCards:           { type: [dimensionCardSchema],      default: [] },
   prioritizationInsight:    { type: String,   default: '' },

@@ -2536,9 +2536,16 @@ function buildBriefPrompt({ companyName, industry, role, businessObjective, cont
   const skipStrategicPosition = NO_STRATEGIC_POSITION_CAPABILITIES.has(capabilityName);
   const coreFields = [
     !skipStrategicPosition && `strategicPosition (1–2 sentences MAXIMUM)
-   Define the IDEAL FUTURE-STATE — what success looks like when this capability is fully executing.
-   Must be outcome-oriented and concrete. Must describe the target operating model.
-   Do NOT describe current problems or gaps.`,
+   Define the IDEAL FUTURE-STATE for THIS SECTION SPECIFICALLY — what success looks like once THIS
+   section's own Definition and Key Principles (given above for each section) are fully realised.
+   Must be outcome-oriented and concrete, and must describe the one thing that is true of this section
+   once it succeeds — not a future-state statement that could be copy-pasted onto a sibling section in
+   the same capability with only the noun changed. Do NOT describe current problems or gaps.
+   REJECT a statement generic enough to fit any capability (e.g. "The organization successfully adopts
+   AI to improve outcomes" is NOT acceptable) — name the specific thing that becomes true only for THIS
+   section (e.g. for a data-privacy section, what becomes true about how data is protected; for a model-
+   validation section, what becomes true about model reliability; for a roles-planning section, what
+   becomes true about who owns what).`,
     `priorityActions (3 to 5 items)
    Executable actions for the next 90 days only.
    Must use strong verbs: Define, Deploy, Integrate, Implement, Establish, Launch, Assign.

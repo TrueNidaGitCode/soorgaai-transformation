@@ -5924,19 +5924,24 @@ function buildSectionCard(blueprint, cap, section) {
   card.dataset.sectionTitle = section.title;
 
   // Header
+  // Every KB capability file opens with a self-titled overview pillar ("# 1. <Capability Name>").
+  // When a section's title matches its parent capability's name, this IS that overview pillar —
+  // the capability header above already exposes an equivalent "Refine with AI Assistant" action
+  // scoped to the whole capability, so we skip both the redundant title and the redundant button here.
+  const isSelfTitled = resolveCapName(section.title) === resolveCapName(cap.capabilityName);
   const header = document.createElement('div');
   header.className = 'bp-section__header';
-  const titleHtml = resolveCapName(section.title) !== resolveCapName(cap.capabilityName)
-    ? `<h3 class="bp-section__title">${resolveCapName(section.title)}</h3>`
-    : '';
-  header.innerHTML = `
-    ${titleHtml}
-    <div class="bp-section__actions">
+  const titleHtml = isSelfTitled
+    ? ''
+    : `<h3 class="bp-section__title">${resolveCapName(section.title)}</h3>`;
+  const actionsHtml = isSelfTitled
+    ? ''
+    : `<div class="bp-section__actions">
       <button class="bp-section__action-btn js-refine-btn" aria-label="Refine this section with AI Assistant">Refine with AI Assistant</button>
-    </div>
-  `;
-  header.querySelector('.js-refine-btn').addEventListener('click', () => openAssistantForSection(section.title));
-  card.appendChild(header);
+    </div>`;
+  header.innerHTML = `${titleHtml}${actionsHtml}`;
+  header.querySelector('.js-refine-btn')?.addEventListener('click', () => openAssistantForSection(section.title));
+  if (titleHtml || actionsHtml) card.appendChild(header);
 
   // Route to the correct renderer based on active view mode
   if (BLUEPRINT_VIEW_MODE === 'essay') {

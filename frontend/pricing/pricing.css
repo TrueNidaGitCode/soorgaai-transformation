@@ -10,14 +10,16 @@
   --pr-card-border:  rgba(255, 255, 255, 0.08);
   --pr-text-dim:     rgba(255, 255, 255, 0.45);
   --pr-max-w:        1120px;
+  --font-serif:      'Source Serif 4', Georgia, 'Times New Roman', serif;
 }
 
 /* Override home.css global h2 for pricing-specific headings */
 .pr-faq__heading,
 .pr-footer-cta__heading {
+  font-family: var(--font-serif);
   font-size: clamp(24px, 2.6vw, 34px);
-  font-weight: 800;
-  letter-spacing: -0.3px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
   margin-bottom: 0;
   color: #fff;
 }

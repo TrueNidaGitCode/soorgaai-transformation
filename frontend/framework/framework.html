@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="The SoorgaAI Intelligence Framework — continuously evolving enterprise AI transformation across seven domains.">
+  <meta name="description" content="The SoorgaAI Intelligence Framework — continuously evolving enterprise AI transformation across six domains.">
 
   <!-- Open Graph -->
   <meta property="og:type"        content="website">
@@ -14,7 +14,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="SoorgaAI — The Intelligence Framework">
-  <meta name="twitter:description" content="Continuously evolving enterprise AI transformation across seven domains.">
+  <meta name="twitter:description" content="Continuously evolving enterprise AI transformation across six domains.">
 
   <title>SoorgaAI — The Intelligence Framework</title>
 
@@ -24,15 +24,48 @@
 
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../home.css">
+  <link rel="stylesheet" href="../landing.css">
   <link rel="stylesheet" href="framework.css">
 
   <script src="../login/config.js"></script>
-  <script type="module" src="../login/authState.js"></script>
-  <script type="module" src="../navbar/navbar.js"></script>
+  <script type="module" src="../index.js"></script>
 </head>
-<body data-nav-mode="anonymous">
+<body class="landing2">
 
-  <div id="navbar-container" style="min-height:64px"></div>
+  <!-- ── Left sidebar (fixed) — replicated from the landing page ─────────── -->
+  <aside id="side" class="side">
+    <a href="/index.html" class="side__logo" aria-label="SoorgaAI — home">Soorga<span>AI</span></a>
+
+    <p class="side__label">Blueprints</p>
+    <div id="side-blueprints" class="side__bps" aria-label="Your blueprints"></div>
+
+    <div class="side__nav" role="navigation" aria-label="Site navigation">
+      <a href="/enterprise/enterprise.html" class="side__link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+        <span>Enterprise</span>
+      </a>
+      <a href="/framework/framework.html" class="side__link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Framework</span>
+      </a>
+      <a href="/pricing/pricing.html" class="side__link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Pricing</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── Main column ─────────────────────────────────────────── -->
+  <div class="main-col">
+
+    <header class="topbar">
+      <button id="side-toggle-mobile" class="side__toggle side__toggle--mobile" aria-label="Open menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div id="topbar-auth" class="topbar__auth">
+        <a href="/login/login.html" id="topbar-login" class="auth-btn auth-btn--solid">Log in</a>
+      </div>
+    </header>
 
   <main>
 
@@ -107,7 +140,7 @@
             </div>
             <div class="fw-step__body">
               <h3>Enterprise Strategy</h3>
-              <p>A unified AI transformation strategy is defined across all seven enterprise domains for the entire organization.</p>
+              <p>A unified AI transformation strategy is defined across all six enterprise domains for the entire organization.</p>
             </div>
           </div>
 
@@ -138,13 +171,13 @@
     </section>
 
     <!-- ═══════════════════════════════════════════════════
-         SECTION 2 — SEVEN DOMAIN INTELLIGENCE
+         SECTION 2 — SIX DOMAIN INTELLIGENCE
     ════════════════════════════════════════════════════ -->
     <section class="fw-section fw-section--alt" id="domains" aria-labelledby="s2-heading">
       <div class="fw-section__inner">
         <div class="fw-section__label">02 / Domains</div>
         <h2 id="s2-heading" class="fw-section__heading">Enterprise Transformation Domains</h2>
-        <p class="fw-section__lead">SoorgaAI maintains continuously evolving frameworks across seven enterprise domains.</p>
+        <p class="fw-section__lead">SoorgaAI maintains continuously evolving frameworks across six enterprise domains.</p>
 
         <div class="fw-domains-grid">
 
@@ -164,96 +197,80 @@
             </div>
           </div>
 
-          <!-- Leadership — Coming Soon -->
-          <div class="fw-domain-card">
-            <div class="fw-domain-card__header">
-              <h3 class="fw-domain-card__name">Leadership</h3>
-              <span class="fw-domain-card__badge fw-domain-card__badge--soon">Coming Soon</span>
-            </div>
-            <p class="fw-domain-card__purpose">
-              Build executive alignment and organizational capability to lead and sustain AI transformation.
-            </p>
-            <div class="fw-domain-card__attrs fw-domain-card__attrs--muted">
-              <span class="fw-domain-attr">Best Practices</span>
-              <span class="fw-domain-attr">AI Intelligence</span>
-              <span class="fw-domain-attr">Evolution</span>
-            </div>
-          </div>
-
-          <!-- AI Use Cases — Coming Soon -->
-          <div class="fw-domain-card">
+          <!-- AI Use Cases — Available -->
+          <div class="fw-domain-card fw-domain-card--active">
             <div class="fw-domain-card__header">
               <h3 class="fw-domain-card__name">AI Use Cases</h3>
-              <span class="fw-domain-card__badge fw-domain-card__badge--soon">Coming Soon</span>
+              <span class="fw-domain-card__badge fw-domain-card__badge--available">&#10003; Available</span>
             </div>
             <p class="fw-domain-card__purpose">
               Identify, prioritize, and govern high-value AI use cases across business and engineering domains.
             </p>
-            <div class="fw-domain-card__attrs fw-domain-card__attrs--muted">
+            <div class="fw-domain-card__attrs">
               <span class="fw-domain-attr">Best Practices</span>
               <span class="fw-domain-attr">AI Intelligence</span>
               <span class="fw-domain-attr">Evolution</span>
             </div>
           </div>
 
-          <!-- Data Readiness — Coming Soon -->
-          <div class="fw-domain-card">
+          <!-- Data Readiness — Available -->
+          <div class="fw-domain-card fw-domain-card--active">
             <div class="fw-domain-card__header">
               <h3 class="fw-domain-card__name">Data Readiness</h3>
-              <span class="fw-domain-card__badge fw-domain-card__badge--soon">Coming Soon</span>
+              <span class="fw-domain-card__badge fw-domain-card__badge--available">&#10003; Available</span>
             </div>
             <p class="fw-domain-card__purpose">
               Establish data foundations, governance, and quality standards required for enterprise AI at scale.
             </p>
-            <div class="fw-domain-card__attrs fw-domain-card__attrs--muted">
+            <div class="fw-domain-card__attrs">
               <span class="fw-domain-attr">Best Practices</span>
               <span class="fw-domain-attr">AI Intelligence</span>
               <span class="fw-domain-attr">Evolution</span>
             </div>
           </div>
 
-          <!-- Technology Infrastructure — Coming Soon -->
-          <div class="fw-domain-card">
+          <!-- Technology Infrastructure — Available -->
+          <div class="fw-domain-card fw-domain-card--active">
             <div class="fw-domain-card__header">
               <h3 class="fw-domain-card__name">Technology Infrastructure</h3>
-              <span class="fw-domain-card__badge fw-domain-card__badge--soon">Coming Soon</span>
+              <span class="fw-domain-card__badge fw-domain-card__badge--available">&#10003; Available</span>
             </div>
             <p class="fw-domain-card__purpose">
               Design and govern the technical architecture enabling enterprise AI deployment at scale.
             </p>
-            <div class="fw-domain-card__attrs fw-domain-card__attrs--muted">
+            <div class="fw-domain-card__attrs">
               <span class="fw-domain-attr">Best Practices</span>
               <span class="fw-domain-attr">AI Intelligence</span>
               <span class="fw-domain-attr">Evolution</span>
             </div>
           </div>
 
-          <!-- Skills & Workforce — Coming Soon -->
-          <div class="fw-domain-card">
+          <!-- Skills & Workforce — Available -->
+          <div class="fw-domain-card fw-domain-card--active">
             <div class="fw-domain-card__header">
               <h3 class="fw-domain-card__name">Skills &amp; Workforce</h3>
-              <span class="fw-domain-card__badge fw-domain-card__badge--soon">Coming Soon</span>
+              <span class="fw-domain-card__badge fw-domain-card__badge--available">&#10003; Available</span>
             </div>
             <p class="fw-domain-card__purpose">
               Build AI competencies and adapt workforce roles for sustained enterprise AI transformation.
             </p>
-            <div class="fw-domain-card__attrs fw-domain-card__attrs--muted">
+            <div class="fw-domain-card__attrs">
               <span class="fw-domain-attr">Best Practices</span>
               <span class="fw-domain-attr">AI Intelligence</span>
               <span class="fw-domain-attr">Evolution</span>
             </div>
           </div>
 
-          <!-- Governance & Security — Coming Soon -->
-          <div class="fw-domain-card">
+          <!-- Governance & Ethics — Available -->
+          <div class="fw-domain-card fw-domain-card--active">
             <div class="fw-domain-card__header">
-              <h3 class="fw-domain-card__name">Governance &amp; Security</h3>
-              <span class="fw-domain-card__badge fw-domain-card__badge--soon">Coming Soon</span>
+              <h3 class="fw-domain-card__name">Governance &amp; Ethics</h3>
+              <span class="fw-domain-card__badge fw-domain-card__badge--available">&#10003; Available</span>
             </div>
             <p class="fw-domain-card__purpose">
-              Establish AI ethics, risk management, regulatory compliance, and enterprise security frameworks.
+              Establish responsible AI practices, model validation, regulatory compliance, and trust across every initiative.
             </p>
-            <div class="fw-domain-card__attrs fw-domain-card__attrs--muted">
+            <div class="fw-domain-card__attrs">
               <span class="fw-domain-attr">Best Practices</span>
               <span class="fw-domain-attr">AI Intelligence</span>
               <span class="fw-domain-attr">Evolution</span>
@@ -434,6 +451,74 @@
       <p>&copy; 2025 SoorgaAI. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
     </div>
   </footer>
+
+  </div>
+
+  <!-- ── Log in / sign up modal ───────────────────────────────── -->
+  <div id="auth-modal" class="auth-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <div class="auth-modal__backdrop" id="auth-modal-backdrop"></div>
+    <div class="auth-modal__card">
+      <button id="auth-modal-close" class="auth-modal__close" aria-label="Close">✕</button>
+
+      <!-- Step 1 — pick a method -->
+      <div id="auth-step-email">
+        <h2 id="auth-modal-title" class="auth-modal__title">Log in or sign up</h2>
+        <p class="auth-modal__sub">Unlock all six domains of your blueprint and keep your work saved.</p>
+
+        <button type="button" id="auth-google" class="auth-modal__btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+
+        <div class="auth-modal__or"><span>OR</span></div>
+
+        <form id="auth-email-form" class="auth-modal__email-form">
+          <input
+            type="email"
+            id="auth-email"
+            class="auth-modal__email"
+            placeholder="Email address"
+            autocomplete="email"
+            aria-label="Email address"
+          >
+          <button type="submit" id="auth-email-continue" class="auth-modal__continue">Continue</button>
+        </form>
+      </div>
+
+      <!-- Step 2 — enter the emailed code -->
+      <div id="auth-step-code" style="display:none">
+        <h2 class="auth-modal__title">Check your email</h2>
+        <p class="auth-modal__sub">We sent a 6-digit code to <strong id="auth-code-email"></strong>. It expires in 10 minutes.</p>
+
+        <form id="auth-code-form" class="auth-modal__email-form">
+          <input
+            type="text"
+            id="auth-code"
+            class="auth-modal__email auth-modal__code"
+            placeholder="6-digit code"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            aria-label="Sign-in code"
+          >
+          <button type="submit" id="auth-code-verify" class="auth-modal__continue">Verify &amp; continue</button>
+        </form>
+
+        <p class="auth-modal__links">
+          <button type="button" id="auth-code-resend" class="auth-modal__link">Resend code</button>
+          <span aria-hidden="true">·</span>
+          <button type="button" id="auth-code-back" class="auth-modal__link">Use a different email</button>
+        </p>
+      </div>
+
+      <p id="auth-modal-error" class="prompt__error" role="alert" style="display:none"></p>
+    </div>
+  </div>
 
 </body>
 </html>

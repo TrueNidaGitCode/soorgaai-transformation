@@ -11,14 +11,16 @@
   --fw-card-border:rgba(255, 255, 255, 0.08);
   --fw-text-dim:   rgba(255, 255, 255, 0.45);
   --fw-max-w:      1060px;
+  --font-serif:    'Source Serif 4', Georgia, 'Times New Roman', serif;
 }
 
 /* ── Override home.css global h2 for framework sections ───── */
 .fw-section h2,
 .fw-closing h2 {
+  font-family: var(--font-serif);
   font-size: clamp(26px, 2.8vw, 38px);
-  font-weight: 800;
-  letter-spacing: -0.4px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
   margin-bottom: 0;
   color: #fff;
 }
@@ -50,8 +52,9 @@
 }
 
 .fw-hero__sub {
-  font-size: 20px;
-  font-weight: 500;
+  font-family: var(--font-serif);
+  font-size: 21px;
+  font-weight: 600;
   color: #fff;
   line-height: 1.5;
   margin-bottom: 16px;
@@ -149,7 +152,8 @@
 }
 
 .fw-step__body h3 {
-  font-size: 16px;
+  font-family: var(--font-serif);
+  font-size: 17px;
   font-weight: 700;
   color: #fff;
   margin-bottom: 6px;
@@ -510,9 +514,15 @@
 }
 
 .fw-closing__body {
-  font-size: 18px;
+  font-family: var(--font-serif);
+  font-size: 19px;
   line-height: 1.7;
-  color: var(--fw-text-dim);
+  color: rgba(255, 255, 255, 0.8);
+  text-align: left;
+  max-width: 600px;
+  margin: 0 auto;
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--fw-brand);
 }
 
 /* ═══════════════════════════════════════════════════════════

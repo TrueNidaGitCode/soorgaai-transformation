@@ -3,11 +3,24 @@
    Extends global style.css and home.css (brand tokens + footer)
    ============================================================ */
 
+:root {
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+}
+
 /* ── Hero — centered single column ───────────────────────── */
 .ent-hero {
   max-width: 900px;
   margin: 0 auto;
   padding: 80px 40px 72px;
+}
+
+.ent-eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brand-primary, #5CC5A7);
+  margin: 0 0 0.9rem;
 }
 
 .ent-hero h1 {
@@ -96,18 +109,22 @@
 }
 
 .value-prop__headline {
+  font-family: var(--font-serif);
   font-size: clamp(24px, 2.4vw, 36px);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 16px;
   letter-spacing: -0.3px;
 }
 
 .value-prop__body {
-  font-size: 18px;
+  font-family: var(--font-serif);
+  font-size: 19px;
   line-height: 1.7;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.82);
   max-width: 640px;
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--brand-primary, #5CC5A7);
 }
 
 /* ═══════════════════════════════════════════════════════════

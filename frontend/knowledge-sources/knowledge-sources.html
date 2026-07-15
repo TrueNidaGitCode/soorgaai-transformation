@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoorgaAI — Knowledge Sources</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../workspace/workspace.css">
+  <link rel="stylesheet" href="knowledge-sources.css">
+  <script src="../login/config.js"></script>
+  <script src="../login/sessionGuard.js"></script>
+</head>
+<body class="workspace-page">
+
+  <!-- ── Navbar ──────────────────────────────────────────────────────────── -->
+  <nav class="workspace-nav" aria-label="Knowledge sources navigation">
+    <div class="workspace-nav__left">
+      <a href="/domain/domain.html" class="workspace-nav__back" aria-label="Back to blueprint">← Blueprint</a>
+      <span class="workspace-nav__logo">SOORGA<span>AI</span></span>
+    </div>
+    <div class="workspace-nav__right">
+      <span id="ks-username" class="workspace-nav__username"></span>
+      <button id="ks-logout" class="workspace-nav__logout">Logout</button>
+    </div>
+  </nav>
+
+  <main class="workspace-main ks-main" aria-label="Knowledge Sources">
+
+    <h1 class="ws-page-title">Knowledge Sources</h1>
+    <p class="ks-subtitle">Connect your team's Confluence space so blueprint generation is grounded in your actual architecture, requirements, and design docs — not generic best practice.</p>
+
+    <div id="ks-loading" class="ws-loading">
+      <div class="ws-spinner"></div>
+      <p>Loading connection status…</p>
+    </div>
+
+    <div id="ks-content" style="display:none">
+
+      <!-- ── Error / notice banner (OAuth errors, extraction warnings) ────── -->
+      <div id="ks-banner" class="ks-banner" style="display:none" role="alert"></div>
+
+      <!-- ── State: not connected ──────────────────────────────────────────── -->
+      <section id="ks-state-disconnected" class="ws-card ks-state" style="display:none">
+        <h2 class="ks-card-heading">Confluence</h2>
+        <p class="ks-card-body">No knowledge source is connected yet. Connecting Confluence lets SoorgaAI read your team's existing pages (text only — diagrams, images, and spreadsheets are skipped) and ground every blueprint in what your organisation has already documented.</p>
+        <a id="ks-connect-btn" href="#" class="ks-btn ks-btn--primary">Connect Confluence</a>
+        <p class="ks-permission-note" id="ks-disconnected-noaccess" style="display:none">Only CTO or admin users can connect a knowledge source. Ask your CTO or an admin to connect Confluence for your organisation.</p>
+      </section>
+
+      <!-- ── State: read-only viewer (non-CTO/Admin, nothing connected) ───── -->
+      <section id="ks-state-readonly-empty" class="ws-card ks-state" style="display:none">
+        <h2 class="ks-card-heading">Confluence</h2>
+        <p class="ks-card-body">No knowledge source is connected for your organisation yet.</p>
+      </section>
+
+      <!-- ── State: connected, spaces not yet selected ─────────────────────── -->
+      <section id="ks-state-select-spaces" class="ws-card ks-state" style="display:none">
+        <h2 class="ks-card-heading">Choose spaces to extract</h2>
+        <p class="ks-card-body">Connected to <strong id="ks-site-name"></strong>. Select the Confluence spaces SoorgaAI should read from.</p>
+        <div id="ks-space-list" class="ks-space-list"></div>
+        <button id="ks-extract-btn" class="ks-btn ks-btn--primary" disabled>Extract selected spaces</button>
+      </section>
+
+      <!-- ── State: extracting ─────────────────────────────────────────────── -->
+      <section id="ks-state-extracting" class="ws-card ks-state" style="display:none">
+        <h2 class="ks-card-heading">Extracting knowledge…</h2>
+        <div class="ks-progress"><div class="ks-progress__bar"></div></div>
+        <p class="ks-card-body">Reading pages from <strong id="ks-extracting-site"></strong>. This can take a few minutes depending on how many pages are selected.</p>
+      </section>
+
+      <!-- ── State: connected & synced (CTO/Admin) ─────────────────────────── -->
+      <section id="ks-state-active" class="ws-card ks-state" style="display:none">
+        <h2 class="ks-card-heading">Confluence — connected</h2>
+        <dl class="ks-meta-grid">
+          <div><dt>Site</dt><dd id="ks-active-site"></dd></div>
+          <div><dt>Spaces</dt><dd id="ks-active-spaces"></dd></div>
+          <div><dt>Last synced</dt><dd id="ks-active-synced"></dd></div>
+          <div><dt>Documents</dt><dd id="ks-active-docs"></dd></div>
+        </dl>
+        <div class="ks-actions">
+          <button id="ks-resync-btn" class="ks-btn ks-btn--secondary">Re-sync</button>
+          <button id="ks-disconnect-btn" class="ks-btn ks-btn--danger">Disconnect</button>
+        </div>
+      </section>
+
+      <!-- ── State: read-only viewer (non-CTO/Admin, connection active) ────── -->
+      <section id="ks-state-readonly-active" class="ws-card ks-state" style="display:none">
+        <h2 class="ks-card-heading">Confluence — connected</h2>
+        <p class="ks-card-body">Connected knowledge from <strong id="ks-readonly-site"></strong> is grounding your organisation's blueprints.</p>
+        <p class="ks-permission-note">Only CTO or admin users can manage this connection.</p>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ── Disconnect confirmation dialog ───────────────────────────────────── -->
+  <div id="ks-disconnect-dialog" class="ks-dialog" style="display:none" role="dialog" aria-modal="true" aria-labelledby="ks-dialog-title">
+    <div class="ks-dialog__backdrop" id="ks-dialog-backdrop"></div>
+    <div class="ks-dialog__card">
+      <h2 id="ks-dialog-title">Disconnect Confluence?</h2>
+      <p>This permanently deletes all extracted knowledge for your organisation. Blueprint generation will stop using Confluence context immediately. This cannot be undone.</p>
+      <div class="ks-dialog__actions">
+        <button id="ks-dialog-cancel" class="ks-btn ks-btn--secondary">Cancel</button>
+        <button id="ks-dialog-confirm" class="ks-btn ks-btn--danger">Disconnect</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="knowledge-sources.js"></script>
+</body>
+</html>

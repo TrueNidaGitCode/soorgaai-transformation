@@ -32,7 +32,16 @@ import {
 import { BLUEPRINT_CONFIG }       from '../config/blueprintConfig.js';
 import { enabledDomains, getDomain } from '../config/domainRegistry.js';
 import { getCapabilityEnterpriseContext, preloadEnterpriseContextMap } from './enterpriseBlueprintService.js';
+import { getConnectedKnowledgeContext, preloadConnectedKnowledgeMap } from './connectedKnowledgeService.js';
 import { detectIndustryFit } from './industryFitService.js';
+
+// Merges Enterprise Blueprint context with Connected Knowledge (Confluence)
+// context into the single string the existing prompt builders already accept —
+// avoids threading a second context parameter through every call site.
+function combineContexts(...blocks) {
+  const joined = blocks.filter(Boolean).join('\n\n');
+  return joined || null;
+}
 
 // ── Company profile helpers ───────────────────────────────────────────────────
 
@@ -2795,24 +2804,31 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
     return [];
   }
 
-  // Fetch Enterprise Blueprint grounding context (P0 — silent no-op if none exists)
+  // Fetch Enterprise Blueprint + Connected Knowledge grounding context (P0 — silent no-op if none exists)
   const enterpriseContext = companyProfile.orgName
     ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
     : null;
+  const connectedKnowledgeContext = companyProfile.orgName
+    ? await getConnectedKnowledgeContext(companyProfile.orgName, { capabilityId: cap.id, capabilityName: cap.name, businessObjective }).catch(() => null)
+    : null;
+  const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext);
 
   if (enterpriseContext) {
     console.log(`[blueprintGen] Enterprise Blueprint context injected for: ${cap.name}`);
+  }
+  if (connectedKnowledgeContext) {
+    console.log(`[blueprintGen] Connected Knowledge context injected for: ${cap.name}`);
   }
 
   if (BLUEPRINT_CONFIG.generate.essay) {
     // Essay pipeline: long-form prose first, brief extracted from it
     console.log(`[blueprintGen] Essay pipeline active for: ${cap.name}`);
-    const essays = await runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint, enterpriseContext);
+    const essays = await runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint, combinedContext);
     return await runBriefExtraction(cap, parsedSections, essays);
   }
 
   // Brief pipeline (default): direct structured generation
-  return await runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint, enterpriseContext);
+  return await runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint, combinedContext);
 }
 
 // ── Single-section extras regeneration ───────────────────────────────────────
@@ -3090,6 +3106,10 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
     const enterpriseContext = companyProfile.orgName
       ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
       : null;
+    const connectedKnowledgeContext = companyProfile.orgName
+      ? await getConnectedKnowledgeContext(companyProfile.orgName, { capabilityId: cap.id, capabilityName: cap.name, businessObjective }).catch(() => null)
+      : null;
+    const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext);
 
     // Build both context structures from capabilities completed before this one
     const blueprintDoc      = await TransformationBlueprint.findById(blueprintId).lean();
@@ -3099,7 +3119,7 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
 
     const sections = await runBriefGeneration(
       cap, companyProfile, businessObjective, groundingIndustry,
-      capBlueprint.sections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext, transformationCtx
+      capBlueprint.sections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx
     );
 
     // DEBUG: log extra fields so we can confirm LLM is generating them
@@ -3509,6 +3529,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
   const groundingIndustry = industryFit.matched ? industry : NO_KB_FOLDER_INDUSTRY;
   const domains           = enabledDomains();
   const enterpriseCtxMap  = await preloadEnterpriseContextMap(companyProfile.orgName || '');
+  const connectedKnowledgeMap = await preloadConnectedKnowledgeMap(companyProfile.orgName || '');
 
   // Single journey chain spanning all domains — each capability receives the
   // full context of everything generated before it across the entire blueprint.
@@ -3573,6 +3594,8 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         // Reuse the existing generation pipeline
         const capObj = { id: cap.id, name: cap.name, objective: cap.objective };
         const enterpriseContext = enterpriseCtxMap.get(cap.id) ?? null;
+        const connectedKnowledgeContext = connectedKnowledgeMap.get(cap.id, cap.name);
+        const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext);
         const journeyContext    = journeyContextParts.length
           ? journeyContextParts.join('\n\n')
           : null;
@@ -3581,13 +3604,13 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         if (BLUEPRINT_CONFIG.generate.essay) {
           const essays = await runEssayGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
-            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext, transformationCtx
+            parsedSections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx
           );
           sections = await runBriefExtraction(capObj, parsedSections, essays);
         } else {
           sections = await runBriefGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
-            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext, journeyContext, transformationCtx
+            parsedSections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx
           );
         }
 
@@ -3715,18 +3738,22 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
         const enterpriseContext = companyProfile.orgName
           ? await getCapabilityEnterpriseContext(companyProfile.orgName, cap.id).catch(() => null)
           : null;
+        const connectedKnowledgeContext = companyProfile.orgName
+          ? await getConnectedKnowledgeContext(companyProfile.orgName, { capabilityId: cap.id, capabilityName: cap.name, businessObjective }).catch(() => null)
+          : null;
+        const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext);
 
         let sections;
         if (BLUEPRINT_CONFIG.generate.essay) {
           const essays = await runEssayGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
-            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext
+            parsedSections, capBlueprint.automotiveBlueprint, combinedContext
           );
           sections = await runBriefExtraction(capObj, parsedSections, essays);
         } else {
           sections = await runBriefGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
-            parsedSections, capBlueprint.automotiveBlueprint, enterpriseContext
+            parsedSections, capBlueprint.automotiveBlueprint, combinedContext
           );
         }
 

@@ -18,11 +18,13 @@ import companyContextRoutes         from "./routes/companyContextRoutes.js";
 import enterpriseBlueprintRoutes    from "./routes/enterpriseBlueprintRoutes.js";
 import feedbackRoutes               from "./routes/feedbackRoutes.js";
 import guestRoutes                  from "./routes/guestRoutes.js";
+import confluenceRoutes             from "./routes/confluenceRoutes.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
 import CompanyBlueprint from "./models/CompanyBlueprint.js";
 import TransformationBlueprint from "./models/TransformationBlueprint.js";
+import { recoverStuckConfluenceSyncs } from "./services/confluenceExtractionService.js";
 
 dotenv.config();
 
@@ -97,6 +99,7 @@ app.use("/api/company-context",       companyContextRoutes);
 app.use("/api/enterprise-blueprint", enterpriseBlueprintRoutes);
 app.use("/api/feedback",             feedbackRoutes);
 app.use("/api/guest",                guestRoutes);
+app.use("/api/confluence",           confluenceRoutes);
 app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
 
 // ✅ Health Check Route
@@ -201,6 +204,12 @@ async function recoverStuckBlueprints() {
         }
     } catch (err) {
         console.warn('[startup] Blueprint recovery failed (non-fatal):', err.message);
+    }
+
+    try {
+        await recoverStuckConfluenceSyncs();
+    } catch (err) {
+        console.warn('[startup] Confluence sync recovery failed (non-fatal):', err.message);
     }
 }
 

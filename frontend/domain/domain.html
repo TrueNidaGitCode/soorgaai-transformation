@@ -42,6 +42,17 @@
     <p><strong>Outside our automotive knowledge base.</strong> <span id="domain-industryfit-reason"></span> This blueprint was generated using our core AI transformation framework only, without automotive-specific reference content.</p>
   </div>
 
+  <!-- Not-grounded notice — shown to logged-in users with an existing
+       blueprint who have neither a personal nor an org-wide Confluence
+       connection. Sibling to all 4 screens so it survives screen changes. -->
+  <div id="domain-grounding-banner" class="domain-grounding-banner" style="display:none" role="status">
+    <p>Your blueprint isn't grounded in your project's documentation yet. Connect your existing project documents in Confluence to ground it.</p>
+    <div class="domain-grounding-banner__actions">
+      <a id="domain-grounding-banner-yes" href="#" class="domain-grounding-banner__btn">Yes, connect</a>
+      <button id="domain-grounding-banner-dismiss" class="domain-grounding-banner__dismiss" aria-label="Dismiss">✕</button>
+    </div>
+  </div>
+
   <!-- ── Loading splash ─────────────────────────────────────────────────── -->
   <div id="domain-loading" class="ws-loading" aria-live="polite">
     <div class="ws-spinner"></div>

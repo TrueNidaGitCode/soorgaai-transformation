@@ -52,6 +52,47 @@ function initNav() {
   }
 }
 
+// ── Not-grounded notice ────────────────────────────────────────────────────
+// Shown to logged-in users viewing an existing blueprint who have neither a
+// personal nor an org-wide Confluence connection — covers users who were
+// already mid-session before this feature shipped and never passed through
+// profile-setup or any other connect prompt.
+
+function groundingDismissedKey(blueprintId) {
+  return `soorgaai_grounding_dismissed_${blueprintId}`;
+}
+
+async function initGroundingBanner(blueprintId) {
+  const banner = document.getElementById('domain-grounding-banner');
+  if (!banner || !blueprintId) return;
+
+  if (localStorage.getItem(groundingDismissedKey(blueprintId))) return;
+
+  const token = getToken();
+  try {
+    const [personal, org] = await Promise.all([
+      fetch(`${API_BASE}/confluence/personal/status`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => (r.ok ? r.json() : { connected: false })).catch(() => ({ connected: false })),
+      fetch(`${API_BASE}/confluence/status`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => (r.ok ? r.json() : { status: 'not_connected' })).catch(() => ({ status: 'not_connected' })),
+    ]);
+
+    if (personal.connected || org.status === 'active') return; // already grounded one way or another
+  } catch {
+    return; // status check failed — don't nag on uncertain information
+  }
+
+  const linkBtn = document.getElementById('domain-grounding-banner-yes');
+  if (linkBtn) linkBtn.href = `/knowledge-sources/knowledge-sources.html?blueprintId=${encodeURIComponent(blueprintId)}`;
+
+  document.getElementById('domain-grounding-banner-dismiss')?.addEventListener('click', () => {
+    localStorage.setItem(groundingDismissedKey(blueprintId), '1');
+    banner.style.display = 'none';
+  });
+
+  banner.style.display = 'flex';
+}
+
 // ── Screen 2: Domain-grouped progress rendering ───────────────────────────────
 
 const STATUS_ICON  = { pending: '○', 'in-progress': '⟳', generating: '⟳', completed: '✓', error: '✕' };
@@ -442,6 +483,7 @@ async function init() {
     document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
     if (bp.status === 'generating') startLiveUpdates(null);
     initGenerateForm(); // keep form initialised in case user clicks New Blueprint
+    initGroundingBanner(bp._id);
 
   } catch (err) {
     if (err.message === 'SESSION_EXPIRED') return; // already redirecting home

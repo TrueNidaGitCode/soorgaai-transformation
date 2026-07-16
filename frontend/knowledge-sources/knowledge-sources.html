@@ -15,7 +15,7 @@
   <!-- ── Navbar ──────────────────────────────────────────────────────────── -->
   <nav class="workspace-nav" aria-label="Knowledge sources navigation">
     <div class="workspace-nav__left">
-      <a href="/domain/domain.html" class="workspace-nav__back" aria-label="Back to blueprint">← Blueprint</a>
+      <a href="/" class="workspace-nav__back" aria-label="Back to home">← Home</a>
       <span class="workspace-nav__logo">SOORGA<span>AI</span></span>
     </div>
     <div class="workspace-nav__right">
@@ -85,12 +85,6 @@
         <p class="ks-card-body">No knowledge source is connected yet. Connecting Confluence lets SoorgaAI read your team's existing pages (text only — diagrams, images, and spreadsheets are skipped) and ground every blueprint in what your organisation has already documented.</p>
         <a id="ks-connect-btn" href="#" class="ks-btn ks-btn--primary">Connect Confluence</a>
         <p class="ks-permission-note" id="ks-disconnected-noaccess" style="display:none">Only CTO or admin users can connect a knowledge source. Ask your CTO or an admin to connect Confluence for your organisation.</p>
-      </section>
-
-      <!-- ── State: read-only viewer (non-CTO/Admin, nothing connected) ───── -->
-      <section id="ks-state-readonly-empty" class="ws-card ks-state" style="display:none">
-        <h2 class="ks-card-heading">Confluence</h2>
-        <p class="ks-card-body">No knowledge source is connected for your organisation yet.</p>
       </section>
 
       <!-- ── State: connected, spaces not yet selected ─────────────────────── -->

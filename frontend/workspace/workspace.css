@@ -22,6 +22,20 @@
   z-index: 100;
 }
 
+.workspace-nav__left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.workspace-nav__back {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.workspace-nav__back:hover { color: #fff; }
+
 .workspace-nav__logo {
   font-size: 1.15rem;
   font-weight: 800;

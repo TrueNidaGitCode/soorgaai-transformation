@@ -59,13 +59,19 @@ function stopPolling() {
 
 // ── Renderers ──────────────────────────────────────────────────────────────
 
+function hideAllOrgStates() {
+  document.querySelectorAll('.ks-state').forEach(el => { el.style.display = 'none'; });
+}
+
 function renderNotConnected() {
   if (canManage) {
     document.getElementById('ks-disconnected-noaccess').style.display = 'none';
     showOnly('ks-state-disconnected');
     wireConnectButton();
   } else {
-    showOnly('ks-state-readonly-empty');
+    // Non-admin users have nothing to act on here — the personal section
+    // above already covers what they can do. Nothing to show.
+    hideAllOrgStates();
   }
 }
 
@@ -158,7 +164,7 @@ async function loadStatus({ poll = false } = {}) {
   }
 
   if (status.status === 'discovering' && !(status.selectedSpaceKeys || []).length) {
-    if (!canManage) { showOnly('ks-state-readonly-empty'); return; }
+    if (!canManage) { hideAllOrgStates(); return; }
     const { spaces } = await api('/confluence/spaces');
     renderSelectSpaces(status, spaces);
     return;

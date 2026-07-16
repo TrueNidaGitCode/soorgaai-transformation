@@ -75,6 +75,14 @@
 }
 .workspace-nav__logout:hover { border-color: #ff6b6b; color: #ff6b6b; }
 
+.workspace-nav__link {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.workspace-nav__link:hover { color: #5CC5A7; }
+
 /* ── Loading ───────────────────────────────────────────────────────────────── */
 
 .ws-loading {

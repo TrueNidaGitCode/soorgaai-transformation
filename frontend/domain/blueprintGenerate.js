@@ -52,6 +52,19 @@ function initNav() {
   }
 }
 
+// ── Knowledge Sources nav link ──────────────────────────────────────────────
+// Permanent, blueprint-scoped entry point back to the per-project linking
+// page. Unlike the not-grounded banner (which only shows once, before any
+// connection exists), this is always available — a connected user still
+// needs a way to link documents to a *different* or *new* blueprint.
+
+function initKnowledgeSourcesLink(blueprintId) {
+  const link = document.getElementById('domain-knowledge-link');
+  if (!link || !blueprintId) return;
+  link.href = `/knowledge-sources/knowledge-sources.html?blueprintId=${encodeURIComponent(blueprintId)}`;
+  link.style.display = '';
+}
+
 // ── Not-grounded notice ────────────────────────────────────────────────────
 // Shown to logged-in users viewing an existing blueprint who have neither a
 // personal nor an org-wide Confluence connection — covers users who were
@@ -484,6 +497,7 @@ async function init() {
     if (bp.status === 'generating') startLiveUpdates(null);
     initGenerateForm(); // keep form initialised in case user clicks New Blueprint
     initGroundingBanner(bp._id);
+    initKnowledgeSourcesLink(bp._id);
 
   } catch (err) {
     if (err.message === 'SESSION_EXPIRED') return; // already redirecting home

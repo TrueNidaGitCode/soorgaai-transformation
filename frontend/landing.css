@@ -124,6 +124,15 @@
 .side__link:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
 .side__link svg { flex-shrink: 0; opacity: 0.8; }
 
+.side__link-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #5CC5A7;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 /* ── Main column ────────────────────────────────────────────── */
 .main-col {
   flex: 1;

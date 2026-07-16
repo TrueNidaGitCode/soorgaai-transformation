@@ -19,6 +19,7 @@ import enterpriseBlueprintRoutes    from "./routes/enterpriseBlueprintRoutes.js"
 import feedbackRoutes               from "./routes/feedbackRoutes.js";
 import guestRoutes                  from "./routes/guestRoutes.js";
 import confluenceRoutes             from "./routes/confluenceRoutes.js";
+import personalConfluenceRoutes     from "./routes/personalConfluenceRoutes.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
@@ -99,6 +100,8 @@ app.use("/api/company-context",       companyContextRoutes);
 app.use("/api/enterprise-blueprint", enterpriseBlueprintRoutes);
 app.use("/api/feedback",             feedbackRoutes);
 app.use("/api/guest",                guestRoutes);
+// More specific prefix first, per the convention noted above
+app.use("/api/confluence/personal",  personalConfluenceRoutes);
 app.use("/api/confluence",           confluenceRoutes);
 app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
 

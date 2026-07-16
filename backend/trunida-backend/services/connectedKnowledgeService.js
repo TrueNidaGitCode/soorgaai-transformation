@@ -13,7 +13,8 @@
  * hybrid retrieval without changing the calling contract.
  */
 
-import KnowledgeDocument from '../models/KnowledgeDocument.js';
+import KnowledgeDocument      from '../models/KnowledgeDocument.js';
+import LinkedProjectDocument  from '../models/LinkedProjectDocument.js';
 
 const MAX_DOCS        = 5;
 const MAX_BLOCK_CHARS = 6000;
@@ -115,4 +116,44 @@ export async function preloadConnectedKnowledgeMap(orgName) {
       return formatBlock(orgName, ranked);
     },
   };
+}
+
+// ── Personal per-blueprint linked documents ──────────────────────────────────
+// Explicitly user-picked via the personal Confluence connection — always
+// included in full, no relevance filtering (the user already chose them).
+
+function formatLinkedBlock(docs) {
+  let charBudget = MAX_BLOCK_CHARS;
+  const entries = [];
+
+  for (const doc of docs) {
+    const entry = `[${doc.title}]\n${doc.summary || '(no summary)'}`;
+    if (entry.length > charBudget && entries.length > 0) break;
+    entries.push(entry);
+    charBudget -= entry.length;
+    if (charBudget <= 0) break;
+  }
+
+  return [
+    `=== LINKED PROJECT DOCUMENTS ===`,
+    `[Source: Confluence pages the user explicitly linked to this specific project. Use for grounding only, do not quote verbatim.]`,
+    '',
+    entries.join('\n\n'),
+    `=== END LINKED PROJECT DOCUMENTS ===`,
+  ].join('\n');
+}
+
+/**
+ * Returns a formatted context block of documents explicitly linked to this
+ * blueprint via a user's personal Confluence connection, or null if none.
+ *
+ * @param {string} blueprintId
+ */
+export async function getLinkedProjectContext(blueprintId) {
+  if (!blueprintId) return null;
+
+  const docs = await LinkedProjectDocument.find({ blueprintId, extractionStatus: 'extracted' }).lean().catch(() => []);
+  if (!docs.length) return null;
+
+  return formatLinkedBlock(docs);
 }

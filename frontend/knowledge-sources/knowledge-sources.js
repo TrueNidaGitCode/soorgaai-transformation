@@ -232,8 +232,132 @@ function handleQueryParams() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('error')) showBanner(params.get('error'), 'error');
   if (params.get('connected')) showBanner('Confluence connected. Choose spaces to extract below.', 'success');
-  if (params.get('error') || params.get('connected')) {
-    window.history.replaceState({}, '', window.location.pathname);
+  if (params.get('personalConnected')) showBanner('Confluence connected. Choose a space and pick pages below.', 'success');
+  if (params.get('error') || params.get('connected') || params.get('personalConnected')) {
+    const blueprintId = params.get('blueprintId');
+    const newParams = blueprintId ? `?blueprintId=${encodeURIComponent(blueprintId)}` : '';
+    window.history.replaceState({}, '', window.location.pathname + newParams);
+  }
+}
+
+// ── Personal project-linking section ─────────────────────────────────────────
+// Independent of the org-wide state machine above — any authenticated user,
+// shown only when the page is visited with ?blueprintId=.
+
+function showPersonalOnly(id) {
+  ['ks-personal-disconnected', 'ks-personal-spaces', 'ks-personal-pages', 'ks-personal-result'].forEach(sid => {
+    const el = document.getElementById(sid);
+    if (el) el.style.display = (sid === id) ? 'block' : 'none';
+  });
+}
+
+function renderPersonalLinked(docs) {
+  const el = document.getElementById('ks-personal-linked-list');
+  if (!docs.length) { el.style.display = 'none'; return; }
+  el.innerHTML = `<p class="ks-card-body"><strong>Already linked:</strong> ${docs.map(d => esc(d.title)).join(', ')}</p>`;
+  el.style.display = 'block';
+}
+
+function wirePersonalConnectButton(blueprintId) {
+  const btn = document.getElementById('ks-personal-connect-btn');
+  btn.onclick = async (e) => {
+    e.preventDefault();
+    btn.textContent = 'Connecting…';
+    try {
+      const { url } = await api(`/confluence/personal/connect?blueprintId=${encodeURIComponent(blueprintId)}`);
+      window.location.href = url;
+    } catch (err) {
+      showBanner(err.message, 'error');
+      btn.textContent = 'Connect your Confluence';
+    }
+  };
+}
+
+function renderPersonalSpaces(siteName, spaces, blueprintId) {
+  document.getElementById('ks-personal-site-name').textContent = siteName || 'Confluence';
+  const list = document.getElementById('ks-personal-space-list');
+  list.innerHTML = spaces.map(s => `
+    <button type="button" class="ks-space-item ks-space-item--btn" data-space-key="${esc(s.key)}" data-space-name="${esc(s.name)}">
+      <span>${esc(s.name)} <span class="ks-space-key">(${esc(s.key)})</span></span>
+    </button>
+  `).join('') || '<p class="ks-card-body">No spaces found in this Confluence site.</p>';
+
+  list.querySelectorAll('.ks-space-item--btn').forEach(el => {
+    el.addEventListener('click', () => loadPersonalPages(el.dataset.spaceKey, blueprintId));
+  });
+
+  showPersonalOnly('ks-personal-spaces');
+}
+
+async function loadPersonalPages(spaceKey, blueprintId) {
+  try {
+    const { pages } = await api(`/confluence/personal/spaces/${encodeURIComponent(spaceKey)}/pages`);
+    const list = document.getElementById('ks-personal-page-list');
+    list.innerHTML = pages.map(p => `
+      <label class="ks-space-item">
+        <input type="checkbox" class="ks-page-checkbox" value="${esc(p.id)}" data-space-key="${esc(spaceKey)}">
+        <span>${esc(p.title)}</span>
+      </label>
+    `).join('') || '<p class="ks-card-body">No pages found in this space.</p>';
+
+    const linkBtn = document.getElementById('ks-personal-link-btn');
+    linkBtn.disabled = true;
+    list.querySelectorAll('.ks-page-checkbox').forEach(cb => {
+      cb.addEventListener('change', () => {
+        linkBtn.disabled = !list.querySelectorAll('.ks-page-checkbox:checked').length;
+      });
+    });
+
+    linkBtn.onclick = async () => {
+      const checked = Array.from(list.querySelectorAll('.ks-page-checkbox:checked'));
+      const pagesToLink = checked.map(cb => ({ pageId: cb.value, spaceKey: cb.dataset.spaceKey }));
+      linkBtn.disabled = true;
+      linkBtn.textContent = 'Linking…';
+      try {
+        const result = await api('/confluence/personal/link', {
+          method: 'POST',
+          body: JSON.stringify({ blueprintId, pages: pagesToLink }),
+        });
+        document.getElementById('ks-personal-result-text').textContent =
+          `${result.linkedCount} of ${result.total} document(s) linked to this blueprint.`;
+        showPersonalOnly('ks-personal-result');
+      } catch (err) {
+        showBanner(err.message, 'error');
+        linkBtn.disabled = false;
+        linkBtn.textContent = 'Link selected pages';
+      }
+    };
+
+    showPersonalOnly('ks-personal-pages');
+  } catch (err) {
+    showBanner(err.message, 'error');
+  }
+}
+
+async function initPersonalSection(blueprintId) {
+  const section = document.getElementById('ks-personal-section');
+  section.style.display = 'block';
+
+  document.getElementById('ks-personal-back-to-spaces').addEventListener('click', () => {
+    showPersonalOnly('ks-personal-spaces');
+  });
+
+  try {
+    const { documents } = await api(`/confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
+    renderPersonalLinked(documents || []);
+  } catch { /* non-critical */ }
+
+  try {
+    const status = await api('/confluence/personal/status');
+    if (!status.connected) {
+      wirePersonalConnectButton(blueprintId);
+      showPersonalOnly('ks-personal-disconnected');
+      return;
+    }
+    const { spaces } = await api('/confluence/personal/spaces');
+    renderPersonalSpaces(status.siteName, spaces, blueprintId);
+  } catch (err) {
+    showBanner(err.message, 'error');
   }
 }
 
@@ -269,8 +393,11 @@ async function init() {
 
   canManage = await determineCanManage();
 
+  const blueprintId = new URLSearchParams(window.location.search).get('blueprintId');
+
   try {
     await loadStatus();
+    if (blueprintId) await initPersonalSection(blueprintId);
   } catch (err) {
     showBanner(err.message, 'error');
   } finally {

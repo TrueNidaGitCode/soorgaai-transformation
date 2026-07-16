@@ -139,9 +139,24 @@
         }
       } catch (e) { /* ignore */ }
 
+      // New users have no UserProfile yet — detour through profile setup once,
+      // then on to the original destination. A failed check fails open.
+      function proceedRespectingProfile(dest) {
+        var apiBase = (window.CONFIG && window.CONFIG.API_BASE) || '';
+        fetch(apiBase + '/profile/me', { headers: { Authorization: 'Bearer ' + token } })
+          .then(function (resp) {
+            if (resp.status === 404) {
+              window.location.replace('/profile-setup/profile.html?redirect=' + encodeURIComponent(dest));
+            } else {
+              window.location.replace(dest);
+            }
+          })
+          .catch(function () { window.location.replace(dest); });
+      }
+
       // Small delay so user sees the "Signed in!" flash
       setTimeout(function () {
-        window.location.replace(destination);
+        proceedRespectingProfile(destination);
       }, 600);
 
       function escapeHtml(str) {

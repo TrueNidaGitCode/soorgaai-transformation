@@ -32,7 +32,7 @@ import {
 import { BLUEPRINT_CONFIG }       from '../config/blueprintConfig.js';
 import { enabledDomains, getDomain } from '../config/domainRegistry.js';
 import { getCapabilityEnterpriseContext, preloadEnterpriseContextMap } from './enterpriseBlueprintService.js';
-import { getConnectedKnowledgeContext, preloadConnectedKnowledgeMap } from './connectedKnowledgeService.js';
+import { getConnectedKnowledgeContext, preloadConnectedKnowledgeMap, getLinkedProjectContext } from './connectedKnowledgeService.js';
 import { detectIndustryFit } from './industryFitService.js';
 
 // Merges Enterprise Blueprint context with Connected Knowledge (Confluence)
@@ -3109,7 +3109,8 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
     const connectedKnowledgeContext = companyProfile.orgName
       ? await getConnectedKnowledgeContext(companyProfile.orgName, { capabilityId: cap.id, capabilityName: cap.name, businessObjective }).catch(() => null)
       : null;
-    const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext);
+    const linkedProjectContext = await getLinkedProjectContext(blueprintId).catch(() => null);
+    const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext, linkedProjectContext);
 
     // Build both context structures from capabilities completed before this one
     const blueprintDoc      = await TransformationBlueprint.findById(blueprintId).lean();
@@ -3595,7 +3596,10 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         const capObj = { id: cap.id, name: cap.name, objective: cap.objective };
         const enterpriseContext = enterpriseCtxMap.get(cap.id) ?? null;
         const connectedKnowledgeContext = connectedKnowledgeMap.get(cap.id, cap.name);
-        const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext);
+        // Fetched fresh per capability (not preloaded like the maps above) so a
+        // document the user links mid-run can still reach later capabilities.
+        const linkedProjectContext = await getLinkedProjectContext(blueprintId).catch(() => null);
+        const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext, linkedProjectContext);
         const journeyContext    = journeyContextParts.length
           ? journeyContextParts.join('\n\n')
           : null;
@@ -3741,7 +3745,8 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
         const connectedKnowledgeContext = companyProfile.orgName
           ? await getConnectedKnowledgeContext(companyProfile.orgName, { capabilityId: cap.id, capabilityName: cap.name, businessObjective }).catch(() => null)
           : null;
-        const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext);
+        const linkedProjectContext = await getLinkedProjectContext(blueprintId).catch(() => null);
+        const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext, linkedProjectContext);
 
         let sections;
         if (BLUEPRINT_CONFIG.generate.essay) {

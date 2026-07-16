@@ -117,6 +117,24 @@
   font-size: 0.82rem;
 }
 
+.ks-space-item--btn {
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: border-color 0.15s;
+}
+.ks-space-item--btn:hover { border-color: rgba(92,197,167,0.4); }
+
+.ks-linked-list {
+  background: rgba(92,197,167,0.08);
+  border: 1px solid rgba(92,197,167,0.25);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+.ks-linked-list p { margin: 0; }
+
 /* ── Extracting progress ──────────────────────────────────────────────────── */
 
 .ks-progress {

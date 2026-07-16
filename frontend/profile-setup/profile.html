@@ -45,6 +45,32 @@
 
       </form>
 
+      <!-- ── Connector cards — optional, never blocks submitting the form above ── -->
+      <section class="connector-section" aria-label="Connect a knowledge source">
+        <p class="connector-section__label">Connect your knowledge sources <span class="connector-section__optional">(optional — you can do this anytime)</span></p>
+        <div class="connector-cards">
+
+          <button type="button" id="connector-confluence" class="connector-card">
+            <svg class="connector-card__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span class="connector-card__name">Confluence</span>
+            <span class="connector-card__status" id="connector-confluence-status">Connect</span>
+          </button>
+
+          <div class="connector-card connector-card--disabled" aria-disabled="true">
+            <svg class="connector-card__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+            <span class="connector-card__name">GitHub</span>
+            <span class="connector-card__status">Coming soon</span>
+          </div>
+
+          <div class="connector-card connector-card--disabled" aria-disabled="true">
+            <svg class="connector-card__icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+            <span class="connector-card__name">SharePoint</span>
+            <span class="connector-card__status">Coming soon</span>
+          </div>
+
+        </div>
+      </section>
+
     </div>
   </main>
 

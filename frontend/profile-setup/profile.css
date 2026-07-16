@@ -141,3 +141,74 @@
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Connector cards ───────────────────────────────────────────────────────── */
+
+.connector-section {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.connector-section__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.9rem;
+}
+.connector-section__optional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: rgba(255,255,255,0.35);
+}
+
+.connector-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.connector-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0.75rem;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 1rem 0.5rem;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+.connector-card:hover:not(:disabled) { border-color: rgba(92,197,167,0.5); background: rgba(92,197,167,0.06); }
+.connector-card:disabled { cursor: default; }
+
+.connector-card--disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.connector-card__icon { color: #5CC5A7; }
+
+.connector-card__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.connector-card__status {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+}
+.connector-card__status[data-kind="progress"] { color: #f5c542; }
+.connector-card__status[data-kind="success"]  { color: #5CC5A7; }
+.connector-card__status[data-kind="error"]    { color: #ff6b6b; }
+
+@media (max-width: 420px) {
+  .connector-cards { grid-template-columns: 1fr; }
+}

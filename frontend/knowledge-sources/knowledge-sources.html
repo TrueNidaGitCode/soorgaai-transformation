@@ -39,6 +39,34 @@
       <!-- ── Error / notice banner (OAuth errors, extraction warnings) ────── -->
       <div id="ks-banner" class="ks-banner" style="display:none" role="alert"></div>
 
+      <!-- ── Personal project-linking (shown only when ?blueprintId= is present) ── -->
+      <section id="ks-personal-section" class="ws-card" style="display:none">
+        <h2 class="ks-card-heading">Link documents to this project</h2>
+        <p class="ks-card-body">Connect your own Confluence account and pick pages relevant specifically to this blueprint — independent of any organisation-wide connection below.</p>
+
+        <div id="ks-personal-linked-list" class="ks-linked-list" style="display:none"></div>
+
+        <div id="ks-personal-disconnected" style="display:none">
+          <a id="ks-personal-connect-btn" href="#" class="ks-btn ks-btn--primary">Connect your Confluence</a>
+        </div>
+
+        <div id="ks-personal-spaces" style="display:none">
+          <p class="ks-card-body">Connected to <strong id="ks-personal-site-name"></strong>. Choose a space to see its pages.</p>
+          <div id="ks-personal-space-list" class="ks-space-list"></div>
+        </div>
+
+        <div id="ks-personal-pages" style="display:none">
+          <button id="ks-personal-back-to-spaces" class="ks-btn ks-btn--secondary" type="button">← Spaces</button>
+          <div id="ks-personal-page-list" class="ks-space-list"></div>
+          <button id="ks-personal-link-btn" class="ks-btn ks-btn--primary" disabled>Link selected pages</button>
+        </div>
+
+        <div id="ks-personal-result" style="display:none">
+          <p id="ks-personal-result-text" class="ks-card-body"></p>
+          <a href="/domain/domain.html" class="ks-btn ks-btn--primary">Back to blueprint</a>
+        </div>
+      </section>
+
       <!-- ── State: not connected ──────────────────────────────────────────── -->
       <section id="ks-state-disconnected" class="ws-card ks-state" style="display:none">
         <h2 class="ks-card-heading">Confluence</h2>

@@ -12,13 +12,30 @@ import { MATURITY_STAGES } from './data/maturityStages.js';
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';
 
+// New users have no UserProfile yet — detour through profile setup once,
+// then on to the original destination. A failed check fails open (never
+// let a broken profile lookup block someone who just authenticated).
+async function redirectRespectingProfile(destination) {
+    try {
+        const token = localStorage.getItem('token');
+        const resp = await fetch(`${API_BASE()}/profile/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (resp.status === 404) {
+            window.location.href = `/profile-setup/profile.html?redirect=${encodeURIComponent(destination)}`;
+            return;
+        }
+    } catch { /* fall through to destination */ }
+    window.location.href = destination;
+}
+
 // Must match backend/trunida-backend/config/objectiveLimits.js — a soft guide
 // here (never blocks typing/pasting) backed by a hard, clearly-messaged
 // rejection server-side. No silent truncation either way.
 const MAX_OBJECTIVE_LENGTH = 8000;
 const OBJECTIVE_COUNTER_THRESHOLD = 0.85; // start showing the counter at 85% of the limit
 
-/* v8 ignore next 9 */
+/* v8 ignore next 10 */
 document.addEventListener('DOMContentLoaded', () => {
     renderStages(MATURITY_STAGES, document.querySelector('.stages'));
     wirePrimaryCta();
@@ -27,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wireTopbarAuth();
     wireHeroPrompt();
     wireAuthModal();
+    wireKnowledgeSourcesIndicator();
 });
 
 /**
@@ -173,7 +191,7 @@ export function wireAuthModal() {
             localStorage.setItem('role',     data.role || 'user');
 
             // The blueprint view claims any waiting guest preview on load
-            window.location.href = '/domain/domain.html';
+            await redirectRespectingProfile('/domain/domain.html');
         } catch (err) {
             showError(err.message);
             if (btn) { btn.disabled = false; btn.textContent = 'Verify & continue'; }
@@ -215,6 +233,33 @@ export function wireSidebar() {
         }
     });
 
+}
+
+/**
+ * Adds a small connected-state dot to the "Knowledge Sources" sidebar link
+ * once the user has a personal Confluence connection. Silent no-op for
+ * guests (no token) or anyone who hasn't connected — never blocks the link.
+ */
+export async function wireKnowledgeSourcesIndicator() {
+    const link = document.querySelector('.side__link[href="/knowledge-sources/knowledge-sources.html"]');
+    if (!link) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const resp = await fetch(`${API_BASE()}/confluence/personal/status`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!resp.ok) return;
+        const { connected } = await resp.json();
+        if (connected && !link.querySelector('.side__link-dot')) {
+            const dot = document.createElement('span');
+            dot.className = 'side__link-dot';
+            dot.setAttribute('aria-label', 'Connected');
+            link.appendChild(dot);
+        }
+    } catch { /* non-critical */ }
 }
 
 /**
@@ -425,8 +470,14 @@ export function wireHeroPrompt() {
             }
 
             // Straight into the blueprint view — it renders live, filling in
-            // capabilities as they complete
-            window.location.href = '/domain/domain.html';
+            // capabilities as they complete. Guests have no profile to check
+            // (no token at all); logged-in users get the same profile-setup
+            // safety net as the other auth entry points.
+            if (token) {
+                await redirectRespectingProfile('/domain/domain.html');
+            } else {
+                window.location.href = '/domain/domain.html';
+            }
 
         } catch (err) {
             if (errEl) {

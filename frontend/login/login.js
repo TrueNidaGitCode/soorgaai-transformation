@@ -268,38 +268,53 @@ async function handleLogin(event) {
  * Determine where to redirect user after successful login
  * ============================================
  */
-function redirectAfterLogin() {
-    console.log("🔄 Determining redirect destination");
-
+function computeLoginDestination() {
     // 1. ?redirect= query param (highest priority — set by CTARouter or platform guard)
     if (pendingRedirect) {
-        console.log(`✅ Redirecting to ?redirect param: ${pendingRedirect}`);
-        window.location.href = pendingRedirect;
-        return;
+        console.log(`✅ Destination from ?redirect param: ${pendingRedirect}`);
+        return pendingRedirect;
     }
 
     // 2. Saved redirect from localStorage (legacy pattern)
     const redirectUrl = localStorage.getItem('redirectAfterLogin');
-
     if (redirectUrl) {
-        console.log(`✅ Redirecting to saved page: ${redirectUrl}`);
+        console.log(`✅ Destination from saved page: ${redirectUrl}`);
         localStorage.removeItem('redirectAfterLogin');
-        window.location.href = redirectUrl;
-        return;
+        return redirectUrl;
     }
 
     // 3. Check for pending signal generation
-    const pendingSignalId = localStorage.getItem('pendingSignalId');
-
-    if (pendingSignalId) {
-        console.log(`✅ Redirecting to signal page with pending generation`);
-        window.location.href = '/signals/signal-page.html';
-        return;
+    if (localStorage.getItem('pendingSignalId')) {
+        console.log(`✅ Destination: signal page with pending generation`);
+        return '/signals/signal-page.html';
     }
 
-    // 4. Default redirect to workspace
-    console.log("✅ Redirecting to workspace");
-    window.location.href = '/domain/domain.html';
+    // 4. Default: workspace
+    console.log("✅ Destination: workspace");
+    return '/domain/domain.html';
+}
+
+// New users have no UserProfile yet — send them through profile setup once,
+// then on to whatever destination they were originally headed to. A failed
+// check (network error, etc.) fails open and proceeds to the destination
+// unchanged, so a broken profile check never blocks login.
+async function redirectAfterLogin() {
+    const destination = computeLoginDestination();
+
+    try {
+        const token = localStorage.getItem('token');
+        const resp = await fetch(`${window.CONFIG.API_BASE}/profile/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (resp.status === 404) {
+            window.location.href = `/profile-setup/profile.html?redirect=${encodeURIComponent(destination)}`;
+            return;
+        }
+    } catch (err) {
+        console.warn('Profile check failed, proceeding to destination anyway:', err);
+    }
+
+    window.location.href = destination;
 }
 
 /**

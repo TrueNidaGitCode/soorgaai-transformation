@@ -251,7 +251,7 @@ function handleQueryParams() {
 // shown only when the page is visited with ?blueprintId=.
 
 function showPersonalOnly(id) {
-  ['ks-personal-disconnected', 'ks-personal-spaces', 'ks-personal-pages', 'ks-personal-result'].forEach(sid => {
+  ['ks-personal-disconnected', 'ks-personal-spaces', 'ks-personal-pages', 'ks-personal-result', 'ks-personal-error'].forEach(sid => {
     const el = document.getElementById(sid);
     if (el) el.style.display = (sid === id) ? 'block' : 'none';
   });
@@ -375,18 +375,52 @@ async function initPersonalSection(blueprintId) {
     } catch { /* non-critical */ }
   }
 
+  let status;
   try {
-    const status = await api('/confluence/personal/status');
-    if (!status.connected) {
-      wirePersonalConnectButton(blueprintId);
-      showPersonalOnly('ks-personal-disconnected');
-      return;
-    }
+    status = await api('/confluence/personal/status');
+  } catch (err) {
+    showBanner(err.message, 'error');
+    return;
+  }
+
+  if (!status.connected) {
+    wirePersonalConnectButton(blueprintId);
+    showPersonalOnly('ks-personal-disconnected');
+    return;
+  }
+
+  wirePersonalErrorActions(status, blueprintId);
+  await loadPersonalSpacesOrShowError(status, blueprintId);
+}
+
+async function loadPersonalSpacesOrShowError(status, blueprintId) {
+  showConnectedBadge(status.siteName); // connected regardless of whether listing spaces succeeds
+  try {
     const { spaces, siteUrl } = await api('/confluence/personal/spaces');
     renderPersonalSpaces(status.siteName, siteUrl || status.siteUrl, spaces, blueprintId);
   } catch (err) {
-    showBanner(err.message, 'error');
+    document.getElementById('ks-personal-error-text').textContent =
+      `Connected to ${status.siteName || 'Confluence'}, but couldn't list spaces: ${err.message}`;
+    showPersonalOnly('ks-personal-error');
   }
+}
+
+function wirePersonalErrorActions(status, blueprintId) {
+  document.getElementById('ks-personal-retry-btn').onclick = () => loadPersonalSpacesOrShowError(status, blueprintId);
+
+  document.getElementById('ks-personal-disconnect-btn').onclick = async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.textContent = 'Disconnecting…';
+    try {
+      await api('/confluence/personal/disconnect', { method: 'POST' });
+      window.location.reload();
+    } catch (err) {
+      showBanner(err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Disconnect and reconnect';
+    }
+  };
 }
 
 async function determineCanManage() {

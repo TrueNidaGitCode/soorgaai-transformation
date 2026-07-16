@@ -89,6 +89,7 @@ export async function initiatePersonalConnect(req, res) {
       userId: String(req.user._id),
       blueprintId: blueprintId || '',
       returnTo: RETURN_PATHS[returnTo] ? returnTo : 'knowledge-sources',
+      flow: 'personal',
     },
     JWT_SECRET,
     { expiresIn: '10m' }

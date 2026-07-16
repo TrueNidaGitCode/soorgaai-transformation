@@ -33,6 +33,7 @@ import {
   CONFLUENCE_SCOPES,
 } from '../services/confluenceApiService.js';
 import { extractConfluenceKnowledgeAsync } from '../services/confluenceExtractionService.js';
+import { personalConfluenceCallback } from './personalConfluenceController.js';
 
 const JWT_SECRET   = process.env.JWT_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
@@ -87,7 +88,7 @@ export async function initiateConfluenceConnect(req, res) {
   }
 
   const state = jwt.sign(
-    { nonce: crypto.randomBytes(16).toString('hex'), userId: String(req.user._id), orgName: profile.orgName },
+    { nonce: crypto.randomBytes(16).toString('hex'), userId: String(req.user._id), orgName: profile.orgName, flow: 'org' },
     JWT_SECRET,
     { expiresIn: '10m' }
   );
@@ -96,6 +97,14 @@ export async function initiateConfluenceConnect(req, res) {
 }
 
 // ── GET /api/confluence/callback ──────────────────────────────────────────────
+//
+// IMPORTANT: this is the ONLY Atlassian redirect URL actually registered in
+// the developer console (CONFLUENCE_OAUTH_CALLBACK_URL is one shared env var
+// for both flows) — a personal-flow authorization lands here too, never at
+// /api/confluence/personal/callback. Dispatch on state.flow before doing any
+// org-wide-specific work, or a personal connection silently corrupts the
+// org-wide ConfluenceConnection document instead (an undefined orgName in
+// the query filter matches whatever document Mongo returns first).
 
 export async function confluenceCallback(req, res) {
   const { code, state, error } = req.query;
@@ -111,6 +120,10 @@ export async function confluenceCallback(req, res) {
     statePayload = jwt.verify(state, JWT_SECRET);
   } catch {
     return errorRedirect(res, 'Invalid or expired security state. Please try connecting again.');
+  }
+
+  if (statePayload.flow === 'personal') {
+    return personalConfluenceCallback(req, res);
   }
 
   try {

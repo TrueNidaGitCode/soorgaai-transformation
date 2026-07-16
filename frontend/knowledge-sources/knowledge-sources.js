@@ -273,16 +273,26 @@ function wirePersonalConnectButton(blueprintId) {
   };
 }
 
-function renderPersonalSpaces(siteName, spaces, blueprintId) {
-  document.getElementById('ks-personal-site-name').textContent = siteName || 'Confluence';
+function showConnectedBadge(siteName) {
+  const badge = document.getElementById('ks-personal-connected-badge');
+  document.getElementById('ks-personal-connected-site').textContent = siteName || 'Confluence';
+  badge.style.display = 'flex';
+}
+
+function renderPersonalSpaces(siteName, siteUrl, spaces, blueprintId) {
+  showConnectedBadge(siteName);
+
   const list = document.getElementById('ks-personal-space-list');
   list.innerHTML = spaces.map(s => `
-    <button type="button" class="ks-space-item ks-space-item--btn" data-space-key="${esc(s.key)}" data-space-name="${esc(s.name)}">
-      <span>${esc(s.name)} <span class="ks-space-key">(${esc(s.key)})</span></span>
-    </button>
+    <div class="ks-space-item ks-space-item--row">
+      <svg class="ks-confluence-icon ks-confluence-icon--small" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span class="ks-space-item__name">${esc(s.name)} <span class="ks-space-key">(${esc(s.key)})</span></span>
+      ${siteUrl ? `<a href="${esc(siteUrl)}/wiki/spaces/${esc(s.key)}/overview" target="_blank" rel="noopener" class="ks-space-item__open" title="Open in Confluence">Open ↗</a>` : ''}
+      <button type="button" class="ks-btn ks-btn--secondary ks-space-item__choose" data-space-key="${esc(s.key)}">Choose pages →</button>
+    </div>
   `).join('') || '<p class="ks-card-body">No spaces found in this Confluence site.</p>';
 
-  list.querySelectorAll('.ks-space-item--btn').forEach(el => {
+  list.querySelectorAll('.ks-space-item__choose').forEach(el => {
     el.addEventListener('click', () => loadPersonalPages(el.dataset.spaceKey, blueprintId));
   });
 
@@ -354,8 +364,8 @@ async function initPersonalSection(blueprintId) {
       showPersonalOnly('ks-personal-disconnected');
       return;
     }
-    const { spaces } = await api('/confluence/personal/spaces');
-    renderPersonalSpaces(status.siteName, spaces, blueprintId);
+    const { spaces, siteUrl } = await api('/confluence/personal/spaces');
+    renderPersonalSpaces(status.siteName, siteUrl || status.siteUrl, spaces, blueprintId);
   } catch (err) {
     showBanner(err.message, 'error');
   }

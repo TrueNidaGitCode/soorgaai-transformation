@@ -155,7 +155,7 @@ export async function getPersonalSpaces(req, res) {
     connection.discoveredAt = new Date();
     await connection.save();
 
-    return res.json({ spaces });
+    return res.json({ spaces, siteUrl: connection.siteUrl, siteName: connection.siteName });
   } catch (err) {
     console.error('[PersonalConfluence] GET spaces error:', err.response?.data || err.message);
     return res.status(500).json({ error: 'Failed to list Confluence spaces.' });
@@ -283,7 +283,7 @@ export async function getPersonalStatus(req, res) {
   try {
     const connection = await PersonalConfluenceConnection.findOne({ userId: req.user._id }).lean();
     if (!connection) return res.json({ connected: false });
-    return res.json({ connected: true, siteName: connection.siteName });
+    return res.json({ connected: true, siteName: connection.siteName, siteUrl: connection.siteUrl });
   } catch (err) {
     console.error('[PersonalConfluence] GET status error:', err.message);
     return res.status(500).json({ error: 'Failed to retrieve connection status.' });

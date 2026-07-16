@@ -41,8 +41,18 @@
 
       <!-- ── Personal project-linking (shown only when ?blueprintId= is present) ── -->
       <section id="ks-personal-section" class="ws-card" style="display:none">
-        <h2 class="ks-card-heading">Link documents to this project</h2>
+        <div class="ks-card-heading-row">
+          <svg class="ks-confluence-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <h2 class="ks-card-heading">Link documents to this project</h2>
+        </div>
         <p class="ks-card-body">Connect your own Confluence account and pick pages relevant specifically to this blueprint — independent of any organisation-wide connection below.</p>
+
+        <!-- Self-contained confirmation — never depends on the shared banner above,
+             so this always accurately reflects the current connection state on load. -->
+        <div id="ks-personal-connected-badge" class="ks-connected-badge" style="display:none">
+          <span class="ks-connected-badge__dot" aria-hidden="true"></span>
+          Connected to <strong id="ks-personal-connected-site"></strong>
+        </div>
 
         <div id="ks-personal-linked-list" class="ks-linked-list" style="display:none"></div>
 
@@ -51,7 +61,7 @@
         </div>
 
         <div id="ks-personal-spaces" style="display:none">
-          <p class="ks-card-body">Connected to <strong id="ks-personal-site-name"></strong>. Choose a space to see its pages.</p>
+          <p class="ks-card-body">Choose a space to see its pages, or open a space directly in Confluence.</p>
           <div id="ks-personal-space-list" class="ks-space-list"></div>
         </div>
 

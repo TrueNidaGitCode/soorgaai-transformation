@@ -298,12 +298,17 @@ function renderPersonalSpaces(siteName, siteUrl, spaces, blueprintId) {
   list.innerHTML = spaces.map(s => `
     <div class="ks-space-item ks-space-item--row">
       <svg class="ks-confluence-icon ks-confluence-icon--small" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <span class="ks-space-item__name">${esc(s.name)} <span class="ks-space-key">(${esc(s.key)})</span></span>
-      ${siteUrl ? `<a href="${esc(siteUrl)}/wiki/spaces/${esc(s.key)}/overview" target="_blank" rel="noopener" class="ks-space-item__open" title="Open in Confluence">Open ↗</a>` : ''}
-      ${blueprintId ? `
-        <button type="button" class="ks-btn ks-btn--secondary ks-space-item__link-all" data-space-key="${esc(s.key)}">Link entire space</button>
-        <button type="button" class="ks-btn ks-btn--secondary ks-space-item__choose" data-space-key="${esc(s.key)}">Choose pages →</button>
-      ` : ''}
+      <div class="ks-space-item__info">
+        <span class="ks-space-item__name">${esc(s.name)}</span>
+        <span class="ks-space-key">${esc(s.key)}</span>
+      </div>
+      <div class="ks-space-item__actions">
+        ${siteUrl ? `<a href="${esc(siteUrl)}/wiki/spaces/${esc(s.key)}/overview" target="_blank" rel="noopener" class="ks-space-item__open" title="Open in Confluence">Open ↗</a>` : ''}
+        ${blueprintId ? `
+          <button type="button" class="ks-space-item__action ks-space-item__link-all" data-space-key="${esc(s.key)}">Link entire space</button>
+          <button type="button" class="ks-space-item__action ks-space-item__choose" data-space-key="${esc(s.key)}">Choose pages →</button>
+        ` : ''}
+      </div>
     </div>
   `).join('') || '<p class="ks-card-body">No spaces found in this Confluence site.</p>';
 

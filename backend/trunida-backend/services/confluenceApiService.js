@@ -18,12 +18,13 @@ const CLIENT_SECRET = process.env.CONFLUENCE_OAUTH_CLIENT_SECRET;
 const CALLBACK_URL  = process.env.CONFLUENCE_OAUTH_CALLBACK_URL;
 
 // Granular OAuth scopes — least privilege: read-only content + space listing,
-// offline_access for refresh tokens, read:me to identify the connecting account.
+// offline_access for refresh tokens. Identity (who connected) is already
+// known from our own JWT — no User identity API scope is requested, since
+// nothing in this codebase ever calls an Atlassian /me endpoint.
 export const CONFLUENCE_SCOPES = [
   'offline_access',
   'read:confluence-content.all',
   'read:confluence-space.summary',
-  'read:me',
 ];
 
 export function isConfluenceOAuthConfigured() {

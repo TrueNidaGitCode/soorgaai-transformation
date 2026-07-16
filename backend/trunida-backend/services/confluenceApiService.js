@@ -21,10 +21,18 @@ const CALLBACK_URL  = process.env.CONFLUENCE_OAUTH_CALLBACK_URL;
 // offline_access for refresh tokens. Identity (who connected) is already
 // known from our own JWT — no User identity API scope is requested, since
 // nothing in this codebase ever calls an Atlassian /me endpoint.
+//
+// read:confluence-content.all / read:confluence-space.summary are the
+// "classic" granular scopes, tied to the retired v1 REST API
+// (/wiki/rest/api/...). Since confluenceApiService.js now calls the v2 API
+// (/wiki/api/v2/...), it needs the newer read:<resource>:confluence-style
+// scopes instead — confirm these two are enabled under the Confluence API
+// permissions in the Atlassian console (look for entries matching this
+// naming pattern, distinct from the read:confluence-* ones already added).
 export const CONFLUENCE_SCOPES = [
   'offline_access',
-  'read:confluence-content.all',
-  'read:confluence-space.summary',
+  'read:space:confluence',
+  'read:page:confluence',
 ];
 
 export function isConfluenceOAuthConfigured() {

@@ -45,7 +45,7 @@ function combineContexts(...blocks) {
 
 // ── Company profile helpers ───────────────────────────────────────────────────
 
-async function loadCompanyProfile(userId) {
+export async function loadCompanyProfile(userId) {
   try {
     const [profile, ctx] = await Promise.all([
       UserProfile.findOne({ userId }).lean(),
@@ -2624,7 +2624,7 @@ Generate the Strategy Brief JSON for all ${parsedSections.length} sections: ${se
   return { systemPrompt, userMessage };
 }
 
-async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null) {
+export async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null) {
   const { systemPrompt, userMessage } = buildBriefPrompt({
     companyName:         companyProfile.companyName,
     industry,

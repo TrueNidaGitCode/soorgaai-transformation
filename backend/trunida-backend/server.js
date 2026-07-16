@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import userRoutes              from "./routes/userRoutes.js";
 import oauthRoutes             from "./routes/oauthRoutes.js";
 import knowledgeSuggestionRoutes from "./routes/knowledgeSuggestionRoutes.js";
+import debugRoutes                  from "./routes/debugRoutes.js"; // TEMPORARY — see controllers/debugController.js
 import assessmentRoutes        from "./routes/assessmentRoutes.js";
 import dynamicAssessmentRoutes from "./routes/dynamicAssessmentRoutes.js";
 import kbRoutes                from "./routes/kbRoutes.js";
@@ -104,6 +105,7 @@ app.use("/api/guest",                guestRoutes);
 app.use("/api/confluence/personal",  personalConfluenceRoutes);
 app.use("/api/confluence",           confluenceRoutes);
 app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
+app.use("/api/debug",                debugRoutes); // TEMPORARY
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

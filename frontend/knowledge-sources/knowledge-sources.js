@@ -264,7 +264,8 @@ function wirePersonalConnectButton(blueprintId) {
     e.preventDefault();
     btn.textContent = 'Connecting…';
     try {
-      const { url } = await api(`/confluence/personal/connect?blueprintId=${encodeURIComponent(blueprintId)}`);
+      const qs = blueprintId ? `?blueprintId=${encodeURIComponent(blueprintId)}` : '';
+      const { url } = await api(`/confluence/personal/connect${qs}`);
       window.location.href = url;
     } catch (err) {
       showBanner(err.message, 'error');
@@ -288,13 +289,16 @@ function renderPersonalSpaces(siteName, siteUrl, spaces, blueprintId) {
       <svg class="ks-confluence-icon ks-confluence-icon--small" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <span class="ks-space-item__name">${esc(s.name)} <span class="ks-space-key">(${esc(s.key)})</span></span>
       ${siteUrl ? `<a href="${esc(siteUrl)}/wiki/spaces/${esc(s.key)}/overview" target="_blank" rel="noopener" class="ks-space-item__open" title="Open in Confluence">Open ↗</a>` : ''}
-      <button type="button" class="ks-btn ks-btn--secondary ks-space-item__choose" data-space-key="${esc(s.key)}">Choose pages →</button>
+      ${blueprintId ? `<button type="button" class="ks-btn ks-btn--secondary ks-space-item__choose" data-space-key="${esc(s.key)}">Choose pages →</button>` : ''}
     </div>
   `).join('') || '<p class="ks-card-body">No spaces found in this Confluence site.</p>';
 
   list.querySelectorAll('.ks-space-item__choose').forEach(el => {
     el.addEventListener('click', () => loadPersonalPages(el.dataset.spaceKey, blueprintId));
   });
+
+  const note = document.getElementById('ks-personal-no-blueprint-note');
+  if (note) note.style.display = blueprintId ? 'none' : 'block';
 
   showPersonalOnly('ks-personal-spaces');
 }
@@ -348,14 +352,22 @@ async function initPersonalSection(blueprintId) {
   const section = document.getElementById('ks-personal-section');
   section.style.display = 'block';
 
+  if (blueprintId) {
+    document.getElementById('ks-personal-heading').textContent = 'Link documents to this project';
+    document.getElementById('ks-personal-intro').textContent =
+      'Connect your own Confluence account and pick pages relevant specifically to this blueprint — independent of any organisation-wide connection below.';
+  }
+
   document.getElementById('ks-personal-back-to-spaces').addEventListener('click', () => {
     showPersonalOnly('ks-personal-spaces');
   });
 
-  try {
-    const { documents } = await api(`/confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
-    renderPersonalLinked(documents || []);
-  } catch { /* non-critical */ }
+  if (blueprintId) {
+    try {
+      const { documents } = await api(`/confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
+      renderPersonalLinked(documents || []);
+    } catch { /* non-critical */ }
+  }
 
   try {
     const status = await api('/confluence/personal/status');
@@ -407,7 +419,7 @@ async function init() {
 
   try {
     await loadStatus();
-    if (blueprintId) await initPersonalSection(blueprintId);
+    await initPersonalSection(blueprintId); // always available — blueprintId may be null
   } catch (err) {
     showBanner(err.message, 'error');
   } finally {

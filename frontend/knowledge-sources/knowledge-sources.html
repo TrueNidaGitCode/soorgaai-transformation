@@ -39,13 +39,14 @@
       <!-- ── Error / notice banner (OAuth errors, extraction warnings) ────── -->
       <div id="ks-banner" class="ks-banner" style="display:none" role="alert"></div>
 
-      <!-- ── Personal project-linking (shown only when ?blueprintId= is present) ── -->
+      <!-- ── Personal Confluence connection — always available; per-project
+           linking (below) only activates when ?blueprintId= is present ── -->
       <section id="ks-personal-section" class="ws-card" style="display:none">
         <div class="ks-card-heading-row">
           <svg class="ks-confluence-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <h2 class="ks-card-heading">Link documents to this project</h2>
+          <h2 class="ks-card-heading" id="ks-personal-heading">Your Confluence connection</h2>
         </div>
-        <p class="ks-card-body">Connect your own Confluence account and pick pages relevant specifically to this blueprint — independent of any organisation-wide connection below.</p>
+        <p class="ks-card-body" id="ks-personal-intro">Connect your own Confluence account, independent of any organisation-wide connection below. Once connected, you can link specific pages to a project from that project's blueprint.</p>
 
         <!-- Self-contained confirmation — never depends on the shared banner above,
              so this always accurately reflects the current connection state on load. -->
@@ -63,6 +64,7 @@
         <div id="ks-personal-spaces" style="display:none">
           <p class="ks-card-body">Choose a space to see its pages, or open a space directly in Confluence.</p>
           <div id="ks-personal-space-list" class="ks-space-list"></div>
+          <p class="ks-permission-note" id="ks-personal-no-blueprint-note" style="display:none">You're connected. To link specific pages to a project, open Knowledge Sources from the "isn't grounded yet" notice on that project's blueprint.</p>
         </div>
 
         <div id="ks-personal-pages" style="display:none">

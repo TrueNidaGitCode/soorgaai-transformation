@@ -46,6 +46,16 @@ const RETURN_PATHS = {
   'knowledge-sources': '/knowledge-sources/knowledge-sources.html',
 };
 
+function auditLog(action, userId, extra = {}) {
+  console.log(JSON.stringify({
+    audit:  'PersonalConfluenceConnection',
+    action,
+    userId: String(userId),
+    ts:     new Date().toISOString(),
+    ...extra,
+  }));
+}
+
 function returnUrl(returnTo, extraParams = {}) {
   const path = RETURN_PATHS[returnTo] || RETURN_PATHS['knowledge-sources'];
   const params = new URLSearchParams(extraParams);
@@ -131,6 +141,8 @@ export async function personalConfluenceCallback(req, res) {
       },
       { upsert: true }
     );
+
+    auditLog('CONNECTED', statePayload.userId, { siteName: site.name });
 
     const extraParams = { personalConnected: '1' };
     if (statePayload.blueprintId) extraParams.blueprintId = statePayload.blueprintId;
@@ -236,6 +248,7 @@ export async function linkDocumentsToBlueprint(req, res) {
     }
 
     const linkedCount = results.filter(r => r.status === 'linked').length;
+    auditLog('LINKED', req.user._id, { blueprintId, linkedCount, total: pages.length });
 
     // Generation can outrun linking (it starts before login, for guests).
     // Any capability that already finished before this link completed
@@ -301,6 +314,7 @@ export async function disconnectPersonal(req, res) {
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'No personal Confluence connection found.' });
     }
+    auditLog('DISCONNECTED', req.user._id);
     return res.json({ status: 'disconnected' });
   } catch (err) {
     console.error('[PersonalConfluence] POST disconnect error:', err.message);

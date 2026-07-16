@@ -227,6 +227,17 @@ export async function linkDocumentsToBlueprint(req, res) {
         const page = await getPageContent(connection.cloudId, accessToken, pageId);
         const normalizedText = htmlToText(page.html);
         const contentHash = hashText(normalizedText);
+
+        // Re-linking an already-linked, unchanged page happens easily now
+        // that "link entire space" can resubmit overlapping pages — skip
+        // the LLM classification call entirely when nothing's changed,
+        // mirroring the same optimization in confluenceExtractionService.js.
+        const existing = await LinkedProjectDocument.findOne({ blueprintId, sourceId: page.id }).lean();
+        if (existing && existing.contentHash === contentHash && existing.extractionStatus === 'extracted') {
+          results.push({ pageId, title: page.title, status: 'linked', unchanged: true });
+          continue;
+        }
+
         const classification = await classifyDocument(page.title, normalizedText);
 
         await LinkedProjectDocument.updateOne(
@@ -258,13 +269,17 @@ export async function linkDocumentsToBlueprint(req, res) {
     }
 
     const linkedCount = results.filter(r => r.status === 'linked').length;
-    auditLog('LINKED', req.user._id, { blueprintId, linkedCount, total: pages.length });
+    const changedCount = results.filter(r => r.status === 'linked' && !r.unchanged).length;
+    auditLog('LINKED', req.user._id, { blueprintId, linkedCount, changedCount, total: pages.length });
 
     // Generation can outrun linking (it starts before login, for guests).
     // Any capability that already finished before this link completed
     // regenerates automatically, picking up the newly-linked context —
     // same fire-and-forget function the manual "Regenerate" button calls.
-    if (linkedCount > 0) {
+    // Gated on changedCount, not linkedCount — re-submitting pages that were
+    // already linked and unchanged has nothing new for a capability to pick
+    // up, so it shouldn't trigger a wasted regeneration.
+    if (changedCount > 0) {
       for (const domain of blueprint.domains || []) {
         for (const cap of domain.capabilities || []) {
           if (cap.status !== 'completed') continue;

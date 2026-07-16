@@ -286,6 +286,11 @@ function showConnectedBadge(siteName) {
   badge.style.display = 'flex';
 }
 
+// Must match backend/trunida-backend/controllers/personalConfluenceController.js's
+// MAX_PAGES_PER_LINK_REQUEST — checked client-side too so a big space fails
+// fast with a clear message instead of a generic server error.
+const MAX_PAGES_PER_LINK = 30;
+
 function renderPersonalSpaces(siteName, siteUrl, spaces, blueprintId) {
   showConnectedBadge(siteName);
 
@@ -295,18 +300,58 @@ function renderPersonalSpaces(siteName, siteUrl, spaces, blueprintId) {
       <svg class="ks-confluence-icon ks-confluence-icon--small" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <span class="ks-space-item__name">${esc(s.name)} <span class="ks-space-key">(${esc(s.key)})</span></span>
       ${siteUrl ? `<a href="${esc(siteUrl)}/wiki/spaces/${esc(s.key)}/overview" target="_blank" rel="noopener" class="ks-space-item__open" title="Open in Confluence">Open ↗</a>` : ''}
-      ${blueprintId ? `<button type="button" class="ks-btn ks-btn--secondary ks-space-item__choose" data-space-key="${esc(s.key)}">Choose pages →</button>` : ''}
+      ${blueprintId ? `
+        <button type="button" class="ks-btn ks-btn--secondary ks-space-item__link-all" data-space-key="${esc(s.key)}">Link entire space</button>
+        <button type="button" class="ks-btn ks-btn--secondary ks-space-item__choose" data-space-key="${esc(s.key)}">Choose pages →</button>
+      ` : ''}
     </div>
   `).join('') || '<p class="ks-card-body">No spaces found in this Confluence site.</p>';
 
   list.querySelectorAll('.ks-space-item__choose').forEach(el => {
     el.addEventListener('click', () => loadPersonalPages(el.dataset.spaceKey, blueprintId));
   });
+  list.querySelectorAll('.ks-space-item__link-all').forEach(el => {
+    el.addEventListener('click', () => linkEntireSpace(el.dataset.spaceKey, blueprintId, el));
+  });
 
   const note = document.getElementById('ks-personal-no-blueprint-note');
   if (note) note.style.display = blueprintId ? 'none' : 'block';
 
   showPersonalOnly('ks-personal-spaces');
+}
+
+async function submitPagesToLink(blueprintId, pagesToLink) {
+  const result = await api('/confluence/personal/link', {
+    method: 'POST',
+    body: JSON.stringify({ blueprintId, pages: pagesToLink }),
+  });
+  document.getElementById('ks-personal-result-text').textContent =
+    `${result.linkedCount} of ${result.total} document(s) linked to this blueprint.`;
+  showPersonalOnly('ks-personal-result');
+}
+
+async function linkEntireSpace(spaceKey, blueprintId, btn) {
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Loading pages…';
+  try {
+    const { pages } = await api(`/confluence/personal/spaces/${encodeURIComponent(spaceKey)}/pages`);
+    if (!pages.length) {
+      showBanner('No pages found in this space.', 'error');
+      return;
+    }
+    if (pages.length > MAX_PAGES_PER_LINK) {
+      showBanner(`This space has ${pages.length} pages — linking a whole space at once is capped at ${MAX_PAGES_PER_LINK}. Use "Choose pages" to pick a subset instead.`, 'error');
+      return;
+    }
+    btn.textContent = `Linking ${pages.length} pages…`;
+    await submitPagesToLink(blueprintId, pages.map(p => ({ pageId: p.id, spaceKey })));
+  } catch (err) {
+    showBanner(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 async function loadPersonalPages(spaceKey, blueprintId) {
@@ -320,13 +365,23 @@ async function loadPersonalPages(spaceKey, blueprintId) {
       </label>
     `).join('') || '<p class="ks-card-body">No pages found in this space.</p>';
 
-    const linkBtn = document.getElementById('ks-personal-link-btn');
+    const linkBtn   = document.getElementById('ks-personal-link-btn');
+    const selectAll = document.getElementById('ks-personal-select-all');
     linkBtn.disabled = true;
+    if (selectAll) selectAll.checked = false;
+
+    const updateLinkBtnState = () => {
+      linkBtn.disabled = !list.querySelectorAll('.ks-page-checkbox:checked').length;
+    };
     list.querySelectorAll('.ks-page-checkbox').forEach(cb => {
-      cb.addEventListener('change', () => {
-        linkBtn.disabled = !list.querySelectorAll('.ks-page-checkbox:checked').length;
-      });
+      cb.addEventListener('change', updateLinkBtnState);
     });
+    if (selectAll) {
+      selectAll.onchange = () => {
+        list.querySelectorAll('.ks-page-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
+        updateLinkBtnState();
+      };
+    }
 
     linkBtn.onclick = async () => {
       const checked = Array.from(list.querySelectorAll('.ks-page-checkbox:checked'));
@@ -334,13 +389,7 @@ async function loadPersonalPages(spaceKey, blueprintId) {
       linkBtn.disabled = true;
       linkBtn.textContent = 'Linking…';
       try {
-        const result = await api('/confluence/personal/link', {
-          method: 'POST',
-          body: JSON.stringify({ blueprintId, pages: pagesToLink }),
-        });
-        document.getElementById('ks-personal-result-text').textContent =
-          `${result.linkedCount} of ${result.total} document(s) linked to this blueprint.`;
-        showPersonalOnly('ks-personal-result');
+        await submitPagesToLink(blueprintId, pagesToLink);
       } catch (err) {
         showBanner(err.message, 'error');
         linkBtn.disabled = false;

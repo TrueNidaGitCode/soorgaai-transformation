@@ -149,6 +149,17 @@
   font-size: 0.82rem;
 }
 
+.ks-select-all {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin: 0.9rem 0 0.6rem;
+}
+.ks-select-all input { accent-color: #5CC5A7; }
+
 .ks-space-item--row {
   cursor: default;
   flex-wrap: wrap;

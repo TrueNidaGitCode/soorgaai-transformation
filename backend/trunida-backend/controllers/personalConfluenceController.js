@@ -193,14 +193,23 @@ export async function getPersonalSpacePages(req, res) {
 }
 
 // ── POST /api/confluence/personal/link ────────────────────────────────────────
-// Synchronous — a handful of user-picked pages, not a full-space sync, so we
-// can classify them inline and return per-page success/failure immediately.
+// Synchronous — pages are classified inline so the response carries an
+// immediate per-page result. Capped (not fire-and-forget like the org-wide
+// bulk sync) since a synchronous request shouldn't run unbounded — link an
+// entire space via the frontend's "Link entire space" action up to this cap;
+// larger spaces need the org-wide CTO/Admin-managed sync instead.
+const MAX_PAGES_PER_LINK_REQUEST = 30;
 
 export async function linkDocumentsToBlueprint(req, res) {
   try {
     const { blueprintId, pages } = req.body;
     if (!blueprintId || !Array.isArray(pages) || !pages.length) {
       return res.status(400).json({ error: 'blueprintId and a non-empty pages array are required.' });
+    }
+    if (pages.length > MAX_PAGES_PER_LINK_REQUEST) {
+      return res.status(400).json({
+        error: `Too many pages in one request (${pages.length}, max ${MAX_PAGES_PER_LINK_REQUEST}). Link fewer pages at a time, or ask your CTO/Admin to connect this space to the whole organisation instead.`,
+      });
     }
 
     const blueprint = await verifyBlueprintOwnership(blueprintId, req.user._id);

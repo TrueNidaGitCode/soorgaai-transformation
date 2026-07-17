@@ -282,8 +282,11 @@ export async function linkDocumentsToBlueprint(req, res) {
     // same fire-and-forget function the manual "Regenerate" button calls.
     // Gated on changedCount, not linkedCount — re-submitting pages that were
     // already linked and unchanged has nothing new for a capability to pick
-    // up, so it shouldn't trigger a wasted regeneration.
-    if (changedCount > 0) {
+    // up, so it shouldn't trigger a wasted regeneration. Also skipped
+    // entirely when force is set — that's an explicit re-classify-for-
+    // testing action, not organically discovering new content, so the
+    // caller decides what to regenerate rather than it cascading automatically.
+    if (changedCount > 0 && !force) {
       for (const domain of blueprint.domains || []) {
         for (const cap of domain.capabilities || []) {
           if (cap.status !== 'completed') continue;

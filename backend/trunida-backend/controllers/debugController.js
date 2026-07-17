@@ -16,6 +16,8 @@
  */
 
 import UserProfile from '../models/UserProfile.js';
+import { User } from '../models/user.js';
+import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { getDomainCapabilityBlueprint } from '../services/strategyCanvasService.js';
 import { loadCompanyProfile, runBriefGeneration } from '../services/blueprintGenerationService.js';
 import { getLinkedProjectContext } from '../services/connectedKnowledgeService.js';
@@ -76,5 +78,58 @@ export async function compareGrounding(req, res) {
   } catch (err) {
     console.error('[Debug] compareGrounding error:', err.message);
     return res.status(500).json({ error: 'Failed to run grounding comparison.' });
+  }
+}
+
+// ── GET /api/debug/user-blueprints?email=... ──────────────────────────────────
+// Looks up another named user's blueprint(s) by email — a real cross-user
+// privacy boundary. Platform admins (JWT role 'admin') can look up anyone;
+// CTOs can only look up users within their own organisation, not across
+// tenants — same-org teammates only, not a general cross-customer lookup.
+
+export async function getUserBlueprints(req, res) {
+  try {
+    const callerProfile = await UserProfile.findOne({ userId: req.user._id }).lean();
+    const isPlatformAdmin = req.user.role === 'admin';
+    const isCto = callerProfile?.role === 'CTO';
+    if (!isPlatformAdmin && !isCto) {
+      return res.status(403).json({ error: 'Access denied. This lookup is restricted to CTO or admin users.' });
+    }
+
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ error: 'email query parameter is required.' });
+    }
+
+    const user = await User.findOne({ email }).lean();
+    if (!user) {
+      return res.status(404).json({ error: `No user found with email ${email}.` });
+    }
+
+    if (!isPlatformAdmin) {
+      const targetProfile = await UserProfile.findOne({ userId: user._id }).lean();
+      if (!targetProfile || targetProfile.orgName !== callerProfile.orgName) {
+        return res.status(403).json({ error: 'Access denied. You can only look up users within your own organisation.' });
+      }
+    }
+
+    const blueprints = await TransformationBlueprint.find({ userId: user._id })
+      .select('businessObjective status createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({
+      email,
+      userId: user._id,
+      blueprints: blueprints.map(bp => ({
+        blueprintId: bp._id,
+        businessObjective: bp.businessObjective,
+        status: bp.status,
+        createdAt: bp.createdAt,
+      })),
+    });
+  } catch (err) {
+    console.error('[Debug] getUserBlueprints error:', err.message);
+    return res.status(500).json({ error: 'Failed to look up blueprints for that user.' });
   }
 }

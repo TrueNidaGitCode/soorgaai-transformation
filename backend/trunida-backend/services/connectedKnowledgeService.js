@@ -43,7 +43,8 @@ function formatBlock(orgName, docs) {
   const entries = [];
 
   for (const doc of docs) {
-    const entry = `[${doc.title}] (${doc.docType})\n${doc.summary || '(no summary)'}`;
+    const keywordLine = doc.keywords?.length ? `\nKey terms: ${doc.keywords.join(', ')}` : '';
+    const entry = `[${doc.title}] (${doc.docType})${keywordLine}\n${doc.summary || '(no summary)'}`;
     if (entry.length > charBudget && entries.length > 0) break; // keep at least one doc
     entries.push(entry);
     charBudget -= entry.length;
@@ -52,7 +53,7 @@ function formatBlock(orgName, docs) {
 
   return [
     `=== CONNECTED KNOWLEDGE — ${orgName} (Confluence) ===`,
-    `[Source: customer Confluence space, extracted automatically. Use for grounding only, do not quote verbatim.]`,
+    `[Source: customer Confluence space, extracted automatically. Use the specific systems, tools, and terms named below by their actual names — this is what makes the output sound grounded in this project rather than generic. Do not copy full sentences or paragraphs verbatim.]`,
     '',
     entries.join('\n\n'),
     `=== END CONNECTED KNOWLEDGE ===`,
@@ -127,7 +128,8 @@ function formatLinkedBlock(docs) {
   const entries = [];
 
   for (const doc of docs) {
-    const entry = `[${doc.title}]\n${doc.summary || '(no summary)'}`;
+    const keywordLine = doc.keywords?.length ? `\nKey terms: ${doc.keywords.join(', ')}` : '';
+    const entry = `[${doc.title}]${keywordLine}\n${doc.summary || '(no summary)'}`;
     if (entry.length > charBudget && entries.length > 0) break;
     entries.push(entry);
     charBudget -= entry.length;
@@ -136,7 +138,7 @@ function formatLinkedBlock(docs) {
 
   return [
     `=== LINKED PROJECT DOCUMENTS ===`,
-    `[Source: Confluence pages the user explicitly linked to this specific project. Use for grounding only, do not quote verbatim.]`,
+    `[Source: Confluence pages the user explicitly linked to this specific project. Use the specific systems, tools, and terms named below by their actual names — this is what makes the output sound grounded in this project rather than generic. Do not copy full sentences or paragraphs verbatim.]`,
     '',
     entries.join('\n\n'),
     `=== END LINKED PROJECT DOCUMENTS ===`,

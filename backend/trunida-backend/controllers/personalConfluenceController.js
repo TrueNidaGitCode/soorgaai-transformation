@@ -202,7 +202,7 @@ const MAX_PAGES_PER_LINK_REQUEST = 30;
 
 export async function linkDocumentsToBlueprint(req, res) {
   try {
-    const { blueprintId, pages } = req.body;
+    const { blueprintId, pages, force } = req.body;
     if (!blueprintId || !Array.isArray(pages) || !pages.length) {
       return res.status(400).json({ error: 'blueprintId and a non-empty pages array are required.' });
     }
@@ -232,8 +232,11 @@ export async function linkDocumentsToBlueprint(req, res) {
         // that "link entire space" can resubmit overlapping pages — skip
         // the LLM classification call entirely when nothing's changed,
         // mirroring the same optimization in confluenceExtractionService.js.
+        // force:true bypasses this — needed to pick up a classification
+        // prompt improvement for pages whose Confluence content itself
+        // hasn't changed (the hash alone can't detect that case).
         const existing = await LinkedProjectDocument.findOne({ blueprintId, sourceId: page.id }).lean();
-        if (existing && existing.contentHash === contentHash && existing.extractionStatus === 'extracted') {
+        if (!force && existing && existing.contentHash === contentHash && existing.extractionStatus === 'extracted') {
           results.push({ pageId, title: page.title, status: 'linked', unchanged: true });
           continue;
         }
@@ -251,6 +254,7 @@ export async function linkDocumentsToBlueprint(req, res) {
               title: page.title,
               permalink: page.permalink,
               summary: classification.summary,
+              keywords: classification.keywords,
               rawText: truncateForLLM(normalizedText),
               contentHash,
               confluenceLastModified: page.lastModified ? new Date(page.lastModified) : null,

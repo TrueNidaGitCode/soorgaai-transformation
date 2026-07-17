@@ -49,10 +49,12 @@ export function truncateForLLM(text) {
 function buildKnowledgeExtractionPrompt(title, normalizedText) {
   const systemPrompt = `You are SoorgaAI, classifying an internal company document to ground AI transformation strategy generation.
 
+The whole point of this document is to make later generation sound like it was written by someone who actually read it — not a generic industry description. That means preserving the source's own vocabulary, not translating it into more common synonyms.
+
 Given a document's title and text, produce:
 1. docType — exactly one of: architecture, requirements, design, presentation, meeting_notes, other
-2. summary — 3-5 sentences capturing the concrete, specific content (systems named, decisions made, requirements stated). Do not write a generic description.
-3. keywords — 5-10 short keywords/phrases useful for matching this document to a relevant business capability later
+2. summary — 3-5 sentences capturing the concrete, specific content (systems named, decisions made, requirements stated). REJECT any summary that would read the same if you swapped in a different company's document — it must be impossible to write without having read this exact text. Use the document's own proper nouns, system names, tool names, and process names verbatim (e.g. if the source says "Flash Execution Logs", write "Flash Execution Logs" — do not generalize it to "diagnostic logs"; if it says "OTA Manifest", keep "OTA Manifest" — do not write "configuration file"). Do not write a generic description.
+3. keywords — 5-10 exact terms and phrases copied verbatim from the source text (system names, tool names, document names, process names) — not generic category labels. These are used later to ground generation in this document's actual vocabulary, so invented or generalized terms defeat the purpose.
 
 OUTPUT — valid JSON only, no markdown fences:
 { "docType": "...", "summary": "...", "keywords": ["...", "..."] }`;

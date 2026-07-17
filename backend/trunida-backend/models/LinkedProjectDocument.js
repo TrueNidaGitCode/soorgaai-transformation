@@ -25,6 +25,7 @@ const linkedProjectDocumentSchema = new mongoose.Schema({
   permalink: { type: String, default: '' },
 
   summary: { type: String, default: '' },
+  keywords: { type: [String], default: [] },
   rawText: { type: String, default: '' },
   contentHash: { type: String, default: '' },
 

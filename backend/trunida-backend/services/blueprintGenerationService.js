@@ -3110,6 +3110,7 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
       ? await getConnectedKnowledgeContext(companyProfile.orgName, { capabilityId: cap.id, capabilityName: cap.name, businessObjective }).catch(() => null)
       : null;
     const linkedProjectContext = await getLinkedProjectContext(blueprintId).catch(() => null);
+    console.log(`[transformationGen] Linked Confluence context for ${cap.name}: ${linkedProjectContext ? 'INCLUDED' : 'none'}`);
     const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext, linkedProjectContext);
 
     // Build both context structures from capabilities completed before this one
@@ -3599,6 +3600,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         // Fetched fresh per capability (not preloaded like the maps above) so a
         // document the user links mid-run can still reach later capabilities.
         const linkedProjectContext = await getLinkedProjectContext(blueprintId).catch(() => null);
+        console.log(`[transformationGen] Linked Confluence context for ${cap.name}: ${linkedProjectContext ? 'INCLUDED' : 'none'}`);
         const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext, linkedProjectContext);
         const journeyContext    = journeyContextParts.length
           ? journeyContextParts.join('\n\n')
@@ -3746,6 +3748,7 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
           ? await getConnectedKnowledgeContext(companyProfile.orgName, { capabilityId: cap.id, capabilityName: cap.name, businessObjective }).catch(() => null)
           : null;
         const linkedProjectContext = await getLinkedProjectContext(blueprintId).catch(() => null);
+        console.log(`[domainRegen] Linked Confluence context for ${cap.name}: ${linkedProjectContext ? 'INCLUDED' : 'none'}`);
         const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext, linkedProjectContext);
 
         let sections;

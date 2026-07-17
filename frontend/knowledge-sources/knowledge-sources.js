@@ -264,6 +264,18 @@ function renderPersonalLinked(docs) {
   el.style.display = 'block';
 }
 
+// spaceKey -> count of already-linked documents from that space, so the
+// space list below can show which ones have already been worked on instead
+// of looking identical to spaces nothing has ever been linked from.
+function countLinkedBySpace(docs) {
+  const counts = {};
+  for (const doc of docs) {
+    if (!doc.spaceKey) continue;
+    counts[doc.spaceKey] = (counts[doc.spaceKey] || 0) + 1;
+  }
+  return counts;
+}
+
 function wirePersonalConnectButton(blueprintId) {
   const btn = document.getElementById('ks-personal-connect-btn');
   btn.onclick = async (e) => {
@@ -291,17 +303,20 @@ function showConnectedBadge(siteName) {
 // fast with a clear message instead of a generic server error.
 const MAX_PAGES_PER_LINK = 30;
 
-function renderPersonalSpaces(siteName, siteUrl, spaces, blueprintId) {
+function renderPersonalSpaces(siteName, siteUrl, spaces, blueprintId, linkedCounts = {}) {
   showConnectedBadge(siteName);
 
   const list = document.getElementById('ks-personal-space-list');
-  list.innerHTML = spaces.map(s => `
+  list.innerHTML = spaces.map(s => {
+    const linkedHere = linkedCounts[s.key] || 0;
+    return `
     <div class="ks-space-item ks-space-item--row">
       <svg class="ks-confluence-icon ks-confluence-icon--small" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <div class="ks-space-item__info">
         <span class="ks-space-item__name">${esc(s.name)}</span>
         <span class="ks-space-key">${esc(s.key)}</span>
       </div>
+      ${linkedHere ? `<span class="ks-space-item__linked-badge">✓ ${linkedHere} linked</span>` : ''}
       <div class="ks-space-item__actions">
         ${siteUrl ? `<a href="${esc(siteUrl)}/wiki/spaces/${esc(s.key)}/overview" target="_blank" rel="noopener" class="ks-space-item__open" title="Open in Confluence">Open ↗</a>` : ''}
         ${blueprintId ? `
@@ -310,7 +325,8 @@ function renderPersonalSpaces(siteName, siteUrl, spaces, blueprintId) {
         ` : ''}
       </div>
     </div>
-  `).join('') || '<p class="ks-card-body">No spaces found in this Confluence site.</p>';
+  `;
+  }).join('') || '<p class="ks-card-body">No spaces found in this Confluence site.</p>';
 
   list.querySelectorAll('.ks-space-item__choose').forEach(el => {
     el.addEventListener('click', () => loadPersonalPages(el.dataset.spaceKey, blueprintId));
@@ -422,10 +438,12 @@ async function initPersonalSection(blueprintId) {
     showPersonalOnly('ks-personal-spaces');
   });
 
+  let linkedCounts = {};
   if (blueprintId) {
     try {
       const { documents } = await api(`/confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
       renderPersonalLinked(documents || []);
+      linkedCounts = countLinkedBySpace(documents || []);
     } catch { /* non-critical */ }
   }
 
@@ -443,15 +461,15 @@ async function initPersonalSection(blueprintId) {
     return;
   }
 
-  wirePersonalErrorActions(status, blueprintId);
-  await loadPersonalSpacesOrShowError(status, blueprintId);
+  wirePersonalErrorActions(status, blueprintId, linkedCounts);
+  await loadPersonalSpacesOrShowError(status, blueprintId, linkedCounts);
 }
 
-async function loadPersonalSpacesOrShowError(status, blueprintId) {
+async function loadPersonalSpacesOrShowError(status, blueprintId, linkedCounts = {}) {
   showConnectedBadge(status.siteName); // connected regardless of whether listing spaces succeeds
   try {
     const { spaces, siteUrl } = await api('/confluence/personal/spaces');
-    renderPersonalSpaces(status.siteName, siteUrl || status.siteUrl, spaces, blueprintId);
+    renderPersonalSpaces(status.siteName, siteUrl || status.siteUrl, spaces, blueprintId, linkedCounts);
   } catch (err) {
     document.getElementById('ks-personal-error-text').textContent =
       `Connected to ${status.siteName || 'Confluence'}, but couldn't list spaces: ${err.message}`;
@@ -459,8 +477,8 @@ async function loadPersonalSpacesOrShowError(status, blueprintId) {
   }
 }
 
-function wirePersonalErrorActions(status, blueprintId) {
-  document.getElementById('ks-personal-retry-btn').onclick = () => loadPersonalSpacesOrShowError(status, blueprintId);
+function wirePersonalErrorActions(status, blueprintId, linkedCounts = {}) {
+  document.getElementById('ks-personal-retry-btn').onclick = () => loadPersonalSpacesOrShowError(status, blueprintId, linkedCounts);
 
   document.getElementById('ks-personal-disconnect-btn').onclick = async (e) => {
     const btn = e.currentTarget;

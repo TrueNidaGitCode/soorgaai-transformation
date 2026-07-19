@@ -99,6 +99,19 @@ const NO_STRATEGIC_POSITION_CAPABILITIES = new Set([
   'AI Implementation Prioritization',
 ]);
 
+// These 4 capabilities render exclusively through their own SECTION_TEMPLATES extras
+// (custom CTO layouts in blueprintWorkspace.js) — priorityActions/successMetrics/
+// leadershipValidation are never displayed for them, so generating them wastes
+// tokens/time and dilutes prompt focus. See blueprintWorkspace.js's section-title
+// routing switch, which explicitly avoids the generic brief-grid fallback for these
+// sections (its Leadership Validation cell is "not needed in CTO style").
+const AI_USE_CASES_CAPABILITIES = new Set([
+  'AI Opportunity Discovery',
+  'AI Use Case Classification',
+  'Business Value Definition',
+  'AI Implementation Prioritization',
+]);
+
 // ── Section template config ───────────────────────────────────────────────────
 // Declares which section titles get extra LLM-generated fields (CTO view).
 // Add a new entry here when a new slide template needs section-specific data.
@@ -645,7 +658,7 @@ SECTION-SPECIFIC EXTRAS — "AI Opportunity Discovery" sections only:
    Each item is a plain string, 1–3 words.
    Example: ["Validate", "Assign", "Document"]
 
-8. aiOpportunities (4 to 6 items)
+8. aiOpportunities (3 to 4 items)
    Each item is an OBJECT with two fields: { "name": "...", "why": "..." } — not a plain string.
 
    "name": the specific AI TECHNIQUE matched to one of the company's high-effort activities — not
@@ -702,7 +715,14 @@ Do NOT describe generic AI value — describe the value each specific opportunit
    semantic linking"). A reader must be able to tell what this specific opportunity does, not just
    that it's beneficial.
 
-6. kpiPills (exactly 6 items)
+   DO NOT RESTATE: "focus" and "outcomes" answer a different question than AI Opportunity Discovery's
+   "why" (the AI technique/mechanism) and AI Use Case Classification's "rationale" (why the
+   classification label fits) — both already exist earlier in this journey and the reader has already
+   seen them. This field must be phrased strictly in measurable outcome/metric terms (time saved, cost
+   reduced, defect rate, cycle time, adoption) — not a restatement of how the opportunity works or why
+   it was classified that way.
+
+6. kpiPills (4 to 5 items)
    Short metric names for the primary measurable KPIs created by these opportunities collectively. Each item is a short string (2–5 words) in title case. Make every KPI specific to what these opportunities measure — not generic engineering metrics.
 
 7. businessValueInsight (1–2 sentences)
@@ -736,6 +756,11 @@ Distribute the remaining identified opportunities across the other quadrants bas
    is NOT acceptable) — name the concrete reason specific to this company (e.g. existing data already
    structured for it, existing tooling that lowers the lift, or a constraint that rules out riskier options).
 
+   DO NOT RESTATE: this is not another chance to explain the opportunity's value (already covered in
+   Business Value Definition) or how it works (already covered in AI Opportunity Discovery) — the
+   reader has seen both. Answer only the sequencing question: relative to the OTHER identified
+   opportunities, what makes this one comparatively easier, lower-risk, or better-timed to start first.
+
 5b. recommendedInitiativeName (1 string)
    The SAME initiative named in recommendedStartingPoint, but copied verbatim — exact characters,
    no rewording — from its "name" field in the "Identified AI Opportunities" list. Every downstream
@@ -760,6 +785,10 @@ Distribute the remaining identified opportunities across the other quadrants bas
    dimension specifically, if a private/self-hosted deployment constraint was established in AI
    Opportunity Discovery, the bullets must reflect that constraint's real impact on feasibility — not
    ignore it.
+   DO NOT RESTATE: the Business Value dimension's bullets must not repeat the outcomes/focus already
+   listed for this opportunity in Business Value Definition — reframe them as comparative prioritization
+   facts (e.g. "Largest opportunity value" or "Fastest payback" relative to the other identified
+   opportunities), not a second description of what the opportunity does.
 
 8. implementationPhases (2 to 4 items, in chronological order)
    Sequence ALL identified opportunities from Capability 1 — not just the recommended starting point
@@ -785,7 +814,7 @@ SECTION-SPECIFIC EXTRAS — "AI Use Case Classification" sections only:
 JOURNEY RULE: Use the "Identified AI Opportunities" list from the TRANSFORMATION JOURNEY block. Classify EVERY opportunity in that list — do not select only one.
 
 5. opportunityClassifications (one item per identified AI opportunity, in the same order as "Identified AI Opportunities")
-   Each item: { "opportunity": "<the AI opportunity name, copied verbatim from Identified AI Opportunities — do not reword, shorten, or paraphrase it>", "classification": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence, specific to this opportunity and company, stating the classification's primary business outcome — e.g. 'This initiative primarily boosts engineering productivity by reducing manual investigation and accelerating analysis through AI-driven similarity retrieval.'>" }
+   Each item: { "opportunity": "<the AI opportunity name, copied verbatim from Identified AI Opportunities — do not reword, shorten, or paraphrase it>", "classification": "Productivity AI" | "Functional AI" | "Product AI", "rationale": "<1 sentence, specific to this opportunity and company, stating why this classification LABEL fits — e.g. 'This is Productivity AI because it changes an internal engineering workflow, not anything the customer sees.'>" }
 
    Classification definitions:
    - Productivity AI: improves internal engineering or operational efficiency (faster analysis, less manual effort)
@@ -794,9 +823,14 @@ JOURNEY RULE: Use the "Identified AI Opportunities" list from the TRANSFORMATION
 
    REJECT any rationale that only restates the classification label in generic terms (e.g. "This is
    a Productivity AI initiative that helps engineers work more efficiently" is NOT acceptable — it
-   doesn't say how). The rationale must name the specific mechanism or characteristic of THIS
-   opportunity that drives the outcome — a reader must be able to tell what makes this opportunity's
-   impact real, not just that "AI helps."
+   doesn't say how). The rationale must name the specific characteristic of THIS opportunity that
+   places it in this classification — a reader must be able to tell why this label fits and not one
+   of the other two.
+
+   DO NOT RESTATE: this rationale answers a different question than AI Opportunity Discovery's "why"
+   field — assume the reader already knows the AI technique and how it works. Do not re-explain the
+   mechanism (retrieval, anomaly detection, etc.); explain only why the business-outcome LABEL
+   (Productivity/Functional/Product) is the correct one for this opportunity.
 
    If a data handling, security, governance, IP, or external-AI-service constraint was established
    in AI Opportunity Discovery, keep it in mind here too — do not describe an outcome that implies
@@ -805,8 +839,8 @@ JOURNEY RULE: Use the "Identified AI Opportunities" list from the TRANSFORMATION
 
    Example:
    [
-     { "opportunity": "Embedding-Based Similarity Matching", "classification": "Productivity AI", "rationale": "This initiative primarily boosts engineering productivity by reducing manual investigation and accelerating analysis through AI-driven similarity retrieval." },
-     { "opportunity": "Anomaly Detection on Diagnostic Traces", "classification": "Functional AI", "rationale": "This initiative strengthens diagnostic reliability by surfacing failure patterns before they reach manual review." }
+     { "opportunity": "Embedding-Based Similarity Matching", "classification": "Productivity AI", "rationale": "This is Productivity AI, not Functional AI, because it speeds up how engineers find prior work rather than changing the diagnostic decision itself." },
+     { "opportunity": "Anomaly Detection on Diagnostic Traces", "classification": "Functional AI", "rationale": "This is Functional AI because it changes what counts as a validated diagnostic outcome, not just how fast engineers work." }
    ]
 
    Add all to the brief object:
@@ -2499,23 +2533,25 @@ function extractExtraFields(promptInstruction) {
 // emits the 4 base fields (or generates extras as plain strings).
 function buildOutputFormat(parsedSections) {
   const examples = parsedSections.map(s => {
-    const tpl        = BLUEPRINT_CONFIG.generate.ctoExtras ? SECTION_TEMPLATES[s.title] : null;
-    const extras     = tpl ? extractExtraFields(tpl.promptInstruction) : [];
-    const extraLines = extras.length
-      ? ',\n        ' + extras.map(({ name, placeholder }) => `"${name}": ${placeholder}`).join(',\n        ')
-      : '';
-    const positionLine = NO_STRATEGIC_POSITION_CAPABILITIES.has(s.title)
-      ? ''
-      : '        "strategicPosition": "<1-2 sentence future-state definition>",\n';
+    const tpl    = BLUEPRINT_CONFIG.generate.ctoExtras ? SECTION_TEMPLATES[s.title] : null;
+    const extras = tpl ? extractExtraFields(tpl.promptInstruction) : [];
+
+    const coreLines = [];
+    if (!NO_STRATEGIC_POSITION_CAPABILITIES.has(s.title)) {
+      coreLines.push('"strategicPosition": "<1-2 sentence future-state definition>"');
+    }
+    if (!AI_USE_CASES_CAPABILITIES.has(s.title)) {
+      coreLines.push('"priorityActions": ["<action 1>", "<action 2>", "<action 3>"]');
+      coreLines.push('"successMetrics": ["<KPI 1>", "<KPI 2>"]');
+      coreLines.push('"leadershipValidation": {\n          "status": "Not Yet Validated",\n          "context": "<one sentence on what alignment or approval is needed>"\n        }');
+    }
+    extras.forEach(({ name, placeholder }) => coreLines.push(`"${name}": ${placeholder}`));
+
+    const body = coreLines.map(line => `        ${line}`).join(',\n');
     return `    {
       "title": "${s.title}",
       "brief": {
-${positionLine}        "priorityActions": ["<action 1>", "<action 2>", "<action 3>"],
-        "successMetrics": ["<KPI 1>", "<KPI 2>"],
-        "leadershipValidation": {
-          "status": "Not Yet Validated",
-          "context": "<one sentence on what alignment or approval is needed>"
-        }${extraLines}
+${body}
       }
     }`;
   }).join(',\n');
@@ -2543,6 +2579,11 @@ function buildBriefPrompt({ companyName, industry, role, businessObjective, cont
     : '';
 
   const skipStrategicPosition = NO_STRATEGIC_POSITION_CAPABILITIES.has(capabilityName);
+  // These 4 capabilities render exclusively through their own SECTION_TEMPLATES extras —
+  // priorityActions/successMetrics/leadershipValidation are never displayed for them, so
+  // skip generating them entirely (saves tokens/time, keeps the model's attention on the
+  // fields that actually appear in the output).
+  const skipUnusedCoreFields = AI_USE_CASES_CAPABILITIES.has(capabilityName);
   const coreFields = [
     !skipStrategicPosition && `strategicPosition (1–2 sentences MAXIMUM)
    Define the IDEAL FUTURE-STATE for THIS SECTION SPECIFICALLY — what success looks like once THIS
@@ -2555,17 +2596,17 @@ function buildBriefPrompt({ companyName, industry, role, businessObjective, cont
    section (e.g. for a data-privacy section, what becomes true about how data is protected; for a model-
    validation section, what becomes true about model reliability; for a roles-planning section, what
    becomes true about who owns what).`,
-    `priorityActions (3 to 5 items)
+    !skipUnusedCoreFields && `priorityActions (3 to 5 items)
    Executable actions for the next 90 days only.
    Must use strong verbs: Define, Deploy, Integrate, Implement, Establish, Launch, Assign.
    Must directly impact delivery or capability execution.
    Do NOT use: improve, enhance, explore, consider, leverage.`,
-    `successMetrics (2 to 4 items)
+    !skipUnusedCoreFields && `successMetrics (2 to 4 items)
    Measurable KPIs only. Must be quantifiable (%, time, cost, adoption rate, defect rate).
    Must clearly state direction: increase / decrease / target value.
    Must reflect real execution outcomes.
    Do NOT use vague metrics like "improve quality" or "increase efficiency."`,
-    `leadershipValidation
+    !skipUnusedCoreFields && `leadershipValidation
    An object with two fields:
    - status: always set to "Not Yet Validated" for AI-generated blueprints
    - context: one sentence describing what executive alignment or approval is needed
@@ -2588,12 +2629,18 @@ ${contextDoc ? `\nCOMPANY PROFILE:\n${contextDoc}` : ''}
 
 TASK:
 For EXACTLY these ${parsedSections.length} sections of the "${capabilityName}" capability — ${sectionTitles} — generate an execution-ready Strategy Brief.
-
+${coreFields.length ? `
 Each section must have ${coreFields.length} required fields:
 
 ${coreFieldsBlock}
-${skipStrategicPosition ? '\nDo NOT include a strategicPosition field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey; repeating it here is redundant.\n' : ''}${templateInstructions}
-
+` : ''}${skipStrategicPosition ? '\nDo NOT include a strategicPosition field — this capability builds directly on the future-state already established by AI Opportunity Discovery earlier in the journey; repeating it here is redundant.\n' : ''}${skipUnusedCoreFields ? '\nDo NOT include priorityActions, successMetrics, or leadershipValidation fields — generate ONLY the fields listed below.\n' : ''}${templateInstructions}
+${skipUnusedCoreFields ? `
+WRITING STYLE — this capability is read by product/delivery leads who do not have time to read every word:
+- Lead with the conclusion, then (only if needed) the one fact that supports it — pyramid principle, not a build-up.
+- Prefer concrete named things (systems, metrics, techniques) over abstract nouns (capabilities, initiatives, solutions).
+- Cut hedging language: may, could, potentially, aims to, seeks to, in order to, would.
+- Every field in this capability must say something the OTHER capabilities in this AI Use Cases journey have not already said — check the PREVIOUS CAPABILITY INSIGHTS context before writing, and do not restate a prior capability's rationale in different words.
+` : ''}
 HARD RULES:
 - Do NOT include a Key Risk section
 - Do NOT write essays or paragraphs

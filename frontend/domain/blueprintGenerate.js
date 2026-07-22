@@ -65,6 +65,29 @@ function initKnowledgeSourcesLink(blueprintId) {
   link.style.display = '';
 }
 
+// ── Enterprise Blueprint nav link ───────────────────────────────────────────
+// CTO/Admin only. The backend enforces the same gating independently — this
+// is purely a UI convenience so other org members never see a link to a page
+// they'd immediately get a 403 from.
+
+async function initEnterpriseBlueprintLink() {
+  const link = document.getElementById('domain-enterprise-blueprint-link');
+  const token = getToken();
+  if (!link || !token) return;
+
+  try {
+    const resp = await fetch(`${API_BASE}/profile/me`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const jwtRole = localStorage.getItem('role') || 'user';
+    if (jwtRole === 'admin' || data?.profile?.role === 'CTO') {
+      link.style.display = '';
+    }
+  } catch {
+    // Non-fatal — link simply stays hidden.
+  }
+}
+
 // ── Not-grounded notice ────────────────────────────────────────────────────
 // Shown to logged-in users viewing an existing blueprint who have neither a
 // personal nor an org-wide Confluence connection — covers users who were
@@ -498,6 +521,7 @@ async function init() {
     initGenerateForm(); // keep form initialised in case user clicks New Blueprint
     initGroundingBanner(bp._id);
     initKnowledgeSourcesLink(bp._id);
+    initEnterpriseBlueprintLink();
 
   } catch (err) {
     if (err.message === 'SESSION_EXPIRED') return; // already redirecting home

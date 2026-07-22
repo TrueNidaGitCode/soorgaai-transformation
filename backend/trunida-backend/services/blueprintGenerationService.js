@@ -34,6 +34,9 @@ import { enabledDomains, getDomain } from '../config/domainRegistry.js';
 import { getCapabilityEnterpriseContext, preloadEnterpriseContextMap } from './enterpriseBlueprintService.js';
 import { getConnectedKnowledgeContext, preloadConnectedKnowledgeMap, getLinkedProjectContext } from './connectedKnowledgeService.js';
 import { detectIndustryFit } from './industryFitService.js';
+import CompanyResearchLibrary from '../models/CompanyResearchLibrary.js';
+import { normalizeCompanyName } from './companyResearchLibraryService.js';
+import { getVerticalContextForCapability, preloadVerticalContextMap } from './industryVerticalKnowledgeService.js';
 
 // Merges Enterprise Blueprint context with Connected Knowledge (Confluence)
 // context into the single string the existing prompt builders already accept —
@@ -51,15 +54,20 @@ export async function loadCompanyProfile(userId) {
       UserProfile.findOne({ userId }).lean(),
       CompanyContext.findOne({ userId }).lean(),
     ]);
+    const companyNameNormalized = normalizeCompanyName(profile?.orgName);
+    const libraryEntry = companyNameNormalized
+      ? await CompanyResearchLibrary.findOne({ companyNameNormalized }).select('subVertical').lean().catch(() => null)
+      : null;
     return {
       companyName: profile?.orgName        || 'Your Organisation',
       orgName:     profile?.orgName        || '',
       role:        profile?.role           || 'Executive',
       industry:    profile?.industryDomain || 'Automotive',
       contextDoc:  ctx?.content            || '',
+      subVertical: libraryEntry?.subVertical || '',
     };
   } catch {
-    return { companyName: 'Your Organisation', orgName: '', role: 'Executive', industry: 'Automotive', contextDoc: '' };
+    return { companyName: 'Your Organisation', orgName: '', role: 'Executive', industry: 'Automotive', contextDoc: '', subVertical: '' };
   }
 }
 
@@ -2858,7 +2866,10 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
   const connectedKnowledgeContext = companyProfile.orgName
     ? await getConnectedKnowledgeContext(companyProfile.orgName, { capabilityId: cap.id, capabilityName: cap.name, businessObjective }).catch(() => null)
     : null;
-  const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext);
+  const verticalContext = companyProfile.subVertical
+    ? await getVerticalContextForCapability(industry, companyProfile.subVertical, cap.id).catch(() => null)
+    : null;
+  const combinedContext = combineContexts(enterpriseContext, verticalContext, connectedKnowledgeContext);
 
   if (enterpriseContext) {
     console.log(`[blueprintGen] Enterprise Blueprint context injected for: ${cap.name}`);
@@ -3156,9 +3167,12 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
     const connectedKnowledgeContext = companyProfile.orgName
       ? await getConnectedKnowledgeContext(companyProfile.orgName, { capabilityId: cap.id, capabilityName: cap.name, businessObjective }).catch(() => null)
       : null;
+    const verticalContext = (companyProfile.subVertical && groundingIndustry !== NO_KB_FOLDER_INDUSTRY)
+      ? await getVerticalContextForCapability(industry, companyProfile.subVertical, cap.id).catch(() => null)
+      : null;
     const linkedProjectContext = await getLinkedProjectContext(blueprintId).catch(() => null);
     console.log(`[transformationGen] Linked Confluence context for ${cap.name}: ${linkedProjectContext ? 'INCLUDED' : 'none'}`);
-    const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext, linkedProjectContext);
+    const combinedContext = combineContexts(enterpriseContext, verticalContext, connectedKnowledgeContext, linkedProjectContext);
 
     // Build both context structures from capabilities completed before this one
     const blueprintDoc      = await TransformationBlueprint.findById(blueprintId).lean();
@@ -3579,6 +3593,12 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
   const domains           = enabledDomains();
   const enterpriseCtxMap  = await preloadEnterpriseContextMap(companyProfile.orgName || '');
   const connectedKnowledgeMap = await preloadConnectedKnowledgeMap(companyProfile.orgName || '');
+  // Only preload vertical context when this objective actually fits the
+  // industry KB — same gating groundingIndustry already applies to the
+  // synchronous Core/Industry KB read just below.
+  const verticalCtxMap = (companyProfile.subVertical && groundingIndustry !== NO_KB_FOLDER_INDUSTRY)
+    ? await preloadVerticalContextMap(industry, companyProfile.subVertical)
+    : new Map();
 
   // Single journey chain spanning all domains — each capability receives the
   // full context of everything generated before it across the entire blueprint.
@@ -3644,11 +3664,12 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         const capObj = { id: cap.id, name: cap.name, objective: cap.objective };
         const enterpriseContext = enterpriseCtxMap.get(cap.id) ?? null;
         const connectedKnowledgeContext = connectedKnowledgeMap.get(cap.id, cap.name);
+        const verticalContext = verticalCtxMap.get(cap.id) ?? null;
         // Fetched fresh per capability (not preloaded like the maps above) so a
         // document the user links mid-run can still reach later capabilities.
         const linkedProjectContext = await getLinkedProjectContext(blueprintId).catch(() => null);
         console.log(`[transformationGen] Linked Confluence context for ${cap.name}: ${linkedProjectContext ? 'INCLUDED' : 'none'}`);
-        const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext, linkedProjectContext);
+        const combinedContext = combineContexts(enterpriseContext, verticalContext, connectedKnowledgeContext, linkedProjectContext);
         const journeyContext    = journeyContextParts.length
           ? journeyContextParts.join('\n\n')
           : null;
@@ -3794,9 +3815,12 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
         const connectedKnowledgeContext = companyProfile.orgName
           ? await getConnectedKnowledgeContext(companyProfile.orgName, { capabilityId: cap.id, capabilityName: cap.name, businessObjective }).catch(() => null)
           : null;
+        const verticalContext = (companyProfile.subVertical && groundingIndustry !== NO_KB_FOLDER_INDUSTRY)
+          ? await getVerticalContextForCapability(industry, companyProfile.subVertical, cap.id).catch(() => null)
+          : null;
         const linkedProjectContext = await getLinkedProjectContext(blueprintId).catch(() => null);
         console.log(`[domainRegen] Linked Confluence context for ${cap.name}: ${linkedProjectContext ? 'INCLUDED' : 'none'}`);
-        const combinedContext = combineContexts(enterpriseContext, connectedKnowledgeContext, linkedProjectContext);
+        const combinedContext = combineContexts(enterpriseContext, verticalContext, connectedKnowledgeContext, linkedProjectContext);
 
         let sections;
         if (BLUEPRINT_CONFIG.generate.essay) {

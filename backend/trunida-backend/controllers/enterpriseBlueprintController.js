@@ -15,6 +15,10 @@
  *
  * PATCH /api/enterprise-blueprint/capability/:capabilityId
  *   Overwrites sections for one capability. CTO/Admin only.
+ *
+ * Company Public Information (external research) is no longer reviewed at
+ * this level — it's admin-curated centrally in CompanyResearchLibrary and
+ * copied in, already-approved, at signup. See companyResearchLibraryController.js.
  */
 
 import UserProfile from '../models/UserProfile.js';

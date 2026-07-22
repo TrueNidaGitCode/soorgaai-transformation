@@ -17,6 +17,8 @@ import chatRoutes              from "./routes/chatRoutes.js";
 import strategyCanvasRoutes    from "./routes/strategyCanvasRoutes.js";
 import companyContextRoutes         from "./routes/companyContextRoutes.js";
 import enterpriseBlueprintRoutes    from "./routes/enterpriseBlueprintRoutes.js";
+import companyResearchLibraryRoutes from "./routes/companyResearchLibraryRoutes.js";
+import industryVerticalKnowledgeRoutes from "./routes/industryVerticalKnowledgeRoutes.js";
 import feedbackRoutes               from "./routes/feedbackRoutes.js";
 import guestRoutes                  from "./routes/guestRoutes.js";
 import confluenceRoutes             from "./routes/confluenceRoutes.js";
@@ -99,6 +101,8 @@ app.use("/api/chat",                  chatRoutes);
 app.use("/api/strategy-canvas",       strategyCanvasRoutes);
 app.use("/api/company-context",       companyContextRoutes);
 app.use("/api/enterprise-blueprint", enterpriseBlueprintRoutes);
+app.use("/api/admin/company-library", companyResearchLibraryRoutes);
+app.use("/api/admin/industry-verticals", industryVerticalKnowledgeRoutes);
 app.use("/api/feedback",             feedbackRoutes);
 app.use("/api/guest",                guestRoutes);
 // More specific prefix first, per the convention noted above

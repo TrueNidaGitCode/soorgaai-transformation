@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoorgaAI — Enterprise Blueprint</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../workspace/workspace.css">
+  <link rel="stylesheet" href="enterprise-blueprint.css">
+  <script src="../login/config.js"></script>
+  <script src="../login/sessionGuard.js"></script>
+</head>
+<body class="workspace-page">
+
+  <!-- ── Navbar ──────────────────────────────────────────────────────────── -->
+  <nav class="workspace-nav" aria-label="Enterprise Blueprint navigation">
+    <div class="workspace-nav__left">
+      <a href="/" class="workspace-nav__back" aria-label="Back to home">← Home</a>
+      <span class="workspace-nav__logo">SOORGA<span>AI</span></span>
+    </div>
+    <div class="workspace-nav__right">
+      <span id="eb-username" class="workspace-nav__username"></span>
+      <button id="eb-logout" class="workspace-nav__logout">Logout</button>
+    </div>
+  </nav>
+
+  <main class="workspace-main eb-main" aria-label="Enterprise Blueprint">
+
+    <h1 class="ws-page-title">Enterprise Blueprint</h1>
+    <p class="eb-subtitle">Your organisation's proprietary AI strategy document — grounds every recommendation SoorgaAI gives your team. CTO/Admin only.</p>
+
+    <div id="eb-loading" class="ws-loading">
+      <div class="ws-spinner"></div>
+      <p>Loading…</p>
+    </div>
+
+    <div id="eb-noaccess" class="ws-card" style="display:none">
+      <p>Enterprise Blueprint content is restricted to CTO and admin users. You still benefit from it automatically — SoorgaAI's advisor uses it as context for every recommendation, without exposing the raw document.</p>
+    </div>
+
+    <div id="eb-error" class="eb-banner eb-banner--error" style="display:none" role="alert"></div>
+
+    <div id="eb-content" class="eb-layout" style="display:none">
+
+      <!-- ── Sidebar: capabilities → sections ─────────────────────────────── -->
+      <nav id="eb-sidebar" class="eb-sidebar" aria-label="Capabilities"></nav>
+
+      <!-- ── Section detail panel ─────────────────────────────────────────── -->
+      <section id="eb-panel" class="eb-panel">
+        <p class="eb-panel__empty">Select a section from the left to review its content.</p>
+      </section>
+
+    </div>
+
+  </main>
+
+  <script src="enterprise-blueprint.js"></script>
+</body>
+</html>

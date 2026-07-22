@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Research Library - SOORGA Admin</title>
+
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="company-library.css">
+    <script src="../login/config.js"></script>
+</head>
+<body>
+    <header>
+        <div id="navbar-container"></div>
+    </header>
+
+    <main class="admin-dashboard">
+        <div class="dashboard-header">
+            <h1>Company Research Library</h1>
+            <p class="header-subtitle">Public company research — SoorgaAI admin-curated, reused across every matching org at signup.</p>
+        </div>
+
+        <div id="cl-banner" class="cl-banner" style="display:none" role="alert"></div>
+
+        <!-- ── List view ─────────────────────────────────────────────────────── -->
+        <div id="cl-list-view">
+
+            <div class="admin-panel">
+                <div class="panel-header">
+                    <h2>Add a Company</h2>
+                </div>
+                <form id="cl-create-form" class="signal-form">
+                    <div class="form-group">
+                        <label for="cl-company-name">Company Name *</label>
+                        <input type="text" id="cl-company-name" placeholder="e.g. Acme Motors" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cl-industry">Industry</label>
+                        <select id="cl-industry">
+                            <option value="Automotive" selected>Automotive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cl-sub-vertical">Sub-vertical (optional)</label>
+                        <input type="text" id="cl-sub-vertical" placeholder="e.g. Autonomous Fleet Operations">
+                        <p class="field-hint">If the company's actual domain differs meaningfully from generic Industry KB (e.g. an autonomous fleet operator vs. a traditional OEM supplier), tag it here — reference material for this sub-vertical is auto-drafted for admin review.</p>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-icon" id="cl-create-btn">+ Add Company</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="admin-panel">
+                <div class="panel-header">
+                    <h2>All Companies</h2>
+                </div>
+                <div id="cl-list-loading" class="loading-state">
+                    <div class="spinner-large"></div>
+                    <p>Loading…</p>
+                </div>
+                <div id="cl-list-empty" class="empty-state" style="display:none">No companies in the library yet.</div>
+                <table id="cl-table" class="cl-table" style="display:none">
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Industry</th>
+                            <th>Sub-vertical</th>
+                            <th>Status</th>
+                            <th>Sections</th>
+                            <th>Drafts pending</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cl-table-body"></tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- ── Detail view ───────────────────────────────────────────────────── -->
+        <div id="cl-detail-view" style="display:none">
+            <button type="button" id="cl-back-btn" class="btn-secondary cl-back-btn">← All Companies</button>
+
+            <div class="admin-panel">
+                <div class="panel-header cl-detail-header">
+                    <div>
+                        <h2 id="cl-detail-title"></h2>
+                        <p id="cl-detail-meta" class="header-subtitle"></p>
+                        <p id="cl-vertical-indicator" class="cl-vertical-indicator" style="display:none"></p>
+                    </div>
+                    <button type="button" id="cl-research-btn" class="btn-icon">Run Research</button>
+                </div>
+
+                <div class="eb-layout">
+                    <nav id="cl-sidebar" class="eb-sidebar" aria-label="Capabilities"></nav>
+                    <section id="cl-panel" class="eb-panel">
+                        <p class="eb-panel__empty">Select a section from the left to review its content.</p>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="company-library.js"></script>
+</body>
+</html>

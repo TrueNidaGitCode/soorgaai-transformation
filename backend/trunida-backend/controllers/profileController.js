@@ -57,8 +57,10 @@ export const createProfile = async (req, res) => {
 
     console.log(`✅ Profile + 7 canvases created for userId ${userId}`);
 
-    // Stage 1: auto-create empty enterprise blueprint shell for the org.
-    // Fire-and-forget — a failure here must not block the profile response.
+    // Stage 1: auto-create empty enterprise blueprint shell for the org — this
+    // also checks CompanyResearchLibrary for a name match and copies in any
+    // admin-approved public research (see ensureBlueprint). Fire-and-forget —
+    // a failure here must not block the profile response.
     ensureBlueprint({ orgName, industry: profile.industryDomain, createdByUserId: userId })
       .catch(err => console.error('[EnterpriseBlueprint] Shell creation failed (non-fatal):', err.message));
 

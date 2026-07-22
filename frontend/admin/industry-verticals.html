@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industry Verticals - SOORGA Admin</title>
+
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="industry-verticals.css">
+    <script src="../login/config.js"></script>
+</head>
+<body>
+    <header>
+        <div id="navbar-container"></div>
+    </header>
+
+    <main class="admin-dashboard">
+        <div class="dashboard-header">
+            <h1>Industry Verticals</h1>
+            <p class="header-subtitle">Reference material for industry sub-verticals whose terminology diverges from the generic parent-industry KB (e.g. Autonomous Fleet Operations vs. traditional Automotive OEM). One entry can ground every company tagged with it in the Company Research Library.</p>
+        </div>
+
+        <div id="iv-banner" class="cl-banner" style="display:none" role="alert"></div>
+
+        <!-- ── List view ─────────────────────────────────────────────────────── -->
+        <div id="iv-list-view">
+
+            <div class="admin-panel">
+                <div class="panel-header">
+                    <h2>Add a Vertical</h2>
+                </div>
+                <form id="iv-create-form" class="signal-form">
+                    <div class="form-group">
+                        <label for="iv-parent-industry">Parent Industry</label>
+                        <select id="iv-parent-industry">
+                            <option value="Automotive" selected>Automotive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="iv-sub-vertical">Sub-vertical *</label>
+                        <input type="text" id="iv-sub-vertical" placeholder="e.g. Autonomous Fleet Operations" required>
+                        <p class="field-hint">Creating this immediately runs web-search research to draft reference material — review and approve before it's used in generation.</p>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-icon" id="iv-create-btn">+ Add Vertical</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="admin-panel">
+                <div class="panel-header">
+                    <h2>All Verticals</h2>
+                </div>
+                <div id="iv-list-loading" class="loading-state">
+                    <div class="spinner-large"></div>
+                    <p>Loading…</p>
+                </div>
+                <div id="iv-list-empty" class="empty-state" style="display:none">No industry verticals yet — tag a company with a sub-vertical, or add one directly above.</div>
+                <table id="iv-table" class="cl-table" style="display:none">
+                    <thead>
+                        <tr>
+                            <th>Parent Industry</th>
+                            <th>Sub-vertical</th>
+                            <th>Status</th>
+                            <th>Sections</th>
+                            <th>Drafts pending</th>
+                        </tr>
+                    </thead>
+                    <tbody id="iv-table-body"></tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- ── Detail view ───────────────────────────────────────────────────── -->
+        <div id="iv-detail-view" style="display:none">
+            <button type="button" id="iv-back-btn" class="btn-secondary cl-back-btn">← All Verticals</button>
+
+            <div class="admin-panel">
+                <div class="panel-header cl-detail-header">
+                    <div>
+                        <h2 id="iv-detail-title"></h2>
+                        <p id="iv-detail-meta" class="header-subtitle"></p>
+                    </div>
+                    <button type="button" id="iv-research-btn" class="btn-icon">Run Research</button>
+                </div>
+
+                <div class="eb-layout">
+                    <nav id="iv-sidebar" class="eb-sidebar" aria-label="Capabilities"></nav>
+                    <section id="iv-panel" class="eb-panel">
+                        <p class="eb-panel__empty">Select a section from the left to review its content.</p>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="industry-verticals.js"></script>
+</body>
+</html>

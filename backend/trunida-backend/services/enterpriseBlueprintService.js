@@ -6,14 +6,22 @@
  * Public API:
  *   ensureBlueprint({ orgName, industry, createdByUserId })
  *     Idempotent — creates an empty blueprint shell for the org if one doesn't
- *     already exist. Called once per org on first profile setup.
+ *     already exist. Called once per org on first profile setup. If the org's
+ *     name matches an admin-approved CompanyResearchLibrary entry, its
+ *     approved content is copied straight in (contentSource: 'company-library').
+ *     If NO library entry exists yet for this company, one is auto-created and
+ *     web-search research fires immediately (companyResearchLibraryService) —
+ *     but strictly as a draft; nothing reaches this or any other org's
+ *     EnterpriseBlueprint until a SoorgaAI platform admin reviews and approves
+ *     it. The triggering org gets no special preview of its own unapproved
+ *     research — same admin-gated path as everyone else.
  *
  *   getBlueprint(orgName)
  *     Returns the full EnterpriseBlueprint document or null.
  *
  *   updateCapabilitySections(orgName, capabilityId, sections, updatedByUserId)
- *     Stage 2 — CTO/Admin writes section content for a single capability.
- *     Recomputes overall status after update.
+ *     Stage 2 — CTO/Admin writes section content for a single capability
+ *     (contentSource: 'cto-manual'). Recomputes overall status after update.
  *
  *   getEnterpriseContextForAdvisor(userId, capabilityId)
  *     Stage 3 — Returns a formatted context string for the matching capability's
@@ -23,6 +31,8 @@
 import EnterpriseBlueprint from '../models/EnterpriseBlueprint.js';
 import UserProfile          from '../models/UserProfile.js';
 import { getCapabilities, getCapabilityBlueprint } from './strategyCanvasService.js';
+import CompanyResearchLibrary from '../models/CompanyResearchLibrary.js';
+import { normalizeCompanyName, createLibraryEntry, runResearch } from './companyResearchLibraryService.js';
 
 // ── Stage 1: Blueprint shell creation ─────────────────────────────────────────
 
@@ -52,21 +62,77 @@ function buildEmptyCapabilities(industry) {
   });
 }
 
+/**
+ * Looks up CompanyResearchLibrary for a matching (normalized) company name and
+ * copies its APPROVED content (never draftContent — unapproved research must
+ * never reach a customer) onto the shell's sections by title. Mutates
+ * `capabilities` in place; non-fatal on any lookup error.
+ *
+ * If no entry exists yet for this company, creates one and immediately fires
+ * research (still lands in draftContent, pending admin review — see
+ * companyResearchLibraryService.js) so the company is ready for an admin to
+ * approve as soon as possible, rather than sitting unresearched until someone
+ * notices it in the admin library list.
+ */
+async function applyLibraryMatch(capabilities, orgName, industry, createdByUserId) {
+  try {
+    const companyNameNormalized = normalizeCompanyName(orgName);
+    if (!companyNameNormalized) return;
+
+    const entry = await CompanyResearchLibrary.findOne({ companyNameNormalized }).lean();
+
+    if (!entry) {
+      try {
+        const created = await createLibraryEntry(orgName, industry, createdByUserId);
+        await runResearch(created._id);
+        console.log(`[EnterpriseBlueprint] Auto-created and researched company library entry for "${orgName}" — pending admin approval.`);
+      } catch (err) {
+        console.error(`[EnterpriseBlueprint] Auto-create library entry failed for "${orgName}" (non-fatal):`, err.message);
+      }
+      return;
+    }
+
+    const now = new Date();
+    let copied = 0;
+    for (const cap of capabilities) {
+      const libCap = entry.capabilities.find(c => c.capabilityId === cap.capabilityId);
+      if (!libCap) continue;
+      for (const section of cap.sections) {
+        const libSection = libCap.sections.find(s => s.title === section.title);
+        if (!libSection?.content?.trim()) continue;
+        section.content       = libSection.content;
+        section.contentSource = 'company-library';
+        section.updatedAt     = now;
+        copied++;
+      }
+    }
+    if (copied > 0) {
+      console.log(`[EnterpriseBlueprint] Copied ${copied} approved section(s) from company library match "${entry.companyName}" for org: "${orgName}"`);
+    }
+  } catch (err) {
+    console.error(`[EnterpriseBlueprint] Library lookup failed for org "${orgName}" (non-fatal):`, err.message);
+  }
+}
+
 export async function ensureBlueprint({ orgName, industry = 'Automotive', createdByUserId }) {
   const existing = await EnterpriseBlueprint.findOne({ orgName }).lean();
-  if (existing) return;
+  if (existing) return { created: false };
 
   const capabilities = buildEmptyCapabilities(industry);
+  await applyLibraryMatch(capabilities, orgName, industry, createdByUserId);
 
-  await EnterpriseBlueprint.create({
+  const doc = await EnterpriseBlueprint.create({
     orgName,
     industry,
     createdByUserId,
     capabilities,
     status: 'empty',
   });
+  doc.status = computeStatus(doc.capabilities);
+  if (doc.isModified('status')) await doc.save();
 
   console.log(`[EnterpriseBlueprint] Shell created for org: "${orgName}" (${capabilities.length} capabilities)`);
+  return { created: true };
 }
 
 // ── Stage 2: Section content update (CTO/Admin only) ─────────────────────────
@@ -84,7 +150,9 @@ function computeStatus(capabilities) {
 
 /**
  * Overwrite the sections array for one capability.
- * `sections` must be an array of { title, content } objects.
+ * `sections` must be an array of { title, content } objects. Always tags
+ * written sections `contentSource: 'cto-manual'` — this is the org's own
+ * CTO/Admin typing directly, as distinct from a company-library match.
  */
 export async function updateCapabilitySections(orgName, capabilityId, sections, updatedByUserId) {
   const doc = await EnterpriseBlueprint.findOne({ orgName });
@@ -95,10 +163,11 @@ export async function updateCapabilitySections(orgName, capabilityId, sections, 
 
   const now = new Date();
   cap.sections = sections.map(s => ({
-    title:     s.title,
-    content:   typeof s.content === 'string' ? s.content.trim() : '',
-    updatedAt: now,
-    updatedBy: updatedByUserId || null,
+    title:         s.title,
+    content:       typeof s.content === 'string' ? s.content.trim() : '',
+    updatedAt:     now,
+    updatedBy:     updatedByUserId || null,
+    contentSource: 'cto-manual',
   }));
 
   doc.status = computeStatus(doc.capabilities);

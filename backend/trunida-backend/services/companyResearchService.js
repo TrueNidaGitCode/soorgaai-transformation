@@ -1,17 +1,19 @@
 /**
  * SoorgaAI — Company Research Service
  *
- * Runs a single Claude call with the web_search server tool to research a
- * company on the public internet and draft Enterprise Blueprint section
- * content from real findings — not model inference from the company name
- * alone (that's what companyContextService.js already does).
+ * Runs a single OpenAI Responses API call with the web_search server tool to
+ * research a company on the public internet and draft Enterprise Blueprint
+ * section content from real findings — not model inference from the company
+ * name alone (that's what companyContextService.js already does).
  *
  * Deliberately bypasses llmService.js's generic 3-provider failover chain:
  * web search is not a capability Gemini/Claude/OpenAI share equally today
- * (see enterpriseBlueprintService.js for the full rationale). Claude only,
- * with the @anthropic-ai/sdk web_search_20250305 tool. Any failure — missing
- * key, rate limit, malformed output — resolves to null; callers must treat
- * that as "no draft available" and degrade gracefully, never throw upstream.
+ * (see enterpriseBlueprintService.js for the full rationale). OpenAI only,
+ * via the Responses API's `web_search` tool (confirmed against the installed
+ * openai@6.18.0 SDK types — Chat Completions, used elsewhere in this
+ * codebase, doesn't support this tool). Any failure — missing key, no
+ * credit, malformed output — resolves to null; callers must treat that as
+ * "no draft available" and degrade gracefully, never throw upstream.
  *
  * ANTI-HALLUCINATION CONTRACT: a wrong specific fact about someone's own
  * company, shown to their own CTO, is worse than no draft at all. The system
@@ -20,11 +22,10 @@
  * flag thin findings rather than presenting them as verified.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
-const RESEARCH_MODEL     = process.env.CLAUDE_MODEL || 'claude-sonnet-4-6';
+const RESEARCH_MODEL      = process.env.OPENAI_MODEL || 'gpt-4o';
 const RESEARCH_MAX_TOKENS = 4000;
-const WEB_SEARCH_MAX_USES = 5;
 
 function buildSystemPrompt() {
   return `You are a research analyst preparing grounding material for an AI transformation strategy document. You have a web_search tool — use it to find real, current, public information about the company named in the user message.
@@ -37,6 +38,7 @@ STRICT RULES:
 - Set "confidence" to "high" only when the section's content is grounded in a specific fact your search actually returned.
 - Never mention that you are an AI, never mention "search results" or "I found" in the output text itself — write it as clean document prose, not as a research summary.
 - Do not write generic filler that could apply to any company in any industry ("adopts AI to improve outcomes" is not acceptable).
+- Do not include citations, source links, or markdown-formatted links (e.g. "([source.com](url))") anywhere in the content — write plain prose only, as it will be read directly, not as an annotated research memo.
 
 OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
 {
@@ -61,11 +63,17 @@ ${sectionList}
 Respond with the JSON object described in the system prompt, one entry per section listed above.`;
 }
 
-function extractText(content) {
-  return (content || [])
-    .filter(block => block.type === 'text')
-    .map(block => block.text)
-    .join('\n')
+// OpenAI's web_search tool has a strong default tendency to inject inline
+// markdown citations (e.g. "($150K savings ([fluxauto.ai](url)))") into
+// output_text even when instructed not to — the system-prompt rule above
+// isn't reliably enough on its own, so this is a defensive backstop, not
+// the only line of defense.
+function stripCitations(text) {
+  return text
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '')  // remove [label](url)
+    .replace(/\(\s*\)/g, '')                 // remove now-empty parens left behind
+    .replace(/\s+([.,;:])/g, '$1')           // fix "word ." artifacts from removed links
+    .replace(/\s{2,}/g, ' ')                 // collapse double spaces
     .trim();
 }
 
@@ -79,7 +87,7 @@ function parseSections(rawText, validTitles) {
     .filter(s => s && validTitles.has(s.title) && String(s.content || '').trim())
     .map(s => ({
       title:      s.title,
-      content:    String(s.content).trim(),
+      content:    stripCitations(String(s.content).trim()),
       confidence: s.confidence === 'high' ? 'high' : 'low',
     }));
 }
@@ -95,23 +103,23 @@ function parseSections(rawText, validTitles) {
 export async function researchCompanyForBlueprint({ orgName, industry, sections }) {
   if (!orgName || !Array.isArray(sections) || sections.length === 0) return null;
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.warn('[CompanyResearch] Skipped — ANTHROPIC_API_KEY not configured.');
+    console.warn('[CompanyResearch] Skipped — OPENAI_API_KEY not configured.');
     return null;
   }
 
   try {
-    const client = new Anthropic({ apiKey });
-    const resp   = await client.messages.create({
-      model:      RESEARCH_MODEL,
-      max_tokens: RESEARCH_MAX_TOKENS,
-      system:     buildSystemPrompt(),
-      messages:   [{ role: 'user', content: buildUserMessage({ orgName, industry, sections }) }],
-      tools:      [{ type: 'web_search_20250305', name: 'web_search', max_uses: WEB_SEARCH_MAX_USES }],
+    const client = new OpenAI({ apiKey });
+    const resp   = await client.responses.create({
+      model:             RESEARCH_MODEL,
+      max_output_tokens: RESEARCH_MAX_TOKENS,
+      instructions:      buildSystemPrompt(),
+      input:             buildUserMessage({ orgName, industry, sections }),
+      tools:             [{ type: 'web_search' }],
     });
 
-    const text = extractText(resp.content);
+    const text = (resp.output_text || '').trim();
     if (!text) {
       console.warn(`[CompanyResearch] Empty response for org "${orgName}".`);
       return null;
@@ -146,6 +154,7 @@ STRICT RULES:
 - If search returns little or nothing specific to this vertical, write reference content at the level of what's genuinely known about the vertical's general characteristics — and set that section's "confidence" to "low".
 - Set "confidence" to "high" only when the section's content is grounded in something your search actually returned.
 - Do not write generic filler that could apply to any industry ("uses technology to improve outcomes" is not acceptable).
+- Do not include citations, source links, or markdown-formatted links (e.g. "([source.com](url))") anywhere in the content — write plain prose only, as it will be read directly, not as an annotated research memo.
 
 OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
 {
@@ -181,23 +190,23 @@ Respond with the JSON object described in the system prompt, one entry per secti
 export async function researchIndustryVertical({ parentIndustry, subVertical, sections }) {
   if (!subVertical || !Array.isArray(sections) || sections.length === 0) return null;
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.warn('[CompanyResearch] Vertical research skipped — ANTHROPIC_API_KEY not configured.');
+    console.warn('[CompanyResearch] Vertical research skipped — OPENAI_API_KEY not configured.');
     return null;
   }
 
   try {
-    const client = new Anthropic({ apiKey });
-    const resp   = await client.messages.create({
-      model:      RESEARCH_MODEL,
-      max_tokens: RESEARCH_MAX_TOKENS,
-      system:     buildVerticalSystemPrompt(),
-      messages:   [{ role: 'user', content: buildVerticalUserMessage({ parentIndustry, subVertical, sections }) }],
-      tools:      [{ type: 'web_search_20250305', name: 'web_search', max_uses: WEB_SEARCH_MAX_USES }],
+    const client = new OpenAI({ apiKey });
+    const resp   = await client.responses.create({
+      model:             RESEARCH_MODEL,
+      max_output_tokens: RESEARCH_MAX_TOKENS,
+      instructions:      buildVerticalSystemPrompt(),
+      input:             buildVerticalUserMessage({ parentIndustry, subVertical, sections }),
+      tools:             [{ type: 'web_search' }],
     });
 
-    const text = extractText(resp.content);
+    const text = (resp.output_text || '').trim();
     if (!text) {
       console.warn(`[CompanyResearch] Empty vertical-research response for "${subVertical}".`);
       return null;
@@ -210,6 +219,104 @@ export async function researchIndustryVertical({ parentIndustry, subVertical, se
     return { sections: parsedSections };
   } catch (err) {
     console.error(`[CompanyResearch] Vertical research failed for "${subVertical}" (non-fatal):`, err.message);
+    return null;
+  }
+}
+
+// ── Company capability map research ─────────────────────────────────────────
+// Distinct from section research above: identifies the company's key
+// products/capabilities and maps each to the specific industry challenge(s)
+// it addresses (e.g. "Labour shortage -> Autonomous industrial vehicles").
+// Powers the AI Opportunity Discovery staged-reasoning pipeline in
+// blueprintGenerationService.js — Stage 2 looks up the admin-approved result
+// instead of re-inferring this connection from prose on every generation.
+
+function buildCapabilityMapSystemPrompt() {
+  return `You are a research analyst preparing grounding material for an AI transformation strategy document. You have a web_search tool — use it to find real, current, public information about the company named in the user message.
+
+TASK: Identify the company's key products, platforms, or capabilities. For each one, name the specific industry challenge(s) it addresses and briefly explain the mechanism — how it actually addresses that challenge.
+
+STRICT RULES:
+- Only name a product/capability and challenge pairing if your search results actually surfaced evidence connecting them. Do not invent a plausible-sounding pairing.
+- Each "industryChallenge" must be a real, recognized challenge in the company's industry — not invented or overly narrow.
+- Each "companyCapability" must be an actual named product, platform, or service of this company — not a generic paraphrase like "AI technology."
+- "mechanism" is 1 sentence: the concrete way the capability addresses the challenge (not a restatement of the challenge or capability name).
+- Set "confidence" to "high" only when grounded in a specific fact your search actually returned; otherwise "low".
+- Do not include citations, source links, or markdown-formatted links anywhere in the output — plain text only.
+- Identify 3-8 pairings. A single capability may address more than one challenge (one row per pairing).
+
+OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
+{
+  "mappings": [
+    { "industryChallenge": "<specific industry challenge>", "companyCapability": "<actual named product/platform>", "mechanism": "<1 sentence>", "confidence": "high" | "low" }
+  ]
+}`;
+}
+
+function buildCapabilityMapUserMessage({ orgName, industry, subVertical }) {
+  return `Company: ${orgName}
+Industry: ${industry}${subVertical ? `\nSub-vertical: ${subVertical}` : ''}
+
+Research this company's products/capabilities and map each to the specific industry challenge(s) it addresses.
+
+Respond with the JSON object described in the system prompt.`;
+}
+
+function parseCapabilityMap(rawText) {
+  const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+  const parsed  = JSON.parse(cleaned);
+  const raw     = Array.isArray(parsed?.mappings) ? parsed.mappings : [];
+
+  return raw
+    .filter(m => m && String(m.industryChallenge || '').trim() && String(m.companyCapability || '').trim())
+    .map(m => ({
+      industryChallenge: stripCitations(String(m.industryChallenge).trim()),
+      companyCapability: stripCitations(String(m.companyCapability).trim()),
+      mechanism:         stripCitations(String(m.mechanism || '').trim()),
+      confidence:         m.confidence === 'high' ? 'high' : 'low',
+    }));
+}
+
+/**
+ * Researches a company's products/capabilities and maps each to the
+ * industry challenge(s) it addresses. Returns { mappings: [{
+ * industryChallenge, companyCapability, mechanism, confidence }] } or null
+ * if research is unavailable/failed — callers must treat null as "no draft
+ * available," not as an error.
+ *
+ * @param {{ orgName: string, industry: string, subVertical?: string }} params
+ */
+export async function researchCapabilityMap({ orgName, industry, subVertical }) {
+  if (!orgName) return null;
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.warn('[CompanyResearch] Capability map research skipped — OPENAI_API_KEY not configured.');
+    return null;
+  }
+
+  try {
+    const client = new OpenAI({ apiKey });
+    const resp   = await client.responses.create({
+      model:             RESEARCH_MODEL,
+      max_output_tokens: RESEARCH_MAX_TOKENS,
+      instructions:      buildCapabilityMapSystemPrompt(),
+      input:             buildCapabilityMapUserMessage({ orgName, industry, subVertical }),
+      tools:             [{ type: 'web_search' }],
+    });
+
+    const text = (resp.output_text || '').trim();
+    if (!text) {
+      console.warn(`[CompanyResearch] Empty capability-map response for "${orgName}".`);
+      return null;
+    }
+
+    const mappings = parseCapabilityMap(text);
+    if (mappings.length === 0) return null;
+
+    return { mappings };
+  } catch (err) {
+    console.error(`[CompanyResearch] Capability map research failed for "${orgName}" (non-fatal):`, err.message);
     return null;
   }
 }

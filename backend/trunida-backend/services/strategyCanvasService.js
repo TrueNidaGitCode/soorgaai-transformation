@@ -12,6 +12,13 @@ const KB_ENTERPRISE_ROOT = path.resolve(
 // Legacy path kept for backwards-compat helpers that still reference it directly
 const AI_STRATEGY_PATH = path.join(KB_ENTERPRISE_ROOT, 'AI_Strategy');
 
+// Domains covered by the Company/Enterprise/Vertical knowledge library
+// (CompanyResearchLibrary, EnterpriseBlueprint, IndustryVerticalKnowledge).
+// Single source of truth — all three services loop over this same list via
+// getDomainCapabilities/getDomainCapabilityBlueprint, so extending coverage
+// to another domain later means changing it here once, not in three places.
+export const LIBRARY_GROUNDED_DOMAINS = ['AI_Strategy', 'AI_Use_Cases'];
+
 // Resolve any domain's KB folder by its kbPath (from domainRegistry)
 function domainPath(kbPath) {
   return path.join(KB_ENTERPRISE_ROOT, kbPath);
@@ -155,20 +162,30 @@ function extractParagraphText(markdown, maxWords = 200) {
   for (const line of lines) {
     const t = line.trim();
     if (!t || t === '---') continue;
-    if (t.startsWith('#')) continue;
     if (t.startsWith('> ')) continue;
     if (t.startsWith('|')) continue;
-    if (t.startsWith('* ') || t.startsWith('- ')) continue;
-    if (t.match(/^\d+\.\s/)) continue;
     // Skip standalone bold metadata labels (e.g. **Layer:** Automotive)
     if (t.match(/^\*\*[^*]+:\*\*/)) continue;
     // Skip pure italic lines (e.g. *Leadership Question text*)
     if (t.match(/^\*[^*].*\*$/)) continue;
+
+    // Headings and list items carry real content (category labels, business
+    // challenges, AI opportunities) — strip the markdown marker but keep the
+    // text instead of dropping the line entirely.
+    const isHeading = /^#{1,6}\s+/.test(t);
+    const content = t
+      .replace(/^#{1,6}\s+/, '')
+      .replace(/^[-*]\s+/, '')
+      .replace(/^\d+\.\s+/, '');
+    if (!content) continue;
+
     // Strip inline markdown formatting (* ** `)
-    const clean = t
+    let clean = content
       .replace(/\*\*(.+?)\*\*/g, '$1')
       .replace(/\*(.+?)\*/g, '$1')
       .replace(/`(.+?)`/g, '$1');
+    if (isHeading && !/[:.!?]$/.test(clean)) clean += ':';
+
     paras.push(clean);
     count += clean.split(/\s+/).filter(Boolean).length;
     if (count >= maxWords) break;
@@ -271,7 +288,7 @@ export function getDomainCapabilityBlueprint(capabilityId, kbPath, industry = 'A
     };
   });
 
-  let automotiveBlueprint = extractParagraphText(industryContent, 200);
+  let automotiveBlueprint = extractParagraphText(industryContent, 1200);
   if (automotiveBlueprint.split(/\s+/).filter(Boolean).length < 60) {
     const coreProse = extractParagraphText(coreContent, 150);
     automotiveBlueprint = [automotiveBlueprint, coreProse].filter(Boolean).join(' ').trim();
@@ -368,7 +385,7 @@ export function getCapabilityBlueprint(capabilityId, industry = 'Automotive') {
 
   // Automotive Blueprint: capability-level industry prose (100-200 words).
   // Primary source is the industry doc; fall back to core doc if sparse.
-  let automotiveBlueprint = extractParagraphText(industryContent, 200);
+  let automotiveBlueprint = extractParagraphText(industryContent, 1200);
   if (automotiveBlueprint.split(/\s+/).filter(Boolean).length < 60) {
     const coreProse = extractParagraphText(coreContent, 150);
     automotiveBlueprint = [automotiveBlueprint, coreProse].filter(Boolean).join(' ').trim();

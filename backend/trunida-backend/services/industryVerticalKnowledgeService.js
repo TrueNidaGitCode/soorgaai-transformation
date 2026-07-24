@@ -32,7 +32,7 @@
  */
 
 import IndustryVerticalKnowledge from '../models/IndustryVerticalKnowledge.js';
-import { getCapabilities, getCapabilityBlueprint } from './strategyCanvasService.js';
+import { LIBRARY_GROUNDED_DOMAINS, getDomainCapabilities, getDomainCapabilityBlueprint } from './strategyCanvasService.js';
 import { researchIndustryVertical } from './companyResearchService.js';
 
 export function normalizeVerticalKey(parentIndustry, subVertical) {
@@ -44,19 +44,47 @@ export function normalizeVerticalKey(parentIndustry, subVertical) {
 
 // ── Shell creation ────────────────────────────────────────────────────────────
 
+// Loops over every domain in LIBRARY_GROUNDED_DOMAINS (currently AI_Strategy
+// + AI_Use_Cases) so a new entry gets every covered domain's capabilities
+// from the start, each tagged with the domain it came from.
 function buildEmptyCapabilities(parentIndustry) {
-  const capabilities = getCapabilities();
-
-  return capabilities.map(cap => {
-    let sections = [];
-    try {
-      const blueprint = getCapabilityBlueprint(cap.id, parentIndustry);
-      sections = (blueprint.sections || []).map(s => ({ title: s.title, content: '' }));
-    } catch {
-      // KB file missing for this capability — create capability with no sections
+  const capabilities = [];
+  for (const kbPath of LIBRARY_GROUNDED_DOMAINS) {
+    for (const cap of getDomainCapabilities(kbPath)) {
+      let sections = [];
+      try {
+        const blueprint = getDomainCapabilityBlueprint(cap.id, kbPath, parentIndustry);
+        sections = (blueprint.sections || []).map(s => ({ title: s.title, content: '' }));
+      } catch {
+        // KB file missing for this capability — create capability with no sections
+      }
+      capabilities.push({ capabilityId: cap.id, capabilityName: cap.name, sections, domainKbPath: kbPath });
     }
-    return { capabilityId: cap.id, capabilityName: cap.name, sections };
-  });
+  }
+  return capabilities;
+}
+
+// Additive-only: adds any (domain, capability) pair from LIBRARY_GROUNDED_DOMAINS
+// that isn't already present in doc.capabilities — never touches or reorders
+// existing entries.
+function syncMissingCapabilities(doc, parentIndustry) {
+  const existingIds = new Set(doc.capabilities.map(c => c.capabilityId));
+  let added = 0;
+  for (const kbPath of LIBRARY_GROUNDED_DOMAINS) {
+    for (const cap of getDomainCapabilities(kbPath)) {
+      if (existingIds.has(cap.id)) continue;
+      let sections = [];
+      try {
+        const blueprint = getDomainCapabilityBlueprint(cap.id, kbPath, parentIndustry);
+        sections = (blueprint.sections || []).map(s => ({ title: s.title, content: '' }));
+      } catch {
+        // KB file missing for this capability — add it with no sections
+      }
+      doc.capabilities.push({ capabilityId: cap.id, capabilityName: cap.name, sections, domainKbPath: kbPath });
+      added++;
+    }
+  }
+  return added;
 }
 
 /**
@@ -109,15 +137,27 @@ export async function runResearch(verticalId) {
   const doc = await IndustryVerticalKnowledge.findById(verticalId);
   if (!doc) throw new Error('Vertical knowledge entry not found.');
 
+  // Catch this entry up on any domain added to LIBRARY_GROUNDED_DOMAINS since
+  // it was created — additive only, never touches existing capabilities.
+  const added = syncMissingCapabilities(doc, doc.parentIndustry);
+  if (added > 0) {
+    await doc.save();
+    console.log(`[IndustryVerticalKnowledge] Synced ${added} missing capability/ies for "${doc.subVertical}"`);
+  }
+
+  // Only research sections that are genuinely empty — never overwrite a
+  // section that already has approved content or a pending draft.
   const sectionMeta = [];
   for (const cap of doc.capabilities) {
+    const kbPath = cap.domainKbPath || 'AI_Strategy';
     let kbSections = [];
     try {
-      kbSections = getCapabilityBlueprint(cap.capabilityId, doc.parentIndustry).sections || [];
+      kbSections = getDomainCapabilityBlueprint(cap.capabilityId, kbPath, doc.parentIndustry).sections || [];
     } catch {
       // KB file missing for this capability — research with title only.
     }
     for (const section of cap.sections) {
+      if (section.content || section.draftContent) continue; // already handled
       const kb = kbSections.find(s => s.title === section.title);
       sectionMeta.push({ title: section.title, definition: kb?.definition || '' });
     }

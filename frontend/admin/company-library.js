@@ -43,6 +43,18 @@ function hideBanner() {
 let currentEntry = null;   // full library entry when in detail view
 let selected     = null;   // { capabilityId, sectionTitle }
 
+// While validating a single capability end-to-end, hide the rest of the
+// sidebar so review isn't split across unrelated capabilities. Add more
+// names here to bring the next capability into focus; clear the array to
+// show everything again.
+const FOCUS_CAPABILITIES = ['AI Opportunity Discovery'];
+
+function visibleCapabilities(capabilities) {
+  if (!FOCUS_CAPABILITIES.length) return capabilities;
+  const focused = capabilities.filter(c => FOCUS_CAPABILITIES.includes(c.capabilityName));
+  return focused.length ? focused : capabilities;
+}
+
 // ── List view ──────────────────────────────────────────────────────────────
 
 async function loadList() {
@@ -125,6 +137,10 @@ async function openDetail(id) {
     const { entry } = await api(`/${encodeURIComponent(id)}`);
     currentEntry = entry;
     renderDetailHeader();
+
+    const focused = visibleCapabilities(currentEntry.capabilities)[0];
+    if (focused) selected = { capabilityId: focused.capabilityId, sectionTitle: null };
+
     renderSidebar();
     renderPanel();
   } catch (err) {
@@ -143,11 +159,68 @@ function renderDetailHeader() {
   } else {
     indicator.style.display = 'none';
   }
+
+  renderCapabilityMap();
 }
 
-function findSection(capabilityId, sectionTitle) {
-  const cap = currentEntry?.capabilities.find(c => c.capabilityId === capabilityId);
-  return cap?.sections.find(s => s.title === sectionTitle) || null;
+function renderCapabilityMap() {
+  const panel = document.getElementById('cl-capmap-panel');
+  const body  = document.getElementById('cl-capmap-body');
+  const map   = currentEntry.capabilityMap || {};
+  const approved = map.content || [];
+  const draft    = map.draftContent || [];
+
+  if (approved.length === 0 && draft.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  body.innerHTML = '';
+
+  if (draft.length > 0) {
+    const flag = document.createElement('div');
+    flag.className = map.draftSource === 'external-research'
+      ? 'eb-draft__flag eb-draft__flag--high'
+      : 'eb-draft__flag eb-draft__flag--low';
+    flag.textContent = map.draftSource === 'external-research'
+      ? 'Drafted from external research — review before approving'
+      : 'Limited public information found. Review carefully.';
+    body.appendChild(flag);
+
+    body.appendChild(buildCapabilityMapTable(draft));
+
+    const actions = document.createElement('div');
+    actions.className = 'eb-actions';
+    actions.appendChild(makeBtn('Approve All', 'eb-btn--primary', approveCapabilityMap));
+    actions.appendChild(makeBtn('Discard', 'eb-btn--danger', discardCapabilityMap));
+    body.appendChild(actions);
+    return;
+  }
+
+  const meta = document.createElement('p');
+  meta.className = 'eb-approved__meta';
+  meta.textContent = map.updatedAt ? `Approved ${new Date(map.updatedAt).toLocaleDateString()}` : '';
+  body.appendChild(meta);
+  body.appendChild(buildCapabilityMapTable(approved));
+}
+
+function buildCapabilityMapTable(rows) {
+  const table = document.createElement('table');
+  table.className = 'cl-table cl-capmap-table';
+  table.innerHTML = `
+    <thead>
+      <tr><th>Industry Challenge</th><th>Company Capability</th><th>Mechanism</th></tr>
+    </thead>
+    <tbody>
+      ${rows.map(r => `
+        <tr>
+          <td>${esc(r.industryChallenge)}</td>
+          <td>${esc(r.companyCapability)}</td>
+          <td>${esc(r.mechanism)}</td>
+        </tr>
+      `).join('')}
+    </tbody>`;
+  return table;
 }
 
 function capabilityFor(sectionTitle) {
@@ -158,13 +231,30 @@ function renderSidebar() {
   const nav = document.getElementById('cl-sidebar');
   nav.innerHTML = '';
 
-  currentEntry.capabilities.forEach(cap => {
+  const note = document.getElementById('cl-capabilities-focus-note');
+  note.textContent = FOCUS_CAPABILITIES.length
+    ? `Focused on ${FOCUS_CAPABILITIES.join(', ')} — other capabilities are hidden while this one is under review.`
+    : '';
+
+  visibleCapabilities(currentEntry.capabilities).forEach(cap => {
     const group = document.createElement('div');
     group.className = 'eb-sidebar__group';
 
-    const heading = document.createElement('p');
-    heading.className = 'eb-sidebar__capability';
+    // Capability heading is now the primary click target — selects the whole
+    // capability and shows every one of its sections stacked together, like
+    // reading a KB markdown file, instead of one section at a time.
+    const heading = document.createElement('button');
+    heading.type = 'button';
+    heading.className = 'eb-sidebar__capability eb-sidebar__capability-btn';
+    if (selected?.capabilityId === cap.capabilityId) {
+      heading.classList.add('eb-sidebar__capability-btn--active');
+    }
     heading.textContent = cap.capabilityName;
+    heading.addEventListener('click', () => {
+      selected = { capabilityId: cap.capabilityId, sectionTitle: null };
+      renderSidebar();
+      renderPanel();
+    });
     group.appendChild(heading);
 
     const list = document.createElement('ul');
@@ -195,6 +285,9 @@ function renderSidebar() {
         btn.appendChild(badge);
       }
 
+      // Selects the parent capability's full document view, then scrolls
+      // straight to this section within it — a shortcut into the document,
+      // not a separate single-section view anymore.
       btn.addEventListener('click', () => {
         selected = { capabilityId: cap.capabilityId, sectionTitle: section.title };
         renderSidebar();
@@ -216,26 +309,112 @@ function renderPanel() {
   if (!selected) {
     const empty = document.createElement('p');
     empty.className = 'eb-panel__empty';
-    empty.textContent = 'Select a section from the left to review its content.';
+    empty.textContent = 'Select a capability from the left to review all of its sections together.';
     panel.appendChild(empty);
     return;
   }
 
-  const section = findSection(selected.capabilityId, selected.sectionTitle);
-  if (!section) return;
+  const cap = currentEntry.capabilities.find(c => c.capabilityId === selected.capabilityId);
+  if (!cap) return;
 
   const title = document.createElement('h2');
   title.className = 'eb-panel__title';
-  title.textContent = section.title;
+  title.textContent = cap.capabilityName;
   panel.appendChild(title);
 
-  if (section.draftContent) {
-    panel.appendChild(buildDraftReview(section));
-  } else if (section.content) {
-    panel.appendChild(buildApprovedView(section));
-  } else {
-    panel.appendChild(buildEmptyView(section));
+  // Automotive/Industry KB is written once per capability (not per section —
+  // the KB layers aren't structured symmetrically), so it's shown once here,
+  // above every section, rather than repeated under each one.
+  if (cap.kbAutomotiveContext) {
+    panel.appendChild(buildKbReferenceBlock('AUTOMOTIVE INDUSTRY CONTEXT', cap.kbAutomotiveContext));
   }
+
+  // Capability Map only feeds generation for AI Opportunity Discovery — shown
+  // here, stacked with Core/Automotive, only for that capability so it reads
+  // as one reference set rather than a generic block on every capability.
+  if (cap.capabilityName === 'AI Opportunity Discovery') {
+    const approvedMap = currentEntry.capabilityMap?.content || [];
+    if (approvedMap.length > 0) {
+      panel.appendChild(buildCapabilityMapReferenceBlock(approvedMap));
+    }
+  }
+
+  cap.sections.forEach((section, i) => {
+    const block = document.createElement('div');
+    block.className = 'cl-doc-section';
+    block.dataset.sectionTitle = section.title;
+
+    const heading = document.createElement('h3');
+    heading.className = 'cl-doc-section__title';
+    heading.textContent = section.title;
+    block.appendChild(heading);
+
+    if (section.kbCoreDefinition) {
+      block.appendChild(buildKbReferenceBlock('CORE DEFINITION', section.kbCoreDefinition));
+    }
+
+    const companyLabel = document.createElement('p');
+    companyLabel.className = 'cl-kb-ref__label';
+    companyLabel.textContent = 'COMPANY PROFILE';
+    block.appendChild(companyLabel);
+
+    if (section.draftContent) {
+      block.appendChild(buildDraftReview(section));
+    } else if (section.content) {
+      block.appendChild(buildApprovedView(section));
+    } else {
+      block.appendChild(buildEmptyView(section));
+    }
+
+    if (i < cap.sections.length - 1) {
+      const divider = document.createElement('hr');
+      divider.className = 'cl-doc-divider';
+      block.appendChild(divider);
+    }
+
+    panel.appendChild(block);
+  });
+
+  if (selected.sectionTitle) {
+    const target = panel.querySelector(`[data-section-title="${CSS.escape(selected.sectionTitle)}"]`);
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Read-only reference block — Core/Automotive KB text shown for comparison
+// only, never editable and never sent back to the server.
+function buildKbReferenceBlock(label, text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'cl-kb-ref';
+
+  const labelEl = document.createElement('p');
+  labelEl.className = 'cl-kb-ref__label';
+  labelEl.textContent = label;
+  wrap.appendChild(labelEl);
+
+  const body = document.createElement('p');
+  body.className = 'cl-kb-ref__body';
+  body.textContent = text;
+  wrap.appendChild(body);
+
+  return wrap;
+}
+
+// Read-only reference block for the approved Company Capability Map — same
+// visual language as buildKbReferenceBlock, but renders the table instead of
+// plain text since the map is structured rows, not prose.
+function buildCapabilityMapReferenceBlock(rows) {
+  const wrap = document.createElement('div');
+  wrap.className = 'cl-kb-ref';
+
+  const labelEl = document.createElement('p');
+  labelEl.className = 'cl-kb-ref__label';
+  labelEl.textContent = 'COMPANY CAPABILITY MAP';
+  wrap.appendChild(labelEl);
+
+  wrap.appendChild(buildCapabilityMapTable(rows));
+
+  return wrap;
 }
 
 function makeBtn(text, cls, handler) {
@@ -334,6 +513,28 @@ function buildEmptyView(section) {
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
+
+async function approveCapabilityMap() {
+  hideBanner();
+  try {
+    const { entry } = await api(`/${currentEntry._id}/capability-map/approve`, { method: 'POST' });
+    currentEntry = entry;
+    renderDetailHeader();
+  } catch (err) {
+    showBanner(err.message || 'Failed to approve capability map.');
+  }
+}
+
+async function discardCapabilityMap() {
+  hideBanner();
+  try {
+    const { entry } = await api(`/${currentEntry._id}/capability-map/discard`, { method: 'POST' });
+    currentEntry = entry;
+    renderDetailHeader();
+  } catch (err) {
+    showBanner(err.message || 'Failed to discard capability map.');
+  }
+}
 
 async function saveManualContent(section, newContent) {
   hideBanner();

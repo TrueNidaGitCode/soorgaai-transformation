@@ -35,12 +35,21 @@
  *   updateCapabilitySections(libraryId, capabilityId, sections, updatedByUserId)
  *     Manual admin entry for one capability, same as EnterpriseBlueprint's.
  *
+ *   approveCapabilityMap / discardCapabilityMapDraft(libraryId, ...)
+ *     Whole-set admin review for the "industry challenge -> company
+ *     capability" map (not row-by-row) — see runResearch, which also drafts
+ *     this alongside sections.
+ *
+ *   getApprovedCapabilityMap(companyNameNormalized)
+ *     Read-only, used by blueprintGenerationService.js's AI Opportunity
+ *     Discovery staged pipeline. Returns [] if none approved yet.
+ *
  *   getLibraryEntry(libraryId) / listLibraryEntries()
  */
 
 import CompanyResearchLibrary from '../models/CompanyResearchLibrary.js';
-import { getCapabilities, getCapabilityBlueprint } from './strategyCanvasService.js';
-import { researchCompanyForBlueprint } from './companyResearchService.js';
+import { LIBRARY_GROUNDED_DOMAINS, getDomainCapabilities, getDomainCapabilityBlueprint } from './strategyCanvasService.js';
+import { researchCompanyForBlueprint, researchCapabilityMap } from './companyResearchService.js';
 import { ensureVerticalKnowledge } from './industryVerticalKnowledgeService.js';
 
 export function normalizeCompanyName(name) {
@@ -49,19 +58,48 @@ export function normalizeCompanyName(name) {
 
 // ── Shell creation ────────────────────────────────────────────────────────────
 
+// Loops over every domain in LIBRARY_GROUNDED_DOMAINS (currently AI_Strategy
+// + AI_Use_Cases) so a new entry gets every covered domain's capabilities
+// from the start, each tagged with the domain it came from.
 function buildEmptyCapabilities(industry) {
-  const capabilities = getCapabilities();
-
-  return capabilities.map(cap => {
-    let sections = [];
-    try {
-      const blueprint = getCapabilityBlueprint(cap.id, industry);
-      sections = (blueprint.sections || []).map(s => ({ title: s.title, content: '' }));
-    } catch {
-      // KB file missing for this capability — create capability with no sections
+  const capabilities = [];
+  for (const kbPath of LIBRARY_GROUNDED_DOMAINS) {
+    for (const cap of getDomainCapabilities(kbPath)) {
+      let sections = [];
+      try {
+        const blueprint = getDomainCapabilityBlueprint(cap.id, kbPath, industry);
+        sections = (blueprint.sections || []).map(s => ({ title: s.title, content: '' }));
+      } catch {
+        // KB file missing for this capability — create capability with no sections
+      }
+      capabilities.push({ capabilityId: cap.id, capabilityName: cap.name, sections, domainKbPath: kbPath });
     }
-    return { capabilityId: cap.id, capabilityName: cap.name, sections };
-  });
+  }
+  return capabilities;
+}
+
+// Additive-only: adds any (domain, capability) pair from LIBRARY_GROUNDED_DOMAINS
+// that isn't already present in doc.capabilities — never touches or reorders
+// existing entries. Lets an entry created before a new domain was added catch
+// up without disturbing already-drafted/approved/reviewed content.
+function syncMissingCapabilities(doc, industry) {
+  const existingIds = new Set(doc.capabilities.map(c => c.capabilityId));
+  let added = 0;
+  for (const kbPath of LIBRARY_GROUNDED_DOMAINS) {
+    for (const cap of getDomainCapabilities(kbPath)) {
+      if (existingIds.has(cap.id)) continue;
+      let sections = [];
+      try {
+        const blueprint = getDomainCapabilityBlueprint(cap.id, kbPath, industry);
+        sections = (blueprint.sections || []).map(s => ({ title: s.title, content: '' }));
+      } catch {
+        // KB file missing for this capability — add it with no sections
+      }
+      doc.capabilities.push({ capabilityId: cap.id, capabilityName: cap.name, sections, domainKbPath: kbPath });
+      added++;
+    }
+  }
+  return added;
 }
 
 export async function createLibraryEntry(companyName, industry = 'Automotive', createdByUserId, subVertical = '') {
@@ -119,45 +157,79 @@ export async function runResearch(libraryId) {
   const doc = await CompanyResearchLibrary.findById(libraryId);
   if (!doc) throw new Error('Library entry not found.');
 
+  // Catch this entry up on any domain added to LIBRARY_GROUNDED_DOMAINS since
+  // it was created — additive only, never touches existing capabilities.
+  const added = syncMissingCapabilities(doc, doc.industry);
+  if (added > 0) {
+    await doc.save();
+    console.log(`[CompanyResearchLibrary] Synced ${added} missing capability/ies for "${doc.companyName}"`);
+  }
+
+  // Only research sections that are genuinely empty — never overwrite a
+  // section that already has approved content or a pending draft, so
+  // re-running research to pick up a newly-synced domain doesn't clobber
+  // work already reviewed/edited on the existing sections.
   const sectionMeta = [];
   for (const cap of doc.capabilities) {
+    const kbPath = cap.domainKbPath || 'AI_Strategy';
     let kbSections = [];
     try {
-      kbSections = getCapabilityBlueprint(cap.capabilityId, doc.industry).sections || [];
+      kbSections = getDomainCapabilityBlueprint(cap.capabilityId, kbPath, doc.industry).sections || [];
     } catch {
       // KB file missing for this capability — research with title only.
     }
     for (const section of cap.sections) {
+      if (section.content || section.draftContent) continue; // already handled
       const kb = kbSections.find(s => s.title === section.title);
       sectionMeta.push({ title: section.title, definition: kb?.definition || '' });
     }
   }
-  if (sectionMeta.length === 0) return doc;
 
-  const result = await researchCompanyForBlueprint({
-    orgName:  doc.companyName,
-    industry: doc.industry,
-    sections: sectionMeta,
-  });
-  if (!result || result.sections.length === 0) {
+  const needsCapabilityMap = !doc.capabilityMap?.content?.length && !doc.capabilityMap?.draftContent?.length;
+  if (sectionMeta.length === 0 && !needsCapabilityMap) return doc;
+
+  const [sectionResult, mapResult] = await Promise.all([
+    sectionMeta.length > 0
+      ? researchCompanyForBlueprint({ orgName: doc.companyName, industry: doc.industry, sections: sectionMeta })
+      : Promise.resolve(null),
+    // Only research the capability map if nothing's there yet — never
+    // overwrite an approved map or a pending draft the admin hasn't reviewed.
+    needsCapabilityMap
+      ? researchCapabilityMap({ orgName: doc.companyName, industry: doc.industry, subVertical: doc.subVertical })
+      : Promise.resolve(null),
+  ]);
+
+  const now = new Date();
+  let sectionsDrafted = 0;
+
+  if (sectionResult?.sections?.length) {
+    const byTitle = new Map(sectionResult.sections.map(s => [s.title, s]));
+    for (const cap of doc.capabilities) {
+      for (const section of cap.sections) {
+        const drafted = byTitle.get(section.title);
+        if (!drafted) continue;
+        section.draftContent = drafted.content;
+        section.draftSource  = drafted.confidence === 'high' ? 'external-research' : 'external-research-limited';
+        section.draftedAt    = now;
+        sectionsDrafted++;
+      }
+    }
+  }
+
+  if (mapResult?.mappings?.length) {
+    const hasLow = mapResult.mappings.some(m => m.confidence === 'low');
+    doc.capabilityMap.draftContent = mapResult.mappings.map(({ confidence, ...rest }) => rest);
+    doc.capabilityMap.draftSource  = hasLow ? 'external-research-limited' : 'external-research';
+    doc.capabilityMap.draftedAt    = now;
+  }
+
+  if (sectionsDrafted === 0 && !mapResult?.mappings?.length) {
     console.log(`[CompanyResearchLibrary] No research draft produced for "${doc.companyName}"`);
     return doc;
   }
 
-  const now = new Date();
-  const byTitle = new Map(result.sections.map(s => [s.title, s]));
-  for (const cap of doc.capabilities) {
-    for (const section of cap.sections) {
-      const drafted = byTitle.get(section.title);
-      if (!drafted) continue;
-      section.draftContent = drafted.content;
-      section.draftSource  = drafted.confidence === 'high' ? 'external-research' : 'external-research-limited';
-      section.draftedAt    = now;
-    }
-  }
-
   await doc.save();
-  console.log(`[CompanyResearchLibrary] Drafted ${result.sections.length} section(s) for "${doc.companyName}"`);
+  console.log(`[CompanyResearchLibrary] Drafted ${sectionsDrafted} section(s)${mapResult?.mappings?.length ? ` + ${mapResult.mappings.length} capability-map row(s)` : ''} for "${doc.companyName}"`);
   return doc;
 }
 
@@ -212,6 +284,50 @@ export async function discardDraftSection(libraryId, capabilityId, sectionTitle)
   return doc;
 }
 
+// ── Capability map review — approve or discard the whole set ──────────────────
+// Whole-set, not row-by-row — a v1 simplification; individual rows can be
+// edited before approving by discarding and re-running research if needed.
+
+export async function approveCapabilityMap(libraryId, updatedByUserId) {
+  const doc = await CompanyResearchLibrary.findById(libraryId);
+  if (!doc) throw new Error('Library entry not found.');
+  if (!doc.capabilityMap?.draftContent?.length) throw new Error('Capability map has no pending draft.');
+
+  doc.capabilityMap.content      = doc.capabilityMap.draftContent;
+  doc.capabilityMap.updatedAt    = new Date();
+  doc.capabilityMap.updatedBy    = updatedByUserId || null;
+  doc.capabilityMap.draftContent = [];
+  doc.capabilityMap.draftSource  = '';
+  doc.capabilityMap.draftedAt    = null;
+
+  await doc.save();
+  return doc;
+}
+
+export async function discardCapabilityMapDraft(libraryId) {
+  const doc = await CompanyResearchLibrary.findById(libraryId);
+  if (!doc) throw new Error('Library entry not found.');
+
+  doc.capabilityMap.draftContent = [];
+  doc.capabilityMap.draftSource  = '';
+  doc.capabilityMap.draftedAt    = null;
+
+  await doc.save();
+  return doc;
+}
+
+/**
+ * Returns the APPROVED capability map for a company (by normalized name), or
+ * [] if none exists/none approved yet. Used by blueprintGenerationService.js's
+ * AI Opportunity Discovery staged pipeline — never returns unapproved drafts.
+ */
+export async function getApprovedCapabilityMap(companyNameNormalized) {
+  if (!companyNameNormalized) return [];
+  const doc = await CompanyResearchLibrary.findOne({ companyNameNormalized })
+    .select('capabilityMap.content').lean().catch(() => null);
+  return doc?.capabilityMap?.content || [];
+}
+
 // ── Manual admin entry ───────────────────────────────────────────────────────
 
 export async function updateCapabilitySections(libraryId, capabilityId, sections, updatedByUserId) {
@@ -243,8 +359,36 @@ export async function updateCapabilitySections(libraryId, capabilityId, sections
 
 // ── Read ──────────────────────────────────────────────────────────────────────
 
+/**
+ * Enriches each capability/section with its KB reference text, computed live
+ * from the current markdown files (never stored — always reflects whatever
+ * the KB says right now). Core content is written per-section
+ * (`kbCoreDefinition`); the Automotive/Industry overlay is written once for
+ * the whole capability, not per-section (`kbAutomotiveContext`) — the two KB
+ * layers aren't structured symmetrically, so this doesn't force them to be.
+ */
+function attachKbReference(doc) {
+  for (const cap of doc.capabilities) {
+    const kbPath = cap.domainKbPath || 'AI_Strategy';
+    try {
+      const blueprint = getDomainCapabilityBlueprint(cap.capabilityId, kbPath, doc.industry);
+      cap.kbAutomotiveContext = blueprint.automotiveBlueprint || '';
+      for (const section of cap.sections) {
+        const kbSection = (blueprint.sections || []).find(s => s.title === section.title);
+        section.kbCoreDefinition = kbSection?.definition || '';
+      }
+    } catch {
+      cap.kbAutomotiveContext = '';
+      for (const section of cap.sections) section.kbCoreDefinition = '';
+    }
+  }
+  return doc;
+}
+
 export async function getLibraryEntry(libraryId) {
-  return CompanyResearchLibrary.findById(libraryId).lean();
+  const doc = await CompanyResearchLibrary.findById(libraryId).lean();
+  if (!doc) return null;
+  return attachKbReference(doc);
 }
 
 export async function listLibraryEntries() {

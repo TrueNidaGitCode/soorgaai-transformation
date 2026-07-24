@@ -35,6 +35,8 @@
 .cl-table__row { cursor: pointer; transition: background 0.15s; }
 .cl-table__row:hover { background: rgba(92,197,167,0.06); }
 
+.cl-capmap-table { margin: 0.75rem 0 1rem; }
+
 /* ── Detail view ───────────────────────────────────────────────────────────── */
 
 .cl-back-btn { margin-bottom: 1.25rem; }
@@ -77,6 +79,68 @@
   text-transform: uppercase;
   margin: 0 0 0.5rem;
 }
+
+.eb-sidebar__capability-btn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.eb-sidebar__capability-btn:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.04); }
+.eb-sidebar__capability-btn--active { color: #5CC5A7; background: rgba(92,197,167,0.08); }
+
+/* ── Capability document view (all sections stacked, KB-file style) ─────────── */
+
+.cl-doc-section { margin-bottom: 1.5rem; }
+.cl-doc-section:last-child { margin-bottom: 0; }
+
+.cl-doc-section__title {
+  color: rgba(255,255,255,0.9);
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+}
+
+.cl-doc-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin: 1.5rem 0 0;
+}
+
+/* ── KB reference blocks (Core / Automotive) — read-only, for comparison ────── */
+
+.cl-kb-ref {
+  background: rgba(255,255,255,0.02);
+  border-left: 2px solid rgba(255,255,255,0.15);
+  border-radius: 0 0.4rem 0.4rem 0;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.85rem;
+}
+
+.cl-kb-ref__label {
+  color: rgba(255,255,255,0.4);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 0.35rem;
+}
+
+.cl-kb-ref__body {
+  color: rgba(255,255,255,0.65);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* The "COMPANY PROFILE" label reuses .cl-kb-ref__label's styling but sits
+   directly above the editable content, not inside a reference-styled box. */
 
 .eb-sidebar__sections {
   list-style: none;

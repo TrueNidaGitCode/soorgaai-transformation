@@ -10,6 +10,8 @@ import {
   patchCapability,
   approveDraft,
   discardDraft,
+  approveCapabilityMapHandler,
+  discardCapabilityMapHandler,
 } from '../controllers/companyResearchLibraryController.js';
 
 const router = express.Router();
@@ -23,5 +25,7 @@ router.post('/:id/set-vertical',                                                
 router.patch('/:id/capability/:capabilityId',                                      protect, adminOnly, patchCapability);
 router.post('/:id/capability/:capabilityId/section/:sectionTitle/approve',         protect, adminOnly, approveDraft);
 router.post('/:id/capability/:capabilityId/section/:sectionTitle/discard',         protect, adminOnly, discardDraft);
+router.post('/:id/capability-map/approve',                                         protect, adminOnly, approveCapabilityMapHandler);
+router.post('/:id/capability-map/discard',                                         protect, adminOnly, discardCapabilityMapHandler);
 
 export default router;

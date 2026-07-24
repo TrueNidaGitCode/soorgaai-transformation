@@ -30,36 +30,42 @@
 
 import EnterpriseBlueprint from '../models/EnterpriseBlueprint.js';
 import UserProfile          from '../models/UserProfile.js';
-import { getCapabilities, getCapabilityBlueprint } from './strategyCanvasService.js';
+import { LIBRARY_GROUNDED_DOMAINS, getDomainCapabilities, getDomainCapabilityBlueprint } from './strategyCanvasService.js';
 import CompanyResearchLibrary from '../models/CompanyResearchLibrary.js';
 import { normalizeCompanyName, createLibraryEntry, runResearch } from './companyResearchLibraryService.js';
 
 // ── Stage 1: Blueprint shell creation ─────────────────────────────────────────
 
 /**
- * Build an empty capabilities array from the current KB framework.
- * Reads Core markdown files to enumerate section titles.
+ * Build an empty capabilities array from the current KB framework, covering
+ * every domain in LIBRARY_GROUNDED_DOMAINS (currently AI_Strategy +
+ * AI_Use_Cases) — must match CompanyResearchLibrary's shell shape exactly,
+ * or applyLibraryMatch's capabilityId matching below silently finds nothing
+ * to copy for whichever domain is missing from one side.
  */
 function buildEmptyCapabilities(industry) {
-  const capabilities = getCapabilities();
-
-  return capabilities.map(cap => {
-    let sections = [];
-    try {
-      const blueprint = getCapabilityBlueprint(cap.id, industry);
-      sections = (blueprint.sections || []).map(s => ({
-        title:   s.title,
-        content: '',
-      }));
-    } catch {
-      // KB file missing for this capability — create capability with no sections
+  const capabilities = [];
+  for (const kbPath of LIBRARY_GROUNDED_DOMAINS) {
+    for (const cap of getDomainCapabilities(kbPath)) {
+      let sections = [];
+      try {
+        const blueprint = getDomainCapabilityBlueprint(cap.id, kbPath, industry);
+        sections = (blueprint.sections || []).map(s => ({
+          title:   s.title,
+          content: '',
+        }));
+      } catch {
+        // KB file missing for this capability — create capability with no sections
+      }
+      capabilities.push({
+        capabilityId:   cap.id,
+        capabilityName: cap.name,
+        sections,
+        domainKbPath:   kbPath,
+      });
     }
-    return {
-      capabilityId:   cap.id,
-      capabilityName: cap.name,
-      sections,
-    };
-  });
+  }
+  return capabilities;
 }
 
 /**

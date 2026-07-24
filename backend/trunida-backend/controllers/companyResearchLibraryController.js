@@ -13,6 +13,8 @@
  * POST   /api/admin/company-library/:id/capability/:capabilityId/section/:sectionTitle/approve
  * POST   /api/admin/company-library/:id/capability/:capabilityId/section/:sectionTitle/discard
  * POST   /api/admin/company-library/:id/set-vertical                    Tag/change sub-vertical.
+ * POST   /api/admin/company-library/:id/capability-map/approve          Approve the whole draft map.
+ * POST   /api/admin/company-library/:id/capability-map/discard          Discard the draft map.
  */
 
 import {
@@ -22,6 +24,8 @@ import {
   approveSection,
   discardDraftSection,
   updateCapabilitySections,
+  approveCapabilityMap,
+  discardCapabilityMapDraft,
   getLibraryEntry,
   listLibraryEntries,
 } from '../services/companyResearchLibraryService.js';
@@ -143,6 +147,26 @@ export async function discardDraft(req, res) {
     const { id, capabilityId, sectionTitle } = req.params;
     const doc = await discardDraftSection(id, capabilityId, decodeURIComponent(sectionTitle));
     auditLog('DISCARDED', req.user._id, { libraryId: id, capabilityId, sectionTitle });
+    return res.json({ entry: doc });
+  } catch (err) {
+    return handleServiceError(res, err);
+  }
+}
+
+export async function approveCapabilityMapHandler(req, res) {
+  try {
+    const doc = await approveCapabilityMap(req.params.id, req.user._id);
+    auditLog('CAPABILITY_MAP_APPROVED', req.user._id, { libraryId: req.params.id, rows: doc.capabilityMap.content.length });
+    return res.json({ entry: doc });
+  } catch (err) {
+    return handleServiceError(res, err);
+  }
+}
+
+export async function discardCapabilityMapHandler(req, res) {
+  try {
+    const doc = await discardCapabilityMapDraft(req.params.id);
+    auditLog('CAPABILITY_MAP_DISCARDED', req.user._id, { libraryId: req.params.id });
     return res.json({ entry: doc });
   } catch (err) {
     return handleServiceError(res, err);

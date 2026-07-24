@@ -35,7 +35,7 @@ import { getCapabilityEnterpriseContext, preloadEnterpriseContextMap } from './e
 import { getConnectedKnowledgeContext, preloadConnectedKnowledgeMap, getLinkedProjectContext } from './connectedKnowledgeService.js';
 import { detectIndustryFit } from './industryFitService.js';
 import CompanyResearchLibrary from '../models/CompanyResearchLibrary.js';
-import { normalizeCompanyName } from './companyResearchLibraryService.js';
+import { normalizeCompanyName, getApprovedCapabilityMap } from './companyResearchLibraryService.js';
 import { getVerticalContextForCapability, preloadVerticalContextMap } from './industryVerticalKnowledgeService.js';
 
 // Merges Enterprise Blueprint context with Connected Knowledge (Confluence)
@@ -2679,7 +2679,94 @@ Generate the Strategy Brief JSON for all ${parsedSections.length} sections: ${se
   return { systemPrompt, userMessage };
 }
 
+// ── AI Opportunity Discovery — staged reasoning pipeline ──────────────────────
+// The key-differentiator capability, per this session's design discussion:
+// today every other capability is one LLM call reading all context at once.
+// This one is 2 calls with an explicit reasoning boundary between them —
+// Stage 1 identifies industry problems WITHOUT looking at company data yet
+// (matching the intended reasoning order: industry context before company
+// context); Stage 2 grounds the actual opportunities in the company's own
+// approved capability map (CompanyResearchLibrary.capabilityMap — see
+// companyResearchLibraryService.js) instead of re-inferring the connection
+// between "industry problem" and "company product" from prose every time.
+//
+// Output shape is identical to the single-call path — businessProblems/
+// workflowSteps/highEffortActivities/aiOpportunities — so this is purely an
+// internal generation-mechanism change. Nothing downstream (parseBriefOutput,
+// journeyContext extraction, frontend rendering) needs to know which path ran.
+async function runOpportunityDiscoveryStaged({ cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext }) {
+  const section = parsedSections[0]; // self-titled capability — exactly one section
+
+  // ── Stage 1: extract intent + identify industry problems (industry context only) ──
+  const stage1System = `You are an AI transformation strategist analysing a business objective. Your job right now is ONLY to understand the objective and the industry it sits in — do not consider any specific company's products yet, that happens in a later step.
+
+TASK:
+1. "intent": 1-2 sentences stating what this objective is really asking for, in plain language.
+2. "businessProblems" (4 to 6 items): specific business/engineering challenges in this industry that create the opportunity for AI. Each item 3-6 words, specific to the industry context given below — not generic ("Manual Defect Analysis", not "Inefficiency"). Ground these in the industry context provided; do not invent problems unrelated to it.
+
+OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences:
+{ "intent": "...", "businessProblems": ["...", ...] }`;
+
+  const stage1User = `BUSINESS OBJECTIVE: ${businessObjective}
+INDUSTRY: ${industry}
+${automotiveBlueprint ? `\nINDUSTRY CONTEXT:\n${automotiveBlueprint}\n` : ''}${section.definition ? `\nFRAMEWORK CONTEXT:\n${section.definition}\n` : ''}
+Extract the intent and identify the industry problems.`;
+
+  const stage1 = await callLLM(stage1System, stage1User, 90_000, `${cap.name} (Stage 1 — industry problems)`);
+  const intent = String(stage1?.intent || '').trim();
+  const businessProblemsFromStage1 = Array.isArray(stage1?.businessProblems)
+    ? stage1.businessProblems.map(String).filter(Boolean).slice(0, 6)
+    : [];
+
+  // ── Fast lookup, not an LLM call: the company's admin-approved capability map ──
+  const capabilityMap = companyProfile.orgName
+    ? await getApprovedCapabilityMap(normalizeCompanyName(companyProfile.orgName)).catch(() => [])
+    : [];
+
+  // ── Stage 2: generate opportunities grounded in company capabilities, validated against project context ──
+  const capabilityMapBlock = capabilityMap.length
+    ? `\nCOMPANY CAPABILITY MAP (admin-approved — ground opportunities in these actual products where relevant):\n${capabilityMap.map(m => `- ${m.industryChallenge} -> ${m.companyCapability}${m.mechanism ? ` (${m.mechanism})` : ''}`).join('\n')}\n`
+    : '';
+
+  const stage2System = `You are an AI transformation strategist. Given the industry problems already identified, generate the specific AI opportunities that address them — grounded in this company's actual products where a mapping is provided, and consistent with any project constraints given below.
+
+${SECTION_TEMPLATES['AI Opportunity Discovery'].promptInstruction}
+
+ADDITIONAL RULES FOR THIS STAGE:
+- The industry problems (businessProblems) were already identified in a prior step and are given to you below — do NOT regenerate or restate them.
+- When a COMPANY CAPABILITY MAP is provided below, prefer AI opportunities that strengthen one of the company's existing mapped capabilities, and name that capability explicitly in "why" (e.g. "This strengthens the Odin retrofit platform's fleet coordination by..."). If a project-context block below states a constraint (data handling, security, existing systems, architecture), the opportunities must respect it — do not propose something incompatible with a stated constraint.
+
+OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation, and NO fields other than these three:
+{
+  "workflowSteps": ["<step 1>", "<step 2>", "..."],
+  "highEffortActivities": ["<activity 1>", "<activity 2>", "..."],
+  "aiOpportunities": [{ "name": "<AI technique>", "why": "<1-2 sentences>" }, ...]
+}`;
+
+  const stage2User = `BUSINESS OBJECTIVE: ${businessObjective}
+INTENT: ${intent}
+INDUSTRY PROBLEMS IDENTIFIED: ${businessProblemsFromStage1.join(', ')}
+${capabilityMapBlock}${enterpriseContext ? `\n${enterpriseContext}\n` : ''}
+Generate workflowSteps, highEffortActivities, and aiOpportunities as specified.`;
+
+  const stage2 = await callLLM(stage2System, stage2User, 120_000, `${cap.name} (Stage 2 — opportunities)`);
+
+  const brief = {
+    businessProblems:     businessProblemsFromStage1,
+    workflowSteps:        stage2?.workflowSteps,
+    highEffortActivities: stage2?.highEffortActivities,
+    aiOpportunities:      stage2?.aiOpportunities,
+  };
+
+  const validTitles = new Set(parsedSections.map(s => s.title.toLowerCase()));
+  return parseBriefOutput([{ title: section.title, brief }], validTitles);
+}
+
 export async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null) {
+  if (cap.name === 'AI Opportunity Discovery' && BLUEPRINT_CONFIG.generate.ctoExtras) {
+    return runOpportunityDiscoveryStaged({ cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext });
+  }
+
   const { systemPrompt, userMessage } = buildBriefPrompt({
     companyName:         companyProfile.companyName,
     industry,

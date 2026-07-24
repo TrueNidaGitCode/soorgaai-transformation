@@ -45,12 +45,51 @@ const librarySectionSchema = new mongoose.Schema({
   draftedAt: { type: Date, default: null },
 }, { _id: false });
 
+// ── Capability map ────────────────────────────────────────────────────────────
+// "Industry challenge → company capability" mapping — e.g. "Labour shortage
+// -> Autonomous industrial vehicles". Cross-cutting: not tied to any one KB
+// capability/section, unlike `capabilities` below. Powers the AI Opportunity
+// Discovery staged-reasoning pipeline (blueprintGenerationService.js's
+// runOpportunityDiscoveryStaged) — Stage 2 looks up this APPROVED list
+// instead of re-inferring the connection from prose on every generation.
+
+const capabilityMapEntrySchema = new mongoose.Schema({
+  industryChallenge: { type: String, required: true },
+  companyCapability: { type: String, required: true },
+  mechanism:         { type: String, default: '' },  // how the capability addresses the challenge
+}, { _id: false });
+
+const capabilityMapSchema = new mongoose.Schema({
+  content:      { type: [capabilityMapEntrySchema], default: [] },  // admin-approved
+  draftContent: { type: [capabilityMapEntrySchema], default: [] },  // pending review
+
+  draftSource: {
+    type: String,
+    enum: ['', 'external-research', 'external-research-limited'],
+    default: '',
+  },
+  draftedAt: { type: Date, default: null },
+  updatedAt: { type: Date },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref:  'User',
+    default: null,
+  },
+}, { _id: false });
+
 // ── Capability ────────────────────────────────────────────────────────────────
 
 const libraryCapabilitySchema = new mongoose.Schema({
   capabilityId:   { type: String, required: true },
   capabilityName: { type: String, required: true },
   sections:       { type: [librarySectionSchema], default: [] },
+
+  // Which domain KB folder this capability belongs to (e.g. 'AI_Strategy',
+  // 'AI_Use_Cases') — see strategyCanvasService.js's LIBRARY_GROUNDED_DOMAINS.
+  // Empty string on entries created before this field existed means
+  // 'AI_Strategy' (the only domain that existed at the time) — every reader
+  // of this field must apply that fallback explicitly.
+  domainKbPath: { type: String, default: '' },
 }, { _id: false });
 
 // ── Library entry ────────────────────────────────────────────────────────────
@@ -96,7 +135,8 @@ const companyResearchLibrarySchema = new mongoose.Schema({
     ref:  'User',
   },
 
-  capabilities: { type: [libraryCapabilitySchema], default: [] },
+  capabilities:  { type: [libraryCapabilitySchema], default: [] },
+  capabilityMap: { type: capabilityMapSchema, default: () => ({}) },
 }, { timestamps: true });
 
 export default mongoose.model('CompanyResearchLibrary', companyResearchLibrarySchema);

@@ -57,6 +57,13 @@ const verticalCapabilitySchema = new mongoose.Schema({
   capabilityId:   { type: String, required: true },
   capabilityName: { type: String, required: true },
   sections:       { type: [verticalSectionSchema], default: [] },
+
+  // Which domain KB folder this capability belongs to (e.g. 'AI_Strategy',
+  // 'AI_Use_Cases') — see strategyCanvasService.js's LIBRARY_GROUNDED_DOMAINS.
+  // Empty string on entries created before this field existed means
+  // 'AI_Strategy' (the only domain that existed at the time) — every reader
+  // of this field must apply that fallback explicitly.
+  domainKbPath: { type: String, default: '' },
 }, { _id: false });
 
 // ── Vertical entry ────────────────────────────────────────────────────────────

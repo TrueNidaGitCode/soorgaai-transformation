@@ -14,11 +14,18 @@
  *     library-lookup step in enterpriseBlueprintService.js — must stay
  *     identical in both places or matching silently breaks.
  *
- *   createLibraryEntry(companyName, industry, createdByUserId, subVertical)
- *     Creates an empty shell for a company. Throws if one already exists
- *     for the normalized name. If subVertical is provided, also ensures a
- *     matching IndustryVerticalKnowledge entry exists (auto-drafts one via
- *     research if it doesn't) — see industryVerticalKnowledgeService.js.
+ *   createLibraryEntry(companyName, createdByUserId, subVertical, industry?)
+ *     Creates an empty shell for a company. Throws if one already exists for
+ *     the normalized name. `industry` is optional — when omitted (the admin
+ *     "Add Company" flow), it's auto-detected from the company name via
+ *     companyResearchService.js's detectCompanyIndustry, falling back to
+ *     'Automotive' only if detection fails. Always fires
+ *     industryCapabilityKnowledgeService.js's ensureIndustryCoverage in the
+ *     background, which generates a full Industry KB overlay if this is the
+ *     first company in a new industry (skipped if one already exists). If
+ *     subVertical is provided, also ensures a matching IndustryVerticalKnowledge
+ *     entry exists (auto-drafts one via research if it doesn't) — see
+ *     industryVerticalKnowledgeService.js.
  *
  *   setSubVertical(libraryId, subVertical)
  *     Tags an existing entry with a sub-vertical after the fact — same
@@ -49,8 +56,9 @@
 
 import CompanyResearchLibrary from '../models/CompanyResearchLibrary.js';
 import { LIBRARY_GROUNDED_DOMAINS, getDomainCapabilities, getDomainCapabilityBlueprint } from './strategyCanvasService.js';
-import { researchCompanyForBlueprint, researchCapabilityMap } from './companyResearchService.js';
+import { researchCompanyForBlueprint, researchCapabilityMap, detectCompanyIndustry } from './companyResearchService.js';
 import { ensureVerticalKnowledge } from './industryVerticalKnowledgeService.js';
+import { ensureIndustryCoverage, listKnownIndustries, resolveIndustry } from './industryCapabilityKnowledgeService.js';
 
 export function normalizeCompanyName(name) {
   return String(name || '').trim().toLowerCase();
@@ -102,29 +110,57 @@ function syncMissingCapabilities(doc, industry) {
   return added;
 }
 
-export async function createLibraryEntry(companyName, industry = 'Automotive', createdByUserId, subVertical = '') {
+// `industry` is optional and internal-only — the admin "Add Company" flow
+// never supplies it (industry is auto-detected from just the company name
+// below); enterpriseBlueprintService.js's applyLibraryMatch DOES pass it
+// explicitly, since a live customer's industry is already known from their
+// own profile and re-detecting it via web search would be redundant and
+// could disagree with what the customer already selected.
+export async function createLibraryEntry(companyName, createdByUserId, subVertical = '', industry = null) {
   const companyNameNormalized = normalizeCompanyName(companyName);
   if (!companyNameNormalized) throw new Error('companyName is required.');
 
   const existing = await CompanyResearchLibrary.findOne({ companyNameNormalized }).lean();
   if (existing) throw new Error(`A library entry already exists for "${companyName}".`);
 
-  const capabilities = buildEmptyCapabilities(industry);
+  let resolvedIndustry = industry;
+  if (!resolvedIndustry) {
+    // Shown to the model so it reuses an existing label instead of a
+    // near-duplicate phrasing of the same industry (see resolveIndustry).
+    const knownIndustries = await listKnownIndustries().catch(() => []);
+    const detected = await detectCompanyIndustry({ companyName, knownIndustries }).catch(() => null);
+    const rawIndustry = detected?.industry || 'Automotive';
+
+    // Deterministic backstop in case the model still drifts — e.g. detects
+    // "Semiconductor" when "Semiconductors" already has KB coverage.
+    resolvedIndustry = await resolveIndustry(rawIndustry).catch(() => rawIndustry);
+
+    const dedupedNote = resolvedIndustry !== rawIndustry ? ` — deduped to existing "${resolvedIndustry}"` : '';
+    console.log(`[CompanyResearchLibrary] Industry ${detected ? `detected as "${rawIndustry}"${dedupedNote} (${detected.confidence} confidence)` : `could not be detected, defaulting to "${resolvedIndustry}"`} for "${companyName}"`);
+  }
+
+  const capabilities = buildEmptyCapabilities(resolvedIndustry);
 
   const doc = await CompanyResearchLibrary.create({
     companyName,
     companyNameNormalized,
-    industry,
+    industry: resolvedIndustry,
     subVertical,
     createdByUserId,
     capabilities,
     status: 'empty',
   });
 
-  console.log(`[CompanyResearchLibrary] Entry created for "${companyName}" (${capabilities.length} capabilities)`);
+  console.log(`[CompanyResearchLibrary] Entry created for "${companyName}" (${capabilities.length} capabilities, industry: ${resolvedIndustry})`);
+
+  // Non-blocking: checks whether this industry already has KB coverage and,
+  // if not, generates it in the background (admin reviews/approves later —
+  // see industryCapabilityKnowledgeService.js). Never blocks company creation.
+  ensureIndustryCoverage(resolvedIndustry, createdByUserId)
+    .catch(err => console.error(`[CompanyResearchLibrary] Industry coverage ensure failed for "${resolvedIndustry}" (non-fatal):`, err.message));
 
   if (subVertical) {
-    ensureVerticalKnowledge(industry, subVertical, createdByUserId)
+    ensureVerticalKnowledge(resolvedIndustry, subVertical, createdByUserId)
       .catch(err => console.error(`[CompanyResearchLibrary] Vertical knowledge ensure failed for "${subVertical}" (non-fatal):`, err.message));
   }
 

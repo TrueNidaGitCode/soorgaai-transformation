@@ -96,14 +96,16 @@ async function handleCreate(evt) {
   evt.preventDefault();
   hideBanner();
   const companyName = document.getElementById('cl-company-name').value.trim();
-  const industry     = document.getElementById('cl-industry').value;
   const subVertical  = document.getElementById('cl-sub-vertical').value.trim();
   if (!companyName) return;
 
   const btn = document.getElementById('cl-create-btn');
+  const originalLabel = btn.textContent;
   btn.disabled = true;
+  btn.textContent = 'Detecting industry…';
   try {
-    const { entry } = await api('/', { method: 'POST', body: JSON.stringify({ companyName, industry, subVertical }) });
+    // industry is not sent — the backend auto-detects it from companyName.
+    const { entry } = await api('/', { method: 'POST', body: JSON.stringify({ companyName, subVertical }) });
     document.getElementById('cl-company-name').value = '';
     document.getElementById('cl-sub-vertical').value = '';
     await loadList();
@@ -112,6 +114,7 @@ async function handleCreate(evt) {
     showBanner(err.message || 'Failed to create company.');
   } finally {
     btn.disabled = false;
+    btn.textContent = originalLabel;
   }
 }
 
@@ -152,6 +155,8 @@ function renderDetailHeader() {
   document.getElementById('cl-detail-title').textContent = currentEntry.companyName;
   document.getElementById('cl-detail-meta').textContent = `${currentEntry.industry} · Status: ${currentEntry.status}`;
 
+  renderIndustryKbIndicator();
+
   const indicator = document.getElementById('cl-vertical-indicator');
   if (currentEntry.subVertical) {
     indicator.innerHTML = `Sub-vertical: <strong>${esc(currentEntry.subVertical)}</strong> — <a href="industry-verticals.html">review reference material →</a>`;
@@ -161,6 +166,38 @@ function renderDetailHeader() {
   }
 
   renderCapabilityMap();
+}
+
+// Fire-and-forget: shows whether this company's industry still has pending
+// Industry KB generation/review, linking to industry-kb.html. Not part of
+// the company entry response itself — industry KB coverage is tracked
+// per-industry, shared across every company in it.
+async function renderIndustryKbIndicator() {
+  const indicator = document.getElementById('cl-industry-kb-indicator');
+  indicator.style.display = 'none';
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/industry-kb`, { headers: authHeaders() });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return;
+
+    const match = (data.entries || []).find(
+      e => e.industry.trim().toLowerCase() === currentEntry.industry.trim().toLowerCase()
+    );
+    if (!match || match.status === 'ready') return;
+
+    const { completed = 0, total = 0 } = match.progress || {};
+    const label = match.status === 'pending'
+      ? `Industry KB for ${esc(match.industry)}: not yet generated — review →`
+      : match.status === 'generating'
+      ? `Industry KB for ${esc(match.industry)}: generating (${completed}/${total})…`
+      : `Industry KB for ${esc(match.industry)}: ${completed}/${total} generated — review →`;
+
+    indicator.innerHTML = `<a href="industry-kb.html?id=${esc(match._id)}">${label}</a>`;
+    indicator.style.display = 'block';
+  } catch {
+    // non-fatal — indicator just stays hidden
+  }
 }
 
 function renderCapabilityMap() {

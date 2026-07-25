@@ -320,3 +320,210 @@ export async function researchCapabilityMap({ orgName, industry, subVertical }) 
     return null;
   }
 }
+
+// ── Industry detection ──────────────────────────────────────────────────────
+// Given just a company name, identifies its primary industry so the admin
+// Company Research Library never needs a manual industry picker. Feeds
+// industryCapabilityKnowledgeService.js's coverage check.
+
+function buildIndustryDetectionSystemPrompt(knownIndustries) {
+  const knownBlock = knownIndustries?.length
+    ? `\n\nINDUSTRIES ALREADY IN THE KNOWLEDGE BASE — if this company's industry is the same real-world industry as one of these, you MUST return that EXACT label, verbatim (same wording, same singular/plural, same case) rather than inventing a new phrasing for the same thing:\n${knownIndustries.map(i => `- ${i}`).join('\n')}\n\nOnly return a label outside this list if the company's industry is genuinely different from all of them.`
+    : '';
+
+  return `You identify the primary industry of a company from its name, using web search to confirm.
+
+TASK: Return the company's single primary industry as a short, canonical label — the kind of label used to organize a business/consulting knowledge base (e.g. "Automotive", "Semiconductor", "Aerospace", "Healthcare", "Retail", "Financial Services", "Logistics"). Prefer a well-established industry category over a narrow niche description.
+
+STRICT RULES:
+- If search does not clearly identify the company or its industry, set "confidence" to "low" and give your best single-word-or-two guess rather than leaving it blank.
+- Set "confidence" to "high" only when search results clearly and specifically confirm the company and its industry.
+- The label must be 1-3 words, title case, no punctuation, no explanation.${knownBlock}
+
+OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
+{ "industry": "<short canonical industry label>", "confidence": "high" | "low" }`;
+}
+
+/**
+ * Detects a company's primary industry from its name via web search.
+ * Returns { industry, confidence } or null if detection is unavailable/
+ * failed — callers must treat null as "unknown, fall back to a default,"
+ * never as an error to surface.
+ *
+ * `knownIndustries` (optional) — industries that already have KB coverage
+ * (from industryCapabilityKnowledgeService.js's listKnownIndustries) — shown
+ * to the model so it reuses an existing label instead of inventing a
+ * near-duplicate phrasing (e.g. "Semiconductor" vs "Semiconductors") that
+ * would otherwise trigger a second, wasted full KB generation for what's
+ * really the same industry. companyResearchLibraryService.js also runs the
+ * result through resolveIndustry() as a deterministic backstop in case the
+ * model still drifts despite being shown this list.
+ *
+ * @param {{ companyName: string, knownIndustries?: string[] }} params
+ */
+export async function detectCompanyIndustry({ companyName, knownIndustries }) {
+  if (!companyName) return null;
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.warn('[CompanyResearch] Industry detection skipped — OPENAI_API_KEY not configured.');
+    return null;
+  }
+
+  try {
+    const client = new OpenAI({ apiKey });
+    const resp   = await client.responses.create({
+      model:             RESEARCH_MODEL,
+      max_output_tokens: 300,
+      instructions:      buildIndustryDetectionSystemPrompt(knownIndustries),
+      input:             `Company: ${companyName}\n\nIdentify this company's primary industry.`,
+      tools:             [{ type: 'web_search' }],
+    }, { timeout: 60_000 });
+
+    const text = (resp.output_text || '').trim();
+    if (!text) return null;
+
+    const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    const parsed  = JSON.parse(cleaned);
+    const industry = String(parsed?.industry || '').trim();
+    if (!industry) return null;
+
+    return { industry, confidence: parsed.confidence === 'high' ? 'high' : 'low' };
+  } catch (err) {
+    console.error(`[CompanyResearch] Industry detection failed for "${companyName}" (non-fatal):`, err.message);
+    return null;
+  }
+}
+
+// ── Industry capability KB generation ───────────────────────────────────────
+// Generates a full industry-overlay KB document for one capability — the
+// same role Automotive_{Capability}.md files play today, but authored by the
+// model (grounded via web search) instead of by hand, for an industry that
+// has no coverage yet. Powers industryCapabilityKnowledgeService.js. Output
+// is structured per-section JSON, not freeform markdown — deliberately, so
+// assembly into the final .md file is deterministic (see that service for
+// the fixed heading template each section title maps to).
+
+export const INDUSTRY_KB_SECTION_TITLES = [
+  'Purpose',
+  'Business Context',
+  'Business Challenges',
+  'Workflows',
+  'Common High-Effort Activities',
+  'Typical Opportunities',
+  'Principles',
+  'Leadership Question',
+];
+
+function buildIndustryCapabilitySystemPrompt() {
+  return `You are a management consultant authoring a knowledge-base reference document that teaches an AI system how to reason about one specific business capability within one specific industry. You have a web_search tool — use it to ground the content in real, current facts about the industry named in the user message.
+
+This document extends a generic, industry-neutral "Core" definition of the capability (given to you in the user message) with everything that is specific to the named industry.
+
+TASK: Write content for EXACTLY these 8 sections, in this order:
+1. "Purpose" — 2-3 sentences on how this capability specifically applies within this industry, building on the Core definition given to you.
+2. "Business Context" — what kinds of companies exist in this industry that this capability is relevant to. If the industry genuinely contains distinct company types relevant to this capability (e.g. companies serving end customers directly vs. companies whose main concern is their own internal operations/engineering), describe each as its own labeled sub-category. Do not force a split that doesn't genuinely apply — a single well-described context is fine if that's what's true.
+3. "Business Challenges" — concrete, specific challenges in this industry that create the opportunity for this capability to add value. Where Business Context identified distinct company types or customer segments, organize challenges under those same labeled sub-categories so a reader can tell which challenges apply to which kind of company. Each challenge should be 3-8 words, specific to this industry — not generic filler.
+4. "Workflows" — 2-4 example workflows (as short arrow-chains, e.g. "Step One → Step Two → Step Three") typical of this industry that provide context for this capability.
+5. "Common High-Effort Activities" — the manual, time-consuming activities in this industry that this capability typically has to deal with or improve.
+6. "Typical Opportunities" — the specific ways this capability is typically applied or realized in this industry, organized under the same sub-categories as Business Challenges if applicable.
+7. "Principles" — 3-5 guidance rules for how recommendations under this capability should be generated for a company in this industry (e.g. what terminology to use, what to prioritize, how to tell which sub-category a given company falls into).
+8. "Leadership Question" — one sentence a business leader in this industry would ask to prioritize action on this capability. If Business Context identified distinct sub-categories, phrase one variant per sub-category.
+
+STRICT RULES:
+- Ground specifics (terminology, named technologies, real challenges) in what your search actually surfaces about this industry. Do not invent implausible specifics, but reasonable, well-known industry knowledge does not require a citation to state.
+- Do not write generic filler that could apply to any industry ("uses technology to improve outcomes" is not acceptable).
+- Do not include citations, source links, or markdown-formatted links anywhere in the output — plain text only.
+- Keep bullet-style lists as actual arrays of short strings, not a single paragraph.
+- Set "confidence" to "high" only if your search results gave you real, specific grounding for this industry; otherwise "low".
+
+OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
+{
+  "sections": [
+    { "title": "Purpose", "content": "<2-3 sentences>" },
+    { "title": "Business Context", "content": "<prose, may include sub-category labels>" },
+    { "title": "Business Challenges", "content": ["<challenge>", "..."] },
+    { "title": "Workflows", "content": ["<Step → Step → Step>", "..."] },
+    { "title": "Common High-Effort Activities", "content": ["<activity>", "..."] },
+    { "title": "Typical Opportunities", "content": ["<opportunity>", "..."] },
+    { "title": "Principles", "content": ["<principle>", "..."] },
+    { "title": "Leadership Question", "content": "<question(s)>" }
+  ],
+  "confidence": "high" | "low"
+}`;
+}
+
+function buildIndustryCapabilityUserMessage({ industry, capabilityName, domainName, objective, coreDefinition }) {
+  return `Industry: ${industry}
+Domain: ${domainName}
+Capability: ${capabilityName}
+Capability objective: ${objective || '(not specified)'}
+${coreDefinition ? `\nCore (industry-neutral) definition of this capability, to extend:\n${coreDefinition}\n` : ''}
+Write the industry-overlay knowledge base document for this capability in this industry, per the 8-section format described in the system prompt.`;
+}
+
+function renderSectionContent(content) {
+  if (Array.isArray(content)) {
+    return content.map(item => `- ${String(item).trim()}`).join('\n');
+  }
+  return String(content || '').trim();
+}
+
+function parseIndustryCapabilitySections(rawText) {
+  const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+  const parsed  = JSON.parse(cleaned);
+  const raw     = Array.isArray(parsed?.sections) ? parsed.sections : [];
+  const validTitles = new Set(INDUSTRY_KB_SECTION_TITLES);
+
+  const sections = raw
+    .filter(s => s && validTitles.has(s.title) && s.content)
+    .map(s => ({
+      title:   s.title,
+      content: stripCitations(renderSectionContent(s.content)),
+    }))
+    .filter(s => s.content);
+
+  if (sections.length === 0) return null;
+  return { sections, confidence: parsed.confidence === 'high' ? 'high' : 'low' };
+}
+
+/**
+ * Generates a full industry-overlay KB document for one capability, grounded
+ * via web search. Returns { sections: [{ title, content }], confidence } or
+ * null if generation is unavailable/failed — callers must treat null as "no
+ * draft available, mark this capability failed and continue," never as an
+ * error to surface or retry synchronously.
+ *
+ * @param {{ industry: string, capabilityName: string, domainName: string, objective?: string, coreDefinition?: string }} params
+ */
+export async function researchIndustryCapability({ industry, capabilityName, domainName, objective, coreDefinition }) {
+  if (!industry || !capabilityName) return null;
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.warn('[CompanyResearch] Industry capability generation skipped — OPENAI_API_KEY not configured.');
+    return null;
+  }
+
+  try {
+    const client = new OpenAI({ apiKey });
+    const resp   = await client.responses.create({
+      model:             RESEARCH_MODEL,
+      max_output_tokens: 7000,
+      instructions:      buildIndustryCapabilitySystemPrompt(),
+      input:             buildIndustryCapabilityUserMessage({ industry, capabilityName, domainName, objective, coreDefinition }),
+      tools:             [{ type: 'web_search' }],
+    }, { timeout: 120_000 });
+
+    const text = (resp.output_text || '').trim();
+    if (!text) {
+      console.warn(`[CompanyResearch] Empty industry-capability response for "${industry}" / "${capabilityName}".`);
+      return null;
+    }
+
+    return parseIndustryCapabilitySections(text);
+  } catch (err) {
+    console.error(`[CompanyResearch] Industry capability generation failed for "${industry}" / "${capabilityName}" (non-fatal):`, err.message);
+    return null;
+  }
+}

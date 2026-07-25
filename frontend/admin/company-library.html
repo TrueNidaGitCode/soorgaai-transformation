@@ -34,12 +34,7 @@
                     <div class="form-group">
                         <label for="cl-company-name">Company Name *</label>
                         <input type="text" id="cl-company-name" placeholder="e.g. Acme Motors" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="cl-industry">Industry</label>
-                        <select id="cl-industry">
-                            <option value="Automotive" selected>Automotive</option>
-                        </select>
+                        <p class="field-hint">Industry is detected automatically from the company name — no need to pick one. If it's the first company in a new industry, its Industry KB won't have existing coverage yet — you'll need to generate it manually (real AI cost) from the <a href="industry-kb.html">Industry KB</a> page.</p>
                     </div>
                     <div class="form-group">
                         <label for="cl-sub-vertical">Sub-vertical (optional)</label>
@@ -88,6 +83,7 @@
                         <h2 id="cl-detail-title"></h2>
                         <p id="cl-detail-meta" class="header-subtitle"></p>
                         <p id="cl-vertical-indicator" class="cl-vertical-indicator" style="display:none"></p>
+                        <p id="cl-industry-kb-indicator" class="cl-vertical-indicator" style="display:none"></p>
                     </div>
                     <button type="button" id="cl-research-btn" class="btn-icon">Run Research</button>
                 </div>

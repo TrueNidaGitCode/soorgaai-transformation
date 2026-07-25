@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // KB root: services/ → trunida-backend/ → backend/ → project root → knowledge_base
-const KB_ENTERPRISE_ROOT = path.resolve(
+// Exported so industryCapabilityKnowledgeService.js can write newly-approved
+// industry KB files to exactly the path this module reads them back from.
+export const KB_ENTERPRISE_ROOT = path.resolve(
   __dirname, '../../../knowledge_base/automotive/enterprise_ai'
 );
 
@@ -26,7 +28,7 @@ function domainPath(kbPath) {
 
 // ── Filename mapping ──────────────────────────────────────────────────────────
 
-function toFilename(capabilityName) {
+export function toFilename(capabilityName) {
   return capabilityName
     .replace(/&/g, '')
     .replace(/\s+/g, '_')

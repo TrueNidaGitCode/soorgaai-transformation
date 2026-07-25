@@ -69,11 +69,13 @@ export async function listEntries(req, res) {
 
 export async function createEntry(req, res) {
   try {
-    const { companyName, industry, subVertical } = req.body;
+    const { companyName, subVertical } = req.body;
     if (!companyName) return res.status(400).json({ error: 'companyName is required.' });
 
-    const doc = await createLibraryEntry(companyName, industry || 'Automotive', req.user._id, subVertical || '');
-    auditLog('CREATED', req.user._id, { companyName, subVertical: subVertical || null });
+    // industry is intentionally not read from the request — it's auto-
+    // detected from companyName inside createLibraryEntry.
+    const doc = await createLibraryEntry(companyName, req.user._id, subVertical || '');
+    auditLog('CREATED', req.user._id, { companyName, industry: doc.industry, subVertical: subVertical || null });
     return res.status(201).json({ entry: doc });
   } catch (err) {
     if (err.message?.includes('already exists')) {

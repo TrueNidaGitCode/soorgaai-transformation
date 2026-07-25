@@ -281,3 +281,21 @@
   .eb-layout { flex-direction: column; }
   .eb-sidebar { flex: none; width: 100%; }
 }
+
+/* ── Industry KB generation progress bar ─────────────────────────────────── */
+
+.ik-progress-bar {
+  background: rgba(255,255,255,0.06);
+  border-radius: 999px;
+  height: 8px;
+  margin: 1rem 0 0.5rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.ik-progress-bar__fill {
+  background: #5CC5A7;
+  height: 100%;
+  transition: width 0.4s ease;
+  width: 0%;
+}

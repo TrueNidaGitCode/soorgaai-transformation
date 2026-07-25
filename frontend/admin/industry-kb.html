@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industry KB - SOORGA Admin</title>
+
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="company-library.css">
+    <link rel="stylesheet" href="industry-verticals.css">
+    <script src="../login/config.js"></script>
+</head>
+<body>
+    <header>
+        <div id="navbar-container"></div>
+    </header>
+
+    <main class="admin-dashboard">
+        <div class="dashboard-header">
+            <h1>Industry KB</h1>
+            <p class="header-subtitle">Auto-generated Industry-overlay KB coverage for industries with no hand-authored KB files yet. Created automatically the first time a company in a new industry is added to the Company Research Library — review and approve each capability below before it's used in real generation.</p>
+        </div>
+
+        <div id="ik-banner" class="cl-banner" style="display:none" role="alert"></div>
+
+        <!-- ── List view ─────────────────────────────────────────────────────── -->
+        <div id="ik-list-view">
+            <div class="admin-panel">
+                <div class="panel-header">
+                    <h2>All Industries</h2>
+                </div>
+                <div id="ik-list-loading" class="loading-state">
+                    <div class="spinner-large"></div>
+                    <p>Loading…</p>
+                </div>
+                <div id="ik-list-empty" class="empty-state" style="display:none">No auto-generated industries yet — one is created automatically the first time a company is added in an industry with no existing KB coverage.</div>
+                <table id="ik-table" class="cl-table" style="display:none">
+                    <thead>
+                        <tr>
+                            <th>Industry</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ik-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Detail view ───────────────────────────────────────────────────── -->
+        <div id="ik-detail-view" style="display:none">
+            <button type="button" id="ik-back-btn" class="btn-secondary cl-back-btn">← All Industries</button>
+
+            <div class="admin-panel">
+                <div class="panel-header cl-detail-header">
+                    <div>
+                        <h2 id="ik-detail-title"></h2>
+                        <p id="ik-detail-meta" class="header-subtitle"></p>
+                    </div>
+                </div>
+
+                <div id="ik-pending-panel" class="eb-draft__flag eb-draft__flag--low" style="display:none">
+                    <span id="ik-pending-label"></span>
+                    <button type="button" id="ik-generate-btn" class="btn-icon" style="margin-left:0.75rem">Generate Industry KB</button>
+                </div>
+
+                <div id="ik-progress-panel" style="display:none">
+                    <div class="ik-progress-bar"><div id="ik-progress-fill" class="ik-progress-bar__fill"></div></div>
+                    <p id="ik-progress-label" class="header-subtitle"></p>
+                </div>
+
+                <div class="eb-layout">
+                    <nav id="ik-sidebar" class="eb-sidebar" aria-label="Capabilities"></nav>
+                    <section id="ik-panel" class="eb-panel">
+                        <p class="eb-panel__empty">Select a capability from the left to review its generated content.</p>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="industry-kb.js"></script>
+</body>
+</html>

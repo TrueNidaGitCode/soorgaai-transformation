@@ -85,11 +85,14 @@ async function applyLibraryMatch(capabilities, orgName, industry, createdByUserI
     const companyNameNormalized = normalizeCompanyName(orgName);
     if (!companyNameNormalized) return;
 
-    const entry = await CompanyResearchLibrary.findOne({ companyNameNormalized }).lean();
+    // Scoped by industry too, not just name — prevents two different real
+    // companies that happen to share a name across industries from having
+    // one's library content silently copied into the other's blueprint.
+    const entry = await CompanyResearchLibrary.findOne({ companyNameNormalized, industry }).lean();
 
     if (!entry) {
       try {
-        const created = await createLibraryEntry(orgName, industry, createdByUserId);
+        const created = await createLibraryEntry(orgName, createdByUserId, '', industry);
         await runResearch(created._id);
         console.log(`[EnterpriseBlueprint] Auto-created and researched company library entry for "${orgName}" — pending admin approval.`);
       } catch (err) {

@@ -98,25 +98,9 @@ function checkExistingAuth() {
 
     if (token) {
         console.log('✅ User already authenticated');
-
-        // ?redirect= param takes priority (e.g. platform page bounced them here)
-        if (pendingRedirect) {
-            console.log(`🔄 Redirecting to ?redirect param: ${pendingRedirect}`);
-            window.location.href = pendingRedirect;
-            return;
-        }
-
-        // Fall back to localStorage redirect
-        const redirectUrl = localStorage.getItem('redirectAfterLogin');
-
-        if (redirectUrl) {
-            console.log(`🔄 Redirecting to saved page: ${redirectUrl}`);
-            localStorage.removeItem('redirectAfterLogin');
-            window.location.href = redirectUrl;
-        } else {
-            console.log('🔄 Redirecting to workspace');
-            window.location.href = '/domain/domain.html';
-        }
+        // Same priority order as a fresh login (?redirect= > saved redirect >
+        // guest preview to claim > landing page) — see computeLoginDestination.
+        window.location.href = computeLoginDestination();
     }
 }
 
@@ -289,9 +273,16 @@ function computeLoginDestination() {
         return '/signals/signal-page.html';
     }
 
-    // 4. Default: workspace
-    console.log("✅ Destination: workspace");
-    return '/domain/domain.html';
+    // 4. A guest preview is waiting to be claimed onto this account —
+    // domain.html's init() does that claim, so it needs to load first.
+    if (localStorage.getItem('soorgaai_guest_id')) {
+        console.log('✅ Destination: workspace (guest preview to claim)');
+        return '/domain/domain.html';
+    }
+
+    // 5. Default: landing page
+    console.log('✅ Destination: landing page');
+    return '/';
 }
 
 // New users have no UserProfile yet — send them through profile setup once,

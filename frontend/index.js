@@ -190,8 +190,11 @@ export function wireAuthModal() {
             localStorage.setItem('username', data.username);
             localStorage.setItem('role',     data.role || 'user');
 
-            // The blueprint view claims any waiting guest preview on load
-            await redirectRespectingProfile('/domain/domain.html');
+            // A fresh login lands back on the landing page — unless there's a
+            // guest preview waiting to be claimed onto this account, in which
+            // case domain.html needs to load first (its init() does the claim).
+            const hasGuestPreview = !!localStorage.getItem('soorgaai_guest_id');
+            await redirectRespectingProfile(hasGuestPreview ? '/domain/domain.html' : '/');
         } catch (err) {
             showError(err.message);
             if (btn) { btn.disabled = false; btn.textContent = 'Verify & continue'; }

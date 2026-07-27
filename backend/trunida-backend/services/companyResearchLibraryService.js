@@ -202,9 +202,8 @@ export async function runResearch(libraryId) {
   }
 
   // Only research sections that are genuinely empty — never overwrite a
-  // section that already has approved content or a pending draft, so
-  // re-running research to pick up a newly-synced domain doesn't clobber
-  // work already reviewed/edited on the existing sections.
+  // section that already has content, so re-running research to pick up a
+  // newly-synced domain doesn't clobber existing work.
   const sectionMeta = [];
   for (const cap of doc.capabilities) {
     const kbPath = cap.domainKbPath || 'AI_Strategy';
@@ -215,57 +214,64 @@ export async function runResearch(libraryId) {
       // KB file missing for this capability — research with title only.
     }
     for (const section of cap.sections) {
-      if (section.content || section.draftContent) continue; // already handled
+      if (section.content) continue; // already handled
       const kb = kbSections.find(s => s.title === section.title);
       sectionMeta.push({ title: section.title, definition: kb?.definition || '' });
     }
   }
 
-  const needsCapabilityMap = !doc.capabilityMap?.content?.length && !doc.capabilityMap?.draftContent?.length;
+  const needsCapabilityMap = !doc.capabilityMap?.content?.length;
   if (sectionMeta.length === 0 && !needsCapabilityMap) return doc;
 
   const [sectionResult, mapResult] = await Promise.all([
     sectionMeta.length > 0
       ? researchCompanyForBlueprint({ orgName: doc.companyName, industry: doc.industry, sections: sectionMeta })
       : Promise.resolve(null),
-    // Only research the capability map if nothing's there yet — never
-    // overwrite an approved map or a pending draft the admin hasn't reviewed.
+    // Only research the capability map if nothing's there yet.
     needsCapabilityMap
       ? researchCapabilityMap({ orgName: doc.companyName, industry: doc.industry, subVertical: doc.subVertical })
       : Promise.resolve(null),
   ]);
 
   const now = new Date();
-  let sectionsDrafted = 0;
+  let sectionsWritten = 0;
 
+  // Research writes straight to `content` — approved by default, no
+  // separate admin review step. `draftSource`/`draftedAt` are kept as
+  // permanent provenance metadata (how confidently this was researched,
+  // and when), not as a "pending" flag — the admin UI shows them as a
+  // read-only quality indicator alongside the content.
   if (sectionResult?.sections?.length) {
     const byTitle = new Map(sectionResult.sections.map(s => [s.title, s]));
     for (const cap of doc.capabilities) {
       for (const section of cap.sections) {
-        const drafted = byTitle.get(section.title);
-        if (!drafted) continue;
-        section.draftContent = drafted.content;
-        section.draftSource  = drafted.confidence === 'high' ? 'external-research' : 'external-research-limited';
+        const researched = byTitle.get(section.title);
+        if (!researched) continue;
+        section.content      = researched.content;
+        section.draftSource  = researched.confidence === 'high' ? 'external-research' : 'external-research-limited';
         section.draftedAt    = now;
-        sectionsDrafted++;
+        section.updatedAt    = now;
+        sectionsWritten++;
       }
     }
   }
 
   if (mapResult?.mappings?.length) {
     const hasLow = mapResult.mappings.some(m => m.confidence === 'low');
-    doc.capabilityMap.draftContent = mapResult.mappings.map(({ confidence, ...rest }) => rest);
-    doc.capabilityMap.draftSource  = hasLow ? 'external-research-limited' : 'external-research';
-    doc.capabilityMap.draftedAt    = now;
+    doc.capabilityMap.content     = mapResult.mappings.map(({ confidence, ...rest }) => rest);
+    doc.capabilityMap.draftSource = hasLow ? 'external-research-limited' : 'external-research';
+    doc.capabilityMap.draftedAt   = now;
+    doc.capabilityMap.updatedAt   = now;
   }
 
-  if (sectionsDrafted === 0 && !mapResult?.mappings?.length) {
-    console.log(`[CompanyResearchLibrary] No research draft produced for "${doc.companyName}"`);
+  if (sectionsWritten === 0 && !mapResult?.mappings?.length) {
+    console.log(`[CompanyResearchLibrary] No research produced for "${doc.companyName}"`);
     return doc;
   }
 
+  doc.status = computeStatus(doc.capabilities);
   await doc.save();
-  console.log(`[CompanyResearchLibrary] Drafted ${sectionsDrafted} section(s)${mapResult?.mappings?.length ? ` + ${mapResult.mappings.length} capability-map row(s)` : ''} for "${doc.companyName}"`);
+  console.log(`[CompanyResearchLibrary] Wrote ${sectionsWritten} section(s)${mapResult?.mappings?.length ? ` + ${mapResult.mappings.length} capability-map row(s)` : ''} for "${doc.companyName}" (auto-approved)`);
   return doc;
 }
 

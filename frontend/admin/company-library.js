@@ -1,10 +1,14 @@
 /**
  * SoorgaAI — Company Research Library (platform admin only)
  *
- * List + create companies, run web-search research, review and
- * approve/discard/edit drafted sections before they become available to be
- * copied into any matching org's EnterpriseBlueprint at signup (see
- * ensureBlueprint in backend/trunida-backend/services/enterpriseBlueprintService.js).
+ * List + create companies; Run Research populates content directly (auto-
+ * approved — see runResearch in companyResearchLibraryService.js, no
+ * separate admin review step). This page is read-only: it displays Core /
+ * Automotive / Company Profile / Capability Map for review, but has no
+ * approve/discard/edit controls. Editing mechanisms across all layers are
+ * deferred to a later decision — the backend's manual-entry and
+ * approve/discard endpoints still exist and work, they're just not wired
+ * to any control here right now.
  *
  * Client-side role guard only — the backend independently enforces
  * adminOnly on every /api/admin/company-library/* route.
@@ -79,7 +83,6 @@ async function loadList() {
         <td>${e.subVertical ? esc(e.subVertical) : '—'}</td>
         <td><span class="signal-badge active">${esc(e.status)}</span></td>
         <td>${e.filled} / ${e.total}</td>
-        <td>${e.hasDraft > 0 ? `<span class="signal-badge signal-type-trending">${e.hasDraft} pending</span>` : '—'}</td>
       </tr>
     `).join('');
     tbody.querySelectorAll('.cl-table__row').forEach(row => {
@@ -164,8 +167,6 @@ function renderDetailHeader() {
   } else {
     indicator.style.display = 'none';
   }
-
-  renderCapabilityMap();
 }
 
 // Fire-and-forget: shows whether this company's industry still has pending
@@ -200,42 +201,6 @@ async function renderIndustryKbIndicator() {
   }
 }
 
-// Only shown while there's a draft awaiting admin action (Approve/Discard).
-// Once approved, the map is already visible read-only inside the AI
-// Opportunity Discovery capability's stacked document view (see
-// buildCapabilityMapReferenceBlock in renderPanel) — showing it here too
-// would just be the same table twice with nothing left to do about it.
-function renderCapabilityMap() {
-  const panel = document.getElementById('cl-capmap-panel');
-  const body  = document.getElementById('cl-capmap-body');
-  const map   = currentEntry.capabilityMap || {};
-  const draft = map.draftContent || [];
-
-  if (draft.length === 0) {
-    panel.style.display = 'none';
-    return;
-  }
-  panel.style.display = 'block';
-  body.innerHTML = '';
-
-  const flag = document.createElement('div');
-  flag.className = map.draftSource === 'external-research'
-    ? 'eb-draft__flag eb-draft__flag--high'
-    : 'eb-draft__flag eb-draft__flag--low';
-  flag.textContent = map.draftSource === 'external-research'
-    ? 'Drafted from external research — review before approving'
-    : 'Limited public information found. Review carefully.';
-  body.appendChild(flag);
-
-  body.appendChild(buildCapabilityMapTable(draft));
-
-  const actions = document.createElement('div');
-  actions.className = 'eb-actions';
-  actions.appendChild(makeBtn('Approve All', 'eb-btn--primary', approveCapabilityMap));
-  actions.appendChild(makeBtn('Discard', 'eb-btn--danger', discardCapabilityMap));
-  body.appendChild(actions);
-}
-
 function buildCapabilityMapTable(rows) {
   const table = document.createElement('table');
   table.className = 'cl-table cl-capmap-table';
@@ -253,10 +218,6 @@ function buildCapabilityMapTable(rows) {
       `).join('')}
     </tbody>`;
   return table;
-}
-
-function capabilityFor(sectionTitle) {
-  return currentEntry.capabilities.find(c => c.sections.some(s => s.title === sectionTitle));
 }
 
 function renderSidebar() {
@@ -305,15 +266,10 @@ function renderSidebar() {
       label.textContent = section.title;
       btn.appendChild(label);
 
-      if (section.draftContent) {
-        const badge = document.createElement('span');
-        badge.className = 'eb-sidebar__draft-badge';
-        badge.textContent = 'Draft';
-        btn.appendChild(badge);
-      } else if (section.content) {
+      if (section.content) {
         const badge = document.createElement('span');
         badge.className = 'eb-sidebar__filled-dot';
-        badge.setAttribute('aria-label', 'Approved');
+        badge.setAttribute('aria-label', 'Has content');
         btn.appendChild(badge);
       }
 
@@ -334,6 +290,13 @@ function renderSidebar() {
   });
 }
 
+// Read-only, ordered Core -> Automotive -> Company Profile per section, then
+// the Capability Map once at the very end (it's cross-cutting, not tied to
+// any one section). Automotive/Industry KB is written once per capability,
+// not per section, so with today's single-section capabilities this
+// collapses to exactly Core -> Automotive -> Company as requested; a future
+// multi-section capability would repeat the Automotive block per section,
+// an acceptable tradeoff for keeping this order simple.
 function renderPanel() {
   const panel = document.getElementById('cl-panel');
   panel.innerHTML = '';
@@ -354,23 +317,6 @@ function renderPanel() {
   title.textContent = cap.capabilityName;
   panel.appendChild(title);
 
-  // Automotive/Industry KB is written once per capability (not per section —
-  // the KB layers aren't structured symmetrically), so it's shown once here,
-  // above every section, rather than repeated under each one.
-  if (cap.kbAutomotiveContext) {
-    panel.appendChild(buildKbReferenceBlock('AUTOMOTIVE INDUSTRY CONTEXT', cap.kbAutomotiveContext));
-  }
-
-  // Capability Map only feeds generation for AI Opportunity Discovery — shown
-  // here, stacked with Core/Automotive, only for that capability so it reads
-  // as one reference set rather than a generic block on every capability.
-  if (cap.capabilityName === 'AI Opportunity Discovery') {
-    const approvedMap = currentEntry.capabilityMap?.content || [];
-    if (approvedMap.length > 0) {
-      panel.appendChild(buildCapabilityMapReferenceBlock(approvedMap));
-    }
-  }
-
   cap.sections.forEach((section, i) => {
     const block = document.createElement('div');
     block.className = 'cl-doc-section';
@@ -385,18 +331,15 @@ function renderPanel() {
       block.appendChild(buildKbReferenceBlock('CORE DEFINITION', section.kbCoreDefinition));
     }
 
+    if (cap.kbAutomotiveContext) {
+      block.appendChild(buildKbReferenceBlock('AUTOMOTIVE INDUSTRY CONTEXT', cap.kbAutomotiveContext));
+    }
+
     const companyLabel = document.createElement('p');
     companyLabel.className = 'cl-kb-ref__label';
     companyLabel.textContent = 'COMPANY PROFILE';
     block.appendChild(companyLabel);
-
-    if (section.draftContent) {
-      block.appendChild(buildDraftReview(section));
-    } else if (section.content) {
-      block.appendChild(buildApprovedView(section));
-    } else {
-      block.appendChild(buildEmptyView(section));
-    }
+    block.appendChild(buildCompanyProfileView(section));
 
     if (i < cap.sections.length - 1) {
       const divider = document.createElement('hr');
@@ -406,6 +349,18 @@ function renderPanel() {
 
     panel.appendChild(block);
   });
+
+  // Capability Map — cross-cutting, only relevant to AI Opportunity
+  // Discovery, shown last per the requested layer order.
+  if (cap.capabilityName === 'AI Opportunity Discovery') {
+    const approvedMap = currentEntry.capabilityMap?.content || [];
+    if (approvedMap.length > 0) {
+      const divider = document.createElement('hr');
+      divider.className = 'cl-doc-divider';
+      panel.appendChild(divider);
+      panel.appendChild(buildCapabilityMapReferenceBlock(approvedMap));
+    }
+  }
 
   if (selected.sectionTitle) {
     const target = panel.querySelector(`[data-section-title="${CSS.escape(selected.sectionTitle)}"]`);
@@ -449,57 +404,31 @@ function buildCapabilityMapReferenceBlock(rows) {
   return wrap;
 }
 
-function makeBtn(text, cls, handler) {
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = `eb-btn ${cls}`;
-  btn.textContent = text;
-  btn.addEventListener('click', handler);
-  return btn;
-}
-
-function buildDraftReview(section) {
+// Read-only — no Approve/Discard/Edit controls. Research writes straight to
+// approved content (see runResearch), so there's nothing to review here;
+// this just displays it, carrying over the research confidence as a
+// provenance note rather than a pending-review flag.
+function buildCompanyProfileView(section) {
   const wrap = document.createElement('div');
-  wrap.className = 'eb-draft';
 
-  const flag = document.createElement('div');
-  flag.className = section.draftSource === 'external-research'
-    ? 'eb-draft__flag eb-draft__flag--high'
-    : 'eb-draft__flag eb-draft__flag--low';
-  flag.textContent = section.draftSource === 'external-research'
-    ? 'Drafted from external research — review before approving'
-    : 'Limited public information found — drafted at an industry-general level. Review carefully.';
-  wrap.appendChild(flag);
+  if (!section.content) {
+    const note = document.createElement('p');
+    note.className = 'eb-empty__note';
+    note.textContent = 'No content yet for this section. Run research above to populate it.';
+    wrap.appendChild(note);
+    return wrap;
+  }
 
-  const textarea = document.createElement('textarea');
-  textarea.className = 'eb-textarea';
-  textarea.readOnly = true;
-  textarea.value = section.draftContent;
-  wrap.appendChild(textarea);
-
-  const actions = document.createElement('div');
-  actions.className = 'eb-actions';
-  actions.appendChild(makeBtn('Approve', 'eb-btn--primary', () => approveDraft(section)));
-  actions.appendChild(makeBtn('Edit before approving', 'eb-btn--secondary', () => {
-    textarea.readOnly = false;
-    textarea.focus();
-    actions.innerHTML = '';
-    actions.appendChild(makeBtn('Save & Approve', 'eb-btn--primary', () => approveDraft(section, textarea.value)));
-    actions.appendChild(makeBtn('Cancel', 'eb-btn--secondary', renderPanel));
-  }));
-  actions.appendChild(makeBtn('Discard', 'eb-btn--danger', () => discardDraft(section)));
-  wrap.appendChild(actions);
-
-  return wrap;
-}
-
-function buildApprovedView(section) {
-  const wrap = document.createElement('div');
-  wrap.className = 'eb-approved';
+  if (section.draftSource === 'external-research-limited') {
+    const flag = document.createElement('div');
+    flag.className = 'eb-draft__flag eb-draft__flag--low';
+    flag.textContent = 'Limited public information was found for this section — review for accuracy.';
+    wrap.appendChild(flag);
+  }
 
   const meta = document.createElement('p');
   meta.className = 'eb-approved__meta';
-  meta.textContent = section.updatedAt ? `Approved ${new Date(section.updatedAt).toLocaleDateString()}` : '';
+  meta.textContent = section.updatedAt ? `Updated ${new Date(section.updatedAt).toLocaleDateString()}` : '';
   wrap.appendChild(meta);
 
   const textarea = document.createElement('textarea');
@@ -508,120 +437,10 @@ function buildApprovedView(section) {
   textarea.value = section.content;
   wrap.appendChild(textarea);
 
-  const actions = document.createElement('div');
-  actions.className = 'eb-actions';
-  actions.appendChild(makeBtn('Edit', 'eb-btn--secondary', () => {
-    textarea.readOnly = false;
-    textarea.focus();
-    actions.innerHTML = '';
-    actions.appendChild(makeBtn('Save', 'eb-btn--primary', () => saveManualContent(section, textarea.value)));
-    actions.appendChild(makeBtn('Cancel', 'eb-btn--secondary', renderPanel));
-  }));
-  wrap.appendChild(actions);
-
-  return wrap;
-}
-
-function buildEmptyView(section) {
-  const wrap = document.createElement('div');
-  wrap.className = 'eb-empty';
-
-  const note = document.createElement('p');
-  note.className = 'eb-empty__note';
-  note.textContent = 'No content yet for this section. Run research above, or write it manually.';
-  wrap.appendChild(note);
-
-  const textarea = document.createElement('textarea');
-  textarea.className = 'eb-textarea';
-  textarea.placeholder = 'Write this section’s content…';
-  wrap.appendChild(textarea);
-
-  const actions = document.createElement('div');
-  actions.className = 'eb-actions';
-  actions.appendChild(makeBtn('Save', 'eb-btn--primary', () => saveManualContent(section, textarea.value)));
-  wrap.appendChild(actions);
-
   return wrap;
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
-
-async function approveCapabilityMap() {
-  hideBanner();
-  try {
-    const { entry } = await api(`/${currentEntry._id}/capability-map/approve`, { method: 'POST' });
-    currentEntry = entry;
-    renderDetailHeader();
-  } catch (err) {
-    showBanner(err.message || 'Failed to approve capability map.');
-  }
-}
-
-async function discardCapabilityMap() {
-  hideBanner();
-  try {
-    const { entry } = await api(`/${currentEntry._id}/capability-map/discard`, { method: 'POST' });
-    currentEntry = entry;
-    renderDetailHeader();
-  } catch (err) {
-    showBanner(err.message || 'Failed to discard capability map.');
-  }
-}
-
-async function saveManualContent(section, newContent) {
-  hideBanner();
-  const cap = capabilityFor(section.title);
-  const sections = cap.sections.map(s => ({ title: s.title, content: s.title === section.title ? newContent : s.content }));
-
-  try {
-    const { entry } = await api(`/${currentEntry._id}/capability/${encodeURIComponent(cap.capabilityId)}`, {
-      method: 'PATCH', body: JSON.stringify({ sections }),
-    });
-    currentEntry = entry;
-    renderDetailHeader();
-    renderSidebar();
-    renderPanel();
-  } catch (err) {
-    showBanner(err.message || 'Failed to save.');
-  }
-}
-
-async function approveDraft(section, editedContent) {
-  hideBanner();
-  const cap = capabilityFor(section.title);
-  try {
-    if (typeof editedContent === 'string' && editedContent.trim() !== section.draftContent.trim()) {
-      const sections = cap.sections.map(s => ({ title: s.title, content: s.title === section.title ? editedContent : s.content }));
-      await api(`/${currentEntry._id}/capability/${encodeURIComponent(cap.capabilityId)}`, {
-        method: 'PATCH', body: JSON.stringify({ sections }),
-      });
-      const { entry } = await api(`/${currentEntry._id}/capability/${encodeURIComponent(cap.capabilityId)}/section/${encodeURIComponent(section.title)}/discard`, { method: 'POST' });
-      currentEntry = entry;
-    } else {
-      const { entry } = await api(`/${currentEntry._id}/capability/${encodeURIComponent(cap.capabilityId)}/section/${encodeURIComponent(section.title)}/approve`, { method: 'POST' });
-      currentEntry = entry;
-    }
-    renderDetailHeader();
-    renderSidebar();
-    renderPanel();
-  } catch (err) {
-    showBanner(err.message || 'Failed to approve draft.');
-  }
-}
-
-async function discardDraft(section) {
-  hideBanner();
-  const cap = capabilityFor(section.title);
-  try {
-    const { entry } = await api(`/${currentEntry._id}/capability/${encodeURIComponent(cap.capabilityId)}/section/${encodeURIComponent(section.title)}/discard`, { method: 'POST' });
-    currentEntry = entry;
-    renderDetailHeader();
-    renderSidebar();
-    renderPanel();
-  } catch (err) {
-    showBanner(err.message || 'Failed to discard draft.');
-  }
-}
 
 async function runResearch() {
   hideBanner();

@@ -3,18 +3,22 @@
  *
  * CONFIDENTIALITY: The Enterprise Blueprint is proprietary company-owned IP.
  *
- *   Raw content (section text) is restricted to CTO/Admin users only.
+ *   Raw content (section text) is restricted to the org's own CTO only —
+ *   every route here resolves the CALLER's own org via their UserProfile
+ *   (resolveOrg), never an arbitrary chosen org, so there is no meaningful
+ *   "platform admin" bypass to grant: it would only ever expose the admin's
+ *   own (placeholder) org, not any real customer's data.
  *   All other users benefit from the blueprint silently through the advisor
  *   (Stage 3 context injection) — they never see the raw document.
  *
  * GET  /api/enterprise-blueprint
- *   Returns full blueprint content. CTO/Admin only.
+ *   Returns full blueprint content. CTO only.
  *
  * GET  /api/enterprise-blueprint/status
  *   Returns fill counts per capability — no content. All org users.
  *
  * PATCH /api/enterprise-blueprint/capability/:capabilityId
- *   Overwrites sections for one capability. CTO/Admin only.
+ *   Overwrites sections for one capability. CTO only.
  *
  * Company Public Information (external research) is no longer reviewed at
  * this level — it's admin-curated centrally in CompanyResearchLibrary and
@@ -35,8 +39,13 @@ async function resolveOrg(userId) {
   return profile;
 }
 
-function canAccessContent(jwtRole, profileRole) {
-  return jwtRole === 'admin' || profileRole === 'CTO';
+// CTO only. resolveOrg() always resolves the CALLER's own org profile, never
+// an arbitrary chosen org — so a platform-admin JWT role bypass here would
+// never grant real cross-org oversight, only access to whatever placeholder
+// org the admin's own account happens to have. Not a useful capability, so
+// it isn't one.
+function canAccessContent(profileRole) {
+  return profileRole === 'CTO';
 }
 
 function auditLog(action, userId, orgName, extra = {}) {
@@ -60,9 +69,9 @@ export async function getBlueprintForMyOrg(req, res) {
       return res.status(404).json({ error: 'Profile not found. Complete profile setup first.' });
     }
 
-    if (!canAccessContent(req.user.role, profile.role)) {
+    if (!canAccessContent(profile.role)) {
       return res.status(403).json({
-        error: 'Access denied. Enterprise blueprint content is restricted to CTO and admin users.',
+        error: 'Access denied. Enterprise blueprint content is restricted to CTO users.',
       });
     }
 
@@ -127,11 +136,11 @@ export async function patchCapability(req, res) {
       return res.status(403).json({ error: 'Access denied. Complete profile setup to verify your role.' });
     }
 
-    // Permission gate: User JWT role 'admin' OR UserProfile role 'CTO'
-    const canEdit = req.user.role === 'admin' || profile.role === 'CTO';
-    if (!canEdit) {
+    // Permission gate: UserProfile role 'CTO' — see canAccessContent's
+    // comment above for why a platform-admin JWT bypass isn't included here.
+    if (!canAccessContent(profile.role)) {
       return res.status(403).json({
-        error: 'Access denied. Only CTO or admin users may edit the enterprise blueprint.',
+        error: 'Access denied. Only CTO users may edit the enterprise blueprint.',
       });
     }
 

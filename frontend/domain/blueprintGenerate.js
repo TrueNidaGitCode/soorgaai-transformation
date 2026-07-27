@@ -66,9 +66,13 @@ function initKnowledgeSourcesLink(blueprintId) {
 }
 
 // ── Enterprise Blueprint nav link ───────────────────────────────────────────
-// CTO/Admin only. The backend enforces the same gating independently — this
-// is purely a UI convenience so other org members never see a link to a page
-// they'd immediately get a 403 from.
+// CTO only — this points at the caller's OWN org's Enterprise Blueprint
+// (resolveOrg() in enterpriseBlueprintController.js), never a chosen org, so
+// a platform admin's JWT role never surfaces anything useful here — it just
+// shows whatever placeholder org their own admin account happens to have.
+// The backend enforces the same gating independently — this is purely a UI
+// convenience so other org members never see a link to a page they'd
+// immediately get a 403 from.
 
 async function initEnterpriseBlueprintLink() {
   const link = document.getElementById('domain-enterprise-blueprint-link');
@@ -79,8 +83,7 @@ async function initEnterpriseBlueprintLink() {
     const resp = await fetch(`${API_BASE}/profile/me`, { headers: { Authorization: `Bearer ${token}` } });
     if (!resp.ok) return;
     const data = await resp.json();
-    const jwtRole = localStorage.getItem('role') || 'user';
-    if (jwtRole === 'admin' || data?.profile?.role === 'CTO') {
+    if (data?.profile?.role === 'CTO') {
       link.style.display = '';
     }
   } catch {

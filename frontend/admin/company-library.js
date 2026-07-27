@@ -200,45 +200,40 @@ async function renderIndustryKbIndicator() {
   }
 }
 
+// Only shown while there's a draft awaiting admin action (Approve/Discard).
+// Once approved, the map is already visible read-only inside the AI
+// Opportunity Discovery capability's stacked document view (see
+// buildCapabilityMapReferenceBlock in renderPanel) — showing it here too
+// would just be the same table twice with nothing left to do about it.
 function renderCapabilityMap() {
   const panel = document.getElementById('cl-capmap-panel');
   const body  = document.getElementById('cl-capmap-body');
   const map   = currentEntry.capabilityMap || {};
-  const approved = map.content || [];
-  const draft    = map.draftContent || [];
+  const draft = map.draftContent || [];
 
-  if (approved.length === 0 && draft.length === 0) {
+  if (draft.length === 0) {
     panel.style.display = 'none';
     return;
   }
   panel.style.display = 'block';
   body.innerHTML = '';
 
-  if (draft.length > 0) {
-    const flag = document.createElement('div');
-    flag.className = map.draftSource === 'external-research'
-      ? 'eb-draft__flag eb-draft__flag--high'
-      : 'eb-draft__flag eb-draft__flag--low';
-    flag.textContent = map.draftSource === 'external-research'
-      ? 'Drafted from external research — review before approving'
-      : 'Limited public information found. Review carefully.';
-    body.appendChild(flag);
+  const flag = document.createElement('div');
+  flag.className = map.draftSource === 'external-research'
+    ? 'eb-draft__flag eb-draft__flag--high'
+    : 'eb-draft__flag eb-draft__flag--low';
+  flag.textContent = map.draftSource === 'external-research'
+    ? 'Drafted from external research — review before approving'
+    : 'Limited public information found. Review carefully.';
+  body.appendChild(flag);
 
-    body.appendChild(buildCapabilityMapTable(draft));
+  body.appendChild(buildCapabilityMapTable(draft));
 
-    const actions = document.createElement('div');
-    actions.className = 'eb-actions';
-    actions.appendChild(makeBtn('Approve All', 'eb-btn--primary', approveCapabilityMap));
-    actions.appendChild(makeBtn('Discard', 'eb-btn--danger', discardCapabilityMap));
-    body.appendChild(actions);
-    return;
-  }
-
-  const meta = document.createElement('p');
-  meta.className = 'eb-approved__meta';
-  meta.textContent = map.updatedAt ? `Approved ${new Date(map.updatedAt).toLocaleDateString()}` : '';
-  body.appendChild(meta);
-  body.appendChild(buildCapabilityMapTable(approved));
+  const actions = document.createElement('div');
+  actions.className = 'eb-actions';
+  actions.appendChild(makeBtn('Approve All', 'eb-btn--primary', approveCapabilityMap));
+  actions.appendChild(makeBtn('Discard', 'eb-btn--danger', discardCapabilityMap));
+  body.appendChild(actions);
 }
 
 function buildCapabilityMapTable(rows) {

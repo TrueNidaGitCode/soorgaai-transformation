@@ -166,8 +166,14 @@ function extractParagraphText(markdown, maxWords = 200) {
     if (!t || t === '---') continue;
     if (t.startsWith('> ')) continue;
     if (t.startsWith('|')) continue;
-    // Skip standalone bold metadata labels (e.g. **Layer:** Automotive)
-    if (t.match(/^\*\*[^*]+:\*\*/)) continue;
+    // Skip only the document's own front-matter fields (e.g. **Layer:**
+    // Automotive) — NOT any bold-prefixed line. A broader match here used to
+    // also swallow real sentences that happen to open with a bold label
+    // (e.g. "**Engineering organisations:** Which engineering activities
+    // create the...") — dropping the whole line, not just the label, and
+    // silently truncating that sentence wherever it was used (Leadership
+    // Question in Automotive_AI_Opportunity_Discovery.md, confirmed live).
+    if (t.match(/^\*\*(Layer|Extends|Version):\*\*/)) continue;
     // Skip pure italic lines (e.g. *Leadership Question text*)
     if (t.match(/^\*[^*].*\*$/)) continue;
 

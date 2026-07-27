@@ -22,13 +22,19 @@ document.addEventListener("DOMContentLoaded", function () {
 /**
  * Check if user is already authenticated as admin
  */
+function redirectAfterAdminAuth() {
+    const target = localStorage.getItem('redirectAfterLogin');
+    localStorage.removeItem('redirectAfterLogin');
+    window.location.href = target || '/admin/dashboard.html';
+}
+
 function checkExistingAuth() {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
 
     if (token && role === 'admin') {
-        console.log("✅ Already logged in as admin, redirecting to dashboard");
-        window.location.href = '/admin/dashboard.html';
+        console.log("✅ Already logged in as admin, redirecting");
+        redirectAfterAdminAuth();
     }
 }
 
@@ -91,10 +97,10 @@ async function handleAdminLogin(event) {
         // Show success message
         showSuccess("Login successful! Redirecting...");
 
-        // Redirect to admin dashboard
-        setTimeout(() => {
-            window.location.href = '/admin/dashboard.html';
-        }, 800);
+        // Respects redirectAfterLogin (set by company-library.js/industry-kb.js/
+        // industry-verticals.js when they bounce an unauthenticated admin here) —
+        // falls back to the dashboard only when nothing specific was requested.
+        setTimeout(redirectAfterAdminAuth, 800);
 
     } catch (error) {
         console.error("❌ Admin Login Error:", error);

@@ -431,11 +431,13 @@ function buildCompanyProfileView(section) {
   meta.textContent = section.updatedAt ? `Updated ${new Date(section.updatedAt).toLocaleDateString()}` : '';
   wrap.appendChild(meta);
 
-  const textarea = document.createElement('textarea');
-  textarea.className = 'eb-textarea';
-  textarea.readOnly = true;
-  textarea.value = section.content;
-  wrap.appendChild(textarea);
+  // Same plain-text rendering as Core/Automotive/Capability Map (cl-kb-ref__body)
+  // instead of a fixed-height <textarea> — grows with the content and lets a
+  // triple-click / select-all grab the whole thing in one go, no inner scrollbar.
+  const body = document.createElement('p');
+  body.className = 'cl-kb-ref__body';
+  body.textContent = section.content;
+  wrap.appendChild(body);
 
   return wrap;
 }

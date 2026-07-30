@@ -3438,13 +3438,18 @@ function buildSectionContent(section) {
   // Skills & Workforce
   if (t === 'AI Roles & Capability Planning' || t === 'AI Skills Assessment') return buildAISkillsAssessmentLayout(section);
   if (t === 'AI Learning & Adoption')            return buildAILearningAdoptionLayout(section);
-  // Default: strategic position only
+  // Default: strategic position only — left genuinely empty (no child) if
+  // there isn't one, so the caller's "did this render anything?" check
+  // correctly treats it as no content instead of an empty-looking box.
   var div = document.createElement('div');
   div.className = 'vision-statement';
-  var p = document.createElement('p');
-  p.className = 'vision-statement__text';
-  p.textContent = (section.brief || {}).strategicPosition || '';
-  div.appendChild(p);
+  var stratPos = (section.brief || {}).strategicPosition || '';
+  if (stratPos) {
+    var p = document.createElement('p');
+    p.className = 'vision-statement__text';
+    p.textContent = stratPos;
+    div.appendChild(p);
+  }
   return div;
 }
 
@@ -3559,16 +3564,29 @@ function renderBlueprint(bp) {
         capPage.appendChild(hr);
 
         (cap.sections || []).forEach(function(section) {
-          // "Has this section actually been generated?" used to be answered by checking
-          // strategicPosition alone, but AI Use Case Classification / Business Value
-          // Definition / AI Implementation Prioritization deliberately don't generate it
-          // (it would just repeat AI Opportunity Discovery's). priorityActions is still a
-          // required base field for every capability in every domain, so fall back to it.
-          var hasContent = section.brief && (
-            section.brief.strategicPosition ||
-            (section.brief.priorityActions && section.brief.priorityActions.length)
-          );
-          if (!hasContent) return;
+          if (!section.brief) return;
+
+          // "Has this section actually been generated?" used to be answered by
+          // checking strategicPosition or priorityActions alone — but those are
+          // two specific "base" fields that not every capability populates by
+          // design (e.g. AI Use Case Classification/Business Value Definition/
+          // AI Implementation Prioritization deliberately skip strategicPosition
+          // since it would repeat AI Opportunity Discovery's; AI Opportunity
+          // Discovery's own staged-reasoning pipeline populates neither field at
+          // all, only its own businessProblems/workflowSteps/aiOpportunities).
+          // Render first and check whether the layout function actually produced
+          // any DOM content instead — stays correct for every capability's own
+          // field set without hardcoding which fields each one uses.
+          var bodyEl;
+          try {
+            bodyEl = buildSectionContent(section);
+          } catch (renderErr) {
+            bodyEl = document.createElement('p');
+            bodyEl.style.cssText = 'color:rgba(255,80,80,0.65);font-size:0.7rem;margin:0.5rem 0;';
+            bodyEl.textContent = '[Layout render error: ' + (renderErr.message || renderErr) + ']';
+          }
+          if (!bodyEl || bodyEl.childNodes.length === 0) return;
+
           tocEntries.push({ title: section.title, level: 2 });
 
           var secWrap = document.createElement('div');
@@ -3577,15 +3595,8 @@ function renderBlueprint(bp) {
           var secTitle = document.createElement('h3');
           secTitle.className = 'pdf-section-h3'; secTitle.textContent = section.title;
           secWrap.appendChild(secTitle);
+          secWrap.appendChild(bodyEl);
 
-          try {
-            secWrap.appendChild(buildSectionContent(section));
-          } catch (renderErr) {
-            var errP = document.createElement('p');
-            errP.style.cssText = 'color:rgba(255,80,80,0.65);font-size:0.7rem;margin:0.5rem 0;';
-            errP.textContent = '[Layout render error: ' + (renderErr.message || renderErr) + ']';
-            secWrap.appendChild(errP);
-          }
           capPage.appendChild(secWrap);
         });
 

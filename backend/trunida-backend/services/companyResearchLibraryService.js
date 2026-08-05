@@ -61,7 +61,12 @@ import { ensureVerticalKnowledge } from './industryVerticalKnowledgeService.js';
 import { ensureIndustryCoverage, listKnownIndustries, resolveIndustry } from './industryCapabilityKnowledgeService.js';
 
 export function normalizeCompanyName(name) {
-  return String(name || '').trim().toLowerCase();
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[.,]/g, '')   // "Flux Auto, Inc." vs "Flux Auto, Inc" must match
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // ── Shell creation ────────────────────────────────────────────────────────────

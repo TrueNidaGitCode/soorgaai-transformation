@@ -101,9 +101,10 @@ const companyResearchLibrarySchema = new mongoose.Schema({
     trim:     true,
   },
 
-  // trim + toLowerCase() of companyName — exact-normalized matching only.
-  // No fuzzy/alias resolution in v1; an admin can re-key an entry if a
-  // customer's org name doesn't normalize-match.
+  // trim + toLowerCase() + punctuation-strip of companyName (see
+  // normalizeCompanyName in companyResearchLibraryService.js). No fuzzy/alias
+  // resolution beyond that in v1; an admin can re-key an entry if a
+  // customer's org name still doesn't normalize-match (e.g. "Corp" vs "Inc").
   companyNameNormalized: {
     type:     String,
     required: true,

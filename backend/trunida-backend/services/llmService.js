@@ -6,8 +6,13 @@
  *   factory.py     → provider selection + chain
  *   providers/     → gemini.py, claude.py, openai.py
  *
- * Supported providers:  gemini  |  claude  |  openai
+ * Supported providers:  gemini  |  claude  |  openai  |  kimi
  * Default model:        gemini-2.5-flash-lite
+ *
+ * Note: "kimi" is intentionally NOT in the default chain — it's opt-in only
+ * (explicit `provider: 'kimi'`, or add it to PROVIDER_CHAIN yourself) so it
+ * never silently affects advisorService / confluenceContentService / etc.
+ * which all share this same chain via the default PROVIDER_CHAIN env var.
  *
  * ── Configuration (Railway Variables) ────────────────────────────────────────
  *
@@ -18,10 +23,15 @@
  *  GOOGLE_API_KEY    AIza…                  Gemini key (matches Python pipeline)
  *  ANTHROPIC_API_KEY sk-ant-…               Claude key
  *  OPENAI_API_KEY    sk-…                   OpenAI key
+ *  OPENROUTER_API_KEY sk-or-…                Kimi K3 key (via OpenRouter — Moonshot
+ *                                            AI's own platform's India availability
+ *                                            is unconfirmed, so routed through the
+ *                                            same global aggregator used for Qwen)
  *
  *  GEMINI_MODEL      gemini-2.5-flash-lite  Per-provider model override
  *  CLAUDE_MODEL      claude-sonnet-4-6
  *  OPENAI_MODEL      gpt-4o
+ *  KIMI_MODEL        moonshotai/kimi-k3
  *
  *  ADVISOR_MODEL     <any>                  Global override (applies to all providers)
  *
@@ -48,7 +58,11 @@ const DEFAULT_MODELS = {
   gemini: process.env.GEMINI_MODEL || GLOBAL_MODEL || 'gemini-2.0-flash',
   claude: process.env.CLAUDE_MODEL || GLOBAL_MODEL || 'claude-sonnet-4-6',
   openai: process.env.OPENAI_MODEL || GLOBAL_MODEL || 'gpt-4o',
+  kimi:   process.env.KIMI_MODEL   || GLOBAL_MODEL || 'moonshotai/kimi-k3',
 };
+
+// OpenRouter's OpenAI-compatible endpoint.
+const KIMI_BASE_URL = 'https://openrouter.ai/api/v1';
 
 const DEFAULT_MAX_TOKENS = 1500;
 
@@ -169,6 +183,34 @@ const PROVIDERS = {
       const client = new OpenAI({ apiKey });
       const resp   = await client.chat.completions.create({
         model:      model || DEFAULT_MODELS.openai,
+        max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userMessage  },
+        ],
+      });
+
+      return {
+        text:         resp.choices[0]?.message?.content || '',
+        inputTokens:  resp.usage?.prompt_tokens     || 0,
+        outputTokens: resp.usage?.completion_tokens || 0,
+      };
+    },
+  },
+
+  // ── Kimi K3 (via OpenRouter) ─────────────────────────────────────────────────
+  // Opt-in only — not part of the default chain. Uses the same `openai` SDK
+  // via OpenRouter's OpenAI-compatible endpoint, so the request/response shape
+  // mirrors the openai provider above exactly.
+
+  kimi: {
+    async generate({ systemPrompt, userMessage, model, maxTokens }) {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) throw new Error('OPENROUTER_API_KEY is not configured.');
+
+      const client = new OpenAI({ apiKey, baseURL: KIMI_BASE_URL });
+      const resp   = await client.chat.completions.create({
+        model:      model || DEFAULT_MODELS.kimi,
         max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
         messages: [
           { role: 'system', content: systemPrompt },

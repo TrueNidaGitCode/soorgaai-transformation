@@ -3750,7 +3750,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         // Reuse the existing generation pipeline
         const capObj = { id: cap.id, name: cap.name, objective: cap.objective };
         const enterpriseContext = enterpriseCtxMap.get(cap.id) ?? null;
-        const connectedKnowledgeContext = connectedKnowledgeMap.get(cap.id, cap.name);
+        const connectedKnowledgeContext = await connectedKnowledgeMap.get(cap.id, cap.name);
         const verticalContext = verticalCtxMap.get(cap.id) ?? null;
         // Fetched fresh per capability (not preloaded like the maps above) so a
         // document the user links mid-run can still reach later capabilities.

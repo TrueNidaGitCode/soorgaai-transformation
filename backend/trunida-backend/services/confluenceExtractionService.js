@@ -13,6 +13,7 @@ import ConfluenceConnection from '../models/ConfluenceConnection.js';
 import KnowledgeDocument     from '../models/KnowledgeDocument.js';
 import { getValidAccessToken, listPages, getPageContent } from './confluenceApiService.js';
 import { htmlToText, hashText, truncateForLLM, classifyDocument } from './confluenceContentService.js';
+import { syncConfluenceDocToChunk } from './hybridRetrievalService.js';
 
 const MAX_PAGES_PER_SYNC = parseInt(process.env.CONFLUENCE_MAX_PAGES_PER_SYNC || '200', 10);
 
@@ -77,6 +78,12 @@ export async function extractConfluenceKnowledgeAsync(orgName, spaceKeys, userId
             },
             { upsert: true }
           );
+
+          // Non-blocking: an embedding hiccup should never fail a Confluence sync.
+          syncConfluenceDocToChunk({
+            orgName, sourceId: page.id, title: page.title,
+            docType: classification.docType, summary: classification.summary, keywords: classification.keywords,
+          }).catch(err => console.error(`[confluenceExtraction] Chunk sync failed for page ${page.id} (non-fatal):`, err.message));
         } catch (pageErr) {
           sawError = true;
           console.error(`[confluenceExtraction] Failed to extract page ${pageStub.id} ("${pageStub.title}") in space ${spaceKey}:`, pageErr.message);

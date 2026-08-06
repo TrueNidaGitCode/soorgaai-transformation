@@ -28,6 +28,7 @@ import {
 import { generate } from './llmService.js';
 import { buildMemoryContext } from './executiveMemoryService.js';
 import { getCompanyContext } from './companyContextService.js';
+import { rankByRelevance } from './hybridRetrievalService.js';
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
@@ -516,11 +517,32 @@ export async function suggestBlueprintSection({
   const companyCtxRecord = userId ? await getCompanyContext(userId) : null;
   const companyContext   = companyCtxRecord?.content || '';
 
+  // Rank all-capability-sections by relevance to this message instead of
+  // dumping all 16 unfiltered — on-the-fly, not persisted (this content is
+  // one user's current blueprint state, changes as they edit). Falls back
+  // to the full unfiltered list on any ranking failure — a degraded ranking
+  // must never leave multi-capability updates worse off than before this
+  // existed, only unable to improve on it for that one request.
+  const relevantCapabilitySections = await (async () => {
+    if (!allCapabilitySections.length || !request) return allCapabilitySections;
+    try {
+      const candidates = allCapabilitySections.map(cap => ({
+        key:  cap.capabilityId,
+        text: `${cap.capabilityName}: ${(cap.sections || []).map(s => s.strategicPosition).filter(Boolean).join(' ')}`,
+      }));
+      const ranked = await rankByRelevance(request, candidates, 5);
+      const relevantIds = new Set(ranked.map(r => r.key));
+      return allCapabilitySections.filter(cap => relevantIds.has(cap.capabilityId));
+    } catch {
+      return allCapabilitySections;
+    }
+  })();
+
   const systemPrompt = buildSystemPrompt(industry, capabilityName, sectionTitle);
   const userMessage  = buildUserMessage(
     blueprint, sectionTitle, currentContent || '',
     coreContent, industryContent, specContent, related, request, automotiveBlueprint,
-    memoryContext, companyContext, allCapabilitySections
+    memoryContext, companyContext, relevantCapabilitySections
   );
 
   const { text, inputTokens, outputTokens } = await generate({

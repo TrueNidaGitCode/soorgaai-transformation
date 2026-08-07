@@ -332,13 +332,24 @@ async function renderActionTracker() {
     return;
   }
 
-  // Group by capability, preserving first-seen order
-  const byCapability = new Map();
+  // Group by capability, ordered by the blueprint's real domain/capability
+  // sequence — NOT by item insertion order. Items come from a parallel
+  // backfill (Promise.all across every capability at once), so their
+  // createdAt timestamps land in whatever order the LLM calls happened to
+  // finish, not domain order — the first domain could easily finish last.
+  const itemsByCapability = new Map();
   for (const item of items) {
-    if (!byCapability.has(item.capabilityId)) {
-      byCapability.set(item.capabilityId, { capabilityName: item.capabilityName, domainName: item.domainName, items: [] });
+    if (!itemsByCapability.has(item.capabilityId)) itemsByCapability.set(item.capabilityId, []);
+    itemsByCapability.get(item.capabilityId).push(item);
+  }
+
+  const byCapability = new Map();
+  for (const dom of _blueprint.domains || []) {
+    for (const cap of dom.capabilities || []) {
+      const capItems = itemsByCapability.get(cap.capabilityId);
+      if (!capItems?.length) continue;
+      byCapability.set(cap.capabilityId, { capabilityName: cap.capabilityName, domainName: dom.domainName, items: capItems });
     }
-    byCapability.get(item.capabilityId).items.push(item);
   }
 
   const groups = [...byCapability.values()].map(group => `

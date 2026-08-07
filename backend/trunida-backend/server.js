@@ -24,6 +24,7 @@ import feedbackRoutes               from "./routes/feedbackRoutes.js";
 import guestRoutes                  from "./routes/guestRoutes.js";
 import confluenceRoutes             from "./routes/confluenceRoutes.js";
 import personalConfluenceRoutes     from "./routes/personalConfluenceRoutes.js";
+import actionItemRoutes             from "./routes/actionItemRoutes.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
@@ -111,6 +112,7 @@ app.use("/api/guest",                guestRoutes);
 app.use("/api/confluence/personal",  personalConfluenceRoutes);
 app.use("/api/confluence",           confluenceRoutes);
 app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
+app.use("/api/action-items",         actionItemRoutes);
 app.use("/api/debug",                debugRoutes); // TEMPORARY
 
 // ✅ Health Check Route

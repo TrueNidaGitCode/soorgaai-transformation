@@ -14,6 +14,7 @@ import {
   generateSpecificDomainsAsync,
 } from '../services/blueprintGenerationService.js';
 import { autoCapture }      from '../services/knowledgeSuggestionService.js';
+import { backfillActionItemsForClaimedBlueprint } from '../services/actionItemService.js';
 import { enabledDomains }   from '../config/domainRegistry.js';
 import { MAX_OBJECTIVE_LENGTH } from '../config/objectiveLimits.js';
 
@@ -709,6 +710,12 @@ export async function claimGuestBlueprint(req, res) {
     if (!claimed) {
       return res.json({ claimed: false, reason: 'not-found' });
     }
+
+    // Fire-and-forget: guest generation skips action-item extraction (cost
+    // control — see blueprintGenerationService.js), so a claimed blueprint
+    // needs a one-time backfill for whatever capabilities already completed.
+    backfillActionItemsForClaimedBlueprint(claimed)
+      .catch(err => console.error('[actionItems] Claim backfill failed (non-fatal):', err.message));
 
     return res.json({ claimed: true, transformationId: claimed._id });
 

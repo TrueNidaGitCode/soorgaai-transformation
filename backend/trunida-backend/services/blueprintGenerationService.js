@@ -37,6 +37,7 @@ import { detectIndustryFit } from './industryFitService.js';
 import CompanyResearchLibrary from '../models/CompanyResearchLibrary.js';
 import { normalizeCompanyName, getApprovedCapabilityMap } from './companyResearchLibraryService.js';
 import { getVerticalContextForCapability, preloadVerticalContextMap } from './industryVerticalKnowledgeService.js';
+import { saveActionItems } from './actionItemService.js';
 
 // Merges Enterprise Blueprint context with Connected Knowledge (Confluence)
 // context into the single string the existing prompt builders already accept —
@@ -2563,7 +2564,16 @@ ${body}
       }
     }`;
   }).join(',\n');
-  return `OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:\n{\n  "sections": [\n${examples}\n  ]\n}`;
+  return `OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation:
+{
+  "sections": [
+${examples}
+  ],
+  "actionItems": [
+    { "title": "<specific, action-oriented next step — one sentence>", "description": "<what completing it actually involves — one sentence>", "assignee": "<suggested owner role, e.g. Product Owner>", "reviewer": "<suggested sign-off role, e.g. Technical Architect — empty string if no review is naturally implied>" }
+  ]
+}
+Generate 2-4 actionItems for this capability as a whole (not per section) — concrete things a real project team would need to do, review, or agree on to act on this capability's content. Infer assignee/reviewer roles from what each action actually is, not a generic default.`;
 }
 
 // ── Pipeline A: Brief (direct) ────────────────────────────────────────────────
@@ -2736,12 +2746,16 @@ ADDITIONAL RULES FOR THIS STAGE:
 - The industry problems (businessProblems) were already identified in a prior step and are given to you below — do NOT regenerate or restate them.
 - When a COMPANY CAPABILITY MAP is provided below, prefer AI opportunities that strengthen one of the company's existing mapped capabilities, and name that capability explicitly in "why" (e.g. "This strengthens the Odin retrofit platform's fleet coordination by..."). If a project-context block below states a constraint (data handling, security, existing systems, architecture), the opportunities must respect it — do not propose something incompatible with a stated constraint.
 
-OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation, and NO fields other than these three:
+OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation, and NO fields other than these four:
 {
   "workflowSteps": ["<step 1>", "<step 2>", "..."],
   "highEffortActivities": ["<activity 1>", "<activity 2>", "..."],
-  "aiOpportunities": [{ "name": "<AI technique>", "why": "<1-2 sentences>" }, ...]
-}`;
+  "aiOpportunities": [{ "name": "<AI technique>", "why": "<1-2 sentences>" }, ...],
+  "actionItems": [
+    { "title": "<specific, action-oriented next step — one sentence>", "description": "<what completing it actually involves — one sentence>", "assignee": "<suggested owner role>", "reviewer": "<suggested sign-off role — empty string if no review is naturally implied>" }
+  ]
+}
+Generate 2-4 actionItems — concrete things a real project team would need to do, review, or agree on to act on these opportunities (e.g. "Review top 2 opportunities and align on Q1 priority" reviewed by Product Owner/Technical Architect). Infer assignee/reviewer roles from what each action actually is.`;
 
   const stage2User = `BUSINESS OBJECTIVE: ${businessObjective}
 INTENT: ${intent}
@@ -2759,7 +2773,10 @@ Generate workflowSteps, highEffortActivities, and aiOpportunities as specified.`
   };
 
   const validTitles = new Set(parsedSections.map(s => s.title.toLowerCase()));
-  return parseBriefOutput([{ title: section.title, brief }], validTitles);
+  return {
+    sections:    parseBriefOutput([{ title: section.title, brief }], validTitles),
+    actionItems: normalizeActionItems(stage2?.actionItems),
+  };
 }
 
 export async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null) {
@@ -2784,7 +2801,25 @@ export async function runBriefGeneration(cap, companyProfile, businessObjective,
   const timeoutMs = Math.max(120_000, parsedSections.length * 60_000);
   const parsed    = await callLLM(systemPrompt, userMessage, timeoutMs, cap.name);
   const validTitles = new Set(parsedSections.map(s => s.title.toLowerCase()));
-  return parseBriefOutput(parsed?.sections || [], validTitles);
+  return {
+    sections:    parseBriefOutput(parsed?.sections || [], validTitles),
+    actionItems: normalizeActionItems(parsed?.actionItems),
+  };
+}
+
+// Shared by both generation paths (standard brief + AI Opportunity Discovery's
+// staged Stage 2) — validates the model's actionItems array into a clean,
+// consistent shape regardless of which call produced it.
+function normalizeActionItems(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(i => i && typeof i === 'object' && String(i.title || '').trim())
+    .map(i => ({
+      title:       String(i.title       || '').trim(),
+      description: String(i.description || '').trim(),
+      assignee:    String(i.assignee    || '').trim(),
+      reviewer:    String(i.reviewer    || '').trim(),
+    }));
 }
 
 // ── Pipeline B: Essay → Brief (cascade) ──────────────────────────────────────
@@ -2972,8 +3007,11 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
     return await runBriefExtraction(cap, parsedSections, essays);
   }
 
-  // Brief pipeline (default): direct structured generation
-  return await runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint, combinedContext);
+  // Brief pipeline (default): direct structured generation.
+  // Legacy CompanyBlueprint path — no Action Tracker here, so actionItems
+  // from the merged call are intentionally discarded, not saved.
+  const { sections } = await runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, blueprint.automotiveBlueprint, combinedContext);
+  return sections;
 }
 
 // ── Single-section extras regeneration ───────────────────────────────────────
@@ -3267,7 +3305,7 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
     const transformationCtx = buildTransformationCtxForRegen(blueprintDoc, domainId, resolvedCapabilityId, businessObjective);
     console.log(`[transformationGen] Journey context for ${cap.name}: ${journeyContext ? 'AVAILABLE' : 'NONE'} | Ctx initiative: ${transformationCtx.selectedInitiative || 'none'}`);
 
-    const sections = await runBriefGeneration(
+    const { sections, actionItems } = await runBriefGeneration(
       cap, companyProfile, businessObjective, groundingIndustry,
       capBlueprint.sections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx
     );
@@ -3304,6 +3342,13 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
     );
 
     console.log(`[transformationGen] ✓ Regenerated ${domain.name} / ${cap.name} (${sections.length} sections)`);
+
+    // Replace (not append) — this capability's content just changed, its
+    // action items should reflect the new content, same as sections itself.
+    saveActionItems({
+      blueprintId, domainId, domainName: domain.name,
+      capabilityId: cap.id, capabilityName: cap.name, actionItems, replace: true,
+    }).catch(err => console.error(`[actionItems] Save failed for ${cap.name} (non-fatal):`, err.message));
   } catch (err) {
     console.error(`[transformationGen] ✗ Regenerate ${cap.name}:`, err.message);
     await TransformationBlueprint.updateOne(
@@ -3761,7 +3806,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
           ? journeyContextParts.join('\n\n')
           : null;
 
-        let sections;
+        let sections, actionItems = [];
         if (BLUEPRINT_CONFIG.generate.essay) {
           const essays = await runEssayGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
@@ -3769,10 +3814,10 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
           );
           sections = await runBriefExtraction(capObj, parsedSections, essays);
         } else {
-          sections = await runBriefGeneration(
+          ({ sections, actionItems } = await runBriefGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
             parsedSections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx
-          );
+          ));
         }
 
         // Feed this capability's output into both accumulators for the next capability
@@ -3792,6 +3837,15 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         );
 
         console.log(`[transformationGen] ✓ ${domain.name} / ${cap.name} (${sections.length} sections)`);
+
+        // Skipped for guest generation (userId is null pre-login) — see
+        // generateSpecificDomainsAsync for the matching guest-skip + claim-backfill design.
+        if (userId) {
+          saveActionItems({
+            blueprintId, domainId: domain.id, domainName: domain.name,
+            capabilityId: cap.id, capabilityName: cap.name, actionItems,
+          }).catch(err => console.error(`[actionItems] Save failed for ${cap.name} (non-fatal):`, err.message));
+        }
       } catch (err) {
         console.error(`[transformationGen] ✗ ${domain.name} / ${cap.name}:`, err.message);
         await TransformationBlueprint.updateOne(
@@ -3909,7 +3963,7 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
         console.log(`[domainRegen] Linked Confluence context for ${cap.name}: ${linkedProjectContext ? 'INCLUDED' : 'none'}`);
         const combinedContext = combineContexts(enterpriseContext, verticalContext, connectedKnowledgeContext, linkedProjectContext);
 
-        let sections;
+        let sections, actionItems = [];
         if (BLUEPRINT_CONFIG.generate.essay) {
           const essays = await runEssayGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
@@ -3917,10 +3971,10 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
           );
           sections = await runBriefExtraction(capObj, parsedSections, essays);
         } else {
-          sections = await runBriefGeneration(
+          ({ sections, actionItems } = await runBriefGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
             parsedSections, capBlueprint.automotiveBlueprint, combinedContext
-          );
+          ));
         }
 
         await TransformationBlueprint.updateOne(
@@ -3936,6 +3990,21 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
         );
 
         console.log(`[domainRegen] ✓ ${domain.name} / ${cap.name} (${sections.length} sections)`);
+
+        // Action items now come from the same call as the content itself
+        // (merged — see buildOutputFormat/runBriefGeneration), not a separate
+        // extraction call. Still skipped for guest generation (userId is null
+        // pre-login) — a guest who never claims the blueprint shouldn't cost
+        // anything extra. Claimed guest blueprints get a one-time backfill via
+        // extractActionItemsForCapability — see claimGuestBlueprint in
+        // strategyCanvasController.js, which is now the ONLY caller of that
+        // separate-LLM-call extraction path, alongside lazy tab-open backfill.
+        if (userId) {
+          saveActionItems({
+            blueprintId, domainId: domain.id, domainName: domain.name,
+            capabilityId: cap.id, capabilityName: cap.name, actionItems,
+          }).catch(err => console.error(`[actionItems] Save failed for ${cap.name} (non-fatal):`, err.message));
+        }
       } catch (err) {
         console.error(`[domainRegen] ✗ ${domain.name} / ${cap.name}:`, err.message);
         await TransformationBlueprint.updateOne(

@@ -74,6 +74,7 @@ let _pendingSuggestion   = null; // { sectionTitle, text, rationale }
 let _refineTargetSection = null; // section title currently being refined via "Refine with AI Assistant"
 let _isSending           = false;
 let _feedbackShown       = false; // guard: show at most once per session
+let _showingActionTracker = false; // Action Tracker is blueprint-wide, not domain-scoped
 
 // ── Screen helpers ────────────────────────────────────────────────────────────
 
@@ -150,10 +151,30 @@ async function regenerateDomains(blueprintId, domainIds) {
   }
 }
 
+function renderActionTrackerNavItem(nav) {
+  const item = document.createElement('button');
+  item.className = `ws-domain-item ws-domain-item--action-tracker${_showingActionTracker ? ' is-active' : ''}`;
+  item.title = 'Action Tracker — next steps across all capabilities';
+  item.innerHTML = `
+    <span class="ws-domain-item__icon">
+      <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M14 8h7"/><rect x="3" y="15" width="6" height="6" rx="1"/><path d="M14 18h7"/></svg>
+    </span>
+    <span class="ws-domain-item__name">Action Tracker</span>
+  `;
+  item.addEventListener('click', () => selectActionTracker());
+  nav.appendChild(item);
+
+  const divider = document.createElement('div');
+  divider.className = 'ws-domain-divider';
+  nav.appendChild(divider);
+}
+
 function renderDomainTabs(blueprint) {
   const nav = document.getElementById('domain-nav');
   if (!nav) return;
   nav.innerHTML = '';
+
+  renderActionTrackerNavItem(nav);
 
   const domains   = blueprint.domains || [];
   const generated = [];
@@ -233,6 +254,7 @@ function selectDomain(idx) {
   _selectedDomainIdx = idx;
   _selectedCapIndex  = 0;
   _refineTargetSection = null;
+  _showingActionTracker = false;
   clearSuggestionCard();
 
   // Match by stored index, not DOM order — the sidebar groups items into
@@ -240,10 +262,165 @@ function selectDomain(idx) {
   document.querySelectorAll('.ws-domain-item').forEach((t) => {
     t.classList.toggle('is-active', Number(t.dataset.idx) === idx);
   });
+  document.querySelector('.ws-domain-item--action-tracker')?.classList.remove('is-active');
 
+  document.getElementById('cap-nav').style.display = '';
   renderCapabilityTabs(_blueprint);
   renderBlueprintContent(_blueprint, 0);
   updateAssistantContext();
+}
+
+// ── Action Tracker (blueprint-wide, not domain-scoped) ──────────────────────────
+
+const ACTION_ITEM_STATUSES = [
+  { value: 'not_started', label: 'Not Started' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'in_review',   label: 'In Review' },
+  { value: 'agreed',      label: 'Agreed' },
+];
+
+function selectActionTracker() {
+  _showingActionTracker = true;
+  _refineTargetSection = null;
+  clearSuggestionCard();
+
+  document.querySelectorAll('.ws-domain-item').forEach(t => t.classList.remove('is-active'));
+  document.querySelector('.ws-domain-item--action-tracker')?.classList.add('is-active');
+
+  // No capability sub-navigation applies to a blueprint-wide view
+  document.getElementById('cap-nav').style.display = 'none';
+  const header = document.getElementById('cap-journey-header');
+  if (header) header.innerHTML = '';
+
+  renderActionTracker();
+}
+
+async function renderActionTracker() {
+  const area = document.getElementById('bp-content');
+  if (!area || !_blueprint) return;
+
+  area.innerHTML = `
+    <div class="bp-cap-header"><h2 class="bp-cap-title">Action Tracker</h2></div>
+    <div class="at-loading">Loading action items…</div>
+  `;
+
+  let items;
+  try {
+    const resp = await fetch(`${API_BASE}/action-items/${_blueprint._id}`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    if (resp.status === 401) { window.handleSessionExpired(); return; }
+    if (!resp.ok) throw new Error('Failed to load action items');
+    ({ items } = await resp.json());
+  } catch (err) {
+    console.error('[blueprintWorkspace] action tracker load error:', err);
+    area.innerHTML = `
+      <div class="bp-cap-header"><h2 class="bp-cap-title">Action Tracker</h2></div>
+      <p class="at-error">Couldn't load action items. Please try again.</p>
+    `;
+    return;
+  }
+
+  // Guard against a stale response landing after the user navigated away
+  if (!_showingActionTracker) return;
+
+  if (!items.length) {
+    area.innerHTML = `
+      <div class="bp-cap-header"><h2 class="bp-cap-title">Action Tracker</h2></div>
+      <p class="at-empty">No action items yet — they're derived automatically as capabilities complete.</p>
+    `;
+    return;
+  }
+
+  // Group by capability, preserving first-seen order
+  const byCapability = new Map();
+  for (const item of items) {
+    if (!byCapability.has(item.capabilityId)) {
+      byCapability.set(item.capabilityId, { capabilityName: item.capabilityName, domainName: item.domainName, items: [] });
+    }
+    byCapability.get(item.capabilityId).items.push(item);
+  }
+
+  const groups = [...byCapability.values()].map(group => `
+    <div class="at-group">
+      <p class="at-group__label">${escapeHtml(group.domainName)} · ${escapeHtml(resolveCapName(group.capabilityName))}</p>
+      <table class="at-table">
+        <thead>
+          <tr><th>Action Item</th><th>Assignee</th><th>Reviewer</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          ${group.items.map(item => `
+            <tr data-item-id="${item._id}">
+              <td class="at-table__title">
+                <p class="at-item-title">${escapeHtml(item.title)}</p>
+                ${item.description ? `<p class="at-item-desc">${escapeHtml(item.description)}</p>` : ''}
+              </td>
+              <td><input type="text" class="at-input at-input--assignee" placeholder="Unassigned"></td>
+              <td><input type="text" class="at-input at-input--reviewer" placeholder="—"></td>
+              <td>
+                <select class="at-status at-status--${item.status}">
+                  ${ACTION_ITEM_STATUSES.map(s => `<option value="${s.value}"${s.value === item.status ? ' selected' : ''}>${s.label}</option>`).join('')}
+                </select>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `).join('');
+
+  area.innerHTML = `
+    <div class="bp-cap-header"><h2 class="bp-cap-title">Action Tracker</h2></div>
+    ${groups}
+  `;
+
+  // Wire up edits — one PATCH per field change, scoped to that row's item id.
+  // Assignee/reviewer values are set via the .value property here, not
+  // string-interpolated into the value="..." attribute above — user-typed
+  // text (e.g. containing a literal ") would otherwise break out of the
+  // attribute when parsed as HTML.
+  const itemsById = new Map(items.map(i => [String(i._id), i]));
+  area.querySelectorAll('tr[data-item-id]').forEach(row => {
+    const itemId = row.dataset.itemId;
+    const item   = itemsById.get(itemId);
+
+    const assigneeInput = row.querySelector('.at-input--assignee');
+    if (assigneeInput) {
+      assigneeInput.value = item?.assignee || '';
+      assigneeInput.addEventListener('change', e => patchActionItem(itemId, { assignee: e.target.value }));
+    }
+
+    const reviewerInput = row.querySelector('.at-input--reviewer');
+    if (reviewerInput) {
+      reviewerInput.value = item?.reviewer || '';
+      reviewerInput.addEventListener('change', e => patchActionItem(itemId, { reviewer: e.target.value }));
+    }
+
+    row.querySelector('.at-status')?.addEventListener('change', e => {
+      e.target.className = `at-status at-status--${e.target.value}`;
+      patchActionItem(itemId, { status: e.target.value });
+    });
+  });
+}
+
+async function patchActionItem(itemId, updates) {
+  try {
+    const resp = await fetch(`${API_BASE}/action-items/${_blueprint._id}/${itemId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify(updates),
+    });
+    if (resp.status === 401) { window.handleSessionExpired(); return; }
+    if (!resp.ok) throw new Error('Failed to update action item');
+  } catch (err) {
+    console.error('[blueprintWorkspace] action item update error:', err);
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 // ── Capability tabs ───────────────────────────────────────────────────────────

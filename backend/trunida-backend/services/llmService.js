@@ -6,13 +6,21 @@
  *   factory.py     → provider selection + chain
  *   providers/     → gemini.py, claude.py, openai.py
  *
- * Supported providers:  gemini  |  claude  |  openai  |  kimi
+ * Supported providers:  gemini  |  claude  |  openai  |  kimi  |  azure
  * Default model:        gemini-2.5-flash-lite
  *
- * Note: "kimi" is intentionally NOT in the default chain — it's opt-in only
- * (explicit `provider: 'kimi'`, or add it to PROVIDER_CHAIN yourself) so it
- * never silently affects advisorService / confluenceContentService / etc.
- * which all share this same chain via the default PROVIDER_CHAIN env var.
+ * Note: "kimi" and "azure" are intentionally NOT in the default chain —
+ * opt-in only (explicit `provider: 'kimi'`/`'azure'`, or add to
+ * PROVIDER_CHAIN yourself) so neither silently affects advisorService /
+ * confluenceContentService / etc. which all share this same chain via the
+ * default PROVIDER_CHAIN env var.
+ *
+ * "azure" hosts the same GPT models as "openai" above, just billed against
+ * an Azure subscription instead — the point being to draw on Azure credits
+ * instead of a separate OpenAI account for the same underlying model, once
+ * Azure OpenAI access is approved (a separate gate from just having an
+ * Azure subscription — see AZURE_OPENAI_* vars below) and a model is
+ * deployed in the Azure portal.
  *
  * ── Configuration (Railway Variables) ────────────────────────────────────────
  *
@@ -27,6 +35,12 @@
  *                                            AI's own platform's India availability
  *                                            is unconfirmed, so routed through the
  *                                            same global aggregator used for Qwen)
+ *  AZURE_OPENAI_API_KEY   …                  From the Azure portal, once Azure
+ *                                            OpenAI access is approved
+ *  AZURE_OPENAI_ENDPOINT  https://{resource}.openai.azure.com/
+ *  AZURE_OPENAI_DEPLOYMENT  gpt-4o           The deployment NAME you chose in the
+ *                                            Azure portal — not a raw model id
+ *  AZURE_OPENAI_API_VERSION 2025-04-01-preview  Optional override
  *
  *  GEMINI_MODEL      gemini-2.5-flash-lite  Per-provider model override
  *  CLAUDE_MODEL      claude-sonnet-4-6
@@ -45,7 +59,7 @@
  */
 
 import Anthropic            from '@anthropic-ai/sdk';
-import OpenAI               from 'openai';
+import OpenAI, { AzureOpenAI } from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // ── Model defaults ─────────────────────────────────────────────────────────────
@@ -211,6 +225,50 @@ const PROVIDERS = {
       const client = new OpenAI({ apiKey, baseURL: KIMI_BASE_URL });
       const resp   = await client.chat.completions.create({
         model:      model || DEFAULT_MODELS.kimi,
+        max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userMessage  },
+        ],
+      });
+
+      return {
+        text:         resp.choices[0]?.message?.content || '',
+        inputTokens:  resp.usage?.prompt_tokens     || 0,
+        outputTokens: resp.usage?.completion_tokens || 0,
+      };
+    },
+  },
+
+  // ── Azure OpenAI ─────────────────────────────────────────────────────────────
+  // Opt-in only — not part of the default chain. Same underlying GPT models as
+  // "openai" above, billed against an Azure subscription instead. Uses the
+  // openai SDK's dedicated AzureOpenAI client (handles the api-key header and
+  // /deployments/{name} path Azure requires, unlike the plain OpenAI client).
+  //
+  // "model" here means the DEPLOYMENT NAME chosen in the Azure portal, not a
+  // raw model id like "gpt-4o" — Azure resolves the actual model from that
+  // deployment, so the same deployment name must exist in the Azure resource
+  // before this can succeed.
+
+  azure: {
+    async generate({ systemPrompt, userMessage, model, maxTokens }) {
+      const apiKey     = process.env.AZURE_OPENAI_API_KEY;
+      const endpoint   = process.env.AZURE_OPENAI_ENDPOINT;
+      const deployment = model || process.env.AZURE_OPENAI_DEPLOYMENT;
+      if (!apiKey)     throw new Error('AZURE_OPENAI_API_KEY is not configured.');
+      if (!endpoint)   throw new Error('AZURE_OPENAI_ENDPOINT is not configured.');
+      if (!deployment) throw new Error('AZURE_OPENAI_DEPLOYMENT is not configured (and no model override was given).');
+
+      const client = new AzureOpenAI({
+        apiKey,
+        endpoint,
+        deployment,
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2025-04-01-preview',
+      });
+
+      const resp = await client.chat.completions.create({
+        model:      deployment, // ignored for routing (deployment already pins the model) — kept for SDK typing
         max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
         messages: [
           { role: 'system', content: systemPrompt },

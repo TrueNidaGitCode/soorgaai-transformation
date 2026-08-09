@@ -3002,6 +3002,11 @@
 .at-input::placeholder { color: rgba(255,255,255,0.3); }
 
 .at-status {
+  /* Tells the browser to render this native control (including its open
+     options popup) in dark mode — without this, some browsers render a
+     <select>'s own background as opaque light/white regardless of the
+     background-color set below, making pale text on it unreadable. */
+  color-scheme: dark;
   font-family: inherit;
   font-size: 0.75rem;
   font-weight: 600;
@@ -3010,10 +3015,12 @@
   border: 1px solid transparent;
   cursor: pointer;
 }
-.at-status--not_started { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.55); }
-.at-status--in_progress { background: rgba(96,165,250,0.12); color: #60A5FA; border-color: rgba(96,165,250,0.25); }
-.at-status--in_review   { background: rgba(245,158,11,0.12); color: #F59E0B; border-color: rgba(245,158,11,0.25); }
-.at-status--agreed      { background: rgba(92,197,167,0.12); color: #5CC5A7; border-color: rgba(92,197,167,0.25); }
+/* Solid, opaque backgrounds — not translucent rgba() — so they don't blend
+   into a native opaque widget background instead of the dark page behind it. */
+.at-status--not_started { background-color: #2a2a35; color: rgba(255,255,255,0.75); }
+.at-status--in_progress { background-color: #1e3a5f; color: #93c5fd; border-color: rgba(96,165,250,0.35); }
+.at-status--in_review   { background-color: #4a3510; color: #fcd34d; border-color: rgba(245,158,11,0.35); }
+.at-status--agreed      { background-color: #16352c; color: #86efac; border-color: rgba(92,197,167,0.35); }
 
 /* ── Guest login banner ───────────────────────────────────────────────────── */
 

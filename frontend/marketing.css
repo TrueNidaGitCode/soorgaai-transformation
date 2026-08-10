@@ -203,7 +203,7 @@
 .mkt-hero {
   max-width: 1160px;
   margin: 0 auto;
-  padding: 108px 32px 96px;
+  padding: 52px 32px 96px;
 }
 
 .mkt-hero__grid {
@@ -1149,7 +1149,7 @@
   .mkt-nav__auth { display: none; }
   .mkt-mobile-toggle { display: flex; }
 
-  .mkt-hero { padding: 80px 24px 56px; }
+  .mkt-hero { padding: 36px 24px 56px; }
   .mkt-hero__grid { grid-template-columns: 1fr; text-align: center; gap: 44px; }
   .mkt-hero__heading { font-size: 34px; }
   .mkt-hero__sub { max-width: 440px; margin: 0 auto 34px; }

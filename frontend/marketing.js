@@ -1,7 +1,7 @@
 /**
  * SoorgaAI — Marketing homepage
  * Top-nav dropdown menus, mobile panel toggle, CTA routing into Cob,
- * and the AI maturity stages strip.
+ * and the scroll-driven AI maturity journey visualization.
  */
 
 import { MATURITY_STAGES } from './data/maturityStages.js';
@@ -11,22 +11,220 @@ document.addEventListener('DOMContentLoaded', () => {
   wireMobileToggle();
   wireCtaButtons();
   wireNavShrink();
-  renderMaturityStages();
+  wireJourneyScroll();
+  wireJourneyClimax();
   wirePricingToggle();
   wirePricingCtas();
 });
 
-function renderMaturityStages() {
-  const container = document.getElementById('maturity-stages');
-  if (!container) return;
+// ── AI Maturity Journey ──────────────────────────────────────────────
+//
+// A fixed node/edge graph laid out in four loose "business function"
+// zones (top-left, top-right, bottom-left, bottom-right) plus a central
+// hub. Each element carries the stage at which it should appear —
+// stages 1-3 reveal is deliberately slower (stage-slow) than 4-5
+// (stage-fast), which is what makes the AI Alignment -> AI-Fueled
+// Enterprise stretch of the scroll feel like it accelerates.
+const JOURNEY_NODES = [
+  { id: 'n1',  x: 120, y: 140, r: 7, stage: 1 },
+  { id: 'n2',  x: 480, y: 120, r: 7, stage: 1 },
+  { id: 'n3',  x: 140, y: 460, r: 7, stage: 1 },
+  { id: 'n4',  x: 470, y: 480, r: 7, stage: 1 },
 
-  container.innerHTML = MATURITY_STAGES.map((stage) => `
-    <li class="mkt-maturity__stage" style="--stage-color: ${stage.color}">
-      <span class="mkt-maturity__num">${String(stage.id).padStart(2, '0')}</span>
-      <span class="mkt-maturity__name">${stage.name}</span>
-      <span class="mkt-maturity__desc">${stage.descriptor}</span>
+  { id: 'n5',  x: 200, y: 90,  r: 6, stage: 2 },
+  { id: 'n6',  x: 420, y: 180, r: 6, stage: 2 },
+  { id: 'n7',  x: 90,  y: 380, r: 6, stage: 2 },
+  { id: 'n8',  x: 380, y: 420, r: 6, stage: 2 },
+
+  { id: 'n9',  x: 300, y: 260, r: 9, stage: 3, hub: true },
+  { id: 'n10', x: 230, y: 340, r: 6, stage: 3 },
+  { id: 'n11', x: 350, y: 150, r: 6, stage: 3 },
+
+  { id: 'n12', x: 170, y: 220, r: 6, stage: 4 },
+  { id: 'n13', x: 420, y: 300, r: 6, stage: 4 },
+  { id: 'n14', x: 300, y: 420, r: 6, stage: 4 },
+
+  { id: 'n15', x: 300, y: 60,  r: 6, stage: 5 },
+  { id: 'n16', x: 300, y: 540, r: 6, stage: 5 },
+];
+
+const JOURNEY_EDGES = [
+  // Stage 2 — small local pairs, still fragmented
+  { a: 'n1', b: 'n5', stage: 2 },
+  { a: 'n2', b: 'n6', stage: 2 },
+  { a: 'n3', b: 'n7', stage: 2 },
+  { a: 'n4', b: 'n8', stage: 2 },
+
+  // Stage 3 — cross-functional alignment through a shared center
+  { a: 'n1', b: 'n9',  stage: 3 },
+  { a: 'n2', b: 'n9',  stage: 3 },
+  { a: 'n3', b: 'n9',  stage: 3 },
+  { a: 'n4', b: 'n9',  stage: 3 },
+  { a: 'n9', b: 'n10', stage: 3 },
+  { a: 'n9', b: 'n11', stage: 3 },
+
+  // Stage 4 — direct peer mesh, not just routed through the hub
+  { a: 'n5',  b: 'n6',  stage: 4 },
+  { a: 'n7',  b: 'n8',  stage: 4 },
+  { a: 'n1',  b: 'n12', stage: 4 },
+  { a: 'n12', b: 'n10', stage: 4 },
+  { a: 'n13', b: 'n9',  stage: 4 },
+  { a: 'n13', b: 'n4',  stage: 4 },
+  { a: 'n14', b: 'n10', stage: 4 },
+  { a: 'n14', b: 'n8',  stage: 4 },
+  { a: 'n11', b: 'n6',  stage: 4 },
+  { a: 'n11', b: 'n2',  stage: 4 },
+
+  // Stage 5 — the ecosystem closes the loop
+  { a: 'n15', b: 'n11', stage: 5 },
+  { a: 'n15', b: 'n2',  stage: 5 },
+  { a: 'n15', b: 'n9',  stage: 5 },
+  { a: 'n16', b: 'n14', stage: 5 },
+  { a: 'n16', b: 'n10', stage: 5 },
+  { a: 'n16', b: 'n9',  stage: 5 },
+];
+
+function buildJourneyNetwork(svg) {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const byId = {};
+  JOURNEY_NODES.forEach((n) => { byId[n.id] = n; });
+
+  // Edges first so node circles render on top of the lines.
+  JOURNEY_EDGES.forEach((e) => {
+    const a = byId[e.a];
+    const b = byId[e.b];
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', a.x);
+    line.setAttribute('y1', a.y);
+    line.setAttribute('x2', b.x);
+    line.setAttribute('y2', b.y);
+    line.setAttribute('class', `mkt-journey__edge ${e.stage <= 3 ? 'stage-slow' : 'stage-fast'}`);
+    line.dataset.stage = String(e.stage);
+    svg.appendChild(line);
+  });
+
+  JOURNEY_NODES.forEach((n) => {
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', n.x);
+    circle.setAttribute('cy', n.y);
+    circle.setAttribute('r', n.r);
+    circle.setAttribute('class', `mkt-journey__node ${n.stage <= 3 ? 'stage-slow' : 'stage-fast'}${n.hub ? ' is-hub' : ''}`);
+    circle.dataset.stage = String(n.stage);
+    svg.appendChild(circle);
+  });
+}
+
+function updateJourneyStage(stage) {
+  const svg = document.getElementById('journey-network');
+  if (!svg) return;
+
+  svg.querySelectorAll('[data-stage]').forEach((el) => {
+    el.classList.toggle('is-visible', Number(el.dataset.stage) <= stage);
+  });
+  svg.classList.toggle('is-stage-5', stage === 5);
+
+  const info = MATURITY_STAGES[stage - 1];
+  const numEl  = document.getElementById('journey-stage-num');
+  const nameEl = document.getElementById('journey-stage-name');
+  const descEl = document.getElementById('journey-stage-desc');
+  if (info && numEl && nameEl && descEl) {
+    numEl.textContent  = String(info.id).padStart(2, '0');
+    nameEl.textContent = info.name;
+    descEl.textContent = info.descriptor;
+  }
+  document.querySelector('.mkt-journey__stage-label')?.classList.toggle('is-final', stage === 5);
+
+  document.querySelectorAll('.mkt-journey__progress-dot').forEach((dot) => {
+    dot.classList.toggle('is-active', Number(dot.dataset.stage) === stage);
+  });
+}
+
+function renderJourneyStaticList() {
+  const list = document.getElementById('journey-static-list');
+  if (!list) return;
+  list.style.display = 'flex';
+  list.innerHTML = MATURITY_STAGES.map((s) => `
+    <li class="mkt-journey__static-stage">
+      <span class="mkt-journey__static-num">${String(s.id).padStart(2, '0')}</span>
+      <span>
+        <span class="mkt-journey__static-name">${s.name}</span>
+        <span class="mkt-journey__static-desc">${s.descriptor}</span>
+      </span>
     </li>
   `).join('');
+}
+
+function wireJourneyScroll() {
+  const track = document.getElementById('journey-track');
+  const svg   = document.getElementById('journey-network');
+  if (!track || !svg) return;
+
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isMobile = window.matchMedia('(max-width: 860px)').matches;
+
+  // Scroll-pinning is a desktop technique — on mobile, or when the user
+  // has asked for reduced motion, skip it entirely and show the plain
+  // stage list instead of a static (but still tall) empty track.
+  if (prefersReduced || isMobile) {
+    track.style.display = 'none';
+    renderJourneyStaticList();
+    return;
+  }
+
+  buildJourneyNetwork(svg);
+
+  // Stage boundaries as a fraction of the scroll track. 1->3 spans 66%
+  // of the track (slow, fragmented); 3->5 spans only the remaining 34%
+  // (the "compress the journey" acceleration), reinforcing what the
+  // stage-slow / stage-fast CSS transition speeds already do.
+  const STAGE_BREAKS = [0, 0.22, 0.44, 0.66, 0.83, 1];
+
+  function stageForProgress(progress) {
+    let stage = 1;
+    for (let i = 0; i < STAGE_BREAKS.length - 1; i++) {
+      if (progress >= STAGE_BREAKS[i]) stage = i + 1;
+    }
+    return stage;
+  }
+
+  let ticking = false;
+  function update() {
+    const rect = track.getBoundingClientRect();
+    const scrollable = track.offsetHeight - window.innerHeight;
+    const progress = scrollable > 0
+      ? Math.min(1, Math.max(0, -rect.top / scrollable))
+      : 0;
+    updateJourneyStage(stageForProgress(progress));
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(update);
+  }, { passive: true });
+
+  update();
+}
+
+function wireJourneyClimax() {
+  const climax = document.getElementById('journey-climax');
+  if (!climax) return;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    climax.classList.add('is-visible');
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        climax.classList.add('is-visible');
+        observer.unobserve(climax);
+      }
+    });
+  }, { threshold: 0.3 });
+  observer.observe(climax);
 }
 
 function wireNavShrink() {

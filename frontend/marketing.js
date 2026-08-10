@@ -7,7 +7,29 @@ document.addEventListener('DOMContentLoaded', () => {
   wireDropdowns();
   wireMobileToggle();
   wireCtaButtons();
+  wireNavShrink();
 });
+
+function wireNavShrink() {
+  const nav = document.querySelector('.mkt-nav');
+  if (!nav) return;
+
+  const SCROLL_THRESHOLD = 24;
+  let ticking = false;
+
+  function update() {
+    nav.classList.toggle('is-scrolled', window.scrollY > SCROLL_THRESHOLD);
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(update);
+  }, { passive: true });
+
+  update();
+}
 
 function wireDropdowns() {
   const items = document.querySelectorAll('.mkt-menu__item');

@@ -201,10 +201,16 @@
 
 /* ── Hero ───────────────────────────────────────────────────── */
 .mkt-hero {
-  max-width: 720px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 120px 32px 80px;
-  text-align: center;
+  padding: 108px 32px 96px;
+}
+
+.mkt-hero__grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  gap: 64px;
 }
 
 .mkt-hero__eyebrow {
@@ -228,14 +234,13 @@
   font-size: 16.5px;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.6);
-  max-width: 520px;
-  margin: 0 auto 34px;
+  max-width: 480px;
+  margin: 0 0 34px;
 }
 
 .mkt-hero__actions {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 22px;
   flex-wrap: wrap;
 }
@@ -247,6 +252,225 @@
   text-decoration: none;
 }
 .mkt-hero__secondary:hover { color: #fff; }
+
+/* ── Hero visual — "AI Strategy Blueprint" panel ─────────────── */
+.mkt-hero__visual {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+/* Soft ambient glow behind the card — restrained, no particles */
+.mkt-hero__visual::before {
+  content: '';
+  position: absolute;
+  inset: 8% 10%;
+  background: radial-gradient(closest-side, rgba(92, 197, 167, 0.16), transparent 70%);
+  filter: blur(30px);
+  z-index: 0;
+}
+
+.mkt-blueprint {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 22px 22px 24px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.mkt-blueprint__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mkt-blueprint__title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.mkt-blueprint__live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--accent-green);
+}
+
+.mkt-blueprint__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  animation: mkt-pulse 2.2s ease-in-out infinite;
+}
+
+.mkt-blueprint__stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mkt-blueprint__stage {
+  display: flex;
+  gap: 14px;
+  opacity: 0;
+  animation: mkt-rise 0.6s ease forwards;
+  animation-delay: calc(var(--i) * 0.12s + 0.15s);
+}
+
+.mkt-blueprint__track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.mkt-blueprint__node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(92, 197, 167, 0.12);
+  border: 1px solid rgba(92, 197, 167, 0.4);
+  color: var(--accent-green);
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.mkt-blueprint__line {
+  position: relative;
+  width: 2px;
+  flex: 1;
+  min-height: 22px;
+  margin: 4px 0;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.mkt-blueprint__flow {
+  position: absolute;
+  left: 0;
+  top: -30%;
+  width: 100%;
+  height: 30%;
+  background: linear-gradient(180deg, transparent, #5CC5A7, transparent);
+  animation: mkt-flow 2.4s linear infinite;
+  animation-delay: calc(var(--i) * 0.3s);
+}
+
+.mkt-blueprint__stage:last-child .mkt-blueprint__track { justify-content: flex-start; }
+
+.mkt-blueprint__body {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+}
+.mkt-blueprint__stage:last-child .mkt-blueprint__body { padding-bottom: 0; }
+
+.mkt-blueprint__name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.mkt-blueprint__meta {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.mkt-blueprint__badge {
+  align-self: flex-start;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--accent-green);
+  background: rgba(92, 197, 167, 0.12);
+  border: 1px solid rgba(92, 197, 167, 0.3);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.mkt-blueprint__progress {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.mkt-blueprint__progress-bar {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5CC5A7, #3DAFD3);
+  animation: mkt-progress 4s ease-in-out infinite;
+  animation-delay: 0.9s;
+}
+
+@keyframes mkt-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mkt-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+@keyframes mkt-flow {
+  0%   { top: -30%; }
+  100% { top: 100%; }
+}
+
+@keyframes mkt-progress {
+  0%             { width: 0%; }
+  55%, 75%       { width: 72%; }
+  100%           { width: 72%; }
+}
+
+/* Motion-sensitive users get the same layout, no movement */
+@media (prefers-reduced-motion: reduce) {
+  .mkt-blueprint__stage {
+    opacity: 1;
+    animation: none;
+  }
+  .mkt-blueprint__dot,
+  .mkt-blueprint__flow,
+  .mkt-blueprint__progress-bar {
+    animation: none;
+  }
+  .mkt-blueprint__progress-bar { width: 72%; }
+}
+
+/* Tablet — keep the two-column layout and the flow, drop the
+   secondary detail lines so the card stays legible at this width */
+@media (max-width: 1024px) and (min-width: 861px) {
+  .mkt-hero__grid { gap: 36px; }
+  .mkt-hero__heading { font-size: 38px; }
+  .mkt-blueprint { max-width: 340px; padding: 18px 18px 20px; }
+  .mkt-blueprint__meta { display: none; }
+}
 
 /* ── How it works ───────────────────────────────────────────── */
 .mkt-how {
@@ -926,7 +1150,12 @@
   .mkt-mobile-toggle { display: flex; }
 
   .mkt-hero { padding: 80px 24px 56px; }
+  .mkt-hero__grid { grid-template-columns: 1fr; text-align: center; gap: 44px; }
   .mkt-hero__heading { font-size: 34px; }
+  .mkt-hero__sub { max-width: 440px; margin: 0 auto 34px; }
+  .mkt-hero__actions { justify-content: center; }
+  .mkt-blueprint { max-width: 360px; padding: 18px 18px 20px; }
+  .mkt-blueprint__meta { display: none; }
 
   .mkt-how__list { grid-template-columns: 1fr; gap: 32px; }
 

@@ -6363,7 +6363,7 @@ function initAssistantButton() {
   const newBlueprintBtn = document.getElementById('btn-new-blueprint');
   if (newBlueprintBtn) newBlueprintBtn.addEventListener('click', () => {
     // New blueprints start from the landing-page prompt box
-    window.location.href = '/';
+    window.location.href = '/cob.html';
   });
 
   const exportBtn = document.getElementById('btn-export-pdf');

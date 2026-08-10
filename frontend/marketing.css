@@ -1,0 +1,299 @@
+/* ============================================================
+   SoorgaAI — Marketing homepage (enterprise, deployment.inc-inspired)
+   Top nav + minimal hero. Extends global style.css tokens.
+   ============================================================ */
+
+.mkt { overflow-x: hidden; }
+
+/* ── Top nav ────────────────────────────────────────────────── */
+.mkt-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13, 13, 13, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mkt-nav__inner {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+.mkt-logo {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.mkt-logo span { color: var(--accent-green); }
+
+.mkt-menu {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.mkt-menu__item { position: relative; }
+
+.mkt-menu__trigger {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.mkt-menu__trigger:hover,
+.mkt-menu__item.is-open .mkt-menu__trigger {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.mkt-menu__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 260px;
+  background: #16181d;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.14s, transform 0.14s, visibility 0.14s;
+}
+.mkt-menu__item.is-open .mkt-menu__panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.mkt-menu__link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+.mkt-menu__link:hover { background: rgba(255, 255, 255, 0.06); }
+
+.mkt-menu__link-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.mkt-menu__link-desc {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+}
+
+.mkt-nav__auth {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.mkt-mobile-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 6px;
+}
+
+.mkt-mobile-panel {
+  display: none;
+  flex-direction: column;
+  padding: 8px 20px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.mkt-mobile-panel.is-open { display: flex; }
+
+.mkt-mobile-panel__link {
+  padding: 12px 4px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.mkt-mobile-panel__link:last-child { border-bottom: none; }
+
+/* ── Hero ───────────────────────────────────────────────────── */
+.mkt-hero {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 120px 32px 80px;
+  text-align: center;
+}
+
+.mkt-hero__eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent-green);
+  margin: 0 0 18px;
+}
+
+.mkt-hero__heading {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.5px;
+  margin: 0 0 20px;
+}
+
+.mkt-hero__sub {
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 520px;
+  margin: 0 auto 34px;
+}
+
+.mkt-hero__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.mkt-hero__secondary {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+}
+.mkt-hero__secondary:hover { color: #fff; }
+
+/* ── How it works ───────────────────────────────────────────── */
+.mkt-how {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 64px 32px;
+}
+
+.mkt-how__list {
+  max-width: 1000px;
+  margin: 0 auto;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+}
+
+.mkt-how__num {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--accent-green);
+  margin-bottom: 14px;
+}
+
+.mkt-how__step h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.mkt-how__step p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+/* ── Industry / About sections ─────────────────────────────── */
+.mkt-industry,
+.mkt-about {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 72px 32px;
+  text-align: center;
+}
+
+.mkt-industry__eyebrow,
+.mkt-about__eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 0 14px;
+}
+
+.mkt-industry__heading,
+.mkt-about__heading {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.28;
+  margin: 0 0 18px;
+}
+
+.mkt-industry__body,
+.mkt-about__body {
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.58);
+  margin: 0 0 28px;
+}
+
+.mkt-about__contact {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--accent-green);
+  text-decoration: none;
+}
+.mkt-about__contact:hover { text-decoration: underline; }
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.mkt-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.mkt-footer a {
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: none;
+}
+.mkt-footer a:hover { color: rgba(255, 255, 255, 0.7); }
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .mkt-menu,
+  .mkt-nav__auth { display: none; }
+  .mkt-mobile-toggle { display: flex; }
+
+  .mkt-hero { padding: 80px 24px 56px; }
+  .mkt-hero__heading { font-size: 34px; }
+
+  .mkt-how__list { grid-template-columns: 1fr; gap: 32px; }
+}

@@ -465,7 +465,7 @@ async function initGuest(guestId) {
     const resp = await fetch(`${API_BASE}/guest/blueprint/${encodeURIComponent(guestId)}`);
     if (resp.status === 404) {
       localStorage.removeItem('soorgaai_guest_id');
-      window.location.href = '/';
+      window.location.href = '/cob.html';
       return;
     }
     if (!resp.ok) throw new Error('Failed to load preview blueprint');
@@ -477,7 +477,7 @@ async function initGuest(guestId) {
     if (bp.status === 'generating') startLiveUpdates(guestId);
   } catch (err) {
     console.error('[blueprintGenerate] guest init error:', err);
-    window.location.href = '/';
+    window.location.href = '/cob.html';
   }
 }
 
@@ -513,7 +513,7 @@ async function init() {
 
     if (!bp) {
       // No blueprint yet — the landing page owns the prompt box
-      window.location.href = '/';
+      window.location.href = '/cob.html';
       return;
     }
 

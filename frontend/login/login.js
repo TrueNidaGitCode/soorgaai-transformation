@@ -280,9 +280,9 @@ function computeLoginDestination() {
         return '/domain/domain.html';
     }
 
-    // 5. Default: landing page
-    console.log('✅ Destination: landing page');
-    return '/';
+    // 5. Default: Cob product home
+    console.log('✅ Destination: Cob product home');
+    return '/cob.html';
 }
 
 // New users have no UserProfile yet — send them through profile setup once,

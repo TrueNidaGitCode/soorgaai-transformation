@@ -29,11 +29,16 @@
   <!-- ── Top nav ──────────────────────────────────────────────── -->
   <header class="mkt-nav">
     <div class="mkt-nav__inner">
-      <a href="/" class="mkt-logo" aria-label="SoorgaAI — home">Soorga<span>AI</span></a>
+      <a href="/" class="mkt-logo" aria-label="SoorgaAI — home">
+        <img src="assets/logo-nav.png" alt="SoorgaAI" class="mkt-logo__img">
+      </a>
 
       <nav class="mkt-menu" aria-label="Primary navigation">
         <div class="mkt-menu__item">
-          <button type="button" class="mkt-menu__trigger" aria-expanded="false">Industry</button>
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Industry
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
           <div class="mkt-menu__panel">
             <a href="#automotive" class="mkt-menu__link">
               <span class="mkt-menu__link-title">Automotive</span>
@@ -43,7 +48,10 @@
         </div>
 
         <div class="mkt-menu__item">
-          <button type="button" class="mkt-menu__trigger" aria-expanded="false">Products</button>
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Products
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
           <div class="mkt-menu__panel">
             <a href="/cob.html" class="mkt-menu__link">
               <span class="mkt-menu__link-title">Cob</span>
@@ -53,7 +61,10 @@
         </div>
 
         <div class="mkt-menu__item">
-          <button type="button" class="mkt-menu__trigger" aria-expanded="false">Company</button>
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Company
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
           <div class="mkt-menu__panel">
             <a href="#about" class="mkt-menu__link">
               <span class="mkt-menu__link-title">About</span>
@@ -68,8 +79,7 @@
       </nav>
 
       <div class="mkt-nav__auth">
-        <a href="/login/login.html" class="auth-btn auth-btn--outline">Log in</a>
-        <button type="button" id="mkt-cta-nav" class="auth-btn auth-btn--workspace">Get started</button>
+        <a href="mailto:hello@soorgaai.com" class="mkt-btn mkt-btn--primary">Contact us</a>
       </div>
 
       <button type="button" id="mkt-mobile-toggle" class="mkt-mobile-toggle" aria-label="Open menu" aria-expanded="false">
@@ -82,7 +92,6 @@
       <a href="/cob.html" class="mkt-mobile-panel__link">Products — Cob</a>
       <a href="#about" class="mkt-mobile-panel__link">Company — About</a>
       <a href="mailto:hello@soorgaai.com" class="mkt-mobile-panel__link">Company — Contact</a>
-      <a href="/login/login.html" class="mkt-mobile-panel__link">Log in</a>
     </div>
   </header>
 

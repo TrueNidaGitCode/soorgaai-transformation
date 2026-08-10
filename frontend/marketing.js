@@ -49,7 +49,7 @@ function wireMobileToggle() {
 }
 
 function wireCtaButtons() {
-  const ids = ['mkt-cta-nav', 'mkt-cta-hero', 'mkt-cta-automotive'];
+  const ids = ['mkt-cta-hero', 'mkt-cta-automotive'];
   ids.forEach((id) => {
     document.getElementById(id)?.addEventListener('click', () => {
       window.CTARouter?.routeToWorkspace();

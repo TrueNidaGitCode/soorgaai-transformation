@@ -28,9 +28,9 @@
 }
 
 .mkt-nav.is-scrolled .mkt-nav__inner {
-  max-width: 1020px;
-  margin: 14px auto 0;
-  padding: 9px 24px;
+  max-width: 960px;
+  margin: 12px auto 0;
+  padding: 6px 20px;
   border-radius: 999px;
   background: rgba(22, 24, 29, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.08);

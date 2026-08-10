@@ -33,7 +33,8 @@
         <img src="assets/logo-nav.png" alt="SoorgaAI" class="mkt-logo__img">
       </a>
 
-      <nav class="mkt-menu" aria-label="Primary navigation">
+      <!-- div (not <nav>) — style.css has a global `nav {...}` tag selector that would otherwise paint this as an opaque box -->
+      <div class="mkt-menu" role="navigation" aria-label="Primary navigation">
         <div class="mkt-menu__item">
           <button type="button" class="mkt-menu__trigger" aria-expanded="false">
             Industry
@@ -76,7 +77,7 @@
             </a>
           </div>
         </div>
-      </nav>
+      </div>
 
       <div class="mkt-nav__auth">
         <a href="mailto:hello@soorgaai.com" class="mkt-btn mkt-btn--primary">Contact us</a>

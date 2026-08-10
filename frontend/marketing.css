@@ -56,7 +56,7 @@
 .mkt-menu {
   display: flex;
   gap: 4px;
-  flex: 1;
+  margin-left: auto;
 }
 
 .mkt-menu__item { position: relative; }
@@ -94,8 +94,8 @@
 .mkt-menu__panel {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
-  min-width: 260px;
+  right: 0;
+  min-width: 160px;
   background: #16181d;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
@@ -113,12 +113,11 @@
 }
 
 .mkt-menu__link {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px;
+  display: block;
+  padding: 10px 14px;
   border-radius: 9px;
   text-decoration: none;
+  white-space: nowrap;
   transition: background 0.12s;
 }
 .mkt-menu__link:hover { background: rgba(255, 255, 255, 0.06); }
@@ -127,12 +126,6 @@
   font-size: 14px;
   font-weight: 700;
   color: #fff;
-}
-
-.mkt-menu__link-desc {
-  font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.5);
-  line-height: 1.4;
 }
 
 .mkt-nav__auth {

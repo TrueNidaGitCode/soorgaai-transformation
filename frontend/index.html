@@ -180,27 +180,9 @@
 
     <!-- ── AI Maturity Journey ─────────────────────────────────── -->
     <section id="maturity" class="mkt-journey">
-      <div class="mkt-journey__intro">
-        <p class="mkt-journey__eyebrow">The AI maturity journey</p>
-        <h2 class="mkt-journey__heading">Where does your organization stand?</h2>
-        <p class="mkt-journey__sub">
-          Every organization is somewhere on its AI journey. The path from
-          experimentation to an AI-fueled enterprise can take years.
-        </p>
-      </div>
+      <div class="mkt-journey__top">
 
-      <!-- Tall scroll track — its height gives the pinned panel below
-           room to advance through all 5 stages as the user scrolls. -->
-      <div id="journey-track" class="mkt-journey__track">
-        <div class="mkt-journey__sticky">
-
-          <div class="mkt-journey__stage-label">
-            <span id="journey-stage-num" class="mkt-journey__stage-num">01</span>
-            <h3 id="journey-stage-name" class="mkt-journey__stage-name">AI Scramble</h3>
-            <p id="journey-stage-desc" class="mkt-journey__stage-desc">Ad hoc, no strategy</p>
-            <p id="journey-stage-tagline" class="mkt-journey__stage-tagline">Days, not years.</p>
-          </div>
-
+        <div class="mkt-journey__visual">
           <div class="mkt-journey__canvas">
             <svg id="journey-network" class="mkt-journey__network" viewBox="0 0 600 600" aria-hidden="true">
               <defs>
@@ -212,6 +194,13 @@
             </svg>
           </div>
 
+          <div class="mkt-journey__stage-label">
+            <span id="journey-stage-num" class="mkt-journey__stage-num">01</span>
+            <h3 id="journey-stage-name" class="mkt-journey__stage-name">AI Scramble</h3>
+            <p id="journey-stage-desc" class="mkt-journey__stage-desc">Ad hoc, no strategy</p>
+            <p id="journey-stage-tagline" class="mkt-journey__stage-tagline">Days, not years.</p>
+          </div>
+
           <div class="mkt-journey__dots" aria-hidden="true">
             <span class="mkt-journey__progress-dot" data-stage="1"></span>
             <span class="mkt-journey__progress-dot" data-stage="2"></span>
@@ -219,13 +208,18 @@
             <span class="mkt-journey__progress-dot" data-stage="4"></span>
             <span class="mkt-journey__progress-dot" data-stage="5"></span>
           </div>
-
         </div>
-      </div>
 
-      <!-- Simplified static fallback — shown instead of the pinned
-           scroller on mobile, and with prefers-reduced-motion. -->
-      <ol id="journey-static-list" class="mkt-journey__static-list"></ol>
+        <div class="mkt-journey__content">
+          <p class="mkt-journey__eyebrow">The AI maturity journey</p>
+          <h2 class="mkt-journey__heading">Where does your organization stand?</h2>
+          <p class="mkt-journey__sub">
+            Every organization is somewhere on its AI journey. The path from
+            experimentation to an AI-fueled enterprise can take years.
+          </p>
+        </div>
+
+      </div>
 
       <!-- ── Vision climax ────────────────────────────────────── -->
       <div id="journey-climax" class="mkt-journey__climax">

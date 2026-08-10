@@ -471,8 +471,10 @@
   .mkt-blueprint { max-width: 340px; padding: 18px 18px 20px; }
   .mkt-blueprint__meta { display: none; }
 
-  .mkt-journey__canvas { width: min(60vw, 420px); }
+  .mkt-journey__top { gap: 32px; }
+  .mkt-journey__canvas { width: min(38vw, 300px); }
   .mkt-journey__stage-name { font-size: 24px; }
+  .mkt-journey__heading { font-size: 27px; }
 }
 
 /* ── How it works ───────────────────────────────────────────── */
@@ -743,12 +745,18 @@
   background: #08090b;
 }
 
-.mkt-journey__intro {
-  max-width: 640px;
+/* ── Top: visual (left) + intro copy (right) ─────────────────── */
+.mkt-journey__top {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  align-items: center;
+  gap: 64px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 88px 32px 0;
-  text-align: center;
+  padding: 88px 32px 72px;
 }
+
+.mkt-journey__content { text-align: left; }
 
 .mkt-journey__eyebrow {
   font-size: 12.5px;
@@ -773,24 +781,15 @@
   line-height: 1.65;
   color: rgba(255, 255, 255, 0.55);
   margin: 0;
+  max-width: 440px;
 }
 
-/* ── Scroll track + pinned panel ─────────────────────────────── */
-.mkt-journey__track {
-  position: relative;
-  height: 500vh; /* 5 stages x one viewport each */
-}
-
-.mkt-journey__sticky {
-  position: sticky;
-  top: 0;
-  height: 100vh;
+/* ── Visual column ────────────────────────────────────────────── */
+.mkt-journey__visual {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 28px;
-  overflow: hidden;
+  gap: 24px;
 }
 
 .mkt-journey__stage-label {
@@ -837,9 +836,8 @@
 }
 
 .mkt-journey__canvas {
-  width: min(72vw, 560px);
+  width: min(40vw, 380px);
   aspect-ratio: 1 / 1;
-  max-height: 46vh;
 }
 
 .mkt-journey__network {
@@ -899,45 +897,17 @@
   transform: scale(1.4);
 }
 
-/* Static fallback — mobile + prefers-reduced-motion */
-.mkt-journey__static-list {
-  display: none;
-  list-style: none;
-  margin: 0;
-  padding: 40px 24px 0;
-  max-width: 460px;
-  margin-inline: auto;
-  flex-direction: column;
-  gap: 0;
-}
-
-.mkt-journey__static-stage {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  padding: 16px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-}
-.mkt-journey__static-stage:last-child { border-bottom: none; }
-
-.mkt-journey__static-num {
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--accent-green);
-  flex-shrink: 0;
-}
-
-.mkt-journey__static-name {
-  font-size: 14.5px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.mkt-journey__static-desc {
-  display: block;
-  font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 2px;
+/* Motion-sensitive users get the finished, fully-connected network
+   immediately, with no reveal/flow transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .mkt-journey__node,
+  .mkt-journey__edge,
+  .mkt-journey__network,
+  .mkt-journey__stage-tagline,
+  .mkt-journey__progress-dot,
+  .mkt-journey__climax {
+    transition: none !important;
+  }
 }
 
 /* ── Vision climax ────────────────────────────────────────────── */
@@ -1379,12 +1349,11 @@
 
   .mkt-how__list { grid-template-columns: 1fr; gap: 32px; }
 
-  /* Scroll-pinning is desktop-only — JS already hides the track and
-     renders the static list instead, this is a no-JS/pre-hydration
-     safety net so a 500vh empty track never flashes on mobile. */
-  .mkt-journey__track { display: none; }
-  .mkt-journey__intro { padding: 56px 24px 0; }
+  .mkt-journey__top { grid-template-columns: 1fr; padding: 56px 24px 48px; gap: 36px; text-align: center; }
+  .mkt-journey__content { order: -1; text-align: center; }
+  .mkt-journey__sub { max-width: 440px; margin: 0 auto; }
   .mkt-journey__heading { font-size: 26px; }
+  .mkt-journey__canvas { width: min(70vw, 340px); }
   .mkt-journey__climax { padding: 64px 24px 76px; }
   .mkt-journey__climax-heading { font-size: 24px; }
   .mkt-journey__climax-statement { font-size: 34px; }

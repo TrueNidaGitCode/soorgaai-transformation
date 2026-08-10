@@ -1,7 +1,7 @@
 /**
  * SoorgaAI — Marketing homepage
  * Top-nav dropdown menus, mobile panel toggle, CTA routing into Cob,
- * and the scroll-driven AI maturity journey visualization.
+ * and the AI maturity journey visualization.
  */
 
 import { MATURITY_STAGES } from './data/maturityStages.js';
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   wireMobileToggle();
   wireCtaButtons();
   wireNavShrink();
-  wireJourneyScroll();
+  wireJourneyAnimation();
   wireJourneyClimax();
   wirePricingToggle();
   wirePricingCtas();
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // hub. Each element carries the stage at which it should appear —
 // stages 1-3 reveal is deliberately slower (stage-slow) than 4-5
 // (stage-fast), which is what makes the AI Alignment -> AI-Fueled
-// Enterprise stretch of the scroll feel like it accelerates.
+// Enterprise stretch of the sequence feel like it accelerates.
 const JOURNEY_NODES = [
   { id: 'n1',  x: 120, y: 140, r: 7, stage: 1 },
   { id: 'n2',  x: 480, y: 120, r: 7, stage: 1 },
@@ -139,72 +139,52 @@ function updateJourneyStage(stage) {
   });
 }
 
-function renderJourneyStaticList() {
-  const list = document.getElementById('journey-static-list');
-  if (!list) return;
-  list.style.display = 'flex';
-  list.innerHTML = MATURITY_STAGES.map((s) => `
-    <li class="mkt-journey__static-stage">
-      <span class="mkt-journey__static-num">${String(s.id).padStart(2, '0')}</span>
-      <span>
-        <span class="mkt-journey__static-name">${s.name}</span>
-        <span class="mkt-journey__static-desc">${s.descriptor}</span>
-      </span>
-    </li>
-  `).join('');
+// Plays once, the first time the section scrolls into view. Holds are
+// longer for the early, fragmented stages and shorter for 4-5, so the
+// Alignment -> AI-Fueled Enterprise stretch visibly speeds up — the
+// same "compress the journey" idea, now expressed as a timed sequence
+// instead of scroll distance.
+const JOURNEY_STAGE_HOLD_MS = { 1: 1500, 2: 1500, 3: 1700, 4: 650 };
+
+function playJourneySequence() {
+  let stage = 1;
+  updateJourneyStage(stage);
+
+  function advance() {
+    const hold = JOURNEY_STAGE_HOLD_MS[stage];
+    if (!hold) return; // reached stage 5 — hold there, sequence ends
+    setTimeout(() => {
+      stage += 1;
+      updateJourneyStage(stage);
+      advance();
+    }, hold);
+  }
+  advance();
 }
 
-function wireJourneyScroll() {
-  const track = document.getElementById('journey-track');
-  const svg   = document.getElementById('journey-network');
-  if (!track || !svg) return;
-
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const isMobile = window.matchMedia('(max-width: 860px)').matches;
-
-  // Scroll-pinning is a desktop technique — on mobile, or when the user
-  // has asked for reduced motion, skip it entirely and show the plain
-  // stage list instead of a static (but still tall) empty track.
-  if (prefersReduced || isMobile) {
-    track.style.display = 'none';
-    renderJourneyStaticList();
-    return;
-  }
+function wireJourneyAnimation() {
+  const section = document.getElementById('maturity');
+  const svg = document.getElementById('journey-network');
+  if (!section || !svg) return;
 
   buildJourneyNetwork(svg);
 
-  // Stage boundaries as a fraction of the scroll track. 1->3 spans 66%
-  // of the track (slow, fragmented); 3->5 spans only the remaining 34%
-  // (the "compress the journey" acceleration), reinforcing what the
-  // stage-slow / stage-fast CSS transition speeds already do.
-  const STAGE_BREAKS = [0, 0.22, 0.44, 0.66, 0.83, 1];
-
-  function stageForProgress(progress) {
-    let stage = 1;
-    for (let i = 0; i < STAGE_BREAKS.length - 1; i++) {
-      if (progress >= STAGE_BREAKS[i]) stage = i + 1;
-    }
-    return stage;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    updateJourneyStage(5); // fully-formed network, no animation
+    return;
   }
 
-  let ticking = false;
-  function update() {
-    const rect = track.getBoundingClientRect();
-    const scrollable = track.offsetHeight - window.innerHeight;
-    const progress = scrollable > 0
-      ? Math.min(1, Math.max(0, -rect.top / scrollable))
-      : 0;
-    updateJourneyStage(stageForProgress(progress));
-    ticking = false;
-  }
-
-  window.addEventListener('scroll', () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(update);
-  }, { passive: true });
-
-  update();
+  let played = false;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && !played) {
+        played = true;
+        playJourneySequence();
+        observer.unobserve(section);
+      }
+    });
+  }, { threshold: 0.35 });
+  observer.observe(section);
 }
 
 function wireJourneyClimax() {

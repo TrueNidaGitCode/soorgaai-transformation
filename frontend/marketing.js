@@ -1,14 +1,33 @@
 /**
  * SoorgaAI — Marketing homepage
- * Top-nav dropdown menus, mobile panel toggle, and CTA routing into Cob.
+ * Top-nav dropdown menus, mobile panel toggle, CTA routing into Cob,
+ * and the AI maturity stages strip.
  */
+
+import { MATURITY_STAGES } from './data/maturityStages.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   wireDropdowns();
   wireMobileToggle();
   wireCtaButtons();
   wireNavShrink();
+  renderMaturityStages();
+  wirePricingToggle();
+  wirePricingCtas();
 });
+
+function renderMaturityStages() {
+  const container = document.getElementById('maturity-stages');
+  if (!container) return;
+
+  container.innerHTML = MATURITY_STAGES.map((stage) => `
+    <li class="mkt-maturity__stage" style="--stage-color: ${stage.color}">
+      <span class="mkt-maturity__num">${String(stage.id).padStart(2, '0')}</span>
+      <span class="mkt-maturity__name">${stage.name}</span>
+      <span class="mkt-maturity__desc">${stage.descriptor}</span>
+    </li>
+  `).join('');
+}
 
 function wireNavShrink() {
   const nav = document.querySelector('.mkt-nav');
@@ -76,5 +95,52 @@ function wireCtaButtons() {
     document.getElementById(id)?.addEventListener('click', () => {
       window.CTARouter?.routeToWorkspace();
     });
+  });
+}
+
+function wirePricingToggle() {
+  const toggleBtns = document.querySelectorAll('.mkt-pricing__toggle-btn');
+  const monthlyEls = document.querySelectorAll('.mkt-pricing-card__price--monthly');
+  const yearlyEls  = document.querySelectorAll('.mkt-pricing-card__price--yearly');
+  if (!toggleBtns.length) return;
+
+  function setPeriod(period) {
+    toggleBtns.forEach((btn) => {
+      const active = btn.dataset.period === period;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+    monthlyEls.forEach((el) => { el.hidden = period !== 'monthly'; });
+    yearlyEls.forEach((el)  => { el.hidden = period !== 'yearly';  });
+  }
+
+  toggleBtns.forEach((btn) => {
+    btn.addEventListener('click', () => setPeriod(btn.dataset.period));
+  });
+}
+
+function wirePricingCtas() {
+  // Free plan — straight into Cob, same as every other CTA on the page.
+  document.getElementById('mkt-cta-pricing-free')?.addEventListener('click', () => {
+    window.CTARouter?.routeToWorkspace();
+  });
+
+  // Professional — not live yet, explain that instead of pretending it's active.
+  const dialog = document.getElementById('mkt-dialog-coming-soon');
+  document.getElementById('mkt-cta-pricing-pro')?.addEventListener('click', () => {
+    if (dialog) dialog.hidden = false;
+  });
+  document.getElementById('mkt-dialog-close')?.addEventListener('click', () => {
+    if (dialog) dialog.hidden = true;
+  });
+  document.getElementById('mkt-cta-pricing-dialog')?.addEventListener('click', () => {
+    if (dialog) dialog.hidden = true;
+    window.CTARouter?.routeToWorkspace();
+  });
+  dialog?.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.hidden = true;
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && dialog && !dialog.hidden) dialog.hidden = true;
   });
 }

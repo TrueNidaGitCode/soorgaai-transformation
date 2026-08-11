@@ -142,7 +142,7 @@ function updateJourneyStage(stage) {
 // longer for the early, fragmented stages and shorter for 4-5, so the
 // Alignment -> AI-Fueled Enterprise stretch visibly speeds up each lap
 // — the "compress the journey" idea, expressed as a timed sequence.
-const JOURNEY_STAGE_HOLD_MS = { 1: 800, 2: 800, 3: 900, 4: 350, 5: 900 };
+const JOURNEY_STAGE_HOLD_MS = { 1: 1100, 2: 1100, 3: 1300, 4: 500, 5: 1200 };
 
 function wireJourneyAnimation() {
   const section = document.getElementById('maturity');

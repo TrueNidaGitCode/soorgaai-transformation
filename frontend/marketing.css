@@ -915,52 +915,6 @@
   }
 }
 
-/* ── Vision — merged into the content column, no separate section ── */
-.mkt-journey__compress {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 22px 0 18px;
-  flex-wrap: wrap;
-}
-
-.mkt-journey__compress-stage {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 10px 14px;
-}
-.mkt-journey__compress-stage strong {
-  font-size: 12.5px;
-  font-weight: 800;
-  color: #fff;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.mkt-journey__compress-arrow {
-  font-size: 16px;
-  color: var(--accent-green);
-}
-
-.mkt-journey__climax-statement {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  margin: 0;
-  background: linear-gradient(135deg, #5CC5A7, #3DAFD3);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 /* ── Industry / About sections ─────────────────────────────── */
 .mkt-industry,
 .mkt-about {
@@ -1320,8 +1274,6 @@
   .mkt-journey__sub { max-width: 440px; margin: 0 auto; }
   .mkt-journey__heading { font-size: 24px; }
   .mkt-journey__canvas { width: min(60vw, 280px); }
-  .mkt-journey__compress { justify-content: center; gap: 10px; }
-  .mkt-journey__climax-statement { font-size: 22px; }
 
   .mkt-domains__grid { grid-template-columns: 1fr; }
   .mkt-cycle__row { flex-wrap: wrap; }

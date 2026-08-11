@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="How SoorgaAI's Cob helps automotive engineering and product teams turn AI opportunity into an executive-ready strategy.">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="SoorgaAI — Automotive">
+  <meta property="og:description" content="Cob is grounded in automotive-specific context — from defect and incident triage to workflow automation.">
+  <meta property="og:url"         content="https://soorgaai.com/industry/automotive.html">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="SoorgaAI — Automotive">
+  <meta name="twitter:description" content="Cob is grounded in automotive-specific context — from defect and incident triage to workflow automation.">
+
+  <title>SoorgaAI — Automotive</title>
+
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../marketing.css">
+
+  <script src="../login/config.js"></script>
+  <script src="../shared/ctaRouter.js"></script>
+</head>
+<body class="mkt">
+
+  <!-- ── Top nav ──────────────────────────────────────────────── -->
+  <header class="mkt-nav">
+    <div class="mkt-nav__inner">
+      <a href="/" class="mkt-logo" aria-label="SoorgaAI — home">
+        <img src="../assets/logo-nav.png" alt="SoorgaAI" class="mkt-logo__img">
+      </a>
+
+      <!-- div (not <nav>) — style.css has a global `nav {...}` tag selector that would otherwise paint this as an opaque box -->
+      <div class="mkt-menu" role="navigation" aria-label="Primary navigation">
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Industry
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel">
+            <a href="/industry/automotive.html" class="mkt-menu__link">
+              <span class="mkt-menu__link-title">Automotive</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Products
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel">
+            <a href="/cob.html" class="mkt-menu__link">
+              <span class="mkt-menu__link-title">Cob</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Company
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel">
+            <a href="/#about" class="mkt-menu__link">
+              <span class="mkt-menu__link-title">About</span>
+            </a>
+            <a href="mailto:hello@soorgaai.com" class="mkt-menu__link">
+              <span class="mkt-menu__link-title">Contact</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="mkt-nav__auth">
+        <a href="mailto:hello@soorgaai.com" class="mkt-btn mkt-btn--primary">Contact us</a>
+      </div>
+
+      <button type="button" id="mkt-mobile-toggle" class="mkt-mobile-toggle" aria-label="Open menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div id="mkt-mobile-panel" class="mkt-mobile-panel">
+      <a href="/industry/automotive.html" class="mkt-mobile-panel__link">Industry — Automotive</a>
+      <a href="/cob.html" class="mkt-mobile-panel__link">Products — Cob</a>
+      <a href="/#about" class="mkt-mobile-panel__link">Company — About</a>
+      <a href="mailto:hello@soorgaai.com" class="mkt-mobile-panel__link">Company — Contact</a>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── Industry: Automotive ───────────────────────────────── -->
+    <section class="mkt-industry">
+      <div class="mkt-industry__grid">
+
+        <div class="mkt-industry__content">
+          <p class="mkt-industry__eyebrow">Industry — Automotive</p>
+          <h2 class="mkt-industry__heading">Built for automotive engineering &amp; product teams</h2>
+          <p class="mkt-industry__body">
+            Most automotive teams recognize the importance of AI but struggle to identify
+            where it creates real business value. Cob is grounded in automotive-specific
+            context — from defect and incident triage to workflow automation — so the
+            blueprint it generates reflects how your team actually works, not a generic
+            AI checklist.
+          </p>
+          <button type="button" id="mkt-cta-automotive" class="cta-button cta-button--secondary">Try it for your project</button>
+        </div>
+
+        <div class="mkt-industry__visual" aria-hidden="true">
+          <div class="mkt-industry__mock">
+            <p class="mkt-industry__mock-label">Functions Cob understands</p>
+            <div class="mkt-industry__chips">
+              <span>ADAS</span>
+              <span>Diagnostics</span>
+              <span>Connectivity</span>
+              <span>Infotainment</span>
+              <span>Validation</span>
+              <span>Software Platform</span>
+              <span>Manufacturing</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="mkt-footer">
+    <span>© 2026 SoorgaAI</span>
+    <a href="mailto:hello@soorgaai.com">Contact</a>
+  </footer>
+
+  <script type="module" src="automotive.js"></script>
+</body>
+</html>

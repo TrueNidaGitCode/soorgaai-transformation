@@ -475,7 +475,202 @@
   .mkt-journey__canvas { width: min(30vw, 240px); }
   .mkt-journey__stage-name { font-size: 22px; }
   .mkt-journey__heading { font-size: 23px; }
+
+  .mkt-pillars__grid { gap: 14px; }
+  .mkt-pillar-card { padding: 18px; }
+  .mkt-pillar-card__mock { padding: 12px; min-height: 116px; }
 }
+
+/* ── Pillars ───────────────────────────────────────────────────── */
+.mkt-pillars {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 88px 32px;
+}
+
+.mkt-pillars__headline {
+  max-width: 760px;
+  margin: 0 auto 52px;
+  text-align: center;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.28;
+  letter-spacing: -0.3px;
+}
+
+.mkt-pillars__grid {
+  max-width: 1160px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.mkt-pillar-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.mkt-pillar-card__num {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--accent-green);
+  margin-bottom: 10px;
+}
+
+.mkt-pillar-card__title {
+  font-size: 18.5px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 20px;
+}
+
+.mkt-pillar-card__mock {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  min-height: 132px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.mkt-pillar-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mkt-pillar-chip {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.mkt-pillar-chip--more {
+  color: rgba(255, 255, 255, 0.4);
+  background: transparent;
+  border-style: dashed;
+}
+
+.mkt-pillar-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.mkt-pillar-chain__step {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 9px;
+}
+.mkt-pillar-chain__step em {
+  font-style: normal;
+  font-size: 9.5px;
+  opacity: 0.8;
+}
+.mkt-pillar-chain__step--fail {
+  color: rgba(248, 113, 113, 0.85);
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  text-decoration: line-through;
+  text-decoration-color: rgba(248, 113, 113, 0.4);
+}
+.mkt-pillar-chain__step--ok {
+  color: var(--accent-green);
+  background: rgba(92, 197, 167, 0.1);
+  border: 1px solid rgba(92, 197, 167, 0.3);
+}
+.mkt-pillar-chain__arrow {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.mkt-pillar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mkt-pillar-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.mkt-pillar-status {
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.mkt-pillar-status--on {
+  color: var(--accent-green);
+  background: rgba(92, 197, 167, 0.12);
+}
+.mkt-pillar-status--off {
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mkt-pillar-org {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.mkt-pillar-org__root {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #5CC5A7, #3DAFD3);
+  border-radius: 999px;
+  padding: 7px 14px;
+}
+.mkt-pillar-org__branches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.mkt-pillar-org__branches span {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 5px 10px;
+}
+
+.mkt-pillar-card__body {
+  font-size: 13px;
+  line-height: 1.58;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+.mkt-pillar-card__body strong { color: rgba(255, 255, 255, 0.88); }
 
 /* ── How it works ───────────────────────────────────────────── */
 .mkt-how {
@@ -1268,6 +1463,9 @@
   .mkt-blueprint__meta { display: none; }
 
   .mkt-how__list { grid-template-columns: 1fr; gap: 32px; }
+
+  .mkt-pillars__headline { font-size: 24px; }
+  .mkt-pillars__grid { grid-template-columns: 1fr; }
 
   .mkt-journey__top { grid-template-columns: 1fr; padding: 40px 24px 32px; gap: 28px; text-align: center; }
   .mkt-journey__content { order: -1; text-align: center; }

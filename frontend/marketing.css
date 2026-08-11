@@ -468,9 +468,6 @@
   .mkt-pillars__grid { gap: 14px; }
   .mkt-pillar-card { padding: 18px; }
   .mkt-pillar-card__mock { padding: 12px; min-height: 116px; }
-
-  .mkt-industry__grid { gap: 32px; }
-  .mkt-industry__heading { font-size: 26px; }
 }
 
 /* ── Pillars ───────────────────────────────────────────────────── */
@@ -840,223 +837,21 @@
   }
 }
 
-/* ── Industry: Automotive ──────────────────────────────────────── */
-.mkt-industry {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 88px 32px;
-}
-
-.mkt-industry__grid {
-  max-width: 1160px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  align-items: center;
-  gap: 64px;
-}
-
-.mkt-industry__eyebrow {
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--accent-green);
-  margin: 0 0 16px;
-}
-
-.mkt-industry__heading {
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1.26;
-  margin: 0 0 18px;
-}
-
-.mkt-industry__body {
-  font-size: 15px;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.58);
-  max-width: 480px;
-  margin: 0 0 28px;
-}
-
-.mkt-industry__visual {
-  display: flex;
-  justify-content: center;
-}
-
-.mkt-industry__mock {
-  width: 100%;
-  max-width: 400px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  padding: 26px;
-}
-
-.mkt-industry__mock-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
-  margin: 0 0 16px;
-}
-
-.mkt-industry__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.mkt-industry__chips span {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  padding: 7px 14px;
-}
-
-/* ── Layered knowledge base (automotive page 1) ───────────────────── */
-.mkt-layers {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 88px 32px;
-}
-
-.mkt-layers__intro {
-  max-width: 620px;
-  margin: 0 auto 56px;
-  text-align: center;
-}
-
-.mkt-layers__eyebrow {
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--accent-green);
-  margin: 0 0 16px;
-}
-
-.mkt-layers__heading {
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1.26;
-  margin: 0 0 16px;
-}
-
-.mkt-layers__sub {
-  font-size: 15px;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.58);
-  margin: 0;
-}
-
-.mkt-layers__stack {
-  max-width: 620px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.mkt-layer,
-.mkt-layers__arrow {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-  transition-delay: calc(var(--i) * 0.15s);
-}
-.mkt-layers__stack.is-visible .mkt-layer,
-.mkt-layers__stack.is-visible .mkt-layers__arrow {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.mkt-layer {
-  width: 100%;
-  border-radius: 16px;
-  padding: 22px 26px;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: 4px solid var(--layer-color, #5CC5A7);
-}
-
-.mkt-layer--1 { --layer-color: #3DAFD3; width: 100%; }
-.mkt-layer--2 { --layer-color: #5CC5A7; width: 88%; }
-.mkt-layer--3 { --layer-color: #8FD9BE; width: 76%; }
-
-.mkt-layer__tag {
-  display: block;
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--layer-color, var(--accent-green));
-  margin-bottom: 8px;
-}
-
-.mkt-layer__name {
-  font-size: 17px;
-  font-weight: 800;
-  color: #fff;
-  margin: 0 0 6px;
-}
-
-.mkt-layer__desc {
-  font-size: 13px;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.55);
-  margin: 0;
-}
-
-.mkt-layers__arrow {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.3);
-  margin: 4px 0;
-}
-
-.mkt-layer--output {
-  width: 62%;
-  text-align: center;
-  border-left: none;
-  border-color: rgba(92, 197, 167, 0.35);
-  background: linear-gradient(135deg, rgba(92, 197, 167, 0.1), rgba(61, 175, 211, 0.1));
-  animation: mkt-layer-glow 3.2s ease-in-out infinite;
-}
-.mkt-layer--output .mkt-layer__tag { color: var(--accent-green); }
-
-@keyframes mkt-layer-glow {
-  0%, 100% { box-shadow: 0 0 0 rgba(92, 197, 167, 0); }
-  50%      { box-shadow: 0 8px 32px rgba(92, 197, 167, 0.25); }
-}
-
-.mkt-layers__case-link {
-  display: block;
-  text-align: center;
-  margin: 48px auto 0;
-  font-size: 14.5px;
-  font-weight: 700;
-  color: var(--accent-green);
-  text-decoration: none;
-}
-.mkt-layers__case-link:hover { text-decoration: underline; }
-
-@media (prefers-reduced-motion: reduce) {
-  .mkt-layer,
-  .mkt-layers__arrow,
-  .mkt-layer--output {
-    transition: none !important;
-    animation: none !important;
-  }
-}
-
-/* ── Case study (automotive page 2) ───────────────────────────────── */
+/* ── Case study (the entire Automotive page) ──────────────────────── */
 .mkt-case {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 88px 32px;
+}
+
+/* Sole content on the page — give it real room instead of a section's
+   usual compact padding, so it doesn't look like a fragment. */
+.mkt-case--full {
+  border-top: none;
+  padding: 120px 32px 140px;
+  min-height: calc(100vh - 260px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .mkt-case__intro {
@@ -1064,16 +859,6 @@
   margin: 0 auto 56px;
   text-align: center;
 }
-
-.mkt-case__back {
-  display: inline-block;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
-  text-decoration: none;
-  margin-bottom: 28px;
-}
-.mkt-case__back:hover { color: #fff; }
 
 .mkt-case__eyebrow {
   font-size: 12.5px;
@@ -1220,18 +1005,6 @@
   .mkt-journey__sub { max-width: 440px; margin: 0 auto; }
   .mkt-journey__heading { font-size: 24px; }
   .mkt-journey__canvas { width: min(60vw, 280px); }
-
-  .mkt-industry { padding: 56px 24px; }
-  .mkt-industry__grid { grid-template-columns: 1fr; text-align: center; gap: 32px; }
-  .mkt-industry__body { max-width: 440px; margin: 0 auto 28px; }
-  .mkt-industry__chips { justify-content: center; }
-
-  .mkt-layers { padding: 56px 24px; }
-  .mkt-layers__heading { font-size: 24px; }
-  .mkt-layer--1,
-  .mkt-layer--2,
-  .mkt-layer--3,
-  .mkt-layer--output { width: 100%; }
 
   .mkt-case { padding: 56px 24px; }
   .mkt-case__heading { font-size: 26px; }

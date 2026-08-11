@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
   wireCtaButtons();
   wireNavShrink();
   wireJourneyAnimation();
-  wireJourneyClimax();
   wirePricingToggle();
   wirePricingCtas();
 });
@@ -139,28 +138,11 @@ function updateJourneyStage(stage) {
   });
 }
 
-// Plays once, the first time the section scrolls into view. Holds are
+// Loops continuously while the section is in view. Holds are still
 // longer for the early, fragmented stages and shorter for 4-5, so the
-// Alignment -> AI-Fueled Enterprise stretch visibly speeds up — the
-// same "compress the journey" idea, now expressed as a timed sequence
-// instead of scroll distance.
-const JOURNEY_STAGE_HOLD_MS = { 1: 1500, 2: 1500, 3: 1700, 4: 650 };
-
-function playJourneySequence() {
-  let stage = 1;
-  updateJourneyStage(stage);
-
-  function advance() {
-    const hold = JOURNEY_STAGE_HOLD_MS[stage];
-    if (!hold) return; // reached stage 5 — hold there, sequence ends
-    setTimeout(() => {
-      stage += 1;
-      updateJourneyStage(stage);
-      advance();
-    }, hold);
-  }
-  advance();
-}
+// Alignment -> AI-Fueled Enterprise stretch visibly speeds up each lap
+// — the "compress the journey" idea, expressed as a timed sequence.
+const JOURNEY_STAGE_HOLD_MS = { 1: 800, 2: 800, 3: 900, 4: 350, 5: 900 };
 
 function wireJourneyAnimation() {
   const section = document.getElementById('maturity');
@@ -174,37 +156,38 @@ function wireJourneyAnimation() {
     return;
   }
 
-  let played = false;
+  let stage = 1;
+  let timer = null;
+  let running = false;
+
+  function tick() {
+    updateJourneyStage(stage);
+    timer = setTimeout(() => {
+      stage = stage >= 5 ? 1 : stage + 1;
+      tick();
+    }, JOURNEY_STAGE_HOLD_MS[stage]);
+  }
+
+  function start() {
+    if (running) return;
+    running = true;
+    tick();
+  }
+
+  function stop() {
+    running = false;
+    clearTimeout(timer);
+  }
+
+  // Pause while scrolled out of view rather than running forever
+  // off-screen — resumes from whichever stage it was on.
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      if (entry.isIntersecting && !played) {
-        played = true;
-        playJourneySequence();
-        observer.unobserve(section);
-      }
+      if (entry.isIntersecting) start();
+      else stop();
     });
   }, { threshold: 0.35 });
   observer.observe(section);
-}
-
-function wireJourneyClimax() {
-  const climax = document.getElementById('journey-climax');
-  if (!climax) return;
-
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    climax.classList.add('is-visible');
-    return;
-  }
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        climax.classList.add('is-visible');
-        observer.unobserve(climax);
-      }
-    });
-  }, { threshold: 0.3 });
-  observer.observe(climax);
 }
 
 function wireNavShrink() {

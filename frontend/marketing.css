@@ -1170,6 +1170,136 @@
   }
 }
 
+/* ── About Us page ─────────────────────────────────────────────── */
+.mkt-about-page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 100px 32px 120px;
+}
+
+.mkt-about-page__intro {
+  text-align: center;
+  margin-bottom: 88px;
+}
+
+.mkt-about-page__eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent-green);
+  margin: 0 0 18px;
+}
+
+.mkt-about-page__heading {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin: 0 0 20px;
+}
+
+.mkt-about-page__body {
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.62);
+  margin: 0;
+}
+
+.mkt-about-page__beliefs {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 72px;
+  margin-bottom: 88px;
+  text-align: center;
+}
+
+.mkt-about-page__beliefs-eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent-green);
+  margin: 0 0 18px;
+}
+
+.mkt-about-page__beliefs-heading {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.28;
+  margin: 0 0 18px;
+}
+
+.mkt-about-page__beliefs-sub {
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 540px;
+  margin: 0 auto 48px;
+}
+
+.mkt-about-page__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.mkt-about-page__list li {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  padding: 22px 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition-delay: calc(var(--i) * 0.15s);
+}
+.mkt-about-page__list.is-visible li {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mkt-about-page__num {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--accent-green);
+}
+
+.mkt-about-page__list p {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.mkt-about-page__closing {
+  text-align: center;
+}
+
+.mkt-about-page__closing-heading {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 14px;
+}
+
+.mkt-about-page__closing-body {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 440px;
+  margin: 0 auto 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt-about-page__list li {
+    transition: none !important;
+  }
+}
+
 /* ── Footer ─────────────────────────────────────────────────── */
 .mkt-footer {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -1227,4 +1357,9 @@
   .mkt-case__heading { font-size: 26px; }
   .mkt-case__compare { grid-template-columns: 1fr; gap: 20px; }
   .mkt-case__arrow { display: none; }
+
+  .mkt-about-page { padding: 64px 24px 80px; }
+  .mkt-about-page__heading { font-size: 28px; }
+  .mkt-about-page__beliefs-heading { font-size: 22px; }
+  .mkt-about-page__list li { flex-direction: column; gap: 6px; }
 }

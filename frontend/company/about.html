@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Why SoorgaAI exists — grounded AI strategy instead of generic advice, starting with Cob.">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="SoorgaAI — About Us">
+  <meta property="og:description" content="Why SoorgaAI exists — grounded AI strategy instead of generic advice, starting with Cob.">
+  <meta property="og:url"         content="https://soorgaai.com/company/about.html">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="SoorgaAI — About Us">
+  <meta name="twitter:description" content="Why SoorgaAI exists — grounded AI strategy instead of generic advice, starting with Cob.">
+
+  <title>SoorgaAI — About Us</title>
+
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../marketing.css">
+
+  <script src="../login/config.js"></script>
+  <script src="../shared/ctaRouter.js"></script>
+</head>
+<body class="mkt">
+
+  <!-- ── Top nav ──────────────────────────────────────────────── -->
+  <header class="mkt-nav">
+    <div class="mkt-nav__inner">
+      <a href="/" class="mkt-logo" aria-label="SoorgaAI — home">
+        <img src="../assets/logo-nav.png" alt="SoorgaAI" class="mkt-logo__img">
+      </a>
+
+      <!-- div (not <nav>) — style.css has a global `nav {...}` tag selector that would otherwise paint this as an opaque box -->
+      <div class="mkt-menu" role="navigation" aria-label="Primary navigation">
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Industry
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel">
+            <a href="/industry/automotive.html" class="mkt-menu__link">
+              <span class="mkt-menu__link-title">Automotive</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Products
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel">
+            <a href="/cob.html" class="mkt-menu__link">
+              <span class="mkt-menu__link-title">Cob</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Company
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel">
+            <a href="/company/about.html" class="mkt-menu__link">
+              <span class="mkt-menu__link-title">About us</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="mkt-nav__auth">
+        <a href="mailto:hello@soorgaai.com" class="mkt-btn mkt-btn--primary">Contact us</a>
+      </div>
+
+      <button type="button" id="mkt-mobile-toggle" class="mkt-mobile-toggle" aria-label="Open menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div id="mkt-mobile-panel" class="mkt-mobile-panel">
+      <a href="/industry/automotive.html" class="mkt-mobile-panel__link">Industry — Automotive</a>
+      <a href="/cob.html" class="mkt-mobile-panel__link">Products — Cob</a>
+      <a href="/company/about.html" class="mkt-mobile-panel__link">Company — About us</a>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── Mission ──────────────────────────────────────────────── -->
+    <section class="mkt-about-page">
+      <div class="mkt-about-page__intro">
+        <p class="mkt-about-page__eyebrow">About SoorgaAI</p>
+        <h1 class="mkt-about-page__heading">Why we exist</h1>
+        <p class="mkt-about-page__body">
+          Every team knows AI matters. Few have the time to turn that into a
+          structured plan. SoorgaAI exists to close that gap — starting with
+          Cob, our AI strategy blueprint generator, grounded in real industry
+          and company context instead of generic AI advice.
+        </p>
+      </div>
+
+      <!-- ── What we believe ───────────────────────────────────── -->
+      <div class="mkt-about-page__beliefs">
+        <p class="mkt-about-page__beliefs-eyebrow">What we believe</p>
+        <h2 class="mkt-about-page__beliefs-heading">The gap isn't ambition. It's grounding.</h2>
+        <p class="mkt-about-page__beliefs-sub">
+          Most organizations don't lack AI ambition — they lack a way to turn
+          that ambition into something specific to how they actually work.
+          Generic AI advice doesn't survive contact with a real engineering
+          org. So we build differently.
+        </p>
+
+        <ol id="beliefs-list" class="mkt-about-page__list">
+          <li style="--i:0">
+            <span class="mkt-about-page__num">01</span>
+            <p>We believe strategy should be grounded, not generic.</p>
+          </li>
+          <li style="--i:1">
+            <span class="mkt-about-page__num">02</span>
+            <p>We believe teams shouldn't be hostage to one AI vendor.</p>
+          </li>
+          <li style="--i:2">
+            <span class="mkt-about-page__num">03</span>
+            <p>We believe the AI maturity journey shouldn't take years.</p>
+          </li>
+        </ol>
+      </div>
+
+      <!-- ── Closing ────────────────────────────────────────────── -->
+      <div class="mkt-about-page__closing">
+        <h2 class="mkt-about-page__closing-heading">Get in touch</h2>
+        <p class="mkt-about-page__closing-body">
+          Questions, feedback, or just want to talk through your own AI
+          strategy — we'd like to hear from you.
+        </p>
+        <a href="mailto:hello@soorgaai.com" class="cta-button cta-button--primary">Contact us</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="mkt-footer">
+    <span>© 2026 SoorgaAI</span>
+    <a href="mailto:hello@soorgaai.com">Contact</a>
+  </footer>
+
+  <script type="module" src="about.js"></script>
+</body>
+</html>

@@ -12,8 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
   wireCtaButtons();
   wireNavShrink();
   wireJourneyAnimation();
-  wirePricingToggle();
-  wirePricingCtas();
 });
 
 // ── AI Maturity Journey ──────────────────────────────────────────────
@@ -251,57 +249,10 @@ function wireMobileToggle() {
 }
 
 function wireCtaButtons() {
-  const ids = ['mkt-cta-hero', 'mkt-cta-automotive'];
+  const ids = ['mkt-cta-hero'];
   ids.forEach((id) => {
     document.getElementById(id)?.addEventListener('click', () => {
       window.CTARouter?.routeToWorkspace();
     });
-  });
-}
-
-function wirePricingToggle() {
-  const toggleBtns = document.querySelectorAll('.mkt-pricing__toggle-btn');
-  const monthlyEls = document.querySelectorAll('.mkt-pricing-card__price--monthly');
-  const yearlyEls  = document.querySelectorAll('.mkt-pricing-card__price--yearly');
-  if (!toggleBtns.length) return;
-
-  function setPeriod(period) {
-    toggleBtns.forEach((btn) => {
-      const active = btn.dataset.period === period;
-      btn.classList.toggle('is-active', active);
-      btn.setAttribute('aria-pressed', String(active));
-    });
-    monthlyEls.forEach((el) => { el.hidden = period !== 'monthly'; });
-    yearlyEls.forEach((el)  => { el.hidden = period !== 'yearly';  });
-  }
-
-  toggleBtns.forEach((btn) => {
-    btn.addEventListener('click', () => setPeriod(btn.dataset.period));
-  });
-}
-
-function wirePricingCtas() {
-  // Free plan — straight into Cob, same as every other CTA on the page.
-  document.getElementById('mkt-cta-pricing-free')?.addEventListener('click', () => {
-    window.CTARouter?.routeToWorkspace();
-  });
-
-  // Professional — not live yet, explain that instead of pretending it's active.
-  const dialog = document.getElementById('mkt-dialog-coming-soon');
-  document.getElementById('mkt-cta-pricing-pro')?.addEventListener('click', () => {
-    if (dialog) dialog.hidden = false;
-  });
-  document.getElementById('mkt-dialog-close')?.addEventListener('click', () => {
-    if (dialog) dialog.hidden = true;
-  });
-  document.getElementById('mkt-cta-pricing-dialog')?.addEventListener('click', () => {
-    if (dialog) dialog.hidden = true;
-    window.CTARouter?.routeToWorkspace();
-  });
-  dialog?.addEventListener('click', (e) => {
-    if (e.target === dialog) dialog.hidden = true;
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && dialog && !dialog.hidden) dialog.hidden = true;
   });
 }

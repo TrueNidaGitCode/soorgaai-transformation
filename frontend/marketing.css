@@ -1300,6 +1300,112 @@
   }
 }
 
+/* ── Contact Us page ───────────────────────────────────────────── */
+.mkt-contact {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 100px 32px 140px;
+}
+
+.mkt-contact__intro {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.mkt-contact__eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent-green);
+  margin: 0 0 18px;
+}
+
+.mkt-contact__heading {
+  font-size: 34px;
+  font-weight: 800;
+  margin: 0 0 16px;
+}
+
+.mkt-contact__sub {
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.58);
+  margin: 0;
+}
+
+.mkt-contact__form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.mkt-contact__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.mkt-contact__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mkt-contact__field span {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+}
+.mkt-contact__field span em {
+  font-style: normal;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.mkt-contact__field input,
+.mkt-contact__field textarea {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 14.5px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.12s;
+}
+.mkt-contact__field input:focus,
+.mkt-contact__field textarea:focus {
+  border-color: var(--accent-green);
+}
+
+.mkt-contact__error {
+  font-size: 13px;
+  color: #f87171;
+  margin: 0;
+}
+
+.mkt-contact__form .cta-button { align-self: flex-start; }
+
+.mkt-contact__success {
+  text-align: center;
+  padding: 32px 0;
+}
+.mkt-contact__success h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 10px;
+}
+.mkt-contact__success p {
+  font-size: 14.5px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
 /* ── Footer ─────────────────────────────────────────────────── */
 .mkt-footer {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -1362,4 +1468,8 @@
   .mkt-about-page__heading { font-size: 28px; }
   .mkt-about-page__beliefs-heading { font-size: 22px; }
   .mkt-about-page__list li { flex-direction: column; gap: 6px; }
+
+  .mkt-contact { padding: 64px 24px 96px; }
+  .mkt-contact__heading { font-size: 26px; }
+  .mkt-contact__row { grid-template-columns: 1fr; }
 }

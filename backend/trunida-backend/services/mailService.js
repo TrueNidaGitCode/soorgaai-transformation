@@ -73,7 +73,16 @@ function otpHtml(code) {
 </div>`;
 }
 
-async function sendViaBrevo(to, code) {
+async function sendViaBrevo({ to, replyTo, subject, text, html }) {
+  const body = {
+    sender:      senderParts(),
+    to:          [{ email: to }],
+    subject,
+    textContent: text,
+    htmlContent: html,
+  };
+  if (replyTo) body.replyTo = { email: replyTo };
+
   const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
@@ -81,30 +90,48 @@ async function sendViaBrevo(to, code) {
       'Content-Type': 'application/json',
       'Accept':       'application/json',
     },
-    body: JSON.stringify({
-      sender:      senderParts(),
-      to:          [{ email: to }],
-      subject:     otpSubject(code),
-      textContent: otpText(code),
-      htmlContent: otpHtml(code),
-    }),
+    body: JSON.stringify(body),
     signal: AbortSignal.timeout(15000),
   });
 
   if (!resp.ok) {
-    const body = await resp.text().catch(() => '');
-    throw new Error(`Brevo ${resp.status}: ${body.slice(0, 300)}`);
+    const errBody = await resp.text().catch(() => '');
+    throw new Error(`Brevo ${resp.status}: ${errBody.slice(0, 300)}`);
   }
 }
 
-async function sendViaSmtp(to, code) {
+async function sendViaSmtp({ to, replyTo, subject, text, html }) {
   await transporter.sendMail({
     from:    process.env.EMAIL_FROM || process.env.EMAIL_USER,
     to,
-    subject: otpSubject(code),
-    text:    otpText(code),
-    html:    otpHtml(code),
+    replyTo,
+    subject,
+    text,
+    html,
   });
+}
+
+// Generic send — both sendOtpEmail and sendContactFormEmail funnel through
+// this so the Brevo/SMTP branching and "not configured" fallback only
+// live in one place.
+async function sendMail({ to, replyTo, subject, text, html, logLabel }) {
+  if (!mailConfigured) {
+    console.log(`[mail] Not configured — ${logLabel || 'email'} for ${to} not sent`);
+    return;
+  }
+
+  try {
+    if (BREVO_API_KEY) {
+      await sendViaBrevo({ to, replyTo, subject, text, html });
+    } else {
+      await sendViaSmtp({ to, replyTo, subject, text, html });
+    }
+  } catch (err) {
+    // Failure class in server logs: ETIMEDOUT/ESOCKET = egress blocked or
+    // unreachable; EAUTH = bad SMTP credentials; Brevo 401 = bad API key
+    console.error(`[mail] ${logLabel || 'Send'} failed for ${to}: code=${err.code || 'n/a'} — ${err.message}`);
+    throw err;
+  }
 }
 
 export async function sendOtpEmail(to, code) {
@@ -112,17 +139,52 @@ export async function sendOtpEmail(to, code) {
     console.log(`[mail] Not configured — OTP for ${to}: ${code}`);
     return;
   }
+  await sendMail({
+    to,
+    subject: otpSubject(code),
+    text:    otpText(code),
+    html:    otpHtml(code),
+    logLabel: 'OTP send',
+  });
+}
 
-  try {
-    if (BREVO_API_KEY) {
-      await sendViaBrevo(to, code);
-    } else {
-      await sendViaSmtp(to, code);
-    }
-  } catch (err) {
-    // Failure class in server logs: ETIMEDOUT/ESOCKET = egress blocked or
-    // unreachable; EAUTH = bad SMTP credentials; Brevo 401 = bad API key
-    console.error(`[mail] OTP send failed for ${to}: code=${err.code || 'n/a'} — ${err.message}`);
-    throw err;
-  }
+const CONTACT_FORM_RECIPIENT = 'praneshbabykannan@soorgaai.com';
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Sends a contact-form submission to CONTACT_FORM_RECIPIENT, with the
+ * submitter set as replyTo so a direct "Reply" goes straight to them.
+ */
+export async function sendContactFormEmail({ name, email, company, message }) {
+  const subject = `New contact form submission — ${name}`;
+  const text = `Name: ${name}
+Email: ${email}
+Company: ${company || '(not provided)'}
+
+${message}`;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px">
+  <h2 style="margin:0 0 16px;color:#111">New contact form submission</h2>
+  <p style="margin:0 0 6px;color:#444"><strong>Name:</strong> ${escapeHtml(name)}</p>
+  <p style="margin:0 0 6px;color:#444"><strong>Email:</strong> ${escapeHtml(email)}</p>
+  <p style="margin:0 0 16px;color:#444"><strong>Company:</strong> ${escapeHtml(company || '(not provided)')}</p>
+  <p style="margin:0 0 4px;color:#444"><strong>Message:</strong></p>
+  <p style="white-space:pre-wrap;color:#222">${escapeHtml(message)}</p>
+</div>`;
+
+  await sendMail({
+    to:      CONTACT_FORM_RECIPIENT,
+    replyTo: email,
+    subject,
+    text,
+    html,
+    logLabel: 'Contact form send',
+  });
 }

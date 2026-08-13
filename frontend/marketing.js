@@ -1,8 +1,9 @@
 /**
  * SoorgaAI — Marketing homepage
- * CTA routing into Cob and the AI maturity journey visualization.
- * Shared nav wiring (dropdowns, mobile panel, scroll shrink) lives in
- * shared/marketingNav.js, reused by every ".mkt-nav" page.
+ * CTA routing into Cob, the AI maturity journey visualization, and
+ * the connected-stack network. Shared nav wiring (dropdowns, mobile
+ * panel, scroll shrink) lives in shared/marketingNav.js, reused by
+ * every ".mkt-nav" page.
  */
 
 import { MATURITY_STAGES } from './data/maturityStages.js';
@@ -12,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMarketingNav();
   wireCtaButtons();
   wireJourneyAnimation();
+  wireStackNetwork();
 });
 
 // ── AI Maturity Journey ──────────────────────────────────────────────
@@ -195,4 +197,83 @@ function wireCtaButtons() {
       window.CTARouter?.routeToWorkspace();
     });
   });
+}
+
+// ── The stack, connected ─────────────────────────────────────────────
+//
+// Cob is the hub (it generates the blueprint); Aria, Arth, Eame, and
+// Yusu sit around it, each spoke-connected to Cob and ring-connected
+// to their neighbors — reads as "everything connects to everything,"
+// not four independent add-ons. Unlike the maturity journey network,
+// this one reveals once and settles (a stable system, not a staged
+// progression), reusing the same node/edge technique.
+const STACK_NODES = [
+  { id: 'cob',  x: 300, y: 300, r: 16, kind: 'hub' },
+  { id: 'aria', x: 300, y: 110, r: 11, kind: 'partner' },
+  { id: 'arth', x: 490, y: 300, r: 11, kind: 'partner' },
+  { id: 'yusu', x: 300, y: 490, r: 11, kind: 'owned' },
+  { id: 'eame', x: 110, y: 300, r: 11, kind: 'partner' },
+];
+
+const STACK_EDGES = [
+  { a: 'cob', b: 'aria' },
+  { a: 'cob', b: 'arth' },
+  { a: 'cob', b: 'yusu' },
+  { a: 'cob', b: 'eame' },
+  { a: 'aria', b: 'arth' },
+  { a: 'arth', b: 'yusu' },
+  { a: 'yusu', b: 'eame' },
+  { a: 'eame', b: 'aria' },
+];
+
+function buildStackNetwork(svg) {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const byId = {};
+  STACK_NODES.forEach((n) => { byId[n.id] = n; });
+
+  STACK_EDGES.forEach((e, i) => {
+    const a = byId[e.a];
+    const b = byId[e.b];
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', a.x);
+    line.setAttribute('y1', a.y);
+    line.setAttribute('x2', b.x);
+    line.setAttribute('y2', b.y);
+    line.setAttribute('class', 'mkt-stack__edge');
+    line.style.setProperty('--i', i);
+    svg.appendChild(line);
+  });
+
+  STACK_NODES.forEach((n, i) => {
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', n.x);
+    circle.setAttribute('cy', n.y);
+    circle.setAttribute('r', n.r);
+    circle.setAttribute('class', `mkt-stack__node mkt-stack__node--${n.kind}`);
+    circle.style.setProperty('--i', i);
+    svg.appendChild(circle);
+  });
+}
+
+function wireStackNetwork() {
+  const svg = document.getElementById('stack-network');
+  if (!svg) return;
+
+  buildStackNetwork(svg);
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    svg.classList.add('is-visible', 'is-settled');
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        svg.classList.add('is-visible');
+        setTimeout(() => svg.classList.add('is-settled'), 1400);
+        observer.unobserve(svg);
+      }
+    });
+  }, { threshold: 0.3 });
+  observer.observe(svg);
 }

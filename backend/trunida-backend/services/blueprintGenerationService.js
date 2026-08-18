@@ -140,6 +140,8 @@ JOURNEY RULE: This Vision MUST continue from the exact initiative already establ
 
 Use "Selected AI Initiative", "Recommended Implementation", "Primary Classification", "Expected Business Value", and "Target KPIs" from the TRANSFORMATION CONTEXT block. Name the initiative explicitly throughout — never substitute a different AI opportunity.
 
+HARD CONSTRAINT: Every sentence in this section — the Vision Statement AND all 3 strategic pillars — must describe the future state created by the Selected AI Initiative's OWN mechanism only. AI Opportunity Discovery identified several other opportunities (e.g. anomaly detection, plausibility classification, report drafting); those are NOT this initiative and must not appear here, even as supporting color, unless one of them literally IS the Selected AI Initiative. If the Vision Statement or pillars collectively describe more than one distinct AI technique, that is a violation — rewrite so every pillar is a different BUSINESS-LEVEL CONSEQUENCE of the same single technique, not a different technique.
+
 Vision defines the TARGET OPERATING MODEL — the future state of the organization once this initiative is fully adopted. It describes WHERE the organization will be, not HOW it gets there.
 The Vision Statement (strategicPosition) must answer: "What will our engineering environment look like once this initiative is embedded in daily operations?" Describe transformed outcomes, new capabilities, and improved ways of working — never describe implementation steps, deployment phases, or technology choices.
 Strategic pillars must describe WHAT CHANGES at the business level (e.g. automated traceability, predictable delivery, continuous quality visibility) — not how to build or deploy the AI system.
@@ -147,13 +149,21 @@ Strategic pillars must describe WHAT CHANGES at the business level (e.g. automat
 This is the ONLY section that defines business outcome metrics. Alignment and Commitment sections must NOT repeat these KPIs.
 
 5. strategicPillars (exactly 3 items)
-   Three distinct business transformation outcomes this initiative creates — each one a different dimension of the future operating model.
+   Three different ANGLES on the Selected AI Initiative's single mechanism (e.g. speed, consistency, compounding reuse) — never three different AI techniques or opportunities.
    Each item: { "title": "<2–4 word noun phrase>", "description": "<1 sentence describing the business outcome once the initiative is operational>", "businessImpactTag": "<1–3 word impact label>" }
    Pillars describe WHAT CHANGES for the business, not HOW to implement. No deployment tasks, technology steps, or implementation milestones.
    Example tags: "Engineering Velocity", "Release Predictability", "Traceability Accuracy"
    REJECT a description that would be true of almost any AI initiative (e.g. "Engineering teams work more
    efficiently" is NOT acceptable) — name the specific mechanism THIS initiative changes (e.g. "Engineers
    retrieve analogous historical defects in seconds instead of searching manually" for a retrieval initiative).
+   REJECT a pillar set where each pillar maps to a different AI opportunity from AI Opportunity Discovery
+   (e.g. pillar 1 about retrieval, pillar 2 about anomaly detection, pillar 3 about report drafting is NOT
+   acceptable, even though all three were real candidates) — all 3 pillars must be consequences of the ONE
+   Selected AI Initiative's mechanism specifically.
+   Example — a retrieval initiative's 3 pillars, all describing the SAME technique from different angles:
+   { "title": "Instant Case Recall", "description": "Engineers retrieve the closest matching historical defect in seconds instead of searching manually." }
+   { "title": "Consistent Triage Quality", "description": "Every engineer works from the same retrieval-ranked evidence, not just the ones with the longest tenure." }
+   { "title": "Compounding Knowledge Value", "description": "Each new case indexed by retrieval improves match quality for every future investigation." }
 
 6. kpiHighlights (exactly 3 items)
    The 3 headline business outcome metrics for this initiative. Draw directly from "Target KPIs" and "Expected Business Value" in the TRANSFORMATION CONTEXT.

@@ -3963,17 +3963,27 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
         console.log(`[domainRegen] Linked Confluence context for ${cap.name}: ${linkedProjectContext ? 'INCLUDED' : 'none'}`);
         const combinedContext = combineContexts(enterpriseContext, verticalContext, connectedKnowledgeContext, linkedProjectContext);
 
+        // Replay every capability already completed before this one — across all
+        // domains, including domains generated in an earlier run — so this
+        // domain-selective path carries the same "Selected AI Initiative" /
+        // journey grounding as the full-generation path. Without this, capabilities
+        // generated here never learned which opportunity AI Use Cases prioritized
+        // and re-derived generic themes from the raw business objective instead.
+        const blueprintSnapshot = await TransformationBlueprint.findById(blueprintId).lean();
+        const transformationCtx = buildTransformationCtxForRegen(blueprintSnapshot, domain.id, cap.id, businessObjective);
+        const journeyContext    = buildJourneyContextForRegen(blueprintSnapshot, domain.id, cap.id);
+
         let sections, actionItems = [];
         if (BLUEPRINT_CONFIG.generate.essay) {
           const essays = await runEssayGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
-            parsedSections, capBlueprint.automotiveBlueprint, combinedContext
+            parsedSections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx
           );
           sections = await runBriefExtraction(capObj, parsedSections, essays);
         } else {
           ({ sections, actionItems } = await runBriefGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
-            parsedSections, capBlueprint.automotiveBlueprint, combinedContext
+            parsedSections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx
           ));
         }
 

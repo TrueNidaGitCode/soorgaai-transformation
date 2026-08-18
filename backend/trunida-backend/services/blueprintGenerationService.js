@@ -1170,6 +1170,22 @@ constraint was established in AI Opportunity Discovery, the deployment model, co
 security model must reflect that constraint's real impact (e.g. self-hosted/open-weight models, a
 private/VPC-hosted inference endpoint) rather than a generic "compliant infrastructure" placeholder.
 
+TECHNIQUE-INFRASTRUCTURE MATCH: The stack must reflect what the Selected AI Initiative's specific
+mechanism needs to actually function — never a generic on-prem LLM stack reused regardless of technique.
+Reason about the mechanism before choosing the Data Layer and AI Platform recommendations:
+- If the technique depends on retrieval or semantic similarity matching (e.g. finding analogous historical
+  cases via embeddings), the Data Layer recommendation MUST be a vector-search-capable store (a vector
+  database, or a vector-search extension on an existing store) — plain relational or time-series storage
+  alone cannot do semantic matching and is NOT an acceptable substitute.
+- If the technique depends on classification or anomaly detection over structured/time-series signals,
+  structured or time-series storage is the right call instead — do not force a vector store where none is needed.
+- If the technique depends on generation/drafting from retrieved or structured context, the Data Layer must
+  support whatever that technique retrieves from (vector store if it retrieves by similarity, structured
+  store if it retrieves by structured lookup).
+REJECT a Data Layer recommendation that ignores this reasoning (e.g. recommending only a relational/
+time-series database for a retrieval-based initiative) — the Data Layer choice must be justified by what
+the Selected AI Initiative's mechanism specifically requires to run, not a boilerplate storage layer.
+
 5. deploymentBlocks (exactly 4 items)
    The 4 building blocks of the recommended deployment architecture. Use these fixed blockTypes in this exact order: AI Workload, Deployment Model, Compute Strategy, Scaling Strategy.
    Each item: { "blockType": "<AI Workload|Deployment Model|Compute Strategy|Scaling Strategy>", "name": "<specific recommendation for this use case, 3–5 words>", "why": "<1-sentence outcome-focused rationale, ≤12 words — what it delivers, not what risk it avoids>" }
@@ -1183,6 +1199,9 @@ private/VPC-hosted inference endpoint) rather than a generic "compliant infrastr
 7. techRecommendations (exactly 5 items)
    Technology recommendations for each deployment layer. Use these fixed layer names in order: Infrastructure, AI Platform, Data Layer, Integration, Monitoring.
    Each item: { "layer": "<layer name>", "recommendation": "<specific tool or service, ≤6 words>", "selectionRationale": "<why this is the right choice for this use case, ≤12 words>" }
+   The Data Layer entry specifically must follow the TECHNIQUE-INFRASTRUCTURE MATCH reasoning above — name
+   a vector-search-capable store when the mechanism retrieves by similarity, not a default relational/
+   time-series choice reused regardless of technique.
 
 8. cdsArchRationale (exactly 5 strings)
    5 concise executive-level reasons why this architecture is the right strategic choice. Each string ≤12 words, outcome-focused, suitable for a PM presenting to stakeholders.
@@ -1198,6 +1217,9 @@ private/VPC-hosted inference endpoint) rather than a generic "compliant infrastr
 11. infraItems (4–6 items)
    Expected infrastructure components. Recommend capabilities and platforms only — NOT sizing, node counts, or specific resource numbers.
    Each item: { "item": "<component capability, ≤4 words>", "recommendation": "<specific platform or service name, ≤6 words>" }
+   Must stay consistent with the Data Layer choice from techRecommendations — if that entry is a
+   vector-search-capable store, include a matching vector/embedding index component here, not a
+   generic storage line that omits it.
 
 12. cdsInvestmentEstimate (exactly 5 items)
    Investment level classification for each area. Use these fixed areas in this order: Cloud Infrastructure, AI Platform, Integration, Operations, Overall Complexity.

@@ -1482,7 +1482,7 @@
   gap: 56px;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 100px 32px 90px;
+  padding: 52px 32px 90px;
   align-items: start;
 }
 
@@ -1504,17 +1504,37 @@
   max-width: 300px;
 }
 
-.mkt-stack3__layer {
-  position: relative;
-  padding-top: 18px;
+/* Each row pairs an external label (matching the right panel's
+   .mkt-product-capability__num treatment, so the two columns read as the
+   same pattern) with its box — the label used to sit inside the box's
+   front face; moved above it here for a cleaner, aligned read. */
+.mkt-stack3__row {
   opacity: 0;
   transform: translateY(22px);
   transition: opacity 0.7s ease, transform 0.7s ease;
   transition-delay: calc(var(--i) * 0.22s);
 }
-.mkt-stack3.is-visible .mkt-stack3__layer {
+.mkt-stack3.is-visible .mkt-stack3__row {
   opacity: 1;
   transform: translateY(0);
+}
+.mkt-stack3__row + .mkt-stack3__row {
+  margin-top: 14px;
+}
+
+.mkt-stack3__layer-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent-green);
+  margin-bottom: 8px;
+}
+
+.mkt-stack3__layer {
+  position: relative;
+  padding-top: 18px;
 }
 
 .mkt-stack3__top {
@@ -1529,22 +1549,11 @@
 }
 
 .mkt-stack3__front {
-  position: relative;
-  height: 58px;
+  height: 48px;
   border-radius: 8px;
   background: linear-gradient(165deg, rgba(92, 197, 167, 0.14), rgba(13, 15, 19, 0.92));
   border: 1px solid rgba(92, 197, 167, 0.4);
   box-shadow: 0 16px 26px rgba(0, 0, 0, 0.35);
-  display: flex;
-  align-items: center;
-  padding-left: 26px;
-}
-
-.mkt-stack3__label {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.2px;
-  color: #fff;
 }
 
 /* Groups the Application layer and the Model+Compute layers into two
@@ -1619,7 +1628,7 @@
   .mkt-product-split {
     grid-template-columns: 1fr;
     gap: 52px;
-    padding: 72px 24px 60px;
+    padding: 40px 24px 60px;
   }
   .mkt-product-split__right {
     border-left: none;
@@ -1917,7 +1926,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mkt-stack3__layer {
+  .mkt-stack3__row,
+  .mkt-stack3__link {
     transition: none !important;
   }
 }

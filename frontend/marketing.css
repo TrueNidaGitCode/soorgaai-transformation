@@ -1506,9 +1506,13 @@
 
 /* Each row pairs an external label (matching the right panel's
    .mkt-product-capability__num treatment, so the two columns read as the
-   same pattern) with its box — the label used to sit inside the box's
-   front face; moved above it here for a cleaner, aligned read. */
+   same pattern) with its box, side by side — the label sits on the box's
+   own vertical axis (centered against its height) rather than stacked
+   above it, like an axis label next to a bar. */
 .mkt-stack3__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   opacity: 0;
   transform: translateY(22px);
   transition: opacity 0.7s ease, transform 0.7s ease;
@@ -1523,17 +1527,19 @@
 }
 
 .mkt-stack3__layer-label {
-  display: block;
+  flex-shrink: 0;
+  width: 82px;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--accent-green);
-  margin-bottom: 8px;
+  text-align: right;
 }
 
 .mkt-stack3__layer {
   position: relative;
+  flex: 1;
   padding-top: 18px;
 }
 

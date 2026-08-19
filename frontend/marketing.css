@@ -1470,6 +1470,52 @@
   margin: 0 0 32px;
 }
 
+.mkt-product-hero__proof {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 28px;
+  margin: 44px 0 0;
+  padding-top: 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mkt-product-hero__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 190px;
+}
+
+.mkt-product-hero__stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--accent-green);
+}
+
+.mkt-product-hero__stat-label {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.mkt-product-hero__reach-canvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 36px;
+}
+
+.mkt-product-hero__reach-caption {
+  max-width: 380px;
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.4);
+}
+
 .mkt-product-capabilities {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 80px 32px;
@@ -1749,6 +1795,60 @@
   .mkt-stack__node,
   .mkt-stack__edge,
   .mkt-stack__network {
+    transition: none !important;
+  }
+}
+
+/* ── Arth reach network (hero proof visual) ────────────────────────── */
+
+.mkt-reach__network {
+  width: min(70vw, 360px);
+  aspect-ratio: 400 / 320;
+  overflow: visible;
+  transition: filter 0.6s ease;
+}
+.mkt-reach__network.is-settled {
+  filter: drop-shadow(0 0 18px rgba(61, 175, 211, 0.25));
+}
+
+.mkt-reach__node {
+  opacity: 0;
+  transform: scale(0.4);
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition-delay: calc(var(--i) * 0.1s);
+}
+.mkt-reach__network.is-visible .mkt-reach__node {
+  opacity: 1;
+  transform: scale(1);
+}
+.mkt-reach__node--hub {
+  fill: rgba(92, 197, 167, 0.18);
+  stroke: #5CC5A7;
+  stroke-width: 2;
+}
+.mkt-reach__node--node {
+  fill: #0d0f13;
+  stroke: #3DAFD3;
+  stroke-width: 1.4;
+}
+
+.mkt-reach__edge {
+  stroke: url(#reach-edge-gradient);
+  stroke-width: 1.1;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+  transition-delay: calc(0.45s + var(--i) * 0.07s);
+}
+.mkt-reach__network.is-visible .mkt-reach__edge {
+  opacity: 0.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt-reach__node,
+  .mkt-reach__edge,
+  .mkt-reach__network {
     transition: none !important;
   }
 }

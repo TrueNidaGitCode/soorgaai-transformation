@@ -1623,9 +1623,9 @@
 }
 .mkt-product-split__right .mkt-product-capability-row .mkt-product-capability__num {
   flex-shrink: 0;
-  width: 90px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
   margin-bottom: 0;
-  text-align: right;
 }
 .mkt-product-capability-row .mkt-product-capability {
   flex: 1;

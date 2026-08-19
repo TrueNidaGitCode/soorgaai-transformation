@@ -128,12 +128,9 @@
         <div class="mkt-stack3" id="arth-stack3">
           <div class="mkt-stack3__zone">
             <span class="mkt-stack3__zone-label">Your private cloud</span>
-            <div class="mkt-stack3__row" style="--i:2">
-              <span class="mkt-stack3__layer-label">Application</span>
-              <div class="mkt-stack3__layer">
-                <div class="mkt-stack3__top"></div>
-                <div class="mkt-stack3__front"></div>
-              </div>
+            <div class="mkt-stack3__layer" style="--i:2">
+              <div class="mkt-stack3__top"></div>
+              <div class="mkt-stack3__front"><span class="mkt-stack3__label">Application</span></div>
             </div>
           </div>
 
@@ -141,19 +138,13 @@
 
           <div class="mkt-stack3__zone">
             <span class="mkt-stack3__zone-label">Dedicated GPU infrastructure</span>
-            <div class="mkt-stack3__row" style="--i:1">
-              <span class="mkt-stack3__layer-label">Model</span>
-              <div class="mkt-stack3__layer">
-                <div class="mkt-stack3__top"></div>
-                <div class="mkt-stack3__front"></div>
-              </div>
+            <div class="mkt-stack3__layer" style="--i:1">
+              <div class="mkt-stack3__top"></div>
+              <div class="mkt-stack3__front"><span class="mkt-stack3__label">Model</span></div>
             </div>
-            <div class="mkt-stack3__row" style="--i:0">
-              <span class="mkt-stack3__layer-label">Compute</span>
-              <div class="mkt-stack3__layer">
-                <div class="mkt-stack3__top"></div>
-                <div class="mkt-stack3__front"></div>
-              </div>
+            <div class="mkt-stack3__layer" style="--i:0">
+              <div class="mkt-stack3__top"></div>
+              <div class="mkt-stack3__front"><span class="mkt-stack3__label">Compute</span></div>
             </div>
           </div>
         </div>
@@ -171,20 +162,26 @@
         </div>
 
         <div class="mkt-product-capabilities__grid">
-          <div class="mkt-product-capability" style="--i:0">
+          <div class="mkt-product-capability-row" style="--i:0">
             <span class="mkt-product-capability__num">Application</span>
-            <h3>Runs in your cloud, not someone else's</h3>
-            <p>The application layer — matching, classification, generation — lives inside your own private cloud. You decide where the workflow runs and who can reach it, independent of where inference happens underneath it.</p>
+            <div class="mkt-product-capability">
+              <h3>Runs in your cloud, not someone else's</h3>
+              <p>The application layer — matching, classification, generation — lives inside your own private cloud. You decide where the workflow runs and who can reach it, independent of where inference happens underneath it.</p>
+            </div>
           </div>
-          <div class="mkt-product-capability" style="--i:1">
+          <div class="mkt-product-capability-row" style="--i:1">
             <span class="mkt-product-capability__num">Model</span>
-            <h3>Owned, not rented</h3>
-            <p>An open-weight model your team can run yourselves on dedicated GPU infrastructure, connected to your application over a private link — never a public endpoint. Not a proprietary model reachable only through someone else's API.</p>
+            <div class="mkt-product-capability">
+              <h3>Owned, not rented</h3>
+              <p>An open-weight model your team can run yourselves on dedicated GPU infrastructure, connected to your application over a private link — never a public endpoint. Not a proprietary model reachable only through someone else's API.</p>
+            </div>
           </div>
-          <div class="mkt-product-capability" style="--i:2">
+          <div class="mkt-product-capability-row" style="--i:2">
             <span class="mkt-product-capability__num">Compute</span>
-            <h3>Dedicated, not shared</h3>
-            <p>Isolated GPU infrastructure, hosted in a jurisdiction that satisfies data residency — and legal sovereignty, since who can be compelled to access it matters as much as where it physically sits.</p>
+            <div class="mkt-product-capability">
+              <h3>Dedicated, not shared</h3>
+              <p>Isolated GPU infrastructure, hosted in a jurisdiction that satisfies data residency — and legal sovereignty, since who can be compelled to access it matters as much as where it physically sits.</p>
+            </div>
           </div>
         </div>
       </div>

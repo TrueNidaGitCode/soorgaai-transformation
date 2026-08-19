@@ -187,6 +187,51 @@
       </div>
     </section>
 
+    <!-- ── Instant compute: browsable GPU tiers, not a procurement cycle ── -->
+    <section class="mkt-gpu-instant">
+      <div class="mkt-gpu-instant__intro">
+        <p class="mkt-product-capabilities__eyebrow">Compute, ready now</p>
+        <h2 class="mkt-product-capabilities__heading">Instant allocation of compute</h2>
+        <p class="mkt-product-capabilities__sub">
+          Not a procurement cycle. Capacity is already provisioned, dedicated,
+          and ready to route to your workload — pick the tier that fits.
+        </p>
+      </div>
+
+      <div class="mkt-gpu-picker" id="arth-gpu-picker">
+        <button type="button" class="mkt-gpu-card is-active" data-gpu="l40" data-spec="48GB · Inference-optimized" style="--i:0">
+          <span class="mkt-gpu-card__visual"><span class="mkt-gpu-card__fins"></span><span class="mkt-gpu-card__fan"></span></span>
+          <span class="mkt-gpu-card__name">L40</span>
+          <span class="mkt-gpu-card__spec">48GB · Inference-optimized</span>
+        </button>
+        <button type="button" class="mkt-gpu-card" data-gpu="h100" data-spec="80GB · Flagship performance" style="--i:1">
+          <span class="mkt-gpu-card__visual"><span class="mkt-gpu-card__fins"></span><span class="mkt-gpu-card__fan"></span></span>
+          <span class="mkt-gpu-card__name">H100</span>
+          <span class="mkt-gpu-card__spec">80GB · Flagship performance</span>
+        </button>
+        <button type="button" class="mkt-gpu-card" data-gpu="h200" data-spec="141GB · Maximum throughput" style="--i:2">
+          <span class="mkt-gpu-card__visual"><span class="mkt-gpu-card__fins"></span><span class="mkt-gpu-card__fan"></span></span>
+          <span class="mkt-gpu-card__name">H200</span>
+          <span class="mkt-gpu-card__spec">141GB · Maximum throughput</span>
+        </button>
+      </div>
+
+      <p class="mkt-gpu-picker__selected" id="arth-gpu-selected">Selected — <strong>L40</strong>: 48GB · Inference-optimized</p>
+
+      <div class="mkt-gpu-stats">
+        <div class="mkt-gpu-stat">
+          <span class="mkt-gpu-stat__value">24</span>
+          <span class="mkt-gpu-stat__label">Global locations across North America, Europe, Africa &amp; Australia</span>
+        </div>
+        <div class="mkt-gpu-stat">
+          <span class="mkt-gpu-stat__value">48&ndash;141GB</span>
+          <span class="mkt-gpu-stat__label">VRAM range across the tiers shown above</span>
+        </div>
+      </div>
+
+      <a href="/company/contact-us.html" class="cta-button cta-button--secondary">Reserve capacity for your workload</a>
+    </section>
+
     <!-- ── Why partnership ──────────────────────────────────────── -->
     <section class="mkt-product-partnership">
       <div class="mkt-product-partnership__card">

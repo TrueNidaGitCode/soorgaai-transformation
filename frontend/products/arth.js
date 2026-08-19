@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMarketingNav();
   wireCapabilitiesReveal();
   wireStackReveal();
+  wireGpuPicker();
 });
 
 // Plays once, the first time the capability grid scrolls into view —
@@ -57,4 +58,44 @@ function wireStackReveal() {
     });
   }, { threshold: 0.3 });
   observer.observe(stack);
+}
+
+// Click-to-select GPU tier cards — only one active at a time, updating the
+// "Selected — X" summary line so the picker feels like real self-serve
+// inventory rather than a static spec sheet. All card/spec text is
+// authored in the page's own markup (data-spec attributes), never derived
+// from user input, so building the summary via innerHTML here is safe.
+function wireGpuPicker() {
+  const picker = document.getElementById('arth-gpu-picker');
+  if (!picker) return;
+
+  const selectedLine = document.getElementById('arth-gpu-selected');
+  const cards = picker.querySelectorAll('.mkt-gpu-card');
+
+  cards.forEach((card) => {
+    card.addEventListener('click', () => {
+      cards.forEach((c) => c.classList.remove('is-active'));
+      card.classList.add('is-active');
+      if (selectedLine) {
+        const name = card.querySelector('.mkt-gpu-card__name')?.textContent || '';
+        const spec = card.dataset.spec || '';
+        selectedLine.innerHTML = `Selected — <strong>${name}</strong>: ${spec}`;
+      }
+    });
+  });
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    picker.classList.add('is-visible');
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        picker.classList.add('is-visible');
+        observer.unobserve(picker);
+      }
+    });
+  }, { threshold: 0.25 });
+  observer.observe(picker);
 }

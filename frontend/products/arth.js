@@ -10,29 +10,36 @@ document.addEventListener('DOMContentLoaded', () => {
   wireCapabilitiesReveal();
   wireStackReveal();
   wireGpuPicker();
+  wireSlmCompareReveal();
 });
 
-// Plays once, the first time the capability grid scrolls into view —
-// each card fades/rises in with a stagger (driven by the --i custom
-// property set on each card).
+// Plays once per grid, the first time each capability grid scrolls into
+// view — each card fades/rises in with a stagger (driven by the --i
+// custom property set on each card). The page now has more than one of
+// these grids (the sovereignty explanation and the model explanation),
+// so every grid gets its own independent observer.
 function wireCapabilitiesReveal() {
-  const grid = document.querySelector('.mkt-product-capabilities__grid');
-  if (!grid) return;
+  const grids = document.querySelectorAll('.mkt-product-capabilities__grid');
+  if (!grids.length) return;
 
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    grid.classList.add('is-visible');
-    return;
-  }
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        grid.classList.add('is-visible');
-        observer.unobserve(grid);
-      }
-    });
-  }, { threshold: 0.25 });
-  observer.observe(grid);
+  grids.forEach((grid) => {
+    if (reduceMotion) {
+      grid.classList.add('is-visible');
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          grid.classList.add('is-visible');
+          observer.unobserve(grid);
+        }
+      });
+    }, { threshold: 0.25 });
+    observer.observe(grid);
+  });
 }
 
 // Plays once, the first time the sovereign-stack diagram scrolls into
@@ -98,4 +105,27 @@ function wireGpuPicker() {
     });
   }, { threshold: 0.25 });
   observer.observe(picker);
+}
+
+// Plays once, the first time the model size/precision comparison scrolls
+// into view — the general ring settles first, the specialized ring
+// settles in on top of it 0.3s later (via CSS transition-delay).
+function wireSlmCompareReveal() {
+  const compare = document.getElementById('arth-slm-compare');
+  if (!compare) return;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    compare.classList.add('is-visible');
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        compare.classList.add('is-visible');
+        observer.unobserve(compare);
+      }
+    });
+  }, { threshold: 0.3 });
+  observer.observe(compare);
 }

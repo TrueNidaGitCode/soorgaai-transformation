@@ -1470,57 +1470,11 @@
   margin: 0 0 32px;
 }
 
-.mkt-product-hero__proof {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 28px;
-  margin: 44px 0 0;
-  padding-top: 32px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.mkt-product-hero__stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  max-width: 190px;
-}
-
-.mkt-product-hero__stat-value {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  color: var(--accent-green);
-}
-
-.mkt-product-hero__stat-label {
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.mkt-product-hero__reach-canvas {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 36px;
-}
-
-.mkt-product-hero__reach-caption {
-  max-width: 380px;
-  margin: 14px 0 0;
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-/* ── Arth-only: merged hero + capabilities split (left/right columns) ──
+/* ── Arth-only: sovereign stack split (left = layered diagram, right = per-layer explanation) ──
    Reuses the shared .mkt-product-hero__* / .mkt-product-capabilities__*
    scaffold (still relied on by Aria/Eame/Yusu) unmodified — this block only
-   adds the two-column wrapper and the alignment overrides specific to
-   rendering that scaffold left-aligned vs. right-aligned side by side. */
+   adds the two-column wrapper, the .mkt-stack3 diagram, and the alignment
+   overrides specific to rendering that scaffold left vs. right side by side. */
 
 .mkt-product-split {
   display: grid;
@@ -1535,25 +1489,43 @@
 .mkt-product-split__left {
   text-align: left;
 }
-.mkt-product-split__left .mkt-product-hero__proof {
-  justify-content: flex-start;
-  border-top: none;
-  padding-top: 0;
-  margin-top: 36px;
+
+/* Three stacked slabs — Compute at the base, Application on top — each
+   offset slightly further right than the one below it (a simple CSS
+   staircase, not a literal 3D render) to read as a layered stack. Reveals
+   bottom-to-top via --i regardless of DOM order, so the animation tells the
+   "sovereignty is built up from the ground" story explicitly. */
+.mkt-stack3 {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 44px;
+  max-width: 340px;
 }
-.mkt-product-split__left .mkt-product-hero__stat {
-  align-items: flex-start;
-  text-align: left;
-  max-width: 220px;
+
+.mkt-stack3__layer {
+  padding: 22px 24px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(92, 197, 167, 0.09), rgba(61, 175, 211, 0.05));
+  border: 1px solid rgba(92, 197, 167, 0.35);
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+  transition-delay: calc(var(--i) * 0.22s);
 }
-.mkt-product-split__left .mkt-product-hero__reach-canvas {
-  align-items: flex-start;
+.mkt-stack3.is-visible .mkt-stack3__layer {
+  opacity: 1;
+  transform: translateY(0);
 }
-.mkt-product-split__left .mkt-reach__network {
-  width: min(100%, 300px);
-}
-.mkt-product-split__left .mkt-product-hero__reach-caption {
-  text-align: left;
+
+.mkt-stack3__layer--model  { margin-left: 18px; }
+.mkt-stack3__layer--application { margin-left: 36px; }
+
+.mkt-stack3__label {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #fff;
 }
 
 .mkt-product-split__right {
@@ -1875,56 +1847,8 @@
   }
 }
 
-/* ── Arth reach network (hero proof visual) ────────────────────────── */
-
-.mkt-reach__network {
-  width: min(70vw, 360px);
-  aspect-ratio: 400 / 320;
-  overflow: visible;
-  transition: filter 0.6s ease;
-}
-.mkt-reach__network.is-settled {
-  filter: drop-shadow(0 0 18px rgba(61, 175, 211, 0.25));
-}
-
-.mkt-reach__node {
-  opacity: 0;
-  transform: scale(0.4);
-  transform-origin: center;
-  transform-box: fill-box;
-  transition: opacity 0.6s ease, transform 0.6s ease;
-  transition-delay: calc(var(--i) * 0.1s);
-}
-.mkt-reach__network.is-visible .mkt-reach__node {
-  opacity: 1;
-  transform: scale(1);
-}
-.mkt-reach__node--hub {
-  fill: rgba(92, 197, 167, 0.18);
-  stroke: #5CC5A7;
-  stroke-width: 2;
-}
-.mkt-reach__node--node {
-  fill: #0d0f13;
-  stroke: #3DAFD3;
-  stroke-width: 1.4;
-}
-
-.mkt-reach__edge {
-  stroke: url(#reach-edge-gradient);
-  stroke-width: 1.1;
-  opacity: 0;
-  transition: opacity 0.7s ease;
-  transition-delay: calc(0.45s + var(--i) * 0.07s);
-}
-.mkt-reach__network.is-visible .mkt-reach__edge {
-  opacity: 0.45;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .mkt-reach__node,
-  .mkt-reach__edge,
-  .mkt-reach__network {
+  .mkt-stack3__layer {
     transition: none !important;
   }
 }

@@ -1516,6 +1516,82 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
+/* ── Arth-only: merged hero + capabilities split (left/right columns) ──
+   Reuses the shared .mkt-product-hero__* / .mkt-product-capabilities__*
+   scaffold (still relied on by Aria/Eame/Yusu) unmodified — this block only
+   adds the two-column wrapper and the alignment overrides specific to
+   rendering that scaffold left-aligned vs. right-aligned side by side. */
+
+.mkt-product-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 100px 32px 90px;
+  align-items: start;
+}
+
+.mkt-product-split__left {
+  text-align: left;
+}
+.mkt-product-split__left .mkt-product-hero__proof {
+  justify-content: flex-start;
+  border-top: none;
+  padding-top: 0;
+  margin-top: 36px;
+}
+.mkt-product-split__left .mkt-product-hero__stat {
+  align-items: flex-start;
+  text-align: left;
+  max-width: 220px;
+}
+.mkt-product-split__left .mkt-product-hero__reach-canvas {
+  align-items: flex-start;
+}
+.mkt-product-split__left .mkt-reach__network {
+  width: min(100%, 300px);
+}
+.mkt-product-split__left .mkt-product-hero__reach-caption {
+  text-align: left;
+}
+
+.mkt-product-split__right {
+  text-align: right;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  padding-left: 56px;
+}
+.mkt-product-split__right .mkt-product-capabilities__intro {
+  max-width: none;
+  margin: 0 0 36px;
+}
+.mkt-product-split__right .mkt-product-capabilities__grid {
+  max-width: none;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+.mkt-product-split__right .mkt-product-capability {
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .mkt-product-split {
+    grid-template-columns: 1fr;
+    gap: 52px;
+    padding: 72px 24px 60px;
+  }
+  .mkt-product-split__right {
+    border-left: none;
+    padding-left: 0;
+    padding-top: 44px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: left;
+  }
+  .mkt-product-split__right .mkt-product-capability {
+    text-align: left;
+  }
+}
+
 .mkt-product-capabilities {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 80px 32px;

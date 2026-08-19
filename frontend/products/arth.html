@@ -111,77 +111,78 @@
 
   <main>
 
-    <!-- ── The problem ──────────────────────────────────────────── -->
-    <section class="mkt-product-hero">
-      <p class="mkt-product-hero__eyebrow">Arth — Technology &amp; Infrastructure</p>
-      <h1 class="mkt-product-hero__heading">
-        The right compute. The right model.<br>Not whatever's convenient.
-      </h1>
-      <p class="mkt-product-hero__body">
-        Most enterprises default to whatever GPU capacity and general-purpose
-        model they already have access to — not because it's the right fit,
-        but because procuring anything else takes months and a large budget.
-        For specialized, safety-critical, or regulated workloads, that
-        default often isn't good enough. Arth is how SoorgaAI addresses that
-        gap: matching each workload to infrastructure and models actually
-        built for it.
-      </p>
-      <a href="/company/contact-us.html" class="cta-button cta-button--secondary">Talk to us about your workload</a>
-
-      <div class="mkt-product-hero__proof">
-        <div class="mkt-product-hero__stat">
-          <span class="mkt-product-hero__stat-value">24</span>
-          <span class="mkt-product-hero__stat-label">Global compute locations across North America, Europe, Africa &amp; Australia</span>
-        </div>
-        <div class="mkt-product-hero__stat">
-          <span class="mkt-product-hero__stat-value">5</span>
-          <span class="mkt-product-hero__stat-label">GPU architectures — from cost-efficient inference cards to top-tier training-class hardware</span>
-        </div>
-        <div class="mkt-product-hero__stat">
-          <span class="mkt-product-hero__stat-value">16&ndash;80GB</span>
-          <span class="mkt-product-hero__stat-label">VRAM range, matched to the workload instead of defaulted to one option</span>
-        </div>
-      </div>
-
-      <div class="mkt-product-hero__reach-canvas">
-        <svg id="arth-reach-network" class="mkt-reach__network" viewBox="0 0 400 320" aria-hidden="true">
-          <defs>
-            <linearGradient id="reach-edge-gradient" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#3DAFD3"/>
-              <stop offset="100%" stop-color="#5CC5A7"/>
-            </linearGradient>
-          </defs>
-        </svg>
-        <p class="mkt-product-hero__reach-caption">A distributed network of compute partners SoorgaAI routes workloads to — matched by location, hardware, and compliance need.</p>
-      </div>
-    </section>
-
-    <!-- ── How it works ─────────────────────────────────────────── -->
-    <section class="mkt-product-capabilities">
-      <div class="mkt-product-capabilities__intro">
-        <p class="mkt-product-capabilities__eyebrow">How it works</p>
-        <h2 class="mkt-product-capabilities__heading">Three ways Arth fits infrastructure to the workload</h2>
-        <p class="mkt-product-capabilities__sub">
-          Compute and models are matched to what the workload actually needs
-          — not defaulted to whatever's already on hand.
+    <!-- ── The problem + how it works, merged: left = hero, right = capabilities ── -->
+    <section class="mkt-product-split">
+      <div class="mkt-product-split__left">
+        <p class="mkt-product-hero__eyebrow">Arth — Technology &amp; Infrastructure</p>
+        <h1 class="mkt-product-hero__heading">
+          The right compute. The right model.<br>Not whatever's convenient.
+        </h1>
+        <p class="mkt-product-hero__body">
+          Most enterprises default to whatever GPU capacity and general-purpose
+          model they already have access to — not because it's the right fit,
+          but because procuring anything else takes months and a large budget.
+          For specialized, safety-critical, or regulated workloads, that
+          default often isn't good enough. Arth is how SoorgaAI addresses that
+          gap: matching each workload to infrastructure and models actually
+          built for it.
         </p>
+        <a href="/company/contact-us.html" class="cta-button cta-button--secondary">Talk to us about your workload</a>
+
+        <div class="mkt-product-hero__proof">
+          <div class="mkt-product-hero__stat">
+            <span class="mkt-product-hero__stat-value">24</span>
+            <span class="mkt-product-hero__stat-label">Global compute locations across North America, Europe, Africa &amp; Australia</span>
+          </div>
+          <div class="mkt-product-hero__stat">
+            <span class="mkt-product-hero__stat-value">5</span>
+            <span class="mkt-product-hero__stat-label">GPU architectures — from cost-efficient inference cards to top-tier training-class hardware</span>
+          </div>
+          <div class="mkt-product-hero__stat">
+            <span class="mkt-product-hero__stat-value">16&ndash;80GB</span>
+            <span class="mkt-product-hero__stat-label">VRAM range, matched to the workload instead of defaulted to one option</span>
+          </div>
+        </div>
+
+        <div class="mkt-product-hero__reach-canvas">
+          <svg id="arth-reach-network" class="mkt-reach__network" viewBox="0 0 400 320" aria-hidden="true">
+            <defs>
+              <linearGradient id="reach-edge-gradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#3DAFD3"/>
+                <stop offset="100%" stop-color="#5CC5A7"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <p class="mkt-product-hero__reach-caption">A distributed network of compute partners SoorgaAI routes workloads to — matched by location, hardware, and compliance need.</p>
+        </div>
       </div>
 
-      <div class="mkt-product-capabilities__grid">
-        <div class="mkt-product-capability" style="--i:0">
-          <span class="mkt-product-capability__num">01</span>
-          <h3>Compute, provisioned fast</h3>
-          <p>GPU capacity is deployed in days, not the months typical of traditional procurement — with the flexibility to place workloads where data residency and compliance require.</p>
+      <div class="mkt-product-split__right">
+        <div class="mkt-product-capabilities__intro">
+          <p class="mkt-product-capabilities__eyebrow">How it works</p>
+          <h2 class="mkt-product-capabilities__heading">Three ways Arth fits infrastructure to the workload</h2>
+          <p class="mkt-product-capabilities__sub">
+            Compute and models are matched to what the workload actually needs
+            — not defaulted to whatever's already on hand.
+          </p>
         </div>
-        <div class="mkt-product-capability" style="--i:1">
-          <span class="mkt-product-capability__num">02</span>
-          <h3>Domain-specific models where they matter</h3>
-          <p>General-purpose LLMs aren't always enough for specialized or safety-critical contexts. Purpose-built models — trained on the standards and constraints of a specific domain — are used where they outperform generic ones.</p>
-        </div>
-        <div class="mkt-product-capability" style="--i:2">
-          <span class="mkt-product-capability__num">03</span>
-          <h3>Optimization built in</h3>
-          <p>Deployment includes the full operating layer — access control, observability, audit trails — not just GPU access left for your team to wire together afterward.</p>
+
+        <div class="mkt-product-capabilities__grid">
+          <div class="mkt-product-capability" style="--i:0">
+            <span class="mkt-product-capability__num">01</span>
+            <h3>Compute, provisioned fast</h3>
+            <p>GPU capacity is deployed in days, not the months typical of traditional procurement — with the flexibility to place workloads where data residency and compliance require.</p>
+          </div>
+          <div class="mkt-product-capability" style="--i:1">
+            <span class="mkt-product-capability__num">02</span>
+            <h3>Domain-specific models where they matter</h3>
+            <p>General-purpose LLMs aren't always enough for specialized or safety-critical contexts. Purpose-built models — trained on the standards and constraints of a specific domain — are used where they outperform generic ones.</p>
+          </div>
+          <div class="mkt-product-capability" style="--i:2">
+            <span class="mkt-product-capability__num">03</span>
+            <h3>Optimization built in</h3>
+            <p>Deployment includes the full operating layer — access control, observability, audit trails — not just GPU access left for your team to wire together afterward.</p>
+          </div>
         </div>
       </div>
     </section>

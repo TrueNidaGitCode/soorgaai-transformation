@@ -183,8 +183,10 @@
         <p class="mkt-product-capabilities__eyebrow">Compute, ready now</p>
         <h2 class="mkt-product-capabilities__heading">Instant allocation of compute</h2>
         <p class="mkt-product-capabilities__sub">
-          Not a procurement cycle. Capacity is already provisioned, dedicated,
-          and ready to route to your workload — pick the tier that fits.
+          Not a procurement cycle, and not a decision you have to make
+          yourself. Every tier below is already vetted, dedicated, and
+          ready — which one your workload needs is matched automatically,
+          once Cob and Aria have done their part.
         </p>
       </div>
 
@@ -206,7 +208,7 @@
         </button>
       </div>
 
-      <p class="mkt-gpu-picker__selected" id="arth-gpu-selected">Selected — <strong>L40</strong>: 48GB · Inference-optimized</p>
+      <p class="mkt-gpu-picker__selected" id="arth-gpu-selected">Example match — <strong>L40</strong>: 48GB · Inference-optimized</p>
 
       <div class="mkt-gpu-stats">
         <div class="mkt-gpu-stat">
@@ -219,63 +221,65 @@
         </div>
       </div>
 
-      <a href="/company/contact-us.html" class="cta-button cta-button--secondary">Reserve capacity for your workload</a>
+      <a href="/company/contact-us.html" class="cta-button cta-button--secondary">Talk to us about your workload</a>
     </section>
 
-    <!-- ── The model layer: left = size/precision comparison, right = why it matters ── -->
+    <!-- ── The model layer: left = routing split, right = how Arth decides ── -->
     <section class="mkt-product-split">
       <div class="mkt-product-split__left">
         <p class="mkt-product-hero__eyebrow">Arth — Model</p>
         <h2 class="mkt-product-hero__heading">
-          Smaller model.<br>Sharper fit.
+          Frontier LLM by default.<br>Sovereign model when it matters.
         </h2>
         <p class="mkt-product-hero__body">
-          A general-purpose model has to be good at everything, which means
-          it's rarely the best at anything specific. A model built for your
-          domain — trained on your terminology, your failure patterns, your
-          data — gets sharper where it counts, using a fraction of the compute.
+          Most requests route straight to whichever frontier model your team
+          already trusts — that's not a fight worth having, and not a choice
+          you have to make. A specialized, self-hosted model exists for one
+          job: the slice of work a frontier model was never going to be
+          allowed to touch, regardless of how capable it is.
         </p>
 
         <div class="mkt-slm-compare" id="arth-slm-compare">
           <div class="mkt-slm-compare__ring mkt-slm-compare__ring--general">
-            <span class="mkt-slm-compare__ring-label">General-purpose model</span>
+            <span class="mkt-slm-compare__ring-label">Frontier LLM — everything else</span>
           </div>
           <div class="mkt-slm-compare__ring mkt-slm-compare__ring--slm">
-            <span class="mkt-slm-compare__ring-label">Specialized for your task</span>
+            <span class="mkt-slm-compare__ring-label">Sovereign model — gated work</span>
           </div>
         </div>
       </div>
 
       <div class="mkt-product-split__right">
         <div class="mkt-product-capabilities__intro">
-          <p class="mkt-product-capabilities__eyebrow">Why specialized models win</p>
-          <h2 class="mkt-product-capabilities__heading">Narrow, on purpose</h2>
+          <p class="mkt-product-capabilities__eyebrow">How Arth decides</p>
+          <h2 class="mkt-product-capabilities__heading">One default. One exception.</h2>
           <p class="mkt-product-capabilities__sub">
-            Breadth and precision trade off against each other. For a defined
-            task, precision wins.
+            Your team's preferred model handles almost everything. The
+            sovereign model exists for exactly one reason — and Arth applies
+            it automatically, not as a choice you make.
           </p>
         </div>
 
         <div class="mkt-product-capabilities__grid">
           <div class="mkt-product-capability-row" style="--i:0">
-            <span class="mkt-product-capability__num">Precision</span>
+            <span class="mkt-product-capability__num">Default</span>
             <div class="mkt-product-capability">
-              <h3>Narrow beats broad, for your task</h3>
-              <p>A model fine-tuned on your domain's own data and terminology often outperforms a much larger general model on the work that actually matters to you — it doesn't have to be good at everything else too.</p>
+              <h3>Your model, unless it can't be</h3>
+              <p>Most requests go straight to the frontier LLM your team already trusts. No new tool to learn, no workflow to change — the routing is invisible until it needs to matter.</p>
             </div>
           </div>
           <div class="mkt-product-capability-row" style="--i:1">
-            <span class="mkt-product-capability__num">Efficiency</span>
+            <span class="mkt-product-capability__num">Routing</span>
             <div class="mkt-product-capability">
-              <h3>Smaller footprint, faster inference</h3>
-              <p>Fewer parameters means faster responses and less GPU needed to run it — often fitting comfortably on the smaller compute tiers shown above, not just the flagship ones.</p>
+              <h3>Automatic, not manual</h3>
+              <p>Cob and Aria already know which work is sovereignty-gated. Arth routes that specific slice to the specialized model on its own — nobody has to remember to flag it.</p>
             </div>
           </div>
           <div class="mkt-product-capability-row" style="--i:2">
-            <span class="mkt-product-capability__num">Ownership</span>
+            <span class="mkt-product-capability__num">Fit</span>
             <div class="mkt-product-capability">
-              <h3>Open-weight by design</h3>
-              <p>Specialized models are typically open-weight — which is what makes them ownable and sovereign in the first place, not a proprietary model reachable only through someone else's API.</p>
+              <h3>Still built for the job it does</h3>
+              <p>The sovereign model is fine-tuned specifically for the gated work it handles — a narrower job, not a downgraded one, and open-weight by design, which is what makes it ownable in the first place.</p>
             </div>
           </div>
         </div>

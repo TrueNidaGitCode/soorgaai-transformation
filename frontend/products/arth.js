@@ -67,11 +67,14 @@ function wireStackReveal() {
   observer.observe(stack);
 }
 
-// Click-to-select GPU tier cards — only one active at a time, updating the
-// "Selected — X" summary line so the picker feels like real self-serve
-// inventory rather than a static spec sheet. All card/spec text is
-// authored in the page's own markup (data-spec attributes), never derived
-// from user input, so building the summary via innerHTML here is safe.
+// Click-to-browse GPU tier cards — only one active at a time, updating the
+// "Example match — X" summary line. This is deliberately framed as
+// illustrative (proof of ready inventory), not a choice the visitor is
+// making — Arth auto-matches the real tier from what Cob/Aria already
+// determined, it isn't a picker the customer configures themselves. All
+// card/spec text is authored in the page's own markup (data-spec
+// attributes), never derived from user input, so building the summary via
+// innerHTML here is safe.
 function wireGpuPicker() {
   const picker = document.getElementById('arth-gpu-picker');
   if (!picker) return;
@@ -86,7 +89,7 @@ function wireGpuPicker() {
       if (selectedLine) {
         const name = card.querySelector('.mkt-gpu-card__name')?.textContent || '';
         const spec = card.dataset.spec || '';
-        selectedLine.innerHTML = `Selected — <strong>${name}</strong>: ${spec}`;
+        selectedLine.innerHTML = `Example match — <strong>${name}</strong>: ${spec}`;
       }
     });
   });
@@ -107,9 +110,9 @@ function wireGpuPicker() {
   observer.observe(picker);
 }
 
-// Plays once, the first time the model size/precision comparison scrolls
-// into view — the general ring settles first, the specialized ring
-// settles in on top of it 0.3s later (via CSS transition-delay).
+// Plays once, the first time the model routing split scrolls into view —
+// the frontier-LLM ring settles first, the sovereign-model ring settles
+// in on top of it 0.3s later (via CSS transition-delay).
 function wireSlmCompareReveal() {
   const compare = document.getElementById('arth-slm-compare');
   if (!compare) return;

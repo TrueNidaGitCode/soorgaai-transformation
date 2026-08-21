@@ -1815,13 +1815,14 @@
   }
 }
 
-/* ── Arth: model size/precision comparison ─────────────────────────
-   Two concentric rings — a large dashed ring for "general-purpose model"
-   (broad but unfocused) and a small solid ring for "specialized SLM"
-   (narrow but precisely on-target) — reveals with the small ring settling
-   in after the large one, each with its own independent transform rule
-   (not a shared one) so the --slm ring's centering translate never gets
-   clobbered by the general ring's scale-only transform. */
+/* ── Arth: model routing split ─────────────────────────────────────
+   Two concentric rings — a large dashed ring for "frontier LLM, everything
+   else" (the default path) and a small solid ring nested inside it for
+   "sovereign model, gated work" (the narrow exception) — reveals with the
+   small ring settling in after the large one, each with its own
+   independent transform rule (not a shared one) so the --slm ring's
+   centering translate never gets clobbered by the general ring's
+   scale-only transform. */
 .mkt-slm-compare {
   position: relative;
   width: 280px;

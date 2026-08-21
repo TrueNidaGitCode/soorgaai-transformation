@@ -201,29 +201,23 @@ function wireCtaButtons() {
 
 // ── The stack, connected ─────────────────────────────────────────────
 //
-// Cob is the hub (it generates the blueprint); Aria, Arth, Eame, and
-// Yusu sit around it, each spoke-connected to Cob and ring-connected
-// to their neighbors — reads as "everything connects to everything,"
-// not four independent add-ons. Unlike the maturity journey network,
-// this one reveals once and settles (a stable system, not a staged
-// progression), reusing the same node/edge technique.
+// Cob is the hub (it generates the blueprint); Aria and Arth sit around
+// it, each spoke-connected to Cob and to each other — a small connected
+// triangle. Eame and Yusu are disabled for now (unlinked from nav, not
+// deleted) — reduce back to 5 nodes/8 edges if they're re-enabled later.
+// Unlike the maturity journey network, this one reveals once and settles
+// (a stable system, not a staged progression), reusing the same
+// node/edge technique.
 const STACK_NODES = [
   { id: 'cob',  x: 300, y: 300, r: 16, kind: 'hub' },
   { id: 'aria', x: 300, y: 110, r: 11, kind: 'partner' },
   { id: 'arth', x: 490, y: 300, r: 11, kind: 'partner' },
-  { id: 'yusu', x: 300, y: 490, r: 11, kind: 'owned' },
-  { id: 'eame', x: 110, y: 300, r: 11, kind: 'partner' },
 ];
 
 const STACK_EDGES = [
   { a: 'cob', b: 'aria' },
   { a: 'cob', b: 'arth' },
-  { a: 'cob', b: 'yusu' },
-  { a: 'cob', b: 'eame' },
   { a: 'aria', b: 'arth' },
-  { a: 'arth', b: 'yusu' },
-  { a: 'yusu', b: 'eame' },
-  { a: 'eame', b: 'aria' },
 ];
 
 function buildStackNetwork(svg) {

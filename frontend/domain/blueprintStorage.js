@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Blueprint LocalStorage Persistence (Sprint 17)
+ * Svarg — Blueprint LocalStorage Persistence (Sprint 17)
  *
  * All blueprint lifecycle state is browser-local — no backend storage.
  * Gracefully handles missing, corrupt, or full storage.

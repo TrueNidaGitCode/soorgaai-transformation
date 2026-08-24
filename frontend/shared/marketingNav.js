@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Shared top nav wiring for marketing pages
+ * Svarg — Shared top nav wiring for marketing pages
  * (homepage, industry pages, and any future ".mkt-nav" page).
  * Dropdown open/close, mobile panel toggle, and the shrink-on-scroll
  * pill effect. Page-specific behavior (hero animations, CTA routing,

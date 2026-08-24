@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Industry KB (platform admin only)
+ * Svarg — Industry KB (platform admin only)
  *
  * Review/approve/discard auto-generated Industry-overlay KB documents,
  * created automatically by industryCapabilityKnowledgeService.js's

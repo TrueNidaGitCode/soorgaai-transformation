@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Blueprint Generate Module
+ * Svarg — Blueprint Generate Module
  *
  * Manages Screen 1 (Generate form) and Screen 2 (Generation Progress).
  *

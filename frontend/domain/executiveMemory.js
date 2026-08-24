@@ -1,8 +1,8 @@
 /**
- * SoorgaAI — Executive Memory (Sprint 23)
+ * Svarg — Executive Memory (Sprint 23)
  *
  * Persists company profile across page sessions using localStorage.
- * Domain-agnostic — any future SoorgaAI capability can call these functions.
+ * Domain-agnostic — any future Svarg capability can call these functions.
  *
  * Conversation history is session-only and is managed in advisor.js.
  */

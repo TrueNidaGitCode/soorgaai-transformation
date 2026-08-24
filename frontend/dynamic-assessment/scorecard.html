@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your AI Maturity Scorecard — SoorgaAI</title>
+    <title>Your AI Maturity Scorecard — Svarg</title>
     <link rel="stylesheet" href="../navbar/navbar.css">
     <link rel="stylesheet" href="dynamic-assessment.css">
     <script src="../login/config.js"></script>
@@ -52,7 +52,7 @@
         <!-- CTA -->
         <div class="da-card cta-card">
             <h2>Ready to Accelerate Your AI Transformation?</h2>
-            <p>Book a 1-on-1 advisory session with a SoorgaAI expert to turn your scorecard into a concrete transformation roadmap.</p>
+            <p>Book a 1-on-1 advisory session with a Svarg expert to turn your scorecard into a concrete transformation roadmap.</p>
             <div class="cta-buttons">
                 <button class="btn-primary" onclick="bookConsultation()">→ Book Advisory Session</button>
                 <button class="btn-secondary" onclick="retakeAssessment()">Retake Assessment</button>
@@ -153,7 +153,7 @@
             const company = localStorage.getItem('da_companyName') || 'my company';
             const score   = JSON.parse(localStorage.getItem('da_score') || '{}');
             const subject = encodeURIComponent(`AI Advisory Session — ${company}`);
-            const body    = encodeURIComponent(`Hi,\n\nI just completed the SoorgaAI AI Transformation Assessment for ${company}.\n\nOverall Score: ${Math.round(score.overallScore || 0)}/100\nMaturity Stage: ${score.maturityStage || '—'}\n\nI'd like to book an advisory session to discuss our AI transformation roadmap.\n\nThank you.`);
+            const body    = encodeURIComponent(`Hi,\n\nI just completed the Svarg AI Transformation Assessment for ${company}.\n\nOverall Score: ${Math.round(score.overallScore || 0)}/100\nMaturity Stage: ${score.maturityStage || '—'}\n\nI'd like to book an advisory session to discuss our AI transformation roadmap.\n\nThank you.`);
             window.location.href = `mailto:hello@soorgaai.com?subject=${subject}&body=${body}`;
         }
 

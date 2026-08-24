@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Navbar Component
+ * Svarg — Navbar Component
  * Handles dynamic loading, auth state, navigation, and mobile toggle.
  */
 
@@ -166,7 +166,7 @@ function logoutUser() {
   window.location.href = '/index.html';
 }
 
-console.log('✅ SoorgaAI Navbar loaded');
+console.log('✅ Svarg Navbar loaded');
 
 // Named exports for unit testing (Vitest ESM).
 // The <script type="module"> tag in HTML loads these transparently.

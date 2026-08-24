@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Automotive industry page
+ * Svarg — Automotive industry page
  * Shared nav wiring, both reveal animations (layered knowledge base,
  * then the before/after case study), and both CTAs into Cob.
  */

@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — CTA Router
+ * Svarg — CTA Router
  * Auth-aware routing for the "Generate My AI Roadmap" entry point.
  *
  * Anonymous user  → /cob.html (landing prompt box — generation starts there)

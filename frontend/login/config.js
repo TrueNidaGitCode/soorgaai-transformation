@@ -9,7 +9,7 @@
 
 const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000'
-    : 'https://truenidawebsite-production.up.railway.app'; // ← SoorgaAI Railway backend
+    : 'https://truenidawebsite-production.up.railway.app'; // ← Svarg Railway backend
 
 window.CONFIG = {
     API_BASE: `${API_BASE_URL}/api`,
@@ -64,5 +64,5 @@ window.CONFIG.getHeader = () => ({ 'Authorization': `Bearer ${localStorage.getIt
 window.CONFIG.isLoggedIn = () => !!localStorage.getItem('token');
 
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('⚙️ SoorgaAI Config loaded — API:', window.API_BASE_URL);
+    console.log('⚙️ Svarg Config loaded — API:', window.API_BASE_URL);
 }

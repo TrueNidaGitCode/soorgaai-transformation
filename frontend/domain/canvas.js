@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Canvas Module
+ * Svarg — Canvas Module
  *
  * Loads and renders the 5 AI Strategy focus area cards.
  * Exposes window.Canvas.updateFocusArea(focusAreaId, newDescription) so chat.js

@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Results Dashboard
+ * Svarg — Results Dashboard
  *
  * Behaviour:
  *  1. Read ?id= from URL → fetch /api/assessment/results/:id
@@ -160,7 +160,7 @@ function renderResults(data, assessmentId) {
         <!-- ── Consultation CTA ── -->
         <div class="consultation-cta" id="consultationCta" style="display:none">
             <h2>Ready to Accelerate Your AI Transformation?</h2>
-            <p>Book a 1-on-1 advisory session with a SoorgaAI expert to turn your roadmap into a real transformation programme.</p>
+            <p>Book a 1-on-1 advisory session with a Svarg expert to turn your roadmap into a real transformation programme.</p>
             <div class="cta-buttons">
                 <button class="btn-primary" onclick="bookConsultation()">📅 Book a Consultation</button>
                 <button class="btn-secondary" onclick="window.location.href='/assessment/assessment.html'">🔄 Retake Assessment</button>
@@ -321,9 +321,9 @@ function renderError(message) {
 function bookConsultation() {
     // Replace with Calendly URL or contact page when available
     const email = 'advisory@soorgaai.com';
-    const subject = encodeURIComponent('SoorgaAI Advisory Consultation Request');
+    const subject = encodeURIComponent('Svarg Advisory Consultation Request');
     const body = encodeURIComponent(
-        `Hi SoorgaAI team,\n\nI've completed the AI Maturity Assessment and would like to book an advisory consultation.\n\nPlease let me know your available slots.\n\nThank you!`
+        `Hi Svarg team,\n\nI've completed the AI Maturity Assessment and would like to book an advisory consultation.\n\nPlease let me know your available slots.\n\nThank you!`
     );
     window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
 }

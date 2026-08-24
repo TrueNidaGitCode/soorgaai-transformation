@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Knowledge Sources page
+ * Svarg — Knowledge Sources page
  *
  * Manages the Confluence connected-knowledge feature: connect (CTO/Admin
  * only, redirect-based OAuth), select spaces, extract, monitor sync status,

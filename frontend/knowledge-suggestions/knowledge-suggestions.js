@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Knowledge Suggestions Review Page
+ * Svarg — Knowledge Suggestions Review Page
  *
  * Lists all knowledge suggestions for the logged-in user.
  * Supports status filtering and approve/reject actions.

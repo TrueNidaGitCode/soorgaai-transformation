@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Company Research Library (platform admin only)
+ * Svarg — Company Research Library (platform admin only)
  *
  * List + create companies; Run Research populates content directly (auto-
  * approved — see runResearch in companyResearchLibraryService.js, no

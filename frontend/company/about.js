@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — About Us page
+ * Svarg — About Us page
  * Shared nav wiring + the "what we believe" list reveal animation.
  */
 

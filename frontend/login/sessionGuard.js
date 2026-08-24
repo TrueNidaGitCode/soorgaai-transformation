@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Session Guard
+ * Svarg — Session Guard
  *
  * Shared session-expiry handler for pages that don't load the full auth.js
  * dashboard module (domain.html, workspace.html). Loaded as a plain script

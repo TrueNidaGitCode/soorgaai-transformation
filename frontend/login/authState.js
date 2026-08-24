@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Auth State Helper
+ * Svarg — Auth State Helper
  * Shared by navbar CTA and hero CTA.
  *
  * Loaded as <script type="module"> — sets window.SoorgaAuth so classic-script

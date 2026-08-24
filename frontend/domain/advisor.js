@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — AI Strategy Advisor Module (Sprint 15 / 16)
+ * Svarg — AI Strategy Advisor Module (Sprint 15 / 16)
  *
  * Right-panel AI collaboration interface.
  *
@@ -283,7 +283,7 @@ function exitSectionMode() {
 
   sectionContextEl.style.display = 'none';
 
-  inputEl.placeholder = 'Ask SoorgaAI…';
+  inputEl.placeholder = 'Ask Svarg…';
 
   // Restore context indicator
   const ctx = window.StrategyCanvas?.getCurrentContext();
@@ -856,7 +856,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Set document title from domain id (navbar title span removed)
   const domainId    = getDomainId();
   const domainLabel = domainId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  document.title = `SoorgaAI — ${domainLabel}`;
+  document.title = `Svarg — ${domainLabel}`;
 
   // Username in nav — same value stored at login
   const usernameEl = document.getElementById('domain-username');

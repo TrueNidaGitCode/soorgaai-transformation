@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Aria (Data Readiness) product page
+ * Svarg — Aria (Data Readiness) product page
  * Shared nav wiring + the capability cards reveal animation.
  */
 

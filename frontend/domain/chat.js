@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Chat Module
+ * Svarg — Chat Module
  *
  * Responsibilities:
  *   - Load and display suggested prompts on mount.
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     domainId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   // Set page title
-  document.title = `SoorgaAI — ${document.getElementById('domain-title-nav').textContent}`;
+  document.title = `Svarg — ${document.getElementById('domain-title-nav').textContent}`;
 
   // Load history + prompts in parallel
   await Promise.all([loadHistory(), loadSuggestedPrompts()]);

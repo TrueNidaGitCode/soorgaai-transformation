@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — /try (legacy redirect stub)
+ * Svarg — /try (legacy redirect stub)
  *
  * Generation now starts directly from the landing-page prompt and renders
  * live in /domain/domain.html for both guests and signed-in users. This page

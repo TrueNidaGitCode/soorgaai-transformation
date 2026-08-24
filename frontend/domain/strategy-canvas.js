@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Strategy Canvas Module (Sprint 14.1 / 15 / 16 / 17)
+ * Svarg — Strategy Canvas Module (Sprint 14.1 / 15 / 16 / 17)
  *
  * Left-panel AI Strategy Canvas: capability list → blueprint sections.
  *

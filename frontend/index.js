@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Landing Page Module (ChatGPT-style layout)
+ * Svarg — Landing Page Module (ChatGPT-style layout)
  *
  * Wires: sidebar collapse/expand, auth-aware topbar, and the hero
  * prompt composer (try-before-login entry point).

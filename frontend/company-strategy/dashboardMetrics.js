@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Dashboard Metrics (Sprint 18)
+ * Svarg — Dashboard Metrics (Sprint 18)
  *
  * Pure, deterministic derivations for the Company AI Strategy Dashboard.
  * No LLM calls, no storage access — every function takes plain data in and

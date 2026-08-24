@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Dynamic Assessment Shared Utilities
+ * Svarg — Dynamic Assessment Shared Utilities
  *
  * Shared helpers available on all 4 dynamic assessment pages.
  * Pages include this file and call helpers directly.

@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Contact Us page
+ * Svarg — Contact Us page
  * Shared nav wiring + the contact form submission.
  */
 

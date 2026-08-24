@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Marketing homepage
+ * Svarg — Marketing homepage
  * CTA routing into Cob, the AI maturity journey visualization, and
  * the connected-stack network. Shared nav wiring (dropdowns, mobile
  * panel, scroll shrink) lives in shared/marketingNav.js, reused by
@@ -203,7 +203,7 @@ function wireCtaButtons() {
 //
 // Cob is the hub (it generates the blueprint); Aria, Arth, Eame, and Yusu
 // sit around it, each spoke-connected to Cob and ring-connected to their
-// neighbors. Eame and Yusu are "owned" (built by SoorgaAI, not partner-
+// neighbors. Eame and Yusu are "owned" (built by Svarg, not partner-
 // delivered) now that they're Layer 4 (AI Application) and Layer 5
 // (Business Integration) — reclassified from their earlier Skills &
 // Workforce / Ecosystem framing. Unlike the maturity journey network,

@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Company AI Strategy Dashboard (Sprint 18)
+ * Svarg — Company AI Strategy Dashboard (Sprint 18)
  *
  * Executive, read-oriented view of the company blueprint built in the
  * workspace (Sprints 16–17). No backend, no LLM, no editing controls —

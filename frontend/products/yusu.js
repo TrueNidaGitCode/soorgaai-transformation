@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Yusu (Business Integration) product page
+ * Svarg — Yusu (Business Integration) product page
  * Shared nav wiring + the capability cards reveal animation.
  */
 

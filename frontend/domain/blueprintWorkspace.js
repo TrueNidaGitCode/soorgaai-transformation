@@ -1,5 +1,5 @@
 ﻿/**
- * SoorgaAI — Blueprint Workspace Module (PI 26.3 Sprint 1)
+ * Svarg — Blueprint Workspace Module (PI 26.3 Sprint 1)
  *
  * Manages Screen 3: Company Blueprint Workspace
  *

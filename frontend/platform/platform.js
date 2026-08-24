@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Platform Workspace Auth Guard
+ * Svarg — Platform Workspace Auth Guard
  *
  * Validates the JWT on every load:
  *   No token         → redirect to login (with ?redirect= back here)

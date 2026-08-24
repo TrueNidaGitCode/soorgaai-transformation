@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SoorgaAI — Knowledge Sources</title>
+  <title>Svarg — Knowledge Sources</title>
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../workspace/workspace.css">
   <link rel="stylesheet" href="knowledge-sources.css">
@@ -91,7 +91,7 @@
       <!-- ── State: not connected ──────────────────────────────────────────── -->
       <section id="ks-state-disconnected" class="ws-card ks-state" style="display:none">
         <h2 class="ks-card-heading">Confluence</h2>
-        <p class="ks-card-body">No knowledge source is connected yet. Connecting Confluence lets SoorgaAI read your team's existing pages (text only — diagrams, images, and spreadsheets are skipped) and ground every blueprint in what your organisation has already documented.</p>
+        <p class="ks-card-body">No knowledge source is connected yet. Connecting Confluence lets Svarg read your team's existing pages (text only — diagrams, images, and spreadsheets are skipped) and ground every blueprint in what your organisation has already documented.</p>
         <a id="ks-connect-btn" href="#" class="ks-btn ks-btn--primary">Connect Confluence</a>
         <p class="ks-permission-note" id="ks-disconnected-noaccess" style="display:none">Only CTO or admin users can connect a knowledge source. Ask your CTO or an admin to connect Confluence for your organisation.</p>
       </section>
@@ -99,7 +99,7 @@
       <!-- ── State: connected, spaces not yet selected ─────────────────────── -->
       <section id="ks-state-select-spaces" class="ws-card ks-state" style="display:none">
         <h2 class="ks-card-heading">Choose spaces to extract</h2>
-        <p class="ks-card-body">Connected to <strong id="ks-site-name"></strong>. Select the Confluence spaces SoorgaAI should read from.</p>
+        <p class="ks-card-body">Connected to <strong id="ks-site-name"></strong>. Select the Confluence spaces Svarg should read from.</p>
         <div id="ks-space-list" class="ks-space-list"></div>
         <button id="ks-extract-btn" class="ks-btn ks-btn--primary" disabled>Extract selected spaces</button>
       </section>

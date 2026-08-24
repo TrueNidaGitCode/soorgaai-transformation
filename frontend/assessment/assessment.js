@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Assessment Form Logic
+ * Svarg — Assessment Form Logic
  *
  * Steps:
  *   0       → Organisation context (name, industry, size)

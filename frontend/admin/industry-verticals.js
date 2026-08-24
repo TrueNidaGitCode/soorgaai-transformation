@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Industry Verticals (platform admin only)
+ * Svarg — Industry Verticals (platform admin only)
  *
  * List + create industry sub-verticals, run web-search research, review and
  * approve/discard/edit drafted sections before they become available as

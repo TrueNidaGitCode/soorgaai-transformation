@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Domain Page Bootstrap
+ * Svarg — Domain Page Bootstrap
  *
  * Lightweight coordinator: validates auth and sets the page title.
  * Heavy lifting is split between canvas.js and chat.js.

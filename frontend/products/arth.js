@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Arth (Technology & Infrastructure) product page
+ * Svarg — Arth (Technology & Infrastructure) product page
  * Shared nav wiring + the capability cards and sovereign-stack reveal animations.
  */
 

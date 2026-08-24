@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Maturity Stages Data
+ * Svarg — Maturity Stages Data
  * Single source of truth for the 5 AI maturity stages on the frontend.
  *
  * MUST stay in sync with:

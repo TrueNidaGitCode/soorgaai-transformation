@@ -1,12 +1,12 @@
 /**
- * SoorgaAI — Enterprise Blueprint page (org's own CTO/Admin)
+ * Svarg — Enterprise Blueprint page (org's own CTO/Admin)
  *
  * Shows the org's proprietary AI strategy document as a capability sidebar +
  * section detail panel. Sections may already be filled in from a matching
  * CompanyResearchLibrary entry (admin-approved public research, copied in at
  * signup — see ensureBlueprint) or from this org's own CTO typing directly;
  * both look identical here, no review/approve UI at this level — that
- * happens centrally, by SoorgaAI platform admins, in
+ * happens centrally, by Svarg platform admins, in
  * frontend/admin/company-library.js before any org ever sees it. Empty
  * sections can be filled in manually.
  */
@@ -142,7 +142,7 @@ function buildApprovedView(section) {
   wrap.className = 'eb-approved';
 
   const sourceLabel = section.contentSource === 'company-library'
-    ? 'Sourced from SoorgaAI company research'
+    ? 'Sourced from Svarg company research'
     : section.contentSource === 'cto-manual'
       ? 'Entered manually'
       : '';

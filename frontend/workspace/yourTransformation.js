@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — "Your AI Transformation" Workspace Widget (Sprint 18.1)
+ * Svarg — "Your AI Transformation" Workspace Widget (Sprint 18.1)
  *
  * Personal-progress widget at the top of the workspace. Separates the
  * user's own journey from the Transformation Domain (platform capability)

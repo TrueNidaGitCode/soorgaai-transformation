@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Profile Setup Page
+ * Svarg — Profile Setup Page
  *
  * Guards: if no JWT → redirect to login.
  * On submit: POST /api/profile → redirect to /domain/domain.html.

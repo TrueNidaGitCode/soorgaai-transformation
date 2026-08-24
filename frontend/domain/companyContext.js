@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Company Context Module (Sprint 23.1)
+ * Svarg — Company Context Module (Sprint 23.1)
  *
  * Manages the one-time Company Context onboarding modal and caches the
  * approved content in localStorage for fast reads.
@@ -93,7 +93,7 @@ function _buildModal() {
   const sub = document.createElement('p');
   sub.className = 'cc-modal__subtitle';
   sub.textContent =
-    'SoorgaAI gives better recommendations when it understands your organization. ' +
+    'Svarg gives better recommendations when it understands your organization. ' +
     'Generate a brief company profile from your organization name and role — ' +
     'review and edit before approving.';
   header.appendChild(sub);

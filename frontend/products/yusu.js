@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Yusu (Ecosystem) product page
+ * SoorgaAI — Yusu (Business Integration) product page
  * Shared nav wiring + the capability cards reveal animation.
  */
 

@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Eame (Skills & Workforce) product page
+ * SoorgaAI — Eame (AI Application) product page
  * Shared nav wiring + the capability cards reveal animation.
  */
 

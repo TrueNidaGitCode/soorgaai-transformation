@@ -497,9 +497,9 @@
   .mkt-journey__stage-name { font-size: 22px; }
   .mkt-journey__heading { font-size: 23px; }
 
-  .mkt-pillars__grid { gap: 14px; }
-  .mkt-pillar-card { padding: 18px; }
-  .mkt-pillar-card__mock { padding: 12px; min-height: 116px; }
+  .mkt-pillars__grid { gap: 12px; }
+  .mkt-pillar-card { padding: 16px; }
+  .mkt-pillar-card__mock { padding: 12px; min-height: 92px; }
 
   .mkt-industry__grid { gap: 32px; }
   .mkt-industry__heading { font-size: 26px; }
@@ -508,14 +508,14 @@
 /* ── Pillars ───────────────────────────────────────────────────── */
 .mkt-pillars {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 88px 32px;
+  padding: 64px 32px;
 }
 
 .mkt-pillars__headline {
   max-width: 760px;
-  margin: 0 auto 52px;
+  margin: 0 auto 36px;
   text-align: center;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1.28;
   letter-spacing: -0.3px;
@@ -526,7 +526,7 @@
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -536,7 +536,7 @@
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 18px;
-  padding: 24px;
+  padding: 20px;
 }
 
 .mkt-pillar-card__num {
@@ -545,14 +545,14 @@
   font-weight: 800;
   letter-spacing: 1px;
   color: var(--accent-green);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .mkt-pillar-card__title {
-  font-size: 18.5px;
+  font-size: 17px;
   font-weight: 800;
   color: #fff;
-  margin: 0 0 20px;
+  margin: 0 0 14px;
 }
 
 .mkt-pillar-card__mock {
@@ -560,12 +560,12 @@
   flex-direction: column;
   justify-content: center;
   gap: 14px;
-  min-height: 132px;
+  min-height: 100px;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
+  padding: 14px;
+  margin-bottom: 14px;
 }
 
 .mkt-pillar-chain {
@@ -613,35 +613,6 @@
   margin: 0;
 }
 .mkt-pillar-card__body strong { color: rgba(255, 255, 255, 0.88); }
-
-.mkt-pillars__summary {
-  max-width: 600px;
-  margin: 36px auto 0;
-  text-align: center;
-  font-size: 15px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
-}
-.mkt-pillars__summary strong {
-  color: var(--accent-green);
-  font-weight: 800;
-}
-
-.mkt-pillars__subheadline {
-  max-width: 600px;
-  margin: 56px auto 28px;
-  padding-top: 36px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  text-align: center;
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1.3;
-}
-
-.mkt-pillars__grid--secondary {
-  max-width: 780px;
-  grid-template-columns: repeat(2, 1fr);
-}
 
 /* ── AI Maturity Journey ───────────────────────────────────────── */
 .mkt-journey {

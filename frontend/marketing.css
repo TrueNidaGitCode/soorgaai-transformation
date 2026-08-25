@@ -497,6 +497,8 @@
   .mkt-journey__stage-name { font-size: 22px; }
   .mkt-journey__heading { font-size: 23px; }
 
+  .mkt-stack__grid { gap: 40px; }
+
   .mkt-pillars__grid { gap: 12px; }
   .mkt-pillar-card { padding: 16px; }
   .mkt-pillar-card__mock { padding: 12px; min-height: 92px; }
@@ -1966,12 +1968,20 @@
 .mkt-stack {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 88px 32px;
-  text-align: center;
+}
+
+/* ── Left: intro copy + right: stack visual ─────────────────── */
+.mkt-stack__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 64px;
+  max-width: 1160px;
+  margin: 0 auto;
 }
 
 .mkt-stack__intro {
-  max-width: 620px;
-  margin: 0 auto 40px;
+  text-align: left;
 }
 
 .mkt-stack__eyebrow {
@@ -2016,7 +2026,6 @@
 .mkt-stack__canvas {
   display: flex;
   justify-content: center;
-  margin-bottom: 8px;
 }
 
 /* ── Full stack visual: five stacked, clickable layers ──────────────
@@ -2205,5 +2214,7 @@
   .mkt-product-partnership__card { padding: 32px 24px; }
 
   .mkt-stack { padding: 56px 24px; }
+  .mkt-stack__grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
+  .mkt-stack__intro { text-align: center; }
   .mkt-stack__heading { font-size: 24px; }
 }

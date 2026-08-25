@@ -499,105 +499,8 @@
 
   .mkt-stack__grid { gap: 40px; }
 
-  .mkt-bottlenecks__grid { grid-template-columns: repeat(3, 1fr); gap: 28px 20px; }
-
   .mkt-industry__grid { gap: 32px; }
   .mkt-industry__heading { font-size: 26px; }
-}
-
-/* ── Bottlenecks ───────────────────────────────────────────────── */
-.mkt-bottlenecks {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 64px 32px;
-  text-align: center;
-}
-
-.mkt-bottlenecks__eyebrow {
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--accent-green);
-  margin: 0 0 16px;
-}
-
-.mkt-bottlenecks__heading {
-  max-width: 640px;
-  margin: 0 auto 16px;
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1.28;
-  letter-spacing: -0.3px;
-}
-
-.mkt-bottlenecks__sub {
-  max-width: 560px;
-  margin: 0 auto 44px;
-  font-size: 15px;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.58);
-}
-
-.mkt-bottlenecks__grid {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 20px;
-  align-items: start;
-}
-
-.mkt-bottleneck-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  padding: 0 4px;
-}
-
-.mkt-bottleneck-card__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: rgba(92, 197, 167, 0.08);
-  border: 1px solid rgba(92, 197, 167, 0.28);
-  color: var(--accent-green);
-  margin-bottom: 18px;
-}
-
-.mkt-bottleneck-card__num {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-  color: var(--accent-green);
-  margin: 0 0 8px;
-}
-
-.mkt-bottleneck-card__flow {
-  font-size: 14.5px;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.4;
-  margin: 0 0 10px;
-}
-
-.mkt-bottleneck-card__body {
-  font-size: 13px;
-  line-height: 1.58;
-  color: rgba(255, 255, 255, 0.55);
-  margin: 0;
-}
-.mkt-bottleneck-card__body strong { color: rgba(255, 255, 255, 0.88); }
-
-.mkt-bottlenecks__closing {
-  max-width: 560px;
-  margin: 44px auto 0;
-  font-size: 17px;
-  font-weight: 700;
-  color: #fff;
 }
 
 /* ── AI Maturity Journey ───────────────────────────────────────── */
@@ -2154,10 +2057,6 @@
   .mkt-hero__actions { justify-content: center; }
   .mkt-blueprint { max-width: 360px; padding: 18px 18px 20px; }
   .mkt-blueprint__meta { display: none; }
-
-  .mkt-bottlenecks__heading { font-size: 24px; }
-  .mkt-bottlenecks__grid { grid-template-columns: 1fr; gap: 32px; }
-  .mkt-bottleneck-card { align-items: center; text-align: center; }
 
   .mkt-journey__top { grid-template-columns: 1fr; padding: 40px 24px 32px; gap: 28px; text-align: center; }
   .mkt-journey__content { order: -1; text-align: center; }

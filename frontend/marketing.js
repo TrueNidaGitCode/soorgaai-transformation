@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMarketingNav();
   wireCtaButtons();
   wireJourneyAnimation();
-  wireStackNetwork();
+  wireFullstackReveal();
 });
 
 // ── AI Maturity Journey ──────────────────────────────────────────────
@@ -201,81 +201,27 @@ function wireCtaButtons() {
 
 // ── The stack, connected ─────────────────────────────────────────────
 //
-// Cob is the hub (it generates the blueprint); Aria, Arth, Eame, and Yusu
-// sit around it, each spoke-connected to Cob and ring-connected to their
-// neighbors. Eame and Yusu are "owned" (built by Svarg, not partner-
-// delivered) now that they're Layer 4 (AI Application) and Layer 5
-// (Business Integration) — reclassified from their earlier Skills &
-// Workforce / Ecosystem framing. Unlike the maturity journey network,
-// this one reveals once and settles (a stable system, not a staged
-// progression), reusing the same node/edge technique.
-const STACK_NODES = [
-  { id: 'cob',  x: 300, y: 300, r: 16, kind: 'hub' },
-  { id: 'aria', x: 300, y: 110, r: 11, kind: 'partner' },
-  { id: 'arth', x: 490, y: 300, r: 11, kind: 'partner' },
-  { id: 'eame', x: 300, y: 490, r: 11, kind: 'owned' },
-  { id: 'yusu', x: 110, y: 300, r: 11, kind: 'owned' },
-];
-
-const STACK_EDGES = [
-  { a: 'cob', b: 'aria' },
-  { a: 'cob', b: 'arth' },
-  { a: 'cob', b: 'eame' },
-  { a: 'cob', b: 'yusu' },
-  { a: 'aria', b: 'arth' },
-  { a: 'arth', b: 'eame' },
-  { a: 'eame', b: 'yusu' },
-  { a: 'yusu', b: 'aria' },
-];
-
-function buildStackNetwork(svg) {
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const byId = {};
-  STACK_NODES.forEach((n) => { byId[n.id] = n; });
-
-  STACK_EDGES.forEach((e, i) => {
-    const a = byId[e.a];
-    const b = byId[e.b];
-    const line = document.createElementNS(svgNS, 'line');
-    line.setAttribute('x1', a.x);
-    line.setAttribute('y1', a.y);
-    line.setAttribute('x2', b.x);
-    line.setAttribute('y2', b.y);
-    line.setAttribute('class', 'mkt-stack__edge');
-    line.style.setProperty('--i', i);
-    svg.appendChild(line);
-  });
-
-  STACK_NODES.forEach((n, i) => {
-    const circle = document.createElementNS(svgNS, 'circle');
-    circle.setAttribute('cx', n.x);
-    circle.setAttribute('cy', n.y);
-    circle.setAttribute('r', n.r);
-    circle.setAttribute('class', `mkt-stack__node mkt-stack__node--${n.kind}`);
-    circle.style.setProperty('--i', i);
-    svg.appendChild(circle);
-  });
-}
-
-function wireStackNetwork() {
-  const svg = document.getElementById('stack-network');
-  if (!svg) return;
-
-  buildStackNetwork(svg);
+// Five stacked layers, Yusu (Adopt) at the top down to Cob (Define) at
+// the bottom — a physical stack rather than a node graph, since the
+// copy now reads top-to-bottom as "AI at work" down to "AI opportunity".
+// Plays once, the first time it scrolls into view, each layer rising
+// in with a stagger driven by the --i custom property set per layer.
+function wireFullstackReveal() {
+  const stack = document.getElementById('stack-fullstack');
+  if (!stack) return;
 
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    svg.classList.add('is-visible', 'is-settled');
+    stack.classList.add('is-visible');
     return;
   }
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
-        svg.classList.add('is-visible');
-        setTimeout(() => svg.classList.add('is-settled'), 1400);
-        observer.unobserve(svg);
+        stack.classList.add('is-visible');
+        observer.unobserve(stack);
       }
     });
-  }, { threshold: 0.3 });
-  observer.observe(svg);
+  }, { threshold: 0.2 });
+  observer.observe(stack);
 }

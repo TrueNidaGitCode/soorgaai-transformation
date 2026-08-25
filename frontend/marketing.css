@@ -642,7 +642,10 @@
   margin: 0 0 14px;
 }
 
-.mkt-journey__eyebrow--vision {
+/* Divider before the second heading — matches whichever heading directly
+   follows the first sub-paragraph, since the vision eyebrow that used to
+   carry this spacing was removed from the markup. */
+.mkt-journey__sub + .mkt-journey__heading {
   margin-top: 28px;
   padding-top: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -1991,122 +1994,131 @@
   font-size: 15px;
   line-height: 1.65;
   color: rgba(255, 255, 255, 0.58);
+  margin: 0 0 18px;
+}
+.mkt-stack__sub strong { color: #fff; }
+
+.mkt-stack__flow {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent-green);
+  margin: 0 0 10px;
+}
+
+.mkt-stack__tag {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.42);
   margin: 0;
 }
+.mkt-stack__tag em { font-style: normal; }
 
 .mkt-stack__canvas {
   display: flex;
   justify-content: center;
-  margin-bottom: 32px;
+  margin-bottom: 8px;
 }
 
-.mkt-stack__network {
-  width: min(60vw, 420px);
-  aspect-ratio: 1 / 1;
-  overflow: visible;
-  transition: filter 0.6s ease;
-}
-.mkt-stack__network.is-settled {
-  filter: drop-shadow(0 0 20px rgba(92, 197, 167, 0.3));
-}
-
-.mkt-stack__node {
-  opacity: 0;
-  transform: scale(0.4);
-  transform-origin: center;
-  transform-box: fill-box;
-  transition: opacity 0.6s ease, transform 0.6s ease;
-  transition-delay: calc(var(--i) * 0.12s);
-}
-.mkt-stack__network.is-visible .mkt-stack__node {
-  opacity: 1;
-  transform: scale(1);
-}
-.mkt-stack__node--hub {
-  fill: rgba(92, 197, 167, 0.18);
-  stroke: #5CC5A7;
-  stroke-width: 2;
-}
-.mkt-stack__node--owned {
-  fill: #0d0f13;
-  stroke: #5CC5A7;
-  stroke-width: 1.6;
-}
-.mkt-stack__node--partner {
-  fill: #0d0f13;
-  stroke: #3DAFD3;
-  stroke-width: 1.6;
-}
-
-.mkt-stack__edge {
-  stroke: url(#stack-edge-gradient);
-  stroke-width: 1.2;
-  opacity: 0;
-  transition: opacity 0.7s ease;
-  transition-delay: calc(0.5s + var(--i) * 0.08s);
-}
-.mkt-stack__network.is-visible .mkt-stack__edge {
-  opacity: 0.5;
-}
-
-.mkt-stack__legend {
+/* ── Full stack visual: five stacked, clickable layers ──────────────
+   Same pseudo-isometric slab technique as Arth's .mkt-stack3 (skewed
+   top face + front face, reliable 2D CSS trick) — reused here for
+   visual consistency between "the complete stack" on the homepage and
+   the sovereign stack on the Arth page. Reads bottom-to-top as the
+   pipeline order (Cob first) and reveals in that same order. */
+.mkt-fullstack {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.mkt-stack__chip {
-  display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.75);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  padding: 8px 16px;
-  text-decoration: none;
-  transition: border-color 0.12s, color 0.12s, background 0.12s;
-}
-.mkt-stack__chip:hover {
-  border-color: #3DAFD3;
-  color: #fff;
-  background: rgba(61, 175, 211, 0.08);
-}
-.mkt-stack__chip--owned:hover {
-  border-color: var(--accent-green);
-  background: rgba(92, 197, 167, 0.08);
+  gap: 12px;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
-.mkt-stack__chip-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #3DAFD3;
+.mkt-fullstack__cap {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.mkt-fullstack__layer {
+  display: block;
+  position: relative;
+  width: 100%;
+  padding-top: 20px;
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition-delay: calc(var(--i) * 0.1s);
+}
+.mkt-fullstack.is-visible .mkt-fullstack__layer {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mkt-fullstack__top {
+  position: absolute;
+  top: 0;
+  left: 22px;
+  right: 22px;
+  height: 20px;
+  background: linear-gradient(90deg, rgba(146, 230, 205, 0.55), rgba(92, 197, 167, 0.28));
+  transform: skewX(-24deg);
+  border-radius: 4px 8px 0 0;
+}
+
+.mkt-fullstack__front {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px;
+  border-radius: 10px;
+  background: linear-gradient(165deg, rgba(92, 197, 167, 0.1), rgba(13, 15, 19, 0.92));
+  border: 1px solid rgba(92, 197, 167, 0.35);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s ease;
+}
+.mkt-fullstack__layer:hover .mkt-fullstack__front {
+  border-color: #5CC5A7;
+}
+
+.mkt-fullstack__layer--partner .mkt-fullstack__top {
+  background: linear-gradient(90deg, rgba(130, 205, 230, 0.5), rgba(61, 175, 211, 0.28));
+}
+.mkt-fullstack__layer--partner .mkt-fullstack__front {
+  border-color: rgba(61, 175, 211, 0.35);
+}
+.mkt-fullstack__layer--partner:hover .mkt-fullstack__front {
+  border-color: #3DAFD3;
+}
+
+.mkt-fullstack__name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
   flex-shrink: 0;
 }
-.mkt-stack__chip--owned .mkt-stack__chip-dot,
-.mkt-stack__chip-dot--owned {
-  background: var(--accent-green);
+
+.mkt-fullstack__desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: right;
 }
 
-.mkt-stack__legend-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
-  margin: 0;
+@media (max-width: 560px) {
+  .mkt-fullstack__front {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .mkt-fullstack__desc { text-align: left; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mkt-stack__node,
-  .mkt-stack__edge,
-  .mkt-stack__network {
+  .mkt-fullstack__layer {
     transition: none !important;
   }
 }
@@ -2194,5 +2206,4 @@
 
   .mkt-stack { padding: 56px 24px; }
   .mkt-stack__heading { font-size: 24px; }
-  .mkt-stack__network { width: min(75vw, 320px); }
 }

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Svarg — Retrieval-Augmented Semantic Matching for Defects: a walking-skeleton demo matching a new failure description against historical defect records.">
+  <title>Defect Matching — Svarg</title>
+
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="defect-matching.css">
+
+  <script src="../login/config.js"></script>
+  <script type="module" src="../login/authState.js"></script>
+  <script type="module" src="../navbar/navbar.js"></script>
+</head>
+<body>
+
+  <div id="navbar-container" style="min-height:64px"></div>
+
+  <main class="dm-page">
+
+    <!-- ── Page header ──────────────────────────────────────── -->
+    <header class="dm-header">
+      <p class="dm-header__eyebrow">Walking skeleton &middot; Eame</p>
+      <h1 class="dm-header__title">Retrieval-Augmented Semantic Matching for Defects</h1>
+      <p class="dm-header__sub">
+        Cob's top-ranked opportunity for the ORU Pre-analysis engagement.
+        Describe a new test failure below — this matches it against
+        historical defect records and suggests a likely root cause. Seeded
+        with synthetic, representative OTA ECU flashing scenarios, not real
+        customer data.
+      </p>
+    </header>
+
+    <!-- ── Input form ──────────────────────────────────────────── -->
+    <form class="dm-form" id="dm-form">
+      <label class="dm-form__label" for="dm-description">New failure description</label>
+      <textarea
+        id="dm-description"
+        class="dm-form__textarea"
+        rows="4"
+        placeholder="e.g. Flash attempt on the gateway ECU failed after transfer; checksum verification did not match the expected value."
+        required
+      ></textarea>
+      <button type="submit" class="dm-form__submit" id="dm-submit">Find similar defects</button>
+    </form>
+
+    <!-- ── Loading state ─────────────────────────────────────── -->
+    <div class="dm-loading" id="dm-loading" hidden aria-live="polite">
+      <div class="dm-spinner" role="status" aria-label="Matching defects"></div>
+      <p>Retrieving similar defects and drafting a root-cause suggestion…</p>
+    </div>
+
+    <!-- ── Error state ───────────────────────────────────────── -->
+    <div class="dm-error" id="dm-error" hidden></div>
+
+    <!-- ── Results ───────────────────────────────────────────── -->
+    <section class="dm-results" id="dm-results" hidden>
+
+      <div class="dm-root-cause">
+        <p class="dm-root-cause__label">Suggested root cause</p>
+        <p class="dm-root-cause__text" id="dm-root-cause-text"></p>
+      </div>
+
+      <h2 class="dm-matches__heading">Matched historical defects</h2>
+      <div class="dm-matches" id="dm-matches"></div>
+
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2026 Svarg. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
+    </div>
+  </footer>
+
+  <script type="module" src="defect-matching.js"></script>
+</body>
+</html>

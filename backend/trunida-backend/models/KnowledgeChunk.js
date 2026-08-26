@@ -2,7 +2,7 @@
  * SoorgaAI — Unified Knowledge Chunk (hybrid retrieval)
  *
  * One collection for every retrievable chunk, regardless of source — KB
- * markdown sections today, Confluence-extracted documents next. Both the
+ * markdown sections, Confluence-extracted documents, defect records. Both the
  * structured arm (metadata filter, no embedding needed) and the semantic
  * arm (Atlas Vector Search on `embedding`) query this same collection, so
  * blueprint generation and chat share one retrieval system instead of two.
@@ -16,7 +16,7 @@ import mongoose from 'mongoose';
 const knowledgeChunkSchema = new mongoose.Schema({
   chunkId: { type: String, required: true, unique: true, index: true },
 
-  sourceType: { type: String, required: true, enum: ['kb', 'confluence'] },
+  sourceType: { type: String, required: true, enum: ['kb', 'confluence', 'defect'] },
 
   // KB-sourced fields
   layer:        { type: String, default: '' },   // 'Core' | industry name (e.g. 'Automotive')

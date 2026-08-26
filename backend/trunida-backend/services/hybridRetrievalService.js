@@ -143,6 +143,26 @@ export async function syncConfluenceDocToChunk(doc) {
   }]);
 }
 
+/**
+ * Syncs one DefectRecord into the shared chunk store — one chunk per
+ * record, embedding title + symptom only (deliberately excludes
+ * rootCause/resolution, so the embedding represents "what a new failure
+ * looks like," not "what we already know the answer is").
+ */
+export async function syncDefectRecordToChunk(record) {
+  return upsertChunks([{
+    sourceType: 'defect',
+    orgName:    record.orgName,
+    industry:   record.industry,
+    docType:    record.system || '',
+    keywords:   record.keywords || [],
+    title:      record.title,
+    section:    record.title,
+    path:       record.defectId,
+    content:    `${record.title}\n${record.symptom}`,
+  }]);
+}
+
 /** One-time (or idempotent re-run) creation of the Atlas Vector Search index. */
 export async function ensureVectorIndex() {
   const coll = KnowledgeChunk.collection;

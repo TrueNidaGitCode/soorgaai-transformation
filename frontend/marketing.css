@@ -1900,7 +1900,15 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--accent-green);
-  margin: 0 0 10px;
+  margin: 0 0 18px;
+}
+
+.mkt-stack__closing {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.4;
+  margin: 0 0 14px;
 }
 
 .mkt-stack__tag {
@@ -1967,10 +1975,9 @@
 
 .mkt-fullstack__front {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 24px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 24px 12px;
   border-radius: 10px;
   background: linear-gradient(165deg, rgba(92, 197, 167, 0.1), rgba(13, 15, 19, 0.92));
   border: 1px solid rgba(92, 197, 167, 0.35);
@@ -1991,6 +1998,13 @@
   border-color: #3DAFD3;
 }
 
+.mkt-fullstack__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .mkt-fullstack__name {
   font-size: 16px;
   font-weight: 800;
@@ -2004,8 +2018,15 @@
   text-align: right;
 }
 
+.mkt-fullstack__note {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 7px;
+}
+
 @media (max-width: 560px) {
-  .mkt-fullstack__front {
+  .mkt-fullstack__row {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;

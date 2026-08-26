@@ -101,6 +101,17 @@ function setupNavbarHandlers() {
     if (roadmapCta && window.SoorgaAuth) {
         roadmapCta.href = window.SoorgaAuth.getRoadmapHref();
     }
+
+    // ── Minimal mode: internal demo pages opt in via data-nav-mode="minimal" ──
+    // Same auth chrome (username, logout, roadmap CTA) as any other page —
+    // just hides the full product nav (Enterprise/Framework/Pricing/
+    // Knowledge Base/My Assessments/Admin), which isn't relevant here.
+    if (document.body.dataset.navMode === 'minimal') {
+        const navLinksList = document.getElementById('navLinksList');
+        if (navLinksList) navLinksList.style.display = 'none';
+        if (myAssessmentsBtn) myAssessmentsBtn.style.display = 'none';
+        if (adminBtn) adminBtn.style.display = 'none';
+    }
 }
 
 // ── Navigation links ──────────────────────────────────────

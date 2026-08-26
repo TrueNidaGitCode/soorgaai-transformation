@@ -1,6 +1,6 @@
 # SoorgaAI — Architecture
 
-How the system is actually built. For what a customer experiences, see [USER_JOURNEY.md](USER_JOURNEY.md); for the admin tooling, see [ADMIN_JOURNEY.md](ADMIN_JOURNEY.md); for frameworks/libraries/hosting, see [TECH_STACK.md](TECH_STACK.md) (not duplicated here).
+How the system is actually built. For what a customer experiences, see [USER_JOURNEY.md](USER_JOURNEY.md); for the admin tooling, see [ADMIN_JOURNEY.md](ADMIN_JOURNEY.md); for frameworks/libraries/hosting, see [TECH_STACK.md](TECH_STACK.md); for how the five products (Cob/Aria/Arth/Eame/Yusu) connect to a customer's own engineering lifecycle, see [PRODUCT_PIPELINE_SCHEMA.md](PRODUCT_PIPELINE_SCHEMA.md) — a design document, not yet implemented (not duplicated here).
 
 ## The mental model: five knowledge layers
 

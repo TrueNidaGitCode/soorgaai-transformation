@@ -1,0 +1,282 @@
+/* ── Page ────────────────────────────────────────────────────────────────── */
+.pd-page { max-width: 1200px; }
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.pd-header { margin-bottom: 28px; }
+
+.pd-header__eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #5CC5A7;
+  margin: 0 0 12px;
+}
+
+.pd-header__sub {
+  font-size: 15px;
+  color: rgba(255,255,255,0.55);
+  max-width: 680px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── Journey chain ───────────────────────────────────────────────────────── */
+.pd-chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 20px;
+  margin-bottom: 36px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+}
+
+.pd-chain__node {
+  padding: 7px 16px;
+  background: rgba(92,197,167,0.07);
+  border: 1px solid rgba(92,197,167,0.25);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pd-chain__node:hover {
+  background: rgba(92,197,167,0.14);
+  border-color: #5CC5A7;
+}
+
+.pd-chain__arrow {
+  color: rgba(92,197,167,0.5);
+  font-size: 14px;
+}
+
+/* ── Stages ──────────────────────────────────────────────────────────────── */
+.pd-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pd-stage { scroll-margin-top: 84px; }
+
+.pd-stage__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.pd-stage__title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.pd-stage__intro {
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.55);
+  margin: 0 0 20px;
+  max-width: 720px;
+}
+
+.pd-substage-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin: 20px 0 10px;
+}
+
+/* ── Status badges ───────────────────────────────────────────────────────── */
+.pd-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.pd-badge--live       { background: rgba(92,197,167,0.12);  color: #5CC5A7; border: 1px solid rgba(92,197,167,0.35); }
+.pd-badge--simulated  { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.16); }
+.pd-badge--reused     { background: rgba(61,175,211,0.12);  color: #3DAFD3; border: 1px solid rgba(61,175,211,0.35); }
+.pd-badge--human      { background: rgba(212,175,110,0.12); color: #D4AF6E; border: 1px solid rgba(212,175,110,0.35); }
+
+/* ── Cob: quote + winner ─────────────────────────────────────────────────── */
+.pd-quote {
+  margin: 0 0 20px;
+  padding: 14px 18px;
+  border-left: 3px solid rgba(92,197,167,0.4);
+  background: rgba(255,255,255,0.025);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.75);
+}
+
+.pd-winner {
+  padding: 18px 20px;
+  background: rgba(92,197,167,0.08);
+  border: 1px solid rgba(92,197,167,0.3);
+  border-radius: 10px;
+}
+
+.pd-winner__label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #5CC5A7;
+  margin: 0 0 8px;
+}
+
+.pd-winner__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 10px;
+}
+
+.pd-winner__why {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.6);
+  font-style: italic;
+  margin: 0;
+}
+
+.pd-deemphasized {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13.5px;
+  line-height: 1.9;
+  color: rgba(255,255,255,0.4);
+}
+
+/* ── Aria: dataset list ──────────────────────────────────────────────────── */
+.pd-datasets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pd-dataset {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.pd-dataset__name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #fff;
+  flex: 1 1 240px;
+}
+
+.pd-dataset__priority {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.pd-dataset__priority--high   { background: rgba(248,113,113,0.1); color: rgba(248,113,113,0.9); }
+.pd-dataset__priority--medium { background: rgba(212,175,110,0.1); color: #D4AF6E; }
+
+.pd-dataset__source {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  white-space: nowrap;
+}
+
+/* ── Arth: infra grid ────────────────────────────────────────────────────── */
+.pd-infra-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pd-infra-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+}
+
+.pd-infra-item__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+
+.pd-infra-item__value {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* ── Shared: manual/warning notes ────────────────────────────────────────── */
+.pd-manual-note {
+  margin: 20px 0 0;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.55);
+}
+.pd-manual-note strong { color: rgba(255,255,255,0.8); }
+
+.pd-manual-note--warn {
+  background: rgba(212,175,110,0.06);
+  border-color: rgba(212,175,110,0.25);
+}
+.pd-manual-note--warn strong { color: #D4AF6E; }
+
+/* ── Yusu: tags ──────────────────────────────────────────────────────────── */
+.pd-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pd-tag {
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .pd-chain { padding: 12px 14px; }
+  .pd-chain__node { padding: 6px 12px; font-size: 12.5px; }
+  .pd-dataset { flex-direction: column; align-items: flex-start; }
+}

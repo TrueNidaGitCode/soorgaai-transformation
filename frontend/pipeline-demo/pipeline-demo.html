@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Svarg — How Cob, Aria, Arth, Eame, and Yusu connect for the real ORU Pre-analysis engagement.">
+  <title>Pipeline Demonstration — Svarg</title>
+
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../workspace/workspace.css">
+  <link rel="stylesheet" href="../defect-matching/defect-matching.css">
+  <link rel="stylesheet" href="pipeline-demo.css">
+
+  <script src="../login/config.js"></script>
+  <script type="module" src="../login/authState.js"></script>
+  <script type="module" src="../navbar/navbar.js"></script>
+</head>
+<body>
+
+  <div id="navbar-container" style="min-height:64px"></div>
+
+  <main class="workspace-main pd-page">
+
+    <!-- ── Page header ──────────────────────────────────────── -->
+    <header class="pd-header">
+      <p class="pd-header__eyebrow">Internal demonstration &middot; ORU Pre-analysis (KPIT / CARIAD)</p>
+      <h1 class="ws-page-title">How the five products connect, end to end</h1>
+      <p class="pd-header__sub">
+        One real engagement, walked through stage by stage — what's
+        actually live, what's simulated by hand, what's reused
+        infrastructure, and what's still a human-delivered step. Built to
+        surface the gaps, not paper over them.
+      </p>
+    </header>
+
+    <!-- ── Journey chain ─────────────────────────────────────── -->
+    <nav class="pd-chain" aria-label="Pipeline stages">
+      <a href="#stage-cob" class="pd-chain__node">Cob</a>
+      <span class="pd-chain__arrow" aria-hidden="true">→</span>
+      <a href="#stage-aria" class="pd-chain__node">Aria</a>
+      <span class="pd-chain__arrow" aria-hidden="true">→</span>
+      <a href="#stage-arth" class="pd-chain__node">Arth</a>
+      <span class="pd-chain__arrow" aria-hidden="true">→</span>
+      <a href="#stage-eame" class="pd-chain__node">Eame</a>
+      <span class="pd-chain__arrow" aria-hidden="true">→</span>
+      <a href="#stage-yusu" class="pd-chain__node">Yusu</a>
+    </nav>
+
+    <div class="pd-stages">
+
+      <!-- ── 1. Cob ──────────────────────────────────────────── -->
+      <section class="ws-card pd-stage" id="stage-cob">
+        <div class="pd-stage__head">
+          <h2 class="pd-stage__title">1. Cob — AI Strategy &amp; Blueprint</h2>
+          <span class="pd-badge pd-badge--live">Live &middot; real data</span>
+        </div>
+        <p class="pd-stage__intro">
+          The Project Manager's real objective, and what Cob's Opportunity
+          Discovery + Implementation Prioritization did with it. No new
+          code — this reads fields Cob already generates.
+        </p>
+
+        <blockquote class="pd-quote">
+          "I am the Project Manager for the ORU Maintenance &amp;
+          Development project for CARIAD. Our customer wants us to
+          introduce AI into the project, and I have been asked to lead the
+          Pre-analysis initiative."
+        </blockquote>
+
+        <div class="pd-winner">
+          <p class="pd-winner__label">Recommended starting point</p>
+          <p class="pd-winner__name">Retrieval-Augmented Semantic Matching for Defects</p>
+          <p class="pd-winner__why">
+            "Existing defect and investigation data is already structured
+            within VW Group systems (Confluence Wiki, Jira, Polarion,
+            Flash Log Repository), enabling rapid integration and
+            self-hosted deployment without new data pipelines."
+          </p>
+        </div>
+
+        <p class="pd-substage-label">Other opportunities considered, ranked lower</p>
+        <ul class="pd-deemphasized">
+          <li>Anomaly Detection on Flash Execution and Communication Logs</li>
+          <li>Automatic Plausibility Validation via Classification</li>
+          <li>Knowledge Capture &amp; Retrieval-Augmented Assistance</li>
+          <li>Generative Drafting of Pre-analysis Reports</li>
+        </ul>
+      </section>
+
+      <!-- ── 2. Aria ─────────────────────────────────────────── -->
+      <section class="ws-card pd-stage" id="stage-aria">
+        <div class="pd-stage__head">
+          <h2 class="pd-stage__title">2. Aria — Data Readiness</h2>
+          <span class="pd-badge pd-badge--simulated">Simulated &middot; no live product yet</span>
+        </div>
+        <p class="pd-stage__intro">
+          Cob's Data Readiness domain already identified exactly which
+          datasets this opportunity needs. Aria's real job would be
+          closing the gap between what's identified and what's actually
+          connected — for this demo, that step was done by hand, not by a
+          running product.
+        </p>
+
+        <p class="pd-substage-label">Datasets Cob identified as required</p>
+        <div class="pd-datasets">
+          <div class="pd-dataset">
+            <span class="pd-dataset__name">Test Execution and Defect Records</span>
+            <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
+            <span class="pd-dataset__source">Jira, Polarion, TestRail</span>
+          </div>
+          <div class="pd-dataset">
+            <span class="pd-dataset__name">Flashing Logs and Diagnostic Traces</span>
+            <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
+            <span class="pd-dataset__source">Internal log repositories, Campaign Manager</span>
+          </div>
+          <div class="pd-dataset">
+            <span class="pd-dataset__name">Pre-analysis Business Objectives</span>
+            <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
+            <span class="pd-dataset__source">Confluence, program documentation</span>
+          </div>
+          <div class="pd-dataset">
+            <span class="pd-dataset__name">OTA ECU Product Configuration</span>
+            <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
+            <span class="pd-dataset__source">Product configuration DB, Polarion</span>
+          </div>
+          <div class="pd-dataset">
+            <span class="pd-dataset__name">Engineering Knowledge Base</span>
+            <span class="pd-dataset__priority pd-dataset__priority--medium">MEDIUM</span>
+            <span class="pd-dataset__source">Confluence, historical analysis docs</span>
+          </div>
+          <div class="pd-dataset">
+            <span class="pd-dataset__name">OTA System Architecture Artifacts</span>
+            <span class="pd-dataset__priority pd-dataset__priority--medium">MEDIUM</span>
+            <span class="pd-dataset__source">System architecture docs, engineering portal</span>
+          </div>
+        </div>
+
+        <p class="pd-manual-note">
+          <strong>What actually happened here:</strong> we don't have
+          access to KPIT's real Jira, Polarion, or log repositories, so
+          Aria's role was simulated manually — 14 synthetic, representative
+          defect records were written and seeded
+          (<code>seed_defect_records.mjs</code>) to stand in for what Aria
+          would have pulled from the real systems above.
+        </p>
+      </section>
+
+      <!-- ── 3. Arth ─────────────────────────────────────────── -->
+      <section class="ws-card pd-stage" id="stage-arth">
+        <div class="pd-stage__head">
+          <h2 class="pd-stage__title">3. Arth — Model &amp; Infrastructure</h2>
+          <span class="pd-badge pd-badge--reused">Reused infra &middot; not sovereign yet</span>
+        </div>
+        <p class="pd-stage__intro">
+          What actually runs this capability, provisioned with zero new
+          code — Svarg's own existing platform infrastructure, originally
+          built for Cob, reused as-is for Eame's matching and retrieval.
+        </p>
+
+        <div class="pd-infra-grid">
+          <div class="pd-infra-item">
+            <span class="pd-infra-item__label">Embeddings</span>
+            <span class="pd-infra-item__value">OpenAI text-embedding-3-small</span>
+          </div>
+          <div class="pd-infra-item">
+            <span class="pd-infra-item__label">Retrieval</span>
+            <span class="pd-infra-item__value">MongoDB Atlas Vector Search</span>
+          </div>
+          <div class="pd-infra-item">
+            <span class="pd-infra-item__label">Synthesis</span>
+            <span class="pd-infra-item__value">Gemini &rarr; Claude &rarr; OpenAI failover</span>
+          </div>
+        </div>
+
+        <p class="pd-manual-note pd-manual-note--warn">
+          <strong>Real gap, not glossed over:</strong> the actual objective
+          requires operating "completely within the VW Group ecosystem
+          without relying on external AI services." This demo runs on
+          Svarg's frontier-default infrastructure — the sovereign-gated-
+          exception path a real KPIT/CARIAD deployment would need is not
+          what's running here.
+        </p>
+      </section>
+
+      <!-- ── 4. Eame ─────────────────────────────────────────── -->
+      <section class="ws-card pd-stage" id="stage-eame">
+        <div class="pd-stage__head">
+          <h2 class="pd-stage__title">4. Eame — AI Application</h2>
+          <span class="pd-badge pd-badge--live">Live &middot; try it</span>
+        </div>
+        <p class="pd-stage__intro">
+          The one fully working, interactive piece — describe a new test
+          failure below and it retrieves similar historical defects and
+          drafts a cited root-cause suggestion, for real, against the
+          seeded data above.
+        </p>
+
+        <form class="dm-form" id="dm-form">
+          <label class="dm-form__label" for="dm-description">New failure description</label>
+          <textarea
+            id="dm-description"
+            class="dm-form__textarea"
+            rows="4"
+            placeholder="e.g. Flash attempt on the gateway ECU failed after transfer; checksum verification did not match the expected value."
+            required
+          ></textarea>
+          <button type="submit" class="dm-form__submit" id="dm-submit">Find similar defects</button>
+        </form>
+
+        <div class="dm-loading" id="dm-loading" hidden aria-live="polite">
+          <div class="dm-spinner" role="status" aria-label="Matching defects"></div>
+          <p>Retrieving similar defects and drafting a root-cause suggestion…</p>
+        </div>
+
+        <div class="dm-error" id="dm-error" hidden></div>
+
+        <section class="dm-results" id="dm-results" hidden>
+          <div class="dm-root-cause">
+            <p class="dm-root-cause__label">Suggested root cause</p>
+            <p class="dm-root-cause__text" id="dm-root-cause-text"></p>
+          </div>
+          <h3 class="dm-matches__heading">Matched historical defects</h3>
+          <div class="dm-matches" id="dm-matches"></div>
+        </section>
+      </section>
+
+      <!-- ── 5. Yusu ─────────────────────────────────────────── -->
+      <section class="ws-card pd-stage" id="stage-yusu">
+        <div class="pd-stage__head">
+          <h2 class="pd-stage__title">5. Yusu — Enterprise Integration</h2>
+          <span class="pd-badge pd-badge--human">Human-delivered &middot; not automated</span>
+        </div>
+        <p class="pd-stage__intro">
+          Not a self-serve integration product today, and that's the
+          right scope for now — a Svarg engineer sits with the customer's
+          team and wires Eame's output directly into the tools they
+          already use, rather than a separate portal nobody adopts.
+        </p>
+
+        <p class="pd-substage-label">Real target systems named in this engagement</p>
+        <div class="pd-tags">
+          <span class="pd-tag">Jira Defect Management</span>
+          <span class="pd-tag">Polarion Requirements Repository</span>
+          <span class="pd-tag">Confluence Engineering Wiki</span>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2026 Svarg. <em>Transforming organizations into AI-Fueled Enterprises.</em></p>
+    </div>
+  </footer>
+
+  <script type="module" src="pipeline-demo.js"></script>
+</body>
+</html>

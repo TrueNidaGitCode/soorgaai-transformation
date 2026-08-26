@@ -4,6 +4,11 @@
  * Walking-skeleton UI for "Retrieval-Augmented Semantic Matching for
  * Defects" — submits a new failure description, renders the suggested
  * root cause and the matched historical defect records.
+ *
+ * initDefectMatching() is exported so it can be embedded as one panel
+ * inside a larger page (see frontend/pipeline-demo/) as well as bound
+ * standalone here — the caller is responsible for requireAuth(), so it
+ * only ever runs once per page regardless of how many panels need it.
  */
 
 const API_BASE = window.CONFIG?.API_BASE || 'http://localhost:3000/api';
@@ -13,9 +18,9 @@ let formEl, textareaEl, submitBtn, loadingEl, errorEl, resultsEl, rootCauseTextE
 
 // ── Auth guard ────────────────────────────────────────────────────────────
 
-function requireAuth() {
+export function requireAuth() {
   if (!getToken()) {
-    window.location.href = '/login/login.html?redirect=/defect-matching/defect-matching.html';
+    window.location.href = `/login/login.html?redirect=${encodeURIComponent(window.location.pathname)}`;
     return false;
   }
   return true;
@@ -34,7 +39,7 @@ async function fetchMatch(description) {
   });
 
   if (resp.status === 401) {
-    window.location.href = '/login/login.html?redirect=/defect-matching/defect-matching.html';
+    window.location.href = `/login/login.html?redirect=${encodeURIComponent(window.location.pathname)}`;
     throw new Error('session expired');
   }
 
@@ -110,11 +115,9 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// ── Bootstrap ─────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (!requireAuth()) return;
-
+export function initDefectMatching() {
   formEl          = document.getElementById('dm-form');
   textareaEl      = document.getElementById('dm-description');
   submitBtn       = document.getElementById('dm-submit');
@@ -125,4 +128,11 @@ document.addEventListener('DOMContentLoaded', () => {
   matchesEl       = document.getElementById('dm-matches');
 
   formEl.addEventListener('submit', handleSubmit);
+}
+
+// ── Bootstrap (standalone page only) ─────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!requireAuth()) return;
+  initDefectMatching();
 });

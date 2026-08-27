@@ -1,129 +1,31 @@
 /**
  * SoorgaAI — Confluence API Service
  *
- * Pure Atlassian REST client: OAuth 2.0 (3LO) token exchange/refresh,
- * accessible-resources lookup, space/page listing, and page content fetch.
- * No Mongoose/model access here — callers persist whatever this returns.
+ * Confluence-specific REST calls only (space/page listing, page content
+ * fetch). The OAuth mechanics (token exchange/refresh, accessible-resources
+ * lookup) moved to atlassianAuthService.js, since Jira needs the exact same
+ * plumbing — re-exported here so no existing caller's import line changes.
  */
 
 import axios from 'axios';
-import { encryptSecret, decryptSecret } from '../utils/encryption.js';
+import {
+  isAtlassianOAuthConfigured,
+  buildAuthorizeUrl,
+  exchangeCodeForTokens,
+  getAccessibleResources,
+  getValidAccessToken,
+  CONFLUENCE_SCOPES,
+} from './atlassianAuthService.js';
 
-const AUTHORIZE_URL   = 'https://auth.atlassian.com/authorize';
-const TOKEN_URL        = 'https://auth.atlassian.com/oauth/token';
-const RESOURCES_URL    = 'https://api.atlassian.com/oauth/token/accessible-resources';
+export {
+  buildAuthorizeUrl,
+  exchangeCodeForTokens,
+  getAccessibleResources,
+  getValidAccessToken,
+  CONFLUENCE_SCOPES,
+};
 
-const CLIENT_ID     = process.env.CONFLUENCE_OAUTH_CLIENT_ID;
-const CLIENT_SECRET = process.env.CONFLUENCE_OAUTH_CLIENT_SECRET;
-const CALLBACK_URL  = process.env.CONFLUENCE_OAUTH_CALLBACK_URL;
-
-// Granular OAuth scopes — least privilege: read-only content + space listing,
-// offline_access for refresh tokens. Identity (who connected) is already
-// known from our own JWT — no User identity API scope is requested, since
-// nothing in this codebase ever calls an Atlassian /me endpoint.
-//
-// read:confluence-content.all / read:confluence-space.summary are the
-// "classic" granular scopes, tied to the retired v1 REST API
-// (/wiki/rest/api/...). Since confluenceApiService.js now calls the v2 API
-// (/wiki/api/v2/...), it needs the newer read:<resource>:confluence-style
-// scopes instead — confirm these two are enabled under the Confluence API
-// permissions in the Atlassian console (look for entries matching this
-// naming pattern, distinct from the read:confluence-* ones already added).
-export const CONFLUENCE_SCOPES = [
-  'offline_access',
-  'read:space:confluence',
-  'read:page:confluence',
-];
-
-export function isConfluenceOAuthConfigured() {
-  return !!(CLIENT_ID && CLIENT_SECRET && CALLBACK_URL);
-}
-
-/**
- * Builds the Atlassian authorize redirect URL.
- */
-export function buildAuthorizeUrl(state) {
-  const params = new URLSearchParams({
-    audience:      'api.atlassian.com',
-    client_id:     CLIENT_ID,
-    scope:         CONFLUENCE_SCOPES.join(' '),
-    redirect_uri:  CALLBACK_URL,
-    state,
-    response_type: 'code',
-    prompt:        'consent',
-  });
-  return `${AUTHORIZE_URL}?${params}`;
-}
-
-/**
- * Exchanges an authorization code for an access + refresh token pair.
- */
-export async function exchangeCodeForTokens(code) {
-  const { data } = await axios.post(TOKEN_URL, {
-    grant_type:    'authorization_code',
-    client_id:     CLIENT_ID,
-    client_secret: CLIENT_SECRET,
-    code,
-    redirect_uri:  CALLBACK_URL,
-  });
-  return data; // { access_token, refresh_token, expires_in, scope, token_type }
-}
-
-/**
- * Exchanges a refresh token for a new access + refresh token pair.
- * Atlassian rotates the refresh token on every use — always persist the new one.
- */
-async function refreshTokens(refreshToken) {
-  const { data } = await axios.post(TOKEN_URL, {
-    grant_type:    'refresh_token',
-    client_id:     CLIENT_ID,
-    client_secret: CLIENT_SECRET,
-    refresh_token: refreshToken,
-  });
-  return data;
-}
-
-/**
- * Fetches the Atlassian sites (cloudId, url, name) accessible to this token.
- * v1 uses only the first entry — multi-site accounts are not yet supported.
- */
-export async function getAccessibleResources(accessToken) {
-  const { data } = await axios.get(RESOURCES_URL, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  return data; // [{ id: cloudId, url, name, scopes, avatarUrl }]
-}
-
-/**
- * Returns a valid plaintext access token for the given connection, refreshing
- * (and persisting the refreshed, re-encrypted tokens) if the current one has
- * expired or is within 60s of expiry. The plaintext token is never logged.
- *
- * @param {import('mongoose').Document} connection ConfluenceConnection doc
- * @returns {Promise<string>} plaintext access token
- */
-export async function getValidAccessToken(connection) {
-  const expiresAt = connection.accessTokenExpiresAt ? new Date(connection.accessTokenExpiresAt).getTime() : 0;
-  const isExpiring = !expiresAt || expiresAt - Date.now() < 60_000;
-
-  if (!isExpiring) {
-    return decryptSecret(connection.encryptedAccessToken);
-  }
-
-  if (!connection.encryptedRefreshToken) {
-    throw new Error('No refresh token on file — reconnect required.');
-  }
-
-  const refreshToken = decryptSecret(connection.encryptedRefreshToken);
-  const tokens = await refreshTokens(refreshToken);
-
-  connection.encryptedAccessToken  = encryptSecret(tokens.access_token);
-  connection.encryptedRefreshToken = encryptSecret(tokens.refresh_token);
-  connection.accessTokenExpiresAt  = new Date(Date.now() + (tokens.expires_in || 3600) * 1000);
-  await connection.save();
-
-  return tokens.access_token;
-}
+export const isConfluenceOAuthConfigured = isAtlassianOAuthConfigured;
 
 // ── Discovery (metadata only) ────────────────────────────────────────────────
 

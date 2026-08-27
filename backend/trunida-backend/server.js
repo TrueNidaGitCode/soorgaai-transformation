@@ -24,6 +24,7 @@ import feedbackRoutes               from "./routes/feedbackRoutes.js";
 import guestRoutes                  from "./routes/guestRoutes.js";
 import confluenceRoutes             from "./routes/confluenceRoutes.js";
 import personalConfluenceRoutes     from "./routes/personalConfluenceRoutes.js";
+import personalJiraRoutes           from "./routes/personalJiraRoutes.js";
 import actionItemRoutes             from "./routes/actionItemRoutes.js";
 import contactRoutes                from "./routes/contactRoutes.js";
 import defectMatchingRoutes         from "./routes/defectMatchingRoutes.js";
@@ -113,6 +114,7 @@ app.use("/api/guest",                guestRoutes);
 // More specific prefix first, per the convention noted above
 app.use("/api/confluence/personal",  personalConfluenceRoutes);
 app.use("/api/confluence",           confluenceRoutes);
+app.use("/api/jira/personal",        personalJiraRoutes);
 app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
 app.use("/api/defect-matching",      defectMatchingRoutes);
 app.use("/api/action-items",         actionItemRoutes);

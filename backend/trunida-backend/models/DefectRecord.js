@@ -6,10 +6,12 @@
  * same structured-original/retrieval-index split KnowledgeDocument already
  * has relative to KnowledgeChunk, applied to a new source type.
  *
- * v1 is seeded with synthetic, representative records (no real Jira
- * connector exists yet) — `sourceSystem` names which real system a record
+ * v1 was seeded with synthetic, representative records (no real Jira
+ * connector existed yet) — `sourceSystem` names which real system a record
  * represents, and is deliberately suffixed "(sample)" so the synthetic
- * origin is visible in the data itself, not just in code comments.
+ * origin is visible in the data itself, not just in code comments. Real
+ * Jira-sourced records (pipeline wizard Window 3) are added alongside the
+ * synthetic ones, not replacing them — `sourceIssueKey` distinguishes them.
  */
 
 import mongoose from 'mongoose';
@@ -33,8 +35,12 @@ const defectRecordSchema = new mongoose.Schema({
     default: 'medium',
   },
 
-  sourceSystem: { type: String, default: '' },  // e.g. 'Jira Defect Management (sample)'
+  sourceSystem: { type: String, default: '' },  // e.g. 'Jira Defect Management (sample)' or '(real)'
   keywords:     { type: [String], default: [] },
+
+  // Real-Jira provenance (empty for synthetic seed records)
+  sourceIssueKey:    { type: String, default: '' },  // e.g. 'PROJ-123'
+  sourceContentHash: { type: String, default: '' },  // skip re-redaction/re-LLM-call on an unchanged issue
 }, { timestamps: true });
 
 defectRecordSchema.index({ orgName: 1, system: 1 });

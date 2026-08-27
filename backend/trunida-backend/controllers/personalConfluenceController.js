@@ -31,8 +31,8 @@ import {
   listSpaces,
   listPages,
   getPageContent,
-  CONFLUENCE_SCOPES,
 } from '../services/confluenceApiService.js';
+import { ATLASSIAN_SCOPES, JIRA_SCOPES } from '../services/atlassianAuthService.js';
 import { htmlToText, hashText, truncateForLLM, classifyDocument } from '../services/confluenceContentService.js';
 import { regenerateTransformationCapabilityAsync } from '../services/blueprintGenerationService.js';
 
@@ -44,6 +44,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
 const RETURN_PATHS = {
   'profile-setup':     '/profile-setup/profile.html',
   'knowledge-sources': '/knowledge-sources/knowledge-sources.html',
+  'pipeline-wizard':   '/pipeline-demo/pipeline-demo.html',
 };
 
 function auditLog(action, userId, extra = {}) {
@@ -82,20 +83,28 @@ export async function initiatePersonalConnect(req, res) {
   }
 
   const { blueprintId, returnTo } = req.query;
+  const resolvedReturnTo = RETURN_PATHS[returnTo] ? returnTo : 'knowledge-sources';
 
   const state = jwt.sign(
     {
       nonce: crypto.randomBytes(16).toString('hex'),
       userId: String(req.user._id),
       blueprintId: blueprintId || '',
-      returnTo: RETURN_PATHS[returnTo] ? returnTo : 'knowledge-sources',
+      returnTo: resolvedReturnTo,
       flow: 'personal',
     },
     JWT_SECRET,
     { expiresIn: '10m' }
   );
 
-  return res.json({ url: buildAuthorizeUrl(state) });
+  // Only the pipeline wizard needs Jira access alongside Confluence — every
+  // other personal-connect caller (knowledge-sources, profile-setup) keeps
+  // requesting the narrower CONFLUENCE_SCOPES default, so this doesn't risk
+  // breaking their already-working connect flow if the Atlassian app's Jira
+  // scope hasn't been added yet (see atlassianAuthService.js's JIRA_SCOPES).
+  const scopes = resolvedReturnTo === 'pipeline-wizard' ? ATLASSIAN_SCOPES : undefined;
+
+  return res.json({ url: scopes ? buildAuthorizeUrl(state, scopes) : buildAuthorizeUrl(state) });
 }
 
 // ── GET /api/confluence/personal/callback ─────────────────────────────────────
@@ -136,7 +145,13 @@ export async function personalConfluenceCallback(req, res) {
           encryptedAccessToken: encryptSecret(tokens.access_token),
           encryptedRefreshToken: encryptSecret(tokens.refresh_token),
           accessTokenExpiresAt: new Date(Date.now() + (tokens.expires_in || 3600) * 1000),
-          scopes: CONFLUENCE_SCOPES,
+          // Persist what Atlassian actually granted, not what was requested —
+          // required for the Jira-access check below to be trustworthy (a
+          // request for the wider ATLASSIAN_SCOPES can still come back
+          // Confluence-only if the app's Jira permission hasn't been added
+          // yet). Previously hardcoded to the requested CONFLUENCE_SCOPES
+          // constant regardless of what was actually granted — real bug.
+          scopes: (tokens.scope || '').split(' ').filter(Boolean),
           connectedAt: new Date(),
         },
       },
@@ -328,7 +343,13 @@ export async function getPersonalStatus(req, res) {
   try {
     const connection = await PersonalConfluenceConnection.findOne({ userId: req.user._id }).lean();
     if (!connection) return res.json({ connected: false });
-    return res.json({ connected: true, siteName: connection.siteName, siteUrl: connection.siteUrl });
+    const jiraScopeGranted = JIRA_SCOPES.every(s => (connection.scopes || []).includes(s));
+    return res.json({
+      connected: true,
+      siteName: connection.siteName,
+      siteUrl: connection.siteUrl,
+      jiraScopeGranted,
+    });
   } catch (err) {
     console.error('[PersonalConfluence] GET status error:', err.message);
     return res.status(500).json({ error: 'Failed to retrieve connection status.' });

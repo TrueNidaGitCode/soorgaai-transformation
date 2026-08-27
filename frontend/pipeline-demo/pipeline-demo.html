@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Svarg — How Cob, Aria, Arth, Eame, and Yusu connect for the real ORU Pre-analysis engagement.">
-  <title>Pipeline Demonstration — Svarg</title>
+  <meta name="description" content="Svarg — Interactive walkthrough of Cob, Aria, Arth, Eame, and Yusu for the real ORU Pre-analysis engagement.">
+  <title>Pipeline Wizard — Svarg</title>
 
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../workspace/workspace.css">
+  <link rel="stylesheet" href="../knowledge-sources/knowledge-sources.css">
   <link rel="stylesheet" href="../defect-matching/defect-matching.css">
   <link rel="stylesheet" href="pipeline-demo.css">
 
@@ -23,229 +24,255 @@
 
     <!-- ── Page header ──────────────────────────────────────── -->
     <header class="pd-header">
-      <p class="pd-header__eyebrow">Internal demonstration &middot; ORU Pre-analysis (KPIT / CARIAD)</p>
+      <p class="pd-header__eyebrow">Interactive walkthrough &middot; ORU Pre-analysis (KPIT / CARIAD)</p>
       <h1 class="ws-page-title">How the five products connect, end to end</h1>
       <p class="pd-header__sub">
-        One real engagement, walked through stage by stage — what's
-        actually live, what's simulated by hand, what's reused
-        infrastructure, and what's still a human-delivered step. Built to
-        surface the gaps, not paper over them.
+        One real engagement, walked through window by window — real Cob
+        output, a real Confluence and Jira connection, and a real working
+        agent at the end.
       </p>
     </header>
 
-    <!-- ── Journey chain ─────────────────────────────────────── -->
-    <nav class="pd-chain" aria-label="Pipeline stages">
-      <a href="#stage-cob" class="pd-chain__node">Cob</a>
-      <span class="pd-chain__arrow" aria-hidden="true">→</span>
-      <a href="#stage-aria" class="pd-chain__node">Aria</a>
-      <span class="pd-chain__arrow" aria-hidden="true">→</span>
-      <a href="#stage-arth" class="pd-chain__node">Arth</a>
-      <span class="pd-chain__arrow" aria-hidden="true">→</span>
-      <a href="#stage-eame" class="pd-chain__node">Eame</a>
-      <span class="pd-chain__arrow" aria-hidden="true">→</span>
-      <a href="#stage-yusu" class="pd-chain__node">Yusu</a>
+    <!-- ── Step indicator ───────────────────────────────────── -->
+    <nav class="pw-steps" id="pw-steps" aria-label="Wizard steps">
+      <button type="button" class="pw-step" data-step="1"><span class="pw-step__num">1</span>Cob</button>
+      <button type="button" class="pw-step" data-step="2"><span class="pw-step__num">2</span>Opportunities</button>
+      <button type="button" class="pw-step" data-step="3"><span class="pw-step__num">3</span>Aria</button>
+      <button type="button" class="pw-step" data-step="4"><span class="pw-step__num">4</span>Arth</button>
+      <button type="button" class="pw-step" data-step="5"><span class="pw-step__num">5</span>Eame</button>
+      <button type="button" class="pw-step" data-step="6"><span class="pw-step__num">6</span>Yusu</button>
     </nav>
 
-    <div class="pd-stages">
+    <!-- ══ Window 1 — Cob ═══════════════════════════════════════════════ -->
+    <section class="ws-card pw-screen" id="pw-screen-1">
+      <div class="pd-stage__head">
+        <h2 class="pd-stage__title">1. Cob — describe the objective</h2>
+        <span class="pd-badge pd-badge--live">Live</span>
+      </div>
+      <p class="pd-stage__intro">
+        Prefilled with the real objective from the ORU Pre-analysis
+        engagement. Link Confluence pages for extra context if you like,
+        then click Go.
+      </p>
 
-      <!-- ── 1. Cob ──────────────────────────────────────────── -->
-      <section class="ws-card pd-stage" id="stage-cob">
-        <div class="pd-stage__head">
-          <h2 class="pd-stage__title">1. Cob — AI Strategy &amp; Blueprint</h2>
-          <span class="pd-badge pd-badge--live">Live &middot; real data</span>
+      <label class="pw-label" for="pw-objective">Business objective</label>
+      <textarea id="pw-objective" class="dm-form__textarea" rows="7"></textarea>
+
+      <!-- ── Confluence connect/picker (real) ─────────────────── -->
+      <div class="pw-connector">
+        <h3 class="ks-card-heading">Link Confluence pages (optional)</h3>
+
+        <div id="pw-conf-connected-badge" class="ks-connected-badge" style="display:none">
+          <span class="ks-connected-badge__dot"></span>
+          Connected to <strong id="pw-conf-connected-site"></strong>
         </div>
-        <p class="pd-stage__intro">
-          The Project Manager's real objective, and what Cob's Opportunity
-          Discovery + Implementation Prioritization did with it. No new
-          code — this reads fields Cob already generates.
+
+        <div id="pw-conf-disconnected">
+          <a id="pw-conf-connect-btn" href="#" class="ks-btn ks-btn--primary">Connect your Confluence</a>
+        </div>
+
+        <div id="pw-conf-spaces" style="display:none">
+          <div id="pw-conf-space-list" class="ks-space-list"></div>
+        </div>
+
+        <div id="pw-conf-pages" style="display:none">
+          <button id="pw-conf-back-to-spaces" class="ks-btn ks-btn--secondary" type="button">&larr; Spaces</button>
+          <div id="pw-conf-page-list" class="ks-space-list"></div>
+          <button id="pw-conf-select-btn" class="ks-btn ks-btn--primary" disabled>Use selected pages</button>
+        </div>
+
+        <div id="pw-conf-linked-list" class="ks-linked-list" style="display:none"></div>
+
+        <div id="pw-conf-error" class="ks-banner ks-banner--error" style="display:none"></div>
+      </div>
+
+      <div class="pw-actions">
+        <button type="button" class="pw-next-btn" id="pw-go-btn">Go &rarr;</button>
+      </div>
+    </section>
+
+    <!-- ══ Window 2 — Cob results ═══════════════════════════════════════ -->
+    <section class="ws-card pw-screen" id="pw-screen-2">
+      <div class="pd-stage__head">
+        <h2 class="pd-stage__title">2. Cob — AI opportunities</h2>
+        <span class="pd-badge pd-badge--live">Live &middot; real data</span>
+      </div>
+      <p class="pd-stage__intro">
+        What Cob's Opportunity Discovery and Implementation Prioritization
+        actually produced for this objective. Approve the recommended
+        opportunity to continue.
+      </p>
+
+      <div class="pd-winner">
+        <p class="pd-winner__label">Recommended starting point</p>
+        <p class="pd-winner__name">Retrieval-Augmented Semantic Matching for Defects</p>
+        <p class="pd-winner__why">
+          "Existing defect and investigation data is already structured
+          within VW Group systems (Confluence Wiki, Jira, Polarion,
+          Flash Log Repository), enabling rapid integration and
+          self-hosted deployment without new data pipelines."
         </p>
+      </div>
 
-        <blockquote class="pd-quote">
-          "I am the Project Manager for the ORU Maintenance &amp;
-          Development project for CARIAD. Our customer wants us to
-          introduce AI into the project, and I have been asked to lead the
-          Pre-analysis initiative."
-        </blockquote>
+      <p class="pd-substage-label">Other opportunities considered, ranked lower</p>
+      <ul class="pd-deemphasized">
+        <li>Anomaly Detection on Flash Execution and Communication Logs</li>
+        <li>Automatic Plausibility Validation via Classification</li>
+        <li>Knowledge Capture &amp; Retrieval-Augmented Assistance</li>
+        <li>Generative Drafting of Pre-analysis Reports</li>
+      </ul>
 
-        <div class="pd-winner">
-          <p class="pd-winner__label">Recommended starting point</p>
-          <p class="pd-winner__name">Retrieval-Augmented Semantic Matching for Defects</p>
-          <p class="pd-winner__why">
-            "Existing defect and investigation data is already structured
-            within VW Group systems (Confluence Wiki, Jira, Polarion,
-            Flash Log Repository), enabling rapid integration and
-            self-hosted deployment without new data pipelines."
-          </p>
+      <div class="pw-actions">
+        <button type="button" class="pw-back-btn" data-back="1">&larr; Back</button>
+        <button type="button" class="pw-next-btn" id="pw-approve-btn">Approve &rarr;</button>
+      </div>
+    </section>
+
+    <!-- ══ Window 3 — Aria ══════════════════════════════════════════════ -->
+    <section class="ws-card pw-screen" id="pw-screen-3">
+      <div class="pd-stage__head">
+        <h2 class="pd-stage__title">3. Aria — connect and structure the data</h2>
+        <span class="pd-badge pd-badge--live">Live</span>
+      </div>
+      <p class="pd-stage__intro">
+        Connect a real Jira project, pick issues, and Aria fetches each
+        one, removes sensitive information, and structures it into an
+        AI-ready defect record.
+      </p>
+
+      <div id="pw-jira-scope-missing" class="ks-banner ks-banner--warning" style="display:none">
+        Jira access hasn't been granted on this connection yet. Reconnect
+        below once Jira scopes are enabled on the Atlassian app.
+        <a id="pw-jira-reconnect-btn" href="#" class="ks-btn ks-btn--secondary" style="margin-top:10px">Reconnect</a>
+      </div>
+
+      <div id="pw-jira-not-connected" style="display:none">
+        <a id="pw-jira-connect-btn" href="#" class="ks-btn ks-btn--primary">Connect Confluence + Jira</a>
+      </div>
+
+      <div id="pw-jira-projects" style="display:none">
+        <h3 class="ks-card-heading">Projects</h3>
+        <div id="pw-jira-project-list" class="ks-space-list"></div>
+      </div>
+
+      <div id="pw-jira-issues" style="display:none">
+        <button id="pw-jira-back-to-projects" class="ks-btn ks-btn--secondary" type="button">&larr; Projects</button>
+        <label class="ks-select-all"><input type="checkbox" id="pw-jira-select-all"> Select all</label>
+        <div id="pw-jira-issue-list" class="ks-space-list"></div>
+        <button id="pw-jira-link-btn" class="ks-btn ks-btn--primary" disabled>Process selected issues</button>
+      </div>
+
+      <div id="pw-jira-processing" class="pw-process-list" style="display:none"></div>
+
+      <div id="pw-jira-error" class="ks-banner ks-banner--error" style="display:none"></div>
+
+      <div class="pw-actions">
+        <button type="button" class="pw-back-btn" data-back="2">&larr; Back</button>
+        <button type="button" class="pw-next-btn" id="pw-finalize-btn">Finalize &rarr;</button>
+      </div>
+    </section>
+
+    <!-- ══ Window 4 — Arth ══════════════════════════════════════════════ -->
+    <section class="ws-card pw-screen" id="pw-screen-4">
+      <div class="pd-stage__head">
+        <h2 class="pd-stage__title">4. Arth — prepare the infrastructure</h2>
+        <span class="pd-badge pd-badge--reused">Reused infra &middot; not sovereign yet</span>
+      </div>
+      <p class="pd-stage__intro">
+        Two tracks prepared in parallel: where the AI application runs, and
+        where the model runs.
+      </p>
+
+      <div class="pd-infra-grid">
+        <div class="pd-infra-item pw-infra-track" data-track="app">
+          <span class="pd-infra-item__label">AI application infrastructure</span>
+          <span class="pd-infra-item__value">Node.js service runtime</span>
+          <span class="pw-infra-status">Preparing&hellip;</span>
         </div>
-
-        <p class="pd-substage-label">Other opportunities considered, ranked lower</p>
-        <ul class="pd-deemphasized">
-          <li>Anomaly Detection on Flash Execution and Communication Logs</li>
-          <li>Automatic Plausibility Validation via Classification</li>
-          <li>Knowledge Capture &amp; Retrieval-Augmented Assistance</li>
-          <li>Generative Drafting of Pre-analysis Reports</li>
-        </ul>
-      </section>
-
-      <!-- ── 2. Aria ─────────────────────────────────────────── -->
-      <section class="ws-card pd-stage" id="stage-aria">
-        <div class="pd-stage__head">
-          <h2 class="pd-stage__title">2. Aria — Data Readiness</h2>
-          <span class="pd-badge pd-badge--simulated">Simulated &middot; no live product yet</span>
+        <div class="pd-infra-item pw-infra-track" data-track="model">
+          <span class="pd-infra-item__label">Model &amp; compute infrastructure</span>
+          <span class="pd-infra-item__value">OpenAI embeddings + Atlas Vector Search + LLM failover</span>
+          <span class="pw-infra-status">Preparing&hellip;</span>
         </div>
-        <p class="pd-stage__intro">
-          Cob's Data Readiness domain already identified exactly which
-          datasets this opportunity needs. Aria's real job would be
-          closing the gap between what's identified and what's actually
-          connected — for this demo, that step was done by hand, not by a
-          running product.
-        </p>
+      </div>
 
-        <p class="pd-substage-label">Datasets Cob identified as required</p>
-        <div class="pd-datasets">
-          <div class="pd-dataset">
-            <span class="pd-dataset__name">Test Execution and Defect Records</span>
-            <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
-            <span class="pd-dataset__source">Jira, Polarion, TestRail</span>
-          </div>
-          <div class="pd-dataset">
-            <span class="pd-dataset__name">Flashing Logs and Diagnostic Traces</span>
-            <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
-            <span class="pd-dataset__source">Internal log repositories, Campaign Manager</span>
-          </div>
-          <div class="pd-dataset">
-            <span class="pd-dataset__name">Pre-analysis Business Objectives</span>
-            <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
-            <span class="pd-dataset__source">Confluence, program documentation</span>
-          </div>
-          <div class="pd-dataset">
-            <span class="pd-dataset__name">OTA ECU Product Configuration</span>
-            <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
-            <span class="pd-dataset__source">Product configuration DB, Polarion</span>
-          </div>
-          <div class="pd-dataset">
-            <span class="pd-dataset__name">Engineering Knowledge Base</span>
-            <span class="pd-dataset__priority pd-dataset__priority--medium">MEDIUM</span>
-            <span class="pd-dataset__source">Confluence, historical analysis docs</span>
-          </div>
-          <div class="pd-dataset">
-            <span class="pd-dataset__name">OTA System Architecture Artifacts</span>
-            <span class="pd-dataset__priority pd-dataset__priority--medium">MEDIUM</span>
-            <span class="pd-dataset__source">System architecture docs, engineering portal</span>
-          </div>
-        </div>
+      <p class="pd-manual-note pd-manual-note--warn">
+        <strong>Real gap, not glossed over:</strong> the actual objective
+        requires operating "completely within the VW Group ecosystem
+        without relying on external AI services." This demo runs on
+        Svarg's frontier-default infrastructure — the sovereign-gated-
+        exception path a real KPIT/CARIAD deployment would need is not
+        what's running here.
+      </p>
 
-        <p class="pd-manual-note">
-          <strong>What actually happened here:</strong> we don't have
-          access to KPIT's real Jira, Polarion, or log repositories, so
-          Aria's role was simulated manually — 14 synthetic, representative
-          defect records were written and seeded
-          (<code>seed_defect_records.mjs</code>) to stand in for what Aria
-          would have pulled from the real systems above.
-        </p>
-      </section>
+      <div class="pw-actions">
+        <button type="button" class="pw-back-btn" data-back="3">&larr; Back</button>
+        <button type="button" class="pw-next-btn" id="pw-infra-ready-btn">Continue &rarr;</button>
+      </div>
+    </section>
 
-      <!-- ── 3. Arth ─────────────────────────────────────────── -->
-      <section class="ws-card pd-stage" id="stage-arth">
-        <div class="pd-stage__head">
-          <h2 class="pd-stage__title">3. Arth — Model &amp; Infrastructure</h2>
-          <span class="pd-badge pd-badge--reused">Reused infra &middot; not sovereign yet</span>
-        </div>
-        <p class="pd-stage__intro">
-          What actually runs this capability, provisioned with zero new
-          code — Svarg's own existing platform infrastructure, originally
-          built for Cob, reused as-is for Eame's matching and retrieval.
-        </p>
+    <!-- ══ Window 5 — Eame ══════════════════════════════════════════════ -->
+    <section class="ws-card pw-screen" id="pw-screen-5">
+      <div class="pd-stage__head">
+        <h2 class="pd-stage__title">5. Eame — build the AI application</h2>
+        <span class="pd-badge pd-badge--simulated">Illustrative</span>
+      </div>
+      <p class="pd-stage__intro">
+        Eame assembles the AI application from Aria's structured data and
+        Arth's infrastructure, and delivers the source code.
+      </p>
 
-        <div class="pd-infra-grid">
-          <div class="pd-infra-item">
-            <span class="pd-infra-item__label">Embeddings</span>
-            <span class="pd-infra-item__value">OpenAI text-embedding-3-small</span>
-          </div>
-          <div class="pd-infra-item">
-            <span class="pd-infra-item__label">Retrieval</span>
-            <span class="pd-infra-item__value">MongoDB Atlas Vector Search</span>
-          </div>
-          <div class="pd-infra-item">
-            <span class="pd-infra-item__label">Synthesis</span>
-            <span class="pd-infra-item__value">Gemini &rarr; Claude &rarr; OpenAI failover</span>
-          </div>
-        </div>
+      <pre class="pw-code"><code>// defect-matching-agent.js (illustrative)
+import { hybridRetrieve } from "./retrieval.js";
+import { generate } from "./llm.js";
 
-        <p class="pd-manual-note pd-manual-note--warn">
-          <strong>Real gap, not glossed over:</strong> the actual objective
-          requires operating "completely within the VW Group ecosystem
-          without relying on external AI services." This demo runs on
-          Svarg's frontier-default infrastructure — the sovereign-gated-
-          exception path a real KPIT/CARIAD deployment would need is not
-          what's running here.
-        </p>
-      </section>
+export async function matchDefect({ description }) {
+  const matches = await hybridRetrieve({
+    queryText: description,
+    sourceType: "defect",
+    topK: 5,
+  });
 
-      <!-- ── 4. Eame ─────────────────────────────────────────── -->
-      <section class="ws-card pd-stage" id="stage-eame">
-        <div class="pd-stage__head">
-          <h2 class="pd-stage__title">4. Eame — AI Application</h2>
-          <span class="pd-badge pd-badge--live">Live &middot; try it</span>
-        </div>
-        <p class="pd-stage__intro">
-          The one fully working, interactive piece — describe a new test
-          failure below and it retrieves similar historical defects and
-          drafts a cited root-cause suggestion, for real, against the
-          seeded data above.
-        </p>
+  const suggestion = await generate({
+    systemPrompt: ROOT_CAUSE_PROMPT,
+    userMessage: buildContext(description, matches),
+  });
 
-        <form class="dm-form" id="dm-form">
-          <label class="dm-form__label" for="dm-description">New failure description</label>
-          <textarea
-            id="dm-description"
-            class="dm-form__textarea"
-            rows="4"
-            placeholder="e.g. Flash attempt on the gateway ECU failed after transfer; checksum verification did not match the expected value."
-            required
-          ></textarea>
-          <button type="submit" class="dm-form__submit" id="dm-submit">Find similar defects</button>
+  return { matches, suggestedRootCause: suggestion.text };
+}</code></pre>
+
+      <div class="pw-actions">
+        <button type="button" class="pw-back-btn" data-back="4">&larr; Back</button>
+        <button type="button" class="pw-next-btn" id="pw-deploy-btn">Deploy &rarr;</button>
+      </div>
+    </section>
+
+    <!-- ══ Window 6 — Yusu ══════════════════════════════════════════════ -->
+    <section class="ws-card pw-screen" id="pw-screen-6">
+      <div class="pd-stage__head">
+        <h2 class="pd-stage__title">6. Yusu — deploy and connect</h2>
+        <span class="pd-badge pd-badge--live">Live &middot; try it</span>
+      </div>
+      <p class="pd-stage__intro">
+        The agent deploys into the prepared infrastructure, connects to the
+        model/compute layer and the structured data — then it's ready to
+        talk to.
+      </p>
+
+      <div id="pw-deploy-checklist" class="pw-process-list"></div>
+
+      <div class="pw-chat" id="pw-chat" hidden>
+        <div class="pw-chat__messages" id="pw-chat-messages"></div>
+        <form class="pw-chat__form" id="pw-chat-form">
+          <textarea id="pw-chat-input" class="dm-form__textarea" rows="2" placeholder="Describe a new defect…" required></textarea>
+          <button type="submit" class="pw-next-btn" id="pw-chat-send">Send</button>
         </form>
+      </div>
 
-        <div class="dm-loading" id="dm-loading" hidden aria-live="polite">
-          <div class="dm-spinner" role="status" aria-label="Matching defects"></div>
-          <p>Retrieving similar defects and drafting a root-cause suggestion…</p>
-        </div>
-
-        <div class="dm-error" id="dm-error" hidden></div>
-
-        <section class="dm-results" id="dm-results" hidden>
-          <div class="dm-root-cause">
-            <p class="dm-root-cause__label">Suggested root cause</p>
-            <p class="dm-root-cause__text" id="dm-root-cause-text"></p>
-          </div>
-          <h3 class="dm-matches__heading">Matched historical defects</h3>
-          <div class="dm-matches" id="dm-matches"></div>
-        </section>
-      </section>
-
-      <!-- ── 5. Yusu ─────────────────────────────────────────── -->
-      <section class="ws-card pd-stage" id="stage-yusu">
-        <div class="pd-stage__head">
-          <h2 class="pd-stage__title">5. Yusu — Enterprise Integration</h2>
-          <span class="pd-badge pd-badge--human">Human-delivered &middot; not automated</span>
-        </div>
-        <p class="pd-stage__intro">
-          Not a self-serve integration product today, and that's the
-          right scope for now — a Svarg engineer sits with the customer's
-          team and wires Eame's output directly into the tools they
-          already use, rather than a separate portal nobody adopts.
-        </p>
-
-        <p class="pd-substage-label">Real target systems named in this engagement</p>
-        <div class="pd-tags">
-          <span class="pd-tag">Jira Defect Management</span>
-          <span class="pd-tag">Polarion Requirements Repository</span>
-          <span class="pd-tag">Confluence Engineering Wiki</span>
-        </div>
-      </section>
-
-    </div>
+      <div class="pw-actions">
+        <button type="button" class="pw-back-btn" data-back="5">&larr; Back</button>
+      </div>
+    </section>
 
   </main>
 

@@ -28,7 +28,7 @@ export function requireAuth() {
 
 // ── API call ──────────────────────────────────────────────────────────────
 
-async function fetchMatch(description) {
+export async function fetchMatch(description) {
   const resp = await fetch(`${API_BASE}/defect-matching/match`, {
     method: 'POST',
     headers: {

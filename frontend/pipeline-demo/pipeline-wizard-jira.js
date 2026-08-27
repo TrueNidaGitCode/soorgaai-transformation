@@ -1,0 +1,168 @@
+/**
+ * Svarg — Pipeline Wizard: Window 3's real Jira connector
+ *
+ * Reuses the SAME PersonalConfluenceConnection Window 1 establishes — one
+ * Atlassian OAuth grant covers both products (see
+ * backend/.../services/atlassianAuthService.js). There's no separate
+ * connect/callback here; this module only reads jiraScopeGranted off the
+ * existing connection status and, once granted, lists projects/issues and
+ * submits selected issues to /api/jira/personal/link, which fetches +
+ * redacts + LLM-structures each one into a real DefectRecord.
+ */
+
+const API_BASE = window.CONFIG?.API_BASE || 'http://localhost:3000/api';
+const getToken = () => localStorage.getItem('token');
+
+async function api(path, opts = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...opts,
+    headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
+}
+
+function esc(text) {
+  return String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+const SECTIONS = ['pw-jira-scope-missing', 'pw-jira-not-connected', 'pw-jira-projects', 'pw-jira-issues'];
+
+function showOnly(id) {
+  SECTIONS.forEach(sid => {
+    const el = document.getElementById(sid);
+    if (el) el.style.display = sid === id ? 'block' : 'none';
+  });
+}
+
+function showError(message) {
+  const el = document.getElementById('pw-jira-error');
+  el.textContent = message;
+  el.style.display = 'block';
+}
+
+function renderProjects(projects) {
+  const list = document.getElementById('pw-jira-project-list');
+  list.innerHTML = projects.map(p => `
+    <div class="ks-space-item ks-space-item--row">
+      <div class="ks-space-item__info">
+        <span class="ks-space-item__name">${esc(p.name)}</span>
+        <span class="ks-space-key">${esc(p.key)}</span>
+      </div>
+      <div class="ks-space-item__actions">
+        <button type="button" class="ks-space-item__action ks-space-item__choose" data-project-key="${esc(p.key)}">Choose issues &rarr;</button>
+      </div>
+    </div>
+  `).join('') || '<p class="ks-card-body">No projects found in this Jira site.</p>';
+
+  list.querySelectorAll('.ks-space-item__choose').forEach(el => {
+    el.addEventListener('click', () => loadIssues(el.dataset.projectKey));
+  });
+
+  showOnly('pw-jira-projects');
+}
+
+async function loadIssues(projectKey) {
+  try {
+    const { issues } = await api(`/jira/personal/projects/${encodeURIComponent(projectKey)}/issues`);
+    const list = document.getElementById('pw-jira-issue-list');
+    list.innerHTML = issues.map(i => `
+      <label class="ks-space-item">
+        <input type="checkbox" class="pw-jira-issue-checkbox" value="${esc(i.key)}">
+        <span>${esc(i.key)} — ${esc(i.summary)}</span>
+      </label>
+    `).join('') || '<p class="ks-card-body">No issues found in this project.</p>';
+
+    const linkBtn = document.getElementById('pw-jira-link-btn');
+    const selectAll = document.getElementById('pw-jira-select-all');
+    linkBtn.disabled = true;
+    selectAll.checked = false;
+
+    const updateBtnState = () => { linkBtn.disabled = !list.querySelectorAll('.pw-jira-issue-checkbox:checked').length; };
+    list.querySelectorAll('.pw-jira-issue-checkbox').forEach(cb => cb.addEventListener('change', updateBtnState));
+    selectAll.onchange = () => {
+      list.querySelectorAll('.pw-jira-issue-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
+      updateBtnState();
+    };
+
+    linkBtn.onclick = () => processIssues(
+      Array.from(list.querySelectorAll('.pw-jira-issue-checkbox:checked')).map(cb => ({ issueKey: cb.value }))
+    );
+
+    showOnly('pw-jira-issues');
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+function renderProcessing(results) {
+  const el = document.getElementById('pw-jira-processing');
+  el.style.display = 'block';
+  el.innerHTML = results.map(r => {
+    if (r.status === 'error') {
+      return `<div class="pw-process-item pw-process-item--error">
+        <span class="pw-process-item__title">${esc(r.issueKey)}</span>
+        <span class="pw-process-item__detail">${esc(r.error)}</span>
+      </div>`;
+    }
+    const notes = r.redactionNotes?.length ? r.redactionNotes.map(esc).join(', ') : 'nothing to redact';
+    return `<div class="pw-process-item pw-process-item--done">
+      <span class="pw-process-item__title">${esc(r.title)}</span>
+      <span class="pw-process-item__detail">${r.unchanged ? 'already structured, unchanged' : `redacted (${notes}) → structured → indexed`}</span>
+    </div>`;
+  }).join('');
+}
+
+async function processIssues(issues) {
+  const linkBtn = document.getElementById('pw-jira-link-btn');
+  linkBtn.disabled = true;
+  linkBtn.textContent = 'Processing…';
+  try {
+    const result = await api('/jira/personal/link', { method: 'POST', body: JSON.stringify({ issues }) });
+    renderProcessing(result.results);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    linkBtn.disabled = false;
+    linkBtn.textContent = 'Process selected issues';
+  }
+}
+
+function wireConnectButtons() {
+  const connect = async (btn) => {
+    btn.textContent = 'Connecting…';
+    try {
+      const { url } = await api('/confluence/personal/connect?returnTo=pipeline-wizard');
+      window.location.href = url;
+    } catch (err) {
+      showError(err.message);
+    }
+  };
+
+  document.getElementById('pw-jira-connect-btn').addEventListener('click', (e) => {
+    e.preventDefault();
+    connect(e.currentTarget);
+  });
+  document.getElementById('pw-jira-reconnect-btn').addEventListener('click', (e) => {
+    e.preventDefault();
+    connect(e.currentTarget);
+  });
+}
+
+export async function initJiraConnector() {
+  wireConnectButtons();
+
+  document.getElementById('pw-jira-back-to-projects').addEventListener('click', () => showOnly('pw-jira-projects'));
+
+  try {
+    const status = await api('/confluence/personal/status');
+    if (!status.connected) { showOnly('pw-jira-not-connected'); return; }
+    if (!status.jiraScopeGranted) { showOnly('pw-jira-scope-missing'); return; }
+
+    const { projects } = await api('/jira/personal/projects');
+    renderProjects(projects);
+  } catch (err) {
+    showError(err.message);
+  }
+}

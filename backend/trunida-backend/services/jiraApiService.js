@@ -20,22 +20,22 @@ export async function listProjects(cloudId, accessToken) {
   return (data.values || []).map(p => ({ key: p.key, id: p.id, name: p.name }));
 }
 
+// Jira Cloud deprecated GET /rest/api/3/search in favor of this endpoint —
+// token-based pagination (nextPageToken) instead of startAt/total.
 export async function listIssues(cloudId, accessToken, projectKey, { limit = 50, maxIssues = 200 } = {}) {
   const issues = [];
-  let startAt = 0;
+  let nextPageToken;
 
   while (issues.length < maxIssues) {
-    const { data } = await axios.get(
-      `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search`,
+    const { data } = await axios.post(
+      `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search/jql`,
       {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        params: {
-          jql: `project = "${projectKey}" ORDER BY created DESC`,
-          startAt,
-          maxResults: limit,
-          fields: 'summary,status,priority,issuetype,updated',
-        },
-      }
+        jql: `project = "${projectKey}" ORDER BY created DESC`,
+        maxResults: limit,
+        fields: ['summary', 'status', 'priority', 'issuetype', 'updated'],
+        ...(nextPageToken ? { nextPageToken } : {}),
+      },
+      { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } }
     );
 
     for (const issue of data.issues || []) {
@@ -49,9 +49,8 @@ export async function listIssues(cloudId, accessToken, projectKey, { limit = 50,
       });
     }
 
-    const total = data.total ?? issues.length;
-    startAt += limit;
-    if (startAt >= total || !data.issues?.length) break;
+    nextPageToken = data.nextPageToken;
+    if (!nextPageToken || !data.issues?.length) break;
   }
 
   return issues.slice(0, maxIssues);

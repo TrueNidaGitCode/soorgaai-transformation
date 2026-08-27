@@ -30,6 +30,14 @@ const SYSTEM   = 'OTA ECU Flashing';
 
 const MAX_ISSUES_PER_LINK_REQUEST = 30;
 
+// Surfaces Jira's own error detail in the response, not just server logs —
+// this is a protect-gated internal tool, not a customer-facing surface, so
+// exposing Atlassian's own error text is a diagnosability win, not a leak.
+function jiraErrorDetail(err) {
+  const data = err.response?.data;
+  return data?.errorMessages?.[0] || (data?.errors && JSON.stringify(data.errors)) || err.message;
+}
+
 async function getConnectionWithJiraAccess(userId) {
   const connection = await PersonalConfluenceConnection.findOne({ userId });
   if (!connection) {
@@ -54,7 +62,7 @@ export async function getPersonalProjects(req, res) {
     return res.json({ projects });
   } catch (err) {
     console.error('[PersonalJira] GET projects error:', err.response?.data || err.message);
-    return res.status(500).json({ error: 'Failed to list Jira projects.' });
+    return res.status(500).json({ error: `Failed to list Jira projects: ${jiraErrorDetail(err)}` });
   }
 }
 
@@ -70,7 +78,7 @@ export async function getPersonalProjectIssues(req, res) {
     return res.json({ issues });
   } catch (err) {
     console.error('[PersonalJira] GET issues error:', err.response?.data || err.message);
-    return res.status(500).json({ error: 'Failed to list Jira issues.' });
+    return res.status(500).json({ error: `Failed to list Jira issues: ${jiraErrorDetail(err)}` });
   }
 }
 
@@ -133,8 +141,8 @@ export async function linkIssuesToDefectRecords(req, res) {
 
         results.push({ issueKey, title: record.title, status: 'linked', unchanged: false, redactionNotes });
       } catch (issueErr) {
-        console.error(`[PersonalJira] Failed to link issue ${issueKey}:`, issueErr.message);
-        results.push({ issueKey, status: 'error', error: issueErr.message });
+        console.error(`[PersonalJira] Failed to link issue ${issueKey}:`, issueErr.response?.data || issueErr.message);
+        results.push({ issueKey, status: 'error', error: jiraErrorDetail(issueErr) });
       }
     }
 

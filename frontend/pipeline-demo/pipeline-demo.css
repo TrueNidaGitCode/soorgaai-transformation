@@ -199,6 +199,49 @@
   color: rgba(255,255,255,0.4);
 }
 
+/* ── Aria: dataset list ──────────────────────────────────────────────────── */
+.pd-datasets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pd-dataset {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.pd-dataset__name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #fff;
+  flex: 1 1 240px;
+}
+
+.pd-dataset__priority {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.pd-dataset__priority--high   { background: rgba(248,113,113,0.1); color: rgba(248,113,113,0.9); }
+.pd-dataset__priority--medium { background: rgba(212,175,110,0.1); color: #D4AF6E; }
+
+.pd-dataset__source {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  white-space: nowrap;
+}
+
 /* ── Arth: infra grid ────────────────────────────────────────────────────── */
 .pd-infra-grid {
   display: grid;
@@ -415,4 +458,5 @@
   .pw-steps { padding: 10px 12px; }
   .pw-step { padding: 6px 10px; font-size: 12px; }
   .pw-chat__form { flex-direction: column; align-items: stretch; }
+  .pd-dataset { flex-direction: column; align-items: flex-start; }
 }

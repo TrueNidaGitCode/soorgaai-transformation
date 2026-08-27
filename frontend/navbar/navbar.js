@@ -103,14 +103,16 @@ function setupNavbarHandlers() {
     }
 
     // ── Minimal mode: internal demo pages opt in via data-nav-mode="minimal" ──
-    // Same auth chrome (username, logout, roadmap CTA) as any other page —
-    // just hides the full product nav (Enterprise/Framework/Pricing/
-    // Knowledge Base/My Assessments/Admin), which isn't relevant here.
+    // Keeps it to brand + username + logout, same minimalism as Cob's own
+    // nav — hides the full product nav (Enterprise/Framework/Pricing/
+    // Knowledge Base/My Assessments/Admin) and the Generate Roadmap CTA,
+    // none of which are relevant on these pages.
     if (document.body.dataset.navMode === 'minimal') {
         const navLinksList = document.getElementById('navLinksList');
         if (navLinksList) navLinksList.style.display = 'none';
         if (myAssessmentsBtn) myAssessmentsBtn.style.display = 'none';
         if (adminBtn) adminBtn.style.display = 'none';
+        if (roadmapCta) roadmapCta.style.display = 'none';
     }
 }
 

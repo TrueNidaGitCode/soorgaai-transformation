@@ -6,14 +6,14 @@
  *   factory.py     → provider selection + chain
  *   providers/     → gemini.py, claude.py, openai.py
  *
- * Supported providers:  gemini  |  claude  |  openai  |  kimi  |  azure
+ * Supported providers:  gemini  |  claude  |  openai  |  kimi  |  azure  |  selfhosted
  * Default model:        gemini-2.5-flash-lite
  *
- * Note: "kimi" and "azure" are intentionally NOT in the default chain —
- * opt-in only (explicit `provider: 'kimi'`/`'azure'`, or add to
- * PROVIDER_CHAIN yourself) so neither silently affects advisorService /
- * confluenceContentService / etc. which all share this same chain via the
- * default PROVIDER_CHAIN env var.
+ * Note: "kimi", "azure", and "selfhosted" are intentionally NOT in the
+ * default chain — opt-in only (explicit `provider: 'kimi'`/`'azure'`/
+ * `'selfhosted'`, or add to PROVIDER_CHAIN yourself) so none of them
+ * silently affects advisorService / confluenceContentService / etc. which
+ * all share this same chain via the default PROVIDER_CHAIN env var.
  *
  * "azure" hosts the same GPT models as "openai" above, just billed against
  * an Azure subscription instead — the point being to draw on Azure credits
@@ -21,6 +21,11 @@
  * Azure OpenAI access is approved (a separate gate from just having an
  * Azure subscription — see AZURE_OPENAI_* vars below) and a model is
  * deployed in the Azure portal.
+ *
+ * "selfhosted" points the same openai SDK at any OpenAI-compatible
+ * /v1/chat/completions server (Ollama, vLLM, Hugging Face TGI) instead of
+ * a cloud provider — the privacy path: nothing sent here leaves wherever
+ * that server is actually running. See SELFHOSTED_MODEL_SETUP.md.
  *
  * ── Configuration (Railway Variables) ────────────────────────────────────────
  *
@@ -42,10 +47,19 @@
  *                                            Azure portal — not a raw model id
  *  AZURE_OPENAI_API_VERSION 2025-04-01-preview  Optional override
  *
+ *  SELFHOSTED_BASE_URL  http://localhost:11434/v1  Any OpenAI-compatible
+ *                                            server's base URL (Ollama shown)
+ *  SELFHOSTED_API_KEY   (optional)           Most self-hosted servers don't
+ *                                            check this — defaults to a
+ *                                            dummy value if unset, since the
+ *                                            openai SDK requires a non-empty string
+ *
  *  GEMINI_MODEL      gemini-2.5-flash-lite  Per-provider model override
  *  CLAUDE_MODEL      claude-sonnet-4-6
  *  OPENAI_MODEL      gpt-4o
  *  KIMI_MODEL        moonshotai/kimi-k3
+ *  SELFHOSTED_MODEL  llama3.1:8b            Must match a model already
+ *                                            pulled/loaded on that server
  *
  *  ADVISOR_MODEL     <any>                  Global override (applies to all providers)
  *
@@ -73,6 +87,10 @@ const DEFAULT_MODELS = {
   claude: process.env.CLAUDE_MODEL || GLOBAL_MODEL || 'claude-sonnet-4-6',
   openai: process.env.OPENAI_MODEL || GLOBAL_MODEL || 'gpt-4o',
   kimi:   process.env.KIMI_MODEL   || GLOBAL_MODEL || 'moonshotai/kimi-k3',
+  // No GLOBAL_MODEL fallback here on purpose — ADVISOR_MODEL is a cloud
+  // model id (e.g. 'gpt-4o'); falling back to it would send a model name
+  // the self-hosted server almost certainly doesn't have loaded.
+  selfhosted: process.env.SELFHOSTED_MODEL || 'llama3.1:8b',
 };
 
 // OpenRouter's OpenAI-compatible endpoint.
@@ -269,6 +287,35 @@ const PROVIDERS = {
 
       const resp = await client.chat.completions.create({
         model:      deployment, // ignored for routing (deployment already pins the model) — kept for SDK typing
+        max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userMessage  },
+        ],
+      });
+
+      return {
+        text:         resp.choices[0]?.message?.content || '',
+        inputTokens:  resp.usage?.prompt_tokens     || 0,
+        outputTokens: resp.usage?.completion_tokens || 0,
+      };
+    },
+  },
+
+  // ── Self-hosted (Ollama / vLLM / Hugging Face TGI) ──────────────────────────
+  // Opt-in only — not part of the default chain. The privacy path: this
+  // points the same openai SDK at a self-hosted, OpenAI-compatible server
+  // instead of a cloud provider, so nothing sent here leaves wherever that
+  // server is actually running. See SELFHOSTED_MODEL_SETUP.md for setup.
+
+  selfhosted: {
+    async generate({ systemPrompt, userMessage, model, maxTokens }) {
+      const baseURL = process.env.SELFHOSTED_BASE_URL;
+      if (!baseURL) throw new Error('SELFHOSTED_BASE_URL is not configured.');
+
+      const client = new OpenAI({ apiKey: process.env.SELFHOSTED_API_KEY || 'not-needed', baseURL });
+      const resp   = await client.chat.completions.create({
+        model:      model || DEFAULT_MODELS.selfhosted,
         max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
         messages: [
           { role: 'system', content: systemPrompt },

@@ -373,12 +373,45 @@
 .pw-process-item__title  { font-weight: 700; color: #fff; }
 .pw-process-item__detail { font-size: 12px; color: rgba(255,255,255,0.45); }
 
-.pw-infra-status {
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.4);
+/* ── Arth: model selection ───────────────────────────────────────────────── */
+.pw-model-result {
+  padding: 18px 20px;
+  background: rgba(92,197,167,0.06);
+  border: 1px solid rgba(92,197,167,0.22);
+  border-radius: 10px;
+  margin-bottom: 16px;
 }
-.pw-infra-status--ready { color: #5CC5A7; }
+
+.pw-model-result__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 10px;
+}
+
+.pw-model-result__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pw-model-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.6);
+}
+
+.pw-model-result__rationale {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.6);
+  margin: 0;
+}
 
 /* ── Eame: mock code preview ─────────────────────────────────────────────── */
 .pw-code {
@@ -425,6 +458,14 @@
   font-size: 12.5px;
   line-height: 1.7;
   color: rgba(255,255,255,0.6);
+}
+
+.pw-chat__answered-by {
+  margin: 10px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: rgba(92,197,167,0.8);
 }
 
 .chat-msg {

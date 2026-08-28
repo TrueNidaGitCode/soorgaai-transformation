@@ -253,6 +253,8 @@ const briefSchema = new mongoose.Schema({
   cdsInvestmentEstimate:    { type: [cdsInvestmentEstimateSchema],    default: [] },
   cdsConsultantGuidance:    { type: String,                           default: '' },
   cdsAIRecommendation:      { type: String,                           default: '' },
+  recommendedModelApproach: { type: String,                           default: '' },
+  modelSelectionRationale:  { type: String,                           default: '' },
   // Skills & Workforce: AI Roles & Capability Planning (legacy fields kept for backwards compat)
   skillsReadiness:          { type: Number,   default: 0 },
   requiredSkills:           { type: [requiredSkillSchema],            default: [] },

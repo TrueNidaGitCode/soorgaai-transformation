@@ -221,34 +221,36 @@
     <!-- ══ Window 4 — Arth ══════════════════════════════════════════════ -->
     <section class="ws-card pw-screen" id="pw-screen-4">
       <div class="pd-stage__head">
-        <h2 class="pd-stage__title">4. Arth — prepare the infrastructure</h2>
-        <span class="pd-badge pd-badge--reused">Reused infra &middot; not sovereign yet</span>
+        <h2 class="pd-stage__title">4. Arth — model selection</h2>
+        <span class="pd-badge pd-badge--live">Live</span>
       </div>
       <p class="pd-stage__intro">
-        Two tracks prepared in parallel: where the AI application runs, and
-        where the model runs.
+        Arth routes per task, Perplexity-style, rather than pinning
+        everything to one model. What's actually running this engagement
+        today:
       </p>
 
-      <div class="pd-infra-grid">
-        <div class="pd-infra-item pw-infra-track" data-track="app">
-          <span class="pd-infra-item__label">AI application infrastructure</span>
-          <span class="pd-infra-item__value">Node.js service runtime</span>
-          <span class="pw-infra-status">Preparing&hellip;</span>
-        </div>
-        <div class="pd-infra-item pw-infra-track" data-track="model">
-          <span class="pd-infra-item__label">Model &amp; compute infrastructure</span>
-          <span class="pd-infra-item__value">OpenAI embeddings + Atlas Vector Search + LLM failover</span>
-          <span class="pw-infra-status">Preparing&hellip;</span>
-        </div>
+      <div class="pd-infra-item" style="margin-bottom:20px">
+        <span class="pd-infra-item__label">AI application infrastructure</span>
+        <span class="pd-infra-item__value">Node.js service runtime</span>
       </div>
+
+      <div class="pw-model-result" id="pw-model-result">
+        <p class="pw-model-result__name" id="pw-model-name">Loading&hellip;</p>
+        <div class="pw-model-result__tags" id="pw-model-tags"></div>
+        <p class="pw-model-result__rationale" id="pw-model-rationale"></p>
+      </div>
+
+      <div id="pw-model-error" class="ks-banner ks-banner--error" style="display:none"></div>
 
       <p class="pd-manual-note pd-manual-note--warn">
         <strong>Real gap, not glossed over:</strong> the actual objective
         requires operating "completely within the VW Group ecosystem
-        without relying on external AI services." This demo runs on
-        Svarg's frontier-default infrastructure — the sovereign-gated-
-        exception path a real KPIT/CARIAD deployment would need is not
-        what's running here.
+        without relying on external AI services." Frontier and Auto both
+        still call external cloud APIs — only Open Weight is the
+        sovereign-gated-exception path a real KPIT/CARIAD deployment would
+        need, and it can't run end to end yet without real hardware (see
+        SELFHOSTED_MODEL_SETUP.md).
       </p>
 
       <div class="pw-actions">

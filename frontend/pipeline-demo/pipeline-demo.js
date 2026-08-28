@@ -11,6 +11,7 @@
 import { requireAuth } from '../defect-matching/defect-matching.js';
 import { initConfluenceConnector } from './pipeline-wizard-confluence.js';
 import { initJiraConnector } from './pipeline-wizard-jira.js';
+import { initModelSelection } from './pipeline-wizard-model.js';
 import { initChat, revealChatIfNeeded } from './pipeline-wizard-chat.js';
 
 const STATE_KEY = 'svarg.pipelineWizard.v1';
@@ -120,11 +121,6 @@ function initWindow3() {
 
 function initWindow4() {
   document.getElementById('pw-infra-ready-btn').addEventListener('click', () => showScreen(5));
-
-  document.querySelectorAll('.pw-infra-track').forEach((track, i) => {
-    const status = track.querySelector('.pw-infra-status');
-    setTimeout(() => { status.textContent = 'Ready'; status.classList.add('pw-infra-status--ready'); }, 600 + i * 500);
-  });
 }
 
 // ── Window 5: Eame ────────────────────────────────────────────────────────
@@ -147,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initWindow3();
   initJiraConnector();
   initWindow4();
+  initModelSelection();
   initWindow5();
   initChat();
 

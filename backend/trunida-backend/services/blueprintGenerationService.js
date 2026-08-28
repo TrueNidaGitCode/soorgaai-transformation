@@ -1232,8 +1232,20 @@ the Selected AI Initiative's mechanism specifically requires to run, not a boile
 14. cdsAIRecommendation
    1–2 sentences making a positive, outcome-focused architecture recommendation. State clearly what to adopt and what it delivers. Close with how to de-risk through a pilot. Do NOT lead with a risk or a caution.
 
+15. recommendedModelApproach (1 string, ≤6 words)
+   State which model approach fits THIS initiative: "Frontier LLM (cloud API)" or "Open-weight model
+   (self-hosted)" — or name a specific model class if warranted (e.g. "Domain-specialized SLM"). Base
+   this on the JOURNEY RULE above — a data handling, security, governance, or external-AI-service
+   constraint from AI Opportunity Discovery decides this, not a default preference.
+
+16. modelSelectionRationale (1–2 sentences)
+   Name the Quality, Cost, AND Performance tradeoff for this initiative specifically.
+   REJECT a rationale that only addresses one of the three, or one generic enough to apply to a
+   different initiative — tie it to this initiative's actual constraints (e.g. expected query volume,
+   a sovereignty/data-residency requirement, or a latency need), not a boilerplate justification.
+
    Add all to the brief object:
-   "deploymentBlocks": [...], "cdsDeploymentFlow": [...], "techRecommendations": [...], "cdsArchRationale": [...], "deploymentDecisions": [...], "cdsImplSequence": [...], "infraItems": [...], "cdsInvestmentEstimate": [...], "cdsConsultantGuidance": "...", "cdsAIRecommendation": "..."`,
+   "deploymentBlocks": [...], "cdsDeploymentFlow": [...], "techRecommendations": [...], "cdsArchRationale": [...], "deploymentDecisions": [...], "cdsImplSequence": [...], "infraItems": [...], "cdsInvestmentEstimate": [...], "cdsConsultantGuidance": "...", "cdsAIRecommendation": "...", "recommendedModelApproach": "...", "modelSelectionRationale": "..."`,
   },
 
   // ── Skills & Workforce domain ─────────────────────────────────────────────
@@ -2110,8 +2122,10 @@ function parseBriefOutput(rawSections, validTitles) {
         return { area, estimate: found ? String(found.estimate || 'Medium').trim() : 'Medium' };
       });
 
-      const cdsConsultantGuidance = String(b.cdsConsultantGuidance || '').trim();
-      const cdsAIRecommendation   = String(b.cdsAIRecommendation   || '').trim();
+      const cdsConsultantGuidance   = String(b.cdsConsultantGuidance   || '').trim();
+      const cdsAIRecommendation     = String(b.cdsAIRecommendation     || '').trim();
+      const recommendedModelApproach = String(b.recommendedModelApproach || '').trim();
+      const modelSelectionRationale  = String(b.modelSelectionRationale  || '').trim();
 
       // ── Data Readiness: Data Architecture Enablement parsers ─────────────────
 
@@ -2488,6 +2502,8 @@ function parseBriefOutput(rawSections, validTitles) {
           ...(cdsInvestmentEstimate.length    ? { cdsInvestmentEstimate }    : {}),
           ...(cdsConsultantGuidance           ? { cdsConsultantGuidance }    : {}),
           ...(cdsAIRecommendation             ? { cdsAIRecommendation }      : {}),
+          ...(recommendedModelApproach        ? { recommendedModelApproach } : {}),
+          ...(modelSelectionRationale         ? { modelSelectionRationale }  : {}),
           // Skills & Workforce: AI Roles & Capability Planning extras (new format)
           ...(projectRoles.length                                        ? { projectRoles }             : {}),
           ...(responsibilityJourney.length                               ? { responsibilityJourney }   : {}),
@@ -3254,6 +3270,7 @@ OUTPUT — valid JSON only, no markdown fences:
       'deploymentBlocks', 'cdsDeploymentFlow', 'techRecommendations', 'cdsArchRationale',
       'deploymentDecisions', 'cdsImplSequence', 'infraItems', 'cdsInvestmentEstimate',
       'cdsConsultantGuidance', 'cdsAIRecommendation',
+      'recommendedModelApproach', 'modelSelectionRationale',
       // Skills & Workforce extras
       'projectRoles', 'responsibilityJourney', 'capabilityPriorities', 'workforceStats', 'arcpConsultantGuidance', 'arcpAIRecommendation',
       'skillsReadiness', 'requiredSkills', 'skillsMatrix', 'skillsRecommendations', 'skillsStats', 'skillsCategorySummary',
@@ -3559,6 +3576,8 @@ function extractJourneyContext(capabilityName, sections) {
       lines.push(`Deployment Guidance: ${b.cdsConsultantGuidance}`);
     if (b.cdsAIRecommendation)
       lines.push(`Deployment AI Recommendation: ${b.cdsAIRecommendation}`);
+    if (b.recommendedModelApproach)
+      lines.push(`Recommended Model Approach: ${b.recommendedModelApproach}${b.modelSelectionRationale ? ` — ${b.modelSelectionRationale}` : ''}`);
     // ── Skills & Workforce: AI Roles & Capability Planning carry-forward ─────────
     if (b.projectRoles?.length)
       lines.push(`Required Project Roles: ${b.projectRoles.map(r => `${r.name} (${r.primaryResponsibility})`).join(', ')}`);

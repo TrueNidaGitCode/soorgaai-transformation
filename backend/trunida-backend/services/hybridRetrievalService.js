@@ -31,7 +31,7 @@ import crypto from 'crypto';
 import KnowledgeChunk from '../models/KnowledgeChunk.js';
 import { embedText, embedBatch, EMBEDDING_DIMENSIONS } from './embeddingService.js';
 
-const VECTOR_INDEX_NAME       = 'knowledge_chunk_vector_index';
+export const VECTOR_INDEX_NAME = 'knowledge_chunk_vector_index';
 const STRUCTURED_SCORE        = 0.90;
 const BOTH_ARM_BOOST          = 0.10;
 // A sanity floor, not a relevance discriminator — tested empirically and found

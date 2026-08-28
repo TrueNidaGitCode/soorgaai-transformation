@@ -9,6 +9,10 @@
 
 import { fetchMatch } from '../defect-matching/defect-matching.js';
 
+// Matches pipeline-wizard-model.js's MODEL_PREFERENCE — Window 4's display
+// and Window 6's actual chat behavior stay in sync.
+const MODEL_PREFERENCE = 'frontier';
+
 const DEPLOY_STEPS = [
   'Deploying agent into prepared infrastructure…',
   'Connecting to model & compute infrastructure…',
@@ -61,7 +65,11 @@ function renderAssistantResult(result) {
       ).join('')}</ul>`
     : '<p>No matching historical defects found.</p>';
 
-  return `<p>${esc(result.suggestedRootCause)}</p>${matchesHtml}`;
+  const answeredBy = result.modelSelection
+    ? `<p class="pw-chat__answered-by">Answered by: ${esc(result.modelSelection.displayName)}</p>`
+    : '';
+
+  return `<p>${esc(result.suggestedRootCause)}</p>${matchesHtml}${answeredBy}`;
 }
 
 async function handleChatSubmit(e) {
@@ -78,7 +86,7 @@ async function handleChatSubmit(e) {
   const typingEl = appendMessage('assistant', '<span class="chat-msg--typing">Matching against historical defects…</span>');
 
   try {
-    const result = await fetchMatch(description);
+    const result = await fetchMatch(description, MODEL_PREFERENCE);
     typingEl.innerHTML = renderAssistantResult(result);
   } catch (err) {
     typingEl.innerHTML = `<span style="color:rgba(248,113,113,0.9)">${esc(err.message)}</span>`;

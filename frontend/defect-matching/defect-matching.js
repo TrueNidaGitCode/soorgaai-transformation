@@ -28,14 +28,14 @@ export function requireAuth() {
 
 // ── API call ──────────────────────────────────────────────────────────────
 
-export async function fetchMatch(description) {
+export async function fetchMatch(description, modelPreference) {
   const resp = await fetch(`${API_BASE}/defect-matching/match`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${getToken()}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ description }),
+    body: JSON.stringify({ description, ...(modelPreference ? { modelPreference } : {}) }),
   });
 
   if (resp.status === 401) {

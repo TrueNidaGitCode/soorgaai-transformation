@@ -8,6 +8,12 @@
  * existing connection status and, once granted, lists projects/issues and
  * submits selected issues to /api/jira/personal/link, which fetches +
  * redacts + LLM-structures each one into a real DefectRecord.
+ *
+ * Selection state (chosen project, checked issues, processed results) is
+ * mirrored into the wizard's shared sessionStorage state (passed in from
+ * pipeline-demo.js) as it changes, and restored on init — otherwise a page
+ * reload (e.g. returning from the Atlassian OAuth redirect) silently wiped
+ * whatever the user had picked, forcing them to redo it.
  */
 
 const API_BASE = window.CONFIG?.API_BASE || 'http://localhost:3000/api';
@@ -25,6 +31,19 @@ async function api(path, opts = {}) {
 
 function esc(text) {
   return String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+let wizardState = null;
+let persistWizardState = () => {};
+
+function jiraState() {
+  wizardState.jira = wizardState.jira || { projectKey: null, checkedIssueKeys: [], processingResults: null };
+  return wizardState.jira;
+}
+
+function saveJiraState(patch) {
+  Object.assign(jiraState(), patch);
+  persistWizardState(wizardState);
 }
 
 const SECTIONS = ['pw-jira-scope-missing', 'pw-jira-not-connected', 'pw-jira-projects', 'pw-jira-issues'];
@@ -57,7 +76,10 @@ function renderProjects(projects) {
   `).join('') || '<p class="ks-card-body">No projects found in this Jira site.</p>';
 
   list.querySelectorAll('.ks-space-item__choose').forEach(el => {
-    el.addEventListener('click', () => loadIssues(el.dataset.projectKey));
+    el.addEventListener('click', () => {
+      saveJiraState({ projectKey: el.dataset.projectKey, checkedIssueKeys: [], processingResults: null });
+      loadIssues(el.dataset.projectKey);
+    });
   });
 
   showOnly('pw-jira-projects');
@@ -67,30 +89,39 @@ async function loadIssues(projectKey) {
   try {
     const { issues } = await api(`/jira/personal/projects/${encodeURIComponent(projectKey)}/issues`);
     const list = document.getElementById('pw-jira-issue-list');
+    const restoredChecked = new Set(jiraState().projectKey === projectKey ? jiraState().checkedIssueKeys : []);
     list.innerHTML = issues.map(i => `
       <label class="ks-space-item">
-        <input type="checkbox" class="pw-jira-issue-checkbox" value="${esc(i.key)}">
+        <input type="checkbox" class="pw-jira-issue-checkbox" value="${esc(i.key)}" ${restoredChecked.has(i.key) ? 'checked' : ''}>
         <span>${esc(i.key)} — ${esc(i.summary)}</span>
       </label>
     `).join('') || '<p class="ks-card-body">No issues found in this project.</p>';
 
     const linkBtn = document.getElementById('pw-jira-link-btn');
     const selectAll = document.getElementById('pw-jira-select-all');
-    linkBtn.disabled = true;
-    selectAll.checked = false;
-
+    const checkedKeys = () => Array.from(list.querySelectorAll('.pw-jira-issue-checkbox:checked')).map(cb => cb.value);
     const updateBtnState = () => { linkBtn.disabled = !list.querySelectorAll('.pw-jira-issue-checkbox:checked').length; };
-    list.querySelectorAll('.pw-jira-issue-checkbox').forEach(cb => cb.addEventListener('change', updateBtnState));
+
+    linkBtn.disabled = !restoredChecked.size;
+    selectAll.checked = issues.length > 0 && restoredChecked.size === issues.length;
+
+    list.querySelectorAll('.pw-jira-issue-checkbox').forEach(cb => cb.addEventListener('change', () => {
+      saveJiraState({ projectKey, checkedIssueKeys: checkedKeys() });
+      updateBtnState();
+    }));
     selectAll.onchange = () => {
       list.querySelectorAll('.pw-jira-issue-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
+      saveJiraState({ projectKey, checkedIssueKeys: checkedKeys() });
       updateBtnState();
     };
 
-    linkBtn.onclick = () => processIssues(
-      Array.from(list.querySelectorAll('.pw-jira-issue-checkbox:checked')).map(cb => ({ issueKey: cb.value }))
-    );
+    linkBtn.onclick = () => processIssues(checkedKeys().map(key => ({ issueKey: key })), projectKey);
 
     showOnly('pw-jira-issues');
+
+    if (jiraState().projectKey === projectKey && jiraState().processingResults) {
+      renderProcessing(jiraState().processingResults);
+    }
   } catch (err) {
     showError(err.message);
   }
@@ -114,13 +145,14 @@ function renderProcessing(results) {
   }).join('');
 }
 
-async function processIssues(issues) {
+async function processIssues(issues, projectKey) {
   const linkBtn = document.getElementById('pw-jira-link-btn');
   linkBtn.disabled = true;
   linkBtn.textContent = 'Processing…';
   try {
     const result = await api('/jira/personal/link', { method: 'POST', body: JSON.stringify({ issues }) });
     renderProcessing(result.results);
+    saveJiraState({ projectKey, processingResults: result.results });
   } catch (err) {
     showError(err.message);
   } finally {
@@ -150,10 +182,16 @@ function wireConnectButtons() {
   });
 }
 
-export async function initJiraConnector() {
+export async function initJiraConnector(state, persist) {
+  wizardState = state;
+  persistWizardState = persist;
+
   wireConnectButtons();
 
-  document.getElementById('pw-jira-back-to-projects').addEventListener('click', () => showOnly('pw-jira-projects'));
+  document.getElementById('pw-jira-back-to-projects').addEventListener('click', () => {
+    saveJiraState({ projectKey: null, checkedIssueKeys: [], processingResults: null });
+    showOnly('pw-jira-projects');
+  });
 
   try {
     const status = await api('/confluence/personal/status');
@@ -162,6 +200,13 @@ export async function initJiraConnector() {
 
     const { projects } = await api('/jira/personal/projects');
     renderProjects(projects);
+
+    // Resume exactly where the user left off — a page reload (e.g.
+    // returning from the Atlassian OAuth redirect) would otherwise land
+    // back on the bare project list, discarding an in-progress selection.
+    if (jiraState().projectKey) {
+      loadIssues(jiraState().projectKey);
+    }
   } catch (err) {
     showError(err.message);
   }

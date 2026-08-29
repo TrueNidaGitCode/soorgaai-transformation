@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initWindow2();
   initConfluenceConnector();
   initWindow3();
-  initJiraConnector();
+  initJiraConnector(state, saveState);
   initWindow4();
   initModelSelection();
   initWindow5();

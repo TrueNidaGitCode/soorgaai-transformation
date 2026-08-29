@@ -133,6 +133,17 @@ export async function personalConfluenceCallback(req, res) {
     }
     const site = resources[0];
 
+    // Union with whatever scopes are already on the record rather than
+    // overwriting — this connection is shared across three entry points
+    // (pipeline wizard, knowledge-sources, profile-setup) that each
+    // request different scope sets. A narrower reconnect from one of the
+    // Confluence-only flows must not silently drop a Jira grant made
+    // earlier through the pipeline wizard (real bug: it did, since a
+    // straight $set only ever reflected the most recent grant).
+    const existing = await PersonalConfluenceConnection.findOne({ userId: statePayload.userId }).select('scopes').lean();
+    const newScopes = (tokens.scope || '').split(' ').filter(Boolean);
+    const mergedScopes = [...new Set([...(existing?.scopes || []), ...newScopes])];
+
     await PersonalConfluenceConnection.findOneAndUpdate(
       { userId: statePayload.userId },
       {
@@ -145,13 +156,7 @@ export async function personalConfluenceCallback(req, res) {
           encryptedAccessToken: encryptSecret(tokens.access_token),
           encryptedRefreshToken: encryptSecret(tokens.refresh_token),
           accessTokenExpiresAt: new Date(Date.now() + (tokens.expires_in || 3600) * 1000),
-          // Persist what Atlassian actually granted, not what was requested —
-          // required for the Jira-access check below to be trustworthy (a
-          // request for the wider ATLASSIAN_SCOPES can still come back
-          // Confluence-only if the app's Jira permission hasn't been added
-          // yet). Previously hardcoded to the requested CONFLUENCE_SCOPES
-          // constant regardless of what was actually granted — real bug.
-          scopes: (tokens.scope || '').split(' ').filter(Boolean),
+          scopes: mergedScopes,
           connectedAt: new Date(),
         },
       },

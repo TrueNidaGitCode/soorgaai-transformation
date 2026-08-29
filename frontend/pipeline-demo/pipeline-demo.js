@@ -14,6 +14,7 @@ import { initJiraConnector } from './pipeline-wizard-jira.js';
 import { initModelSelection } from './pipeline-wizard-model.js';
 import { initEameConnector } from './pipeline-wizard-eame.js';
 import { initChat, revealChatIfNeeded } from './pipeline-wizard-chat.js';
+import { initGovernanceChecklist, loadGovernanceChecklistIfNeeded } from './pipeline-wizard-governance.js';
 
 const STATE_KEY = 'svarg.pipelineWizard.v1';
 const TOTAL_STEPS = 6;
@@ -62,7 +63,10 @@ function showScreen(n) {
   saveState(state);
   renderSteps();
 
-  if (n === 6) revealChatIfNeeded();
+  if (n === 6) {
+    revealChatIfNeeded();
+    loadGovernanceChecklistIfNeeded();
+  }
 }
 
 function renderSteps() {
@@ -147,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initModelSelection();
   initWindow5();
   initEameConnector(state, saveState);
+  initGovernanceChecklist(state, saveState);
   initChat();
 
   showScreen(state.step);

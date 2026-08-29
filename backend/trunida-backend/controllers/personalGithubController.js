@@ -153,7 +153,13 @@ export async function pushProject(req, res) {
     return res.json({ repoUrl: repo.htmlUrl, fileCount: files.length });
   } catch (err) {
     console.error('[PersonalGithub] push-project error:', err.response?.data || err.message);
-    const detail = err.response?.data?.message || err.message;
+    // GitHub's validation errors put the actually useful detail (e.g. "name
+    // already exists on this account") in a nested `errors` array, not the
+    // generic top-level `message` — surface both, since the top-level one
+    // alone (e.g. "Repository creation failed.") isn't actionable.
+    const data = err.response?.data;
+    const nested = data?.errors?.map(e => e.message || e.code).filter(Boolean).join('; ');
+    const detail = [data?.message, nested].filter(Boolean).join(' — ') || err.message;
     return res.status(500).json({ error: `Failed to push project: ${detail}` });
   }
 }

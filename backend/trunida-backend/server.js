@@ -28,6 +28,7 @@ import personalJiraRoutes           from "./routes/personalJiraRoutes.js";
 import actionItemRoutes             from "./routes/actionItemRoutes.js";
 import contactRoutes                from "./routes/contactRoutes.js";
 import defectMatchingRoutes         from "./routes/defectMatchingRoutes.js";
+import personalGithubRoutes         from "./routes/personalGithubRoutes.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
@@ -117,6 +118,7 @@ app.use("/api/confluence",           confluenceRoutes);
 app.use("/api/jira/personal",        personalJiraRoutes);
 app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
 app.use("/api/defect-matching",      defectMatchingRoutes);
+app.use("/api/github/personal",      personalGithubRoutes);
 app.use("/api/action-items",         actionItemRoutes);
 app.use("/api/contact",              contactRoutes);
 app.use("/api/debug",                debugRoutes); // TEMPORARY

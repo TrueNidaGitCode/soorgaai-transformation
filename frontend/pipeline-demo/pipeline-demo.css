@@ -413,20 +413,6 @@
   margin: 0;
 }
 
-/* ── Eame: mock code preview ─────────────────────────────────────────────── */
-.pw-code {
-  margin: 0 0 4px;
-  padding: 18px 20px;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  overflow-x: auto;
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: rgba(146,230,205,0.9);
-}
-.pw-code code { font-family: 'SF Mono', Consolas, Monaco, monospace; }
-
 /* ── Yusu: chat ──────────────────────────────────────────────────────────── */
 .pw-chat {
   display: flex;

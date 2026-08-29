@@ -1,0 +1,41 @@
+/* Minimal base styles — the full Svarg site stylesheet isn't part of this
+   standalone package, so defect-matching.css's component styles need a
+   plain dark-page baseline to sit on. */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #0b0f14;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.dev-token-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 24px;
+  background: rgba(92, 197, 167, 0.08);
+  border-bottom: 1px solid rgba(92, 197, 167, 0.25);
+  font-size: 13px;
+}
+.dev-token-bar input {
+  flex: 1;
+  max-width: 480px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+}
+.dev-token-bar button {
+  padding: 6px 14px;
+  background: #5CC5A7;
+  border: none;
+  border-radius: 6px;
+  color: #04140f;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+.dev-token-bar span { color: rgba(255,255,255,0.5); }

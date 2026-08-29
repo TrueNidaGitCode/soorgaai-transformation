@@ -12,6 +12,7 @@ import { requireAuth } from '../defect-matching/defect-matching.js';
 import { initConfluenceConnector } from './pipeline-wizard-confluence.js';
 import { initJiraConnector } from './pipeline-wizard-jira.js';
 import { initModelSelection } from './pipeline-wizard-model.js';
+import { initEameConnector } from './pipeline-wizard-eame.js';
 import { initChat, revealChatIfNeeded } from './pipeline-wizard-chat.js';
 
 const STATE_KEY = 'svarg.pipelineWizard.v1';
@@ -145,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initWindow4();
   initModelSelection();
   initWindow5();
+  initEameConnector(state, saveState);
   initChat();
 
   showScreen(state.step);

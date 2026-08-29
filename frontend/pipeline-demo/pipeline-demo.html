@@ -263,31 +263,38 @@
     <section class="ws-card pw-screen" id="pw-screen-5">
       <div class="pd-stage__head">
         <h2 class="pd-stage__title">5. Eame — build the AI application</h2>
-        <span class="pd-badge pd-badge--simulated">Illustrative</span>
+        <span class="pd-badge pd-badge--live">Live</span>
       </div>
       <p class="pd-stage__intro">
-        Eame assembles the AI application from Aria's structured data and
-        Arth's infrastructure, and delivers the source code.
+        Eame doesn't just describe the AI application — it pushes the real,
+        working project (the same defect-matching capability running in
+        this demo) straight to your own GitHub, with a README, deployment
+        steps, and a real Jira integration module included.
       </p>
 
-      <pre class="pw-code"><code>// defect-matching-agent.js (illustrative)
-import { hybridRetrieve } from "./retrieval.js";
-import { generate } from "./llm.js";
+      <div id="pw-eame-error" class="ks-banner ks-banner--error" style="display:none"></div>
 
-export async function matchDefect({ description }) {
-  const matches = await hybridRetrieve({
-    queryText: description,
-    sourceType: "defect",
-    topK: 5,
-  });
+      <div id="pw-eame-not-connected">
+        <a id="pw-eame-connect-btn" href="#" class="ks-btn ks-btn--primary">Connect GitHub</a>
+      </div>
 
-  const suggestion = await generate({
-    systemPrompt: ROOT_CAUSE_PROMPT,
-    userMessage: buildContext(description, matches),
-  });
+      <div id="pw-eame-push-form" style="display:none">
+        <p class="pd-infra-item__label" style="margin-bottom:10px">Connected as <strong id="pw-eame-github-login"></strong></p>
 
-  return { matches, suggestedRootCause: suggestion.text };
-}</code></pre>
+        <label class="dm-form__label" for="pw-eame-repo-name">Repository name</label>
+        <input type="text" id="pw-eame-repo-name" class="dm-form__textarea" style="height:auto;padding:10px 12px" placeholder="defect-matching-agent">
+
+        <label style="display:flex;align-items:center;gap:8px;margin:12px 0;font-size:14px;color:rgba(255,255,255,0.7)">
+          <input type="checkbox" id="pw-eame-private"> Private repository
+        </label>
+
+        <button type="button" class="ks-btn ks-btn--primary" id="pw-eame-push-btn">Push to GitHub</button>
+      </div>
+
+      <div id="pw-eame-result" style="display:none" class="pw-model-result">
+        <p class="pw-model-result__name">Pushed <span id="pw-eame-file-count"></span> files to <a id="pw-eame-repo-link" href="#" target="_blank" rel="noopener"></a></p>
+        <p class="pw-model-result__rationale">Includes a README with local setup + Railway deployment steps, and JIRA_INTEGRATION.md with real, working Jira OAuth code for pulling in live defect data.</p>
+      </div>
 
       <div class="pw-actions">
         <button type="button" class="pw-back-btn" data-back="4">&larr; Back</button>

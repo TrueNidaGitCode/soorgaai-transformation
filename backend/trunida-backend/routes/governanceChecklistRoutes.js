@@ -1,9 +1,9 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { getChecklist } from '../controllers/governanceChecklistController.js';
+import { runChecklist } from '../controllers/governanceChecklistController.js';
 
 const router = express.Router();
 
-router.get('/', protect, getChecklist);
+router.post('/run', protect, runChecklist);
 
 export default router;

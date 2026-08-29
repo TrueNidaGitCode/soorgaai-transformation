@@ -1,22 +1,24 @@
 /**
- * Svarg — Pipeline Wizard: Window 6's governance & ethics checklist
+ * Svarg — Pipeline Wizard: Window 6's governance & ethics test results
  *
- * Reads the real "Governance & Ethics" domain Cob already generated for
- * this engagement (backend/.../controllers/governanceChecklistController.js)
- * and renders each section's priorityActions as a checklist — a review
- * step, not automated testing: the user manually confirms each item before
- * treating the deployed agent as production-ready.
+ * Runs the real, automated test suite
+ * (backend/.../services/governanceTestService.js) against the live
+ * defect-matching agent and publishes the results — fully automated, no
+ * manual review step, per direction ("no more person involved... run the
+ * applicable test automatically and publish the result").
  *
- * Checked state persists into the wizard's shared sessionStorage state,
- * same pattern as Window 3's Jira selection fix.
+ * Results persist into the wizard's shared sessionStorage state (same
+ * pattern as Window 3/5's fixes) so a reload shows the last run instead
+ * of silently re-running ~7 real LLM-backed calls.
  */
 
 const API_BASE = window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const getToken = () => localStorage.getItem('token');
 
-async function api(path) {
+async function api(path, opts = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
+    ...opts,
+    headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json', ...(opts.headers || {}) },
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
@@ -31,54 +33,34 @@ let wizardState = null;
 let persistWizardState = () => {};
 let started = false;
 
-function checkedIds() {
-  wizardState.governance = wizardState.governance || { checkedIds: [] };
-  return new Set(wizardState.governance.checkedIds);
+function groupBySection(results) {
+  const bySection = new Map();
+  for (const r of results) {
+    if (!bySection.has(r.section)) bySection.set(r.section, []);
+    bySection.get(r.section).push(r);
+  }
+  return [...bySection.entries()];
 }
 
-function saveCheckedIds(ids) {
-  wizardState.governance = { checkedIds: [...ids] };
-  persistWizardState(wizardState);
-}
+function renderResults({ results, passedCount, total, sourceGeneratedWithErrors }) {
+  document.getElementById('pw-governance-progress').textContent = `${passedCount} / ${total} passed`;
+  document.getElementById('pw-governance-warning').style.display = sourceGeneratedWithErrors ? 'block' : 'none';
 
-function itemId(sectionIndex, itemIndex) {
-  return `${sectionIndex}-${itemIndex}`;
-}
-
-function renderSections(sections) {
-  const checked = checkedIds();
   const container = document.getElementById('pw-governance-sections');
-  container.innerHTML = sections.map((section, si) => `
+  container.innerHTML = groupBySection(results).map(([section, tests]) => `
     <div class="pw-governance__section">
-      <p class="pw-governance__section-title">${esc(section.title)}</p>
-      ${section.items.map((item, ii) => {
-        const id = itemId(si, ii);
-        return `
-          <label class="pw-governance__item">
-            <input type="checkbox" class="pw-governance__checkbox" data-item-id="${id}" ${checked.has(id) ? 'checked' : ''}>
-            <span>${esc(item)}</span>
-          </label>
-        `;
-      }).join('')}
+      <p class="pw-governance__section-title">${esc(section)}</p>
+      ${tests.map(t => `
+        <div class="pw-governance__item">
+          <span class="pw-governance__badge ${t.passed ? 'pw-governance__badge--pass' : 'pw-governance__badge--fail'}">${t.passed ? 'PASS' : 'FAIL'}</span>
+          <span>
+            <strong>${esc(t.name)}</strong>
+            <span class="pw-governance__detail">${esc(t.detail)}</span>
+          </span>
+        </div>
+      `).join('')}
     </div>
   `).join('');
-
-  updateProgress(sections);
-
-  container.querySelectorAll('.pw-governance__checkbox').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const ids = checkedIds();
-      if (cb.checked) ids.add(cb.dataset.itemId); else ids.delete(cb.dataset.itemId);
-      saveCheckedIds(ids);
-      updateProgress(sections);
-    });
-  });
-}
-
-function updateProgress(sections) {
-  const total = sections.reduce((n, s) => n + s.items.length, 0);
-  const done = checkedIds().size;
-  document.getElementById('pw-governance-progress').textContent = `${done} / ${total} confirmed`;
 }
 
 function showError(message) {
@@ -92,8 +74,8 @@ export async function initGovernanceChecklist(state, persist) {
 }
 
 /**
- * Called once Window 6 becomes active (mirrors revealChatIfNeeded's
- * once-per-page-load guard) — loads and renders the real checklist.
+ * Called once Window 6 becomes active — runs the real test suite (or
+ * shows the last run's results if one already happened this session).
  */
 export async function loadGovernanceChecklistIfNeeded() {
   if (started) return;
@@ -102,13 +84,20 @@ export async function loadGovernanceChecklistIfNeeded() {
   const panel = document.getElementById('pw-governance');
   panel.hidden = false;
 
+  if (wizardState.governance?.lastRun) {
+    renderResults(wizardState.governance.lastRun);
+    return;
+  }
+
+  document.getElementById('pw-governance-progress').textContent = 'Running…';
+
   try {
-    const result = await api('/governance-checklist');
-    if (result.generatedWithErrors) {
-      document.getElementById('pw-governance-warning').style.display = 'block';
-    }
-    renderSections(result.sections);
+    const result = await api('/governance-checklist/run', { method: 'POST' });
+    renderResults(result);
+    wizardState.governance = { lastRun: result };
+    persistWizardState(wizardState);
   } catch (err) {
     showError(err.message);
+    document.getElementById('pw-governance-progress').textContent = '';
   }
 }

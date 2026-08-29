@@ -447,13 +447,28 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 6px 0;
+  padding: 7px 0;
   font-size: 13.5px;
   line-height: 1.5;
   color: rgba(255,255,255,0.8);
-  cursor: pointer;
 }
-.pw-governance__item input { margin-top: 3px; flex-shrink: 0; }
+.pw-governance__badge {
+  flex-shrink: 0;
+  margin-top: 2px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+.pw-governance__badge--pass { background: rgba(92,197,167,0.15); color: #5CC5A7; }
+.pw-governance__badge--fail { background: rgba(248,113,113,0.15); color: #f87171; }
+.pw-governance__detail {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.55);
+}
 
 /* ── Yusu: chat ──────────────────────────────────────────────────────────── */
 .pw-chat {

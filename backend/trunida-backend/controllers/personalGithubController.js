@@ -147,7 +147,7 @@ export async function pushProject(req, res) {
     });
 
     const files = buildManifest({ includeJira: true });
-    await pushFiles(accessToken, repo.owner, repo.name, files, 'Initial commit — delivered by Svarg (Eame)');
+    await pushFiles(accessToken, repo.owner, repo.name, repo.defaultBranch, files, 'Initial commit — delivered by Svarg (Eame)');
 
     auditLog('PUSHED', req.user._id, { repoUrl: repo.htmlUrl, fileCount: files.length });
     return res.json({ repoUrl: repo.htmlUrl, fileCount: files.length });

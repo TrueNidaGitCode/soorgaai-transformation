@@ -1,10 +1,19 @@
 /**
  * SoorgaAI — GitHub REST API Service
  *
- * Repo creation + pushing a full file set as one initial commit, via the
- * Git Data API (blobs -> tree -> commit -> ref) rather than one Contents
- * API call per file — matches what a real `git push` of an initial commit
- * looks like, and avoids one round trip per file.
+ * Repo creation + pushing a full file set as one real commit, via the Git
+ * Data API (blobs -> tree -> commit -> ref) rather than one Contents API
+ * call per file — matches what a real `git push` looks like, and avoids
+ * one round trip per file.
+ *
+ * A brand-new repo has zero commits, and GitHub's Git Data API 409s with
+ * "Git Repository is empty." on git/trees and git/commits until at least
+ * one commit exists — there's no way to create that very first commit
+ * through the Git Data API itself. So pushFiles() bootstraps one throwaway
+ * commit via the Contents API (the one endpoint that can initialize an
+ * empty repo), then builds the real, complete tree as a second commit on
+ * top of it via the Git Data API — the actual file set still lands as one
+ * real commit, just not the repo's very first one.
  */
 
 import axios from 'axios';
@@ -17,7 +26,7 @@ function headers(accessToken) {
 
 /**
  * Creates a new (empty — no auto_init) repo owned by the authenticated user.
- * @returns {Promise<{owner:string, name:string, htmlUrl:string}>}
+ * @returns {Promise<{owner:string, name:string, htmlUrl:string, defaultBranch:string}>}
  */
 export async function createRepo(accessToken, { name, description = '', isPrivate = false }) {
   const { data } = await axios.post(
@@ -25,7 +34,7 @@ export async function createRepo(accessToken, { name, description = '', isPrivat
     { name, description, private: isPrivate, auto_init: false },
     { headers: headers(accessToken) }
   );
-  return { owner: data.owner.login, name: data.name, htmlUrl: data.html_url };
+  return { owner: data.owner.login, name: data.name, htmlUrl: data.html_url, defaultBranch: data.default_branch };
 }
 
 async function createBlob(accessToken, owner, repo, content) {
@@ -38,17 +47,26 @@ async function createBlob(accessToken, owner, repo, content) {
 }
 
 /**
- * Pushes `files` as a single initial commit on `main` into a freshly
- * created (empty) repo.
+ * Pushes `files` as one commit onto `branch` (the repo's default branch,
+ * from createRepo()'s return value) in a freshly created, still-empty repo.
  * @param {{path:string, content:string}[]} files
  */
-export async function pushFiles(accessToken, owner, repo, files, commitMessage) {
+export async function pushFiles(accessToken, owner, repo, branch, files, commitMessage) {
+  const { data: bootstrap } = await axios.put(
+    `${API_BASE}/repos/${owner}/${repo}/contents/.gitkeep`,
+    { message: 'Initialize repository', content: Buffer.from('').toString('base64') },
+    { headers: headers(accessToken) }
+  );
+  const parentSha = bootstrap.commit.sha;
+
   const blobs = [];
   for (const file of files) {
     const sha = await createBlob(accessToken, owner, repo, file.content);
     blobs.push({ path: file.path, mode: '100644', type: 'blob', sha });
   }
 
+  // No base_tree — this tree is the complete, final file set, so the
+  // .gitkeep bootstrap file (not included in `files`) won't appear in it.
   const { data: tree } = await axios.post(
     `${API_BASE}/repos/${owner}/${repo}/git/trees`,
     { tree: blobs },
@@ -57,13 +75,15 @@ export async function pushFiles(accessToken, owner, repo, files, commitMessage) 
 
   const { data: commit } = await axios.post(
     `${API_BASE}/repos/${owner}/${repo}/git/commits`,
-    { message: commitMessage, tree: tree.sha },
+    { message: commitMessage, tree: tree.sha, parents: [parentSha] },
     { headers: headers(accessToken) }
   );
 
-  await axios.post(
-    `${API_BASE}/repos/${owner}/${repo}/git/refs`,
-    { ref: 'refs/heads/main', sha: commit.sha },
+  // PATCH, not POST — the ref already exists (created by the bootstrap
+  // commit above), this just moves it forward.
+  await axios.patch(
+    `${API_BASE}/repos/${owner}/${repo}/git/refs/heads/${branch}`,
+    { sha: commit.sha },
     { headers: headers(accessToken) }
   );
 

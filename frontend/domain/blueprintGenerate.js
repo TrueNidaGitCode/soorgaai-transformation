@@ -615,16 +615,19 @@ async function initGuest(guestId) {
     if (!resp.ok) throw new Error('Failed to load preview blueprint');
     const bp = await resp.json();
 
-    if (bp.status === 'completed') {
+    if (bp.opportunityApproval?.approved) {
+      // Already approved (this session or a previous one) — straight to
+      // the workspace, no need to re-gate.
       document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
     } else {
-      // Gated on full completion — see "Screen 2.5" above. AI Use Cases
-      // appears as soon as that domain finishes; View Blueprint/Approve
-      // unlock once everything is.
+      // Not yet approved — gate on Screen 2.5, whether generation is
+      // still running or this is a pre-existing blueprint from before
+      // this screen existed (opportunityApproval defaults to unapproved
+      // either way, so both cases are handled identically here).
       wireOpportunitiesButtons(guestId);
       showScreen('screen-opportunities');
       handleOpportunitiesUpdate(bp);
-      startLiveUpdates(guestId);
+      if (bp.status === 'generating') startLiveUpdates(guestId);
     }
   } catch (err) {
     console.error('[blueprintGenerate] guest init error:', err);
@@ -668,14 +671,19 @@ async function init() {
       return;
     }
 
-    if (bp.status === 'completed') {
+    if (bp.opportunityApproval?.approved) {
+      // Already approved (this session or a previous one) — straight to
+      // the workspace, no need to re-gate.
       document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
     } else {
-      // Gated on full completion — see "Screen 2.5" above.
+      // Not yet approved — gate on Screen 2.5, whether generation is
+      // still running or this is a pre-existing blueprint from before
+      // this screen existed (opportunityApproval defaults to unapproved
+      // either way, so both cases are handled identically here).
       wireOpportunitiesButtons(null);
       showScreen('screen-opportunities');
       handleOpportunitiesUpdate(bp);
-      startLiveUpdates(null);
+      if (bp.status === 'generating') startLiveUpdates(null);
     }
     initGenerateForm(); // keep form initialised in case user clicks New Blueprint
     initGroundingBanner(bp._id);

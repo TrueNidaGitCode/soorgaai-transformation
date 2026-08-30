@@ -57,7 +57,11 @@ function renderResult(result) {
   const link = document.getElementById('pw-eame-repo-link');
   link.href = result.repoUrl;
   link.textContent = result.repoUrl.replace('https://github.com/', '');
-  document.getElementById('pw-eame-result').style.display = 'block';
+  const resultEl = document.getElementById('pw-eame-result');
+  resultEl.style.display = 'block';
+  resultEl.classList.remove('pw-reveal');
+  void resultEl.offsetWidth;
+  resultEl.classList.add('pw-reveal');
 }
 
 async function handlePush() {

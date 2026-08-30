@@ -63,8 +63,8 @@ function showError(message) {
 
 function renderProjects(projects) {
   const list = document.getElementById('pw-jira-project-list');
-  list.innerHTML = projects.map(p => `
-    <div class="ks-space-item ks-space-item--row">
+  list.innerHTML = projects.map((p, i) => `
+    <div class="ks-space-item ks-space-item--row pw-reveal" style="--i:${i}">
       <div class="ks-space-item__info">
         <span class="ks-space-item__name">${esc(p.name)}</span>
         <span class="ks-space-key">${esc(p.key)}</span>
@@ -90,10 +90,10 @@ async function loadIssues(projectKey) {
     const { issues } = await api(`/jira/personal/projects/${encodeURIComponent(projectKey)}/issues`);
     const list = document.getElementById('pw-jira-issue-list');
     const restoredChecked = new Set(jiraState().projectKey === projectKey ? jiraState().checkedIssueKeys : []);
-    list.innerHTML = issues.map(i => `
-      <label class="ks-space-item">
-        <input type="checkbox" class="pw-jira-issue-checkbox" value="${esc(i.key)}" ${restoredChecked.has(i.key) ? 'checked' : ''}>
-        <span>${esc(i.key)} — ${esc(i.summary)}</span>
+    list.innerHTML = issues.map((issue, idx) => `
+      <label class="ks-space-item pw-reveal" style="--i:${idx}">
+        <input type="checkbox" class="pw-jira-issue-checkbox" value="${esc(issue.key)}" ${restoredChecked.has(issue.key) ? 'checked' : ''}>
+        <span>${esc(issue.key)} — ${esc(issue.summary)}</span>
       </label>
     `).join('') || '<p class="ks-card-body">No issues found in this project.</p>';
 
@@ -130,15 +130,15 @@ async function loadIssues(projectKey) {
 function renderProcessing(results) {
   const el = document.getElementById('pw-jira-processing');
   el.style.display = 'block';
-  el.innerHTML = results.map(r => {
+  el.innerHTML = results.map((r, i) => {
     if (r.status === 'error') {
-      return `<div class="pw-process-item pw-process-item--error">
+      return `<div class="pw-process-item pw-process-item--error pw-reveal" style="--i:${i}">
         <span class="pw-process-item__title">${esc(r.issueKey)}</span>
         <span class="pw-process-item__detail">${esc(r.error)}</span>
       </div>`;
     }
     const notes = r.redactionNotes?.length ? r.redactionNotes.map(esc).join(', ') : 'nothing to redact';
-    return `<div class="pw-process-item pw-process-item--done">
+    return `<div class="pw-process-item pw-process-item--done pw-reveal" style="--i:${i}">
       <span class="pw-process-item__title">${esc(r.title)}</span>
       <span class="pw-process-item__detail">${r.unchanged ? 'already structured, unchanged' : `redacted (${notes}) → structured → indexed`}</span>
     </div>`;

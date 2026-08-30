@@ -6,6 +6,10 @@
   <meta name="description" content="Svarg — Interactive walkthrough of Cob, Aria, Arth, Eame, and Yusu for the real ORU Pre-analysis engagement.">
   <title>Pipeline Wizard — Svarg</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../workspace/workspace.css">
   <link rel="stylesheet" href="../knowledge-sources/knowledge-sources.css">
@@ -35,12 +39,35 @@
 
     <!-- ── Step indicator ───────────────────────────────────── -->
     <nav class="pw-steps" id="pw-steps" aria-label="Wizard steps">
-      <button type="button" class="pw-step" data-step="1"><span class="pw-step__num">1</span>Cob</button>
-      <button type="button" class="pw-step" data-step="2"><span class="pw-step__num">2</span>Opportunities</button>
-      <button type="button" class="pw-step" data-step="3"><span class="pw-step__num">3</span>Aria</button>
-      <button type="button" class="pw-step" data-step="4"><span class="pw-step__num">4</span>Arth</button>
-      <button type="button" class="pw-step" data-step="5"><span class="pw-step__num">5</span>Eame</button>
-      <button type="button" class="pw-step" data-step="6"><span class="pw-step__num">6</span>Yusu</button>
+      <button type="button" class="pw-step" data-step="1">
+        <span class="pw-step__node"><span class="pw-step__num">1</span></span>
+        <span class="pw-step__label">Cob</span>
+      </button>
+      <span class="pw-step-line" data-line="1"><span class="pw-step-line__flow"></span></span>
+      <button type="button" class="pw-step" data-step="2">
+        <span class="pw-step__node"><span class="pw-step__num">2</span></span>
+        <span class="pw-step__label">Opportunities</span>
+      </button>
+      <span class="pw-step-line" data-line="2"><span class="pw-step-line__flow"></span></span>
+      <button type="button" class="pw-step" data-step="3">
+        <span class="pw-step__node"><span class="pw-step__num">3</span></span>
+        <span class="pw-step__label">Aria</span>
+      </button>
+      <span class="pw-step-line" data-line="3"><span class="pw-step-line__flow"></span></span>
+      <button type="button" class="pw-step" data-step="4">
+        <span class="pw-step__node"><span class="pw-step__num">4</span></span>
+        <span class="pw-step__label">Arth</span>
+      </button>
+      <span class="pw-step-line" data-line="4"><span class="pw-step-line__flow"></span></span>
+      <button type="button" class="pw-step" data-step="5">
+        <span class="pw-step__node"><span class="pw-step__num">5</span></span>
+        <span class="pw-step__label">Eame</span>
+      </button>
+      <span class="pw-step-line" data-line="5"><span class="pw-step-line__flow"></span></span>
+      <button type="button" class="pw-step" data-step="6">
+        <span class="pw-step__node"><span class="pw-step__num">6</span></span>
+        <span class="pw-step__label">Yusu</span>
+      </button>
     </nav>
 
     <!-- ══ Window 1 — Cob ═══════════════════════════════════════════════ -->
@@ -103,7 +130,7 @@
         opportunity to continue.
       </p>
 
-      <div class="pd-winner">
+      <div class="pd-winner pw-reveal" style="--i:0">
         <p class="pd-winner__label">Recommended starting point</p>
         <p class="pd-winner__name">Retrieval-Augmented Semantic Matching for Defects</p>
         <p class="pd-winner__why">
@@ -116,10 +143,10 @@
 
       <p class="pd-substage-label">Other opportunities considered, ranked lower</p>
       <ul class="pd-deemphasized">
-        <li>Anomaly Detection on Flash Execution and Communication Logs</li>
-        <li>Automatic Plausibility Validation via Classification</li>
-        <li>Knowledge Capture &amp; Retrieval-Augmented Assistance</li>
-        <li>Generative Drafting of Pre-analysis Reports</li>
+        <li class="pw-reveal" style="--i:1">Anomaly Detection on Flash Execution and Communication Logs</li>
+        <li class="pw-reveal" style="--i:2">Automatic Plausibility Validation via Classification</li>
+        <li class="pw-reveal" style="--i:3">Knowledge Capture &amp; Retrieval-Augmented Assistance</li>
+        <li class="pw-reveal" style="--i:4">Generative Drafting of Pre-analysis Reports</li>
       </ul>
 
       <div class="pw-actions">
@@ -152,32 +179,32 @@
 
       <p class="pd-substage-label">Datasets Cob's Data Readiness domain identified as required</p>
       <div class="pd-datasets">
-        <div class="pd-dataset">
+        <div class="pd-dataset pw-reveal" style="--i:0">
           <span class="pd-dataset__name">Test Execution and Defect Records</span>
           <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
           <span class="pd-dataset__source">Jira, Polarion, TestRail</span>
         </div>
-        <div class="pd-dataset">
+        <div class="pd-dataset pw-reveal" style="--i:1">
           <span class="pd-dataset__name">Flashing Logs and Diagnostic Traces</span>
           <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
           <span class="pd-dataset__source">Internal log repositories, Campaign Manager</span>
         </div>
-        <div class="pd-dataset">
+        <div class="pd-dataset pw-reveal" style="--i:2">
           <span class="pd-dataset__name">Pre-analysis Business Objectives</span>
           <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
           <span class="pd-dataset__source">Confluence, program documentation</span>
         </div>
-        <div class="pd-dataset">
+        <div class="pd-dataset pw-reveal" style="--i:3">
           <span class="pd-dataset__name">OTA ECU Product Configuration</span>
           <span class="pd-dataset__priority pd-dataset__priority--high">HIGH</span>
           <span class="pd-dataset__source">Product configuration DB, Polarion</span>
         </div>
-        <div class="pd-dataset">
+        <div class="pd-dataset pw-reveal" style="--i:4">
           <span class="pd-dataset__name">Engineering Knowledge Base</span>
           <span class="pd-dataset__priority pd-dataset__priority--medium">MEDIUM</span>
           <span class="pd-dataset__source">Confluence, historical analysis docs</span>
         </div>
-        <div class="pd-dataset">
+        <div class="pd-dataset pw-reveal" style="--i:5">
           <span class="pd-dataset__name">OTA System Architecture Artifacts</span>
           <span class="pd-dataset__priority pd-dataset__priority--medium">MEDIUM</span>
           <span class="pd-dataset__source">System architecture docs, engineering portal</span>

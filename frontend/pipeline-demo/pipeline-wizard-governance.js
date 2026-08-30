@@ -47,11 +47,12 @@ function renderResults({ results, passedCount, total, sourceGeneratedWithErrors 
   document.getElementById('pw-governance-warning').style.display = sourceGeneratedWithErrors ? 'block' : 'none';
 
   const container = document.getElementById('pw-governance-sections');
+  let itemIndex = 0;
   container.innerHTML = groupBySection(results).map(([section, tests]) => `
     <div class="pw-governance__section">
       <p class="pw-governance__section-title">${esc(section)}</p>
       ${tests.map(t => `
-        <div class="pw-governance__item">
+        <div class="pw-governance__item pw-reveal" style="--i:${itemIndex++}">
           <span class="pw-governance__badge ${t.passed ? 'pw-governance__badge--pass' : 'pw-governance__badge--fail'}">${t.passed ? 'PASS' : 'FAIL'}</span>
           <span>
             <strong>${esc(t.name)}</strong>

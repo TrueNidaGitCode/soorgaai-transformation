@@ -56,7 +56,17 @@ let state = loadState();
 function showScreen(n) {
   for (let i = 1; i <= TOTAL_STEPS; i++) {
     const el = document.getElementById(`pw-screen-${i}`);
-    if (el) el.style.display = i === n ? '' : 'none';
+    if (!el) continue;
+    if (i === n) {
+      el.style.display = '';
+      // Force a reflow so the enter animation restarts even when
+      // re-visiting a screen (class re-add alone wouldn't replay it).
+      el.classList.remove('pw-screen--enter');
+      void el.offsetWidth;
+      el.classList.add('pw-screen--enter');
+    } else {
+      el.style.display = 'none';
+    }
   }
   state.step = n;
   state.maxReached = Math.max(state.maxReached, n);
@@ -76,6 +86,13 @@ function renderSteps() {
     btn.classList.toggle('pw-step--done', step < state.step);
     btn.classList.toggle('pw-step--locked', step > state.maxReached);
     btn.disabled = step > state.maxReached;
+  });
+
+  // Connector between step i and i+1 is "done" (gets the flowing
+  // gradient pulse) once the user has actually reached step i+1.
+  document.querySelectorAll('.pw-step-line').forEach(line => {
+    const i = parseInt(line.dataset.line, 10);
+    line.classList.toggle('pw-step-line--done', state.maxReached > i);
   });
 }
 

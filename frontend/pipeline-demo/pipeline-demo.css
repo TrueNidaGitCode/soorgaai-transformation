@@ -1,3 +1,18 @@
+/* ── Tokens (page-scoped — reuses the sitewide palette, adds a display
+   serif already used on sibling marketing pages, and a real type scale
+   to replace this page's previously ad-hoc px sizes) ───────────────────── */
+:root {
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --pw-size-xs:  11px;
+  --pw-size-sm:  12.5px;
+  --pw-size-base:14px;
+  --pw-size-md:  15px;
+  --pw-size-lg:  17px;
+  --pw-size-xl:  22px;
+  --pw-size-2xl: 32px;
+  --pw-size-3xl: 44px;
+}
+
 /* ── Page ────────────────────────────────────────────────────────────────── */
 .pd-page { max-width: 1200px; }
 
@@ -5,7 +20,7 @@
 .pd-header { margin-bottom: 28px; }
 
 .pd-header__eyebrow {
-  font-size: 12.5px;
+  font-size: var(--pw-size-sm);
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -13,21 +28,34 @@
   margin: 0 0 12px;
 }
 
+.pd-page .ws-page-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 3vw, var(--pw-size-3xl));
+  font-weight: 700;
+  text-wrap: balance;
+}
+
 .pd-header__sub {
-  font-size: 15px;
+  font-size: var(--pw-size-md);
   color: rgba(255,255,255,0.55);
   max-width: 680px;
   line-height: 1.55;
   margin: 0;
 }
 
-/* ── Wizard steps ────────────────────────────────────────────────────────── */
+/* ── Wizard steps: the flow diagram ──────────────────────────────────────
+   Literal data-flow visualization AND the step nav in one element — each
+   .pw-step is a node, each .pw-step-line the connector between two nodes.
+   Traversed connectors carry a continuous gradient pulse (extends the
+   .mkt-blueprint pattern from marketing.css into a horizontal layout),
+   signaling "data is moving through this pipeline" rather than a static
+   progress bar. ─────────────────────────────────────────────────────── */
 .pw-steps {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 14px 18px;
+  gap: 0;
+  padding: 20px 22px;
   margin-bottom: 28px;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.08);
@@ -36,47 +64,99 @@
 
 .pw-step {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 7px 14px;
+  gap: 7px;
+  padding: 4px 6px;
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 999px;
-  color: rgba(255,255,255,0.5);
-  font-size: 13px;
+  border: none;
+  color: rgba(255,255,255,0.45);
+  font-size: var(--pw-size-xs);
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .pw-step:disabled { cursor: not-allowed; opacity: 0.4; }
 
-.pw-step__num {
+.pw-step__node {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.1);
-  font-size: 10.5px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.14);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
-.pw-step--active {
-  color: #fff;
+.pw-step__num { font-size: var(--pw-size-xs); }
+
+.pw-step__label {
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.pw-step--active .pw-step__node {
   border-color: #5CC5A7;
-  background: rgba(92,197,167,0.1);
+  background: rgba(92,197,167,0.14);
+  box-shadow: 0 0 0 4px rgba(92,197,167,0.1);
+  animation: pw-node-pulse 2.2s ease-in-out infinite;
 }
-.pw-step--active .pw-step__num { background: #5CC5A7; color: #08090b; }
+.pw-step--active .pw-step__label { color: #fff; }
 
-.pw-step--done {
-  color: rgba(255,255,255,0.75);
-  border-color: rgba(92,197,167,0.3);
+.pw-step--done .pw-step__node { background: #5CC5A7; border-color: #5CC5A7; color: #08090b; }
+.pw-step--done .pw-step__label { color: rgba(255,255,255,0.7); }
+
+.pw-step-line {
+  position: relative;
+  flex: 1 1 28px;
+  min-width: 16px;
+  height: 2px;
+  margin: 0 2px;
+  align-self: flex-start;
+  margin-top: 15px;
+  background: rgba(255,255,255,0.1);
+  overflow: hidden;
+  border-radius: 2px;
 }
-.pw-step--done .pw-step__num { background: rgba(92,197,167,0.3); color: #fff; }
+.pw-step-line--done { background: rgba(92,197,167,0.35); }
+
+.pw-step-line__flow {
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #5CC5A7, #3DAFD3, transparent);
+  opacity: 0;
+}
+.pw-step-line--done .pw-step-line__flow {
+  opacity: 1;
+  animation: pw-line-flow 2.6s linear infinite;
+}
+
+@keyframes pw-node-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(92,197,167,0.1); }
+  50%      { box-shadow: 0 0 0 7px rgba(92,197,167,0.04); }
+}
+
+@keyframes pw-line-flow {
+  0%   { left: -30%; }
+  100% { left: 100%; }
+}
 
 /* ── Screens ─────────────────────────────────────────────────────────────── */
 .pw-screen { scroll-margin-top: 84px; }
+
+.pw-screen--enter { animation: pw-screen-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes pw-screen-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 .pd-stage__head {
   display: flex;
@@ -88,14 +168,15 @@
 }
 
 .pd-stage__title {
-  font-size: 19px;
+  font-family: var(--font-serif);
+  font-size: var(--pw-size-xl);
   font-weight: 700;
   color: #fff;
   margin: 0;
 }
 
 .pd-stage__intro {
-  font-size: 14px;
+  font-size: var(--pw-size-base);
   line-height: 1.55;
   color: rgba(255,255,255,0.55);
   margin: 0 0 20px;
@@ -103,12 +184,27 @@
 }
 
 .pd-substage-label {
-  font-size: 12px;
+  font-size: var(--pw-size-xs);
   font-weight: 700;
   letter-spacing: 0.3px;
   text-transform: uppercase;
   color: rgba(255,255,255,0.4);
   margin: 20px 0 10px;
+}
+
+/* ── Staggered reveal utility ─────────────────────────────────────────────
+   Applied via class="pw-reveal" style="--i:N" — reused across every
+   dynamically-rendered list in the wizard (see pipeline-wizard-*.js) and
+   a few static ones (Window 2/3's cards) directly in the HTML. ────────── */
+.pw-reveal {
+  opacity: 0;
+  animation: pw-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 0.06s);
+}
+
+@keyframes pw-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Status badges ───────────────────────────────────────────────────────── */
@@ -539,8 +635,21 @@
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .pw-steps { padding: 10px 12px; }
-  .pw-step { padding: 6px 10px; font-size: 12px; }
+  .pw-steps { padding: 14px 10px; }
+  .pw-step__node { width: 24px; height: 24px; }
+  .pw-step__label { display: none; }
+  .pw-step-line { margin-top: 12px; flex: 1 1 12px; }
   .pw-chat__form { flex-direction: column; align-items: stretch; }
   .pd-dataset { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .pw-step--active .pw-step__node,
+  .pw-step-line--done .pw-step-line__flow,
+  .pw-screen--enter,
+  .pw-reveal {
+    animation: none !important;
+  }
+  .pw-reveal { opacity: 1; }
 }

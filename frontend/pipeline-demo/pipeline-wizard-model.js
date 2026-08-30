@@ -37,7 +37,11 @@ function showError(message) {
 
 function renderSelection(selection) {
   document.getElementById('pw-model-error').style.display = 'none';
-  document.getElementById('pw-model-result').style.display = 'block';
+  const resultEl = document.getElementById('pw-model-result');
+  resultEl.style.display = 'block';
+  resultEl.classList.remove('pw-reveal');
+  void resultEl.offsetWidth;
+  resultEl.classList.add('pw-reveal');
   document.getElementById('pw-model-name').textContent = selection.displayName;
   document.getElementById('pw-model-tags').innerHTML = `
     <span class="pw-model-tag">Quality: ${esc(selection.quality)}</span>

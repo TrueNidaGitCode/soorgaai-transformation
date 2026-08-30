@@ -24,9 +24,10 @@ function esc(text) {
   return String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function renderDeployStep(text, done) {
+function renderDeployStep(text, done, index) {
   const el = document.createElement('div');
-  el.className = `pw-process-item ${done ? 'pw-process-item--done' : ''}`;
+  el.className = `pw-process-item pw-reveal ${done ? 'pw-process-item--done' : ''}`;
+  el.style.setProperty('--i', index);
   el.innerHTML = `<span class="pw-process-item__title">${esc(text)}</span>`;
   return el;
 }
@@ -40,7 +41,7 @@ function runDeploySequence() {
     const next = () => {
       if (i > 0) list.lastElementChild.classList.add('pw-process-item--done');
       if (i >= DEPLOY_STEPS.length) { resolve(); return; }
-      list.appendChild(renderDeployStep(DEPLOY_STEPS[i], false));
+      list.appendChild(renderDeployStep(DEPLOY_STEPS[i], false, i));
       i++;
       setTimeout(next, 500);
     };
@@ -51,7 +52,7 @@ function runDeploySequence() {
 function appendMessage(role, html) {
   const messagesEl = document.getElementById('pw-chat-messages');
   const el = document.createElement('div');
-  el.className = `chat-msg chat-msg--${role}`;
+  el.className = `chat-msg chat-msg--${role} pw-reveal`;
   el.innerHTML = html;
   messagesEl.appendChild(el);
   messagesEl.scrollTop = messagesEl.scrollHeight;

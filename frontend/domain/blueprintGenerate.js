@@ -363,11 +363,14 @@ function handleOpportunitiesUpdate(bp) {
 }
 
 async function transitionToWorkspace(guestId) {
+  const errEl = document.getElementById('opp-error');
   try {
     const bp = await fetchCurrentBlueprint(guestId);
-    if (bp) document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
+    if (!bp) throw new Error('Could not load your blueprint. Please refresh and try again.');
+    document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
   } catch (err) {
     console.error('[blueprintGenerate] Failed to load blueprint for workspace transition:', err);
+    if (errEl) { errEl.textContent = err.message || 'Could not load your blueprint. Please refresh and try again.'; errEl.style.display = 'block'; }
   }
 }
 
@@ -381,7 +384,12 @@ function wireOpportunitiesButtons(guestId) {
   const viewBtn    = document.getElementById('opp-view-blueprint-btn');
   const errEl      = document.getElementById('opp-error');
 
-  viewBtn?.addEventListener('click', () => transitionToWorkspace(guestId));
+  viewBtn?.addEventListener('click', async () => {
+    if (errEl) errEl.style.display = 'none';
+    viewBtn.disabled = true;
+    await transitionToWorkspace(guestId);
+    viewBtn.disabled = false; // no-op if the transition succeeded and this screen is now hidden
+  });
 
   approveBtn?.addEventListener('click', async () => {
     const token = getToken();

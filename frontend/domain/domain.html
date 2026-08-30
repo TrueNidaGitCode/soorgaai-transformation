@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="domain.css">
+  <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -118,6 +119,46 @@
     </div>
 
     <p class="prog-hint">Analysing your objective across all transformation domains…</p>
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SCREEN 2.5 — AI Use Cases & Prioritization
+       Shown once the ai-use-cases domain finishes, ahead of the rest of the
+       blueprint. View Blueprint / Approve stay disabled until the whole
+       blueprint (bp.status === 'completed') is done.
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <main id="screen-opportunities" class="screen screen--opportunities pd-page" style="display:none" aria-label="AI use cases and prioritization">
+
+    <div class="pd-header">
+      <p class="pd-header__eyebrow">Cob &middot; AI opportunities</p>
+      <h1 class="pd-stage__title" style="font-size:var(--pw-size-2xl);margin-bottom:10px">What Cob found for your objective</h1>
+      <p class="pd-header__sub" id="opp-status-hint">The rest of your blueprint — Data Readiness, Technology Infrastructure, Skills &amp; Workforce, Governance &amp; Ethics — is still generating.</p>
+    </div>
+
+    <div id="opp-loading" class="pw-process-list">
+      <div class="pw-process-item">
+        <span class="pw-process-item__title">Analyzing your objective and prioritizing AI use cases…</span>
+      </div>
+    </div>
+
+    <div id="opp-content" style="display:none">
+      <div class="pd-winner pw-reveal" style="--i:0">
+        <p class="pd-winner__label">Recommended starting point</p>
+        <p class="pd-winner__name" id="opp-winner-name"></p>
+        <p class="pd-winner__why" id="opp-winner-why"></p>
+      </div>
+
+      <p class="pd-substage-label">Other opportunities considered</p>
+      <ul class="pd-deemphasized" id="opp-others"></ul>
+    </div>
+
+    <div id="opp-error" class="gen-error" style="display:none" role="alert"></div>
+
+    <div class="pw-actions">
+      <button type="button" class="pw-next-btn" id="opp-approve-btn" disabled>Approve</button>
+      <button type="button" class="pw-next-btn" id="opp-view-blueprint-btn" disabled>View full blueprint &rarr;</button>
+    </div>
 
   </main>
 

@@ -79,7 +79,7 @@ let _showingActionTracker = false; // Action Tracker is blueprint-wide, not doma
 // ── Screen helpers ────────────────────────────────────────────────────────────
 
 function showScreen(id) {
-  ['screen-generate', 'screen-progress', 'screen-workspace', 'domain-loading'].forEach(sid => {
+  ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-workspace', 'domain-loading'].forEach(sid => {
     const el = document.getElementById(sid);
     if (el) el.style.display = (sid === id) ? '' : 'none';
   });

@@ -752,6 +752,33 @@ export async function getTransformationBlueprint(req, res) {
 }
 
 /**
+ * PATCH /strategy-canvas/transformation-blueprint/:blueprintId/approve-opportunity
+ * Records the user's approval of Cob's recommended starting point (the AI
+ * Use Cases & Prioritization screen, Window 1) — a decision recorded on
+ * the blueprint, not a generation output. Logged-in only: this is a real
+ * decision-recording action, same gating spirit as other things this
+ * product already reserves for signed-in users.
+ */
+export async function approveOpportunity(req, res) {
+  try {
+    const { blueprintId } = req.params;
+
+    const result = await TransformationBlueprint.updateOne(
+      { _id: blueprintId, userId: req.user._id },
+      { $set: { 'opportunityApproval.approved': true, 'opportunityApproval.approvedAt': new Date() } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Blueprint not found.' });
+    }
+    return res.json({ approved: true });
+  } catch (err) {
+    console.error('approveOpportunity error:', err);
+    res.status(500).json({ error: 'Failed to approve.' });
+  }
+}
+
+/**
  * GET /strategy-canvas/transformation-blueprints
  * Lightweight list of the user's blueprints for the sidebar history —
  * objective, status, and timestamps only (no domain content).

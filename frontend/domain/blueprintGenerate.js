@@ -30,7 +30,7 @@ function getToken() { return localStorage.getItem('token'); }
 // ── Screen helpers ────────────────────────────────────────────────────────────
 
 function showScreen(id) {
-  ['screen-generate', 'screen-progress', 'screen-workspace', 'domain-loading'].forEach(sid => {
+  ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-workspace', 'domain-loading'].forEach(sid => {
     const el = document.getElementById(sid);
     if (el) el.style.display = (sid === id) ? '' : 'none';
   });
@@ -272,6 +272,150 @@ function handleProgressMessage(msg, transformationId) {
   }
 }
 
+// ── Screen 2.5: AI Use Cases & Prioritization (gated on full completion) ──────
+// Shown once the ai-use-cases domain finishes, ahead of the rest of the
+// blueprint — View Blueprint / Approve stay disabled until bp.status is
+// 'completed'. Reuses the same blueprint:update polling snapshots
+// startLiveUpdates() already dispatches (full content each tick, no
+// separate fetch needed to read the recommended starting point).
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+let _opportunitiesContentShown = false;
+
+function findAiUseCasesPrioritizationSection(bp) {
+  const domain = (bp.domains || []).find(d => d.domainId === 'ai-use-cases');
+  if (!domain || domain.status !== 'completed') return null;
+  for (const cap of (domain.capabilities || [])) {
+    for (const section of (cap.sections || [])) {
+      if (section.title === 'AI Implementation Prioritization' || section.title === 'AI Use Case Prioritization') {
+        return section;
+      }
+    }
+  }
+  return null;
+}
+
+// recommendedStartingPoint is a full justification sentence (e.g.
+// "X should be implemented first because…"), not just the initiative's
+// short name — it embeds the matching priorityQuadrants initiative name
+// as a leading substring, which is how the winner/others split works.
+function renderOpportunitiesContent(section) {
+  const brief = section.brief || {};
+  const allInitiatives = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
+  const recommended = brief.recommendedStartingPoint || '';
+  const winnerInitiative = allInitiatives.find(name => name && recommended.includes(name));
+
+  const winnerNameEl = document.getElementById('opp-winner-name');
+  const winnerWhyEl  = document.getElementById('opp-winner-why');
+  if (winnerNameEl) winnerNameEl.textContent = winnerInitiative || recommended;
+  if (winnerWhyEl)  winnerWhyEl.textContent  = winnerInitiative ? recommended : '';
+
+  const others = allInitiatives.filter(name => name && name !== winnerInitiative);
+
+  const othersList = document.getElementById('opp-others');
+  if (othersList) {
+    othersList.innerHTML = others
+      .map((name, i) => `<li class="pw-reveal" style="--i:${i + 1}">${escapeHtml(name)}</li>`)
+      .join('');
+  }
+
+  const loadingEl = document.getElementById('opp-loading');
+  const contentEl = document.getElementById('opp-content');
+  if (loadingEl) loadingEl.style.display = 'none';
+  if (contentEl) contentEl.style.display = 'block';
+
+  _opportunitiesContentShown = true;
+}
+
+function updateOpportunitiesGate(bp) {
+  const done = bp.status === 'completed';
+  const approveBtn = document.getElementById('opp-approve-btn');
+  const viewBtn    = document.getElementById('opp-view-blueprint-btn');
+  if (approveBtn) approveBtn.disabled = !done;
+  if (viewBtn)    viewBtn.disabled    = !done;
+
+  const hint = document.getElementById('opp-status-hint');
+  if (hint) {
+    hint.textContent = done
+      ? 'Your full blueprint is ready.'
+      : 'The rest of your blueprint — Data Readiness, Technology Infrastructure, Skills & Workforce, Governance & Ethics — is still generating.';
+  }
+}
+
+// Only acts while the opportunities screen is the active one — once the
+// user has moved on to the workspace, this becomes a no-op rather than
+// fighting with blueprintWorkspace.js's own rendering of the same data.
+function handleOpportunitiesUpdate(bp) {
+  const screen = document.getElementById('screen-opportunities');
+  if (!screen || screen.style.display === 'none') return;
+
+  if (!_opportunitiesContentShown) {
+    const section = findAiUseCasesPrioritizationSection(bp);
+    if (section) renderOpportunitiesContent(section);
+  }
+
+  updateOpportunitiesGate(bp);
+}
+
+async function transitionToWorkspace(guestId) {
+  try {
+    const bp = await fetchCurrentBlueprint(guestId);
+    if (bp) document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
+  } catch (err) {
+    console.error('[blueprintGenerate] Failed to load blueprint for workspace transition:', err);
+  }
+}
+
+let _opportunitiesButtonsWired = false;
+
+function wireOpportunitiesButtons(guestId) {
+  if (_opportunitiesButtonsWired) return;
+  _opportunitiesButtonsWired = true;
+
+  const approveBtn = document.getElementById('opp-approve-btn');
+  const viewBtn    = document.getElementById('opp-view-blueprint-btn');
+  const errEl      = document.getElementById('opp-error');
+
+  viewBtn?.addEventListener('click', () => transitionToWorkspace(guestId));
+
+  approveBtn?.addEventListener('click', async () => {
+    const token = getToken();
+    if (!token) {
+      localStorage.setItem('redirectAfterLogin', '/domain/domain.html');
+      window.location.href = '/login/login.html';
+      return;
+    }
+    if (errEl) errEl.style.display = 'none';
+    approveBtn.disabled = true;
+    try {
+      const bp = await fetchTransformationBlueprint();
+      const resp = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint/${bp._id}/approve-opportunity`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resp.status === 401) { window.handleSessionExpired(); return; }
+      if (!resp.ok) {
+        const { error } = await resp.json().catch(() => ({}));
+        throw new Error(error || 'Failed to approve. Please try again.');
+      }
+      await transitionToWorkspace(guestId);
+    } catch (err) {
+      if (errEl) { errEl.textContent = err.message; errEl.style.display = 'block'; }
+      approveBtn.disabled = false;
+    }
+  });
+}
+
+document.addEventListener('blueprint:update', (e) => {
+  const { blueprint } = e.detail || {};
+  if (blueprint) handleOpportunitiesUpdate(blueprint);
+});
+
 // ── API helpers ───────────────────────────────────────────────────────────────
 
 async function fetchTransformationBlueprint() {
@@ -471,10 +615,17 @@ async function initGuest(guestId) {
     if (!resp.ok) throw new Error('Failed to load preview blueprint');
     const bp = await resp.json();
 
-    // Render immediately — completed capabilities are readable right away,
-    // the rest fill in live while generation continues
-    document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
-    if (bp.status === 'generating') startLiveUpdates(guestId);
+    if (bp.status === 'completed') {
+      document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
+    } else {
+      // Gated on full completion — see "Screen 2.5" above. AI Use Cases
+      // appears as soon as that domain finishes; View Blueprint/Approve
+      // unlock once everything is.
+      wireOpportunitiesButtons(guestId);
+      showScreen('screen-opportunities');
+      handleOpportunitiesUpdate(bp);
+      startLiveUpdates(guestId);
+    }
   } catch (err) {
     console.error('[blueprintGenerate] guest init error:', err);
     window.location.href = '/cob.html';
@@ -517,10 +668,15 @@ async function init() {
       return;
     }
 
-    // Render immediately — completed capabilities are readable right away,
-    // the rest fill in live while generation continues
-    document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
-    if (bp.status === 'generating') startLiveUpdates(null);
+    if (bp.status === 'completed') {
+      document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
+    } else {
+      // Gated on full completion — see "Screen 2.5" above.
+      wireOpportunitiesButtons(null);
+      showScreen('screen-opportunities');
+      handleOpportunitiesUpdate(bp);
+      startLiveUpdates(null);
+    }
     initGenerateForm(); // keep form initialised in case user clicks New Blueprint
     initGroundingBanner(bp._id);
     initKnowledgeSourcesLink(bp._id);

@@ -348,6 +348,13 @@ const transformationBlueprintSchema = new mongoose.Schema({
     matched: { type: Boolean, default: true },
     reason:  { type: String,  default: '' },
   },
+  // Set when the user clicks "Approve" on the AI Use Cases & Prioritization
+  // screen (Window 1 / Cob) confirming Cob's recommended starting point —
+  // a user decision recorded on the blueprint, not a generation output.
+  opportunityApproval: {
+    approved:   { type: Boolean, default: false },
+    approvedAt: { type: Date,    default: null },
+  },
   domains: { type: [domainSchema], default: [] },
 }, { timestamps: true });
 

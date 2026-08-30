@@ -16,6 +16,7 @@ import {
   streamTransformationProgress,
   getTransformationBlueprint,
   listTransformationBlueprints,
+  approveOpportunity,
   claimGuestBlueprint,
   updateTransformationSection,
   regenerateSpecificDomains,
@@ -50,6 +51,7 @@ router.get('/generate-transformation/:transformationId/stream',        protect, 
 router.get('/transformation-blueprint',                                protect, getTransformationBlueprint);
 router.get('/transformation-blueprints',                               protect, listTransformationBlueprints);
 router.post('/claim-guest-blueprint',                                  protect, claimGuestBlueprint);
+router.patch('/transformation-blueprint/:blueprintId/approve-opportunity', protect, approveOpportunity);
 router.patch(
   '/transformation-blueprint/:blueprintId/domain/:domainId/capability/:capabilityId/section/:sectionTitle',
   protect, updateTransformationSection

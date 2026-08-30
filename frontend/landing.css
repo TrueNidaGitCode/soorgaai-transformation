@@ -288,6 +288,63 @@
 }
 .prompt__counter--over { color: #f87171; }
 
+/* ── Confluence connector (optional, before generating) ───────── */
+.confluence-connect {
+  width: 100%;
+  max-width: 640px;
+  margin-top: 14px;
+}
+
+.confluence-connect__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.confluence-connect__btn:hover {
+  border-color: var(--accent-green);
+  background: rgba(92, 197, 167, 0.07);
+  color: #fff;
+}
+.confluence-connect__btn:disabled { cursor: not-allowed; opacity: 0.6; }
+
+.confluence-connect__hint {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+}
+
+.confluence-connect__badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: rgba(92, 197, 167, 0.08);
+  border: 1px solid rgba(92, 197, 167, 0.3);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 600;
+  width: fit-content;
+}
+.confluence-connect__badge strong { color: #5CC5A7; }
+
+.confluence-connect__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #5CC5A7;
+  flex-shrink: 0;
+}
+
 /* ── Example prompt card ────────────────────────────────────── */
 .examples {
   width: 100%;

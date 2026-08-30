@@ -43,7 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
     wireSidebarBlueprints();
     wireTopbarAuth();
     wireHeroPrompt();
-    wireAuthModal();
+    const authModal = wireAuthModal();
+    wireCobConfluenceConnector(authModal?.open);
     wireKnowledgeSourcesIndicator();
 });
 
@@ -215,6 +216,8 @@ export function wireAuthModal() {
         clearInterval(resendTimer);
         showStep('email');
     });
+
+    return { open };
 }
 
 /**
@@ -490,6 +493,72 @@ export function wireHeroPrompt() {
             if (sendBtn) sendBtn.disabled = false;
         }
     });
+}
+
+/**
+ * Confluence connector — connect-only (no blueprint exists yet at
+ * objective-entry time to attach specific pages to; picking pages stays
+ * in the existing post-generation Knowledge Sources flow). Requires an
+ * authenticated user (OAuth connections are per-user), so a guest who
+ * clicks this is sent to the login modal instead of the API.
+ */
+function wireCobConfluenceConnector(openAuthModal) {
+    const badge   = document.getElementById('confluence-connect-badge');
+    const site    = document.getElementById('confluence-connect-site');
+    const btn     = document.getElementById('confluence-connect-btn');
+    const errEl   = document.getElementById('confluence-connect-error');
+    if (!btn) return;
+
+    const showError = (msg) => { if (errEl) { errEl.textContent = msg; errEl.style.display = ''; } };
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('personalConnected') || params.has('error')) {
+        if (params.get('error')) showError(params.get('error'));
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    async function refreshStatus() {
+        const token = localStorage.getItem('token');
+        if (!token) return; // stays in the not-connected/prompt-login state
+        try {
+            const resp = await fetch(`${API_BASE()}/confluence/personal/status`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!resp.ok) return;
+            const status = await resp.json();
+            if (status.connected) {
+                if (site) site.textContent = status.siteName || 'Confluence';
+                if (badge) badge.style.display = 'flex';
+                btn.style.display = 'none';
+            }
+        } catch { /* leave the connect button showing */ }
+    }
+
+    btn.addEventListener('click', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            openAuthModal?.();
+            return;
+        }
+        if (errEl) errEl.style.display = 'none';
+        btn.disabled = true;
+        try {
+            const resp = await fetch(`${API_BASE()}/confluence/personal/connect?returnTo=cob`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!resp.ok) {
+                const { error } = await resp.json().catch(() => ({}));
+                throw new Error(error || 'Failed to start the Confluence connection.');
+            }
+            const { url } = await resp.json();
+            window.location.href = url;
+        } catch (err) {
+            showError(err.message);
+            btn.disabled = false;
+        }
+    });
+
+    refreshStatus();
 }
 
 function autogrow(el) {

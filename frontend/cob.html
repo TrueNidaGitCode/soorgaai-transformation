@@ -93,6 +93,18 @@
       <p id="hero-objective-counter" class="prompt__counter" style="display:none"></p>
       <p id="hero-prompt-error" class="prompt__error" role="alert" style="display:none"></p>
 
+      <div class="confluence-connect" id="confluence-connect">
+        <div id="confluence-connect-badge" class="confluence-connect__badge" style="display:none">
+          <span class="confluence-connect__dot"></span>
+          Connected to <strong id="confluence-connect-site"></strong>
+        </div>
+        <button type="button" id="confluence-connect-btn" class="confluence-connect__btn">
+          Connect your Confluence
+          <span class="confluence-connect__hint">— optional, grounds your blueprint in real project docs</span>
+        </button>
+        <p id="confluence-connect-error" class="prompt__error" style="display:none"></p>
+      </div>
+
       <div class="examples">
         <div class="examples__divider"><span>Example prompts</span></div>
         <button type="button" class="example-card" id="example-card">

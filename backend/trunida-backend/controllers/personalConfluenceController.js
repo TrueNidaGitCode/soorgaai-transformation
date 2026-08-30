@@ -45,6 +45,7 @@ const RETURN_PATHS = {
   'profile-setup':     '/profile-setup/profile.html',
   'knowledge-sources': '/knowledge-sources/knowledge-sources.html',
   'pipeline-wizard':   '/pipeline-demo/pipeline-demo.html',
+  'cob':               '/cob.html',
 };
 
 function auditLog(action, userId, extra = {}) {

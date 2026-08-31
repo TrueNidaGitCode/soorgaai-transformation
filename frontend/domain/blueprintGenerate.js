@@ -352,8 +352,12 @@ function renderOpportunitiesContent(section) {
 // separate step); Aria/Arth/Eame/Yusu render locked in the HTML by
 // default (see domain.html/.rp-journey__locked) since they're not built
 // yet — this just marks Cob active (we're still inside it, not past it).
+// The connector right after Cob gets the same flowing-gradient treatment
+// the demo uses for a "done" segment — not claiming Aria is reached, just
+// signaling that Cob's output is actively what feeds the next stage.
 function renderJourneyIndicator() {
   document.getElementById('rp-step-1')?.classList.add('pw-step--active');
+  document.getElementById('rp-line-1')?.classList.add('pw-step-line--done');
 }
 
 function updateOpportunitiesGate(bp) {

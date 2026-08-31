@@ -2667,6 +2667,21 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
+   SCREEN 2.5 — AI Use Cases & Prioritization
+   .pw-steps/.pw-step/.pw-step-line etc. come from pipeline-demo.css (linked
+   in domain.html) — reused as-is for the journey indicator. This block only
+   adds domain.html-specific extras: spacing and the "not built yet" locked
+   look for Aria/Arth/Eame/Yusu, which pipeline-demo.html doesn't need since
+   every one of its steps is real.
+══════════════════════════════════════════════════════════════════════════════ */
+
+.screen--opportunities { padding: 2.5rem 1.5rem; max-width: 900px; margin: 0 auto; }
+
+.rp-journey { margin-bottom: 2rem; }
+
+.rp-journey__locked { opacity: 0.4; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
    SCREEN 3 — Company Blueprint Workspace
 ══════════════════════════════════════════════════════════════════════════════ */
 

@@ -332,6 +332,15 @@ function renderOpportunitiesContent(section) {
   _opportunitiesContentShown = true;
 }
 
+// Cob and Opportunities are real; Aria/Arth/Eame/Yusu render locked in the
+// HTML by default (see domain.html/.rp-journey__locked) since they're not
+// built yet — this just marks the two real steps as done/active.
+function renderJourneyIndicator() {
+  document.getElementById('rp-step-1')?.classList.add('pw-step--done');
+  document.getElementById('rp-step-2')?.classList.add('pw-step--active');
+  document.getElementById('rp-line-1')?.classList.add('pw-step-line--done');
+}
+
 function updateOpportunitiesGate(bp) {
   const done = bp.status === 'completed';
   const approveBtn = document.getElementById('opp-approve-btn');
@@ -634,6 +643,7 @@ async function initGuest(guestId) {
       // either way, so both cases are handled identically here).
       wireOpportunitiesButtons(guestId);
       showScreen('screen-opportunities');
+      renderJourneyIndicator();
       handleOpportunitiesUpdate(bp);
       if (bp.status === 'generating') startLiveUpdates(guestId);
     }
@@ -690,6 +700,7 @@ async function init() {
       // either way, so both cases are handled identically here).
       wireOpportunitiesButtons(null);
       showScreen('screen-opportunities');
+      renderJourneyIndicator();
       handleOpportunitiesUpdate(bp);
       if (bp.status === 'generating') startLiveUpdates(null);
     }

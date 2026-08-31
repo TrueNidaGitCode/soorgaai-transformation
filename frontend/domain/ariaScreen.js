@@ -401,10 +401,10 @@ function statusCellHtml(toolId, key) {
   return `<span class="aria-status aria-status--ready"><span class="aria-status-dot"></span>Ready to link</span>`;
 }
 
-function renderSourceRow({ tool, toolId, letter, name, key, count, capped, noun }) {
+function renderSourceRow({ tool, toolId, name, key, count, capped, noun }) {
   return `
     <tr>
-      <td><span class="aria-source"><span class="aria-source__icon aria-source__icon--${toolId}">${letter}</span>${esc(tool)}</span></td>
+      <td><span class="aria-src-tool aria-src-tool--${toolId}">${esc(tool)}</span></td>
       <td>
         <span class="aria-row-name__title">${esc(name)}</span>
         <span class="aria-row-name__desc">${esc(key)}</span>
@@ -439,7 +439,7 @@ function renderConfluenceTable() {
   const list = document.getElementById('aria-conf-space-list');
   if (!list) return;
   list.innerHTML = _sources.confluence.map(s => renderSourceRow({
-    tool: 'Confluence', toolId: 'confluence', letter: 'C',
+    tool: 'Confluence', toolId: 'confluence',
     name: s.name, key: s.key,
     count: s.itemCount, capped: s.itemCountCapped, noun: 'page',
   })).join('') || `<tr><td colspan="4" class="ks-card-body">No spaces found in this Confluence site.</td></tr>`;
@@ -452,7 +452,7 @@ async function renderConfluenceSpaces(blueprintId) {
 
   try {
     const { spaces } = await api('/confluence/personal/spaces?withCounts=1');
-    _sources.confluence = spaces;
+    _sources.confluence = spaces.filter(sp => sp.type !== 'personal' && !String(sp.key || '').startsWith('~'));
     renderConfluenceTable();
     updateProcessBar(_cachedDatasets);
   } catch (err) {
@@ -494,7 +494,7 @@ function renderJiraTable() {
   const list = document.getElementById('aria-jira-project-list');
   if (!list) return;
   list.innerHTML = _sources.jira.map(p => renderSourceRow({
-    tool: 'Jira', toolId: 'jira', letter: 'J',
+    tool: 'Jira', toolId: 'jira',
     name: p.name, key: p.key,
     count: p.itemCount, capped: p.itemCountCapped, noun: 'ticket',
   })).join('') || `<tr><td colspan="4" class="ks-card-body">No projects found in this Jira site.</td></tr>`;

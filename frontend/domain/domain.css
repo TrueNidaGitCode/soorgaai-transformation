@@ -3048,6 +3048,20 @@
 .aria-src-table th:nth-child(2) { width: auto; }
 .aria-src-table th:nth-child(3) { width: 22%; }
 .aria-src-table th:nth-child(4) { width: 26%; text-align: right; }
+/* Tool cell: a small colour-keyed chip. No letter badge — the column is
+   already headed "Tool Name", so an icon reading "J" beside "Jira" just
+   printed the tool twice. */
+.aria-src-tool {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.aria-src-tool--confluence { background: rgba(38,132,255,0.14); color: #7FB4FF; }
+.aria-src-tool--jira       { background: rgba(0,82,204,0.18);  color: #8AB4F8; }
+
 .aria-src-table__count {
   color: rgba(255,255,255,0.6);
   font-size: 12.5px;

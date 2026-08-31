@@ -12,18 +12,6 @@
   <link rel="stylesheet" href="domain.css">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
-  <!-- Three.js — real 3D render for the Cob spinning-top element
-       (cobSpinningTop.js). Only capability on the page that isn't a
-       plain local script; CDN import, same category of dependency as
-       the Google Fonts link above. -->
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
 </head>
 <body class="domain-page">
 
@@ -214,13 +202,6 @@
 
         <img src="/assets/cob-character.png" class="rp-character" alt="" aria-hidden="true">
 
-        <!-- Positioned so Cob (the character image) appears to be looking
-             down at it — see cobSpinningTop.js. Real 3D WebGL render
-             (Three.js), not a flat image — a 2D photo/APNG can't rotate
-             without collapsing into a thin sliver at 90°; this has actual
-             volume from every angle, in Svarg's own brand color. -->
-        <canvas id="rp-spinning-top-canvas" class="rp-spinning-top" aria-hidden="true"></canvas>
-
       </div>
     </div>
 
@@ -331,6 +312,5 @@
 
   <script type="module" src="blueprintGenerate.js"></script>
   <script type="module" src="blueprintWorkspace.js"></script>
-  <script type="module" src="cobSpinningTop.js"></script>
 </body>
 </html>

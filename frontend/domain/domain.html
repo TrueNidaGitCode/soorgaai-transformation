@@ -254,10 +254,12 @@
         <p class="pd-header__sub">Connect the sources required by this blueprint.</p>
       </div>
 
+      <p class="pd-substage-label">Required Data</p>
       <div class="aria-table-wrap">
         <table class="aria-table">
           <thead>
             <tr>
+              <th class="aria-table__check-col"></th>
               <th>Dataset</th>
               <th>Tools to Configure</th>
               <th>Status</th>
@@ -319,8 +321,9 @@
         </div>
       </div>
 
-      <div class="pw-actions">
-        <button type="button" class="pw-next-btn" id="aria-continue-btn">Continue to Technology &rarr;</button>
+      <div class="aria-process-bar">
+        <span class="aria-process-bar__hint" id="aria-process-hint">Select connected data to process</span>
+        <button type="button" class="pw-next-btn" id="aria-process-btn" disabled>Process Selected Data</button>
       </div>
 
       </div>

@@ -95,7 +95,7 @@ function statusCellHtml(status, actionSource) {
   return `<span class="aria-status-pill aria-status-pill--none">Not yet supported</span>`;
 }
 
-function renderRow(d, confCount, jiraCount) {
+function renderRow(d, confCount, jiraCount, index) {
   const s = String(d.typicalSource || '').toLowerCase();
   const mentionsConfluence = s.includes('confluence');
   const mentionsJira = s.includes('jira');
@@ -103,8 +103,13 @@ function renderRow(d, confCount, jiraCount) {
   const status = datasetStatus(mentionsConfluence, mentionsJira, confCount, jiraCount);
   const actionSource = primaryActionSource(mentionsConfluence, mentionsJira, confCount, jiraCount);
 
+  // Only data that's actually linked (fully or partly) has anything to
+  // process — an unconnected or unsupported row has no content behind it.
+  const selectable = status === 'connected' || status === 'partial';
+
   return `
     <tr>
+      <td><input type="checkbox" class="aria-row-check" data-index="${index}" ${selectable ? '' : 'disabled'}></td>
       <td>
         <span class="aria-row-name__title">${esc(d.name)}</span>
         <span class="aria-row-name__desc">${esc(d.purpose)}</span>
@@ -117,8 +122,22 @@ function renderRow(d, confCount, jiraCount) {
 
 function renderTable(datasets, confCount, jiraCount) {
   const body = document.getElementById('aria-required-body');
-  body.innerHTML = datasets.map(d => renderRow(d, confCount, jiraCount)).join('')
-    || `<tr><td colspan="3" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
+  body.innerHTML = datasets.map((d, i) => renderRow(d, confCount, jiraCount, i)).join('')
+    || `<tr><td colspan="4" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
+  updateProcessBar();
+}
+
+// ── Process Selected Data ────────────────────────────────────────────────────
+// UI hook only for now — the actual processing pipeline (Gritworks) isn't
+// wired up yet, so this reports the selection honestly instead of
+// pretending to run something that doesn't exist.
+
+function updateProcessBar() {
+  const checked = document.querySelectorAll('#aria-required-body .aria-row-check:checked').length;
+  const btn = document.getElementById('aria-process-btn');
+  const hint = document.getElementById('aria-process-hint');
+  if (btn) btn.disabled = checked === 0;
+  if (hint) hint.textContent = checked > 0 ? `${checked} dataset${checked === 1 ? '' : 's'} selected` : 'Select connected data to process';
 }
 
 // ── Connector panels: open/close + linked-doc refresh ────────────────────────
@@ -383,8 +402,13 @@ function wireStaticControls() {
   if (_wired) return;
   _wired = true;
 
-  document.getElementById('aria-continue-btn')?.addEventListener('click', () => {
-    window.location.href = '/domain/domain.html?openBlueprint=1';
+  document.getElementById('aria-required-body')?.addEventListener('change', (e) => {
+    if (e.target.classList.contains('aria-row-check')) updateProcessBar();
+  });
+
+  document.getElementById('aria-process-btn')?.addEventListener('click', () => {
+    const hint = document.getElementById('aria-process-hint');
+    if (hint) hint.textContent = 'Processing isn’t connected yet — coming soon.';
   });
 
   document.querySelectorAll('.aria-connector__close').forEach(btn => {

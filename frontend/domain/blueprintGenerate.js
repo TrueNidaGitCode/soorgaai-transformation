@@ -304,7 +304,7 @@ function findAiUseCasesPrioritizationSection(bp) {
 // "X should be implemented first because…"), not just the initiative's
 // short name — it embeds the matching priorityQuadrants initiative name
 // as a leading substring, which is how the winner/others split works.
-function renderOpportunitiesContent(section, bp) {
+function renderOpportunitiesContent(section) {
   const brief = section.brief || {};
   const allInitiatives = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
   const recommended = brief.recommendedStartingPoint || '';
@@ -314,9 +314,6 @@ function renderOpportunitiesContent(section, bp) {
   const winnerWhyEl  = document.getElementById('opp-winner-why');
   if (winnerNameEl) winnerNameEl.textContent = winnerInitiative || recommended;
   if (winnerWhyEl)  winnerWhyEl.textContent  = winnerInitiative ? recommended : '';
-
-  const projectNameEl = document.getElementById('rp-project-name');
-  if (projectNameEl) projectNameEl.textContent = bp?.companyName || 'Untitled Project';
 
   const others = allInitiatives.filter(name => name && name !== winnerInitiative);
 
@@ -372,7 +369,7 @@ function handleOpportunitiesUpdate(bp) {
 
   if (!_opportunitiesContentShown) {
     const section = findAiUseCasesPrioritizationSection(bp);
-    if (section) renderOpportunitiesContent(section, bp);
+    if (section) renderOpportunitiesContent(section);
   }
 
   updateOpportunitiesGate(bp);

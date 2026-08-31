@@ -2785,12 +2785,22 @@
 
 /* ══════════════════════════════════════════════════════════════════════════════
    SCREEN 2.7 — Aria
-   .pd-page/.pw-steps/.pd-header*/.pd-winner/.pw-next-btn/.pw-back-btn/
-   .pw-process-list/.pw-reveal all come from pipeline-demo.css (already
-   linked). New classes here are only the readiness/table/connector UI,
+
+   NOTE: never write a bare "*" immediately before a "/" in these comments.
+   An earlier version of this banner listed reused classes as
+   ".pd-header*" followed by "/.pd-winner", which closed the comment right
+   there. Everything after it — the whole Aria section, ~250 lines — was
+   then parsed as one invalid selector and silently discarded to EOF
+   (the prose apostrophes open unterminated CSS strings once outside a
+   comment). The screen rendered completely unstyled with no error
+   anywhere. Balanced-brace checks do NOT catch this.
+
+   Reused from pipeline-demo.css (already linked): pd-page, pw-steps,
+   pd-header, pd-winner, pw-next-btn, pw-back-btn, pw-process-list,
+   pw-reveal. New classes here are only the readiness/table/connector UI,
    deliberately not reusing knowledge-sources.css (a second stylesheet
    dependency isn't worth it for a handful of rules, same reasoning as
-   the Cob screen not reusing cob.html's .side*).
+   the Cob screen not reusing the cob.html side-nav classes).
 ══════════════════════════════════════════════════════════════════════════════ */
 
 /* Same rp-shell/rp-shell__body/rp-main/rp-character structure as the
@@ -2802,8 +2812,14 @@
    zone (right 30%) could ever reach it. Two independent guarantees
    against overlap, not just one. */
 .screen--aria { padding: 0; min-height: 100vh; }
-.screen--aria .pd-page { max-width: 700px; }
-@media (max-width: 1300px) {
+
+/* Five columns need real room. The character is capped to 26% and the
+   panel to 62%, so together they can never sum past 88% of the shell —
+   the gap between them is the guarantee against overlap, not luck. */
+.screen--aria .pd-page { max-width: 62%; min-width: 0; }
+.screen--aria .rp-character { max-width: 26%; opacity: 0.28; }
+@media (max-width: 1400px) {
+  .screen--aria .pd-page { max-width: 100%; }
   .screen--aria .rp-character { display: none; }
 }
 
@@ -2921,17 +2937,19 @@
   border-bottom: 1px solid rgba(255,255,255,0.16);
   white-space: nowrap;
 }
-.aria-table th:nth-child(1) { width: 34%; }
-.aria-table th:nth-child(2) { width: 15%; }
-.aria-table th:nth-child(3) { width: 22%; }
+.aria-table th:nth-child(1) { width: 30%; }
+.aria-table th:nth-child(2) { width: 11%; }
+.aria-table th:nth-child(3) { width: 24%; }
 .aria-table th:nth-child(4) { width: 17%; }
-.aria-table__action-col { width: 12%; }
+.aria-table__action-col { width: 18%; }
 .aria-table td {
-  padding: 12px 16px;
+  padding: 12px 14px;
   color: rgba(255,255,255,0.8);
   border-bottom: 1px solid rgba(255,255,255,0.08);
   vertical-align: middle;
 }
+/* The action cell must never clip its button — the row can grow instead. */
+.aria-table td:last-child { text-align: right; white-space: nowrap; }
 .aria-table tbody tr:last-child td { border-bottom: none; }
 .aria-table tbody tr:hover td { background: rgba(255,255,255,0.03); }
 
@@ -3003,6 +3021,11 @@
   border-top: 1px solid rgba(255,255,255,0.08);
 }
 .aria-process-bar__hint { font-size: 12.5px; color: rgba(255,255,255,0.4); }
+/* .pw-next-btn is teal by default (pipeline-demo.css); this screen's
+   accent is indigo, so override rather than mixing two accent colors. */
+.aria-process-bar .pw-next-btn { background: var(--aria-accent); color: #fff; }
+.aria-process-bar .pw-next-btn:hover:not(:disabled) { background: var(--aria-accent-2); }
+.aria-process-bar .pw-next-btn:disabled { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.35); }
 
 .aria-connector-panels { margin-top: 24px; }
 

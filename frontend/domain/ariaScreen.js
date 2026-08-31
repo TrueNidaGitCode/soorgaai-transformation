@@ -63,14 +63,21 @@ function priorityClass(priority) {
   return ['high', 'medium', 'low'].includes(p) ? p : 'medium';
 }
 
+// The opportunity name only exists once AI Use Cases has finished
+// generating. Until then (or if the section shape ever changes) show
+// nothing rather than a dangling "Blueprint:" label with no value.
 function renderBreadcrumb(bp) {
+  const crumb = document.querySelector('.aria-breadcrumb');
   const oppSection = findAiUseCasesPrioritizationSection(bp);
-  if (!oppSection) return;
-  const brief = oppSection.brief || {};
+  const brief = oppSection?.brief || {};
   const allInitiatives = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
   const recommended = brief.recommendedStartingPoint || '';
   const winner = allInitiatives.find(name => name && recommended.includes(name));
-  document.getElementById('aria-recap-name').textContent = winner || recommended;
+  const label = winner || recommended;
+
+  if (!label) { if (crumb) crumb.style.display = 'none'; return; }
+  if (crumb) crumb.style.display = '';
+  document.getElementById('aria-recap-name').textContent = label;
 }
 
 // ── Required Data table ──────────────────────────────────────────────────────

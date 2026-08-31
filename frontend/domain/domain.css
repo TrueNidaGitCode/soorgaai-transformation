@@ -2783,6 +2783,9 @@
   pointer-events: none;
   z-index: 2;
 }
+/* Radial fade on both the image and the tint overlay — if the source
+   file has a background (rather than a transparent cutout), this
+   dissolves it into nothing instead of showing a hard rectangular edge. */
 .rp-spinning-top img {
   display: block;
   width: 100%;
@@ -2790,6 +2793,8 @@
   object-fit: contain;
   animation: rp-top-spin 3s linear infinite;
   filter: drop-shadow(0 10px 16px rgba(0,0,0,0.5));
+  -webkit-mask-image: radial-gradient(circle, #000 55%, transparent 85%);
+  mask-image: radial-gradient(circle, #000 55%, transparent 85%);
 }
 .rp-spinning-top::after {
   content: '';
@@ -2798,6 +2803,8 @@
   background: #2E6BFF;
   mix-blend-mode: color;
   pointer-events: none;
+  -webkit-mask-image: radial-gradient(circle, #000 55%, transparent 85%);
+  mask-image: radial-gradient(circle, #000 55%, transparent 85%);
 }
 
 @keyframes rp-top-spin {

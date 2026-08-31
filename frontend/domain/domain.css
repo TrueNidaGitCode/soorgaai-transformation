@@ -2812,35 +2812,40 @@
 .aria-table-wrap {
   margin-top: 12px;
   overflow-x: auto;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.16);
   border-radius: 12px;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255,255,255,0.035);
 }
 .aria-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13.5px;
+  table-layout: fixed;
 }
 .aria-table th {
   text-align: left;
   padding: 12px 16px;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.45);
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.16);
+  white-space: nowrap;
 }
-.aria-table__check-col { width: 34px; }
+.aria-table__check-col { width: 40px; }
+.aria-table th:nth-child(2) { width: 34%; }
+.aria-table th:nth-child(3) { width: 28%; }
+.aria-table th:nth-child(4) { width: 18%; }
 .aria-table td {
-  padding: 13px 16px;
+  padding: 14px 16px;
   color: rgba(255,255,255,0.8);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  vertical-align: top;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  vertical-align: middle;
 }
 .aria-table tbody tr:last-child td { border-bottom: none; }
-.aria-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+.aria-table tbody tr:hover td { background: rgba(255,255,255,0.03); }
 
 .aria-row-check {
   width: 15px;
@@ -2851,9 +2856,9 @@
 .aria-row-check:disabled { opacity: 0.25; cursor: not-allowed; }
 
 .aria-row-name__title { display: block; font-size: 14px; font-weight: 600; color: #fff; }
-.aria-row-name__desc  { display: block; margin-top: 3px; font-size: 12.5px; color: rgba(255,255,255,0.45); }
+.aria-row-name__desc  { display: block; margin-top: 3px; font-size: 12.5px; color: rgba(255,255,255,0.45); line-height: 1.4; }
 
-.aria-table td.aria-row-tools { color: rgba(255,255,255,0.6); white-space: nowrap; }
+.aria-table td.aria-row-tools { color: rgba(255,255,255,0.6); white-space: normal; line-height: 1.4; }
 
 .aria-status-pill {
   font-size: 13px;

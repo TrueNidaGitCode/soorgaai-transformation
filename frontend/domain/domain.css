@@ -2770,22 +2770,19 @@
   pointer-events: none;
 }
 
-/* ── Spinning top — real APNG animation (transparent background, self-
-   contained 3s loop), sits in front of the character in its line of
-   sight. No CSS-driven spin or color tint — the asset animates and looks
-   like itself; only positioning/depth are added here. proportions are
-   preserved via width + height:auto rather than forcing a fixed box.
-   Note: prefers-reduced-motion can't pause an animated PNG via CSS —
-   a platform limitation, not something addressable in this stylesheet. */
+/* ── Spinning top — real 3D WebGL render (cobSpinningTop.js), sits in
+   front of the character in its line of sight. width/height here match
+   the canvas's actual pixel buffer size (set from JS) so it doesn't
+   reflow once the script runs; the 3D lighting provides its own depth,
+   no CSS filter needed. */
 .rp-spinning-top {
   position: absolute;
   right: 25%;
   bottom: 9%;
   width: 130px;
-  height: auto;
+  height: 130px;
   pointer-events: none;
   z-index: 2;
-  filter: drop-shadow(0 10px 16px rgba(0,0,0,0.45));
 }
 
 @media (max-width: 1100px) {

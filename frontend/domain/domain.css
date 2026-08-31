@@ -2787,7 +2787,10 @@
    the Cob screen not reusing cob.html's .side*).
 ══════════════════════════════════════════════════════════════════════════════ */
 
-.screen--aria { padding: 2.5rem 1.5rem; position: relative; }
+/* Same rp-shell/rp-shell__body/rp-main/rp-character structure as the
+   Cob screen (screen--opportunities) — reused as-is so the character
+   portrait docks bottom-right the same way on both screens. */
+.screen--aria { padding: 0; min-height: 100vh; }
 
 /* Real dataset priority can be LOW, not just HIGH/MEDIUM which is all
    the demo's hardcoded data ever used — pipeline-demo.css only defines
@@ -2919,28 +2922,6 @@
   transition: border-color 0.15s, color 0.15s;
 }
 .aria-manage-btn:hover { border-color: #5CC5A7; color: #fff; }
-
-.aria-character {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  height: 60%;
-  max-width: 26%;
-  object-fit: cover;
-  object-position: top;
-  opacity: 0.4;
-  -webkit-mask-image: linear-gradient(90deg, transparent, rgba(0,0,0,0.9) 35%, rgba(0,0,0,0.9) 100%),
-                       linear-gradient(0deg, transparent, rgba(0,0,0,0.9) 25%, rgba(0,0,0,0.9) 100%);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(90deg, transparent, rgba(0,0,0,0.9) 35%, rgba(0,0,0,0.9) 100%),
-              linear-gradient(0deg, transparent, rgba(0,0,0,0.9) 25%, rgba(0,0,0,0.9) 100%);
-  mask-composite: intersect;
-  pointer-events: none;
-  z-index: 0;
-}
-@media (max-width: 1100px) {
-  .aria-character { display: none; }
-}
 
 .aria-connector {
   margin-top: 20px;

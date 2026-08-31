@@ -29,10 +29,21 @@ function getToken() { return localStorage.getItem('token'); }
 
 // ── Screen helpers ────────────────────────────────────────────────────────────
 
+// .pw-screen--enter comes from pipeline-demo.css (already linked in
+// domain.html) — same fade+rise transition used between windows in the
+// pipeline demo, reused here for the same effect between real screens.
 function showScreen(id) {
   ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-workspace', 'domain-loading'].forEach(sid => {
     const el = document.getElementById(sid);
-    if (el) el.style.display = (sid === id) ? '' : 'none';
+    if (!el) return;
+    if (sid === id) {
+      el.style.display = '';
+      el.classList.remove('pw-screen--enter');
+      void el.offsetWidth; // force reflow so the animation restarts
+      el.classList.add('pw-screen--enter');
+    } else {
+      el.style.display = 'none';
+    }
   });
 }
 

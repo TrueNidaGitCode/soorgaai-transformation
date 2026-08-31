@@ -2771,9 +2771,11 @@
 }
 
 /* ── Spinning top — sits in front of the character, in its line of
-   sight. Blue tint via mix-blend-mode:color on a ::after overlay (blends
-   with whatever's beneath — works on the source image's dark tones
-   without needing a re-colored asset). ─────────────────────────────── */
+   sight. Spins on its vertical axis (rotateY, not a flat rotate()) so an
+   asymmetric side-view photo reads as a top actually spinning in place
+   rather than cartwheeling. Blue is a soft glow behind the object plus a
+   gentle overlay tint, not a flat mix-blend-mode:color recolor — reads
+   as light hitting a dark object rather than a paint wash. ──────────── */
 .rp-spinning-top {
   position: absolute;
   right: 25%;
@@ -2782,34 +2784,52 @@
   height: 120px;
   pointer-events: none;
   z-index: 2;
+  perspective: 500px;
+}
+/* Ambient glow behind the object — pulses gently rather than staying static. */
+.rp-spinning-top::before {
+  content: '';
+  position: absolute;
+  inset: -25%;
+  background: radial-gradient(circle, rgba(46,107,255,0.5), transparent 70%);
+  filter: blur(16px);
+  animation: rp-top-glow 3s ease-in-out infinite;
 }
 /* Radial fade on both the image and the tint overlay — if the source
    file has a background (rather than a transparent cutout), this
    dissolves it into nothing instead of showing a hard rectangular edge. */
 .rp-spinning-top img {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
   animation: rp-top-spin 3s linear infinite;
-  filter: drop-shadow(0 10px 16px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 10px 16px rgba(0,0,0,0.5)) drop-shadow(0 0 8px rgba(46,107,255,0.4));
   -webkit-mask-image: radial-gradient(circle, #000 55%, transparent 85%);
   mask-image: radial-gradient(circle, #000 55%, transparent 85%);
 }
 .rp-spinning-top::after {
   content: '';
   position: absolute;
+  z-index: 1;
   inset: 0;
   background: #2E6BFF;
-  mix-blend-mode: color;
+  mix-blend-mode: overlay;
+  opacity: 0.4;
   pointer-events: none;
   -webkit-mask-image: radial-gradient(circle, #000 55%, transparent 85%);
   mask-image: radial-gradient(circle, #000 55%, transparent 85%);
 }
 
 @keyframes rp-top-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(360deg); }
+}
+@keyframes rp-top-glow {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
 }
 
 @media (max-width: 1100px) {
@@ -2820,7 +2840,8 @@
   .rp-main { padding: 24px 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .rp-spinning-top img { animation: none; }
+  .rp-spinning-top img,
+  .rp-spinning-top::before { animation: none; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════

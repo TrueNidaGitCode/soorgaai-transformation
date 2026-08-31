@@ -22,6 +22,8 @@
  * shows as unsupported rather than offering a dead link.
  */
 
+import { findAiUseCasesPrioritizationSection } from './blueprintGenerate.js';
+
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
       ? 'http://localhost:3000/api'
@@ -56,6 +58,21 @@ function findDatasetsSection(bp) {
   return null;
 }
 
+function priorityClass(priority) {
+  const p = String(priority || '').toLowerCase();
+  return ['high', 'medium', 'low'].includes(p) ? p : 'medium';
+}
+
+function renderBreadcrumb(bp) {
+  const oppSection = findAiUseCasesPrioritizationSection(bp);
+  if (!oppSection) return;
+  const brief = oppSection.brief || {};
+  const allInitiatives = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
+  const recommended = brief.recommendedStartingPoint || '';
+  const winner = allInitiatives.find(name => name && recommended.includes(name));
+  document.getElementById('aria-recap-name').textContent = winner || recommended;
+}
+
 // ── Required Data table ──────────────────────────────────────────────────────
 
 function datasetStatus(mentionsConfluence, mentionsJira, confCount, jiraCount) {
@@ -81,21 +98,28 @@ function configureHref(source) {
   return `/domain/domain.html?view=aria&connect=${source}`;
 }
 
-function statusCellHtml(status, actionSource) {
-  if (status === 'connected') {
-    return `<span class="aria-status-pill aria-status-pill--connected">&check; Connected</span>`;
-  }
-  if (status === 'partial') {
-    return `<span class="aria-status-pill aria-status-pill--partial">&#9681; Partial</span> `
-      + `<a href="${configureHref(actionSource)}" class="aria-configure-link">Configure &rarr;</a>`;
-  }
-  if (actionSource) {
-    return `<a href="${configureHref(actionSource)}" class="aria-configure-link">Configure &rarr;</a>`;
-  }
-  return `<span class="aria-status-pill aria-status-pill--none">Not yet supported</span>`;
+function sourceIconHtml(mentionsConfluence, mentionsJira, typicalSource) {
+  if (mentionsConfluence) return `<span class="aria-source__icon aria-source__icon--confluence">C</span>`;
+  if (mentionsJira) return `<span class="aria-source__icon aria-source__icon--jira">J</span>`;
+  const letter = String(typicalSource || '?').trim().charAt(0).toUpperCase() || '?';
+  return `<span class="aria-source__icon aria-source__icon--other">${esc(letter)}</span>`;
 }
 
-function renderRow(d, confCount, jiraCount, index) {
+function statusHtml(status) {
+  if (status === 'connected') return `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Connected</span>`;
+  if (status === 'partial') return `<span class="aria-status aria-status--partial"><span class="aria-status-dot"></span>Partial</span>`;
+  return `<span class="aria-status aria-status--none"><span class="aria-status-dot"></span>Not Connected</span>`;
+}
+
+// A dead "Connect" link for a source we don't actually support would be
+// worse than no link — Polarion/TestRail/etc. get an em dash instead.
+function actionHtml(status, actionSource) {
+  if (!actionSource) return `<span class="aria-action-none">&mdash;</span>`;
+  if (status === 'none') return `<a href="${configureHref(actionSource)}" class="aria-action-btn aria-action-btn--primary">Connect &rarr;</a>`;
+  return `<a href="${configureHref(actionSource)}" class="aria-action-btn aria-action-btn--ghost">Configure &rarr;</a>`;
+}
+
+function renderRow(d, confCount, jiraCount) {
   const s = String(d.typicalSource || '').toLowerCase();
   const mentionsConfluence = s.includes('confluence');
   const mentionsJira = s.includes('jira');
@@ -103,41 +127,70 @@ function renderRow(d, confCount, jiraCount, index) {
   const status = datasetStatus(mentionsConfluence, mentionsJira, confCount, jiraCount);
   const actionSource = primaryActionSource(mentionsConfluence, mentionsJira, confCount, jiraCount);
 
-  // Only data that's actually linked (fully or partly) has anything to
-  // process — an unconnected or unsupported row has no content behind it.
-  const selectable = status === 'connected' || status === 'partial';
-
   return `
     <tr>
-      <td><input type="checkbox" class="aria-row-check" data-index="${index}" ${selectable ? '' : 'disabled'}></td>
       <td>
         <span class="aria-row-name__title">${esc(d.name)}</span>
         <span class="aria-row-name__desc">${esc(d.purpose)}</span>
       </td>
-      <td class="aria-row-tools">${esc(d.typicalSource)}</td>
-      <td>${statusCellHtml(status, actionSource)}</td>
+      <td><span class="aria-priority-pill aria-priority-pill--${priorityClass(d.priority)}">${esc((d.priority || '').toUpperCase())}</span></td>
+      <td><span class="aria-source">${sourceIconHtml(mentionsConfluence, mentionsJira, d.typicalSource)}${esc(d.typicalSource)}</span></td>
+      <td>${statusHtml(status)}</td>
+      <td>${actionHtml(status, actionSource)}</td>
     </tr>
   `;
 }
 
-function renderTable(datasets, confCount, jiraCount) {
-  const body = document.getElementById('aria-required-body');
-  body.innerHTML = datasets.map((d, i) => renderRow(d, confCount, jiraCount, i)).join('')
-    || `<tr><td colspan="4" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
-  updateProcessBar();
+function eachDatasetStatus(datasets, confCount, jiraCount, fn) {
+  datasets.forEach(d => {
+    const s = String(d.typicalSource || '').toLowerCase();
+    fn(datasetStatus(s.includes('confluence'), s.includes('jira'), confCount, jiraCount));
+  });
 }
 
-// ── Process Selected Data ────────────────────────────────────────────────────
-// UI hook only for now — the actual processing pipeline (Gritworks) isn't
-// wired up yet, so this reports the selection honestly instead of
-// pretending to run something that doesn't exist.
+function updateReadinessCard(datasets, confCount, jiraCount) {
+  let ready = 0, partial = 0, missing = 0;
+  eachDatasetStatus(datasets, confCount, jiraCount, (status) => {
+    if (status === 'connected') ready++;
+    else if (status === 'partial') partial++;
+    else missing++;
+  });
 
-function updateProcessBar() {
-  const checked = document.querySelectorAll('#aria-required-body .aria-row-check:checked').length;
+  const total = datasets.length;
+  const pct = total ? Math.round((ready / total) * 100) : 0;
+  document.getElementById('aria-readiness-fraction').textContent = `${ready} of ${total}`;
+  document.getElementById('aria-readiness-pct').textContent = `${pct}%`;
+  document.getElementById('aria-readiness-fill').style.width = `${pct}%`;
+  document.getElementById('aria-legend-ready').textContent = `${ready} Ready`;
+  document.getElementById('aria-legend-partial').textContent = `${partial} Partial`;
+  document.getElementById('aria-legend-missing').textContent = `${missing} Missing`;
+}
+
+// ── Process Connected Data ───────────────────────────────────────────────────
+// UI hook only for now — the actual processing pipeline (Gritworks) isn't
+// specced yet, so this reports real state honestly instead of pretending
+// to run something that doesn't exist.
+
+function updateProcessBar(datasets, confCount, jiraCount) {
+  let connectable = 0;
+  eachDatasetStatus(datasets, confCount, jiraCount, (status) => {
+    if (status === 'connected' || status === 'partial') connectable++;
+  });
+
   const btn = document.getElementById('aria-process-btn');
   const hint = document.getElementById('aria-process-hint');
-  if (btn) btn.disabled = checked === 0;
-  if (hint) hint.textContent = checked > 0 ? `${checked} dataset${checked === 1 ? '' : 's'} selected` : 'Select connected data to process';
+  if (btn) btn.disabled = connectable === 0;
+  if (hint) hint.textContent = connectable > 0
+    ? `${connectable} dataset${connectable === 1 ? '' : 's'} have linked data`
+    : 'Connect at least one source to process data';
+}
+
+function renderTable(datasets, confCount, jiraCount) {
+  const body = document.getElementById('aria-required-body');
+  body.innerHTML = datasets.map(d => renderRow(d, confCount, jiraCount)).join('')
+    || `<tr><td colspan="5" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
+  updateReadinessCard(datasets, confCount, jiraCount);
+  updateProcessBar(datasets, confCount, jiraCount);
 }
 
 // ── Connector panels: open/close + linked-doc refresh ────────────────────────
@@ -388,6 +441,7 @@ async function initJiraSection(blueprintId) {
     const status = await api('/confluence/personal/status');
     if (!status.connected) { showOnly(JIRA_SECTIONS, 'aria-jira-not-connected'); return; }
     if (!status.jiraScopeGranted) { showOnly(JIRA_SECTIONS, 'aria-jira-scope-missing'); return; }
+    document.getElementById('aria-jira-connected-badge').style.display = 'inline-flex';
     await renderJiraProjects(blueprintId);
   } catch (err) {
     showJiraError(err.message);
@@ -401,10 +455,6 @@ let _wired = false;
 function wireStaticControls() {
   if (_wired) return;
   _wired = true;
-
-  document.getElementById('aria-required-body')?.addEventListener('change', (e) => {
-    if (e.target.classList.contains('aria-row-check')) updateProcessBar();
-  });
 
   document.getElementById('aria-process-btn')?.addEventListener('click', () => {
     const hint = document.getElementById('aria-process-hint');
@@ -420,6 +470,7 @@ document.addEventListener('aria:show', (e) => {
   const bp = e.detail?.blueprint;
   if (!bp) return;
   wireStaticControls();
+  renderBreadcrumb(bp);
 
   const datasetsSection = findDatasetsSection(bp);
   _cachedDatasets = datasetsSection?.brief?.datasets || [];

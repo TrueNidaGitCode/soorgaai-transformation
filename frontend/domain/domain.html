@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
-  <link rel="stylesheet" href="domain.css?v=2">
+  <link rel="stylesheet" href="domain.css?v=3">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -250,19 +250,47 @@
       </nav>
 
       <div class="pd-header aria-header">
-        <h1 class="aria-header__title">Data Connections</h1>
-        <p class="pd-header__sub">Connect the sources required by this blueprint.</p>
+        <div class="aria-header__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        </div>
+        <div>
+          <h1 class="aria-header__title">Data Connections</h1>
+          <p class="pd-header__sub">Connect the sources required by this blueprint.</p>
+        </div>
       </div>
 
-      <p class="pd-substage-label">Required Data</p>
+      <a href="/domain/domain.html?view=cob" class="aria-breadcrumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Blueprint: <strong id="aria-recap-name"></strong></span>
+        <svg class="aria-breadcrumb__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+
+      <div class="aria-readiness-card">
+        <div class="aria-readiness-card__main">
+          <p class="pd-substage-label" style="margin:0">Data Readiness</p>
+          <p class="aria-readiness-card__count"><span id="aria-readiness-fraction">0 of 0</span> <span class="aria-readiness-card__count-label">datasets ready</span></p>
+          <div class="aria-readiness-card__bar-row">
+            <div class="aria-readiness-card__bar"><div class="aria-readiness-card__bar-fill" id="aria-readiness-fill" style="width:0%"></div></div>
+            <span class="aria-readiness-card__pct" id="aria-readiness-pct">0%</span>
+          </div>
+        </div>
+        <div class="aria-readiness-card__legend">
+          <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--ready"></span><span id="aria-legend-ready">0 Ready</span></span>
+          <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--partial"></span><span id="aria-legend-partial">0 Partial</span></span>
+          <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--missing"></span><span id="aria-legend-missing">0 Missing</span></span>
+        </div>
+      </div>
+
+      <p class="pd-substage-label aria-required-label">Required Data</p>
       <div class="aria-table-wrap">
         <table class="aria-table">
           <thead>
             <tr>
-              <th class="aria-table__check-col"></th>
               <th>Dataset</th>
-              <th>Tools to Configure</th>
+              <th>Priority</th>
+              <th>Source</th>
               <th>Status</th>
+              <th class="aria-table__action-col">Action</th>
             </tr>
           </thead>
           <tbody id="aria-required-body"></tbody>
@@ -272,14 +300,15 @@
       <div class="aria-connector-panels">
         <div class="aria-connector" id="aria-conf-panel" style="display:none">
           <div class="aria-connector__head">
+            <span class="aria-connector__icon aria-connector__icon--confluence">C</span>
             <h3 class="aria-connector__title">Confluence</h3>
+            <span class="aria-connected-badge" id="aria-conf-connected-badge" style="display:none">
+              <span class="aria-connected-badge__dot"></span>
+              Connected<span id="aria-conf-site-wrap"> to <strong id="aria-conf-site"></strong></span>
+            </span>
             <button type="button" class="aria-connector__close" data-panel="aria-conf-panel">Done</button>
           </div>
           <div id="aria-conf-error" class="gen-error" style="display:none"></div>
-          <div id="aria-conf-connected-badge" class="aria-connected-badge" style="display:none">
-            <span class="aria-connected-badge__dot"></span>
-            Connected to <strong id="aria-conf-site"></strong>
-          </div>
           <div id="aria-conf-not-connected">
             <a id="aria-conf-connect-btn" href="#" class="pw-back-btn">Connect Confluence</a>
           </div>
@@ -297,7 +326,12 @@
 
         <div class="aria-connector" id="aria-jira-panel" style="display:none">
           <div class="aria-connector__head">
+            <span class="aria-connector__icon aria-connector__icon--jira">J</span>
             <h3 class="aria-connector__title">Jira</h3>
+            <span class="aria-connected-badge" id="aria-jira-connected-badge" style="display:none">
+              <span class="aria-connected-badge__dot"></span>
+              Connected
+            </span>
             <button type="button" class="aria-connector__close" data-panel="aria-jira-panel">Done</button>
           </div>
           <div id="aria-jira-error" class="gen-error" style="display:none"></div>
@@ -322,8 +356,8 @@
       </div>
 
       <div class="aria-process-bar">
-        <span class="aria-process-bar__hint" id="aria-process-hint">Select connected data to process</span>
-        <button type="button" class="pw-next-btn" id="aria-process-btn" disabled>Process Selected Data</button>
+        <span class="aria-process-bar__hint" id="aria-process-hint">Connect at least one source to process data</span>
+        <button type="button" class="pw-next-btn" id="aria-process-btn" disabled>Process Connected Data</button>
       </div>
 
       </div>
@@ -441,6 +475,6 @@
 
   <script type="module" src="blueprintGenerate.js?v=2"></script>
   <script type="module" src="blueprintWorkspace.js?v=2"></script>
-  <script type="module" src="ariaScreen.js?v=2"></script>
+  <script type="module" src="ariaScreen.js?v=3"></script>
 </body>
 </html>

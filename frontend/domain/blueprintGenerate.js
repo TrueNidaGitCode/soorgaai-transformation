@@ -76,6 +76,19 @@ function initKnowledgeSourcesLink(blueprintId) {
   link.style.display = '';
 }
 
+// ── Aria nav link ────────────────────────────────────────────────────────────
+// Once approved, a plain page load always bounces to the workspace
+// (shouldShowWorkspace) and Aria would otherwise only be reachable in the
+// instant right after clicking Approve — this is the permanent way back,
+// via the same ?view=aria override init() checks.
+
+function initAriaLink(bp) {
+  const link = document.getElementById('domain-aria-link');
+  if (!link || !bp.opportunityApproval?.approved) return;
+  link.href = '/domain/domain.html?view=aria';
+  link.style.display = '';
+}
+
 // ── Enterprise Blueprint nav link ───────────────────────────────────────────
 // CTO only — this points at the caller's OWN org's Enterprise Blueprint
 // (resolveOrg() in enterpriseBlueprintController.js), never a chosen org, so
@@ -736,10 +749,15 @@ async function init() {
     // RETURN_PATHS — this flag is set client-side right before leaving,
     // see ariaScreen.js) — an approved blueprint would otherwise default
     // straight to the workspace instead of back to where the user was.
+    // ?view=aria is the same override as ?view=cob, but for Aria — once a
+    // blueprint is approved, every plain page load bounces straight to
+    // the workspace and Aria becomes otherwise unreachable, so the
+    // "Data Architecture" nav link (initAriaLink) always points here.
     const returningToAria = sessionStorage.getItem('svarg_returning_to_aria') === '1';
     sessionStorage.removeItem('svarg_returning_to_aria');
+    const forceAria = new URLSearchParams(window.location.search).get('view') === 'aria';
 
-    if (returningToAria) {
+    if (returningToAria || forceAria) {
       showScreen('screen-aria');
       document.dispatchEvent(new CustomEvent('aria:show', { detail: { blueprint: bp } }));
     } else if (shouldShowWorkspace(bp)) {
@@ -759,6 +777,7 @@ async function init() {
     initGenerateForm(); // keep form initialised in case user clicks New Blueprint
     initGroundingBanner(bp._id);
     initKnowledgeSourcesLink(bp._id);
+    initAriaLink(bp);
     initEnterpriseBlueprintLink();
 
   } catch (err) {

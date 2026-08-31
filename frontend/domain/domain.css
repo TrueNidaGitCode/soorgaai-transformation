@@ -2778,6 +2778,103 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
+   SCREEN 2.7 — Aria
+   .pd-page/.pw-steps/.pd-header*/.pd-winner/.pd-datasets/.pd-dataset/
+   .pw-next-btn/.pw-back-btn/.pw-process-list/.pw-reveal all come from
+   pipeline-demo.css (already linked). New classes here are only the
+   connector-list UI, deliberately not reusing knowledge-sources.css (a
+   second stylesheet dependency isn't worth it for a handful of rules,
+   same reasoning as the Cob screen not reusing cob.html's .side*).
+══════════════════════════════════════════════════════════════════════════════ */
+
+.screen--aria { padding: 2.5rem 1.5rem; }
+
+/* Real dataset priority can be LOW, not just HIGH/MEDIUM which is all
+   the demo's hardcoded data ever used — pipeline-demo.css only defines
+   those two variants. */
+.pd-dataset__priority--low { background: rgba(92,197,167,0.1); color: #5CC5A7; }
+
+.aria-connector {
+  margin-top: 20px;
+  padding: 18px 20px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+}
+.aria-connector__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 12px;
+}
+
+.aria-connected-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(92,197,167,0.08);
+  border: 1px solid rgba(92,197,167,0.3);
+  border-radius: 999px;
+  color: rgba(255,255,255,0.85);
+  font-size: 13px;
+  font-weight: 600;
+  width: fit-content;
+}
+.aria-connected-badge strong { color: #5CC5A7; }
+.aria-connected-badge__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #5CC5A7; flex-shrink: 0;
+}
+
+.aria-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0;
+}
+.aria-list__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: rgba(255,255,255,0.75);
+}
+.aria-list__item input[type="checkbox"] { flex-shrink: 0; }
+.aria-list__item-name { flex: 1; }
+.aria-list__item-action {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.aria-list__item-action:hover { border-color: #5CC5A7; color: #fff; }
+
+.aria-select-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 4px;
+}
+
+.aria-linked-list {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.5);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
    SCREEN 3 — Company Blueprint Workspace
 ══════════════════════════════════════════════════════════════════════════════ */
 

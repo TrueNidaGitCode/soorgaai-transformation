@@ -1,11 +1,16 @@
 /**
  * SoorgaAI — Linked Project Document Model
  *
- * One row per Confluence page a user explicitly linked to a specific
- * TransformationBlueprint via their personal connection. Deliberately
- * separate from KnowledgeDocument (org-wide, keyword-relevance filtered) —
- * these are explicitly user-picked and always included in that blueprint's
- * generation context, no filtering.
+ * One row per source document (a Confluence page, or a Jira issue) a
+ * user explicitly linked to a specific TransformationBlueprint via their
+ * personal connection. Deliberately separate from KnowledgeDocument
+ * (org-wide, keyword-relevance filtered) — these are explicitly
+ * user-picked and always included in that blueprint's generation
+ * context, no filtering.
+ *
+ * sourceType distinguishes the two source kinds sharing this one
+ * generic shape — existing rows predate this field and default to
+ * 'confluence', no migration needed.
  */
 
 import mongoose from 'mongoose';
@@ -19,8 +24,10 @@ const linkedProjectDocumentSchema = new mongoose.Schema({
   },
   linkedByUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 
+  sourceType: { type: String, enum: ['confluence', 'jira'], default: 'confluence' },
   sourceId:  { type: String, required: true },
-  spaceKey:  { type: String, default: '' },
+  spaceKey:  { type: String, default: '' },   // Confluence
+  projectKey: { type: String, default: '' },  // Jira
   title:     { type: String, required: true },
   permalink: { type: String, default: '' },
 

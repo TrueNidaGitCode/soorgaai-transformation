@@ -208,6 +208,113 @@
   </main>
 
   <!-- ══════════════════════════════════════════════════════════════════════
+       SCREEN 2.7 — Aria
+       Reached from Approve on the Cob/Opportunities screen. Recaps the
+       approved opportunity, shows Cob's real required-datasets list, and
+       lets the user connect Confluence/Jira and link real sources to
+       ground this specific blueprint — see ariaScreen.js.
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <main id="screen-aria" class="screen screen--aria" style="display:none" aria-label="Aria — connect and structure your data">
+
+    <div class="pd-page">
+
+      <nav class="pw-steps rp-journey" aria-label="Your AI transformation journey">
+        <div class="pw-step pw-step--done">
+          <span class="pw-step__node"><span class="pw-step__num">1</span></span>
+          <span class="pw-step__label">Cob</span>
+        </div>
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--active">
+          <span class="pw-step__node"><span class="pw-step__num">2</span></span>
+          <span class="pw-step__label">Aria</span>
+        </div>
+        <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step rp-journey__locked">
+          <span class="pw-step__node"><span class="pw-step__num">3</span></span>
+          <span class="pw-step__label">Arth</span>
+        </div>
+        <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step rp-journey__locked">
+          <span class="pw-step__node"><span class="pw-step__num">4</span></span>
+          <span class="pw-step__label">Eame</span>
+        </div>
+        <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step rp-journey__locked">
+          <span class="pw-step__num">5</span>
+          <span class="pw-step__label">Yusu</span>
+        </div>
+      </nav>
+
+      <div class="pd-header">
+        <p class="pd-header__eyebrow">Aria &middot; Connect and structure your data</p>
+        <h1 class="pd-stage__title">Ground your blueprint in real sources</h1>
+        <p class="pd-header__sub">Connect Confluence and Jira to link the real documents and issues this blueprint should be grounded in.</p>
+      </div>
+
+      <div class="pd-winner pw-reveal" style="--i:0">
+        <p class="pd-winner__label">Carried from Cob</p>
+        <p class="pd-winner__name" id="aria-recap-name"></p>
+        <p class="pd-winner__why" id="aria-recap-why"></p>
+      </div>
+
+      <p class="pd-substage-label">Datasets Cob identified as needed</p>
+      <div class="pd-datasets" id="aria-datasets"></div>
+
+      <p class="pd-substage-label">Connect real sources</p>
+
+      <div class="aria-connector">
+        <h3 class="aria-connector__title">Confluence</h3>
+        <div id="aria-conf-error" class="gen-error" style="display:none"></div>
+        <div id="aria-conf-connected-badge" class="aria-connected-badge" style="display:none">
+          <span class="aria-connected-badge__dot"></span>
+          Connected to <strong id="aria-conf-site"></strong>
+        </div>
+        <div id="aria-conf-not-connected">
+          <a id="aria-conf-connect-btn" href="#" class="pw-back-btn">Connect Confluence</a>
+        </div>
+        <div id="aria-conf-spaces" style="display:none">
+          <div id="aria-conf-space-list" class="aria-list"></div>
+        </div>
+        <div id="aria-conf-pages" style="display:none">
+          <button type="button" id="aria-conf-back-to-spaces" class="pw-back-btn">&larr; Spaces</button>
+          <label class="aria-select-all"><input type="checkbox" id="aria-conf-select-all"> Select all</label>
+          <div id="aria-conf-page-list" class="aria-list"></div>
+          <button type="button" id="aria-conf-link-btn" class="pw-next-btn" disabled>Link selected pages</button>
+        </div>
+        <div id="aria-conf-linked-list" class="aria-linked-list" style="display:none"></div>
+      </div>
+
+      <div class="aria-connector">
+        <h3 class="aria-connector__title">Jira</h3>
+        <div id="aria-jira-error" class="gen-error" style="display:none"></div>
+        <div id="aria-jira-scope-missing" class="gen-error" style="display:none">
+          Jira access hasn't been granted on this connection yet. Reconnect below.
+          <br><a id="aria-jira-reconnect-btn" href="#" class="pw-back-btn" style="margin-top:10px;display:inline-block">Reconnect</a>
+        </div>
+        <div id="aria-jira-not-connected" style="display:none">
+          <a id="aria-jira-connect-btn" href="#" class="pw-back-btn">Connect Jira</a>
+        </div>
+        <div id="aria-jira-projects" style="display:none">
+          <div id="aria-jira-project-list" class="aria-list"></div>
+        </div>
+        <div id="aria-jira-issues" style="display:none">
+          <button type="button" id="aria-jira-back-to-projects" class="pw-back-btn">&larr; Projects</button>
+          <label class="aria-select-all"><input type="checkbox" id="aria-jira-select-all"> Select all</label>
+          <div id="aria-jira-issue-list" class="aria-list"></div>
+          <button type="button" id="aria-jira-link-btn" class="pw-next-btn" disabled>Link selected issues</button>
+        </div>
+        <div id="aria-jira-processing" class="pw-process-list" style="display:none"></div>
+      </div>
+
+      <div class="pw-actions">
+        <button type="button" class="pw-next-btn" id="aria-continue-btn">Continue to blueprint &rarr;</button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
        SCREEN 3 — Company Blueprint Workspace
   ══════════════════════════════════════════════════════════════════════════ -->
   <main id="screen-workspace" class="screen screen--workspace" style="display:none" aria-label="Company Blueprint Workspace">
@@ -312,5 +419,6 @@
 
   <script type="module" src="blueprintGenerate.js"></script>
   <script type="module" src="blueprintWorkspace.js"></script>
+  <script type="module" src="ariaScreen.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import {
   getPersonalProjectIssues,
   linkIssuesToDefectRecords,
   getLinkedIssues,
+  linkIssuesToBlueprint,
 } from '../controllers/personalJiraController.js';
 
 const router = express.Router();
@@ -15,5 +16,6 @@ router.get( '/projects',                    protect, getPersonalProjects);
 router.get( '/projects/:projectKey/issues', protect, getPersonalProjectIssues);
 router.post('/link',                         protect, linkIssuesToDefectRecords);
 router.get( '/linked',                       protect, getLinkedIssues);
+router.post('/link-to-blueprint',            protect, linkIssuesToBlueprint);
 
 export default router;

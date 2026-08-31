@@ -46,6 +46,7 @@ const RETURN_PATHS = {
   'knowledge-sources': '/knowledge-sources/knowledge-sources.html',
   'pipeline-wizard':   '/pipeline-demo/pipeline-demo.html',
   'cob':               '/cob.html',
+  'domain':            '/domain/domain.html',
 };
 
 function auditLog(action, userId, extra = {}) {
@@ -98,12 +99,13 @@ export async function initiatePersonalConnect(req, res) {
     { expiresIn: '10m' }
   );
 
-  // Only the pipeline wizard needs Jira access alongside Confluence — every
-  // other personal-connect caller (knowledge-sources, profile-setup) keeps
-  // requesting the narrower CONFLUENCE_SCOPES default, so this doesn't risk
-  // breaking their already-working connect flow if the Atlassian app's Jira
-  // scope hasn't been added yet (see atlassianAuthService.js's JIRA_SCOPES).
-  const scopes = resolvedReturnTo === 'pipeline-wizard' ? ATLASSIAN_SCOPES : undefined;
+  // The pipeline wizard and the real Aria screen (domain.html) both need
+  // Jira access alongside Confluence — every other personal-connect
+  // caller (knowledge-sources, profile-setup) keeps requesting the
+  // narrower CONFLUENCE_SCOPES default, so this doesn't risk breaking
+  // their already-working connect flow if the Atlassian app's Jira scope
+  // hasn't been added yet (see atlassianAuthService.js's JIRA_SCOPES).
+  const scopes = (resolvedReturnTo === 'pipeline-wizard' || resolvedReturnTo === 'domain') ? ATLASSIAN_SCOPES : undefined;
 
   return res.json({ url: scopes ? buildAuthorizeUrl(state, scopes) : buildAuthorizeUrl(state) });
 }

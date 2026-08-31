@@ -33,7 +33,7 @@ function getToken() { return localStorage.getItem('token'); }
 // domain.html) — same fade+rise transition used between windows in the
 // pipeline demo, reused here for the same effect between real screens.
 function showScreen(id) {
-  ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-workspace', 'domain-loading'].forEach(sid => {
+  ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-aria', 'screen-workspace', 'domain-loading'].forEach(sid => {
     const el = document.getElementById(sid);
     if (!el) return;
     if (sid === id) {
@@ -298,7 +298,7 @@ function escapeHtml(str) {
 
 let _opportunitiesContentShown = false;
 
-function findAiUseCasesPrioritizationSection(bp) {
+export function findAiUseCasesPrioritizationSection(bp) {
   const domain = (bp.domains || []).find(d => d.domainId === 'ai-use-cases');
   if (!domain || domain.status !== 'completed') return null;
   for (const cap of (domain.capabilities || [])) {
@@ -459,7 +459,11 @@ function wireOpportunitiesButtons(guestId) {
         const { error } = await resp.json().catch(() => ({}));
         throw new Error(error || 'Failed to approve. Please try again.');
       }
-      openBlueprintInNewTab();
+      // Approve is forward progress through the journey (unlike Open
+      // Blueprint, which is a peek-and-return action) — advances to Aria
+      // in the same tab rather than opening a new one.
+      showScreen('screen-aria');
+      document.dispatchEvent(new CustomEvent('aria:show', { detail: { blueprint: bp } }));
     } catch (err) {
       if (errEl) { errEl.textContent = err.message; errEl.style.display = 'block'; }
       approveBtn.disabled = false;
@@ -727,7 +731,18 @@ async function init() {
       return;
     }
 
-    if (shouldShowWorkspace(bp)) {
+    // Confluence/Jira OAuth on the Aria screen redirects back to this
+    // same page (no query-string round trip through the backend's
+    // RETURN_PATHS — this flag is set client-side right before leaving,
+    // see ariaScreen.js) — an approved blueprint would otherwise default
+    // straight to the workspace instead of back to where the user was.
+    const returningToAria = sessionStorage.getItem('svarg_returning_to_aria') === '1';
+    sessionStorage.removeItem('svarg_returning_to_aria');
+
+    if (returningToAria) {
+      showScreen('screen-aria');
+      document.dispatchEvent(new CustomEvent('aria:show', { detail: { blueprint: bp } }));
+    } else if (shouldShowWorkspace(bp)) {
       document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
     } else {
       // Not yet approved (or ?view=cob was explicitly requested) — gate

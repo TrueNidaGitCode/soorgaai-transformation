@@ -3037,21 +3037,12 @@
    Required Data above it, so the two read as one screen. */
 .aria-src-wrap { margin-top: 0; }
 /* .aria-table is table-layout:fixed, so every column needs an explicit
-   width — leaving them auto makes all four collapse to equal thirds. */
-.aria-src-table th:nth-child(1) { width: 44px; }
-.aria-src-table th:nth-child(2) { width: 20%; }
-.aria-src-table th:nth-child(3) { width: auto; }
-.aria-src-table th:nth-child(4) { width: 34%; text-align: right; }
-.aria-src-table__check { width: 44px; text-align: center; }
-.aria-src-table td:first-child { text-align: center; }
-.aria-src-table__check input,
-.aria-src-check {
-  width: 15px; height: 15px;
-  accent-color: var(--aria-accent);
-  cursor: pointer;
-  vertical-align: middle;
-}
-.aria-src-check:disabled { opacity: 0.3; cursor: not-allowed; }
+   width — leaving them auto collapses them to equal shares. Columns are
+   Tool Name / Space-or-Project Name / Status / Available. */
+.aria-src-table th:nth-child(1) { width: 18%; }
+.aria-src-table th:nth-child(2) { width: auto; }
+.aria-src-table th:nth-child(3) { width: 22%; }
+.aria-src-table th:nth-child(4) { width: 26%; text-align: right; }
 .aria-src-table__count {
   color: rgba(255,255,255,0.6);
   font-size: 12.5px;

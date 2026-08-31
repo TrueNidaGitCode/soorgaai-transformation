@@ -46,6 +46,7 @@ function esc(text) {
 }
 
 let _cachedDatasets = [];
+let _blueprintId = null;
 
 function findDatasetsSection(bp) {
   const domain = (bp.domains || []).find(d => d.domainId === 'data-readiness');
@@ -190,14 +191,88 @@ function updateReadinessCard(datasets, confCount, jiraCount) {
 // specced yet, so this reports real state honestly instead of pretending
 // to run something that doesn't exist.
 
-function updateProcessBar(datasets, confCount, jiraCount) {
-  const { connected } = tally(datasets, confCount, jiraCount);
+// Every source with something to link. Linking is idempotent — the backend
+// skips items whose content hash is unchanged before doing any LLM work —
+// so re-running this over already-linked spaces is cheap.
+function linkableSources() {
+  return [
+    ..._sources.confluence.filter(s => s.itemCount > 0).map(s => ({ tool: 'confluence', key: s.key, name: s.name })),
+    ..._sources.jira.filter(p => p.itemCount > 0).map(p => ({ tool: 'jira', key: p.key, name: p.name })),
+  ];
+}
+
+function updateProcessBar(datasets) {
   const btn = document.getElementById('aria-process-btn');
   const hint = document.getElementById('aria-process-hint');
-  if (btn) btn.disabled = connected === 0;
-  if (hint) hint.textContent = connected > 0
-    ? `${connected} dataset${connected === 1 ? '' : 's'} connected`
-    : 'Connect at least one source to process data';
+  const pending = linkableSources();
+  if (btn) btn.disabled = pending.length === 0;
+  if (hint) hint.textContent = pending.length
+    ? `${pending.length} source${pending.length === 1 ? '' : 's'} ready · up to ${LINK_BATCH} items each`
+    : 'Connect a source to process data';
+}
+
+// Process = link, then process. The user asked for one button that does
+// both, so this links the newest items from every available source before
+// handing over. Progress is reported per source, because linking is the
+// slow part (one LLM classification per new item, server-side).
+let _processing = false;
+
+async function runProcess(blueprintId) {
+  if (_processing) return;
+  const btn = document.getElementById('aria-process-btn');
+  const hint = document.getElementById('aria-process-hint');
+  const sources = linkableSources();
+  if (!sources.length) return;
+
+  _processing = true;
+  btn.disabled = true;
+  const confProc = document.getElementById('aria-conf-processing');
+  const jiraProc = document.getElementById('aria-jira-processing');
+  const confResults = [], jiraResults = [];
+
+  try {
+    for (let i = 0; i < sources.length; i++) {
+      const src = sources[i];
+      hint.textContent = `Linking ${src.name} (${i + 1} of ${sources.length})…`;
+      btn.textContent = 'Linking…';
+
+      if (src.tool === 'confluence') {
+        // listPages is newest-first, so the head is the newest N.
+        const { pages } = await api(`/confluence/personal/spaces/${encodeURIComponent(src.key)}/pages`);
+        const batch = pages.slice(0, LINK_BATCH).map(p => ({ pageId: p.id, spaceKey: src.key }));
+        if (!batch.length) continue;
+        const r = await api('/confluence/personal/link', {
+          method: 'POST', body: JSON.stringify({ blueprintId, pages: batch }),
+        });
+        confResults.push(...(r.results || []));
+        renderProcessing(confProc, confResults, 'pageId');
+      } else {
+        // listIssues is ordered by created DESC.
+        const { issues } = await api(`/jira/personal/projects/${encodeURIComponent(src.key)}/issues`);
+        const batch = issues.slice(0, LINK_BATCH).map(iss => ({ issueKey: iss.key }));
+        if (!batch.length) continue;
+        const r = await api('/jira/personal/link-to-blueprint', {
+          method: 'POST', body: JSON.stringify({ blueprintId, issues: batch }),
+        });
+        jiraResults.push(...(r.results || []));
+        renderProcessing(jiraProc, jiraResults, 'issueKey');
+      }
+    }
+
+    await refreshLinked(blueprintId);
+
+    const linked = [...confResults, ...jiraResults].filter(r => r.status !== 'error').length;
+    btn.textContent = 'Process Connected Data';
+    // Linking is real and done. Processing itself isn't built yet, so say
+    // that plainly rather than implying the pipeline ran.
+    hint.textContent = `${linked} item${linked === 1 ? '' : 's'} linked. Processing isn't connected yet — coming soon.`;
+  } catch (err) {
+    btn.textContent = 'Process Connected Data';
+    hint.textContent = err.message || 'Linking failed. Please try again.';
+  } finally {
+    _processing = false;
+    btn.disabled = false;
+  }
 }
 
 function renderTable(datasets, confCount, jiraCount) {
@@ -205,7 +280,7 @@ function renderTable(datasets, confCount, jiraCount) {
   body.innerHTML = datasets.map(d => renderRow(d, confCount, jiraCount)).join('')
     || `<tr><td colspan="4" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
   updateReadinessCard(datasets, confCount, jiraCount);
-  updateProcessBar(datasets, confCount, jiraCount);
+  updateProcessBar(datasets);
 }
 
 // ── Connector panels: open/close + linked-doc refresh ────────────────────────
@@ -217,16 +292,19 @@ function openPanel(source) {
   panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function closePanel(panelId) {
-  const panel = document.getElementById(panelId);
-  if (panel) panel.style.display = 'none';
-}
-
 async function refreshLinked(blueprintId) {
   try {
     const { documents } = await api(`/confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
     const confDocs = documents.filter(d => (d.sourceType || 'confluence') === 'confluence');
     const jiraDocs = documents.filter(d => d.sourceType === 'jira');
+
+    // Per-space / per-project linkage drives the Status column. The linked
+    // documents carry spaceKey/projectKey, so this is real state, not a
+    // guess from whatever the user last clicked.
+    _linkedKeys = {
+      confluence: new Set(confDocs.map(d => d.spaceKey).filter(Boolean)),
+      jira: new Set(jiraDocs.map(d => d.projectKey).filter(Boolean)),
+    };
 
     const linkedList = document.getElementById('aria-conf-linked-list');
     if (confDocs.length) {
@@ -236,6 +314,8 @@ async function refreshLinked(blueprintId) {
       linkedList.style.display = 'none';
     }
 
+    renderConfluenceTable();
+    renderJiraTable();
     renderTable(_cachedDatasets, confDocs.length, jiraDocs.length);
   } catch {
     renderTable(_cachedDatasets, 0, 0);
@@ -286,54 +366,33 @@ function countCellHtml(count, capped, noun) {
   return `${esc(label)}${limit}`;
 }
 
-function renderSourceRow({ tool, toolClass, letter, name, key, count, capped, noun }) {
-  // Nothing to link from an empty source, and an unknown count can't be
-  // linked from safely either — leave both unselectable rather than
-  // shipping a request that would do nothing.
-  const selectable = typeof count === 'number' && count > 0;
+// Which spaces / projects already have content linked to this blueprint —
+// filled by refreshLinked() from the real linked-documents response, so the
+// Status column reflects the database rather than anything the user clicked.
+let _linkedKeys = { confluence: new Set(), jira: new Set() };
+
+function statusCellHtml(toolId, key, count) {
+  if (_linkedKeys[toolId]?.has(key)) {
+    return `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Linked</span>`;
+  }
+  if (typeof count === 'number' && count > 0) {
+    return `<span class="aria-status aria-status--none"><span class="aria-status-dot"></span>Ready to link</span>`;
+  }
+  return `<span class="aria-status aria-status--none"><span class="aria-status-dot"></span>Nothing to link</span>`;
+}
+
+function renderSourceRow({ tool, toolId, letter, name, key, count, capped, noun }) {
   return `
     <tr>
-      <td class="aria-src-table__check">
-        <input type="checkbox" class="aria-src-check" value="${esc(key)}" ${selectable ? 'checked' : 'disabled'}>
-      </td>
-      <td><span class="aria-source"><span class="aria-source__icon aria-source__icon--${toolClass}">${letter}</span>${esc(tool)}</span></td>
+      <td><span class="aria-source"><span class="aria-source__icon aria-source__icon--${toolId}">${letter}</span>${esc(tool)}</span></td>
       <td>
         <span class="aria-row-name__title">${esc(name)}</span>
         <span class="aria-row-name__desc">${esc(key)}</span>
       </td>
+      <td>${statusCellHtml(toolId, key, count)}</td>
       <td class="aria-src-table__count">${countCellHtml(count, capped, noun)}</td>
     </tr>
   `;
-}
-
-// Keeps the header checkbox, the row checkboxes, the hint and the button in
-// agreement — all four derive from the same selected set.
-function wireSourceSelection(listEl, selectAllEl, btnEl, hintEl, noun) {
-  // Disabled rows (empty or unknown count) are excluded everywhere, so
-  // "select all" never ticks something that can't be linked and the
-  // header checkbox reflects only the rows that can actually be chosen.
-  const rows = () => Array.from(listEl.querySelectorAll('.aria-src-check:not(:disabled)'));
-
-  const update = () => {
-    const all = rows();
-    const checked = all.filter(cb => cb.checked);
-    btnEl.disabled = checked.length === 0;
-    selectAllEl.disabled = all.length === 0;
-    selectAllEl.checked = all.length > 0 && checked.length === all.length;
-    hintEl.textContent = all.length === 0
-      ? `Nothing available to link`
-      : checked.length
-        ? `${checked.length} ${noun}${checked.length === 1 ? '' : 's'} selected · up to ${LINK_BATCH} items each`
-        : `Select at least one ${noun}`;
-  };
-
-  rows().forEach(cb => cb.addEventListener('change', update));
-  selectAllEl.onchange = () => {
-    rows().forEach(cb => { cb.checked = selectAllEl.checked; });
-    update();
-  };
-  update();
-  return () => rows().filter(cb => cb.checked).map(cb => cb.value);
 }
 
 function renderProcessing(el, results, keyField) {
@@ -352,63 +411,30 @@ function renderProcessing(el, results, keyField) {
   }).join('');
 }
 
+// Cached so the Process button can link without re-listing, and so the
+// Status column can be re-rendered after linking without another round trip.
+let _sources = { confluence: [], jira: [] };
+
+function renderConfluenceTable() {
+  const list = document.getElementById('aria-conf-space-list');
+  if (!list) return;
+  list.innerHTML = _sources.confluence.map(s => renderSourceRow({
+    tool: 'Confluence', toolId: 'confluence', letter: 'C',
+    name: s.name, key: s.key,
+    count: s.itemCount, capped: s.itemCountCapped, noun: 'page',
+  })).join('') || `<tr><td colspan="4" class="ks-card-body">No spaces found in this Confluence site.</td></tr>`;
+}
+
 async function renderConfluenceSpaces(blueprintId) {
   const list = document.getElementById('aria-conf-space-list');
-  const btn = document.getElementById('aria-conf-link-btn');
-  const hint = document.getElementById('aria-conf-hint');
-  const selectAll = document.getElementById('aria-conf-select-all');
-
   list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Loading spaces…</td></tr>`;
   showOnly(CONF_SECTIONS, 'aria-conf-spaces');
 
   try {
     const { spaces } = await api('/confluence/personal/spaces?withCounts=1');
-    if (!spaces.length) {
-      list.innerHTML = `<tr><td colspan="4" class="ks-card-body">No spaces found in this Confluence site.</td></tr>`;
-      btn.disabled = true;
-      return;
-    }
-
-    list.innerHTML = spaces.map(s => renderSourceRow({
-      tool: 'Confluence', toolClass: 'confluence', letter: 'C',
-      name: s.name, key: s.key,
-      count: s.itemCount, capped: s.itemCountCapped, noun: 'page',
-    })).join('');
-
-    const selected = wireSourceSelection(list, selectAll, btn, hint, 'space');
-
-    btn.onclick = async () => {
-      const keys = selected();
-      if (!keys.length) return;
-      btn.disabled = true;
-      btn.textContent = 'Linking…';
-      document.getElementById('aria-conf-error').style.display = 'none';
-      const proc = document.getElementById('aria-conf-processing');
-
-      try {
-        const all = [];
-        for (const spaceKey of keys) {
-          // listPages returns newest-first, so the head of the list is the
-          // "newest 30" the table promised.
-          const { pages } = await api(`/confluence/personal/spaces/${encodeURIComponent(spaceKey)}/pages`);
-          const batch = pages.slice(0, LINK_BATCH).map(p => ({ pageId: p.id, spaceKey }));
-          if (!batch.length) continue;
-          const result = await api('/confluence/personal/link', {
-            method: 'POST',
-            body: JSON.stringify({ blueprintId, pages: batch }),
-          });
-          all.push(...(result.results || []));
-          renderProcessing(proc, all, 'pageId');
-        }
-        await refreshLinked(blueprintId);
-        btn.textContent = `Linked ${all.filter(r => r.status !== 'error').length}`;
-      } catch (err) {
-        showConfError(err.message);
-      } finally {
-        btn.disabled = false;
-        setTimeout(() => { btn.textContent = 'Link selected'; }, 2500);
-      }
-    };
+    _sources.confluence = spaces;
+    renderConfluenceTable();
+    updateProcessBar(_cachedDatasets);
   } catch (err) {
     list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Couldn't load spaces.</td></tr>`;
     showConfError(err.message);
@@ -425,8 +451,6 @@ async function initConfluenceSection(blueprintId) {
     const status = await api('/confluence/personal/status');
     if (!status.connected) { showOnly(CONF_SECTIONS, 'aria-conf-not-connected'); return; }
 
-    document.getElementById('aria-conf-connected-badge').style.display = 'flex';
-    document.getElementById('aria-conf-site').textContent = status.siteName || 'Confluence';
     await renderConfluenceSpaces(blueprintId);
   } catch (err) {
     showConfError(err.message);
@@ -443,62 +467,26 @@ function showJiraError(message) {
 
 const JIRA_SECTIONS = ['aria-jira-scope-missing', 'aria-jira-not-connected', 'aria-jira-projects'];
 
+function renderJiraTable() {
+  const list = document.getElementById('aria-jira-project-list');
+  if (!list) return;
+  list.innerHTML = _sources.jira.map(p => renderSourceRow({
+    tool: 'Jira', toolId: 'jira', letter: 'J',
+    name: p.name, key: p.key,
+    count: p.itemCount, capped: p.itemCountCapped, noun: 'ticket',
+  })).join('') || `<tr><td colspan="4" class="ks-card-body">No projects found in this Jira site.</td></tr>`;
+}
+
 async function renderJiraProjects(blueprintId) {
   const list = document.getElementById('aria-jira-project-list');
-  const btn = document.getElementById('aria-jira-link-btn');
-  const hint = document.getElementById('aria-jira-hint');
-  const selectAll = document.getElementById('aria-jira-select-all');
-
   list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Loading projects…</td></tr>`;
   showOnly(JIRA_SECTIONS, 'aria-jira-projects');
 
   try {
     const { projects } = await api('/jira/personal/projects?withCounts=1');
-    if (!projects.length) {
-      list.innerHTML = `<tr><td colspan="4" class="ks-card-body">No projects found in this Jira site.</td></tr>`;
-      btn.disabled = true;
-      return;
-    }
-
-    list.innerHTML = projects.map(p => renderSourceRow({
-      tool: 'Jira', toolClass: 'jira', letter: 'J',
-      name: p.name, key: p.key,
-      count: p.itemCount, capped: false, noun: 'ticket',
-    })).join('');
-
-    const selected = wireSourceSelection(list, selectAll, btn, hint, 'project');
-
-    btn.onclick = async () => {
-      const keys = selected();
-      if (!keys.length) return;
-      btn.disabled = true;
-      btn.textContent = 'Linking…';
-      document.getElementById('aria-jira-error').style.display = 'none';
-      const proc = document.getElementById('aria-jira-processing');
-
-      try {
-        const all = [];
-        for (const projectKey of keys) {
-          // listIssues is ordered by created DESC, so the head is the newest.
-          const { issues } = await api(`/jira/personal/projects/${encodeURIComponent(projectKey)}/issues`);
-          const batch = issues.slice(0, LINK_BATCH).map(i => ({ issueKey: i.key }));
-          if (!batch.length) continue;
-          const result = await api('/jira/personal/link-to-blueprint', {
-            method: 'POST',
-            body: JSON.stringify({ blueprintId, issues: batch }),
-          });
-          all.push(...(result.results || []));
-          renderProcessing(proc, all, 'issueKey');
-        }
-        await refreshLinked(blueprintId);
-        btn.textContent = `Linked ${all.filter(r => r.status !== 'error').length}`;
-      } catch (err) {
-        showJiraError(err.message);
-      } finally {
-        btn.disabled = false;
-        setTimeout(() => { btn.textContent = 'Link selected'; }, 2500);
-      }
-    };
+    _sources.jira = projects;
+    renderJiraTable();
+    updateProcessBar(_cachedDatasets);
   } catch (err) {
     list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Couldn't load projects.</td></tr>`;
     showJiraError(err.message);
@@ -514,7 +502,6 @@ async function initJiraSection(blueprintId) {
     const status = await api('/confluence/personal/status');
     if (!status.connected) { showOnly(JIRA_SECTIONS, 'aria-jira-not-connected'); return; }
     if (!status.jiraScopeGranted) { showOnly(JIRA_SECTIONS, 'aria-jira-scope-missing'); return; }
-    document.getElementById('aria-jira-connected-badge').style.display = 'inline-flex';
     await renderJiraProjects(blueprintId);
   } catch (err) {
     showJiraError(err.message);
@@ -530,12 +517,8 @@ function wireStaticControls() {
   _wired = true;
 
   document.getElementById('aria-process-btn')?.addEventListener('click', () => {
-    const hint = document.getElementById('aria-process-hint');
-    if (hint) hint.textContent = 'Processing isn’t connected yet — coming soon.';
-  });
-
-  document.querySelectorAll('.aria-connector__close').forEach(btn => {
-    btn.addEventListener('click', () => closePanel(btn.dataset.panel));
+    const id = _blueprintId;
+    if (id) runProcess(id);
   });
 }
 
@@ -545,6 +528,7 @@ document.addEventListener('aria:show', (e) => {
   wireStaticControls();
   renderBreadcrumb(bp);
 
+  _blueprintId = bp._id;
   const datasetsSection = findDatasetsSection(bp);
   _cachedDatasets = datasetsSection?.brief?.datasets || [];
   renderTable(_cachedDatasets, 0, 0);

@@ -2983,6 +2983,11 @@
 .aria-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .aria-status--connected .aria-status-dot { background: #5CC5A7; }
 .aria-status--connected { color: rgba(255,255,255,0.75); }
+/* Tool connected, nothing linked from it yet — a normal waiting state,
+   not a problem, so it reads amber rather than grey-as-missing. */
+.aria-status--ready .aria-status-dot { background: #D4AF6E; }
+.aria-status--ready { color: rgba(255,255,255,0.7); }
+
 .aria-status--none .aria-status-dot { background: rgba(255,255,255,0.3); }
 .aria-status--none { color: rgba(255,255,255,0.4); font-weight: 500; }
 /* Not a failure state — this data simply has no connector, and the

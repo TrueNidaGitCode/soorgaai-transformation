@@ -48,6 +48,12 @@ function esc(text) {
 let _cachedDatasets = [];
 let _blueprintId = null;
 
+// Tool-level connection (an OAuth grant exists) — deliberately separate
+// from whether any content has been linked. Right after connecting, a tool
+// is connected but has nothing linked yet, and the UI has to say so rather
+// than still reading "Not connected".
+let _connected = { confluence: false, jira: false };
+
 function findDatasetsSection(bp) {
   const domain = (bp.domains || []).find(d => d.domainId === 'data-readiness');
   if (!domain) return null;
@@ -103,7 +109,11 @@ function rowState(d, confCount, jiraCount) {
   const source = resolveSource(d.typicalSource, confCount, jiraCount);
   if (!source) return { state: 'inferred', source: null };
   const count = source.id === 'confluence' ? confCount : jiraCount;
-  return { state: count > 0 ? 'connected' : 'not-connected', source };
+  if (count > 0) return { state: 'connected', source };
+  // Tool connected but nothing linked from it yet — Process will do the
+  // linking, so this is not a "go and connect something" state.
+  if (_connected[source.id]) return { state: 'ready', source };
+  return { state: 'not-connected', source };
 }
 
 function connectHref(sourceId) {
@@ -125,12 +135,14 @@ function renderRow(d, confCount, jiraCount) {
       + `<span class="aria-source__icon aria-source__icon--${source.id}">${source.letter}</span>${esc(source.label)}</span>`;
     statusCell = state === 'connected'
       ? `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Connected</span>`
-      : `<span class="aria-status aria-status--none"><span class="aria-status-dot"></span>Not connected</span>`;
-    // Connect is the only action — choosing spaces/pages happens inside
-    // the connector panel it opens, so there is no separate Configure.
-    actionCell = state === 'connected'
-      ? `<span class="aria-action-none">&mdash;</span>`
-      : `<a href="${connectHref(source.id)}" class="aria-action-btn aria-action-btn--primary">Connect &rarr;</a>`;
+      : state === 'ready'
+        ? `<span class="aria-status aria-status--ready"><span class="aria-status-dot"></span>Ready to link</span>`
+        : `<span class="aria-status aria-status--none"><span class="aria-status-dot"></span>Not connected</span>`;
+    // Connect only appears when the tool genuinely isn't connected —
+    // once it is, Process does the linking, so there is nothing to click.
+    actionCell = state === 'not-connected'
+      ? `<a href="${connectHref(source.id)}" class="aria-action-btn aria-action-btn--primary">Connect &rarr;</a>`
+      : `<span class="aria-action-none">&mdash;</span>`;
   }
 
   return `
@@ -151,7 +163,7 @@ function tally(datasets, confCount, jiraCount) {
   datasets.forEach(d => {
     const { state } = rowState(d, confCount, jiraCount);
     if (state === 'connected') connected++;
-    else if (state === 'not-connected') toConnect++;
+    else if (state === 'not-connected' || state === 'ready') toConnect++;
     else inferred++;
   });
   return { connected, toConnect, inferred };
@@ -196,8 +208,8 @@ function updateReadinessCard(datasets, confCount, jiraCount) {
 // so re-running this over already-linked spaces is cheap.
 function linkableSources() {
   return [
-    ..._sources.confluence.filter(s => s.itemCount > 0).map(s => ({ tool: 'confluence', key: s.key, name: s.name })),
-    ..._sources.jira.filter(p => p.itemCount > 0).map(p => ({ tool: 'jira', key: p.key, name: p.name })),
+    ..._sources.confluence.map(s => ({ tool: 'confluence', key: s.key, name: s.name })),
+    ..._sources.jira.map(p => ({ tool: 'jira', key: p.key, name: p.name })),
   ];
 }
 
@@ -285,11 +297,22 @@ function renderTable(datasets, confCount, jiraCount) {
 
 // ── Connector panels: open/close + linked-doc refresh ────────────────────────
 
+function panelEl(source) {
+  return document.getElementById(source === 'jira' ? 'aria-jira-panel' : 'aria-conf-panel');
+}
+
+// Reveal without moving the viewport — used on load for every connected
+// tool, so scrolling here would yank the page on every visit.
+function showPanel(source) {
+  const panel = panelEl(source);
+  if (panel) panel.style.display = 'block';
+}
+
+// Reveal AND scroll — only for ?connect=<source>, where the user asked to
+// be taken to that specific connector.
 function openPanel(source) {
-  const panel = document.getElementById(source === 'jira' ? 'aria-jira-panel' : 'aria-conf-panel');
-  if (!panel) return;
-  panel.style.display = 'block';
-  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showPanel(source);
+  panelEl(source)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function refreshLinked(blueprintId) {
@@ -353,11 +376,11 @@ const CONF_SECTIONS = ['aria-conf-not-connected', 'aria-conf-spaces'];
 const LINK_BATCH = 30;
 
 function countCellHtml(count, capped, noun) {
-  if (count === null || count === undefined) {
-    return `<span class="aria-src-table__count--empty">Count unavailable</span>`;
-  }
-  if (count === 0) {
-    return `<span class="aria-src-table__count--empty">No ${noun}s</span>`;
+  // Jira's approximate-count is unavailable on some editions and answers
+  // 0 rather than erroring, so a zero here is not proof of emptiness.
+  // Say "unknown" instead of claiming the source is empty.
+  if (!count) {
+    return `<span class="aria-src-table__count--empty">&mdash;</span>`;
   }
   const label = `${count.toLocaleString()}${capped ? '+' : ''} ${noun}${count === 1 && !capped ? '' : 's'}`;
   const limit = count > LINK_BATCH
@@ -371,14 +394,11 @@ function countCellHtml(count, capped, noun) {
 // Status column reflects the database rather than anything the user clicked.
 let _linkedKeys = { confluence: new Set(), jira: new Set() };
 
-function statusCellHtml(toolId, key, count) {
+function statusCellHtml(toolId, key) {
   if (_linkedKeys[toolId]?.has(key)) {
     return `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Linked</span>`;
   }
-  if (typeof count === 'number' && count > 0) {
-    return `<span class="aria-status aria-status--none"><span class="aria-status-dot"></span>Ready to link</span>`;
-  }
-  return `<span class="aria-status aria-status--none"><span class="aria-status-dot"></span>Nothing to link</span>`;
+  return `<span class="aria-status aria-status--ready"><span class="aria-status-dot"></span>Ready to link</span>`;
 }
 
 function renderSourceRow({ tool, toolId, letter, name, key, count, capped, noun }) {
@@ -389,7 +409,7 @@ function renderSourceRow({ tool, toolId, letter, name, key, count, capped, noun 
         <span class="aria-row-name__title">${esc(name)}</span>
         <span class="aria-row-name__desc">${esc(key)}</span>
       </td>
-      <td>${statusCellHtml(toolId, key, count)}</td>
+      <td>${statusCellHtml(toolId, key)}</td>
       <td class="aria-src-table__count">${countCellHtml(count, capped, noun)}</td>
     </tr>
   `;
@@ -451,7 +471,10 @@ async function initConfluenceSection(blueprintId) {
     const status = await api('/confluence/personal/status');
     if (!status.connected) { showOnly(CONF_SECTIONS, 'aria-conf-not-connected'); return; }
 
+    _connected.confluence = true;
+    showPanel('confluence');
     await renderConfluenceSpaces(blueprintId);
+    renderTable(_cachedDatasets, _linkedKeys.confluence.size, _linkedKeys.jira.size);
   } catch (err) {
     showConfError(err.message);
   }
@@ -501,8 +524,15 @@ async function initJiraSection(blueprintId) {
   try {
     const status = await api('/confluence/personal/status');
     if (!status.connected) { showOnly(JIRA_SECTIONS, 'aria-jira-not-connected'); return; }
-    if (!status.jiraScopeGranted) { showOnly(JIRA_SECTIONS, 'aria-jira-scope-missing'); return; }
+    if (!status.jiraScopeGranted) {
+      showPanel('jira');
+      showOnly(JIRA_SECTIONS, 'aria-jira-scope-missing');
+      return;
+    }
+    _connected.jira = true;
+    showPanel('jira');
     await renderJiraProjects(blueprintId);
+    renderTable(_cachedDatasets, _linkedKeys.confluence.size, _linkedKeys.jira.size);
   } catch (err) {
     showJiraError(err.message);
   }

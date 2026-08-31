@@ -2813,19 +2813,28 @@
    against overlap, not just one. */
 .screen--aria { padding: 0; min-height: 100vh; }
 
-/* Five columns need real room. The character is capped to 26% and the
-   panel to 62%, so together they can never sum past 88% of the shell —
-   the gap between them is the guarantee against overlap, not luck. */
-.screen--aria .pd-page { max-width: 62%; min-width: 0; }
-.screen--aria .rp-character { max-width: 26%; opacity: 0.28; }
-@media (max-width: 1400px) {
-  .screen--aria .pd-page { max-width: 100%; }
+/* The character keeps a reserved lane on the right rather than being
+   hidden: rp-main pads itself past the character's width, so content
+   physically cannot reach it at any viewport. Capping .pd-page instead
+   would leave the character visible but hide it on normal laptops once
+   the cap kicked in — reserving space keeps it present down to ~1000px,
+   where there genuinely isn't room for both. */
+.screen--aria .rp-character { width: 24%; max-width: 24%; opacity: 0.3; }
+.screen--aria .rp-main { padding-right: calc(24% + 48px); }
+.screen--aria .pd-page { max-width: 100%; min-width: 0; }
+
+@media (max-width: 1000px) {
   .screen--aria .rp-character { display: none; }
+  .screen--aria .rp-main { padding-right: 40px; }
 }
 
+/* Matches the app palette (style.css --accent-green #5CC5A7 and the
+   #5CC5A7→#3DAFD3 gradient used across the marketing pages). An earlier
+   pass used indigo to match a reference mockup, which left this screen
+   as the only teal-less surface in the product. */
 :root {
-  --aria-accent: #5B5FEF;
-  --aria-accent-2: #8B7FF5;
+  --aria-accent: #5CC5A7;
+  --aria-accent-2: #3DAFD3;
 }
 
 .aria-header { display: flex; align-items: center; gap: 14px; }
@@ -2839,7 +2848,7 @@
   justify-content: center;
   background: linear-gradient(135deg, var(--aria-accent-2), var(--aria-accent));
   color: #fff;
-  box-shadow: 0 4px 14px rgba(91,95,239,0.35);
+  box-shadow: 0 4px 14px rgba(92,197,167,0.35);
 }
 .aria-header__icon svg { width: 21px; height: 21px; }
 
@@ -2858,15 +2867,15 @@
   gap: 9px;
   margin-top: 18px;
   padding: 10px 14px;
-  background: rgba(91,95,239,0.08);
-  border: 1px solid rgba(91,95,239,0.28);
+  background: rgba(92,197,167,0.08);
+  border: 1px solid rgba(92,197,167,0.28);
   border-radius: 9px;
   color: rgba(255,255,255,0.7);
   font-size: 13px;
   text-decoration: none;
   transition: border-color 0.15s, background 0.15s;
 }
-.aria-breadcrumb:hover { background: rgba(91,95,239,0.13); border-color: rgba(91,95,239,0.45); }
+.aria-breadcrumb:hover { background: rgba(92,197,167,0.13); border-color: rgba(92,197,167,0.45); }
 .aria-breadcrumb svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--aria-accent-2); }
 .aria-breadcrumb span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aria-breadcrumb strong { color: #fff; font-weight: 600; }
@@ -2906,7 +2915,7 @@
 .aria-readiness-card__legend { display: flex; flex-direction: column; gap: 8px; }
 .aria-legend-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: rgba(255,255,255,0.6); white-space: nowrap; }
 .aria-legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.aria-legend-dot--ready { background: #34D399; }
+.aria-legend-dot--ready { background: #5CC5A7; }
 .aria-legend-dot--partial { background: #FBBF24; }
 .aria-legend-dot--missing { background: rgba(255,255,255,0.3); }
 
@@ -2967,7 +2976,7 @@
 }
 .aria-priority-pill--high   { background: rgba(239,68,68,0.15); color: #FCA5A5; }
 .aria-priority-pill--medium { background: rgba(245,158,11,0.15); color: #FCD34D; }
-.aria-priority-pill--low    { background: rgba(52,211,153,0.14); color: #6EE7B7; }
+.aria-priority-pill--low    { background: rgba(92,197,167,0.14); color: #8ED9C2; }
 
 .aria-source { display: flex; align-items: center; gap: 7px; color: rgba(255,255,255,0.65); font-size: 12.5px; line-height: 1.4; }
 .aria-source__icon {
@@ -2983,12 +2992,12 @@
   color: #fff;
 }
 .aria-source__icon--confluence { background: #2684FF; }
-.aria-source__icon--jira { background: var(--aria-accent); }
+.aria-source__icon--jira { background: #0052CC; }
 .aria-source__icon--other { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.5); }
 
 .aria-status { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
 .aria-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.aria-status--connected .aria-status-dot { background: #34D399; }
+.aria-status--connected .aria-status-dot { background: #5CC5A7; }
 .aria-status--connected { color: rgba(255,255,255,0.75); }
 .aria-status--partial .aria-status-dot { background: #FBBF24; }
 .aria-status--partial { color: rgba(255,255,255,0.75); }
@@ -3055,7 +3064,7 @@
   color: #fff;
 }
 .aria-connector__icon--confluence { background: #2684FF; }
-.aria-connector__icon--jira { background: var(--aria-accent); }
+.aria-connector__icon--jira { background: #0052CC; }
 .aria-connector__title {
   font-size: 14px;
   font-weight: 700;
@@ -3081,18 +3090,18 @@
   align-items: center;
   gap: 7px;
   padding: 4px 11px;
-  background: rgba(52,211,153,0.1);
-  border: 1px solid rgba(52,211,153,0.3);
+  background: rgba(92,197,167,0.1);
+  border: 1px solid rgba(92,197,167,0.3);
   border-radius: 999px;
   color: rgba(255,255,255,0.8);
   font-size: 12px;
   font-weight: 600;
   width: fit-content;
 }
-.aria-connected-badge strong { color: #34D399; }
+.aria-connected-badge strong { color: #5CC5A7; }
 .aria-connected-badge__dot {
   width: 6px; height: 6px; border-radius: 50%;
-  background: #34D399; flex-shrink: 0;
+  background: #5CC5A7; flex-shrink: 0;
 }
 
 .aria-list {

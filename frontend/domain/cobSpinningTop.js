@@ -63,10 +63,15 @@ async function init() {
   ];
   const geometry = new THREE.LatheGeometry(profile, 48);
 
+  // metalness this high needs an environment map to reflect — physically-
+  // based metals show almost nothing from direct light alone (that's what
+  // made the first version nearly invisible against the dark page). Kept
+  // moderate here as a safe baseline that still reads clearly even if the
+  // environment-map setup below fails to load.
   const material = new THREE.MeshPhysicalMaterial({
     color: 0x5CC5A7, // Svarg's real accent — a controllable material color, not a photo needing a CSS tint
-    metalness: 0.9,
-    roughness: 0.28,
+    metalness: 0.55,
+    roughness: 0.32,
     clearcoat: 0.5,
     clearcoatRoughness: 0.25,
   });
@@ -75,17 +80,36 @@ async function init() {
   top.position.y = -0.15;
   scene.add(top);
 
-  // ── Lighting: key + a brand-blue rim light + a soft fill ────────────
-  const key = new THREE.DirectionalLight(0xffffff, 2.2);
+  // ── Lighting: key + a brand-blue rim light + a front fill + soft
+  // ambient — deliberately bright/redundant so the object reads clearly
+  // from the camera's exact angle even without environment reflections ──
+  const key = new THREE.DirectionalLight(0xffffff, 3);
   key.position.set(1.5, 2, 2);
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(0x3DAFD3, 1.8); // Svarg's secondary blue
+  const rim = new THREE.DirectionalLight(0x3DAFD3, 2.2); // Svarg's secondary blue
   rim.position.set(-1.5, -0.5, -1.5);
   scene.add(rim);
 
-  const fill = new THREE.HemisphereLight(0x8888aa, 0x111111, 0.6);
-  scene.add(fill);
+  const frontFill = new THREE.DirectionalLight(0xffffff, 1.4);
+  frontFill.position.set(0, 0.5, 3);
+  scene.add(frontFill);
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambient);
+
+  // Proper environment reflections for the metallic material — without
+  // this, high metalness renders close to flat black outside of small
+  // direct-light highlights. Wrapped so a failure here still leaves the
+  // (still clearly visible, per the lighting above) fallback material.
+  try {
+    const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
+  } catch (err) {
+    console.warn('[cobSpinningTop] Environment map failed to load — using direct lighting only:', err);
+  }
 
   // ── Animation: exactly one revolution per 3 seconds, frame-rate
   // independent, paused while the tab isn't visible ───────────────────

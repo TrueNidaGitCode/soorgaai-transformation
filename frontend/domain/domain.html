@@ -250,21 +250,22 @@
       </nav>
 
       <div class="pd-header aria-header">
-        <div class="aria-header__top">
-          <h1 class="aria-header__title">Data Connections</h1>
-          <span class="aria-status-badge" id="aria-status-badge">
-            <span class="aria-status-badge__dot"></span>
-            <span id="aria-status-badge__text">Checking&hellip;</span>
-          </span>
-        </div>
+        <h1 class="aria-header__title">Data Connections</h1>
         <p class="pd-header__sub">Connect the sources required by this blueprint.</p>
-        <p class="aria-breadcrumb">Cob <span class="aria-breadcrumb__sep">/</span> <span id="aria-recap-name"></span></p>
       </div>
 
-      <hr class="aria-divider">
-
-      <p class="pd-substage-label">Required Data</p>
-      <div class="aria-cards" id="aria-cards"></div>
+      <div class="aria-table-wrap">
+        <table class="aria-table">
+          <thead>
+            <tr>
+              <th>Dataset</th>
+              <th>Tools to Configure</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="aria-required-body"></tbody>
+        </table>
+      </div>
 
       <div class="aria-connector-panels">
         <div class="aria-connector" id="aria-conf-panel" style="display:none">

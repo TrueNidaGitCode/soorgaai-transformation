@@ -2,24 +2,25 @@
  * Svarg — Aria screen (real product)
  *
  * Reached from Approve on the Cob/Opportunities screen (dispatches
- * 'aria:show', see blueprintGenerate.js). Recaps the approved
- * opportunity, and renders one card per dataset Cob's Data Readiness
- * capability flagged as required (already present in the blueprint
- * fetch, no extra request) — each card shows whether its source is
- * actually linked to this blueprint yet, and a Connect/Configure action
- * that opens the matching connector panel. Reuses the same
- * blueprint-scoped, generic linking endpoints Knowledge Sources already
- * uses for Confluence, plus the equivalent for Jira
- * (POST /jira/personal/link-to-blueprint).
+ * 'aria:show', see blueprintGenerate.js). Renders one table row per
+ * dataset Cob's Data Readiness capability flagged as required (already
+ * present in the blueprint fetch, no extra request) — each row shows
+ * the tool(s) it typically lives in and whether that source is actually
+ * linked to this blueprint yet. "Configure" is a real link to
+ * /domain/domain.html?view=aria&connect=<source>, which reloads onto
+ * this same screen with that connector panel already expanded — the
+ * panel's own status check then decides whether to show the OAuth
+ * "Connect" button (a real redirect to Atlassian) or the space/page
+ * (or project/issue) picker. Reuses the same blueprint-scoped, generic
+ * linking endpoints Knowledge Sources already uses for Confluence, plus
+ * the equivalent for Jira (POST /jira/personal/link-to-blueprint).
  *
  * Connection status per dataset is a text match of the dataset's
  * typicalSource against "confluence"/"jira" — the only two connectors
  * that exist today. A dataset whose typical source doesn't mention
- * either (e.g. a CRM or product analytics DB) has no connector yet and
- * honestly shows as unsupported rather than offering a dead button.
+ * either (e.g. Polarion, TestRail) has no connector yet and honestly
+ * shows as unsupported rather than offering a dead link.
  */
-
-import { findAiUseCasesPrioritizationSection } from './blueprintGenerate.js';
 
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
@@ -44,8 +45,6 @@ function esc(text) {
 
 let _cachedDatasets = [];
 
-// ── Header recap ─────────────────────────────────────────────────────────
-
 function findDatasetsSection(bp) {
   const domain = (bp.domains || []).find(d => d.domainId === 'data-readiness');
   if (!domain) return null;
@@ -57,22 +56,7 @@ function findDatasetsSection(bp) {
   return null;
 }
 
-function priorityClass(priority) {
-  const p = String(priority || '').toLowerCase();
-  return ['high', 'medium', 'low'].includes(p) ? p : 'medium';
-}
-
-function renderHeaderRecap(bp) {
-  const oppSection = findAiUseCasesPrioritizationSection(bp);
-  if (!oppSection) return;
-  const brief = oppSection.brief || {};
-  const allInitiatives = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
-  const recommended = brief.recommendedStartingPoint || '';
-  const winner = allInitiatives.find(name => name && recommended.includes(name));
-  document.getElementById('aria-recap-name').textContent = winner || recommended;
-}
-
-// ── Required Data cards ──────────────────────────────────────────────────────
+// ── Required Data table ──────────────────────────────────────────────────────
 
 function datasetStatus(mentionsConfluence, mentionsJira, confCount, jiraCount) {
   if (!mentionsConfluence && !mentionsJira) return 'none';
@@ -83,19 +67,8 @@ function datasetStatus(mentionsConfluence, mentionsJira, confCount, jiraCount) {
   return 'none';
 }
 
-function sourceDetail(mentionsConfluence, mentionsJira, confCount, jiraCount) {
-  if (mentionsConfluence && mentionsJira) {
-    const parts = [
-      mentionsConfluence ? `Confluence ${confCount > 0 ? 'connected' : 'pending'}` : null,
-      mentionsJira ? `Jira ${jiraCount > 0 ? 'connected' : 'pending'}` : null,
-    ].filter(Boolean);
-    return parts.join(' · ');
-  }
-  if (mentionsConfluence && confCount > 0) return `${confCount} page${confCount === 1 ? '' : 's'} selected`;
-  if (mentionsJira && jiraCount > 0) return `${jiraCount} issue${jiraCount === 1 ? '' : 's'} selected`;
-  return '';
-}
-
+// Which panel Configure should send the user to — whichever mentioned
+// source still needs attention, defaulting to Confluence if both do.
 function primaryActionSource(mentionsConfluence, mentionsJira, confCount, jiraCount) {
   if (mentionsConfluence && confCount === 0) return 'confluence';
   if (mentionsJira && jiraCount === 0) return 'jira';
@@ -104,60 +77,48 @@ function primaryActionSource(mentionsConfluence, mentionsJira, confCount, jiraCo
   return null;
 }
 
-function renderCard(d, confCount, jiraCount) {
+function configureHref(source) {
+  return `/domain/domain.html?view=aria&connect=${source}`;
+}
+
+function statusCellHtml(status, actionSource) {
+  if (status === 'connected') {
+    return `<span class="aria-status-pill aria-status-pill--connected">&check; Connected</span>`;
+  }
+  if (status === 'partial') {
+    return `<span class="aria-status-pill aria-status-pill--partial">&#9681; Partial</span> `
+      + `<a href="${configureHref(actionSource)}" class="aria-configure-link">Configure &rarr;</a>`;
+  }
+  if (actionSource) {
+    return `<a href="${configureHref(actionSource)}" class="aria-configure-link">Configure &rarr;</a>`;
+  }
+  return `<span class="aria-status-pill aria-status-pill--none">Not yet supported</span>`;
+}
+
+function renderRow(d, confCount, jiraCount) {
   const s = String(d.typicalSource || '').toLowerCase();
   const mentionsConfluence = s.includes('confluence');
   const mentionsJira = s.includes('jira');
 
   const status = datasetStatus(mentionsConfluence, mentionsJira, confCount, jiraCount);
-  const detail = sourceDetail(mentionsConfluence, mentionsJira, confCount, jiraCount);
   const actionSource = primaryActionSource(mentionsConfluence, mentionsJira, confCount, jiraCount);
 
-  let statusEl;
-  if (status === 'none' && actionSource) {
-    statusEl = `<button type="button" class="aria-card__status aria-card__status--none" data-source="${actionSource}">&#9675; Connect &rarr;</button>`;
-  } else if (status === 'partial') {
-    statusEl = `<span class="aria-card__status aria-card__status--partial">&#9681; Partial</span>`;
-  } else if (status === 'connected') {
-    statusEl = `<span class="aria-card__status aria-card__status--connected">&check; Connected</span>`;
-  } else {
-    statusEl = `<span class="aria-card__unsupported">No connector available yet</span>`;
-  }
-
-  const showConfigure = actionSource && status !== 'none';
-
   return `
-    <div class="aria-card">
-      <div class="aria-card__top">
-        <span class="aria-card__name">${esc(d.name)}</span>
-        <span class="pd-dataset__priority pd-dataset__priority--${priorityClass(d.priority)}">${esc((d.priority || '').toUpperCase())}</span>
-      </div>
-      <p class="aria-card__source">${esc(d.typicalSource)}</p>
-      <div class="aria-card__footer">
-        <p class="aria-card__detail">${esc(detail)}</p>
-        ${statusEl}
-      </div>
-      ${showConfigure ? `<button type="button" class="aria-card__configure" data-source="${actionSource}">Configure &rarr;</button>` : ''}
-    </div>
+    <tr>
+      <td>
+        <span class="aria-row-name__title">${esc(d.name)}</span>
+        <span class="aria-row-name__desc">${esc(d.purpose)}</span>
+      </td>
+      <td class="aria-row-tools">${esc(d.typicalSource)}</td>
+      <td>${statusCellHtml(status, actionSource)}</td>
+    </tr>
   `;
 }
 
-function renderCards(datasets, confCount, jiraCount) {
-  const container = document.getElementById('aria-cards');
-  container.innerHTML = datasets.map(d => renderCard(d, confCount, jiraCount)).join('')
-    || `<p class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</p>`;
-
-  let connectedCount = 0;
-  datasets.forEach(d => {
-    const s = String(d.typicalSource || '').toLowerCase();
-    const status = datasetStatus(s.includes('confluence'), s.includes('jira'), confCount, jiraCount);
-    if (status === 'connected') connectedCount++;
-  });
-
-  const badge = document.getElementById('aria-status-badge');
-  const badgeText = document.getElementById('aria-status-badge__text');
-  badge.classList.toggle('aria-status-badge--ready', connectedCount > 0);
-  badgeText.textContent = `${connectedCount} Connected`;
+function renderTable(datasets, confCount, jiraCount) {
+  const body = document.getElementById('aria-required-body');
+  body.innerHTML = datasets.map(d => renderRow(d, confCount, jiraCount)).join('')
+    || `<tr><td colspan="3" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
 }
 
 // ── Connector panels: open/close + linked-doc refresh ────────────────────────
@@ -188,9 +149,9 @@ async function refreshLinked(blueprintId) {
       linkedList.style.display = 'none';
     }
 
-    renderCards(_cachedDatasets, confDocs.length, jiraDocs.length);
+    renderTable(_cachedDatasets, confDocs.length, jiraDocs.length);
   } catch {
-    renderCards(_cachedDatasets, 0, 0);
+    renderTable(_cachedDatasets, 0, 0);
   }
 }
 
@@ -429,26 +390,23 @@ function wireStaticControls() {
   document.querySelectorAll('.aria-connector__close').forEach(btn => {
     btn.addEventListener('click', () => closePanel(btn.dataset.panel));
   });
-
-  // Delegated: cards are re-rendered on every refresh, so their
-  // Connect/Configure buttons can't be wired individually.
-  document.getElementById('aria-cards')?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-source]');
-    if (btn) openPanel(btn.dataset.source);
-  });
 }
 
 document.addEventListener('aria:show', (e) => {
   const bp = e.detail?.blueprint;
   if (!bp) return;
   wireStaticControls();
-  renderHeaderRecap(bp);
 
   const datasetsSection = findDatasetsSection(bp);
   _cachedDatasets = datasetsSection?.brief?.datasets || [];
-  renderCards(_cachedDatasets, 0, 0);
+  renderTable(_cachedDatasets, 0, 0);
 
   initConfluenceSection(bp._id);
   initJiraSection(bp._id);
   refreshLinked(bp._id);
+
+  // Configure links redirect here with ?connect=<source> — land straight
+  // on the matching panel instead of the bare table.
+  const connectParam = new URLSearchParams(window.location.search).get('connect');
+  if (connectParam === 'confluence' || connectParam === 'jira') openPanel(connectParam);
 });

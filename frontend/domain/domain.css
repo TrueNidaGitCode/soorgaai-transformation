@@ -2792,44 +2792,6 @@
    portrait docks bottom-right the same way on both screens. */
 .screen--aria { padding: 0; min-height: 100vh; }
 
-/* Real dataset priority can be LOW, not just HIGH/MEDIUM which is all
-   the demo's hardcoded data ever used — pipeline-demo.css only defines
-   those two variants. */
-.pd-dataset__priority--low { background: rgba(92,197,167,0.1); color: #5CC5A7; }
-
-.aria-header__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.aria-status-badge {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.55);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.aria-status-badge__dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: rgba(255,255,255,0.3); flex-shrink: 0;
-  transition: background 0.2s;
-}
-.aria-status-badge--ready {
-  background: rgba(92,197,167,0.1);
-  border-color: rgba(92,197,167,0.35);
-  color: #5CC5A7;
-}
-.aria-status-badge--ready .aria-status-badge__dot { background: #5CC5A7; }
-
 .aria-header__title {
   font-family: var(--font-serif);
   font-size: clamp(1.4rem, 2.4vw, 1.8rem);
@@ -2838,98 +2800,59 @@
   margin: 0;
 }
 
-.aria-breadcrumb {
-  margin: 10px 0 0;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.45);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.aria-breadcrumb__sep { margin: 0 8px; opacity: 0.4; }
-.aria-breadcrumb span:last-child {
-  color: #5CC5A7;
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.aria-divider {
-  border: none;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  margin: 24px 0 20px;
-}
-
-.aria-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.aria-card {
-  padding: 16px 18px;
-  background: rgba(255,255,255,0.025);
+.aria-table-wrap {
+  margin-top: 24px;
+  overflow-x: auto;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
 }
-.aria-card__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.aria-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
 }
-.aria-card__name { font-size: 14.5px; font-weight: 600; color: #fff; }
-.aria-card__source { margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.45); }
-
-.aria-card__footer {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 10px;
+.aria-table th {
+  text-align: left;
+  padding: 12px 16px;
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
-.aria-card__detail { margin: 0; font-size: 12.5px; color: rgba(255,255,255,0.55); }
+.aria-table td {
+  padding: 14px 16px;
+  color: rgba(255,255,255,0.8);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: top;
+}
+.aria-table tr:last-child td { border-bottom: none; }
 
-.aria-card__status {
+.aria-row-name__title { display: block; font-size: 14px; font-weight: 600; color: #fff; }
+.aria-row-name__desc  { display: block; margin-top: 3px; font-size: 12.5px; color: rgba(255,255,255,0.45); }
+
+.aria-table td.aria-row-tools { color: rgba(255,255,255,0.65); white-space: nowrap; }
+
+.aria-status-pill {
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
 }
-.aria-card__status--connected { color: #5CC5A7; }
-.aria-card__status--partial { color: #D4AF6E; }
-.aria-card__status--none { color: rgba(255,255,255,0.4); }
+.aria-status-pill--connected { color: #5CC5A7; }
+.aria-status-pill--partial { color: #D4AF6E; }
+.aria-status-pill--none { color: rgba(255,255,255,0.3); font-weight: 500; font-style: italic; }
 
-button.aria-card__status--none {
-  background: transparent;
-  border: none;
-  font-family: inherit;
-  cursor: pointer;
-  padding: 0;
-}
-button.aria-card__status--none:hover { color: #5CC5A7; }
-
-.aria-card__unsupported {
-  font-size: 12px;
-  color: rgba(255,255,255,0.3);
-  font-style: italic;
-}
-
-.aria-card__configure {
-  display: block;
-  margin: 10px 0 0 auto;
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 6px;
-  padding: 5px 12px;
-  color: rgba(255,255,255,0.7);
-  font-size: 12.5px;
-  font-family: inherit;
+.aria-configure-link {
+  color: #5CC5A7;
   font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
 }
-.aria-card__configure:hover { border-color: #5CC5A7; color: #fff; }
+.aria-configure-link:hover { text-decoration: underline; }
 
-.aria-connector-panels { margin-top: 20px; }
+.aria-connector-panels { margin-top: 24px; }
 
 .aria-connector {
   margin-top: 20px;

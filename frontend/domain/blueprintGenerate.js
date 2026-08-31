@@ -507,7 +507,16 @@ async function fetchTransformationBlueprint() {
   if (resp.status === 401) { window.handleSessionExpired(); throw new Error('SESSION_EXPIRED'); }
   if (resp.status === 404) return null;
   if (!resp.ok) throw new Error('Failed to load blueprint');
-  return resp.json();
+  const bp = await resp.json();
+  // Pin whichever blueprint this tab ends up looking at — without an id,
+  // the backend falls back to "most recently created", which for an
+  // account with several blueprints (approved and not) can silently pick
+  // a *different* one on the next call than the one just approved,
+  // bouncing a refresh back to the Cob gate instead of Aria/workspace.
+  // Same key the sidebar-pick flow already uses, so this is just closing
+  // the gap for the "landed here without picking" path.
+  if (bp?._id) sessionStorage.setItem('soorgaai_open_blueprint_id', bp._id);
+  return bp;
 }
 
 async function loadBlueprintAndTransition(transformationId) {
@@ -578,6 +587,11 @@ function initGenerateForm() {
     if (submitBtn) submitBtn.disabled = true;
     if (submitText) submitText.style.display = 'none';
     if (submitLoader) submitLoader.style.display = '';
+
+    // Clear any pinned blueprint id (see fetchTransformationBlueprint) —
+    // otherwise the reload below would fetch the OLD pinned blueprint
+    // instead of the one just created, same as index.js's generate flow.
+    sessionStorage.removeItem('soorgaai_open_blueprint_id');
 
     try {
       const resp = await fetch(`${API_BASE}/strategy-canvas/generate-transformation`, {

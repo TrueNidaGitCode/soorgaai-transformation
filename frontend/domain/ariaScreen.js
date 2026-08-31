@@ -58,14 +58,9 @@ function findDatasetsSection(bp) {
   return null;
 }
 
-function priorityClass(priority) {
-  const p = String(priority || '').toLowerCase();
-  return ['high', 'medium', 'low'].includes(p) ? p : 'medium';
-}
-
 // The opportunity name only exists once AI Use Cases has finished
 // generating. Until then (or if the section shape ever changes) show
-// nothing rather than a dangling "Blueprint:" label with no value.
+// nothing rather than a dangling label with no value.
 function renderBreadcrumb(bp) {
   const crumb = document.querySelector('.aria-breadcrumb');
   const oppSection = findAiUseCasesPrioritizationSection(bp);
@@ -82,57 +77,60 @@ function renderBreadcrumb(bp) {
 
 // ── Required Data table ──────────────────────────────────────────────────────
 
-function datasetStatus(mentionsConfluence, mentionsJira, confCount, jiraCount) {
-  if (!mentionsConfluence && !mentionsJira) return 'none';
-  const confOk = !mentionsConfluence || confCount > 0;
-  const jiraOk = !mentionsJira || jiraCount > 0;
-  if (confOk && jiraOk) return 'connected';
-  if ((mentionsConfluence && confCount > 0) || (mentionsJira && jiraCount > 0)) return 'partial';
-  return 'none';
+// Cob writes typicalSource as a list of candidate tools ("Jira, Polarion,
+// TestRail"). Only one of those matters here: the tool this organization
+// actually uses, which we know from the connectors Svarg supports. So
+// resolve the list down to that single tool rather than showing all the
+// options, and return null when none of them is a tool we can connect —
+// those datasets get filled from analysis instead.
+const CONNECTORS = [
+  { id: 'confluence', label: 'Confluence', match: 'confluence', letter: 'C' },
+  { id: 'jira', label: 'Jira', match: 'jira', letter: 'J' },
+];
+
+function resolveSource(typicalSource, confCount, jiraCount) {
+  const s = String(typicalSource || '').toLowerCase();
+  const mentioned = CONNECTORS.filter(c => s.includes(c.match));
+  if (!mentioned.length) return null;
+  // If the dataset names more than one supported tool, the one that
+  // actually has content linked is the one in use.
+  const linked = { confluence: confCount, jira: jiraCount };
+  return mentioned.find(c => linked[c.id] > 0) || mentioned[0];
 }
 
-// Which panel Configure should send the user to — whichever mentioned
-// source still needs attention, defaulting to Confluence if both do.
-function primaryActionSource(mentionsConfluence, mentionsJira, confCount, jiraCount) {
-  if (mentionsConfluence && confCount === 0) return 'confluence';
-  if (mentionsJira && jiraCount === 0) return 'jira';
-  if (mentionsConfluence) return 'confluence';
-  if (mentionsJira) return 'jira';
-  return null;
+function rowState(d, confCount, jiraCount) {
+  const source = resolveSource(d.typicalSource, confCount, jiraCount);
+  if (!source) return { state: 'inferred', source: null };
+  const count = source.id === 'confluence' ? confCount : jiraCount;
+  return { state: count > 0 ? 'connected' : 'not-connected', source };
 }
 
-function configureHref(source) {
-  return `/domain/domain.html?view=aria&connect=${source}`;
-}
-
-function sourceIconHtml(mentionsConfluence, mentionsJira, typicalSource) {
-  if (mentionsConfluence) return `<span class="aria-source__icon aria-source__icon--confluence">C</span>`;
-  if (mentionsJira) return `<span class="aria-source__icon aria-source__icon--jira">J</span>`;
-  const letter = String(typicalSource || '?').trim().charAt(0).toUpperCase() || '?';
-  return `<span class="aria-source__icon aria-source__icon--other">${esc(letter)}</span>`;
-}
-
-function statusHtml(status) {
-  if (status === 'connected') return `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Connected</span>`;
-  if (status === 'partial') return `<span class="aria-status aria-status--partial"><span class="aria-status-dot"></span>Partial</span>`;
-  return `<span class="aria-status aria-status--none"><span class="aria-status-dot"></span>Not Connected</span>`;
-}
-
-// A dead "Connect" link for a source we don't actually support would be
-// worse than no link — Polarion/TestRail/etc. get an em dash instead.
-function actionHtml(status, actionSource) {
-  if (!actionSource) return `<span class="aria-action-none">&mdash;</span>`;
-  if (status === 'none') return `<a href="${configureHref(actionSource)}" class="aria-action-btn aria-action-btn--primary">Connect &rarr;</a>`;
-  return `<a href="${configureHref(actionSource)}" class="aria-action-btn aria-action-btn--ghost">Configure &rarr;</a>`;
+function connectHref(sourceId) {
+  return `/domain/domain.html?view=aria&connect=${sourceId}`;
 }
 
 function renderRow(d, confCount, jiraCount) {
-  const s = String(d.typicalSource || '').toLowerCase();
-  const mentionsConfluence = s.includes('confluence');
-  const mentionsJira = s.includes('jira');
+  const { state, source } = rowState(d, confCount, jiraCount);
 
-  const status = datasetStatus(mentionsConfluence, mentionsJira, confCount, jiraCount);
-  const actionSource = primaryActionSource(mentionsConfluence, mentionsJira, confCount, jiraCount);
+  let sourceCell, statusCell, actionCell;
+  if (state === 'inferred') {
+    // No connector exists for this data, so there is nothing to connect.
+    // Say what will happen instead of showing a dead control.
+    sourceCell = `<span class="aria-source aria-source--none">Not available</span>`;
+    statusCell = `<span class="aria-status aria-status--inferred"><span class="aria-status-dot"></span>Filled from analysis</span>`;
+    actionCell = `<span class="aria-action-none">&mdash;</span>`;
+  } else {
+    sourceCell = `<span class="aria-source">`
+      + `<span class="aria-source__icon aria-source__icon--${source.id}">${source.letter}</span>${esc(source.label)}</span>`;
+    statusCell = state === 'connected'
+      ? `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Connected</span>`
+      : `<span class="aria-status aria-status--none"><span class="aria-status-dot"></span>Not connected</span>`;
+    // Connect is the only action — choosing spaces/pages happens inside
+    // the connector panel it opens, so there is no separate Configure.
+    actionCell = state === 'connected'
+      ? `<span class="aria-action-none">&mdash;</span>`
+      : `<a href="${connectHref(source.id)}" class="aria-action-btn aria-action-btn--primary">Connect &rarr;</a>`;
+  }
 
   return `
     <tr>
@@ -140,37 +138,51 @@ function renderRow(d, confCount, jiraCount) {
         <span class="aria-row-name__title">${esc(d.name)}</span>
         <span class="aria-row-name__desc">${esc(d.purpose)}</span>
       </td>
-      <td><span class="aria-priority-pill aria-priority-pill--${priorityClass(d.priority)}">${esc((d.priority || '').toUpperCase())}</span></td>
-      <td><span class="aria-source">${sourceIconHtml(mentionsConfluence, mentionsJira, d.typicalSource)}${esc(d.typicalSource)}</span></td>
-      <td>${statusHtml(status)}</td>
-      <td>${actionHtml(status, actionSource)}</td>
+      <td>${sourceCell}</td>
+      <td>${statusCell}</td>
+      <td>${actionCell}</td>
     </tr>
   `;
 }
 
-function eachDatasetStatus(datasets, confCount, jiraCount, fn) {
+function tally(datasets, confCount, jiraCount) {
+  let connected = 0, toConnect = 0, inferred = 0;
   datasets.forEach(d => {
-    const s = String(d.typicalSource || '').toLowerCase();
-    fn(datasetStatus(s.includes('confluence'), s.includes('jira'), confCount, jiraCount));
+    const { state } = rowState(d, confCount, jiraCount);
+    if (state === 'connected') connected++;
+    else if (state === 'not-connected') toConnect++;
+    else inferred++;
   });
+  return { connected, toConnect, inferred };
 }
 
 function updateReadinessCard(datasets, confCount, jiraCount) {
-  let ready = 0, partial = 0, missing = 0;
-  eachDatasetStatus(datasets, confCount, jiraCount, (status) => {
-    if (status === 'connected') ready++;
-    else if (status === 'partial') partial++;
-    else missing++;
-  });
+  const { connected, toConnect, inferred } = tally(datasets, confCount, jiraCount);
 
-  const total = datasets.length;
-  const pct = total ? Math.round((ready / total) * 100) : 0;
-  document.getElementById('aria-readiness-fraction').textContent = `${ready} of ${total}`;
+  // Percentage is over what's actually connectable — datasets with no
+  // connector can never be connected, so counting them would make 100%
+  // permanently unreachable and the bar meaningless.
+  const connectable = connected + toConnect;
+  const pct = connectable ? Math.round((connected / connectable) * 100) : 0;
+
+  document.getElementById('aria-readiness-fraction').textContent = `${connected} of ${connectable}`;
   document.getElementById('aria-readiness-pct').textContent = `${pct}%`;
   document.getElementById('aria-readiness-fill').style.width = `${pct}%`;
-  document.getElementById('aria-legend-ready').textContent = `${ready} Ready`;
-  document.getElementById('aria-legend-partial').textContent = `${partial} Partial`;
-  document.getElementById('aria-legend-missing').textContent = `${missing} Missing`;
+  document.getElementById('aria-legend-ready').textContent = `${connected} Connected`;
+  document.getElementById('aria-legend-missing').textContent = `${toConnect} To connect`;
+  document.getElementById('aria-legend-inferred').textContent = `${inferred} From analysis`;
+
+  const note = document.getElementById('aria-note');
+  const noteText = document.getElementById('aria-note-text');
+  if (note && noteText) {
+    if (inferred > 0) {
+      noteText.textContent = `${inferred} dataset${inferred === 1 ? '' : 's'} ha${inferred === 1 ? 's' : 've'} no connector available yet. `
+        + `Svarg will fill th${inferred === 1 ? 'at' : 'ose'} in from its own analysis instead of your documents.`;
+      note.style.display = '';
+    } else {
+      note.style.display = 'none';
+    }
+  }
 }
 
 // ── Process Connected Data ───────────────────────────────────────────────────
@@ -179,23 +191,19 @@ function updateReadinessCard(datasets, confCount, jiraCount) {
 // to run something that doesn't exist.
 
 function updateProcessBar(datasets, confCount, jiraCount) {
-  let connectable = 0;
-  eachDatasetStatus(datasets, confCount, jiraCount, (status) => {
-    if (status === 'connected' || status === 'partial') connectable++;
-  });
-
+  const { connected } = tally(datasets, confCount, jiraCount);
   const btn = document.getElementById('aria-process-btn');
   const hint = document.getElementById('aria-process-hint');
-  if (btn) btn.disabled = connectable === 0;
-  if (hint) hint.textContent = connectable > 0
-    ? `${connectable} dataset${connectable === 1 ? '' : 's'} have linked data`
+  if (btn) btn.disabled = connected === 0;
+  if (hint) hint.textContent = connected > 0
+    ? `${connected} dataset${connected === 1 ? '' : 's'} connected`
     : 'Connect at least one source to process data';
 }
 
 function renderTable(datasets, confCount, jiraCount) {
   const body = document.getElementById('aria-required-body');
   body.innerHTML = datasets.map(d => renderRow(d, confCount, jiraCount)).join('')
-    || `<tr><td colspan="5" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
+    || `<tr><td colspan="4" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
   updateReadinessCard(datasets, confCount, jiraCount);
   updateProcessBar(datasets, confCount, jiraCount);
 }

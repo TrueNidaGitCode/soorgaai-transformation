@@ -2875,11 +2875,9 @@
   text-decoration: none;
   transition: border-color 0.15s, background 0.15s;
 }
-.aria-breadcrumb:hover { background: rgba(92,197,167,0.13); border-color: rgba(92,197,167,0.45); }
 .aria-breadcrumb svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--aria-accent-2); }
 .aria-breadcrumb span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aria-breadcrumb strong { color: #fff; font-weight: 600; }
-.aria-breadcrumb__chev { color: rgba(255,255,255,0.35) !important; }
 
 .aria-readiness-card {
   display: flex;
@@ -2916,8 +2914,8 @@
 .aria-legend-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: rgba(255,255,255,0.6); white-space: nowrap; }
 .aria-legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .aria-legend-dot--ready { background: #5CC5A7; }
-.aria-legend-dot--partial { background: #FBBF24; }
 .aria-legend-dot--missing { background: rgba(255,255,255,0.3); }
+.aria-legend-dot--inferred { background: var(--aria-accent-2); opacity: 0.7; }
 
 .aria-required-label { margin-top: 26px; }
 
@@ -2946,10 +2944,9 @@
   border-bottom: 1px solid rgba(255,255,255,0.16);
   white-space: nowrap;
 }
-.aria-table th:nth-child(1) { width: 30%; }
-.aria-table th:nth-child(2) { width: 11%; }
+.aria-table th:nth-child(1) { width: 38%; }
+.aria-table th:nth-child(2) { width: 20%; }
 .aria-table th:nth-child(3) { width: 24%; }
-.aria-table th:nth-child(4) { width: 17%; }
 .aria-table__action-col { width: 18%; }
 .aria-table td {
   padding: 12px 14px;
@@ -2965,18 +2962,6 @@
 .aria-row-name__title { display: block; font-size: 13.5px; font-weight: 600; color: #fff; }
 .aria-row-name__desc  { display: block; margin-top: 3px; font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.4; }
 
-.aria-priority-pill {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 5px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-.aria-priority-pill--high   { background: rgba(239,68,68,0.15); color: #FCA5A5; }
-.aria-priority-pill--medium { background: rgba(245,158,11,0.15); color: #FCD34D; }
-.aria-priority-pill--low    { background: rgba(92,197,167,0.14); color: #8ED9C2; }
 
 .aria-source { display: flex; align-items: center; gap: 7px; color: rgba(255,255,255,0.65); font-size: 12.5px; line-height: 1.4; }
 .aria-source__icon {
@@ -2993,16 +2978,30 @@
 }
 .aria-source__icon--confluence { background: #2684FF; }
 .aria-source__icon--jira { background: #0052CC; }
-.aria-source__icon--other { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.5); }
 
 .aria-status { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
 .aria-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .aria-status--connected .aria-status-dot { background: #5CC5A7; }
 .aria-status--connected { color: rgba(255,255,255,0.75); }
-.aria-status--partial .aria-status-dot { background: #FBBF24; }
-.aria-status--partial { color: rgba(255,255,255,0.75); }
 .aria-status--none .aria-status-dot { background: rgba(255,255,255,0.3); }
 .aria-status--none { color: rgba(255,255,255,0.4); font-weight: 500; }
+/* Not a failure state — this data simply has no connector, and the
+   blueprint fills it from analysis. Reads as informational, not missing. */
+.aria-status--inferred .aria-status-dot { background: var(--aria-accent-2); opacity: 0.7; }
+.aria-status--inferred { color: rgba(255,255,255,0.55); font-weight: 500; }
+
+.aria-source--none { color: rgba(255,255,255,0.3); font-style: italic; }
+
+.aria-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 2px 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.45);
+}
+.aria-note__icon { color: var(--aria-accent-2); flex-shrink: 0; }
 
 .aria-action-btn {
   display: inline-block;
@@ -3016,8 +3015,6 @@
 }
 .aria-action-btn--primary { background: var(--aria-accent); color: #fff; }
 .aria-action-btn--primary:hover { opacity: 0.85; }
-.aria-action-btn--ghost { background: transparent; border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.8); }
-.aria-action-btn--ghost:hover { border-color: var(--aria-accent-2); color: #fff; }
 .aria-action-none { color: rgba(255,255,255,0.25); font-size: 12px; }
 
 .aria-process-bar {

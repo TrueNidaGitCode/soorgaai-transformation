@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
-  <link rel="stylesheet" href="domain.css?v=5">
+  <link rel="stylesheet" href="domain.css?v=6">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -259,25 +259,24 @@
         </div>
       </div>
 
-      <a href="/domain/domain.html?view=cob" class="aria-breadcrumb">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <span>Blueprint: <strong id="aria-recap-name"></strong></span>
-        <svg class="aria-breadcrumb__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
+      <div class="aria-breadcrumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Selected use case: <strong id="aria-recap-name"></strong></span>
+      </div>
 
       <div class="aria-readiness-card">
         <div class="aria-readiness-card__main">
           <p class="pd-substage-label" style="margin:0">Data Readiness</p>
-          <p class="aria-readiness-card__count"><span id="aria-readiness-fraction">0 of 0</span> <span class="aria-readiness-card__count-label">datasets ready</span></p>
+          <p class="aria-readiness-card__count"><span id="aria-readiness-fraction">0 of 0</span> <span class="aria-readiness-card__count-label" id="aria-readiness-label">sources connected</span></p>
           <div class="aria-readiness-card__bar-row">
             <div class="aria-readiness-card__bar"><div class="aria-readiness-card__bar-fill" id="aria-readiness-fill" style="width:0%"></div></div>
             <span class="aria-readiness-card__pct" id="aria-readiness-pct">0%</span>
           </div>
         </div>
         <div class="aria-readiness-card__legend">
-          <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--ready"></span><span id="aria-legend-ready">0 Ready</span></span>
-          <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--partial"></span><span id="aria-legend-partial">0 Partial</span></span>
-          <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--missing"></span><span id="aria-legend-missing">0 Missing</span></span>
+          <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--ready"></span><span id="aria-legend-ready">0 Connected</span></span>
+          <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--missing"></span><span id="aria-legend-missing">0 To connect</span></span>
+          <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--inferred"></span><span id="aria-legend-inferred">0 From analysis</span></span>
         </div>
       </div>
 
@@ -287,7 +286,6 @@
           <thead>
             <tr>
               <th>Dataset</th>
-              <th>Priority</th>
               <th>Source</th>
               <th>Status</th>
               <th class="aria-table__action-col">Action</th>
@@ -296,6 +294,11 @@
           <tbody id="aria-required-body"></tbody>
         </table>
       </div>
+
+      <p class="aria-note" id="aria-note" style="display:none">
+        <span class="aria-note__icon">&#9432;</span>
+        <span id="aria-note-text"></span>
+      </p>
 
       <div class="aria-connector-panels">
         <div class="aria-connector" id="aria-conf-panel" style="display:none">
@@ -475,6 +478,6 @@
 
   <script type="module" src="blueprintGenerate.js?v=2"></script>
   <script type="module" src="blueprintWorkspace.js?v=2"></script>
-  <script type="module" src="ariaScreen.js?v=4"></script>
+  <script type="module" src="ariaScreen.js?v=5"></script>
 </body>
 </html>

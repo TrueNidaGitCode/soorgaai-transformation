@@ -335,7 +335,7 @@ export async function getLinkedDocuments(req, res) {
     if (!blueprint) return res.status(404).json({ error: 'Blueprint not found or you do not have access to it.' });
 
     const docs = await LinkedProjectDocument.find({ blueprintId })
-      .select('sourceId title spaceKey extractionStatus createdAt')
+      .select('sourceId title spaceKey projectKey sourceType extractionStatus createdAt')
       .lean();
 
     return res.json({ documents: docs });

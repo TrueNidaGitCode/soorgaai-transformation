@@ -2779,20 +2779,168 @@
 
 /* ══════════════════════════════════════════════════════════════════════════════
    SCREEN 2.7 — Aria
-   .pd-page/.pw-steps/.pd-header*/.pd-winner/.pd-datasets/.pd-dataset/
-   .pw-next-btn/.pw-back-btn/.pw-process-list/.pw-reveal all come from
-   pipeline-demo.css (already linked). New classes here are only the
-   connector-list UI, deliberately not reusing knowledge-sources.css (a
-   second stylesheet dependency isn't worth it for a handful of rules,
-   same reasoning as the Cob screen not reusing cob.html's .side*).
+   .pd-page/.pw-steps/.pd-header*/.pd-winner/.pw-next-btn/.pw-back-btn/
+   .pw-process-list/.pw-reveal all come from pipeline-demo.css (already
+   linked). New classes here are only the readiness/table/connector UI,
+   deliberately not reusing knowledge-sources.css (a second stylesheet
+   dependency isn't worth it for a handful of rules, same reasoning as
+   the Cob screen not reusing cob.html's .side*).
 ══════════════════════════════════════════════════════════════════════════════ */
 
-.screen--aria { padding: 2.5rem 1.5rem; }
+.screen--aria { padding: 2.5rem 1.5rem; position: relative; }
 
 /* Real dataset priority can be LOW, not just HIGH/MEDIUM which is all
    the demo's hardcoded data ever used — pipeline-demo.css only defines
    those two variants. */
 .pd-dataset__priority--low { background: rgba(92,197,167,0.1); color: #5CC5A7; }
+
+.aria-header__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.aria-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.55);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.aria-status-badge__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,0.3); flex-shrink: 0;
+  transition: background 0.2s;
+}
+.aria-status-badge--ready {
+  background: rgba(92,197,167,0.1);
+  border-color: rgba(92,197,167,0.35);
+  color: #5CC5A7;
+}
+.aria-status-badge--ready .aria-status-badge__dot { background: #5CC5A7; }
+.aria-status-badge--partial {
+  background: rgba(212,175,110,0.1);
+  border-color: rgba(212,175,110,0.35);
+  color: #D4AF6E;
+}
+.aria-status-badge--partial .aria-status-badge__dot { background: #D4AF6E; }
+
+.aria-header__recap {
+  margin: 10px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #5CC5A7;
+}
+
+.aria-section { margin-top: 28px; }
+
+.aria-readiness__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.aria-readiness__count { font-size: 13.5px; color: rgba(255,255,255,0.65); }
+.aria-readiness__pct { font-size: 20px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.aria-readiness__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.aria-readiness__bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3DAFD3, #5CC5A7);
+  transition: width 0.4s ease;
+}
+
+.aria-table-wrap { overflow-x: auto; }
+.aria-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.aria-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.aria-table td {
+  padding: 11px 12px;
+  color: rgba(255,255,255,0.8);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.aria-table tr:last-child td { border-bottom: none; }
+
+.aria-status-icon {
+  display: inline-block;
+  width: 1.1em;
+  text-align: center;
+  margin-right: 4px;
+  font-weight: 700;
+}
+.aria-status-icon--connected { color: #5CC5A7; }
+.aria-status-icon--partial { color: #D4AF6E; }
+.aria-status-icon--none { color: rgba(255,255,255,0.25); }
+
+.aria-source-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.aria-source-row__label { font-size: 14px; font-weight: 600; color: #fff; width: 110px; flex-shrink: 0; }
+.aria-source-row__count { flex: 1; font-size: 13px; color: rgba(255,255,255,0.5); }
+.aria-manage-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  padding: 6px 14px;
+  color: rgba(255,255,255,0.7);
+  font-size: 12.5px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.aria-manage-btn:hover { border-color: #5CC5A7; color: #fff; }
+
+.aria-character {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  height: 60%;
+  max-width: 26%;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0.4;
+  -webkit-mask-image: linear-gradient(90deg, transparent, rgba(0,0,0,0.9) 35%, rgba(0,0,0,0.9) 100%),
+                       linear-gradient(0deg, transparent, rgba(0,0,0,0.9) 25%, rgba(0,0,0,0.9) 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, rgba(0,0,0,0.9) 35%, rgba(0,0,0,0.9) 100%),
+              linear-gradient(0deg, transparent, rgba(0,0,0,0.9) 25%, rgba(0,0,0,0.9) 100%);
+  mask-composite: intersect;
+  pointer-events: none;
+  z-index: 0;
+}
+@media (max-width: 1100px) {
+  .aria-character { display: none; }
+}
 
 .aria-connector {
   margin-top: 20px;

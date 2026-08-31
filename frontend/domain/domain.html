@@ -245,72 +245,101 @@
         </div>
       </nav>
 
-      <div class="pd-header">
-        <p class="pd-header__eyebrow">Aria &middot; Connect and structure your data</p>
-        <h1 class="pd-stage__title">Ground your blueprint in real sources</h1>
-        <p class="pd-header__sub">Connect Confluence and Jira to link the real documents and issues this blueprint should be grounded in.</p>
+      <div class="pd-header aria-header">
+        <div class="aria-header__top">
+          <p class="pd-header__eyebrow">Aria</p>
+          <span class="aria-status-badge" id="aria-status-badge">
+            <span class="aria-status-badge__dot"></span>
+            <span id="aria-status-badge__text">Checking data&hellip;</span>
+          </span>
+        </div>
+        <h1 class="pd-stage__title">Data Architecture</h1>
+        <p class="aria-header__recap" id="aria-recap-name"></p>
+        <p class="pd-header__sub">Connect the data this blueprint needs.</p>
       </div>
 
-      <div class="pd-winner pw-reveal" style="--i:0">
-        <p class="pd-winner__label">Carried from Cob</p>
-        <p class="pd-winner__name" id="aria-recap-name"></p>
-        <p class="pd-winner__why" id="aria-recap-why"></p>
-      </div>
+      <section class="aria-section">
+        <p class="pd-substage-label">Data Readiness</p>
+        <div class="aria-readiness__row">
+          <span class="aria-readiness__count" id="aria-readiness-count">0 of 0 datasets ready</span>
+          <span class="aria-readiness__pct" id="aria-readiness-pct">0%</span>
+        </div>
+        <div class="aria-readiness__bar"><div class="aria-readiness__bar-fill" id="aria-readiness-fill" style="width:0%"></div></div>
+      </section>
 
-      <p class="pd-substage-label">Datasets Cob identified as needed</p>
-      <div class="pd-datasets" id="aria-datasets"></div>
+      <section class="aria-section">
+        <p class="pd-substage-label">Required Data</p>
+        <div class="aria-table-wrap">
+          <table class="aria-table">
+            <thead><tr><th>Dataset</th><th>Priority</th><th>Source</th></tr></thead>
+            <tbody id="aria-required-body"></tbody>
+          </table>
+        </div>
+      </section>
 
-      <p class="pd-substage-label">Connect real sources</p>
+      <section class="aria-section">
+        <p class="pd-substage-label">Connected Sources</p>
 
-      <div class="aria-connector">
-        <h3 class="aria-connector__title">Confluence</h3>
-        <div id="aria-conf-error" class="gen-error" style="display:none"></div>
-        <div id="aria-conf-connected-badge" class="aria-connected-badge" style="display:none">
-          <span class="aria-connected-badge__dot"></span>
-          Connected to <strong id="aria-conf-site"></strong>
+        <div class="aria-source-row">
+          <span class="aria-source-row__label">Confluence</span>
+          <span class="aria-source-row__count" id="aria-conf-summary-count">Not connected</span>
+          <button type="button" class="aria-manage-btn" id="aria-conf-manage-btn">Manage</button>
         </div>
-        <div id="aria-conf-not-connected">
-          <a id="aria-conf-connect-btn" href="#" class="pw-back-btn">Connect Confluence</a>
+        <div class="aria-connector" id="aria-conf-panel" style="display:none">
+          <div id="aria-conf-error" class="gen-error" style="display:none"></div>
+          <div id="aria-conf-connected-badge" class="aria-connected-badge" style="display:none">
+            <span class="aria-connected-badge__dot"></span>
+            Connected to <strong id="aria-conf-site"></strong>
+          </div>
+          <div id="aria-conf-not-connected">
+            <a id="aria-conf-connect-btn" href="#" class="pw-back-btn">Connect Confluence</a>
+          </div>
+          <div id="aria-conf-spaces" style="display:none">
+            <div id="aria-conf-space-list" class="aria-list"></div>
+          </div>
+          <div id="aria-conf-pages" style="display:none">
+            <button type="button" id="aria-conf-back-to-spaces" class="pw-back-btn">&larr; Spaces</button>
+            <label class="aria-select-all"><input type="checkbox" id="aria-conf-select-all"> Select all</label>
+            <div id="aria-conf-page-list" class="aria-list"></div>
+            <button type="button" id="aria-conf-link-btn" class="pw-next-btn" disabled>Link selected pages</button>
+          </div>
+          <div id="aria-conf-linked-list" class="aria-linked-list" style="display:none"></div>
         </div>
-        <div id="aria-conf-spaces" style="display:none">
-          <div id="aria-conf-space-list" class="aria-list"></div>
-        </div>
-        <div id="aria-conf-pages" style="display:none">
-          <button type="button" id="aria-conf-back-to-spaces" class="pw-back-btn">&larr; Spaces</button>
-          <label class="aria-select-all"><input type="checkbox" id="aria-conf-select-all"> Select all</label>
-          <div id="aria-conf-page-list" class="aria-list"></div>
-          <button type="button" id="aria-conf-link-btn" class="pw-next-btn" disabled>Link selected pages</button>
-        </div>
-        <div id="aria-conf-linked-list" class="aria-linked-list" style="display:none"></div>
-      </div>
 
-      <div class="aria-connector">
-        <h3 class="aria-connector__title">Jira</h3>
-        <div id="aria-jira-error" class="gen-error" style="display:none"></div>
-        <div id="aria-jira-scope-missing" class="gen-error" style="display:none">
-          Jira access hasn't been granted on this connection yet. Reconnect below.
-          <br><a id="aria-jira-reconnect-btn" href="#" class="pw-back-btn" style="margin-top:10px;display:inline-block">Reconnect</a>
+        <div class="aria-source-row">
+          <span class="aria-source-row__label">Jira</span>
+          <span class="aria-source-row__count" id="aria-jira-summary-count">Not connected</span>
+          <button type="button" class="aria-manage-btn" id="aria-jira-manage-btn">Manage</button>
         </div>
-        <div id="aria-jira-not-connected" style="display:none">
-          <a id="aria-jira-connect-btn" href="#" class="pw-back-btn">Connect Jira</a>
+        <div class="aria-connector" id="aria-jira-panel" style="display:none">
+          <div id="aria-jira-error" class="gen-error" style="display:none"></div>
+          <div id="aria-jira-scope-missing" class="gen-error" style="display:none">
+            Jira access hasn't been granted on this connection yet. Reconnect below.
+            <br><a id="aria-jira-reconnect-btn" href="#" class="pw-back-btn" style="margin-top:10px;display:inline-block">Reconnect</a>
+          </div>
+          <div id="aria-jira-not-connected" style="display:none">
+            <a id="aria-jira-connect-btn" href="#" class="pw-back-btn">Connect Jira</a>
+          </div>
+          <div id="aria-jira-projects" style="display:none">
+            <div id="aria-jira-project-list" class="aria-list"></div>
+          </div>
+          <div id="aria-jira-issues" style="display:none">
+            <button type="button" id="aria-jira-back-to-projects" class="pw-back-btn">&larr; Projects</button>
+            <label class="aria-select-all"><input type="checkbox" id="aria-jira-select-all"> Select all</label>
+            <div id="aria-jira-issue-list" class="aria-list"></div>
+            <button type="button" id="aria-jira-link-btn" class="pw-next-btn" disabled>Link selected issues</button>
+          </div>
+          <div id="aria-jira-processing" class="pw-process-list" style="display:none"></div>
         </div>
-        <div id="aria-jira-projects" style="display:none">
-          <div id="aria-jira-project-list" class="aria-list"></div>
-        </div>
-        <div id="aria-jira-issues" style="display:none">
-          <button type="button" id="aria-jira-back-to-projects" class="pw-back-btn">&larr; Projects</button>
-          <label class="aria-select-all"><input type="checkbox" id="aria-jira-select-all"> Select all</label>
-          <div id="aria-jira-issue-list" class="aria-list"></div>
-          <button type="button" id="aria-jira-link-btn" class="pw-next-btn" disabled>Link selected issues</button>
-        </div>
-        <div id="aria-jira-processing" class="pw-process-list" style="display:none"></div>
-      </div>
+      </section>
 
       <div class="pw-actions">
-        <button type="button" class="pw-next-btn" id="aria-continue-btn">Continue to blueprint &rarr;</button>
+        <button type="button" class="pw-next-btn" id="aria-continue-btn">Continue to Technology &rarr;</button>
       </div>
 
     </div>
+
+    <img class="aria-character" src="/assets/aria-character.png" alt="" aria-hidden="true" onerror="this.style.display='none'">
 
   </main>
 

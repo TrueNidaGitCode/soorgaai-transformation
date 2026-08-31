@@ -3,13 +3,21 @@
  *
  * Reached from Approve on the Cob/Opportunities screen (dispatches
  * 'aria:show', see blueprintGenerate.js). Recaps the approved
- * opportunity, shows Cob's real required-datasets list (Data Readiness
- * domain's "Critical Data Identification" capability — already present
- * in the blueprint fetch, no extra request), and lets the user connect
- * Confluence/Jira and link real sources to ground this specific
- * blueprint — reusing the same blueprint-scoped, generic linking
- * endpoints Knowledge Sources already uses for Confluence, plus a new
- * equivalent for Jira (POST /jira/personal/link-to-blueprint).
+ * opportunity, cross-references Cob's real required-datasets list (Data
+ * Readiness domain's "Critical Data Identification" capability —
+ * already present in the blueprint fetch, no extra request) against
+ * what's actually linked to this blueprint so far, and lets the user
+ * connect Confluence/Jira and link real sources — reusing the same
+ * blueprint-scoped, generic linking endpoints Knowledge Sources already
+ * uses for Confluence, plus the equivalent for Jira
+ * (POST /jira/personal/link-to-blueprint).
+ *
+ * Connection status per dataset is a text match of the dataset's
+ * typicalSource against "confluence"/"jira" — the only two connectors
+ * that exist today. A dataset whose typical source doesn't mention
+ * either (e.g. a CRM or product analytics DB) has no connector yet and
+ * honestly shows as not connected; there's nothing more specific we can
+ * offer it right now.
  */
 
 import { findAiUseCasesPrioritizationSection } from './blueprintGenerate.js';
@@ -35,7 +43,9 @@ function esc(text) {
   return String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// ── Recap + real datasets ──────────────────────────────────────────────────
+let _cachedDatasets = [];
+
+// ── Header recap ─────────────────────────────────────────────────────────
 
 function findDatasetsSection(bp) {
   const domain = (bp.domains || []).find(d => d.domainId === 'data-readiness');
@@ -53,27 +63,116 @@ function priorityClass(priority) {
   return ['high', 'medium', 'low'].includes(p) ? p : 'medium';
 }
 
-function renderRecapAndDatasets(bp) {
+function renderHeaderRecap(bp) {
   const oppSection = findAiUseCasesPrioritizationSection(bp);
-  if (oppSection) {
-    const brief = oppSection.brief || {};
-    const allInitiatives = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
-    const recommended = brief.recommendedStartingPoint || '';
-    const winner = allInitiatives.find(name => name && recommended.includes(name));
-    document.getElementById('aria-recap-name').textContent = winner || recommended;
-    document.getElementById('aria-recap-why').textContent = winner ? recommended : '';
+  if (!oppSection) return;
+  const brief = oppSection.brief || {};
+  const allInitiatives = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
+  const recommended = brief.recommendedStartingPoint || '';
+  const winner = allInitiatives.find(name => name && recommended.includes(name));
+  document.getElementById('aria-recap-name').textContent = winner || recommended;
+}
+
+// ── Required Data table + readiness bar + status badge ──────────────────────
+
+function statusIcon(status) {
+  if (status === 'connected') return '<span class="aria-status-icon aria-status-icon--connected" title="Connected">&check;</span>';
+  if (status === 'partial') return '<span class="aria-status-icon aria-status-icon--partial" title="Partially connected">&#9681;</span>';
+  return '<span class="aria-status-icon aria-status-icon--none" title="Not connected">&#9675;</span>';
+}
+
+function datasetStatus(typicalSource, confCount, jiraCount) {
+  const s = String(typicalSource || '').toLowerCase();
+  const mentionsConfluence = s.includes('confluence');
+  const mentionsJira = s.includes('jira');
+  if (!mentionsConfluence && !mentionsJira) return 'none';
+  const confOk = !mentionsConfluence || confCount > 0;
+  const jiraOk = !mentionsJira || jiraCount > 0;
+  if (confOk && jiraOk) return 'connected';
+  if ((mentionsConfluence && confCount > 0) || (mentionsJira && jiraCount > 0)) return 'partial';
+  return 'none';
+}
+
+function renderRequiredData(datasets, confCount, jiraCount) {
+  const body = document.getElementById('aria-required-body');
+  let readyCount = 0;
+
+  body.innerHTML = datasets.map(d => {
+    const status = datasetStatus(d.typicalSource, confCount, jiraCount);
+    if (status === 'connected') readyCount++;
+    return `<tr>
+      <td>${esc(d.name)}</td>
+      <td><span class="pd-dataset__priority pd-dataset__priority--${priorityClass(d.priority)}">${esc((d.priority || '').toUpperCase())}</span></td>
+      <td>${statusIcon(status)}${esc(d.typicalSource)}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="3" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
+
+  const total = datasets.length;
+  const pct = total ? Math.round((readyCount / total) * 100) : 0;
+  document.getElementById('aria-readiness-count').textContent = `${readyCount} of ${total} dataset${total === 1 ? '' : 's'} ready`;
+  document.getElementById('aria-readiness-pct').textContent = `${pct}%`;
+  document.getElementById('aria-readiness-fill').style.width = `${pct}%`;
+
+  const badge = document.getElementById('aria-status-badge');
+  const badgeText = document.getElementById('aria-status-badge__text');
+  badge.classList.remove('aria-status-badge--ready', 'aria-status-badge--partial');
+  if (total > 0 && readyCount === total) {
+    badge.classList.add('aria-status-badge--ready');
+    badgeText.textContent = 'DATA CONNECTED';
+  } else if (readyCount > 0) {
+    badge.classList.add('aria-status-badge--partial');
+    badgeText.textContent = 'PARTIALLY CONNECTED';
+  } else {
+    badgeText.textContent = 'NOT CONNECTED';
+  }
+}
+
+// ── Connected Sources summary + refresh ──────────────────────────────────────
+
+function renderSourcesSummary(documents) {
+  const confDocs = documents.filter(d => (d.sourceType || 'confluence') === 'confluence');
+  const jiraDocs = documents.filter(d => d.sourceType === 'jira');
+
+  document.getElementById('aria-conf-summary-count').textContent = confDocs.length
+    ? `${confDocs.length} page${confDocs.length === 1 ? '' : 's'} selected`
+    : 'Not connected';
+
+  const jiraProjectCount = new Set(jiraDocs.map(d => d.projectKey).filter(Boolean)).size;
+  document.getElementById('aria-jira-summary-count').textContent = jiraDocs.length
+    ? `${jiraProjectCount} project${jiraProjectCount === 1 ? '' : 's'} · ${jiraDocs.length} issue${jiraDocs.length === 1 ? '' : 's'} selected`
+    : 'Not connected';
+
+  const linkedList = document.getElementById('aria-conf-linked-list');
+  if (confDocs.length) {
+    linkedList.innerHTML = `<strong>Already linked:</strong> ${confDocs.map(d => esc(d.title)).join(', ')}`;
+    linkedList.style.display = 'block';
+  } else {
+    linkedList.style.display = 'none';
   }
 
-  const datasetsSection = findDatasetsSection(bp);
-  const datasets = datasetsSection?.brief?.datasets || [];
-  const container = document.getElementById('aria-datasets');
-  container.innerHTML = datasets.map(d => `
-    <div class="pd-dataset">
-      <span class="pd-dataset__name">${esc(d.name)}</span>
-      <span class="pd-dataset__priority pd-dataset__priority--${priorityClass(d.priority)}">${esc((d.priority || '').toUpperCase())}</span>
-      <span class="pd-dataset__source">${esc(d.typicalSource)}</span>
-    </div>
-  `).join('') || '<p class="ks-card-body">Data Readiness hasn\'t finished generating yet — check back on the full blueprint shortly.</p>';
+  return { confCount: confDocs.length, jiraCount: jiraDocs.length };
+}
+
+async function refreshLinked(blueprintId) {
+  try {
+    const { documents } = await api(`/confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
+    const { confCount, jiraCount } = renderSourcesSummary(documents);
+    renderRequiredData(_cachedDatasets, confCount, jiraCount);
+  } catch {
+    renderRequiredData(_cachedDatasets, 0, 0);
+  }
+}
+
+// ── Manage toggles ────────────────────────────────────────────────────────
+
+function wireManageToggle(btnId, panelId) {
+  const btn = document.getElementById(btnId);
+  const panel = document.getElementById(panelId);
+  btn.addEventListener('click', () => {
+    const opening = panel.style.display === 'none';
+    panel.style.display = opening ? 'block' : 'none';
+    btn.textContent = opening ? 'Hide' : 'Manage';
+  });
 }
 
 // ── Confluence: connect → spaces → pages → link ─────────────────────────────
@@ -130,7 +229,7 @@ async function loadConfluencePages(spaceKey, blueprintId) {
       linkBtn.textContent = 'Linking…';
       try {
         const result = await api('/confluence/personal/link', { method: 'POST', body: JSON.stringify({ blueprintId, pages: pages2 }) });
-        await renderConfluenceLinked(blueprintId);
+        await refreshLinked(blueprintId);
         document.getElementById('aria-conf-error').style.display = 'none';
         linkBtn.textContent = `Linked ${result.linkedCount}/${result.total}`;
       } catch (err) {
@@ -168,24 +267,12 @@ async function renderConfluenceSpaces(blueprintId) {
   }
 }
 
-async function renderConfluenceLinked(blueprintId) {
-  try {
-    const { documents } = await api(`/confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
-    const el = document.getElementById('aria-conf-linked-list');
-    if (!documents.length) { el.style.display = 'none'; return; }
-    el.innerHTML = `<strong>Already linked:</strong> ${documents.map(d => esc(d.title)).join(', ')}`;
-    el.style.display = 'block';
-  } catch { /* non-critical */ }
-}
-
 async function initConfluenceSection(blueprintId) {
   document.getElementById('aria-conf-connect-btn').addEventListener('click', (e) => {
     e.preventDefault();
     goConnectAtlassian(blueprintId);
   });
   document.getElementById('aria-conf-back-to-spaces').addEventListener('click', () => showOnly(CONF_SECTIONS, 'aria-conf-spaces'));
-
-  await renderConfluenceLinked(blueprintId);
 
   try {
     const status = await api('/confluence/personal/status');
@@ -239,6 +326,7 @@ async function loadJiraIssues(projectKey, blueprintId) {
       try {
         const result = await api('/jira/personal/link-to-blueprint', { method: 'POST', body: JSON.stringify({ blueprintId, issues: checked }) });
         renderJiraProcessing(result.results);
+        await refreshLinked(blueprintId);
       } catch (err) {
         showJiraError(err.message);
       } finally {
@@ -317,13 +405,21 @@ function wireContinueButton() {
   document.getElementById('aria-continue-btn')?.addEventListener('click', () => {
     window.location.href = '/domain/domain.html?openBlueprint=1';
   });
+  wireManageToggle('aria-conf-manage-btn', 'aria-conf-panel');
+  wireManageToggle('aria-jira-manage-btn', 'aria-jira-panel');
 }
 
 document.addEventListener('aria:show', (e) => {
   const bp = e.detail?.blueprint;
   if (!bp) return;
   wireContinueButton();
-  renderRecapAndDatasets(bp);
+  renderHeaderRecap(bp);
+
+  const datasetsSection = findDatasetsSection(bp);
+  _cachedDatasets = datasetsSection?.brief?.datasets || [];
+  renderRequiredData(_cachedDatasets, 0, 0);
+
   initConfluenceSection(bp._id);
   initJiraSection(bp._id);
+  refreshLinked(bp._id);
 });

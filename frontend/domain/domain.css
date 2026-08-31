@@ -3033,6 +3033,28 @@
 .aria-process-bar .pw-next-btn:hover:not(:disabled) { background: var(--aria-accent-2); }
 .aria-process-bar .pw-next-btn:disabled { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.35); }
 
+/* Source picker inside a connector panel — same table language as
+   Required Data above it, so the two read as one screen. */
+.aria-src-wrap { margin-top: 0; }
+.aria-src-table th:nth-child(1),
+.aria-src-table th:nth-child(2),
+.aria-src-table th:nth-child(3),
+.aria-src-table th:nth-child(4) { width: auto; }
+.aria-src-table__check { width: 42px; }
+.aria-src-table__check input { width: 15px; height: 15px; accent-color: var(--aria-accent); cursor: pointer; }
+.aria-src-check { width: 15px; height: 15px; accent-color: var(--aria-accent); cursor: pointer; }
+.aria-src-table__count { color: rgba(255,255,255,0.6); font-size: 12.5px; white-space: nowrap; }
+
+.aria-src-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+.aria-src-actions__hint { font-size: 12.5px; color: rgba(255,255,255,0.45); }
+.aria-src-actions .pw-next-btn { margin-left: 0; }
+
 .aria-connector-panels { margin-top: 24px; }
 
 .aria-connector {

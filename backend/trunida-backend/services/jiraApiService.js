@@ -83,3 +83,28 @@ export async function getIssueDetail(cloudId, accessToken, issueKey) {
     comments,    // each an ADF document
   };
 }
+
+/**
+ * Approximate issue count for a project.
+ *
+ * Uses Jira's approximate-count endpoint, which is a single cheap call and
+ * is covered by the read:jira-work scope we already hold — no reconnect
+ * needed. Approximate is fine here: the number is shown to give the user a
+ * sense of scale, not to drive any logic.
+ *
+ * Returns null (not 0) when the count can't be obtained, so callers can tell
+ * "unknown" apart from "genuinely empty".
+ */
+export async function approximateIssueCount(cloudId, accessToken, projectKey) {
+  try {
+    const { data } = await axios.post(
+      `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search/approximate-count`,
+      { jql: `project = "${projectKey}"` },
+      { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } }
+    );
+    return typeof data?.count === 'number' ? data.count : null;
+  } catch (err) {
+    console.warn(`[jiraApi] approximate count failed for ${projectKey}:`, err.response?.status || err.message);
+    return null;
+  }
+}

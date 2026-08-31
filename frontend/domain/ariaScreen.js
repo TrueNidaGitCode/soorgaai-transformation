@@ -264,72 +264,130 @@ function showOnly(ids, activeId) {
   });
 }
 
-const CONF_SECTIONS = ['aria-conf-not-connected', 'aria-conf-spaces', 'aria-conf-pages'];
+const CONF_SECTIONS = ['aria-conf-not-connected', 'aria-conf-spaces'];
 
-async function loadConfluencePages(spaceKey, blueprintId) {
-  try {
-    const { pages } = await api(`/confluence/personal/spaces/${encodeURIComponent(spaceKey)}/pages`);
-    const list = document.getElementById('aria-conf-page-list');
-    list.innerHTML = pages.map(p => `
-      <label class="aria-list__item">
-        <input type="checkbox" class="aria-conf-page-checkbox" value="${esc(p.id)}" data-space-key="${esc(spaceKey)}">
-        <span class="aria-list__item-name">${esc(p.title)}</span>
-      </label>
-    `).join('') || '<p class="ks-card-body">No pages found in this space.</p>';
+// Each linked item costs one sequential LLM call (classifyDocument) and the
+// link endpoints cap a request at 30, so "select everything" links the 30
+// most recent items per source rather than the whole space. The table still
+// reports the true total so the user knows what was left behind.
+const LINK_BATCH = 30;
 
-    const linkBtn = document.getElementById('aria-conf-link-btn');
-    const selectAll = document.getElementById('aria-conf-select-all');
-    linkBtn.disabled = true;
-    selectAll.checked = false;
+function fmtCount(n, capped, noun) {
+  if (n === null || n === undefined) return '—';
+  const label = `${n.toLocaleString()}${capped ? '+' : ''} ${noun}${n === 1 && !capped ? '' : 's'}`;
+  return n > LINK_BATCH ? `${label} · newest ${LINK_BATCH} will link` : label;
+}
 
-    const update = () => { linkBtn.disabled = !list.querySelectorAll('.aria-conf-page-checkbox:checked').length; };
-    list.querySelectorAll('.aria-conf-page-checkbox').forEach(cb => cb.addEventListener('change', update));
-    selectAll.onchange = () => {
-      list.querySelectorAll('.aria-conf-page-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
-      update();
-    };
+function renderSourceRow({ tool, toolClass, letter, name, key, count, capped, noun }) {
+  return `
+    <tr>
+      <td class="aria-src-table__check"><input type="checkbox" class="aria-src-check" value="${esc(key)}" checked></td>
+      <td><span class="aria-source"><span class="aria-source__icon aria-source__icon--${toolClass}">${letter}</span>${esc(tool)}</span></td>
+      <td>
+        <span class="aria-row-name__title">${esc(name)}</span>
+        <span class="aria-row-name__desc">${esc(key)}</span>
+      </td>
+      <td class="aria-src-table__count">${esc(fmtCount(count, capped, noun))}</td>
+    </tr>
+  `;
+}
 
-    linkBtn.onclick = async () => {
-      const checked = Array.from(list.querySelectorAll('.aria-conf-page-checkbox:checked'));
-      const pages2 = checked.map(cb => ({ pageId: cb.value, spaceKey: cb.dataset.spaceKey }));
-      linkBtn.disabled = true;
-      linkBtn.textContent = 'Linking…';
-      try {
-        const result = await api('/confluence/personal/link', { method: 'POST', body: JSON.stringify({ blueprintId, pages: pages2 }) });
-        await refreshLinked(blueprintId);
-        document.getElementById('aria-conf-error').style.display = 'none';
-        linkBtn.textContent = `Linked ${result.linkedCount}/${result.total}`;
-      } catch (err) {
-        showConfError(err.message);
-      } finally {
-        linkBtn.disabled = false;
-        setTimeout(() => { linkBtn.textContent = 'Link selected pages'; }, 2000);
-      }
-    };
+// Keeps the header checkbox, the row checkboxes, the hint and the button in
+// agreement — all four derive from the same selected set.
+function wireSourceSelection(listEl, selectAllEl, btnEl, hintEl, noun) {
+  const rows = () => Array.from(listEl.querySelectorAll('.aria-src-check'));
+  const update = () => {
+    const checked = rows().filter(cb => cb.checked);
+    btnEl.disabled = checked.length === 0;
+    selectAllEl.checked = checked.length > 0 && checked.length === rows().length;
+    hintEl.textContent = checked.length
+      ? `${checked.length} ${noun}${checked.length === 1 ? '' : 's'} selected · up to ${LINK_BATCH} items each`
+      : `Select at least one ${noun}`;
+  };
+  rows().forEach(cb => cb.addEventListener('change', update));
+  selectAllEl.onchange = () => {
+    rows().forEach(cb => { cb.checked = selectAllEl.checked; });
+    update();
+  };
+  update();
+  return () => rows().filter(cb => cb.checked).map(cb => cb.value);
+}
 
-    showOnly(CONF_SECTIONS, 'aria-conf-pages');
-  } catch (err) {
-    showConfError(err.message);
-  }
+function renderProcessing(el, results, keyField) {
+  el.style.display = 'block';
+  el.innerHTML = results.map(r => {
+    if (r.status === 'error') {
+      return `<div class="pw-process-item pw-process-item--error">
+        <span class="pw-process-item__title">${esc(r[keyField] || r.title || '')}</span>
+        <span class="pw-process-item__detail">${esc(r.error)}</span>
+      </div>`;
+    }
+    return `<div class="pw-process-item pw-process-item--done">
+      <span class="pw-process-item__title">${esc(r.title || r[keyField] || '')}</span>
+      <span class="pw-process-item__detail">${r.unchanged ? 'already linked, unchanged' : 'linked to this blueprint'}</span>
+    </div>`;
+  }).join('');
 }
 
 async function renderConfluenceSpaces(blueprintId) {
+  const list = document.getElementById('aria-conf-space-list');
+  const btn = document.getElementById('aria-conf-link-btn');
+  const hint = document.getElementById('aria-conf-hint');
+  const selectAll = document.getElementById('aria-conf-select-all');
+
+  list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Loading spaces…</td></tr>`;
+  showOnly(CONF_SECTIONS, 'aria-conf-spaces');
+
   try {
-    const { spaces } = await api('/confluence/personal/spaces');
-    const list = document.getElementById('aria-conf-space-list');
-    list.innerHTML = spaces.map(s => `
-      <div class="aria-list__item">
-        <span class="aria-list__item-name">${esc(s.name)} <span style="opacity:.5">(${esc(s.key)})</span></span>
-        <button type="button" class="aria-list__item-action" data-space-key="${esc(s.key)}">Choose pages &rarr;</button>
-      </div>
-    `).join('') || '<p class="ks-card-body">No spaces found in this Confluence site.</p>';
+    const { spaces } = await api('/confluence/personal/spaces?withCounts=1');
+    if (!spaces.length) {
+      list.innerHTML = `<tr><td colspan="4" class="ks-card-body">No spaces found in this Confluence site.</td></tr>`;
+      btn.disabled = true;
+      return;
+    }
 
-    list.querySelectorAll('.aria-list__item-action').forEach(btn => {
-      btn.addEventListener('click', () => loadConfluencePages(btn.dataset.spaceKey, blueprintId));
-    });
+    list.innerHTML = spaces.map(s => renderSourceRow({
+      tool: 'Confluence', toolClass: 'confluence', letter: 'C',
+      name: s.name, key: s.key,
+      count: s.itemCount, capped: s.itemCountCapped, noun: 'page',
+    })).join('');
 
-    showOnly(CONF_SECTIONS, 'aria-conf-spaces');
+    const selected = wireSourceSelection(list, selectAll, btn, hint, 'space');
+
+    btn.onclick = async () => {
+      const keys = selected();
+      if (!keys.length) return;
+      btn.disabled = true;
+      btn.textContent = 'Linking…';
+      document.getElementById('aria-conf-error').style.display = 'none';
+      const proc = document.getElementById('aria-conf-processing');
+
+      try {
+        const all = [];
+        for (const spaceKey of keys) {
+          // listPages returns newest-first, so the head of the list is the
+          // "newest 30" the table promised.
+          const { pages } = await api(`/confluence/personal/spaces/${encodeURIComponent(spaceKey)}/pages`);
+          const batch = pages.slice(0, LINK_BATCH).map(p => ({ pageId: p.id, spaceKey }));
+          if (!batch.length) continue;
+          const result = await api('/confluence/personal/link', {
+            method: 'POST',
+            body: JSON.stringify({ blueprintId, pages: batch }),
+          });
+          all.push(...(result.results || []));
+          renderProcessing(proc, all, 'pageId');
+        }
+        await refreshLinked(blueprintId);
+        btn.textContent = `Linked ${all.filter(r => r.status !== 'error').length}`;
+      } catch (err) {
+        showConfError(err.message);
+      } finally {
+        btn.disabled = false;
+        setTimeout(() => { btn.textContent = 'Link selected'; }, 2500);
+      }
+    };
   } catch (err) {
+    list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Couldn't load spaces.</td></tr>`;
     showConfError(err.message);
   }
 }
@@ -339,7 +397,6 @@ async function initConfluenceSection(blueprintId) {
     e.preventDefault();
     goConnectAtlassian(blueprintId);
   });
-  document.getElementById('aria-conf-back-to-spaces').addEventListener('click', () => showOnly(CONF_SECTIONS, 'aria-conf-spaces'));
 
   try {
     const status = await api('/confluence/personal/status');
@@ -361,87 +418,66 @@ function showJiraError(message) {
   el.style.display = 'block';
 }
 
-const JIRA_SECTIONS = ['aria-jira-scope-missing', 'aria-jira-not-connected', 'aria-jira-projects', 'aria-jira-issues'];
+const JIRA_SECTIONS = ['aria-jira-scope-missing', 'aria-jira-not-connected', 'aria-jira-projects'];
 
-async function loadJiraIssues(projectKey, blueprintId) {
+async function renderJiraProjects(blueprintId) {
+  const list = document.getElementById('aria-jira-project-list');
+  const btn = document.getElementById('aria-jira-link-btn');
+  const hint = document.getElementById('aria-jira-hint');
+  const selectAll = document.getElementById('aria-jira-select-all');
+
+  list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Loading projects…</td></tr>`;
+  showOnly(JIRA_SECTIONS, 'aria-jira-projects');
+
   try {
-    const { issues } = await api(`/jira/personal/projects/${encodeURIComponent(projectKey)}/issues`);
-    const list = document.getElementById('aria-jira-issue-list');
-    list.innerHTML = issues.map(i => `
-      <label class="aria-list__item">
-        <input type="checkbox" class="aria-jira-issue-checkbox" value="${esc(i.key)}">
-        <span class="aria-list__item-name">${esc(i.key)} — ${esc(i.summary)}</span>
-      </label>
-    `).join('') || '<p class="ks-card-body">No issues found in this project.</p>';
+    const { projects } = await api('/jira/personal/projects?withCounts=1');
+    if (!projects.length) {
+      list.innerHTML = `<tr><td colspan="4" class="ks-card-body">No projects found in this Jira site.</td></tr>`;
+      btn.disabled = true;
+      return;
+    }
 
-    const linkBtn = document.getElementById('aria-jira-link-btn');
-    const selectAll = document.getElementById('aria-jira-select-all');
-    linkBtn.disabled = true;
-    selectAll.checked = false;
+    list.innerHTML = projects.map(p => renderSourceRow({
+      tool: 'Jira', toolClass: 'jira', letter: 'J',
+      name: p.name, key: p.key,
+      count: p.itemCount, capped: false, noun: 'ticket',
+    })).join('');
 
-    const update = () => { linkBtn.disabled = !list.querySelectorAll('.aria-jira-issue-checkbox:checked').length; };
-    list.querySelectorAll('.aria-jira-issue-checkbox').forEach(cb => cb.addEventListener('change', update));
-    selectAll.onchange = () => {
-      list.querySelectorAll('.aria-jira-issue-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
-      update();
-    };
+    const selected = wireSourceSelection(list, selectAll, btn, hint, 'project');
 
-    linkBtn.onclick = async () => {
-      const checked = Array.from(list.querySelectorAll('.aria-jira-issue-checkbox:checked')).map(cb => ({ issueKey: cb.value }));
-      linkBtn.disabled = true;
-      linkBtn.textContent = 'Linking…';
+    btn.onclick = async () => {
+      const keys = selected();
+      if (!keys.length) return;
+      btn.disabled = true;
+      btn.textContent = 'Linking…';
+      document.getElementById('aria-jira-error').style.display = 'none';
+      const proc = document.getElementById('aria-jira-processing');
+
       try {
-        const result = await api('/jira/personal/link-to-blueprint', { method: 'POST', body: JSON.stringify({ blueprintId, issues: checked }) });
-        renderJiraProcessing(result.results);
+        const all = [];
+        for (const projectKey of keys) {
+          // listIssues is ordered by created DESC, so the head is the newest.
+          const { issues } = await api(`/jira/personal/projects/${encodeURIComponent(projectKey)}/issues`);
+          const batch = issues.slice(0, LINK_BATCH).map(i => ({ issueKey: i.key }));
+          if (!batch.length) continue;
+          const result = await api('/jira/personal/link-to-blueprint', {
+            method: 'POST',
+            body: JSON.stringify({ blueprintId, issues: batch }),
+          });
+          all.push(...(result.results || []));
+          renderProcessing(proc, all, 'issueKey');
+        }
         await refreshLinked(blueprintId);
+        btn.textContent = `Linked ${all.filter(r => r.status !== 'error').length}`;
       } catch (err) {
         showJiraError(err.message);
       } finally {
-        linkBtn.disabled = false;
-        linkBtn.textContent = 'Link selected issues';
+        btn.disabled = false;
+        setTimeout(() => { btn.textContent = 'Link selected'; }, 2500);
       }
     };
-
-    showOnly(JIRA_SECTIONS, 'aria-jira-issues');
   } catch (err) {
-    showJiraError(err.message);
-  }
-}
-
-function renderJiraProcessing(results) {
-  const el = document.getElementById('aria-jira-processing');
-  el.style.display = 'block';
-  el.innerHTML = results.map(r => {
-    if (r.status === 'error') {
-      return `<div class="pw-process-item pw-process-item--error">
-        <span class="pw-process-item__title">${esc(r.issueKey)}</span>
-        <span class="pw-process-item__detail">${esc(r.error)}</span>
-      </div>`;
-    }
-    return `<div class="pw-process-item pw-process-item--done">
-      <span class="pw-process-item__title">${esc(r.title)}</span>
-      <span class="pw-process-item__detail">${r.unchanged ? 'already linked, unchanged' : 'linked to this blueprint'}</span>
-    </div>`;
-  }).join('');
-}
-
-async function renderJiraProjects(blueprintId) {
-  try {
-    const { projects } = await api('/jira/personal/projects');
-    const list = document.getElementById('aria-jira-project-list');
-    list.innerHTML = projects.map(p => `
-      <div class="aria-list__item">
-        <span class="aria-list__item-name">${esc(p.name)} <span style="opacity:.5">(${esc(p.key)})</span></span>
-        <button type="button" class="aria-list__item-action" data-project-key="${esc(p.key)}">Choose issues &rarr;</button>
-      </div>
-    `).join('') || '<p class="ks-card-body">No projects found in this Jira site.</p>';
-
-    list.querySelectorAll('.aria-list__item-action').forEach(btn => {
-      btn.addEventListener('click', () => loadJiraIssues(btn.dataset.projectKey, blueprintId));
-    });
-
-    showOnly(JIRA_SECTIONS, 'aria-jira-projects');
-  } catch (err) {
+    list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Couldn't load projects.</td></tr>`;
     showJiraError(err.message);
   }
 }
@@ -450,7 +486,6 @@ async function initJiraSection(blueprintId) {
   const connect = (e) => { e.preventDefault(); goConnectAtlassian(blueprintId); };
   document.getElementById('aria-jira-connect-btn').addEventListener('click', connect);
   document.getElementById('aria-jira-reconnect-btn').addEventListener('click', connect);
-  document.getElementById('aria-jira-back-to-projects').addEventListener('click', () => showOnly(JIRA_SECTIONS, 'aria-jira-projects'));
 
   try {
     const status = await api('/confluence/personal/status');

@@ -20,7 +20,7 @@ import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import LinkedProjectDocument from '../models/LinkedProjectDocument.js';
 import { getValidAccessToken } from '../services/confluenceApiService.js';
 import { JIRA_SCOPES } from '../services/atlassianAuthService.js';
-import { listProjects, listIssues, getIssueDetail } from '../services/jiraApiService.js';
+import { listProjects, listIssues, getIssueDetail, approximateIssueCount } from '../services/jiraApiService.js';
 import { adfToText, regexRedact, structureDefectFromIssue, hashText } from '../services/jiraContentService.js';
 import { classifyDocument } from '../services/confluenceContentService.js';
 import { syncDefectRecordToChunk } from '../services/hybridRetrievalService.js';
@@ -66,6 +66,17 @@ export async function getPersonalProjects(req, res) {
 
     const accessToken = await getValidAccessToken(connection);
     const projects = await listProjects(connection.cloudId, accessToken);
+
+    // Opt-in via ?withCounts=1 — one cheap approximate-count call per
+    // project, covered by the read:jira-work scope we already hold.
+    if (req.query.withCounts === '1') {
+      const withCounts = await Promise.all(projects.map(async (p) => ({
+        ...p,
+        itemCount: await approximateIssueCount(connection.cloudId, accessToken, p.key),
+      })));
+      return res.json({ projects: withCounts });
+    }
+
     return res.json({ projects });
   } catch (err) {
     console.error('[PersonalJira] GET projects error:', err.response?.data || err.message);

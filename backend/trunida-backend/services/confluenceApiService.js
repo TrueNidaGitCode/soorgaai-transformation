@@ -106,3 +106,40 @@ export async function getPageContent(cloudId, accessToken, pageId) {
     permalink:    data._links?.base && data._links?.webui ? `${data._links.base}${data._links.webui}` : '',
   };
 }
+
+/**
+ * Page count for a space.
+ *
+ * Confluence's v2 API returns no total, and the CQL search endpoint that
+ * does needs the classic `search:confluence` scope which our connections
+ * don't hold — requesting it would force every existing user to reconnect.
+ * So we page and count instead, with ids only (limit 250) to keep payloads
+ * small.
+ *
+ * Returns { count, capped } — capped:true means "at least this many", so
+ * the UI can say "500+" rather than implying an exact total.
+ */
+export async function countPages(cloudId, accessToken, spaceKey, { maxCount = 500 } = {}) {
+  const spaceId = await resolveSpaceId(cloudId, accessToken, spaceKey);
+
+  let count = 0;
+  let url = `https://api.atlassian.com/ex/confluence/${cloudId}/wiki/api/v2/spaces/${spaceId}/pages`;
+  let params = { limit: 250 };
+
+  while (url && count < maxCount) {
+    const { data } = await axios.get(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params,
+    });
+    count += (data.results || []).length;
+
+    if (data._links?.next && count < maxCount) {
+      url = `https://api.atlassian.com${data._links.next}`;
+      params = undefined; // the next link already carries the query string
+    } else {
+      url = null;
+    }
+  }
+
+  return { count: Math.min(count, maxCount), capped: count >= maxCount };
+}

@@ -30,6 +30,7 @@ import {
   getValidAccessToken,
   listSpaces,
   listPages,
+  countPages,
   getPageContent,
 } from '../services/confluenceApiService.js';
 import { ATLASSIAN_SCOPES, JIRA_SCOPES } from '../services/atlassianAuthService.js';
@@ -191,7 +192,22 @@ export async function getPersonalSpaces(req, res) {
     connection.discoveredAt = new Date();
     await connection.save();
 
-    return res.json({ spaces, siteUrl: connection.siteUrl, siteName: connection.siteName });
+    // Opt-in via ?withCounts=1 — counting pages costs one request per ~250
+    // pages per space, so existing callers that only need names (e.g. the
+    // Knowledge Sources page) are left untouched and fast.
+    let out = spaces;
+    if (req.query.withCounts === '1') {
+      out = await Promise.all(spaces.map(async (s) => {
+        try {
+          const { count, capped } = await countPages(connection.cloudId, accessToken, s.key);
+          return { ...s, itemCount: count, itemCountCapped: capped };
+        } catch {
+          return { ...s, itemCount: null, itemCountCapped: false };
+        }
+      }));
+    }
+
+    return res.json({ spaces: out, siteUrl: connection.siteUrl, siteName: connection.siteName });
   } catch (err) {
     console.error('[PersonalConfluence] GET spaces error:', err.response?.data || err.message);
     return res.status(500).json({ error: 'Failed to list Confluence spaces.' });

@@ -2676,12 +2676,15 @@
    .chat-msg cross-file collision found earlier).
 ══════════════════════════════════════════════════════════════════════════════ */
 
-.screen--opportunities { padding: 0; min-height: 100vh; }
+/* 100vh here would sit BELOW the 64px sticky navbar, making the shell
+   overflow the viewport by exactly the navbar height — which pushed the
+   chat launcher (anchored to the shell bottom) off-screen. */
+.screen--opportunities { padding: 0; min-height: calc(100vh - 64px); }
 
 .rp-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
 }
 
 /* ── Body: main + character ─────────────────────────────────────────── */
@@ -2810,7 +2813,7 @@
    .rp-main keeps Cob's plain padding — an earlier version padded it to
    reserve a lane for the character, which also squeezed the journey nav
    and made it narrower than Cob's. */
-.screen--aria { padding: 0; min-height: 100vh; }
+.screen--aria { padding: 0; min-height: calc(100vh - 64px); }
 
 /* Cob's content (a 640px card) is narrow enough to clear the character
    on its own; this screen's table is not, so cap it explicitly. 70vw is
@@ -3143,6 +3146,209 @@
   margin-top: 10px;
   font-size: 12.5px;
   color: rgba(255,255,255,0.5);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CHAT WITH COB / ARIA  (see screenChat.js)
+
+   The lane occupies the character's column on Cob and Aria. It sits ABOVE
+   .rp-main (which is z-index 1) so the launcher stays clickable, but the
+   lane itself is pointer-events:none so its empty area never swallows
+   clicks meant for the page — only the launcher and panel take pointers.
+══════════════════════════════════════════════════════════════════════════════ */
+
+.sc-lane {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 30%;
+  z-index: 3;
+  pointer-events: none;
+}
+.sc-lane > * { pointer-events: auto; }
+
+/* The portrait keeps its original size: max-width was 30% of the shell, and
+   the lane is exactly that 30%, so 100% here is the same rendered width. */
+.sc-lane .rp-character { max-width: 100%; width: 100%; }
+.sc-lane--open .sc-portrait { display: none; }
+
+.sc-launcher {
+  position: absolute;
+  right: 24px;
+  bottom: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(92,197,167,0.4);
+  background: rgba(10,10,15,0.82);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+.sc-launcher:hover { border-color: var(--accent-teal); background: rgba(92,197,167,0.16); transform: translateY(-1px); }
+.sc-launcher__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent-teal); flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(92,197,167,0.6);
+  animation: sc-pulse 2.4s ease-out infinite;
+}
+@keyframes sc-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(92,197,167,0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(92,197,167,0); }
+  100% { box-shadow: 0 0 0 0 rgba(92,197,167,0); }
+}
+.sc-lane--open .sc-launcher { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .sc-launcher__dot { animation: none; }
+  .sc-launcher:hover { transform: none; }
+}
+
+.sc-panel {
+  position: absolute;
+  right: 20px;
+  bottom: 24px;
+  left: 8px;
+  /* Bottom-anchored and bounded, not full-lane-height — a full-height
+     panel reached up over the journey nav. */
+  height: min(72vh, 560px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(14,15,20,0.96);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+}
+/* The bare `hidden` attribute sets display:none at lower specificity than
+   the rule above, so without this the panel is visible on load. */
+.sc-panel[hidden] { display: none; }
+
+.sc-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.09);
+  background: rgba(255,255,255,0.03);
+  flex-shrink: 0;
+}
+.sc-panel__avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  overflow: hidden; flex-shrink: 0;
+  border: 1px solid rgba(92,197,167,0.5);
+}
+.sc-panel__avatar img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.sc-panel__name { flex: 1; font-size: 14px; font-weight: 700; color: #fff; }
+.sc-panel__close {
+  background: transparent; border: none; cursor: pointer;
+  color: rgba(255,255,255,0.5); font-size: 20px; line-height: 1;
+  padding: 0 4px; font-family: inherit;
+}
+.sc-panel__close:hover { color: #fff; }
+
+.sc-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sc-msg { max-width: 92%; font-size: 13px; line-height: 1.55; }
+.sc-msg__body {
+  padding: 9px 12px;
+  border-radius: 12px;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+.sc-msg--bot { align-self: flex-start; }
+.sc-msg--bot .sc-msg__body {
+  background: rgba(255,255,255,0.055);
+  color: rgba(255,255,255,0.88);
+  border-bottom-left-radius: 4px;
+}
+.sc-msg--user { align-self: flex-end; }
+.sc-msg--user .sc-msg__body {
+  background: rgba(92,197,167,0.16);
+  border: 1px solid rgba(92,197,167,0.3);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.sc-msg--error .sc-msg__body {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.32);
+  color: #FCA5A5;
+}
+.sc-msg--pending .sc-msg__body { color: rgba(255,255,255,0.45); font-style: italic; }
+
+.sc-action {
+  margin-top: 8px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent-teal);
+  color: #08120f;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.sc-action:hover:not(:disabled) { opacity: 0.86; }
+.sc-action:disabled { opacity: 0.55; cursor: default; }
+
+.sc-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255,255,255,0.09);
+  flex-shrink: 0;
+}
+.sc-input {
+  flex: 1;
+  resize: none;
+  max-height: 110px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.sc-input:focus { outline: none; border-color: var(--accent-teal); }
+.sc-input::placeholder { color: rgba(255,255,255,0.32); }
+.sc-input:disabled { opacity: 0.6; }
+.sc-send {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  border: none;
+  background: var(--accent-teal);
+  color: #08120f;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.sc-send:disabled { opacity: 0.45; cursor: default; }
+
+/* Below this the character is hidden on both screens, so the lane has no
+   column to live in — the chat becomes a normal bottom-right widget. */
+@media (max-width: 1100px) {
+  .sc-lane { width: min(380px, 92vw); }
+  .sc-panel { left: auto; width: min(380px, 92vw); }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════

@@ -304,7 +304,7 @@ function findAiUseCasesPrioritizationSection(bp) {
 // "X should be implemented first because…"), not just the initiative's
 // short name — it embeds the matching priorityQuadrants initiative name
 // as a leading substring, which is how the winner/others split works.
-function renderOpportunitiesContent(section) {
+function renderOpportunitiesContent(section, bp) {
   const brief = section.brief || {};
   const allInitiatives = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
   const recommended = brief.recommendedStartingPoint || '';
@@ -315,12 +315,20 @@ function renderOpportunitiesContent(section) {
   if (winnerNameEl) winnerNameEl.textContent = winnerInitiative || recommended;
   if (winnerWhyEl)  winnerWhyEl.textContent  = winnerInitiative ? recommended : '';
 
+  const projectNameEl = document.getElementById('rp-project-name');
+  if (projectNameEl) projectNameEl.textContent = bp?.companyName || 'Untitled Project';
+
   const others = allInitiatives.filter(name => name && name !== winnerInitiative);
 
   const othersList = document.getElementById('opp-others');
   if (othersList) {
     othersList.innerHTML = others
-      .map((name, i) => `<li class="pw-reveal" style="--i:${i + 1}">${escapeHtml(name)}</li>`)
+      .map((name, i) => `
+        <li class="rp-others-item pw-reveal" style="--i:${i + 1}">
+          <span class="rp-others-item__name">${escapeHtml(name)}</span>
+          <span class="rp-others-item__arrow">&rarr;</span>
+        </li>
+      `)
       .join('');
   }
 
@@ -332,13 +340,12 @@ function renderOpportunitiesContent(section) {
   _opportunitiesContentShown = true;
 }
 
-// Cob and Opportunities are real; Aria/Arth/Eame/Yusu render locked in the
-// HTML by default (see domain.html/.rp-journey__locked) since they're not
-// built yet — this just marks the two real steps as done/active.
+// Cob is real (this screen IS Cob's own opportunity discovery, not a
+// separate step); Aria/Arth/Eame/Yusu render locked in the HTML by
+// default (see domain.html/.rp-journey__locked) since they're not built
+// yet — this just marks Cob active (we're still inside it, not past it).
 function renderJourneyIndicator() {
-  document.getElementById('rp-step-1')?.classList.add('pw-step--done');
-  document.getElementById('rp-step-2')?.classList.add('pw-step--active');
-  document.getElementById('rp-line-1')?.classList.add('pw-step-line--done');
+  document.getElementById('rp-step-1')?.classList.add('pw-step--active');
 }
 
 function updateOpportunitiesGate(bp) {
@@ -348,11 +355,11 @@ function updateOpportunitiesGate(bp) {
   if (approveBtn) approveBtn.disabled = !done;
   if (viewBtn)    viewBtn.disabled    = !done;
 
-  const hint = document.getElementById('opp-status-hint');
-  if (hint) {
-    hint.textContent = done
-      ? 'Your full blueprint is ready.'
-      : 'The rest of your blueprint — Data Readiness, Technology Infrastructure, Skills & Workforce, Governance & Ethics — is still generating.';
+  const badge = document.getElementById('opp-live-badge');
+  if (badge) {
+    badge.textContent = done ? '● Live' : 'Generating…';
+    badge.classList.toggle('pd-badge--live', done);
+    badge.classList.toggle('pd-badge--simulated', !done);
   }
 }
 
@@ -365,7 +372,7 @@ function handleOpportunitiesUpdate(bp) {
 
   if (!_opportunitiesContentShown) {
     const section = findAiUseCasesPrioritizationSection(bp);
-    if (section) renderOpportunitiesContent(section);
+    if (section) renderOpportunitiesContent(section, bp);
   }
 
   updateOpportunitiesGate(bp);

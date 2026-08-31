@@ -128,72 +128,102 @@
        blueprint. View Blueprint / Approve stay disabled until the whole
        blueprint (bp.status === 'completed') is done.
   ══════════════════════════════════════════════════════════════════════════ -->
-  <main id="screen-opportunities" class="screen screen--opportunities pd-page" style="display:none" aria-label="AI use cases and prioritization">
+  <main id="screen-opportunities" class="screen screen--opportunities" style="display:none" aria-label="AI use cases and prioritization">
 
-    <!-- Your AI transformation journey — Cob/Opportunities are real and
-         reflect actual progress; Aria/Arth/Eame/Yusu are shown as the
-         upcoming stages of the same pipeline but aren't built yet, so
-         they render locked rather than as fake working steps. -->
-    <nav class="pw-steps rp-journey" aria-label="Your AI transformation journey">
-      <div class="pw-step" id="rp-step-1">
-        <span class="pw-step__node"><span class="pw-step__num">1</span></span>
-        <span class="pw-step__label">Cob</span>
-      </div>
-      <span class="pw-step-line" id="rp-line-1"><span class="pw-step-line__flow"></span></span>
-      <div class="pw-step" id="rp-step-2">
-        <span class="pw-step__node"><span class="pw-step__num">2</span></span>
-        <span class="pw-step__label">Opportunities</span>
-      </div>
-      <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
-      <div class="pw-step rp-journey__locked">
-        <span class="pw-step__node"><span class="pw-step__num">3</span></span>
-        <span class="pw-step__label">Aria</span>
-      </div>
-      <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
-      <div class="pw-step rp-journey__locked">
-        <span class="pw-step__node"><span class="pw-step__num">4</span></span>
-        <span class="pw-step__label">Arth</span>
-      </div>
-      <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
-      <div class="pw-step rp-journey__locked">
-        <span class="pw-step__node"><span class="pw-step__num">5</span></span>
-        <span class="pw-step__label">Eame</span>
-      </div>
-      <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
-      <div class="pw-step rp-journey__locked">
-        <span class="pw-step__node"><span class="pw-step__num">6</span></span>
-        <span class="pw-step__label">Yusu</span>
-      </div>
-    </nav>
+    <div class="rp-shell">
 
-    <div class="pd-header">
-      <p class="pd-header__eyebrow">Cob &middot; AI opportunities</p>
-      <h1 class="pd-stage__title" style="font-size:var(--pw-size-2xl);margin-bottom:10px">What Cob found for your objective</h1>
-      <p class="pd-header__sub" id="opp-status-hint">The rest of your blueprint — Data Readiness, Technology Infrastructure, Skills &amp; Workforce, Governance &amp; Ethics — is still generating.</p>
-    </div>
+      <header class="rp-topbar">
+        <span class="rp-topbar__brand">SVARG <span>AI</span></span>
+        <span class="rp-topbar__project">Project: <strong id="rp-project-name"></strong></span>
+      </header>
 
-    <div id="opp-loading" class="pw-process-list">
-      <div class="pw-process-item">
-        <span class="pw-process-item__title">Analyzing your objective and prioritizing AI use cases…</span>
+      <div class="rp-shell__body">
+
+        <!-- Product sidebar — only "Discover" is real today. The rest
+             render locked rather than as fake working sections, same
+             honest-roadmap treatment as the journey indicator below. -->
+        <nav class="rp-sidebar" aria-label="Cob navigation">
+          <p class="rp-sidebar__product">COB</p>
+          <div class="rp-sidebar__nav">
+            <span class="rp-sidebar__item rp-sidebar__item--locked">Overview</span>
+            <span class="rp-sidebar__item rp-sidebar__item--locked">Objectives</span>
+            <span class="rp-sidebar__item rp-sidebar__item--active">Discover</span>
+            <span class="rp-sidebar__item rp-sidebar__item--locked">Blueprints</span>
+            <span class="rp-sidebar__item rp-sidebar__item--locked">Data</span>
+            <span class="rp-sidebar__item rp-sidebar__item--locked">Technology</span>
+            <span class="rp-sidebar__item rp-sidebar__item--locked">Implement</span>
+          </div>
+        </nav>
+
+        <main class="rp-main">
+
+          <!-- Your AI transformation journey — Cob is real (this screen
+               IS Cob's own opportunity discovery, not a separate step);
+               Aria/Arth/Eame/Yusu are the upcoming stages of the same
+               pipeline but aren't built yet, so they render locked. -->
+          <nav class="pw-steps rp-journey" aria-label="Your AI transformation journey">
+            <div class="pw-step" id="rp-step-1">
+              <span class="pw-step__node"><span class="pw-step__num">1</span></span>
+              <span class="pw-step__label">Cob</span>
+            </div>
+            <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+            <div class="pw-step rp-journey__locked">
+              <span class="pw-step__node"><span class="pw-step__num">2</span></span>
+              <span class="pw-step__label">Aria</span>
+            </div>
+            <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+            <div class="pw-step rp-journey__locked">
+              <span class="pw-step__node"><span class="pw-step__num">3</span></span>
+              <span class="pw-step__label">Arth</span>
+            </div>
+            <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+            <div class="pw-step rp-journey__locked">
+              <span class="pw-step__node"><span class="pw-step__num">4</span></span>
+              <span class="pw-step__label">Eame</span>
+            </div>
+            <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+            <div class="pw-step rp-journey__locked">
+              <span class="pw-step__node"><span class="pw-step__num">5</span></span>
+              <span class="pw-step__label">Yusu</span>
+            </div>
+          </nav>
+
+          <div class="rp-main__head">
+            <div>
+              <p class="pd-header__eyebrow">Opportunity Discovery</p>
+              <h1 class="pd-stage__title">AI opportunities</h1>
+            </div>
+            <span id="opp-live-badge" class="pd-badge pd-badge--simulated">Generating&hellip;</span>
+          </div>
+
+          <div id="opp-loading" class="pw-process-list">
+            <div class="pw-process-item">
+              <span class="pw-process-item__title">Analyzing your objective and prioritizing AI use cases…</span>
+            </div>
+          </div>
+
+          <div id="opp-content" style="display:none">
+            <div class="pd-winner pw-reveal rp-winner-card" style="--i:0">
+              <p class="pd-winner__label">&#9733; Recommended</p>
+              <p class="pd-winner__name" id="opp-winner-name"></p>
+              <p class="pd-winner__why" id="opp-winner-why"></p>
+              <div class="rp-winner-card__actions">
+                <button type="button" class="pw-back-btn" id="opp-view-blueprint-btn" disabled>Open Blueprint</button>
+                <button type="button" class="pw-next-btn" id="opp-approve-btn" disabled>Approve</button>
+              </div>
+            </div>
+
+            <p class="pd-substage-label">Other opportunities</p>
+            <ol class="rp-others-list" id="opp-others"></ol>
+          </div>
+
+          <div id="opp-error" class="gen-error" style="display:none" role="alert"></div>
+
+        </main>
+
+        <img src="/assets/cob-character.png" class="rp-character" alt="" aria-hidden="true">
+
       </div>
-    </div>
-
-    <div id="opp-content" style="display:none">
-      <div class="pd-winner pw-reveal" style="--i:0">
-        <p class="pd-winner__label">Recommended starting point</p>
-        <p class="pd-winner__name" id="opp-winner-name"></p>
-        <p class="pd-winner__why" id="opp-winner-why"></p>
-      </div>
-
-      <p class="pd-substage-label">Other opportunities considered</p>
-      <ul class="pd-deemphasized" id="opp-others"></ul>
-    </div>
-
-    <div id="opp-error" class="gen-error" style="display:none" role="alert"></div>
-
-    <div class="pw-actions">
-      <button type="button" class="pw-next-btn" id="opp-approve-btn" disabled>Approve</button>
-      <button type="button" class="pw-next-btn" id="opp-view-blueprint-btn" disabled>View full blueprint &rarr;</button>
     </div>
 
   </main>

@@ -70,10 +70,10 @@ export async function getPersonalProjects(req, res) {
     // Opt-in via ?withCounts=1 — one cheap approximate-count call per
     // project, covered by the read:jira-work scope we already hold.
     if (req.query.withCounts === '1') {
-      const withCounts = await Promise.all(projects.map(async (p) => ({
-        ...p,
-        itemCount: await approximateIssueCount(connection.cloudId, accessToken, p.key),
-      })));
+      const withCounts = await Promise.all(projects.map(async (p) => {
+        const { count, capped } = await approximateIssueCount(connection.cloudId, accessToken, p.key);
+        return { ...p, itemCount: count, itemCountCapped: capped };
+      }));
       return res.json({ projects: withCounts });
     }
 

@@ -272,22 +272,36 @@ const CONF_SECTIONS = ['aria-conf-not-connected', 'aria-conf-spaces'];
 // reports the true total so the user knows what was left behind.
 const LINK_BATCH = 30;
 
-function fmtCount(n, capped, noun) {
-  if (n === null || n === undefined) return '—';
-  const label = `${n.toLocaleString()}${capped ? '+' : ''} ${noun}${n === 1 && !capped ? '' : 's'}`;
-  return n > LINK_BATCH ? `${label} · newest ${LINK_BATCH} will link` : label;
+function countCellHtml(count, capped, noun) {
+  if (count === null || count === undefined) {
+    return `<span class="aria-src-table__count--empty">Count unavailable</span>`;
+  }
+  if (count === 0) {
+    return `<span class="aria-src-table__count--empty">No ${noun}s</span>`;
+  }
+  const label = `${count.toLocaleString()}${capped ? '+' : ''} ${noun}${count === 1 && !capped ? '' : 's'}`;
+  const limit = count > LINK_BATCH
+    ? `<span class="aria-src-table__limit">newest ${LINK_BATCH} will link</span>`
+    : '';
+  return `${esc(label)}${limit}`;
 }
 
 function renderSourceRow({ tool, toolClass, letter, name, key, count, capped, noun }) {
+  // Nothing to link from an empty source, and an unknown count can't be
+  // linked from safely either — leave both unselectable rather than
+  // shipping a request that would do nothing.
+  const selectable = typeof count === 'number' && count > 0;
   return `
     <tr>
-      <td class="aria-src-table__check"><input type="checkbox" class="aria-src-check" value="${esc(key)}" checked></td>
+      <td class="aria-src-table__check">
+        <input type="checkbox" class="aria-src-check" value="${esc(key)}" ${selectable ? 'checked' : 'disabled'}>
+      </td>
       <td><span class="aria-source"><span class="aria-source__icon aria-source__icon--${toolClass}">${letter}</span>${esc(tool)}</span></td>
       <td>
         <span class="aria-row-name__title">${esc(name)}</span>
         <span class="aria-row-name__desc">${esc(key)}</span>
       </td>
-      <td class="aria-src-table__count">${esc(fmtCount(count, capped, noun))}</td>
+      <td class="aria-src-table__count">${countCellHtml(count, capped, noun)}</td>
     </tr>
   `;
 }
@@ -295,15 +309,24 @@ function renderSourceRow({ tool, toolClass, letter, name, key, count, capped, no
 // Keeps the header checkbox, the row checkboxes, the hint and the button in
 // agreement — all four derive from the same selected set.
 function wireSourceSelection(listEl, selectAllEl, btnEl, hintEl, noun) {
-  const rows = () => Array.from(listEl.querySelectorAll('.aria-src-check'));
+  // Disabled rows (empty or unknown count) are excluded everywhere, so
+  // "select all" never ticks something that can't be linked and the
+  // header checkbox reflects only the rows that can actually be chosen.
+  const rows = () => Array.from(listEl.querySelectorAll('.aria-src-check:not(:disabled)'));
+
   const update = () => {
-    const checked = rows().filter(cb => cb.checked);
+    const all = rows();
+    const checked = all.filter(cb => cb.checked);
     btnEl.disabled = checked.length === 0;
-    selectAllEl.checked = checked.length > 0 && checked.length === rows().length;
-    hintEl.textContent = checked.length
-      ? `${checked.length} ${noun}${checked.length === 1 ? '' : 's'} selected · up to ${LINK_BATCH} items each`
-      : `Select at least one ${noun}`;
+    selectAllEl.disabled = all.length === 0;
+    selectAllEl.checked = all.length > 0 && checked.length === all.length;
+    hintEl.textContent = all.length === 0
+      ? `Nothing available to link`
+      : checked.length
+        ? `${checked.length} ${noun}${checked.length === 1 ? '' : 's'} selected · up to ${LINK_BATCH} items each`
+        : `Select at least one ${noun}`;
   };
+
   rows().forEach(cb => cb.addEventListener('change', update));
   selectAllEl.onchange = () => {
     rows().forEach(cb => { cb.checked = selectAllEl.checked; });

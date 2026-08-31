@@ -96,15 +96,47 @@ export async function getIssueDetail(cloudId, accessToken, issueKey) {
  * "unknown" apart from "genuinely empty".
  */
 export async function approximateIssueCount(cloudId, accessToken, projectKey) {
+  // Try the cheap endpoint first: one call, no paging.
   try {
     const { data } = await axios.post(
       `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search/approximate-count`,
       { jql: `project = "${projectKey}"` },
       { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } }
     );
-    return typeof data?.count === 'number' ? data.count : null;
+    if (typeof data?.count === 'number' && data.count > 0) return { count: data.count, capped: false };
+    // A zero here is not trustworthy — the endpoint isn't available on every
+    // Jira edition and some deployments answer 200 with count:0 rather than
+    // erroring. Fall through to a real count instead of reporting "0 tickets"
+    // for a project that plainly has issues.
+    console.warn(`[jiraApi] approximate-count returned ${JSON.stringify(data)} for ${projectKey}; falling back to a counted query`);
   } catch (err) {
-    console.warn(`[jiraApi] approximate count failed for ${projectKey}:`, err.response?.status || err.message);
-    return null;
+    console.warn(`[jiraApi] approximate-count unavailable for ${projectKey}:`, err.response?.status || err.message);
+  }
+
+  // Fallback: page the search endpoint counting ids only. Costs a few calls,
+  // but only on projects the cheap path couldn't answer for.
+  try {
+    let count = 0;
+    let nextPageToken;
+    const MAX = 500;
+    while (count < MAX) {
+      const { data } = await axios.post(
+        `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search/jql`,
+        {
+          jql: `project = "${projectKey}"`,
+          maxResults: 100,
+          fields: ['id'],
+          ...(nextPageToken ? { nextPageToken } : {}),
+        },
+        { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } }
+      );
+      count += (data.issues || []).length;
+      nextPageToken = data.nextPageToken;
+      if (!nextPageToken || !data.issues?.length) break;
+    }
+    return { count: Math.min(count, MAX), capped: count >= MAX };
+  } catch (err) {
+    console.warn(`[jiraApi] issue count failed for ${projectKey}:`, err.response?.status || err.message);
+    return { count: null, capped: false };
   }
 }

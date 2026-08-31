@@ -251,45 +251,27 @@
 
       <div class="pd-header aria-header">
         <div class="aria-header__top">
-          <p class="pd-header__eyebrow">Aria</p>
+          <h1 class="aria-header__title">Data Connections</h1>
           <span class="aria-status-badge" id="aria-status-badge">
             <span class="aria-status-badge__dot"></span>
-            <span id="aria-status-badge__text">Checking data&hellip;</span>
+            <span id="aria-status-badge__text">Checking&hellip;</span>
           </span>
         </div>
-        <h1 class="pd-stage__title">Data Architecture</h1>
-        <p class="aria-header__recap" id="aria-recap-name"></p>
-        <p class="pd-header__sub">Connect the data this blueprint needs.</p>
+        <p class="pd-header__sub">Connect the sources required by this blueprint.</p>
+        <p class="aria-breadcrumb">Cob <span class="aria-breadcrumb__sep">/</span> <span id="aria-recap-name"></span></p>
       </div>
 
-      <section class="aria-section">
-        <p class="pd-substage-label">Data Readiness</p>
-        <div class="aria-readiness__row">
-          <span class="aria-readiness__count" id="aria-readiness-count">0 of 0 datasets ready</span>
-          <span class="aria-readiness__pct" id="aria-readiness-pct">0%</span>
-        </div>
-        <div class="aria-readiness__bar"><div class="aria-readiness__bar-fill" id="aria-readiness-fill" style="width:0%"></div></div>
-      </section>
+      <hr class="aria-divider">
 
-      <section class="aria-section">
-        <p class="pd-substage-label">Required Data</p>
-        <div class="aria-table-wrap">
-          <table class="aria-table">
-            <thead><tr><th>Dataset</th><th>Priority</th><th>Source</th></tr></thead>
-            <tbody id="aria-required-body"></tbody>
-          </table>
-        </div>
-      </section>
+      <p class="pd-substage-label">Required Data</p>
+      <div class="aria-cards" id="aria-cards"></div>
 
-      <section class="aria-section">
-        <p class="pd-substage-label">Connected Sources</p>
-
-        <div class="aria-source-row">
-          <span class="aria-source-row__label">Confluence</span>
-          <span class="aria-source-row__count" id="aria-conf-summary-count">Not connected</span>
-          <button type="button" class="aria-manage-btn" id="aria-conf-manage-btn">Manage</button>
-        </div>
+      <div class="aria-connector-panels">
         <div class="aria-connector" id="aria-conf-panel" style="display:none">
+          <div class="aria-connector__head">
+            <h3 class="aria-connector__title">Confluence</h3>
+            <button type="button" class="aria-connector__close" data-panel="aria-conf-panel">Done</button>
+          </div>
           <div id="aria-conf-error" class="gen-error" style="display:none"></div>
           <div id="aria-conf-connected-badge" class="aria-connected-badge" style="display:none">
             <span class="aria-connected-badge__dot"></span>
@@ -310,12 +292,11 @@
           <div id="aria-conf-linked-list" class="aria-linked-list" style="display:none"></div>
         </div>
 
-        <div class="aria-source-row">
-          <span class="aria-source-row__label">Jira</span>
-          <span class="aria-source-row__count" id="aria-jira-summary-count">Not connected</span>
-          <button type="button" class="aria-manage-btn" id="aria-jira-manage-btn">Manage</button>
-        </div>
         <div class="aria-connector" id="aria-jira-panel" style="display:none">
+          <div class="aria-connector__head">
+            <h3 class="aria-connector__title">Jira</h3>
+            <button type="button" class="aria-connector__close" data-panel="aria-jira-panel">Done</button>
+          </div>
           <div id="aria-jira-error" class="gen-error" style="display:none"></div>
           <div id="aria-jira-scope-missing" class="gen-error" style="display:none">
             Jira access hasn't been granted on this connection yet. Reconnect below.
@@ -335,7 +316,7 @@
           </div>
           <div id="aria-jira-processing" class="pw-process-list" style="display:none"></div>
         </div>
-      </section>
+      </div>
 
       <div class="pw-actions">
         <button type="button" class="pw-next-btn" id="aria-continue-btn">Continue to Technology &rarr;</button>

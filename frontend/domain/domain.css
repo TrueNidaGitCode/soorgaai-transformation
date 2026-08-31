@@ -2829,91 +2829,97 @@
   color: #5CC5A7;
 }
 .aria-status-badge--ready .aria-status-badge__dot { background: #5CC5A7; }
-.aria-status-badge--partial {
-  background: rgba(212,175,110,0.1);
-  border-color: rgba(212,175,110,0.35);
-  color: #D4AF6E;
-}
-.aria-status-badge--partial .aria-status-badge__dot { background: #D4AF6E; }
 
-.aria-header__recap {
+.aria-header__title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.aria-breadcrumb {
   margin: 10px 0 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #5CC5A7;
-}
-
-.aria-section { margin-top: 28px; }
-
-.aria-readiness__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-.aria-readiness__count { font-size: 13.5px; color: rgba(255,255,255,0.65); }
-.aria-readiness__pct { font-size: 20px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
-.aria-readiness__bar {
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.06);
-  overflow: hidden;
-}
-.aria-readiness__bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #3DAFD3, #5CC5A7);
-  transition: width 0.4s ease;
-}
-
-.aria-table-wrap { overflow-x: auto; }
-.aria-table {
-  width: 100%;
-  border-collapse: collapse;
   font-size: 13.5px;
-}
-.aria-table th {
-  text-align: left;
-  padding: 8px 12px;
-  color: rgba(255,255,255,0.4);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
   text-transform: uppercase;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  letter-spacing: 0.04em;
 }
-.aria-table td {
-  padding: 11px 12px;
-  color: rgba(255,255,255,0.8);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+.aria-breadcrumb__sep { margin: 0 8px; opacity: 0.4; }
+.aria-breadcrumb span:last-child {
+  color: #5CC5A7;
+  text-transform: none;
+  letter-spacing: normal;
 }
-.aria-table tr:last-child td { border-bottom: none; }
 
-.aria-status-icon {
-  display: inline-block;
-  width: 1.1em;
-  text-align: center;
-  margin-right: 4px;
-  font-weight: 700;
+.aria-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin: 24px 0 20px;
 }
-.aria-status-icon--connected { color: #5CC5A7; }
-.aria-status-icon--partial { color: #D4AF6E; }
-.aria-status-icon--none { color: rgba(255,255,255,0.25); }
 
-.aria-source-row {
+.aria-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aria-card {
+  padding: 16px 18px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+}
+.aria-card__top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 12px 4px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.aria-source-row__label { font-size: 14px; font-weight: 600; color: #fff; width: 110px; flex-shrink: 0; }
-.aria-source-row__count { flex: 1; font-size: 13px; color: rgba(255,255,255,0.5); }
-.aria-manage-btn {
+.aria-card__name { font-size: 14.5px; font-weight: 600; color: #fff; }
+.aria-card__source { margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.45); }
+
+.aria-card__footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+.aria-card__detail { margin: 0; font-size: 12.5px; color: rgba(255,255,255,0.55); }
+
+.aria-card__status {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.aria-card__status--connected { color: #5CC5A7; }
+.aria-card__status--partial { color: #D4AF6E; }
+.aria-card__status--none { color: rgba(255,255,255,0.4); }
+
+button.aria-card__status--none {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+button.aria-card__status--none:hover { color: #5CC5A7; }
+
+.aria-card__unsupported {
+  font-size: 12px;
+  color: rgba(255,255,255,0.3);
+  font-style: italic;
+}
+
+.aria-card__configure {
+  display: block;
+  margin: 10px 0 0 auto;
   background: transparent;
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 6px;
-  padding: 6px 14px;
+  padding: 5px 12px;
   color: rgba(255,255,255,0.7);
   font-size: 12.5px;
   font-family: inherit;
@@ -2921,7 +2927,9 @@
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
-.aria-manage-btn:hover { border-color: #5CC5A7; color: #fff; }
+.aria-card__configure:hover { border-color: #5CC5A7; color: #fff; }
+
+.aria-connector-panels { margin-top: 20px; }
 
 .aria-connector {
   margin-top: 20px;
@@ -2930,12 +2938,30 @@
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
 }
+.aria-connector__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
 .aria-connector__title {
   font-size: 14px;
   font-weight: 700;
   color: #fff;
-  margin: 0 0 12px;
+  margin: 0;
 }
+.aria-connector__close {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  padding: 4px 12px;
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.aria-connector__close:hover { border-color: #5CC5A7; color: #fff; }
 
 .aria-connected-badge {
   display: flex;

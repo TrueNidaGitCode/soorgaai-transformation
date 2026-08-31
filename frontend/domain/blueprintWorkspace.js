@@ -7098,6 +7098,18 @@ async function initWorkspace(blueprint) {
   _selectedDomainIdx = 0;
   _selectedCapIndex  = 0;
 
+  // The workspace is reached either as a fresh tab (Open Blueprint opens
+  // one via ?openBlueprint=1) or in-place after approving — either way,
+  // "← Home" doesn't make sense here. ?view=cob forces the Cob/
+  // Opportunities screen to show even for an already-approved blueprint,
+  // which would otherwise just bounce straight back to the workspace.
+  const backLink = document.querySelector('.workspace-nav__back');
+  if (backLink) {
+    backLink.href = '/domain/domain.html?view=cob';
+    backLink.textContent = '← Back to Cob';
+    backLink.setAttribute('aria-label', 'Back to Cob');
+  }
+
   // Guests browse read-only — assistant (and its authed API calls) stays hidden
   const assistantBtn = document.getElementById('btn-ai-assistant');
   if (assistantBtn && !window.SOORGA_GUEST) assistantBtn.style.display = '';

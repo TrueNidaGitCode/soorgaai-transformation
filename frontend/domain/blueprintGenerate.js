@@ -402,6 +402,31 @@ async function transitionToWorkspace(guestId) {
   }
 }
 
+// Decides whether a fresh page load should skip straight to the
+// workspace. ?openBlueprint=1 (set by openBlueprintInNewTab() below)
+// forces it regardless of approval status — viewing the blueprint
+// shouldn't require approving it first. ?view=cob forces the opposite
+// (the "← Back to Cob" link on the workspace uses this) — otherwise an
+// already-approved blueprint would just bounce straight back to the
+// workspace instead of actually showing Cob.
+function shouldShowWorkspace(bp) {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('view') === 'cob') return false;
+  if (params.get('openBlueprint') === '1') return bp.status === 'completed';
+  return !!bp.opportunityApproval?.approved;
+}
+
+// Opens the workspace in a new tab rather than replacing this screen —
+// window.open() (not a plain link) so sessionStorage (which
+// fetchTransformationBlueprint() reads for the picked-blueprint id) is
+// inherited by the new tab per the HTML spec's same-origin auxiliary
+// browsing context rules. ?openBlueprint=1 tells that fresh page load to
+// go straight to the workspace regardless of approval status — viewing
+// shouldn't require approving first.
+function openBlueprintInNewTab() {
+  window.open('/domain/domain.html?openBlueprint=1', '_blank');
+}
+
 let _opportunitiesButtonsWired = false;
 
 function wireOpportunitiesButtons(guestId) {
@@ -412,12 +437,7 @@ function wireOpportunitiesButtons(guestId) {
   const viewBtn    = document.getElementById('opp-view-blueprint-btn');
   const errEl      = document.getElementById('opp-error');
 
-  viewBtn?.addEventListener('click', async () => {
-    if (errEl) errEl.style.display = 'none';
-    viewBtn.disabled = true;
-    await transitionToWorkspace(guestId);
-    viewBtn.disabled = false; // no-op if the transition succeeded and this screen is now hidden
-  });
+  viewBtn?.addEventListener('click', () => openBlueprintInNewTab());
 
   approveBtn?.addEventListener('click', async () => {
     const token = getToken();
@@ -439,7 +459,7 @@ function wireOpportunitiesButtons(guestId) {
         const { error } = await resp.json().catch(() => ({}));
         throw new Error(error || 'Failed to approve. Please try again.');
       }
-      await transitionToWorkspace(guestId);
+      openBlueprintInNewTab();
     } catch (err) {
       if (errEl) { errEl.textContent = err.message; errEl.style.display = 'block'; }
       approveBtn.disabled = false;
@@ -651,15 +671,14 @@ async function initGuest(guestId) {
     if (!resp.ok) throw new Error('Failed to load preview blueprint');
     const bp = await resp.json();
 
-    if (bp.opportunityApproval?.approved) {
-      // Already approved (this session or a previous one) — straight to
-      // the workspace, no need to re-gate.
+    if (shouldShowWorkspace(bp)) {
       document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
     } else {
-      // Not yet approved — gate on Screen 2.5, whether generation is
-      // still running or this is a pre-existing blueprint from before
-      // this screen existed (opportunityApproval defaults to unapproved
-      // either way, so both cases are handled identically here).
+      // Not yet approved (or ?view=cob was explicitly requested) — gate
+      // on Screen 2.5, whether generation is still running or this is a
+      // pre-existing blueprint from before this screen existed
+      // (opportunityApproval defaults to unapproved either way, so both
+      // cases are handled identically here).
       wireOpportunitiesButtons(guestId);
       showScreen('screen-opportunities');
       renderJourneyIndicator();
@@ -708,15 +727,14 @@ async function init() {
       return;
     }
 
-    if (bp.opportunityApproval?.approved) {
-      // Already approved (this session or a previous one) — straight to
-      // the workspace, no need to re-gate.
+    if (shouldShowWorkspace(bp)) {
       document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
     } else {
-      // Not yet approved — gate on Screen 2.5, whether generation is
-      // still running or this is a pre-existing blueprint from before
-      // this screen existed (opportunityApproval defaults to unapproved
-      // either way, so both cases are handled identically here).
+      // Not yet approved (or ?view=cob was explicitly requested) — gate
+      // on Screen 2.5, whether generation is still running or this is a
+      // pre-existing blueprint from before this screen existed
+      // (opportunityApproval defaults to unapproved either way, so both
+      // cases are handled identically here).
       wireOpportunitiesButtons(null);
       showScreen('screen-opportunities');
       renderJourneyIndicator();

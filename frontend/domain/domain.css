@@ -2803,29 +2803,26 @@
    the Cob screen not reusing the cob.html side-nav classes).
 ══════════════════════════════════════════════════════════════════════════════ */
 
-/* Same rp-shell/rp-shell__body/rp-main/rp-character structure as the
-   Cob screen (screen--opportunities) — reused as-is so the character
-   portrait docks bottom-right the same way on both screens. Content is
-   capped to a compact left panel, and the character hides earlier than
-   Cob's own threshold (1100px) — this screen's table is denser than
-   Cob's free-form list, so it needs more headroom before the character
-   zone (right 30%) could ever reach it. Two independent guarantees
-   against overlap, not just one. */
+/* Identical shell to the Cob screen (screen--opportunities): same
+   rp-shell / rp-shell__body / rp-main / rp-character, same .pd-page
+   width, and the character inherits .rp-character untouched (78% tall,
+   30% wide, 0.5 opacity) so both screens read the same.
+   .rp-main keeps Cob's plain padding — an earlier version padded it to
+   reserve a lane for the character, which also squeezed the journey nav
+   and made it narrower than Cob's. */
 .screen--aria { padding: 0; min-height: 100vh; }
 
-/* The character keeps a reserved lane on the right rather than being
-   hidden: rp-main pads itself past the character's width, so content
-   physically cannot reach it at any viewport. Capping .pd-page instead
-   would leave the character visible but hide it on normal laptops once
-   the cap kicked in — reserving space keeps it present down to ~1000px,
-   where there genuinely isn't room for both. */
-.screen--aria .rp-character { width: 24%; max-width: 24%; opacity: 0.3; }
-.screen--aria .rp-main { padding-right: calc(24% + 48px); }
-.screen--aria .pd-page { max-width: 100%; min-width: 0; }
+/* Cob's content (a 640px card) is narrow enough to clear the character
+   on its own; this screen's table is not, so cap it explicitly. 70vw is
+   where the character's 30% lane begins, less the page padding and a
+   gap — so the table tracks the character at every width instead of
+   relying on a fixed breakpoint. The journey nav sits outside this
+   wrapper and keeps the full page width. */
+.aria-body { max-width: calc(70vw - 100px); }
 
 @media (max-width: 1000px) {
   .screen--aria .rp-character { display: none; }
-  .screen--aria .rp-main { padding-right: 40px; }
+  .aria-body { max-width: 100%; }
 }
 
 /* Matches the app palette (style.css --accent-green #5CC5A7 and the

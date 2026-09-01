@@ -77,7 +77,11 @@ export async function classifyDocument(title, normalizedText) {
       keywords: Array.isArray(parsed.keywords) ? parsed.keywords.filter(k => typeof k === 'string').slice(0, 10) : [],
     };
   } catch (err) {
-    console.warn(`[confluenceContent] Classification failed for "${title}", falling back to docType:'other' —`, err.message);
-    return { docType: 'other', summary: '', keywords: [] };
+    // Report the failure rather than absorbing it. Callers previously
+    // could not tell an empty classification from a failed LLM call, and
+    // stored the document as successfully extracted either way — which
+    // then made the unchanged-skip refuse to ever retry it.
+    console.warn(`[confluenceContent] Classification failed for "${title}" —`, err.message);
+    return { docType: 'other', summary: '', keywords: [], failed: true, error: err.message };
   }
 }

@@ -307,8 +307,11 @@ export async function linkDocumentsToBlueprint(req, res) {
               redactionCount: redactionNotes.length,
               redactionNotes,
               confluenceLastModified: page.lastModified ? new Date(page.lastModified) : null,
-              extractionStatus: 'extracted',
-              extractionError: '',
+              // A document whose classification failed is NOT extracted.
+              // Marking it so would both overstate what we hold and make
+              // the unchanged-skip above refuse to retry it later.
+              extractionStatus: classification.failed ? 'error' : 'extracted',
+              extractionError: classification.failed ? (classification.error || 'Classification failed') : '',
             },
           },
           { upsert: true }

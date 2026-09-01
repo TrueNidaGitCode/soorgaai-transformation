@@ -247,8 +247,11 @@ export async function linkIssuesToBlueprint(req, res) {
               redactionApplied: true,
               redactionCount: redactionNotes.length,
               redactionNotes,
-              extractionStatus: 'extracted',
-              extractionError: '',
+              // A document whose classification failed is NOT extracted.
+              // Marking it so would both overstate what we hold and make
+              // the unchanged-skip above refuse to retry it later.
+              extractionStatus: classification.failed ? 'error' : 'extracted',
+              extractionError: classification.failed ? (classification.error || 'Classification failed') : '',
             },
           },
           { upsert: true }

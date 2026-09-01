@@ -3074,6 +3074,40 @@
 .pw-process-item--empty { opacity: 1; border-color: rgba(255,255,255,0.12); }
 .pw-process-item--empty .pw-process-item__title { color: rgba(255,255,255,0.7); }
 
+/* Completion banner: the stage is done, and Arth is next but unavailable.
+   Stated rather than linked, since a link would go nowhere. */
+.aria-next {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: rgba(92,197,167,0.07);
+  border: 1px solid rgba(92,197,167,0.3);
+  border-radius: 10px;
+}
+.aria-next__tick {
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--aria-accent);
+  color: #08120f;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+}
+.aria-next__title { margin: 0; font-size: 13.5px; font-weight: 700; color: #fff; }
+.aria-next__body  { margin: 3px 0 0; font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,0.6); }
+.aria-next__body strong { color: var(--aria-accent); }
+
+.aria-relink {
+  background: none; border: none; padding: 0;
+  color: var(--aria-accent); font-family: inherit; font-size: 12.5px;
+  font-weight: 600; cursor: pointer; text-decoration: underline;
+}
+
+.aria-pipe--fail { color: #F87171; }
+
 .aria-process-bar {
   display: flex;
   align-items: center;

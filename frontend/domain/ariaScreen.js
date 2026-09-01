@@ -359,20 +359,34 @@ async function runProcess(blueprintId) {
     const linked = results.filter(r => r.status === 'linked').length;
     const failed = results.filter(r => r.status === 'error').length;
     const empty  = results.filter(r => r.status === 'empty').length;
-    btn.textContent = 'Process Connected Data';
-    // Linking is real and finished. Processing itself isn't built yet, so
-    // say so plainly rather than implying a pipeline ran.
-    hint.textContent = linked + ' item' + (linked === 1 ? '' : 's') + ' linked'
+    markAriaComplete(linked > 0 && failed === 0);
+    // Finished state — the button previously stayed enabled and read the
+    // same as before the run, which gave no signal the stage was done.
+    // "Run again" stays available for re-linking after new content lands.
+    btn.textContent = '✓ Data Processed';
+    btn.disabled = true;
+    hint.innerHTML = esc(
+      linked + ' item' + (linked === 1 ? '' : 's') + ' linked'
       + (empty ? ', ' + empty + ' source' + (empty === 1 ? '' : 's') + ' empty' : '')
-      + (failed ? ', ' + failed + ' failed' : '')
-      + '. Processing isn\'t connected yet — coming soon.';
+      + (failed ? ', ' + failed + ' failed' : '') + '.'
+    ) + ' <button type="button" class="aria-relink" id="aria-relink">Run again</button>';
+    document.getElementById('aria-relink')?.addEventListener('click', () => {
+      btn.disabled = false;
+      btn.textContent = 'Process Connected Data';
+      hint.textContent = '';
+      hideProgress();
+    });
   } catch (err) {
     hideProgress();
     btn.textContent = 'Process Connected Data';
+    btn.disabled = false;
     hint.textContent = err.message || 'Linking failed. Please try again.';
   } finally {
+    // Deliberately does NOT re-enable the button: on success the finished
+    // state owns it (and "Run again" restores it), and the catch above
+    // re-enables it when a retry is actually warranted. Re-enabling here
+    // unconditionally undid the completion state.
     _processing = false;
-    btn.disabled = false;
   }
 }
 
@@ -382,6 +396,24 @@ function renderTable(datasets, confCount, jiraCount) {
     || `<tr><td colspan="6" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
   updateReadinessCard(datasets, confCount, jiraCount);
   updateProcessBar(datasets);
+}
+
+// Aria is finished once data has actually been linked. Mark the journey
+// step done and say what comes next — Arth isn't built, so this states
+// that plainly instead of offering a link that goes nowhere.
+function markAriaComplete(ok) {
+  if (!ok) return;
+  const steps = document.querySelectorAll('#screen-aria .pw-step');
+  const aria = steps[1];
+  if (aria) {
+    aria.classList.remove('pw-step--active');
+    aria.classList.add('pw-step--done');
+  }
+  const line = document.querySelector('#screen-aria .pw-step-line:nth-of-type(2)');
+  if (line) line.classList.add('pw-step-line--done');
+
+  const banner = document.getElementById('aria-next-stage');
+  if (banner) banner.style.display = 'flex';
 }
 
 // ── Sources: one table for every connected tool ─────────────────────────────
@@ -464,7 +496,7 @@ function pipelineCell(done, total, doneLabel, pendingLabel) {
 }
 
 function sourceRowHtml({ tool, toolId, name, key, count, capped, noun }) {
-  const s = _linkedStats[toolId]?.get(key) || { linked: 0, redacted: 0, redactions: 0, structured: 0 };
+  const s = _linkedStats[toolId]?.get(key) || { linked: 0, redacted: 0, redactions: 0, structured: 0, failed: 0 };
   const status = s.linked > 0
     ? `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Linked · ${s.linked} ${noun}${s.linked === 1 ? '' : 's'}</span>`
     : `<span class="aria-status aria-status--ready"><span class="aria-status-dot"></span>Ready to link</span>`;
@@ -479,7 +511,9 @@ function sourceRowHtml({ tool, toolId, name, key, count, capped, noun }) {
         ? `<span class="aria-pipe aria-pipe--flag">${s.redactions} removed</span>`
         : `<span class="aria-pipe aria-pipe--ok">&check; Clean</span>`;
 
-  const structured = pipelineCell(s.structured, s.linked, 'Structured', 'Pending');
+  const structured = s.failed
+    ? `<span class="aria-pipe aria-pipe--fail" title="Extraction failed — see the log">${s.failed} failed</span>`
+    : pipelineCell(s.structured, s.linked, 'Structured', 'Pending');
 
   return `
     <tr>
@@ -526,13 +560,14 @@ async function refreshLinked(blueprintId) {
       docs.forEach(d => {
         const k = d[keyField];
         if (!k) return;
-        const s = m.get(k) || { linked: 0, redacted: 0, redactions: 0, structured: 0 };
+        const s = m.get(k) || { linked: 0, redacted: 0, redactions: 0, structured: 0, failed: 0 };
         s.linked++;
         if (d.redactionApplied) s.redacted++;
         s.redactions += (d.redactionCount || 0);
         // "Structured" means the extraction produced usable output, not
         // merely that it ran — a doc with no keywords is not structured.
         if (d.extractionStatus === 'extracted' && (d.keywords || []).length) s.structured++;
+        if (d.extractionStatus === 'error') s.failed++;
         m.set(k, s);
       });
       return m;

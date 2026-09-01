@@ -51,6 +51,7 @@ function esc(text) {
 
 let _cachedDatasets = [];
 let _blueprintId = null;
+let _ariaBlueprint = null;
 
 // Tool-level connection (an OAuth grant exists) — deliberately separate
 // from whether any content has been linked. Right after connecting, a tool
@@ -414,6 +415,17 @@ function markAriaComplete(ok) {
 
   const banner = document.getElementById('aria-next-stage');
   if (banner) banner.style.display = 'flex';
+
+  // Arth exists now, so offer the move rather than saying it isn't built.
+  const body = document.querySelector('#aria-next-stage .aria-next__body');
+  if (body) {
+    body.innerHTML = 'Next is <strong>Arth</strong> — choosing the models and infrastructure to run it on. '
+      + '<button type="button" class="aria-relink" id="aria-to-arth">Continue to Arth &rarr;</button>';
+    document.getElementById('aria-to-arth')?.addEventListener('click', () => {
+      document.dispatchEvent(new CustomEvent('screen:show', { detail: { id: 'screen-arth' } }));
+      document.dispatchEvent(new CustomEvent('arth:show', { detail: { blueprint: _ariaBlueprint } }));
+    });
+  }
 }
 
 // ── Sources: one table for every connected tool ─────────────────────────────
@@ -675,6 +687,7 @@ document.addEventListener('aria:show', (e) => {
   renderBreadcrumb(bp);
 
   _blueprintId = bp._id;
+  _ariaBlueprint = bp;
   const datasetsSection = findDatasetsSection(bp);
   _cachedDatasets = datasetsSection?.brief?.datasets || [];
   renderTable(_cachedDatasets, 0, 0);

@@ -33,7 +33,7 @@ function getToken() { return localStorage.getItem('token'); }
 // domain.html) — same fade+rise transition used between windows in the
 // pipeline demo, reused here for the same effect between real screens.
 function showScreen(id) {
-  ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-aria', 'screen-workspace', 'domain-loading'].forEach(sid => {
+  ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-aria', 'screen-arth', 'screen-eame', 'screen-workspace', 'domain-loading'].forEach(sid => {
     const el = document.getElementById(sid);
     if (!el) return;
     if (sid === id) {
@@ -484,6 +484,13 @@ function wireOpportunitiesButtons(guestId) {
   });
 }
 
+// Lets arthScreen.js / eameScreen.js switch screens without importing
+// showScreen — same decoupling the blueprint:ready / aria:show events use.
+document.addEventListener('screen:show', (e) => {
+  const id = e.detail?.id;
+  if (id) showScreen(id);
+});
+
 document.addEventListener('blueprint:update', (e) => {
   const { blueprint } = e.detail || {};
   if (blueprint) handleOpportunitiesUpdate(blueprint);
@@ -769,7 +776,28 @@ async function init() {
     // "Data Architecture" nav link (initAriaLink) always points here.
     const returningToAria = sessionStorage.getItem('svarg_returning_to_aria') === '1';
     sessionStorage.removeItem('svarg_returning_to_aria');
-    const forceAria = new URLSearchParams(window.location.search).get('view') === 'aria';
+    const returningToEame = sessionStorage.getItem('svarg_returning_to_eame') === '1';
+    sessionStorage.removeItem('svarg_returning_to_eame');
+    if (returningToEame) {
+      showScreen('screen-eame');
+      document.dispatchEvent(new CustomEvent('eame:show', { detail: { blueprint: bp } }));
+      initGenerateForm();
+      initEnterpriseBlueprintLink();
+      return;
+    }
+    const view = new URLSearchParams(window.location.search).get('view');
+    const forceAria = view === 'aria';
+    // Arth and Eame are reachable directly too, same override as Aria.
+    if (view === 'arth' || view === 'eame') {
+      showScreen('screen-' + view);
+      document.dispatchEvent(new CustomEvent(view + ':show', { detail: { blueprint: bp } }));
+      initGenerateForm();
+      initGroundingBanner(bp._id);
+      initKnowledgeSourcesLink(bp._id);
+      initAriaLink(bp);
+      initEnterpriseBlueprintLink();
+      return;
+    }
 
     if (returningToAria || forceAria) {
       showScreen('screen-aria');

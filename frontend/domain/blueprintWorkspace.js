@@ -82,7 +82,7 @@ let _showingActionTracker = false; // Action Tracker is blueprint-wide, not doma
 // domain.html) — same fade+rise transition used between windows in the
 // pipeline demo, reused here for the same effect between real screens.
 function showScreen(id) {
-  ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-aria', 'screen-workspace', 'domain-loading'].forEach(sid => {
+  ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-aria', 'screen-arth', 'screen-eame', 'screen-workspace', 'domain-loading'].forEach(sid => {
     const el = document.getElementById(sid);
     if (!el) return;
     if (sid === id) {

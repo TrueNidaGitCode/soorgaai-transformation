@@ -186,4 +186,10 @@ class ScreenChat {
   }
 }
 
-document.querySelectorAll('.sc-lane').forEach(lane => new ScreenChat(lane));
+// Arth and Eame reuse .sc-lane purely to position their character portrait
+// and have no chat of their own, so only wire lanes that actually carry a
+// launcher — constructing against a lane without one threw on load and took
+// the rest of this module's setup with it.
+document.querySelectorAll('.sc-lane').forEach(lane => {
+  if (lane.querySelector('.sc-launcher')) new ScreenChat(lane);
+});

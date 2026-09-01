@@ -355,6 +355,18 @@ const transformationBlueprintSchema = new mongoose.Schema({
     approved:   { type: Boolean, default: false },
     approvedAt: { type: Date,    default: null },
   },
+
+  // Arth (stage 3): which model class this engagement runs on. Stores the
+  // preference the user chose plus the resolved pick at that moment, since
+  // the catalog can change later and we want the decision as it was made.
+  // providerId is null for 'auto' — see modelSelectionService.selectModel.
+  arthSelection: {
+    preference:  { type: String, enum: ['frontier', 'open-weight', 'auto'], default: null },
+    providerId:  { type: String, default: '' },
+    displayName: { type: String, default: '' },
+    selectedAt:  { type: Date,   default: null },
+  },
+
   domains: { type: [domainSchema], default: [] },
 }, { timestamps: true });
 

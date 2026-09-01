@@ -131,3 +131,43 @@ export async function screenChat(req, res) {
     return res.status(500).json({ error: 'Failed to generate a reply.' });
   }
 }
+
+/**
+ * PATCH /strategy-canvas/transformation-blueprint/:blueprintId/arth-selection
+ * Records the model class chosen on the Arth screen.
+ *
+ * The resolved pick is recomputed here from modelSelectionService rather
+ * than trusted from the request body — the client sends only a preference,
+ * so it cannot record a model the catalog does not actually offer.
+ */
+export async function saveArthSelection(req, res) {
+  try {
+    const { blueprintId } = req.params;
+    const { preference } = req.body;
+
+    if (!['frontier', 'open-weight', 'auto'].includes(preference)) {
+      return res.status(400).json({ error: 'preference must be frontier, open-weight or auto.' });
+    }
+
+    const { selectModel } = await import('../services/modelSelectionService.js');
+    const picked = selectModel({ preference });
+
+    const result = await TransformationBlueprint.updateOne(
+      { _id: blueprintId, userId: req.user._id },
+      { $set: { arthSelection: {
+        preference,
+        providerId:  picked.providerId || '',
+        displayName: picked.displayName,
+        selectedAt:  new Date(),
+      } } }
+    );
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Blueprint not found.' });
+    }
+
+    return res.json({ saved: true, selection: picked });
+  } catch (err) {
+    console.error('[arthSelection] error:', err.message);
+    return res.status(500).json({ error: 'Failed to save the model selection.' });
+  }
+}

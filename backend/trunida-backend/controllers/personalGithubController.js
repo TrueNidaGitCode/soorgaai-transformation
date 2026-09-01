@@ -163,3 +163,28 @@ export async function pushProject(req, res) {
     return res.status(500).json({ error: `Failed to push project: ${detail}` });
   }
 }
+
+/**
+ * GET /api/github/personal/project-manifest
+ * The file list that a push would deliver — paths and sizes only, no
+ * content. Lets the Eame screen show what will actually be built from the
+ * same builder the push uses, rather than a hand-maintained list that
+ * could drift from reality.
+ */
+export async function getProjectManifest(req, res) {
+  try {
+    const includeJira = req.query.includeJira !== '0';
+    const files = buildManifest({ includeJira });
+    return res.json({
+      fileCount: files.length,
+      totalBytes: files.reduce((n, f) => n + Buffer.byteLength(f.content || '', 'utf8'), 0),
+      files: files.map(f => ({
+        path: f.path,
+        bytes: Buffer.byteLength(f.content || '', 'utf8'),
+      })),
+    });
+  } catch (err) {
+    console.error('[PersonalGithub] manifest error:', err.message);
+    return res.status(500).json({ error: 'Failed to build the project manifest.' });
+  }
+}

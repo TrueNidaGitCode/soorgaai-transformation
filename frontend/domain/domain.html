@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
-  <link rel="stylesheet" href="domain.css?v=23">
+  <link rel="stylesheet" href="domain.css?v=24">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -418,6 +418,224 @@
 
   </main>
 
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SCREEN 2.8 — Arth (model & infrastructure)
+       Reached from Aria once data is linked. The model options come from
+       the real catalog via GET /defect-matching/model-selection, and the
+       infrastructure rows from the blueprint's own technology domain — see
+       arthScreen.js.
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <main id="screen-arth" class="screen screen--aria" style="display:none" aria-label="Arth — model and infrastructure">
+   <div class="rp-shell">
+    <div class="rp-shell__body">
+     <main class="rp-main">
+
+      <nav class="pw-steps rp-journey" aria-label="Your AI transformation journey">
+        <div class="pw-step pw-step--done">
+          <span class="pw-step__node"><span class="pw-step__num">1</span></span>
+          <span class="pw-step__label">Cob</span>
+        </div>
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--done">
+          <span class="pw-step__node"><span class="pw-step__num">2</span></span>
+          <span class="pw-step__label">Aria</span>
+        </div>
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--active">
+          <span class="pw-step__node"><span class="pw-step__num">3</span></span>
+          <span class="pw-step__label">Arth</span>
+        </div>
+        <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step rp-journey__locked">
+          <span class="pw-step__node"><span class="pw-step__num">4</span></span>
+          <span class="pw-step__label">Eame</span>
+        </div>
+        <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step rp-journey__locked">
+          <span class="pw-step__node"><span class="pw-step__num">5</span></span>
+          <span class="pw-step__label">Yusu</span>
+        </div>
+      </nav>
+
+      <div class="aria-body">
+
+      <div class="pd-header aria-header">
+        <div class="aria-header__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        </div>
+        <div>
+          <h1 class="aria-header__title">Model &amp; Infrastructure</h1>
+          <p class="pd-header__sub">Choose what this use case runs on.</p>
+        </div>
+      </div>
+
+      <div class="aria-breadcrumb" id="arth-breadcrumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Selected use case: <strong id="arth-recap-name"></strong></span>
+      </div>
+
+      <div id="arth-error" class="gen-error" style="display:none"></div>
+
+      <p class="pd-substage-label aria-required-label">Model Class</p>
+      <div class="arth-options" id="arth-options"></div>
+
+      <div class="arth-detail" id="arth-detail" style="display:none">
+        <p class="arth-detail__name" id="arth-detail-name"></p>
+        <div class="arth-detail__tags" id="arth-detail-tags"></div>
+        <p class="arth-detail__rationale" id="arth-detail-rationale"></p>
+      </div>
+
+      <p class="pd-substage-label aria-required-label">Infrastructure</p>
+      <div class="aria-table-wrap">
+        <table class="aria-table aria-src-table">
+          <thead>
+            <tr><th>Component</th><th>Value</th></tr>
+          </thead>
+          <tbody id="arth-infra-body"></tbody>
+        </table>
+      </div>
+      <p class="aria-note" id="arth-infra-note" style="display:none">
+        <span class="aria-note__icon">&#9432;</span>
+        <span id="arth-infra-note-text"></span>
+      </p>
+
+      <div class="aria-next" id="arth-next-stage" style="display:none">
+        <span class="aria-next__tick">&check;</span>
+        <div>
+          <p class="aria-next__title">Model selected</p>
+          <p class="aria-next__body">Next is <strong>Eame</strong> — building the application itself.</p>
+        </div>
+      </div>
+
+      <div class="aria-process-bar">
+        <span class="aria-process-bar__hint" id="arth-hint">Choose a model class to continue</span>
+        <button type="button" class="pw-next-btn" id="arth-confirm-btn" disabled>Confirm &amp; Continue</button>
+      </div>
+
+      </div><!-- /.aria-body -->
+     </main>
+
+     <div class="sc-lane" data-screen="arth">
+       <img src="/assets/aria-character.png" class="rp-character sc-portrait" alt="" aria-hidden="true">
+     </div>
+
+    </div>
+   </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SCREEN 2.9 — Eame (build the application)
+       Reached from Arth. The capability package and its delivery to the
+       user's own GitHub are real — see eameScreen.js and
+       personalGithubRoutes.js.
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <main id="screen-eame" class="screen screen--aria" style="display:none" aria-label="Eame — build the application">
+   <div class="rp-shell">
+    <div class="rp-shell__body">
+     <main class="rp-main">
+
+      <nav class="pw-steps rp-journey" aria-label="Your AI transformation journey">
+        <div class="pw-step pw-step--done">
+          <span class="pw-step__node"><span class="pw-step__num">1</span></span>
+          <span class="pw-step__label">Cob</span>
+        </div>
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--done">
+          <span class="pw-step__node"><span class="pw-step__num">2</span></span>
+          <span class="pw-step__label">Aria</span>
+        </div>
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--done">
+          <span class="pw-step__node"><span class="pw-step__num">3</span></span>
+          <span class="pw-step__label">Arth</span>
+        </div>
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--active">
+          <span class="pw-step__node"><span class="pw-step__num">4</span></span>
+          <span class="pw-step__label">Eame</span>
+        </div>
+        <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step rp-journey__locked">
+          <span class="pw-step__node"><span class="pw-step__num">5</span></span>
+          <span class="pw-step__label">Yusu</span>
+        </div>
+      </nav>
+
+      <div class="aria-body">
+
+      <div class="pd-header aria-header">
+        <div class="aria-header__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
+        <div>
+          <h1 class="aria-header__title">Build the Application</h1>
+          <p class="pd-header__sub">Deliver a running project to your own repository.</p>
+        </div>
+      </div>
+
+      <div class="aria-breadcrumb" id="eame-breadcrumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Selected use case: <strong id="eame-recap-name"></strong></span>
+      </div>
+
+      <div id="eame-error" class="gen-error" style="display:none"></div>
+
+      <p class="pd-substage-label aria-required-label">What Gets Built</p>
+      <div class="aria-table-wrap">
+        <table class="aria-table aria-src-table">
+          <thead>
+            <tr><th>File</th><th>Purpose</th></tr>
+          </thead>
+          <tbody id="eame-manifest-body"></tbody>
+        </table>
+      </div>
+
+      <p class="pd-substage-label aria-required-label">Delivery</p>
+      <div class="aria-connector" id="eame-delivery">
+        <div id="eame-not-connected">
+          <p class="aria-next__body" style="margin:0 0 10px">Connect GitHub to receive the project as a real repository you own.</p>
+          <a id="eame-connect-btn" href="#" class="pw-back-btn">Connect GitHub</a>
+        </div>
+        <div id="eame-connected" style="display:none">
+          <span class="aria-connected-badge">
+            <span class="aria-connected-badge__dot"></span>
+            Connected as <strong id="eame-github-user"></strong>
+          </span>
+          <label class="aria-select-all" style="margin-top:12px">
+            Repository name
+            <input type="text" id="eame-repo-name" class="sc-input" style="max-width:280px" placeholder="svarg-defect-matching">
+          </label>
+          <label class="aria-select-all"><input type="checkbox" id="eame-repo-private" checked> Private repository</label>
+        </div>
+      </div>
+
+      <div id="eame-push-result" class="pw-process-list" style="display:none"></div>
+
+      <div class="aria-next" id="eame-next-stage" style="display:none">
+        <span class="aria-next__tick">&check;</span>
+        <div>
+          <p class="aria-next__title">Project delivered</p>
+          <p class="aria-next__body" id="eame-next-body">Next is <strong>Yusu</strong> — rolling it into the business. That stage isn't built yet.</p>
+        </div>
+      </div>
+
+      <div class="aria-process-bar">
+        <span class="aria-process-bar__hint" id="eame-hint">Connect GitHub to deliver the project</span>
+        <button type="button" class="pw-next-btn" id="eame-build-btn" disabled>Build &amp; Push Project</button>
+      </div>
+
+      </div><!-- /.aria-body -->
+     </main>
+
+     <div class="sc-lane" data-screen="eame">
+       <img src="/assets/cob-character.png" class="rp-character sc-portrait" alt="" aria-hidden="true">
+     </div>
+
+    </div>
+   </div>
+  </main>
+
   <!-- ══════════════════════════════════════════════════════════════════════
        SCREEN 3 — Company Blueprint Workspace
   ══════════════════════════════════════════════════════════════════════════ -->
@@ -521,9 +739,11 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=2"></script>
-  <script type="module" src="blueprintWorkspace.js?v=2"></script>
-  <script type="module" src="ariaScreen.js?v=22"></script>
-  <script type="module" src="screenChat.js?v=1"></script>
+  <script type="module" src="blueprintGenerate.js?v=3"></script>
+  <script type="module" src="blueprintWorkspace.js?v=3"></script>
+  <script type="module" src="ariaScreen.js?v=23"></script>
+  <script type="module" src="arthScreen.js?v=1"></script>
+  <script type="module" src="eameScreen.js?v=1"></script>
+  <script type="module" src="screenChat.js?v=2"></script>
 </body>
 </html>

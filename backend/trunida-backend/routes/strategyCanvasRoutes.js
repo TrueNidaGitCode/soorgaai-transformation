@@ -1,6 +1,6 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { screenChat } from '../controllers/screenChatController.js';
+import { screenChat, saveArthSelection } from '../controllers/screenChatController.js';
 import {
   listCapabilities,
   fetchCapabilityBlueprint,
@@ -38,6 +38,7 @@ router.post('/advisor/ask',            protect, ask);
 router.post('/blueprint-suggest',      protect, suggestSection);
 // Conversational chat with Cob / Aria (see screenChatController.js)
 router.post('/screen-chat',            protect, screenChat);
+router.patch('/transformation-blueprint/:blueprintId/arth-selection', protect, saveArthSelection);
 
 // ── Legacy: single-domain AI Strategy blueprint (kept for backwards compat) ───
 router.post('/generate-blueprint',                                                              protect, startBlueprintGeneration);

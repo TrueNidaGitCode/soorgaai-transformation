@@ -49,3 +49,7 @@ coverage/
 # OS
 Thumbs.db
 .DS_Store
+
+# Timestamped .env backups — same secrets as .env, must never be committed
+.env.bak.*
+backend/trunida-backend/.env.bak.*

@@ -3108,6 +3108,54 @@
 
 .aria-pipe--fail { color: #F87171; }
 
+/* Arth: model-class chooser. Cards rather than a select, because the
+   trade-off text is the point of the decision. */
+.arth-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.arth-option {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.arth-option:hover { border-color: rgba(92,197,167,0.5); }
+.arth-option--on {
+  border-color: var(--aria-accent);
+  background: rgba(92,197,167,0.09);
+}
+.arth-option__title { font-size: 14px; font-weight: 700; color: #fff; }
+.arth-option__blurb { font-size: 12.5px; line-height: 1.45; color: rgba(255,255,255,0.55); }
+.arth-option__pick  { font-size: 11.5px; color: var(--aria-accent); font-weight: 600; }
+
+.arth-detail {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.025);
+}
+.arth-detail__name { margin: 0; font-size: 14px; font-weight: 700; color: #fff; }
+.arth-detail__tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.arth-tag {
+  font-size: 11.5px; font-weight: 600;
+  padding: 3px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8);
+}
+.arth-tag__k { color: rgba(255,255,255,0.4); margin-right: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+.arth-detail__rationale { margin: 0; font-size: 12.5px; line-height: 1.55; color: rgba(255,255,255,0.6); }
+
 .aria-process-bar {
   display: flex;
   align-items: center;

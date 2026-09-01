@@ -3273,7 +3273,12 @@
 .sc-launcher {
   position: absolute;
   right: 24px;
-  bottom: 28px;
+  /* Sits just inside the top edge of the portrait. .rp-character is
+     height:78% anchored to the bottom, so its top edge is at 22% of the
+     lane — anchoring to the bottom of the page hid the launcher behind
+     the chat panel of the OTHER screen and below the fold on short
+     viewports. */
+  top: calc(22% + 16px);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -3446,6 +3451,8 @@
 @media (max-width: 1100px) {
   .sc-lane { width: min(380px, 92vw); }
   .sc-panel { left: auto; width: min(380px, 92vw); }
+  /* No portrait to sit on at this width — revert to a corner widget. */
+  .sc-launcher { top: auto; bottom: 24px; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════

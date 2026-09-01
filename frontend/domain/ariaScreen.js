@@ -218,9 +218,10 @@ function updateProcessBar(datasets) {
   const hint = document.getElementById('aria-process-hint');
   const pending = linkableSources();
   if (btn) btn.disabled = pending.length === 0;
-  if (hint) hint.textContent = pending.length
-    ? `${pending.length} source${pending.length === 1 ? '' : 's'} ready · up to ${LINK_BATCH} items each`
-    : 'Connect a source to process data';
+  // No idle text — the table above already says what is ready, so a
+  // standing "N sources ready" line was pure repetition. The element stays
+  // because linking progress, results and errors are reported through it.
+  if (hint) hint.textContent = pending.length ? '' : 'Connect a source to process data';
 }
 
 // Process = link, then process. The user asked for one button that does

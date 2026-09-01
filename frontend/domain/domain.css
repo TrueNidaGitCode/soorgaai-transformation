@@ -2689,6 +2689,11 @@
 
 /* ── Body: main + character ─────────────────────────────────────────── */
 .rp-shell__body {
+  /* Top of the heading in the content column: rp-main's 32px padding, the
+     105px journey nav, and the nav's 28px margin. The portrait lane and the
+     chat launcher hang off this so they line up with the text and stay
+     clear of the nav. */
+  --rp-lane-top: 165px;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -3381,9 +3386,9 @@
    becomes the containing block for fixed descendants. */
 .sc-lane {
   position: absolute;
-  top: 0;
+  top: var(--rp-lane-top);
   right: 0;
-  height: calc(100vh - 64px);
+  height: calc(100vh - 64px - var(--rp-lane-top));
   width: 30%;
   z-index: 3;
   pointer-events: none;
@@ -3392,7 +3397,13 @@
 
 /* The portrait keeps its original size: max-width was 30% of the shell, and
    the lane is exactly that 30%, so 100% here is the same rendered width. */
-.sc-lane .rp-character { max-width: 100%; width: 100%; }
+.sc-lane .rp-character {
+  max-width: 100%;
+  width: 100%;
+  top: 0;
+  bottom: auto;
+  height: 100%;
+}
 .sc-lane--open .sc-portrait { display: none; }
 
 .sc-launcher {
@@ -3402,12 +3413,9 @@
      which is why the two never lined up. */
   right: auto;
   left: -18px;
-  /* Sits just inside the top edge of the portrait. .rp-character is
-     height:78% anchored to the bottom, so its top edge is at 22% of the
-     lane — anchoring to the bottom of the page hid the launcher behind
-     the chat panel of the OTHER screen and below the fold on short
-     viewports. */
-  top: calc(22% + 16px);
+  /* Flush with the top of the lane, which is also the top of the portrait
+     and of the heading in the content column. */
+  top: 0;
   display: inline-flex;
   align-items: center;
   gap: 8px;

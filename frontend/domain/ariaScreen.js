@@ -238,9 +238,8 @@ async function runProcess(blueprintId) {
 
   _processing = true;
   btn.disabled = true;
-  const confProc = document.getElementById('aria-conf-processing');
-  const jiraProc = document.getElementById('aria-jira-processing');
-  const confResults = [], jiraResults = [];
+  const proc = document.getElementById('aria-sources-processing');
+  const results = [];
 
   try {
     for (let i = 0; i < sources.length; i++) {
@@ -256,8 +255,8 @@ async function runProcess(blueprintId) {
         const r = await api('/confluence/personal/link', {
           method: 'POST', body: JSON.stringify({ blueprintId, pages: batch }),
         });
-        confResults.push(...(r.results || []));
-        renderProcessing(confProc, confResults, 'pageId');
+        results.push(...(r.results || []));
+        renderProcessing(proc, results, 'pageId');
       } else {
         // listIssues is ordered by created DESC.
         const { issues } = await api(`/jira/personal/projects/${encodeURIComponent(src.key)}/issues`);
@@ -266,14 +265,14 @@ async function runProcess(blueprintId) {
         const r = await api('/jira/personal/link-to-blueprint', {
           method: 'POST', body: JSON.stringify({ blueprintId, issues: batch }),
         });
-        jiraResults.push(...(r.results || []));
-        renderProcessing(jiraProc, jiraResults, 'issueKey');
+        results.push(...(r.results || []));
+        renderProcessing(proc, results, 'issueKey');
       }
     }
 
     await refreshLinked(blueprintId);
 
-    const linked = [...confResults, ...jiraResults].filter(r => r.status !== 'error').length;
+    const linked = results.filter(r => r.status !== 'error').length;
     btn.textContent = 'Process Connected Data';
     // Linking is real and done. Processing itself isn't built yet, so say
     // that plainly rather than implying the pipeline ran.
@@ -295,93 +294,35 @@ function renderTable(datasets, confCount, jiraCount) {
   updateProcessBar(datasets);
 }
 
-// ── Connector panels: open/close + linked-doc refresh ────────────────────────
+// ── Sources: one table for every connected tool ─────────────────────────────
+// Confluence spaces and Jira projects used to live in two separate panels,
+// with duplicated status calls and near-identical rendering. They are one
+// list now: same columns, same statuses, one status request.
 
-function panelEl(source) {
-  return document.getElementById(source === 'jira' ? 'aria-jira-panel' : 'aria-conf-panel');
-}
-
-// Reveal without moving the viewport — used on load for every connected
-// tool, so scrolling here would yank the page on every visit.
-function showPanel(source) {
-  const panel = panelEl(source);
-  if (panel) panel.style.display = 'block';
-}
-
-// Reveal AND scroll — only for ?connect=<source>, where the user asked to
-// be taken to that specific connector.
-function openPanel(source) {
-  showPanel(source);
-  panelEl(source)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-async function refreshLinked(blueprintId) {
-  try {
-    const { documents } = await api(`/confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
-    const confDocs = documents.filter(d => (d.sourceType || 'confluence') === 'confluence');
-    const jiraDocs = documents.filter(d => d.sourceType === 'jira');
-
-    // Per-space / per-project linkage drives the Status column. The linked
-    // documents carry spaceKey/projectKey, so this is real state, not a
-    // guess from whatever the user last clicked.
-    _linkedKeys = {
-      confluence: new Set(confDocs.map(d => d.spaceKey).filter(Boolean)),
-      jira: new Set(jiraDocs.map(d => d.projectKey).filter(Boolean)),
-    };
-
-    const linkedList = document.getElementById('aria-conf-linked-list');
-    if (confDocs.length) {
-      linkedList.innerHTML = `<strong>Already linked:</strong> ${confDocs.map(d => esc(d.title)).join(', ')}`;
-      linkedList.style.display = 'block';
-    } else {
-      linkedList.style.display = 'none';
-    }
-
-    renderConfluenceTable();
-    renderJiraTable();
-    renderTable(_cachedDatasets, confDocs.length, jiraDocs.length);
-  } catch {
-    renderTable(_cachedDatasets, 0, 0);
-  }
-}
-
-// ── Confluence: connect → spaces → pages → link ─────────────────────────────
-
-function goConnectAtlassian(blueprintId) {
-  sessionStorage.setItem('svarg_returning_to_aria', '1');
-  api(`/confluence/personal/connect?blueprintId=${encodeURIComponent(blueprintId)}&returnTo=domain`)
-    .then(({ url }) => { window.location.href = url; })
-    .catch(err => showConfError(err.message));
-}
-
-function showConfError(message) {
-  const el = document.getElementById('aria-conf-error');
+function showSourcesError(message) {
+  const el = document.getElementById('aria-sources-error');
   el.textContent = message;
   el.style.display = 'block';
 }
 
-function showOnly(ids, activeId) {
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = id === activeId ? 'block' : 'none';
-  });
+function goConnectAtlassian(blueprintId) {
+  sessionStorage.setItem('svarg_returning_to_aria', '1');
+  api(`confluence/personal/connect?blueprintId=${encodeURIComponent(blueprintId)}&returnTo=domain`)
+    .then(({ url }) => { window.location.href = url; })
+    .catch(err => showSourcesError(err.message));
 }
 
-const CONF_SECTIONS = ['aria-conf-not-connected', 'aria-conf-spaces'];
-
 // Each linked item costs one sequential LLM call (classifyDocument) and the
-// link endpoints cap a request at 30, so "select everything" links the 30
-// most recent items per source rather than the whole space. The table still
-// reports the true total so the user knows what was left behind.
+// link endpoints cap a request at 30, so "link everything" links the 30 most
+// recent items per source. The table still reports the true total so the
+// user knows what was left behind.
 const LINK_BATCH = 30;
 
 function countCellHtml(count, capped, noun) {
-  // Jira's approximate-count is unavailable on some editions and answers
-  // 0 rather than erroring, so a zero here is not proof of emptiness.
-  // Say "unknown" instead of claiming the source is empty.
-  if (!count) {
-    return `<span class="aria-src-table__count--empty">&mdash;</span>`;
-  }
+  // Jira's approximate-count is unavailable on some editions and answers 0
+  // rather than erroring, so a zero here is not proof of emptiness. Say
+  // "unknown" instead of claiming the source is empty.
+  if (!count) return `<span class="aria-src-table__count--empty">&mdash;</span>`;
   const label = `${count.toLocaleString()}${capped ? '+' : ''} ${noun}${count === 1 && !capped ? '' : 's'}`;
   const limit = count > LINK_BATCH
     ? `<span class="aria-src-table__limit">newest ${LINK_BATCH} will link</span>`
@@ -394,26 +335,9 @@ function countCellHtml(count, capped, noun) {
 // Status column reflects the database rather than anything the user clicked.
 let _linkedKeys = { confluence: new Set(), jira: new Set() };
 
-function statusCellHtml(toolId, key) {
-  if (_linkedKeys[toolId]?.has(key)) {
-    return `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Linked</span>`;
-  }
-  return `<span class="aria-status aria-status--ready"><span class="aria-status-dot"></span>Ready to link</span>`;
-}
-
-function renderSourceRow({ tool, toolId, name, key, count, capped, noun }) {
-  return `
-    <tr>
-      <td><span class="aria-src-tool aria-src-tool--${toolId}">${esc(tool)}</span></td>
-      <td>
-        <span class="aria-row-name__title">${esc(name)}</span>
-        <span class="aria-row-name__desc">${esc(key)}</span>
-      </td>
-      <td>${statusCellHtml(toolId, key)}</td>
-      <td class="aria-src-table__count">${countCellHtml(count, capped, noun)}</td>
-    </tr>
-  `;
-}
+// Cached so Process can link without re-listing, and so Status can
+// re-render after linking without another round trip.
+let _sources = { confluence: [], jira: [] };
 
 function renderProcessing(el, results, keyField) {
   el.style.display = 'block';
@@ -431,112 +355,132 @@ function renderProcessing(el, results, keyField) {
   }).join('');
 }
 
-// Cached so the Process button can link without re-listing, and so the
-// Status column can be re-rendered after linking without another round trip.
-let _sources = { confluence: [], jira: [] };
-
-function renderConfluenceTable() {
-  const list = document.getElementById('aria-conf-space-list');
-  if (!list) return;
-  list.innerHTML = _sources.confluence.map(s => renderSourceRow({
-    tool: 'Confluence', toolId: 'confluence',
-    name: s.name, key: s.key,
-    count: s.itemCount, capped: s.itemCountCapped, noun: 'page',
-  })).join('') || `<tr><td colspan="4" class="ks-card-body">No spaces found in this Confluence site.</td></tr>`;
+function sourceRowHtml({ tool, toolId, name, key, count, capped, noun }) {
+  const linked = _linkedKeys[toolId]?.has(key);
+  const status = linked
+    ? `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Linked</span>`
+    : `<span class="aria-status aria-status--ready"><span class="aria-status-dot"></span>Ready to link</span>`;
+  return `
+    <tr>
+      <td><span class="aria-src-tool aria-src-tool--${toolId}">${esc(tool)}</span></td>
+      <td>
+        <span class="aria-row-name__title">${esc(name)}</span>
+        <span class="aria-row-name__desc">${esc(key)}</span>
+      </td>
+      <td>${status}</td>
+      <td class="aria-src-table__count">${countCellHtml(count, capped, noun)}</td>
+    </tr>
+  `;
 }
 
-async function renderConfluenceSpaces(blueprintId) {
-  const list = document.getElementById('aria-conf-space-list');
-  list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Loading spaces…</td></tr>`;
-  showOnly(CONF_SECTIONS, 'aria-conf-spaces');
+function renderSourcesTable() {
+  const body = document.getElementById('aria-sources-body');
+  if (!body) return;
+  const rows = [
+    ..._sources.confluence.map(sp => sourceRowHtml({
+      tool: 'Confluence', toolId: 'confluence', name: sp.name, key: sp.key,
+      count: sp.itemCount, capped: sp.itemCountCapped, noun: 'page',
+    })),
+    ..._sources.jira.map(pr => sourceRowHtml({
+      tool: 'Jira', toolId: 'jira', name: pr.name, key: pr.key,
+      count: pr.itemCount, capped: pr.itemCountCapped, noun: 'ticket',
+    })),
+  ];
+  body.innerHTML = rows.join('')
+    || `<tr><td colspan="4" class="ks-card-body">No sources connected yet.</td></tr>`;
+}
 
+async function refreshLinked(blueprintId) {
   try {
-    const { spaces } = await api('/confluence/personal/spaces?withCounts=1');
-    _sources.confluence = spaces.filter(sp => sp.type !== 'personal' && !String(sp.key || '').startsWith('~'));
-    renderConfluenceTable();
-    updateProcessBar(_cachedDatasets);
-  } catch (err) {
-    list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Couldn't load spaces.</td></tr>`;
-    showConfError(err.message);
+    const { documents } = await api(`confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
+    const confDocs = documents.filter(d => (d.sourceType || 'confluence') === 'confluence');
+    const jiraDocs = documents.filter(d => d.sourceType === 'jira');
+
+    // Per-space / per-project linkage drives the Status column. Linked
+    // documents carry spaceKey/projectKey, so this is real state.
+    _linkedKeys = {
+      confluence: new Set(confDocs.map(d => d.spaceKey).filter(Boolean)),
+      jira: new Set(jiraDocs.map(d => d.projectKey).filter(Boolean)),
+    };
+
+    const linkedList = document.getElementById('aria-linked-list');
+    if (documents.length) {
+      linkedList.innerHTML = `<strong>Already linked:</strong> ${documents.map(d => esc(d.title)).join(', ')}`;
+      linkedList.style.display = 'block';
+    } else {
+      linkedList.style.display = 'none';
+    }
+
+    renderSourcesTable();
+    renderTable(_cachedDatasets, confDocs.length, jiraDocs.length);
+  } catch {
+    renderTable(_cachedDatasets, 0, 0);
   }
 }
 
-async function initConfluenceSection(blueprintId) {
-  document.getElementById('aria-conf-connect-btn').addEventListener('click', (e) => {
-    e.preventDefault();
-    goConnectAtlassian(blueprintId);
-  });
-
-  try {
-    const status = await api('/confluence/personal/status');
-    if (!status.connected) { showOnly(CONF_SECTIONS, 'aria-conf-not-connected'); return; }
-
-    _connected.confluence = true;
-    showPanel('confluence');
-    await renderConfluenceSpaces(blueprintId);
-    renderTable(_cachedDatasets, _linkedKeys.confluence.size, _linkedKeys.jira.size);
-  } catch (err) {
-    showConfError(err.message);
-  }
-}
-
-// ── Jira: connect → projects → issues → link ────────────────────────────────
-
-function showJiraError(message) {
-  const el = document.getElementById('aria-jira-error');
-  el.textContent = message;
-  el.style.display = 'block';
-}
-
-const JIRA_SECTIONS = ['aria-jira-scope-missing', 'aria-jira-not-connected', 'aria-jira-projects'];
-
-function renderJiraTable() {
-  const list = document.getElementById('aria-jira-project-list');
-  if (!list) return;
-  list.innerHTML = _sources.jira.map(p => renderSourceRow({
-    tool: 'Jira', toolId: 'jira',
-    name: p.name, key: p.key,
-    count: p.itemCount, capped: p.itemCountCapped, noun: 'ticket',
-  })).join('') || `<tr><td colspan="4" class="ks-card-body">No projects found in this Jira site.</td></tr>`;
-}
-
-async function renderJiraProjects(blueprintId) {
-  const list = document.getElementById('aria-jira-project-list');
-  list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Loading projects…</td></tr>`;
-  showOnly(JIRA_SECTIONS, 'aria-jira-projects');
-
-  try {
-    const { projects } = await api('/jira/personal/projects?withCounts=1');
-    _sources.jira = projects;
-    renderJiraTable();
-    updateProcessBar(_cachedDatasets);
-  } catch (err) {
-    list.innerHTML = `<tr><td colspan="4" class="ks-card-body">Couldn't load projects.</td></tr>`;
-    showJiraError(err.message);
-  }
-}
-
-async function initJiraSection(blueprintId) {
+// One status call answers for both tools — they share a single Atlassian
+// connection, so asking twice was pure duplication.
+async function initSources(blueprintId) {
+  const prompts = document.getElementById('aria-connect-prompts');
+  const confBtn = document.getElementById('aria-conf-connect-btn');
+  const jiraBtn = document.getElementById('aria-jira-connect-btn');
+  const scopeMsg = document.getElementById('aria-jira-scope-missing');
   const connect = (e) => { e.preventDefault(); goConnectAtlassian(blueprintId); };
-  document.getElementById('aria-jira-connect-btn').addEventListener('click', connect);
+
+  confBtn.addEventListener('click', connect);
+  jiraBtn.addEventListener('click', connect);
   document.getElementById('aria-jira-reconnect-btn').addEventListener('click', connect);
 
+  const body = document.getElementById('aria-sources-body');
+  body.innerHTML = `<tr><td colspan="4" class="ks-card-body">Loading sources…</td></tr>`;
+
+  let status;
   try {
-    const status = await api('/confluence/personal/status');
-    if (!status.connected) { showOnly(JIRA_SECTIONS, 'aria-jira-not-connected'); return; }
-    if (!status.jiraScopeGranted) {
-      showPanel('jira');
-      showOnly(JIRA_SECTIONS, 'aria-jira-scope-missing');
-      return;
-    }
-    _connected.jira = true;
-    showPanel('jira');
-    await renderJiraProjects(blueprintId);
-    renderTable(_cachedDatasets, _linkedKeys.confluence.size, _linkedKeys.jira.size);
+    status = await api('/confluence/personal/status');
   } catch (err) {
-    showJiraError(err.message);
+    body.innerHTML = `<tr><td colspan="4" class="ks-card-body">Couldn't check your connection.</td></tr>`;
+    showSourcesError(err.message);
+    return;
   }
+
+  _connected.confluence = !!status.connected;
+  _connected.jira = !!(status.connected && status.jiraScopeGranted);
+
+  confBtn.style.display = _connected.confluence ? 'none' : '';
+  jiraBtn.style.display = status.connected ? 'none' : '';
+  scopeMsg.style.display = (status.connected && !status.jiraScopeGranted) ? '' : 'none';
+  prompts.style.display = (!_connected.confluence || !_connected.jira) ? 'flex' : 'none';
+
+  if (!status.connected) {
+    body.innerHTML = `<tr><td colspan="4" class="ks-card-body">Connect a tool to list its sources.</td></tr>`;
+    renderTable(_cachedDatasets, 0, 0);
+    return;
+  }
+
+  // Both lists in parallel — neither depends on the other. A failure in one
+  // must not blank the other, so each catches for itself.
+  const [conf, jira] = await Promise.all([
+    api('/confluence/personal/spaces?withCounts=1')
+      .catch(err => { showSourcesError(err.message); return { spaces: [] }; }),
+    _connected.jira
+      ? api('/jira/personal/projects?withCounts=1')
+          .catch(err => { showSourcesError(err.message); return { projects: [] }; })
+      : Promise.resolve({ projects: [] }),
+  ]);
+
+  // Personal spaces (key "~accountId") are an individual's scratch area
+  // holding Confluence's default tutorial pages, not team documentation.
+  // Process links every listed source automatically, so leaving them in
+  // would quietly ground the blueprint in "Getting started in Confluence".
+  _sources.confluence = (conf.spaces || [])
+    .filter(sp => sp.type !== 'personal' && !String(sp.key || '').startsWith('~'));
+  _sources.jira = jira.projects || [];
+
+  renderSourcesTable();
+  await refreshLinked(blueprintId);
+  updateProcessBar(_cachedDatasets);
 }
+
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────
 
@@ -563,12 +507,15 @@ document.addEventListener('aria:show', (e) => {
   _cachedDatasets = datasetsSection?.brief?.datasets || [];
   renderTable(_cachedDatasets, 0, 0);
 
-  initConfluenceSection(bp._id);
-  initJiraSection(bp._id);
-  refreshLinked(bp._id);
+  initSources(bp._id);
 
-  // Configure links redirect here with ?connect=<source> — land straight
-  // on the matching panel instead of the bare table.
+  // Connect links come back here with ?connect=<source>; there is one
+  // sources table now, so just scroll to it rather than picking a panel.
   const connectParam = new URLSearchParams(window.location.search).get('connect');
-  if (connectParam === 'confluence' || connectParam === 'jira') openPanel(connectParam);
+  if (connectParam === 'confluence' || connectParam === 'jira') {
+    setTimeout(() => {
+      document.getElementById('aria-sources-panel')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+  }
 });

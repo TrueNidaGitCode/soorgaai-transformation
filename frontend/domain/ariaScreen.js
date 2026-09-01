@@ -229,55 +229,124 @@ function updateProcessBar(datasets) {
 // slow part (one LLM classification per new item, server-side).
 let _processing = false;
 
+function setProgress(label, done, total) {
+  const wrap = document.getElementById('aria-progress');
+  const lbl = document.getElementById('aria-progress-label');
+  const cnt = document.getElementById('aria-progress-count');
+  const fill = document.getElementById('aria-progress-fill');
+  if (!wrap) return;
+  wrap.style.display = 'block';
+  lbl.textContent = label;
+  // total 0 means "phase with no measurable size yet" — keep the bar at 0
+  // rather than dividing by zero and showing a misleading 100%.
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  fill.style.width = pct + '%';
+  cnt.textContent = total > 0 ? done + ' of ' + total + ' items · ' + pct + '%' : '';
+}
+
+function hideProgress() {
+  const wrap = document.getElementById('aria-progress');
+  if (wrap) wrap.style.display = 'none';
+}
+
+// Process = link, then process. Linking is the slow part: the server makes
+// one LLM classification call per NEW item, sequentially, so a real
+// item-level progress bar is worth the extra listing pass up front.
+//
+// Two phases:
+//   1. list every source, so the total is a real number rather than a guess
+//   2. link source by source, advancing by the items each batch actually
+//      returned (not by the batch size we hoped for)
 async function runProcess(blueprintId) {
   if (_processing) return;
   const btn = document.getElementById('aria-process-btn');
   const hint = document.getElementById('aria-process-hint');
+  const proc = document.getElementById('aria-sources-processing');
   const sources = linkableSources();
   if (!sources.length) return;
 
   _processing = true;
   btn.disabled = true;
-  const proc = document.getElementById('aria-sources-processing');
+  btn.textContent = 'Processing…';
+  hint.textContent = '';
+  proc.style.display = 'none';
+  proc.innerHTML = '';
+
   const results = [];
 
   try {
+    // ── Phase 1: work out what there actually is to link ──────────────
+    const jobs = [];
     for (let i = 0; i < sources.length; i++) {
       const src = sources[i];
-      hint.textContent = `Linking ${src.name} (${i + 1} of ${sources.length})…`;
-      btn.textContent = 'Linking…';
-
-      if (src.tool === 'confluence') {
-        // listPages is newest-first, so the head is the newest N.
-        const { pages } = await api(`/confluence/personal/spaces/${encodeURIComponent(src.key)}/pages`);
-        const batch = pages.slice(0, LINK_BATCH).map(p => ({ pageId: p.id, spaceKey: src.key }));
-        if (!batch.length) continue;
-        const r = await api('/confluence/personal/link', {
-          method: 'POST', body: JSON.stringify({ blueprintId, pages: batch }),
-        });
-        results.push(...(r.results || []));
-        renderProcessing(proc, results, 'pageId');
-      } else {
-        // listIssues is ordered by created DESC.
-        const { issues } = await api(`/jira/personal/projects/${encodeURIComponent(src.key)}/issues`);
-        const batch = issues.slice(0, LINK_BATCH).map(iss => ({ issueKey: iss.key }));
-        if (!batch.length) continue;
-        const r = await api('/jira/personal/link-to-blueprint', {
-          method: 'POST', body: JSON.stringify({ blueprintId, issues: batch }),
-        });
-        results.push(...(r.results || []));
-        renderProcessing(proc, results, 'issueKey');
+      setProgress('Reading ' + src.name + '…', i, sources.length);
+      try {
+        if (src.tool === 'confluence') {
+          // listPages is newest-first, so the head is the newest N.
+          const { pages } = await api('/confluence/personal/spaces/' + encodeURIComponent(src.key) + '/pages');
+          const batch = pages.slice(0, LINK_BATCH).map(pg => ({ pageId: pg.id, spaceKey: src.key }));
+          if (batch.length) jobs.push({ src, batch });
+        } else {
+          // listIssues is ordered by created DESC.
+          const { issues } = await api('/jira/personal/projects/' + encodeURIComponent(src.key) + '/issues');
+          const batch = issues.slice(0, LINK_BATCH).map(iss => ({ issueKey: iss.key }));
+          if (batch.length) jobs.push({ src, batch });
+        }
+      } catch (err) {
+        // One unreadable source must not abandon the rest.
+        results.push({ status: 'error', title: src.name, error: err.message });
       }
     }
 
+    const total = jobs.reduce((n, j) => n + j.batch.length, 0);
+    if (!total) {
+      hideProgress();
+      btn.textContent = 'Process Connected Data';
+      hint.textContent = results.length
+        ? 'Could not read any source. See the log below.'
+        : 'Nothing new to link.';
+      if (results.length) renderProcessing(proc, results, 'title');
+      return;
+    }
+
+    // ── Phase 2: link, advancing by real completions ──────────────────
+    let done = 0;
+    for (const job of jobs) {
+      setProgress('Linking ' + job.src.name + '…', done, total);
+      try {
+        const r = job.src.tool === 'confluence'
+          ? await api('/confluence/personal/link', {
+              method: 'POST', body: JSON.stringify({ blueprintId, pages: job.batch }),
+            })
+          : await api('/jira/personal/link-to-blueprint', {
+              method: 'POST', body: JSON.stringify({ blueprintId, issues: job.batch }),
+            });
+        const got = r.results || [];
+        results.push(...got);
+        // Advance by what the server actually reported, falling back to the
+        // batch size if it returned nothing, so the bar can never stall.
+        done += got.length || job.batch.length;
+      } catch (err) {
+        results.push({ status: 'error', title: job.src.name, error: err.message });
+        done += job.batch.length;
+      }
+      setProgress('Linking ' + job.src.name + '…', Math.min(done, total), total);
+      renderProcessing(proc, results, job.src.tool === 'confluence' ? 'pageId' : 'issueKey');
+    }
+
+    setProgress('Linked', total, total);
     await refreshLinked(blueprintId);
 
     const linked = results.filter(r => r.status !== 'error').length;
+    const failed = results.length - linked;
     btn.textContent = 'Process Connected Data';
-    // Linking is real and done. Processing itself isn't built yet, so say
-    // that plainly rather than implying the pipeline ran.
-    hint.textContent = `${linked} item${linked === 1 ? '' : 's'} linked. Processing isn't connected yet — coming soon.`;
+    // Linking is real and finished. Processing itself isn't built yet, so
+    // say so plainly rather than implying a pipeline ran.
+    hint.textContent = linked + ' item' + (linked === 1 ? '' : 's') + ' linked'
+      + (failed ? ', ' + failed + ' failed' : '')
+      + '. Processing isn\'t connected yet — coming soon.';
   } catch (err) {
+    hideProgress();
     btn.textContent = 'Process Connected Data';
     hint.textContent = err.message || 'Linking failed. Please try again.';
   } finally {

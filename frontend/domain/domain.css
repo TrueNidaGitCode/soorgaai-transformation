@@ -3022,6 +3022,53 @@
 .aria-action-btn--primary:hover { opacity: 0.85; }
 .aria-action-none { color: rgba(255,255,255,0.25); font-size: 12px; }
 
+/* Linking progress. The fill is set from real item counts, so the width
+   transition is the only animation — nothing here fakes movement. */
+.aria-progress {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+}
+.aria-progress__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.aria-progress__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aria-progress__count {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.aria-progress__track {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+.aria-progress__fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--aria-accent-2), var(--aria-accent));
+  transition: width 0.35s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aria-progress__fill { transition: none; }
+}
+
 .aria-process-bar {
   display: flex;
   align-items: center;

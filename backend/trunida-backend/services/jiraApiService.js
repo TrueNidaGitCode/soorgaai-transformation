@@ -49,6 +49,14 @@ export async function listIssues(cloudId, accessToken, projectKey, { limit = 50,
       });
     }
 
+    // An empty first page is worth recording: it is indistinguishable in
+    // the UI from a broken query, and the raw shape tells them apart.
+    if (!issues.length) {
+      console.log('[jiraApi] search/jql returned no issues for ' + projectKey +
+        ' — keys: ' + JSON.stringify(Object.keys(data || {})) +
+        ', isLast: ' + data.isLast + ', total: ' + data.total);
+    }
+
     nextPageToken = data.nextPageToken;
     if (!nextPageToken || !data.issues?.length) break;
   }

@@ -3069,6 +3069,11 @@
   .aria-progress__fill { transition: none; }
 }
 
+/* A source with nothing in it is an outcome, not an error — muted, not red.
+   .pw-process-item/--done/--error come from pipeline-demo.css. */
+.pw-process-item--empty { opacity: 1; border-color: rgba(255,255,255,0.12); }
+.pw-process-item--empty .pw-process-item__title { color: rgba(255,255,255,0.7); }
+
 .aria-process-bar {
   display: flex;
   align-items: center;

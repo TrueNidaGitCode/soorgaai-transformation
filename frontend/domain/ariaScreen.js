@@ -293,13 +293,13 @@ async function runProcess(blueprintId) {
           if (batch.length) jobs.push({ src, batch });
           // Silently skipping an empty source is why Jira could vanish from
           // a run with no explanation. Say so instead.
-          else results.push({ status: 'error', title: src.name, error: 'Confluence returned no pages for this space.' });
+          else results.push({ status: 'empty', title: src.name, error: 'No pages in this space — nothing to link.' });
         } else {
           // listIssues is ordered by created DESC.
           const { issues } = await api('/jira/personal/projects/' + encodeURIComponent(src.key) + '/issues');
           const batch = issues.slice(0, LINK_BATCH).map(iss => ({ issueKey: iss.key }));
           if (batch.length) jobs.push({ src, batch });
-          else results.push({ status: 'error', title: src.name, error: 'Jira returned no issues for this project.' });
+          else results.push({ status: 'empty', title: src.name, error: 'No issues in this project — nothing to link.' });
         }
       } catch (err) {
         // One unreadable source must not abandon the rest.
@@ -311,9 +311,9 @@ async function runProcess(blueprintId) {
     if (!total) {
       hideProgress();
       btn.textContent = 'Process Connected Data';
-      hint.textContent = results.length
-        ? 'No items came back from any source — see below.'
-        : 'Nothing new to link.';
+      hint.textContent = results.some(r => r.status === 'error')
+        ? 'No items could be read — see below.'
+        : 'The connected sources are empty — nothing to link yet.';
       if (results.length) renderProcessing(proc, results, 'title');
       return;
     }
@@ -346,12 +346,14 @@ async function runProcess(blueprintId) {
     setProgress('Linked', total, total);
     await refreshLinked(blueprintId);
 
-    const linked = results.filter(r => r.status !== 'error').length;
-    const failed = results.length - linked;
+    const linked = results.filter(r => r.status === 'linked').length;
+    const failed = results.filter(r => r.status === 'error').length;
+    const empty  = results.filter(r => r.status === 'empty').length;
     btn.textContent = 'Process Connected Data';
     // Linking is real and finished. Processing itself isn't built yet, so
     // say so plainly rather than implying a pipeline ran.
     hint.textContent = linked + ' item' + (linked === 1 ? '' : 's') + ' linked'
+      + (empty ? ', ' + empty + ' source' + (empty === 1 ? '' : 's') + ' empty' : '')
       + (failed ? ', ' + failed + ' failed' : '')
       + '. Processing isn\'t connected yet — coming soon.';
   } catch (err) {
@@ -420,6 +422,14 @@ let _sources = { confluence: [], jira: [] };
 function renderProcessing(el, results, keyField) {
   el.style.display = 'block';
   el.innerHTML = results.map(r => {
+    // An empty source is a legitimate outcome, not a failure — a project
+    // with no issues should not read like something went wrong.
+    if (r.status === 'empty') {
+      return `<div class="pw-process-item pw-process-item--empty">
+        <span class="pw-process-item__title">${esc(r.title || '')}</span>
+        <span class="pw-process-item__detail">${esc(r.error)}</span>
+      </div>`;
+    }
     if (r.status === 'error') {
       return `<div class="pw-process-item pw-process-item--error">
         <span class="pw-process-item__title">${esc(r[keyField] || r.title || '')}</span>

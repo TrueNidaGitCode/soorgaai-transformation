@@ -32,6 +32,10 @@ const API_BASE = window.CONFIG?.API_BASE
 function getToken() { return localStorage.getItem('token'); }
 
 async function api(path, opts = {}) {
+  // API_BASE has no trailing slash, so a path missing its leading slash
+  // silently concatenates into ".../apiconfluence/..." and 404s. Normalise
+  // rather than trusting every call site to remember.
+  if (!path.startsWith('/')) path = '/' + path;
   const res = await fetch(`${API_BASE}${path}`, {
     ...opts,
     headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json', ...(opts.headers || {}) },
@@ -377,7 +381,7 @@ function showSourcesError(message) {
 
 function goConnectAtlassian(blueprintId) {
   sessionStorage.setItem('svarg_returning_to_aria', '1');
-  api(`confluence/personal/connect?blueprintId=${encodeURIComponent(blueprintId)}&returnTo=domain`)
+  api(`/confluence/personal/connect?blueprintId=${encodeURIComponent(blueprintId)}&returnTo=domain`)
     .then(({ url }) => { window.location.href = url; })
     .catch(err => showSourcesError(err.message));
 }
@@ -462,7 +466,7 @@ function renderSourcesTable() {
 
 async function refreshLinked(blueprintId) {
   try {
-    const { documents } = await api(`confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
+    const { documents } = await api(`/confluence/personal/linked/${encodeURIComponent(blueprintId)}`);
     const confDocs = documents.filter(d => (d.sourceType || 'confluence') === 'confluence');
     const jiraDocs = documents.filter(d => d.sourceType === 'jira');
 

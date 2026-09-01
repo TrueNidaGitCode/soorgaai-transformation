@@ -191,10 +191,14 @@ function wireJourneyAnimation() {
 }
 
 function wireCtaButtons() {
+  // Deliberately NOT CTARouter: this button is the marketing entry point to
+  // Cob, so it always lands on the objective box. CTARouter sends signed-in
+  // users to their existing blueprint instead, which is right for the
+  // pricing CTAs but skips the step this button is advertising.
   const ids = ['mkt-cta-hero'];
   ids.forEach((id) => {
     document.getElementById(id)?.addEventListener('click', () => {
-      window.CTARouter?.routeToWorkspace();
+      window.location.href = '/cob.html';
     });
   });
 }

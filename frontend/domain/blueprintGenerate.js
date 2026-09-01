@@ -480,6 +480,36 @@ function wireOpportunitiesButtons(guestId) {
 
 // Lets arthScreen.js / eameScreen.js switch screens without importing
 // showScreen — same decoupling the blueprint:ready / aria:show events use.
+// The journey steps look like navigation, so they should behave like it.
+// Switching in-place (rather than via ?view=, which reloads) keeps the
+// blueprint already in memory and avoids a refetch on every hop.
+let _currentBlueprint = null;
+
+function goToStage(stage) {
+  const bp = _currentBlueprint;
+  if (!bp) return;
+
+  if (stage === 'cob') {
+    showScreen('screen-opportunities');
+    renderJourneyIndicator();
+    handleOpportunitiesUpdate(bp);
+    return;
+  }
+  showScreen('screen-' + stage);
+  document.dispatchEvent(new CustomEvent(stage + ':show', { detail: { blueprint: bp } }));
+}
+
+function wireJourneyNavigation() {
+  // Delegated on document: every screen has its own copy of the nav, and
+  // the ones inside hidden screens still need to work once shown.
+  document.addEventListener('click', (e) => {
+    const step = e.target.closest('.rp-journey .pw-step[data-goto]');
+    if (!step) return;
+    e.preventDefault();
+    goToStage(step.dataset.goto);
+  });
+}
+
 document.addEventListener('screen:show', (e) => {
   const id = e.detail?.id;
   if (id) showScreen(id);
@@ -487,7 +517,7 @@ document.addEventListener('screen:show', (e) => {
 
 document.addEventListener('blueprint:update', (e) => {
   const { blueprint } = e.detail || {};
-  if (blueprint) handleOpportunitiesUpdate(blueprint);
+  if (blueprint) { _currentBlueprint = blueprint; handleOpportunitiesUpdate(blueprint); }
 });
 
 // ── API helpers ───────────────────────────────────────────────────────────────
@@ -752,6 +782,8 @@ async function init() {
 
   try {
     const bp = await fetchTransformationBlueprint();
+    _currentBlueprint = bp;
+    wireJourneyNavigation();
 
     if (!bp) {
       // No blueprint yet — the landing page owns the prompt box

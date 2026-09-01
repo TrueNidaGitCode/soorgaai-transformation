@@ -2714,6 +2714,14 @@
 .rp-journey { margin-bottom: 28px; }
 .rp-journey__locked { opacity: 0.4; cursor: not-allowed; }
 
+/* Steps that lead somewhere are clickable; Yusu has no screen yet and
+   keeps the locked treatment above. */
+.rp-journey .pw-step[data-goto] { cursor: pointer; }
+.rp-journey .pw-step[data-goto]:hover .pw-step__label { color: #fff; }
+.rp-journey .pw-step[data-goto]:hover .pw-step__node {
+  border-color: var(--accent-teal);
+}
+
 .rp-main__head {
   display: flex;
   align-items: flex-start;

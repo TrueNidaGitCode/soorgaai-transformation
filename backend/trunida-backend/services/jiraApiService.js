@@ -58,7 +58,7 @@ function mapIssues(data) {
   }));
 }
 
-export async function listIssues(cloudId, accessToken, projectKey, { limit = 50, maxIssues = 200 } = {}) {
+export async function listIssues(cloudId, accessToken, projectKey, { limit = 50, maxIssues = 200, diagnostics } = {}) {
   const variants = [
     `project = "${projectKey}" ORDER BY created DESC`,
     `project = ${projectKey} ORDER BY created DESC`,
@@ -72,12 +72,19 @@ export async function listIssues(cloudId, accessToken, projectKey, { limit = 50,
     data = await searchIssues(cloudId, accessToken, jql, { limit });
     const n = (data.issues || []).length;
     if (n) { usedJql = jql; break; }
-    console.log(
-      '[jiraApi] search/jql found 0 issues for ' + projectKey +
-      ' with JQL ' + JSON.stringify(jql) +
-      ' — response keys: ' + JSON.stringify(Object.keys(data || {})) +
-      ', isLast: ' + data.isLast + ', total: ' + data.total
-    );
+    // Some Atlassian endpoints answer 200 with an errorMessages payload
+    // rather than a 4xx, which is indistinguishable from "no results"
+    // unless the body is inspected — so capture the shape either way.
+    const shape = {
+      jql,
+      responseKeys: Object.keys(data || {}),
+      isLast: data.isLast,
+      total: data.total,
+      errorMessages: data.errorMessages || null,
+      warningMessages: data.warningMessages || null,
+    };
+    console.log('[jiraApi] search/jql found 0 issues for ' + projectKey + ' — ' + JSON.stringify(shape));
+    if (diagnostics) diagnostics.push(shape);
   }
 
   const issues = mapIssues(data);

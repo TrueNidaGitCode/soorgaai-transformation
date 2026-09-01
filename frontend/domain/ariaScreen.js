@@ -296,10 +296,20 @@ async function runProcess(blueprintId) {
           else results.push({ status: 'empty', title: src.name, error: 'No pages in this space — nothing to link.' });
         } else {
           // listIssues is ordered by created DESC.
-          const { issues } = await api('/jira/personal/projects/' + encodeURIComponent(src.key) + '/issues');
-          const batch = issues.slice(0, LINK_BATCH).map(iss => ({ issueKey: iss.key }));
+          const res = await api('/jira/personal/projects/' + encodeURIComponent(src.key) + '/issues');
+          const batch = (res.issues || []).slice(0, LINK_BATCH).map(iss => ({ issueKey: iss.key }));
           if (batch.length) jobs.push({ src, batch });
-          else results.push({ status: 'empty', title: src.name, error: 'No issues in this project — nothing to link.' });
+          else {
+            // Show what Jira actually said, so an empty project and a
+            // rejected query don't look identical on screen.
+            const d = (res.diagnostics || [])[0];
+            const detail = d?.errorMessages?.length
+              ? 'Jira rejected the query: ' + d.errorMessages.join('; ')
+              : d
+                ? 'Jira returned no issues (total: ' + d.total + ', fields: ' + (d.responseKeys || []).join('/') + ')'
+                : 'No issues in this project — nothing to link.';
+            results.push({ status: 'empty', title: src.name, error: detail });
+          }
         }
       } catch (err) {
         // One unreadable source must not abandon the rest.

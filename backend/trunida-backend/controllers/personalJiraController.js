@@ -92,8 +92,13 @@ export async function getPersonalProjectIssues(req, res) {
     if (error) return res.status(error.status).json(error.body);
 
     const accessToken = await getValidAccessToken(connection);
-    const issues = await listIssues(connection.cloudId, accessToken, req.params.projectKey);
-    return res.json({ issues });
+    // When a project comes back with nothing, hand the raw response shape
+    // back to the client too. Otherwise the only way to tell "empty
+    // project" from "Jira refused the query" is server logs, which the
+    // person looking at the screen usually cannot reach.
+    const diagnostics = [];
+    const issues = await listIssues(connection.cloudId, accessToken, req.params.projectKey, { diagnostics });
+    return res.json({ issues, ...(issues.length ? {} : { diagnostics }) });
   } catch (err) {
     console.error('[PersonalJira] GET issues error:', err.response?.data || err.message);
     return res.status(500).json({ error: `Failed to list Jira issues: ${jiraErrorDetail(err)}` });

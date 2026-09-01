@@ -226,7 +226,7 @@ export async function linkIssuesToBlueprint(req, res) {
           continue;
         }
 
-        const { redactedText } = regexRedact(rawText);
+        const { redactedText, redactionNotes } = regexRedact(rawText);
         const classification = await classifyDocument(issue.summary, redactedText);
 
         await LinkedProjectDocument.updateOne(
@@ -244,6 +244,9 @@ export async function linkIssuesToBlueprint(req, res) {
               keywords: classification.keywords,
               rawText: redactedText,
               contentHash,
+              redactionApplied: true,
+              redactionCount: redactionNotes.length,
+              redactionNotes,
               extractionStatus: 'extracted',
               extractionError: '',
             },

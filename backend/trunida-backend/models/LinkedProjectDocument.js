@@ -36,6 +36,13 @@ const linkedProjectDocumentSchema = new mongoose.Schema({
   rawText: { type: String, default: '' },
   contentHash: { type: String, default: '' },
 
+  // What the redaction pass removed before the text was stored or sent to
+  // an LLM. redactionCount 0 with redactionApplied true means "we looked
+  // and found nothing", which is different from "we never looked".
+  redactionApplied: { type: Boolean, default: false },
+  redactionCount: { type: Number, default: 0 },
+  redactionNotes: { type: [String], default: [] },
+
   confluenceLastModified: { type: Date, default: null },
 
   extractionStatus: {

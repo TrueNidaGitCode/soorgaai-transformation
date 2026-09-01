@@ -3096,10 +3096,12 @@
 /* .aria-table is table-layout:fixed, so every column needs an explicit
    width — leaving them auto collapses them to equal shares. Columns are
    Tool Name / Space-or-Project Name / Status / Available. */
-.aria-src-table th:nth-child(1) { width: 18%; }
+.aria-src-table th:nth-child(1) { width: 13%; }
 .aria-src-table th:nth-child(2) { width: auto; }
-.aria-src-table th:nth-child(3) { width: 22%; }
-.aria-src-table th:nth-child(4) { width: 26%; text-align: right; }
+.aria-src-table th:nth-child(3) { width: 19%; }
+.aria-src-table th:nth-child(4) { width: 14%; }
+.aria-src-table th:nth-child(5) { width: 13%; }
+.aria-src-table th:nth-child(6) { width: 17%; text-align: right; }
 /* Tool cell: a small colour-keyed chip. No letter badge — the column is
    already headed "Tool Name", so an icon reading "J" beside "Jira" just
    printed the tool twice. */
@@ -3113,6 +3115,15 @@
 }
 .aria-src-tool--confluence { background: rgba(38,132,255,0.14); color: #7FB4FF; }
 .aria-src-tool--jira       { background: rgba(0,82,204,0.18);  color: #8AB4F8; }
+
+/* Processing-pipeline cells: redaction and structuring outcome per source.
+   "Clean" is a positive finding (the pass ran, matched nothing); an em dash
+   means nothing has been processed yet — the two must not look alike. */
+.aria-pipe { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.aria-pipe--ok   { color: var(--aria-accent); }
+.aria-pipe--flag { color: #D4AF6E; }
+.aria-pipe--part { color: rgba(255,255,255,0.6); font-weight: 500; }
+.aria-pipe--idle { color: rgba(255,255,255,0.28); }
 
 .aria-src-table__count {
   color: rgba(255,255,255,0.6);

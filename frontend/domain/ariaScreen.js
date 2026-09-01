@@ -379,7 +379,7 @@ async function runProcess(blueprintId) {
 function renderTable(datasets, confCount, jiraCount) {
   const body = document.getElementById('aria-required-body');
   body.innerHTML = datasets.map(d => renderRow(d, confCount, jiraCount)).join('')
-    || `<tr><td colspan="4" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
+    || `<tr><td colspan="6" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
   updateReadinessCard(datasets, confCount, jiraCount);
   updateProcessBar(datasets);
 }
@@ -423,7 +423,10 @@ function countCellHtml(count, capped, noun) {
 // Which spaces / projects already have content linked to this blueprint —
 // filled by refreshLinked() from the real linked-documents response, so the
 // Status column reflects the database rather than anything the user clicked.
-let _linkedCounts = { confluence: new Map(), jira: new Map() };
+// Per source: how many documents are linked, how many went through the
+// redaction pass, how many carry structured output. All derived from the
+// stored documents, so they survive a reload and cannot drift from the DB.
+let _linkedStats = { confluence: new Map(), jira: new Map() };
 
 // Cached so Process can link without re-listing, and so Status can
 // re-render after linking without another round trip.
@@ -453,11 +456,31 @@ function renderProcessing(el, results, keyField) {
   }).join('');
 }
 
+function pipelineCell(done, total, doneLabel, pendingLabel) {
+  if (!total) return `<span class="aria-pipe aria-pipe--idle">&mdash;</span>`;
+  if (done >= total) return `<span class="aria-pipe aria-pipe--ok">&check; ${doneLabel}</span>`;
+  if (done === 0) return `<span class="aria-pipe aria-pipe--idle">${pendingLabel}</span>`;
+  return `<span class="aria-pipe aria-pipe--part">${done} of ${total}</span>`;
+}
+
 function sourceRowHtml({ tool, toolId, name, key, count, capped, noun }) {
-  const n = _linkedCounts[toolId]?.get(key) || 0;
-  const status = n > 0
-    ? `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Linked · ${n} ${noun}${n === 1 ? '' : 's'}</span>`
+  const s = _linkedStats[toolId]?.get(key) || { linked: 0, redacted: 0, redactions: 0, structured: 0 };
+  const status = s.linked > 0
+    ? `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Linked · ${s.linked} ${noun}${s.linked === 1 ? '' : 's'}</span>`
     : `<span class="aria-status aria-status--ready"><span class="aria-status-dot"></span>Ready to link</span>`;
+
+  // "Clean" is a real finding, not an absence: the pass ran and matched
+  // nothing. Distinct from "—", which means nothing has been processed.
+  const sensitive = !s.linked
+    ? `<span class="aria-pipe aria-pipe--idle">&mdash;</span>`
+    : s.redacted < s.linked
+      ? `<span class="aria-pipe aria-pipe--part">${s.redacted} of ${s.linked}</span>`
+      : s.redactions > 0
+        ? `<span class="aria-pipe aria-pipe--flag">${s.redactions} removed</span>`
+        : `<span class="aria-pipe aria-pipe--ok">&check; Clean</span>`;
+
+  const structured = pipelineCell(s.structured, s.linked, 'Structured', 'Pending');
+
   return `
     <tr>
       <td><span class="aria-src-tool aria-src-tool--${toolId}">${esc(tool)}</span></td>
@@ -466,6 +489,8 @@ function sourceRowHtml({ tool, toolId, name, key, count, capped, noun }) {
         <span class="aria-row-name__desc">${esc(key)}</span>
       </td>
       <td>${status}</td>
+      <td>${sensitive}</td>
+      <td>${structured}</td>
       <td class="aria-src-table__count">${countCellHtml(count, capped, noun)}</td>
     </tr>
   `;
@@ -485,7 +510,7 @@ function renderSourcesTable() {
     })),
   ];
   body.innerHTML = rows.join('')
-    || `<tr><td colspan="4" class="ks-card-body">No sources connected yet.</td></tr>`;
+    || `<tr><td colspan="6" class="ks-card-body">No sources connected yet.</td></tr>`;
 }
 
 async function refreshLinked(blueprintId) {
@@ -500,11 +525,19 @@ async function refreshLinked(blueprintId) {
       const m = new Map();
       docs.forEach(d => {
         const k = d[keyField];
-        if (k) m.set(k, (m.get(k) || 0) + 1);
+        if (!k) return;
+        const s = m.get(k) || { linked: 0, redacted: 0, redactions: 0, structured: 0 };
+        s.linked++;
+        if (d.redactionApplied) s.redacted++;
+        s.redactions += (d.redactionCount || 0);
+        // "Structured" means the extraction produced usable output, not
+        // merely that it ran — a doc with no keywords is not structured.
+        if (d.extractionStatus === 'extracted' && (d.keywords || []).length) s.structured++;
+        m.set(k, s);
       });
       return m;
     };
-    _linkedCounts = {
+    _linkedStats = {
       confluence: tally(confDocs, 'spaceKey'),
       jira: tally(jiraDocs, 'projectKey'),
     };
@@ -536,13 +569,13 @@ async function initSources(blueprintId) {
   document.getElementById('aria-jira-reconnect-btn').addEventListener('click', connect);
 
   const body = document.getElementById('aria-sources-body');
-  body.innerHTML = `<tr><td colspan="4" class="ks-card-body">Loading sources…</td></tr>`;
+  body.innerHTML = `<tr><td colspan="6" class="ks-card-body">Loading sources…</td></tr>`;
 
   let status;
   try {
     status = await api('/confluence/personal/status');
   } catch (err) {
-    body.innerHTML = `<tr><td colspan="4" class="ks-card-body">Couldn't check your connection.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="6" class="ks-card-body">Couldn't check your connection.</td></tr>`;
     showSourcesError(err.message);
     return;
   }
@@ -556,7 +589,7 @@ async function initSources(blueprintId) {
   prompts.style.display = (!_connected.confluence || !_connected.jira) ? 'flex' : 'none';
 
   if (!status.connected) {
-    body.innerHTML = `<tr><td colspan="4" class="ks-card-body">Connect a tool to list its sources.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="6" class="ks-card-body">Connect a tool to list its sources.</td></tr>`;
     renderTable(_cachedDatasets, 0, 0);
     return;
   }

@@ -35,6 +35,10 @@ import {
 } from '../services/confluenceApiService.js';
 import { ATLASSIAN_SCOPES, JIRA_SCOPES } from '../services/atlassianAuthService.js';
 import { htmlToText, hashText, truncateForLLM, classifyDocument } from '../services/confluenceContentService.js';
+// Same redaction pass Jira issues already go through — Confluence pages
+// were being stored and sent to the LLM unredacted, which is the more
+// exposed of the two given pages often hold credentials and personal data.
+import { regexRedact } from '../services/jiraContentService.js';
 import { regenerateTransformationCapabilityAsync } from '../services/blueprintGenerationService.js';
 
 const JWT_SECRET   = process.env.JWT_SECRET;
@@ -280,7 +284,8 @@ export async function linkDocumentsToBlueprint(req, res) {
           continue;
         }
 
-        const classification = await classifyDocument(page.title, normalizedText);
+        const { redactedText, redactionNotes } = regexRedact(normalizedText);
+        const classification = await classifyDocument(page.title, redactedText);
 
         await LinkedProjectDocument.updateOne(
           { blueprintId, sourceId: page.id },
@@ -294,8 +299,13 @@ export async function linkDocumentsToBlueprint(req, res) {
               permalink: page.permalink,
               summary: classification.summary,
               keywords: classification.keywords,
-              rawText: truncateForLLM(normalizedText),
+              // Redacted, not raw — this text is stored and later fed to
+              // the LLM, so the unredacted version must not persist.
+              rawText: truncateForLLM(redactedText),
               contentHash,
+              redactionApplied: true,
+              redactionCount: redactionNotes.length,
+              redactionNotes,
               confluenceLastModified: page.lastModified ? new Date(page.lastModified) : null,
               extractionStatus: 'extracted',
               extractionError: '',
@@ -351,7 +361,7 @@ export async function getLinkedDocuments(req, res) {
     if (!blueprint) return res.status(404).json({ error: 'Blueprint not found or you do not have access to it.' });
 
     const docs = await LinkedProjectDocument.find({ blueprintId })
-      .select('sourceId title spaceKey projectKey sourceType extractionStatus createdAt')
+      .select('sourceId title spaceKey projectKey sourceType extractionStatus redactionApplied redactionCount keywords summary createdAt')
       .lean();
 
     return res.json({ documents: docs });

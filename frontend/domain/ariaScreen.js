@@ -291,11 +291,15 @@ async function runProcess(blueprintId) {
           const { pages } = await api('/confluence/personal/spaces/' + encodeURIComponent(src.key) + '/pages');
           const batch = pages.slice(0, LINK_BATCH).map(pg => ({ pageId: pg.id, spaceKey: src.key }));
           if (batch.length) jobs.push({ src, batch });
+          // Silently skipping an empty source is why Jira could vanish from
+          // a run with no explanation. Say so instead.
+          else results.push({ status: 'error', title: src.name, error: 'Confluence returned no pages for this space.' });
         } else {
           // listIssues is ordered by created DESC.
           const { issues } = await api('/jira/personal/projects/' + encodeURIComponent(src.key) + '/issues');
           const batch = issues.slice(0, LINK_BATCH).map(iss => ({ issueKey: iss.key }));
           if (batch.length) jobs.push({ src, batch });
+          else results.push({ status: 'error', title: src.name, error: 'Jira returned no issues for this project.' });
         }
       } catch (err) {
         // One unreadable source must not abandon the rest.
@@ -308,7 +312,7 @@ async function runProcess(blueprintId) {
       hideProgress();
       btn.textContent = 'Process Connected Data';
       hint.textContent = results.length
-        ? 'Could not read any source. See the log below.'
+        ? 'No items came back from any source — see below.'
         : 'Nothing new to link.';
       if (results.length) renderProcessing(proc, results, 'title');
       return;
@@ -407,7 +411,7 @@ function countCellHtml(count, capped, noun) {
 // Which spaces / projects already have content linked to this blueprint —
 // filled by refreshLinked() from the real linked-documents response, so the
 // Status column reflects the database rather than anything the user clicked.
-let _linkedKeys = { confluence: new Set(), jira: new Set() };
+let _linkedCounts = { confluence: new Map(), jira: new Map() };
 
 // Cached so Process can link without re-listing, and so Status can
 // re-render after linking without another round trip.
@@ -430,9 +434,9 @@ function renderProcessing(el, results, keyField) {
 }
 
 function sourceRowHtml({ tool, toolId, name, key, count, capped, noun }) {
-  const linked = _linkedKeys[toolId]?.has(key);
-  const status = linked
-    ? `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Linked</span>`
+  const n = _linkedCounts[toolId]?.get(key) || 0;
+  const status = n > 0
+    ? `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Linked · ${n} ${noun}${n === 1 ? '' : 's'}</span>`
     : `<span class="aria-status aria-status--ready"><span class="aria-status-dot"></span>Ready to link</span>`;
   return `
     <tr>
@@ -472,18 +476,24 @@ async function refreshLinked(blueprintId) {
 
     // Per-space / per-project linkage drives the Status column. Linked
     // documents carry spaceKey/projectKey, so this is real state.
-    _linkedKeys = {
-      confluence: new Set(confDocs.map(d => d.spaceKey).filter(Boolean)),
-      jira: new Set(jiraDocs.map(d => d.projectKey).filter(Boolean)),
+    const tally = (docs, keyField) => {
+      const m = new Map();
+      docs.forEach(d => {
+        const k = d[keyField];
+        if (k) m.set(k, (m.get(k) || 0) + 1);
+      });
+      return m;
+    };
+    _linkedCounts = {
+      confluence: tally(confDocs, 'spaceKey'),
+      jira: tally(jiraDocs, 'projectKey'),
     };
 
+    // The per-source "Linked · N pages" in the table replaces what used to
+    // be one long comma-separated list of every title, which said nothing
+    // about which source each came from.
     const linkedList = document.getElementById('aria-linked-list');
-    if (documents.length) {
-      linkedList.innerHTML = `<strong>Already linked:</strong> ${documents.map(d => esc(d.title)).join(', ')}`;
-      linkedList.style.display = 'block';
-    } else {
-      linkedList.style.display = 'none';
-    }
+    if (linkedList) linkedList.style.display = 'none';
 
     renderSourcesTable();
     renderTable(_cachedDatasets, confDocs.length, jiraDocs.length);

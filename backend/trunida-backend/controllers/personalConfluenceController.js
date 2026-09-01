@@ -279,7 +279,8 @@ export async function linkDocumentsToBlueprint(req, res) {
         // prompt improvement for pages whose Confluence content itself
         // hasn't changed (the hash alone can't detect that case).
         const existing = await LinkedProjectDocument.findOne({ blueprintId, sourceId: page.id }).lean();
-        if (!force && existing && existing.contentHash === contentHash && existing.extractionStatus === 'extracted') {
+        if (!force && existing && existing.contentHash === contentHash && existing.extractionStatus === 'extracted'
+            && (existing.keywords || []).length > 0) {
           results.push({ pageId, title: page.title, status: 'linked', unchanged: true });
           continue;
         }

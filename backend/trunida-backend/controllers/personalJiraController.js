@@ -221,7 +221,8 @@ export async function linkIssuesToBlueprint(req, res) {
         const contentHash = hashText(rawText);
 
         const existing = await LinkedProjectDocument.findOne({ blueprintId, sourceId: issueKey }).lean();
-        if (existing && existing.contentHash === contentHash && existing.extractionStatus === 'extracted') {
+        if (existing && existing.contentHash === contentHash && existing.extractionStatus === 'extracted'
+            && (existing.keywords || []).length > 0) {
           results.push({ issueKey, title: existing.title, status: 'linked', unchanged: true });
           continue;
         }

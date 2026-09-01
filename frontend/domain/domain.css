@@ -2684,7 +2684,9 @@
 .rp-shell {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 64px);
+  /* height, not min-height: a growing shell is what let the portrait
+     drift down long screens like Aria. rp-main scrolls inside instead. */
+  height: calc(100vh - 64px);
 }
 
 /* ── Body: main + character ─────────────────────────────────────────── */
@@ -3366,6 +3368,11 @@
    clicks meant for the page — only the launcher and panel take pointers.
 ══════════════════════════════════════════════════════════════════════════════ */
 
+/* Absolute inside .rp-shell__body, which the rule below keeps exactly
+   one viewport tall. position:fixed would be the obvious fix but cannot
+   work here: .pw-screen--enter animates with fill-mode `both`, so the final
+   transform sticks on the screen element, and a transformed ancestor
+   becomes the containing block for fixed descendants. */
 .sc-lane {
   position: absolute;
   top: 0;
@@ -3384,7 +3391,11 @@
 
 .sc-launcher {
   position: absolute;
-  right: 24px;
+  /* Pulled just outside the lane's left edge so it clears the portrait on
+     every screen — previously Cob had its own offset and Aria did not,
+     which is why the two never lined up. */
+  right: auto;
+  left: -18px;
   /* Sits just inside the top edge of the portrait. .rp-character is
      height:78% anchored to the bottom, so its top edge is at 22% of the
      lane — anchoring to the bottom of the page hid the launcher behind
@@ -3420,11 +3431,6 @@
   100% { box-shadow: 0 0 0 0 rgba(92,197,167,0); }
 }
 .sc-lane--open .sc-launcher { display: none; }
-
-/* On Cob the portrait sits further left than Aria's, so the launcher's
-   default right-edge position landed on top of it (and, before the badge
-   was removed, on top of that too). Nudge it inward on this lane only. */
-.sc-lane[data-screen="cob"] .sc-launcher { right: auto; left: -18px; }
 @media (prefers-reduced-motion: reduce) {
   .sc-launcher__dot { animation: none; }
   .sc-launcher:hover { transform: none; }

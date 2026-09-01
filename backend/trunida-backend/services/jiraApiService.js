@@ -22,43 +22,78 @@ export async function listProjects(cloudId, accessToken) {
 
 // Jira Cloud deprecated GET /rest/api/3/search in favor of this endpoint —
 // token-based pagination (nextPageToken) instead of startAt/total.
+// Jira Cloud deprecated GET /rest/api/3/search in favor of this endpoint —
+// token-based pagination (nextPageToken) instead of startAt/total.
+//
+// JQL returns an EMPTY set (200, not an error) for issues the token's
+// account cannot browse, and different JQL spellings can resolve
+// differently — a quoted term is matched against project name as well as
+// key, which is ambiguous when a site has similarly named projects. This
+// project listed fine on 27 Aug and returns nothing now with identical
+// code, so on an empty result we retry a couple of equivalent spellings
+// and log what each returned. Costs one or two extra calls only when the
+// first attempt finds nothing.
+async function searchIssues(cloudId, accessToken, jql, { limit, nextPageToken }) {
+  const { data } = await axios.post(
+    `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search/jql`,
+    {
+      jql,
+      maxResults: limit,
+      fields: ['summary', 'status', 'priority', 'issuetype', 'updated'],
+      ...(nextPageToken ? { nextPageToken } : {}),
+    },
+    { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } }
+  );
+  return data;
+}
+
+function mapIssues(data) {
+  return (data.issues || []).map(issue => ({
+    key:      issue.key,
+    summary:  issue.fields?.summary || '',
+    status:   issue.fields?.status?.name || '',
+    priority: issue.fields?.priority?.name || '',
+    type:     issue.fields?.issuetype?.name || '',
+    updated:  issue.fields?.updated || null,
+  }));
+}
+
 export async function listIssues(cloudId, accessToken, projectKey, { limit = 50, maxIssues = 200 } = {}) {
-  const issues = [];
-  let nextPageToken;
+  const variants = [
+    `project = "${projectKey}" ORDER BY created DESC`,
+    `project = ${projectKey} ORDER BY created DESC`,
+    `project = "${projectKey}"`,
+  ];
 
-  while (issues.length < maxIssues) {
-    const { data } = await axios.post(
-      `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search/jql`,
-      {
-        jql: `project = "${projectKey}" ORDER BY created DESC`,
-        maxResults: limit,
-        fields: ['summary', 'status', 'priority', 'issuetype', 'updated'],
-        ...(nextPageToken ? { nextPageToken } : {}),
-      },
-      { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } }
+  let data = null;
+  let usedJql = variants[0];
+
+  for (const jql of variants) {
+    data = await searchIssues(cloudId, accessToken, jql, { limit });
+    const n = (data.issues || []).length;
+    if (n) { usedJql = jql; break; }
+    console.log(
+      '[jiraApi] search/jql found 0 issues for ' + projectKey +
+      ' with JQL ' + JSON.stringify(jql) +
+      ' — response keys: ' + JSON.stringify(Object.keys(data || {})) +
+      ', isLast: ' + data.isLast + ', total: ' + data.total
     );
+  }
 
-    for (const issue of data.issues || []) {
-      issues.push({
-        key:      issue.key,
-        summary:  issue.fields?.summary || '',
-        status:   issue.fields?.status?.name || '',
-        priority: issue.fields?.priority?.name || '',
-        type:     issue.fields?.issuetype?.name || '',
-        updated:  issue.fields?.updated || null,
-      });
-    }
+  const issues = mapIssues(data);
+  if (!issues.length) return [];
+  if (usedJql !== variants[0]) {
+    console.log('[jiraApi] recovered ' + issues.length + ' issues for ' + projectKey + ' using fallback JQL ' + JSON.stringify(usedJql));
+  }
 
-    // An empty first page is worth recording: it is indistinguishable in
-    // the UI from a broken query, and the raw shape tells them apart.
-    if (!issues.length) {
-      console.log('[jiraApi] search/jql returned no issues for ' + projectKey +
-        ' — keys: ' + JSON.stringify(Object.keys(data || {})) +
-        ', isLast: ' + data.isLast + ', total: ' + data.total);
-    }
-
-    nextPageToken = data.nextPageToken;
-    if (!nextPageToken || !data.issues?.length) break;
+  // Page out the rest with whichever spelling worked.
+  let nextPageToken = data.nextPageToken;
+  while (nextPageToken && issues.length < maxIssues) {
+    const page = await searchIssues(cloudId, accessToken, usedJql, { limit, nextPageToken });
+    const mapped = mapIssues(page);
+    if (!mapped.length) break;
+    issues.push(...mapped);
+    nextPageToken = page.nextPageToken;
   }
 
   return issues.slice(0, maxIssues);

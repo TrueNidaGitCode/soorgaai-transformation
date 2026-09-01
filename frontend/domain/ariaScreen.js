@@ -433,25 +433,25 @@ let _linkedStats = { confluence: new Map(), jira: new Map() };
 let _sources = { confluence: [], jira: [] };
 
 function renderProcessing(el, results, keyField) {
+  // Only surface what needs attention. A successful link already shows up
+  // as "Linked · N" plus the Sensitive Data / Structured columns on the
+  // source's own row, so listing every page and ticket again just piled a
+  // long block of duplicate detail under the table.
+  const notable = results.filter(r => r.status === 'error' || r.status === 'empty');
+  if (!notable.length) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+
   el.style.display = 'block';
-  el.innerHTML = results.map(r => {
+  el.innerHTML = notable.map(r => {
     // An empty source is a legitimate outcome, not a failure — a project
     // with no issues should not read like something went wrong.
-    if (r.status === 'empty') {
-      return `<div class="pw-process-item pw-process-item--empty">
-        <span class="pw-process-item__title">${esc(r.title || '')}</span>
-        <span class="pw-process-item__detail">${esc(r.error)}</span>
-      </div>`;
-    }
-    if (r.status === 'error') {
-      return `<div class="pw-process-item pw-process-item--error">
-        <span class="pw-process-item__title">${esc(r[keyField] || r.title || '')}</span>
-        <span class="pw-process-item__detail">${esc(r.error)}</span>
-      </div>`;
-    }
-    return `<div class="pw-process-item pw-process-item--done">
+    const cls = r.status === 'empty' ? 'empty' : 'error';
+    return `<div class="pw-process-item pw-process-item--${cls}">
       <span class="pw-process-item__title">${esc(r.title || r[keyField] || '')}</span>
-      <span class="pw-process-item__detail">${r.unchanged ? 'already linked, unchanged' : 'linked to this blueprint'}</span>
+      <span class="pw-process-item__detail">${esc(r.error)}</span>
     </div>`;
   }).join('');
 }

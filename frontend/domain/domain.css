@@ -2684,9 +2684,7 @@
 .rp-shell {
   display: flex;
   flex-direction: column;
-  /* height, not min-height: a growing shell is what let the portrait
-     drift down long screens like Aria. rp-main scrolls inside instead. */
-  height: calc(100vh - 64px);
+  min-height: calc(100vh - 64px);
 }
 
 /* ── Body: main + character ─────────────────────────────────────────── */
@@ -3385,7 +3383,7 @@
   position: absolute;
   top: 0;
   right: 0;
-  bottom: 0;
+  height: calc(100vh - 64px);
   width: 30%;
   z-index: 3;
   pointer-events: none;

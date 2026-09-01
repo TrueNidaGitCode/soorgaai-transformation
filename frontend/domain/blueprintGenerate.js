@@ -380,12 +380,6 @@ function updateOpportunitiesGate(bp) {
   if (approveBtn) approveBtn.disabled = !done;
   if (viewBtn)    viewBtn.disabled    = !done;
 
-  const badge = document.getElementById('opp-live-badge');
-  if (badge) {
-    badge.textContent = done ? '● Live' : 'Generating…';
-    badge.classList.toggle('pd-badge--live', done);
-    badge.classList.toggle('pd-badge--simulated', !done);
-  }
 }
 
 // Only acts while the opportunities screen is the active one — once the

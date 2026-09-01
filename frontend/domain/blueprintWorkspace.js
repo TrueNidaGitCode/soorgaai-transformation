@@ -607,10 +607,25 @@ function renderBlueprintContent(blueprint, capIdx) {
     empty.className = 'bp-empty';
     const isError      = cap.status === 'error';
     const isGenerating = blueprint.status === 'generating' && !isError;
+    // "The AI encountered an error" told the user nothing they could act
+    // on. The real cause is already stored on the capability — most often
+    // an exhausted API key, which is fixable in a minute once named.
+    const raw = String(cap.errorMessage || '');
+    let reason = 'The AI encountered an error generating this section.';
+    if (/no credits remaining|credit balance is too low|quota/i.test(raw)) {
+      reason = 'The AI provider rejected the request for lack of credits. Top up the provider (or point PROVIDER_CHAIN at a local model) and regenerate.';
+    } else if (/rate limit/i.test(raw)) {
+      reason = 'The AI provider rate-limited the request. Wait a moment and regenerate.';
+    } else if (/not configured|API key/i.test(raw)) {
+      reason = 'No AI provider is configured on the server. Set a provider key and regenerate.';
+    } else if (raw) {
+      reason = raw.split('\n')[0].slice(0, 200);
+    }
+
     empty.innerHTML = `
       <div class="bp-empty__icon">${isError ? '⚠' : '⟳'}</div>
       <p class="bp-empty__title">${isError ? 'Generation failed for this capability' : (isGenerating ? 'Generating in progress…' : 'Not generated yet')}</p>
-      <p class="bp-empty__text">${isError ? 'The AI encountered an error generating this section.' : (isGenerating ? 'This capability is being generated — it will appear here automatically in a moment.' : 'This section will appear when generation completes.')}</p>
+      <p class="bp-empty__text">${isError ? escapeHtml(reason) : (isGenerating ? 'This capability is being generated — it will appear here automatically in a moment.' : 'This section will appear when generation completes.')}</p>
     `;
     if (canRegen) {
       const regenBtn = document.createElement('button');

@@ -299,7 +299,11 @@ export async function wireSidebarBlueprints() {
                 btn.textContent = (bp.status === 'generating' ? '⋯ ' : '') + truncate(bp.businessObjective, 46);
                 btn.addEventListener('click', () => {
                     sessionStorage.setItem(OPEN_BLUEPRINT_KEY, bp._id);
-                    window.location.href = '/domain/domain.html';
+                    // ?view=cob so a picked blueprint opens on the Cob stage.
+                    // Without it, an already-approved blueprint jumps straight
+                    // to the workspace (see shouldShowWorkspace), skipping the
+                    // journey the user picked it in order to look at.
+                    window.location.href = '/domain/domain.html?view=cob';
                 });
                 wrap.appendChild(btn);
             });

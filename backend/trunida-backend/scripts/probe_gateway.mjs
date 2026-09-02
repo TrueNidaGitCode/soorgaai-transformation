@@ -68,14 +68,34 @@ check('a body with no messages is a 400', r.status === 400, `got ${r.status}`);
 r = await post('/embeddings', { input: [] }, token);
 check('an empty embeddings input is a 400', r.status === 400, `got ${r.status}`);
 
-// ── Nothing is spent on a failed call ───────────────────────────────────────
+// ── Usage must reflect what actually happened ───────────────────────────────
+// Asserted the same way in both environments: locally there is no working
+// upstream so this is a 502 and nothing may be charged; against Railway the
+// provider answers and the call must be metered. One invariant, two outcomes.
+await HostedDeployment.updateOne({ _id: dep._id },
+  { $set: { 'model.modelId': 'gemini-flash', 'model.providerId': 'gemini' } });   // cheapest row
 const before = await HostedDeployment.findById(dep._id).lean();
 r = await post('/chat/completions', CHAT, token);
-check('an unreachable provider is a 502, not a 500', r.status === 502, `got ${r.status}`);
 const after = await HostedDeployment.findById(dep._id).lean();
-check('a failed call records no usage',
-  after.usage.requests === before.usage.requests && after.usage.costUsd === before.usage.costUsd,
-  `requests ${before.usage.requests} -> ${after.usage.requests}`);
+
+if (r.status === 200) {
+  check('a real completion comes back', !!r.body?.choices?.[0]?.message?.content,
+    JSON.stringify(r.body?.choices?.[0]?.message?.content || '').slice(0, 60));
+  check('...in OpenAI shape', r.body.object === 'chat.completion', r.body.object);
+  check('...reporting the model it actually used', !!r.body.model, r.body.model);
+  check('...with real token counts', r.body.usage?.total_tokens > 0, `${r.body.usage?.total_tokens} tok`);
+  check('a successful call is metered', after.usage.requests === before.usage.requests + 1,
+    `requests ${before.usage.requests} -> ${after.usage.requests}`);
+  check('...and costed above zero', after.usage.costUsd > before.usage.costUsd,
+    `$${before.usage.costUsd} -> $${after.usage.costUsd}`);
+} else {
+  check('an unreachable provider is a 502, not a 500', r.status === 502, `got ${r.status}`);
+  check('a failed call records no usage',
+    after.usage.requests === before.usage.requests && after.usage.costUsd === before.usage.costUsd,
+    `requests ${before.usage.requests} -> ${after.usage.requests}`);
+  console.log('      NOTE: no upstream provider reachable here — run with PROBE_BASE set to');
+  console.log('            the Railway URL to exercise a successful forward.');
+}
 
 // ── An open-weight deployment is refused up front ───────────────────────────
 await HostedDeployment.updateOne({ _id: dep._id },

@@ -15,7 +15,7 @@
 
 import {
   authenticate, checkAllowance, recordUsage, forwardChat,
-  estimateCostUsd, estimateEmbeddingCostUsd, toChatCompletion,
+  estimateCostUsd, estimateEmbeddingCostUsd, toChatCompletion, classifyUpstreamError,
 } from '../services/gatewayService.js';
 import { embedBatchWithUsage } from '../services/embeddingService.js';
 
@@ -82,7 +82,7 @@ export async function chatCompletions(req, res) {
   } catch (err) {
     if (err.status === 501) return fail(res, 501, err.message, 'invalid_request_error');
     console.error('[gateway] chat error:', err.message);
-    return fail(res, 502, 'The upstream model provider could not be reached.', 'api_error');
+    return fail(res, 502, classifyUpstreamError(err.message), 'api_error');
   }
 }
 
@@ -114,6 +114,6 @@ export async function embeddings(req, res) {
 
   } catch (err) {
     console.error('[gateway] embeddings error:', err.message);
-    return fail(res, 502, 'The upstream embedding provider could not be reached.', 'api_error');
+    return fail(res, 502, classifyUpstreamError(err.message), 'api_error');
   }
 }

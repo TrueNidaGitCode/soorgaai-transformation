@@ -186,6 +186,26 @@ export function toChatCompletion({ text, model, inputTokens, outputTokens }) {
  * and the cost is attributed to that model's rate, so silently answering from
  * a different one would misreport both the answer and the bill.
  */
+/**
+ * Categorise an upstream failure into something a tenant can act on. The raw
+ * provider error goes to Svarg's logs; only the category crosses the wire, so
+ * "your app is broken" and "Svarg needs to top up" stop looking identical
+ * without disclosing which provider or account is behind the gateway.
+ */
+export function classifyUpstreamError(message = '') {
+  const m = String(message);
+  if (/no credits remaining|credit balance|billing|quota/i.test(m)) {
+    return 'The model provider rejected the request for lack of credit. This is on Svarg to resolve, not your application.';
+  }
+  if (/rate limit|429/i.test(m)) {
+    return 'The model provider is rate limiting requests. Retry shortly.';
+  }
+  if (/not configured|api key|401|403|invalid.*key/i.test(m)) {
+    return 'The model provider is not configured correctly on Svarg. This is on Svarg to resolve.';
+  }
+  return 'The upstream model provider could not be reached.';
+}
+
 export async function forwardChat(deployment, { messages, max_tokens }) {
   const catalog = findCatalogModel(deployment.model?.modelId);
   // Allow-list, not a deny-list: an unrecognised modelId must not fall through

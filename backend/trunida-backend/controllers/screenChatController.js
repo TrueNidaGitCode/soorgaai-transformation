@@ -56,13 +56,17 @@ function findInfra(bp) {
   for (const cap of domain.capabilities || []) {
     for (const section of cap.sections || []) {
       const b = section.brief || {};
+      // Field names come from infraItemSchema {item, recommendation} and
+      // techStackItemSchema {layer, recommendation} in TransformationBlueprint.
+      // The alternates are kept only for blueprints written before those
+      // schemas settled.
       (b.infraItems || []).forEach(i => rows.push({
-        label: i.label || i.name || i.component || '',
-        value: i.value || i.detail || i.description || '',
+        label: i.item || i.label || i.name || i.component || '',
+        value: i.recommendation || i.value || i.detail || i.description || '',
       }));
       (b.techStack || []).forEach(t => rows.push({
         label: t.layer || t.category || t.name || '',
-        value: t.technology || t.value || t.tools || t.description || '',
+        value: t.recommendation || t.technology || t.value || t.tools || t.description || '',
       }));
     }
   }

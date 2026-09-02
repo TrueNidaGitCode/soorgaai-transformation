@@ -153,13 +153,17 @@ function findInfra(bp) {
   for (const cap of domain.capabilities || []) {
     for (const section of cap.sections || []) {
       const b = section.brief || {};
+      // Field names come from infraItemSchema {item, recommendation} and
+      // techStackItemSchema {layer, recommendation} in TransformationBlueprint.
+      // The alternates are kept only for blueprints written before those
+      // schemas settled.
       (b.infraItems || []).forEach(i => rows.push({
-        label: i.label || i.name || i.component || '',
-        value: i.value || i.detail || i.description || '',
+        label: i.item || i.label || i.name || i.component || '',
+        value: i.recommendation || i.value || i.detail || i.description || '',
       }));
       (b.techStack || []).forEach(t => rows.push({
         label: t.layer || t.category || t.name || '',
-        value: t.technology || t.value || t.tools || t.description || '',
+        value: t.recommendation || t.technology || t.value || t.tools || t.description || '',
       }));
     }
   }
@@ -173,7 +177,28 @@ function renderInfra(bp) {
   const rows = findInfra(bp);
 
   if (!rows.length) {
-    body.innerHTML = `<tr><td colspan="2" class="ks-card-body">Technology &amp; Infrastructure hasn't finished generating yet.</td></tr>`;
+    // "Hasn't finished yet" was shown for every empty case, including the
+    // common one where generation ran and failed. The domain rolls up to
+    // 'completed' even when every capability under it errored, so the
+    // capabilities are what has to be read to tell the two apart.
+    const domain = (bp.domains || []).find(d => d.domainId === 'technology-infrastructure');
+    const caps = domain?.capabilities || [];
+    const failed = caps.filter(c => c.status === 'error');
+    const pending = caps.filter(c => c.status !== 'error' && c.status !== 'completed');
+
+    let msg;
+    if (failed.length && !pending.length) {
+      const raw = String(failed[0].errorMessage || '');
+      msg = /no credits remaining|credit balance|quota|billing/i.test(raw)
+        ? 'Technology &amp; Infrastructure could not be generated — the AI provider rejected the request for lack of credits. Top up the provider and regenerate.'
+        : 'Technology &amp; Infrastructure could not be generated. Regenerate this domain to try again.';
+    } else if (pending.length) {
+      msg = 'Technology &amp; Infrastructure is still generating.';
+    } else {
+      msg = 'This blueprint has no Technology &amp; Infrastructure content.';
+    }
+
+    body.innerHTML = `<tr><td colspan="2" class="ks-card-body">${msg}</td></tr>`;
     note.style.display = 'none';
     return;
   }

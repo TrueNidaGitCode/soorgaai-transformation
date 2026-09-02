@@ -3404,6 +3404,14 @@
   bottom: auto;
   height: 100%;
 }
+
+/* Cob's artwork is the one landscape source (1402x1122) against a portrait
+   lane, so cover crops ~40% of its width. Centred, that pushes his face to
+   the right edge; biasing the crop left follows the subject instead. Aria
+   and Arth are near the lane's own aspect and need no adjustment. */
+.sc-lane .rp-character[src^="/assets/cob-character"] {
+  object-position: 41% top;
+}
 .sc-lane--open .sc-portrait { display: none; }
 
 .sc-launcher {

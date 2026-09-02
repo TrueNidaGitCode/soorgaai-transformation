@@ -202,10 +202,35 @@ function renderHosting(deployment) {
   if (!_repo && !deployment) { wrap.style.display = 'none'; return; }
   wrap.style.display = '';
 
-  const running = deployment && ['provisioning', 'live', 'suspended'].includes(deployment.status);
+  // Hosting is Arth's decision now; this screen only carries it out. Saying
+  // otherwise would offer a choice that has already been made.
+  const offerTitle = document.getElementById('eame-host-title');
+  const offerBody  = document.getElementById('eame-host-body');
+  const deployBtn  = document.getElementById('eame-deploy-btn');
+
+  if (deployment?.hosting === 'self') {
+    offer.style.display = ''; live.style.display = 'none';
+    offerTitle.textContent = 'You are running this yourself';
+    offerBody.textContent = 'Arth recorded that this runs in your own environment, so there is nothing for Svarg to deploy. The repository above has everything needed.';
+    deployBtn.style.display = 'none';
+    return;
+  }
+
+  const running = deployment && ['attaching', 'live', 'suspended'].includes(deployment.status);
   offer.style.display = running ? 'none' : '';
   live.style.display  = running ? '' : 'none';
-  if (!running) return;
+
+  if (!running) {
+    const prepared = deployment?.status === 'prepared';
+    deployBtn.style.display = prepared ? '' : 'none';
+    offerTitle.textContent = prepared
+      ? 'Deploy to your prepared environment'
+      : 'No environment prepared yet';
+    offerBody.textContent = prepared
+      ? `${deployment.environmentName || 'The Svarg environment'} is ready and waiting for this application.`
+      : 'Prepare the environment on the Arth screen first — that is where hosting is decided.';
+    return;
+  }
 
   const dot   = document.getElementById('eame-host-dot');
   const state = document.getElementById('eame-host-state');

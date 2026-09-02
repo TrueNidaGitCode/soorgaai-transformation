@@ -12322,3 +12322,28 @@
   opacity: 0.75;
   transition: color 0.25s;
 }
+
+/* Environment facts on Arth. A definition list because that is what this
+   is — a label and its value — and it keeps the two columns aligned
+   without a table's overhead. */
+.env-facts {
+  display: grid;
+  grid-template-columns: minmax(110px, auto) 1fr;
+  gap: 7px 18px;
+  margin: 4px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 12.5px;
+}
+.env-facts dt {
+  color: rgba(255,255,255,0.42);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding-top: 2px;
+}
+.env-facts dd {
+  margin: 0;
+  color: rgba(255,255,255,0.82);
+  word-break: break-word;
+}

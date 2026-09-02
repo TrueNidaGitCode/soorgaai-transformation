@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
-  <link rel="stylesheet" href="domain.css?v=33">
+  <link rel="stylesheet" href="domain.css?v=34">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -534,7 +534,43 @@
         <div class="arth-recommendation" id="arth-recommendation" style="display:none"></div>
       </div>
 
-      <p class="pd-substage-label aria-required-label">Infrastructure</p>
+      <!-- Arth's second decision: where the application will run. Separate
+           from the model above — that is where inference happens, this is
+           where the app itself lives. -->
+      <p class="pd-substage-label aria-required-label">Where the application runs</p>
+      <div class="arth-options" id="arth-hosting"></div>
+
+      <div id="arth-prep" style="display:none">
+        <div class="host-card" id="arth-prep-offer">
+          <div class="host-card__row">
+            <div>
+              <p class="host-card__title" id="arth-prep-title"></p>
+              <p class="host-card__body" id="arth-prep-body"></p>
+            </div>
+            <button type="button" class="pw-next-btn" id="arth-prep-btn">Prepare</button>
+          </div>
+        </div>
+
+        <div class="host-card host-card--live" id="arth-prep-ready" style="display:none">
+          <div class="host-card__row">
+            <div>
+              <p class="host-card__label"><span class="host-dot host-dot--live"></span><span id="arth-prep-state">Environment ready</span></p>
+              <p class="host-card__title" id="arth-prep-name"></p>
+            </div>
+            <button type="button" class="pw-back-btn" id="arth-prep-remove">Remove</button>
+          </div>
+          <dl class="env-facts" id="arth-prep-facts"></dl>
+        </div>
+
+        <div class="host-token" id="arth-prep-token" style="display:none">
+          <p class="host-token__label">Save this now — it is shown once</p>
+          <code id="arth-prep-token-value"></code>
+          <p class="host-token__note">Your application uses it to reach Svarg's model gateway.
+            Svarg stores only a hash, so it cannot be shown again.</p>
+        </div>
+      </div>
+
+      <p class="pd-substage-label aria-required-label">Target Architecture</p>
       <div class="aria-table-wrap">
         <table class="aria-table aria-src-table">
           <thead>
@@ -696,14 +732,13 @@
         <div class="host-card" id="eame-host-offer">
           <div class="host-card__row">
             <div>
-              <p class="host-card__title">Run it on Svarg</p>
-              <p class="host-card__body">Your own container and database, with the model Arth
-                chose already wired in. Nothing to install.</p>
+              <p class="host-card__title" id="eame-host-title"></p>
+              <p class="host-card__body" id="eame-host-body"></p>
             </div>
             <button type="button" class="pw-next-btn" id="eame-deploy-btn">Deploy</button>
           </div>
-          <p class="host-card__alt">Prefer to run it yourself? The repository above is complete —
-            follow its README and nothing here is required.</p>
+          <p class="host-card__alt">Where this runs was decided on Arth. Change it there rather
+            than here, so the environment and the application stay in step.</p>
         </div>
 
         <div class="host-card host-card--live" id="eame-host-live" style="display:none">
@@ -850,8 +885,8 @@
   <script type="module" src="blueprintGenerate.js?v=5"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=23"></script>
-  <script type="module" src="arthScreen.js?v=5"></script>
-  <script type="module" src="eameScreen.js?v=4"></script>
+  <script type="module" src="arthScreen.js?v=6"></script>
+  <script type="module" src="eameScreen.js?v=5"></script>
   <script type="module" src="screenChat.js?v=3"></script>
 </body>
 </html>

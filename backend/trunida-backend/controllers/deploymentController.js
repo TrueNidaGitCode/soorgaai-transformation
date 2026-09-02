@@ -28,10 +28,16 @@ function publicView(d) {
   return {
     status: d.status,
     statusMessage: d.statusMessage || '',
+    hosting: d.hosting || 'svarg',
     url: d.railway?.url || '',
     model: d.model || {},
     dbName: d.dbName || '',
+    region: d.railway?.region || '',
+    environmentName: d.railway?.projectName || '',
+    appAttached: !!d.railway?.serviceId,
     repo: d.repo || {},
+    preparedAt: d.preparedAt || null,
+    liveAt: d.liveAt || null,
     usage: {
       requests: d.usage?.requests || 0,
       inputTokens: d.usage?.inputTokens || 0,
@@ -78,68 +84,82 @@ export async function getDeployment(req, res) {
   }
 }
 
-export async function createDeployment(req, res) {
+/**
+ * POST .../infrastructure — Arth prepares the environment.
+ *
+ * None of this needs the application to exist, which is what lets it happen
+ * at Arth rather than after Eame. The one Railway call that requires a
+ * repository (serviceCreate) is deferred to attachApplication below.
+ *
+ * hosting: 'self' records a real decision rather than doing nothing quietly —
+ * Svarg prepares no environment, and Eame ships deployment docs instead.
+ */
+export async function prepareInfrastructure(req, res) {
   try {
     const bp = await ownedBlueprint(req);
     if (!bp) return res.status(404).json({ error: 'Blueprint not found or you do not have access to it.' });
 
+    const hosting = req.body?.hosting === 'self' ? 'self' : 'svarg';
+
+    if (!bp.arthSelection?.modelId) {
+      return res.status(400).json({ error: 'Choose a model before preparing the environment.' });
+    }
+
     const existing = await HostedDeployment.findOne({ blueprintId: bp._id });
-    if (existing && existing.status !== 'failed' && existing.status !== 'destroyed') {
+    if (existing && ['prepared', 'attaching', 'live', 'suspended'].includes(existing.status)) {
       return res.status(409).json({
-        error: 'This blueprint already has a deployment.',
+        error: 'An environment is already prepared for this blueprint.',
         deployment: publicView(existing),
       });
     }
 
-    // Preconditions, each with the stage that fixes it — a bare "cannot
-    // deploy" would leave the user guessing which screen to go back to.
-    if (!bp.arthSelection?.modelId) {
-      return res.status(400).json({ error: 'Choose a model on the Arth screen before deploying.' });
-    }
-    const { owner, name } = req.body?.repo || {};
-    if (!owner || !name) {
-      return res.status(400).json({ error: 'Push the project to GitHub from Eame before deploying.' });
-    }
-
-    const target = getDeployTarget();
-    if (!target.configured()) {
-      return res.status(503).json({ error: 'Hosting is not available yet — Svarg has no deploy target configured.' });
-    }
-
-    const { token, hash } = issueToken();
     const dep = existing || new HostedDeployment({ userId: req.user._id, blueprintId: bp._id });
-    dep.status = 'provisioning';
+    dep.hosting = hosting;
     dep.statusMessage = '';
-    dep.gatewayTokenHash = hash;
-    dep.dbName = tenantDbName(bp._id);
-    dep.repo = { owner: String(owner), name: String(name) };
     dep.model = {
       modelId: bp.arthSelection.modelId,
       displayName: bp.arthSelection.displayName || '',
       providerId: bp.arthSelection.providerId || '',
     };
-    // Reset spend when a deployment is stood up again, so a previous run's
-    // usage cannot leave the new one capped from the first request.
+
+    // Running it themselves means there is nothing for Svarg to stand up. The
+    // record still exists so Eame knows what to build for.
+    if (hosting === 'self') {
+      dep.status = 'prepared';
+      dep.preparedAt = new Date();
+      dep.dbName = '';
+      await dep.save();
+      return res.status(201).json({ deployment: publicView(dep) });
+    }
+
+    const target = getDeployTarget();
+    if (!target.configured()) {
+      return res.status(503).json({ error: 'Svarg hosting is not available yet — no deploy target is configured.' });
+    }
+
+    // The token is issued here because it is part of the environment, not of
+    // the application — the customer can hold it before anything is built.
+    const { token, hash } = issueToken();
+    dep.status = 'preparing';
+    dep.gatewayTokenHash = hash;
+    dep.dbName = tenantDbName(bp._id);
+    // A re-prepared environment starts with a clean ledger, so an earlier
+    // attempt's spend cannot leave the new one capped from the first request.
     dep.usage = { requests: 0, inputTokens: 0, outputTokens: 0, costUsd: 0, periodStart: new Date(), lastRequestAt: null };
     await dep.save();
 
     try {
-      const env = buildTenantEnv({
-        deployment: dep,
-        gatewayToken: token,
-        gatewayBaseUrl: process.env.GATEWAY_BASE_URL || `${req.protocol}://${req.get('host')}/api/gateway`,
-        clusterUri: process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI,
-      });
-
-      const placed = await target.provision({ deployment: dep, env });
+      const placed = await target.prepare({ deployment: dep });
       dep.railway = {
         projectId: placed.projectId,
         projectName: placed.projectName || tenantProjectName(bp._id),
-        serviceId: placed.serviceId,
         environmentId: placed.environmentId,
-        url: placed.url || '',
+        region: placed.region || '',
+        serviceId: '',
+        url: '',
       };
-      dep.status = 'live';
+      dep.status = 'prepared';
+      dep.preparedAt = new Date();
       await dep.save();
 
       return res.status(201).json({
@@ -147,18 +167,94 @@ export async function createDeployment(req, res) {
         // Shown once. Only the hash is stored, so it cannot be recovered.
         gatewayToken: token,
       });
-
     } catch (err) {
       dep.status = 'failed';
       dep.statusMessage = err.message.slice(0, 400);
       await dep.save();
-      console.error('[deployment] provision failed:', err.message);
+      console.error('[deployment] prepare failed:', err.message);
       return res.status(502).json({ error: err.message, deployment: publicView(dep) });
     }
 
   } catch (err) {
-    console.error('[deployment] create error:', err.message);
-    return res.status(500).json({ error: 'Failed to start the deployment.' });
+    console.error('[deployment] prepare error:', err.message);
+    return res.status(500).json({ error: 'Failed to prepare the environment.' });
+  }
+}
+
+/**
+ * POST .../deploy — attach the built application to the prepared environment.
+ *
+ * Called from Eame today; this is the action that becomes Yusu's. It refuses
+ * rather than silently preparing, so the environment is always something the
+ * customer agreed to at Arth.
+ */
+export async function attachApplication(req, res) {
+  try {
+    const bp = await ownedBlueprint(req);
+    if (!bp) return res.status(404).json({ error: 'Blueprint not found or you do not have access to it.' });
+
+    const dep = await HostedDeployment.findOne({ blueprintId: bp._id });
+    if (!dep || !['prepared', 'failed'].includes(dep.status)) {
+      return res.status(400).json({
+        error: dep && dep.status === 'live'
+          ? 'This application is already running.'
+          : 'Prepare the environment on the Arth screen before deploying.',
+        deployment: publicView(dep),
+      });
+    }
+    if (dep.hosting === 'self') {
+      return res.status(400).json({ error: 'This blueprint is set to run in your own environment, so Svarg has nothing to deploy. Change it on the Arth screen to have Svarg host it.' });
+    }
+
+    // Prefer what the blueprint recorded at push time over what the client
+    // sends — the client is convenience, the record is the truth.
+    const owner = bp.eameDelivery?.repoOwner || req.body?.repo?.owner;
+    const name  = bp.eameDelivery?.repoName  || req.body?.repo?.name;
+    if (!owner || !name) {
+      return res.status(400).json({ error: 'Push the project to GitHub from Eame before deploying.' });
+    }
+
+    const target = getDeployTarget();
+    if (!target.configured()) {
+      return res.status(503).json({ error: 'Svarg hosting is not available yet — no deploy target is configured.' });
+    }
+
+    dep.repo = { owner: String(owner), name: String(name) };
+    dep.status = 'attaching';
+    await dep.save();
+
+    try {
+      // A fresh token: the one shown at preparation was displayed once and
+      // never stored, so it cannot be recovered to inject here.
+      const { token, hash } = issueToken();
+      dep.gatewayTokenHash = hash;
+
+      const env = buildTenantEnv({
+        deployment: dep,
+        gatewayToken: token,
+        gatewayBaseUrl: process.env.GATEWAY_BASE_URL || `${req.protocol}://${req.get('host')}/api/gateway`,
+        clusterUri: process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI,
+      });
+
+      const attached = await target.attach({ deployment: dep, env });
+      dep.railway.serviceId = attached.serviceId;
+      dep.railway.url = attached.url || '';
+      dep.status = 'live';
+      dep.liveAt = new Date();
+      await dep.save();
+
+      return res.status(201).json({ deployment: publicView(dep), gatewayToken: token });
+    } catch (err) {
+      dep.status = 'failed';
+      dep.statusMessage = err.message.slice(0, 400);
+      await dep.save();
+      console.error('[deployment] attach failed:', err.message);
+      return res.status(502).json({ error: err.message, deployment: publicView(dep) });
+    }
+
+  } catch (err) {
+    console.error('[deployment] attach error:', err.message);
+    return res.status(500).json({ error: 'Failed to deploy the application.' });
   }
 }
 
@@ -168,14 +264,18 @@ export async function destroyDeployment(req, res) {
     if (!bp) return res.status(404).json({ error: 'Blueprint not found or you do not have access to it.' });
 
     const dep = await HostedDeployment.findOne({ blueprintId: bp._id });
-    if (!dep || dep.status === 'destroyed') return res.status(404).json({ error: 'There is no deployment to remove.' });
+    if (!dep || dep.status === 'destroyed') return res.status(404).json({ error: 'There is no environment to remove.' });
 
-    try {
-      await getDeployTarget().destroy({ deployment: dep });
-    } catch (err) {
-      // A refusal from the guards is a bug worth surfacing, not swallowing.
-      console.error('[deployment] destroy failed:', err.message);
-      return res.status(502).json({ error: err.message });
+    // Self-hosted records nothing in Railway, so there is nothing to call —
+    // and calling destroy on an empty railway block would trip the guards.
+    if (dep.hosting !== 'self' && dep.railway?.projectId) {
+      try {
+        await getDeployTarget().destroy({ deployment: dep });
+      } catch (err) {
+        // A refusal from the guards is a bug worth surfacing, not swallowing.
+        console.error('[deployment] destroy failed:', err.message);
+        return res.status(502).json({ error: err.message });
+      }
     }
 
     dep.status = 'destroyed';

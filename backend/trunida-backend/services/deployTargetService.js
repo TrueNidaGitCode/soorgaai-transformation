@@ -153,12 +153,14 @@ export const railwayTarget = {
     return !!process.env.RAILWAY_API_TOKEN;
   },
 
-  async provision({ deployment, env }) {
-    const repo = `${deployment.repo?.owner}/${deployment.repo?.name}`;
-    if (!deployment.repo?.owner || !deployment.repo?.name) {
-      throw new Error('This deployment has no repository recorded. Push the project from Eame first.');
-    }
-
+  /**
+   * Arth's half: the environment, with no application in it.
+   *
+   * Nothing here needs the code to exist, which is exactly why this can run
+   * at Arth — before Eame has written anything. Railway's serviceCreate is
+   * the one call that requires a repository, so it belongs in attach().
+   */
+  async prepare({ deployment }) {
     const name = tenantProjectName(deployment.blueprintId);
     const project = (await gql(`
       mutation projectCreate($input: ProjectCreateInput!) {
@@ -166,7 +168,7 @@ export const railwayTarget = {
       }`, {
       input: {
         name,
-        description: `Svarg hosted application for blueprint ${deployment.blueprintId}`,
+        description: `Svarg environment for blueprint ${deployment.blueprintId}`,
         isPublic: false,
         ...(process.env.RAILWAY_WORKSPACE_ID ? { workspaceId: process.env.RAILWAY_WORKSPACE_ID } : {}),
       },
@@ -175,35 +177,50 @@ export const railwayTarget = {
     const envNode = project.environments?.edges?.[0]?.node;
     if (!envNode) throw new Error('Railway created the project but reported no environment.');
 
+    return {
+      projectId: project.id,
+      projectName: project.name,
+      environmentId: envNode.id,
+      region: process.env.RAILWAY_REGION || 'us-west',
+    };
+  },
+
+  /**
+   * Attaching the application to an environment Arth already prepared.
+   * Needs the repository, so it cannot run before Eame has pushed.
+   */
+  async attach({ deployment, env }) {
+    if (!deployment.repo?.owner || !deployment.repo?.name) {
+      throw new Error('This deployment has no repository recorded. Push the project from Eame first.');
+    }
+    if (!deployment.railway?.projectId) {
+      throw new Error('No environment has been prepared for this blueprint. Prepare it on the Arth screen first.');
+    }
+    const repo = `${deployment.repo.owner}/${deployment.repo.name}`;
+
     const service = (await gql(`
       mutation serviceCreate($input: ServiceCreateInput!) {
         serviceCreate(input: $input) { id name }
       }`, {
-      input: { projectId: project.id, name: 'app', source: { repo }, variables: env },
+      input: { projectId: deployment.railway.projectId, name: 'app', source: { repo }, variables: env },
     })).serviceCreate;
 
-    // A domain is what makes it reachable, but a project without one is still
-    // a successful deployment — report it rather than unwinding the whole thing.
+    // A domain is what makes it reachable, but a service without one is still
+    // attached — report it rather than unwinding the whole thing.
     let url = '';
     try {
       const domain = (await gql(`
         mutation serviceDomainCreate($input: ServiceDomainCreateInput!) {
           serviceDomainCreate(input: $input) { id domain }
         }`, {
-        input: { serviceId: service.id, environmentId: envNode.id, targetPort: 3000 },
+        input: { serviceId: service.id, environmentId: deployment.railway.environmentId, targetPort: 3000 },
       })).serviceDomainCreate;
       url = domain?.domain ? `https://${domain.domain}` : '';
     } catch (err) {
       console.warn('[railway] domain creation failed —', err.message);
     }
 
-    return {
-      projectId: project.id,
-      projectName: project.name,
-      serviceId: service.id,
-      environmentId: envNode.id,
-      url,
-    };
+    return { serviceId: service.id, url };
   },
 
   async status({ deployment }) {

@@ -48,6 +48,8 @@ let _model = null;           // the specific model id — this is the decision
 let _models = [];            // candidates currently on screen
 let _priority = null;        // what matters most, for the auto flow
 let _recommendation = null;  // Arth's pick, kept so its reasoning is saved
+let _hosting = null;         // svarg | self — where the application runs
+let _env = null;             // the prepared environment, once there is one
 
 // The three classes the catalog actually distinguishes. Descriptions state
 // the trade honestly rather than selling each one.
@@ -62,6 +64,17 @@ const PRIORITIES = [
   { id: 'cost',        title: 'Cost',        blurb: 'Keep the running bill down.' },
   { id: 'performance', title: 'Speed',       blurb: 'Low latency and high throughput.' },
   { id: 'privacy',     title: 'Data control',blurb: 'Nothing leaves our environment.' },
+];
+
+// Where the application itself runs — a separate question from which model
+// answers its requests. Svarg's environment is the one Arth can prepare
+// today; preparing a customer's own target environment comes later, the way
+// GPUNet does for open-weight models.
+const HOSTING = [
+  { id: 'svarg', title: 'Svarg environment',
+    blurb: 'We prepare and run it: a dedicated container, database and model gateway. Nothing to install.' },
+  { id: 'self',  title: 'Your own environment',
+    blurb: 'You run it on your own infrastructure. Eame includes the deployment files and Svarg prepares nothing.' },
 ];
 
 function showError(msg) {
@@ -210,8 +223,138 @@ function renderInfra(bp) {
     </tr>
   `).join('');
 
-  noteText.textContent = 'Taken from this blueprint’s Technology & Infrastructure domain, not a generic stack.';
+  noteText.textContent = 'The architecture this blueprint recommends for your own environment — taken from its Technology & Infrastructure domain, not a generic stack. Separate from the Svarg environment above.';
   note.style.display = '';
+}
+
+// ── Where the application runs ──────────────────────────────────────────────
+
+function renderHostingOptions() {
+  document.getElementById('arth-hosting').innerHTML = HOSTING.map(h => `
+    <button type="button" class="arth-option${_hosting === h.id ? ' arth-option--on' : ''}" data-hosting="${h.id}">
+      <span class="arth-option__title">${esc(h.title)}</span>
+      <span class="arth-option__blurb">${esc(h.blurb)}</span>
+    </button>
+  `).join('');
+}
+
+function fact(label, value) {
+  return value ? `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>` : '';
+}
+
+/**
+ * What a project manager needs to know about the environment. Deliberately
+ * complete rather than minimal — this is what they are accepting, and what
+ * they will be asked about internally.
+ */
+function renderPrepared(dep) {
+  _env = dep;
+  const prep  = document.getElementById('arth-prep');
+  const offer = document.getElementById('arth-prep-offer');
+  const ready = document.getElementById('arth-prep-ready');
+
+  if (!_hosting) { prep.style.display = 'none'; return; }
+  prep.style.display = '';
+
+  const done = dep && ['prepared', 'attaching', 'live', 'suspended'].includes(dep.status);
+  offer.style.display = done ? 'none' : '';
+  ready.style.display = done ? '' : 'none';
+
+  if (!done) {
+    const svarg = _hosting === 'svarg';
+    document.getElementById('arth-prep-title').textContent = svarg
+      ? 'Prepare the Svarg environment'
+      : 'Nothing for Svarg to prepare';
+    document.getElementById('arth-prep-body').textContent = svarg
+      ? 'Creates a dedicated container, a database with vector search, and a model gateway wired to the model above. The application itself is attached later, once Eame has built it.'
+      : 'You are running this yourself. Recording the choice so Eame ships the deployment files with the project.';
+    document.getElementById('arth-prep-btn').textContent = svarg ? 'Prepare' : 'Confirm';
+    return;
+  }
+
+  const model = dep.model?.displayName || '';
+  const cap   = dep.limits?.maxCostUsd || 0;
+  const spent = dep.usage?.costUsd || 0;
+
+  document.getElementById('arth-prep-state').textContent =
+    dep.hosting === 'self' ? 'Running in your environment' : 'Environment ready';
+  document.getElementById('arth-prep-name').textContent =
+    dep.hosting === 'self' ? 'Your own infrastructure' : (dep.environmentName || 'Svarg environment');
+
+  const facts = dep.hosting === 'self'
+    ? [
+        fact('Runs on', 'Your own infrastructure'),
+        fact('Model', model ? `${model} — you supply the API key` : ''),
+        fact('Svarg provides', 'The application source and its deployment files'),
+        fact('You provide', 'Hosting, database, and the model API key'),
+      ]
+    : [
+        fact('Runs on', `Svarg${dep.region ? ` · ${dep.region}` : ''}`),
+        fact('Environment', dep.environmentName),
+        fact('Database', dep.dbName ? `${dep.dbName} — dedicated, with vector search` : ''),
+        fact('Model', model ? `${model} — reached through Svarg's gateway` : ''),
+        fact('Spend limit', cap ? `$${cap.toFixed(2)} per month` : 'No limit set'),
+        fact('Used so far', `$${spent.toFixed(2)} · ${(dep.usage?.requests || 0).toLocaleString()} requests`),
+        fact('Application', dep.appAttached
+          ? (dep.url || 'Attached')
+          : 'Not attached yet — Eame builds it, then it is deployed here'),
+        fact('Prepared', dep.preparedAt ? new Date(dep.preparedAt).toLocaleString() : ''),
+      ];
+
+  document.getElementById('arth-prep-facts').innerHTML = facts.filter(Boolean).join('');
+}
+
+async function loadEnvironment() {
+  if (!_blueprintId) return;
+  try {
+    const { deployment } = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/deployment`);
+    if (deployment?.hosting) _hosting = deployment.hosting;
+    renderHostingOptions();
+    renderPrepared(deployment);
+  } catch {
+    renderPrepared(null);
+  }
+}
+
+async function prepareEnvironment() {
+  const btn = document.getElementById('arth-prep-btn');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = _hosting === 'svarg' ? 'Preparing…' : 'Saving…';
+  document.getElementById('arth-error').style.display = 'none';
+  try {
+    const r = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/infrastructure`, {
+      method: 'POST',
+      body: JSON.stringify({ hosting: _hosting }),
+    });
+    renderPrepared(r.deployment);
+    if (r.gatewayToken) {
+      document.getElementById('arth-prep-token-value').textContent = r.gatewayToken;
+      document.getElementById('arth-prep-token').style.display = '';
+    }
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
+async function removeEnvironment() {
+  if (!confirm('Remove this environment? Its container and database are deleted and the gateway token stops working. Your blueprint and repository are untouched.')) return;
+  const btn = document.getElementById('arth-prep-remove');
+  btn.disabled = true;
+  btn.textContent = 'Removing…';
+  try {
+    await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/deployment`, { method: 'DELETE' });
+    document.getElementById('arth-prep-token').style.display = 'none';
+    renderPrepared(null);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Remove';
+  }
 }
 
 function renderPriorities() {
@@ -293,6 +436,16 @@ function wire() {
   document.getElementById('arth-quant').addEventListener('change', () => {
     if (_chosen === 'open-weight') loadModels();
   });
+
+  document.getElementById('arth-hosting').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-hosting]');
+    if (!b) return;
+    _hosting = b.dataset.hosting;
+    renderHostingOptions();
+    renderPrepared(_env);
+  });
+  document.getElementById('arth-prep-btn').addEventListener('click', prepareEnvironment);
+  document.getElementById('arth-prep-remove').addEventListener('click', removeEnvironment);
 
   document.getElementById('arth-priorities').addEventListener('click', (e) => {
     const b = e.target.closest('[data-priority]');
@@ -406,4 +559,13 @@ document.addEventListener('arth:show', (e) => {
         `Previously selected: ${prev.displayName || prev.modelId}`;
     }
   }
+
+  // An environment prepared in an earlier session should show as prepared,
+  // not offer to prepare a second one.
+  _hosting = null;
+  _env = null;
+  document.getElementById('arth-prep-token').style.display = 'none';
+  renderHostingOptions();
+  renderPrepared(null);
+  loadEnvironment();
 });

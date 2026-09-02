@@ -25,9 +25,22 @@ const hostedDeploymentSchema = new mongoose.Schema({
     required: true, unique: true, index: true,
   },
 
+  // Where the application will run. Arth decides this; Svarg-hosted is the
+  // only environment Svarg prepares today. 'self' is a real choice, not a
+  // placeholder — it means Eame ships deployment docs and Svarg prepares
+  // nothing, which is the honest outcome rather than a disabled button.
+  hosting: {
+    type: String,
+    enum: ['svarg', 'self'],
+    default: 'svarg',
+  },
+
+  // prepared: the environment exists but no application is attached to it.
+  // That state is the whole point of Arth owning preparation — it can be
+  // reached before Eame has written anything.
   status: {
     type: String,
-    enum: ['queued', 'provisioning', 'live', 'failed', 'suspended', 'destroyed'],
+    enum: ['queued', 'preparing', 'prepared', 'attaching', 'live', 'failed', 'suspended', 'destroyed'],
     default: 'queued',
     index: true,
   },
@@ -41,6 +54,7 @@ const hostedDeploymentSchema = new mongoose.Schema({
     projectName:   { type: String, default: '' },
     serviceId:     { type: String, default: '' },
     environmentId: { type: String, default: '' },
+    region:        { type: String, default: '' },
     url:           { type: String, default: '' },
   },
 
@@ -83,6 +97,8 @@ const hostedDeploymentSchema = new mongoose.Schema({
     maxRequests:  { type: Number, default: 20000 },
   },
 
+  preparedAt:      { type: Date,   default: null },
+  liveAt:          { type: Date,   default: null },
   suspendedAt:     { type: Date,   default: null },
   suspendedReason: { type: String, default: '' },
 

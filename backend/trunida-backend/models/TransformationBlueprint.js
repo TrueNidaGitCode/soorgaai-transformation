@@ -365,6 +365,24 @@ const transformationBlueprintSchema = new mongoose.Schema({
     providerId:  { type: String, default: '' },
     displayName: { type: String, default: '' },
     selectedAt:  { type: Date,   default: null },
+
+    // The specific model chosen from Arth's advisory catalog. Older rows have
+    // only the class above, which is why these default to empty rather than
+    // being required.
+    modelId:     { type: String, default: '' },
+    vendor:      { type: String, default: '' },
+    // Why this one — Arth's reasoning when the class was 'auto', so the
+    // decision can still be defended months later.
+    rationale:   { type: String, default: '' },
+    priority:    { type: String, default: '' },
+    // Compute snapshot for open-weight picks, as derived at selection time.
+    compute: {
+      quantization: { type: String, default: '' },
+      vramGb:       { type: Number, default: 0 },
+      gpuCount:     { type: Number, default: 0 },
+      gpu:          { type: String, default: '' },
+      note:         { type: String, default: '' },
+    },
   },
 
   domains: { type: [domainSchema], default: [] },

@@ -43,15 +43,25 @@ function esc(t) {
 
 let _bp = null;
 let _blueprintId = null;
-let _chosen = null;
-const _resolved = {};   // preference -> the server's resolved pick
+let _chosen = null;          // the class: frontier | open-weight | auto
+let _model = null;           // the specific model id — this is the decision
+let _models = [];            // candidates currently on screen
+let _priority = null;        // what matters most, for the auto flow
+let _recommendation = null;  // Arth's pick, kept so its reasoning is saved
 
 // The three classes the catalog actually distinguishes. Descriptions state
 // the trade honestly rather than selling each one.
 const OPTIONS = [
   { id: 'frontier',    title: 'Frontier',    blurb: 'Best quality, per-call cloud pricing. Data leaves your environment.' },
   { id: 'open-weight', title: 'Open Weight', blurb: 'Runs on your own hardware. Fixed cost, full data control, some quality traded away.' },
-  { id: 'auto',        title: 'Auto',        blurb: 'Uses the resilient provider chain rather than pinning one model, so an outage never blocks a request.' },
+  { id: 'auto',        title: 'Auto',        blurb: 'Arth reads this use case and picks the model that fits it, weighing cost, quality and performance.' },
+];
+
+const PRIORITIES = [
+  { id: 'quality',     title: 'Quality',     blurb: 'Get the best answer, accept the price.' },
+  { id: 'cost',        title: 'Cost',        blurb: 'Keep the running bill down.' },
+  { id: 'performance', title: 'Speed',       blurb: 'Low latency and high throughput.' },
+  { id: 'privacy',     title: 'Data control',blurb: 'Nothing leaves our environment.' },
 ];
 
 function showError(msg) {
@@ -78,27 +88,59 @@ function renderOptions() {
     <button type="button" class="arth-option${_chosen === o.id ? ' arth-option--on' : ''}" data-pref="${o.id}">
       <span class="arth-option__title">${esc(o.title)}</span>
       <span class="arth-option__blurb">${esc(o.blurb)}</span>
-      <span class="arth-option__pick" data-pick="${o.id}"></span>
     </button>
   `).join('');
-
-  // Fill in each option's resolved model name as it arrives, so the card
-  // names the actual model rather than only the category.
-  OPTIONS.forEach(o => {
-    const el = wrap.querySelector(`[data-pick="${o.id}"]`);
-    if (el && _resolved[o.id]) el.textContent = _resolved[o.id].displayName;
-  });
 }
 
-function renderDetail(pick) {
-  const box = document.getElementById('arth-detail');
-  if (!pick) { box.style.display = 'none'; return; }
+function tags(m) {
+  return [['Quality', m.quality], ['Cost', m.cost], ['Speed', m.performance]]
+    .filter(([, v]) => v)
+    .map(([k, v]) => `<span class="arth-tag"><span class="arth-tag__k">${k}</span>${esc(v)}</span>`)
+    .join('');
+}
+
+// The compute line is the whole point of choosing open weight with open eyes,
+// so it is stated on the card rather than hidden behind the selection.
+function computeLine(m) {
+  if (!m.compute) return '';
+  const c = m.compute;
+  return `<span class="arth-compute">
+      <strong>${c.vramGb}GB VRAM</strong> · ${c.gpuCount}x ${esc(c.gpu)}
+      <span class="arth-compute__note">${esc(c.note)}</span>
+    </span>`;
+}
+
+function renderModels(models) {
+  const wrap = document.getElementById('arth-models');
+  if (!models.length) {
+    wrap.innerHTML = `<p class="ks-card-body">No models of this class in the catalog.</p>`;
+    return;
+  }
+  wrap.innerHTML = models.map(m => `
+    <button type="button" class="arth-model${_model === m.id ? ' arth-model--on' : ''}" data-model="${esc(m.id)}">
+      <span class="arth-model__head">
+        <span class="arth-model__name">${esc(m.displayName)}</span>
+        <span class="arth-model__vendor">${esc(m.vendor)}</span>
+      </span>
+      <span class="arth-model__tags">${tags(m)}</span>
+      <span class="arth-model__strengths">${esc(m.strengths || '')}</span>
+      ${computeLine(m)}
+      ${m.license ? `<span class="arth-model__license">${esc(m.license)}</span>` : ''}
+    </button>
+  `).join('');
+}
+
+function renderRecommendation(rec) {
+  const box = document.getElementById('arth-recommendation');
   box.style.display = 'block';
-  document.getElementById('arth-detail-name').textContent = pick.displayName;
-  document.getElementById('arth-detail-tags').innerHTML = [
-    ['Quality', pick.quality], ['Cost', pick.cost], ['Performance', pick.performance],
-  ].map(([k, v]) => `<span class="arth-tag"><span class="arth-tag__k">${k}</span>${esc(v)}</span>`).join('');
-  document.getElementById('arth-detail-rationale').textContent = pick.rationale;
+  box.innerHTML = `
+    <p class="arth-rec__label">Arth recommends</p>
+    <p class="arth-rec__name">${esc(rec.displayName)}
+      <span class="arth-model__vendor">${esc(rec.vendor || '')}</span></p>
+    <div class="arth-model__tags">${tags(rec)}</div>
+    <p class="arth-rec__why">${esc(rec.why || '')}</p>
+    ${rec.compute ? `<p class="arth-rec__compute">${computeLine(rec)}</p>` : ''}
+  `;
 }
 
 // Infrastructure comes from whichever technology capability actually
@@ -147,28 +189,61 @@ function renderInfra(bp) {
   note.style.display = '';
 }
 
-async function loadResolved() {
-  // One call per class so each card can name its actual model. Cheap and
-  // deterministic — selectModel is rule-based, not an LLM call.
-  await Promise.all(OPTIONS.map(async o => {
-    try {
-      _resolved[o.id] = await api(`/defect-matching/model-selection?preference=${o.id}`);
-    } catch (err) {
-      showError(err.message);
-    }
-  }));
-  renderOptions();
-  if (_chosen && _resolved[_chosen]) renderDetail(_resolved[_chosen]);
+function renderPriorities() {
+  document.getElementById('arth-priorities').innerHTML = PRIORITIES.map(p => `
+    <button type="button" class="arth-option arth-option--sm${_priority === p.id ? ' arth-option--on' : ''}" data-priority="${p.id}">
+      <span class="arth-option__title">${esc(p.title)}</span>
+      <span class="arth-option__blurb">${esc(p.blurb)}</span>
+    </button>
+  `).join('');
+}
+
+// Only a specific model counts as a decision. Picking a class narrows the
+// question; it does not answer it.
+function refreshConfirm() {
+  const btn  = document.getElementById('arth-confirm-btn');
+  const hint = document.getElementById('arth-hint');
+  const picked = _models.find(m => m.id === _model);
+  btn.disabled = !_model;
+  hint.textContent = picked ? `Selected: ${picked.displayName}`
+    : _chosen ? 'Choose a model to continue'
+    : 'Choose a model class to continue';
+}
+
+async function loadModels() {
+  const wrap = document.getElementById('arth-models');
+  wrap.innerHTML = `<p class="ks-card-body">Loading models…</p>`;
+  try {
+    const q = document.getElementById('arth-quant').value;
+    const data = await api(`/strategy-canvas/arth/models?type=${_chosen}&quantization=${q}`);
+    _models = data.models || [];
+    renderModels(_models);
+  } catch (err) {
+    wrap.innerHTML = '';
+    showError(err.message);
+  }
 }
 
 function choose(pref) {
+  if (_chosen !== pref) { _model = null; _models = []; }
   _chosen = pref;
   renderOptions();
-  renderDetail(_resolved[pref]);
-  const btn = document.getElementById('arth-confirm-btn');
-  btn.disabled = false;
-  document.getElementById('arth-hint').textContent =
-    _resolved[pref] ? `Selected: ${_resolved[pref].displayName}` : '';
+
+  const picker = document.getElementById('arth-picker');
+  const auto   = document.getElementById('arth-auto');
+  picker.style.display = pref === 'auto' ? 'none' : '';
+  auto.style.display   = pref === 'auto' ? '' : 'none';
+
+  if (pref === 'auto') {
+    renderPriorities();
+  } else {
+    document.getElementById('arth-picker-label').textContent =
+      pref === 'frontier' ? 'Choose a frontier model' : 'Choose an open-weight model';
+    // Precision only changes anything for models you host yourself.
+    document.getElementById('arth-quant-wrap').style.display = pref === 'open-weight' ? '' : 'none';
+    loadModels();
+  }
+  refreshConfirm();
 }
 
 let _wired = false;
@@ -180,6 +255,55 @@ function wire() {
   document.getElementById('arth-options').addEventListener('click', (e) => {
     const b = e.target.closest('[data-pref]');
     if (b) choose(b.dataset.pref);
+  });
+
+  document.getElementById('arth-models').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-model]');
+    if (!b) return;
+    _model = b.dataset.model;
+    renderModels(_models);
+    refreshConfirm();
+  });
+
+  document.getElementById('arth-quant').addEventListener('change', () => {
+    if (_chosen === 'open-weight') loadModels();
+  });
+
+  document.getElementById('arth-priorities').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-priority]');
+    if (!b) return;
+    _priority = b.dataset.priority;
+    renderPriorities();
+  });
+
+  document.getElementById('arth-recommend-btn').addEventListener('click', async () => {
+    const btn  = document.getElementById('arth-recommend-btn');
+    const hint = document.getElementById('arth-auto-hint');
+    btn.disabled = true;
+    btn.textContent = 'Arth is thinking…';
+    hint.textContent = '';
+    try {
+      const rec = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/arth-recommend`, {
+        method: 'POST',
+        body: JSON.stringify({
+          priority: _priority || 'quality',
+          constraints: document.getElementById('arth-constraints').value.trim(),
+        }),
+      });
+      // The recommendation IS the selection once it comes back — the user
+      // still confirms it, and can ask again with different priorities.
+      _recommendation = rec;
+      _model = rec.id;
+      _models = [rec];
+      renderRecommendation(rec);
+      refreshConfirm();
+      hint.textContent = 'Not what you expected? Change what matters and ask again.';
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = _recommendation ? 'Ask again' : 'Ask Arth to choose';
+    }
   });
 
   // Chat with Arth can propose a model class; accepting it only moves the
@@ -197,12 +321,17 @@ function wire() {
     btn.disabled = true;
     btn.textContent = 'Saving…';
     try {
-      await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/arth-selection`, {
+      const saved = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/arth-selection`, {
         method: 'PATCH',
-        body: JSON.stringify({ preference: _chosen }),
+        body: JSON.stringify({
+          preference: _chosen,
+          modelId: _model,
+          priority: _chosen === 'auto' ? (_priority || 'quality') : '',
+          rationale: _recommendation?.why || '',
+        }),
       });
       btn.textContent = '✓ Model Selected';
-      hint.textContent = `Saved: ${_resolved[_chosen]?.displayName || _chosen}.`;
+      hint.textContent = `Saved: ${saved.selection?.displayName || _model}.`;
       document.getElementById('arth-next-stage').style.display = 'flex';
       // Forward progress, same pattern Aria uses to reach this screen.
       setTimeout(() => {
@@ -226,13 +355,30 @@ document.addEventListener('arth:show', (e) => {
   renderBreadcrumb(bp);
   renderInfra(bp);
 
-  // Re-entering the screen should show the decision already on record.
-  _chosen = bp.arthSelection?.preference || null;
+  // Re-entering the screen should show the decision already on record, down
+  // to which model — not just which class it belonged to.
+  const prev = bp.arthSelection || {};
+  _priority = prev.priority || null;
+  _model = null;
+  _models = [];
+  _recommendation = null;
+  _chosen = null;
   renderOptions();
-  if (_chosen) {
-    document.getElementById('arth-confirm-btn').disabled = false;
-    document.getElementById('arth-hint').textContent = `Previously selected: ${bp.arthSelection.displayName}`;
-  }
+  refreshConfirm();
 
-  loadResolved();
+  if (prev.preference) {
+    choose(prev.preference);
+    if (prev.modelId) {
+      _model = prev.modelId;
+      if (prev.preference === 'auto') {
+        // Nothing to re-fetch: what was saved is the recommendation.
+        _recommendation = { ...prev, id: prev.modelId, why: prev.rationale };
+        _models = [_recommendation];
+        renderRecommendation(_recommendation);
+      }
+      refreshConfirm();
+      document.getElementById('arth-hint').textContent =
+        `Previously selected: ${prev.displayName || prev.modelId}`;
+    }
+  }
 });

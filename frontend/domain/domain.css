@@ -3183,6 +3183,141 @@
 .arth-tag__k { color: rgba(255,255,255,0.4); margin-right: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
 .arth-detail__rationale { margin: 0; font-size: 12.5px; line-height: 1.55; color: rgba(255,255,255,0.6); }
 
+/* ── Choosing the model itself ──────────────────────────────────────────
+   The class narrows the question; these answer it. Cards rather than a
+   dropdown because the trade-offs — and for open weight the hardware bill —
+   are what the decision turns on, so they have to be visible at once. */
+.arth-picker__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.arth-quant {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; color: rgba(255,255,255,0.45);
+}
+.arth-quant select {
+  font-family: inherit; font-size: 12px;
+  padding: 5px 9px; border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.85);
+}
+
+.arth-models {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.arth-model {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.arth-model:hover { border-color: rgba(92,197,167,0.5); }
+.arth-model--on {
+  border-color: var(--aria-accent);
+  background: rgba(92,197,167,0.09);
+}
+.arth-model__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.arth-model__name   { font-size: 14px; font-weight: 700; color: #fff; }
+.arth-model__vendor { font-size: 11.5px; color: rgba(255,255,255,0.35); }
+.arth-model__tags   { display: flex; flex-wrap: wrap; gap: 6px; }
+.arth-model__strengths { font-size: 12.5px; line-height: 1.45; color: rgba(255,255,255,0.55); }
+.arth-model__license   { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+/* The hardware bill. Given its own surface so it reads as a commitment
+   rather than another descriptive line. */
+.arth-compute {
+  display: block;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(92,197,167,0.07);
+  border: 1px solid rgba(92,197,167,0.18);
+  font-size: 12px;
+  color: rgba(255,255,255,0.72);
+}
+.arth-compute strong { color: var(--aria-accent); }
+.arth-compute__note {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.4);
+}
+
+/* ── Auto: Arth chooses ─────────────────────────────────────────────────── */
+.arth-priorities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.arth-option--sm { padding: 11px 13px; gap: 4px; }
+.arth-option--sm .arth-option__title { font-size: 13px; }
+.arth-option--sm .arth-option__blurb { font-size: 11.5px; }
+
+.arth-constraints {
+  display: block;
+  margin-top: 16px;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.45);
+}
+.arth-constraints input {
+  display: block;
+  width: 100%;
+  margin-top: 7px;
+  padding: 10px 13px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+}
+.arth-constraints input::placeholder { color: rgba(255,255,255,0.25); }
+.arth-constraints input:focus {
+  outline: none;
+  border-color: var(--aria-accent);
+}
+
+.arth-process-row {
+  display: flex; align-items: center; gap: 14px;
+  margin-top: 16px;
+}
+
+.arth-recommendation {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 11px;
+  border: 1px solid rgba(92,197,167,0.3);
+  background: rgba(92,197,167,0.06);
+}
+.arth-rec__label {
+  margin: 0 0 6px;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--aria-accent);
+}
+.arth-rec__name {
+  margin: 0 0 10px;
+  display: flex; align-items: baseline; gap: 10px;
+  font-size: 15px; font-weight: 700; color: #fff;
+}
+.arth-rec__why { margin: 10px 0 0; font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.72); }
+.arth-rec__compute { margin: 12px 0 0; }
+
 .aria-process-bar {
   display: flex;
   align-items: center;

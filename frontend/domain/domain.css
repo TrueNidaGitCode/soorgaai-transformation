@@ -12352,3 +12352,70 @@
   color: rgba(255,255,255,0.82);
   word-break: break-word;
 }
+
+/* ── Yusu: go live and handover ─────────────────────────────────────────
+   The checks are a gate, so an unmet one carries the way to fix it rather
+   than only reporting that it failed. */
+.yusu-checks { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.yusu-check {
+  display: flex; align-items: center; gap: 13px;
+  padding: 13px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.025);
+}
+.yusu-check--ok { border-color: rgba(92,197,167,0.3); background: rgba(92,197,167,0.06); }
+.yusu-check__mark {
+  width: 22px; height: 22px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.35);
+}
+.yusu-check--ok .yusu-check__mark {
+  border-color: var(--aria-accent); color: var(--aria-accent);
+}
+.yusu-check__body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.yusu-check__title { font-size: 13.5px; font-weight: 700; color: #fff; }
+.yusu-check__detail { font-size: 12px; color: rgba(255,255,255,0.5); }
+.yusu-check__go {
+  flex-shrink: 0;
+  font-family: inherit; font-size: 12px;
+  padding: 6px 13px; border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: transparent; color: rgba(255,255,255,0.75);
+  cursor: pointer;
+}
+.yusu-check__go:hover { border-color: var(--aria-accent); color: var(--aria-accent); }
+
+/* Where the line falls between the two sides. */
+.yusu-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.yusu-own {
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.025);
+}
+.yusu-own__title {
+  margin: 0 0 10px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--aria-accent);
+}
+.yusu-own ul { margin: 0; padding-left: 17px; display: flex; flex-direction: column; gap: 7px; }
+.yusu-own li { font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,0.68); }
+
+/* Eame's handoff to Yusu. */
+.yusu-onward {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  margin-top: 22px; padding: 18px 20px;
+  border-radius: 11px;
+  border: 1px solid rgba(92,197,167,0.28);
+  background: rgba(92,197,167,0.06);
+}

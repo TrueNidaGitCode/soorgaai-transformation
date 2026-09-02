@@ -101,5 +101,15 @@ check('eame REJECTS an aria action',
 check('an invented eame action is rejected',
   validateAction('deploy_application', 'eame', fresh), null);
 
+// ── yusu ────────────────────────────────────────────────────────────────────
+// Going live is the most consequential button in the product; it is never
+// something a conversation offers.
+check('yusu offers no action either',
+  validateAction('approve_opportunity', 'yusu', fresh), null);
+check('yusu REJECTS an arth action',
+  validateAction('choose_frontier', 'yusu', fresh), null);
+check('an invented go-live action is rejected',
+  validateAction('go_live', 'yusu', fresh), null);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -88,8 +88,8 @@ export async function screenChat(req, res) {
   try {
     const { blueprintId, screen, message, conversationHistory } = req.body;
 
-    if (!['cob', 'aria', 'arth', 'eame'].includes(screen)) {
-      return res.status(400).json({ error: 'screen must be "cob", "aria", "arth" or "eame".' });
+    if (!['cob', 'aria', 'arth', 'eame', 'yusu'].includes(screen)) {
+      return res.status(400).json({ error: 'screen must be one of: cob, aria, arth, eame, yusu.' });
     }
     if (!message || typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({ error: 'message is required.' });
@@ -150,6 +150,29 @@ export async function screenChat(req, res) {
       context.deploymentStatus = dep?.status || '';
       context.deploymentUrl    = dep?.railway?.url || '';
       context.model            = dep?.model?.displayName || bp.arthSelection?.displayName || '';
+
+    } else if (screen === 'yusu') {
+      const { default: HostedDeployment } = await import('../models/HostedDeployment.js');
+      const dep = await HostedDeployment.findOne({ blueprintId }).lean();
+
+      // The same three gates the screen shows, resolved from the same state,
+      // so Yusu can never claim something is outstanding that the screen has
+      // already ticked — or the reverse.
+      context.selectedUseCase = selectedUseCase;
+      context.checks = [
+        { title: 'A model is chosen', ok: !!bp.arthSelection?.modelId, fix: 'choose one on Arth' },
+        { title: 'An environment is ready',
+          ok: ['prepared', 'live'].includes(dep?.status) || dep?.hosting === 'self',
+          fix: 'prepare it on Arth' },
+        { title: 'The application is built', ok: !!bp.eameDelivery?.repoName, fix: 'build and push it on Eame' },
+      ];
+      context.hosting  = dep?.hosting || '';
+      context.live     = dep?.status === 'live';
+      context.url      = dep?.railway?.url || '';
+      context.model    = dep?.model?.displayName || bp.arthSelection?.displayName || '';
+      context.costUsd  = dep?.usage?.costUsd || 0;
+      context.capUsd   = dep?.limits?.maxCostUsd || 0;
+      context.requests = dep?.usage?.requests || 0;
 
     } else {
       const docs = await LinkedProjectDocument.find({ blueprintId }).select('sourceType').lean();

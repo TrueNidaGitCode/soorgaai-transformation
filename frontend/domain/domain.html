@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
-  <link rel="stylesheet" href="domain.css?v=35">
+  <link rel="stylesheet" href="domain.css?v=36">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -162,7 +162,7 @@
               <span class="pw-step__label">Eame</span>
             </div>
             <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
-            <div class="pw-step rp-journey__locked">
+            <div class="pw-step" data-goto="yusu">
               <span class="pw-step__node"><span class="pw-step__num">5</span></span>
               <span class="pw-step__label">Yusu</span>
             </div>
@@ -283,7 +283,7 @@
           <span class="pw-step__label">Eame</span>
         </div>
         <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step rp-journey__locked">
+        <div class="pw-step" data-goto="yusu">
           <span class="pw-step__num">5</span>
           <span class="pw-step__label">Yusu</span>
         </div>
@@ -470,7 +470,7 @@
           <span class="pw-step__label">Eame</span>
         </div>
         <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step rp-journey__locked">
+        <div class="pw-step" data-goto="yusu">
           <span class="pw-step__node"><span class="pw-step__num">5</span></span>
           <span class="pw-step__label">Yusu</span>
         </div>
@@ -657,7 +657,7 @@
           <span class="pw-step__label">Eame</span>
         </div>
         <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step rp-journey__locked">
+        <div class="pw-step" data-goto="yusu">
           <span class="pw-step__node"><span class="pw-step__num">5</span></span>
           <span class="pw-step__label">Yusu</span>
         </div>
@@ -717,7 +717,7 @@
         <span class="aria-next__tick">&check;</span>
         <div>
           <p class="aria-next__title">Project delivered</p>
-          <p class="aria-next__body" id="eame-next-body">Next is <strong>Yusu</strong> — rolling it into the business. That stage isn't built yet.</p>
+          <p class="aria-next__body" id="eame-next-body">Next is <strong>Yusu</strong> — going live and handing it over.</p>
         </div>
       </div>
 
@@ -726,48 +726,14 @@
         <button type="button" class="pw-next-btn" id="eame-build-btn" disabled>Build &amp; Push Project</button>
       </div>
 
-      <!-- Hosting. Hidden until the repository exists, because there is
-           nothing to deploy before that. -->
-      <div id="eame-hosting" style="display:none">
-        <p class="pd-substage-label aria-required-label">Hosting</p>
-
-        <div class="host-card" id="eame-host-offer">
-          <div class="host-card__row">
-            <div>
-              <p class="host-card__title" id="eame-host-title"></p>
-              <p class="host-card__body" id="eame-host-body"></p>
-            </div>
-            <button type="button" class="pw-next-btn" id="eame-deploy-btn">Deploy</button>
-          </div>
-          <p class="host-card__alt">Where this runs was decided on Arth. Change it there rather
-            than here, so the environment and the application stay in step.</p>
+      <!-- Deploying moved to Yusu: Eame writes the application, Yusu ships
+           it. What is left here is the handoff between the two. -->
+      <div class="yusu-onward" id="eame-onward" style="display:none">
+        <div>
+          <p class="host-card__title">Delivered. Ready to go live.</p>
+          <p class="host-card__body">Yusu turns it on in the environment Arth prepared, and hands it over.</p>
         </div>
-
-        <div class="host-card host-card--live" id="eame-host-live" style="display:none">
-          <div class="host-card__row">
-            <div>
-              <p class="host-card__label"><span class="host-dot" id="eame-host-dot"></span><span id="eame-host-state">Live</span></p>
-              <p class="host-card__title"><a id="eame-host-url" href="#" target="_blank" rel="noopener"></a></p>
-              <p class="host-card__body" id="eame-host-model"></p>
-            </div>
-            <button type="button" class="pw-back-btn" id="eame-host-remove">Remove</button>
-          </div>
-
-          <div class="host-meter">
-            <div class="host-meter__head">
-              <span id="eame-host-usage-label">Usage this month</span>
-              <span id="eame-host-usage-num"></span>
-            </div>
-            <div class="host-meter__track"><div class="host-meter__fill" id="eame-host-usage-fill"></div></div>
-          </div>
-        </div>
-
-        <div class="host-token" id="eame-host-token" style="display:none">
-          <p class="host-token__label">Save this now — it is shown once</p>
-          <code id="eame-host-token-value"></code>
-          <p class="host-token__note">Your application uses it to reach Svarg's model gateway.
-            Svarg stores only a hash, so it cannot be shown again.</p>
-        </div>
+        <button type="button" class="pw-next-btn" data-goto="yusu">Continue to Yusu</button>
       </div>
 
       </div><!-- /.aria-body -->
@@ -795,6 +761,144 @@
     </div>
    </div>
   </main>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SCREEN 4.5 — Yusu
+       The last stage: put the application live and hand it over. Deploying
+       lives here rather than on Eame because Eame writes the application and
+       Yusu ships it — Arth prepared the environment, Eame filled it, Yusu
+       turns it on and says what the customer now owns. See yusuScreen.js.
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <main id="screen-yusu" class="screen screen--aria" style="display:none" aria-label="Yusu — go live and hand over">
+   <div class="rp-shell">
+    <div class="rp-shell__body">
+     <main class="rp-main">
+
+      <nav class="pw-steps rp-journey" aria-label="Your AI transformation journey">
+        <div class="pw-step pw-step--done" data-goto="cob">
+          <span class="pw-step__node"><span class="pw-step__num">1</span></span>
+          <span class="pw-step__label">Cob</span>
+        </div>
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--done" data-goto="aria">
+          <span class="pw-step__node"><span class="pw-step__num">2</span></span>
+          <span class="pw-step__label">Aria</span>
+        </div>
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--done" data-goto="arth">
+          <span class="pw-step__node"><span class="pw-step__num">3</span></span>
+          <span class="pw-step__label">Arth</span>
+        </div>
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--done" data-goto="eame">
+          <span class="pw-step__node"><span class="pw-step__num">4</span></span>
+          <span class="pw-step__label">Eame</span>
+        </div>
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--active" data-goto="yusu">
+          <span class="pw-step__node"><span class="pw-step__num">5</span></span>
+          <span class="pw-step__label">Yusu</span>
+        </div>
+      </nav>
+
+      <div class="aria-body">
+
+      <div class="pd-header aria-header">
+        <div class="aria-header__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div>
+          <h1 class="aria-header__title">Go Live &amp; Handover</h1>
+          <p class="pd-header__sub">Turn it on, and hand it to the people who will use it.</p>
+        </div>
+      </div>
+
+      <div class="aria-breadcrumb" id="yusu-breadcrumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Selected use case: <strong id="yusu-recap-name"></strong></span>
+      </div>
+
+      <div id="yusu-error" class="gen-error" style="display:none"></div>
+
+      <!-- Everything that has to be true before this can go live, each naming
+           the stage that satisfies it rather than just failing. -->
+      <p class="pd-substage-label aria-required-label">Before going live</p>
+      <div class="yusu-checks" id="yusu-checks"></div>
+
+      <div class="aria-process-bar">
+        <span class="aria-process-bar__hint" id="yusu-hint"></span>
+        <button type="button" class="pw-next-btn" id="yusu-golive-btn" disabled>Go Live</button>
+      </div>
+
+      <!-- The handover itself: what is running, and what the customer now owns. -->
+      <div id="yusu-handover" style="display:none">
+        <p class="pd-substage-label aria-required-label">Handover</p>
+
+        <div class="host-card host-card--live">
+          <div class="host-card__row">
+            <div>
+              <p class="host-card__label"><span class="host-dot" id="yusu-dot"></span><span id="yusu-state"></span></p>
+              <p class="host-card__title"><a id="yusu-url" href="#" target="_blank" rel="noopener"></a></p>
+              <p class="host-card__body" id="yusu-sub"></p>
+            </div>
+          </div>
+          <dl class="env-facts" id="yusu-facts"></dl>
+
+          <div class="host-meter" id="yusu-meter">
+            <div class="host-meter__head">
+              <span id="yusu-usage-label"></span>
+              <span id="yusu-usage-num"></span>
+            </div>
+            <div class="host-meter__track"><div class="host-meter__fill" id="yusu-usage-fill"></div></div>
+          </div>
+        </div>
+
+        <div class="host-token" id="yusu-token" style="display:none">
+          <p class="host-token__label">Save this now — it is shown once</p>
+          <code id="yusu-token-value"></code>
+          <p class="host-token__note">The application uses it to reach Svarg's model gateway. Svarg
+            keeps only a hash, so it cannot be shown again — but it is already set on the running
+            application, so you only need this if you rebuild it elsewhere.</p>
+        </div>
+
+        <div class="yusu-split">
+          <div class="yusu-own">
+            <p class="yusu-own__title">What you own</p>
+            <ul id="yusu-owns"></ul>
+          </div>
+          <div class="yusu-own">
+            <p class="yusu-own__title">What Svarg runs</p>
+            <ul id="yusu-runs"></ul>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /.aria-body -->
+     </main>
+
+     <div class="sc-lane" data-screen="yusu">
+       <img src="/assets/yusu-character.png?v=1" class="rp-character sc-portrait" alt="" aria-hidden="true">
+       <button type="button" class="sc-launcher" data-sc-open>
+         <span class="sc-launcher__dot"></span>Chat with Yusu
+       </button>
+       <section class="sc-panel" hidden aria-label="Chat with Yusu">
+         <header class="sc-panel__head">
+           <span class="sc-panel__avatar"><img src="/assets/yusu-character.png?v=1" alt=""></span>
+           <span class="sc-panel__name">Yusu</span>
+           <button type="button" class="sc-panel__close" data-sc-close aria-label="Close chat">&times;</button>
+         </header>
+         <div class="sc-log" data-sc-log role="log" aria-live="polite"></div>
+         <form class="sc-form" data-sc-form>
+           <textarea class="sc-input" data-sc-input rows="1" placeholder="Ask Yusu about going live…" aria-label="Message"></textarea>
+           <button type="submit" class="sc-send" data-sc-send aria-label="Send">&uarr;</button>
+         </form>
+       </section>
+     </div>
+
+    </div>
+   </div>
+  </main>
+
 
   <!-- ══════════════════════════════════════════════════════════════════════
        SCREEN 3 — Company Blueprint Workspace
@@ -899,11 +1003,12 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=5"></script>
+  <script type="module" src="blueprintGenerate.js?v=2"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=23"></script>
   <script type="module" src="arthScreen.js?v=9"></script>
-  <script type="module" src="eameScreen.js?v=5"></script>
-  <script type="module" src="screenChat.js?v=4"></script>
+  <script type="module" src="eameScreen.js?v=6"></script>
+  <script type="module" src="yusuScreen.js?v=1"></script>
+  <script type="module" src="screenChat.js?v=5"></script>
 </body>
 </html>

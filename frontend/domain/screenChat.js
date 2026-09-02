@@ -1,5 +1,5 @@
 /**
- * Svarg — Chat with Cob / Aria / Arth / Eame
+ * Svarg — Chat with Cob / Aria / Arth / Eame / Yusu
  *
  * Each `.sc-lane[data-screen]` holds the character portrait, a launcher
  * button, and a chat panel. Opening the chat hides the portrait and shows
@@ -36,6 +36,7 @@ const GREETINGS = {
   aria: "I'm Aria. I map the data this use case needs. Ask me what's missing, or what happens to the data we can't connect.",
   arth: "I'm Arth. I work out what this use case should run on. Ask me how the model classes differ, or which one fits your constraints.",
   eame: "I'm Eame. I build the application itself. Ask me what's in the project, how to run it, or what happens when you deploy it.",
+  yusu: "I'm Yusu. I put it live and hand it over. Ask me what's still outstanding, or what you own once it's running.",
 };
 
 const PLACEHOLDER_BUSY = {
@@ -43,6 +44,7 @@ const PLACEHOLDER_BUSY = {
   aria: 'Aria is thinking…',
   arth: 'Arth is thinking…',
   eame: 'Eame is thinking…',
+  yusu: 'Yusu is thinking…',
 };
 
 class ScreenChat {

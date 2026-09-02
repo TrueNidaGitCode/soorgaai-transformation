@@ -39,7 +39,6 @@ let _connected = false;
 let _pushing = false;
 let _githubUser = '';
 let _repo = null;        // owner/name of the pushed repository
-let _deployment = null;  // the hosted deployment, once there is one
 
 function showError(msg) {
   const el = document.getElementById('eame-error');
@@ -174,9 +173,9 @@ async function push() {
     btn.textContent = '✓ Project Delivered';
     hint.textContent = 'Delivered to your GitHub account.';
     document.getElementById('eame-next-stage').style.display = 'flex';
-    // Hosting deploys from the repository, so it only becomes an option now.
+    // Yusu deploys from this repository, so the way on opens here.
     _repo = { owner: r.owner || _githubUser, name: repoName };
-    renderHosting(null);
+    document.getElementById('eame-onward').style.display = 'flex';
   } catch (err) {
     btn.disabled = false;
     btn.textContent = 'Build & Push Project';
@@ -188,150 +187,12 @@ async function push() {
   }
 }
 
-// ── Hosting ─────────────────────────────────────────────────────────────────
-// Running the application Svarg just built, on Svarg's infrastructure. The
-// repository is the deploy source, so this only appears once one exists.
-
-function renderHosting(deployment) {
-  _deployment = deployment;
-  const wrap = document.getElementById('eame-hosting');
-  const offer = document.getElementById('eame-host-offer');
-  const live  = document.getElementById('eame-host-live');
-
-  // Nothing to deploy until the project has been pushed somewhere.
-  if (!_repo && !deployment) { wrap.style.display = 'none'; return; }
-  wrap.style.display = '';
-
-  // Hosting is Arth's decision now; this screen only carries it out. Saying
-  // otherwise would offer a choice that has already been made.
-  const offerTitle = document.getElementById('eame-host-title');
-  const offerBody  = document.getElementById('eame-host-body');
-  const deployBtn  = document.getElementById('eame-deploy-btn');
-
-  if (deployment?.hosting === 'self') {
-    offer.style.display = ''; live.style.display = 'none';
-    offerTitle.textContent = 'You are running this yourself';
-    offerBody.textContent = 'Arth recorded that this runs in your own environment, so there is nothing for Svarg to deploy. The repository above has everything needed.';
-    deployBtn.style.display = 'none';
-    return;
-  }
-
-  const running = deployment && ['attaching', 'live', 'suspended'].includes(deployment.status);
-  offer.style.display = running ? 'none' : '';
-  live.style.display  = running ? '' : 'none';
-
-  if (!running) {
-    const prepared = deployment?.status === 'prepared';
-    deployBtn.style.display = prepared ? '' : 'none';
-    offerTitle.textContent = prepared
-      ? 'Deploy to your prepared environment'
-      : 'No environment prepared yet';
-    offerBody.textContent = prepared
-      ? `${deployment.environmentName || 'The Svarg environment'} is ready and waiting for this application.`
-      : 'Prepare the environment on the Arth screen first — that is where hosting is decided.';
-    return;
-  }
-
-  const dot   = document.getElementById('eame-host-dot');
-  const state = document.getElementById('eame-host-state');
-  dot.className = 'host-dot host-dot--' + deployment.status;
-  state.textContent = deployment.status === 'live' ? 'Live'
-    : deployment.status === 'provisioning' ? 'Starting up'
-    : 'Suspended';
-
-  const link = document.getElementById('eame-host-url');
-  if (deployment.url) {
-    link.href = deployment.url;
-    link.textContent = deployment.url.replace(/^https?:\/\//, '');
-  } else {
-    link.removeAttribute('href');
-    link.textContent = deployment.status === 'provisioning'
-      ? 'Waiting for a web address…'
-      : 'No web address yet';
-  }
-
-  document.getElementById('eame-host-model').textContent =
-    deployment.model?.displayName
-      ? `Running on ${deployment.model.displayName}, through Svarg's model gateway.`
-      : '';
-
-  // Spend against the cap is the number that decides when it stops working,
-  // so it gets the bar rather than the request count.
-  const spent = deployment.usage?.costUsd || 0;
-  const cap   = deployment.limits?.maxCostUsd || 0;
-  const pct   = cap > 0 ? Math.min(100, (spent / cap) * 100) : 0;
-  document.getElementById('eame-host-usage-num').textContent = cap > 0
-    ? `$${spent.toFixed(2)} of $${cap.toFixed(2)}`
-    : `$${spent.toFixed(2)}`;
-  document.getElementById('eame-host-usage-label').textContent =
-    `${(deployment.usage?.requests || 0).toLocaleString()} requests this month`;
-  const fill = document.getElementById('eame-host-usage-fill');
-  fill.style.width = pct + '%';
-  fill.classList.toggle('host-meter__fill--near', pct >= 80);
-}
-
-function showGatewayToken(token) {
-  if (!token) return;
-  const box = document.getElementById('eame-host-token');
-  document.getElementById('eame-host-token-value').textContent = token;
-  box.style.display = '';
-}
-
-async function loadDeployment() {
-  if (!_bp?._id) return;
-  try {
-    const { deployment } = await api(`/strategy-canvas/transformation-blueprint/${_bp._id}/deployment`);
-    renderHosting(deployment);
-  } catch {
-    // No deployment yet is the normal case, and not worth an error banner.
-    renderHosting(null);
-  }
-}
-
-async function deploy() {
-  const btn = document.getElementById('eame-deploy-btn');
-  btn.disabled = true;
-  btn.textContent = 'Deploying…';
-  document.getElementById('eame-error').style.display = 'none';
-  try {
-    const r = await api(`/strategy-canvas/transformation-blueprint/${_bp._id}/deploy`, {
-      method: 'POST',
-      body: JSON.stringify({ repo: _repo }),
-    });
-    renderHosting(r.deployment);
-    showGatewayToken(r.gatewayToken);
-  } catch (err) {
-    showError(err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Deploy';
-  }
-}
-
-async function removeDeployment() {
-  if (!confirm('Remove this deployment? The container and its database are deleted, and the web address stops working. Your GitHub repository is untouched.')) return;
-  const btn = document.getElementById('eame-host-remove');
-  btn.disabled = true;
-  btn.textContent = 'Removing…';
-  try {
-    await api(`/strategy-canvas/transformation-blueprint/${_bp._id}/deployment`, { method: 'DELETE' });
-    document.getElementById('eame-host-token').style.display = 'none';
-    renderHosting(null);
-  } catch (err) {
-    showError(err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Remove';
-  }
-}
-
 let _wired = false;
 
 function wire() {
   if (_wired) return;
   _wired = true;
-  document.getElementById('eame-deploy-btn').addEventListener('click', deploy);
-  document.getElementById('eame-host-remove').addEventListener('click', removeDeployment);
+
   document.getElementById('eame-connect-btn').addEventListener('click', (e) => {
     e.preventDefault();
     goConnectGithub();
@@ -355,8 +216,11 @@ document.addEventListener('eame:show', (e) => {
   // A repository pushed in an earlier session still counts — hosting deploys
   // from what was delivered, not from what this page happens to remember.
   const delivered = bp.eameDelivery;
-  if (delivered?.repoName) _repo = { owner: delivered.repoOwner, name: delivered.repoName };
+  if (delivered?.repoName) {
+    _repo = { owner: delivered.repoOwner, name: delivered.repoName };
+    // Already delivered in an earlier session — the way on is still open.
+    document.getElementById('eame-onward').style.display = 'flex';
+  }
 
   refreshGithubStatus().then(renderManifest);
-  loadDeployment();
 });

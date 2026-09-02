@@ -33,7 +33,7 @@ function getToken() { return localStorage.getItem('token'); }
 // domain.html) — same fade+rise transition used between windows in the
 // pipeline demo, reused here for the same effect between real screens.
 function showScreen(id) {
-  ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-aria', 'screen-arth', 'screen-eame', 'screen-workspace', 'domain-loading'].forEach(sid => {
+  ['screen-generate', 'screen-progress', 'screen-opportunities', 'screen-aria', 'screen-arth', 'screen-eame', 'screen-yusu', 'screen-workspace', 'domain-loading'].forEach(sid => {
     const el = document.getElementById(sid);
     if (!el) return;
     if (sid === id) {
@@ -814,7 +814,7 @@ async function init() {
     const view = new URLSearchParams(window.location.search).get('view');
     const forceAria = view === 'aria';
     // Arth and Eame are reachable directly too, same override as Aria.
-    if (view === 'arth' || view === 'eame') {
+    if (view === 'arth' || view === 'eame' || view === 'yusu') {
       showScreen('screen-' + view);
       document.dispatchEvent(new CustomEvent(view + ':show', { detail: { blueprint: bp } }));
       initGenerateForm();

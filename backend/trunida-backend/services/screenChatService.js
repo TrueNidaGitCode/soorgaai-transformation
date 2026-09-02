@@ -30,6 +30,9 @@ const ALLOWED_ACTIONS = {
   // irreversible enough that they should be deliberate clicks on the screen,
   // not something a conversation offers.
   eame: [],
+  // Same for Yusu, more so: going live is the single most consequential
+  // button in the product.
+  yusu: [],
 };
 
 const ACTION_LABELS = {
@@ -61,6 +64,11 @@ const PERSONAS = {
     name: 'Eame',
     role: 'the engineer who builds the application and hands it over as working code',
     focus: 'what is in the delivered project, how to run it, what it needs configured, and what happens when it is deployed',
+  },
+  yusu: {
+    name: 'Yusu',
+    role: 'the one who puts the application live and hands it to the business',
+    focus: 'what is still outstanding before it can go live, what happens at go-live, and where the line falls between what the customer owns and what Svarg runs for them',
   },
 };
 
@@ -181,6 +189,35 @@ function buildContext(screen, ctx) {
 
     lines.push(`\nYou do not perform actions. Pushing to GitHub and deploying are buttons`);
     lines.push(`on this screen; describe them rather than offering to do them.`);
+  }
+
+  if (screen === 'yusu') {
+    if (ctx.selectedUseCase) lines.push(`\nSelected use case: ${ctx.selectedUseCase}`);
+
+    lines.push(`\nReadiness — everything that must hold before this can go live:`);
+    (ctx.checks || []).forEach(c => {
+      lines.push(`  - ${c.title}: ${c.ok ? 'done' : 'NOT DONE — ' + c.fix}`);
+    });
+
+    if (ctx.hosting === 'self') {
+      lines.push(`\nThis customer runs it in their own environment. There is nothing for`);
+      lines.push(`Svarg to turn on — the repository from Eame is the handover.`);
+    } else if (ctx.live) {
+      lines.push(`\nIt is LIVE${ctx.url ? ` at ${ctx.url}` : ''}, running ${ctx.model || 'the chosen model'} through Svarg's gateway.`);
+      lines.push(`Spent $${(ctx.costUsd || 0).toFixed(2)} of a $${ctx.capUsd || 0} monthly limit across ${ctx.requests || 0} requests.`);
+    } else {
+      lines.push(`\nNot live yet.`);
+    }
+
+    lines.push(`\nWhere the line falls, and be exact about this when asked:`);
+    lines.push(`  The customer owns the source code in their own GitHub repository, and`);
+    lines.push(`  the data in the database — their documents and whatever the application`);
+    lines.push(`  produces. They can move it elsewhere at any time; nothing is locked in.`);
+    lines.push(`  Svarg runs the container, the database, and the model gateway, and holds`);
+    lines.push(`  the provider account behind it. Past the spend limit requests are refused`);
+    lines.push(`  rather than billed on.`);
+
+    lines.push(`\nYou do not perform actions. Going Live is a button on this screen.`);
   }
 
   return lines.join('\n');

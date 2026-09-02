@@ -28,13 +28,35 @@ function headers(accessToken) {
  * Creates a new (empty — no auto_init) repo owned by the authenticated user.
  * @returns {Promise<{owner:string, name:string, htmlUrl:string, defaultBranch:string}>}
  */
+/**
+ * Create the repository, or adopt one that is already there.
+ *
+ * A repository of this name usually exists because a previous run already
+ * delivered it — the name is derived from the use case, so it is stable.
+ * Failing in that case blocks the whole pipeline on a success. The existing
+ * repository is returned and left ALONE: its contents are the customer's,
+ * and overwriting them to satisfy a retry would be worse than not pushing.
+ */
 export async function createRepo(accessToken, { name, description = '', isPrivate = false }) {
-  const { data } = await axios.post(
-    `${API_BASE}/user/repos`,
-    { name, description, private: isPrivate, auto_init: false },
-    { headers: headers(accessToken) }
-  );
-  return { owner: data.owner.login, name: data.name, htmlUrl: data.html_url, defaultBranch: data.default_branch };
+  try {
+    const { data } = await axios.post(
+      `${API_BASE}/user/repos`,
+      { name, description, private: isPrivate, auto_init: false },
+      { headers: headers(accessToken) }
+    );
+    return { owner: data.owner.login, name: data.name, htmlUrl: data.html_url, defaultBranch: data.default_branch, created: true };
+  } catch (err) {
+    const already = (err.response?.data?.errors || [])
+      .some(e => /already exists/i.test(e.message || ''));
+    if (!already) throw err;
+
+    const me = await axios.get(`${API_BASE}/user`, { headers: headers(accessToken) });
+    const { data } = await axios.get(
+      `${API_BASE}/repos/${me.data.login}/${name}`,
+      { headers: headers(accessToken) }
+    );
+    return { owner: data.owner.login, name: data.name, htmlUrl: data.html_url, defaultBranch: data.default_branch, created: false };
+  }
 }
 
 async function createBlob(accessToken, owner, repo, content) {

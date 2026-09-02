@@ -251,7 +251,9 @@ async function buildAndPush() {
   out.style.display = 'block';
   out.innerHTML = `<div class="pw-process-item pw-process-item--done">
     <span class="pw-process-item__title">${esc(repoName)}</span>
-    <span class="pw-process-item__detail">${r.fileCount} files pushed &middot;
+    <span class="pw-process-item__detail">${r.created === false
+        ? 'Already delivered — repository left untouched'
+        : r.fileCount + ' files pushed'} &middot;
       <a href="${esc(r.repoUrl)}" target="_blank" rel="noopener" class="aria-configure-link">Open repository &rarr;</a></span>
   </div>`;
 
@@ -406,6 +408,20 @@ async function loadManifest() {
   } catch { _manifestPaths = []; }
 }
 
+/**
+ * Re-read what was delivered, rather than trusting the blueprint this page
+ * loaded with. Navigating away and back re-enters Yusu with the copy held
+ * since page load — which, after a push in the same session, no longer knows
+ * about it, and the run would push a second time.
+ */
+async function refreshDelivery() {
+  try {
+    // getTransformationBlueprint takes `id` and returns the blueprint itself.
+    const fresh = await api(`/strategy-canvas/transformation-blueprint?id=${_blueprintId}`);
+    if (fresh?.eameDelivery?.repoName) _bp.eameDelivery = fresh.eameDelivery;
+  } catch { /* the adopt-existing path covers this if it fails */ }
+}
+
 async function load() {
   if (!_blueprintId) return;
   try {
@@ -500,7 +516,7 @@ document.addEventListener('yusu:show', (e) => {
   _failed = '';
   _manifestPaths = [];
   render(bp, null);
-  Promise.all([refreshGithubStatus(), loadManifest(), load()]).then(() => {
+  Promise.all([refreshGithubStatus(), loadManifest(), load(), refreshDelivery()]).then(() => {
     render(_bp, _dep);
     autoRun();
   });

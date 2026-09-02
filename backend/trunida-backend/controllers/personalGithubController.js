@@ -147,9 +147,17 @@ export async function pushProject(req, res) {
     });
 
     const files = buildManifest({ includeJira: true });
-    await pushFiles(accessToken, repo.owner, repo.name, repo.defaultBranch, files, 'Initial commit — delivered by Svarg (Eame)');
 
-    auditLog('PUSHED', req.user._id, { repoUrl: repo.htmlUrl, fileCount: files.length });
+    // An existing repository is left exactly as it is. pushFiles bootstraps
+    // a .gitkeep commit and writes a fresh tree, which would trample whatever
+    // is already in there — and it is the customer's repository, not ours.
+    if (repo.created) {
+      await pushFiles(accessToken, repo.owner, repo.name, repo.defaultBranch, files, 'Initial commit — delivered by Svarg (Eame)');
+    } else {
+      console.log(`[PersonalGithub] ${repo.owner}/${repo.name} already exists — adopting it, contents untouched`);
+    }
+
+    auditLog(repo.created ? 'PUSHED' : 'ADOPTED', req.user._id, { repoUrl: repo.htmlUrl, fileCount: files.length });
 
     // Ownership is enforced in the filter — a blueprintId from the body can
     // only ever update a blueprint this user already owns.
@@ -163,7 +171,7 @@ export async function pushProject(req, res) {
         } } }
       ).catch(err => console.warn('[PersonalGithub] could not record delivery —', err.message));
     }
-    return res.json({ repoUrl: repo.htmlUrl, fileCount: files.length, owner: repo.owner, name: repo.name });
+    return res.json({ repoUrl: repo.htmlUrl, fileCount: files.length, owner: repo.owner, name: repo.name, created: repo.created });
   } catch (err) {
     console.error('[PersonalGithub] push-project error:', err.response?.data || err.message);
     // GitHub's validation errors put the actually useful detail (e.g. "name

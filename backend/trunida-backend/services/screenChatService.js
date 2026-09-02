@@ -2,7 +2,8 @@
  * Svarg — Screen Chat Service
  *
  * Conversational chat for the Cob (opportunity selection), Aria (data
- * connections) and Arth (model & infrastructure) screens. Unlike advisorService (structured 5-field report,
+ * connections), Arth (model & infrastructure) and Eame (the application)
+ * screens. Unlike advisorService (structured 5-field report,
  * capability-scoped) or conversationService (mutates DomainCanvas), this
  * returns plain conversational text scoped to a blueprint and a screen,
  * so the user feels they are talking to Cob or Aria directly.
@@ -25,6 +26,10 @@ const ALLOWED_ACTIONS = {
   // Arth's actions only move the selection on the screen — the commit stays
   // behind its own Confirm & Continue button, so chat never writes a choice.
   arth: ['choose_frontier', 'choose_open_weight', 'choose_auto'],
+  // Eame proposes nothing. Pushing to a repository and deploying are both
+  // irreversible enough that they should be deliberate clicks on the screen,
+  // not something a conversation offers.
+  eame: [],
 };
 
 const ACTION_LABELS = {
@@ -50,7 +55,12 @@ const PERSONAS = {
   arth: {
     name: 'Arth',
     role: 'the engineer who decides what an AI use case actually runs on',
-    focus: 'the trade-off between frontier, open-weight and auto model classes — quality against cost, and cloud against keeping data in the customer\'s own environment — and the infrastructure this blueprint calls for',
+    focus: 'the trade-off between frontier, open-weight and auto model classes — quality against cost, and cloud against keeping data in the customer\'s own environment — and where the application itself will run',
+  },
+  eame: {
+    name: 'Eame',
+    role: 'the engineer who builds the application and hands it over as working code',
+    focus: 'what is in the delivered project, how to run it, what it needs configured, and what happens when it is deployed',
   },
 };
 
@@ -144,6 +154,33 @@ function buildContext(screen, ctx) {
     } else {
       lines.push(`\nThis blueprint's Technology & Infrastructure domain has not finished generating, so you do not have its infrastructure detail. Say so rather than inventing a stack.`);
     }
+  }
+
+  if (screen === 'eame') {
+    if (ctx.selectedUseCase) lines.push(`\nSelected use case: ${ctx.selectedUseCase}`);
+
+    lines.push(`\nWhat the delivered project is: a Node/Express application with its own`);
+    lines.push(`API, a MongoDB database using Atlas Vector Search for retrieval, and an`);
+    lines.push(`OpenAI-compatible client for the model. It is working code copied from`);
+    lines.push(`Svarg's own engine, not a generated sample.`);
+    if (ctx.fileCount) lines.push(`It is ${ctx.fileCount} files.`);
+
+    lines.push(`\nGitHub connected: ${ctx.githubConnected ? `yes (${ctx.githubUser || 'account linked'})` : 'no'}`);
+    lines.push(`Pushed to a repository: ${ctx.repo ? `yes — ${ctx.repo}` : 'not yet'}`);
+
+    if (ctx.hosting === 'self') {
+      lines.push(`\nThis customer chose to run it in their own environment. Svarg prepares`);
+      lines.push(`nothing; they need their own hosting, database and model API key.`);
+    } else if (ctx.deploymentStatus) {
+      lines.push(`\nSvarg environment: ${ctx.deploymentStatus}`);
+      if (ctx.deploymentUrl) lines.push(`Running at: ${ctx.deploymentUrl}`);
+      if (ctx.model) lines.push(`Configured to use ${ctx.model}, reached through Svarg's gateway — the API key stays on Svarg's side and never reaches the application.`);
+    } else {
+      lines.push(`\nNo environment has been prepared yet. That happens on the Arth screen.`);
+    }
+
+    lines.push(`\nYou do not perform actions. Pushing to GitHub and deploying are buttons`);
+    lines.push(`on this screen; describe them rather than offering to do them.`);
   }
 
   return lines.join('\n');

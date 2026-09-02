@@ -1,5 +1,5 @@
 /**
- * Svarg — Chat with Cob / Aria / Arth
+ * Svarg — Chat with Cob / Aria / Arth / Eame
  *
  * Each `.sc-lane[data-screen]` holds the character portrait, a launcher
  * button, and a chat panel. Opening the chat hides the portrait and shows
@@ -35,12 +35,14 @@ const GREETINGS = {
   cob: "I'm Cob. I picked the recommended starting point for you — ask me why, or how it compares to the other options.",
   aria: "I'm Aria. I map the data this use case needs. Ask me what's missing, or what happens to the data we can't connect.",
   arth: "I'm Arth. I work out what this use case should run on. Ask me how the model classes differ, or which one fits your constraints.",
+  eame: "I'm Eame. I build the application itself. Ask me what's in the project, how to run it, or what happens when you deploy it.",
 };
 
 const PLACEHOLDER_BUSY = {
   cob: 'Cob is thinking…',
   aria: 'Aria is thinking…',
   arth: 'Arth is thinking…',
+  eame: 'Eame is thinking…',
 };
 
 class ScreenChat {
@@ -200,10 +202,9 @@ class ScreenChat {
   }
 }
 
-// Eame reuses .sc-lane purely to position its character portrait and has no
-// chat of its own, so only wire lanes that actually carry a launcher —
-// constructing against a lane without one threw on load and took the rest of
-// this module's setup with it.
+// Only wire lanes that actually carry a launcher — constructing against a
+// lane without one threw on load and took the rest of this module's setup
+// with it.
 document.querySelectorAll('.sc-lane').forEach(lane => {
   if (lane.querySelector('.sc-launcher')) new ScreenChat(lane);
 });

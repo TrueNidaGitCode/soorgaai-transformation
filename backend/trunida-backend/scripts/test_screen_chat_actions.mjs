@@ -89,5 +89,17 @@ check('a different class is still offered when one is selected',
 check('choose_auto dropped once auto is selected',
   validateAction('choose_auto', 'arth', { ...fresh, currentPreference: 'auto' }), null);
 
+// ── eame ────────────────────────────────────────────────────────────────────
+// Eame proposes nothing. Pushing to a repository and deploying are both
+// irreversible enough to need a deliberate click, not a conversational offer.
+check('eame does not inherit cob\'s action',
+  validateAction('approve_opportunity', 'eame', fresh), null);
+check('eame REJECTS an arth action',
+  validateAction('choose_frontier', 'eame', fresh), null);
+check('eame REJECTS an aria action',
+  validateAction('connect_jira', 'eame', fresh), null);
+check('an invented eame action is rejected',
+  validateAction('deploy_application', 'eame', fresh), null);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

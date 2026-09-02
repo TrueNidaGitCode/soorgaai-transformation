@@ -88,8 +88,8 @@ export async function screenChat(req, res) {
   try {
     const { blueprintId, screen, message, conversationHistory } = req.body;
 
-    if (!['cob', 'aria', 'arth'].includes(screen)) {
-      return res.status(400).json({ error: 'screen must be "cob", "aria" or "arth".' });
+    if (!['cob', 'aria', 'arth', 'eame'].includes(screen)) {
+      return res.status(400).json({ error: 'screen must be "cob", "aria", "arth" or "eame".' });
     }
     if (!message || typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({ error: 'message is required.' });
@@ -129,6 +129,28 @@ export async function screenChat(req, res) {
       context.currentPreference  = bp.arthSelection?.preference || '';
       context.currentDisplayName = bp.arthSelection?.displayName || '';
       context.infra = findInfra(bp);
+
+    } else if (screen === 'eame') {
+      // Read here rather than taken from the body, so Eame describes what was
+      // actually delivered and actually deployed — not what a client claims.
+      const { default: HostedDeployment } = await import('../models/HostedDeployment.js');
+      const { default: PersonalGithubConnection } = await import('../models/PersonalGithubConnection.js');
+
+      const dep = await HostedDeployment.findOne({ blueprintId }).lean();
+      const gh  = await PersonalGithubConnection.findOne({ userId: req.user._id }).lean();
+
+      context.selectedUseCase  = selectedUseCase;
+      context.githubConnected  = !!gh;
+      context.githubUser       = gh?.githubLogin || '';
+      context.repo             = bp.eameDelivery?.repoName
+        ? `${bp.eameDelivery.repoOwner}/${bp.eameDelivery.repoName}`
+        : '';
+      context.fileCount        = bp.eameDelivery?.fileCount || 0;
+      context.hosting          = dep?.hosting || '';
+      context.deploymentStatus = dep?.status || '';
+      context.deploymentUrl    = dep?.railway?.url || '';
+      context.model            = dep?.model?.displayName || bp.arthSelection?.displayName || '';
+
     } else {
       const docs = await LinkedProjectDocument.find({ blueprintId }).select('sourceType').lean();
       const confCount = docs.filter(d => (d.sourceType || 'confluence') === 'confluence').length;

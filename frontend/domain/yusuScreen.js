@@ -258,7 +258,7 @@ async function switchAccount() {
 
 function goConnectGithub() {
   sessionStorage.setItem('svarg_returning_to_yusu', '1');
-  api('/github/personal/connect?returnTo=domain')
+  api('/github/personal/connect?returnTo=yusu')
     .then(({ url }) => { window.location.href = url; })
     .catch(err => showError(err.message));
 }

@@ -50,6 +50,7 @@ let _priority = null;        // what matters most, for the auto flow
 let _recommendation = null;  // Arth's pick, kept so its reasoning is saved
 let _hosting = null;         // svarg | self — where the application runs
 let _env = null;             // the prepared environment, once there is one
+let _savedModelId = null;    // what is actually persisted, vs what is merely picked
 
 // The three classes the catalog actually distinguishes. Descriptions state
 // the trade honestly rather than selling each one.
@@ -316,13 +317,43 @@ async function loadEnvironment() {
   }
 }
 
+/**
+ * Persist the model chosen on screen. Preparing an environment needs a saved
+ * selection, and until this existed the only way to save one was Confirm &
+ * Continue — which sits below this section and leaves for Eame, so there was
+ * no way to save without abandoning the screen that needed it.
+ */
+async function saveModelSelection() {
+  if (_savedModelId === _model) return;
+  const saved = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/arth-selection`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      preference: _chosen,
+      modelId: _model,
+      priority: _chosen === 'auto' ? (_priority || 'quality') : '',
+      rationale: _recommendation?.why || '',
+    }),
+  });
+  _savedModelId = _model;
+  document.getElementById('arth-hint').textContent =
+    `Saved: ${saved.selection?.displayName || _model}.`;
+}
+
 async function prepareEnvironment() {
+  // Caught here rather than as a 400, so the reason names the step that
+  // fixes it instead of arriving as a bare failure from the server.
+  if (!_model) {
+    showError('Choose a model first — the environment is prepared around it.');
+    return;
+  }
+
   const btn = document.getElementById('arth-prep-btn');
   const original = btn.textContent;
   btn.disabled = true;
   btn.textContent = _hosting === 'svarg' ? 'Preparing…' : 'Saving…';
   document.getElementById('arth-error').style.display = 'none';
   try {
+    await saveModelSelection();
     const r = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/infrastructure`, {
       method: 'POST',
       body: JSON.stringify({ hosting: _hosting }),
@@ -495,21 +526,14 @@ function wire() {
   document.getElementById('arth-confirm-btn').addEventListener('click', async () => {
     if (!_chosen || !_blueprintId) return;
     const btn = document.getElementById('arth-confirm-btn');
-    const hint = document.getElementById('arth-hint');
     btn.disabled = true;
     btn.textContent = 'Saving…';
     try {
-      const saved = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/arth-selection`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          preference: _chosen,
-          modelId: _model,
-          priority: _chosen === 'auto' ? (_priority || 'quality') : '',
-          rationale: _recommendation?.why || '',
-        }),
-      });
+      // Force a write even when Prepare already saved it, so Confirm is
+      // never a no-op that looks like one.
+      _savedModelId = null;
+      await saveModelSelection();
       btn.textContent = '✓ Model Selected';
-      hint.textContent = `Saved: ${saved.selection?.displayName || _model}.`;
       document.getElementById('arth-next-stage').style.display = 'flex';
       // Forward progress, same pattern Aria uses to reach this screen.
       setTimeout(() => {
@@ -541,6 +565,7 @@ document.addEventListener('arth:show', (e) => {
   _models = [];
   _recommendation = null;
   _chosen = null;
+  _savedModelId = prev.modelId || null;
   renderOptions();
   refreshConfirm();
 

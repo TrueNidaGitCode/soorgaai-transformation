@@ -77,16 +77,107 @@ function fmtBytes(n) {
   return (n / 1024).toFixed(1) + ' KB';
 }
 
+/**
+ * Group the manifest the way a person reads a project: by directory, with
+ * root files split into documentation and everything else. Order is fixed
+ * rather than alphabetical, so it reads models-outward like the codebase.
+ */
+const DIR_ORDER = ['models', 'services', 'controllers', 'routes', 'middleware',
+                   'frontend', 'config', 'utils', 'scripts', 'documentation', 'project root'];
+
+function groupByDirectory(files) {
+  const groups = new Map();
+  for (const f of files) {
+    const dir = f.path.includes('/')
+      ? f.path.split('/')[0]
+      : (/\.(md|txt)$/i.test(f.path) ? 'documentation' : 'project root');
+    if (!groups.has(dir)) groups.set(dir, []);
+    groups.get(dir).push(f);
+  }
+  const known = DIR_ORDER.filter(d => groups.has(d));
+  const rest = [...groups.keys()].filter(d => !DIR_ORDER.includes(d)).sort();
+  return [...known, ...rest].map(dir => ({ dir, files: groups.get(dir) }));
+}
+
+/**
+ * What the build actually produced. Each line is a claim about the manifest,
+ * so it is checked against the manifest rather than asserted — a project
+ * built without Jira really does lose its data-connection line.
+ */
+function buildSummary(paths) {
+  const has = re => paths.some(p => re.test(p));
+  return [
+    { ok: paths.length > 0,                      text: 'Core application structure generated' },
+    { ok: has(/llmService|embeddingService/i),   text: 'AI services integrated' },
+    { ok: has(/jira|confluence/i),               text: 'Engineering data connections configured' },
+    { ok: has(/^frontend\//i),                   text: 'Frontend interface built' },
+    { ok: has(/authMiddleware|encryption/i),     text: 'Security and authentication setup' },
+    { ok: has(/\.md$/i),                         text: 'Project documentation included' },
+  ];
+}
+
+/** Read off the files that prove it, never a fixed list. */
+function techStack(paths) {
+  const has = re => paths.some(p => re.test(p));
+  return [
+    ['Node.js',       has(/package\.json$/)],
+    ['Express.js',    has(/^server\.js$|^routes\//)],
+    ['MongoDB',       has(/^models\//)],
+    ['Jira API',      has(/jira/i)],
+    ['Confluence API',has(/confluence/i)],
+    ['Vanilla JS',    has(/^frontend\/.*\.js$/)],
+    ['CSS',           has(/\.css$/)],
+  ].filter(([, ok]) => ok).map(([name]) => name);
+}
+
+function renderStats(fileCount, totalBytes) {
+  const stats = [
+    { icon: '&#128193;', value: `${fileCount} Files`,          label: 'Full-stack application' },
+    { icon: '&#128190;', value: fmtBytes(totalBytes),          label: 'Optimised codebase' },
+    { icon: '&#9881;',   value: 'Node.js',                     label: 'Modern, scalable stack' },
+  ];
+  document.getElementById('eame-stats').innerHTML = stats.map(s => `
+    <div class="eg-stat">
+      <span class="eg-stat__icon">${s.icon}</span>
+      <span class="eg-stat__text">
+        <span class="eg-stat__value">${esc(s.value)}</span>
+        <span class="eg-stat__label">${esc(s.label)}</span>
+      </span>
+    </div>
+  `).join('');
+}
+
 async function renderManifest() {
-  const body = document.getElementById('eame-manifest-body');
-  body.innerHTML = `<tr><td colspan="2" class="ks-card-body">Loading project files…</td></tr>`;
+  const tree = document.getElementById('eame-tree');
+  tree.innerHTML = `<li class="eg-tree__loading">Loading project files…</li>`;
   try {
     const { files, fileCount, totalBytes } = await api('/github/personal/project-manifest');
     if (!files?.length) {
-      body.innerHTML = `<tr><td colspan="2" class="ks-card-body">The project builder returned no files.</td></tr>`;
+      tree.innerHTML = `<li class="eg-tree__loading">The project builder returned no files.</li>`;
       return;
     }
-    body.innerHTML = files.map(f => `
+    const paths = files.map(f => f.path);
+
+    renderStats(fileCount, totalBytes);
+
+    tree.innerHTML = groupByDirectory(files).map(g => `
+      <li class="eg-tree__row">
+        <span class="eg-tree__name"><span class="eg-folder-ico">&#128193;</span>${esc(g.dir)}${g.dir.includes(' ') ? '' : '/'}</span>
+        <span class="eg-tree__count">${g.files.length} file${g.files.length === 1 ? '' : 's'}</span>
+      </li>
+    `).join('');
+
+    document.getElementById('eame-summary').innerHTML = buildSummary(paths).map(s => `
+      <li class="eg-summary__item${s.ok ? '' : ' eg-summary__item--no'}">
+        <span class="eg-summary__mark">${s.ok ? '&#10003;' : '&middot;'}</span>${esc(s.text)}
+      </li>
+    `).join('');
+
+    document.getElementById('eame-stack').innerHTML =
+      techStack(paths).map(t => `<span class="eg-chip">${esc(t)}</span>`).join('');
+
+    // The full list stays available behind "View Source Structure".
+    document.getElementById('eame-manifest-body').innerHTML = files.map(f => `
       <tr>
         <td>
           <span class="aria-row-name__title">${esc(f.path)}</span>
@@ -95,12 +186,29 @@ async function renderManifest() {
         <td class="aria-row-tools">${esc(describe(f.path))}</td>
       </tr>
     `).join('');
-    const hint = document.getElementById('eame-hint');
-    if (hint) hint.textContent = `${fileCount} files · ${fmtBytes(totalBytes)}`;
   } catch (err) {
-    body.innerHTML = `<tr><td colspan="2" class="ks-card-body">Couldn't load the project manifest.</td></tr>`;
+    tree.innerHTML = `<li class="eg-tree__loading">Couldn't load the project manifest.</li>`;
     showError(err.message);
   }
+}
+
+/** Both badges are real state, so neither can claim something untrue. */
+async function renderBadges(bp) {
+  const approved = !!bp.opportunityApproval?.approved;
+  let linked = 0;
+  try {
+    const r = await api(`/confluence/personal/linked/${bp._id}`);
+    linked = (r.documents || []).length;
+  } catch { /* not connected is a valid answer, not an error */ }
+
+  document.getElementById('eame-badges').innerHTML = [
+    { ok: approved, on: 'Blueprint Approved', off: 'Not Yet Approved' },
+    { ok: linked > 0, on: `Data Connected`, off: 'No Data Connected' },
+  ].map(b => `
+    <span class="eg-badge${b.ok ? ' eg-badge--on' : ''}">
+      <span class="eg-badge__dot"></span>${esc(b.ok ? b.on : b.off)}
+    </span>
+  `).join('');
 }
 
 let _wired = false;
@@ -108,6 +216,20 @@ let _wired = false;
 function wire() {
   if (_wired) return;
   _wired = true;
+
+  // The file list is the detail behind the summary, not a replacement for it.
+  document.getElementById('eame-source-btn').addEventListener('click', () => {
+    const box = document.getElementById('eame-files');
+    const open = box.style.display !== 'none';
+    box.style.display = open ? 'none' : '';
+    document.getElementById('eame-source-btn').innerHTML = open
+      ? '<span class=eg-folder-ico>&#128193;</span> View Source Structure &rarr;'
+      : '<span class=eg-folder-ico>&#128193;</span> Hide Source Structure';
+  });
+
+  document.getElementById('eame-view-details').addEventListener('click', () => {
+    window.open('/domain/domain.html?openBlueprint=1', '_blank', 'noopener');
+  });
 }
 
 document.addEventListener('eame:show', (e) => {
@@ -121,4 +243,5 @@ document.addEventListener('eame:show', (e) => {
 
   renderBreadcrumb(bp);
   renderManifest();
+  renderBadges(bp);
 });

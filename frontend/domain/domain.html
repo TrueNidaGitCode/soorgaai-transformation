@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
-  <link rel="stylesheet" href="domain.css?v=32">
+  <link rel="stylesheet" href="domain.css?v=33">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -688,6 +688,51 @@
         <button type="button" class="pw-next-btn" id="eame-build-btn" disabled>Build &amp; Push Project</button>
       </div>
 
+      <!-- Hosting. Hidden until the repository exists, because there is
+           nothing to deploy before that. -->
+      <div id="eame-hosting" style="display:none">
+        <p class="pd-substage-label aria-required-label">Hosting</p>
+
+        <div class="host-card" id="eame-host-offer">
+          <div class="host-card__row">
+            <div>
+              <p class="host-card__title">Run it on Svarg</p>
+              <p class="host-card__body">Your own container and database, with the model Arth
+                chose already wired in. Nothing to install.</p>
+            </div>
+            <button type="button" class="pw-next-btn" id="eame-deploy-btn">Deploy</button>
+          </div>
+          <p class="host-card__alt">Prefer to run it yourself? The repository above is complete —
+            follow its README and nothing here is required.</p>
+        </div>
+
+        <div class="host-card host-card--live" id="eame-host-live" style="display:none">
+          <div class="host-card__row">
+            <div>
+              <p class="host-card__label"><span class="host-dot" id="eame-host-dot"></span><span id="eame-host-state">Live</span></p>
+              <p class="host-card__title"><a id="eame-host-url" href="#" target="_blank" rel="noopener"></a></p>
+              <p class="host-card__body" id="eame-host-model"></p>
+            </div>
+            <button type="button" class="pw-back-btn" id="eame-host-remove">Remove</button>
+          </div>
+
+          <div class="host-meter">
+            <div class="host-meter__head">
+              <span id="eame-host-usage-label">Usage this month</span>
+              <span id="eame-host-usage-num"></span>
+            </div>
+            <div class="host-meter__track"><div class="host-meter__fill" id="eame-host-usage-fill"></div></div>
+          </div>
+        </div>
+
+        <div class="host-token" id="eame-host-token" style="display:none">
+          <p class="host-token__label">Save this now — it is shown once</p>
+          <code id="eame-host-token-value"></code>
+          <p class="host-token__note">Your application uses it to reach Svarg's model gateway.
+            Svarg stores only a hash, so it cannot be shown again.</p>
+        </div>
+      </div>
+
       </div><!-- /.aria-body -->
      </main>
 
@@ -806,7 +851,7 @@
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=23"></script>
   <script type="module" src="arthScreen.js?v=4"></script>
-  <script type="module" src="eameScreen.js?v=1"></script>
+  <script type="module" src="eameScreen.js?v=4"></script>
   <script type="module" src="screenChat.js?v=3"></script>
 </body>
 </html>

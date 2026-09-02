@@ -108,7 +108,7 @@ const VALID_SEVERITIES = ['low', 'medium', 'high', 'critical'];
 export async function structureDefectFromIssue(issueMeta, redactedText) {
   const { systemPrompt, userMessage } = buildStructuringPrompt(issueMeta, redactedText);
   try {
-    const result = await generate({ systemPrompt, userMessage, maxTokens: 600 });
+    const result = await generate({ systemPrompt, userMessage, maxTokens: 600, label: 'aria:classify-jira' });
     const cleaned = result.text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
     const parsed = JSON.parse(cleaned);
     return {

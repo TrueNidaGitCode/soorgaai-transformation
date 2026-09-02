@@ -3,7 +3,7 @@
  * A mistake here is silent: the app boots, and either bills the wrong way,
  * shares a database, or builds a vector index that can never match a query.
  */
-import { buildTenantEnv, tenantDbName, tenantMongoUri } from '../services/deployTargetService.js';
+import { buildTenantEnv, tenantDbName, tenantMongoUri, assertDestroyable, tenantProjectName, TENANT_PREFIX } from '../services/deployTargetService.js';
 import { classifyUpstreamError } from '../services/gatewayService.js';
 
 let pass = 0, fail = 0;
@@ -85,6 +85,40 @@ check('anything else stays generic',
   classifyUpstreamError('socket hang up'), 'The upstream model provider could not be reached.');
 check('no provider name leaks to the tenant',
   /anthropic|openai|gemini|google/i.test(classifyUpstreamError('Anthropic 400 credit balance too low')), false);
+
+// ── Destroy guards ──────────────────────────────────────────────────────────
+// projectDelete is irreversible, and an account token can delete ANY project
+// in the workspace — including the one running Svarg. These checks run before
+// any call is made, and work only from what Svarg itself wrote down.
+const tenant = (over = {}) => ({
+  railway: {
+    projectId: 'proj-abc',
+    projectName: tenantProjectName('6a4f37751d281fa2742797a6'),
+    ...(over.railway || {}),
+  },
+});
+
+check('a real tenant project may be destroyed', assertDestroyable(tenant()), true);
+throws('a deployment with no project id is refused',
+  () => assertDestroyable({ railway: { projectName: TENANT_PREFIX + 'x' } }), /nothing to destroy/i);
+throws('a project without the tenant prefix is refused',
+  () => assertDestroyable(tenant({ railway: { projectName: 'svarg-production' } })), /not a Svarg tenant project/i);
+throws('a project with no name recorded is refused',
+  () => assertDestroyable(tenant({ railway: { projectName: '' } })), /not a Svarg tenant project/i);
+throws('a deployment with no railway block is refused',
+  () => assertDestroyable({}), /nothing to destroy/i);
+
+process.env.RAILWAY_PROTECTED_PROJECT_IDS = 'proj-abc, proj-svarg';
+throws('a protected id is refused even when the name looks right',
+  () => assertDestroyable(tenant()), /protected list/i);
+check('...while other projects stay destroyable',
+  assertDestroyable(tenant({ railway: { projectId: 'proj-other' } })), true);
+delete process.env.RAILWAY_PROTECTED_PROJECT_IDS;
+
+check('tenant project names carry the prefix',
+  tenantProjectName('6a4f37751d281fa2742797a6').startsWith(TENANT_PREFIX), true);
+check('two blueprints get different project names',
+  tenantProjectName('6a4f37751d281fa2742797a6') === tenantProjectName('aaaaaaaaaaaaaaaaaaaaaaaa'), false);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

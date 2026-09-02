@@ -84,11 +84,68 @@ export function buildTenantEnv({ deployment, gatewayToken, gatewayBaseUrl, clust
 
 // ── Targets ─────────────────────────────────────────────────────────────────
 
+const RAILWAY_API = 'https://backboard.railway.com/graphql/v2';
+
 /**
- * Shape A. Not yet wired: it needs RAILWAY_API_TOKEN, and a token that can
- * create and delete anything in the account it belongs to should point at a
- * Railway team holding only tenant deployments, never the one running Svarg.
+ * Every tenant project carries this prefix, and destroy refuses anything
+ * without it. Account tokens can delete any project in the workspace,
+ * including the one running Svarg — a name check is cheap and catches the
+ * case a wrong id would otherwise make catastrophic.
  */
+export const TENANT_PREFIX = 'svarg-tenant-';
+
+export function tenantProjectName(blueprintId) {
+  return TENANT_PREFIX + String(blueprintId).slice(-12);
+}
+
+/**
+ * Project ids that must never be touched, whatever is asked. Svarg's own
+ * project belongs here — a provisioning bug should fail loudly rather than
+ * tear down production.
+ */
+export function protectedProjectIds() {
+  return String(process.env.RAILWAY_PROTECTED_PROJECT_IDS || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+}
+
+/**
+ * The guard destroy() runs before making any call. Exported because it is the
+ * whole safety story for an irreversible operation, and deserves its own tests.
+ *
+ * `deployment` is the stored record — destroy works from what Svarg wrote down,
+ * never from an id supplied by a caller, and never by enumerating the account.
+ */
+export function assertDestroyable(deployment) {
+  const id = deployment?.railway?.projectId;
+  if (!id) throw new Error('This deployment has no Railway project recorded, so there is nothing to destroy.');
+  if (protectedProjectIds().includes(id)) {
+    throw new Error(`Refusing to destroy ${id}: it is on the protected list.`);
+  }
+  const name = deployment?.railway?.projectName || '';
+  if (!name.startsWith(TENANT_PREFIX)) {
+    throw new Error(`Refusing to destroy ${id}: "${name}" is not a Svarg tenant project.`);
+  }
+  return true;
+}
+
+async function gql(query, variables) {
+  const token = process.env.RAILWAY_API_TOKEN;
+  if (!token) throw new Error('The Railway deploy target is not configured. Set RAILWAY_API_TOKEN.');
+
+  const res = await fetch(RAILWAY_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ query, variables }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body.errors?.length) {
+    const msg = body.errors?.map(e => e.message).join('; ') || `Railway returned ${res.status}`;
+    throw new Error(`Railway API: ${msg}`);
+  }
+  return body.data;
+}
+
+/** Shape A: one project, one service from the tenant's repo, one domain. */
 export const railwayTarget = {
   name: 'railway',
 
@@ -96,14 +153,79 @@ export const railwayTarget = {
     return !!process.env.RAILWAY_API_TOKEN;
   },
 
-  async provision() {
-    throw new Error('The Railway deploy target is not configured. Set RAILWAY_API_TOKEN.');
+  async provision({ deployment, env }) {
+    const repo = `${deployment.repo?.owner}/${deployment.repo?.name}`;
+    if (!deployment.repo?.owner || !deployment.repo?.name) {
+      throw new Error('This deployment has no repository recorded. Push the project from Eame first.');
+    }
+
+    const name = tenantProjectName(deployment.blueprintId);
+    const project = (await gql(`
+      mutation projectCreate($input: ProjectCreateInput!) {
+        projectCreate(input: $input) { id name environments { edges { node { id name } } } }
+      }`, {
+      input: {
+        name,
+        description: `Svarg hosted application for blueprint ${deployment.blueprintId}`,
+        isPublic: false,
+        ...(process.env.RAILWAY_WORKSPACE_ID ? { workspaceId: process.env.RAILWAY_WORKSPACE_ID } : {}),
+      },
+    })).projectCreate;
+
+    const envNode = project.environments?.edges?.[0]?.node;
+    if (!envNode) throw new Error('Railway created the project but reported no environment.');
+
+    const service = (await gql(`
+      mutation serviceCreate($input: ServiceCreateInput!) {
+        serviceCreate(input: $input) { id name }
+      }`, {
+      input: { projectId: project.id, name: 'app', source: { repo }, variables: env },
+    })).serviceCreate;
+
+    // A domain is what makes it reachable, but a project without one is still
+    // a successful deployment — report it rather than unwinding the whole thing.
+    let url = '';
+    try {
+      const domain = (await gql(`
+        mutation serviceDomainCreate($input: ServiceDomainCreateInput!) {
+          serviceDomainCreate(input: $input) { id domain }
+        }`, {
+        input: { serviceId: service.id, environmentId: envNode.id, targetPort: 3000 },
+      })).serviceDomainCreate;
+      url = domain?.domain ? `https://${domain.domain}` : '';
+    } catch (err) {
+      console.warn('[railway] domain creation failed —', err.message);
+    }
+
+    return {
+      projectId: project.id,
+      projectName: project.name,
+      serviceId: service.id,
+      environmentId: envNode.id,
+      url,
+    };
   },
-  async status() {
-    throw new Error('The Railway deploy target is not configured. Set RAILWAY_API_TOKEN.');
+
+  async status({ deployment }) {
+    const { projectId, serviceId, environmentId } = deployment.railway || {};
+    if (!projectId || !serviceId) return { status: 'unknown', url: deployment.railway?.url || '' };
+
+    const data = await gql(`
+      query domains($projectId: String!, $environmentId: String!, $serviceId: String!) {
+        domains(projectId: $projectId, environmentId: $environmentId, serviceId: $serviceId) {
+          serviceDomains { domain }
+        }
+      }`, { projectId, environmentId, serviceId });
+
+    const domain = data?.domains?.serviceDomains?.[0]?.domain;
+    return { status: 'live', url: domain ? `https://${domain}` : (deployment.railway?.url || '') };
   },
-  async destroy() {
-    throw new Error('The Railway deploy target is not configured. Set RAILWAY_API_TOKEN.');
+
+  async destroy({ deployment }) {
+    assertDestroyable(deployment);
+    await gql(`mutation projectDelete($id: String!) { projectDelete(id: $id) }`,
+      { id: deployment.railway.projectId });
+    return { destroyed: true };
   },
 };
 

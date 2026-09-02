@@ -2545,7 +2545,7 @@ function parseBriefOutput(rawSections, validTitles) {
 
 async function callLLM(systemPrompt, userMessage, timeoutMs, capName) {
   const { text } = await Promise.race([
-    generate({ systemPrompt, userMessage, maxTokens: 4000 }),
+    generate({ systemPrompt, userMessage, maxTokens: 4000, label: 'cob:section' }),
     new Promise((_, reject) =>
       setTimeout(
         () => reject(new Error(`LLM timeout after ${timeoutMs / 1000}s for: ${capName}`)),

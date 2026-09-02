@@ -385,6 +385,16 @@ const transformationBlueprintSchema = new mongoose.Schema({
     },
   },
 
+  // Eame (stage 4): what was actually delivered. Hosting deploys from this
+  // repository, so it has to outlive the browser session that pushed it.
+  eameDelivery: {
+    repoOwner: { type: String, default: '' },
+    repoName:  { type: String, default: '' },
+    repoUrl:   { type: String, default: '' },
+    fileCount: { type: Number, default: 0 },
+    pushedAt:  { type: Date,   default: null },
+  },
+
   domains: { type: [domainSchema], default: [] },
 }, { timestamps: true });
 

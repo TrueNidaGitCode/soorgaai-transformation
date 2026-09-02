@@ -195,7 +195,7 @@ export async function askScreenChat({ screen, context, message, conversationHist
     `\nUser: ${message}`,
   ].filter(Boolean).join('\n');
 
-  const { text } = await generate({ systemPrompt, userMessage, maxTokens: 700 });
+  const { text } = await generate({ systemPrompt, userMessage, maxTokens: 700, label: `chat:${screen}` });
 
   const { reply, action } = splitAction(text);
   return {

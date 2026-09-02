@@ -36,6 +36,9 @@ const hostedDeploymentSchema = new mongoose.Schema({
   // Where it runs. Empty until the deploy target reports back.
   railway: {
     projectId:     { type: String, default: '' },
+    // Checked by assertDestroyable before any delete — a project without the
+    // tenant prefix is refused, so this is a safety field, not a label.
+    projectName:   { type: String, default: '' },
     serviceId:     { type: String, default: '' },
     environmentId: { type: String, default: '' },
     url:           { type: String, default: '' },

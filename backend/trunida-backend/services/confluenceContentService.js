@@ -67,7 +67,7 @@ OUTPUT — valid JSON only, no markdown fences:
 export async function classifyDocument(title, normalizedText) {
   const { systemPrompt, userMessage } = buildKnowledgeExtractionPrompt(title, normalizedText);
   try {
-    const result = await generate({ systemPrompt, userMessage, maxTokens: 600 });
+    const result = await generate({ systemPrompt, userMessage, maxTokens: 600, label: 'aria:classify-confluence' });
     const cleaned = result.text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
     const parsed  = JSON.parse(cleaned);
     const validTypes = ['architecture', 'requirements', 'design', 'presentation', 'meeting_notes', 'other'];

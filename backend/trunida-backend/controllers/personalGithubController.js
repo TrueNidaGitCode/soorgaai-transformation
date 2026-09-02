@@ -150,7 +150,20 @@ export async function pushProject(req, res) {
     await pushFiles(accessToken, repo.owner, repo.name, repo.defaultBranch, files, 'Initial commit — delivered by Svarg (Eame)');
 
     auditLog('PUSHED', req.user._id, { repoUrl: repo.htmlUrl, fileCount: files.length });
-    return res.json({ repoUrl: repo.htmlUrl, fileCount: files.length });
+
+    // Ownership is enforced in the filter — a blueprintId from the body can
+    // only ever update a blueprint this user already owns.
+    if (req.body?.blueprintId) {
+      const { default: TransformationBlueprint } = await import('../models/TransformationBlueprint.js');
+      await TransformationBlueprint.updateOne(
+        { _id: req.body.blueprintId, userId: req.user._id },
+        { $set: { eameDelivery: {
+          repoOwner: repo.owner, repoName: repo.name, repoUrl: repo.htmlUrl,
+          fileCount: files.length, pushedAt: new Date(),
+        } } }
+      ).catch(err => console.warn('[PersonalGithub] could not record delivery —', err.message));
+    }
+    return res.json({ repoUrl: repo.htmlUrl, fileCount: files.length, owner: repo.owner, name: repo.name });
   } catch (err) {
     console.error('[PersonalGithub] push-project error:', err.response?.data || err.message);
     // GitHub's validation errors put the actually useful detail (e.g. "name

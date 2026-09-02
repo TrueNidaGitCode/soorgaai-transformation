@@ -195,7 +195,7 @@ export async function recommendModel({ useCase, businessObjective, priority = 'q
   let why = '';
 
   try {
-    const { text } = await generate({ systemPrompt: SYSTEM_PROMPT, userMessage, maxTokens: 400 });
+    const { text } = await generate({ systemPrompt: SYSTEM_PROMPT, userMessage, maxTokens: 400, label: 'arth:recommend' });
     const parsed = parseRecommendation(text);
     // Validated against the candidate set, so a hallucinated id — or a cloud
     // model proposed under a privacy constraint — cannot reach the screen.

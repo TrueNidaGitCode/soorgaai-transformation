@@ -3318,6 +3318,99 @@
 .arth-rec__why { margin: 10px 0 0; font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.72); }
 .arth-rec__compute { margin: 12px 0 0; }
 
+/* ── Hosting (Eame) ─────────────────────────────────────────────────────
+   Running the delivered application on Svarg. Deliberately understated —
+   the repository above is the real deliverable, and hosting is an offer
+   on top of it rather than the conclusion of the stage. */
+.host-card {
+  margin-top: 10px;
+  padding: 18px 20px;
+  border-radius: 11px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.host-card--live {
+  border-color: rgba(92,197,167,0.3);
+  background: rgba(92,197,167,0.06);
+}
+.host-card__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.host-card__row > div { min-width: 0; }
+.host-card__title { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #fff; }
+.host-card__title a { color: var(--aria-accent); text-decoration: none; word-break: break-all; }
+.host-card__title a:hover { text-decoration: underline; }
+.host-card__body { margin: 0; font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,0.55); }
+.host-card__alt {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.4);
+}
+.host-card__label {
+  margin: 0 0 6px;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+.host-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); flex-shrink: 0; }
+.host-dot--live { background: var(--aria-accent); }
+.host-dot--provisioning { background: #D6A15C; }
+.host-dot--suspended { background: #E0766A; }
+
+/* Spend against the cap, not request count — spend is what stops it. */
+.host-meter { display: flex; flex-direction: column; gap: 7px; }
+.host-meter__head {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: 11.5px; color: rgba(255,255,255,0.45);
+  font-variant-numeric: tabular-nums;
+}
+.host-meter__track {
+  height: 5px; border-radius: 999px; overflow: hidden;
+  background: rgba(255,255,255,0.09);
+}
+.host-meter__fill {
+  height: 100%; width: 0;
+  background: var(--aria-accent);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.host-meter__fill--near { background: #D6A15C; }
+
+.host-token {
+  margin-top: 10px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(214,161,92,0.35);
+  background: rgba(214,161,92,0.07);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.host-token__label {
+  margin: 0;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: #D6A15C;
+}
+.host-token code {
+  display: block;
+  font-size: 12px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  background: rgba(0,0,0,0.3);
+  color: rgba(255,255,255,0.9);
+  word-break: break-all;
+}
+.host-token__note { margin: 0; font-size: 11.5px; line-height: 1.5; color: rgba(255,255,255,0.45); }
+
 .aria-process-bar {
   display: flex;
   align-items: center;

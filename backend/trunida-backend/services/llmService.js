@@ -405,7 +405,11 @@ export async function generate({
   model,
   maxTokens,
   provider,
+  label,
 }) {
+  const started = Date.now();
+  let result;
+
   // Explicit single-provider call (e.g. from tests or direct API usage)
   if (provider) {
     const impl = PROVIDERS[provider];
@@ -415,8 +419,51 @@ export async function generate({
       );
     }
     console.log(`[llm] Provider: ${provider} (explicit)`);
-    return impl.generate({ systemPrompt, userMessage, model, maxTokens });
+    result = await impl.generate({ systemPrompt, userMessage, model, maxTokens });
+  } else {
+    result = await runChain({ systemPrompt, userMessage, model, maxTokens });
   }
 
-  return runChain({ systemPrompt, userMessage, model, maxTokens });
+  recordCall({ label, result, ms: Date.now() - started });
+  return result;
+}
+
+// ── Usage accounting ───────────────────────────────────────────────────────────
+/**
+ * Every provider above already reports token counts and nothing was adding
+ * them up, so there was no way to answer "what does one blueprint cost?".
+ * Accumulating here rather than at each of the twelve call sites keeps it
+ * impossible to add a call that goes uncounted.
+ *
+ * In-process only — it resets when the server restarts. This measures a run,
+ * it is not billing; per-tenant spend is metered durably in gatewayService.
+ * `label` is optional and only groups the breakdown.
+ */
+const usage = { calls: 0, inputTokens: 0, outputTokens: 0, ms: 0, byLabel: {} };
+
+function recordCall({ label, result, ms }) {
+  const inTok  = result?.inputTokens  || 0;
+  const outTok = result?.outputTokens || 0;
+  const key = label || 'unlabelled';
+
+  usage.calls++;
+  usage.inputTokens  += inTok;
+  usage.outputTokens += outTok;
+  usage.ms += ms;
+
+  const b = usage.byLabel[key] || (usage.byLabel[key] = { calls: 0, inputTokens: 0, outputTokens: 0, ms: 0 });
+  b.calls++; b.inputTokens += inTok; b.outputTokens += outTok; b.ms += ms;
+
+  if (process.env.LLM_LOG_USAGE === '1') {
+    console.log(`[llm usage] ${key}: ${inTok} in / ${outTok} out (${(ms / 1000).toFixed(1)}s)`);
+  }
+}
+
+export function getUsageStats() {
+  return JSON.parse(JSON.stringify(usage));
+}
+
+export function resetUsageStats() {
+  usage.calls = 0; usage.inputTokens = 0; usage.outputTokens = 0; usage.ms = 0;
+  usage.byLabel = {};
 }

@@ -1,6 +1,7 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { screenChat, saveArthSelection, listArthModels, recommendArthModel } from '../controllers/screenChatController.js';
+import { getDeployment, createDeployment, destroyDeployment } from '../controllers/deploymentController.js';
 import {
   listCapabilities,
   fetchCapabilityBlueprint,
@@ -42,6 +43,11 @@ router.post('/screen-chat',            protect, screenChat);
 router.get('/arth/models',             protect, listArthModels);
 router.post('/transformation-blueprint/:blueprintId/arth-recommend',  protect, recommendArthModel);
 router.patch('/transformation-blueprint/:blueprintId/arth-selection', protect, saveArthSelection);
+
+// Eame (stage 4): hosting the application Svarg built.
+router.get   ('/transformation-blueprint/:blueprintId/deployment', protect, getDeployment);
+router.post  ('/transformation-blueprint/:blueprintId/deploy',     protect, createDeployment);
+router.delete('/transformation-blueprint/:blueprintId/deployment', protect, destroyDeployment);
 
 // ── Legacy: single-domain AI Strategy blueprint (kept for backwards compat) ───
 router.post('/generate-blueprint',                                                              protect, startBlueprintGeneration);

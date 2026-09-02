@@ -338,6 +338,7 @@ function render(bp, dep) {
   const delivery = document.getElementById('yusu-delivery-wrap');
 
   const live = dep && ['live', 'suspended'].includes(dep.status);
+  const building = dep?.status === 'attaching';
   const pushed = !!bp.eameDelivery?.repoName;
   const checksPass = results.length > 0 && results.every(r => r.pass);
 
@@ -353,6 +354,18 @@ function render(bp, dep) {
   }
 
   view.style.display = 'none';
+
+  // Railway is building the repository. It is deployed but not yet serving,
+  // and offering the URL now would hand over a page that cannot answer.
+  if (building) {
+    btn.style.display = '';
+    btn.disabled = true;
+    btn.textContent = 'Deploying…';
+    title.textContent = 'Building your application';
+    sub.textContent = (dep.statusMessage ? dep.statusMessage + ' ' : '')
+      + 'Building and starting the application. This usually takes a couple of minutes.';
+    return;
+  }
 
   if (dep?.hosting === 'self') {
     // Nothing for Svarg to turn on — saying so is the honest end of the
@@ -422,6 +435,22 @@ async function refreshDelivery() {
   } catch { /* the adopt-existing path covers this if it fails */ }
 }
 
+/**
+ * While Railway builds, keep asking — otherwise "Building…" sits there until
+ * the page is reloaded, which is how a working deployment looks broken.
+ * Every poll is a status read on the server, so it stops as soon as Railway
+ * reports the build finished or failed.
+ */
+let _pollTimer = null;
+function pollWhileBuilding() {
+  clearTimeout(_pollTimer);
+  if (_dep?.status !== 'attaching') return;
+  _pollTimer = setTimeout(async () => {
+    await load();
+    pollWhileBuilding();
+  }, 8000);
+}
+
 async function load() {
   if (!_blueprintId) return;
   try {
@@ -480,6 +509,7 @@ async function act() {
       body: JSON.stringify({}),
     });
     render(_bp, r.deployment);
+    pollWhileBuilding();
     if (r.gatewayToken) {
       document.getElementById('yusu-token-value').textContent = r.gatewayToken;
       document.getElementById('yusu-token').style.display = '';
@@ -502,6 +532,10 @@ function wire() {
   });
 }
 
+document.addEventListener('screen:show', (e) => {
+  if (e.detail?.id !== 'screen-yusu') clearTimeout(_pollTimer);
+});
+
 document.addEventListener('yusu:show', (e) => {
   const bp = e.detail?.blueprint;
   if (!bp) return;
@@ -518,6 +552,7 @@ document.addEventListener('yusu:show', (e) => {
   render(bp, null);
   Promise.all([refreshGithubStatus(), loadManifest(), load(), refreshDelivery()]).then(() => {
     render(_bp, _dep);
+    pollWhileBuilding();
     autoRun();
   });
 });

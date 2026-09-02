@@ -66,19 +66,24 @@ export async function getDeployment(req, res) {
     const dep = await HostedDeployment.findOne({ blueprintId: bp._id });
     if (!dep) return res.json({ deployment: null });
 
-    // Ask the target for the live URL if provisioning finished without one.
-    if (dep.status === 'live' && !dep.railway?.url) {
+    // A service that exists is not a service that serves — Railway still has
+    // to build it. Ask, so the screen never claims live before it is.
+    if (['attaching', 'live'].includes(dep.status) && dep.railway?.serviceId) {
       try {
         const s = await getDeployTarget().status({ deployment: dep });
-        if (s.url && s.url !== dep.railway.url) {
-          dep.railway.url = s.url;
-          await dep.save();
+        let changed = false;
+        if (s.url && s.url !== dep.railway.url) { dep.railway.url = s.url; changed = true; }
+        if (s.status && s.status !== dep.status) {
+          dep.status = s.status;
+          if (s.status === 'live' && !dep.liveAt) dep.liveAt = new Date();
+          changed = true;
         }
+        dep.statusMessage = s.railwayStatus ? `Railway reports ${s.railwayStatus}.` : dep.statusMessage;
+        if (changed) await dep.save();
       } catch (err) {
         console.warn('[deployment] status refresh failed —', err.message);
       }
     }
-
     return res.json({ deployment: publicView(dep) });
   } catch (err) {
     console.error('[deployment] get error:', err.message);
@@ -238,8 +243,10 @@ export async function attachApplication(req, res) {
       const attached = await target.attach({ deployment: dep, env });
       dep.railway.serviceId = attached.serviceId;
       dep.railway.url = attached.url || '';
-      dep.status = 'live';
-      dep.liveAt = new Date();
+      // Not live yet — Railway now builds the repository, which takes minutes
+      // and can fail. GET .../deployment asks Railway and promotes it.
+      dep.status = 'attaching';
+      dep.statusMessage = 'Railway is building the application.';
       await dep.save();
 
       return res.status(201).json({ deployment: publicView(dep), gatewayToken: token });

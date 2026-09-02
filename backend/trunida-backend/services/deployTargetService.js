@@ -272,19 +272,62 @@ export const railwayTarget = {
     return { serviceId: service.id, url };
   },
 
+  /**
+   * Whether the service is actually serving.
+   *
+   * Creating a service is not deploying one: Railway then builds the repo,
+   * which takes minutes and can fail. Reporting "live" the moment
+   * serviceCreate returns hands the customer a domain that answers Railway's
+   * "train has not arrived at the station" page, so the build state is what
+   * this reports.
+   *
+   * The deployment query's shape is undocumented, so a couple of plausible
+   * ones are tried; if none answer, the URL is still returned and the caller
+   * keeps whatever status it already had rather than inventing one.
+   */
   async status({ deployment }) {
     const { projectId, serviceId, environmentId } = deployment.railway || {};
     if (!projectId || !serviceId) return { status: 'unknown', url: deployment.railway?.url || '' };
 
-    const data = await gql(`
-      query domains($projectId: String!, $environmentId: String!, $serviceId: String!) {
-        domains(projectId: $projectId, environmentId: $environmentId, serviceId: $serviceId) {
-          serviceDomains { domain }
-        }
-      }`, { projectId, environmentId, serviceId });
+    let url = deployment.railway?.url || '';
+    try {
+      const data = await gql(`
+        query domains($projectId: String!, $environmentId: String!, $serviceId: String!) {
+          domains(projectId: $projectId, environmentId: $environmentId, serviceId: $serviceId) {
+            serviceDomains { domain }
+          }
+        }`, { projectId, environmentId, serviceId });
+      const domain = data?.domains?.serviceDomains?.[0]?.domain;
+      if (domain) url = `https://${domain}`;
+    } catch (err) {
+      console.warn('[railway] domain lookup failed —', err.message);
+    }
 
-    const domain = data?.domains?.serviceDomains?.[0]?.domain;
-    return { status: 'live', url: domain ? `https://${domain}` : (deployment.railway?.url || '') };
+    const QUERIES = [
+      { q: `query d($serviceId: String!, $environmentId: String!) {
+              deployments(first: 1, input: { serviceId: $serviceId, environmentId: $environmentId }) {
+                edges { node { id status } } } }`,
+        pick: d => d?.deployments?.edges?.[0]?.node },
+      { q: `query d($serviceId: String!) {
+              service(id: $serviceId) { deployments(first: 1) { edges { node { id status } } } } }`,
+        pick: d => d?.service?.deployments?.edges?.[0]?.node },
+    ];
+
+    for (const { q, pick } of QUERIES) {
+      try {
+        const node = pick(await gql(q, { serviceId, environmentId }));
+        if (!node?.status) continue;
+        // Railway's deployment states: BUILDING, DEPLOYING, SUCCESS, FAILED,
+        // CRASHED, REMOVED, and a few queued variants.
+        const s = String(node.status).toUpperCase();
+        if (s === 'SUCCESS')  return { status: 'live', url, railwayStatus: s };
+        if (['FAILED', 'CRASHED'].includes(s)) return { status: 'failed', url, railwayStatus: s };
+        return { status: 'attaching', url, railwayStatus: s };
+      } catch { /* try the next shape */ }
+    }
+
+    console.warn('[railway] could not read deployment status — leaving it as recorded');
+    return { status: '', url };
   },
 
   async destroy({ deployment }) {

@@ -692,46 +692,12 @@
         </table>
       </div>
 
-      <p class="pd-substage-label aria-required-label">Delivery</p>
-      <div class="aria-connector" id="eame-delivery">
-        <div id="eame-not-connected">
-          <p class="aria-next__body" style="margin:0 0 10px">Connect GitHub to receive the project as a real repository you own.</p>
-          <a id="eame-connect-btn" href="#" class="pw-back-btn">Connect GitHub</a>
-        </div>
-        <div id="eame-connected" style="display:none">
-          <span class="aria-connected-badge">
-            <span class="aria-connected-badge__dot"></span>
-            Connected as <strong id="eame-github-user"></strong>
-          </span>
-          <label class="aria-select-all" style="margin-top:12px">
-            Repository name
-            <input type="text" id="eame-repo-name" class="sc-input" style="max-width:280px" placeholder="svarg-defect-matching">
-          </label>
-          <label class="aria-select-all"><input type="checkbox" id="eame-repo-private" checked> Private repository</label>
-        </div>
-      </div>
-
-      <div id="eame-push-result" class="pw-process-list" style="display:none"></div>
-
-      <div class="aria-next" id="eame-next-stage" style="display:none">
-        <span class="aria-next__tick">&check;</span>
-        <div>
-          <p class="aria-next__title">Project delivered</p>
-          <p class="aria-next__body" id="eame-next-body">Next is <strong>Yusu</strong> — going live and handing it over.</p>
-        </div>
-      </div>
-
-      <div class="aria-process-bar">
-        <span class="aria-process-bar__hint" id="eame-hint">Connect GitHub to deliver the project</span>
-        <button type="button" class="pw-next-btn" id="eame-build-btn" disabled>Build &amp; Push Project</button>
-      </div>
-
       <!-- Deploying moved to Yusu: Eame writes the application, Yusu ships
            it. What is left here is the handoff between the two. -->
-      <div class="yusu-onward" id="eame-onward" style="display:none">
+      <div class="yusu-onward" id="eame-onward">
         <div>
-          <p class="host-card__title">Delivered. Ready to go live.</p>
-          <p class="host-card__body">Yusu turns it on in the environment Arth prepared, and hands it over.</p>
+          <p class="host-card__title">This is what gets built.</p>
+          <p class="host-card__body">Yusu builds it, pushes it to your GitHub, and puts it live in the environment Arth prepared.</p>
         </div>
         <button type="button" class="pw-next-btn" data-goto="yusu">Continue to Yusu</button>
       </div>
@@ -825,9 +791,32 @@
       <p class="pd-substage-label aria-required-label">Before going live</p>
       <div class="yusu-checks" id="yusu-checks"></div>
 
+      <!-- Delivery lives here because Yusu is what pushes: Eame shows the
+           application, Yusu builds it, ships it to GitHub and puts it live. -->
+      <p class="pd-substage-label aria-required-label">Delivery</p>
+      <div class="aria-connector" id="yusu-delivery">
+        <div id="yusu-not-connected">
+          <p class="aria-next__body" style="margin:0 0 10px">Connect GitHub so the project lands in a repository you own.</p>
+          <a id="yusu-connect-btn" href="#" class="pw-back-btn">Connect GitHub</a>
+        </div>
+        <div id="yusu-connected" style="display:none">
+          <span class="aria-connected-badge">
+            <span class="aria-connected-badge__dot"></span>
+            Connected as <strong id="yusu-github-user"></strong>
+          </span>
+          <label class="aria-select-all" style="margin-top:12px">
+            Repository name
+            <input type="text" id="yusu-repo-name" class="sc-input" style="max-width:280px" placeholder="svarg-defect-matching">
+          </label>
+          <label class="aria-select-all"><input type="checkbox" id="yusu-repo-private" checked> Private repository</label>
+        </div>
+      </div>
+
+      <div id="yusu-push-result" class="pw-process-list" style="display:none"></div>
+
       <div class="aria-process-bar">
         <span class="aria-process-bar__hint" id="yusu-hint"></span>
-        <button type="button" class="pw-next-btn" id="yusu-golive-btn" disabled>Go Live</button>
+        <button type="button" class="pw-next-btn" id="yusu-golive-btn" disabled>Build &amp; Push</button>
       </div>
 
       <!-- The handover itself: what is running, and what the customer now owns. -->
@@ -1003,12 +992,12 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=2"></script>
+  <script type="module" src="blueprintGenerate.js?v=3"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=23"></script>
   <script type="module" src="arthScreen.js?v=9"></script>
-  <script type="module" src="eameScreen.js?v=6"></script>
-  <script type="module" src="yusuScreen.js?v=1"></script>
+  <script type="module" src="eameScreen.js?v=7"></script>
+  <script type="module" src="yusuScreen.js?v=2"></script>
   <script type="module" src="screenChat.js?v=5"></script>
 </body>
 </html>

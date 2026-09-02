@@ -802,11 +802,15 @@ async function init() {
     // "Data Architecture" nav link (initAriaLink) always points here.
     const returningToAria = sessionStorage.getItem('svarg_returning_to_aria') === '1';
     sessionStorage.removeItem('svarg_returning_to_aria');
-    const returningToEame = sessionStorage.getItem('svarg_returning_to_eame') === '1';
+    // Yusu connects GitHub because Yusu is what pushes; the older Eame flag
+    // is still honoured so a redirect started before this change lands well.
+    const returningToShip = sessionStorage.getItem('svarg_returning_to_yusu') === '1'
+      || sessionStorage.getItem('svarg_returning_to_eame') === '1';
+    sessionStorage.removeItem('svarg_returning_to_yusu');
     sessionStorage.removeItem('svarg_returning_to_eame');
-    if (returningToEame) {
-      showScreen('screen-eame');
-      document.dispatchEvent(new CustomEvent('eame:show', { detail: { blueprint: bp } }));
+    if (returningToShip) {
+      showScreen('screen-yusu');
+      document.dispatchEvent(new CustomEvent('yusu:show', { detail: { blueprint: bp } }));
       initGenerateForm();
       initEnterpriseBlueprintLink();
       return;

@@ -1,14 +1,16 @@
 /**
  * Svarg — Yusu screen (go live and hand over)
  *
- * The last stage. Arth prepared the environment, Eame wrote the application;
- * Yusu attaches the two, turns it on, and states plainly what the customer
- * now owns and what Svarg runs for them.
+ * The last stage, and the only one that ships anything. Arth prepared the
+ * environment and Eame described the application; Yusu builds it, pushes it
+ * to the customer's own repository, puts it live, and states plainly what
+ * they now own and what Svarg runs for them.
  *
- * Going live is POST .../deploy — the same endpoint Eame used to call. It
- * moved here rather than being rewritten, because the split was drawn along
- * the line that actually constrains it: Railway cannot create a service until
- * a repository exists, so preparing and attaching were always two acts.
+ * Two steps behind one button: push, then go live. Sequenced rather than
+ * combined because a failed deploy must not mean pushing the repository
+ * again — GitHub refuses a duplicate name, and the repo either exists or it
+ * does not. It is also the line Railway itself draws: a service cannot be
+ * created until a repository exists.
  *
  * Every precondition is read from real state — a prepared environment, a
  * pushed repository, a chosen model — and each unmet one names the stage that
@@ -42,6 +44,8 @@ function esc(t) {
 let _bp = null;
 let _blueprintId = null;
 let _dep = null;
+let _connected = false;   // GitHub
+let _githubUser = '';
 
 function showError(msg) {
   const el = document.getElementById('yusu-error');
@@ -63,8 +67,9 @@ function renderBreadcrumb(bp) {
 }
 
 /**
- * The three things that must hold before this can go live. Each carries the
- * stage that fixes it, so an unmet one is a direction rather than a dead end.
+ * What must hold before Yusu can act. Each carries the stage that fixes it,
+ * so an unmet one is a direction rather than a dead end — except GitHub,
+ * which Yusu resolves itself because Yusu is what pushes.
  */
 function checks(bp, dep) {
   return [
@@ -85,15 +90,76 @@ function checks(bp, dep) {
       goto: 'arth',
     },
     {
-      ok: !!bp.eameDelivery?.repoName,
-      title: 'The application is built',
-      done: bp.eameDelivery?.repoName
-        ? `${bp.eameDelivery.repoOwner}/${bp.eameDelivery.repoName} — ${bp.eameDelivery.fileCount || 0} files`
-        : '',
-      todo: 'Build and push it on Eame.',
-      goto: 'eame',
+      ok: _connected,
+      title: 'GitHub is connected',
+      done: _githubUser ? `Connected as ${_githubUser}` : 'Connected',
+      todo: 'Connect it below — the project needs a repository to live in.',
+      goto: '',
     },
   ];
+}
+
+function slugify(text) {
+  return String(text || 'svarg-project')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'svarg-project';
+}
+
+async function refreshGithubStatus() {
+  const notConn = document.getElementById('yusu-not-connected');
+  const conn = document.getElementById('yusu-connected');
+  try {
+    const status = await api('/github/personal/status');
+    _connected = !!status.connected;
+    _githubUser = status.githubLogin || '';
+    notConn.style.display = _connected ? 'none' : '';
+    conn.style.display = _connected ? '' : 'none';
+    if (_connected) document.getElementById('yusu-github-user').textContent = _githubUser || 'your account';
+  } catch {
+    _connected = false;
+    notConn.style.display = '';
+    conn.style.display = 'none';
+  }
+}
+
+function goConnectGithub() {
+  sessionStorage.setItem('svarg_returning_to_yusu', '1');
+  api('/github/personal/connect?returnTo=domain')
+    .then(({ url }) => { window.location.href = url; })
+    .catch(err => showError(err.message));
+}
+
+/**
+ * Build the project and push it to the customer's own repository. Separate
+ * from going live so a failed deploy does not mean pushing again — the repo
+ * either exists or it does not, and GitHub refuses a duplicate name.
+ */
+async function buildAndPush() {
+  const repoName = (document.getElementById('yusu-repo-name').value || '').trim();
+  if (!repoName) { showError('Give the repository a name first.'); return false; }
+
+  const out = document.getElementById('yusu-push-result');
+  const r = await api('/github/personal/push-project', {
+    method: 'POST',
+    body: JSON.stringify({
+      repoName,
+      isPrivate: document.getElementById('yusu-repo-private').checked,
+      blueprintId: _blueprintId,
+    }),
+  });
+
+  out.style.display = 'block';
+  out.innerHTML = `<div class="pw-process-item pw-process-item--done">
+    <span class="pw-process-item__title">${esc(repoName)}</span>
+    <span class="pw-process-item__detail">${r.fileCount} files pushed &middot;
+      <a href="${esc(r.repoUrl)}" target="_blank" rel="noopener" class="aria-configure-link">Open repository &rarr;</a></span>
+  </div>`;
+
+  // Keep the in-memory blueprint in step so the checks below re-render as met
+  // without a round trip.
+  _bp.eameDelivery = {
+    repoOwner: r.owner, repoName, repoUrl: r.repoUrl, fileCount: r.fileCount,
+  };
+  return true;
 }
 
 function renderChecks(bp, dep) {
@@ -105,7 +171,7 @@ function renderChecks(bp, dep) {
         <span class="yusu-check__title">${esc(c.title)}</span>
         <span class="yusu-check__detail">${esc(c.ok ? c.done : c.todo)}</span>
       </span>
-      ${c.ok ? '' : `<button type="button" class="yusu-check__go" data-goto="${c.goto}">Go to ${c.goto[0].toUpperCase() + c.goto.slice(1)}</button>`}
+      ${(!c.ok && c.goto) ? `<button type="button" class="yusu-check__go" data-goto="${c.goto}">Go to ${c.goto[0].toUpperCase() + c.goto.slice(1)}</button>` : ''}
     </div>
   `).join('');
   return rows;
@@ -194,11 +260,17 @@ function render(bp, dep) {
     hint.textContent = 'This runs in your own environment, so there is nothing for Svarg to turn on. The repository from Eame is the handover.';
     return;
   }
+  // One button, two steps: build and push, then go live. Sequenced rather
+  // than combined so a failed deploy does not mean pushing the repo again.
+  const pushed = !!bp.eameDelivery?.repoName;
   btn.style.display = '';
+  btn.textContent = pushed ? 'Go Live' : 'Build & Push';
   btn.disabled = blocked.length > 0;
   hint.textContent = blocked.length
     ? `Waiting on: ${blocked.map(c => c.title.toLowerCase()).join(', ')}.`
-    : 'Everything is ready.';
+    : pushed
+      ? 'Pushed. Ready to go live.'
+      : 'Everything is ready.';
 }
 
 async function load() {
@@ -211,12 +283,21 @@ async function load() {
   }
 }
 
-async function goLive() {
+/** The primary action: push if it has not been pushed, otherwise go live. */
+async function act() {
   const btn = document.getElementById('yusu-golive-btn');
+  const pushed = !!_bp.eameDelivery?.repoName;
   btn.disabled = true;
-  btn.textContent = 'Going live…';
   document.getElementById('yusu-error').style.display = 'none';
+
   try {
+    if (!pushed) {
+      btn.textContent = 'Building…';
+      if (await buildAndPush()) render(_bp, _dep);
+      return;
+    }
+
+    btn.textContent = 'Going live…';
     const r = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/deploy`, {
       method: 'POST',
       body: JSON.stringify({}),
@@ -227,10 +308,9 @@ async function goLive() {
       document.getElementById('yusu-token').style.display = '';
     }
   } catch (err) {
+    // GitHub's own message ("name already exists") is the useful part.
     showError(err.message);
-    btn.disabled = false;
-  } finally {
-    btn.textContent = 'Go Live';
+    render(_bp, _dep);
   }
 }
 
@@ -239,7 +319,11 @@ let _wired = false;
 function wire() {
   if (_wired) return;
   _wired = true;
-  document.getElementById('yusu-golive-btn').addEventListener('click', goLive);
+  document.getElementById('yusu-golive-btn').addEventListener('click', act);
+  document.getElementById('yusu-connect-btn').addEventListener('click', (e) => {
+    e.preventDefault();
+    goConnectGithub();
+  });
   // The "Go to Arth/Eame" buttons on unmet checks reuse the journey router
   // in blueprintGenerate.js, which already listens for [data-goto].
   document.getElementById('yusu-checks').addEventListener('click', (e) => {
@@ -257,6 +341,9 @@ document.addEventListener('yusu:show', (e) => {
 
   document.dispatchEvent(new CustomEvent('screen:show', { detail: { id: 'screen-yusu' } }));
   document.getElementById('yusu-token').style.display = 'none';
+  const name = document.getElementById('yusu-repo-name');
+  if (name && !name.value) name.value = slugify(renderBreadcrumb(bp) || bp.businessObjective);
   render(bp, null);
+  refreshGithubStatus().then(() => render(_bp, _dep));
   load();
 });

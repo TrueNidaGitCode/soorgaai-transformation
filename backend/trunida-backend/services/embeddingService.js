@@ -50,3 +50,18 @@ export async function embedBatch(texts) {
   const resp = await client().embeddings.create({ model: EMBEDDING_MODEL, input: texts });
   return resp.data.map(d => d.embedding);
 }
+
+/**
+ * As embedBatch, but also returns the token count the provider reported.
+ * The gateway meters embeddings against a tenant's spend cap, and cannot do
+ * that from the vectors alone.
+ */
+export async function embedBatchWithUsage(texts) {
+  if (!texts.length) return { embeddings: [], promptTokens: 0 };
+  const resp = await client().embeddings.create({ model: EMBEDDING_MODEL, input: texts });
+  return {
+    embeddings: resp.data.map(d => d.embedding),
+    promptTokens: resp.usage?.prompt_tokens || 0,
+    model: EMBEDDING_MODEL,
+  };
+}

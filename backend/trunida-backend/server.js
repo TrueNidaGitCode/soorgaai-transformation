@@ -30,6 +30,7 @@ import contactRoutes                from "./routes/contactRoutes.js";
 import defectMatchingRoutes         from "./routes/defectMatchingRoutes.js";
 import personalGithubRoutes         from "./routes/personalGithubRoutes.js";
 import governanceChecklistRoutes    from "./routes/governanceChecklistRoutes.js";
+import gatewayRoutes                from "./routes/gatewayRoutes.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
@@ -120,6 +121,8 @@ app.use("/api/jira/personal",        personalJiraRoutes);
 app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
 app.use("/api/defect-matching",      defectMatchingRoutes);
 app.use("/api/github/personal",      personalGithubRoutes);
+// LLM gateway for hosted customer apps. Deployment-token auth, not user JWT.
+app.use("/api/gateway/v1",           gatewayRoutes);
 app.use("/api/governance-checklist", governanceChecklistRoutes);
 app.use("/api/action-items",         actionItemRoutes);
 app.use("/api/contact",              contactRoutes);

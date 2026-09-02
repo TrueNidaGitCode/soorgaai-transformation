@@ -63,6 +63,8 @@ export const ADVISORY_CATALOG = [
   // ── Frontier (cloud APIs; the data leaves the customer's environment) ────
   {
     id: 'claude-opus',
+    apiModel: process.env.GATEWAY_MODEL_CLAUDE_OPUS   || 'claude-opus-5',
+    priceIn: 15, priceOut: 75,
     providerId: 'claude',
     displayName: 'Claude Opus',
     vendor: 'Anthropic',
@@ -73,6 +75,8 @@ export const ADVISORY_CATALOG = [
   },
   {
     id: 'claude-sonnet',
+    apiModel: process.env.GATEWAY_MODEL_CLAUDE_SONNET || 'claude-sonnet-5',
+    priceIn: 3,  priceOut: 15,
     providerId: 'claude',
     displayName: 'Claude Sonnet',
     vendor: 'Anthropic',
@@ -83,6 +87,8 @@ export const ADVISORY_CATALOG = [
   },
   {
     id: 'gpt-5',
+    apiModel: process.env.GATEWAY_MODEL_GPT           || 'gpt-5',
+    priceIn: 1.25, priceOut: 10,
     providerId: 'openai',
     displayName: 'GPT-5',
     vendor: 'OpenAI',
@@ -93,6 +99,8 @@ export const ADVISORY_CATALOG = [
   },
   {
     id: 'gemini-pro',
+    apiModel: process.env.GATEWAY_MODEL_GEMINI_PRO    || 'gemini-2.5-pro',
+    priceIn: 1.25, priceOut: 10,
     providerId: 'gemini',
     displayName: 'Gemini Pro',
     vendor: 'Google',
@@ -103,6 +111,8 @@ export const ADVISORY_CATALOG = [
   },
   {
     id: 'gemini-flash',
+    apiModel: process.env.GATEWAY_MODEL_GEMINI_FLASH  || 'gemini-2.5-flash',
+    priceIn: 0.30, priceOut: 2.50,
     providerId: 'gemini',
     displayName: 'Gemini Flash',
     vendor: 'Google',

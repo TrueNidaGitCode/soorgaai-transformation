@@ -238,6 +238,7 @@ async function redeployNow() {
   document.getElementById('yusu-error').style.display = 'none';
   try {
     const r = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/redeploy`, { method: 'POST' });
+    _buildingSince = 0;
     render(_bp, r.deployment);
     pollWhileBuilding();
   } catch (err) {
@@ -401,8 +402,13 @@ function render(bp, dep) {
     btn.disabled = true;
     btn.textContent = 'Deploying…';
     title.textContent = 'Building your application';
-    sub.textContent = (dep.statusMessage ? dep.statusMessage + ' ' : '')
-      + 'Building and starting the application. This usually takes a couple of minutes.';
+    const stalled = stallDiagnosis(dep);
+    sub.textContent = stalled
+      ? stalled
+      : (dep.statusMessage ? dep.statusMessage + ' ' : '')
+        + 'Building and starting the application. This usually takes a couple of minutes.';
+    sub.classList.toggle('eg-done__sub--stalled', !!stalled);
+    if (stalled) title.textContent = 'The application is not coming up';
     return;
   }
 
@@ -481,13 +487,41 @@ async function refreshDelivery() {
  * reports the build finished or failed.
  */
 let _pollTimer = null;
+let _buildingSince = 0;
+
 function pollWhileBuilding() {
   clearTimeout(_pollTimer);
-  if (_dep?.status !== 'attaching') return;
+  if (_dep?.status !== 'attaching') { _buildingSince = 0; return; }
+  if (!_buildingSince) _buildingSince = Date.now();
   _pollTimer = setTimeout(async () => {
     await load();
     pollWhileBuilding();
   }, 8000);
+}
+
+/**
+ * A build that never comes up looks identical to one still running, and
+ * "still building" after several minutes is not an explanation. Naming the
+ * causes — with this deployment's actual repository and account in them —
+ * turns a silent stall into something that can be acted on.
+ *
+ * The commonest by far is the deploy platform being unable to read the
+ * repository: its GitHub App is installed per account, so a project pushed
+ * to an account it was never installed on can never be built.
+ */
+function stallDiagnosis(dep) {
+  if (Date.now() - _buildingSince < 90000) return '';
+  const repo = _bp?.eameDelivery?.repoName
+    ? `${_bp.eameDelivery.repoOwner}/${_bp.eameDelivery.repoName}`
+    : 'the repository';
+  const owner = _bp?.eameDelivery?.repoOwner || 'that account';
+  return [
+    `Still nothing answering after a few minutes, so the build is not simply slow.`,
+    `The usual causes, most likely first:`,
+    `• Railway cannot read ${repo} — its GitHub App is installed per account, and it must have access to ${owner}. Use a different account above to deliver somewhere it can read.`,
+    `• The application started and exited. It requires a database connection at boot, so check that the database allows connections from the container's address.`,
+    `• The build itself failed. The deployment logs in Railway say which in one line.`,
+  ].join('\n');
 }
 
 async function load() {

@@ -12765,3 +12765,11 @@
   color: var(--aria-accent); cursor: pointer;
 }
 .yusu-account__switch:hover { text-decoration: underline; }
+
+/* A stalled build explains itself over several lines, so the summary line
+   has to keep them. */
+.eg-done__sub--stalled {
+  white-space: pre-line;
+  color: rgba(255,255,255,0.68);
+  line-height: 1.6;
+}

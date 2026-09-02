@@ -145,6 +145,53 @@ async function gql(query, variables) {
   return body.data;
 }
 
+/**
+ * projectCreate rejects a request with no workspaceId — Railway's own words:
+ * "You must specify a workspaceId to create a project". Their docs list the
+ * field as optional, so this was found by calling it rather than by reading.
+ *
+ * Rather than make the operator hunt for the id, ask the token which
+ * workspaces it can see. The exact shape of that query is not documented, so
+ * a couple of plausible ones are tried and the first that answers wins;
+ * RAILWAY_WORKSPACE_ID short-circuits the whole thing when set.
+ */
+const WORKSPACE_QUERIES = [
+  { q: `query { me { workspaces { id name } } }`,
+    pick: d => d?.me?.workspaces?.[0] },
+  { q: `query { me { teams { edges { node { id name } } } } }`,
+    pick: d => d?.me?.teams?.edges?.[0]?.node },
+  { q: `query { me { workspaces { edges { node { id name } } } } }`,
+    pick: d => d?.me?.workspaces?.edges?.[0]?.node },
+];
+
+let _workspaceCache = null;
+
+export async function resolveWorkspaceId() {
+  if (process.env.RAILWAY_WORKSPACE_ID) return process.env.RAILWAY_WORKSPACE_ID;
+  if (_workspaceCache) return _workspaceCache;
+
+  const tried = [];
+  for (const { q, pick } of WORKSPACE_QUERIES) {
+    try {
+      const found = pick(await gql(q, {}));
+      if (found?.id) {
+        console.log(`[railway] using workspace "${found.name || found.id}"`);
+        _workspaceCache = found.id;
+        return found.id;
+      }
+      tried.push('query returned no workspace');
+    } catch (err) {
+      tried.push(err.message.replace('Railway API: ', ''));
+    }
+  }
+
+  throw new Error(
+    'Could not work out which Railway workspace to create the project in. '
+    + 'Set RAILWAY_WORKSPACE_ID — you can get it by running `query { me { workspaces { id name } } }` '
+    + 'at railway.com/graphiql. Tried: ' + tried.join(' | ')
+  );
+}
+
 /** Shape A: one project, one service from the tenant's repo, one domain. */
 export const railwayTarget = {
   name: 'railway',
@@ -162,6 +209,8 @@ export const railwayTarget = {
    */
   async prepare({ deployment }) {
     const name = tenantProjectName(deployment.blueprintId);
+    const workspaceId = await resolveWorkspaceId();
+
     const project = (await gql(`
       mutation projectCreate($input: ProjectCreateInput!) {
         projectCreate(input: $input) { id name environments { edges { node { id name } } } }
@@ -170,7 +219,7 @@ export const railwayTarget = {
         name,
         description: `Svarg environment for blueprint ${deployment.blueprintId}`,
         isPublic: false,
-        ...(process.env.RAILWAY_WORKSPACE_ID ? { workspaceId: process.env.RAILWAY_WORKSPACE_ID } : {}),
+        workspaceId,
       },
     })).projectCreate;
 

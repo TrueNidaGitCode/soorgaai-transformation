@@ -78,7 +78,8 @@ export async function getDeployment(req, res) {
           if (s.status === 'live' && !dep.liveAt) dep.liveAt = new Date();
           changed = true;
         }
-        dep.statusMessage = s.railwayStatus ? `Railway reports ${s.railwayStatus}.` : dep.statusMessage;
+        if (s.detail && s.detail !== dep.statusMessage) changed = true;
+        if (s.detail) dep.statusMessage = s.detail;
         if (changed) await dep.save();
       } catch (err) {
         console.warn('[deployment] status refresh failed —', err.message);
@@ -299,6 +300,40 @@ export async function acknowledgeGovernance(req, res) {
   } catch (err) {
     console.error('[governanceReview] error:', err.message);
     return res.status(500).json({ error: 'Failed to record the governance review.' });
+  }
+}
+
+/**
+ * POST .../redeploy — ask the platform to build and start the service again.
+ *
+ * A deployment that is recorded as live but is not serving has no other way
+ * forward, and a platform with no redeploy is not usable. It goes back to
+ * attaching so the status check tracks the new build.
+ */
+export async function redeployApplication(req, res) {
+  try {
+    const bp = await ownedBlueprint(req);
+    if (!bp) return res.status(404).json({ error: 'Blueprint not found or you do not have access to it.' });
+
+    const dep = await HostedDeployment.findOne({ blueprintId: bp._id });
+    if (!dep?.railway?.serviceId) {
+      return res.status(400).json({ error: 'There is no running service to redeploy.' });
+    }
+
+    try {
+      await getDeployTarget().redeploy({ deployment: dep });
+    } catch (err) {
+      console.error('[deployment] redeploy failed:', err.message);
+      return res.status(502).json({ error: err.message, deployment: publicView(dep) });
+    }
+
+    dep.status = 'attaching';
+    dep.statusMessage = 'Rebuilding the application.';
+    await dep.save();
+    return res.json({ deployment: publicView(dep) });
+  } catch (err) {
+    console.error('[deployment] redeploy error:', err.message);
+    return res.status(500).json({ error: 'Failed to redeploy.' });
   }
 }
 

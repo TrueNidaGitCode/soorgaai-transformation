@@ -232,6 +232,21 @@ async function refreshGithubStatus() {
  * Disconnect and start the OAuth flow again, so the project can be delivered
  * to a different GitHub account. Nothing already pushed is touched.
  */
+async function redeployNow() {
+  const b = document.getElementById('yusu-redeploy-btn');
+  b.disabled = true; b.textContent = 'Redeploying…';
+  document.getElementById('yusu-error').style.display = 'none';
+  try {
+    const r = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/redeploy`, { method: 'POST' });
+    render(_bp, r.deployment);
+    pollWhileBuilding();
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    b.disabled = false; b.textContent = 'Redeploy';
+  }
+}
+
 async function switchAccount() {
   if (!confirm('Deliver to a different GitHub account? Anything already pushed stays where it is.')) return;
   try {
@@ -353,6 +368,7 @@ function render(bp, dep) {
   const title = document.getElementById('yusu-ready-title');
   const sub = document.getElementById('yusu-ready-sub');
   const view = document.getElementById('yusu-view-app');
+  const redeploy = document.getElementById('yusu-redeploy-btn');
   const delivery = document.getElementById('yusu-delivery-wrap');
 
   const live = dep && ['live', 'suspended'].includes(dep.status);
@@ -364,14 +380,19 @@ function render(bp, dep) {
   delivery.style.display = pushed ? 'none' : '';
 
   if (live) {
+    // A live deployment still needs a way to be rebuilt — a platform with no
+    // redeploy leaves a broken app with nowhere to go.
     btn.style.display = 'none';
+    redeploy.style.display = '';
     title.textContent = 'Live and handed over';
-    sub.textContent = 'Your application is running and available to your users.';
+    sub.textContent = dep.statusMessage || 'Your application is running and available to your users.';
     if (dep.url) { view.href = dep.url; view.style.display = ''; }
     return;
   }
+  redeploy.style.display = '';
 
   view.style.display = 'none';
+  redeploy.style.display = dep?.railway?.serviceId || dep?.appAttached ? '' : 'none';
 
   // Railway is building the repository. It is deployed but not yet serving,
   // and offering the URL now would hand over a page that cannot answer.
@@ -545,6 +566,7 @@ function wire() {
   _wired = true;
   document.getElementById('yusu-golive-btn').addEventListener('click', act);
   document.getElementById('yusu-switch-btn').addEventListener('click', switchAccount);
+  document.getElementById('yusu-redeploy-btn').addEventListener('click', redeployNow);
   document.getElementById('yusu-connect-btn').addEventListener('click', (e) => {
     e.preventDefault();
     goConnectGithub();

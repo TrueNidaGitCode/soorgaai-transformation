@@ -317,31 +317,41 @@ export const railwayTarget = {
       console.warn('[railway] domain lookup failed —', err.message);
     }
 
-    const QUERIES = [
-      { q: `query d($serviceId: String!, $environmentId: String!) {
-              deployments(first: 1, input: { serviceId: $serviceId, environmentId: $environmentId }) {
-                edges { node { id status } } } }`,
-        pick: d => d?.deployments?.edges?.[0]?.node },
-      { q: `query d($serviceId: String!) {
-              service(id: $serviceId) { deployments(first: 1) { edges { node { id status } } } } }`,
-        pick: d => d?.service?.deployments?.edges?.[0]?.node },
-    ];
+    // Ask the application itself rather than the platform.
+    //
+    // Railway's deployment-status query is undocumented and two plausible
+    // shapes for it were wrong, which left deployments reported as live when
+    // nothing was serving. Whether the URL answers is the thing that actually
+    // matters, needs no schema guesswork, and stays true if the deploy target
+    // is ever swapped.
+    if (!url) return { status: 'attaching', url, detail: 'No web address yet.' };
 
-    for (const { q, pick } of QUERIES) {
-      try {
-        const node = pick(await gql(q, { serviceId, environmentId }));
-        if (!node?.status) continue;
-        // Railway's deployment states: BUILDING, DEPLOYING, SUCCESS, FAILED,
-        // CRASHED, REMOVED, and a few queued variants.
-        const s = String(node.status).toUpperCase();
-        if (s === 'SUCCESS')  return { status: 'live', url, railwayStatus: s };
-        if (['FAILED', 'CRASHED'].includes(s)) return { status: 'failed', url, railwayStatus: s };
-        return { status: 'attaching', url, railwayStatus: s };
-      } catch { /* try the next shape */ }
+    try {
+      const ctl = AbortSignal.timeout(4000);
+      const res = await fetch(url, { method: 'GET', redirect: 'manual', signal: ctl });
+
+      // Railway serves its own 404 page for a domain with nothing behind it —
+      // no deployment, a failed build, or a crashed process.
+      if (res.status === 404) {
+        return { status: 'attaching', url, detail: 'Nothing is answering at the address yet.' };
+      }
+      // Anything else means something is listening. 401/403 counts: the app
+      // requires a token, which is a running app refusing an anonymous caller.
+      return { status: 'live', url, detail: `Responding with HTTP ${res.status}.` };
+    } catch (err) {
+      return { status: 'attaching', url, detail: `The address is not responding yet (${err.name}).` };
     }
+  },
 
-    console.warn('[railway] could not read deployment status — leaving it as recorded');
-    return { status: '', url };
+  /** Ask Railway to build and start the service again. */
+  async redeploy({ deployment }) {
+    const { environmentId, serviceId } = deployment.railway || {};
+    if (!serviceId) throw new Error('This deployment has no service to redeploy.');
+    await gql(`
+      mutation environmentTriggersDeploy($input: EnvironmentTriggersDeployInput!) {
+        environmentTriggersDeploy(input: $input)
+      }`, { input: { environmentId, serviceId } });
+    return { triggered: true };
   },
 
   async destroy({ deployment }) {

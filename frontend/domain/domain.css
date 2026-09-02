@@ -12734,3 +12734,19 @@
   .dp { grid-template-columns: repeat(2, 1fr); row-gap: 20px; }
   .dp::before { display: none; }
 }
+
+/* A step that is mid-flight, so the strip reads as a run in progress
+   rather than a checklist with a gap in it. */
+.dp__step--busy .dp__node {
+  border-color: var(--aria-accent);
+  color: var(--aria-accent);
+  animation: dp-pulse 1.4s ease-in-out infinite;
+}
+.dp__step--busy .dp__name { color: rgba(255,255,255,0.85); }
+@keyframes dp-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(92,197,167,0.35); }
+  50%      { box-shadow: 0 0 0 6px rgba(92,197,167,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dp__step--busy .dp__node { animation: none; }
+}

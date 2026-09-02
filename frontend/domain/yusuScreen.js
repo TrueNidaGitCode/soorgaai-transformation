@@ -48,6 +48,8 @@ let _connected = false;   // GitHub
 let _githubUser = '';
 let _checksRun = false;      // have the automated checks been run
 let _manifestPaths = [];     // the files the builder emits, for the security check
+let _running = false;        // the automatic build/push/test run is in flight
+let _failed = '';            // what stopped it, if anything
 
 function showError(msg) {
   const el = document.getElementById('yusu-error');
@@ -186,11 +188,14 @@ function renderPipeline(bp, dep) {
     { name: 'Build',   sub: 'Application built',            done: _manifestPaths.length > 0 },
     { name: 'Push',    sub: 'Code pushed to repository',    done: pushed },
     { name: 'Test',    sub: 'Governance & Ethics validated', done: checksPass },
-    { name: 'Go Live', sub: 'Release to environment',       done: !!live },
+    { name: 'Deploy',  sub: 'Release to environment',       done: !!live },
   ];
 
+  // The first step that is not done is the one in flight, so the strip
+  // reads as progress rather than a checklist.
+  const active = _running ? steps.findIndex(s => !s.done) : -1;
   document.getElementById('yusu-pipeline').innerHTML = steps.map((s, i) => `
-    <li class="dp__step${s.done ? ' dp__step--done' : ''}">
+    <li class="dp__step${s.done ? ' dp__step--done' : (i === active ? ' dp__step--busy' : '')}">
       <span class="dp__node">${s.done ? '&#10003;' : i + 1}</span>
       <span class="dp__name">${esc(s.name)}</span>
       <span class="dp__sub">${esc(s.sub)}</span>
@@ -205,20 +210,16 @@ function slugify(text) {
 }
 
 async function refreshGithubStatus() {
-  const notConn = document.getElementById('yusu-not-connected');
-  const conn = document.getElementById('yusu-connected');
+  // Only the connect prompt remains — everything else Yusu does itself.
+  const prompt = document.getElementById('yusu-delivery-wrap');
   try {
     const status = await api('/github/personal/status');
     _connected = !!status.connected;
     _githubUser = status.githubLogin || '';
-    notConn.style.display = _connected ? 'none' : '';
-    conn.style.display = _connected ? '' : 'none';
-    if (_connected) document.getElementById('yusu-github-user').textContent = _githubUser || 'your account';
   } catch {
     _connected = false;
-    notConn.style.display = '';
-    conn.style.display = 'none';
   }
+  prompt.style.display = _connected ? 'none' : '';
 }
 
 function goConnectGithub() {
@@ -234,15 +235,15 @@ function goConnectGithub() {
  * either exists or it does not, and GitHub refuses a duplicate name.
  */
 async function buildAndPush() {
-  const repoName = (document.getElementById('yusu-repo-name').value || '').trim();
-  if (!repoName) { showError('Give the repository a name first.'); return false; }
+  // Derived from the use case rather than asked for — Yusu runs unattended.
+  const repoName = slugify(renderBreadcrumb(_bp) || _bp.businessObjective);
 
   const out = document.getElementById('yusu-push-result');
   const r = await api('/github/personal/push-project', {
     method: 'POST',
     body: JSON.stringify({
       repoName,
-      isPrivate: document.getElementById('yusu-repo-private').checked,
+      isPrivate: true,
       blueprintId: _blueprintId,
     }),
   });
@@ -360,30 +361,42 @@ function render(bp, dep) {
     return;
   }
 
+  // Go Live is the only thing anyone clicks. Everything before it runs on
+  // its own, so the button is never a step in the process — it is the
+  // decision at the end of it.
   btn.style.display = '';
+  btn.textContent = 'Go Live';
 
-  if (!pushed) {
-    btn.textContent = 'Build & Push';
-    btn.disabled = !_connected;
-    title.textContent = 'Build and push the application';
-    sub.textContent = _connected
-      ? 'The project is assembled and pushed to a repository you own. The checks run straight after.'
-      : 'Connect GitHub below so the project has a repository to live in.';
+  if (!_connected) {
+    btn.disabled = true;
+    title.textContent = 'Connect GitHub to begin';
+    sub.textContent = 'Once connected, Yusu builds, pushes and tests the application on its own.';
     return;
   }
 
-  btn.textContent = 'Go Live';
-  btn.disabled = !checksPass || !(dep?.status === 'prepared');
-  title.textContent = 'Ready to Go Live';
-  if (!_checksRun) {
-    sub.textContent = 'Running the governance, ethics and security checks…';
-  } else if (!checksPass) {
-    sub.textContent = 'Go Live stays closed until the failing checks are resolved.';
-  } else if (dep?.status !== 'prepared') {
-    sub.textContent = 'No environment is prepared yet — that happens on Arth.';
-  } else {
-    sub.textContent = 'Deploy your application to your target environment and make it available to your users.';
+  if (_running) {
+    btn.disabled = true;
+    title.textContent = 'Preparing the release';
+    sub.textContent = pushed
+      ? 'Running the governance, ethics and security checks…'
+      : 'Building the application and pushing it to your repository…';
+    return;
   }
+
+  if (_failed) {
+    btn.disabled = true;
+    title.textContent = 'The run did not finish';
+    sub.textContent = _failed;
+    return;
+  }
+
+  btn.disabled = !checksPass || dep?.status !== 'prepared';
+  title.textContent = 'Ready to Go Live';
+  sub.textContent = !checksPass
+    ? 'Go Live stays closed until the failing checks are resolved.'
+    : dep?.status !== 'prepared'
+      ? 'No environment is prepared yet — that happens on Arth.'
+      : 'Deploy your application to your target environment and make it available to your users.';
 }
 
 async function loadManifest() {
@@ -403,38 +416,49 @@ async function load() {
   }
 }
 
-/**
- * Run the checks with a beat of delay so the result reads as a run rather
- * than appearing fully formed. The evaluation itself is instant — it is all
- * real state already in the page.
- */
-async function runChecksNow() {
-  const status = document.getElementById('yusu-run-status');
-  status.innerHTML = '<span class=eg-status__dot></span>Running…';
-  status.className = 'eg-status eg-status--idle';
-  await new Promise(r => setTimeout(r, 700));
-  _checksRun = true;
-  render(_bp, _dep);
-}
-
 /** The primary action: push if it has not been pushed, otherwise go live. */
-async function act() {
-  const btn = document.getElementById('yusu-golive-btn');
-  const pushed = !!_bp.eameDelivery?.repoName;
-  btn.disabled = true;
-  document.getElementById('yusu-error').style.display = 'none';
+/**
+ * Yusu runs itself: build, push, then the checks, without being asked. The
+ * only thing left for a person is Go Live, which is the one decision that
+ * should never happen by itself.
+ *
+ * Runs once per visit. If it fails, the failure stays on screen and a Retry
+ * appears — automatic on the happy path, manual only when something breaks.
+ */
+async function autoRun() {
+  if (_running || !_connected) return;
+  if (_bp.eameDelivery?.repoName) {         // already delivered in an earlier visit
+    _checksRun = true;
+    render(_bp, _dep);
+    return;
+  }
+
+  _running = true;
+  _failed = '';
+  render(_bp, _dep);
 
   try {
-    if (!pushed) {
-      btn.textContent = 'Building…';
-      if (await buildAndPush()) {
-        render(_bp, _dep);
-        await runChecksNow();
-      }
-      return;
-    }
+    await buildAndPush();
+    render(_bp, _dep);
+    await new Promise(r => setTimeout(r, 500));   // let the strip land on Push
+    _checksRun = true;
+  } catch (err) {
+    // GitHub's own message ("name already exists") is the useful part.
+    _failed = err.message;
+    showError(err.message);
+  } finally {
+    _running = false;
+    render(_bp, _dep);
+  }
+}
 
-    btn.textContent = 'Going live…';
+/** The single human decision. */
+async function act() {
+  const btn = document.getElementById('yusu-golive-btn');
+  btn.disabled = true;
+  btn.textContent = 'Deploying…';
+  document.getElementById('yusu-error').style.display = 'none';
+  try {
     const r = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/deploy`, {
       method: 'POST',
       body: JSON.stringify({}),
@@ -445,7 +469,6 @@ async function act() {
       document.getElementById('yusu-token').style.display = '';
     }
   } catch (err) {
-    // GitHub's own message ("name already exists") is the useful part.
     showError(err.message);
     render(_bp, _dep);
   }
@@ -472,13 +495,13 @@ document.addEventListener('yusu:show', (e) => {
 
   document.dispatchEvent(new CustomEvent('screen:show', { detail: { id: 'screen-yusu' } }));
   document.getElementById('yusu-token').style.display = 'none';
-  const name = document.getElementById('yusu-repo-name');
-  if (name && !name.value) name.value = slugify(renderBreadcrumb(bp) || bp.businessObjective);
   _checksRun = false;
+  _running = false;
+  _failed = '';
   _manifestPaths = [];
   render(bp, null);
   Promise.all([refreshGithubStatus(), loadManifest(), load()]).then(() => {
-    if (_bp.eameDelivery?.repoName) _checksRun = true;
     render(_bp, _dep);
+    autoRun();
   });
 });

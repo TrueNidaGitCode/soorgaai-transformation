@@ -872,28 +872,16 @@
         <div class="tr-verdict" id="yusu-verdict" style="display:none"></div>
       </section>
 
-      <!-- Delivery: Yusu is what pushes, so the repository is named here. -->
-      <div id="yusu-delivery-wrap">
-        <p class="pd-substage-label aria-required-label">Delivery</p>
-        <div class="aria-connector" id="yusu-delivery">
-          <div id="yusu-not-connected">
-            <p class="aria-next__body" style="margin:0 0 10px">Connect GitHub so the project lands in a repository you own.</p>
-            <a id="yusu-connect-btn" href="#" class="pw-back-btn">Connect GitHub</a>
-          </div>
-          <div id="yusu-connected" style="display:none">
-            <span class="aria-connected-badge">
-              <span class="aria-connected-badge__dot"></span>
-              Connected as <strong id="yusu-github-user"></strong>
-            </span>
-            <label class="aria-select-all" style="margin-top:12px">
-              Repository name
-              <input type="text" id="yusu-repo-name" class="sc-input" style="max-width:280px" placeholder="svarg-defect-matching">
-            </label>
-            <label class="aria-select-all"><input type="checkbox" id="yusu-repo-private" checked> Private repository</label>
-          </div>
+      <!-- Yusu runs itself. The only thing it cannot do unattended is the
+           GitHub OAuth round trip, so that is the one prompt left. -->
+      <div id="yusu-delivery-wrap" style="display:none">
+        <div class="aria-connector">
+          <p class="aria-next__body" style="margin:0 0 10px">Connect GitHub so the project has a repository to live in. Everything after that runs on its own.</p>
+          <a id="yusu-connect-btn" href="#" class="pw-back-btn">Connect GitHub</a>
         </div>
-        <div id="yusu-push-result" class="pw-process-list" style="display:none"></div>
       </div>
+
+      <div id="yusu-push-result" class="pw-process-list" style="display:none"></div>
 
       <div class="eg-done" id="yusu-ready">
         <span class="eg-done__ico">
@@ -1086,7 +1074,7 @@
   <script type="module" src="ariaScreen.js?v=23"></script>
   <script type="module" src="arthScreen.js?v=9"></script>
   <script type="module" src="eameScreen.js?v=8"></script>
-  <script type="module" src="yusuScreen.js?v=5"></script>
+  <script type="module" src="yusuScreen.js?v=6"></script>
   <script type="module" src="screenChat.js?v=5"></script>
 </body>
 </html>

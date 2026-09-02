@@ -254,6 +254,20 @@ export const railwayTarget = {
       input: { projectId: deployment.railway.projectId, name: 'app', source: { repo }, variables: env },
     })).serviceCreate;
 
+    // serviceCreate links the repository but does not reliably start a build.
+    // Asking explicitly is harmless when one is already running and is the
+    // difference between a service that deploys and one that sits offline.
+    try {
+      await gql(`
+        mutation environmentTriggersDeploy($input: EnvironmentTriggersDeployInput!) {
+          environmentTriggersDeploy(input: $input)
+        }`, {
+        input: { environmentId: deployment.railway.environmentId, serviceId: service.id },
+      });
+    } catch (err) {
+      console.warn('[railway] explicit deploy trigger failed —', err.message);
+    }
+
     // A domain is what makes it reachable, but a service without one is still
     // attached — report it rather than unwinding the whole thing.
     let url = '';

@@ -247,6 +247,10 @@ export async function attachApplication(req, res) {
       // and can fail. GET .../deployment asks Railway and promotes it.
       dep.status = 'attaching';
       dep.statusMessage = 'Railway is building the application.';
+      // Recorded so the screen can name the usual cause if nothing ever builds:
+      // Railway's GitHub App needs access to the repository, and a private one
+      // created through the customer's own token does not grant it.
+      dep.repoIsPrivate = true;
       await dep.save();
 
       return res.status(201).json({ deployment: publicView(dep), gatewayToken: token });

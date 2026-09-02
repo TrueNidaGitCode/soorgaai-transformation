@@ -262,7 +262,11 @@ export const railwayTarget = {
         mutation environmentTriggersDeploy($input: EnvironmentTriggersDeployInput!) {
           environmentTriggersDeploy(input: $input)
         }`, {
-        input: { environmentId: deployment.railway.environmentId, serviceId: service.id },
+        input: {
+          projectId: deployment.railway.projectId,
+          environmentId: deployment.railway.environmentId,
+          serviceId: service.id,
+        },
       });
     } catch (err) {
       console.warn('[railway] explicit deploy trigger failed —', err.message);
@@ -345,12 +349,12 @@ export const railwayTarget = {
 
   /** Ask Railway to build and start the service again. */
   async redeploy({ deployment }) {
-    const { environmentId, serviceId } = deployment.railway || {};
+    const { projectId, environmentId, serviceId } = deployment.railway || {};
     if (!serviceId) throw new Error('This deployment has no service to redeploy.');
     await gql(`
       mutation environmentTriggersDeploy($input: EnvironmentTriggersDeployInput!) {
         environmentTriggersDeploy(input: $input)
-      }`, { input: { environmentId, serviceId } });
+      }`, { input: { projectId, environmentId, serviceId } });
     return { triggered: true };
   },
 

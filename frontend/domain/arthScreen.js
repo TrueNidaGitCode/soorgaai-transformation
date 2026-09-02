@@ -78,6 +78,13 @@ const HOSTING = [
     blurb: 'You run it on your own infrastructure. Eame includes the deployment files and Svarg prepares nothing.' },
 ];
 
+// The Target Architecture table describes what the customer would build in
+// their OWN environment. A startup on Svarg hosting never builds any of it,
+// so it is off by default. The rendering below is unchanged and still runs,
+// so flipping this to true is the only step needed to bring it back — and the
+// obvious rule when it returns is to show it only for self-hosted customers.
+const SHOW_TARGET_ARCHITECTURE = false;
+
 function showError(msg) {
   const el = document.getElementById('arth-error');
   el.textContent = msg;
@@ -185,6 +192,10 @@ function findInfra(bp) {
 }
 
 function renderInfra(bp) {
+  const section = document.getElementById('arth-target-arch');
+  if (section) section.style.display = SHOW_TARGET_ARCHITECTURE ? '' : 'none';
+  if (!SHOW_TARGET_ARCHITECTURE) return;
+
   const body = document.getElementById('arth-infra-body');
   const note = document.getElementById('arth-infra-note');
   const noteText = document.getElementById('arth-infra-note-text');

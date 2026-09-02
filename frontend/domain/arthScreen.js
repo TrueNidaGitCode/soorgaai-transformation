@@ -182,6 +182,14 @@ function wire() {
     if (b) choose(b.dataset.pref);
   });
 
+  // Chat with Arth can propose a model class; accepting it only moves the
+  // selection here, exactly as clicking the card would. Committing it stays
+  // behind Confirm & Continue so there is still one way to make the choice.
+  document.addEventListener('arth:choose', (e) => {
+    const pref = e.detail?.preference;
+    if (OPTIONS.some(o => o.id === pref)) choose(pref);
+  });
+
   document.getElementById('arth-confirm-btn').addEventListener('click', async () => {
     if (!_chosen || !_blueprintId) return;
     const btn = document.getElementById('arth-confirm-btn');

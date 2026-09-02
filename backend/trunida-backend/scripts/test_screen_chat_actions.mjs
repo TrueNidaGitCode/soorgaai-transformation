@@ -68,5 +68,26 @@ check('connect_jira still offered when only confluence is connected',
   validateAction('connect_jira', 'aria', { ...fresh, confluenceConnected: true }),
   { type: 'connect_jira', label: 'Connect Jira' });
 
+// ── arth ────────────────────────────────────────────────────────────────────
+check('arth allows choose_open_weight',
+  validateAction('choose_open_weight', 'arth', fresh),
+  { type: 'choose_open_weight', label: 'Select Open Weight' });
+
+check('arth REJECTS a cob action',
+  validateAction('approve_opportunity', 'arth', fresh), null);
+
+check('cob REJECTS an arth action',
+  validateAction('choose_frontier', 'cob', fresh), null);
+
+check('choose dropped once that class is already selected',
+  validateAction('choose_open_weight', 'arth', { ...fresh, currentPreference: 'open-weight' }), null);
+
+check('a different class is still offered when one is selected',
+  validateAction('choose_frontier', 'arth', { ...fresh, currentPreference: 'open-weight' }),
+  { type: 'choose_frontier', label: 'Select Frontier' });
+
+check('choose_auto dropped once auto is selected',
+  validateAction('choose_auto', 'arth', { ...fresh, currentPreference: 'auto' }), null);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

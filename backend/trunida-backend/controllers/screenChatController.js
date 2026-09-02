@@ -46,6 +46,29 @@ function findDatasets(bp) {
   return [];
 }
 
+// Mirrors findInfra in arthScreen.js — the generator puts infraItems or
+// techStack on different capabilities depending on what it produced, so
+// search rather than assume, and Arth describes the rows the user can see.
+function findInfra(bp) {
+  const domain = (bp.domains || []).find(d => d.domainId === 'technology-infrastructure');
+  if (!domain) return [];
+  const rows = [];
+  for (const cap of domain.capabilities || []) {
+    for (const section of cap.sections || []) {
+      const b = section.brief || {};
+      (b.infraItems || []).forEach(i => rows.push({
+        label: i.label || i.name || i.component || '',
+        value: i.value || i.detail || i.description || '',
+      }));
+      (b.techStack || []).forEach(t => rows.push({
+        label: t.layer || t.category || t.name || '',
+        value: t.technology || t.value || t.tools || t.description || '',
+      }));
+    }
+  }
+  return rows.filter(r => r.label && r.value);
+}
+
 // Same resolution the Aria table shows the user, so the model describes the
 // screen the user is actually looking at rather than a different view of it.
 function datasetStatus(typicalSource, confCount, jiraCount) {
@@ -61,8 +84,8 @@ export async function screenChat(req, res) {
   try {
     const { blueprintId, screen, message, conversationHistory } = req.body;
 
-    if (!['cob', 'aria'].includes(screen)) {
-      return res.status(400).json({ error: 'screen must be "cob" or "aria".' });
+    if (!['cob', 'aria', 'arth'].includes(screen)) {
+      return res.status(400).json({ error: 'screen must be "cob", "aria" or "arth".' });
     }
     if (!message || typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({ error: 'message is required.' });
@@ -84,9 +107,24 @@ export async function screenChat(req, res) {
     const opportunities = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
     const recommended = brief.recommendedStartingPoint || '';
 
+    const selectedUseCase = opportunities.find(n => n && recommended.includes(n)) || recommended;
+
     if (screen === 'cob') {
       context.opportunities = opportunities;
       context.recommendedStartingPoint = recommended;
+    } else if (screen === 'arth') {
+      // Resolved the same way the Arth cards resolve them — selectModel is
+      // rule-based, so the model names Arth talks about are the ones the
+      // engine would actually route to, not a description of them.
+      const { selectModel } = await import('../services/modelSelectionService.js');
+      context.selectedUseCase = selectedUseCase;
+      context.options = ['frontier', 'open-weight', 'auto'].map(id => {
+        try { return { id, ...selectModel({ preference: id }) }; }
+        catch { return null; }
+      }).filter(Boolean);
+      context.currentPreference  = bp.arthSelection?.preference || '';
+      context.currentDisplayName = bp.arthSelection?.displayName || '';
+      context.infra = findInfra(bp);
     } else {
       const docs = await LinkedProjectDocument.find({ blueprintId }).select('sourceType').lean();
       const confCount = docs.filter(d => (d.sourceType || 'confluence') === 'confluence').length;
@@ -95,7 +133,7 @@ export async function screenChat(req, res) {
       const connection = await PersonalConfluenceConnection.findOne({ userId: req.user._id }).lean();
       const jiraScope = connection && JIRA_SCOPES.every(s => (connection.scopes || []).includes(s));
 
-      context.selectedUseCase = opportunities.find(n => n && recommended.includes(n)) || recommended;
+      context.selectedUseCase = selectedUseCase;
       context.datasets = findDatasets(bp).map(d => ({
         name: d.name,
         purpose: d.purpose,

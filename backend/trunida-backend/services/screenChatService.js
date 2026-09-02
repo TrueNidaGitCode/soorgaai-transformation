@@ -1,8 +1,8 @@
 /**
  * Svarg — Screen Chat Service
  *
- * Conversational chat for the Cob (opportunity selection) and Aria (data
- * connections) screens. Unlike advisorService (structured 5-field report,
+ * Conversational chat for the Cob (opportunity selection), Aria (data
+ * connections) and Arth (model & infrastructure) screens. Unlike advisorService (structured 5-field report,
  * capability-scoped) or conversationService (mutates DomainCanvas), this
  * returns plain conversational text scoped to a blueprint and a screen,
  * so the user feels they are talking to Cob or Aria directly.
@@ -22,12 +22,18 @@ import { generate } from './llmService.js';
 const ALLOWED_ACTIONS = {
   cob:  ['approve_opportunity'],
   aria: ['connect_confluence', 'connect_jira'],
+  // Arth's actions only move the selection on the screen — the commit stays
+  // behind its own Confirm & Continue button, so chat never writes a choice.
+  arth: ['choose_frontier', 'choose_open_weight', 'choose_auto'],
 };
 
 const ACTION_LABELS = {
   approve_opportunity: 'Approve this use case',
   connect_confluence:  'Connect Confluence',
   connect_jira:        'Connect Jira',
+  choose_frontier:     'Select Frontier',
+  choose_open_weight:  'Select Open Weight',
+  choose_auto:         'Select Auto',
 };
 
 const PERSONAS = {
@@ -40,6 +46,11 @@ const PERSONAS = {
     name: 'Aria',
     role: 'the data architect who connects the sources an AI initiative needs',
     focus: 'which datasets the chosen use case needs, which are connected, what is still missing, and what happens to data with no connector',
+  },
+  arth: {
+    name: 'Arth',
+    role: 'the engineer who decides what an AI use case actually runs on',
+    focus: 'the trade-off between frontier, open-weight and auto model classes — quality against cost, and cloud against keeping data in the customer\'s own environment — and the infrastructure this blueprint calls for',
   },
 };
 
@@ -104,6 +115,37 @@ function buildContext(screen, ctx) {
     lines.push(`Datasets whose source has no connector are completed from Svarg's own analysis rather than the user's documents.`);
   }
 
+  if (screen === 'arth') {
+    if (ctx.selectedUseCase) lines.push(`\nSelected use case: ${ctx.selectedUseCase}`);
+
+    if (ctx.options?.length) {
+      lines.push(`\nModel classes available (class — resolved model — quality — cost — performance — why):`);
+      ctx.options.forEach(o => {
+        lines.push(`  - ${o.id} — ${o.displayName} — ${o.quality} — ${o.cost} — ${o.performance} — ${o.rationale}`);
+      });
+
+      // The class names alone are ambiguous: read "frontier" without this and
+      // a model takes it to mean experimental, then recommends the cloud
+      // option to someone who has just said their data cannot leave the
+      // building. These are the trade-offs the cards state, so the chat and
+      // the screen give the same answer.
+      lines.push(`\nWhat each class means for deployment — usually the deciding factor, not the name:`);
+      lines.push(`  - frontier: a cloud API. Best quality, priced per call. The data leaves the customer's environment.`);
+      lines.push(`  - open-weight: runs on the customer's own hardware. Fixed cost, some quality traded away. The data never leaves.`);
+      lines.push(`  - auto: the resilient chain across several cloud providers, so no single outage blocks a request. Data still leaves the environment.`);
+      lines.push(`If the user says their data cannot leave their network, or must stay on-premise, open-weight is the only class that satisfies that.`);
+    }
+
+    lines.push(`\nCurrently selected: ${ctx.currentPreference ? `${ctx.currentPreference} (${ctx.currentDisplayName})` : 'nothing yet'}`);
+
+    if (ctx.infra?.length) {
+      lines.push(`\nInfrastructure this blueprint calls for:`);
+      ctx.infra.forEach(i => lines.push(`  - ${i.label}: ${i.value}`));
+    } else {
+      lines.push(`\nThis blueprint's Technology & Infrastructure domain has not finished generating, so you do not have its infrastructure detail. Say so rather than inventing a stack.`);
+    }
+  }
+
   return lines.join('\n');
 }
 
@@ -130,6 +172,8 @@ export function validateAction(action, screen, ctx) {
   if (action === 'approve_opportunity' && ctx.approved) return null;
   if (action === 'connect_confluence' && ctx.confluenceConnected) return null;
   if (action === 'connect_jira' && ctx.jiraConnected) return null;
+  if (action.startsWith('choose_') && ctx.currentPreference
+      && action === `choose_${ctx.currentPreference.replace('-', '_')}`) return null;
 
   return { type: action, label: ACTION_LABELS[action] };
 }

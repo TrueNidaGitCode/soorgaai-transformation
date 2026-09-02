@@ -1,5 +1,5 @@
 /**
- * Svarg — Chat with Cob / Aria
+ * Svarg — Chat with Cob / Aria / Arth
  *
  * Each `.sc-lane[data-screen]` holds the character portrait, a launcher
  * button, and a chat panel. Opening the chat hides the portrait and shows
@@ -34,11 +34,13 @@ function getBlueprintId() {
 const GREETINGS = {
   cob: "I'm Cob. I picked the recommended starting point for you — ask me why, or how it compares to the other options.",
   aria: "I'm Aria. I map the data this use case needs. Ask me what's missing, or what happens to the data we can't connect.",
+  arth: "I'm Arth. I work out what this use case should run on. Ask me how the model classes differ, or which one fits your constraints.",
 };
 
 const PLACEHOLDER_BUSY = {
   cob: 'Cob is thinking…',
   aria: 'Aria is thinking…',
+  arth: 'Arth is thinking…',
 };
 
 class ScreenChat {
@@ -177,6 +179,18 @@ class ScreenChat {
         return;
       }
 
+      const ARTH_PREF = {
+        choose_frontier:    'frontier',
+        choose_open_weight: 'open-weight',
+        choose_auto:        'auto',
+      };
+      if (ARTH_PREF[type]) {
+        document.dispatchEvent(new CustomEvent('arth:choose', { detail: { preference: ARTH_PREF[type] } }));
+        btn.textContent = 'Selected ✓';
+        this.close();
+        return;
+      }
+
       throw new Error('That action is not available.');
     } catch (err) {
       btn.disabled = false;
@@ -186,10 +200,10 @@ class ScreenChat {
   }
 }
 
-// Arth and Eame reuse .sc-lane purely to position their character portrait
-// and have no chat of their own, so only wire lanes that actually carry a
-// launcher — constructing against a lane without one threw on load and took
-// the rest of this module's setup with it.
+// Eame reuses .sc-lane purely to position its character portrait and has no
+// chat of its own, so only wire lanes that actually carry a launcher —
+// constructing against a lane without one threw on load and took the rest of
+// this module's setup with it.
 document.querySelectorAll('.sc-lane').forEach(lane => {
   if (lane.querySelector('.sc-launcher')) new ScreenChat(lane);
 });

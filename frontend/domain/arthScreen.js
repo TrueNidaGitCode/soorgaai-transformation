@@ -359,10 +359,6 @@ async function prepareEnvironment() {
       body: JSON.stringify({ hosting: _hosting }),
     });
     renderPrepared(r.deployment);
-    if (r.gatewayToken) {
-      document.getElementById('arth-prep-token-value').textContent = r.gatewayToken;
-      document.getElementById('arth-prep-token').style.display = '';
-    }
   } catch (err) {
     showError(err.message);
   } finally {
@@ -378,7 +374,6 @@ async function removeEnvironment() {
   btn.textContent = 'Removing…';
   try {
     await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/deployment`, { method: 'DELETE' });
-    document.getElementById('arth-prep-token').style.display = 'none';
     renderPrepared(null);
   } catch (err) {
     showError(err.message);
@@ -589,7 +584,6 @@ document.addEventListener('arth:show', (e) => {
   // not offer to prepare a second one.
   _hosting = null;
   _env = null;
-  document.getElementById('arth-prep-token').style.display = 'none';
   renderHostingOptions();
   renderPrepared(null);
   loadEnvironment();

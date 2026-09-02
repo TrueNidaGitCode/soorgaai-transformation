@@ -1,18 +1,20 @@
 /**
  * Svarg — Hosted deployments
  *
+ * POST   /strategy-canvas/transformation-blueprint/:blueprintId/infrastructure
  * POST   /strategy-canvas/transformation-blueprint/:blueprintId/deploy
  * GET    /strategy-canvas/transformation-blueprint/:blueprintId/deployment
  * DELETE /strategy-canvas/transformation-blueprint/:blueprintId/deployment
  *
- * Standing up the application Eame built, on Svarg's infrastructure. The
- * repository comes from what Eame actually pushed and the model from what Arth
- * actually chose — neither is accepted from the request, so a deployment
- * cannot be pointed at someone else's repo or a model the customer never
- * agreed to.
+ * Arth prepares the environment; Eame (later Yusu) attaches the application
+ * to it. The repository comes from what Eame actually pushed and the model
+ * from what Arth actually chose — neither is accepted from the request, so a
+ * deployment cannot be pointed at someone else's repo or a model the customer
+ * never agreed to.
  *
- * The gateway token is returned exactly once, at provisioning, and only its
- * hash is stored. It is never echoed back by the status endpoint.
+ * The gateway token is issued when the application is attached, because that
+ * is the moment it can be injected. It is returned exactly once and only its
+ * hash is stored, so the status endpoint can never echo it back.
  */
 
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
@@ -137,11 +139,12 @@ export async function prepareInfrastructure(req, res) {
       return res.status(503).json({ error: 'Svarg hosting is not available yet — no deploy target is configured.' });
     }
 
-    // The token is issued here because it is part of the environment, not of
-    // the application — the customer can hold it before anything is built.
-    const { token, hash } = issueToken();
+    // No gateway token here. It is the APPLICATION's credential, and attach()
+    // has to inject the plaintext — which it can only do by issuing a fresh
+    // one, since preparation stores a hash and nothing else. Issuing one now
+    // would hand the customer a secret that stops working the moment their
+    // app deploys.
     dep.status = 'preparing';
-    dep.gatewayTokenHash = hash;
     dep.dbName = tenantDbName(bp._id);
     // A re-prepared environment starts with a clean ledger, so an earlier
     // attempt's spend cannot leave the new one capped from the first request.
@@ -162,11 +165,7 @@ export async function prepareInfrastructure(req, res) {
       dep.preparedAt = new Date();
       await dep.save();
 
-      return res.status(201).json({
-        deployment: publicView(dep),
-        // Shown once. Only the hash is stored, so it cannot be recovered.
-        gatewayToken: token,
-      });
+      return res.status(201).json({ deployment: publicView(dep) });
     } catch (err) {
       dep.status = 'failed';
       dep.statusMessage = err.message.slice(0, 400);

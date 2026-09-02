@@ -12619,47 +12619,118 @@
   .eg-header { flex-wrap: wrap; }
 }
 
-/* Governance gate on Yusu. Each card is one area the business is taking
-   on; the checkbox is what turns reading them into a decision. */
-.gov-grid {
+
+
+/* ── Yusu: delivery pipeline and test run ───────────────────────────────
+   Both are read from real state, so the layout only has to make four acts
+   and three checks readable at a glance. */
+
+.dp {
+  list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 11px;
-  margin-top: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: 20px 0 0;
+  padding: 0;
+  position: relative;
 }
-.gov-card {
+/* The connecting rail sits behind the nodes, at their centre line. */
+.dp::before {
+  content: '';
+  position: absolute;
+  top: 15px; left: 12.5%; right: 12.5%;
+  height: 2px;
+  background: rgba(255,255,255,0.1);
+}
+.dp__step {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 5px; text-align: center;
+  position: relative;
+  padding: 0 6px;
+}
+.dp__node {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.14);
+  background: var(--aria-bg, #0F1513);
+  color: rgba(255,255,255,0.4);
+  font-size: 13px; font-weight: 700;
+  position: relative; z-index: 1;
+}
+.dp__step--done .dp__node {
+  border-color: var(--aria-accent);
+  background: var(--aria-accent);
+  color: #08110E;
+}
+.dp__name { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.55); margin-top: 3px; }
+.dp__step--done .dp__name { color: #fff; }
+.dp__sub { font-size: 11px; line-height: 1.4; color: rgba(255,255,255,0.35); }
+
+.tr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 11px;
+  margin-top: 16px;
+}
+.tr-card {
   padding: 15px 17px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.025);
-  display: flex; flex-direction: column; gap: 7px;
+  border: 1px solid rgba(92,197,167,0.22);
+  background: rgba(92,197,167,0.05);
+  display: flex; flex-direction: column; gap: 5px;
 }
-.gov-card__title {
-  margin: 0;
-  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
-  font-size: 13.5px; font-weight: 700; color: #fff;
-}
-.gov-card__val {
-  flex-shrink: 0;
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.06em; text-transform: uppercase;
+.tr-card--fail { border-color: rgba(224,118,106,0.32); background: rgba(224,118,106,0.06); }
+.tr-card__icon { font-size: 16px; opacity: 0.85; }
+.tr-card__title { margin: 0; font-size: 13.5px; font-weight: 700; color: #fff; }
+.tr-card__verdict { margin: 0; font-size: 12px; font-weight: 700; color: var(--aria-accent); }
+.tr-card--fail .tr-card__verdict { color: #E0766A; }
+.tr-card__why { margin: 3px 0 0; font-size: 12px; line-height: 1.45; color: rgba(255,255,255,0.55); }
+
+.tr-idle {
+  margin: 16px 0 0;
+  font-size: 12.5px;
   color: rgba(255,255,255,0.35);
 }
-.gov-card__body { margin: 0; font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,0.6); }
-.gov-card__meta { margin: 0; font-size: 11.5px; color: rgba(255,255,255,0.35); font-variant-numeric: tabular-nums; }
 
-.gov-ack {
-  display: flex; align-items: center; gap: 11px;
-  margin-top: 12px; padding: 13px 16px;
+.tr-verdict {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-top: 12px; padding: 14px 17px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.03);
-  font-size: 13px; color: rgba(255,255,255,0.78);
-  cursor: pointer;
-}
-.gov-ack input { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--aria-accent); }
-.gov-ack--done {
-  border-color: rgba(92,197,167,0.3);
+  border: 1px solid rgba(92,197,167,0.28);
   background: rgba(92,197,167,0.07);
-  cursor: default;
+}
+.tr-verdict--fail { border-color: rgba(224,118,106,0.32); background: rgba(224,118,106,0.07); }
+.tr-verdict__mark {
+  width: 22px; height: 22px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--aria-accent);
+  color: var(--aria-accent);
+  font-size: 12px;
+}
+.tr-verdict--fail .tr-verdict__mark { border-color: #E0766A; color: #E0766A; }
+.tr-verdict span span { display: block; }
+.tr-verdict strong { display: block; font-size: 13px; color: #fff; margin-bottom: 2px; }
+.tr-verdict span span:last-child { font-size: 12px; color: rgba(255,255,255,0.55); }
+
+/* The run status pill reuses .eg-status; these are its other two states. */
+.eg-status--idle {
+  border-color: rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.45);
+}
+.eg-status--idle .eg-status__dot { background: rgba(255,255,255,0.3); }
+.eg-status--fail {
+  border-color: rgba(224,118,106,0.35);
+  background: rgba(224,118,106,0.08);
+  color: #E0766A;
+}
+.eg-status--fail .eg-status__dot { background: #E0766A; }
+
+.yusu-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+@media (max-width: 760px) {
+  .dp { grid-template-columns: repeat(2, 1fr); row-gap: 20px; }
+  .dp::before { display: none; }
 }

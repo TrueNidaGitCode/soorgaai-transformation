@@ -821,67 +821,95 @@
 
       <div class="pd-header aria-header">
         <div class="aria-header__icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.1 2.1 0 0 0-2.9-.1z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.7-6 11a22 22 0 0 1-4 2z"/><path d="M9 12H4s.6-3.3 2-4c1.6-.8 5 0 5 0"/><path d="M12 15v5s3.3-.6 4-2c.8-1.6 0-5 0-5"/></svg>
         </div>
         <div>
           <h1 class="aria-header__title">Go Live &amp; Handover</h1>
-          <p class="pd-header__sub">Turn it on, and hand it to the people who will use it.</p>
+          <p class="pd-header__sub">Build, validate and deploy your AI application to your environment.</p>
         </div>
-      </div>
-
-      <div class="aria-breadcrumb" id="yusu-breadcrumb">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span>Selected use case: <strong id="yusu-recap-name"></strong></span>
       </div>
 
       <div id="yusu-error" class="gen-error" style="display:none"></div>
 
-      <!-- Everything that has to be true before this can go live, each naming
-           the stage that satisfies it rather than just failing. -->
-      <p class="pd-substage-label aria-required-label">Before going live</p>
-      <div class="yusu-checks" id="yusu-checks"></div>
-
-      <!-- Governance is a go-live gate, not a footnote: these are the
-           commitments the business takes on the moment this runs. Read
-           from the blueprint's own Governance and Ethics domain. -->
-      <div id="yusu-gov-wrap" style="display:none">
-        <p class="pd-substage-label aria-required-label">Governance &amp; Ethics</p>
-        <div class="gov-grid" id="yusu-gov"></div>
-        <label class="gov-ack" id="yusu-gov-ack-wrap">
-          <input type="checkbox" id="yusu-gov-ack">
-          <span>I have read these and accept them on behalf of the business.</span>
-        </label>
+      <div class="eg-usecase" id="yusu-breadcrumb">
+        <span class="eg-usecase__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </span>
+        <span class="eg-usecase__body">
+          <span class="eg-usecase__label">Application from Eame</span>
+          <span class="eg-usecase__name" id="yusu-recap-name"></span>
+        </span>
       </div>
 
-      <!-- Delivery lives here because Yusu is what pushes: Eame shows the
-           application, Yusu builds it, ships it to GitHub and puts it live. -->
-      <p class="pd-substage-label aria-required-label">Delivery</p>
-      <div class="aria-connector" id="yusu-delivery">
-        <div id="yusu-not-connected">
-          <p class="aria-next__body" style="margin:0 0 10px">Connect GitHub so the project lands in a repository you own.</p>
-          <a id="yusu-connect-btn" href="#" class="pw-back-btn">Connect GitHub</a>
-        </div>
-        <div id="yusu-connected" style="display:none">
-          <span class="aria-connected-badge">
-            <span class="aria-connected-badge__dot"></span>
-            Connected as <strong id="yusu-github-user"></strong>
+      <!-- The four acts, each reflecting real state: the manifest exists, the
+           repository exists, the checks passed, the service is running. -->
+      <section class="eg-panel">
+        <div class="eg-panel__head">
+          <span class="eg-panel__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.1 2.1 0 0 0-2.9-.1z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.7-6 11a22 22 0 0 1-4 2z"/></svg>
           </span>
-          <label class="aria-select-all" style="margin-top:12px">
-            Repository name
-            <input type="text" id="yusu-repo-name" class="sc-input" style="max-width:280px" placeholder="svarg-defect-matching">
-          </label>
-          <label class="aria-select-all"><input type="checkbox" id="yusu-repo-private" checked> Private repository</label>
+          <div>
+            <h2 class="eg-panel__title">Delivery Pipeline</h2>
+            <p class="eg-panel__sub">From application artifact to production deployment</p>
+          </div>
+        </div>
+        <ol class="dp" id="yusu-pipeline"></ol>
+      </section>
+
+      <section class="eg-panel">
+        <div class="eg-panel__head">
+          <span class="eg-panel__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
+          <div>
+            <h2 class="eg-panel__title">Test Run Summary</h2>
+            <p class="eg-panel__sub">Automated checks for governance, ethics and compliance</p>
+          </div>
+          <span class="eg-status" id="yusu-run-status"><span class="eg-status__dot"></span>Not run</span>
+        </div>
+
+        <div class="tr-grid" id="yusu-checks"></div>
+        <div class="tr-verdict" id="yusu-verdict" style="display:none"></div>
+      </section>
+
+      <!-- Delivery: Yusu is what pushes, so the repository is named here. -->
+      <div id="yusu-delivery-wrap">
+        <p class="pd-substage-label aria-required-label">Delivery</p>
+        <div class="aria-connector" id="yusu-delivery">
+          <div id="yusu-not-connected">
+            <p class="aria-next__body" style="margin:0 0 10px">Connect GitHub so the project lands in a repository you own.</p>
+            <a id="yusu-connect-btn" href="#" class="pw-back-btn">Connect GitHub</a>
+          </div>
+          <div id="yusu-connected" style="display:none">
+            <span class="aria-connected-badge">
+              <span class="aria-connected-badge__dot"></span>
+              Connected as <strong id="yusu-github-user"></strong>
+            </span>
+            <label class="aria-select-all" style="margin-top:12px">
+              Repository name
+              <input type="text" id="yusu-repo-name" class="sc-input" style="max-width:280px" placeholder="svarg-defect-matching">
+            </label>
+            <label class="aria-select-all"><input type="checkbox" id="yusu-repo-private" checked> Private repository</label>
+          </div>
+        </div>
+        <div id="yusu-push-result" class="pw-process-list" style="display:none"></div>
+      </div>
+
+      <div class="eg-done" id="yusu-ready">
+        <span class="eg-done__ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.1 2.1 0 0 0-2.9-.1z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.7-6 11a22 22 0 0 1-4 2z"/></svg>
+        </span>
+        <div class="eg-done__body">
+          <p class="eg-done__title" id="yusu-ready-title">Ready to Go Live</p>
+          <p class="eg-done__sub" id="yusu-ready-sub">Deploy your application to your target environment and make it available to your users.</p>
+        </div>
+        <div class="yusu-actions">
+          <button type="button" class="pw-next-btn" id="yusu-golive-btn" disabled>Go Live</button>
+          <a class="pw-back-btn" id="yusu-view-app" href="#" target="_blank" rel="noopener" style="display:none">View Application</a>
         </div>
       </div>
 
-      <div id="yusu-push-result" class="pw-process-list" style="display:none"></div>
-
-      <div class="aria-process-bar">
-        <span class="aria-process-bar__hint" id="yusu-hint"></span>
-        <button type="button" class="pw-next-btn" id="yusu-golive-btn" disabled>Build &amp; Push</button>
-      </div>
-
-      <!-- The handover itself: what is running, and what the customer now owns. -->
+      <!-- Handover: what is running, and where the line falls. -->
       <div id="yusu-handover" style="display:none">
         <p class="pd-substage-label aria-required-label">Handover</p>
 
@@ -894,7 +922,6 @@
             </div>
           </div>
           <dl class="env-facts" id="yusu-facts"></dl>
-
           <div class="host-meter" id="yusu-meter">
             <div class="host-meter__head">
               <span id="yusu-usage-label"></span>
@@ -907,9 +934,9 @@
         <div class="host-token" id="yusu-token" style="display:none">
           <p class="host-token__label">Save this now — it is shown once</p>
           <code id="yusu-token-value"></code>
-          <p class="host-token__note">The application uses it to reach Svarg's model gateway. Svarg
-            keeps only a hash, so it cannot be shown again — but it is already set on the running
-            application, so you only need this if you rebuild it elsewhere.</p>
+          <p class="host-token__note">The application uses it to reach Svarg's model gateway. Svarg keeps
+            only a hash, so it cannot be shown again — but it is already set on the running application,
+            so you only need this if you rebuild it elsewhere.</p>
         </div>
 
         <div class="yusu-split">
@@ -1059,7 +1086,7 @@
   <script type="module" src="ariaScreen.js?v=23"></script>
   <script type="module" src="arthScreen.js?v=9"></script>
   <script type="module" src="eameScreen.js?v=8"></script>
-  <script type="module" src="yusuScreen.js?v=3"></script>
+  <script type="module" src="yusuScreen.js?v=5"></script>
   <script type="module" src="screenChat.js?v=5"></script>
 </body>
 </html>

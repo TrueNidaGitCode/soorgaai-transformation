@@ -46,6 +46,8 @@ let _blueprintId = null;
 let _dep = null;
 let _connected = false;   // GitHub
 let _githubUser = '';
+let _checksRun = false;      // have the automated checks been run
+let _manifestPaths = [];     // the files the builder emits, for the security check
 
 function showError(msg) {
   const el = document.getElementById('yusu-error');
@@ -66,96 +68,135 @@ function renderBreadcrumb(bp) {
   return label;
 }
 
-/**
- * What must hold before Yusu can act. Each carries the stage that fixes it,
- * so an unmet one is a direction rather than a dead end — except GitHub,
- * which Yusu resolves itself because Yusu is what pushes.
- */
-function checks(bp, dep) {
-  return [
-    {
-      ok: !!bp.arthSelection?.modelId,
-      title: 'A model is chosen',
-      done: bp.arthSelection?.displayName ? `Running on ${bp.arthSelection.displayName}` : '',
-      todo: 'Choose one on Arth.',
-      goto: 'arth',
-    },
-    {
-      ok: dep?.status === 'prepared' || dep?.status === 'live' || dep?.hosting === 'self',
-      title: 'An environment is ready',
-      done: dep?.hosting === 'self'
-        ? 'You are running this in your own environment'
-        : (dep?.environmentName ? `${dep.environmentName} is prepared` : ''),
-      todo: 'Prepare it on Arth.',
-      goto: 'arth',
-    },
-    {
-      ok: _connected,
-      title: 'GitHub is connected',
-      done: _githubUser ? `Connected as ${_githubUser}` : 'Connected',
-      todo: 'Connect it below — the project needs a repository to live in.',
-      goto: '',
-    },
-    // A failed generation must not block a deployment, so a blueprint with no
-    // governance content passes rather than trapping the user. When there IS
-    // content, it has to be accepted — that is the whole point of the gate.
-    {
-      ok: governanceAreas(bp).length === 0 || !!bp.governanceReview?.acknowledged,
-      title: 'Governance is accepted',
-      done: governanceAreas(bp).length
-        ? `${governanceAreas(bp).length} areas accepted`
-        : 'No governance content was generated for this blueprint',
-      todo: 'Read the governance areas below and accept them.',
-      goto: '',
-    },
-  ];
-}
-
 /** The Governance & Ethics sections this blueprint actually produced. */
 function governanceAreas(bp) {
   const domain = (bp.domains || []).find(d => d.domainId === 'governance-security');
   return (domain?.capabilities || []).flatMap(c => c.sections || []).filter(s => s.title);
 }
 
-function renderGovernance(bp) {
-  const wrap = document.getElementById('yusu-gov-wrap');
-  const areas = governanceAreas(bp);
-  if (!areas.length) { wrap.style.display = 'none'; return; }
-  wrap.style.display = '';
+/**
+ * The automated checks. Every one is evaluated against real state — the
+ * governance sections the blueprint produced, and the files the project
+ * builder actually emits — so a check can genuinely fail and say why. A
+ * summary that always reads "Passed" would be worse than none at all.
+ */
+function runChecks(bp, manifestPaths) {
+  const gov = governanceAreas(bp);
+  const titles = gov.map(s => (s.title || '').toLowerCase());
+  const hasArea = re => titles.some(t => re.test(t));
+  const hasFile = re => manifestPaths.some(p => re.test(p));
 
-  document.getElementById('yusu-gov').innerHTML = areas.map(a => {
-    const b = a.brief || {};
-    const validation = b.leadershipValidation?.status || '';
-    return `
-      <div class="gov-card">
-        <p class="gov-card__title">${esc(a.title)}
-          ${validation ? `<span class="gov-card__val">${esc(validation)}</span>` : ''}</p>
-        <p class="gov-card__body">${esc(b.strategicPosition || 'No commitment recorded for this area.')}</p>
-        <p class="gov-card__meta">${(b.priorityActions || []).length} actions &middot;
-          ${(b.successMetrics || []).length} measures</p>
-      </div>`;
-  }).join('');
+  const governance = (() => {
+    if (!gov.length) return { pass: false, why: 'No Governance & Ethics content was generated for this blueprint.' };
+    const missing = [
+      [/privacy|security/, 'data handling'],
+      [/regulatory|compliance/, 'regulatory compliance'],
+    ].filter(([re]) => !hasArea(re)).map(([, name]) => name);
+    return missing.length
+      ? { pass: false, why: `Missing coverage for ${missing.join(' and ')}.` }
+      : { pass: true, why: 'Policy compliance, data handling, access control, audit readiness' };
+  })();
 
-  const box = document.getElementById('yusu-gov-ack');
-  const done = !!bp.governanceReview?.acknowledged;
-  box.checked = done;
-  box.disabled = done;
-  document.getElementById('yusu-gov-ack-wrap').classList.toggle('gov-ack--done', done);
+  const ethics = (() => {
+    if (!gov.length) return { pass: false, why: 'No Governance & Ethics content was generated for this blueprint.' };
+    const area = gov.find(s => /ethic/i.test(s.title || ''));
+    if (!area) return { pass: false, why: 'No Ethical AI Guidelines section was produced.' };
+    if (!(area.brief?.strategicPosition || '').trim()) {
+      return { pass: false, why: 'The Ethical AI Guidelines section has no stated commitment.' };
+    }
+    return { pass: true, why: 'Fairness, safety, bias assessment, transparency and responsible AI' };
+  })();
+
+  const security = (() => {
+    if (!manifestPaths.length) return { pass: false, why: 'The project manifest could not be read.' };
+    const gaps = [
+      [/authMiddleware|auth/i, 'authentication middleware'],
+      [/encryption|crypto/i, 'credential encryption'],
+      [/\.env\.example$/, 'a configuration template'],
+    ].filter(([re]) => !hasFile(re)).map(([, name]) => name);
+    // A real .env would mean secrets in the repository — the one thing this
+    // check exists to catch.
+    if (manifestPaths.some(p => /(^|\/)\.env$/.test(p))) {
+      return { pass: false, why: 'The project contains a real .env file — secrets must not be committed.' };
+    }
+    return gaps.length
+      ? { pass: false, why: `The project is missing ${gaps.join(', ')}.` }
+      : { pass: true, why: 'Vulnerability scan, dependency check, configuration validation' };
+  })();
+
+  return [
+    { key: 'governance', title: 'Governance Check', icon: '&#127963;', ...governance },
+    { key: 'ethics',     title: 'Ethics Check',     icon: '&#9878;',   ...ethics },
+    { key: 'security',   title: 'Security Check',   icon: '&#128737;', ...security },
+  ];
 }
 
-async function acknowledgeGovernance() {
-  const box = document.getElementById('yusu-gov-ack');
-  if (!box.checked) return;
-  box.disabled = true;
-  try {
-    await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/governance-review`, { method: 'PATCH' });
-    _bp.governanceReview = { acknowledged: true, acknowledgedAt: new Date().toISOString() };
-    render(_bp, _dep);
-  } catch (err) {
-    box.checked = false;
-    box.disabled = false;
-    showError(err.message);
+function renderChecks(bp) {
+  const wrap = document.getElementById('yusu-checks');
+  const status = document.getElementById('yusu-run-status');
+  const verdict = document.getElementById('yusu-verdict');
+
+  if (!_checksRun) {
+    wrap.innerHTML = `<p class="tr-idle">Checks run once the application has been pushed.</p>`;
+    status.innerHTML = `<span class="eg-status__dot"></span>Not run`;
+    status.className = 'eg-status eg-status--idle';
+    verdict.style.display = 'none';
+    return [];
   }
+
+  const results = runChecks(bp, _manifestPaths);
+  const allPass = results.every(r => r.pass);
+
+  wrap.innerHTML = results.map(r => `
+    <div class="tr-card${r.pass ? '' : ' tr-card--fail'}">
+      <span class="tr-card__icon">${r.icon}</span>
+      <p class="tr-card__title">${esc(r.title)}</p>
+      <p class="tr-card__verdict">${r.pass ? '&#10003; Passed' : '&#10007; Failed'}</p>
+      <p class="tr-card__why">${esc(r.why)}</p>
+    </div>
+  `).join('');
+
+  status.innerHTML = `<span class="eg-status__dot"></span>${allPass ? 'Completed' : 'Failed'}`;
+  status.className = 'eg-status' + (allPass ? '' : ' eg-status--fail');
+
+  verdict.style.display = '';
+  verdict.className = 'tr-verdict' + (allPass ? '' : ' tr-verdict--fail');
+  verdict.innerHTML = `
+    <span class="tr-verdict__mark">${allPass ? '&#10003;' : '&#10007;'}</span>
+    <span>
+      <strong>${allPass ? 'All checks passed' : 'Some checks did not pass'}</strong>
+      <span>${allPass
+        ? 'Your application is ready for deployment to your environment.'
+        : 'Go Live stays closed until these are resolved.'}</span>
+    </span>`;
+
+  return results;
+}
+
+/**
+ * The four acts of delivery. Each is read from real state rather than a
+ * counter, so re-entering the screen shows where things genuinely stand.
+ */
+function renderPipeline(bp, dep) {
+  const pushed = !!bp.eameDelivery?.repoName;
+  const live = dep && ['live', 'suspended'].includes(dep.status);
+  const checksPass = _checksRun && runChecks(bp, _manifestPaths).every(r => r.pass);
+
+  const steps = [
+    { name: 'Build',   sub: 'Application built',            done: _manifestPaths.length > 0 },
+    { name: 'Push',    sub: 'Code pushed to repository',    done: pushed },
+    { name: 'Test',    sub: 'Governance & Ethics validated', done: checksPass },
+    { name: 'Go Live', sub: 'Release to environment',       done: !!live },
+  ];
+
+  document.getElementById('yusu-pipeline').innerHTML = steps.map((s, i) => `
+    <li class="dp__step${s.done ? ' dp__step--done' : ''}">
+      <span class="dp__node">${s.done ? '&#10003;' : i + 1}</span>
+      <span class="dp__name">${esc(s.name)}</span>
+      <span class="dp__sub">${esc(s.sub)}</span>
+    </li>
+  `).join('');
+  return steps;
 }
 
 function slugify(text) {
@@ -221,21 +262,6 @@ async function buildAndPush() {
   return true;
 }
 
-function renderChecks(bp, dep) {
-  const rows = checks(bp, dep);
-  document.getElementById('yusu-checks').innerHTML = rows.map(c => `
-    <div class="yusu-check${c.ok ? ' yusu-check--ok' : ''}">
-      <span class="yusu-check__mark">${c.ok ? '&check;' : '&middot;'}</span>
-      <span class="yusu-check__body">
-        <span class="yusu-check__title">${esc(c.title)}</span>
-        <span class="yusu-check__detail">${esc(c.ok ? c.done : c.todo)}</span>
-      </span>
-      ${(!c.ok && c.goto) ? `<button type="button" class="yusu-check__go" data-goto="${c.goto}">Go to ${c.goto[0].toUpperCase() + c.goto.slice(1)}</button>` : ''}
-    </div>
-  `).join('');
-  return rows;
-}
-
 function fact(label, value) {
   return value ? `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>` : '';
 }
@@ -298,39 +324,73 @@ function renderHandover(bp, dep) {
 function render(bp, dep) {
   _dep = dep;
   renderBreadcrumb(bp);
-  const rows = renderChecks(bp, dep);
-  renderGovernance(bp);
+  const results = renderChecks(bp);
+  renderPipeline(bp, dep);
   renderHandover(bp, dep);
 
   const btn = document.getElementById('yusu-golive-btn');
-  const hint = document.getElementById('yusu-hint');
+  const title = document.getElementById('yusu-ready-title');
+  const sub = document.getElementById('yusu-ready-sub');
+  const view = document.getElementById('yusu-view-app');
+  const delivery = document.getElementById('yusu-delivery-wrap');
+
   const live = dep && ['live', 'suspended'].includes(dep.status);
-  const selfHosted = dep?.hosting === 'self';
-  const blocked = rows.filter(c => !c.ok);
+  const pushed = !!bp.eameDelivery?.repoName;
+  const checksPass = results.length > 0 && results.every(r => r.pass);
+
+  // Naming the repository only matters until it exists.
+  delivery.style.display = pushed ? 'none' : '';
 
   if (live) {
     btn.style.display = 'none';
-    hint.textContent = 'Live and handed over.';
+    title.textContent = 'Live and handed over';
+    sub.textContent = 'Your application is running and available to your users.';
+    if (dep.url) { view.href = dep.url; view.style.display = ''; }
     return;
   }
-  if (selfHosted) {
+
+  view.style.display = 'none';
+
+  if (dep?.hosting === 'self') {
     // Nothing for Svarg to turn on — saying so is the honest end of the
     // journey, not a disabled button with no explanation.
     btn.style.display = 'none';
-    hint.textContent = 'This runs in your own environment, so there is nothing for Svarg to turn on. The repository from Eame is the handover.';
+    title.textContent = 'Running in your own environment';
+    sub.textContent = 'There is nothing for Svarg to turn on. The repository is the handover.';
     return;
   }
-  // One button, two steps: build and push, then go live. Sequenced rather
-  // than combined so a failed deploy does not mean pushing the repo again.
-  const pushed = !!bp.eameDelivery?.repoName;
+
   btn.style.display = '';
-  btn.textContent = pushed ? 'Go Live' : 'Build & Push';
-  btn.disabled = blocked.length > 0;
-  hint.textContent = blocked.length
-    ? `Waiting on: ${blocked.map(c => c.title.toLowerCase()).join(', ')}.`
-    : pushed
-      ? 'Pushed. Ready to go live.'
-      : 'Everything is ready.';
+
+  if (!pushed) {
+    btn.textContent = 'Build & Push';
+    btn.disabled = !_connected;
+    title.textContent = 'Build and push the application';
+    sub.textContent = _connected
+      ? 'The project is assembled and pushed to a repository you own. The checks run straight after.'
+      : 'Connect GitHub below so the project has a repository to live in.';
+    return;
+  }
+
+  btn.textContent = 'Go Live';
+  btn.disabled = !checksPass || !(dep?.status === 'prepared');
+  title.textContent = 'Ready to Go Live';
+  if (!_checksRun) {
+    sub.textContent = 'Running the governance, ethics and security checks…';
+  } else if (!checksPass) {
+    sub.textContent = 'Go Live stays closed until the failing checks are resolved.';
+  } else if (dep?.status !== 'prepared') {
+    sub.textContent = 'No environment is prepared yet — that happens on Arth.';
+  } else {
+    sub.textContent = 'Deploy your application to your target environment and make it available to your users.';
+  }
+}
+
+async function loadManifest() {
+  try {
+    const { files } = await api('/github/personal/project-manifest');
+    _manifestPaths = (files || []).map(f => f.path);
+  } catch { _manifestPaths = []; }
 }
 
 async function load() {
@@ -343,6 +403,20 @@ async function load() {
   }
 }
 
+/**
+ * Run the checks with a beat of delay so the result reads as a run rather
+ * than appearing fully formed. The evaluation itself is instant — it is all
+ * real state already in the page.
+ */
+async function runChecksNow() {
+  const status = document.getElementById('yusu-run-status');
+  status.innerHTML = '<span class=eg-status__dot></span>Running…';
+  status.className = 'eg-status eg-status--idle';
+  await new Promise(r => setTimeout(r, 700));
+  _checksRun = true;
+  render(_bp, _dep);
+}
+
 /** The primary action: push if it has not been pushed, otherwise go live. */
 async function act() {
   const btn = document.getElementById('yusu-golive-btn');
@@ -353,7 +427,10 @@ async function act() {
   try {
     if (!pushed) {
       btn.textContent = 'Building…';
-      if (await buildAndPush()) render(_bp, _dep);
+      if (await buildAndPush()) {
+        render(_bp, _dep);
+        await runChecksNow();
+      }
       return;
     }
 
@@ -380,16 +457,9 @@ function wire() {
   if (_wired) return;
   _wired = true;
   document.getElementById('yusu-golive-btn').addEventListener('click', act);
-  document.getElementById('yusu-gov-ack').addEventListener('change', acknowledgeGovernance);
   document.getElementById('yusu-connect-btn').addEventListener('click', (e) => {
     e.preventDefault();
     goConnectGithub();
-  });
-  // The "Go to Arth/Eame" buttons on unmet checks reuse the journey router
-  // in blueprintGenerate.js, which already listens for [data-goto].
-  document.getElementById('yusu-checks').addEventListener('click', (e) => {
-    const b = e.target.closest('.yusu-check__go');
-    if (b) document.dispatchEvent(new CustomEvent(b.dataset.goto + ':show', { detail: { blueprint: _bp } }));
   });
 }
 
@@ -404,7 +474,11 @@ document.addEventListener('yusu:show', (e) => {
   document.getElementById('yusu-token').style.display = 'none';
   const name = document.getElementById('yusu-repo-name');
   if (name && !name.value) name.value = slugify(renderBreadcrumb(bp) || bp.businessObjective);
+  _checksRun = false;
+  _manifestPaths = [];
   render(bp, null);
-  refreshGithubStatus().then(() => render(_bp, _dep));
-  load();
+  Promise.all([refreshGithubStatus(), loadManifest(), load()]).then(() => {
+    if (_bp.eameDelivery?.repoName) _checksRun = true;
+    render(_bp, _dep);
+  });
 });

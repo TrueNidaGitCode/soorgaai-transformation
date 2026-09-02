@@ -876,10 +876,17 @@
            GitHub OAuth round trip, so that is the one prompt left. -->
       <div id="yusu-delivery-wrap" style="display:none">
         <div class="aria-connector">
-          <p class="aria-next__body" style="margin:0 0 10px">Connect GitHub so the project has a repository to live in. Everything after that runs on its own.</p>
+          <p class="aria-next__body" style="margin:0 0 10px" id="yusu-connect-copy">Connect GitHub so the project has a repository to live in. Everything after that runs on its own.</p>
           <a id="yusu-connect-btn" href="#" class="pw-back-btn">Connect GitHub</a>
         </div>
       </div>
+
+      <!-- Which account the project lands in decides whether the deploy
+           platform can read it, so switching has to be possible. -->
+      <p class="yusu-account" id="yusu-account" style="display:none">
+        Delivering to <strong id="yusu-account-name"></strong>.
+        <button type="button" class="yusu-account__switch" id="yusu-switch-btn">Use a different account</button>
+      </p>
 
       <div id="yusu-push-result" class="pw-process-list" style="display:none"></div>
 
@@ -1074,7 +1081,7 @@
   <script type="module" src="ariaScreen.js?v=23"></script>
   <script type="module" src="arthScreen.js?v=9"></script>
   <script type="module" src="eameScreen.js?v=8"></script>
-  <script type="module" src="yusuScreen.js?v=8"></script>
+  <script type="module" src="yusuScreen.js?v=9"></script>
   <script type="module" src="screenChat.js?v=5"></script>
 </body>
 </html>

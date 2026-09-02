@@ -220,6 +220,24 @@ async function refreshGithubStatus() {
     _connected = false;
   }
   prompt.style.display = _connected ? 'none' : '';
+
+  // Naming the account matters: it decides which GitHub the project lands in,
+  // and therefore whether the deploy platform can read it at all.
+  const acct = document.getElementById('yusu-account');
+  acct.style.display = _connected ? '' : 'none';
+  if (_connected) document.getElementById('yusu-account-name').textContent = _githubUser || 'your account';
+}
+
+/**
+ * Disconnect and start the OAuth flow again, so the project can be delivered
+ * to a different GitHub account. Nothing already pushed is touched.
+ */
+async function switchAccount() {
+  if (!confirm('Deliver to a different GitHub account? Anything already pushed stays where it is.')) return;
+  try {
+    await api('/github/personal/disconnect', { method: 'POST' });
+  } catch { /* already gone is fine */ }
+  goConnectGithub();
 }
 
 function goConnectGithub() {
@@ -526,6 +544,7 @@ function wire() {
   if (_wired) return;
   _wired = true;
   document.getElementById('yusu-golive-btn').addEventListener('click', act);
+  document.getElementById('yusu-switch-btn').addEventListener('click', switchAccount);
   document.getElementById('yusu-connect-btn').addEventListener('click', (e) => {
     e.preventDefault();
     goConnectGithub();

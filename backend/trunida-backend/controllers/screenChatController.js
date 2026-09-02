@@ -154,8 +154,11 @@ export async function screenChat(req, res) {
     } else if (screen === 'yusu') {
       const { default: HostedDeployment } = await import('../models/HostedDeployment.js');
       const dep = await HostedDeployment.findOne({ blueprintId }).lean();
+      const govDomain = (bp.domains || []).find(d => d.domainId === 'governance-security');
+      const govAreas = (govDomain?.capabilities || [])
+        .flatMap(c => c.sections || []).map(s => s.title).filter(Boolean);
 
-      // The same three gates the screen shows, resolved from the same state,
+      // The same gates the screen shows, resolved from the same state,
       // so Yusu can never claim something is outstanding that the screen has
       // already ticked — or the reverse.
       context.selectedUseCase = selectedUseCase;
@@ -165,7 +168,12 @@ export async function screenChat(req, res) {
           ok: ['prepared', 'live'].includes(dep?.status) || dep?.hosting === 'self',
           fix: 'prepare it on Arth' },
         { title: 'The application is built', ok: !!bp.eameDelivery?.repoName, fix: 'build and push it on Eame' },
+        { title: 'Governance is accepted',
+          ok: govAreas.length === 0 || !!bp.governanceReview?.acknowledged,
+          fix: 'read the governance areas on this screen and accept them' },
       ];
+      context.governanceAreas = govAreas;
+      context.governanceAccepted = !!bp.governanceReview?.acknowledged;
       context.hosting  = dep?.hosting || '';
       context.live     = dep?.status === 'live';
       context.url      = dep?.railway?.url || '';

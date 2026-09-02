@@ -385,6 +385,15 @@ const transformationBlueprintSchema = new mongoose.Schema({
     },
   },
 
+  // Yusu (stage 5): the governance areas were read and accepted before
+  // go-live. Recorded on the blueprint rather than the deployment — it is a
+  // statement about the engagement, and it survives redeploying.
+  governanceReview: {
+    acknowledged:   { type: Boolean, default: false },
+    acknowledgedAt: { type: Date,    default: null },
+    areas:          { type: [String], default: [] },
+  },
+
   // Eame (stage 4): what was actually delivered. Hosting deploys from this
   // repository, so it has to outlive the browser session that pushed it.
   eameDelivery: {

@@ -257,6 +257,40 @@ export async function attachApplication(req, res) {
   }
 }
 
+/**
+ * PATCH .../governance-review — the customer confirms they have read the
+ * governance areas this blueprint produced.
+ *
+ * The area titles are read from the blueprint, never accepted from the
+ * request: an acknowledgement has to name what was actually shown, or it
+ * records agreement to something nobody saw.
+ */
+export async function acknowledgeGovernance(req, res) {
+  try {
+    const bp = await ownedBlueprint(req);
+    if (!bp) return res.status(404).json({ error: 'Blueprint not found or you do not have access to it.' });
+
+    const domain = (bp.domains || []).find(d => d.domainId === 'governance-security');
+    const areas = (domain?.capabilities || [])
+      .flatMap(c => c.sections || [])
+      .map(s => s.title)
+      .filter(Boolean);
+
+    if (!areas.length) {
+      return res.status(400).json({ error: 'This blueprint has no governance content to acknowledge.' });
+    }
+
+    await TransformationBlueprint.updateOne(
+      { _id: bp._id, userId: req.user._id },
+      { $set: { governanceReview: { acknowledged: true, acknowledgedAt: new Date(), areas } } }
+    );
+    return res.json({ acknowledged: true, areas });
+  } catch (err) {
+    console.error('[governanceReview] error:', err.message);
+    return res.status(500).json({ error: 'Failed to record the governance review.' });
+  }
+}
+
 export async function destroyDeployment(req, res) {
   try {
     const bp = await ownedBlueprint(req);

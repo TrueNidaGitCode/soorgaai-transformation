@@ -209,6 +209,12 @@ function buildContext(screen, ctx) {
       lines.push(`\nNot live yet.`);
     }
 
+    if (ctx.governanceAreas?.length) {
+      lines.push(`\nGovernance areas this blueprint produced, which the business accepts at`);
+      lines.push(`go-live: ${ctx.governanceAreas.join(', ')}.`);
+      lines.push(`Accepted: ${ctx.governanceAccepted ? 'yes' : 'NOT YET — go-live is blocked until they are'}.`);
+    }
+
     lines.push(`\nWhere the line falls, and be exact about this when asked:`);
     lines.push(`  The customer owns the source code in their own GitHub repository, and`);
     lines.push(`  the data in the database — their documents and whatever the application`);

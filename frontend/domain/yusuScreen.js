@@ -96,7 +96,66 @@ function checks(bp, dep) {
       todo: 'Connect it below — the project needs a repository to live in.',
       goto: '',
     },
+    // A failed generation must not block a deployment, so a blueprint with no
+    // governance content passes rather than trapping the user. When there IS
+    // content, it has to be accepted — that is the whole point of the gate.
+    {
+      ok: governanceAreas(bp).length === 0 || !!bp.governanceReview?.acknowledged,
+      title: 'Governance is accepted',
+      done: governanceAreas(bp).length
+        ? `${governanceAreas(bp).length} areas accepted`
+        : 'No governance content was generated for this blueprint',
+      todo: 'Read the governance areas below and accept them.',
+      goto: '',
+    },
   ];
+}
+
+/** The Governance & Ethics sections this blueprint actually produced. */
+function governanceAreas(bp) {
+  const domain = (bp.domains || []).find(d => d.domainId === 'governance-security');
+  return (domain?.capabilities || []).flatMap(c => c.sections || []).filter(s => s.title);
+}
+
+function renderGovernance(bp) {
+  const wrap = document.getElementById('yusu-gov-wrap');
+  const areas = governanceAreas(bp);
+  if (!areas.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+
+  document.getElementById('yusu-gov').innerHTML = areas.map(a => {
+    const b = a.brief || {};
+    const validation = b.leadershipValidation?.status || '';
+    return `
+      <div class="gov-card">
+        <p class="gov-card__title">${esc(a.title)}
+          ${validation ? `<span class="gov-card__val">${esc(validation)}</span>` : ''}</p>
+        <p class="gov-card__body">${esc(b.strategicPosition || 'No commitment recorded for this area.')}</p>
+        <p class="gov-card__meta">${(b.priorityActions || []).length} actions &middot;
+          ${(b.successMetrics || []).length} measures</p>
+      </div>`;
+  }).join('');
+
+  const box = document.getElementById('yusu-gov-ack');
+  const done = !!bp.governanceReview?.acknowledged;
+  box.checked = done;
+  box.disabled = done;
+  document.getElementById('yusu-gov-ack-wrap').classList.toggle('gov-ack--done', done);
+}
+
+async function acknowledgeGovernance() {
+  const box = document.getElementById('yusu-gov-ack');
+  if (!box.checked) return;
+  box.disabled = true;
+  try {
+    await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/governance-review`, { method: 'PATCH' });
+    _bp.governanceReview = { acknowledged: true, acknowledgedAt: new Date().toISOString() };
+    render(_bp, _dep);
+  } catch (err) {
+    box.checked = false;
+    box.disabled = false;
+    showError(err.message);
+  }
 }
 
 function slugify(text) {
@@ -240,6 +299,7 @@ function render(bp, dep) {
   _dep = dep;
   renderBreadcrumb(bp);
   const rows = renderChecks(bp, dep);
+  renderGovernance(bp);
   renderHandover(bp, dep);
 
   const btn = document.getElementById('yusu-golive-btn');
@@ -320,6 +380,7 @@ function wire() {
   if (_wired) return;
   _wired = true;
   document.getElementById('yusu-golive-btn').addEventListener('click', act);
+  document.getElementById('yusu-gov-ack').addEventListener('change', acknowledgeGovernance);
   document.getElementById('yusu-connect-btn').addEventListener('click', (e) => {
     e.preventDefault();
     goConnectGithub();

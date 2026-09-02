@@ -1,7 +1,7 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { screenChat, saveArthSelection, listArthModels, recommendArthModel } from '../controllers/screenChatController.js';
-import { getDeployment, prepareInfrastructure, attachApplication, destroyDeployment } from '../controllers/deploymentController.js';
+import { getDeployment, prepareInfrastructure, attachApplication, destroyDeployment, acknowledgeGovernance } from '../controllers/deploymentController.js';
 import {
   listCapabilities,
   fetchCapabilityBlueprint,
@@ -49,6 +49,7 @@ router.get   ('/transformation-blueprint/:blueprintId/deployment',     protect, 
 router.post  ('/transformation-blueprint/:blueprintId/infrastructure', protect, prepareInfrastructure);
 router.post  ('/transformation-blueprint/:blueprintId/deploy',         protect, attachApplication);
 router.delete('/transformation-blueprint/:blueprintId/deployment',     protect, destroyDeployment);
+ router.patch ('/transformation-blueprint/:blueprintId/governance-review', protect, acknowledgeGovernance);
 
 // ── Legacy: single-domain AI Strategy blueprint (kept for backwards compat) ───
 router.post('/generate-blueprint',                                                              protect, startBlueprintGeneration);

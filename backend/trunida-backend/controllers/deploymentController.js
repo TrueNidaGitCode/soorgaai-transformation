@@ -363,7 +363,19 @@ export async function redeployApplication(req, res) {
     }
 
     try {
-      await getDeployTarget().redeploy({ deployment: dep });
+      // Only the variables that can be rebuilt from what is stored. The
+      // gateway token is deliberately not recoverable — Svarg keeps a hash —
+      // so the full env cannot be reconstructed here, and `replace: false`
+      // upserts these alongside whatever attach already set rather than
+      // wiping it. This is what lets an existing service pick up variables
+      // added after it was created.
+      await getDeployTarget().redeploy({
+        deployment: dep,
+        env: {
+          APP_NAME: bp.appName || 'AI Assistant',
+          APP_PUBLIC_ACCESS: 'true',
+        },
+      });
     } catch (err) {
       console.error('[deployment] redeploy failed:', err.message);
       return res.status(502).json({ error: err.message, deployment: publicView(dep) });

@@ -375,9 +375,35 @@ export const railwayTarget = {
   },
 
   /** Ask Railway to build and start the service again. */
-  async redeploy({ deployment }) {
+  /**
+   * Ship the current build again — and the current variables with it.
+   *
+   * Variables were only ever set at serviceCreate, so a service created
+   * before a variable existed never gained it: redeploying picked up new
+   * code but ran it under the old environment. That is how an application
+   * can come back with its new UI and still behave as though the settings
+   * driving it were never added.
+   */
+  async redeploy({ deployment, env }) {
     const { projectId, environmentId, serviceId } = deployment.railway || {};
     if (!serviceId) throw new Error('This deployment has no service to redeploy.');
+
+    if (env && Object.keys(env).length) {
+      try {
+        await gql(`
+          mutation variableCollectionUpsert($input: VariableCollectionUpsertInput!) {
+            variableCollectionUpsert(input: $input)
+          }`, {
+          input: { projectId, environmentId, serviceId, variables: env, replace: false },
+        });
+      } catch (err) {
+        // Worth continuing: the code change is usually the point of the
+        // redeploy, and a variable that failed to land is visible in the
+        // running app rather than silently wrong.
+        console.warn('[railway] variable upsert failed —', err.message);
+      }
+    }
+
     return deployService(projectId, environmentId, serviceId);
   },
 

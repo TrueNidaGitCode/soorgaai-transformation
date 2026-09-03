@@ -99,7 +99,13 @@ export const ADVISORY_CATALOG = [
   },
   {
     id: 'gemini-pro',
-    apiModel: process.env.GATEWAY_MODEL_GEMINI_PRO    || 'gemini-2.5-pro',
+    // gemini-2.5-pro is closed to new API keys (404 "no longer available to
+    // new users"), so a customer picking this would have got a deployed app
+    // that failed on every call. Verified working 2026-09-03.
+    apiModel: process.env.GATEWAY_MODEL_GEMINI_PRO    || 'gemini-3.1-pro-preview',
+    // Prices carried over from 2.5-pro and NOT yet reconciled against the
+    // 3.x rate card. They drive the spend cap, and 3.x bills thinking tokens
+    // as output, so real spend can outrun this estimate.
     priceIn: 1.25, priceOut: 10,
     providerId: 'gemini',
     displayName: 'Gemini Pro',
@@ -111,7 +117,9 @@ export const ADVISORY_CATALOG = [
   },
   {
     id: 'gemini-flash',
-    apiModel: process.env.GATEWAY_MODEL_GEMINI_FLASH  || 'gemini-2.5-flash',
+    // Same retirement as Pro above — 2.5-flash is closed to new keys.
+    apiModel: process.env.GATEWAY_MODEL_GEMINI_FLASH  || 'gemini-3.8-flash',
+    // Carried over from 2.5-flash; see the note on Pro about thinking tokens.
     priceIn: 0.30, priceOut: 2.50,
     providerId: 'gemini',
     displayName: 'Gemini Flash',

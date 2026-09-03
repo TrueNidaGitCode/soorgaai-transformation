@@ -81,9 +81,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const GLOBAL_MODEL = process.env.ADVISOR_MODEL;   // backward-compat override
 
 const DEFAULT_MODELS = {
-  // gemini-2.0-flash: ~200 RPD on free tier (v1beta supported);
-  // gemini-2.5-flash-lite was only 20 RPD and gemini-1.5-flash is not on v1beta
-  gemini: process.env.GEMINI_MODEL || GLOBAL_MODEL || 'gemini-2.0-flash',
+  // Verified against the live API on 2026-09-03. gemini-2.0-flash was the
+  // previous default and Google has since retired it — it answers 404 "no
+  // longer available", which fails every generation rather than degrading.
+  // gemini-2.5-flash and -2.5-pro are likewise closed to new keys now.
+  // Re-check this when a run starts 404ing: model ids here expire.
+  gemini: process.env.GEMINI_MODEL || GLOBAL_MODEL || 'gemini-3.8-flash',
   claude: process.env.CLAUDE_MODEL || GLOBAL_MODEL || 'claude-sonnet-4-6',
   openai: process.env.OPENAI_MODEL || GLOBAL_MODEL || 'gpt-4o',
   kimi:   process.env.KIMI_MODEL   || GLOBAL_MODEL || 'moonshotai/kimi-k3',

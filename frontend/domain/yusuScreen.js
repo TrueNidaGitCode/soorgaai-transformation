@@ -618,6 +618,7 @@ async function act() {
     });
     render(_bp, r.deployment);
     pollWhileBuilding();
+    if (r.alreadyLive) showError('This deployment was already live — the screen was showing an older state, now refreshed.');
     if (r.gatewayToken) {
       document.getElementById('yusu-token-value').textContent = r.gatewayToken;
       document.getElementById('yusu-token').style.display = '';

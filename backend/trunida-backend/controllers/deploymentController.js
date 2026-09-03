@@ -214,13 +214,39 @@ export async function attachApplication(req, res) {
       });
     }
 
+    // A recorded 'attaching' can be stale: the build may have finished since
+    // the last status read. Ask before refusing, or the button rejects a
+    // deployment that is already serving.
+    if (dep?.status === 'attaching' && dep.railway?.serviceId) {
+      try {
+        const s = await getDeployTarget().status({ deployment: dep });
+        if (s.status && s.status !== dep.status) {
+          dep.status = s.status;
+          if (s.status === 'live' && !dep.liveAt) dep.liveAt = new Date();
+          if (s.detail) dep.statusMessage = s.detail;
+          await dep.save();
+        }
+      } catch (err) {
+        console.warn('[deployment] pre-attach status check failed —', err.message);
+      }
+      if (dep.status === 'live') {
+        return res.json({ deployment: publicView(dep), alreadyLive: true });
+      }
+    }
+
     if (!dep || !['prepared', 'failed'].includes(dep.status)) {
-      return res.status(400).json({
-        error: dep && dep.status === 'live'
-          ? 'This application is already running.'
-          : 'Prepare the environment on the Arth screen before deploying.',
-        deployment: publicView(dep),
-      });
+      // Each state gets its own answer. "Prepare the environment on Arth" was
+      // shown for every one of them, which sent people to the wrong screen
+      // for a problem that was not there.
+      const reason = !dep
+        ? 'Prepare the environment on the Arth screen before deploying.'
+        : dep.status === 'live'      ? 'This application is already running.'
+        : dep.status === 'attaching' ? 'A deployment is already in progress — it is still building.'
+        : dep.status === 'preparing' ? 'The environment is still being prepared.'
+        : dep.status === 'suspended' ? 'This deployment is suspended.'
+        : dep.status === 'destroyed' ? 'This environment was removed. Prepare a new one on the Arth screen.'
+        : 'Prepare the environment on the Arth screen before deploying.';
+      return res.status(400).json({ error: reason, deployment: publicView(dep) });
     }
     if (dep.hosting === 'self') {
       return res.status(400).json({ error: 'This blueprint is set to run in your own environment, so Svarg has nothing to deploy. Change it on the Arth screen to have Svarg host it.' });

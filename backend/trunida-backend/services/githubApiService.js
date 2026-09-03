@@ -55,7 +55,25 @@ export async function createRepo(accessToken, { name, description = '', isPrivat
       `${API_BASE}/repos/${me.data.login}/${name}`,
       { headers: headers(accessToken) }
     );
-    return { owner: data.owner.login, name: data.name, htmlUrl: data.html_url, defaultBranch: data.default_branch, created: false };
+
+    // An existing repository is left alone because its contents are the
+    // customer's — but an EMPTY one has nothing to protect, and is usually
+    // the wreckage of an earlier attempt that created the repo and then
+    // failed to push. Adopting that and calling it delivered leaves the
+    // deploy platform with nothing to build.
+    let isEmpty = false;
+    try {
+      await axios.get(`${API_BASE}/repos/${data.owner.login}/${data.name}/contents/`,
+        { headers: headers(accessToken) });
+    } catch (e) {
+      // GitHub answers 404 for the contents of a repository with no commits.
+      if (e.response?.status === 404) isEmpty = true;
+    }
+
+    return {
+      owner: data.owner.login, name: data.name, htmlUrl: data.html_url,
+      defaultBranch: data.default_branch, created: false, isEmpty,
+    };
   }
 }
 

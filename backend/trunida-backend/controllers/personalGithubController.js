@@ -170,13 +170,15 @@ export async function pushProject(req, res) {
     // An existing repository is left exactly as it is. pushFiles bootstraps
     // a .gitkeep commit and writes a fresh tree, which would trample whatever
     // is already in there — and it is the customer's repository, not ours.
-    if (repo.created) {
+    const pushed = repo.created || repo.isEmpty;
+    if (pushed) {
       await pushFiles(accessToken, repo.owner, repo.name, repo.defaultBranch, files, 'Initial commit — delivered by Svarg (Eame)');
+      if (repo.isEmpty) console.log(`[PersonalGithub] ${repo.owner}/${repo.name} existed but was empty — populated it`);
     } else {
-      console.log(`[PersonalGithub] ${repo.owner}/${repo.name} already exists — adopting it, contents untouched`);
+      console.log(`[PersonalGithub] ${repo.owner}/${repo.name} already has content — adopting it, untouched`);
     }
 
-    auditLog(repo.created ? 'PUSHED' : 'ADOPTED', req.user._id, { repoUrl: repo.htmlUrl, fileCount: files.length });
+    auditLog(pushed ? 'PUSHED' : 'ADOPTED', req.user._id, { repoUrl: repo.htmlUrl, fileCount: pushed ? files.length : 0 });
 
     // Ownership is enforced in the filter — a blueprintId from the body can
     // only ever update a blueprint this user already owns.
@@ -186,11 +188,11 @@ export async function pushProject(req, res) {
         { _id: req.body.blueprintId, userId: req.user._id },
         { $set: { eameDelivery: {
           repoOwner: repo.owner, repoName: repo.name, repoUrl: repo.htmlUrl,
-          fileCount: files.length, pushedAt: new Date(),
+          fileCount: pushed ? files.length : 0, pushedAt: new Date(),
         } } }
       ).catch(err => console.warn('[PersonalGithub] could not record delivery —', err.message));
     }
-    return res.json({ repoUrl: repo.htmlUrl, fileCount: files.length, owner: repo.owner, name: repo.name, created: repo.created });
+    return res.json({ repoUrl: repo.htmlUrl, fileCount: pushed ? files.length : 0, owner: repo.owner, name: repo.name, created: pushed });
   } catch (err) {
     // GitHub answers 401 "Bad credentials" for a token that has been revoked
     // or has otherwise stopped working. The connection is dead, so delete it:

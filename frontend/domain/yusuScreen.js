@@ -44,8 +44,6 @@ function esc(t) {
 let _bp = null;
 let _blueprintId = null;
 let _dep = null;
-let _connected = false;   // GitHub
-let _githubUser = '';
 let _checksRun = false;      // have the automated checks been run
 let _manifestPaths = [];     // the files the builder emits, for the security check
 let _running = false;        // the automatic build/push/test run is in flight
@@ -209,29 +207,49 @@ function slugify(text) {
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'svarg-project';
 }
 
-async function refreshGithubStatus() {
-  // Only the connect prompt remains — everything else Yusu does itself.
-  const prompt = document.getElementById('yusu-delivery-wrap');
+/**
+ * Hand over the source as a zip.
+ *
+ * A plain link cannot do this — the endpoint is authenticated, and an <a href>
+ * sends no Authorization header. So the bytes are fetched, wrapped in a blob
+ * and handed to a synthesised link, which is also what lets the filename be
+ * set from the use case rather than the URL.
+ */
+async function downloadSource() {
+  const btn = document.getElementById('yusu-download-btn');
+  const label = btn.innerHTML;   // the button holds an icon, not just text
+  btn.disabled = true;
+  btn.textContent = 'Preparing…';
+  document.getElementById('yusu-error').style.display = 'none';
   try {
-    const status = await api('/github/personal/status');
-    _connected = !!status.connected;
-    _githubUser = status.githubLogin || '';
-  } catch {
-    _connected = false;
+    const slug = slugify(renderBreadcrumb(_bp) || _bp.businessObjective);
+    const res = await fetch(
+      `${API_BASE}/delivery/download?blueprintId=${encodeURIComponent(_blueprintId)}&slug=${encodeURIComponent(slug)}`,
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `Download failed (${res.status})`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${slug}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // Revoked on a delay: revoking immediately can cancel the download in
+    // some browsers before it has read the blob.
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = label;
   }
-  prompt.style.display = _connected ? 'none' : '';
-
-  // Naming the account matters: it decides which GitHub the project lands in,
-  // and therefore whether the deploy platform can read it at all.
-  const acct = document.getElementById('yusu-account');
-  acct.style.display = _connected ? '' : 'none';
-  if (_connected) document.getElementById('yusu-account-name').textContent = _githubUser || 'your account';
 }
 
-/**
- * Disconnect and start the OAuth flow again, so the project can be delivered
- * to a different GitHub account. Nothing already pushed is touched.
- */
 async function redeployNow() {
   const b = document.getElementById('yusu-redeploy-btn');
   b.disabled = true; b.textContent = 'Redeploying…';
@@ -248,47 +266,35 @@ async function redeployNow() {
   }
 }
 
-async function switchAccount() {
-  if (!confirm('Reconnect GitHub? You can pick the same account to refresh an expired connection, or a different one to deliver elsewhere. Anything already pushed stays where it is.')) return;
-  try {
-    await api('/github/personal/disconnect', { method: 'POST' });
-  } catch { /* already gone is fine */ }
-  goConnectGithub();
-}
-
-function goConnectGithub() {
-  sessionStorage.setItem('svarg_returning_to_yusu', '1');
-  api('/github/personal/connect?returnTo=yusu')
-    .then(({ url }) => { window.location.href = url; })
-    .catch(err => showError(err.message));
-}
-
 /**
- * Build the project and push it to the customer's own repository. Separate
- * from going live so a failed deploy does not mean pushing again — the repo
- * either exists or it does not, and GitHub refuses a duplicate name.
+ * Build the agent and publish it to Svarg's own repository.
+ *
+ * Svarg owns the repository the platform builds from, which is what makes
+ * this work for a customer who has never heard of Railway: its GitHub App is
+ * installed once, on Svarg's account, with access to every repository. The
+ * customer's copy of the code is the download, not this.
+ *
+ * Still separate from going live: a failed deploy must not mean building and
+ * publishing again, and a service cannot be created before a repo exists.
  */
 async function buildAndPush() {
   // Derived from the use case rather than asked for — Yusu runs unattended.
-  const repoName = slugify(renderBreadcrumb(_bp) || _bp.businessObjective);
+  const slug = slugify(renderBreadcrumb(_bp) || _bp.businessObjective);
 
   const out = document.getElementById('yusu-push-result');
-  const r = await api('/github/personal/push-project', {
+  const r = await api('/delivery/publish', {
     method: 'POST',
-    body: JSON.stringify({
-      repoName,
-      isPrivate: true,
-      blueprintId: _blueprintId,
-    }),
+    body: JSON.stringify({ slug, blueprintId: _blueprintId }),
   });
+  const repoName = r.name;
 
+  // No link to the repository: it is private to Svarg, so a link would 404
+  // for the person reading this. Their copy is the download below.
   out.style.display = 'block';
   out.innerHTML = `<div class="pw-process-item pw-process-item--done">
     <span class="pw-process-item__title">${esc(repoName)}</span>
-    <span class="pw-process-item__detail">${r.created === false
-        ? 'Already delivered — repository left untouched'
-        : r.fileCount + ' files pushed'} &middot;
-      <a href="${esc(r.repoUrl)}" target="_blank" rel="noopener" class="aria-configure-link">Open repository &rarr;</a></span>
+    <span class="pw-process-item__detail">${r.fileCount} files
+      ${r.created ? 'built and published' : 'rebuilt and published'} to the Svarg build registry.</span>
   </div>`;
 
   // Keep the in-memory blueprint in step so the checks below re-render as met
@@ -370,15 +376,18 @@ function render(bp, dep) {
   const sub = document.getElementById('yusu-ready-sub');
   const view = document.getElementById('yusu-view-app');
   const redeploy = document.getElementById('yusu-redeploy-btn');
-  const delivery = document.getElementById('yusu-delivery-wrap');
+  const download = document.getElementById('yusu-download-btn');
 
   const live = dep && ['live', 'suspended'].includes(dep.status);
   const building = dep?.status === 'attaching';
   const pushed = !!bp.eameDelivery?.repoName;
   const checksPass = results.length > 0 && results.every(r => r.pass);
 
-  // Naming the repository only matters until it exists.
-  delivery.style.display = pushed ? 'none' : '';
+  // There is nothing to download until the project has been built.
+  download.disabled = !pushed;
+  document.getElementById('yusu-source-sub').textContent = pushed
+    ? `${bp.eameDelivery.fileCount || _manifestPaths.length} files — the complete project, exactly as deployed. Yours to keep, review, or push to your own Git.`
+    : 'Available as soon as the application has been built.';
 
   if (live) {
     // A live deployment still needs a way to be rebuilt — a platform with no
@@ -426,13 +435,6 @@ function render(bp, dep) {
   // decision at the end of it.
   btn.style.display = '';
   btn.textContent = 'Go Live';
-
-  if (!_connected) {
-    btn.disabled = true;
-    title.textContent = 'Connect GitHub to begin';
-    sub.textContent = 'Once connected, Yusu builds, pushes and tests the application on its own.';
-    return;
-  }
 
   if (_running) {
     btn.disabled = true;
@@ -502,26 +504,20 @@ function pollWhileBuilding() {
 
 /**
  * A build that never comes up looks identical to one still running, and
- * "still building" after several minutes is not an explanation. Naming the
- * causes — with this deployment's actual repository and account in them —
- * turns a silent stall into something that can be acted on.
+ * "still building" after several minutes is not an explanation.
  *
- * The commonest by far is the deploy platform being unable to read the
- * repository: its GitHub App is installed per account, so a project pushed
- * to an account it was never installed on can never be built.
+ * These are now Svarg-side causes rather than anything the reader can fix —
+ * the repository is Svarg's. The message says what is being looked at rather
+ * than handing them a task they have no access to perform.
  */
 function stallDiagnosis(dep) {
   if (Date.now() - _buildingSince < 90000) return '';
-  const repo = _bp?.eameDelivery?.repoName
-    ? `${_bp.eameDelivery.repoOwner}/${_bp.eameDelivery.repoName}`
-    : 'the repository';
-  const owner = _bp?.eameDelivery?.repoOwner || 'that account';
   return [
-    `Still nothing answering after a few minutes, so the build is not simply slow.`,
-    `The usual causes, most likely first:`,
-    `• Railway cannot read ${repo} — its GitHub App is installed per account, and it must have access to ${owner}. Use a different account above to deliver somewhere it can read.`,
-    `• The application started and exited. It requires a database connection at boot, so check that the database allows connections from the container's address.`,
-    `• The build itself failed. The deployment logs in Railway say which in one line.`,
+    'Still nothing answering after a few minutes, so the build is not simply slow.',
+    'This is on our side, and it is one of:',
+    '• The application started and exited — usually a database connection refused at boot.',
+    '• The build itself failed, which the deployment logs state in one line.',
+    'Nothing has been handed over, and nothing is billed while it is not running.',
   ].join('\n');
 }
 
@@ -562,17 +558,12 @@ async function load() {
  * appears — automatic on the happy path, manual only when something breaks.
  */
 async function autoRun() {
-  if (_running || !_connected) return;
-  // A delivery on a different account is not a delivery for this run: the
-  // repository lives somewhere the connected account may not even own, and
-  // the deploy platform is scoped per account. Push again rather than
-  // treating the old one as done.
-  const delivered = _bp.eameDelivery;
-  const sameAccount = delivered?.repoOwner
-    && _githubUser
-    && delivered.repoOwner.toLowerCase() === _githubUser.toLowerCase();
+  if (_running) return;
 
-  if (delivered?.repoName && sameAccount) {
+  // Already published for this blueprint — nothing to rebuild. The repository
+  // is Svarg's and holds this blueprint's agent, so unlike the customer-owned
+  // path there is no question of it belonging to the wrong account.
+  if (_bp.eameDelivery?.repoName) {
     _checksRun = true;
     render(_bp, _dep);
     return;
@@ -588,17 +579,10 @@ async function autoRun() {
     await new Promise(r => setTimeout(r, 500));   // let the strip land on Push
     _checksRun = true;
   } catch (err) {
-    // GitHub's own message ("name already exists") is the useful part.
+    // Publishing failures are Svarg's to fix, not the customer's — the
+    // message says what broke without asking them to do anything about it.
     _failed = err.message;
     showError(err.message);
-    // A rejected token means the connection is gone server-side; reflect that
-    // so the connect prompt comes back instead of a permanently stalled run.
-    if (/no longer valid|reconnect/i.test(err.message)) {
-      _connected = false;
-      _githubUser = '';
-      document.getElementById('yusu-delivery-wrap').style.display = '';
-      document.getElementById('yusu-account').style.display = 'none';
-    }
   } finally {
     _running = false;
     render(_bp, _dep);
@@ -635,12 +619,8 @@ function wire() {
   if (_wired) return;
   _wired = true;
   document.getElementById('yusu-golive-btn').addEventListener('click', act);
-  document.getElementById('yusu-switch-btn').addEventListener('click', switchAccount);
   document.getElementById('yusu-redeploy-btn').addEventListener('click', redeployNow);
-  document.getElementById('yusu-connect-btn').addEventListener('click', (e) => {
-    e.preventDefault();
-    goConnectGithub();
-  });
+  document.getElementById('yusu-download-btn').addEventListener('click', downloadSource);
 }
 
 document.addEventListener('screen:show', (e) => {
@@ -661,7 +641,7 @@ document.addEventListener('yusu:show', (e) => {
   _failed = '';
   _manifestPaths = [];
   render(bp, null);
-  Promise.all([refreshGithubStatus(), loadManifest(), load(), refreshDelivery()]).then(() => {
+  Promise.all([loadManifest(), load(), refreshDelivery()]).then(() => {
     render(_bp, _dep);
     pollWhileBuilding();
     autoRun();

@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
-  <link rel="stylesheet" href="domain.css?v=38">
+  <link rel="stylesheet" href="domain.css?v=39">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -872,23 +872,21 @@
         <div class="tr-verdict" id="yusu-verdict" style="display:none"></div>
       </section>
 
-      <!-- Yusu runs itself. The only thing it cannot do unattended is the
-           GitHub OAuth round trip, so that is the one prompt left. -->
-      <div id="yusu-delivery-wrap" style="display:none">
-        <div class="aria-connector">
-          <p class="aria-next__body" style="margin:0 0 10px" id="yusu-connect-copy">Connect GitHub so the project has a repository to live in. Everything after that runs on its own.</p>
-          <a id="yusu-connect-btn" href="#" class="pw-back-btn">Connect GitHub</a>
-        </div>
-      </div>
-
-      <!-- Which account the project lands in decides whether the deploy
-           platform can read it, so switching has to be possible. -->
-      <p class="yusu-account" id="yusu-account" style="display:none">
-        Delivering to <strong id="yusu-account-name"></strong>.
-        <button type="button" class="yusu-account__switch" id="yusu-switch-btn">Reconnect or use a different account</button>
-      </p>
-
       <div id="yusu-push-result" class="pw-process-list" style="display:none"></div>
+
+      <!-- The source code is the customer's, whether or not they ever touch
+           the running copy. Svarg builds and runs the agent from its own
+           repository; this is how the customer takes it away. -->
+      <div class="yusu-source" id="yusu-source">
+        <div class="yusu-source__body">
+          <h3 class="yusu-source__title">Your source code</h3>
+          <p class="yusu-source__sub" id="yusu-source-sub">The complete project, exactly as deployed &mdash; yours to keep, review, or push to your own Git.</p>
+        </div>
+        <button type="button" class="yusu-source__btn" id="yusu-download-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          Download project
+        </button>
+      </div>
 
       <div class="eg-done" id="yusu-ready">
         <span class="eg-done__ico">
@@ -1082,7 +1080,7 @@
   <script type="module" src="ariaScreen.js?v=23"></script>
   <script type="module" src="arthScreen.js?v=9"></script>
   <script type="module" src="eameScreen.js?v=8"></script>
-  <script type="module" src="yusuScreen.js?v=16"></script>
+  <script type="module" src="yusuScreen.js?v=17"></script>
   <script type="module" src="screenChat.js?v=5"></script>
 </body>
 </html>

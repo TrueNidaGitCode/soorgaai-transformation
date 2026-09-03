@@ -545,7 +545,16 @@ async function load() {
  */
 async function autoRun() {
   if (_running || !_connected) return;
-  if (_bp.eameDelivery?.repoName) {         // already delivered in an earlier visit
+  // A delivery on a different account is not a delivery for this run: the
+  // repository lives somewhere the connected account may not even own, and
+  // the deploy platform is scoped per account. Push again rather than
+  // treating the old one as done.
+  const delivered = _bp.eameDelivery;
+  const sameAccount = delivered?.repoOwner
+    && _githubUser
+    && delivered.repoOwner.toLowerCase() === _githubUser.toLowerCase();
+
+  if (delivered?.repoName && sameAccount) {
     _checksRun = true;
     render(_bp, _dep);
     return;

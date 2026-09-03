@@ -199,6 +199,21 @@ export async function attachApplication(req, res) {
     if (!bp) return res.status(404).json({ error: 'Blueprint not found or you do not have access to it.' });
 
     const dep = await HostedDeployment.findOne({ blueprintId: bp._id });
+
+    // A service is created against one repository and cannot be repointed at
+    // another, so a delivery that has moved account needs the environment
+    // rebuilt rather than re-attached. Saying so beats attaching to a repo
+    // the platform cannot read.
+    if (dep?.railway?.serviceId && bp.eameDelivery?.repoOwner
+        && dep.repo?.owner && dep.repo.owner.toLowerCase() !== bp.eameDelivery.repoOwner.toLowerCase()) {
+      return res.status(409).json({
+        error: `This environment is wired to ${dep.repo.owner}/${dep.repo.name}, but the project now lives in `
+          + `${bp.eameDelivery.repoOwner}/${bp.eameDelivery.repoName}. Remove the environment on Arth and `
+          + `prepare it again so it points at the new repository.`,
+        deployment: publicView(dep),
+      });
+    }
+
     if (!dep || !['prepared', 'failed'].includes(dep.status)) {
       return res.status(400).json({
         error: dep && dep.status === 'live'

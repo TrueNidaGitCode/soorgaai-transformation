@@ -249,7 +249,7 @@ async function redeployNow() {
 }
 
 async function switchAccount() {
-  if (!confirm('Deliver to a different GitHub account? Anything already pushed stays where it is.')) return;
+  if (!confirm('Reconnect GitHub? You can pick the same account to refresh an expired connection, or a different one to deliver elsewhere. Anything already pushed stays where it is.')) return;
   try {
     await api('/github/personal/disconnect', { method: 'POST' });
   } catch { /* already gone is fine */ }

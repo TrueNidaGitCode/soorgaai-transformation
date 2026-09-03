@@ -33,7 +33,7 @@ import { BLUEPRINT_CONFIG }       from '../config/blueprintConfig.js';
 import { enabledDomains, getDomain } from '../config/domainRegistry.js';
 import { getCapabilityEnterpriseContext, preloadEnterpriseContextMap } from './enterpriseBlueprintService.js';
 import { getConnectedKnowledgeContext, preloadConnectedKnowledgeMap, getLinkedProjectContext } from './connectedKnowledgeService.js';
-import { detectIndustryFit } from './industryFitService.js';
+import { resolveIndustryGrounding } from './industryFitService.js';
 import CompanyResearchLibrary from '../models/CompanyResearchLibrary.js';
 import { normalizeCompanyName, getApprovedCapabilityMap } from './companyResearchLibraryService.js';
 import { getVerticalContextForCapability, preloadVerticalContextMap } from './industryVerticalKnowledgeService.js';
@@ -80,21 +80,40 @@ const NO_KB_FOLDER_INDUSTRY = 'General'; // no knowledge_base/.../General/ folde
                                           // getDomainCapabilityBlueprint's file read fails
                                           // closed to core-only content — exactly what we want.
 
+/**
+ * Which industry overlay grounds this blueprint.
+ *
+ * Decided once per blueprint and stored, so every capability run — including
+ * later "generate remaining domains" runs — reuses the same decision rather
+ * than re-classifying and possibly disagreeing with itself mid-blueprint.
+ *
+ * Returns the overlay folder name, or NO_KB_FOLDER_INDUSTRY for core-only.
+ */
 async function resolveIndustryFit(blueprintId, businessObjective) {
   const bp = await TransformationBlueprint.findById(blueprintId, { industryFit: 1 }).lean();
   if (bp?.industryFit?.checked) {
-    return { matched: bp.industryFit.matched !== false, reason: bp.industryFit.reason || '' };
+    return {
+      matched: bp.industryFit.matched !== false,
+      // Blueprints decided before industries were resolvable stored only a
+      // boolean. A matched one of those meant automotive, which was the only
+      // industry then — honour that rather than silently re-grounding it.
+      industry: bp.industryFit.industry || (bp.industryFit.matched !== false ? 'Automotive' : ''),
+      reason: bp.industryFit.reason || '',
+    };
   }
 
-  const fit = await detectIndustryFit(businessObjective);
+  const fit = await resolveIndustryGrounding(businessObjective);
   await TransformationBlueprint.updateOne(
     { _id: blueprintId },
-    { $set: { industryFit: { checked: true, matched: fit.matched, reason: fit.reason } } }
+    { $set: { industryFit: {
+      checked: true, matched: fit.matched, industry: fit.industry || '', reason: fit.reason,
+    } } }
   ).catch(err => console.error('[industryFit] failed to persist result:', err.message));
 
-  if (!fit.matched) {
-    console.log(`[industryFit] ${blueprintId}: objective does not match automotive KB — core-only grounding. Reason: ${fit.reason}`);
-  }
+  console.log(fit.industry
+    ? `[industryGrounding] ${blueprintId}: grounding on "${fit.industry}". ${fit.reason}`
+    : `[industryGrounding] ${blueprintId}: no industry overlay fits — core-only grounding. ${fit.reason}`);
+
   return fit;
 }
 
@@ -3310,7 +3329,7 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
   const companyProfile = await loadCompanyProfile(userId);
   const industry       = companyProfile.industry || 'Automotive';
   const industryFit       = await resolveIndustryFit(blueprintId, businessObjective);
-  const groundingIndustry = industryFit.matched ? industry : NO_KB_FOLDER_INDUSTRY;
+  const groundingIndustry = industryFit.industry || NO_KB_FOLDER_INDUSTRY;
 
   const domain = getDomain(domainId);
   if (!domain) throw new Error(`Domain not found in registry: ${domainId}`);
@@ -3772,7 +3791,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
   const industryFit       = await resolveIndustryFit(blueprintId, businessObjective);
   // 'General' has no knowledge_base/.../General/ folder, so the industry-file
   // read fails closed to core-only content — see NO_KB_FOLDER_INDUSTRY above.
-  const groundingIndustry = industryFit.matched ? industry : NO_KB_FOLDER_INDUSTRY;
+  const groundingIndustry = industryFit.industry || NO_KB_FOLDER_INDUSTRY;
   const domains           = enabledDomains();
   const enterpriseCtxMap  = await preloadEnterpriseContextMap(companyProfile.orgName || '');
   const connectedKnowledgeMap = await preloadConnectedKnowledgeMap(companyProfile.orgName || '');
@@ -3937,7 +3956,7 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
   const companyProfile = await loadCompanyProfile(userId);
   const industry       = companyProfile.industry || 'Automotive';
   const industryFit       = await resolveIndustryFit(blueprintId, businessObjective);
-  const groundingIndustry = industryFit.matched ? industry : NO_KB_FOLDER_INDUSTRY;
+  const groundingIndustry = industryFit.industry || NO_KB_FOLDER_INDUSTRY;
   const allDomains     = enabledDomains();
   const domains        = allDomains.filter(d => domainIds.includes(d.id));
 

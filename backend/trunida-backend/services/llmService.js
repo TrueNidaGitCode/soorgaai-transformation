@@ -101,6 +101,20 @@ const KIMI_BASE_URL = 'https://openrouter.ai/api/v1';
 
 const DEFAULT_MAX_TOKENS = 1500;
 
+/**
+ * Extra output budget for models that think before answering.
+ *
+ * Gemini 3.x charges thinking tokens against maxOutputTokens, so a budget
+ * sized for the visible answer starves it and returns nothing. Measured:
+ * a 59-token prompt spent 769 thinking tokens, and short classification
+ * prompts routinely spend several hundred. 2048 covers the short structured
+ * calls this codebase makes without meaningfully capping long generations.
+ *
+ * Configurable because the right number moves with the model, and the whole
+ * point of this service is not to depend on one.
+ */
+const THINKING_HEADROOM = parseInt(process.env.LLM_THINKING_HEADROOM || '2048', 10);
+
 // ── Provider chain ─────────────────────────────────────────────────────────────
 
 function getProviderChain() {
@@ -153,9 +167,19 @@ const PROVIDERS = {
         safetySettings,
       });
 
+      // Gemini 3.x models think before answering, and thinking tokens are
+      // charged against maxOutputTokens. A budget sized for the visible
+      // answer alone therefore gets consumed by thinking and returns an
+      // EMPTY response — no error, just nothing, which callers then fail to
+      // parse. Every maxTokens in this codebase was chosen before thinking
+      // models existed, so the headroom is added here rather than asking
+      // ~30 call sites to know which models think.
+      const asked = maxTokens || DEFAULT_MAX_TOKENS;
+      const budget = asked + THINKING_HEADROOM;
+
       const result   = await mdl.generateContent({
         contents:         [{ role: 'user', parts: [{ text: userMessage }] }],
-        generationConfig: { maxOutputTokens: maxTokens || DEFAULT_MAX_TOKENS },
+        generationConfig: { maxOutputTokens: budget },
         safetySettings,
       });
 
@@ -172,6 +196,18 @@ const PROVIDERS = {
         const blockReason  = response.promptFeedback?.blockReason   || '';
         throw new Error(
           `Gemini response unavailable — finishReason: ${finishReason}${blockReason ? `, blockReason: ${blockReason}` : ''}`
+        );
+      }
+
+      // An empty body with MAX_TOKENS means thinking ate the whole budget.
+      // Say so, rather than handing back '' for the caller to misdiagnose as
+      // a bad prompt — this exact failure silently broke three classifiers.
+      if (!text || !text.trim()) {
+        const finishReason = response.candidates?.[0]?.finishReason || 'UNKNOWN';
+        const thoughts = meta?.thoughtsTokenCount || 0;
+        throw new Error(
+          `Gemini returned an empty response — finishReason: ${finishReason}` +
+          (thoughts ? `, ${thoughts} thinking tokens against a ${budget}-token budget` : '')
         );
       }
 

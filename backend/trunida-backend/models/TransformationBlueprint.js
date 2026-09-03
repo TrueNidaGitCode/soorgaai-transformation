@@ -343,10 +343,18 @@ const transformationBlueprintSchema = new mongoose.Schema({
   // "not yet classified" from "classified as matched" so it's never
   // re-classified or left ambiguous. When unmatched, generation falls back
   // to core (industry-agnostic) KB grounding only, and the UI notifies the user.
+  // Which industry overlay grounds this blueprint, decided once from the
+  // objective and reused by every capability run so the decision cannot
+  // flip-flop mid-generation.
+  //
+  // `industry` is the overlay folder name, or '' for core-only grounding.
+  // `matched` is kept because the UI's industry-fit banner reads it, and
+  // because blueprints created before `industry` existed only have this.
   industryFit: {
-    checked: { type: Boolean, default: false },
-    matched: { type: Boolean, default: true },
-    reason:  { type: String,  default: '' },
+    checked:  { type: Boolean, default: false },
+    matched:  { type: Boolean, default: true },
+    industry: { type: String,  default: '' },
+    reason:   { type: String,  default: '' },
   },
   // Set when the user clicks "Approve" on the AI Use Cases & Prioritization
   // screen (Window 1 / Cob) confirming Cob's recommended starting point —

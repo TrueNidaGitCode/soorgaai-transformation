@@ -26,6 +26,52 @@ function domainPath(kbPath) {
   return path.join(KB_ENTERPRISE_ROOT, kbPath);
 }
 
+// Folders inside a domain that are not industry overlays.
+const NON_INDUSTRY_FOLDERS = new Set(['Core', 'Templates']);
+
+/**
+ * Which industries the knowledge base actually has overlay content for.
+ *
+ * Read from disk rather than held in a list, so publishing a new industry
+ * through the admin KB screen makes it immediately available for grounding
+ * with no code change. That is what makes the platform industry-agnostic:
+ * adding an industry is a content operation, not a deployment.
+ *
+ * An industry counts as covered if it appears in any domain — coverage is
+ * usually partial while generation is still in progress, and partial
+ * grounding is better than none.
+ *
+ * @returns {string[]} industry names, e.g. ['Artificial Intelligence', 'Automotive']
+ */
+export function listGroundedIndustries() {
+  const found = new Set();
+  let domains = [];
+  try {
+    domains = fs.readdirSync(KB_ENTERPRISE_ROOT, { withFileTypes: true })
+      .filter(d => d.isDirectory()).map(d => d.name);
+  } catch {
+    return [];
+  }
+
+  for (const domain of domains) {
+    let entries = [];
+    try {
+      entries = fs.readdirSync(path.join(KB_ENTERPRISE_ROOT, domain), { withFileTypes: true });
+    } catch { continue; }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory() || NON_INDUSTRY_FOLDERS.has(entry.name)) continue;
+      // A folder with no markdown in it is an empty shell from an
+      // interrupted generation run — offering it would ground on nothing.
+      try {
+        const files = fs.readdirSync(path.join(KB_ENTERPRISE_ROOT, domain, entry.name));
+        if (files.some(f => f.endsWith('.md'))) found.add(entry.name);
+      } catch { /* unreadable — skip */ }
+    }
+  }
+  return [...found].sort();
+}
+
 // ── Filename mapping ──────────────────────────────────────────────────────────
 
 export function toFilename(capabilityName) {

@@ -192,6 +192,19 @@ export async function pushProject(req, res) {
     }
     return res.json({ repoUrl: repo.htmlUrl, fileCount: files.length, owner: repo.owner, name: repo.name, created: repo.created });
   } catch (err) {
+    // GitHub answers 401 "Bad credentials" for a token that has been revoked
+    // or has otherwise stopped working. The connection is dead, so delete it:
+    // leaving it in place makes the screen report a healthy connection and
+    // fail on every push with a message that names no remedy.
+    if (err.response?.status === 401) {
+      await PersonalGithubConnection.deleteOne({ userId: req.user._id })
+        .catch(e => console.warn('[PersonalGithub] could not clear dead connection —', e.message));
+      auditLog('TOKEN_REJECTED', req.user._id);
+      return res.status(401).json({
+        error: 'Your GitHub connection is no longer valid — reconnect to continue.',
+        code: 'not_connected',
+      });
+    }
     console.error('[PersonalGithub] push-project error:', err.response?.data || err.message);
     // GitHub's validation errors put the actually useful detail (e.g. "name
     // already exists on this account") in a nested `errors` array, not the

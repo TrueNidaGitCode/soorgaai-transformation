@@ -591,6 +591,14 @@ async function autoRun() {
     // GitHub's own message ("name already exists") is the useful part.
     _failed = err.message;
     showError(err.message);
+    // A rejected token means the connection is gone server-side; reflect that
+    // so the connect prompt comes back instead of a permanently stalled run.
+    if (/no longer valid|reconnect/i.test(err.message)) {
+      _connected = false;
+      _githubUser = '';
+      document.getElementById('yusu-delivery-wrap').style.display = '';
+      document.getElementById('yusu-account').style.display = 'none';
+    }
   } finally {
     _running = false;
     render(_bp, _dep);

@@ -29,9 +29,29 @@
 
 import crypto from 'crypto';
 import KnowledgeChunk from '../models/KnowledgeChunk.js';
-import { embedText, embedBatch, EMBEDDING_DIMENSIONS } from './embeddingService.js';
+import {
+  embedText, embedBatch, EMBEDDING_DIMENSIONS,
+  EMBEDDING_PROVIDER, EMBEDDING_MODEL, EMBEDDING_PROVENANCE,
+} from './embeddingService.js';
 
-export const VECTOR_INDEX_NAME = 'knowledge_chunk_vector_index';
+/**
+ * The index name carries its width.
+ *
+ * An Atlas vector index is built at one fixed dimension. Sharing a single
+ * name across widths means switching embedding provider either fails on
+ * write or, worse, quietly stops matching — the index cannot be redefined in
+ * place, and ensureVectorIndex() skips creation when the name already exists.
+ *
+ * Naming it by width means each configuration gets its own index: switching
+ * to a different width creates a new one rather than colliding with the old,
+ * and switching back finds the original still intact.
+ *
+ * The 1536 name is spelled out explicitly so the existing production index,
+ * created before this scheme, keeps being used rather than orphaned.
+ */
+export const VECTOR_INDEX_NAME = EMBEDDING_DIMENSIONS === 1536
+  ? 'knowledge_chunk_vector_index'
+  : `knowledge_chunk_vector_index_${EMBEDDING_DIMENSIONS}`;
 const STRUCTURED_SCORE        = 0.90;
 const BOTH_ARM_BOOST          = 0.10;
 // A sanity floor, not a relevance discriminator — tested empirically and found
@@ -102,11 +122,22 @@ export async function upsertChunks(chunkInputs) {
 
   const existing = await KnowledgeChunk.find(
     { chunkId: { $in: withIds.map(c => c.chunkId) } },
-    { chunkId: 1, content: 1 }
+    { chunkId: 1, content: 1, embeddingProvider: 1, embeddingModel: 1 }
   ).lean();
-  const existingMap = new Map(existing.map(e => [e.chunkId, e.content]));
+  const existingMap = new Map(existing.map(e => [e.chunkId, e]));
 
-  const toEmbed = withIds.filter(c => existingMap.get(c.chunkId) !== c.content);
+  // Re-embed when the content changed OR when the stored vector came from a
+  // different embedding configuration. Skipping on content alone would leave
+  // a chunk permanently invisible to retrieval after a provider switch: its
+  // text is unchanged, so it is never re-embedded, and its provenance no
+  // longer matches, so it is never returned.
+  const toEmbed = withIds.filter(c => {
+    const prev = existingMap.get(c.chunkId);
+    if (!prev) return true;
+    if (prev.content !== c.content) return true;
+    return prev.embeddingProvider !== EMBEDDING_PROVIDER
+        || prev.embeddingModel !== EMBEDDING_MODEL;
+  });
   if (!toEmbed.length) return { inserted: 0, skipped: withIds.length };
 
   const vectors = await embedBatch(toEmbed.map(c => c.content));
@@ -114,7 +145,7 @@ export async function upsertChunks(chunkInputs) {
   const ops = toEmbed.map((c, i) => ({
     updateOne: {
       filter: { chunkId: c.chunkId },
-      update: { $set: { ...c, embedding: vectors[i] } },
+      update: { $set: { ...c, embedding: vectors[i], ...EMBEDDING_PROVENANCE } },
       upsert: true,
     },
   }));
@@ -181,6 +212,12 @@ export async function ensureVectorIndex() {
         { type: 'filter', path: 'capabilityId' },
         { type: 'filter', path: 'industry' },
         { type: 'filter', path: 'orgName' },
+        // Newly created indexes can filter on provenance during the search
+        // rather than after it. semanticRetrieve() still post-filters, because
+        // indexes created before this scheme lack these fields — the $match
+        // is correct against both, just less efficient against new ones.
+        { type: 'filter', path: 'embeddingProvider' },
+        { type: 'filter', path: 'embeddingModel' },
       ],
     },
   }]);
@@ -223,10 +260,31 @@ async function semanticRetrieve(queryText, filter, topK) {
         path:          'embedding',
         queryVector,
         numCandidates: Math.max(topK * 10, 100),
-        limit:         topK,
+        // Over-fetch, because the provenance filter below removes rows after
+        // the search rather than during it.
+        limit:         topK * 3,
         ...(Object.keys(mongoFilter).length ? { filter: mongoFilter } : {}),
       },
     },
+    // Only compare against vectors from the current embedding configuration.
+    // Vectors from another model occupy a different space, so their cosine
+    // scores against this query are meaningless — near-random numbers that
+    // still sort, which is why the failure is silent rather than loud.
+    //
+    // Deliberately a $match rather than a $vectorSearch filter: Atlas only
+    // permits filtering on fields declared as `filter` type in the index
+    // definition, and the production index predates these fields. Filtering
+    // here works against any index, old or new.
+    //
+    // Rows written before provenance existed carry '' and are excluded until
+    // re-embedded — fewer results, never wrong ones.
+    {
+      $match: {
+        embeddingProvider: EMBEDDING_PROVIDER,
+        embeddingModel:    EMBEDDING_MODEL,
+      },
+    },
+    { $limit: topK },
     { $project: { embedding: 0, score: { $meta: 'vectorSearchScore' } } },
   ];
 

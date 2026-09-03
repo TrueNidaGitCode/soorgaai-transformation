@@ -242,11 +242,34 @@ async function recoverStuckBlueprints() {
     }
 }
 
+/**
+ * Say which embedding configuration is live, and whether it actually works.
+ *
+ * Embeddings are the one provider swap that cannot be verified by reading
+ * config: the failure mode is a width mismatch or an unreachable endpoint,
+ * and both surface as degraded retrieval hours later rather than as an error.
+ * One line on boot beats discovering it from a customer's bad search results.
+ *
+ * Deliberately non-fatal. Semantic retrieval already degrades to the
+ * structured arm when embedding fails, so refusing to boot would take the
+ * whole product down over a feature that is designed to be optional.
+ */
+async function reportEmbeddingConfig() {
+    try {
+        const { verifyEmbeddingConfig } = await import('./services/embeddingService.js');
+        const v = await verifyEmbeddingConfig();
+        console.log(`✅ Embeddings: ${v.provider}/${v.model} @ ${v.dimensions} dims`);
+    } catch (err) {
+        console.warn(`⚠️  Embeddings unavailable — semantic retrieval will fall back to structured only: ${err.message}`);
+    }
+}
+
 // ✅ Connect to MongoDB, then start the server
 connectDB()
     .then(async () => {
         await recoverStuckBlueprints();
         warmCache(); // Pre-load KB files into memory
+        await reportEmbeddingConfig();
         console.log("🚀 Starting SoorgaAI Server...");
         app.listen(PORT, () => console.log(`🚀 SoorgaAI Server running on port ${PORT}`));
     })

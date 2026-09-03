@@ -375,11 +375,30 @@ function renderJourneyIndicator() {
 
 function updateOpportunitiesGate(bp) {
   const done = bp.status === 'completed';
+  const approved = !!bp.opportunityApproval?.approved;
   const approveBtn = document.getElementById('opp-approve-btn');
   const viewBtn    = document.getElementById('opp-view-blueprint-btn');
-  if (approveBtn) approveBtn.disabled = !done;
-  if (viewBtn)    viewBtn.disabled    = !done;
 
+  // Approving is a one-time act, so the button stays spent once it has
+  // happened. It previously re-enabled itself on every revisit, which
+  // invited approving the same opportunity again and again.
+  if (approveBtn) {
+    approveBtn.disabled = !done || approved;
+    approveBtn.textContent = approved ? 'Approved ✓' : 'Approve';
+    approveBtn.classList.toggle('pw-next-btn--spent', approved);
+  }
+  if (viewBtn) viewBtn.disabled = !done;
+
+  // Forward progress is the stage-navigation button's job, not Approve's.
+  const navBtn  = document.getElementById('cob-nav-btn');
+  const navHint = document.getElementById('cob-nav-hint');
+  if (navBtn) navBtn.disabled = !approved;
+  if (navHint) {
+    navHint.textContent = approved
+      ? 'Opportunity approved — Aria is ready for your data.'
+      : done ? 'Approve an opportunity to continue'
+             : 'Still analysing your objective…';
+  }
 }
 
 // Only acts while the opportunities screen is the active one — once the
@@ -466,11 +485,13 @@ function wireOpportunitiesButtons(guestId) {
         const { error } = await resp.json().catch(() => ({}));
         throw new Error(error || 'Failed to approve. Please try again.');
       }
-      // Approve is forward progress through the journey (unlike Open
-      // Blueprint, which is a peek-and-return action) — advances to Aria
-      // in the same tab rather than opening a new one.
-      showScreen('screen-aria');
-      document.dispatchEvent(new CustomEvent('aria:show', { detail: { blueprint: bp } }));
+      // Approving no longer navigates. It records the decision and opens the
+      // stage-navigation button, so advancing is the user's separate, explicit
+      // act — and so Approve can stay visibly spent rather than vanishing
+      // behind a screen change.
+      bp.opportunityApproval = { ...(bp.opportunityApproval || {}), approved: true, approvedAt: new Date().toISOString() };
+      _currentBlueprint = bp;
+      updateOpportunitiesGate(bp);
     } catch (err) {
       if (errEl) { errEl.textContent = err.message; errEl.style.display = 'block'; }
       approveBtn.disabled = false;
@@ -507,6 +528,17 @@ function wireJourneyNavigation() {
     if (!step) return;
     e.preventDefault();
     goToStage(step.dataset.goto);
+  });
+
+  // The stage-navigation button at the foot of every screen. This selector
+  // is separate from the journey one above because the journey handler only
+  // matches `.pw-step` inside `.rp-journey` — Eame's "Continue to Yusu"
+  // carried a data-goto that nothing was listening for, so it did nothing.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.stage-nav__btn[data-goto]');
+    if (!btn || btn.disabled) return;
+    e.preventDefault();
+    goToStage(btn.dataset.goto);
   });
 }
 

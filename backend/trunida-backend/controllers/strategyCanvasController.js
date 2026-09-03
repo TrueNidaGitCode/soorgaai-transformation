@@ -779,6 +779,38 @@ export async function approveOpportunity(req, res) {
 }
 
 /**
+ * PATCH /strategy-canvas/transformation-blueprint/:blueprintId/app-name
+ * What the customer calls their application. Set on Eame before the build,
+ * so it reaches the repository name, the deployed application's title and
+ * its chat header.
+ */
+export async function setAppName(req, res) {
+  try {
+    const { blueprintId } = req.params;
+    const raw = typeof req.body?.appName === 'string' ? req.body.appName.trim() : '';
+
+    // Bounded and stripped of control characters: this string ends up in a
+    // repository name, an HTML title and a page heading.
+    const appName = raw.replace(/[\x00-\x1F\x7F]/g, '').slice(0, 48);
+    if (appName && appName.length < 2) {
+      return res.status(400).json({ error: 'Give your application a name of at least two characters.' });
+    }
+
+    const result = await TransformationBlueprint.updateOne(
+      { _id: blueprintId, userId: req.user._id },
+      { $set: { appName } }
+    );
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Blueprint not found.' });
+    }
+    return res.json({ appName });
+  } catch (err) {
+    console.error('setAppName error:', err);
+    res.status(500).json({ error: 'Failed to save the application name.' });
+  }
+}
+
+/**
  * GET /strategy-canvas/transformation-blueprints
  * Lightweight list of the user's blueprints for the sidebar history —
  * objective, status, and timestamps only (no domain content).

@@ -69,25 +69,37 @@ function readFile(sourcePath, isAbsolute = false) {
 }
 
 /**
- * @param {{includeJira?: boolean}} [opts]
+ * The name the customer gave their application on Eame, substituted into the
+ * files that show it to a user. A placeholder rather than a rename of the
+ * files themselves: the code keeps working under any name, and a project
+ * delivered without one still reads sensibly.
+ */
+const NAME_TOKEN = /__APP_NAME__/g;
+
+function applyName(content, appName) {
+  return appName ? content.replace(NAME_TOKEN, appName) : content.replace(NAME_TOKEN, 'AI Assistant');
+}
+
+/**
+ * @param {{includeJira?: boolean, appName?: string}} [opts]
  * @returns {{path:string, content:string}[]}
  */
-export function buildManifest({ includeJira = true } = {}) {
+export function buildManifest({ includeJira = true, appName = '' } = {}) {
   const manifest = [];
 
   for (const [source, dest] of CORE_FILES) {
-    manifest.push({ path: dest, content: readFile(source) });
+    manifest.push({ path: dest, content: applyName(readFile(source), appName) });
   }
 
   if (includeJira) {
     for (const [source, dest] of JIRA_MODULE_FILES) {
-      manifest.push({ path: dest, content: readFile(source) });
+      manifest.push({ path: dest, content: applyName(readFile(source), appName) });
     }
   }
 
   for (const [fullPath, dest] of walkTemplateFiles(TEMPLATE_ROOT)) {
     if (!includeJira && (dest.includes('jira') || dest.includes('Jira') || dest === 'JIRA_INTEGRATION.md')) continue;
-    manifest.push({ path: dest, content: readFile(fullPath, true) });
+    manifest.push({ path: dest, content: applyName(readFile(fullPath, true), appName) });
   }
 
   return manifest;

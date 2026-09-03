@@ -129,6 +129,25 @@ function renderRow(d, confCount, jiraCount) {
   const { state, source } = rowState(d, confCount, jiraCount);
 
   let sourceCell, statusCell, actionCell;
+  // Once the data has actually been processed, every dataset that had a
+  // source reads as complete. "Connected" and "Ready to link" describe work
+  // still outstanding, and leaving them up after a successful run made a
+  // finished stage look half-done.
+  if (_processed && state !== 'inferred' && state !== 'not-connected') {
+    return `
+    <tr>
+      <td>
+        <span class="aria-row-name__title">${esc(d.name)}</span>
+        <span class="aria-row-name__desc">${esc(d.purpose)}</span>
+      </td>
+      <td><span class="aria-source">`
+        + `<span class="aria-source__icon aria-source__icon--${source.id}">${source.letter}</span>${esc(source.label)}</span></td>
+      <td><span class="aria-status aria-status--done"><span class="aria-status-dot"></span>Completed</span></td>
+      <td><span class="aria-action-none">&mdash;</span></td>
+    </tr>
+  `;
+  }
+
   if (state === 'inferred') {
     // No connector exists for this data, so there is nothing to connect.
     // Say what will happen instead of showing a dead control.
@@ -222,6 +241,14 @@ function updateProcessBar(datasets) {
   const btn = document.getElementById('aria-process-btn');
   const hint = document.getElementById('aria-process-hint');
   const pending = linkableSources();
+
+  // A finished run owns the button. Any later re-render of the table — a
+  // source list refreshing, for instance — would otherwise re-enable it and
+  // wipe the completed state out from under the user.
+  if (_processed) {
+    if (btn) { btn.disabled = true; btn.textContent = '✓ Data Processed'; }
+    return;
+  }
   if (btn) btn.disabled = pending.length === 0;
   // No idle text — the table above already says what is ready, so a
   // standing "N sources ready" line was pure repetition. The element stays
@@ -360,7 +387,14 @@ async function runProcess(blueprintId) {
     const linked = results.filter(r => r.status === 'linked').length;
     const failed = results.filter(r => r.status === 'error').length;
     const empty  = results.filter(r => r.status === 'empty').length;
-    markAriaComplete(linked > 0 && failed === 0);
+    const ok = linked > 0 && failed === 0;
+    if (ok) {
+      // Re-render the dataset table so every sourced row reads Completed
+      // rather than still advertising work to do.
+      _processed = true;
+      renderTable(_cachedDatasets, _sources.confluence.length, _sources.jira.length);
+    }
+    markAriaComplete(ok);
     // Finished state — the button previously stayed enabled and read the
     // same as before the run, which gave no signal the stage was done.
     // "Run again" stays available for re-linking after new content lands.
@@ -372,6 +406,8 @@ async function runProcess(blueprintId) {
       + (failed ? ', ' + failed + ' failed' : '') + '.'
     ) + ' <button type="button" class="aria-relink" id="aria-relink">Run again</button>';
     document.getElementById('aria-relink')?.addEventListener('click', () => {
+      _processed = false;
+      renderTable(_cachedDatasets, _sources.confluence.length, _sources.jira.length);
       btn.disabled = false;
       btn.textContent = 'Process Connected Data';
       hint.textContent = '';
@@ -416,16 +452,13 @@ function markAriaComplete(ok) {
   const banner = document.getElementById('aria-next-stage');
   if (banner) banner.style.display = 'flex';
 
-  // Arth exists now, so offer the move rather than saying it isn't built.
-  const body = document.querySelector('#aria-next-stage .aria-next__body');
-  if (body) {
-    body.innerHTML = 'Next is <strong>Arth</strong> — choosing the models and infrastructure to run it on. '
-      + '<button type="button" class="aria-relink" id="aria-to-arth">Continue to Arth &rarr;</button>';
-    document.getElementById('aria-to-arth')?.addEventListener('click', () => {
-      document.dispatchEvent(new CustomEvent('screen:show', { detail: { id: 'screen-arth' } }));
-      document.dispatchEvent(new CustomEvent('arth:show', { detail: { blueprint: _ariaBlueprint } }));
-    });
-  }
+  // Moving on is the stage-navigation button's job. The banner used to carry
+  // its own "Continue to Arth" link, which meant two different controls for
+  // the same act in two different places on the page.
+  const navBtn  = document.getElementById('aria-nav-btn');
+  const navHint = document.getElementById('aria-nav-hint');
+  if (navBtn) navBtn.disabled = false;
+  if (navHint) navHint.textContent = 'Data processed — Arth is ready to choose a model.';
 }
 
 // ── Sources: one table for every connected tool ─────────────────────────────
@@ -475,6 +508,10 @@ let _linkedStats = { confluence: new Map(), jira: new Map() };
 // Cached so Process can link without re-listing, and so Status can
 // re-render after linking without another round trip.
 let _sources = { confluence: [], jira: [] };
+
+// Set once a processing run has succeeded. Drives the completed state of the
+// dataset table and the stage-navigation gate.
+let _processed = false;
 
 function renderProcessing(el, results, keyField) {
   // Only surface what needs attention. A successful link already shows up

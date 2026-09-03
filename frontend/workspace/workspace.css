@@ -36,13 +36,13 @@
 }
 .workspace-nav__back:hover { color: #fff; }
 
+/* The Svarg mark, sized to sit inside the 64px nav with room to breathe.
+   Height-driven with width:auto so the 3:1 artwork is never distorted. */
 .workspace-nav__logo {
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #fff;
+  height: 34px;
+  width: auto;
+  display: block;
 }
-.workspace-nav__logo span { color: #5CC5A7; }
 
 .workspace-nav__right {
   display: flex;

@@ -3,82 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Defect Matching Agent</title>
+  <title>__APP_NAME__</title>
 
   <link rel="stylesheet" href="base.css">
-  <link rel="stylesheet" href="defect-matching.css">
+  <link rel="stylesheet" href="chat.css">
 
   <script src="config.js"></script>
 </head>
 <body>
 
-  <!-- No signup/login system in this starter kit — paste a token from
-       `npm run mint-token` here once, then use the form normally. -->
-  <div class="dev-token-bar">
-    <span>Dev token:</span>
-    <input type="text" id="dev-token-input" placeholder="paste output of `npm run mint-token`">
-    <button type="button" id="dev-token-save">Save</button>
-    <span id="dev-token-status"></span>
-  </div>
+  <div class="ch-app">
 
-  <main class="dm-page">
-
-    <header class="dm-header">
-      <p class="dm-header__eyebrow">Retrieval-Augmented Semantic Matching</p>
-      <h1 class="dm-header__title">Defect Matching Agent</h1>
-      <p class="dm-header__sub">
-        Describe a new test failure below — this matches it against
-        historical defect records and suggests a likely root cause. Seed
-        data is synthetic; run <code>npm run seed</code> first, or connect
-        Jira (see JIRA_INTEGRATION.md) to pull in real ones.
-      </p>
+    <header class="ch-head">
+      <div class="ch-head__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.9 8.4 8.4 0 0 1 8.4-8.4h.6A8.4 8.4 0 0 1 21 11v.5z"/>
+        </svg>
+      </div>
+      <div class="ch-head__text">
+        <h1 class="ch-head__title">__APP_NAME__</h1>
+        <p class="ch-head__sub">Describe a failure and I'll find similar defects and a likely cause.</p>
+      </div>
+      <span class="ch-head__state" id="ch-state"><span class="ch-head__dot"></span>Connecting…</span>
     </header>
 
-    <form class="dm-form" id="dm-form">
-      <label class="dm-form__label" for="dm-description">New failure description</label>
-      <textarea
-        id="dm-description"
-        class="dm-form__textarea"
-        rows="4"
-        placeholder="e.g. Flash attempt on the gateway ECU failed after transfer; checksum verification did not match the expected value."
-        required
-      ></textarea>
-      <button type="submit" class="dm-form__submit" id="dm-submit">Find similar defects</button>
-    </form>
-
-    <div class="dm-loading" id="dm-loading" hidden aria-live="polite">
-      <div class="dm-spinner" role="status" aria-label="Matching defects"></div>
-      <p>Retrieving similar defects and drafting a root-cause suggestion…</p>
+    <div class="ch-log" id="ch-log" role="log" aria-live="polite">
+      <!-- Opening turn. Not a fake message from the assistant — it is
+           labelled as the app introducing itself, with real examples the
+           user can click rather than an empty box and a blinking cursor. -->
+      <div class="ch-welcome">
+        <h2 class="ch-welcome__title">What went wrong?</h2>
+        <p class="ch-welcome__body">
+          Paste a test failure, an error, or a symptom. This searches your
+          historical defect records for the closest matches and drafts a
+          likely root cause from them.
+        </p>
+        <div class="ch-examples" id="ch-examples">
+          <button type="button" class="ch-example">Flash attempt on the gateway ECU failed after transfer; checksum verification did not match.</button>
+          <button type="button" class="ch-example">OTA update stalls at 40% on the telematics unit and then times out.</button>
+          <button type="button" class="ch-example">Diagnostic session drops during reprogramming when the vehicle is on battery power.</button>
+        </div>
+      </div>
     </div>
 
-    <div class="dm-error" id="dm-error" hidden></div>
+    <form class="ch-compose" id="ch-form">
+      <textarea id="ch-input" class="ch-compose__input" rows="1"
+                placeholder="Describe the failure…" aria-label="Describe the failure"></textarea>
+      <button type="submit" class="ch-compose__send" id="ch-send" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      </button>
+    </form>
 
-    <section class="dm-results" id="dm-results" hidden>
-      <div class="dm-root-cause">
-        <p class="dm-root-cause__label">Suggested root cause</p>
-        <p class="dm-root-cause__text" id="dm-root-cause-text"></p>
-      </div>
+    <p class="ch-foot">Built with Svarg</p>
 
-      <h2 class="dm-matches__heading">Matched historical defects</h2>
-      <div class="dm-matches" id="dm-matches"></div>
-    </section>
+  </div>
 
-  </main>
-
-  <script>
-    // Minimal token bootstrap for this dev bar — defect-matching.js reads
-    // localStorage.token itself and redirects to /login/login.html (which
-    // doesn't exist here) only if it's missing entirely.
-    const tokenInput  = document.getElementById('dev-token-input');
-    const tokenStatus = document.getElementById('dev-token-status');
-    const existing = localStorage.getItem('token');
-    if (existing) tokenStatus.textContent = 'token set';
-    document.getElementById('dev-token-save').addEventListener('click', () => {
-      if (!tokenInput.value.trim()) return;
-      localStorage.setItem('token', tokenInput.value.trim());
-      location.reload();
-    });
-  </script>
-  <script type="module" src="defect-matching.js"></script>
+  <script type="module" src="chat.js"></script>
 </body>
 </html>

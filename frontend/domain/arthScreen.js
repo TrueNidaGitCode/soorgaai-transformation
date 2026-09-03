@@ -272,6 +272,12 @@ function renderPrepared(dep) {
   offer.style.display = done ? 'none' : '';
   ready.style.display = done ? '' : 'none';
 
+  // The environment is built around the model and hosting choice — the
+  // gateway is wired to that model, the container sized for it. Leaving the
+  // pickers live afterwards invited a change that the running environment
+  // would silently not reflect.
+  freezeSelection(done);
+
   if (!done) {
     const svarg = _hosting === 'svarg';
     document.getElementById('arth-prep-title').textContent = svarg
@@ -403,13 +409,54 @@ function renderPriorities() {
   `).join('');
 }
 
+// True once the environment exists, after which the model and hosting
+// choices are settled and the stage button becomes plain navigation.
+let _frozen = false;
+
+/**
+ * Lock every control that feeds the environment's shape.
+ *
+ * Buttons get `disabled`; the whole region also gets a class so the cards
+ * read as settled rather than merely unresponsive — a card that looks
+ * clickable and silently does nothing is worse than one that looks spent.
+ */
+function freezeSelection(on) {
+  _frozen = !!on;
+  const regions = ['arth-options', 'arth-picker', 'arth-auto', 'arth-hosting']
+    .map(id => document.getElementById(id)).filter(Boolean);
+
+  for (const region of regions) {
+    region.classList.toggle('arth-frozen', _frozen);
+    region.querySelectorAll('button, input, select').forEach(el => { el.disabled = _frozen; });
+  }
+  refreshConfirm();
+}
+
 // Only a specific model counts as a decision. Picking a class narrows the
 // question; it does not answer it.
 function refreshConfirm() {
   const btn  = document.getElementById('arth-confirm-btn');
   const hint = document.getElementById('arth-hint');
+  if (!btn || !hint) return;
+
+  // Frozen: the decision is made and the environment is built on it, so the
+  // one control left is the move to Eame.
+  if (_frozen) {
+    btn.disabled = false;
+    btn.textContent = 'Move to Eame →';
+    btn.dataset.goto = 'eame';
+    const picked = _models.find(m => m.id === _model);
+    const name = picked?.displayName || _env?.model?.displayName || '';
+    hint.textContent = name
+      ? `${name} — locked in, and the environment is built around it.`
+      : 'Environment ready — the model and infrastructure are locked in.';
+    return;
+  }
+
+  delete btn.dataset.goto;
   const picked = _models.find(m => m.id === _model);
   btn.disabled = !_model;
+  btn.textContent = 'Confirm & Continue';
   hint.textContent = picked ? `Selected: ${picked.displayName}`
     : _chosen ? 'Choose a model to continue'
     : 'Choose a model class to continue';
@@ -530,6 +577,10 @@ function wire() {
   });
 
   document.getElementById('arth-confirm-btn').addEventListener('click', async () => {
+    // Frozen, the button is pure navigation and carries data-goto — the
+    // delegated stage-nav handler owns the click. Saving again here would
+    // re-write a selection the built environment is already based on.
+    if (_frozen) return;
     if (!_chosen || !_blueprintId) return;
     const btn = document.getElementById('arth-confirm-btn');
     btn.disabled = true;

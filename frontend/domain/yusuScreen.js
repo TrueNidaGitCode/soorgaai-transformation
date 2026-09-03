@@ -41,6 +41,11 @@ function esc(t) {
   return String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/** What the customer called it on Eame, falling back to the use case. */
+function appName(bp) {
+  return (bp?.appName || '').trim() || renderBreadcrumb(bp) || 'Your application';
+}
+
 let _bp = null;
 let _blueprintId = null;
 let _dep = null;
@@ -182,8 +187,12 @@ function renderPipeline(bp, dep) {
   const live = dep && ['live', 'suspended'].includes(dep.status);
   const checksPass = _checksRun && runChecks(bp, _manifestPaths).every(r => r.pass);
 
+  // A repository that exists is proof the build happened, whether or not the
+  // manifest has been fetched yet this visit. Keying Build purely off an
+  // in-flight fetch made an already-delivered application look like it was
+  // still building every time the screen was reopened.
   const steps = [
-    { name: 'Build',   sub: 'Application built',            done: _manifestPaths.length > 0 },
+    { name: 'Build',   sub: 'Application built',            done: _manifestPaths.length > 0 || pushed },
     { name: 'Push',    sub: 'Code pushed to repository',    done: pushed },
     { name: 'Test',    sub: 'Governance & Ethics validated', done: checksPass },
     { name: 'Deploy',  sub: 'Release to environment',       done: !!live },
@@ -252,7 +261,7 @@ async function downloadSource() {
 
 async function redeployNow() {
   const b = document.getElementById('yusu-redeploy-btn');
-  b.disabled = true; b.textContent = 'Redeploying…';
+  b.disabled = true; b.textContent = 'Deploying…';
   document.getElementById('yusu-error').style.display = 'none';
   try {
     const r = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/redeploy`, { method: 'POST' });
@@ -262,7 +271,7 @@ async function redeployNow() {
   } catch (err) {
     showError(err.message);
   } finally {
-    b.disabled = false; b.textContent = 'Redeploy';
+    b.disabled = false; b.textContent = 'Deploy';
   }
 }
 
@@ -391,18 +400,22 @@ function render(bp, dep) {
 
   if (live) {
     // A live deployment still needs a way to be rebuilt — a platform with no
-    // redeploy leaves a broken app with nowhere to go.
+    // way to ship a change leaves a broken app with nowhere to go. It is
+    // called Deploy, because from here on that is what the button does:
+    // pushes the current build out again.
     btn.style.display = 'none';
     redeploy.style.display = '';
-    title.textContent = 'Live and handed over';
+    title.textContent = `${appName(bp)} is live`;
     sub.textContent = dep.statusMessage || 'Your application is running and available to your users.';
     if (dep.url) { view.href = dep.url; view.style.display = ''; }
     return;
   }
-  redeploy.style.display = '';
 
+  // Before it is live there is nothing to redeploy — Go Live is that button.
+  // It used to appear as soon as a service existed, which put two competing
+  // deploy actions on screen at once.
   view.style.display = 'none';
-  redeploy.style.display = dep?.railway?.serviceId || dep?.appAttached ? '' : 'none';
+  redeploy.style.display = 'none';
 
   // Railway is building the repository. It is deployed but not yet serving,
   // and offering the URL now would hand over a page that cannot answer.

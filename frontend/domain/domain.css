@@ -43,13 +43,13 @@
 }
 .workspace-nav__back:hover { color: #fff; }
 
+/* The Svarg mark, sized to sit inside the 64px nav with room to breathe.
+   Height-driven with width:auto so the 3:1 artwork is never distorted. */
 .workspace-nav__logo {
-  font-size: 1.1rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #fff;
+  height: 34px;
+  width: auto;
+  display: block;
 }
-.workspace-nav__logo span { color: #5CC5A7; }
 
 .workspace-nav__right {
   display: flex;
@@ -3019,6 +3019,11 @@
 .aria-status--none { color: rgba(255,255,255,0.4); font-weight: 500; }
 /* Not a failure state — this data simply has no connector, and the
    blueprint fills it from analysis. Reads as informational, not missing. */
+/* Reached only after a successful processing run — a settled state, so it
+   carries the accent at full strength rather than the amber of pending work. */
+.aria-status--done .aria-status-dot { background: var(--aria-accent); }
+.aria-status--done { color: var(--aria-accent); font-weight: 600; }
+
 .aria-status--inferred .aria-status-dot { background: var(--aria-accent-2); opacity: 0.7; }
 .aria-status--inferred { color: rgba(255,255,255,0.55); font-weight: 500; }
 
@@ -12750,6 +12755,122 @@
 @media (prefers-reduced-motion: reduce) {
   .dp__step--busy .dp__node { animation: none; }
 }
+
+/* ── Stage navigation ───────────────────────────────────────────────────────
+   The same bar in the same place on every screen, so moving forward through
+   the pipeline is one consistent control rather than a differently-worded
+   button per stage. The hint carries the gate: while the button is closed it
+   says what would open it, which is more use than a disabled button alone. */
+.stage-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 22px 0 8px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  /* Same bound as .aria-body: the portrait lane owns the right 30%, and a
+     full-width bar would put the button underneath it. Screens that already
+     sit inside .aria-body are unaffected — it resolves to the same width. */
+  max-width: calc(70vw - 100px);
+}
+@media (max-width: 1000px) {
+  .stage-nav { max-width: 100%; }
+}
+.stage-nav__hint {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.42);
+  margin-right: auto;
+}
+.stage-nav__btn {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  font-family: inherit; font-size: 13.5px; font-weight: 700;
+  color: #081310;
+  background: var(--aria-accent);
+  border: 1px solid var(--aria-accent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.16s ease, transform 0.16s ease;
+}
+.stage-nav__btn:hover:not(:disabled) { filter: brightness(1.08); }
+.stage-nav__btn:active:not(:disabled) { transform: translateY(1px); }
+.stage-nav__btn:disabled {
+  color: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.1);
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage-nav__btn { transition: none; }
+  .stage-nav__btn:active:not(:disabled) { transform: none; }
+}
+
+/* Arth's choices once the environment is built on them. Dimmed and inert:
+   a card that still looks clickable but silently does nothing is worse than
+   one that plainly reads as settled. */
+.arth-frozen {
+  opacity: 0.55;
+  filter: saturate(0.6);
+  pointer-events: none;
+}
+.arth-frozen button,
+.arth-frozen input,
+.arth-frozen select { cursor: not-allowed; }
+
+/* Process Connected Data sits inside the sources panel, under the table it
+   acts on, so it reads as "process THESE sources". */
+.aria-process-bar--inline {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+/* Naming the application. Deliberately prominent — this is the moment the
+   project stops being "the deliverable" and becomes something of theirs. */
+.eg-name {
+  margin: 16px 0 0;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+}
+.eg-name__label {
+  display: block;
+  font-size: 14px; font-weight: 700;
+  color: rgba(255,255,255,0.88);
+}
+.eg-name__hint {
+  margin: 3px 0 12px;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.45);
+}
+.eg-name__row { display: flex; align-items: center; gap: 12px; }
+.eg-name__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 380px;
+  padding: 10px 13px;
+  font-family: inherit; font-size: 14px;
+  color: #fff;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 8px;
+}
+.eg-name__input::placeholder { color: rgba(255,255,255,0.28); }
+.eg-name__input:focus {
+  outline: none;
+  border-color: var(--aria-accent);
+  box-shadow: 0 0 0 3px rgba(92,197,167,0.15);
+}
+.eg-name__saved {
+  font-size: 12.5px;
+  color: var(--aria-accent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.eg-name__saved--on { opacity: 1; }
 
 /* The customer's copy of the source. Svarg builds and runs the agent from
    its own repository; this is the half the customer takes away, so it reads

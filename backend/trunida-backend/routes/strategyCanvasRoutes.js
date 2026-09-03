@@ -19,6 +19,7 @@ import {
   getTransformationBlueprint,
   listTransformationBlueprints,
   approveOpportunity,
+  setAppName,
   claimGuestBlueprint,
   updateTransformationSection,
   regenerateSpecificDomains,
@@ -68,6 +69,7 @@ router.get('/transformation-blueprint',                                protect, 
 router.get('/transformation-blueprints',                               protect, listTransformationBlueprints);
 router.post('/claim-guest-blueprint',                                  protect, claimGuestBlueprint);
 router.patch('/transformation-blueprint/:blueprintId/approve-opportunity', protect, approveOpportunity);
+router.patch('/transformation-blueprint/:blueprintId/app-name',            protect, setAppName);
 router.patch(
   '/transformation-blueprint/:blueprintId/domain/:domainId/capability/:capabilityId/section/:sectionTitle',
   protect, updateTransformationSection

@@ -154,8 +154,10 @@ async function renderManifest() {
     const { files, fileCount, totalBytes } = await api('/github/personal/project-manifest');
     if (!files?.length) {
       tree.innerHTML = `<li class="eg-tree__loading">The project builder returned no files.</li>`;
+      updateEameGate(false);
       return;
     }
+    updateEameGate(true);
     const paths = files.map(f => f.path);
 
     renderStats(fileCount, totalBytes);
@@ -188,6 +190,7 @@ async function renderManifest() {
     `).join('');
   } catch (err) {
     tree.innerHTML = `<li class="eg-tree__loading">Couldn't load the project manifest.</li>`;
+    updateEameGate(false);
     showError(err.message);
   }
 }
@@ -230,6 +233,60 @@ function wire() {
   document.getElementById('eame-view-details').addEventListener('click', () => {
     window.open('/domain/domain.html?openBlueprint=1', '_blank', 'noopener');
   });
+
+  // Saved as they type, debounced. A separate Save button for one field is
+  // friction, and a name lost by navigating away is worse than either.
+  const nameInput = document.getElementById('eame-app-name');
+  let saveTimer = null;
+  nameInput?.addEventListener('input', () => {
+    clearTimeout(saveTimer);
+    document.getElementById('eame-name-saved').classList.remove('eg-name__saved--on');
+    saveTimer = setTimeout(saveAppName, 700);
+  });
+  // Leaving the field commits immediately rather than waiting out the timer.
+  nameInput?.addEventListener('blur', () => { clearTimeout(saveTimer); saveAppName(); });
+}
+
+async function saveAppName() {
+  const input = document.getElementById('eame-app-name');
+  const mark  = document.getElementById('eame-name-saved');
+  if (!input || !_bp?._id) return;
+
+  const appName = input.value.trim();
+  if (appName === (_bp.appName || '')) return;   // nothing changed
+
+  try {
+    const r = await api(`/strategy-canvas/transformation-blueprint/${_bp._id}/app-name`, {
+      method: 'PATCH',
+      body: JSON.stringify({ appName }),
+    });
+    _bp.appName = r.appName;
+    if (mark) {
+      mark.textContent = 'Saved';
+      mark.classList.add('eg-name__saved--on');
+    }
+  } catch (err) {
+    if (mark) {
+      mark.textContent = err.message || 'Could not save';
+      mark.classList.add('eg-name__saved--on');
+    }
+  }
+}
+
+/**
+ * Eame is done once the project has actually been built — the manifest is
+ * the evidence, so the gate reads from it rather than from a flag set by
+ * whatever rendered last.
+ */
+function updateEameGate(built) {
+  const btn  = document.getElementById('eame-nav-btn');
+  const hint = document.getElementById('eame-nav-hint');
+  if (btn) btn.disabled = !built;
+  if (hint) {
+    hint.textContent = built
+      ? 'Application generated — Yusu can take it live.'
+      : 'Generate the application to continue';
+  }
 }
 
 document.addEventListener('eame:show', (e) => {
@@ -241,7 +298,18 @@ document.addEventListener('eame:show', (e) => {
   // Screen switching lives in blueprintGenerate.js's showScreen list.
   document.dispatchEvent(new CustomEvent('screen:show', { detail: { id: 'screen-eame' } }));
 
-  renderBreadcrumb(bp);
+  updateEameGate(false);   // reopened by renderManifest once files come back
+
+  const useCase = renderBreadcrumb(bp);
+
+  // Seed the name field. Falls back to the use case, so the field is never
+  // empty and the placeholder is never the thing that ships.
+  const nameInput = document.getElementById('eame-app-name');
+  if (nameInput) {
+    nameInput.value = bp.appName || useCase || bp.businessObjective || '';
+    document.getElementById('eame-name-saved').classList.remove('eg-name__saved--on');
+  }
+
   renderManifest();
   renderBadges(bp);
 });

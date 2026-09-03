@@ -394,6 +394,11 @@ const transformationBlueprintSchema = new mongoose.Schema({
     areas:          { type: [String], default: [] },
   },
 
+  // What the customer calls their application. Chosen on Eame before the
+  // build, so it reaches the repository name, the running application's
+  // title and its chat header rather than being a label added afterwards.
+  appName: { type: String, default: '', trim: true, maxlength: 48 },
+
   // Eame (stage 4): what was actually delivered. Hosting deploys from this
   // repository, so it has to outlive the browser session that pushed it.
   eameDelivery: {

@@ -48,7 +48,7 @@ export function tenantMongoUri(clusterUri, dbName) {
  * this context; it is the delivered app's generic OpenAI-compatible client
  * pointed at the gateway, which is why hosting needs no code change.
  */
-export function buildTenantEnv({ deployment, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret }) {
+export function buildTenantEnv({ deployment, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName }) {
   const catalog = ADVISORY_CATALOG.find(m => m.id === deployment.model?.modelId);
   if (!catalog) throw new Error('This deployment has no model from the catalog.');
   if (catalog.type !== 'frontier') {
@@ -62,6 +62,14 @@ export function buildTenantEnv({ deployment, gatewayToken, gatewayBaseUrl, clust
     PORT: '3000',
     MONGO_URI: tenantMongoUri(clusterUri, dbName),
     JWT_SECRET: jwtSecret || crypto.randomBytes(32).toString('hex'),
+
+    // What the running application calls itself, and whether opening its
+    // address is enough to use it. Svarg-hosted deployments are open so the
+    // customer can click the link and have a working product in front of
+    // them; a customer running this themselves leaves it off and puts their
+    // own sign-in in front (see server.js).
+    APP_NAME: appName || 'AI Assistant',
+    APP_PUBLIC_ACCESS: 'true',
 
     // Generation: the app's 'selfhosted' provider is a plain OpenAI client
     // against an arbitrary base URL, so pointing it at the gateway is enough.

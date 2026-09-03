@@ -280,6 +280,7 @@ export async function attachApplication(req, res) {
         gatewayToken: token,
         gatewayBaseUrl: process.env.GATEWAY_BASE_URL || `${req.protocol}://${req.get('host')}/api/gateway`,
         clusterUri: process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI,
+        appName: bp.appName,
       });
 
       const attached = await target.attach({ deployment: dep, env });

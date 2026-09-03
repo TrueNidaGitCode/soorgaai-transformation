@@ -57,8 +57,10 @@ export async function publishProject(req, res) {
     const bp = await ownedBlueprint(blueprintId, req.user._id);
     if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
 
-    const name = svargRepoName(safeSlug(slug || bp.businessObjective), bp._id);
-    const files = buildManifest({ includeJira: true });
+    // The name the customer chose on Eame drives both the repository and what
+    // the running application calls itself.
+    const name = svargRepoName(safeSlug(bp.appName || slug || bp.businessObjective), bp._id);
+    const files = buildManifest({ includeJira: true, appName: bp.appName });
 
     const repo = await ensureSvargRepo({
       name,
@@ -114,8 +116,8 @@ export async function downloadProject(req, res) {
     const bp = await ownedBlueprint(req.query.blueprintId, req.user._id);
     if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
 
-    const files = buildManifest({ includeJira: true });
-    const folder = safeSlug(req.query.slug || bp.businessObjective);
+    const files = buildManifest({ includeJira: true, appName: bp.appName });
+    const folder = safeSlug(bp.appName || req.query.slug || bp.businessObjective);
     const zip = buildZip(files, folder);
 
     auditLog('DOWNLOADED', req.user._id, { blueprintId: String(bp._id), fileCount: files.length, bytes: zip.length });

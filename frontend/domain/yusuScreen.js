@@ -493,10 +493,11 @@ function pollWhileBuilding() {
   clearTimeout(_pollTimer);
   if (_dep?.status !== 'attaching') { _buildingSince = 0; return; }
   if (!_buildingSince) _buildingSince = Date.now();
+  if (_loadFailures >= 5) return;   // give up rather than hammer a dead link
   _pollTimer = setTimeout(async () => {
     await load();
     pollWhileBuilding();
-  }, 8000);
+  }, _loadFailures ? 20000 : 8000);
 }
 
 /**
@@ -524,13 +525,30 @@ function stallDiagnosis(dep) {
   ].join('\n');
 }
 
+/**
+ * "No deployment" and "could not ask" are different answers, and conflating
+ * them was destroying the screen: a suspended or dropped request — a laptop
+ * sleeping mid-poll is enough — rendered as though no environment existed,
+ * wiping the checks and the button and looking like everything had reset.
+ *
+ * A failed request now changes nothing on screen except to say the
+ * connection was lost.
+ */
+let _loadFailures = 0;
+
 async function load() {
   if (!_blueprintId) return;
   try {
     const { deployment } = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/deployment`);
-    render(_bp, deployment);
-  } catch {
-    render(_bp, null);
+    _loadFailures = 0;
+    render(_bp, deployment);   // null here is the server genuinely saying none
+  } catch (err) {
+    _loadFailures++;
+    // Keep whatever was last known to be true.
+    render(_bp, _dep);
+    if (_loadFailures >= 3) {
+      showError('Lost contact with Svarg while checking the deployment — it is still running. Reload the page to pick it up again.');
+    }
   }
 }
 

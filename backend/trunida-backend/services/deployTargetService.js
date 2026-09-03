@@ -192,6 +192,37 @@ export async function resolveWorkspaceId() {
   );
 }
 
+/**
+ * Start a build. serviceInstanceDeployV2 is what the dashboard's Deploy
+ * button calls; environmentTriggersDeploy fires existing triggers, and a
+ * service created through the API has none, which is why deployments had to
+ * be started by hand.
+ *
+ * The older mutation is kept as a fallback rather than removed — it costs one
+ * call and covers the case where V2 is not available.
+ */
+async function deployService(projectId, environmentId, serviceId) {
+  try {
+    await gql(`
+      mutation serviceInstanceDeployV2($serviceId: String!, $environmentId: String!) {
+        serviceInstanceDeployV2(serviceId: $serviceId, environmentId: $environmentId)
+      }`, { serviceId, environmentId });
+    return { started: true, via: 'serviceInstanceDeployV2' };
+  } catch (err) {
+    console.warn('[railway] serviceInstanceDeployV2 failed —', err.message);
+  }
+  try {
+    await gql(`
+      mutation environmentTriggersDeploy($input: EnvironmentTriggersDeployInput!) {
+        environmentTriggersDeploy(input: $input)
+      }`, { input: { projectId, environmentId, serviceId } });
+    return { started: true, via: 'environmentTriggersDeploy' };
+  } catch (err) {
+    console.warn('[railway] environmentTriggersDeploy failed —', err.message);
+  }
+  throw new Error('Could not start a build. Deploy the service once from the Railway dashboard.');
+}
+
 /** Shape A: one project, one service from the tenant's repo, one domain. */
 export const railwayTarget = {
   name: 'railway',
@@ -254,23 +285,11 @@ export const railwayTarget = {
       input: { projectId: deployment.railway.projectId, name: 'app', source: { repo }, variables: env },
     })).serviceCreate;
 
-    // serviceCreate links the repository but does not reliably start a build.
-    // Asking explicitly is harmless when one is already running and is the
-    // difference between a service that deploys and one that sits offline.
-    try {
-      await gql(`
-        mutation environmentTriggersDeploy($input: EnvironmentTriggersDeployInput!) {
-          environmentTriggersDeploy(input: $input)
-        }`, {
-        input: {
-          projectId: deployment.railway.projectId,
-          environmentId: deployment.railway.environmentId,
-          serviceId: service.id,
-        },
-      });
-    } catch (err) {
-      console.warn('[railway] explicit deploy trigger failed —', err.message);
-    }
+    // serviceCreate links the repository but does not start a build, and
+    // environmentTriggersDeploy did not either — a service created this way
+    // sat with an empty deployment list until someone pressed Deploy in the
+    // dashboard. serviceInstanceDeployV2 is what that button does.
+    await deployService(deployment.railway.projectId, deployment.railway.environmentId, service.id);
 
     // A domain is what makes it reachable, but a service without one is still
     // attached — report it rather than unwinding the whole thing.
@@ -351,11 +370,7 @@ export const railwayTarget = {
   async redeploy({ deployment }) {
     const { projectId, environmentId, serviceId } = deployment.railway || {};
     if (!serviceId) throw new Error('This deployment has no service to redeploy.');
-    await gql(`
-      mutation environmentTriggersDeploy($input: EnvironmentTriggersDeployInput!) {
-        environmentTriggersDeploy(input: $input)
-      }`, { input: { projectId, environmentId, serviceId } });
-    return { triggered: true };
+    return deployService(projectId, environmentId, serviceId);
   },
 
   async destroy({ deployment }) {

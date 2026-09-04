@@ -47,13 +47,17 @@ console.log('1. the service exposes no way to write');
     !/githubApiService|pushFiles|createRepo/.test(src));
 }
 
-console.log('\n2. the controller offers no write route');
+console.log('\n2. the controller offers no route that writes to GitHub');
 {
   const src = fs.readFileSync(path.join(ROOT, 'routes/githubAppRoutes.js'), 'utf8');
-  // disconnect is a POST because it changes our own record; it touches nothing
-  // on GitHub.
-  const posts = (src.match(/router\.post\(/g) || []).length;
-  check('one POST route, disconnect', posts === 1 && /post\('\/disconnect'/.test(src), src);
+
+  // POST here means "changes something of OURS". /analyze writes a profile to
+  // the blueprint and /disconnect drops our record; neither sends anything to
+  // GitHub. Counting POSTs would only measure how many routes exist, so the
+  // check is on which ones — an unexpected name is the signal worth failing on.
+  const posts = [...src.matchAll(/router\.post\('([^']+)'/g)].map(m => m[1]).sort();
+  check('POST routes are exactly /analyze and /disconnect',
+    JSON.stringify(posts) === JSON.stringify(['/analyze', '/disconnect']), posts.join(', '));
   check('no route pushes anything', !/push|deliver/i.test(src));
 }
 

@@ -3027,6 +3027,42 @@
 .aria-status--inferred .aria-status-dot { background: var(--aria-accent-2); opacity: 0.7; }
 .aria-status--inferred { color: rgba(255,255,255,0.55); font-weight: 500; }
 
+/* Found in the customer's own schema, with the file that defines it. The
+   strongest answer the table can give, so it carries the accent. */
+.aria-status--incode .aria-status-dot { background: #5CC5A7; }
+.aria-status--incode { color: rgba(255,255,255,0.78); flex-wrap: wrap; }
+.aria-status--incode code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: #fff;
+}
+/* The evidence. Quieter than the entity name — it is there to be checked,
+   not read every time. */
+.aria-status__where {
+  flex-basis: 100%;
+  padding-left: 14px;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.38);
+  word-break: break-all;
+}
+
+/* ── GitHub repo picker ──────────────────────────────────────────────────── */
+.aria-gh__repos { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.aria-gh__label { font-size: 12px; color: rgba(255,255,255,0.45); }
+.aria-gh__row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.aria-gh__select {
+  flex: 1 1 260px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.85);
+  font: inherit;
+  font-size: 13px;
+}
+
 /* The data exists, in a system Svarg has no connector for. Not a failure and
    not a gap in the plan — a route in that runs through Upload rather than
    through a connector, so it reads as actionable rather than as missing. */

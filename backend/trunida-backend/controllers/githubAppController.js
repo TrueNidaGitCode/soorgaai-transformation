@@ -15,6 +15,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import GithubAppInstallation from '../models/GithubAppInstallation.js';
+import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import {
   isGithubAppConfigured,
   buildInstallUrl,
@@ -22,6 +23,7 @@ import {
   listInstallationRepos,
   isInstallationLive,
 } from '../services/githubAppService.js';
+import { analyzeRepository as analyzeRepo } from '../services/codebaseProfileService.js';
 
 const JWT_SECRET   = process.env.JWT_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
@@ -165,6 +167,100 @@ export async function listRepos(req, res) {
     console.error('listRepos error:', err.message);
     return res.status(502).json({ error: 'Could not list your repositories.' });
   }
+}
+
+// ── POST /analyze ────────────────────────────────────────────────────────────
+
+/**
+ * Read a repository and describe how the product is built.
+ *
+ * Fire-and-forget, like blueprint generation: reading and embedding a
+ * repository takes longer than a request should wait. The client polls
+ * GET /status, which reports what the blueprint now holds.
+ */
+export async function analyzeRepository(req, res) {
+  try {
+    const { blueprintId, repoFullName } = req.body || {};
+    if (!blueprintId || !repoFullName) {
+      return res.status(400).json({ error: 'blueprintId and repoFullName are required.' });
+    }
+    // Shape check before anything else touches it: this value is interpolated
+    // into a GitHub API path.
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repoFullName)) {
+      return res.status(400).json({ error: 'repoFullName must look like owner/repo.' });
+    }
+
+    const record = await GithubAppInstallation.findOne({ userId: req.user._id }).lean();
+    if (!record) return res.status(404).json({ error: 'GitHub is not connected.' });
+
+    const blueprint = await TransformationBlueprint
+      .findOne({ _id: blueprintId, userId: req.user._id })
+      .select('domains')
+      .lean();
+    if (!blueprint) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    // The repository must be one this installation actually covers. Without
+    // this, a caller could name any repo string and have Svarg try to read it
+    // with the installation's token.
+    const allowed = await listInstallationRepos(record.installationId);
+    if (!allowed.some(r => r.fullName === repoFullName)) {
+      return res.status(403).json({ error: 'That repository is not covered by your GitHub installation.' });
+    }
+
+    const datasets = (blueprint.domains || [])
+      .flatMap(d => d.capabilities || [])
+      .flatMap(c => c.sections || [])
+      .flatMap(s => s.brief?.datasets || []);
+
+    await TransformationBlueprint.updateOne(
+      { _id: blueprintId },
+      { $set: { 'codebaseProfile.checked': false, 'codebaseProfile.repoFullName': repoFullName } }
+    );
+
+    analyzeRepositoryAsync({
+      installationId: record.installationId,
+      repoFullName,
+      userId: req.user._id,
+      blueprintId,
+      datasets,
+    }).catch(err => console.error('[codebaseProfile] async analysis failed:', err.message));
+
+    return res.json({ started: true, repoFullName });
+  } catch (err) {
+    console.error('analyzeRepository error:', err);
+    return res.status(500).json({ error: 'Failed to start the analysis.' });
+  }
+}
+
+async function analyzeRepositoryAsync(args) {
+  const { profile, matches, stats } = await analyzeRepo(args);
+
+  await TransformationBlueprint.updateOne(
+    { _id: args.blueprintId },
+    { $set: { codebaseProfile: {
+      checked:        true,
+      repoFullName:   args.repoFullName,
+      languages:      profile.languages,
+      frameworks:     profile.frameworks,
+      database:       profile.database,
+      conventions:    profile.conventions,
+      summary:        profile.summary,
+      entities:       profile.entities,
+      datasetMatches: matches,
+      filesRead:      stats.filesRead,
+      chunks:         stats.chunks,
+      partial:        stats.partial,
+      analyzedAt:     new Date(),
+    } } }
+  );
+
+  auditLog('ANALYZED', args.userId, {
+    repo: args.repoFullName,
+    filesRead: stats.filesRead,
+    entities: profile.entities.length,
+    matched: matches.length,
+    partial: stats.partial,
+  });
 }
 
 // ── POST /disconnect ─────────────────────────────────────────────────────────

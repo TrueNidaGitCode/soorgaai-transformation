@@ -116,7 +116,13 @@ function resolveSource(typicalSource, confCount, jiraCount) {
 }
 
 function rowState(d, confCount, jiraCount) {
-  // An uploaded export outranks everything: the user has supplied the actual
+  // Found in the customer's own schema, with a file to point at. The strongest
+  // answer available: not a tool that might hold the data, the definition of
+  // the table that does.
+  const inCode = _codeMatches.get(d.name);
+  if (inCode) return { state: 'in-code', source: null, match: inCode };
+
+  // An uploaded export outranks a connector: the user has supplied the actual
   // data, which is stronger evidence than a tool being connected.
   if (_uploads.has(d.name)) return { state: 'uploaded', source: null };
 
@@ -142,8 +148,16 @@ function connectHref(sourceId) {
  * would make it so. The tool's name belongs inside the status — "linked from
  * Jira" is a status; a Source column repeating Cob's guess is not.
  */
-function statusCellHtml(state, source, dataset) {
+function statusCellHtml(state, source, dataset, match) {
   const tool = source ? esc(source.label) : '';
+
+  // Shown even after processing: which table this came from stays useful, and
+  // it is the evidence that distinguishes this from a guess.
+  if (state === 'in-code') {
+    return `<span class="aria-status aria-status--incode"><span class="aria-status-dot"></span>`
+      + `In your code &mdash; <code>${esc(match.entity)}</code>`
+      + `<span class="aria-status__where">${esc(match.definedIn)}</span></span>`;
+  }
 
   // Once data has actually been processed, anything that had a route in reads
   // as complete. Leaving "Connected" up after a successful run made a finished
@@ -176,14 +190,14 @@ function statusCellHtml(state, source, dataset) {
 }
 
 function renderRow(d, confCount, jiraCount) {
-  const { state, source } = rowState(d, confCount, jiraCount);
+  const { state, source, match } = rowState(d, confCount, jiraCount);
   return `
     <tr>
       <td>
         <span class="aria-row-name__title">${esc(d.name)}</span>
         <span class="aria-row-name__desc">${esc(d.purpose)}</span>
       </td>
-      <td>${statusCellHtml(state, source, d)}</td>
+      <td>${statusCellHtml(state, source, d, match)}</td>
     </tr>
   `;
 }
@@ -192,7 +206,7 @@ function tally(datasets, confCount, jiraCount) {
   let connected = 0, toConnect = 0, ownSystems = 0;
   datasets.forEach(d => {
     const { state } = rowState(d, confCount, jiraCount);
-    if (state === 'connected' || state === 'uploaded') connected++;
+    if (state === 'connected' || state === 'uploaded' || state === 'in-code') connected++;
     else if (state === 'not-connected' || state === 'ready') toConnect++;
     else ownSystems++;
   });
@@ -831,10 +845,122 @@ async function refreshGithubStatus() {
         + (repositorySelection === 'selected' ? ' — selected repositories.' : ' — all repositories.')
       : 'Not connected.';
     btn.style.display = connected ? 'none' : '';
+
+    const repos = document.getElementById('aria-gh-repos');
+    if (repos) repos.style.display = connected ? '' : 'none';
+    if (connected) loadRepos();
+    renderAnalysis();
   } catch {
     statusEl.textContent = "Couldn't check your GitHub connection.";
     btn.style.display = '';
   }
+}
+
+function showGhError(message) {
+  const el = document.getElementById('aria-gh-error');
+  if (!el) return;
+  el.textContent = message;
+  el.style.display = message ? 'block' : 'none';
+}
+
+async function loadRepos() {
+  const select = document.getElementById('aria-gh-repo-select');
+  if (!select || select.dataset.loaded === '1') return;
+
+  try {
+    const { repositories } = await api('/github/app/repos');
+    if (!repositories?.length) {
+      showGhError('No repositories are covered by your installation. Add one from your GitHub settings.');
+      return;
+    }
+    select.innerHTML = repositories
+      .map(r => `<option value="${esc(r.fullName)}">${esc(r.fullName)}${r.language ? ` — ${esc(r.language)}` : ''}</option>`)
+      .join('');
+    select.dataset.loaded = '1';
+
+    // Preselect whatever was read last, so re-reading the same repo is the
+    // default rather than whichever happens to sort first.
+    const previous = _ariaBlueprint?.codebaseProfile?.repoFullName;
+    if (previous && repositories.some(r => r.fullName === previous)) select.value = previous;
+  } catch (err) {
+    showGhError(err.message);
+  }
+}
+
+/** What the last read found, or that one is still running. */
+function renderAnalysis() {
+  const el = document.getElementById('aria-gh-analysis');
+  if (!el) return;
+  const p = _ariaBlueprint?.codebaseProfile;
+
+  if (_analyzing) {
+    el.textContent = 'Reading the repository… this takes a minute or two.';
+    return;
+  }
+  if (!p?.checked) { el.textContent = ''; return; }
+
+  const stack = [p.database, ...(p.frameworks || [])].filter(Boolean).slice(0, 4).join(', ');
+  el.textContent = `Read ${p.filesRead} file${p.filesRead === 1 ? '' : 's'} from ${p.repoFullName}`
+    + (stack ? ` — ${stack}.` : '.')
+    + ` Found ${(p.entities || []).length} data entit${(p.entities || []).length === 1 ? 'y' : 'ies'},`
+    + ` ${(p.datasetMatches || []).length} matched to required datasets.`
+    // A partial read must say so: a profile built from 30 of 500 model files
+    // should not read as a complete description of the product.
+    + (p.partial ? ' This repository is large, so the profile covers part of it.' : '');
+}
+
+let _analyzing = false;
+
+async function analyzeRepo() {
+  const select = document.getElementById('aria-gh-repo-select');
+  const btn = document.getElementById('aria-gh-analyze');
+  if (!select?.value || !_blueprintId || _analyzing) return;
+
+  _analyzing = true;
+  showGhError('');
+  if (btn) { btn.disabled = true; btn.textContent = 'Reading…'; }
+  renderAnalysis();
+
+  try {
+    await api('/github/app/analyze', {
+      method: 'POST',
+      body: JSON.stringify({ blueprintId: _blueprintId, repoFullName: select.value }),
+    });
+    // The read runs in the background, so poll the blueprint until the profile
+    // lands rather than guessing how long a repository takes.
+    await pollForProfile();
+  } catch (err) {
+    showGhError(err.message);
+  } finally {
+    _analyzing = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Read repository'; }
+    renderAnalysis();
+  }
+}
+
+async function pollForProfile() {
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 3000));
+    try {
+      const bp = await api(`/strategy-canvas/transformation-blueprint?id=${encodeURIComponent(_blueprintId)}`);
+      if (bp?.codebaseProfile?.checked) {
+        _ariaBlueprint = bp;
+        applyCodeMatches(bp);
+        renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
+        return;
+      }
+    } catch { /* keep waiting — a transient failure is not an answer */ }
+  }
+  showGhError('The read is taking longer than expected. Reload the page to see the result.');
+}
+
+/** dataset name → { entity, definedIn } */
+let _codeMatches = new Map();
+
+function applyCodeMatches(bp) {
+  _codeMatches = new Map(
+    (bp?.codebaseProfile?.datasetMatches || []).map(m => [m.dataset, m])
+  );
 }
 
 // ── Upload ───────────────────────────────────────────────────────────────────
@@ -944,6 +1070,8 @@ function wireStaticControls() {
     handleUploadFile(e.target.files?.[0]);
   });
 
+  document.getElementById('aria-gh-analyze')?.addEventListener('click', analyzeRepo);
+
   document.getElementById('aria-gh-connect')?.addEventListener('click', (e) => {
     e.preventDefault();
     sessionStorage.setItem('svarg_returning_to_aria', '1');
@@ -963,6 +1091,10 @@ document.addEventListener('aria:show', (e) => {
   _ariaBlueprint = bp;
   const datasetsSection = findDatasetsSection(bp);
   _cachedDatasets = datasetsSection?.brief?.datasets || [];
+
+  // Anything already found in their code, so the first paint shows it rather
+  // than briefly claiming those datasets have no route in.
+  applyCodeMatches(bp);
 
   // Which connectors this engagement calls for. Done before the first table
   // render so the opening tab is right on the first paint.

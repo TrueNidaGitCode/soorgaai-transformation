@@ -1,0 +1,355 @@
+/**
+ * Svarg — Codebase Profile
+ *
+ * Reads a customer's repository and works out how their product is built, so
+ * the rest of the pipeline stops guessing.
+ *
+ * Cob writes dataset requirements like "Class Attendance Logs — PostgreSQL /
+ * Core Application DB" from inference alone. The authoritative answer is in the
+ * repository: migrations name the tables, ORM models name the fields, the
+ * manifest names the stack. A product company's code describes their data
+ * better than any inference can.
+ *
+ * ── Bounded on purpose ─────────────────────────────────────────────────────
+ *
+ * Selection happens against the file TREE, before anything is fetched, so a
+ * monorepo costs one API call to reject rather than a thousand to read. Files
+ * are capped, bytes are capped, and exceeding either produces a partial
+ * profile that says so — never an unbounded run against someone's API quota.
+ */
+
+import crypto from 'crypto';
+import { generate } from './llmService.js';
+import { regexRedact } from './jiraContentService.js';
+import { embedBatch, EMBEDDING_PROVIDER, EMBEDDING_MODEL } from './embeddingService.js';
+import { getRepoTree, getFileContent } from './githubAppService.js';
+import CustomerCodeChunk from '../models/CustomerCodeChunk.js';
+
+/** Never read from these, whatever they contain. */
+const SKIP_DIRS = [
+  'node_modules/', 'vendor/', 'dist/', 'build/', 'out/', 'target/',
+  '.git/', '.next/', 'coverage/', '__pycache__/', 'venv/', '.venv/',
+  'bower_components/', 'Pods/',
+];
+
+/** Lockfiles are enormous, entirely mechanical, and say nothing about design. */
+const SKIP_FILES = [
+  'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'composer.lock',
+  'Gemfile.lock', 'poetry.lock', 'Cargo.lock',
+];
+
+const BINARY_EXT = /\.(png|jpe?g|gif|svg|ico|webp|mp4|mp3|pdf|zip|gz|tar|jar|war|class|so|dll|exe|woff2?|ttf|eot|min\.js|min\.css)$/i;
+
+/**
+ * What each category is for. Order matters: when the file budget runs out, the
+ * categories earlier in this list have already been taken.
+ *
+ * Stack first because it is two or three files and decides how everything else
+ * is read. Data next because it is the question Aria actually asks. Structure
+ * last because it is the most useful to Eame later and the least useful now.
+ */
+const CATEGORIES = [
+  {
+    name: 'stack',
+    max: 6,
+    match: p => /(^|\/)(package\.json|requirements\.txt|pyproject\.toml|Gemfile|go\.mod|pom\.xml|build\.gradle|composer\.json|[^/]+\.csproj)$/i.test(p),
+  },
+  {
+    name: 'data',
+    max: 30,
+    match: p =>
+      /(^|\/)(prisma\/schema\.prisma|schema\.rb|structure\.sql)$/i.test(p)
+      || /(^|\/)(db\/migrate|migrations|alembic\/versions)\//i.test(p)
+      || /(^|\/)(models|entities|schemas)\/[^/]+\.(js|ts|py|rb|go|java|cs|php)$/i.test(p)
+      || /\.sql$/i.test(p),
+  },
+  {
+    name: 'structure',
+    max: 24,
+    match: p =>
+      /(^|\/)(server|app|main|index)\.(js|ts|py|rb|go|java|cs|php)$/i.test(p)
+      || /(^|\/)(routes|controllers|api|handlers)\/[^/]+\.(js|ts|py|rb|go|java|cs|php)$/i.test(p)
+      || /(^|\/)(docker-compose\.ya?ml|Dockerfile|README\.md)$/i.test(p),
+  },
+];
+
+const MAX_FILES = 60;
+const MAX_TOTAL_BYTES = 600_000;
+const CHUNK_CHARS = 4_000;
+
+function isSkipped(path) {
+  if (SKIP_DIRS.some(d => path.startsWith(d) || path.includes('/' + d))) return true;
+  if (SKIP_FILES.includes(path.split('/').pop())) return true;
+  if (BINARY_EXT.test(path)) return true;
+  return false;
+}
+
+/**
+ * Which files are worth reading, decided from the tree alone.
+ *
+ * @returns {{ selected: Array<{path, bytes, category}>, skipped: number, capped: boolean }}
+ */
+export function selectFiles(treeFiles) {
+  const candidates = treeFiles.filter(f => !isSkipped(f.path));
+  const selected = [];
+  let bytes = 0;
+  let capped = false;
+
+  for (const category of CATEGORIES) {
+    const matching = candidates.filter(f =>
+      category.match(f.path) && !selected.some(s => s.path === f.path));
+
+    // Hitting a category's own budget means matching files were left unread,
+    // which makes the profile partial just as surely as the global cap does.
+    // Reporting only the global cap let a repository with 500 model files
+    // produce a profile built from 30 of them and call itself complete.
+    if (matching.length > category.max) capped = true;
+
+    let taken = 0;
+    for (const f of matching) {
+      if (taken >= category.max) break;
+      if (selected.length >= MAX_FILES) { capped = true; break; }
+      if (bytes + f.bytes > MAX_TOTAL_BYTES) { capped = true; continue; }
+
+      selected.push({ ...f, category: category.name });
+      bytes += f.bytes;
+      taken++;
+    }
+  }
+
+  return { selected, skipped: treeFiles.length - selected.length, capped };
+}
+
+const PROFILE_PROMPT =
+`You are reading excerpts of a company's own source code to describe how their
+product is built. Report only what the files actually show.
+
+Return ONLY compact JSON:
+{"languages":["..."],"frameworks":["..."],"database":"<name or empty>",
+ "entities":[{"name":"<table or model name as it appears in the code>","definedIn":"<file path from the excerpts>","fields":["..."],"describes":"<what this data is, under 12 words>"}],
+ "conventions":"<how this codebase is organised, under 40 words>",
+ "summary":"<what this product does, under 40 words>"}
+
+Rules:
+- entities must be things you SAW defined — a table in a migration, a model, a
+  schema. definedIn must be one of the file paths given to you, exactly.
+- Never invent an entity that would make sense for this kind of product. An
+  incomplete list of real tables is worth more than a plausible list of
+  imagined ones.
+- Empty arrays are correct answers when the excerpts do not show them.`;
+
+/**
+ * What the code says about itself. One call, degrading rather than throwing:
+ * a failed profile leaves the rest of Aria working.
+ */
+export async function deriveProfile(files) {
+  if (!files.length) {
+    return { languages: [], frameworks: [], database: '', entities: [], conventions: '', summary: '', ok: false };
+  }
+
+  const corpus = files
+    .map(f => `--- ${f.path} ---\n${f.content.slice(0, 6_000)}`)
+    .join('\n\n');
+
+  try {
+    const result = await generate({
+      systemPrompt: PROFILE_PROMPT,
+      userMessage: corpus.slice(0, 120_000),
+      maxTokens: 1500,
+      label: 'aria:codebase-profile',
+    });
+    const match = result.text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('No JSON in profile response');
+    const parsed = JSON.parse(match[0]);
+
+    // Every entity must cite a file we actually read. A model naming a
+    // plausible path it never saw is exactly the fabrication this feature
+    // exists to remove, and it is cheap to check.
+    const readPaths = new Set(files.map(f => f.path));
+    const entities = (parsed.entities || [])
+      .filter(e => e?.name && readPaths.has(e.definedIn))
+      .map(e => ({
+        name:      String(e.name).slice(0, 120),
+        definedIn: String(e.definedIn).slice(0, 300),
+        fields:    (e.fields || []).slice(0, 40).map(f => String(f).slice(0, 80)),
+        describes: String(e.describes || '').slice(0, 120),
+      }));
+
+    const dropped = (parsed.entities || []).length - entities.length;
+    if (dropped > 0) console.warn(`[codebaseProfile] dropped ${dropped} entit${dropped === 1 ? 'y' : 'ies'} citing a file that was not read`);
+
+    return {
+      languages:   (parsed.languages  || []).slice(0, 10).map(String),
+      frameworks:  (parsed.frameworks || []).slice(0, 15).map(String),
+      database:    String(parsed.database || '').slice(0, 80),
+      entities,
+      conventions: String(parsed.conventions || '').slice(0, 600),
+      summary:     String(parsed.summary || '').slice(0, 600),
+      ok: true,
+    };
+  } catch (err) {
+    console.error('[codebaseProfile] derivation failed:', err.message);
+    return { languages: [], frameworks: [], database: '', entities: [], conventions: '', summary: '', ok: false };
+  }
+}
+
+const MATCH_PROMPT =
+`Match each required dataset to an entity found in this company's codebase, or
+to nothing.
+
+Return ONLY compact JSON:
+{"matches":[{"dataset":"<dataset name exactly as given>","entity":"<entity name>","definedIn":"<file path>","confidence":<0-1>}]}
+
+Rules:
+- Only match when the entity plainly holds that data. A dataset with no
+  matching entity must be LEFT OUT — a wrong match sends the build at the wrong
+  table, which is worse than admitting we did not find it.
+- entity and definedIn must come from the entity list given to you, verbatim.`;
+
+/**
+ * Which required datasets exist in the customer's own schema, with evidence.
+ *
+ * A match without a file to point at is not reported. That is the whole
+ * difference between this and the inference it replaces.
+ */
+export async function matchDatasets(datasets, entities) {
+  if (!datasets.length || !entities.length) return [];
+
+  try {
+    const result = await generate({
+      systemPrompt: MATCH_PROMPT,
+      userMessage:
+        `REQUIRED DATASETS:\n${datasets.map(d => `- ${d.name}: ${d.purpose || ''}`).join('\n')}\n\n`
+        + `ENTITIES FOUND IN THE CODEBASE:\n${entities.map(e => `- ${e.name} (${e.definedIn}): ${e.describes} [${e.fields.slice(0, 12).join(', ')}]`).join('\n')}`,
+      maxTokens: 1200,
+      label: 'aria:dataset-match',
+    });
+    const m = result.text.match(/\{[\s\S]*\}/);
+    if (!m) return [];
+
+    const byName = new Map(entities.map(e => [e.name, e]));
+    const wanted = new Set(datasets.map(d => d.name));
+
+    return (JSON.parse(m[0]).matches || [])
+      // Both ends verified against what we actually have, so a hallucinated
+      // dataset name or entity cannot reach the screen.
+      .filter(x => wanted.has(x.dataset) && byName.has(x.entity))
+      .map(x => ({
+        dataset:    x.dataset,
+        entity:     x.entity,
+        definedIn:  byName.get(x.entity).definedIn,
+        confidence: Math.min(1, Math.max(0, Number(x.confidence) || 0)),
+      }));
+  } catch (err) {
+    console.error('[codebaseProfile] dataset matching failed:', err.message);
+    return [];
+  }
+}
+
+function chunkText(text) {
+  const out = [];
+  for (let i = 0; i < text.length; i += CHUNK_CHARS) out.push(text.slice(i, i + CHUNK_CHARS));
+  return out;
+}
+
+/**
+ * Store the read files as retrievable chunks, scoped to one user and blueprint.
+ *
+ * Replaces this blueprint's chunks rather than adding to them: re-analysing a
+ * repository should reflect the repository, not accumulate every version of it
+ * ever read.
+ */
+export async function storeCodeChunks({ userId, blueprintId, repoFullName, files }) {
+  await CustomerCodeChunk.deleteMany({ userId, blueprintId });
+  if (!files.length) return { stored: 0 };
+
+  const rows = [];
+  for (const f of files) {
+    chunkText(f.content).forEach((content, chunkIndex) => {
+      rows.push({
+        // userId is in the hash, which is what makes two customers sharing a
+        // path impossible to collide rather than merely unlikely.
+        chunkId: crypto.createHash('sha256')
+          .update(`${userId}:${repoFullName}:${f.path}:${chunkIndex}`).digest('hex'),
+        userId, blueprintId, repoFullName, path: f.path, chunkIndex, content,
+      });
+    });
+  }
+
+  const vectors = await embedBatch(rows.map(r => r.content));
+  await CustomerCodeChunk.bulkWrite(rows.map((r, i) => ({
+    updateOne: {
+      filter: { chunkId: r.chunkId },
+      update: { $set: { ...r, embedding: vectors[i], embeddingProvider: EMBEDDING_PROVIDER, embeddingModel: EMBEDDING_MODEL } },
+      upsert: true,
+    },
+  })));
+
+  return { stored: rows.length };
+}
+
+/**
+ * Retrieve a customer's own code by relevance.
+ *
+ * userId is required and refused when missing rather than defaulted. A
+ * retrieval that silently ran unscoped would return another company's source,
+ * so this fails loudly instead.
+ */
+export async function retrieveCode({ userId, blueprintId, queryText, topK = 6 }) {
+  if (!userId) throw new Error('retrieveCode requires a userId — refusing to search unscoped.');
+  if (!queryText) return [];
+
+  const rows = await CustomerCodeChunk.find(
+    { userId, ...(blueprintId ? { blueprintId } : {}), embeddingProvider: EMBEDDING_PROVIDER, embeddingModel: EMBEDDING_MODEL },
+    { path: 1, content: 1, embedding: 1 }
+  ).lean();
+  if (!rows.length) return [];
+
+  const [queryVector] = await embedBatch([queryText]);
+  const score = (v) => {
+    let dot = 0, a = 0, b = 0;
+    for (let i = 0; i < v.length; i++) { dot += v[i] * queryVector[i]; a += v[i] * v[i]; b += queryVector[i] * queryVector[i]; }
+    return dot / (Math.sqrt(a) * Math.sqrt(b));
+  };
+
+  return rows
+    .map(r => ({ path: r.path, content: r.content, score: score(r.embedding) }))
+    .sort((x, y) => y.score - x.score)
+    .slice(0, topK);
+}
+
+/**
+ * Read a repository and describe it. Returns the profile and the matches; the
+ * caller persists them.
+ */
+export async function analyzeRepository({ installationId, repoFullName, userId, blueprintId, datasets = [] }) {
+  const tree = await getRepoTree(installationId, repoFullName);
+  const { selected, capped } = selectFiles(tree.files);
+
+  const files = [];
+  for (const f of selected) {
+    const raw = await getFileContent(installationId, repoFullName, f.path);
+    if (!raw) continue;
+    // Source carries connection strings, seed data and credentials far more
+    // often than a wiki page does. "They gave us access" is not an exemption.
+    const { redactedText } = regexRedact(raw);
+    files.push({ path: f.path, category: f.category, content: redactedText });
+  }
+
+  const profile = await deriveProfile(files);
+  const matches = await matchDatasets(datasets, profile.entities);
+  const { stored } = await storeCodeChunks({ userId, blueprintId, repoFullName, files });
+
+  return {
+    profile,
+    matches,
+    stats: {
+      filesInRepo: tree.files.length,
+      filesRead:   files.length,
+      chunks:      stored,
+      // Both mean "this profile describes part of the repository, not all of
+      // it", and the screen should be able to say so.
+      partial:     capped || tree.truncated,
+    },
+  };
+}

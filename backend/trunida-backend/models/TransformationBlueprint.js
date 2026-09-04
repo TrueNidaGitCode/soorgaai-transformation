@@ -379,6 +379,50 @@ const transformationBlueprintSchema = new mongoose.Schema({
     reason:     { type: String,  default: '' },
     userSet:    { type: Boolean, default: false },
   },
+  // What the customer's own repository says about how their product is built,
+  // read through the read-only GitHub App — see services/codebaseProfileService.
+  //
+  // Every entity carries the file that defines it, and every dataset match
+  // carries both. A match without a path to point at is not stored, because
+  // the whole reason this exists is to replace inference with evidence.
+  //
+  // `partial` is not a failure: a large repository is deliberately read up to
+  // a cap, and the screen should be able to say the profile covers part of it.
+  //
+  // Plain Strings throughout, no enum with a non-member default — the same
+  // discipline as `engagement` above, for the same reason.
+  codebaseProfile: {
+    checked:      { type: Boolean, default: false },
+    repoFullName: { type: String,  default: '' },
+    languages:    { type: [String], default: [] },
+    frameworks:   { type: [String], default: [] },
+    database:     { type: String,  default: '' },
+    conventions:  { type: String,  default: '' },
+    summary:      { type: String,  default: '' },
+    entities: {
+      type: [new mongoose.Schema({
+        name:      { type: String, default: '' },
+        definedIn: { type: String, default: '' },
+        fields:    { type: [String], default: [] },
+        describes: { type: String, default: '' },
+      }, { _id: false })],
+      default: [],
+    },
+    // dataset name → where it actually lives in their code.
+    datasetMatches: {
+      type: [new mongoose.Schema({
+        dataset:    { type: String, default: '' },
+        entity:     { type: String, default: '' },
+        definedIn:  { type: String, default: '' },
+        confidence: { type: Number, default: 0 },
+      }, { _id: false })],
+      default: [],
+    },
+    filesRead:  { type: Number,  default: 0 },
+    chunks:     { type: Number,  default: 0 },
+    partial:    { type: Boolean, default: false },
+    analyzedAt: { type: Date,    default: null },
+  },
   // Set when the user clicks "Approve" on the AI Use Cases & Prioritization
   // screen (Window 1 / Cob) confirming Cob's recommended starting point —
   // a user decision recorded on the blueprint, not a generation output.

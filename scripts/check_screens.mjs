@@ -66,6 +66,15 @@ const BLUEPRINT = {
     checked: true, category: 'workflow-automation', subArea: 'support',
     maturity: 'enterprise', confidence: 0.9, reason: 'Automates internal defect triage.', userSet: false,
   },
+  // A read repository, matching the one dataset no connector can reach. Without
+  // this the "in your code" state never renders and the check passes without
+  // having drawn it — the same trap the engagement note fell into.
+  codebaseProfile: {
+    checked: true, repoFullName: 'acme/flashing-tools', filesRead: 24, chunks: 61, partial: false,
+    languages: ['JavaScript'], frameworks: ['Express'], database: 'PostgreSQL',
+    entities: [{ name: 'flashing_logs', definedIn: 'db/migrate/20240110_create_flashing_logs.sql', fields: ['ecu_id', 'result'], describes: 'OTA flashing attempts' }],
+    datasetMatches: [{ dataset: 'Flashing Logs', entity: 'flashing_logs', definedIn: 'db/migrate/20240110_create_flashing_logs.sql', confidence: 0.9 }],
+  },
   arthSelection: { preference: 'frontier', modelId: 'claude-sonnet', displayName: 'Claude Sonnet' },
   eameDelivery: { repoOwner: 'acme', repoName: 'svarg-defect-matching', fileCount: 32 },
   governanceReview: { acknowledged: false },
@@ -263,6 +272,25 @@ setTimeout(function () {
         bad('readiness reads "' + out.readiness + '" with ' + rows.length + ' datasets listed');
       }
 
+      // A dataset found in the customer's own code must show the entity AND
+      // the file that defines it. The path is the evidence — a match without
+      // one is the guesswork this feature exists to replace.
+      var inCode = scr.querySelector('.aria-status--incode');
+      if (!inCode) bad('no dataset rendered as found in the codebase');
+      else {
+        // NOTHING in this probe may contain a backslash — not even a comment.
+        // The probe is built inside a template literal, so escapes are consumed
+        // before the browser sees them: an escaped slash in a regex arrives as
+        // a line comment, and a newline escape in a comment ends the comment
+        // early and turns the rest of the sentence into code. Both silently
+        // kill the whole probe, which then reports as "page did not load".
+        // Hence String.fromCharCode(10) and indexOf below.
+        out.inCode = (inCode.textContent || '').split(String.fromCharCode(10)).join(' ').trim().slice(0, 60);
+        if (!inCode.querySelector('code')) bad('in-code status names no entity');
+        var where = inCode.querySelector('.aria-status__where');
+        if (!where || (where.textContent || '').indexOf('/') === -1) bad('in-code status cites no file path');
+      }
+
       var tabs = scr.querySelectorAll('#aria-tabs .aria-tab');
       out.tabs = [].map.call(tabs, function (t) { return t.dataset.tab; }).join('/');
       if (!tabs.length) bad('no connector tabs rendered');
@@ -420,7 +448,7 @@ for (const screen of list) {
     + `css ${String(r.cssRules ?? '?').padStart(4)} rules · `
     + `${r.steps ?? '?'} steps · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
-    + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}"` : ''));
+    + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"` : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

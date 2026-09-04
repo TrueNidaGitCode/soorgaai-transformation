@@ -133,6 +133,60 @@ export async function listInstallationRepos(installationId) {
   }));
 }
 
+/** Refused above this — a source file this large is generated or vendored. */
+const MAX_FILE_BYTES = 200_000;
+
+/**
+ * Every path in the repository, in one request.
+ *
+ * `recursive=1` walks the whole tree server-side, which is far cheaper than
+ * paging directories, and lets selection happen against filenames before a
+ * single file is fetched. GitHub sets `truncated` on very large repositories;
+ * callers get it and should degrade to a partial profile rather than pretend
+ * they saw everything.
+ */
+export async function getRepoTree(installationId, fullName, ref = 'HEAD') {
+  const token = await getInstallationToken(installationId);
+  const data = await ghFetch(
+    `${API}/repos/${fullName}/git/trees/${encodeURIComponent(ref)}?recursive=1`,
+    token
+  );
+  return {
+    truncated: !!data.truncated,
+    files: (data.tree || [])
+      .filter(n => n.type === 'blob')
+      .map(n => ({ path: n.path, bytes: n.size || 0 })),
+  };
+}
+
+/**
+ * One file's text.
+ *
+ * Returns null rather than throwing for the ordinary reasons a file cannot be
+ * read — too large, binary, deleted between tree and fetch. A profile built
+ * from nineteen of twenty files is worth having; one that fails entirely
+ * because a single path went missing is not.
+ */
+export async function getFileContent(installationId, fullName, filePath) {
+  try {
+    const token = await getInstallationToken(installationId);
+    const data = await ghFetch(
+      `${API}/repos/${fullName}/contents/${filePath.split('/').map(encodeURIComponent).join('/')}`,
+      token
+    );
+    if (data.size > MAX_FILE_BYTES || data.encoding !== 'base64' || !data.content) return null;
+
+    const text = Buffer.from(data.content, 'base64').toString('utf8');
+    // A NUL byte means this is not text, whatever its extension claimed.
+    // Embedding decoded binary produces vectors that match nothing and waste
+    // the call that made them.
+    if (text.includes('\u0000')) return null;
+    return text;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Confirms the installation still exists and is readable.
  *

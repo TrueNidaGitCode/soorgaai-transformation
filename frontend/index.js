@@ -282,12 +282,24 @@ export async function wireSidebarBlueprints() {
 
     const empty = (msg) => { wrap.innerHTML = `<p class="side__bps-empty">${msg}</p>`; };
 
+    // A failure is not an absence. Reporting a dead backend or an expired
+    // session as "No blueprints yet" reads as data loss — it sent someone
+    // hunting for a blueprint that was in the database the whole time, while
+    // the only real problem was that nothing was listening on the API port.
+    // Same slot in the sidebar, deliberately different voice.
+    const problem = (msg) => { wrap.innerHTML = `<p class="side__bps-error">${msg}</p>`; };
+
     try {
         if (token) {
             const resp = await fetch(`${API_BASE()}/strategy-canvas/transformation-blueprints`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!resp.ok) { empty('No blueprints yet.'); return; }
+            if (!resp.ok) {
+                problem(resp.status === 401
+                    ? 'Your session has expired — sign in again to see your blueprints.'
+                    : 'Could not load your blueprints. Please try again.');
+                return;
+            }
             const { blueprints } = await resp.json();
             if (!blueprints?.length) { empty('No blueprints yet.'); return; }
 
@@ -309,7 +321,11 @@ export async function wireSidebarBlueprints() {
             });
         } else if (guestId) {
             const resp = await fetch(`${API_BASE()}/guest/blueprint/${encodeURIComponent(guestId)}`);
-            if (!resp.ok) { empty('No blueprints yet — describe your project to start.'); return; }
+            // 404 is the honest empty case here: a guestId in localStorage
+            // whose preview has since been claimed or never existed. Any
+            // other status is a fault and should say so.
+            if (resp.status === 404) { empty('No blueprints yet — describe your project to start.'); return; }
+            if (!resp.ok) { problem('Could not load your preview blueprint. Please try again.'); return; }
             const bp = await resp.json();
             const btn = document.createElement('button');
             btn.className = 'side__bp';
@@ -322,7 +338,9 @@ export async function wireSidebarBlueprints() {
             empty('No blueprints yet — describe your project to start.');
         }
     } catch {
-        empty('No blueprints yet.');
+        // fetch() rejects only when the request never completed at all — the
+        // API is down, or the browser refused it. Never an empty account.
+        problem('Could not reach the server — check that the backend is running.');
     }
 }
 
@@ -483,10 +501,14 @@ export function wireHeroPrompt() {
             // capabilities as they complete. Guests have no profile to check
             // (no token at all); logged-in users get the same profile-setup
             // safety net as the other auth entry points.
+            // ?view=cob so the destination is explicit rather than inferred
+            // from blueprint state — and so a returning user with an already
+            // approved blueprint still lands on the run they just started
+            // instead of being bounced to the workspace.
             if (token) {
-                await redirectRespectingProfile('/domain/domain.html');
+                await redirectRespectingProfile('/domain/domain.html?view=cob');
             } else {
-                window.location.href = '/domain/domain.html';
+                window.location.href = '/domain/domain.html?view=cob';
             }
 
         } catch (err) {

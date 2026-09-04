@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
-  <link rel="stylesheet" href="domain.css?v=42">
+  <link rel="stylesheet" href="domain.css?v=46">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -115,6 +115,19 @@
       <p id="prog-objective" class="prog-objective"></p>
     </div>
 
+    <!-- Overall progress. The per-capability cards below say what is
+         happening; this says how much is left, which is the question
+         someone waiting several minutes is actually asking. -->
+    <div class="prog-bar" id="prog-bar" role="status" aria-live="polite">
+      <div class="prog-bar__head">
+        <span class="prog-bar__label" id="prog-bar-label">Starting…</span>
+        <span class="prog-bar__count" id="prog-bar-count"></span>
+      </div>
+      <div class="prog-bar__track">
+        <div class="prog-bar__fill" id="prog-bar-fill" style="width:0%"></div>
+      </div>
+    </div>
+
     <div id="prog-domains" class="prog-domains">
       <!-- Domain sections with capability cards populated by blueprintGenerate.js -->
     </div>
@@ -194,6 +207,21 @@
             </div>
           </div>
 
+          <!-- Deliberately a sibling of #opp-loading, not a child. Cob's own
+               capability finishes early and hides the loading block, but the
+               other five domains are still generating — nesting this inside
+               would take the progress bar away while most of the work
+               remained. It hides itself when everything has settled. -->
+          <div class="prog-bar" id="opp-progress" role="status" aria-live="polite" style="display:none">
+            <div class="prog-bar__head">
+              <span class="prog-bar__label" id="opp-progress-label">Analysing your objective…</span>
+              <span class="prog-bar__count" id="opp-progress-count"></span>
+            </div>
+            <div class="prog-bar__track">
+              <div class="prog-bar__fill" id="opp-progress-fill" style="width:0%"></div>
+            </div>
+          </div>
+
           <div id="opp-loading" class="pw-process-list">
             <div class="pw-process-item">
               <span class="pw-process-item__title">Analyzing your objective and prioritizing AI use cases…</span>
@@ -201,6 +229,16 @@
           </div>
 
           <div id="opp-content" style="display:none">
+            <!-- What Cob read this engagement as. Classified silently during
+                 generation so it never interrupts the run, shown here because
+                 it decides which data gets asked for and what finally gets
+                 built — and because reading it wrong is expensive enough that
+                 the user must be able to say so. Hidden when undecided. -->
+            <div class="eng-note" id="opp-engagement" style="display:none">
+              <span class="eng-note__text" id="opp-engagement-text"></span>
+              <button type="button" class="eng-note__switch" id="opp-engagement-switch"></button>
+            </div>
+
             <div class="pd-winner pw-reveal rp-winner-card" style="--i:0">
               <p class="pd-winner__label">&#9733; Recommended</p>
               <p class="pd-winner__name" id="opp-winner-name"></p>
@@ -321,7 +359,7 @@
       <div class="aria-readiness-card">
         <div class="aria-readiness-card__main">
           <p class="pd-substage-label" style="margin:0">Data Readiness</p>
-          <p class="aria-readiness-card__count"><span id="aria-readiness-fraction">0 of 0</span> <span class="aria-readiness-card__count-label" id="aria-readiness-label">sources connected</span></p>
+          <p class="aria-readiness-card__count"><span id="aria-readiness-fraction">0 of 0</span> <span class="aria-readiness-card__count-label" id="aria-readiness-label">datasets available</span></p>
           <div class="aria-readiness-card__bar-row">
             <div class="aria-readiness-card__bar"><div class="aria-readiness-card__bar-fill" id="aria-readiness-fill" style="width:0%"></div></div>
             <span class="aria-readiness-card__pct" id="aria-readiness-pct">0%</span>
@@ -337,12 +375,14 @@
       <p class="pd-substage-label aria-required-label">Required Data</p>
       <div class="aria-table-wrap">
         <table class="aria-table">
+          <!-- Two columns on purpose. Source repeated a guess Cob had already
+               made, and Action was an em-dash for every customer the two
+               Atlassian connectors do not serve. What is needed, and whether
+               Svarg can see it, is the whole question. -->
           <thead>
             <tr>
               <th>Dataset</th>
-              <th>Source</th>
               <th>Status</th>
-              <th class="aria-table__action-col">Action</th>
             </tr>
           </thead>
           <tbody id="aria-required-body"></tbody>
@@ -354,8 +394,41 @@
         <span id="aria-note-text"></span>
       </p>
 
-      <p class="pd-substage-label aria-required-label">Connected Sources</p>
-      <div class="aria-connector" id="aria-sources-panel">
+      <p class="pd-substage-label aria-required-label">Connect Your Data</p>
+
+      <!-- Which tabs appear is decided by the blueprint's engagement type:
+           a company putting AI into its own product needs its repository and
+           its own exports, not an issue tracker. Populated by ariaScreen.js;
+           when the engagement is undecided every tab shows, because hiding a
+           connector someone actually needs is the worse failure. -->
+      <div class="aria-tabs" id="aria-tabs" role="tablist"></div>
+
+      <!-- GitHub: connection only. There is no endpoint that reads a
+           customer repository — push-project writes Eame's output — so this
+           panel must not imply the code is being read. -->
+      <div class="aria-tabpanel" id="aria-tab-github" style="display:none" role="tabpanel">
+        <div class="aria-gh">
+          <p class="aria-gh__status" id="aria-gh-status">Checking your GitHub connection…</p>
+          <a href="#" class="pw-back-btn" id="aria-gh-connect" style="display:none">Connect GitHub</a>
+          <p class="aria-gh__note">
+            Connecting lets Svarg deliver the built application into your repository.
+            It does not read your code yet — to supply data from your systems, use Upload.
+          </p>
+        </div>
+      </div>
+
+      <!-- Upload: the only route in for data no connector reaches. -->
+      <div class="aria-tabpanel" id="aria-tab-upload" style="display:none" role="tabpanel">
+        <p class="aria-upload__intro">
+          Export a sample from your own systems and attach it to the dataset it covers.
+          Accepted: .csv, .json, .txt, .md. Files are redacted and only their text is kept.
+        </p>
+        <div id="aria-upload-list" class="aria-upload-list"></div>
+        <div id="aria-upload-error" class="gen-error" style="display:none" role="alert"></div>
+        <input type="file" id="aria-upload-input" accept=".csv,.json,.txt,.md" style="display:none">
+      </div>
+
+      <div class="aria-connector aria-tabpanel" id="aria-sources-panel" role="tabpanel">
 
         <div id="aria-sources-error" class="gen-error" style="display:none"></div>
 
@@ -1112,12 +1185,12 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=5"></script>
+  <script type="module" src="blueprintGenerate.js?v=8"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
-  <script type="module" src="ariaScreen.js?v=25"></script>
-  <script type="module" src="arthScreen.js?v=11"></script>
-  <script type="module" src="eameScreen.js?v=10"></script>
-  <script type="module" src="yusuScreen.js?v=19"></script>
-  <script type="module" src="screenChat.js?v=5"></script>
+  <script type="module" src="ariaScreen.js?v=28"></script>
+  <script type="module" src="arthScreen.js?v=13"></script>
+  <script type="module" src="eameScreen.js?v=12"></script>
+  <script type="module" src="yusuScreen.js?v=21"></script>
+  <script type="module" src="screenChat.js?v=6"></script>
 </body>
 </html>

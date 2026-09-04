@@ -59,6 +59,11 @@ let _ariaBlueprint = null;
 // than still reading "Not connected".
 let _connected = { confluence: false, jira: false };
 
+// Last link counts the required-data table was drawn with, so an upload can
+// redraw it without re-fetching counts it did not change.
+let _lastConfCount = 0;
+let _lastJiraCount = 0;
+
 function findDatasetsSection(bp) {
   const domain = (bp.domains || []).find(d => d.domainId === 'data-readiness');
   if (!domain) return null;
@@ -111,8 +116,15 @@ function resolveSource(typicalSource, confCount, jiraCount) {
 }
 
 function rowState(d, confCount, jiraCount) {
+  // An uploaded export outranks everything: the user has supplied the actual
+  // data, which is stronger evidence than a tool being connected.
+  if (_uploads.has(d.name)) return { state: 'uploaded', source: null };
+
   const source = resolveSource(d.typicalSource, confCount, jiraCount);
-  if (!source) return { state: 'inferred', source: null };
+  // No connector reaches this data. Previously reported as "Filled from
+  // analysis", which announced that Svarg would invent it; it is now a
+  // first-class state that names the way in.
+  if (!source) return { state: 'no-connector', source: null };
   const count = source.id === 'confluence' ? confCount : jiraCount;
   if (count > 0) return { state: 'connected', source };
   // Tool connected but nothing linked from it yet — Process will do the
@@ -125,96 +137,93 @@ function connectHref(sourceId) {
   return `/domain/domain.html?view=aria&connect=${sourceId}`;
 }
 
+/**
+ * One status per dataset, saying whether Svarg can see this data and what
+ * would make it so. The tool's name belongs inside the status — "linked from
+ * Jira" is a status; a Source column repeating Cob's guess is not.
+ */
+function statusCellHtml(state, source, dataset) {
+  const tool = source ? esc(source.label) : '';
+
+  // Once data has actually been processed, anything that had a route in reads
+  // as complete. Leaving "Connected" up after a successful run made a finished
+  // stage look half-done.
+  if (_processed && (state === 'connected' || state === 'ready' || state === 'uploaded')) {
+    return `<span class="aria-status aria-status--done"><span class="aria-status-dot"></span>Processed</span>`;
+  }
+
+  switch (state) {
+    case 'uploaded': {
+      const up = _uploads.get(dataset.name);
+      return `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>`
+        + `Available &mdash; ${esc(up?.filename || 'uploaded file')}</span>`;
+    }
+    case 'connected':
+      return `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>`
+        + `Available &mdash; linked from ${tool}</span>`;
+    case 'ready':
+      return `<span class="aria-status aria-status--ready"><span class="aria-status-dot"></span>`
+        + `${tool} connected, not yet linked</span>`;
+    case 'not-connected':
+      return `<a href="${connectHref(source.id)}" class="aria-status aria-status--none aria-status--link">`
+        + `<span class="aria-status-dot"></span>Connect ${tool} to supply this</a>`;
+    default:
+      // The state that made this whole screen necessary. It names the route in
+      // rather than announcing that the data will be invented.
+      return `<span class="aria-status aria-status--own"><span class="aria-status-dot"></span>`
+        + `In your own systems &mdash; upload an export</span>`;
+  }
+}
+
 function renderRow(d, confCount, jiraCount) {
   const { state, source } = rowState(d, confCount, jiraCount);
-
-  let sourceCell, statusCell, actionCell;
-  // Once the data has actually been processed, every dataset that had a
-  // source reads as complete. "Connected" and "Ready to link" describe work
-  // still outstanding, and leaving them up after a successful run made a
-  // finished stage look half-done.
-  if (_processed && state !== 'inferred' && state !== 'not-connected') {
-    return `
-    <tr>
-      <td>
-        <span class="aria-row-name__title">${esc(d.name)}</span>
-        <span class="aria-row-name__desc">${esc(d.purpose)}</span>
-      </td>
-      <td><span class="aria-source">`
-        + `<span class="aria-source__icon aria-source__icon--${source.id}">${source.letter}</span>${esc(source.label)}</span></td>
-      <td><span class="aria-status aria-status--done"><span class="aria-status-dot"></span>Completed</span></td>
-      <td><span class="aria-action-none">&mdash;</span></td>
-    </tr>
-  `;
-  }
-
-  if (state === 'inferred') {
-    // No connector exists for this data, so there is nothing to connect.
-    // Say what will happen instead of showing a dead control.
-    sourceCell = `<span class="aria-source aria-source--none">Not available</span>`;
-    statusCell = `<span class="aria-status aria-status--inferred"><span class="aria-status-dot"></span>Filled from analysis</span>`;
-    actionCell = `<span class="aria-action-none">&mdash;</span>`;
-  } else {
-    sourceCell = `<span class="aria-source">`
-      + `<span class="aria-source__icon aria-source__icon--${source.id}">${source.letter}</span>${esc(source.label)}</span>`;
-    statusCell = state === 'connected'
-      ? `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>Connected</span>`
-      : state === 'ready'
-        ? `<span class="aria-status aria-status--ready"><span class="aria-status-dot"></span>Ready to link</span>`
-        : `<span class="aria-status aria-status--none"><span class="aria-status-dot"></span>Not connected</span>`;
-    // Connect only appears when the tool genuinely isn't connected —
-    // once it is, Process does the linking, so there is nothing to click.
-    actionCell = state === 'not-connected'
-      ? `<a href="${connectHref(source.id)}" class="aria-action-btn aria-action-btn--primary">Connect &rarr;</a>`
-      : `<span class="aria-action-none">&mdash;</span>`;
-  }
-
   return `
     <tr>
       <td>
         <span class="aria-row-name__title">${esc(d.name)}</span>
         <span class="aria-row-name__desc">${esc(d.purpose)}</span>
       </td>
-      <td>${sourceCell}</td>
-      <td>${statusCell}</td>
-      <td>${actionCell}</td>
+      <td>${statusCellHtml(state, source, d)}</td>
     </tr>
   `;
 }
 
 function tally(datasets, confCount, jiraCount) {
-  let connected = 0, toConnect = 0, inferred = 0;
+  let connected = 0, toConnect = 0, ownSystems = 0;
   datasets.forEach(d => {
     const { state } = rowState(d, confCount, jiraCount);
-    if (state === 'connected') connected++;
+    if (state === 'connected' || state === 'uploaded') connected++;
     else if (state === 'not-connected' || state === 'ready') toConnect++;
-    else inferred++;
+    else ownSystems++;
   });
-  return { connected, toConnect, inferred };
+  return { connected, toConnect, ownSystems };
 }
 
 function updateReadinessCard(datasets, confCount, jiraCount) {
-  const { connected, toConnect, inferred } = tally(datasets, confCount, jiraCount);
+  const { connected, toConnect, ownSystems } = tally(datasets, confCount, jiraCount);
 
-  // Percentage is over what's actually connectable — datasets with no
-  // connector can never be connected, so counting them would make 100%
-  // permanently unreachable and the bar meaningless.
-  const connectable = connected + toConnect;
-  const pct = connectable ? Math.round((connected / connectable) * 100) : 0;
+  // Over EVERY required dataset, not just the ones a connector can reach.
+  // Dividing by the connectable subset is what rendered six required datasets
+  // as "0 of 0" for a company that owns all six — a number that told the user
+  // nothing and looked broken. Upload is a route in for any dataset, so all of
+  // them belong in the denominator.
+  const total = datasets.length;
+  const pct = total ? Math.round((connected / total) * 100) : 0;
 
-  document.getElementById('aria-readiness-fraction').textContent = `${connected} of ${connectable}`;
+  document.getElementById('aria-readiness-fraction').textContent = `${connected} of ${total}`;
   document.getElementById('aria-readiness-pct').textContent = `${pct}%`;
   document.getElementById('aria-readiness-fill').style.width = `${pct}%`;
-  document.getElementById('aria-legend-ready').textContent = `${connected} Connected`;
+  document.getElementById('aria-legend-ready').textContent = `${connected} Available`;
   document.getElementById('aria-legend-missing').textContent = `${toConnect} To connect`;
-  document.getElementById('aria-legend-inferred').textContent = `${inferred} From analysis`;
+  document.getElementById('aria-legend-inferred').textContent = `${ownSystems} In your systems`;
 
   const note = document.getElementById('aria-note');
   const noteText = document.getElementById('aria-note-text');
   if (note && noteText) {
-    if (inferred > 0) {
-      noteText.textContent = `${inferred} dataset${inferred === 1 ? '' : 's'} ha${inferred === 1 ? 's' : 've'} no connector available yet. `
-        + `Svarg will fill th${inferred === 1 ? 'at' : 'ose'} in from its own analysis instead of your documents.`;
+    if (ownSystems > 0) {
+      noteText.textContent = `${ownSystems} dataset${ownSystems === 1 ? '' : 's'} live${ownSystems === 1 ? 's' : ''} `
+        + `in systems Svarg has no connector for. Upload an export for `
+        + `${ownSystems === 1 ? 'it' : 'each'} so the blueprint is built on your real data.`;
       note.style.display = '';
     } else {
       note.style.display = 'none';
@@ -428,9 +437,14 @@ async function runProcess(blueprintId) {
 }
 
 function renderTable(datasets, confCount, jiraCount) {
+  // Remembered so an upload can redraw the table without re-fetching link
+  // counts it did not change.
+  _lastConfCount = confCount;
+  _lastJiraCount = jiraCount;
+
   const body = document.getElementById('aria-required-body');
   body.innerHTML = datasets.map(d => renderRow(d, confCount, jiraCount)).join('')
-    || `<tr><td colspan="6" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
+    || `<tr><td colspan="2" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
   updateReadinessCard(datasets, confCount, jiraCount);
   updateProcessBar(datasets);
 }
@@ -582,15 +596,22 @@ function sourceRowHtml({ tool, toolId, name, key, count, capped, noun }) {
 function renderSourcesTable() {
   const body = document.getElementById('aria-sources-body');
   if (!body) return;
+
+  // Confluence and Jira share this table; the active tab decides whose rows
+  // appear. Before any tab is selected (or when neither is shown), fall back
+  // to both rather than rendering an empty table.
+  const showConf = _activeTab !== 'jira';
+  const showJira = _activeTab !== 'confluence';
+
   const rows = [
-    ..._sources.confluence.map(sp => sourceRowHtml({
+    ...(showConf ? _sources.confluence.map(sp => sourceRowHtml({
       tool: 'Confluence', toolId: 'confluence', name: sp.name, key: sp.key,
       count: sp.itemCount, capped: sp.itemCountCapped, noun: 'page',
-    })),
-    ..._sources.jira.map(pr => sourceRowHtml({
+    })) : []),
+    ...(showJira ? _sources.jira.map(pr => sourceRowHtml({
       tool: 'Jira', toolId: 'jira', name: pr.name, key: pr.key,
       count: pr.itemCount, capped: pr.itemCountCapped, noun: 'ticket',
-    })),
+    })) : []),
   ];
   body.innerHTML = rows.join('')
     || `<tr><td colspan="6" class="ks-card-body">No sources connected yet.</td></tr>`;
@@ -703,6 +724,192 @@ async function initSources(blueprintId) {
 }
 
 
+// ── Connector tabs ───────────────────────────────────────────────────────────
+// Which connectors matter depends on what kind of AI work this is. A company
+// putting AI into the product it sells needs its repository and its own
+// exports; a team automating its own support workflow needs the issue tracker.
+// Showing all four to everyone is what left an education-software company
+// staring at Confluence and Jira.
+
+const TABS = {
+  confluence: { label: 'Confluence', panel: 'aria-sources-panel' },
+  jira:       { label: 'Jira',       panel: 'aria-sources-panel' },
+  github:     { label: 'GitHub',     panel: 'aria-tab-github' },
+  upload:     { label: 'Upload',     panel: 'aria-tab-upload' },
+};
+
+let _activeTab = null;
+
+/**
+ * @returns {string[]} tab ids, in display order.
+ *
+ * An undecided engagement returns everything. Guests and every blueprint
+ * generated before the classifier existed land there, and hiding a connector
+ * someone genuinely needs is a worse failure than a slightly busier screen.
+ */
+function relevantTabs(bp) {
+  const category = bp?.engagement?.category || '';
+  if (category === 'product-ai') return ['github', 'upload'];
+
+  if (category === 'workflow-automation') {
+    const area = bp.engagement.subArea || '';
+    if (area === 'requirements' || area === 'design') return ['confluence', 'upload'];
+    if (area === 'code') return ['github', 'upload'];
+    if (area === 'test' || area === 'deploy' || area === 'support') return ['jira', 'confluence', 'upload'];
+    return ['confluence', 'jira', 'upload'];
+  }
+  return ['confluence', 'jira', 'github', 'upload'];
+}
+
+function selectTab(id) {
+  _activeTab = id;
+
+  document.querySelectorAll('#aria-tabs .aria-tab').forEach(btn => {
+    const on = btn.dataset.tab === id;
+    btn.classList.toggle('aria-tab--active', on);
+    btn.setAttribute('aria-selected', String(on));
+  });
+
+  // Confluence and Jira share one panel and one linked-sources table; the tab
+  // decides which tool's rows that table shows.
+  const shown = TABS[id]?.panel;
+  Object.values(TABS).forEach(t => {
+    const el = document.getElementById(t.panel);
+    if (el) el.style.display = t.panel === shown ? '' : 'none';
+  });
+
+  if (id === 'confluence' || id === 'jira') renderSourcesTable();
+  if (id === 'upload') renderUploadList();
+  if (id === 'github') refreshGithubStatus();
+}
+
+function renderTabs(bp) {
+  const wrap = document.getElementById('aria-tabs');
+  if (!wrap) return;
+  const ids = relevantTabs(bp);
+
+  wrap.innerHTML = ids.map(id =>
+    `<button type="button" class="aria-tab" role="tab" data-tab="${id}" aria-selected="false">${esc(TABS[id].label)}</button>`
+  ).join('');
+
+  wrap.querySelectorAll('.aria-tab').forEach(btn => {
+    btn.addEventListener('click', () => selectTab(btn.dataset.tab));
+  });
+
+  // A ?connect= deep link decides the opening tab when it names one we show.
+  const wanted = new URLSearchParams(window.location.search).get('connect');
+  selectTab(ids.includes(wanted) ? wanted : ids[0]);
+}
+
+// ── GitHub: connection only ──────────────────────────────────────────────────
+
+async function refreshGithubStatus() {
+  const statusEl = document.getElementById('aria-gh-status');
+  const btn = document.getElementById('aria-gh-connect');
+  if (!statusEl || !btn) return;
+
+  try {
+    const { connected, githubLogin } = await api('/github/personal/status');
+    statusEl.textContent = connected
+      ? `Connected as ${githubLogin}.`
+      : 'Not connected.';
+    btn.style.display = connected ? 'none' : '';
+  } catch (err) {
+    statusEl.textContent = "Couldn't check your GitHub connection.";
+    btn.style.display = '';
+  }
+}
+
+// ── Upload ───────────────────────────────────────────────────────────────────
+
+// datasetName → { filename, uploadedAt }
+let _uploads = new Map();
+let _uploadTarget = null;
+
+const MAX_UPLOAD_CHARS = 2_000_000;
+
+async function loadUploads(blueprintId) {
+  try {
+    const { uploads } = await api(`/uploads/dataset-files/${encodeURIComponent(blueprintId)}`);
+    _uploads = new Map((uploads || []).map(u => [u.datasetName, u]));
+  } catch {
+    // A failed list must not make the screen claim nothing was uploaded — but
+    // it also must not block the rest of Aria. Leave whatever we already have.
+  }
+}
+
+function renderUploadList() {
+  const list = document.getElementById('aria-upload-list');
+  if (!list) return;
+
+  if (!_cachedDatasets.length) {
+    list.innerHTML = `<p class="ks-card-body">Data Readiness hasn't finished generating yet.</p>`;
+    return;
+  }
+
+  list.innerHTML = _cachedDatasets.map(d => {
+    const up = _uploads.get(d.name);
+    return `
+      <div class="aria-upload-row">
+        <div class="aria-upload-row__main">
+          <span class="aria-row-name__title">${esc(d.name)}</span>
+          <span class="aria-row-name__desc">${up ? `${esc(up.filename)} attached` : esc(d.purpose)}</span>
+        </div>
+        <button type="button" class="aria-action-btn ${up ? '' : 'aria-action-btn--primary'}"
+                data-upload-for="${esc(d.name)}">${up ? 'Replace' : 'Upload'}</button>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-upload-for]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _uploadTarget = btn.dataset.uploadFor;
+      const input = document.getElementById('aria-upload-input');
+      input.value = '';       // so re-picking the same file still fires change
+      input.click();
+    });
+  });
+}
+
+function showUploadError(message) {
+  const el = document.getElementById('aria-upload-error');
+  if (!el) return;
+  el.textContent = message;
+  el.style.display = message ? 'block' : 'none';
+}
+
+async function handleUploadFile(file) {
+  if (!file || !_uploadTarget || !_blueprintId) return;
+  showUploadError('');
+
+  // Read as text in the browser: the bytes never leave the machine, and the
+  // server has no file storage to put them in anyway.
+  const text = await file.text().catch(() => null);
+  if (text === null) { showUploadError("That file couldn't be read."); return; }
+  if (text.length > MAX_UPLOAD_CHARS) {
+    showUploadError('That file is too large. Upload a smaller export or a sample.');
+    return;
+  }
+
+  try {
+    await api('/uploads/dataset-file', {
+      method: 'POST',
+      body: JSON.stringify({
+        blueprintId: _blueprintId,
+        datasetName: _uploadTarget,
+        filename:    file.name,
+        text,
+      }),
+    });
+    await loadUploads(_blueprintId);
+    renderUploadList();
+    // The required-data table reads from _uploads, so it has to be redrawn for
+    // the row to change — that link is the whole point of the tab.
+    renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
+  } catch (err) {
+    showUploadError(err.message);
+  }
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────
 
 let _wired = false;
@@ -714,6 +921,18 @@ function wireStaticControls() {
   document.getElementById('aria-process-btn')?.addEventListener('click', () => {
     const id = _blueprintId;
     if (id) runProcess(id);
+  });
+
+  document.getElementById('aria-upload-input')?.addEventListener('change', (e) => {
+    handleUploadFile(e.target.files?.[0]);
+  });
+
+  document.getElementById('aria-gh-connect')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    sessionStorage.setItem('svarg_returning_to_aria', '1');
+    api('/github/personal/connect?returnTo=aria')
+      .then(({ url }) => { window.location.href = url; })
+      .catch(err => { document.getElementById('aria-gh-status').textContent = err.message; });
   });
 }
 
@@ -727,17 +946,28 @@ document.addEventListener('aria:show', (e) => {
   _ariaBlueprint = bp;
   const datasetsSection = findDatasetsSection(bp);
   _cachedDatasets = datasetsSection?.brief?.datasets || [];
+
+  // Which connectors this engagement calls for. Done before the first table
+  // render so the opening tab is right on the first paint.
+  renderTabs(bp);
+
   renderTable(_cachedDatasets, 0, 0);
+
+  // Uploads decide dataset status, so the table has to be redrawn once they
+  // are known — the first render above cannot know them yet.
+  loadUploads(bp._id).then(() => {
+    renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
+    if (_activeTab === 'upload') renderUploadList();
+  });
 
   initSources(bp._id);
 
-  // Connect links come back here with ?connect=<source>; there is one
-  // sources table now, so just scroll to it rather than picking a panel.
+  // A ?connect= link lands back here; renderTabs has already opened the
+  // matching tab, so this only has to bring it into view.
   const connectParam = new URLSearchParams(window.location.search).get('connect');
-  if (connectParam === 'confluence' || connectParam === 'jira') {
+  if (connectParam) {
     setTimeout(() => {
-      document.getElementById('aria-sources-panel')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('aria-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 300);
   }
 });

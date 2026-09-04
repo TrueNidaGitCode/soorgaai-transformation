@@ -3027,7 +3027,70 @@
 .aria-status--inferred .aria-status-dot { background: var(--aria-accent-2); opacity: 0.7; }
 .aria-status--inferred { color: rgba(255,255,255,0.55); font-weight: 500; }
 
+/* The data exists, in a system Svarg has no connector for. Not a failure and
+   not a gap in the plan — a route in that runs through Upload rather than
+   through a connector, so it reads as actionable rather than as missing. */
+.aria-status--own .aria-status-dot { background: var(--aria-accent-2); }
+.aria-status--own { color: rgba(255,255,255,0.62); font-weight: 500; }
+
+/* The status doubles as the control when a connector exists but isn't
+   connected — the Action column used to carry this, and was an em-dash for
+   every customer those connectors do not serve. */
+a.aria-status--link { text-decoration: none; cursor: pointer; }
+a.aria-status--link:hover { color: var(--aria-accent); }
+a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
+
 .aria-source--none { color: rgba(255,255,255,0.3); font-style: italic; }
+
+/* ── Connector tabs ──────────────────────────────────────────────────────── */
+.aria-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.aria-tab {
+  padding: 8px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.aria-tab:hover { color: rgba(255,255,255,0.75); }
+.aria-tab--active {
+  color: #fff;
+  border-bottom-color: var(--aria-accent);
+}
+
+/* ── GitHub panel ────────────────────────────────────────────────────────── */
+.aria-gh { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.aria-gh__status { margin: 0; font-size: 13.5px; color: rgba(255,255,255,0.75); }
+.aria-gh__note { margin: 0; font-size: 12.5px; color: rgba(255,255,255,0.42); line-height: 1.5; max-width: 60ch; }
+
+/* ── Upload panel ────────────────────────────────────────────────────────── */
+.aria-upload__intro {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.5;
+  max-width: 70ch;
+}
+.aria-upload-list { display: flex; flex-direction: column; gap: 2px; }
+.aria-upload-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.aria-upload-row:last-child { border-bottom: 0; }
+.aria-upload-row__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 
 .aria-note {
   display: flex;
@@ -3700,7 +3763,19 @@
   position: absolute;
   right: 20px;
   bottom: 24px;
-  left: 8px;
+  /* Wider than the 30% portrait lane it lives in, by growing LEFT into the
+     gap between the content column and the lane.
+
+     The budget: content is bounded to calc(70vw - 100px) inside .rp-main's
+     40px padding, so its right edge sits around 70vw - 60px, and the lane
+     starts at 70vw. Taking 30vw + 40px keeps the panel's left edge clear of
+     that edge at every width, rather than guessing a fixed number that
+     happens to work on one monitor.
+
+     `left: auto` is required — the original rule pinned left: 8px, which
+     fixed the width to the lane and made any width here a no-op. */
+  left: auto;
+  width: min(440px, calc(30vw + 40px));
   /* Bottom-anchored and bounded, not full-lane-height — a full-height
      panel reached up over the journey nav. */
   height: min(72vh, 560px);
@@ -12754,6 +12829,88 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .dp__step--busy .dp__node { animation: none; }
+}
+
+/* ── Generation progress bar ─────────────────────────────────────────────────
+   How much is left, which is what someone waiting several minutes wants to
+   know. The capability cards below already say what is happening. */
+/* ── Engagement note ─────────────────────────────────────────────────────────
+   Cob's reading of what kind of work this is, above the recommendation it
+   produced. Deliberately quiet: it is context for the card below, not a
+   heading of its own. The correction sits inline because a reading nobody can
+   overrule is worse than no reading at all. */
+.eng-note {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.eng-note__text { color: rgba(255,255,255,0.58); }
+.eng-note__switch {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--aria-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.eng-note__switch:hover:not(:disabled) { color: #fff; }
+.eng-note__switch:disabled { color: rgba(255,255,255,0.3); cursor: default; text-decoration: none; }
+
+.prog-bar {
+  max-width: 760px;
+  margin: 0 auto 28px;
+  padding: 0 4px;
+}
+
+/* On the Cob screen the portrait lane owns the right 30%, and the centred
+   rule above pushes the bar underneath it. Left-aligned and bounded by the
+   same width as .aria-body and .stage-nav so it stays clear of the artwork. */
+#opp-progress {
+  margin: 0 0 24px;
+  max-width: min(760px, calc(70vw - 100px));
+}
+@media (max-width: 1000px) {
+  #opp-progress { max-width: 100%; }
+}
+.prog-bar__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.prog-bar__label {
+  font-size: 13.5px;
+  color: rgba(255,255,255,0.7);
+}
+.prog-bar__count {
+  flex-shrink: 0;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.42);
+  font-variant-numeric: tabular-nums;
+}
+.prog-bar__track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.07);
+  overflow: hidden;
+}
+.prog-bar__fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--aria-accent), #3DAFD3);
+  transition: width 0.5s ease;
+}
+.prog-bar__fill--done { background: var(--aria-accent); }
+@media (prefers-reduced-motion: reduce) {
+  .prog-bar__fill { transition: none; }
 }
 
 /* ── Stage navigation ───────────────────────────────────────────────────────

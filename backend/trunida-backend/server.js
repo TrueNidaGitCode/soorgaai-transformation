@@ -29,6 +29,7 @@ import actionItemRoutes             from "./routes/actionItemRoutes.js";
 import contactRoutes                from "./routes/contactRoutes.js";
 import defectMatchingRoutes         from "./routes/defectMatchingRoutes.js";
 import personalGithubRoutes         from "./routes/personalGithubRoutes.js";
+import uploadRoutes                 from "./routes/uploadRoutes.js";
 import deliveryRoutes               from "./routes/deliveryRoutes.js";
 import websiteRoutes                from "./routes/websiteRoutes.js";
 import governanceChecklistRoutes    from "./routes/governanceChecklistRoutes.js";
@@ -123,6 +124,7 @@ app.use("/api/jira/personal",        personalJiraRoutes);
 app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
 app.use("/api/defect-matching",      defectMatchingRoutes);
 app.use("/api/github/personal",      personalGithubRoutes);
+app.use("/api/uploads",              uploadRoutes);
 // Publishing agents to Svarg's own GitHub, and the customer's zip download.
 app.use("/api/delivery",             deliveryRoutes);
 // The knowledge source every company has — including one with no Confluence.

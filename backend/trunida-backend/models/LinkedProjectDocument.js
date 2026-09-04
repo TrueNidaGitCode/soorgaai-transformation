@@ -27,7 +27,11 @@ const linkedProjectDocumentSchema = new mongoose.Schema({
   // 'website' is the source every company has, including one with no
   // Confluence and no Jira. It carries company context — what they do, who
   // they serve — not operational data.
-  sourceType: { type: String, enum: ['confluence', 'jira', 'website'], default: 'confluence' },
+  // 'upload' is a file the user supplied directly, for a company whose data
+  // lives somewhere no connector reaches — a Postgres database, a billing
+  // system. The file itself is never stored: only its extracted, redacted text
+  // arrives here, which is all any other source type keeps anyway.
+  sourceType: { type: String, enum: ['confluence', 'jira', 'website', 'upload'], default: 'confluence' },
   sourceId:  { type: String, required: true },
   spaceKey:  { type: String, default: '' },   // Confluence
   projectKey: { type: String, default: '' },  // Jira

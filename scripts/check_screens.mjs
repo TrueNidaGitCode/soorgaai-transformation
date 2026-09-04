@@ -59,6 +59,13 @@ const BLUEPRINT = {
   status: 'completed',
   businessObjective: 'Reduce OTA flashing defect pre-analysis effort',
   opportunityApproval: { approved: true, approvedAt: new Date().toISOString() },
+  // Present so the Cob screen renders its engagement note. An absent
+  // engagement hides the note entirely, which would leave this check passing
+  // without ever having drawn the thing it is meant to be checking.
+  engagement: {
+    checked: true, category: 'workflow-automation', subArea: 'support',
+    maturity: 'enterprise', confidence: 0.9, reason: 'Automates internal defect triage.', userSet: false,
+  },
   arthSelection: { preference: 'frontier', modelId: 'claude-sonnet', displayName: 'Claude Sonnet' },
   eameDelivery: { repoOwner: 'acme', repoName: 'svarg-defect-matching', fileCount: 32 },
   governanceReview: { acknowledged: false },
@@ -240,6 +247,95 @@ setTimeout(function () {
       if (Math.round(l.right) > document.documentElement.clientWidth) bad('lane overhangs the scrollbar');
     }
 
+    // Aria's required-data table and connector tabs. The readiness denominator
+    // is the specific regression worth pinning: dividing by the connectable
+    // subset rendered six required datasets as "0 of 0".
+    if (out.screen === 'aria') {
+      var reqTable = (document.getElementById('aria-required-body') || {}).closest ? document.getElementById('aria-required-body').closest('table') : null;
+      var head = reqTable ? reqTable.querySelectorAll('thead th') : [];
+      out.ariaCols = head.length;
+      if (head.length !== 2) bad('required-data table has ' + head.length + ' columns, expected 2');
+
+      var rows = scr.querySelectorAll('#aria-required-body tr');
+      var frac = (document.getElementById('aria-readiness-fraction') || {}).textContent || '';
+      out.readiness = frac.trim();
+      if (/of 0$/.test(out.readiness) && rows.length > 0) {
+        bad('readiness reads "' + out.readiness + '" with ' + rows.length + ' datasets listed');
+      }
+
+      var tabs = scr.querySelectorAll('#aria-tabs .aria-tab');
+      out.tabs = [].map.call(tabs, function (t) { return t.dataset.tab; }).join('/');
+      if (!tabs.length) bad('no connector tabs rendered');
+      if (!scr.querySelector('#aria-tabs .aria-tab--active')) bad('no tab is selected');
+      // Upload is the only route in for data no connector reaches, so it must
+      // be offered whatever the engagement says.
+      if (out.tabs.indexOf('upload') === -1) bad('Upload tab missing (tabs: ' + out.tabs + ')');
+    }
+
+    // Cob's engagement note. It states what the whole blueprint was steered
+    // by, so a note that silently fails to render is worse than a visibly
+    // wrong one — assert it drew, said something, and offers the way out.
+    if (out.screen === 'cob') {
+      var eng = document.getElementById('opp-engagement');
+      var engText = document.getElementById('opp-engagement-text');
+      var engSwitch = document.getElementById('opp-engagement-switch');
+      if (!eng || eng.style.display === 'none') bad('engagement note did not render');
+      else {
+        out.engagement = (engText && engText.textContent || '').slice(0, 40);
+        if (!out.engagement.trim()) bad('engagement note rendered empty');
+        if (!engSwitch || !engSwitch.textContent.trim()) bad('engagement note offers no correction');
+        var er = eng.getBoundingClientRect();
+        if (er.width === 0 || er.height === 0) bad('engagement note has no box');
+      }
+    }
+
+    // Open the chat and confirm it does not cover the content column. The
+    // panel is deliberately wider than the portrait lane it sits in, growing
+    // left into the gap, so "wide enough" and "overlapping" are one setting
+    // apart — measure it rather than trusting the arithmetic.
+    var launcher = scr.querySelector('[data-sc-open]');
+    if (launcher) {
+      launcher.click();
+      var panel = scr.querySelector('.sc-panel');
+      if (panel && !panel.hasAttribute('hidden')) {
+        var pr = panel.getBoundingClientRect();
+        out.chatW = Math.round(pr.width);
+        if (pr.width < 300) bad('chat panel is only ' + Math.round(pr.width) + 'px wide');
+
+        // Only elements that actually PAINT. Full-width containers like
+        // #opp-content wrap a much narrower card, so their boxes reach under
+        // the panel while nothing is drawn there — measuring those reports an
+        // overlap that no one can see.
+        var content = scr.querySelectorAll(
+          '.rp-winner-card, .prog-bar, .stage-nav, .rp-others-list,' +
+          '.aria-table-wrap, .eg-panel, .host-card, .arth-card, .tr-grid, .dp__strip'
+        );
+        for (var ci = 0; ci < content.length; ci++) {
+          var cr = content[ci].getBoundingClientRect();
+          if (cr.width === 0 || cr.height === 0) continue;
+          if (cr.right > pr.left + 1 && cr.bottom > pr.top && cr.top < pr.bottom) {
+            bad('chat panel overlaps content (' + content[ci].className.split(' ')[0] +
+                ' ends at ' + Math.round(cr.right) + ', panel starts at ' + Math.round(pr.left) + ')');
+            break;
+          }
+        }
+      }
+      // Close and reopen. The greeting is appended to the log but never
+      // joins the conversation history, so a guard written against history
+      // fires every single time — the panel filled up with the character
+      // introducing itself again on each reopen.
+      var closeBtn = scr.querySelector('[data-sc-close]');
+      if (closeBtn) {
+        closeBtn.click();
+        launcher.click();
+        var log = scr.querySelector('[data-sc-log]');
+        var greetings = log ? log.querySelectorAll('.sc-msg--bot').length : 0;
+        out.greetings = greetings;
+        if (greetings > 1) bad('chat greeted ' + greetings + ' times after one close-and-reopen');
+        closeBtn.click();
+      }
+    }
+
     var d = document.documentElement;
     if (d.scrollWidth > d.clientWidth + 1) bad('page scrolls horizontally');
 
@@ -322,7 +418,9 @@ for (const screen of list) {
   if (!ok) failed++;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${screen.padEnd(6)}`
     + `css ${String(r.cssRules ?? '?').padStart(4)} rules · `
-    + `${r.steps ?? '?'} steps · lane ${r.laneTop ?? '?'} · ${r.launcher || 'no launcher'}`);
+    + `${r.steps ?? '?'} steps · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
+    + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
+    + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}"` : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

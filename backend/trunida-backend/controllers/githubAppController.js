@@ -24,6 +24,8 @@ import {
   isInstallationLive,
 } from '../services/githubAppService.js';
 import { analyzeRepository as analyzeRepo } from '../services/codebaseProfileService.js';
+import { resolveRepoAccess, readRepos } from '../services/githubReadService.js';
+import { isGithubOAuthConfigured } from '../services/githubAuthService.js';
 
 const JWT_SECRET   = process.env.JWT_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
@@ -124,8 +126,33 @@ export async function githubAppCallback(req, res) {
 
 export async function getAppStatus(req, res) {
   try {
-    if (!isGithubAppConfigured()) {
-      return res.json({ connected: false, configured: false });
+    // Either connection can read. The App is preferred and is what a customer
+    // should be offered; Eame's OAuth connection is the fallback so a
+    // deployment that already has it working can read code without standing up
+    // a second app. What each grants is reported, not hidden.
+    //
+    // Resolved BEFORE checking whether the App is configured: gating on the App
+    // would report "not available" to a deployment whose OAuth connector has
+    // been working all along.
+    const access = await resolveRepoAccess(req.user._id);
+    if (!access) {
+      // Nothing connected yet. Say whether connecting is even possible, and
+      // which flow the button should start.
+      const canApp   = isGithubAppConfigured();
+      const canOauth = isGithubOAuthConfigured();
+      return res.json({
+        connected: false,
+        configured: canApp || canOauth,
+        connectVia: canApp ? 'app' : (canOauth ? 'oauth' : null),
+      });
+    }
+    if (access.kind === 'oauth') {
+      return res.json({
+        connected: true, configured: true, via: 'oauth',
+        accountLogin: access.account,
+        repositorySelection: access.repositorySelection,
+        scopeNote: access.scopeNote,
+      });
     }
 
     const record = await GithubAppInstallation.findOne({ userId: req.user._id }).lean();
@@ -144,6 +171,8 @@ export async function getAppStatus(req, res) {
     return res.json({
       connected:           true,
       configured:          true,
+      via:                 'app',
+      scopeNote:           'read-only',
       accountLogin:        record.accountLogin,
       accountType:         record.accountType,
       repositorySelection: record.repositorySelection,
@@ -158,11 +187,11 @@ export async function getAppStatus(req, res) {
 
 export async function listRepos(req, res) {
   try {
-    const record = await GithubAppInstallation.findOne({ userId: req.user._id }).lean();
-    if (!record) return res.status(404).json({ error: 'GitHub is not connected.' });
+    const access = await resolveRepoAccess(req.user._id);
+    if (!access) return res.status(404).json({ error: 'GitHub is not connected.' });
 
-    const repositories = await listInstallationRepos(record.installationId);
-    return res.json({ repositories });
+    const repositories = await readRepos(access);
+    return res.json({ repositories, via: access.kind });
   } catch (err) {
     console.error('listRepos error:', err.message);
     return res.status(502).json({ error: 'Could not list your repositories.' });
@@ -190,8 +219,8 @@ export async function analyzeRepository(req, res) {
       return res.status(400).json({ error: 'repoFullName must look like owner/repo.' });
     }
 
-    const record = await GithubAppInstallation.findOne({ userId: req.user._id }).lean();
-    if (!record) return res.status(404).json({ error: 'GitHub is not connected.' });
+    const access = await resolveRepoAccess(req.user._id);
+    if (!access) return res.status(404).json({ error: 'GitHub is not connected.' });
 
     const blueprint = await TransformationBlueprint
       .findOne({ _id: blueprintId, userId: req.user._id })
@@ -202,9 +231,9 @@ export async function analyzeRepository(req, res) {
     // The repository must be one this installation actually covers. Without
     // this, a caller could name any repo string and have Svarg try to read it
     // with the installation's token.
-    const allowed = await listInstallationRepos(record.installationId);
+    const allowed = await readRepos(access);
     if (!allowed.some(r => r.fullName === repoFullName)) {
-      return res.status(403).json({ error: 'That repository is not covered by your GitHub installation.' });
+      return res.status(403).json({ error: 'That repository is not one your GitHub connection can read.' });
     }
 
     const datasets = (blueprint.domains || [])
@@ -218,7 +247,7 @@ export async function analyzeRepository(req, res) {
     );
 
     analyzeRepositoryAsync({
-      installationId: record.installationId,
+      access,
       repoFullName,
       userId: req.user._id,
       blueprintId,

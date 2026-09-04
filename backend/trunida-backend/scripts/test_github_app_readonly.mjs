@@ -47,6 +47,26 @@ console.log('1. the service exposes no way to write');
     !/githubApiService|pushFiles|createRepo/.test(src));
 }
 
+console.log('');
+console.log('1b. the shared reader cannot write, whichever token it holds');
+{
+  // This matters more than the App service. resolveRepoAccess may hand it an
+  // OAuth token carrying the classic 'repo' scope — read AND write on every
+  // repository the user owns. Nothing in Aria may use that capability, so
+  // the file must contain no request that could.
+  const src = fs.readFileSync(path.join(ROOT, 'services/githubReadService.js'), 'utf8');
+  const verbs = ['POST', 'PUT', 'PATCH', 'DELETE'];
+  check('no method other than GET is ever set',
+    !verbs.some(v => src.includes("method: '" + v + "'")),
+    verbs.filter(v => src.includes("method: '" + v + "'")).join(', '));
+  check('no write-shaped export',
+    !/export (async )?function (create|push|write|update|delete|commit)/i.test(src));
+  check('does not import the OAuth write helpers',
+    !/githubApiService|pushFiles|createRepo/.test(src));
+  check('states what the OAuth connection grants rather than hiding it',
+    /scopeNote/.test(src) && /write/i.test(src));
+}
+
 console.log('\n2. the controller offers no route that writes to GitHub');
 {
   const src = fs.readFileSync(path.join(ROOT, 'routes/githubAppRoutes.js'), 'utf8');

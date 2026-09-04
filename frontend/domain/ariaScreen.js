@@ -828,21 +828,29 @@ async function refreshGithubStatus() {
   if (!statusEl || !btn) return;
 
   try {
-    const { connected, configured, accountLogin, repositorySelection } =
+    const { connected, configured, connectVia, scopeNote, accountLogin, repositorySelection } =
       await api('/github/app/status');
 
     if (!configured) {
       // Distinguished from "not connected" on purpose: nothing the user does
-      // will fix a server that has no GitHub App configured, so do not offer
-      // them a button that cannot work.
+      // will fix a server with no GitHub connection configured at all, so do
+      // not offer them a button that cannot work.
       statusEl.textContent = 'Reading repositories is not available on this server yet.';
       btn.style.display = 'none';
       return;
     }
 
+    // Which flow the button starts depends on what the server has. A
+    // deployment with only the OAuth connector still connects in one click.
+    _connectVia = connectVia || 'app';
+
     statusEl.textContent = connected
       ? `Connected to ${accountLogin}`
-        + (repositorySelection === 'selected' ? ' — selected repositories.' : ' — all repositories.')
+        + (repositorySelection === 'selected' ? ' — selected repositories' : ' — all repositories')
+        // What this connection actually grants. The OAuth one was granted for
+        // delivery and carries write access; saying so is the difference
+        // between a promise and a fact.
+        + (scopeNote ? ` (${scopeNote}).` : '.')
       : 'Not connected.';
     btn.style.display = connected ? 'none' : '';
 
@@ -910,6 +918,10 @@ function renderAnalysis() {
 }
 
 let _analyzing = false;
+
+// 'app' or 'oauth' — set from status, decides which connect flow the button
+// starts. Defaults to the App, which is the one a customer should be offered.
+let _connectVia = 'app';
 
 async function analyzeRepo() {
   const select = document.getElementById('aria-gh-repo-select');
@@ -1083,7 +1095,11 @@ function wireStaticControls() {
   document.getElementById('aria-gh-connect')?.addEventListener('click', (e) => {
     e.preventDefault();
     sessionStorage.setItem('svarg_returning_to_aria', '1');
-    api('/github/app/connect?returnTo=aria')
+    // App install or OAuth authorize, whichever this server can do.
+    const connectPath = _connectVia === 'oauth'
+      ? '/github/personal/connect?returnTo=aria'
+      : '/github/app/connect?returnTo=aria';
+    api(connectPath)
       .then(({ url }) => { window.location.href = url; })
       .catch(err => { document.getElementById('aria-gh-status').textContent = err.message; });
   });

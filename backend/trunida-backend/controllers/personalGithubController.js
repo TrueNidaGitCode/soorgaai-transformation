@@ -41,6 +41,9 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
 const RETURN_PATHS = {
   demo:  '/pipeline-demo/pipeline-demo.html',
   yusu:  '/domain/domain.html?view=yusu',
+  // Aria connects this same account to READ a repository. Without an entry
+  // here the return trip silently lands on the demo page instead.
+  aria:  '/domain/domain.html?view=aria',
 };
 const DEFAULT_RETURN = 'demo';
 

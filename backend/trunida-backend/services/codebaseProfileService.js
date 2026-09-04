@@ -22,7 +22,7 @@ import crypto from 'crypto';
 import { generateForProduct, productProviderName } from './productLlm.js';
 import { regexRedact } from './jiraContentService.js';
 import { embedBatch, EMBEDDING_PROVIDER, EMBEDDING_MODEL } from './embeddingService.js';
-import { getRepoTree, getFileContent } from './githubAppService.js';
+import { readTree, readFile } from './githubReadService.js';
 import CustomerCodeChunk from '../models/CustomerCodeChunk.js';
 
 /** Never read from these, whatever they contain. */
@@ -427,13 +427,13 @@ export async function retrieveCode({ userId, blueprintId, queryText, topK = 6 })
  * Read a repository and describe it. Returns the profile and the matches; the
  * caller persists them.
  */
-export async function analyzeRepository({ installationId, repoFullName, userId, blueprintId, datasets = [] }) {
-  const tree = await getRepoTree(installationId, repoFullName);
+export async function analyzeRepository({ access, repoFullName, userId, blueprintId, datasets = [] }) {
+  const tree = await readTree(access, repoFullName);
   const { selected, capped } = selectFiles(tree.files);
 
   const files = [];
   for (const f of selected) {
-    const raw = await getFileContent(installationId, repoFullName, f.path);
+    const raw = await readFile(access, repoFullName, f.path);
     if (!raw) continue;
     // Source carries connection strings, seed data and credentials far more
     // often than a wiki page does. "They gave us access" is not an exemption.

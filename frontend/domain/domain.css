@@ -3082,25 +3082,51 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
 .aria-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin: 0 0 16px;
+  gap: 2px;
+  margin: 0 0 18px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 .aria-tab {
-  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px;
   border: 0;
+  /* Transparent rather than absent so the tab does not shift by two pixels
+     when it becomes active. */
   border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
   background: none;
   font: inherit;
   font-size: 13px;
   color: rgba(255,255,255,0.45);
   cursor: pointer;
-  transition: color 0.12s, border-color 0.12s;
+  transition: color 0.14s, background 0.14s, border-color 0.14s;
 }
-.aria-tab:hover { color: rgba(255,255,255,0.75); }
+.aria-tab__icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  /* Muted until the tab matters, then the vendor's own colour. Four identical
+     grey labels made a wiki, an issue tracker, a code host and a file upload
+     look like one list; the mark is what you recognise before reading. */
+  color: rgba(255,255,255,0.35);
+  transition: color 0.14s;
+}
+.aria-tab:hover {
+  color: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.04);
+}
+.aria-tab:hover .aria-tab__icon { color: var(--tab-color, rgba(255,255,255,0.6)); }
 .aria-tab--active {
   color: #fff;
-  border-bottom-color: var(--aria-accent);
+  background: rgba(255,255,255,0.05);
+  border-bottom-color: var(--tab-color, var(--aria-accent));
+}
+.aria-tab--active .aria-tab__icon { color: var(--tab-color, var(--aria-accent)); }
+.aria-tab:focus-visible {
+  outline: 2px solid var(--tab-color, var(--aria-accent));
+  outline-offset: -2px;
 }
 
 /* ── GitHub panel ────────────────────────────────────────────────────────── */

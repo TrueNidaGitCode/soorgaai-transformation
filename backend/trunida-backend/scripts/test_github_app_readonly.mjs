@@ -20,6 +20,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import GithubAppInstallation from '../models/GithubAppInstallation.js';
 import * as appService from '../services/githubAppService.js';
+import { isGithubOAuthConfigured } from '../services/githubAuthService.js';
 import { getAppStatus, listRepos, disconnectApp } from '../controllers/githubAppController.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -108,12 +109,20 @@ console.log('\n4. status is honest when the server has no GitHub App configured'
   const base = `http://localhost:${server.address().port}`;
 
   try {
-    const configured = appService.isGithubAppConfigured();
+    const canApp = appService.isGithubAppConfigured();
+    const canOauth = isGithubOAuthConfigured();
     const s = await (await fetch(`${base}/status`)).json();
     check('reports not connected', s.connected === false, JSON.stringify(s));
-    check('reports whether the server is configured at all',
-      s.configured === configured,
-      `status says ${s.configured}, service says ${configured}`);
+
+    // 'configured' means a connection can be SET UP, by either route. It used
+    // to mean 'the App is configured', which reported 'not available' to a
+    // deployment whose OAuth connector had been working all along.
+    check('configured reflects either connection being available',
+      s.configured === (canApp || canOauth),
+      `status ${s.configured}, app ${canApp}, oauth ${canOauth}`);
+    check('names which flow the connect button should start',
+      s.connectVia === (canApp ? 'app' : (canOauth ? 'oauth' : null)),
+      `got ${s.connectVia}`);
 
     // Without a record there is nothing to read, whatever GitHub would say.
     const r = await fetch(`${base}/repos`);

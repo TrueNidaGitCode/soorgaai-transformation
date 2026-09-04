@@ -25,13 +25,31 @@ export function isGithubOAuthConfigured() {
   return !!(CLIENT_ID && CLIENT_SECRET && CALLBACK_URL);
 }
 
+/**
+ * Classic OAuth Apps have 20-character hexadecimal client ids. GitHub Apps use
+ * a prefixed form — Iv1., Iv23…, Ov23… — and the distinction matters here:
+ *
+ *   OAuth App   permissions are requested at authorize time, via `scope`
+ *   GitHub App  permissions are fixed on the app itself; `scope` is not part
+ *               of its authorize contract, and sending one makes GitHub answer
+ *               the authorize page with a 404
+ *
+ * So the parameter is included only when it means something.
+ */
+function isClassicOAuthApp() {
+  return /^[0-9a-f]{20}$/.test(String(CLIENT_ID || ''));
+}
+
 export function buildAuthorizeUrl(state) {
   const params = new URLSearchParams({
     client_id:    CLIENT_ID,
     redirect_uri: CALLBACK_URL,
-    scope:        GITHUB_SCOPES.join(' '),
     state,
   });
+  // Requested for Eame's delivery push, which needs write. A GitHub App gets
+  // whatever its own configuration declares and must not be sent this.
+  if (isClassicOAuthApp()) params.set('scope', GITHUB_SCOPES.join(' '));
+
   return `${AUTHORIZE_URL}?${params}`;
 }
 

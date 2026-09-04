@@ -745,12 +745,34 @@ async function initSources(blueprintId) {
 // Showing all four to everyone is what left an education-software company
 // staring at Confluence and Jira.
 
-const TABS = {
-  confluence: { label: 'Confluence', panel: 'aria-sources-panel' },
-  jira:       { label: 'Jira',       panel: 'aria-sources-panel' },
-  github:     { label: 'GitHub',     panel: 'aria-tab-github' },
-  upload:     { label: 'Upload',     panel: 'aria-tab-upload' },
+// Each connector carries its own mark and colour. A row of identical text
+// labels made four quite different things — a wiki, an issue tracker, a code
+// host, your own file — look like one undifferentiated list, and the tab you
+// want is the one you recognise before you read it.
+//
+// Colours are the vendors' own, lightened where their brand value was chosen
+// for a white interface — Jira's #0052CC on this background is a smudge, not a
+// signal. Upload takes Aria's accent because it is not a vendor: it is the way
+// in that always exists.
+const ICONS = {
+  confluence: '<path d="M2 15.5c2.5-4 5-4.5 8-1.5l4 4"/><path d="M22 8.5c-2.5 4-5 4.5-8 1.5l-4-4"/>',
+  jira:       '<path d="M12 2 3 11a2 2 0 0 0 0 2l9 9"/><path d="M12 11h9a2 2 0 0 1 0 2l-5 5"/>',
+  github:     '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/>',
+  upload:     '<path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
 };
+
+const TABS = {
+  confluence: { label: 'Confluence', panel: 'aria-sources-panel', color: '#2684FF' },
+  jira:       { label: 'Jira',       panel: 'aria-sources-panel', color: '#4C9AFF' },
+  github:     { label: 'GitHub',     panel: 'aria-tab-github',    color: '#C9D1D9' },
+  upload:     { label: 'Upload',     panel: 'aria-tab-upload',    color: 'var(--aria-accent)' },
+};
+
+function tabIcon(id) {
+  return '<svg class="aria-tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+    + ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + (ICONS[id] || '') + '</svg>';
+}
 
 let _activeTab = null;
 
@@ -803,7 +825,9 @@ function renderTabs(bp) {
   const ids = relevantTabs(bp);
 
   wrap.innerHTML = ids.map(id =>
-    `<button type="button" class="aria-tab" role="tab" data-tab="${id}" aria-selected="false">${esc(TABS[id].label)}</button>`
+    `<button type="button" class="aria-tab" role="tab" data-tab="${id}"`
+    + ` style="--tab-color:${TABS[id].color}" aria-selected="false">`
+    + `${tabIcon(id)}<span>${esc(TABS[id].label)}</span></button>`
   ).join('');
 
   wrap.querySelectorAll('.aria-tab').forEach(btn => {

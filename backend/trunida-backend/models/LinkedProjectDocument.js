@@ -24,7 +24,10 @@ const linkedProjectDocumentSchema = new mongoose.Schema({
   },
   linkedByUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 
-  sourceType: { type: String, enum: ['confluence', 'jira'], default: 'confluence' },
+  // 'website' is the source every company has, including one with no
+  // Confluence and no Jira. It carries company context — what they do, who
+  // they serve — not operational data.
+  sourceType: { type: String, enum: ['confluence', 'jira', 'website'], default: 'confluence' },
   sourceId:  { type: String, required: true },
   spaceKey:  { type: String, default: '' },   // Confluence
   projectKey: { type: String, default: '' },  // Jira

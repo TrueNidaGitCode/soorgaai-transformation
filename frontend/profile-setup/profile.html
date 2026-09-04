@@ -34,6 +34,22 @@
           />
         </div>
 
+        <!-- The knowledge source every company has, including one founded
+             last month. Without it, the company profile that grounds every
+             blueprint is guessed from the organisation name alone. -->
+        <div class="form-group">
+          <label for="websiteUrl" class="form-label">Company Website <span class="form-label-optional">optional</span></label>
+          <input
+            id="websiteUrl"
+            name="websiteUrl"
+            type="url"
+            class="form-input"
+            placeholder="https://yourcompany.com"
+            autocomplete="url"
+          />
+          <p class="form-hint" id="website-hint">We'll read your public pages to understand what you do, so your blueprint is grounded in your business rather than assumptions.</p>
+        </div>
+
         <div id="profile-error" class="profile-error" style="display:none"></div>
 
         <button type="submit" id="profile-submit" class="cta-button profile-submit-btn">

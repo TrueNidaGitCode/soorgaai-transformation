@@ -13,6 +13,44 @@
 import { generate } from './llmService.js';
 import CompanyContext from '../models/CompanyContext.js';
 import UserProfile from '../models/UserProfile.js';
+import CompanyWebsitePage from '../models/CompanyWebsitePage.js';
+
+/** How much website text to put in front of the model. */
+const SITE_CONTEXT_LIMIT = 12_000;
+
+/**
+ * The company's own words, from any website pages they have connected.
+ *
+ * Returns '' when nothing is connected, which is a meaningful answer — the
+ * caller uses it to switch to a deliberately cautious prompt rather than
+ * inventing specifics it cannot know.
+ */
+async function loadWebsiteContext(userId) {
+  try {
+    const docs = await CompanyWebsitePage
+      .find({ userId }, { title: 1, rawText: 1, summary: 1 })
+      .sort({ createdAt: 1 })
+      .lean();
+    if (!docs.length) return '';
+
+    let out = '';
+    for (const d of docs) {
+      const body = (d.rawText || d.summary || '').trim();
+      if (!body) continue;
+      const block = `## ${d.title || 'Page'}\n${body}\n\n`;
+      if (out.length + block.length > SITE_CONTEXT_LIMIT) {
+        out += block.slice(0, Math.max(0, SITE_CONTEXT_LIMIT - out.length));
+        break;
+      }
+      out += block;
+    }
+    return out.trim();
+  } catch (err) {
+    // Company context is still useful without it — degrade, do not fail.
+    console.warn('[companyContext] could not load website context —', err.message);
+    return '';
+  }
+}
 
 function cleanMarkdown(text) {
   if (!text || typeof text !== 'string') return text;
@@ -50,24 +88,46 @@ export async function generateCompanyContextDraft(userId) {
   const domain   = profile?.industryDomain || 'Automotive';
   const domainLabel = DOMAIN_LABEL[domain] || 'Automotive';
 
-  const systemPrompt =
-    'You are a business intelligence analyst creating a company profile for an executive AI strategy advisor. ' +
-    'Generate realistic, concise content grounded in the company name, role, and automotive industry context. ' +
-    'This profile personalises AI strategy guidance for senior executives — be specific, not generic. ' +
-    'Output plain text only. Do not use Markdown, bold markers, asterisks, hashes, or any special formatting characters.';
+  // What the company says about itself, if a website has been connected.
+  // Without this the profile is invented from the company name alone, which
+  // for any company the model has not heard of — every startup — produces a
+  // plausible fabrication that then feeds blueprint generation, the advisor
+  // and suggestions. Grounding in their own words is the difference between
+  // a profile and a guess.
+  const siteContext = await loadWebsiteContext(userId);
+
+  const systemPrompt = siteContext
+    ? 'You are a business intelligence analyst creating a company profile for an AI strategy advisor. ' +
+      'Base every field ONLY on the company\'s own website content provided below. ' +
+      'Where the website does not say, write "Not stated on their website" rather than inferring. ' +
+      'Do not import assumptions from other industries. ' +
+      'Output plain text only. No Markdown, bold markers, asterisks, hashes, or special formatting characters.'
+    : 'You are a business intelligence analyst creating a company profile for an AI strategy advisor. ' +
+      'You have only the organisation name and role — no verified information about this specific company. ' +
+      'Keep every field cautious and clearly generic to the stated industry rather than inventing specifics ' +
+      'such as named customers, products or metrics you cannot know. ' +
+      'Output plain text only. No Markdown, bold markers, asterisks, hashes, or special formatting characters.';
 
   const userMessage =
-    `Generate a Company Overview for the SoorgaAI executive AI strategy advisor.\n\n` +
+    `Generate a Company Overview for the Svarg AI strategy advisor.\n\n` +
     `Organisation: ${orgName}\n` +
     `User Role: ${role}\n` +
-    `Industry Domain: ${domainLabel}\n\n` +
+    (siteContext
+      ? `\nThe company's own website says:\n"""\n${siteContext}\n"""\n\n`
+      : `Industry Domain: ${domainLabel}\n\n`) +
     `Output ONLY the structured plain text below. No preamble, no explanation, no Markdown symbols.\n\n` +
     `Company Overview\n\n` +
     `Company Name: ${orgName}\n` +
-    `Industry: [specific sub-sector within ${domainLabel}]\n` +
+    // The industry is read from the company's own words when we have them.
+    // Asking for "a sub-sector within Automotive" was fine when every
+    // customer was automotive; on a generic platform it forces an education
+    // company to be described as an automotive one.
+    (siteContext
+      ? `Industry: [the industry this company actually operates in, from their website]\n`
+      : `Industry: [specific sub-sector within ${domainLabel}]\n`) +
     `User Role: ${role}\n` +
     `Business Model: [one-sentence description of how the company creates and delivers value]\n` +
-    `Primary Customers: [who they serve — OEMs, Tier-1 suppliers, fleet operators, consumers, etc.]\n` +
+    `Primary Customers: [who they serve, in their own terms]\n` +
     `Core Capabilities: [2–3 key technical or business capabilities, comma-separated]\n` +
     `Strategic Focus Areas: [2–3 current strategic priorities, comma-separated]\n` +
     `Known Industry Trends: [2–3 relevant trends affecting this company, comma-separated]\n` +

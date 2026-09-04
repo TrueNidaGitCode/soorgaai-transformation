@@ -23,6 +23,16 @@ const UserProfileSchema = new mongoose.Schema(
       required: true,
       trim:     true,
     },
+    // The company's public site, captured at profile setup. Grounds Company
+    // Context in what the company says about itself rather than in what a
+    // model guesses from its name — which for any young company is a
+    // fabrication that then feeds every blueprint.
+    websiteUrl: {
+      type:     String,
+      required: false,
+      default:  '',
+      trim:     true,
+    },
     role: {
       type:     String,
       required: false,

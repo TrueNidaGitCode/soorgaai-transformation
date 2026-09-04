@@ -30,6 +30,7 @@ import contactRoutes                from "./routes/contactRoutes.js";
 import defectMatchingRoutes         from "./routes/defectMatchingRoutes.js";
 import personalGithubRoutes         from "./routes/personalGithubRoutes.js";
 import deliveryRoutes               from "./routes/deliveryRoutes.js";
+import websiteRoutes                from "./routes/websiteRoutes.js";
 import governanceChecklistRoutes    from "./routes/governanceChecklistRoutes.js";
 import gatewayRoutes                from "./routes/gatewayRoutes.js";
 
@@ -124,6 +125,8 @@ app.use("/api/defect-matching",      defectMatchingRoutes);
 app.use("/api/github/personal",      personalGithubRoutes);
 // Publishing agents to Svarg's own GitHub, and the customer's zip download.
 app.use("/api/delivery",             deliveryRoutes);
+// The knowledge source every company has — including one with no Confluence.
+app.use("/api/website",              websiteRoutes);
 // LLM gateway for hosted customer apps. Deployment-token auth, not user JWT.
 app.use("/api/gateway/v1",           gatewayRoutes);
 app.use("/api/governance-checklist", governanceChecklistRoutes);

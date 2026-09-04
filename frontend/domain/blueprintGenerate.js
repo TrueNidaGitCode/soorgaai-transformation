@@ -133,14 +133,22 @@ async function initGroundingBanner(blueprintId) {
 
   const token = getToken();
   try {
-    const [personal, org] = await Promise.all([
+    const [personal, org, site] = await Promise.all([
       fetch(`${API_BASE}/confluence/personal/status`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => (r.ok ? r.json() : { connected: false })).catch(() => ({ connected: false })),
       fetch(`${API_BASE}/confluence/status`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => (r.ok ? r.json() : { status: 'not_connected' })).catch(() => ({ status: 'not_connected' })),
+      // A connected company website grounds the blueprint too. Counting only
+      // Confluence meant a company that had given us their website was still
+      // told they had connected nothing.
+      fetch(`${API_BASE}/website/company`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => (r.ok ? r.json() : { pages: [] })).catch(() => ({ pages: [] })),
     ]);
 
-    if (personal.connected || org.status === 'active') return; // already grounded one way or another
+    const grounded = personal.connected
+      || org.status === 'active'
+      || (site.pages || []).length > 0;
+    if (grounded) return;
   } catch {
     return; // status check failed — don't nag on uncertain information
   }

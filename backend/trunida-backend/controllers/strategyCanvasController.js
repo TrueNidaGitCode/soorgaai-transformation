@@ -17,6 +17,7 @@ import { autoCapture }      from '../services/knowledgeSuggestionService.js';
 import { backfillActionItemsForClaimedBlueprint } from '../services/actionItemService.js';
 import { enabledDomains }   from '../config/domainRegistry.js';
 import { MAX_OBJECTIVE_LENGTH } from '../config/objectiveLimits.js';
+import { checkObjective } from '../services/objectiveGuardService.js';
 
 const DEFAULT_INDUSTRY = 'Automotive';
 
@@ -514,6 +515,18 @@ export async function startTransformationGeneration(req, res) {
     }
     if (objective.length > MAX_OBJECTIVE_LENGTH) {
       return res.status(400).json({ error: `Objective is too long (max ${MAX_OBJECTIVE_LENGTH} characters).` });
+    }
+
+    // A full run is six domains and ~16 capability generations. Check once,
+    // for a fraction of one capability, that this is worth generating at all
+    // — "what can you do?" has cost four complete runs before now.
+    const verdict = await checkObjective(objective);
+    if (!verdict.ok) {
+      return res.status(400).json({
+        error: verdict.reason,
+        suggestion: verdict.suggestion,
+        code: 'not_a_business_objective',
+      });
     }
 
     const userId = req.user._id;

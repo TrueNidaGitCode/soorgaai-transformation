@@ -78,6 +78,24 @@
   letter-spacing: 0.05em;
 }
 
+/* Marks a field as skippable without making it look unimportant. */
+.form-label-optional {
+  margin-left: 6px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: rgba(255,255,255,0.38);
+}
+
+/* Explains why a field is worth filling in, and doubles as the progress
+   line while the site is being read. */
+.form-hint {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.45);
+}
+
 .form-input {
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.12);

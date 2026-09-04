@@ -75,6 +75,8 @@ describe('profile.js — auth guard', () => {
 
 // ── Skip setup — profile already exists ──────────────────────────────────────
 
+// Cob is the product entry point and matches login.js's own default.
+// These asserted /domain/domain.html, which predates that decision.
 describe('profile.js — profile already exists', () => {
   it('redirects to workspace when GET /api/profile/me returns 200', async () => {
     localStorage.setItem('token', 'valid-jwt');
@@ -86,7 +88,7 @@ describe('profile.js — profile already exists', () => {
     triggerDOMContentLoaded();
     await flushPromises();
 
-    expect(window.location.href).toContain('/domain/domain.html');
+    expect(window.location.href).toContain('/cob.html');
   });
 });
 
@@ -172,7 +174,7 @@ describe('profile.js — successful profile creation', () => {
     // Flush: POST fetch + json response + redirect assignment
     await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
 
-    expect(window.location.href).toContain('/domain/domain.html');
+    expect(window.location.href).toContain('/cob.html');
   });
 });
 

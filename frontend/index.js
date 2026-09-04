@@ -525,13 +525,27 @@ function wireCobConfluenceConnector(openAuthModal) {
         const token = localStorage.getItem('token');
         if (!token) return; // stays in the not-connected/prompt-login state
         try {
-            const resp = await fetch(`${API_BASE()}/confluence/personal/status`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!resp.ok) return;
-            const status = await resp.json();
-            if (status.connected) {
-                if (site) site.textContent = status.siteName || 'Confluence';
+            // A company website grounds the blueprint just as a Confluence
+            // connection does. Checking only Confluence meant a customer who
+            // had given us their website — and who may have no Confluence at
+            // all — was still asked to connect one.
+            const [conf, siteRes] = await Promise.all([
+                fetch(`${API_BASE()}/confluence/personal/status`, { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => (r.ok ? r.json() : { connected: false })).catch(() => ({ connected: false })),
+                fetch(`${API_BASE()}/website/company`, { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => (r.ok ? r.json() : { pages: [] })).catch(() => ({ pages: [] })),
+            ]);
+
+            const pages = (siteRes.pages || []).length;
+            if (conf.connected) {
+                if (site) site.textContent = conf.siteName || 'Confluence';
+                if (badge) badge.style.display = 'flex';
+                btn.style.display = 'none';
+            } else if (pages > 0) {
+                // Name what they actually connected, not a tool they don't use.
+                let host = siteRes.websiteUrl || '';
+                try { host = new URL(siteRes.websiteUrl).hostname; } catch { /* keep as-is */ }
+                if (site) site.textContent = host || 'your website';
                 if (badge) badge.style.display = 'flex';
                 btn.style.display = 'none';
             }

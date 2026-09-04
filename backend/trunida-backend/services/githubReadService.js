@@ -30,6 +30,7 @@ import GithubAppInstallation from '../models/GithubAppInstallation.js';
 import PersonalGithubConnection from '../models/PersonalGithubConnection.js';
 import { decryptSecret } from '../utils/encryption.js';
 import { isGithubAppConfigured, getInstallationToken } from './githubAppService.js';
+import { isClassicOAuthApp } from './githubAuthService.js';
 
 const API = 'https://api.github.com';
 
@@ -78,9 +79,15 @@ export async function resolveRepoAccess(userId) {
       token: decryptSecret(conn.encryptedAccessToken),
       account: conn.githubLogin,
       repositorySelection: 'all',
-      // Surfaced to the user rather than hidden: this connection was granted
-      // for delivery and carries write access, even though nothing here uses it.
-      scopeNote: 'full access (granted for delivery)',
+      // Say what is actually known, not what is assumed. A classic OAuth App
+      // was granted the 'repo' scope — read AND write on everything — and the
+      // user should be told. A GitHub App gets only the permissions declared
+      // on the app itself, which this code cannot read, so it does not claim
+      // to know them. Announcing "full access" for a Contents: Read-only app
+      // would be the same fabrication this screen exists to remove.
+      scopeNote: isClassicOAuthApp()
+        ? 'full access — granted for delivery'
+        : 'access as configured on the GitHub App',
     };
   }
 

@@ -36,7 +36,7 @@ export function isGithubOAuthConfigured() {
  *
  * So the parameter is included only when it means something.
  */
-function isClassicOAuthApp() {
+export function isClassicOAuthApp() {
   return /^[0-9a-f]{20}$/.test(String(CLIENT_ID || ''));
 }
 

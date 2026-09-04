@@ -403,16 +403,23 @@
            connector someone actually needs is the worse failure. -->
       <div class="aria-tabs" id="aria-tabs" role="tablist"></div>
 
-      <!-- GitHub: connection only. There is no endpoint that reads a
-           customer repository — push-project writes Eame's output — so this
-           panel must not imply the code is being read. -->
+      <!-- GitHub, on Aria, is for READING: a product company's schema and
+           migrations are the authoritative answer to where each dataset lives.
+           No endpoint reads a customer repository yet, so this panel states the
+           intent without claiming the capability. It must never describe
+           delivery — Aria is a data screen, and writing to a customer's
+           repository is not what connecting here is for. -->
       <div class="aria-tabpanel" id="aria-tab-github" style="display:none" role="tabpanel">
         <div class="aria-gh">
           <p class="aria-gh__status" id="aria-gh-status">Checking your GitHub connection…</p>
           <a href="#" class="pw-back-btn" id="aria-gh-connect" style="display:none">Connect GitHub</a>
           <p class="aria-gh__note">
-            Connecting lets Svarg deliver the built application into your repository.
-            It does not read your code yet — to supply data from your systems, use Upload.
+            Connecting is how Svarg finds where your data lives &mdash; your schema and
+            migrations describe it better than any guess can. This connection is
+            <strong>read-only</strong> and you choose which repositories it covers;
+            Svarg cannot write to them.
+            <br>
+            Reading your repository is not built yet, so for now upload an export instead.
           </p>
         </div>
       </div>
@@ -1187,7 +1194,7 @@
 
   <script type="module" src="blueprintGenerate.js?v=8"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
-  <script type="module" src="ariaScreen.js?v=28"></script>
+  <script type="module" src="ariaScreen.js?v=29"></script>
   <script type="module" src="arthScreen.js?v=13"></script>
   <script type="module" src="eameScreen.js?v=12"></script>
   <script type="module" src="yusuScreen.js?v=21"></script>

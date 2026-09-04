@@ -803,18 +803,35 @@ function renderTabs(bp) {
 
 // ── GitHub: connection only ──────────────────────────────────────────────────
 
+/**
+ * The READ-ONLY GitHub App, not the OAuth connection Eame delivers through.
+ * That one carries the `repo` scope — write access to every repository the
+ * user owns — which is not something to ask for on a data-connection screen.
+ */
 async function refreshGithubStatus() {
   const statusEl = document.getElementById('aria-gh-status');
   const btn = document.getElementById('aria-gh-connect');
   if (!statusEl || !btn) return;
 
   try {
-    const { connected, githubLogin } = await api('/github/personal/status');
+    const { connected, configured, accountLogin, repositorySelection } =
+      await api('/github/app/status');
+
+    if (!configured) {
+      // Distinguished from "not connected" on purpose: nothing the user does
+      // will fix a server that has no GitHub App configured, so do not offer
+      // them a button that cannot work.
+      statusEl.textContent = 'Reading repositories is not available on this server yet.';
+      btn.style.display = 'none';
+      return;
+    }
+
     statusEl.textContent = connected
-      ? `Connected as ${githubLogin}.`
+      ? `Connected to ${accountLogin}`
+        + (repositorySelection === 'selected' ? ' — selected repositories.' : ' — all repositories.')
       : 'Not connected.';
     btn.style.display = connected ? 'none' : '';
-  } catch (err) {
+  } catch {
     statusEl.textContent = "Couldn't check your GitHub connection.";
     btn.style.display = '';
   }
@@ -930,7 +947,7 @@ function wireStaticControls() {
   document.getElementById('aria-gh-connect')?.addEventListener('click', (e) => {
     e.preventDefault();
     sessionStorage.setItem('svarg_returning_to_aria', '1');
-    api('/github/personal/connect?returnTo=aria')
+    api('/github/app/connect?returnTo=aria')
       .then(({ url }) => { window.location.href = url; })
       .catch(err => { document.getElementById('aria-gh-status').textContent = err.message; });
   });

@@ -30,6 +30,7 @@ import contactRoutes                from "./routes/contactRoutes.js";
 import defectMatchingRoutes         from "./routes/defectMatchingRoutes.js";
 import personalGithubRoutes         from "./routes/personalGithubRoutes.js";
 import uploadRoutes                 from "./routes/uploadRoutes.js";
+import githubAppRoutes              from "./routes/githubAppRoutes.js";
 import deliveryRoutes               from "./routes/deliveryRoutes.js";
 import websiteRoutes                from "./routes/websiteRoutes.js";
 import governanceChecklistRoutes    from "./routes/governanceChecklistRoutes.js";
@@ -125,6 +126,10 @@ app.use("/api/knowledge-suggestions", knowledgeSuggestionRoutes);
 app.use("/api/defect-matching",      defectMatchingRoutes);
 app.use("/api/github/personal",      personalGithubRoutes);
 app.use("/api/uploads",              uploadRoutes);
+// Read-only GitHub App for Aria. Mounted BEFORE /api/github/personal is
+// irrelevant (different prefixes) but kept adjacent so the two GitHub
+// connections are visibly separate things.
+app.use("/api/github/app",           githubAppRoutes);
 // Publishing agents to Svarg's own GitHub, and the customer's zip download.
 app.use("/api/delivery",             deliveryRoutes);
 // The knowledge source every company has — including one with no Confluence.

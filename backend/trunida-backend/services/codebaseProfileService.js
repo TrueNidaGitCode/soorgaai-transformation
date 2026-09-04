@@ -19,7 +19,7 @@
  */
 
 import crypto from 'crypto';
-import { generateForProduct } from './productLlm.js';
+import { generateForProduct, productProviderName } from './productLlm.js';
 import { regexRedact } from './jiraContentService.js';
 import { embedBatch, EMBEDDING_PROVIDER, EMBEDDING_MODEL } from './embeddingService.js';
 import { getRepoTree, getFileContent } from './githubAppService.js';
@@ -139,24 +139,95 @@ Rules:
 - Empty arrays are correct answers when the excerpts do not show them.`;
 
 /**
- * What the code says about itself. One call, degrading rather than throwing:
- * a failed profile leaves the rest of Aria working.
+ * How much source to put in front of the model per call.
+ *
+ * This is a CONTEXT limit, not a cost one, and getting it wrong is silent.
+ * Ollama truncates an oversized prompt rather than refusing it, so a corpus
+ * larger than the model's window produces a confident profile derived from
+ * whatever fragment survived — indistinguishable from a real one.
+ *
+ * A locally served 7B is commonly loaded with a 4k window (Ollama's own
+ * default is smaller still), which is about 12k characters once the system
+ * prompt and the reply are accounted for. Hosted models have far more room.
+ * Anything above one batch is split and merged rather than truncated.
+ */
+const PROFILE_BATCH_CHARS = Number(process.env.PROFILE_BATCH_CHARS)
+  || (productProviderName() ? 10_000 : 100_000);
+const PER_FILE_CHARS = Math.min(6_000, Math.floor(PROFILE_BATCH_CHARS / 2));
+
+/** Split files so no single call exceeds the model's window. */
+function batchFiles(files) {
+  const batches = [];
+  let current = [];
+  let size = 0;
+
+  for (const f of files) {
+    const text = f.content.slice(0, PER_FILE_CHARS);
+    if (size + text.length > PROFILE_BATCH_CHARS && current.length) {
+      batches.push(current);
+      current = [];
+      size = 0;
+    }
+    current.push({ ...f, content: text });
+    size += text.length;
+  }
+  if (current.length) batches.push(current);
+  return batches;
+}
+
+/**
+ * What the code says about itself.
+ *
+ * Batched, because a local model's context is small and exceeding it fails
+ * silently. Each batch is profiled independently and the results merged: a
+ * failed batch costs its own files, not the whole profile.
  */
 export async function deriveProfile(files) {
   if (!files.length) {
     return { languages: [], frameworks: [], database: '', entities: [], conventions: '', summary: '', ok: false };
   }
 
+  const batches = batchFiles(files);
+  if (batches.length > 1) {
+    console.log(`[codebaseProfile] ${files.length} files exceed the ${PROFILE_BATCH_CHARS}-char window — profiling in ${batches.length} batches`);
+  }
+
+  const results = [];
+  for (const [i, batch] of batches.entries()) {
+    const one = await profileBatch(batch, i + 1, batches.length);
+    if (one) results.push(one);
+  }
+  if (!results.length) {
+    return { languages: [], frameworks: [], database: '', entities: [], conventions: '', summary: '', ok: false };
+  }
+
+  // Union the descriptive fields; concatenate entities, which are the point.
+  // The first successful batch supplies the prose — later batches see only a
+  // slice of the codebase and describe it as if it were the whole thing.
+  const uniq = (xs) => [...new Set(xs.filter(Boolean))];
+  return {
+    languages:   uniq(results.flatMap(r => r.languages)).slice(0, 10),
+    frameworks:  uniq(results.flatMap(r => r.frameworks)).slice(0, 15),
+    database:    results.find(r => r.database)?.database || '',
+    entities:    results.flatMap(r => r.entities),
+    conventions: results[0].conventions,
+    summary:     results[0].summary,
+    ok: true,
+  };
+}
+
+/** One batch. Returns null rather than throwing — see deriveProfile. */
+async function profileBatch(files, index, total) {
   const corpus = files
-    .map(f => `--- ${f.path} ---\n${f.content.slice(0, 6_000)}`)
+    .map(f => `--- ${f.path} ---\n${f.content}`)
     .join('\n\n');
 
   try {
     const result = await generateForProduct({
       systemPrompt: PROFILE_PROMPT,
-      userMessage: corpus.slice(0, 120_000),
+      userMessage: corpus,
       maxTokens: 1500,
-      label: 'aria:codebase-profile',
+      label: `aria:codebase-profile${total > 1 ? ` (${index}/${total})` : ''}`,
     });
     const match = result.text.match(/\{[\s\S]*\}/);
     if (!match) throw new Error('No JSON in profile response');
@@ -185,11 +256,13 @@ export async function deriveProfile(files) {
       entities,
       conventions: String(parsed.conventions || '').slice(0, 600),
       summary:     String(parsed.summary || '').slice(0, 600),
-      ok: true,
     };
   } catch (err) {
-    console.error('[codebaseProfile] derivation failed:', err.message);
-    return { languages: [], frameworks: [], database: '', entities: [], conventions: '', summary: '', ok: false };
+    // Null, not an empty profile: deriveProfile counts successful batches to
+    // decide whether it got anything at all, and an empty-but-present result
+    // would look like a codebase with no entities in it.
+    console.error(`[codebaseProfile] batch ${index}/${total} failed:`, err.message);
+    return null;
   }
 }
 

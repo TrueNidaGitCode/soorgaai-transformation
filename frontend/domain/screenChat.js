@@ -60,6 +60,10 @@ class ScreenChat {
     this.sendBtn = lane.querySelector('[data-sc-send]');
     this.history = [];
     this.sending = false;
+    // Tracked separately from `history` on purpose. The greeting is UI chrome,
+    // not a turn the model produced, so it must not be sent back as context —
+    // but it still has to be remembered, or reopening the panel greets again.
+    this.greeted = false;
 
     this.launcher.addEventListener('click', () => this.open());
     lane.querySelector('[data-sc-close]').addEventListener('click', () => this.close());
@@ -86,7 +90,14 @@ class ScreenChat {
   open() {
     this.panel.hidden = false;
     this.lane.classList.add('sc-lane--open');
-    if (!this.history.length) this.append('bot', GREETINGS[this.screen]);
+    // Greet once per page load. The old guard tested `history`, which the
+    // greeting never joins — so every close-and-reopen appended another copy
+    // and the panel filled with Cob introducing himself to someone who had
+    // been talking to him for a while.
+    if (!this.greeted) {
+      this.append('bot', GREETINGS[this.screen]);
+      this.greeted = true;
+    }
     setTimeout(() => this.input.focus(), 60);
   }
 

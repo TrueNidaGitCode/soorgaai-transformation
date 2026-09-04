@@ -356,6 +356,29 @@ const transformationBlueprintSchema = new mongoose.Schema({
     industry: { type: String,  default: '' },
     reason:   { type: String,  default: '' },
   },
+  // What KIND of AI work this is — see services/engagementClassifierService.js.
+  // Decided once, before generation, and reused by every capability run so the
+  // decision cannot flip-flop mid-generation (same discipline as industryFit).
+  //
+  // `category` is '' when undecided, which every reader must treat as "behave
+  // as this product did before the classifier existed" rather than as a
+  // default. `userSet` records that a human corrected it, so a later
+  // regeneration never silently overwrites their answer with a fresh guess.
+  //
+  // Deliberately NOT an enum. The permitted values are documented in the
+  // classifier and validated there before anything is written. An enum here
+  // whose default is not itself a member rejects every new document on save —
+  // that is exactly how arthSelection.preference stopped all blueprint
+  // creation for three days in September 2026.
+  engagement: {
+    checked:    { type: Boolean, default: false },
+    category:   { type: String,  default: '' },   // 'product-ai' | 'workflow-automation' | ''
+    subArea:    { type: String,  default: '' },   // one of WORKFLOW_AREAS, or ''
+    maturity:   { type: String,  default: '' },   // 'enterprise' | 'startup' | 'unknown' | ''
+    confidence: { type: Number,  default: 0 },
+    reason:     { type: String,  default: '' },
+    userSet:    { type: Boolean, default: false },
+  },
   // Set when the user clicks "Approve" on the AI Use Cases & Prioritization
   // screen (Window 1 / Cob) confirming Cob's recommended starting point —
   // a user decision recorded on the blueprint, not a generation output.
@@ -369,7 +392,12 @@ const transformationBlueprintSchema = new mongoose.Schema({
   // the catalog can change later and we want the decision as it was made.
   // providerId is null for 'auto' — see modelSelectionService.selectModel.
   arthSelection: {
-    preference:  { type: String, enum: ['frontier', 'open-weight', 'auto'], default: null },
+    // null is in the enum on purpose: it is the default, it means "no class
+    // chosen yet", and Mongoose validates defaults on save. Without it every
+    // new blueprint failed validation before it could be written — which
+    // silently stopped all blueprint creation between 2026-09-01 and
+    // 2026-09-04. Do not remove null without also changing the default.
+    preference:  { type: String, enum: ['frontier', 'open-weight', 'auto', null], default: null },
     providerId:  { type: String, default: '' },
     displayName: { type: String, default: '' },
     selectedAt:  { type: Date,   default: null },

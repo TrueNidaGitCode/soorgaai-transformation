@@ -147,6 +147,30 @@ export async function getCompanyContext(userId) {
 }
 
 /**
+ * The best available evidence about who this company is, as plain text.
+ *
+ * Prefers the approved Company Context. Falls back to the raw website pages
+ * when no context has been generated yet — which is a real and common state:
+ * the website is captured at profile setup, but generating and approving the
+ * context is a separate step a user may not have taken.
+ *
+ * Written because a caller that only read CompanyContext concluded it knew
+ * nothing about a company whose website was sitting in the database one
+ * collection away. Returns '' when there is genuinely nothing, and callers
+ * must treat that as "unknown" rather than filling the gap with a guess.
+ */
+export async function getCompanyEvidence(userId) {
+  try {
+    const ctx = await CompanyContext.findOne({ userId }).lean();
+    if (ctx?.content?.trim()) return ctx.content.trim();
+    return await loadWebsiteContext(userId);
+  } catch (err) {
+    console.warn('[companyContext] could not load company evidence —', err.message);
+    return '';
+  }
+}
+
+/**
  * Save the approved Company Context to the database.
  * Upserts — one record per user.
  */

@@ -18,8 +18,8 @@ import { backfillActionItemsForClaimedBlueprint } from '../services/actionItemSe
 import { enabledDomains }   from '../config/domainRegistry.js';
 import { MAX_OBJECTIVE_LENGTH } from '../config/objectiveLimits.js';
 import { checkObjective } from '../services/objectiveGuardService.js';
-
-const DEFAULT_INDUSTRY = 'Automotive';
+import { resolveEngagement, CATEGORIES, WORKFLOW_AREAS } from '../services/engagementClassifierService.js';
+import { getCompanyEvidence } from '../services/companyContextService.js';
 
 // Maps UserProfile.industryDomain enum values to knowledge-base folder names.
 // All current sub-domains (ADAS, Diagnostics, etc.) belong to the Automotive layer.
@@ -31,13 +31,23 @@ const INDUSTRY_FOLDER = {
   Automotive:  'Automotive',
 };
 
+/**
+ * The industry declared on the user's profile, or '' when they declared none.
+ *
+ * This used to default to 'Automotive', which is why a company building
+ * academy-management software has a blueprint stored as automotive. An
+ * undeclared industry is unknown, not automotive: resolveIndustryGrounding
+ * treats "no industry" as a first-class answer and grounds on core content,
+ * which is right, where the wrong overlay actively pulls generation toward
+ * irrelevant framing.
+ */
 async function detectIndustry(userId) {
   try {
     const profile = await UserProfile.findOne({ userId }).lean();
-    const domain  = profile?.industryDomain || DEFAULT_INDUSTRY;
-    return INDUSTRY_FOLDER[domain] ?? DEFAULT_INDUSTRY;
+    if (!profile?.industryDomain) return '';
+    return INDUSTRY_FOLDER[profile.industryDomain] ?? '';
   } catch {
-    return DEFAULT_INDUSTRY;
+    return '';
   }
 }
 
@@ -530,9 +540,15 @@ export async function startTransformationGeneration(req, res) {
     }
 
     const userId = req.user._id;
-    const [industry, companyName] = await Promise.all([
+
+    // What kind of AI work this is, decided once and reused by every capability
+    // run. Company context is fetched first because the objective alone cannot
+    // say whose workflow it describes — see engagementClassifierService.
+    const companyEvidence = await getCompanyEvidence(userId).catch(() => '');
+    const [industry, companyName, engagement] = await Promise.all([
       detectIndustry(userId),
       detectOrgName(userId),
+      resolveEngagement(objective, companyEvidence),
     ]);
 
     const domains = enabledDomains();
@@ -560,7 +576,22 @@ export async function startTransformationGeneration(req, res) {
       companyName,
       status: 'generating',
       domains: domainDocs,
+      engagement: {
+        checked:    true,
+        category:   engagement.category || '',
+        subArea:    engagement.subArea  || '',
+        maturity:   engagement.maturity || '',
+        confidence: engagement.confidence,
+        reason:     engagement.reason,
+        userSet:    false,
+      },
     });
+
+    console.log(engagement.category
+      ? `[engagement] ${blueprint._id}: ${engagement.category}`
+        + `${engagement.subArea ? ` / ${engagement.subArea}` : ''}`
+        + ` (${engagement.maturity}). ${engagement.reason}`
+      : `[engagement] ${blueprint._id}: undecided — generation is not steered. ${engagement.reason}`);
 
     generateTransformationAsync(blueprint._id, userId, businessObjective.trim())
       .catch(err => console.error('[startTransformationGeneration] async error:', err));
@@ -590,6 +621,43 @@ export async function regenerateSpecificDomains(req, res) {
 
     const blueprint = await TransformationBlueprint.findOne({ _id: blueprintId, userId });
     if (!blueprint) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    // Classify before regenerating, if this blueprint has no answer yet.
+    //
+    // Two cases land here. A blueprint created before the classifier existed
+    // has no engagement at all. One that came back undecided may simply have
+    // had no company context at the time — context the user has since added,
+    // which is exactly when a regeneration is worth steering. Both are worth
+    // one small call; without this, "regenerate" on an older blueprint is
+    // steered by nothing and produces the same generic datasets again.
+    //
+    // A category the user set themselves is never overwritten.
+    if (!blueprint.engagement?.userSet && !blueprint.engagement?.category) {
+      const evidence = await getCompanyEvidence(userId).catch(() => '');
+      const engagement = await resolveEngagement(blueprint.businessObjective, evidence);
+
+      // Set on the document and saved here rather than through a separate
+      // updateOne. This function calls blueprint.save() further down, and a
+      // write that bypassed the in-memory document could be silently undone by
+      // that save writing back the stale value it still holds.
+      blueprint.engagement = {
+        checked:    true,
+        category:   engagement.category || '',
+        subArea:    engagement.subArea  || '',
+        maturity:   engagement.maturity || '',
+        confidence: engagement.confidence,
+        reason:     engagement.reason,
+        userSet:    false,
+      };
+      // Persisted immediately: the async generation below re-reads the
+      // blueprint from the database to pick this up.
+      await blueprint.save();
+
+      console.log(engagement.category
+        ? `[engagement] ${blueprintId}: classified on regeneration — ${engagement.category}`
+          + `${engagement.subArea ? ` / ${engagement.subArea}` : ''} (${engagement.maturity}).`
+        : `[engagement] ${blueprintId}: still undecided on regeneration. ${engagement.reason}`);
+    }
 
     const allDomainDefs = enabledDomains();
 
@@ -761,6 +829,58 @@ export async function getTransformationBlueprint(req, res) {
   } catch (err) {
     console.error('getTransformationBlueprint error:', err);
     res.status(500).json({ error: 'Failed to load transformation blueprint.' });
+  }
+}
+
+/**
+ * PATCH /strategy-canvas/transformation-blueprint/:blueprintId/engagement
+ *
+ * Corrects what kind of AI work this is. The classifier runs silently at
+ * generation time so it never interrupts the landing flow; this is how a human
+ * overrules it when it read the objective the wrong way round.
+ *
+ * Sets userSet, which stops any later regeneration replacing the answer with a
+ * fresh guess. It does NOT regenerate anything itself — the client decides
+ * whether to re-rank, because a correction made while reading is not
+ * necessarily a request to spend a generation run.
+ */
+export async function setEngagement(req, res) {
+  try {
+    const { blueprintId } = req.params;
+    const { category, subArea, maturity } = req.body || {};
+
+    // Validated against the classifier's own vocabulary so the stored value can
+    // never be something no reader downstream recognises.
+    if (!CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: `category must be one of: ${CATEGORIES.join(', ')}.` });
+    }
+    if (subArea && !WORKFLOW_AREAS.includes(subArea)) {
+      return res.status(400).json({ error: `subArea must be one of: ${WORKFLOW_AREAS.join(', ')}.` });
+    }
+    if (maturity && !['enterprise', 'startup', 'unknown'].includes(maturity)) {
+      return res.status(400).json({ error: 'maturity must be enterprise, startup, or unknown.' });
+    }
+
+    const result = await TransformationBlueprint.updateOne(
+      { _id: blueprintId, userId: req.user._id },
+      { $set: {
+        'engagement.checked':  true,
+        'engagement.category': category,
+        // subArea only means anything for workflow automation.
+        'engagement.subArea':  category === 'workflow-automation' ? (subArea || '') : '',
+        'engagement.maturity': maturity || 'unknown',
+        'engagement.reason':   'Set by the user.',
+        'engagement.userSet':  true,
+      } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Blueprint not found.' });
+    }
+    return res.json({ category, subArea: subArea || '', maturity: maturity || 'unknown', userSet: true });
+  } catch (err) {
+    console.error('setEngagement error:', err);
+    res.status(500).json({ error: 'Failed to save the engagement type.' });
   }
 }
 

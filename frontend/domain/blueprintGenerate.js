@@ -181,7 +181,49 @@ function capStatusLabel(status) {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
+/**
+ * Overall progress across every capability in every domain.
+ *
+ * The cards below say what is happening; someone waiting several minutes
+ * wants to know how much is left. Counts errors as finished — a failed
+ * capability is not coming back, and leaving the bar short of the end
+ * implies work still in flight that never arrives.
+ */
+function renderProgressBar(domains) {
+  const fill  = document.getElementById('prog-bar-fill');
+  const label = document.getElementById('prog-bar-label');
+  const count = document.getElementById('prog-bar-count');
+  if (!fill) return;
+
+  const caps = (domains || []).flatMap(d => d.capabilities || []);
+  const total = caps.length;
+  if (!total) return;
+
+  const done   = caps.filter(c => c.status === 'completed').length;
+  const failed = caps.filter(c => c.status === 'error').length;
+  const active = caps.find(c => c.status === 'in-progress' || c.status === 'generating');
+  const settled = done + failed;
+  const pct = Math.round((settled / total) * 100);
+
+  fill.style.width = pct + '%';
+  fill.classList.toggle('prog-bar__fill--done', settled === total);
+  count.textContent = `${settled} of ${total}`;
+
+  if (settled === total) {
+    label.textContent = failed
+      ? `Finished — ${done} of ${total} generated, ${failed} could not be completed`
+      : 'Blueprint complete';
+    return;
+  }
+  // Naming the capability in flight turns a bar into an explanation.
+  label.textContent = active
+    ? `Generating ${active.capabilityName || active.name}…`
+    : 'Analysing your objective…';
+}
+
 function renderProgressDomains(domains) {
+  renderProgressBar(domains);
+
   const container = document.getElementById('prog-domains');
   if (!container) return;
   container.innerHTML = '';
@@ -236,6 +278,40 @@ function updateProgressCard(domainId, capId, status) {
   const labelEl = card.querySelector('.prog-cap__status-label');
   if (iconEl)  { iconEl.textContent  = icon;  iconEl.className  = `prog-cap__icon prog-cap__icon--${cls}`; }
   if (labelEl) { labelEl.textContent = label; labelEl.className = `prog-cap__status-label prog-cap__status-label--${cls}`; }
+
+  // Streamed updates change one card at a time and never touch the blueprint
+  // object, so the bar has to be recomputed from what is actually on screen.
+  // Reading the DOM also guarantees the two can never disagree.
+  refreshProgressBarFromDom();
+}
+
+/** Recount the bar from the rendered cards. */
+function refreshProgressBarFromDom() {
+  const fill  = document.getElementById('prog-bar-fill');
+  const label = document.getElementById('prog-bar-label');
+  const count = document.getElementById('prog-bar-count');
+  if (!fill) return;
+
+  const cards = document.querySelectorAll('#prog-domains .prog-cap');
+  const total = cards.length;
+  if (!total) return;
+
+  let done = 0, failed = 0, activeName = '';
+  cards.forEach(c => {
+    if (c.classList.contains('prog-cap--completed')) done++;
+    else if (c.classList.contains('prog-cap--error')) failed++;
+    else if (c.classList.contains('prog-cap--progress') && !activeName) {
+      activeName = c.querySelector('.prog-cap__name')?.textContent || '';
+    }
+  });
+
+  const settled = done + failed;
+  fill.style.width = Math.round((settled / total) * 100) + '%';
+  fill.classList.toggle('prog-bar__fill--done', settled === total);
+  count.textContent = `${settled} of ${total}`;
+  label.textContent = settled === total
+    ? (failed ? `Finished — ${done} of ${total} generated, ${failed} could not be completed` : 'Blueprint complete')
+    : (activeName ? `Generating ${activeName}…` : 'Analysing your objective…');
 }
 
 // ── SSE: stream generation progress ──────────────────────────────────────────
@@ -416,12 +492,143 @@ function handleOpportunitiesUpdate(bp) {
   const screen = document.getElementById('screen-opportunities');
   if (!screen || screen.style.display === 'none') return;
 
+  // This screen is what a user watches during a run, so it carries the
+  // progress bar. Driven from the blueprint each poll delivers.
+  renderOpportunitiesProgress(bp);
+
   if (!_opportunitiesContentShown) {
     const section = findAiUseCasesPrioritizationSection(bp);
     if (section) renderOpportunitiesContent(section);
   }
 
+  renderEngagementNote(bp);
   updateOpportunitiesGate(bp);
+}
+
+// ── Engagement type ──────────────────────────────────────────────────────────
+
+const ENGAGEMENT_LABEL = {
+  'product-ai':          'building AI into the product you sell',
+  'workflow-automation': 'automating work your own team does',
+};
+
+// Flipping to the other reading is the only correction offered here. The
+// sub-area and maturity are refinements of a category; getting the category
+// itself backwards is the failure that wastes a whole run.
+const ENGAGEMENT_OTHER = {
+  'product-ai':          'workflow-automation',
+  'workflow-automation': 'product-ai',
+};
+
+let _engagementBusy = false;
+
+/**
+ * Cob's reading of what kind of work this is, with a way to overrule it.
+ *
+ * Hidden entirely when the classifier was undecided: an empty category means
+ * nothing downstream was steered, so there is no decision to show and nothing
+ * for the user to correct.
+ */
+function renderEngagementNote(bp) {
+  const wrap = document.getElementById('opp-engagement');
+  const textEl = document.getElementById('opp-engagement-text');
+  const switchBtn = document.getElementById('opp-engagement-switch');
+  if (!wrap || !textEl || !switchBtn) return;
+
+  const category = bp.engagement?.category || '';
+  if (!ENGAGEMENT_LABEL[category]) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+
+  const area = bp.engagement.subArea ? ` (${bp.engagement.subArea})` : '';
+  textEl.textContent = bp.engagement.userSet
+    ? `You set this as ${ENGAGEMENT_LABEL[category]}${area}.`
+    : `Cob read this as ${ENGAGEMENT_LABEL[category]}${area}.`;
+
+  const other = ENGAGEMENT_OTHER[category];
+  switchBtn.textContent = `No — it's ${ENGAGEMENT_LABEL[other]}`;
+  switchBtn.disabled = _engagementBusy;
+  switchBtn.onclick = () => switchEngagement(bp, other);
+}
+
+/**
+ * Record the correction, then re-rank.
+ *
+ * Only the AI Use Cases domain is regenerated. The category changes which data
+ * the use cases should be built on, so the ranking genuinely has to be redone —
+ * but a full six-domain run to answer one corrected checkbox is not a trade
+ * anyone would choose.
+ */
+async function switchEngagement(bp, category) {
+  const switchBtn = document.getElementById('opp-engagement-switch');
+  const textEl = document.getElementById('opp-engagement-text');
+  if (_engagementBusy) return;
+  _engagementBusy = true;
+  if (switchBtn) { switchBtn.disabled = true; switchBtn.textContent = 'Re-ranking…'; }
+
+  const token = localStorage.getItem('token');
+  try {
+    const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+    const saved = await fetch(`${API_BASE}/strategy-canvas/transformation-blueprint/${bp._id}/engagement`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ category, maturity: bp.engagement?.maturity || 'unknown' }),
+    });
+    if (!saved.ok) throw new Error('Could not save that change.');
+
+    const aiUseCases = (bp.domains || []).find(d =>
+      /ai use cases/i.test(d.domainName || '') || /use-?cases/i.test(d.domainId || ''));
+    if (aiUseCases) {
+      const rerank = await fetch(
+        `${API_BASE}/strategy-canvas/transformation-blueprint/${bp._id}/regenerate-domains`,
+        { method: 'POST', headers, body: JSON.stringify({ domainIds: [aiUseCases.domainId] }) });
+      if (!rerank.ok) throw new Error('Saved, but the use cases could not be re-ranked.');
+    }
+
+    // Let the existing poll pick the new content up rather than rendering a
+    // half-updated screen from here.
+    _opportunitiesContentShown = false;
+    if (textEl) textEl.textContent = 'Re-ranking your use cases with the corrected reading…';
+  } catch (err) {
+    if (textEl) textEl.textContent = err.message || 'That change could not be saved.';
+    if (switchBtn) switchBtn.textContent = 'Try again';
+  } finally {
+    _engagementBusy = false;
+    if (switchBtn) switchBtn.disabled = false;
+  }
+}
+
+/**
+ * Progress across every capability, on the Cob screen.
+ *
+ * Errors count as settled: a failed capability is not coming back, and a bar
+ * that stops short implies work still in flight that never arrives.
+ */
+function renderOpportunitiesProgress(bp) {
+  const wrap  = document.getElementById('opp-progress');
+  const fill  = document.getElementById('opp-progress-fill');
+  const label = document.getElementById('opp-progress-label');
+  const count = document.getElementById('opp-progress-count');
+  if (!wrap || !fill) return;
+
+  const caps = (bp.domains || []).flatMap(d => d.capabilities || []);
+  const total = caps.length;
+  if (!total) return;
+
+  const done    = caps.filter(c => c.status === 'completed').length;
+  const failed  = caps.filter(c => c.status === 'error').length;
+  const active  = caps.find(c => c.status === 'in-progress' || c.status === 'generating');
+  const settled = done + failed;
+
+  // Only worth showing while there is something still to wait for. A
+  // finished bar sitting above the recommendation is just clutter.
+  wrap.style.display = settled === total ? 'none' : '';
+
+  fill.style.width = Math.round((settled / total) * 100) + '%';
+  fill.classList.toggle('prog-bar__fill--done', settled === total);
+  count.textContent = `${settled} of ${total}`;
+  label.textContent = settled === total
+    ? (failed ? `${done} of ${total} generated — ${failed} could not be completed` : 'Blueprint complete')
+    : (active ? `Generating ${active.capabilityName || active.name}…` : 'Analysing your objective…');
 }
 
 async function transitionToWorkspace(guestId) {

@@ -49,11 +49,24 @@ function combineContexts(...blocks) {
 
 // ── Company profile helpers ───────────────────────────────────────────────────
 
-export async function loadCompanyProfile(userId) {
+/**
+ * @param {*} userId
+ * @param {*} [blueprintId] When given, the blueprint's stored engagement
+ *   classification rides along on the profile. It is carried here rather than
+ *   threaded as its own parameter because companyProfile already reaches every
+ *   prompt builder, and because engagement is a fact about the engagement as a
+ *   whole — the same kind of thing as the company's name and industry.
+ *   Reading it is a projection, not a re-classification: the LLM call happens
+ *   once, when the blueprint is created.
+ */
+export async function loadCompanyProfile(userId, blueprintId = null) {
   try {
-    const [profile, ctx] = await Promise.all([
+    const [profile, ctx, bp] = await Promise.all([
       UserProfile.findOne({ userId }).lean(),
       CompanyContext.findOne({ userId }).lean(),
+      blueprintId
+        ? TransformationBlueprint.findById(blueprintId, { engagement: 1 }).lean().catch(() => null)
+        : null,
     ]);
     const companyNameNormalized = normalizeCompanyName(profile?.orgName);
     const libraryEntry = companyNameNormalized
@@ -63,13 +76,57 @@ export async function loadCompanyProfile(userId) {
       companyName: profile?.orgName        || 'Your Organisation',
       orgName:     profile?.orgName        || '',
       role:        profile?.role           || 'Executive',
-      industry:    profile?.industryDomain || 'Automotive',
+      industry:    profile?.industryDomain || '',
       contextDoc:  ctx?.content            || '',
       subVertical: libraryEntry?.subVertical || '',
+      engagement:  bp?.engagement          || null,
     };
   } catch {
-    return { companyName: 'Your Organisation', orgName: '', role: 'Executive', industry: 'Automotive', contextDoc: '', subVertical: '' };
+    return { companyName: 'Your Organisation', orgName: '', role: 'Executive', industry: '', contextDoc: '', subVertical: '', engagement: null };
   }
+}
+
+/**
+ * Where this engagement's data actually lives, as prompt guidance.
+ *
+ * Without it the model is told to name "realistic engineering tool name(s)"
+ * with DOORS / Polarion / TestRail / CANoe / Teamcenter as the examples, which
+ * is right for an automotive supplier automating its defect triage and wrong
+ * for everyone else. A company putting AI into the product it sells does not
+ * have a requirements management tool holding the data — it has its own
+ * repository and its own application database.
+ *
+ * Returns '' when the engagement is undecided, so generation is not steered by
+ * a guess. See services/engagementClassifierService.js.
+ */
+function datasetSourceGuidance(engagement) {
+  const category = engagement?.category;
+  if (!category) return '';
+
+  const maturityNote = engagement.maturity === 'startup'
+    // Not a deficiency to work around: it is the normal shape of a young
+    // company, and asking for documents that do not exist produces datasets
+    // the customer can only ever mark unavailable.
+    ? '\n- This company is young: its CODE IS ITS SPECIFICATION. Do NOT ask for separate requirement or architecture documents — they do not exist. Name the code and the running system instead.'
+    : engagement.maturity === 'enterprise'
+      ? '\n- This is an established organisation, so separate requirement and architecture documents likely exist alongside the code, and may be named as sources.'
+      : '';
+
+  if (category === 'product-ai') {
+    return `
+DATA SOURCE GUIDANCE (this engagement builds AI INTO THE PRODUCT THIS COMPANY SELLS):
+- typicalSource must name THIS COMPANY'S OWN systems — its application database and the tables in it, its source repository, its own analytics and billing systems.
+- Do NOT name third-party engineering process tools (Jira, Confluence, DOORS, Polarion, TestRail, Teamcenter) unless the objective itself is about that process. They are where a company's ENGINEERING PROCESS lives, not where its PRODUCT'S data lives.
+- The data this AI feature needs is the data the product already collects from its users.${maturityNote}
+`;
+  }
+
+  const area = engagement.subArea ? ` in the "${engagement.subArea}" area of work` : '';
+  return `
+DATA SOURCE GUIDANCE (this engagement automates work this company's own staff do${area}):
+- typicalSource must name the tools that team actually works in${area ? ' for that area' : ''} — issue trackers, documentation systems, test management, CI, or service desks as appropriate.
+- Name tools realistic for this company's industry and size; do not assume a heavyweight toolchain a small team would not run.${maturityNote}
+`;
 }
 
 // ── Industry fit (automotive KB grounding vs core-only) ───────────────────────
@@ -79,6 +136,32 @@ export async function loadCompanyProfile(userId) {
 const NO_KB_FOLDER_INDUSTRY = 'General'; // no knowledge_base/.../General/ folder exists, so
                                           // getDomainCapabilityBlueprint's file read fails
                                           // closed to core-only content — exactly what we want.
+
+// Prompt label only — never a KB folder name. This used to be 'Automotive',
+// which meant a company that had declared no industry was TOLD it was
+// automotive in every prompt ("Ground every claim in the Automotive
+// engineering context"). An academy-management software company was grounded
+// that way for a whole run. An unspecified industry must read as unspecified.
+const UNSPECIFIED_INDUSTRY = 'General Business';
+
+/**
+ * The industry label the prompts should use.
+ *
+ * Prefers the industry actually RESOLVED for this blueprint over the one on the
+ * user's profile, because UserProfile.industryDomain is an automotive-only enum
+ * that defaults to 'Automotive' — every profile claims automotive whether or
+ * not it is true. That claim is what told an academy-management software
+ * company's prompts to "ground every claim in the Automotive engineering
+ * context", while industryFit on the very same blueprint had correctly
+ * resolved Education Technology.
+ *
+ * An empty industryFit.industry means "no overlay fits", which is a real answer
+ * and must NOT fall back to the profile's automotive-by-default claim.
+ */
+function industryLabel(industryFit, companyProfile) {
+  if (industryFit) return industryFit.industry || UNSPECIFIED_INDUSTRY;
+  return companyProfile?.industry || UNSPECIFIED_INDUSTRY;
+}
 
 /**
  * Which industry overlay grounds this blueprint.
@@ -897,10 +980,10 @@ the recommended sources and expectedAIOutput must stay consistent with it.
 5. datasets (exactly 6 items — one per data category)
    The minimum critical datasets required to implement this AI use case.
    Categories: Business & Program, Product, System & Software, Engineering, Operational, Supporting Knowledge.
-   Each item: { "name": "<2–4 word dataset name specific to this initiative>", "purpose": "<why this data is needed, ≤10 words, business reason not technical>", "typicalSource": "<tool or system where it typically exists, e.g. IBM DOORS / Polarion, Jira, TestRail, GitHub, CANoe, Teamcenter>", "priority": "HIGH|MEDIUM|LOW", "expectedAIOutput": "<what AI will produce from this dataset, ≤10 words, concrete output not description>" }
+   Each item: { "name": "<2–4 word dataset name specific to this initiative>", "purpose": "<why this data is needed, ≤10 words, business reason not technical>", "typicalSource": "<the specific system or tool where this company's copy of this data actually lives>", "priority": "HIGH|MEDIUM|LOW", "expectedAIOutput": "<what AI will produce from this dataset, ≤10 words, concrete output not description>" }
    - name: specific to THIS use case and domain
    - purpose: why this data matters for the AI — not what the data is
-   - typicalSource: realistic engineering tool name(s) — use automotive tools for automotive context
+   - typicalSource: name real systems this company would plausibly run, following the DATA SOURCE GUIDANCE above where one is given. Never list a tool merely because it is common in some other industry.
    - priority: HIGH = AI cannot function without it, MEDIUM = important but workaround possible, LOW = adds value but not blocking
    - expectedAIOutput: the concrete AI deliverable — e.g. "Structured user stories linked to acceptance criteria", "Searchable test case knowledge base", "Automated traceability map"
    REJECT a purpose that would apply to any AI project (e.g. "Needed for AI analysis" alone is NOT
@@ -2648,7 +2731,7 @@ Generate 2-4 actionItems for this capability as a whole (not per section) — co
 // Generates section.brief in a single LLM call per capability.
 // CTO extras (strategicPillars etc.) are injected into this call when enabled.
 
-function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null }) {
+function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null, engagement = null }) {
   const sectionList   = parsedSections.map((s, i) => {
     let entry = `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`;
     if (s.consultantGuide) entry += `\n\n   CONSULTANT METHODOLOGY:\n${s.consultantGuide}`;
@@ -2656,12 +2739,15 @@ function buildBriefPrompt({ companyName, industry, role, businessObjective, cont
   }).join('\n\n');
   const sectionTitles = parsedSections.map(s => `"${s.title}"`).join(', ');
 
-  const templateInstructions = BLUEPRINT_CONFIG.generate.ctoExtras
+  // Guidance first: the dataset spec inside the templates refers back to it as
+  // "the DATA SOURCE GUIDANCE above". Empty string when engagement is
+  // undecided, which leaves the prompt exactly as it was.
+  const templateInstructions = datasetSourceGuidance(engagement) + (BLUEPRINT_CONFIG.generate.ctoExtras
     ? parsedSections
         .filter(s => SECTION_TEMPLATES[s.title])
         .map(s => SECTION_TEMPLATES[s.title].promptInstruction)
         .join('\n')
-    : '';
+    : '');
 
   const skipStrategicPosition = NO_STRATEGIC_POSITION_CAPABILITIES.has(capabilityName);
   // These 4 capabilities render exclusively through their own SECTION_TEMPLATES extras —
@@ -2852,6 +2938,7 @@ export async function runBriefGeneration(cap, companyProfile, businessObjective,
   }
 
   const { systemPrompt, userMessage } = buildBriefPrompt({
+    engagement: companyProfile.engagement,
     companyName:         companyProfile.companyName,
     industry,
     role:                companyProfile.role,
@@ -2895,7 +2982,7 @@ function normalizeActionItems(raw) {
 // Step 2 extracts the structured brief from that prose.
 // CTO extras are injected into Step 2 when enabled.
 
-function buildEssayPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null }) {
+function buildEssayPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null, engagement = null }) {
   const sectionList   = parsedSections.map((s, i) => {
     let entry = `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`;
     if (s.consultantGuide) entry += `\n\n   CONSULTANT METHODOLOGY:\n${s.consultantGuide}`;
@@ -2953,12 +3040,13 @@ function buildBriefExtractionPrompt({ capabilityName, parsedSections, essays }) 
     .map(e => `SECTION: ${e.title}\n\n${e.content}`)
     .join('\n\n---\n\n');
 
-  const templateInstructions = BLUEPRINT_CONFIG.generate.ctoExtras
+  // Same ordering rule as the brief pipeline — see buildBriefPrompt.
+  const templateInstructions = datasetSourceGuidance(engagement) + (BLUEPRINT_CONFIG.generate.ctoExtras
     ? parsedSections
         .filter(s => SECTION_TEMPLATES[s.title])
         .map(s => SECTION_TEMPLATES[s.title].promptInstruction)
         .join('\n')
-    : '';
+    : '');
 
   const systemPrompt = `You are SoorgaAI. Extract a structured Strategy Brief from each strategic analysis below.
 
@@ -3000,6 +3088,7 @@ Extract the structured Strategy Brief for all ${parsedSections.length} sections.
 
 async function runEssayGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null) {
   const { systemPrompt, userMessage } = buildEssayPrompt({
+    engagement: companyProfile.engagement,
     companyName:         companyProfile.companyName,
     industry,
     role:                companyProfile.role,
@@ -3087,7 +3176,7 @@ async function generateCapabilitySections(cap, companyProfile, businessObjective
 // strategicPosition as the strategic anchor. Does NOT rewrite strategicPosition.
 
 export async function regenerateSectionExtras(blueprintId, capabilityId, sectionTitles, userId) {
-  const companyProfile = await loadCompanyProfile(userId);
+  const companyProfile = await loadCompanyProfile(userId, blueprintId);
   const { companyName, industry, role } = companyProfile;
 
   const blueprint = await CompanyBlueprint.findOne({ _id: blueprintId, userId }).lean();
@@ -3193,7 +3282,7 @@ OUTPUT — valid JSON only, no markdown fences:
 // domains → capabilities → sections structure).
 
 export async function regenerateSectionExtrasForTransformation(blueprintId, domainId, capabilityId, sectionTitles, userId) {
-  const companyProfile = await loadCompanyProfile(userId);
+  const companyProfile = await loadCompanyProfile(userId, blueprintId);
   const { companyName, industry, role } = companyProfile;
 
   const blueprint = await TransformationBlueprint.findOne({ _id: blueprintId, userId }).lean();
@@ -3326,9 +3415,9 @@ OUTPUT — valid JSON only, no markdown fences:
 // ── Transformation Blueprint: single-capability regeneration ──────────────────
 
 export async function regenerateTransformationCapabilityAsync(blueprintId, domainId, capabilityId, userId, businessObjective) {
-  const companyProfile = await loadCompanyProfile(userId);
-  const industry       = companyProfile.industry || 'Automotive';
+  const companyProfile = await loadCompanyProfile(userId, blueprintId);
   const industryFit       = await resolveIndustryFit(blueprintId, businessObjective);
+  const industry          = industryLabel(industryFit, companyProfile);
   const groundingIndustry = industryFit.industry || NO_KB_FOLDER_INDUSTRY;
 
   const domain = getDomain(domainId);
@@ -3435,8 +3524,8 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
 // ── Single-capability regeneration (fire-and-forget) ─────────────────────────
 
 export async function regenerateCapabilityAsync(blueprintId, capabilityId, userId, businessObjective) {
-  const companyProfile = await loadCompanyProfile(userId);
-  const industry       = companyProfile.industry || 'Automotive';
+  const companyProfile = await loadCompanyProfile(userId, blueprintId);
+  const industry       = industryLabel(await resolveIndustryFit(blueprintId, businessObjective), companyProfile);
   const capabilities   = getCapabilities();
   const cap            = capabilities.find(c => c.id === capabilityId);
 
@@ -3479,8 +3568,8 @@ export async function regenerateCapabilityAsync(blueprintId, capabilityId, userI
 // ── Main generation orchestrator (fire-and-forget) ────────────────────────────
 
 export async function generateBlueprintAsync(blueprintId, userId, businessObjective) {
-  const companyProfile = await loadCompanyProfile(userId);
-  const industry       = companyProfile.industry || 'Automotive';
+  const companyProfile = await loadCompanyProfile(userId, blueprintId);
+  const industry       = industryLabel(await resolveIndustryFit(blueprintId, businessObjective), companyProfile);
   const capabilities   = getCapabilities();
 
   for (const cap of capabilities) {
@@ -3786,9 +3875,9 @@ function buildJourneyContextForRegen(blueprint, currentDomainId, currentCapabili
 // Generates all enabled domains → capabilities in the TransformationBlueprint.
 // Called fire-and-forget. Domains without KB documents are skipped gracefully.
 export async function generateTransformationAsync(blueprintId, userId, businessObjective) {
-  const companyProfile    = await loadCompanyProfile(userId);
-  const industry          = companyProfile.industry || 'Automotive';
+  const companyProfile    = await loadCompanyProfile(userId, blueprintId);
   const industryFit       = await resolveIndustryFit(blueprintId, businessObjective);
+  const industry          = industryLabel(industryFit, companyProfile);
   // 'General' has no knowledge_base/.../General/ folder, so the industry-file
   // read fails closed to core-only content — see NO_KB_FOLDER_INDUSTRY above.
   const groundingIndustry = industryFit.industry || NO_KB_FOLDER_INDUSTRY;
@@ -3953,9 +4042,9 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
  */
 export async function generateSpecificDomainsAsync(blueprintId, userId, businessObjective, domainIds) {
   try {
-  const companyProfile = await loadCompanyProfile(userId);
-  const industry       = companyProfile.industry || 'Automotive';
+  const companyProfile = await loadCompanyProfile(userId, blueprintId);
   const industryFit       = await resolveIndustryFit(blueprintId, businessObjective);
+  const industry          = industryLabel(industryFit, companyProfile);
   const groundingIndustry = industryFit.industry || NO_KB_FOLDER_INDUSTRY;
   const allDomains     = enabledDomains();
   const domains        = allDomains.filter(d => domainIds.includes(d.id));

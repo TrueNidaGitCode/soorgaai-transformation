@@ -24,6 +24,7 @@
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import LinkedProjectDocument from '../models/LinkedProjectDocument.js';
 import { regexRedact, hashText } from '../services/jiraContentService.js';
+import { classifyUploads } from '../services/uploadClassifierService.js';
 
 /**
  * Text formats only. PDF and Office documents need a parser this project does
@@ -34,6 +35,9 @@ const ACCEPTED = ['.csv', '.json', '.txt', '.md'];
 
 /** Matches the 2 MB body limit on this route; see routes/uploadRoutes.js. */
 const MAX_TEXT_CHARS = 2_000_000;
+
+/** Per request. The browser chunks a folder into several calls. */
+const MAX_FILES_PER_REQUEST = 20;
 
 function extensionOf(filename) {
   const i = String(filename || '').lastIndexOf('.');
@@ -87,6 +91,7 @@ export async function uploadDatasetFile(req, res) {
         sourceType:       'upload',
         sourceId,
         title:            filename,
+        datasetName,
         rawText:          redactedText,
         contentHash:      hashText(redactedText),
         redactionApplied: redactionNotes.length > 0,
@@ -131,13 +136,17 @@ export async function listDatasetFiles(req, res) {
 
     const docs = await LinkedProjectDocument
       .find({ blueprintId, sourceType: 'upload' })
-      .select('sourceId title updatedAt redactionCount')
+      .select('sourceId title datasetName updatedAt redactionCount')
       .lean();
 
+    // datasetName is what a file was found to serve; the path is what it is.
+    // Reporting both lets the screen show which dataset is covered AND which
+    // files could not be placed, rather than silently dropping the latter.
     return res.json({
       uploads: docs.map(d => ({
-        datasetName:    d.sourceId.replace(/^upload:/, ''),
+        path:           d.sourceId.replace(/^upload:/, ''),
         filename:       d.title,
+        datasetName:    d.datasetName || '',
         uploadedAt:     d.updatedAt,
         redactionCount: d.redactionCount,
       })),
@@ -145,5 +154,139 @@ export async function listDatasetFiles(req, res) {
   } catch (err) {
     console.error('listDatasetFiles error:', err);
     return res.status(500).json({ error: 'Failed to load uploaded files.' });
+  }
+}
+
+/**
+ * POST /api/uploads/folder  { blueprintId, files: [{ path, text }] }
+ *
+ * A folder's worth of exports at once, with no dataset named. Nobody has one
+ * clean file per required dataset; they have a folder, so Svarg takes the
+ * folder and works out what is in it (see uploadClassifierService).
+ *
+ * Files arrive in batches from the browser — the body limit is per request, so
+ * the client chunks and calls this repeatedly. Each call stores what it is
+ * given; classification runs once at the end, over everything.
+ */
+export async function uploadFolder(req, res) {
+  try {
+    const { blueprintId, files } = req.body || {};
+    if (!blueprintId || !Array.isArray(files) || !files.length) {
+      return res.status(400).json({ error: 'blueprintId and a non-empty files array are required.' });
+    }
+    if (files.length > MAX_FILES_PER_REQUEST) {
+      return res.status(400).json({ error: `Send at most ${MAX_FILES_PER_REQUEST} files per request.` });
+    }
+
+    const blueprint = await TransformationBlueprint
+      .findOne({ _id: blueprintId, userId: req.user._id })
+      .select('_id')
+      .lean();
+    if (!blueprint) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    const stored = [];
+    const rejected = [];
+
+    for (const f of files) {
+      const filePath = String(f?.path || '').slice(0, 400);
+      const text = typeof f?.text === 'string' ? f.text : '';
+      const ext = extensionOf(filePath);
+
+      if (!filePath) { continue; }
+      if (!ACCEPTED.includes(ext)) { rejected.push({ path: filePath, reason: 'unsupported type' }); continue; }
+      if (!text.trim())            { rejected.push({ path: filePath, reason: 'empty' }); continue; }
+      if (text.length > MAX_TEXT_CHARS) { rejected.push({ path: filePath, reason: 'too large' }); continue; }
+
+      const { redactedText, redactionNotes } = regexRedact(text);
+
+      await LinkedProjectDocument.findOneAndUpdate(
+        { blueprintId, sourceId: `upload:${filePath}` },
+        {
+          blueprintId,
+          linkedByUserId:   req.user._id,
+          sourceType:       'upload',
+          sourceId:         `upload:${filePath}`,
+          title:            filePath.split('/').pop(),
+          // Left empty until classification runs. Unclassified is a real state.
+          datasetName:      '',
+          rawText:          redactedText,
+          contentHash:      hashText(redactedText),
+          redactionApplied: redactionNotes.length > 0,
+          redactionCount:   redactionNotes.length,
+          redactionNotes,
+          extractionStatus: 'extracted',
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      stored.push(filePath);
+    }
+
+    console.log(`[upload] ${blueprintId}: stored ${stored.length}, rejected ${rejected.length}`);
+    return res.json({ stored: stored.length, rejected });
+  } catch (err) {
+    console.error('uploadFolder error:', err);
+    return res.status(500).json({ error: 'Failed to store those files.' });
+  }
+}
+
+/**
+ * POST /api/uploads/classify  { blueprintId }
+ *
+ * Works out which required dataset each uploaded file serves. Run after the
+ * uploads finish, over everything stored — classifying per batch would deny
+ * the model the chance to see that two files serve the same dataset.
+ */
+export async function classifyUploadedFiles(req, res) {
+  try {
+    const { blueprintId } = req.body || {};
+    if (!blueprintId) return res.status(400).json({ error: 'blueprintId is required.' });
+
+    const blueprint = await TransformationBlueprint
+      .findOne({ _id: blueprintId, userId: req.user._id })
+      .select('domains')
+      .lean();
+    if (!blueprint) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    const datasets = (blueprint.domains || [])
+      .flatMap(d => d.capabilities || [])
+      .flatMap(c => c.sections || [])
+      .flatMap(s => s.brief?.datasets || [])
+      .map(d => ({ name: d.name, purpose: d.purpose }));
+
+    const docs = await LinkedProjectDocument
+      .find({ blueprintId, sourceType: 'upload' })
+      .select('sourceId rawText')
+      .lean();
+    if (!docs.length) return res.json({ classified: 0, unclassified: 0 });
+
+    const files = docs.map(d => ({
+      path: d.sourceId.replace(/^upload:/, ''),
+      content: d.rawText || '',
+    }));
+
+    const matches = await classifyUploads(files, datasets);
+
+    // Reset first: a re-run must be able to UNSET a match the model no longer
+    // stands behind, not just add new ones.
+    await LinkedProjectDocument.updateMany(
+      { blueprintId, sourceType: 'upload' },
+      { $set: { datasetName: '' } }
+    );
+    for (const m of matches) {
+      await LinkedProjectDocument.updateOne(
+        { blueprintId, sourceId: `upload:${m.file}` },
+        { $set: { datasetName: m.dataset } }
+      );
+    }
+
+    console.log(`[upload] ${blueprintId}: classified ${matches.length} of ${files.length}`);
+    return res.json({
+      classified: matches.length,
+      unclassified: files.length - matches.length,
+      matches,
+    });
+  } catch (err) {
+    console.error('classifyUploadedFiles error:', err);
+    return res.status(500).json({ error: 'Failed to classify the uploaded files.' });
   }
 }

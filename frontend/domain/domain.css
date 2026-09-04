@@ -3142,6 +3142,51 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
   line-height: 1.5;
   max-width: 70ch;
 }
+.aria-upload__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.aria-upload__hint {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.5;
+}
+
+/* Files that could not be placed. Deliberately visible: the customer chose to
+   supply them, and quietly dropping what we failed to understand would be the
+   same dishonesty as inventing a match for it. */
+.aria-upload-unplaced {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+}
+.aria-upload-unplaced__head {
+  margin: 0 0 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+}
+.aria-upload-unplaced__note {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+}
+.aria-upload-unplaced__file {
+  display: inline-block;
+  margin: 0 6px 6px 0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.55);
+  word-break: break-all;
+}
+
 .aria-upload-list { display: flex; flex-direction: column; gap: 2px; }
 .aria-upload-row {
   display: flex;

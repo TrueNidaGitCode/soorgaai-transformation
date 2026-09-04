@@ -1,6 +1,11 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { uploadDatasetFile, listDatasetFiles } from '../controllers/uploadController.js';
+import {
+  uploadDatasetFile,
+  uploadFolder,
+  classifyUploadedFiles,
+  listDatasetFiles,
+} from '../controllers/uploadController.js';
 
 const router = express.Router();
 
@@ -13,6 +18,8 @@ const router = express.Router();
 const uploadBody = express.json({ limit: '2mb' });
 
 router.post('/dataset-file', protect, uploadBody, uploadDatasetFile);
+router.post('/folder', protect, uploadBody, uploadFolder);
+router.post('/classify', protect, express.json(), classifyUploadedFiles);
 router.get('/dataset-files/:blueprintId', protect, listDatasetFiles);
 
 export default router;

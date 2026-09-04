@@ -1009,8 +1009,12 @@ function applyCodeMatches(bp) {
 
 // ── Upload ───────────────────────────────────────────────────────────────────
 
-// datasetName → { filename, uploadedAt }
+// datasetName → { filename, ... } for files that were placed. Drives the
+// required-data table, so only classified files belong here.
 let _uploads = new Map();
+// Everything uploaded, classified or not. A file we could not place is still
+// context the customer supplied and must stay visible.
+let _allUploads = [];
 let _uploadTarget = null;
 
 const MAX_UPLOAD_CHARS = 2_000_000;
@@ -1018,7 +1022,8 @@ const MAX_UPLOAD_CHARS = 2_000_000;
 async function loadUploads(blueprintId) {
   try {
     const { uploads } = await api(`/uploads/dataset-files/${encodeURIComponent(blueprintId)}`);
-    _uploads = new Map((uploads || []).map(u => [u.datasetName, u]));
+    _allUploads = uploads || [];
+    _uploads = new Map(_allUploads.filter(u => u.datasetName).map(u => [u.datasetName, u]));
   } catch {
     // A failed list must not make the screen claim nothing was uploaded — but
     // it also must not block the rest of Aria. Leave whatever we already have.
@@ -1034,6 +1039,15 @@ function renderUploadList() {
     return;
   }
 
+  const unplaced = _allUploads.filter(u => !u.datasetName);
+  const unplacedHtml = unplaced.length ? `
+    <div class="aria-upload-unplaced">
+      <p class="aria-upload-unplaced__head">${unplaced.length} file${unplaced.length === 1 ? '' : 's'} kept but not matched to a dataset</p>
+      <p class="aria-upload-unplaced__note">Still used as background context. Nothing you uploaded is discarded.</p>
+      ${unplaced.slice(0, 12).map(u => `<span class="aria-upload-unplaced__file">${esc(u.path || u.filename)}</span>`).join('')}
+      ${unplaced.length > 12 ? `<span class="aria-upload-unplaced__file">and ${unplaced.length - 12} more</span>` : ''}
+    </div>` : '';
+
   list.innerHTML = _cachedDatasets.map(d => {
     const up = _uploads.get(d.name);
     return `
@@ -1045,7 +1059,7 @@ function renderUploadList() {
         <button type="button" class="aria-action-btn ${up ? '' : 'aria-action-btn--primary'}"
                 data-upload-for="${esc(d.name)}">${up ? 'Replace' : 'Upload'}</button>
       </div>`;
-  }).join('');
+  }).join('') + unplacedHtml;
 
   list.querySelectorAll('[data-upload-for]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1062,6 +1076,77 @@ function showUploadError(message) {
   if (!el) return;
   el.textContent = message;
   el.style.display = message ? 'block' : 'none';
+}
+
+const UPLOAD_EXTS = ['.csv', '.json', '.txt', '.md'];
+const UPLOAD_BATCH = 15;          // files per request; the server caps at 20
+
+/**
+ * A whole folder, classified afterwards.
+ *
+ * Nobody has one clean export per required dataset, so the user hands over the
+ * folder and Svarg works out what is in it. Files are read in the browser and
+ * only their text is sent — the same as the single-file path.
+ */
+async function handleFolderPick(fileList) {
+  const files = [...(fileList || [])].filter(f =>
+    UPLOAD_EXTS.some(e => f.name.toLowerCase().endsWith(e)));
+
+  const hint = document.getElementById('aria-upload-hint');
+  showUploadError('');
+
+  if (!files.length) {
+    showUploadError(`No .csv, .json, .txt or .md files in that folder. Other formats need a parser Svarg does not have yet.`);
+    return;
+  }
+  if (!_blueprintId) return;
+
+  const skipped = [...(fileList || [])].length - files.length;
+  const setHint = (t) => { if (hint) hint.textContent = t; };
+  setHint(`Reading ${files.length} file${files.length === 1 ? '' : 's'}…`);
+
+  try {
+    let sent = 0;
+    for (let i = 0; i < files.length; i += UPLOAD_BATCH) {
+      const slice = files.slice(i, i + UPLOAD_BATCH);
+      const payload = [];
+      for (const f of slice) {
+        const text = await f.text().catch(() => null);
+        if (text === null || !text.trim()) continue;
+        if (text.length > MAX_UPLOAD_CHARS) continue;
+        // webkitRelativePath keeps the folder structure, which is often the
+        // clearest signal about what a file is.
+        payload.push({ path: f.webkitRelativePath || f.name, text });
+      }
+      if (!payload.length) continue;
+
+      await api('/uploads/folder', {
+        method: 'POST',
+        body: JSON.stringify({ blueprintId: _blueprintId, files: payload }),
+      });
+      sent += payload.length;
+      setHint(`Uploaded ${sent} of ${files.length}…`);
+    }
+
+    if (!sent) { showUploadError('None of those files could be read.'); setHint(''); return; }
+
+    // One classification pass over everything, not per batch — the model needs
+    // to see the whole set to tell that two files serve the same dataset.
+    setHint(`Working out which dataset each file serves…`);
+    const { classified, unclassified } = await api('/uploads/classify', {
+      method: 'POST',
+      body: JSON.stringify({ blueprintId: _blueprintId }),
+    });
+
+    await loadUploads(_blueprintId);
+    renderUploadList();
+    renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
+    setHint(`${sent} file${sent === 1 ? '' : 's'} uploaded — ${classified} matched to a dataset, ${unclassified} kept as context`
+      + (skipped ? `. ${skipped} skipped as unsupported types.` : '.'));
+  } catch (err) {
+    showUploadError(err.message);
+    setHint('');
+  }
 }
 
 async function handleUploadFile(file) {
@@ -1115,6 +1200,15 @@ function wireStaticControls() {
   });
 
   document.getElementById('aria-gh-analyze')?.addEventListener('click', analyzeRepo);
+
+  document.getElementById('aria-upload-folder-btn')?.addEventListener('click', () => {
+    const input = document.getElementById('aria-upload-folder');
+    input.value = '';               // so re-picking the same folder still fires
+    input.click();
+  });
+  document.getElementById('aria-upload-folder')?.addEventListener('change', (e) => {
+    handleFolderPick(e.target.files);
+  });
 
   document.getElementById('aria-gh-connect')?.addEventListener('click', (e) => {
     e.preventDefault();

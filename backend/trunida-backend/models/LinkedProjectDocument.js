@@ -38,6 +38,16 @@ const linkedProjectDocumentSchema = new mongoose.Schema({
   title:     { type: String, required: true },
   permalink: { type: String, default: '' },
 
+  // Which required dataset an uploaded file was found to serve, decided by
+  // classification rather than by the user tagging each file — nobody has one
+  // clean export per dataset, they have a folder.
+  //
+  // Empty means unclassified, which is a real and kept state: a file that
+  // matches no dataset is still context the customer deliberately supplied,
+  // and discarding it silently would be worse than admitting we could not
+  // place it. Only used when sourceType is 'upload'.
+  datasetName: { type: String, default: '' },
+
   summary: { type: String, default: '' },
   keywords: { type: [String], default: [] },
   rawText: { type: String, default: '' },

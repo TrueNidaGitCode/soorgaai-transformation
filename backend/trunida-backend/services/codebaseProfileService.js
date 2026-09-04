@@ -19,7 +19,7 @@
  */
 
 import crypto from 'crypto';
-import { generate } from './llmService.js';
+import { generateForProduct } from './productLlm.js';
 import { regexRedact } from './jiraContentService.js';
 import { embedBatch, EMBEDDING_PROVIDER, EMBEDDING_MODEL } from './embeddingService.js';
 import { getRepoTree, getFileContent } from './githubAppService.js';
@@ -152,7 +152,7 @@ export async function deriveProfile(files) {
     .join('\n\n');
 
   try {
-    const result = await generate({
+    const result = await generateForProduct({
       systemPrompt: PROFILE_PROMPT,
       userMessage: corpus.slice(0, 120_000),
       maxTokens: 1500,
@@ -216,7 +216,7 @@ export async function matchDatasets(datasets, entities) {
   if (!datasets.length || !entities.length) return [];
 
   try {
-    const result = await generate({
+    const result = await generateForProduct({
       systemPrompt: MATCH_PROMPT,
       userMessage:
         `REQUIRED DATASETS:\n${datasets.map(d => `- ${d.name}: ${d.purpose || ''}`).join('\n')}\n\n`
@@ -276,16 +276,38 @@ export async function storeCodeChunks({ userId, blueprintId, repoFullName, files
     });
   }
 
-  const vectors = await embedBatch(rows.map(r => r.content));
+  // Embedding is the expensive part and nothing reads code yet — retrieveCode
+  // arrives with Eame. Off by default: store the redacted text now (it is the
+  // costly half to obtain, and it came from a customer's repository), embed
+  // when there is something to retrieve for.
+  //
+  // Not merely a cost switch. Embedding sends every selected file's full text
+  // to the embedding provider, which for a customer's source is the largest
+  // thing this feature would send anywhere.
+  const embed = process.env.CODE_CHUNK_EMBEDDING === '1';
+
+  let vectors = null;
+  if (embed) {
+    vectors = await embedBatch(rows.map(r => r.content));
+  } else {
+    console.log(`[codebaseProfile] stored ${rows.length} chunk(s) without vectors `
+      + `(set CODE_CHUNK_EMBEDDING=1 to embed)`);
+  }
+
   await CustomerCodeChunk.bulkWrite(rows.map((r, i) => ({
     updateOne: {
       filter: { chunkId: r.chunkId },
-      update: { $set: { ...r, embedding: vectors[i], embeddingProvider: EMBEDDING_PROVIDER, embeddingModel: EMBEDDING_MODEL } },
+      update: { $set: {
+        ...r,
+        ...(embed
+          ? { embedding: vectors[i], embeddingProvider: EMBEDDING_PROVIDER, embeddingModel: EMBEDDING_MODEL }
+          : { embedding: [], embeddingProvider: '', embeddingModel: '' }),
+      } },
       upsert: true,
     },
   })));
 
-  return { stored: rows.length };
+  return { stored: rows.length, embedded: embed };
 }
 
 /**
@@ -303,7 +325,17 @@ export async function retrieveCode({ userId, blueprintId, queryText, topK = 6 })
     { userId, ...(blueprintId ? { blueprintId } : {}), embeddingProvider: EMBEDDING_PROVIDER, embeddingModel: EMBEDDING_MODEL },
     { path: 1, content: 1, embedding: 1 }
   ).lean();
-  if (!rows.length) return [];
+  if (!rows.length) {
+    // Distinguish "no code stored" from "code stored but never embedded" —
+    // the second looks identical from here and is fixed by a backfill, not by
+    // re-reading the repository.
+    const unembedded = await CustomerCodeChunk.countDocuments({ userId, ...(blueprintId ? { blueprintId } : {}) });
+    if (unembedded) {
+      console.warn(`[codebaseProfile] ${unembedded} chunk(s) stored without vectors — `
+        + `set CODE_CHUNK_EMBEDDING=1 and re-analyse to make them retrievable.`);
+    }
+    return [];
+  }
 
   const [queryVector] = await embedBatch([queryText]);
   const score = (v) => {

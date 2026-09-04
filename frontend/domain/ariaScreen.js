@@ -938,9 +938,17 @@ async function analyzeRepo() {
   }
 }
 
+/**
+ * Wait for the read to land.
+ *
+ * Twenty minutes, not three. A local model takes well over a minute on three
+ * small files, so a real repository is minutes of work — the original window
+ * would have timed out on every honest run and told the user to reload a page
+ * that was still working.
+ */
 async function pollForProfile() {
-  for (let i = 0; i < 60; i++) {
-    await new Promise(r => setTimeout(r, 3000));
+  for (let i = 0; i < 240; i++) {
+    await new Promise(r => setTimeout(r, 5000));
     try {
       const bp = await api(`/strategy-canvas/transformation-blueprint?id=${encodeURIComponent(_blueprintId)}`);
       if (bp?.codebaseProfile?.checked) {

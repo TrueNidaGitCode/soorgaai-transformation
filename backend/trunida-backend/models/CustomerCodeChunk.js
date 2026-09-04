@@ -51,8 +51,14 @@ const customerCodeChunkSchema = new mongoose.Schema({
   chunkIndex:   { type: Number, default: 0 },
 
   // Redacted before it ever arrives here — see codebaseProfileService.
-  content:   { type: String, required: true },
-  embedding: { type: [Number], required: true },
+  content: { type: String, required: true },
+
+  // Optional, and empty by default. Nothing retrieves code yet — that arrives
+  // with Eame — so embedding every file of every repository on read would be
+  // spend with no reader, and the text is the expensive half to obtain.
+  // Storing it now means vectors can be backfilled later without going back to
+  // GitHub. A chunk with no vector is simply invisible to retrieval.
+  embedding: { type: [Number], default: [] },
 
   // Which embedding configuration produced the vector. Vectors from different
   // models are not comparable even at identical width, so retrieval filters on

@@ -418,6 +418,15 @@ const transformationBlueprintSchema = new mongoose.Schema({
       }, { _id: false })],
       default: [],
     },
+    // Live progress while a read is running. The server knows which phase it
+    // is in and how far through; without this the screen could only show a
+    // heartbeat for something that takes minutes.
+    progress: {
+      phase: { type: String, default: '' },   // listing | fetching | profiling | matching | storing
+      done:  { type: Number, default: 0 },
+      total: { type: Number, default: 0 },
+      startedAt: { type: Date, default: null },
+    },
     filesRead:  { type: Number,  default: 0 },
     chunks:     { type: Number,  default: 0 },
     partial:    { type: Boolean, default: false },

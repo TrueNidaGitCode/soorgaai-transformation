@@ -243,7 +243,11 @@ export async function analyzeRepository(req, res) {
 
     await TransformationBlueprint.updateOne(
       { _id: blueprintId },
-      { $set: { 'codebaseProfile.checked': false, 'codebaseProfile.repoFullName': repoFullName } }
+      { $set: {
+        'codebaseProfile.checked': false,
+        'codebaseProfile.repoFullName': repoFullName,
+        'codebaseProfile.progress': { phase: 'listing', done: 0, total: 0, startedAt: new Date() },
+      } }
     );
 
     analyzeRepositoryAsync({
@@ -252,6 +256,10 @@ export async function analyzeRepository(req, res) {
       userId: req.user._id,
       blueprintId,
       datasets,
+      // Written straight to the blueprint so the polling client can see which
+      // phase the read is in. Throttled: fetching fires once per file and a
+      // write per file would be dozens of pointless round trips.
+      onProgress: throttledProgress(blueprintId),
     }).catch(err => console.error('[codebaseProfile] async analysis failed:', err.message));
 
     return res.json({ started: true, repoFullName });
@@ -259,6 +267,26 @@ export async function analyzeRepository(req, res) {
     console.error('analyzeRepository error:', err);
     return res.status(500).json({ error: 'Failed to start the analysis.' });
   }
+}
+
+/**
+ * At most one progress write per second. The phase and counters are for a
+ * human watching a progress bar, and a database write for every file read
+ * would cost more than the reading does.
+ */
+function throttledProgress(blueprintId) {
+  let last = 0;
+  return (p) => {
+    const now = Date.now();
+    if (now - last < 1000 && p.phase !== 'storing') return;
+    last = now;
+    TransformationBlueprint.updateOne(
+      { _id: blueprintId },
+      { $set: { 'codebaseProfile.progress.phase': p.phase,
+                'codebaseProfile.progress.done':  p.done  || 0,
+                'codebaseProfile.progress.total': p.total || 0 } }
+    ).catch(() => { /* progress is not worth failing an analysis over */ });
+  };
 }
 
 async function analyzeRepositoryAsync(args) {
@@ -280,6 +308,7 @@ async function analyzeRepositoryAsync(args) {
       chunks:         stats.chunks,
       partial:        stats.partial,
       analyzedAt:     new Date(),
+      progress:       { phase: '', done: 0, total: 0, startedAt: null },
     } } }
   );
 

@@ -182,7 +182,7 @@ function batchFiles(files) {
  * silently. Each batch is profiled independently and the results merged: a
  * failed batch costs its own files, not the whole profile.
  */
-export async function deriveProfile(files) {
+export async function deriveProfile(files, onProgress = null) {
   if (!files.length) {
     return { languages: [], frameworks: [], database: '', entities: [], conventions: '', summary: '', ok: false };
   }
@@ -194,6 +194,7 @@ export async function deriveProfile(files) {
 
   const results = [];
   for (const [i, batch] of batches.entries()) {
+    onProgress?.({ phase: 'profiling', done: i, total: batches.length });
     const one = await profileBatch(batch, i + 1, batches.length);
     if (one) results.push(one);
   }
@@ -427,17 +428,19 @@ export async function retrieveCode({ userId, blueprintId, queryText, topK = 6 })
  * Read a repository and describe it. Returns the profile and the matches; the
  * caller persists them.
  */
-export async function analyzeRepository({ access, repoFullName, userId, blueprintId, datasets = [] }) {
+export async function analyzeRepository({ access, repoFullName, userId, blueprintId, datasets = [], onProgress = null }) {
   // Timed because "how long does a repository take" is the first question
   // anyone asks before pointing this at a large one, and it was unanswerable.
   // Reported per phase: fetching is network-bound and profiling is model-bound,
   // and which dominates decides whether to tune caps or change model.
   const t0 = Date.now();
+  onProgress?.({ phase: 'listing', done: 0, total: 0 });
   const tree = await readTree(access, repoFullName);
   const { selected, capped } = selectFiles(tree.files);
 
   const files = [];
   for (const f of selected) {
+    onProgress?.({ phase: 'fetching', done: files.length, total: selected.length });
     const raw = await readFile(access, repoFullName, f.path);
     if (!raw) continue;
     // Source carries connection strings, seed data and credentials far more
@@ -447,9 +450,11 @@ export async function analyzeRepository({ access, repoFullName, userId, blueprin
   }
 
   const tFetched = Date.now();
-  const profile = await deriveProfile(files);
+  const profile = await deriveProfile(files, onProgress);
   const tProfiled = Date.now();
+  onProgress?.({ phase: 'matching', done: 0, total: 0 });
   const matches = await matchDatasets(datasets, profile.entities);
+  onProgress?.({ phase: 'storing', done: 0, total: 0 });
   const { stored } = await storeCodeChunks({ userId, blueprintId, repoFullName, files });
   const done = Date.now();
 

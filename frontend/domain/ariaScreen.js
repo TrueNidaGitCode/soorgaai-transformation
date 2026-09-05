@@ -967,6 +967,7 @@ async function analyzeRepo() {
     await pollForProfile();
   } catch (err) {
     showGhError(err.message);
+    ghProgress(null);
   } finally {
     _analyzing = false;
     if (btn) { btn.disabled = false; btn.textContent = 'Read repository'; }
@@ -982,7 +983,48 @@ async function analyzeRepo() {
  * would have timed out on every honest run and told the user to reload a page
  * that was still working.
  */
+/** What each phase is called, in the order the server runs them. */
+const GH_PHASES = {
+  listing:   'Listing the files in your repository…',
+  fetching:  'Reading files…',
+  profiling: 'Working out how the product is built…',
+  matching:  'Matching your data to what it found…',
+  storing:   'Saving…',
+};
+const GH_PHASE_ORDER = ['listing', 'fetching', 'profiling', 'matching', 'storing'];
+
+function ghProgress(progress, startedMs) {
+  const wrap = document.getElementById('aria-gh-progress');
+  const l = document.getElementById('aria-gh-progress-label');
+  const c = document.getElementById('aria-gh-progress-count');
+  const f = document.getElementById('aria-gh-progress-fill');
+  if (!wrap) return;
+
+  if (!progress) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+
+  const phase = progress.phase || 'listing';
+  if (l) l.textContent = GH_PHASES[phase] || 'Reading…';
+
+  // Counters where the server has them; elapsed time otherwise. Both beat a
+  // percentage invented for a phase whose length is not knowable.
+  const elapsed = startedMs ? `${Math.round((Date.now() - startedMs) / 1000)}s` : '';
+  if (c) c.textContent = progress.total ? `${progress.done} of ${progress.total} · ${elapsed}` : elapsed;
+
+  // The bar tracks which phase we are in; within a counted phase it tracks the
+  // count. Phases are not equal in length, so this is a position, not a
+  // prediction of time remaining.
+  const idx = Math.max(0, GH_PHASE_ORDER.indexOf(phase));
+  const within = progress.total ? (progress.done / progress.total) : 0;
+  const pct = Math.round(((idx + within) / GH_PHASE_ORDER.length) * 100);
+  if (f) {
+    f.style.width = Math.max(3, pct) + '%';
+    f.classList.toggle('aria-progress__fill--working', !progress.total);
+  }
+}
+
 async function pollForProfile() {
+  const started = Date.now();
   for (let i = 0; i < 240; i++) {
     await new Promise(r => setTimeout(r, 5000));
     try {
@@ -991,10 +1033,13 @@ async function pollForProfile() {
         _ariaBlueprint = bp;
         applyCodeMatches(bp);
         renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
+        ghProgress(null);
         return;
       }
+      ghProgress(bp?.codebaseProfile?.progress || { phase: 'listing' }, started);
     } catch { /* keep waiting — a transient failure is not an answer */ }
   }
+  ghProgress(null);
   showGhError('The read is taking longer than expected. Reload the page to see the result.');
 }
 

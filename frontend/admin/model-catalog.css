@@ -55,3 +55,40 @@
   color: #5CC5A7;
 }
 
+
+/* The three confidence bands.
+   A raw score says nothing until you know the table's span: 48 on Strategy &
+   Ops is the bottom of a 48-58 range. The band names the third it falls in,
+   which is what a use case actually asks for. */
+.mc-bandset { margin-top: 14px; }
+.mc-bandset__title {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.mc-band {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 11px;
+  border-left: 3px solid transparent;
+  border-radius: 0 5px 5px 0;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.mc-band__label { font-weight: 600; min-width: 170px; }
+.mc-band__range { font-variant-numeric: tabular-nums; color: rgba(255,255,255,0.62); }
+.mc-band__count { margin-left: auto; font-size: 12px; color: rgba(255,255,255,0.42); }
+
+/* One hue, three strengths. Different colours would read as three unrelated
+   things rather than one scale. */
+.mc-band--vh { background: rgba(92,197,167,0.16); border-left-color: #5CC5A7; }
+.mc-band--h  { background: rgba(92,197,167,0.09); border-left-color: rgba(92,197,167,0.6); }
+.mc-band--m  { background: rgba(92,197,167,0.04); border-left-color: rgba(92,197,167,0.3); }
+
+.mc-band--vh-row { background: rgba(92,197,167,0.10); }
+.mc-band--h-row  { background: rgba(92,197,167,0.05); }
+.mc-band--m-row  { background: rgba(255,255,255,0.015); }
+.mc-rank__band { font-size: 12px; color: rgba(255,255,255,0.55); white-space: nowrap; }

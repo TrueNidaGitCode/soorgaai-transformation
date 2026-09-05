@@ -12,7 +12,8 @@
  *
  *   node scripts/test_model_recommender.mjs
  */
-import { recommendModels, deriveRecommendationInputs, SIZE_BANDS, FOCUS_INDICES } from '../services/modelRecommenderService.js';
+import { recommendModels, deriveRecommendationInputs, SIZE_BANDS, FOCUS_INDICES,
+         confidenceBands, bandOf } from '../services/modelRecommenderService.js';
 
 let pass = true;
 const check = (l, ok, d = '') => { console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${l}${d ? ' — ' + d : ''}`); if (!ok) pass = false; };
@@ -191,7 +192,94 @@ console.log('\n9. a startup blueprint derives the band rule');
 }
 
 console.log();
-console.log('10. cost is read from the category being ranked on');
+console.log('10. confidence bands');
+{
+  // Ten points of spread, so the thirds land on round numbers and a boundary
+  // case can be asserted rather than approximated.
+  const mk = (id, score, cost) => ({
+    modelId: id, displayName: id, type: 'frontier', providers: ['A'],
+    scores: { strategyOps: score }, indexCosts: { strategyOps: cost },
+  });
+  const table = [
+    mk('top', 60, 9.00), mk('near-top', 58, 8.00),
+    mk('upper-mid', 56.7, 5.00), mk('mid', 55, 4.00), mk('lower-mid', 54, 3.00),
+    mk('high-medium', 53.2, 2.00), mk('low', 50, 1.00),
+  ];
+
+  const bands = confidenceBands(table, 'strategyOps');
+  check('three bands', bands.length === 3, bands.map(b => b.label).join(' / '));
+  check('measured from the table, not a fixed threshold',
+    bands[2].min === 50 && bands[0].max === 60,
+    bands.map(b => b.min.toFixed(1) + '-' + b.max.toFixed(1)).join(' | '));
+
+  // A boundary must belong to exactly one band. Landing between two, or in
+  // both, is the bug that makes a count not add up and nobody notices.
+  check('a boundary score belongs to the higher band',
+    bandOf(bands, 56.666666666666664).id === 'very-high', bandOf(bands, 56.7).label);
+  const counts = table.map(m => bandOf(bands, m.scores.strategyOps).id);
+  check('every model lands in exactly one band', counts.length === table.length && counts.every(Boolean),
+    counts.join(','));
+
+  // The point of the whole feature: the band decides how good, and cost decides
+  // which one inside it — so a cheaper model outranks a better one it is banded
+  // with, and never outranks the band itself.
+  const vh = recommendModels(table, { focus: 'strategyOps', confidence: 'very-high' });
+  check('very high returns the top third', vh.picks.every(p => p.focusScore >= bands[0].min),
+    vh.picks.map(p => p.modelId + '@' + p.focusScore).join(', '));
+  check('cheapest first inside the band', vh.picks[0].modelId === 'upper-mid', vh.picks[0].modelId);
+  check('the rule is named', vh.rule === 'cheapest-in-confidence-band', vh.rule);
+
+  const med = recommendModels(table, { focus: 'strategyOps', confidence: 'medium' });
+  check('medium never returns a top-third model',
+    med.picks.every(p => p.focusScore < bands[0].min),
+    med.picks.map(p => p.modelId + '@' + p.focusScore).join(', '));
+  check('and is cheaper than very high',
+    med.picks[0].cost < vh.picks[0].cost, med.picks[0].cost + ' vs ' + vh.picks[0].cost);
+
+  // An empty band must drop to the next one down AND say so. Silently
+  // substituting a weaker model for the one the task asked for is the failure
+  // that would never be noticed.
+  const gap = [mk('a', 50, 1), mk('b', 50.5, 2), mk('c', 60, 9)];
+  const gb = confidenceBands(gap, 'strategyOps');
+  const hasHigh = gap.some(m => bandOf(gb, m.scores.strategyOps).id === 'high');
+  const r = recommendModels(gap, { focus: 'strategyOps', confidence: 'high' });
+  check('an empty band falls through rather than returning nothing',
+    hasHigh || r.picks.length > 0, 'high band populated: ' + hasHigh);
+  if (!hasHigh) {
+    check('and reports that it widened', r.widened === true && r.requestedConfidence === 'high',
+      r.confidence + ' (asked for ' + r.requestedConfidence + ')');
+  }
+
+  // One distinct score is not a spread. Three bands over it would invent a
+  // distinction the data does not contain.
+  const flat = confidenceBands([mk('x', 55, 1), mk('y', 55, 2)], 'strategyOps');
+  check('a table with one distinct score reports one band, not three',
+    flat.length === 1, flat.map(b => b.label).join('/'));
+}
+
+console.log();
+console.log('11. how much confidence the use case needs');
+{
+  const conf = (o) => deriveRecommendationInputs({ businessObjective: o }).confidence;
+  check('judgement-led work asks for the top band',
+    conf('Define the AI adoption strategy and roadmap') === 'very-high',
+    conf('Define the AI adoption strategy and roadmap'));
+  check('work with a cost for being wrong asks for the top band',
+    conf('Automate regulatory compliance reporting') === 'very-high',
+    conf('Automate regulatory compliance reporting'));
+  check('extraction against a fixed contract does not',
+    conf('Extract fields from supplier invoices and classify them') === 'medium',
+    conf('Extract fields from supplier invoices and classify them'));
+  check('anything else takes the middle',
+    conf('Build an API integration for the billing service') === 'high',
+    conf('Build an API integration for the billing service'));
+  check('every derivation names a real band',
+    ['very-high', 'high', 'medium'].includes(conf('something entirely unremarkable')),
+    conf('something entirely unremarkable'));
+}
+
+console.log();
+console.log('12. cost is read from the category being ranked on');
 {
   // The real case: one model, two benchmarks, two different bills. Cheap on
   // the index being ranked and expensive on the other one, so using the wrong

@@ -16,9 +16,10 @@
  * on the page has a transcribed table behind it, rather than a number somebody
  * typed once and nobody can trace.
  *
- * The acceptable range stays editable, because it is not a measurement. It is a
- * judgement about what quality the product can ship, arrived at by testing, and
- * only the person who ran those tests knows it.
+ * Nothing here is editable. The acceptable range used to be, and it is gone: it
+ * was one hand-set min/max applied to every use case, where the confidence
+ * bands pick a band per use case out of the same numbers. Keeping both would
+ * let a stale range silently override the choice.
  *
  * Client-side convenience only; the backend enforces auth on every
  * /api/admin/model-catalog route independently.
@@ -52,8 +53,8 @@ const money = (v) => (v === null || v === undefined ? '—' : `$${Number(v).toFi
 /**
  * The maintained benchmark tables, and what each measures.
  *
- * Two, and everything on this page follows from that — the ranking panels and
- * the range dropdown both come from here. The model still has fields for eight
+ * Two, and everything on this page follows from that — the band legend and the
+ * ranking panels both come from here. The model still has fields for eight
  * other categories, so restoring one is this list, a line in FOCUS_INDICES, and
  * a seed script; but a category with no published scores can only ever produce
  * an empty ranking.
@@ -64,7 +65,7 @@ const INDICES = [
 ];
 
 let _models = [];
-let _ranges = {};
+let _bands = {};   // focus -> the three bands, computed by the server
 
 // ── Coverage ────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,39 @@ function renderSummary(summary) {
  * against both scores would misprice whichever table it did not come from.
  * The flat figure is the fallback for rows that predate the split.
  */
+function bandFor(category, score) {
+  const bands = _bands[category] || [];
+  // Boundaries belong to the higher band, matching the service — a model that
+  // sat in two bands, or none, would make the counts on this page a lie.
+  for (const b of bands) if (score >= b.min) return b;
+  return bands[bands.length - 1] || null;
+}
+
+const BAND_CLASS = { 'very-high': 'mc-band--vh', high: 'mc-band--h', medium: 'mc-band--m' };
+
+/** The three bands per table, with how many models are in each. This is the
+ *  whole selection rule on one screen: a use case picks a band, Arth takes the
+ *  cheapest model in it. */
+function renderBands() {
+  const el = document.getElementById('mc-bands');
+  if (!el) return;
+  const sections = INDICES.map(([key, label]) => {
+    const bands = _bands[key];
+    if (!bands || !bands.length) return '';
+    const rows = bands.map(b => {
+      const n = _models.filter(m => m.scores?.[key] != null
+        && bandFor(key, m.scores[key])?.id === b.id).length;
+      return `<div class="mc-band ${BAND_CLASS[b.id] || ''}">
+        <span class="mc-band__label">${esc(b.label)}</span>
+        <span class="mc-band__range">${b.min.toFixed(1)} – ${b.max.toFixed(1)}</span>
+        <span class="mc-band__count">${n} model${n === 1 ? '' : 's'}</span>
+      </div>`;
+    }).join('');
+    return `<div class="mc-bandset"><p class="mc-bandset__title">${esc(label)}</p>${rows}</div>`;
+  }).filter(Boolean).join('');
+  el.innerHTML = sections || '<p class="mc-summary">No scores yet, so there is nothing to split.</p>';
+}
+
 function costFor(m, category) {
   return m.indexCosts?.[category] ?? m.indexCost ?? null;
 }
@@ -100,9 +134,10 @@ function costFor(m, category) {
  * first, in the same shape as the published comparison so a row can be checked
  * against its source without translating between layouts.
  *
- * The acceptable range is shaded and the cheapest row inside it is marked,
- * because that row is the recommendation and it is almost never the top one.
- * Seeing those two facts together is the entire argument for setting a range.
+ * Rows are shaded by confidence band, and the cheapest row in each band is
+ * marked — because that row is what Arth returns for a use case asking for that
+ * band, and it is almost never the top one. Three marks rather than one, since
+ * the table has to answer three different kinds of work.
  */
 function rankingPanel(category, label) {
   const rows = _models
@@ -111,29 +146,30 @@ function rankingPanel(category, label) {
                  || ((costFor(a, category) ?? Infinity) - (costFor(b, category) ?? Infinity)));
   if (!rows.length) return '';
 
-  const r = _ranges?.[category] || {};
-  // With no range set, -Infinity..Infinity would make every row "inside", and
-  // the table would shade all twenty and tag a pick — which reads as a band
-  // someone chose. Nothing has been chosen, and Arth does not use this rule
-  // until it is.
-  const set = r.min != null || r.max != null;
-  const lo = r.min ?? -Infinity;
-  const hi = r.max ?? Infinity;
-  const inside = (m) => set && m.scores[category] >= lo && m.scores[category] <= hi;
-  const cheapest = rows.filter(inside)
-    .sort((a, b) => (costFor(a, category) ?? Infinity) - (costFor(b, category) ?? Infinity))[0];
+  // One answer per band, not one winner per table: a use case asks for a band,
+  // and Arth returns the cheapest model in it. Marking all three shows what
+  // each kind of work would actually get.
+  const cheapestIn = {};
+  for (const m of rows) {
+    const b = bandFor(category, m.scores[category]);
+    if (!b) continue;
+    const c = costFor(m, category) ?? Infinity;
+    if (!cheapestIn[b.id] || c < (costFor(cheapestIn[b.id], category) ?? Infinity)) cheapestIn[b.id] = m;
+  }
 
-  const head = '<thead><tr><th>S.No</th><th>Model</th><th>Company</th>'
+  const head = '<thead><tr><th>S.No</th><th>Model</th><th>Company</th><th>Band</th>'
     + '<th class="mc-rank__num">Score</th><th class="mc-rank__num">Cost</th></tr></thead>';
 
   const body = rows.map((m, i) => {
-    const pick = cheapest && m.modelId === cheapest.modelId;
-    const cls = [inside(m) ? 'mc-rank__row--in' : '', pick ? 'mc-rank__row--pick' : ''].join(' ').trim();
+    const b = bandFor(category, m.scores[category]);
+    const pick = b && cheapestIn[b.id] && cheapestIn[b.id].modelId === m.modelId;
+    const cls = [b ? BAND_CLASS[b.id] + '-row' : '', pick ? 'mc-rank__row--pick' : ''].join(' ').trim();
     const tag = pick ? '<span class="mc-rank__tag">Arth picks this</span>' : '';
     return `<tr class="${cls}">`
       + `<td class="mc-rank__sno">${i + 1}</td>`
       + `<td>${esc(m.displayName)}${tag}</td>`
       + `<td>${esc(m.vendor || '—')}</td>`
+      + `<td class="mc-rank__band">${b ? esc(b.label.replace(' Confidence', '')) : '—'}</td>`
       + `<td class="mc-rank__num mc-rank__score">${m.scores[category]}</td>`
       + `<td class="mc-rank__num mc-rank__cost">${money(costFor(m, category))}</td>`
       + '</tr>';
@@ -143,9 +179,8 @@ function rankingPanel(category, label) {
     <div class="panel-header"><h2>${esc(label)} — proprietary models</h2></div>
     <p class="mc-summary">
       Every model scored on ${esc(label)}, highest first, with the cost measured on that
-      benchmark. ${set
-        ? 'Shaded rows are inside the acceptable range — the only ones Arth can choose from — and within those it takes the cheapest, which is rarely the one at the top.'
-        : 'No acceptable range is set for this category yet, so Arth ranks on balance instead of taking the cheapest that clears a band.'}
+      benchmark. Rows are shaded by confidence band, and the cheapest in each band is
+      marked — that is the model Arth returns when a use case asks for that band.
     </p>
     <div class="mc-rank-wrap"><table class="mc-rank">${head}<tbody>${body}</tbody></table></div>
   </div>`;
@@ -165,64 +200,16 @@ function renderRanking() {
 
 async function load() {
   try {
-    const { models, summary } = await api('');
+    const { models, summary, bands } = await api('');
     _models = models;
+    _bands = bands || {};
     renderSummary(summary);
+    renderBands();
     renderRanking();
     banner('');
   } catch (err) {
     banner(err.message);
   }
 }
-
-// ── The acceptable range ────────────────────────────────────────────────────
-
-async function loadSettings() {
-  try {
-    const { acceptableRanges } = await api('/settings');
-    _ranges = acceptableRanges || {};
-  } catch {
-    _ranges = {};
-  }
-
-  const sel = document.getElementById('mc-range-category');
-  if (sel && !sel.options.length) {
-    sel.innerHTML = INDICES.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('');
-  }
-  showRange();
-  renderRanking();
-}
-
-function showRange() {
-  const cat = document.getElementById('mc-range-category')?.value;
-  const r = _ranges?.[cat] || {};
-  const min = document.getElementById('mc-range-min');
-  const max = document.getElementById('mc-range-max');
-  // Blank means no range, which is a different instruction from zero.
-  if (min) min.value = r.min ?? '';
-  if (max) max.value = r.max ?? '';
-}
-
-// ── Wiring ──────────────────────────────────────────────────────────────────
-
-document.getElementById('mc-range-category')?.addEventListener('change', showRange);
-
-document.getElementById('mc-range-save')?.addEventListener('click', async () => {
-  const saved = document.getElementById('mc-range-saved');
-  try {
-    const { acceptableRanges } = await api('/settings', { method: 'POST', body: JSON.stringify({
-      category: document.getElementById('mc-range-category').value,
-      min: document.getElementById('mc-range-min').value,
-      max: document.getElementById('mc-range-max').value,
-    }) });
-    _ranges = acceptableRanges || {};
-    renderRanking();
-    if (saved) { saved.textContent = 'Saved'; setTimeout(() => { saved.textContent = ''; }, 2000); }
-    banner('');
-  } catch (err) {
-    banner(err.message);
-  }
-});
 
 load();
-loadSettings();

@@ -27,6 +27,12 @@ const FOCUS_ABOUT = {
 
 // The two indices a recommendation can be ranked on — the two that have
 // published tables behind them.
+const CONFIDENCE_LABEL = {
+  'very-high': 'Very High Confidence',
+  high:        'High Confidence',
+  medium:      'Medium Confidence',
+};
+
 const FOCUS_LABEL = {
   strategyOps: 'Strategy & Ops',
   engineering: 'Engineering',
@@ -55,7 +61,7 @@ function render(state) {
   const note = document.getElementById('mr-derived');
   if (!el) return;
 
-  const { picks = [], rule, excluded = [], catalogSize = 0, focus = 'intelligence', derived } = state;
+  const { picks = [], rule, excluded = [], catalogSize = 0, focus = 'strategyOps', derived, band, widened, requestedConfidence } = state;
   if (note) note.textContent = (derived?.reasons || []).join(' ');
 
   if (!picks.length) {
@@ -71,11 +77,27 @@ function render(state) {
     return;
   }
 
+  // What band, on what benchmark, and why that band — a score with no scale
+  // beside it is a number the customer has to take on faith.
+  const bandLine = band && band.label
+    ? `<p class="mr__rule"><strong>${esc(band.label)}</strong> on ${esc(FOCUS_LABEL[focus] || focus)}
+         <span class="mr__band-range">scores ${Number(band.min).toFixed(0)}–${Number(band.max).toFixed(0)} of this benchmark</span>
+         — cheapest model in that band, not the highest score.</p>`
+    : `<p class="mr__rule">Ranked on <strong>${esc(FOCUS_LABEL[focus] || focus)}</strong>${
+        rule === 'cheapest-clearing-band'
+          ? ' — cheapest model clearing the acceptable band, not the highest score.'
+          : ' and cost.'}</p>`;
+
+  // Substituting a weaker band without saying so would be the one failure the
+  // customer could not detect.
+  const widenedLine = widened
+    ? `<p class="mr__widened">No model sits in the ${esc(CONFIDENCE_LABEL[requestedConfidence] || requestedConfidence)}
+         band for this benchmark, so this is the band below it.</p>`
+    : '';
+
   el.innerHTML = `
-    <p class="mr__rule">Ranked on <strong>${esc(FOCUS_LABEL[focus] || focus)}</strong>${
-      rule === 'cheapest-clearing-band'
-        ? ' — cheapest model clearing the acceptable band, not the highest score.'
-        : ' and cost.'}</p>
+    ${bandLine}
+    ${widenedLine}
     ${FOCUS_ABOUT[focus] ? `<p class=\"mr__about\">${esc(FOCUS_ABOUT[focus])}</p>` : ''}
     <div class="mr__table-wrap">
       <table class="mr__table">

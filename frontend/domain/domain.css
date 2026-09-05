@@ -13364,3 +13364,12 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
   line-height: 1.5;
   color: #D4AF6E;
 }
+
+/* Which band Arth used, and its span on that benchmark. A score shown without
+   the range it sits in is a number the customer has to take on faith. */
+.mr__band-range { font-size: 12px; color: rgba(255,255,255,0.45); white-space: nowrap; }
+.mr__widened {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: #D4AF6E;
+}

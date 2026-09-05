@@ -45,6 +45,67 @@ export const FOCUS_INDICES = ['strategyOps', 'engineering'];
 const DEFAULT_FOCUS = 'strategyOps';
 
 /**
+ * How much confidence a task needs, as three bands over a benchmark's scores.
+ *
+ * A raw score answers nothing on its own: 48 on Strategy & Ops means nothing
+ * until you know the table runs 48 to 58. Splitting each table into thirds
+ * turns the number into a statement — top third, middle third, bottom third of
+ * what is actually available — and lets a use case ask for a band instead of a
+ * number nobody can calibrate.
+ *
+ * Ordered strongest first; the order is relied on when a band comes back empty.
+ */
+export const CONFIDENCE_TIERS = [
+  { id: 'very-high', label: 'Very High Confidence' },
+  { id: 'high',      label: 'High Confidence' },
+  { id: 'medium',    label: 'Medium Confidence' },
+];
+
+/**
+ * The three bands for one benchmark, measured from the scores actually
+ * published for it.
+ *
+ * Deliberately relative, not fixed thresholds. "Very high" means the best this
+ * table offers, and a fixed cut would call every Strategy & Ops model medium
+ * (they run 48-58) while calling most Engineering models high (58-65) — an
+ * artefact of two benchmarks being scaled differently, not a real difference in
+ * what they can do.
+ *
+ * The trade is that adding a model can move a boundary. That is the honest
+ * behaviour: confidence here is relative to the field, and the field changed.
+ */
+export function confidenceBands(catalog, focusKey) {
+  const scores = catalog
+    .filter(m => m.active !== false && num(m.scores?.[focusKey]) !== null)
+    .map(m => m.scores[focusKey]);
+  if (!scores.length) return null;
+
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+
+  // One distinct score is not a spread to divide. Reporting three bands over it
+  // would invent a distinction the data does not contain.
+  if (max === min) {
+    return [{ ...CONFIDENCE_TIERS[0], min, max, single: true }];
+  }
+
+  const third = (max - min) / 3;
+  return [
+    { ...CONFIDENCE_TIERS[0], min: min + third * 2, max },
+    { ...CONFIDENCE_TIERS[1], min: min + third,     max: min + third * 2 },
+    { ...CONFIDENCE_TIERS[2], min,                  max: min + third },
+  ];
+}
+
+/** Which band a score falls in. Boundaries belong to the HIGHER band, so a
+ *  model is never counted twice and never falls between two. */
+export function bandOf(bands, score) {
+  if (!bands || score == null) return null;
+  for (const b of bands) if (score >= b.min) return b;
+  return bands[bands.length - 1];
+}
+
+/**
  * Importance → weight. Deliberately not linear: 'critical' is meant to
  * dominate rather than merely outvote, because a critical constraint that can
  * be outweighed by two moderate ones was not critical.
@@ -143,6 +204,7 @@ export function recommendModels(catalog, {
   sizePreference = 'any',
   providers = [],
   band = DEFAULT_BAND,
+  confidence = null,        // 'very-high' | 'high' | 'medium' — how much the task needs
   acceptableRange = null,   // { min, max } set by an admin for this category
   limit = 5,
 } = {}) {
@@ -217,6 +279,53 @@ export function recommendModels(catalog, {
   // it is a judgement about what quality the product can ship, arrived at by
   // testing, and nothing in a leaderboard can infer it. Within the range, the
   // cheapest wins — which is the whole point of setting one.
+  // ── The confidence band ──────────────────────────────────────────────────
+  // What the task needs, expressed as a third of what the benchmark offers,
+  // and within that the cheapest. This is the whole rule: a use case that
+  // needs the best available gets the top third, one that does not gets the
+  // band that matches, and paying frontier prices for extraction work stops
+  // being the default.
+  if (confidence) {
+    const bands = confidenceBands(candidates, focusKey);
+    if (bands) {
+      const wanted = bands.findIndex(b => b.id === confidence);
+      const idx = wanted === -1 ? 0 : wanted;
+
+      // A band can come out empty when scores cluster. Dropping to the next one
+      // down is right — the task asked for at least this much confidence, and
+      // the band below is where the next-best models are — but it must be
+      // reported, not silently substituted.
+      let used = idx, inBand = [];
+      for (let i = idx; i < bands.length && !inBand.length; i++) {
+        used = i;
+        inBand = candidates
+          .map((m, j) => ({ m, score: scores[j], price: prices[j] }))
+          .filter(x => bandOf(bands, x.score)?.id === bands[i].id);
+      }
+      inBand.sort((a2, b2) => (a2.price ?? Infinity) - (b2.price ?? Infinity));
+
+      const chosen = bands[used];
+      return {
+        picks: inBand.slice(0, limit).map(x => ({
+          ...plain(x.m),
+          focusScore: x.score,
+          cost: x.price,
+          confidence: chosen.id,
+          why: `${chosen.label} on ${focusKey} (${chosen.min.toFixed(0)}-${chosen.max.toFixed(0)}), at the lowest cost in that band.`,
+        })),
+        considered: catalog.length,
+        excluded,
+        rule: 'cheapest-in-confidence-band',
+        confidence: chosen.id,
+        requestedConfidence: confidence,
+        widened: chosen.id !== confidence,
+        bands: bands.map(b => ({ id: b.id, label: b.label, min: b.min, max: b.max })),
+        band: { focus: focusKey, min: chosen.min, max: chosen.max, label: chosen.label },
+        focus: focusKey,
+      };
+    }
+  }
+
   if (acceptableRange && (acceptableRange.min != null || acceptableRange.max != null)) {
     const lo = acceptableRange.min ?? -Infinity;
     const hi = acceptableRange.max ?? Infinity;
@@ -341,10 +450,33 @@ export function deriveRecommendationInputs(blueprint) {
   } else {
     reasons.push('The use case is business or operations work, so ranking is on the Strategy & Ops score.');
   }
-  // A young company is buying with its own money and has no procurement
-  // cushion. That is the case the band rule exists for.
+  // How much confidence the work needs. Three outcomes, matched to the three
+  // bands, because the question "how good does this have to be" has roughly
+  // three useful answers and no more.
+  //
+  // Checked strongest first: work that carries a real cost for being wrong
+  // outranks work that merely looks technical.
+  let confidence = 'high';
+  if (/\b(strateg|architect|roadmap|plan|design|advis|recommend|decision|risk|complian|regulat|legal|medical|clinical|safety|audit|forecast|diagnos|root cause|negotiat|research)/.test(useCase)) {
+    confidence = 'very-high';
+    reasons.push('The work is judgement-led and carries a cost for being wrong, so it needs the top band of what the benchmark offers.');
+  } else if (/\b(extract|classif|tag|label|rout|triage|summar|transcri|format|lookup|data entry|categor|parse|validat)/.test(useCase)) {
+    confidence = 'medium';
+    reasons.push('The work is extraction or classification against a fixed contract, so a mid-band model is enough — paying for the top band buys nothing here.');
+  } else {
+    reasons.push('No signal that the work is either judgement-led or purely mechanical, so it takes the middle band.');
+  }
+
+  // Cost importance no longer decides the rule — the confidence band does, and
+  // within a band the cheapest always wins. It is still derived, because a
+  // caller that asks for no band falls back to the weighted rank, and because
+  // the maturity signal is worth carrying either way.
+  //
+  // The reason below used to claim this drove the choice. It did not any more,
+  // and a reason that describes a rule which did not run is worse than no
+  // reason at all — it is checkable, and wrong.
   const cost = engagement.maturity === 'startup' ? 'critical' : 'very-important';
-  if (cost === 'critical') reasons.push('The company reads as early-stage, so cost is treated as critical — the cheapest model clearing the quality band wins.');
+  reasons.push('Within that band the cheapest model wins: the band settles how good it has to be, and price settles which one of those you get.');
 
   // No requirements are inferred. An earlier version turned "a repository was
   // read" into a 200k-context requirement, which excluded every model in a
@@ -357,6 +489,7 @@ export function deriveRecommendationInputs(blueprint) {
 
   return {
     focus,
+    confidence,
     priorities: { intelligence: 'very-important', speed: 'moderate', cost },
     requirements,
     sizePreference: 'any',

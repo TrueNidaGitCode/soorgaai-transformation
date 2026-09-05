@@ -21,6 +21,7 @@ import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import {
   recommendModels,
   deriveRecommendationInputs,
+  confidenceBands,
   FOCUS_INDICES,
   SIZE_BANDS,
 } from '../services/modelRecommenderService.js';
@@ -33,8 +34,18 @@ export async function listCatalog(req, res) {
     // Counted across ANY category: a catalog scored only on Strategy & Ops
     // is a usable catalog, and reporting it as empty would be wrong.
     const scored = models.filter(m => Object.values(m.scores || {}).some(v => v != null)).length;
+    const bands = {};
+    for (const focus of FOCUS_INDICES) {
+      const b = confidenceBands(models.filter(m => m.active !== false), focus);
+      if (b) bands[focus] = b.map(x => ({ id: x.id, label: x.label, min: x.min, max: x.max }));
+    }
+
     return res.json({
       models,
+      // Computed here rather than on the page: a second implementation of the
+      // same split would drift from the one Arth actually uses, and the page
+      // is where people go to check what Arth will do.
+      bands,
       // Surfaced rather than left to be discovered: an unscored catalog
       // recommends nothing, and the reason should not be a mystery.
       summary: { total: models.length, scored, unscored: models.length - scored },
@@ -158,6 +169,7 @@ export async function recommendForBlueprint(req, res) {
     const derived = deriveRecommendationInputs(blueprint);
     const input = {
       focus:          req.body?.focus          ?? derived.focus,
+      confidence:     req.body?.confidence     ?? derived.confidence,
       priorities:     req.body?.priorities     ?? derived.priorities,
       requirements:   req.body?.requirements   ?? derived.requirements,
       sizePreference: req.body?.sizePreference ?? derived.sizePreference,
@@ -165,12 +177,10 @@ export async function recommendForBlueprint(req, res) {
       band:           req.body?.band,
     };
 
-    const settings = await CatalogSettings.findOne({ key: 'default' }).lean();
-    const ranges = settings?.acceptableRanges || {};
-    // Map or plain object depending on how it was read back.
-    const range = typeof ranges.get === 'function' ? ranges.get(input.focus) : ranges[input.focus];
-    if (range) input.acceptableRange = range;
-
+    // The stored min/max is deliberately NOT read here any more. It was a
+    // single band applied to every use case, and the confidence band replaces
+    // it with one chosen per use case — leaving both in would let a hand-set
+    // range silently override the choice this endpoint exists to make.
     const catalog = await ModelCatalogEntry.find({ active: true }).lean();
     const result = recommendModels(catalog, input);
 

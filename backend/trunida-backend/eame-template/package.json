@@ -1,12 +1,11 @@
 {
-  "name": "defect-matching-agent",
+  "name": "svarg-application",
   "version": "1.0.0",
-  "description": "Retrieval-Augmented Semantic Matching for Defects — a real, deployable AI application delivered by Svarg's Eame layer.",
+  "description": "An AI application built by Svarg for a specific use case. See README.md.",
   "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "seed": "node scripts/seed_defect_records.mjs",
     "mint-token": "node scripts/mint-token.mjs"
   },
   "dependencies": {

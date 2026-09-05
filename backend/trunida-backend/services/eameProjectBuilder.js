@@ -14,6 +14,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { FIXED_PATHS } from './eameSpec.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');           // backend/trunida-backend/
@@ -103,4 +104,49 @@ export function buildManifest({ includeJira = true, appName = '' } = {}) {
   }
 
   return manifest;
+}
+
+/**
+ * The fixed runtime, on its own.
+ *
+ * What every application Eame builds sits on: the entrypoint, the package, the
+ * UI shell, and the wiring that authenticates a request and routes model calls
+ * through Svarg's gateway. Identical for every customer, which is exactly why
+ * it is not generated — it is what Railway depends on, and re-proving it every
+ * build would be re-proving the same thing.
+ *
+ * Paths come from FIXED_PATHS in eameSpec.js so the generator, the verifier and
+ * this cannot disagree about which files are the generator's to write.
+ */
+export function buildRuntime({ appName = '' } = {}) {
+  // Where each fixed file is copied from. A path in FIXED_PATHS with no entry
+  // here would silently vanish from the delivered project, so the lookup below
+  // throws instead.
+  const SOURCE = {
+    'server.js':                        { template: 'server.js' },
+    'package.json':                     { template: 'package.json' },
+    '.env.example':                     { template: '.env.example' },
+    '.gitignore':                       { template: '.gitignore' },
+    'README.md':                        { template: 'README.md' },
+    'frontend/index.html':              { template: 'frontend/index.html' },
+    'frontend/base.css':                { template: 'frontend/base.css' },
+    'frontend/config.js':               { template: 'frontend/config.js' },
+    // Styling only. index.html loads it, and frontend/app.js — the one UI file
+    // Eame writes — is what actually drives the page.
+    'frontend/app.css':                 { template: 'frontend/app.css' },
+    'scripts/mint-token.mjs':           { template: 'scripts/mint-token.mjs' },
+    'middleware/authMiddleware.js':     { repo: 'middleware/authMiddleware.js' },
+    'services/llmService.js':           { repo: 'services/llmService.js' },
+    'services/modelSelectionService.js':{ repo: 'services/modelSelectionService.js' },
+    'config/modelCatalog.js':           { repo: 'config/modelCatalog.js' },
+  };
+
+  return FIXED_PATHS.map((dest) => {
+    const source = SOURCE[dest];
+    if (!source) throw new Error(`No source is configured for the fixed file ${dest}`);
+    const content = source.template
+      ? readFile(path.join(TEMPLATE_ROOT, source.template), true)
+      : readFile(source.repo);
+    return { path: dest, content: applyName(content, appName) };
+  });
 }

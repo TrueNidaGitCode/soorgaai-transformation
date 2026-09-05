@@ -19,8 +19,10 @@ const check = (label, ok, detail = '') => {
   if (!ok) pass = false;
 };
 
-console.log('1. the chat front end ships');
-for (const p of ['frontend/index.html', 'frontend/chat.js', 'frontend/chat.css', 'frontend/base.css', 'frontend/config.js']) {
+// app.js, not chat.js: the UI file is the one Eame generates per use case, and
+// index.html loads it by that name whether it was generated or shipped.
+console.log('1. the front end ships');
+for (const p of ['frontend/index.html', 'frontend/app.js', 'frontend/app.css', 'frontend/base.css', 'frontend/config.js']) {
   check(p, p in byPath);
 }
 

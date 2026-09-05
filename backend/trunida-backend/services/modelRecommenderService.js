@@ -30,6 +30,8 @@
  * the first question anyone asks it.
  */
 
+import { resolveUseCase, useCaseText } from './blueprintUseCase.js';
+
 /**
  * The indices a recommendation can be ranked on.
  *
@@ -454,7 +456,12 @@ function plain(m) {
 export function deriveRecommendationInputs(blueprint) {
   const reasons = [];
   const engagement = blueprint?.engagement || {};
-  const useCase = String(blueprint?.recommendedUseCase || blueprint?.businessObjective || '').toLowerCase();
+  // recommendedUseCase was never a field on the blueprint, so this read
+  // undefined and fell through to businessObjective — the sentence typed before
+  // Cob had analysed anything. Every benchmark and confidence band below was
+  // being derived from that, not from the use case anyone approved.
+  const resolved = resolveUseCase(blueprint);
+  const useCase = useCaseText(blueprint).toLowerCase();
 
   // Stems, so no trailing word boundary. /\bcomplian\b/ cannot match
   // "compliance" — the boundary demands the word END at the stem. An earlier
@@ -508,9 +515,17 @@ export function deriveRecommendationInputs(blueprint) {
   // constraint, not from a guess about what a use case might need.
   const requirements = {};
 
+  // Which text the inference was made from. Deriving a benchmark from an
+  // unanalysed objective is a weaker claim than deriving it from an approved
+  // initiative, and that difference should not be invisible on the screen.
+  if (resolved.source !== 'approved-use-case') {
+    reasons.push('No use case has been approved yet, so this is derived from the original business objective.');
+  }
+
   return {
     focus,
     confidence,
+    useCase: resolved,
     priorities: { intelligence: 'very-important', speed: 'moderate', cost },
     requirements,
     sizePreference: 'any',

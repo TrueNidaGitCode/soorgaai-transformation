@@ -31,6 +31,7 @@ import defectMatchingRoutes         from "./routes/defectMatchingRoutes.js";
 import personalGithubRoutes         from "./routes/personalGithubRoutes.js";
 import uploadRoutes                 from "./routes/uploadRoutes.js";
 import githubAppRoutes              from "./routes/githubAppRoutes.js";
+import modelCatalogRoutes           from "./routes/modelCatalogRoutes.js";
 import deliveryRoutes               from "./routes/deliveryRoutes.js";
 import websiteRoutes                from "./routes/websiteRoutes.js";
 import governanceChecklistRoutes    from "./routes/governanceChecklistRoutes.js";
@@ -116,6 +117,7 @@ app.use("/api/enterprise-blueprint", enterpriseBlueprintRoutes);
 app.use("/api/admin/company-library", companyResearchLibraryRoutes);
 app.use("/api/admin/industry-verticals", industryVerticalKnowledgeRoutes);
 app.use("/api/admin/industry-kb", industryCapabilityKnowledgeRoutes);
+app.use("/api/admin/model-catalog", modelCatalogRoutes);
 app.use("/api/feedback",             feedbackRoutes);
 app.use("/api/guest",                guestRoutes);
 // More specific prefix first, per the convention noted above

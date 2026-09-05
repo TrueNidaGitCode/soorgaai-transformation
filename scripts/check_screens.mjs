@@ -161,6 +161,7 @@ const DEP = ${JSON.stringify(
   // an unprepared environment, which is the state the choice is actually made in.
   screen === 'arth' ? { ...DEPLOYMENT, status: 'none', preparedAt: '' } : DEPLOYMENT
 )};
+const BUILD_STATE = ${JSON.stringify(process.env.EAME_BUILD_STATE || "passed")};
 const MANIFEST = ${JSON.stringify({ fileCount: MANIFEST_FILES.length, totalBytes: MANIFEST_FILES.reduce((n, f) => n + f.bytes, 0), files: MANIFEST_FILES })};
 const RECOMMENDED = ${JSON.stringify([
   { modelId: 'gemini-3-8-flash', displayName: 'Gemini 3.8 Flash', vendor: 'Google',    type: 'frontier', providerId: 'gemini', apiModel: 'gemini-3.8-flash', focusScore: 48, cost: 0.56, inBand: true, confidenceLabel: 'Medium Confidence' },
@@ -225,6 +226,10 @@ window.fetch = function (url, opts) {
   }
   if (u.includes('/arth-recommend'))    return J({ ...CATALOG.frontier[1], why: 'Best balance for this use case.', priority: 'quality' }, 200);
   if (u.includes('/eame-build')) {
+    // A blueprint nobody has built yet is a real state and the FIRST one every
+    // customer sees, so it has to be renderable here too.
+    //   EAME_BUILD_STATE=none node scripts/check_screens.mjs eame
+    if (BUILD_STATE === 'none') return J({ status: 'none' });
     return J({
       status: 'passed', verifiedTo: 'smoke', skipped: [], reason: '',
       useCase: 'Predictive Analytics for Student Churn', provider: 'gemini',
@@ -265,7 +270,13 @@ const SCREENS = {
           must: ['.rp-journey', '.pd-winner, .rp-winner, .cob-title'] },
   aria: { id: 'screen-aria',  launcher: 'Chat with Aria',  must: ['.rp-journey', '.aria-header__title'] },
   arth: { id: 'screen-arth',  launcher: 'Chat with Arth',  must: ['.rp-journey', '#arth-options .arth-option'] },
-  eame: { id: 'screen-eame',  launcher: 'Chat with Eame',  must: ['.rp-journey', '.eg-stat', '.eg-tree__row', '.eg-summary__item', '.eg-chip'] },
+  // Two states, two different sets of things that must be on screen. Before a
+  // build there is no project, so requiring a file tree would demand exactly
+  // the fabricated one this screen was fixed to stop showing.
+  eame: { id: 'screen-eame',  launcher: 'Chat with Eame',
+          must: process.env.EAME_BUILD_STATE === 'none'
+            ? ['.rp-journey', '#eame-build-btn', '.eg-gate']
+            : ['.rp-journey', '.eg-stat', '.eg-tree__row', '.eg-summary__item', '.eg-chip'] },
   yusu: { id: 'screen-yusu',  launcher: 'Chat with Yusu',  must: ['.rp-journey', '.dp__step', '.eg-usecase__name'] },
 };
 
@@ -445,7 +456,25 @@ setTimeout(function () {
 
       var passed = scr.querySelectorAll('#eame-gates .eg-gate--ok').length;
       out.gatesPassed = passed;
-      if (passed !== 6) bad(passed + ' of ' + gates.length + ' gates show as passed on a passed build');
+
+      var fresh = /Not built yet/.test((document.getElementById('eame-gen-status') || {}).textContent || '');
+      if (fresh) {
+        // Nothing built means nothing may be shown as built. This screen used
+        // to fall back to the defect-matching template — "32 Files, Full-stack
+        // application" and a summary of green ticks — directly under a badge
+        // reading "Not built yet".
+        if (passed !== 0) bad(passed + ' gates show as passed before anything was built');
+        var stats = scr.querySelectorAll('#eame-stats .eg-stat').length;
+        var summary = scr.querySelectorAll('#eame-summary li').length;
+        var rows = scr.querySelectorAll('#eame-manifest-body tr').length;
+        out.freshShows = stats + ' stats, ' + summary + ' summary, ' + rows + ' files';
+        if (stats || summary || rows) bad('a project is shown before any build: ' + out.freshShows);
+        if (!/No application yet/.test((document.getElementById('eame-tree') || {}).textContent || '')) {
+          bad('the file tree does not say there is nothing built yet');
+        }
+      } else if (passed !== 6) {
+        bad(passed + ' of ' + gates.length + ' gates show as passed on a passed build');
+      }
 
       var badge = document.getElementById('eame-gen-status');
       out.badge = badge ? badge.textContent.trim() : 'missing';
@@ -672,7 +701,7 @@ for (const screen of list) {
     // Its own clause, not nested inside the arth one — nested, it could only
     // ever print for a screen that also had model classes, so the eame line
     // was unreachable.
-    + (r.gates ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}"` : ''));
+    + (r.gates ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}"${r.freshShows ? ' · fresh shows ' + r.freshShows : ''}` : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

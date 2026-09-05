@@ -280,6 +280,8 @@ async function startBuild() {
  */
 function renderFiles({ files, fileCount, totalBytes }) {
   const tree = document.getElementById('eame-tree');
+  const card = document.getElementById('eame-summary-card');
+  if (card) card.style.display = '';
   try {
     if (!files?.length) {
       tree.innerHTML = `<li class="eg-tree__loading">The project builder returned no files.</li>`;
@@ -330,16 +332,28 @@ function renderFiles({ files, fileCount, totalBytes }) {
  * Shown so the screen is not empty before the first build, and labelled as
  * what it is by the build panel above it — this is not their application.
  */
-async function renderManifest() {
-  const tree = document.getElementById('eame-tree');
-  tree.innerHTML = `<li class="eg-tree__loading">Loading project files…</li>`;
-  try {
-    renderFiles(await api('/github/personal/project-manifest'));
-  } catch (err) {
-    tree.innerHTML = `<li class="eg-tree__loading">Couldn't load the project manifest.</li>`;
-    updateEameGate(false);
-    showError(err.message);
-  }
+/**
+ * Before the first build there is nothing to show, so nothing is shown.
+ *
+ * This used to fall back to the template manifest — the defect-matching
+ * project — which rendered "32 Files · Full-stack application" and a Build
+ * Summary of green ticks under a badge reading "Not built yet". A customer
+ * would reasonably conclude their application already existed. It is not their
+ * application, and there is no honest way to display it as one.
+ */
+function renderEmptyProject() {
+  document.getElementById('eame-tree').innerHTML =
+    `<li class="eg-tree__loading">No application yet — press Build.</li>`;
+  document.getElementById('eame-stats').innerHTML = '';
+  document.getElementById('eame-summary').innerHTML = '';
+  document.getElementById('eame-stack').innerHTML = '';
+  document.getElementById('eame-manifest-body').innerHTML = '';
+  // Hidden rather than left as two empty headings. A "Build Summary" with
+  // nothing under it reads as a panel that failed to load, not as one that
+  // has nothing to summarise yet.
+  const card = document.getElementById('eame-summary-card');
+  if (card) card.style.display = 'none';
+  updateEameGate(false);
 }
 
 /** Both badges are real state, so neither can claim something untrue. */
@@ -451,7 +465,7 @@ document.addEventListener('eame:show', (e) => {
   // Screen switching lives in blueprintGenerate.js's showScreen list.
   document.dispatchEvent(new CustomEvent('screen:show', { detail: { id: 'screen-eame' } }));
 
-  updateEameGate(false);   // reopened by renderManifest once files come back
+  updateEameGate(false);   // reopened by renderFiles once a build has passed
 
   const useCase = renderBreadcrumb(bp);
 
@@ -463,15 +477,9 @@ document.addEventListener('eame:show', (e) => {
     document.getElementById('eame-name-saved').classList.remove('eg-name__saved--on');
   }
 
-  // The build comes first: if one has passed, its files are what the tree
-  // shows. renderManifest is the fallback for a blueprint nobody has built,
-  // and showing the template as though it were their application is exactly
-  // what this screen used to do.
-  pollBuild().then(() => {
-    if (!document.getElementById('eame-tree').children.length ||
-        document.getElementById('eame-tree').textContent.includes('Loading')) {
-      renderManifest();
-    }
-  });
+  // The build is the only source of files. No build, no project — there is no
+  // second list to fall back to that would be true.
+  renderEmptyProject();
+  pollBuild();
   renderBadges(bp);
 });

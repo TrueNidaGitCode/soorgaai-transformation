@@ -96,6 +96,11 @@ const BLUEPRINT = {
           { name: 'Pre-analysis Business Objectives', purpose: 'Frame AI reasoning with project KPIs', typicalSource: 'Confluence' },
           { name: 'Test Execution and Defect Records', purpose: 'Correlate failures with defect history', typicalSource: 'Jira' },
           { name: 'Flashing Logs', purpose: 'Enable automated plausibility checks', typicalSource: 'Internal log repositories' },
+          // Nothing covers this one, on purpose: it is what makes the partial
+          // path render — the collection plan, and a nav button that continues
+          // with less than everything. A fixture where all data is present
+          // would leave both untested.
+          { name: 'Field Telemetry Feed', purpose: 'Correlate faults with real-world driving', typicalSource: 'Vehicle telemetry platform', priority: 'HIGH' },
         ] },
       }] }] },
   ],
@@ -291,6 +296,25 @@ setTimeout(function () {
         if (!where || (where.textContent || '').indexOf('/') === -1) bad('in-code status cites no file path');
       }
 
+      // Moving on must never be blocked. It used to be enabled only by the
+      // Confluence/Jira linking path, so an engagement showing GitHub and
+      // Upload could never continue at all — the one control that unlocked
+      // Arth sat on a tab it was never shown.
+      var navBtn = document.getElementById('aria-nav-btn');
+      out.nav = navBtn ? (navBtn.disabled ? 'DISABLED' : navBtn.textContent.trim()) : 'missing';
+      if (!navBtn) bad('no stage-nav button on Aria');
+      else if (navBtn.disabled) bad('Move to Arth is disabled — the stage cannot be completed');
+
+      // A dataset nobody has must appear as work to do, not a warning. This is
+      // the ordinary state for a company that has not collected everything yet.
+      var collect = document.getElementById('aria-collect');
+      if (!collect || collect.style.display === 'none') bad('uncovered dataset produced no collection plan');
+      else {
+        var rows = collect.querySelectorAll('.aria-collect__row');
+        out.collect = rows.length;
+        if (!rows.length) bad('collection plan is empty');
+      }
+
       var tabs = scr.querySelectorAll('#aria-tabs .aria-tab');
       out.tabs = [].map.call(tabs, function (t) { return t.dataset.tab; }).join('/');
       if (!tabs.length) bad('no connector tabs rendered');
@@ -448,7 +472,8 @@ for (const screen of list) {
     + `css ${String(r.cssRules ?? '?').padStart(4)} rules · `
     + `${r.steps ?? '?'} steps · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
-    + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"` : ''));
+    + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
+        nav "${r.nav}" · ${r.collect} to collect` : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

@@ -461,6 +461,89 @@ function renderTable(datasets, confCount, jiraCount) {
     || `<tr><td colspan="2" class="ks-card-body">Data Readiness hasn't finished generating yet — check back shortly.</td></tr>`;
   updateReadinessCard(datasets, confCount, jiraCount);
   updateProcessBar(datasets);
+  updateAriaNav(datasets, confCount, jiraCount);
+  renderCollectionPlan(datasets, confCount, jiraCount);
+}
+
+/**
+ * Moving on is never blocked.
+ *
+ * The gate used to be owned by runProcess — the Confluence/Jira linking path —
+ * so a company whose engagement shows only GitHub and Upload could never
+ * enable it at all. The one control that unlocked Arth sat on a tab they were
+ * never shown.
+ *
+ * Beyond that bug, blocking on coverage is wrong on its own terms. A company
+ * founded this year does not have most of its data yet, and refusing to let
+ * them continue makes the product unusable for exactly the customers it is
+ * aimed at. So the button always works, and says what it is continuing with.
+ */
+function updateAriaNav(datasets, confCount, jiraCount) {
+  const btn  = document.getElementById('aria-nav-btn');
+  const hint = document.getElementById('aria-nav-hint');
+  if (!btn) return;
+
+  const { connected } = tally(datasets, confCount, jiraCount);
+  const total = datasets.length;
+  btn.disabled = false;
+
+  if (!total) {
+    btn.textContent = 'Move to Arth →';
+    if (hint) hint.textContent = '';
+    return;
+  }
+  if (connected === total) {
+    btn.textContent = 'Move to Arth →';
+    if (hint) hint.textContent = 'Every required dataset has a source.';
+    return;
+  }
+
+  // Naming the number on the button matters: continuing with partial data is a
+  // decision, and it should not be made without seeing what is being left out.
+  btn.textContent = `Continue with ${connected} of ${total} →`;
+  if (hint) {
+    hint.textContent = connected === 0
+      ? 'No data connected yet. Svarg will design for the data you plan to collect.'
+      : `${total - connected} dataset${total - connected === 1 ? '' : 's'} still to collect — listed below.`;
+  }
+}
+
+/**
+ * What the customer does not have yet, as something to act on.
+ *
+ * A new business is not failing when it cannot supply five of six datasets;
+ * it has not started collecting them. Turning the gap into a list of what to
+ * instrument is more useful than a warning, and it is derived from what is
+ * already on screen rather than generated — nothing here is invented.
+ */
+function renderCollectionPlan(datasets, confCount, jiraCount) {
+  const wrap = document.getElementById('aria-collect');
+  const body = document.getElementById('aria-collect-body');
+  if (!wrap || !body) return;
+
+  const missing = datasets.filter(d => {
+    const { state } = rowState(d, confCount, jiraCount);
+    return state !== 'connected' && state !== 'uploaded' && state !== 'in-code';
+  });
+
+  if (!missing.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+
+  // Highest priority first: Cob already ranked these, and the order it chose
+  // is the order to start collecting in.
+  const rank = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+  const sorted = [...missing].sort((a, b) =>
+    (rank[(a.priority || '').toUpperCase()] ?? 3) - (rank[(b.priority || '').toUpperCase()] ?? 3));
+
+  body.innerHTML = sorted.map(d => `
+    <div class="aria-collect__row">
+      <div class="aria-collect__main">
+        <span class="aria-row-name__title">${esc(d.name)}</span>
+        <span class="aria-row-name__desc">${esc(d.purpose || '')}</span>
+        ${d.typicalSource ? `<span class="aria-collect__where">Usually lives in: ${esc(d.typicalSource)}</span>` : ''}
+      </div>
+      ${d.priority ? `<span class="aria-collect__pri aria-collect__pri--${esc(String(d.priority).toLowerCase())}">${esc(d.priority)}</span>` : ''}
+    </div>`).join('');
 }
 
 // Aria is finished once data has actually been linked. Mark the journey
@@ -483,9 +566,9 @@ function markAriaComplete(ok) {
   // Moving on is the stage-navigation button's job. The banner used to carry
   // its own "Continue to Arth" link, which meant two different controls for
   // the same act in two different places on the page.
-  const navBtn  = document.getElementById('aria-nav-btn');
+  // The nav button is no longer enabled from here — updateAriaNav owns it, and
+  // it is never disabled. This only reports that processing finished.
   const navHint = document.getElementById('aria-nav-hint');
-  if (navBtn) navBtn.disabled = false;
   if (navHint) navHint.textContent = 'Data processed — Arth is ready to choose a model.';
 }
 

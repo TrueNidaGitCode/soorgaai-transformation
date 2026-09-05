@@ -1,14 +1,24 @@
 /**
  * Svarg — Model Catalog (platform admin)
  *
- * Where the evidence behind Arth's recommendations is entered and kept
- * current. Benchmarks are republished constantly, so this had to be editable
- * without a deploy.
+ * The evidence behind Arth's recommendations, and the one control that decides
+ * what it may choose from.
  *
- * Three things, in the order they matter:
- *   - the acceptable score range, which decides what Arth may choose from
- *   - the ranking, so the range can be set while looking at what it selects
- *   - the per-model editor, for getting the published numbers in
+ * Read-only. Scores and costs come from the seed scripts, which transcribe the
+ * published comparisons and are the only place they are written:
+ *
+ *   scripts/seed_strategy_ops_models.mjs
+ *   scripts/seed_engineering_models.mjs
+ *
+ * That is a deliberate trade. This page used to carry a per-model editor so a
+ * score could be corrected without a deploy — the cost is that correcting one
+ * now takes a script change and a release. What it buys is that every figure
+ * on the page has a transcribed table behind it, rather than a number somebody
+ * typed once and nobody can trace.
+ *
+ * The acceptable range stays editable, because it is not a measurement. It is a
+ * judgement about what quality the product can ship, arrived at by testing, and
+ * only the person who ran those tests knows it.
  *
  * Client-side convenience only; the backend enforces auth on every
  * /api/admin/model-catalog route independently.
@@ -40,34 +50,17 @@ const esc = (t) => String(t ?? '')
 const money = (v) => (v === null || v === undefined ? '—' : `$${Number(v).toFixed(2)}`);
 
 /**
- * The maintained benchmark tables, with what each measures. The source sits
- * next to the input on purpose: someone typing a number should be able to see
- * which published figure it is supposed to be.
+ * The maintained benchmark tables, and what each measures.
  *
- * Two, and everything on this page follows from that — the ranking panels, the
- * range dropdown, and the score-and-cost pairs on each model. The other eight
- * categories are still fields on the model, so restoring one is this list plus
- * its table; but a category with no published scores can only ever produce an
- * empty ranking, and offering it to be filled in suggests otherwise.
+ * Two, and everything on this page follows from that — the ranking panels and
+ * the range dropdown both come from here. The model still has fields for eight
+ * other categories, so restoring one is this list, a line in FOCUS_INDICES, and
+ * a seed script; but a category with no published scores can only ever produce
+ * an empty ranking.
  */
 const INDICES = [
   ['strategyOps', 'Strategy & Ops', 'Business and management, accounting, corporate and markets, strategy and planning, customer support, records management'],
   ['engineering', 'Engineering',    'Building and changing software'],
-];
-
-const NUMERIC = [
-  ['priceIn',  'Price in ($/M tokens)'],
-  ['priceOut', 'Price out ($/M tokens)'],
-  ['medianTokensPerSecond', 'Median tokens/sec'],
-  ['paramsB', 'Parameters (B)'],
-  ['contextTokens', 'Context (tokens)'],
-];
-
-const CAPS = [
-  ['reasoning',  'Reasoning'],
-  ['imageInput', 'Image input'],
-  ['audioInput', 'Audio input'],
-  ['videoInput', 'Video input'],
 ];
 
 let _models = [];
@@ -88,7 +81,19 @@ function renderSummary(summary) {
     : `<strong>All ${total}</strong> models carry a score.`;
 }
 
-// ── The ranking ─────────────────────────────────────────────────────────────
+// ── The rankings ────────────────────────────────────────────────────────────
+
+/**
+ * Cost, read per category.
+ *
+ * The same model bills differently on each benchmark — Claude Opus 5 (max) is
+ * $3.01 on Strategy & Ops and $2.25 on Engineering — so showing one cost
+ * against both scores would misprice whichever table it did not come from.
+ * The flat figure is the fallback for rows that predate the split.
+ */
+function costFor(m, category) {
+  return m.indexCosts?.[category] ?? m.indexCost ?? null;
+}
 
 /**
  * One panel per benchmark table: every model scored on that category, highest
@@ -98,16 +103,7 @@ function renderSummary(summary) {
  * The acceptable range is shaded and the cheapest row inside it is marked,
  * because that row is the recommendation and it is almost never the top one.
  * Seeing those two facts together is the entire argument for setting a range.
- *
- * Cost is read per category. The same model bills differently on each
- * benchmark — Claude Opus 5 (max) is $3.01 on Strategy & Ops and $2.25 on
- * Engineering — so showing one cost against both scores would misprice
- * whichever table it did not come from.
  */
-function costFor(m, category) {
-  return m.indexCosts?.[category] ?? m.indexCost ?? null;
-}
-
 function rankingPanel(category, label) {
   const rows = _models
     .filter(m => m.scores?.[category] != null)
@@ -116,12 +112,17 @@ function rankingPanel(category, label) {
   if (!rows.length) return '';
 
   const r = _ranges?.[category] || {};
+  // With no range set, -Infinity..Infinity would make every row "inside", and
+  // the table would shade all twenty and tag a pick — which reads as a band
+  // someone chose. Nothing has been chosen, and Arth does not use this rule
+  // until it is.
   const set = r.min != null || r.max != null;
   const lo = r.min ?? -Infinity;
   const hi = r.max ?? Infinity;
   const inside = (m) => set && m.scores[category] >= lo && m.scores[category] <= hi;
   const cheapest = rows.filter(inside)
     .sort((a, b) => (costFor(a, category) ?? Infinity) - (costFor(b, category) ?? Infinity))[0];
+
   const head = '<thead><tr><th>S.No</th><th>Model</th><th>Company</th>'
     + '<th class="mc-rank__num">Score</th><th class="mc-rank__num">Cost</th></tr></thead>';
 
@@ -154,152 +155,21 @@ function renderRanking() {
   const el = document.getElementById('mc-rankings');
   if (!el) return;
   const panels = INDICES.map(([key, label]) => rankingPanel(key, label)).filter(Boolean).join('');
+  // An empty catalog and a failed load look identical otherwise, and the fix
+  // for one is nothing like the fix for the other.
   el.innerHTML = panels || '<div class="admin-panel"><p class="mc-summary">'
-    + 'No model carries a score yet, so there is nothing to rank.</p></div>';
+    + 'No model carries a score yet, so there is nothing to rank. Run the seed scripts.</p></div>';
 }
 
-// ── The per-model editor ────────────────────────────────────────────────────
-
-function numberField(m, key, label) {
-  return `<div class="form-group">
-    <label>${esc(label)}</label>
-    <input type="number" step="any" data-field="${key}" value="${m[key] ?? ''}" placeholder="not published">
-  </div>`;
-}
-
-function renderModel(m) {
-  const scored = Object.values(m.scores || {}).some(v => v != null);
-  return `
-  <div class="mc-model" data-model="${esc(m.modelId)}">
-    <div class="mc-model__head" data-toggle>
-      <span class="mc-model__name">${esc(m.displayName)}</span>
-      <span class="mc-model__meta">${esc(m.vendor || '—')} · ${esc(m.type)}${m.paramsB ? ' · ' + m.paramsB + 'B' : ''}</span>
-      <span class="mc-model__state mc-model__state--${scored ? 'scored' : 'unscored'}">${scored ? 'scored' : 'no scores'}</span>
-    </div>
-    <div class="mc-model__body" style="display:none">
-
-      <p class="mc-section-label">Scores (0–100) and the cost measured with them</p>
-      <div class="mc-grid">
-        ${INDICES.map(([key, label, source]) => `
-          <div class="form-group">
-            <label>${esc(label)}<br><span class="mc-model__meta">${esc(source)}</span></label>
-            <div class="mc-pair">
-              <input type="number" step="any" min="0" max="100" data-score="${key}"
-                     value="${m.scores?.[key] ?? ''}" placeholder="score">
-              <input type="number" step="any" min="0" data-cost="${key}"
-                     value="${m.indexCosts?.[key] ?? ''}" placeholder="cost / task">
-            </div>
-          </div>`).join('')}
-      </div>
-
-      <p class="mc-section-label">Cost and shape</p>
-      <div class="mc-grid">${NUMERIC.map(([k, l]) => numberField(m, k, l)).join('')}</div>
-
-      <p class="mc-section-label">Capabilities — these filter, they never trade off</p>
-      <div class="mc-caps">
-        ${CAPS.map(([k, l]) => `<label><input type="checkbox" data-cap="${k}" ${m[k] ? 'checked' : ''}> ${esc(l)}</label>`).join('')}
-        <label><input type="checkbox" data-cap="active" ${m.active !== false ? 'checked' : ''}> Recommendable</label>
-      </div>
-
-      <p class="mc-section-label">Providers and provenance</p>
-      <div class="mc-grid">
-        <div class="form-group">
-          <label>Served by (comma separated)</label>
-          <input type="text" data-field="providers" value="${esc((m.providers || []).join(', '))}" placeholder="Anthropic, Amazon Bedrock">
-        </div>
-        <div class="form-group">
-          <label>Benchmark release</label>
-          <input type="text" data-field="sourceVersion" value="${esc(m.sourceVersion || '')}" placeholder="e.g. 2026-09">
-        </div>
-      </div>
-
-      <div class="mc-actions">
-        <button type="button" class="btn-primary" data-save>Save</button>
-        <button type="button" class="btn-secondary" data-delete>Remove</button>
-        <span class="mc-saved" data-saved></span>
-      </div>
-      <p class="mc-provenance">
-        ${esc(m.source || '')}${m.updatedBy ? ` · last edited by ${esc(m.updatedBy)}` : ''}
-        ${m.updatedAt ? ` · ${new Date(m.updatedAt).toLocaleString()}` : ''}
-      </p>
-    </div>
-  </div>`;
-}
-
-function renderList(filter = '') {
-  const q = filter.trim().toLowerCase();
-  const shown = q
-    ? _models.filter(m => [m.displayName, m.vendor, m.modelId, ...(m.providers || [])]
-        .join(' ').toLowerCase().includes(q))
-    : _models;
-
-  document.getElementById('mc-list').innerHTML = shown.length
-    ? shown.map(renderModel).join('')
-    : '<p class="mc-summary">No models match that filter.</p>';
-}
-
-// ── Loading and saving ──────────────────────────────────────────────────────
+// ── Loading ─────────────────────────────────────────────────────────────────
 
 async function load() {
   try {
     const { models, summary } = await api('');
     _models = models;
     renderSummary(summary);
-    renderList(document.getElementById('mc-filter').value);
     renderRanking();
     banner('');
-  } catch (err) {
-    banner(err.message);
-  }
-}
-
-/**
- * Empty means "not published", which is a different thing from zero and must
- * be sent as null — the recommender excludes an unscored model with a reason
- * rather than ranking it bottom, and a stray 0 would make a model look
- * terrible instead of unmeasured.
- */
-function readNumber(input) {
-  const raw = input.value.trim();
-  if (raw === '') return null;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : null;
-}
-
-async function save(card) {
-  const modelId = card.dataset.model;
-  const body = { scores: {} };
-
-  card.querySelectorAll('[data-score]').forEach(i => { body.scores[i.dataset.score] = readNumber(i); });
-  // Sent whole, so clearing a cost actually clears it. Every category has an
-  // input on the form, so this can never drop one that is not on screen.
-  body.indexCosts = {};
-  card.querySelectorAll('[data-cost]').forEach(i => {
-    const v = readNumber(i);
-    if (v !== null) body.indexCosts[i.dataset.cost] = v;
-  });
-  card.querySelectorAll('[data-field]').forEach(i => {
-    const f = i.dataset.field;
-    if (f === 'providers') body.providers = i.value.split(',').map(s => s.trim()).filter(Boolean);
-    else if (f === 'sourceVersion') body.sourceVersion = i.value.trim();
-    else body[f] = readNumber(i);
-  });
-  card.querySelectorAll('[data-cap]').forEach(i => { body[i.dataset.cap] = i.checked; });
-
-  const saved = card.querySelector('[data-saved]');
-  try {
-    await api(`/${encodeURIComponent(modelId)}`, { method: 'PATCH', body: JSON.stringify(body) });
-    saved.textContent = 'Saved';
-
-    // Reloaded rather than patched in place, so the badges, the ranking and
-    // the coverage line reflect what the server stored rather than what was
-    // typed into the form.
-    const wasOpen = card.querySelector('.mc-model__body').style.display !== 'none';
-    await load();
-    if (wasOpen) {
-      const again = document.querySelector(`[data-model="${CSS.escape(modelId)}"] .mc-model__body`);
-      if (again) again.style.display = '';
-    }
   } catch (err) {
     banner(err.message);
   }
@@ -335,29 +205,6 @@ function showRange() {
 
 // ── Wiring ──────────────────────────────────────────────────────────────────
 
-document.getElementById('mc-list').addEventListener('click', async (e) => {
-  const card = e.target.closest('.mc-model');
-  if (!card) return;
-
-  if (e.target.closest('[data-toggle]')) {
-    const body = card.querySelector('.mc-model__body');
-    body.style.display = body.style.display === 'none' ? '' : 'none';
-    return;
-  }
-  if (e.target.closest('[data-save]')) return save(card);
-  if (e.target.closest('[data-delete]')) {
-    // Deleting a model a blueprint already chose leaves that decision
-    // unreadable, so this asks first and points at the gentler option.
-    const ok = confirm(`Remove ${card.dataset.model} from the catalog?\n\n`
-      + 'Untick "Recommendable" instead if you only want to stop it being suggested — '
-      + 'blueprints that already chose it keep working.');
-    if (!ok) return;
-    try { await api(`/${encodeURIComponent(card.dataset.model)}`, { method: 'DELETE' }); await load(); }
-    catch (err) { banner(err.message); }
-  }
-});
-
-document.getElementById('mc-filter').addEventListener('input', (e) => renderList(e.target.value));
 document.getElementById('mc-range-category')?.addEventListener('change', showRange);
 
 document.getElementById('mc-range-save')?.addEventListener('click', async () => {
@@ -372,23 +219,6 @@ document.getElementById('mc-range-save')?.addEventListener('click', async () => 
     renderRanking();
     if (saved) { saved.textContent = 'Saved'; setTimeout(() => { saved.textContent = ''; }, 2000); }
     banner('');
-  } catch (err) {
-    banner(err.message);
-  }
-});
-
-document.getElementById('mc-create-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  try {
-    await api('', { method: 'POST', body: JSON.stringify({
-      modelId:     document.getElementById('mc-modelId').value.trim(),
-      displayName: document.getElementById('mc-displayName').value.trim(),
-      vendor:      document.getElementById('mc-vendor').value.trim(),
-      type:        document.getElementById('mc-type').value,
-    }) });
-    e.target.reset();
-    await load();
-    banner('Model added. Open it to enter scores.', false);
   } catch (err) {
     banner(err.message);
   }

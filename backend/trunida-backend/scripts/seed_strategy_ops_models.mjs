@@ -1,16 +1,16 @@
 /**
- * Seed the Strategy & Ops comparison into the model catalog.
+ * Strategy & Ops — proprietary models.
  *
- * Transcribed from the published Artificial Analysis comparison — score and
- * cost per task, exactly as given. Nothing is inferred: models here have a
- * Strategy & Ops score and a cost and no other figures, because no other
- * figures were in the table.
+ * Transcribed from the supplied comparison: score and cost per task, exactly
+ * as given. Nothing else is inferred, because nothing else was in the table.
  *
- * Two rows quote two prices; the first is taken and the second recorded in the
- * note rather than silently averaged.
+ * This is the authoritative list for the proprietary side of Strategy & Ops.
+ * Rows seeded from an earlier version of the comparison that are NOT in this
+ * one are removed rather than left behind — two rows for the same model with
+ * different scores is worse than either being missing, and a stale row is
+ * indistinguishable from a current one once it is in the table.
  *
- * Idempotent, and it never touches a score an admin has since edited by hand
- * unless --force is passed.
+ * An admin's own edits are never overwritten unless --force is passed.
  *
  *   node scripts/seed_strategy_ops_models.mjs [--force]
  */
@@ -19,28 +19,30 @@ import mongoose from 'mongoose';
 import ModelCatalogEntry from '../models/ModelCatalogEntry.js';
 
 const FORCE = process.argv.includes('--force');
+const SOURCE = 'Strategy & Ops — proprietary';
 
-// [rank, model, vendor, strategyOps score, cost per task, note]
+// [rank, model, vendor, score, cost per task]
 const ROWS = [
-  [1,  'Claude Fable 5.1 (xhigh, with fallback)',  'Anthropic', 59, 4.23],
-  [2,  'Claude Opus 5 (max)',                      'Anthropic', 55, 3.01],
-  [3,  'Claude Fable 5.1 (high, with fallback)',    'Anthropic', 55, 1.79],
-  [4,  'Claude Fable 5 (xhigh)',                    'Anthropic', 55, 2.30],
-  [6,  'Claude Fable 5 (with fallback)',            'Anthropic', 54, 3.85],
-  [7,  'Claude Opus 5 (high)',                      'Anthropic', 54, 1.55],
-  [8,  'GPT-5.6 Sol (max)',                         'OpenAI',    53, 1.40],
-  [9,  'Claude Fable 5.1 (medium, with fallback)',  'Anthropic', 52, 1.29],
-  [10, 'Grok 4.6 (high)',                           'xAI',       52, 1.45],
-  [11, 'Muse Spark 1.3 (xhigh)',                    'Muse',      50, 0.65],
-  [12, 'Claude Opus 5 (medium)',                    'Anthropic', 50, 0.89],
-  [13, 'Claude Fable 5.1 (low, with fallback)',     'Anthropic', 50, 0.99],
-  [14, 'Gemini 3.8 Flash (high)',                   'Google',    50, 0.77],
-  [15, 'GPT-5.6 Sol (high)',                        'OpenAI',    49, 0.03],
-  [16, 'Grok 4.6 (xhigh)',                          'xAI',       48, 1.89],
-  [17, 'GPT-5.6 Sol (medium)',                      'OpenAI',    48, 0.01],
-  [18, 'Grok 4.6 (medium)',                         'xAI',       48, 1.18],
-  [19, 'Qwen3.8 Max',                               'Alibaba',   47, 0.80, 'table quotes $0.80 / $1.23'],
-  [20, 'GPT-5.5 (xhigh)',                           'OpenAI',    47, 1.46, 'table quotes $1.46 / $1.53'],
+  [1,  'Claude Fable 5.1 (max with fallback)',    'Anthropic', 58, 4.33],
+  [2,  'Claude Fable 5.1 (xhigh with fallback)',  'Anthropic', 57, 3.25],
+  [3,  'Claude Opus 5 (max)',                     'Anthropic', 54, 3.01],
+  [4,  'Claude Fable 5.1 (high with fallback)',   'Anthropic', 54, 1.79],
+  [5,  'Claude Opus 5 (xhigh)',                   'Anthropic', 54, 2.30],
+  [6,  'Muse Spark 1.3 (max)',                    'Muse',      53, 0.87],
+  [7,  'Claude Fable 5 (with fallback)',          'Anthropic', 53, 3.85],
+  [8,  'Claude Opus 5 (high)',                    'Anthropic', 52, 1.55],
+  [9,  'GPT-5.6 Sol (max)',                       'OpenAI',    52, 1.40],
+  [10, 'Claude Fable 5.1 (medium with fallback)', 'Anthropic', 51, 1.29],
+  [11, 'GPT-6 Astra (xhigh)',                     'OpenAI',    51, 1.77],
+  [12, 'GPT-6 Astra (max)',                       'OpenAI',    51, 2.45],
+  [13, 'Grok 4.6 (high)',                         'xAI',       51, 1.45],
+  [14, 'GPT-5.6 Sol (xhigh)',                     'OpenAI',    49, 0.95],
+  [15, 'Muse Spark 1.3 (xhigh)',                  'Muse',      49, 0.65],
+  [16, 'GPT-6 Astra (high)',                      'OpenAI',    49, 1.47],
+  [17, 'Claude Opus 5 (medium)',                  'Anthropic', 48, 0.89],
+  [18, 'Claude Fable 5.1 (low with fallback)',    'Anthropic', 48, 0.99],
+  [19, 'Gemini 3.8 Flash (high)',                 'Google',    48, 0.77],
+  [20, 'Gemini 3.8 Flash (medium)',               'Google',    48, 0.56],
 ];
 
 const slug = (s) => s.toLowerCase()
@@ -48,14 +50,16 @@ const slug = (s) => s.toLowerCase()
 
 await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
 
+const keep = new Set(ROWS.map(([, name]) => slug(name)));
 let created = 0, updated = 0, skipped = 0;
-for (const [rank, name, vendor, score, cost, note] of ROWS) {
+
+for (const [rank, name, vendor, score, cost] of ROWS) {
   const modelId = slug(name);
   const existing = await ModelCatalogEntry.findOne({ modelId }).lean();
 
-  // An admin's own edit is not overwritten by a re-seed. Getting a score wrong
-  // and having it silently restored on the next run is worse than a stale row.
-  if (existing && existing.updatedBy && !FORCE) { skipped++; continue; }
+  // Getting a score wrong and having it silently restored on the next run is
+  // worse than a stale row, so a hand edit wins unless forced.
+  if (existing?.updatedBy && !FORCE) { skipped++; continue; }
 
   await ModelCatalogEntry.updateOne(
     { modelId },
@@ -67,16 +71,32 @@ for (const [rank, name, vendor, score, cost, note] of ROWS) {
       providers: [vendor],
       indexCost: cost,
       'scores.strategyOps': score,
-      source: 'Artificial Analysis — Strategy & Ops comparison'
-        + (note ? ` (${note})` : '') + ` · rank ${rank}`,
+      source: `${SOURCE} · rank ${rank}`,
     } },
     { upsert: true }
   );
   existing ? updated++ : created++;
 }
 
-const scored = await ModelCatalogEntry.countDocuments({ 'scores.strategyOps': { $ne: null } });
+// Rows from a previous version of this comparison that the new one does not
+// contain. Left alone, they would sit in the ranking looking current.
+const stale = await ModelCatalogEntry.find({
+  'scores.strategyOps': { $ne: null },
+  modelId: { $nin: [...keep] },
+  updatedBy: { $in: ['', null] },
+}).select('modelId displayName source').lean();
+
+const removable = stale.filter(m => /Strategy & Ops/i.test(m.source || ''));
+if (removable.length) {
+  await ModelCatalogEntry.deleteMany({ modelId: { $in: removable.map(m => m.modelId) } });
+}
+
 console.log(`created ${created}, updated ${updated}, skipped ${skipped} (edited by an admin)`);
-console.log(`${scored} models now carry a Strategy & Ops score`);
+if (removable.length) {
+  console.log(`removed ${removable.length} row(s) from the superseded list:`);
+  removable.forEach(m => console.log(`   ${m.displayName}`));
+}
+const total = await ModelCatalogEntry.countDocuments({ 'scores.strategyOps': { $ne: null } });
+console.log(`${total} models carry a Strategy & Ops score`);
 
 await mongoose.disconnect();

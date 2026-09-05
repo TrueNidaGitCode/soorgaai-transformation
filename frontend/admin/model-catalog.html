@@ -7,7 +7,7 @@
 
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="../style.css">
-    <link rel="stylesheet" href="model-catalog.css?v=2">
+    <link rel="stylesheet" href="model-catalog.css?v=3">
     <script src="../login/config.js"></script>
 </head>
 <body>
@@ -55,7 +55,17 @@
         </div>
 
         <div class="admin-panel">
-            <div class="panel-header"><h2>Add a Model</h2></div>
+            <div class="panel-header"><h2>Strategy &amp; Ops — proprietary models</h2></div>
+        <p class="mc-summary">
+          Every scored model, highest first. Shaded rows are inside the acceptable range
+          &mdash; the only ones Arth can choose from &mdash; and within those it takes the
+          cheapest, which is rarely the one at the top.
+        </p>
+        <div class="mc-rank-wrap"><table class="mc-rank" id="mc-rank"></table></div>
+      </div>
+
+      <div class="admin-panel">
+        <div class="panel-header"><h2>Add a Model</h2></div>
             <form id="mc-create-form" class="signal-form">
                 <div class="mc-grid">
                     <div class="form-group">
@@ -92,6 +102,6 @@
     </main>
 
     <script src="../login/sessionGuard.js"></script>
-    <script src="model-catalog.js?v=2"></script>
+    <script src="model-catalog.js?v=3"></script>
 </body>
 </html>

@@ -5,9 +5,10 @@
  * current. Benchmarks are republished constantly, so this had to be editable
  * without a deploy.
  *
- * The page is deliberately dense. Its job is to get a lot of published numbers
- * in accurately, not to look spacious — and to make it obvious at a glance
- * which models cannot yet be recommended because nobody has entered a score.
+ * Three things, in the order they matter:
+ *   - the acceptable score range, which decides what Arth may choose from
+ *   - the ranking, so the range can be set while looking at what it selects
+ *   - the per-model editor, for getting the published numbers in
  *
  * Client-side convenience only; the backend enforces auth on every
  * /api/admin/model-catalog route independently.
@@ -36,10 +37,12 @@ function banner(message, isError = true) {
 const esc = (t) => String(t ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+const money = (v) => (v === null || v === undefined ? '—' : `$${Number(v).toFixed(2)}`);
+
 /**
- * The nine indices, each with the benchmark it is measured by. The source sits
- * next to the input on purpose: someone typing a number should be able to see
- * which published figure it is supposed to be.
+ * Each score category, with what it measures. The source sits next to the
+ * input on purpose: someone typing a number should be able to see which
+ * published figure it is supposed to be.
  */
 const INDICES = [
   ['strategyOps',             'Strategy & Ops',         'Business and management, accounting, corporate and markets, strategy and planning, customer support, records management'],
@@ -55,11 +58,11 @@ const INDICES = [
 ];
 
 const NUMERIC = [
+  ['indexCost', 'Cost per task ($)'],
   ['priceIn',  'Price in ($/M tokens)'],
   ['priceOut', 'Price out ($/M tokens)'],
   ['medianTokensPerSecond', 'Median tokens/sec'],
   ['paramsB', 'Parameters (B)'],
-  ['activeParamsB', 'Active params (B)'],
   ['contextTokens', 'Context (tokens)'],
 ];
 
@@ -71,6 +74,9 @@ const CAPS = [
 ];
 
 let _models = [];
+let _ranges = {};
+
+// ── Coverage ────────────────────────────────────────────────────────────────
 
 function renderSummary(summary) {
   const el = document.getElementById('mc-summary');
@@ -81,10 +87,61 @@ function renderSummary(summary) {
   // cause should not have to be inferred from that emptiness.
   el.innerHTML = unscored
     ? `<span class="mc-summary--warn"><strong>${scored} of ${total}</strong> models carry at least one score. `
-      + `The other ${unscored} cannot be ranked and are excluded with a reason — `
-      + `Arth recommends nothing from an unscored catalog.</span>`
+      + `The other ${unscored} cannot be ranked and are excluded with a reason.</span>`
     : `<strong>All ${total}</strong> models carry a score.`;
 }
+
+// ── The ranking ─────────────────────────────────────────────────────────────
+
+/**
+ * Every scored model, highest first — the same shape as the published
+ * comparison, so a row can be checked against the source without translating
+ * between layouts.
+ *
+ * The acceptable range is shaded and the cheapest row inside it is marked,
+ * because that row is the recommendation and it is almost never the top one.
+ * Seeing those two facts together is the entire argument for setting a range.
+ */
+function renderRanking() {
+  const el = document.getElementById('mc-rank');
+  if (!el) return;
+
+  const rows = _models
+    .filter(m => m.scores?.strategyOps != null)
+    .sort((a, b) => (b.scores.strategyOps - a.scores.strategyOps)
+                 || ((a.indexCost ?? Infinity) - (b.indexCost ?? Infinity)));
+
+  if (!rows.length) {
+    el.innerHTML = '<tbody><tr><td class="mc-summary">No model has a Strategy &amp; Ops score yet.</td></tr></tbody>';
+    return;
+  }
+
+  const r = _ranges?.strategyOps || {};
+  const lo = r.min ?? -Infinity;
+  const hi = r.max ?? Infinity;
+  const inRange = rows.filter(m => m.scores.strategyOps >= lo && m.scores.strategyOps <= hi);
+  const cheapest = inRange.slice()
+    .sort((a, b) => (a.indexCost ?? Infinity) - (b.indexCost ?? Infinity))[0];
+
+  const head = '<thead><tr><th>S.No</th><th>Model</th><th>Company</th>'
+    + '<th class="mc-rank__num">Score</th><th class="mc-rank__num">Cost</th></tr></thead>';
+
+  el.innerHTML = head + '<tbody>' + rows.map((m, i) => {
+    const inside = m.scores.strategyOps >= lo && m.scores.strategyOps <= hi;
+    const pick = cheapest && m.modelId === cheapest.modelId;
+    const cls = [inside ? 'mc-rank__row--in' : '', pick ? 'mc-rank__row--pick' : ''].join(' ').trim();
+    const tag = pick ? '<span class="mc-rank__tag">Arth picks this</span>' : '';
+    return `<tr class="${cls}">`
+      + `<td class="mc-rank__sno">${i + 1}</td>`
+      + `<td>${esc(m.displayName)}${tag}</td>`
+      + `<td>${esc(m.vendor || '—')}</td>`
+      + `<td class="mc-rank__num mc-rank__score">${m.scores.strategyOps}</td>`
+      + `<td class="mc-rank__num mc-rank__cost">${money(m.indexCost)}</td>`
+      + '</tr>';
+  }).join('') + '</tbody>';
+}
+
+// ── The per-model editor ────────────────────────────────────────────────────
 
 function numberField(m, key, label) {
   return `<div class="form-group">
@@ -104,7 +161,7 @@ function renderModel(m) {
     </div>
     <div class="mc-model__body" style="display:none">
 
-      <p class="mc-section-label">Benchmark scores (0–100)</p>
+      <p class="mc-section-label">Scores (0–100)</p>
       <div class="mc-grid">
         ${INDICES.map(([key, label, source]) => `
           <div class="form-group">
@@ -114,7 +171,7 @@ function renderModel(m) {
           </div>`).join('')}
       </div>
 
-      <p class="mc-section-label">Economics and shape</p>
+      <p class="mc-section-label">Cost and shape</p>
       <div class="mc-grid">${NUMERIC.map(([k, l]) => numberField(m, k, l)).join('')}</div>
 
       <p class="mc-section-label">Capabilities — these filter, they never trade off</p>
@@ -160,12 +217,15 @@ function renderList(filter = '') {
     : '<p class="mc-summary">No models match that filter.</p>';
 }
 
+// ── Loading and saving ──────────────────────────────────────────────────────
+
 async function load() {
   try {
     const { models, summary } = await api('');
     _models = models;
     renderSummary(summary);
     renderList(document.getElementById('mc-filter').value);
+    renderRanking();
     banner('');
   } catch (err) {
     banner(err.message);
@@ -175,8 +235,8 @@ async function load() {
 /**
  * Empty means "not published", which is a different thing from zero and must
  * be sent as null — the recommender excludes an unscored model with a reason
- * rather than ranking it bottom, and a stray 0 would silently make a model
- * look terrible instead of unmeasured.
+ * rather than ranking it bottom, and a stray 0 would make a model look
+ * terrible instead of unmeasured.
  */
 function readNumber(input) {
   const raw = input.value.trim();
@@ -203,8 +263,9 @@ async function save(card) {
     await api(`/${encodeURIComponent(modelId)}`, { method: 'PATCH', body: JSON.stringify(body) });
     saved.textContent = 'Saved';
 
-    // Reloaded rather than patched in place, so the scored badge and the
-    // coverage line reflect what the server stored rather than what was typed.
+    // Reloaded rather than patched in place, so the badges, the ranking and
+    // the coverage line reflect what the server stored rather than what was
+    // typed into the form.
     const wasOpen = card.querySelector('.mc-model__body').style.display !== 'none';
     await load();
     if (wasOpen) {
@@ -215,6 +276,36 @@ async function save(card) {
     banner(err.message);
   }
 }
+
+// ── The acceptable range ────────────────────────────────────────────────────
+
+async function loadSettings() {
+  try {
+    const { acceptableRanges } = await api('/settings');
+    _ranges = acceptableRanges || {};
+  } catch {
+    _ranges = {};
+  }
+
+  const sel = document.getElementById('mc-range-category');
+  if (sel && !sel.options.length) {
+    sel.innerHTML = INDICES.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('');
+  }
+  showRange();
+  renderRanking();
+}
+
+function showRange() {
+  const cat = document.getElementById('mc-range-category')?.value;
+  const r = _ranges?.[cat] || {};
+  const min = document.getElementById('mc-range-min');
+  const max = document.getElementById('mc-range-max');
+  // Blank means no range, which is a different instruction from zero.
+  if (min) min.value = r.min ?? '';
+  if (max) max.value = r.max ?? '';
+}
+
+// ── Wiring ──────────────────────────────────────────────────────────────────
 
 document.getElementById('mc-list').addEventListener('click', async (e) => {
   const card = e.target.closest('.mc-model');
@@ -239,6 +330,24 @@ document.getElementById('mc-list').addEventListener('click', async (e) => {
 });
 
 document.getElementById('mc-filter').addEventListener('input', (e) => renderList(e.target.value));
+document.getElementById('mc-range-category')?.addEventListener('change', showRange);
+
+document.getElementById('mc-range-save')?.addEventListener('click', async () => {
+  const saved = document.getElementById('mc-range-saved');
+  try {
+    const { acceptableRanges } = await api('/settings', { method: 'POST', body: JSON.stringify({
+      category: document.getElementById('mc-range-category').value,
+      min: document.getElementById('mc-range-min').value,
+      max: document.getElementById('mc-range-max').value,
+    }) });
+    _ranges = acceptableRanges || {};
+    renderRanking();
+    if (saved) { saved.textContent = 'Saved'; setTimeout(() => { saved.textContent = ''; }, 2000); }
+    banner('');
+  } catch (err) {
+    banner(err.message);
+  }
+});
 
 document.getElementById('mc-create-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -258,46 +367,4 @@ document.getElementById('mc-create-form').addEventListener('submit', async (e) =
 });
 
 load();
-
-let _ranges = {};
-
-async function loadSettings() {
-  try {
-    const { acceptableRanges } = await api('/settings');
-    _ranges = acceptableRanges || {};
-  } catch { _ranges = {}; }
-
-  const sel = document.getElementById('mc-range-category');
-  if (sel && !sel.options.length) {
-    sel.innerHTML = INDICES.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('');
-  }
-  showRange();
-}
-
-function showRange() {
-  const cat = document.getElementById('mc-range-category')?.value;
-  const r = _ranges?.[cat] || {};
-  const min = document.getElementById('mc-range-min');
-  const max = document.getElementById('mc-range-max');
-  // Blank means no range, which is a different instruction from zero.
-  if (min) min.value = r.min ?? '';
-  if (max) max.value = r.max ?? '';
-}
-
-document.getElementById('mc-range-category')?.addEventListener('change', showRange);
-
-document.getElementById('mc-range-save')?.addEventListener('click', async () => {
-  const saved = document.getElementById('mc-range-saved');
-  try {
-    const { acceptableRanges } = await api('/settings', { method: 'POST', body: JSON.stringify({
-      category: document.getElementById('mc-range-category').value,
-      min: document.getElementById('mc-range-min').value,
-      max: document.getElementById('mc-range-max').value,
-    }) });
-    _ranges = acceptableRanges || {};
-    if (saved) { saved.textContent = 'Saved'; setTimeout(() => { saved.textContent = ''; }, 2000); }
-    banner('');
-  } catch (err) { banner(err.message); }
-});
-
 loadSettings();

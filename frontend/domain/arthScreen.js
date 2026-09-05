@@ -54,11 +54,20 @@ let _savedModelId = null;    // what is actually persisted, vs what is merely pi
 
 // The three classes the catalog actually distinguishes. Descriptions state
 // the trade honestly rather than selling each one.
+//
+// Open Weight is shown but not selectable. Hiding it would be the easier
+// change and the worse one: running on your own hardware is the reason a
+// regulated buyer looks at this screen at all, and a customer who cannot see
+// the option concludes the platform does not have it. Shown-and-locked says
+// what is true — it exists, and it is not on your plan yet.
 const OPTIONS = [
   { id: 'frontier',    title: 'Frontier',    blurb: 'Best quality, per-call cloud pricing. Data leaves your environment.' },
-  { id: 'open-weight', title: 'Open Weight', blurb: 'Runs on your own hardware. Fixed cost, full data control, some quality traded away.' },
+  { id: 'open-weight', title: 'Open Weight', blurb: 'Runs on your own hardware. Fixed cost, full data control, some quality traded away.',
+    locked: 'Available to large enterprise customers once a contract is in place. Talk to us and we will enable it for your account.' },
   { id: 'auto',        title: 'Auto',        blurb: 'Arth reads this use case and picks the model that fits it, weighing cost, quality and performance.' },
 ];
+
+const optionById = (id) => OPTIONS.find(o => o.id === id) || null;
 
 const PRIORITIES = [
   { id: 'quality',     title: 'Quality',     blurb: 'Get the best answer, accept the price.' },
@@ -105,12 +114,29 @@ function renderBreadcrumb(bp) {
 
 function renderOptions() {
   const wrap = document.getElementById('arth-options');
-  wrap.innerHTML = OPTIONS.map(o => `
-    <button type="button" class="arth-option${_chosen === o.id ? ' arth-option--on' : ''}" data-pref="${o.id}">
-      <span class="arth-option__title">${esc(o.title)}</span>
+  wrap.innerHTML = OPTIONS.map(o => {
+    // A locked option stays focusable and keeps its click handler: it has to
+    // be able to explain itself. A disabled button swallows the click, and the
+    // customer is left with a greyed card and no reason for it.
+    const cls = ['arth-option',
+      _chosen === o.id ? 'arth-option--on' : '',
+      o.locked ? 'arth-option--locked' : ''].filter(Boolean).join(' ');
+    return `
+    <button type="button" class="${cls}" data-pref="${o.id}"${o.locked ? ' aria-disabled="true"' : ''}>
+      <span class="arth-option__title">${esc(o.title)}${
+        o.locked ? '<span class="arth-option__lock">Enterprise</span>' : ''}</span>
       <span class="arth-option__blurb">${esc(o.blurb)}</span>
-    </button>
-  `).join('');
+    </button>`;
+  }).join('');
+}
+
+/** Why a locked option cannot be picked, shown under the row rather than in an
+ *  alert, so it stays on screen while the customer reads it. */
+function showLockedNote(message) {
+  const el = document.getElementById('arth-locked-note');
+  if (!el) return;
+  el.textContent = message || '';
+  el.style.display = message ? '' : 'none';
 }
 
 function tags(m) {
@@ -476,7 +502,18 @@ async function loadModels() {
   }
 }
 
-function choose(pref) {
+function choose(pref, { restoring = false } = {}) {
+  const opt = optionById(pref);
+
+  // Restoring is not choosing. A blueprint that recorded Open Weight before it
+  // was locked keeps showing it — the alternative is a screen that silently
+  // disagrees with the decision on file.
+  if (opt?.locked && !restoring) {
+    showLockedNote(opt.locked);
+    return false;
+  }
+  showLockedNote(opt?.locked && restoring ? opt.locked : '');
+
   if (_chosen !== pref) { _model = null; _models = []; }
   _chosen = pref;
   renderOptions();
@@ -496,6 +533,7 @@ function choose(pref) {
     loadModels();
   }
   refreshConfirm();
+  return true;
 }
 
 let _wired = false;
@@ -573,7 +611,11 @@ function wire() {
   // behind Confirm & Continue so there is still one way to make the choice.
   document.addEventListener('arth:choose', (e) => {
     const pref = e.detail?.preference;
-    if (OPTIONS.some(o => o.id === pref)) choose(pref);
+    if (!optionById(pref)) return;
+    // dispatchEvent is synchronous, so the caller can read the outcome back off
+    // the detail — the chat needs it to avoid reporting "Selected" for a choice
+    // the screen refused.
+    if (!choose(pref)) e.detail.rejected = optionById(pref).locked;
   });
 
   document.getElementById('arth-confirm-btn').addEventListener('click', async () => {
@@ -627,7 +669,7 @@ document.addEventListener('arth:show', (e) => {
   refreshConfirm();
 
   if (prev.preference) {
-    choose(prev.preference);
+    choose(prev.preference, { restoring: true });
     if (prev.modelId) {
       _model = prev.modelId;
       if (prev.preference === 'auto') {

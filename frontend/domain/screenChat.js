@@ -200,7 +200,16 @@ class ScreenChat {
         choose_auto:        'auto',
       };
       if (ARTH_PREF[type]) {
-        document.dispatchEvent(new CustomEvent('arth:choose', { detail: { preference: ARTH_PREF[type] } }));
+        // The screen owns which classes are selectable, so it decides — and
+        // writes its refusal back onto the detail. Duplicating the rule here
+        // would give two places to change it and one to forget.
+        const detail = { preference: ARTH_PREF[type] };
+        document.dispatchEvent(new CustomEvent('arth:choose', { detail }));
+        if (detail.rejected) {
+          btn.textContent = 'Not available';
+          this.append('assistant', detail.rejected);
+          return;
+        }
         btn.textContent = 'Selected ✓';
         this.close();
         return;

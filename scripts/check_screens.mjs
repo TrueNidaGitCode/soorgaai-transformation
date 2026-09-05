@@ -134,7 +134,7 @@ const MANIFEST_FILES = [
 
 // ── The page stub ───────────────────────────────────────────────────────────
 
-function stubScript() {
+function stubScript(screen) {
   return `<script>
 localStorage.setItem('token','stub');
 localStorage.setItem('userId','stub');
@@ -149,7 +149,15 @@ window.addEventListener('unhandledrejection', function(e){
 });
 
 const BP = ${JSON.stringify(BLUEPRINT)};
-const DEP = ${JSON.stringify(DEPLOYMENT)};
+const DEP = ${JSON.stringify(
+  // Arth freezes every control once an environment is prepared — correctly, since
+  // the gateway is wired to the chosen model and the container sized for it. That
+  // makes the model-class row untestable on a prepared fixture: the buttons carry
+  // `disabled`, and a disabled button dispatches no click at all, so a check that
+  // clicks one cannot tell a working lock from a broken one. Arth therefore gets
+  // an unprepared environment, which is the state the choice is actually made in.
+  screen === 'arth' ? { ...DEPLOYMENT, status: 'none', preparedAt: '' } : DEPLOYMENT
+)};
 const MANIFEST = ${JSON.stringify({ fileCount: MANIFEST_FILES.length, totalBytes: MANIFEST_FILES.reduce((n, f) => n + f.bytes, 0), files: MANIFEST_FILES })};
 const CATALOG = ${JSON.stringify({
   frontier: [
@@ -324,6 +332,55 @@ setTimeout(function () {
       if (out.tabs.indexOf('upload') === -1) bad('Upload tab missing (tabs: ' + out.tabs + ')');
     }
 
+    // Arth's model classes. Open Weight is shown but not selectable, and the
+    // failure worth pinning is the quiet one: a locked card that dims but
+    // still selects, or refuses without saying why. Both look fine in a
+    // screenshot, so this clicks it and checks what happened.
+    if (out.screen === 'arth') {
+      var pick = function (id) { return scr.querySelector('#arth-options [data-pref=' + id + ']'); };
+      var isOn = function (id) { var e = pick(id); return !!e && e.classList.contains('arth-option--on'); };
+      var noteText = function () {
+        var n = document.getElementById('arth-locked-note');
+        return (n && n.style.display !== 'none' && (n.textContent || '').trim()) || '';
+      };
+
+      // A frozen screen disables the row, and a disabled button fires no click.
+      // Saying so beats four assertions failing as if the lock were broken.
+      var frozen = !!(pick('frontier') && pick('frontier').disabled);
+      if (frozen) bad('the model-class row is frozen, so the lock cannot be exercised');
+
+      var opts = scr.querySelectorAll('#arth-options .arth-option');
+      out.classes = [].map.call(opts, function (o) {
+        return o.dataset.pref + (o.classList.contains('arth-option--locked') ? '(locked)' : '');
+      }).join('/');
+      if (opts.length !== 3) bad('expected 3 model classes, got ' + opts.length);
+      if (!pick('open-weight')) bad('no open-weight class rendered — it should be visible, just locked');
+      else if (!pick('open-weight').classList.contains('arth-option--locked')) bad('open-weight is not locked');
+
+      // Auto first: an unlocked class that is not already selected proves the
+      // row is wired, so a later refusal can be read as the lock working
+      // rather than as nothing being connected.
+      pick('auto').click();
+      if (!isOn('auto')) bad('an unlocked class could not be selected — the row is not wired');
+
+      pick('open-weight').click();
+      out.lockNote = noteText().slice(0, 52) || "NONE";
+      if (!noteText()) bad('clicking a locked class explained nothing');
+      if (isOn('open-weight')) bad('a locked class was selected anyway');
+      if (!isOn('auto')) bad('a refused click changed the selection');
+
+      // And the lock does not spread: choosing a selectable class still takes
+      // and clears the message on the way.
+      //
+      // Auto rather than Frontier, deliberately. Frontier starts a model fetch
+      // that cannot resolve inside this synchronous pass, so the screen would
+      // still read "Loading models…" when the shared assertions run and fail
+      // for a reason that has nothing to do with the lock. A probe has to
+      // leave the page settled.
+      pick('auto').click();
+      if (!isOn('auto')) bad('a selectable class could not be chosen after the refusal');
+      if (noteText()) bad('the lock message survived choosing a selectable class');
+    }
     // Cob's engagement note. It states what the whole blueprint was steered
     // by, so a note that silently fails to render is worse than a visibly
     // wrong one — assert it drew, said something, and offers the way out.
@@ -411,7 +468,7 @@ function serve(screen) {
       if (err) { res.writeHead(404); res.end('not found'); return; }
       if (p.endsWith('domain.html')) {
         const html = data.toString()
-          .replace('<script type="module"', stubScript() + '\n  <script type="module"')
+          .replace('<script type="module"', stubScript(screen) + '\n  <script type="module"')
           .replace('</body>', probeScript(screen) + '</body>');
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(html);
@@ -473,7 +530,8 @@ for (const screen of list) {
     + `${r.steps ?? '?'} steps · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
-        nav "${r.nav}" · ${r.collect} to collect` : ''));
+        nav "${r.nav}" · ${r.collect} to collect` : '')
+    + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"` : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

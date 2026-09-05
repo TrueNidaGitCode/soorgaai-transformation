@@ -13337,3 +13337,30 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
   line-height: 1.55;
   max-width: 78ch;
 }
+
+/* A model class that exists but is not on this account's plan.
+   Dimmed rather than removed: running on your own hardware is why a regulated
+   buyer opens this screen, and hiding it reads as "the platform cannot do
+   this" instead of "this is not enabled yet". It stays clickable so it can
+   explain itself — a disabled button swallows the click and leaves a grey
+   card with no reason attached. */
+.arth-option--locked { opacity: 0.5; cursor: not-allowed; }
+.arth-option--locked:hover { border-color: rgba(255,255,255,0.12); }
+.arth-option__lock {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(212,175,110,0.16);
+  color: #D4AF6E;
+  vertical-align: middle;
+}
+.arth-locked-note {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #D4AF6E;
+}

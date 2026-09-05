@@ -202,12 +202,16 @@ function renderModels(models, runnable) {
     return;
   }
 
-  wrap.innerHTML =
-    (advice.length ? `<p class="arth-group">Recommended for this use case</p>
+  // Headings only when there is something to tell apart. With every
+  // recommendation runnable — which is the normal case now that catalog rows
+  // carry endpoints — two group labels over one group is furniture.
+  wrap.innerHTML = advice.length
+    ? `<p class="arth-group">Recommended for this use case</p>
        <p class="arth-group__note">Benchmark guidance. Svarg does not run these yet.</p>
-       ${advice.map(m => modelCard(m, true)).join('')}` : '')
-    + (pickable.length ? `<p class="arth-group">Available to run</p>
-       ${pickable.map(m => modelCard(m, false)).join('')}` : '');
+       ${advice.map(m => modelCard(m, true)).join('')}
+       ${pickable.length ? `<p class="arth-group">Available to run</p>
+         ${pickable.map(m => modelCard(m, false)).join('')}` : ''}`
+    : pickable.map(m => modelCard(m, false)).join('');
 }
 
 

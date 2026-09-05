@@ -75,7 +75,10 @@ const BLUEPRINT = {
     entities: [{ name: 'flashing_logs', definedIn: 'db/migrate/20240110_create_flashing_logs.sql', fields: ['ecu_id', 'result'], describes: 'OTA flashing attempts' }],
     datasetMatches: [{ dataset: 'Flashing Logs', entity: 'flashing_logs', definedIn: 'db/migrate/20240110_create_flashing_logs.sql', confidence: 0.9 }],
   },
-  arthSelection: { preference: 'frontier', modelId: 'claude-sonnet', displayName: 'Claude Sonnet' },
+  // A model the catalog still offers, so the selected state is actually
+  // exercised. Pointing this at a retired model left 'selected nothing', which
+  // is a real state but not the one worth asserting.
+  arthSelection: { preference: 'frontier', modelId: 'gemini-3-8-flash', displayName: 'Gemini 3.8 Flash' },
   eameDelivery: { repoOwner: 'acme', repoName: 'svarg-defect-matching', fileCount: 32 },
   governanceReview: { acknowledged: false },
   domains: [
@@ -109,7 +112,7 @@ const BLUEPRINT = {
 const DEPLOYMENT = {
   status: 'prepared', hosting: 'svarg', environmentName: 'svarg-tenant-000001',
   region: 'us-west', dbName: 'tenant_000001', appAttached: false, url: '',
-  model: { modelId: 'claude-sonnet', displayName: 'Claude Sonnet' },
+  model: { modelId: 'gemini-3-8-flash', displayName: 'Gemini 3.8 Flash' },
   usage: { requests: 0, costUsd: 0 }, limits: { maxCostUsd: 5 },
   preparedAt: new Date().toISOString(),
 };
@@ -160,11 +163,11 @@ const DEP = ${JSON.stringify(
 )};
 const MANIFEST = ${JSON.stringify({ fileCount: MANIFEST_FILES.length, totalBytes: MANIFEST_FILES.reduce((n, f) => n + f.bytes, 0), files: MANIFEST_FILES })};
 const RECOMMENDED = ${JSON.stringify([
-  { modelId: 'claude-fable-5-1-xhigh-with-fallback', displayName: 'Claude Fable 5.1 (xhigh with fallback)', vendor: 'Anthropic', type: 'frontier', focusScore: 57, cost: 3.25, inBand: true,  confidenceLabel: 'Very High Confidence' },
-  { modelId: 'claude-fable-5-1-max-with-fallback',   displayName: 'Claude Fable 5.1 (max with fallback)',   vendor: 'Anthropic', type: 'frontier', focusScore: 58, cost: 4.33, inBand: true,  confidenceLabel: 'Very High Confidence' },
-  { modelId: 'muse-spark-1-3-max',                   displayName: 'Muse Spark 1.3 (max)',                   vendor: 'Muse',      type: 'frontier', focusScore: 53, cost: 0.87, inBand: false, confidenceLabel: 'High Confidence' },
-  { modelId: 'gpt-5-6-sol-max',                      displayName: 'GPT-5.6 Sol (max)',                      vendor: 'OpenAI',    type: 'frontier', focusScore: 52, cost: 1.40, inBand: false, confidenceLabel: 'High Confidence' },
-  { modelId: 'claude-opus-5-high',                   displayName: 'Claude Opus 5 (high)',                   vendor: 'Anthropic', type: 'frontier', focusScore: 52, cost: 1.55, inBand: false, confidenceLabel: 'High Confidence' },
+  { modelId: 'gemini-3-8-flash', displayName: 'Gemini 3.8 Flash', vendor: 'Google',    type: 'frontier', providerId: 'gemini', apiModel: 'gemini-3.8-flash', focusScore: 48, cost: 0.56, inBand: true, confidenceLabel: 'Medium Confidence' },
+  { modelId: 'claude-opus-5',    displayName: 'Claude Opus 5',    vendor: 'Anthropic', type: 'frontier', providerId: 'claude', apiModel: 'claude-opus-5',    focusScore: 48, cost: 0.89, inBand: true, confidenceLabel: 'Medium Confidence' },
+  { modelId: 'gpt-5-6-sol',      displayName: 'GPT-5.6 Sol',      vendor: 'OpenAI',    type: 'frontier', providerId: 'openai', apiModel: 'gpt-5.6-sol',      focusScore: 49, cost: 0.95, inBand: true, confidenceLabel: 'Medium Confidence' },
+  { modelId: 'claude-fable-5-1', displayName: 'Claude Fable 5.1', vendor: 'Anthropic', type: 'frontier', providerId: 'claude', apiModel: 'claude-fable-5-1', focusScore: 48, cost: 0.99, inBand: true, confidenceLabel: 'Medium Confidence' },
+  { modelId: 'gpt-6-astra',      displayName: 'GPT-6 Astra',      vendor: 'OpenAI',    type: 'frontier', providerId: 'openai', apiModel: 'gpt-6-astra',      focusScore: 49, cost: 1.47, inBand: true, confidenceLabel: 'Medium Confidence' },
 ])};
 
 const RUNNABLE = ${JSON.stringify([
@@ -208,9 +211,11 @@ window.fetch = function (url, opts) {
     const limit = (JSON.parse(opts && opts.body || '{}').limit) || 5;
     window.__lastRecommend = { limit: limit };
     return J({
-      picks: RECOMMENDED.slice(0, limit).map(function (m) { return Object.assign({}, m, { adviceOnly: true }); }),
-      runnable: RUNNABLE,
-      autoPick: 'gpt-5',
+      picks: RECOMMENDED.slice(0, limit).map(function (m) { return Object.assign({}, m, { adviceOnly: false }); }),
+      // Empty because every pick can be run. RUNNABLE is kept as the fixture
+      // for the fallback path, so the split can still be exercised.
+      runnable: [],
+      autoPick: RECOMMENDED[0].modelId,
       rule: 'cheapest-in-confidence-band',
       focus: 'strategyOps', confidence: 'very-high', requestedConfidence: 'very-high',
       widened: false, filled: limit > 3,
@@ -219,7 +224,7 @@ window.fetch = function (url, opts) {
     });
   }
   if (u.includes('/arth-recommend'))    return J({ ...CATALOG.frontier[1], why: 'Best balance for this use case.', priority: 'quality' }, 200);
-  if (u.includes('/arth-selection'))    return J({ saved: true, selection: { displayName: 'Claude Sonnet' } });
+  if (u.includes('/arth-selection'))    return J({ saved: true, selection: { displayName: 'Gemini 3.8 Flash' } });
   if (u.includes('/governance-review')) return J({ acknowledged: true });
   if (u.includes('/infrastructure'))    return J({ deployment: DEP }, 200);
   if (u.includes('/deployment'))        return J({ deployment: DEP });
@@ -374,8 +379,12 @@ setTimeout(function () {
       out.advice = advice.length;
       out.pickable = pickable.length;
 
-      if (advice.length !== 5) bad('advice list has ' + advice.length + ' models, expected 5');
-      if (!pickable.length) bad('nothing on the picker can be selected');
+      // Every recommendation should be runnable now that catalog rows carry
+      // endpoints. Anything in the advice group means a row lost its provider
+      // or its apiModel, which is the state that produced a picker where
+      // nothing could be confirmed.
+      if (advice.length) bad(advice.length + ' recommended models cannot be run');
+      if (pickable.length !== 5) bad('picker offers ' + pickable.length + ' models, expected 5');
 
       // Enforced, not styled: an advice card carries no data-model, so the
       // click handler cannot reach it however it looks.
@@ -394,14 +403,14 @@ setTimeout(function () {
 
       // The two numbers the choice is made on, on every advice card.
       var withBoth = 0;
-      for (var c = 0; c < advice.length; c++) {
-        var t = advice[c].textContent || '';
+      for (var c = 0; c < pickable.length; c++) {
+        var t = pickable[c].textContent || '';
         // The currency symbol too: a template-literal slip once dropped it and
         // left a bare number, which reads as a score rather than a price.
         var priced = t.indexOf(String.fromCharCode(36)) !== -1;
         if (t.indexOf('Score') !== -1 && t.indexOf('Cost') !== -1 && priced) withBoth++;
       }
-      if (withBoth !== advice.length) bad(withBoth + ' of ' + advice.length + ' advice cards show both score and cost');
+      if (withBoth !== pickable.length) bad(withBoth + ' of ' + pickable.length + ' cards show both score and cost');
 
       // Svarg's own derivation is internal. It used to be printed above the
       // shortlist as if it were product copy — which benchmark was ranked on,

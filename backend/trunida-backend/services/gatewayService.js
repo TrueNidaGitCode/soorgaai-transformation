@@ -207,14 +207,29 @@ export function classifyUpstreamError(message = '') {
 }
 
 export async function forwardChat(deployment, { messages, max_tokens }) {
-  const catalog = findCatalogModel(deployment.model?.modelId);
-  // Allow-list, not a deny-list: an unrecognised modelId must not fall through
-  // to whatever providerId happens to be on the record. Only a known frontier
-  // row is servable — open weight means a GPU Svarg does not run for tenants.
-  if (!catalog || catalog.type !== 'frontier') {
-    const err = new Error(catalog
-      ? 'This deployment is configured for an open-weight model, which Svarg does not host. Point SELFHOSTED_BASE_URL at your own inference endpoint.'
-      : 'This deployment is not configured with a model Svarg can serve.');
+  // Both catalogs, because a tenant can now be deployed on either: the original
+  // ten, or a benchmark row that has since been given an endpoint. Reading only
+  // the first meant every model Arth recommends came back as 501 "not
+  // configured with a model Svarg can serve" — about a model the catalog page
+  // showed as available.
+  //
+  // Still an allow-list. An unrecognised modelId must not fall through to
+  // whatever providerId happens to sit on the deployment record, and resolution
+  // requires an apiModel, so there is always something concrete to ask for.
+  const { resolveSelectableModel } = await import('./selectableModelService.js');
+  const catalog = findCatalogModel(deployment.model?.modelId)
+    || await resolveSelectableModel(deployment.model?.modelId);
+
+  // Open weight means a GPU Svarg does not run for tenants.
+  if (!catalog || catalog.type !== 'frontier' || !catalog.apiModel) {
+    // Three different situations, and the fix differs for each — a single
+    // message would send someone to the wrong one.
+    const err = new Error(
+      !catalog
+        ? 'This deployment is not configured with a model Svarg can serve.'
+        : catalog.type !== 'frontier'
+          ? 'This deployment is configured for an open-weight model, which Svarg does not host. Point SELFHOSTED_BASE_URL at your own inference endpoint.'
+          : `${catalog.displayName || catalog.id} has no API model configured, so there is nothing to ask its provider for.`);
     err.status = 501;
     throw err;
   }

@@ -431,6 +431,9 @@ function plain(m) {
   return {
     modelId: m.modelId, displayName: m.displayName, vendor: m.vendor, type: m.type,
     providers: m.providers || [], providerId: m.providerId || '',
+    // Carried through because servability is decided on it downstream: a
+    // provider with nothing to ask for is not a model anyone can call.
+    apiModel: m.apiModel || '',
     priceIn: m.priceIn, priceOut: m.priceOut,
     indexCost: m.indexCost, indexCosts: m.indexCosts,
     reasoning: !!m.reasoning,

@@ -58,6 +58,13 @@ const modelCatalogEntrySchema = new mongoose.Schema({
   // be told apart from something Svarg can run today.
   providerId: { type: String, default: '' },
 
+  // The exact string the provider API expects — claude-opus-5, gpt-5.6-sol.
+  // Distinct from modelId, which is Svarg's own key, and from displayName,
+  // which is what the published comparison called it. A row with a provider
+  // but no apiModel cannot be called: the gateway would have somewhere to
+  // send the request and nothing to ask for.
+  apiModel: { type: String, default: '' },
+
   // ── Economics ──────────────────────────────────────────────────────────
   // USD per million tokens. The two are kept apart rather than blended,
   // because output-heavy and input-heavy workloads price very differently.

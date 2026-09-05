@@ -27,6 +27,16 @@
 import { ADVISORY_CATALOG } from '../config/modelCatalog.js';
 import ModelCatalogEntry from '../models/ModelCatalogEntry.js';
 
+// Which provider needs which key. A providerId with no key behind it is a
+// model that looks available and fails on its first request, which is the
+// same lie as an unmapped benchmark row wearing a provider name.
+const PROVIDER_KEY = {
+  claude:     () => process.env.ANTHROPIC_API_KEY,
+  gemini:     () => process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY,
+  openai:     () => process.env.OPENAI_API_KEY,
+  selfhosted: () => process.env.SELFHOSTED_BASE_URL,
+};
+
 /**
  * The model behind an id, from whichever catalog holds it.
  *
@@ -41,7 +51,9 @@ export async function resolveSelectableModel(modelId) {
   if (!modelId) return null;
 
   const advisory = ADVISORY_CATALOG.find(m => m.id === modelId);
-  if (advisory) return { ...advisory, source: 'advisory', servable: !!advisory.providerId };
+  // Same three-part test as a benchmark row. Judging an advisory row on
+  // providerId alone would call it servable with no key present.
+  if (advisory) return { ...advisory, source: 'advisory', servable: hasEndpoint(advisory) };
 
   const row = await ModelCatalogEntry.findOne({ modelId, active: true }).lean();
   if (!row) return null;
@@ -51,13 +63,13 @@ export async function resolveSelectableModel(modelId) {
     displayName: row.displayName,
     vendor: row.vendor || '',
     type: row.type || 'frontier',
-    // Empty today for every benchmark row: those tables say how good a model is
-    // and what it costs, not which endpoint serves it. Carried through as-is
-    // rather than guessed at — inventing a provider mapping would produce a
-    // deployment that looks configured and fails on its first request.
     providerId: row.providerId || '',
+    apiModel: row.apiModel || '',
     source: 'benchmark',
-    servable: !!row.providerId,
+    // Three things, all required. A providerId with no apiModel is somewhere
+    // to send a request and nothing to ask for; either with no key is a model
+    // that looks available and fails on its first call.
+    servable: hasEndpoint(row),
   };
 }
 
@@ -74,15 +86,12 @@ export async function isServable(modelId) {
   return !!m?.servable;
 }
 
-// Which provider needs which key. A providerId with no key behind it is a
-// model that looks available and fails on its first request, which is the
-// same lie as an unmapped benchmark row wearing a provider name.
-const PROVIDER_KEY = {
-  claude:     () => process.env.ANTHROPIC_API_KEY,
-  gemini:     () => process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY,
-  openai:     () => process.env.OPENAI_API_KEY,
-  selfhosted: () => process.env.SELFHOSTED_BASE_URL,
-};
+/** A row is callable only with all three: a provider, the identifier that
+ *  provider expects, and a key for it in this environment. */
+export function hasEndpoint(row) {
+  return !!(row?.providerId && row?.apiModel && PROVIDER_KEY[row.providerId]?.());
+}
+
 
 /**
  * The models a customer can actually be put onto today.
@@ -92,14 +101,14 @@ const PROVIDER_KEY = {
  * Svarg can run, and treating them as one is what produced a picker whose
  * every option failed.
  *
- * This is the other list — the models with a provider behind them and a key
- * for that provider in this environment. Open weight is excluded: it needs a
- * GPU Svarg does not run for tenants, which is also why the class is locked.
+ * This is the fallback list — the original ten, for the case where a
+ * recommendation cannot be run. Now that the benchmark rows carry endpoints of
+ * their own it is usually empty, and that is the point: the recommendation and
+ * the thing you can run should be the same model.
  */
 export function runnableModels() {
   return ADVISORY_CATALOG
-    .filter(m => m.type === 'frontier' && m.providerId)
-    .filter(m => !!PROVIDER_KEY[m.providerId]?.())
+    .filter(m => m.type === 'frontier' && hasEndpoint(m))
     .map(m => ({ ...m, servable: true, source: 'advisory' }));
 }
 

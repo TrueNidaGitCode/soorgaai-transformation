@@ -93,10 +93,23 @@ console.log('\n5. servability is reported, not assumed');
     typeof sample.servable === 'boolean', `${sample.id} servable=${sample.servable}`);
   check('and where it came from', sample.source === 'benchmark' || sample.source === 'advisory', sample.source);
 
-  const servable = [];
-  for (const m of catalog) if (await (async () => (await resolveSelectableModel(m.modelId)).servable)()) servable.push(m.modelId);
-  console.log(`  NOTE  ${servable.length} of ${catalog.length} benchmark models carry a providerId`
-    + ` — the rest can be chosen and recorded, but the gateway cannot route to them yet.`);
+  // The requirement, asserted rather than noted: every model Arth can put on
+  // screen must be one a customer can actually be put onto. This is what
+  // "all of them should be working" means as a check, and it fails the moment
+  // a table is added whose endpoints have not been configured.
+  const notServable = [];
+  for (const m of catalog) {
+    if (!(await resolveSelectableModel(m.modelId)).servable) notServable.push(m.displayName);
+  }
+  check(`all ${catalog.length} models in the catalog can be run`, notServable.length === 0,
+    notServable.length ? notServable.join(', ') : catalog.map(m => m.displayName).join(', '));
+
+  // Configured is not the same as reachable. Whether the account can actually
+  // use these endpoints changes without the code changing — a balance runs
+  // out, a key is revoked — so that is checked by
+  // scripts/verify_model_endpoints.mjs, which makes a real call.
+  console.log('  NOTE  this asserts an endpoint is configured, not that the provider'
+    + ' account can currently use it. Run verify_model_endpoints.mjs for that.');
 }
 
 console.log('\n6. what can actually be run');

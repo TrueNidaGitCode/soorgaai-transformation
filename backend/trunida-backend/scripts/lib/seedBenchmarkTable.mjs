@@ -27,6 +27,22 @@ export const slug = (s) => s.toLowerCase()
   .replace(/[()]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 /**
+ * A row is one MODEL, not one benchmark run.
+ *
+ * The published tables list several rows per model — "(max)", "(xhigh)",
+ * "(medium)" — which are reasoning-effort settings, not separate models.
+ * Svarg cannot send an effort parameter: llmService has no such control, so
+ * every call gets the provider default. Keeping four rows for one endpoint
+ * would put four different scores and four different prices against a single
+ * thing that behaves one way.
+ *
+ * So one row per model, and `variant` records WHICH published run the score
+ * and cost were taken from. That number is then traceable and correctable
+ * rather than an unattributed figure, and when effort control exists the rows
+ * can be split again against a real difference.
+ */
+
+/**
  * @param {object}  opts
  * @param {string}  opts.category  A key of ModelCatalogEntry.scores
  * @param {string}  opts.label     How the table is named in output and provenance
@@ -35,10 +51,11 @@ export const slug = (s) => s.toLowerCase()
  */
 export async function seedBenchmarkTable({ category, label, rows, force = false }) {
   const source = `${label} — proprietary`;
-  const keep = new Set(rows.map(([, name]) => slug(name)));
+  const keep = new Set(rows.map(r => slug(r.name)));
   let created = 0, updated = 0, skipped = 0;
 
-  for (const [rank, name, vendor, score, cost] of rows) {
+  for (const row of rows) {
+    const { rank, name, vendor, score, cost, providerId = '', apiModel = '', variant = '' } = row;
     const modelId = slug(name);
     const existing = await ModelCatalogEntry.findOne({ modelId }).lean();
     if (existing?.updatedBy && !force) { skipped++; continue; }
@@ -54,9 +71,13 @@ export async function seedBenchmarkTable({ category, label, rows, force = false 
           vendor,
           type: 'frontier',
           providers: [vendor],
+          providerId,
+          apiModel,
           [`scores.${category}`]: score,
           [`indexCosts.${category}`]: cost,
-          source: `${source} · rank ${rank}`,
+          // Which published run these numbers came from. Without it a score is
+          // a figure nobody can check against the table it was read from.
+          source: `${source} · rank ${rank}${variant ? ' · ' + variant : ''}`,
         },
         $unset: { indexCost: '' },
       },
@@ -72,12 +93,18 @@ export async function seedBenchmarkTable({ category, label, rows, force = false 
   // Scoped to this category twice over — by having a score in it, and by
   // provenance — so a model that only ever appeared in a different table is
   // never caught by it.
-  const stale = (await ModelCatalogEntry.find({
+  // Carrying a score in THIS category is already proof the row belongs to this
+  // table — nothing else writes scores. An earlier version also required the
+  // provenance string to start with the table's name, which quietly broke:
+  // `source` is single-valued, so for a model in both tables the second seed
+  // overwrote what the first had written, and the first could then no longer
+  // recognise its own superseded rows. Sixteen of them survived a reseed that
+  // reported success.
+  const stale = await ModelCatalogEntry.find({
     [`scores.${category}`]: { $ne: null },
     modelId: { $nin: [...keep] },
     updatedBy: { $in: ['', null] },
-  }).select('modelId displayName source').lean())
-    .filter(m => String(m.source || '').startsWith(label));
+  }).select('modelId displayName source').lean();
 
   if (stale.length) {
     // Only this category's numbers are removed. The model itself stays if

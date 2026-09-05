@@ -189,24 +189,27 @@ export async function recommendForBlueprint(req, res) {
     const catalog = await ModelCatalogEntry.find({ active: true }).lean();
     const result = recommendModels(catalog, input);
 
-    // The benchmark tables are advice. They say which model is worth wanting
-    // for this kind of work and what it would cost — they are not a list of
-    // things Svarg can run, and none of their rows carries a provider.
+    // Every recommendation should be a model that can actually be run. Now that
+    // the catalog rows carry a provider and an apiModel, they are — so the
+    // fallback below comes back empty, which is the point: the model Arth
+    // recommends and the model you deploy on should be the same one.
     //
-    // So the answer has two halves, and the screen has to show both: what is
-    // recommended, and what can actually be run. Sending only the first is
-    // what produced a picker whose every option failed on save.
-    const { runnableModels, pickRunnable } = await import('../services/selectableModelService.js');
-    const runnable = runnableModels();
-    const autoPick = pickRunnable(input.confidence);
+    // The fallback is kept for when that stops being true. A picker with
+    // nothing selectable is worse than one offering a second-best model that
+    // works, and a new benchmark table will arrive before its endpoints do.
+    const { runnableModels, pickRunnable, hasEndpoint } = await import('../services/selectableModelService.js');
+    const picks = (result.picks || []).map(p => ({ ...p, adviceOnly: !hasEndpoint(p) }));
+    const allRunnable = picks.length > 0 && picks.every(p => !p.adviceOnly);
+
+    const runnable = allRunnable ? [] : runnableModels();
+    const autoPick = allRunnable ? (picks[0]?.modelId || '')
+                                 : (pickRunnable(input.confidence)?.id || '');
 
     return res.json({
       ...result,
-      // Advice, explicitly. Every pick is flagged so the screen cannot present
-      // one as selectable by omission.
-      picks: (result.picks || []).map(p => ({ ...p, adviceOnly: !p.providerId })),
+      picks,
       runnable,
-      autoPick: autoPick?.id || '',
+      autoPick,
       input,
       derived,
       // Without this, an empty result looks like a broken feature rather than

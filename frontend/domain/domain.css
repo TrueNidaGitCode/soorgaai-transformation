@@ -3199,6 +3199,15 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
 .aria-upload-row:last-child { border-bottom: 0; }
 .aria-upload-row__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 
+/* Whether a dataset is covered by something in the folder. A state, not a
+   control — the user does not place files any more, the classifier does. */
+.aria-upload-row__state {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+}
+.aria-upload-row__state--covered { color: #5CC5A7; font-weight: 600; }
+
 .aria-note {
   display: flex;
   align-items: flex-start;

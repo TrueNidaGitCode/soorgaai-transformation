@@ -1015,7 +1015,6 @@ let _uploads = new Map();
 // Everything uploaded, classified or not. A file we could not place is still
 // context the customer supplied and must stay visible.
 let _allUploads = [];
-let _uploadTarget = null;
 
 const MAX_UPLOAD_CHARS = 2_000_000;
 
@@ -1048,27 +1047,20 @@ function renderUploadList() {
       ${unplaced.length > 12 ? `<span class="aria-upload-unplaced__file">and ${unplaced.length - 12} more</span>` : ''}
     </div>` : '';
 
+  // A status view, not a set of controls. Per-dataset upload buttons asked the
+  // user to sort their own files into the blueprint's categories, which is
+  // exactly the work the classifier exists to do.
   list.innerHTML = _cachedDatasets.map(d => {
     const up = _uploads.get(d.name);
     return `
       <div class="aria-upload-row">
         <div class="aria-upload-row__main">
           <span class="aria-row-name__title">${esc(d.name)}</span>
-          <span class="aria-row-name__desc">${up ? `${esc(up.filename)} attached` : esc(d.purpose)}</span>
+          <span class="aria-row-name__desc">${up ? esc(up.path || up.filename) : esc(d.purpose)}</span>
         </div>
-        <button type="button" class="aria-action-btn ${up ? '' : 'aria-action-btn--primary'}"
-                data-upload-for="${esc(d.name)}">${up ? 'Replace' : 'Upload'}</button>
+        <span class="aria-upload-row__state ${up ? 'aria-upload-row__state--covered' : ''}">${up ? 'Covered' : 'No file yet'}</span>
       </div>`;
   }).join('') + unplacedHtml;
-
-  list.querySelectorAll('[data-upload-for]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      _uploadTarget = btn.dataset.uploadFor;
-      const input = document.getElementById('aria-upload-input');
-      input.value = '';       // so re-picking the same file still fires change
-      input.click();
-    });
-  });
 }
 
 function showUploadError(message) {
@@ -1149,38 +1141,7 @@ async function handleFolderPick(fileList) {
   }
 }
 
-async function handleUploadFile(file) {
-  if (!file || !_uploadTarget || !_blueprintId) return;
-  showUploadError('');
 
-  // Read as text in the browser: the bytes never leave the machine, and the
-  // server has no file storage to put them in anyway.
-  const text = await file.text().catch(() => null);
-  if (text === null) { showUploadError("That file couldn't be read."); return; }
-  if (text.length > MAX_UPLOAD_CHARS) {
-    showUploadError('That file is too large. Upload a smaller export or a sample.');
-    return;
-  }
-
-  try {
-    await api('/uploads/dataset-file', {
-      method: 'POST',
-      body: JSON.stringify({
-        blueprintId: _blueprintId,
-        datasetName: _uploadTarget,
-        filename:    file.name,
-        text,
-      }),
-    });
-    await loadUploads(_blueprintId);
-    renderUploadList();
-    // The required-data table reads from _uploads, so it has to be redrawn for
-    // the row to change — that link is the whole point of the tab.
-    renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
-  } catch (err) {
-    showUploadError(err.message);
-  }
-}
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────
 
@@ -1193,10 +1154,6 @@ function wireStaticControls() {
   document.getElementById('aria-process-btn')?.addEventListener('click', () => {
     const id = _blueprintId;
     if (id) runProcess(id);
-  });
-
-  document.getElementById('aria-upload-input')?.addEventListener('change', (e) => {
-    handleUploadFile(e.target.files?.[0]);
   });
 
   document.getElementById('aria-gh-analyze')?.addEventListener('click', analyzeRepo);

@@ -224,6 +224,19 @@ window.fetch = function (url, opts) {
     });
   }
   if (u.includes('/arth-recommend'))    return J({ ...CATALOG.frontier[1], why: 'Best balance for this use case.', priority: 'quality' }, 200);
+  if (u.includes('/eame-build')) {
+    return J({
+      status: 'passed', verifiedTo: 'smoke', skipped: [], reason: '',
+      useCase: 'Predictive Analytics for Student Churn', provider: 'gemini',
+      warnings: [], failures: [], attempts: 1,
+      progress: { attempt: 1, phase: 'passed', detail: 'smoke' },
+      generatedPaths: ['models/StudentChurnProfile.js', 'services/churnAnalyticsService.js',
+                       'controllers/churnController.js', 'routes/churnRoutes.js',
+                       'scripts/seedChurnData.js', 'frontend/app.js'],
+      files: MANIFEST.files, fileCount: MANIFEST.fileCount,
+      totalBytes: MANIFEST.totalBytes,
+    });
+  }
   if (u.includes('/arth-selection'))    return J({ saved: true, selection: { displayName: 'Gemini 3.8 Flash' } });
   if (u.includes('/governance-review')) return J({ acknowledged: true });
   if (u.includes('/infrastructure'))    return J({ deployment: DEP }, 200);
@@ -422,6 +435,28 @@ setTimeout(function () {
       out.leaked = leaked.length ? leaked.join(' | ') : 'none';
       if (leaked.length) bad('internal reasoning is on screen: ' + leaked.join(' | '));
     }
+    // Eame's build gates. The screen used to say "Generation Complete" as a
+    // hardcoded string over a project nobody had built; these are real states,
+    // and a passed build must show every gate as passed.
+    if (out.screen === 'eame') {
+      var gates = scr.querySelectorAll('#eame-gates .eg-gate');
+      out.gates = gates.length;
+      if (gates.length !== 6) bad('expected 6 build gates, got ' + gates.length);
+
+      var passed = scr.querySelectorAll('#eame-gates .eg-gate--ok').length;
+      out.gatesPassed = passed;
+      if (passed !== 6) bad(passed + ' of ' + gates.length + ' gates show as passed on a passed build');
+
+      var badge = document.getElementById('eame-gen-status');
+      out.badge = badge ? badge.textContent.trim() : 'missing';
+      // The old text was a hardcoded claim. Anything that still asserts
+      // completion without reference to verification is the same bug.
+      if (/Generation Complete/.test(out.badge)) bad('the status badge still claims completion unconditionally');
+
+      var btn = document.getElementById('eame-build-btn');
+      if (!btn) bad('no build control on the Eame screen');
+    }
+
     // Cob's engagement note. It states what the whole blueprint was steered
     // by, so a note that silently fails to render is worse than a visibly
     // wrong one — assert it drew, said something, and offers the way out.
@@ -633,7 +668,11 @@ for (const screen of list) {
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" · ${r.collect} to collect` : '')
-    + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : ''));
+    + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : '')
+    // Its own clause, not nested inside the arth one — nested, it could only
+    // ever print for a screen that also had model classes, so the eame line
+    // was unreachable.
+    + (r.gates ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}"` : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

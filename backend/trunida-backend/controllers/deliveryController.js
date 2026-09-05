@@ -14,6 +14,7 @@
 
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { buildManifest } from '../services/eameProjectBuilder.js';
+import { generatedManifest } from './eameBuildController.js';
 import { buildZip } from '../services/zipService.js';
 import {
   isSvargGithubConfigured, svargRepoName, ensureSvargRepo, publishToSvarg,
@@ -27,6 +28,20 @@ function auditLog(action, userId, extra = {}) {
 async function ownedBlueprint(blueprintId, userId) {
   if (!blueprintId) return null;
   return TransformationBlueprint.findOne({ _id: blueprintId, userId }).lean().catch(() => null);
+}
+
+/**
+ * What to deliver: the application Eame wrote and verified, if there is one.
+ *
+ * Falls back to the fixed manifest only when no build has passed — a customer
+ * who has not pressed Build still gets something rather than an error, and the
+ * caller is told which they got so the screen cannot describe a defect matcher
+ * as their application.
+ */
+async function projectFor(bp) {
+  const generated = await generatedManifest(bp._id, { appName: bp.appName });
+  if (generated) return { files: generated, source: 'generated' };
+  return { files: buildManifest({ includeJira: true, appName: bp.appName }), source: 'template' };
 }
 
 function safeSlug(text) {
@@ -60,7 +75,7 @@ export async function publishProject(req, res) {
     // The name the customer chose on Eame drives both the repository and what
     // the running application calls itself.
     const name = svargRepoName(safeSlug(bp.appName || slug || bp.businessObjective), bp._id);
-    const files = buildManifest({ includeJira: true, appName: bp.appName });
+    const { files, source } = await projectFor(bp);
 
     const repo = await ensureSvargRepo({
       name,
@@ -82,7 +97,7 @@ export async function publishProject(req, res) {
     ).catch(err => console.warn('[Delivery] could not record delivery —', err.message));
 
     auditLog(repo.created ? 'PUBLISHED' : 'REPUBLISHED', req.user._id,
-      { repo: `${repo.owner}/${repo.name}`, fileCount: files.length });
+      { repo: `${repo.owner}/${repo.name}`, source, fileCount: files.length });
 
     return res.json({
       owner: repo.owner, name: repo.name, repoUrl: repo.htmlUrl,
@@ -116,11 +131,11 @@ export async function downloadProject(req, res) {
     const bp = await ownedBlueprint(req.query.blueprintId, req.user._id);
     if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
 
-    const files = buildManifest({ includeJira: true, appName: bp.appName });
+    const { files, source } = await projectFor(bp);
     const folder = safeSlug(bp.appName || req.query.slug || bp.businessObjective);
     const zip = buildZip(files, folder);
 
-    auditLog('DOWNLOADED', req.user._id, { blueprintId: String(bp._id), fileCount: files.length, bytes: zip.length });
+    auditLog('DOWNLOADED', req.user._id, { blueprintId: String(bp._id), source, fileCount: files.length, bytes: zip.length });
 
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${folder}.zip"`);

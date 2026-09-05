@@ -40,6 +40,13 @@ export function productProviderName() {
  * directly for anything whose output has been tuned against a specific model.
  */
 export async function generateForProduct(opts) {
+  // A caller that names a provider means it. PRODUCT_LLM_PROVIDER is the
+  // DEFAULT for product work, not an override of an explicit instruction —
+  // and treating it as an override silently discarded the parameter. Eame's
+  // builder asked for gemini and got the local model, which then sat
+  // generating for minutes on a task it had no chance of finishing.
+  if (opts.provider) return generate(opts);
+
   if (!PRODUCT_PROVIDER) return generate(opts);
 
   try {

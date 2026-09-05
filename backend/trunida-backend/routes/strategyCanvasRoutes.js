@@ -1,6 +1,7 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { recommendForBlueprint } from '../controllers/modelCatalogController.js';
+import { startBuild, getBuild } from '../controllers/eameBuildController.js';
 import { screenChat, saveArthSelection, listArthModels, recommendArthModel } from '../controllers/screenChatController.js';
 import { getDeployment, prepareInfrastructure, attachApplication, destroyDeployment, acknowledgeGovernance, redeployApplication } from '../controllers/deploymentController.js';
 import {
@@ -74,6 +75,12 @@ router.patch('/transformation-blueprint/:blueprintId/approve-opportunity', prote
 router.patch('/transformation-blueprint/:blueprintId/app-name',            protect, setAppName);
 router.patch('/transformation-blueprint/:blueprintId/engagement',          protect, setEngagement);
 router.post ('/transformation-blueprint/:blueprintId/recommend-models',    protect, recommendForBlueprint);
+
+// Eame writes the application and verifies it by running it. Asynchronous:
+// a build is a generation plus an install plus a boot, so the POST starts it
+// and the GET is what the screen polls.
+router.post('/transformation-blueprint/:blueprintId/eame-build', protect, startBuild);
+router.get ('/transformation-blueprint/:blueprintId/eame-build', protect, getBuild);
 router.patch(
   '/transformation-blueprint/:blueprintId/domain/:domainId/capability/:capabilityId/section/:sectionTitle',
   protect, updateTransformationSection

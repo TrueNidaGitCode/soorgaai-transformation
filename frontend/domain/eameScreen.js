@@ -147,11 +147,140 @@ function renderStats(fileCount, totalBytes) {
   `).join('');
 }
 
-async function renderManifest() {
-  const tree = document.getElementById('eame-tree');
-  tree.innerHTML = `<li class="eg-tree__loading">Loading project files…</li>`;
+/**
+ * The six gates, in the order the verifier runs them.
+ *
+ * Named on screen because "building…" says nothing about whether the code was
+ * merely written or actually started. A customer reading "the server booted"
+ * knows something a spinner cannot tell them.
+ */
+const GATES = [
+  ['syntax',        'Every file parses'],
+  ['local-imports', 'Imports resolve inside the project'],
+  ['dependencies',  'Every package is declared'],
+  ['install',       'npm install succeeds'],
+  ['boot',          'The server starts'],
+  ['smoke',         'An endpoint answers'],
+];
+
+let _pollTimer = null;
+
+function renderGates(build) {
+  const el = document.getElementById('eame-gates');
+  if (!el) return;
+
+  const reached = GATES.findIndex(([id]) => id === build.verifiedTo);
+  const failedAt = build.status === 'failed'
+    ? GATES.findIndex(([id]) => id === (build.progress?.detail || '').split(':')[0].trim())
+    : -1;
+  const skipped = new Set(build.skipped || []);
+
+  el.innerHTML = GATES.map(([id, label], i) => {
+    // Passed, skipped, failed or not yet reached — four states, because
+    // "skipped" and "passed" must never look the same. A gate that did not
+    // run has proved nothing.
+    let mark = '&middot;', cls = '';
+    if (skipped.has(id))                      { mark = '&ndash;'; cls = ' eg-gate--skip'; }
+    else if (build.status === 'passed' && reached >= i) { mark = '&#10003;'; cls = ' eg-gate--ok'; }
+    else if (failedAt === i)                  { mark = '&#10007;'; cls = ' eg-gate--bad'; }
+    else if (build.status === 'building')     { cls = ' eg-gate--wait'; }
+    return `<li class="eg-gate${cls}"><span class="eg-gate__mark">${mark}</span>${label}${
+      skipped.has(id) ? '<span class="eg-gate__note">not run</span>' : ''}</li>`;
+  }).join('');
+}
+
+function renderBuildState(build) {
+  const btn = document.getElementById('eame-build-btn');
+  const sub = document.getElementById('eame-build-sub');
+  const note = document.getElementById('eame-build-note');
+  const badge = document.getElementById('eame-gen-status');
+  if (!btn) return;
+
+  renderGates(build);
+
+  const building = build.status === 'building';
+  btn.disabled = building;
+  btn.textContent = building ? 'Building…' : (build.status === 'none' ? 'Build' : 'Rebuild');
+
+  if (badge) {
+    badge.innerHTML = '<span class="eg-status__dot"></span>' + (
+      build.status === 'passed' ? 'Verified — ' + (build.verifiedTo === 'smoke' ? 'it runs' : 'reached ' + build.verifiedTo)
+      : build.status === 'failed' ? 'Build failed'
+      : building ? 'Building…' : 'Not built yet');
+    badge.classList.toggle('eg-status--bad', build.status === 'failed');
+  }
+
+  if (sub) {
+    sub.textContent = building
+      ? `Attempt ${build.progress?.attempt || 1}: ${build.progress?.phase || 'working'}${
+          build.progress?.detail ? ' — ' + build.progress.detail : ''}`
+      : build.status === 'passed'
+        ? `Written for "${build.useCase || 'this use case'}" and verified by running it.`
+        : 'Eame writes the code for this use case, then installs and starts it to prove it runs.';
+  }
+
+  if (note) {
+    // Failures and caveats, never hidden. A build that stopped at install is a
+    // different claim from one that booted, and the screen has to say which.
+    const lines = [];
+    if (build.status === 'failed') {
+      lines.push(build.reason || 'The build did not pass verification.');
+      (build.failures || []).slice(0, 4).forEach(f => lines.push('· ' + f));
+    }
+    (build.warnings || []).forEach(w => lines.push('· ' + w));
+    if (build.status === 'passed' && (build.skipped || []).length) {
+      lines.push('Not every gate ran: ' + build.skipped.join(', ') + '.');
+    }
+    note.textContent = lines.join('\n');
+    note.style.display = lines.length ? '' : 'none';
+  }
+}
+
+async function pollBuild() {
+  if (!_bp?._id) return;
   try {
-    const { files, fileCount, totalBytes } = await api('/github/personal/project-manifest');
+    const build = await api(`/strategy-canvas/transformation-blueprint/${_bp._id}/eame-build`);
+    renderBuildState(build);
+
+    if (build.status === 'building') {
+      clearTimeout(_pollTimer);
+      _pollTimer = setTimeout(pollBuild, 2500);
+      return;
+    }
+    clearTimeout(_pollTimer);
+    if (build.status === 'passed') renderFiles(build);
+    else updateEameGate(false);
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+async function startBuild() {
+  const btn = document.getElementById('eame-build-btn');
+  btn.disabled = true;
+  btn.textContent = 'Building…';
+  document.getElementById('eame-error').style.display = 'none';
+  try {
+    await api(`/strategy-canvas/transformation-blueprint/${_bp._id}/eame-build`, { method: 'POST', body: '{}' });
+    pollBuild();
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Build';
+    showError(err.message);
+  }
+}
+
+/**
+ * Render a file list, wherever it came from.
+ *
+ * Two callers: a build Eame verified, and the fixed template manifest for a
+ * blueprint that has not been built yet. Splitting this out is what lets the
+ * build result reuse the tree, the stats and the summary instead of fetching
+ * a different project to display.
+ */
+function renderFiles({ files, fileCount, totalBytes }) {
+  const tree = document.getElementById('eame-tree');
+  try {
     if (!files?.length) {
       tree.innerHTML = `<li class="eg-tree__loading">The project builder returned no files.</li>`;
       updateEameGate(false);
@@ -189,6 +318,24 @@ async function renderManifest() {
       </tr>
     `).join('');
   } catch (err) {
+    tree.innerHTML = `<li class="eg-tree__loading">Couldn't render the project files.</li>`;
+    updateEameGate(false);
+    showError(err.message);
+  }
+}
+
+/**
+ * The template project, for a blueprint nobody has built yet.
+ *
+ * Shown so the screen is not empty before the first build, and labelled as
+ * what it is by the build panel above it — this is not their application.
+ */
+async function renderManifest() {
+  const tree = document.getElementById('eame-tree');
+  tree.innerHTML = `<li class="eg-tree__loading">Loading project files…</li>`;
+  try {
+    renderFiles(await api('/github/personal/project-manifest'));
+  } catch (err) {
     tree.innerHTML = `<li class="eg-tree__loading">Couldn't load the project manifest.</li>`;
     updateEameGate(false);
     showError(err.message);
@@ -217,6 +364,12 @@ async function renderBadges(bp) {
 let _wired = false;
 
 function wire() {
+  const buildBtn = document.getElementById('eame-build-btn');
+  if (buildBtn && !buildBtn.dataset.wired) {
+    buildBtn.dataset.wired = '1';
+    buildBtn.addEventListener('click', startBuild);
+  }
+
   if (_wired) return;
   _wired = true;
 
@@ -310,6 +463,15 @@ document.addEventListener('eame:show', (e) => {
     document.getElementById('eame-name-saved').classList.remove('eg-name__saved--on');
   }
 
-  renderManifest();
+  // The build comes first: if one has passed, its files are what the tree
+  // shows. renderManifest is the fallback for a blueprint nobody has built,
+  // and showing the template as though it were their application is exactly
+  // what this screen used to do.
+  pollBuild().then(() => {
+    if (!document.getElementById('eame-tree').children.length ||
+        document.getElementById('eame-tree').textContent.includes('Loading')) {
+      renderManifest();
+    }
+  });
   renderBadges(bp);
 });

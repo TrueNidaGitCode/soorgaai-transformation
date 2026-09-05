@@ -13405,3 +13405,32 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
   color: #D4AF6E;
   vertical-align: middle;
 }
+
+/* Eame's build gates.
+   Named states rather than a spinner: "the server starts" is a claim a
+   customer can check, and a gate that was skipped must never look like one
+   that passed — a gate that did not run has proved nothing. */
+.eg-build .eg-panel__head { align-items: center; }
+.eg-gates { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 6px; }
+.eg-gate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.42);
+}
+.eg-gate__mark { width: 16px; text-align: center; }
+.eg-gate__note { font-size: 11.5px; color: rgba(255,255,255,0.3); }
+.eg-gate--ok   { color: rgba(255,255,255,0.8); }
+.eg-gate--ok .eg-gate__mark { color: #5CC5A7; }
+.eg-gate--bad  { color: #E38C7A; }
+.eg-gate--skip { color: rgba(255,255,255,0.35); }
+.eg-gate--wait { color: rgba(255,255,255,0.55); }
+.eg-build__note {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #D4AF6E;
+  white-space: pre-wrap;
+}
+.eg-status--bad .eg-status__dot { background: #E38C7A; }

@@ -3149,6 +3149,25 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
   flex-wrap: wrap;
   margin-bottom: 16px;
 }
+/* Classification is one model call of unknowable length, so the bar stops
+   pretending to measure and shows it is alive instead. A crawling percentage
+   would be a fabricated estimate. */
+.aria-progress__fill--working {
+  width: 100% !important;
+  background: linear-gradient(90deg,
+    rgba(92,197,167,0) 0%, var(--aria-accent) 50%, rgba(92,197,167,0) 100%);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: aria-progress-sweep 1.4s ease-in-out infinite;
+}
+@keyframes aria-progress-sweep {
+  0%   { background-position: -40% 0; }
+  100% { background-position: 140% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aria-progress__fill--working { animation: none; background: var(--aria-accent); opacity: 0.5; }
+}
+
 .aria-upload__hint {
   font-size: 12.5px;
   color: rgba(255,255,255,0.5);

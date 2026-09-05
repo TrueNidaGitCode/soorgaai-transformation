@@ -1064,24 +1064,54 @@ const UPLOAD_BATCH = 15;          // files per request; the server caps at 20
  * folder and Svarg works out what is in it. Files are read in the browser and
  * only their text is sent — the same as the single-file path.
  */
+/**
+ * Progress for something that takes minutes.
+ *
+ * Reading is instant, uploading is quick, and classification is one slow model
+ * call — so a bar driven by bytes would sit at 90% for most of the wait. The
+ * phases are reported instead, with a counter during upload and an elapsed
+ * clock during classification, because the question someone is actually asking
+ * is "is this still working".
+ */
+function uploadProgress(label, { pct = null, count = '' } = {}) {
+  const wrap = document.getElementById('aria-upload-progress');
+  const l = document.getElementById('aria-upload-progress-label');
+  const c = document.getElementById('aria-upload-progress-count');
+  const f = document.getElementById('aria-upload-progress-fill');
+  if (!wrap) return;
+
+  if (label === null) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  if (l) l.textContent = label;
+  if (c) c.textContent = count;
+  if (f && pct !== null) f.style.width = Math.max(2, Math.min(100, pct)) + '%';
+  if (f) f.classList.toggle('aria-progress__fill--working', pct === null);
+}
+
 async function handleFolderPick(fileList) {
-  const files = [...(fileList || [])].filter(f =>
-    UPLOAD_EXTS.some(e => f.name.toLowerCase().endsWith(e)));
-
+  const all = [...(fileList || [])];
+  const files = all.filter(f => UPLOAD_EXTS.some(e => f.name.toLowerCase().endsWith(e)));
+  const btn = document.getElementById('aria-upload-folder-btn');
   const hint = document.getElementById('aria-upload-hint');
-  showUploadError('');
+  const setHint = (t) => { if (hint) hint.textContent = t; };
 
+  showUploadError('');
   if (!files.length) {
     showUploadError(`No readable text files in that folder. Svarg accepts ${UPLOAD_EXTS.join(', ')} — other formats need a parser it does not have yet.`);
     return;
   }
   if (!_blueprintId) return;
 
-  const skipped = [...(fileList || [])].length - files.length;
-  const setHint = (t) => { if (hint) hint.textContent = t; };
-  setHint(`Reading ${files.length} file${files.length === 1 ? '' : 's'}…`);
+  const skipped = all.length - files.length;
+  // Disabled while working: a second folder picked mid-run would interleave
+  // uploads with a classification pass over a half-written set.
+  if (btn) { btn.disabled = true; btn.textContent = 'Working…'; }
+  setHint('');
 
+  let clock = null;
   try {
+    uploadProgress('Reading files from your folder…', { pct: 4, count: `0 of ${files.length}` });
+
     let sent = 0;
     for (let i = 0; i < files.length; i += UPLOAD_BATCH) {
       const slice = files.slice(i, i + UPLOAD_BATCH);
@@ -1090,8 +1120,6 @@ async function handleFolderPick(fileList) {
         const text = await f.text().catch(() => null);
         if (text === null || !text.trim()) continue;
         if (text.length > MAX_UPLOAD_CHARS) continue;
-        // webkitRelativePath keeps the folder structure, which is often the
-        // clearest signal about what a file is.
         payload.push({ path: f.webkitRelativePath || f.name, text });
       }
       if (!payload.length) continue;
@@ -1101,28 +1129,49 @@ async function handleFolderPick(fileList) {
         body: JSON.stringify({ blueprintId: _blueprintId, files: payload }),
       });
       sent += payload.length;
-      setHint(`Uploaded ${sent} of ${files.length}…`);
+      // Uploading is capped at 60% of the bar: classification is the long part
+      // and a bar that reached 100% before it started would be a lie.
+      uploadProgress('Uploading to Svarg…', {
+        pct: 4 + Math.round((sent / files.length) * 56),
+        count: `${sent} of ${files.length}`,
+      });
     }
 
-    if (!sent) { showUploadError('None of those files could be read.'); setHint(''); return; }
+    if (!sent) { showUploadError('None of those files could be read.'); uploadProgress(null); return; }
 
-    // One classification pass over everything, not per batch — the model needs
-    // to see the whole set to tell that two files serve the same dataset.
-    setHint(`Working out which dataset each file serves…`);
+    // No percentage here on purpose — one model call whose duration is not
+    // knowable in advance. An elapsed clock is honest; a crawling bar is not.
+    const started = Date.now();
+    const tick = () => uploadProgress('Working out which dataset each file serves…', {
+      pct: null,
+      count: `${Math.round((Date.now() - started) / 1000)}s`,
+    });
+    tick();
+    clock = setInterval(tick, 1000);
+
     const { classified, unclassified } = await api('/uploads/classify', {
       method: 'POST',
       body: JSON.stringify({ blueprintId: _blueprintId }),
     });
 
+    clearInterval(clock); clock = null;
+    uploadProgress('Done', { pct: 100, count: `${Math.round((Date.now() - started) / 1000)}s` });
+
     await loadUploads(_blueprintId);
     renderUploadList();
     renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
+
     setHint(`${sent} file${sent === 1 ? '' : 's'} uploaded — ${classified} matched to a dataset, ${unclassified} kept as context`
       + (skipped ? `. ${skipped} skipped as unsupported types.` : '.'));
+    setTimeout(() => uploadProgress(null), 2500);
   } catch (err) {
     showUploadError(err.message);
-    setHint('');
+    uploadProgress(null);
+  } finally {
+    if (clock) clearInterval(clock);
+    if (btn) { btn.disabled = false; btn.textContent = 'Choose a folder'; }
   }
+
 }
 
 

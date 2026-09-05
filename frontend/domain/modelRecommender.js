@@ -18,6 +18,12 @@ const esc = (t) => String(t ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Column heading per score category, so the table names what it ranked on. */
+/** What each category actually measures, shown under the table so a score is
+ *  not a bare number someone has to take on faith. */
+const FOCUS_ABOUT = {
+  strategyOps: 'Domain knowledge across business and management, accounting, corporate and markets, plus strategy and planning, customer support and records management.',
+};
+
 const FOCUS_LABEL = {
   strategyOps:             'Strategy & Ops',
   intelligence:            'Intelligence',
@@ -75,6 +81,7 @@ function render(state) {
       rule === 'cheapest-clearing-band'
         ? ' — cheapest model clearing the acceptable band, not the highest score.'
         : ' and cost.'}</p>
+    ${FOCUS_ABOUT[focus] ? `<p class=\"mr__about\">${esc(FOCUS_ABOUT[focus])}</p>` : ''}
     <div class="mr__table-wrap">
       <table class="mr__table">
         <thead>

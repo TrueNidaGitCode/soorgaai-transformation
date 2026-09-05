@@ -314,7 +314,7 @@ export function deriveRecommendationInputs(blueprint) {
   // regulatory cost, resistance to confident invention outranks tool use.
   // Strategy and operations work ranks on the Strategy & Ops score. Checked
   // first because it is the category with measured data behind it.
-  if (/\b(strateg|operations|ops |planning|roadmap|prioriti)/.test(useCase)) {
+  if (/\b(strateg|operations|ops |planning|roadmap|prioriti|business|management|accounting|corporate|market|customer support|records|administrat|invoic|billing|schedul)/.test(useCase)) {
     focus = 'strategyOps'; reasons.push('The use case is strategy or operations work, so ranking is on the Strategy & Ops score.');
   } else if (/\b(complian|governance|audit|regulat|legal|medical|clinical|safety)/.test(useCase)) {
     focus = 'hallucinationResistance'; reasons.push('The use case carries a cost for being confidently wrong, so ranking is on hallucination resistance.');

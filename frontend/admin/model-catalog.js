@@ -42,7 +42,7 @@ const esc = (t) => String(t ?? '')
  * which published figure it is supposed to be.
  */
 const INDICES = [
-  ['strategyOps',             'Strategy & Ops',         'your own benchmark'],
+  ['strategyOps',             'Strategy & Ops',         'Business and management, accounting, corporate and markets, strategy and planning, customer support, records management'],
   ['intelligence',            'General Intelligence',   'AA Intelligence Index'],
   ['agentic',                 'Agentic Capabilities',   'AA Agentic Index'],
   ['coding',                  'Coding',                 'Terminal-Bench'],

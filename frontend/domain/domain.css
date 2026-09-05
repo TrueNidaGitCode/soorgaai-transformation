@@ -13327,3 +13327,13 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
 .mr__excluded { margin-top: 14px; font-size: 12px; color: rgba(255,255,255,0.4); }
 .mr__excluded summary { cursor: pointer; }
 .mr__excluded ul { margin: 8px 0 0 18px; padding: 0; line-height: 1.7; }
+
+/* What the score category actually measures. A bare number invites the
+   question "of what?", and the answer should not require leaving the page. */
+.mr__about {
+  margin: -4px 0 12px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.55;
+  max-width: 78ch;
+}

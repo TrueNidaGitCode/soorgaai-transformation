@@ -46,7 +46,6 @@ let _blueprintId = null;
 let _chosen = null;          // the class: frontier | open-weight | auto
 let _model = null;           // the specific model id — this is the decision
 let _models = [];            // candidates currently on screen
-let _priority = null;        // what matters most, for the auto flow
 let _recommendation = null;  // Arth's pick, kept so its reasoning is saved
 let _hosting = null;         // svarg | self — where the application runs
 let _env = null;             // the prepared environment, once there is one
@@ -69,12 +68,6 @@ const OPTIONS = [
 
 const optionById = (id) => OPTIONS.find(o => o.id === id) || null;
 
-const PRIORITIES = [
-  { id: 'quality',     title: 'Quality',     blurb: 'Get the best answer, accept the price.' },
-  { id: 'cost',        title: 'Cost',        blurb: 'Keep the running bill down.' },
-  { id: 'performance', title: 'Speed',       blurb: 'Low latency and high throughput.' },
-  { id: 'privacy',     title: 'Data control',blurb: 'Nothing leaves our environment.' },
-];
 
 // Where the application itself runs — a separate question from which model
 // answers its requests. Svarg's environment is the one Arth can prepare
@@ -157,6 +150,17 @@ function computeLine(m) {
     </span>`;
 }
 
+const money = (v) => (v === null || v === undefined ? '—' : '$' + Number(v).toFixed(2));
+
+/**
+ * The shortlist.
+ *
+ * Score and cost, and nothing else. An earlier version printed Svarg's own
+ * derivation above this — which benchmark it ranked on, why it picked that
+ * band, what the band measures — three paragraphs of internal reasoning shown
+ * to the customer as if it were product copy. How the shortlist was arrived at
+ * is Svarg's business; what is on it is the customer's.
+ */
 function renderModels(models) {
   const wrap = document.getElementById('arth-models');
   if (!models.length) {
@@ -169,26 +173,17 @@ function renderModels(models) {
         <span class="arth-model__name">${esc(m.displayName)}</span>
         <span class="arth-model__vendor">${esc(m.vendor)}</span>
       </span>
-      <span class="arth-model__tags">${tags(m)}</span>
-      <span class="arth-model__strengths">${esc(m.strengths || '')}</span>
+      ${m.focusScore != null ? `<span class="arth-model__tags">
+        <span class="arth-tag"><span class="arth-tag__k">Score</span>${m.focusScore}</span>
+        <span class="arth-tag"><span class="arth-tag__k">Cost / task</span>${money(m.cost)}</span>
+      </span>` : `<span class="arth-model__tags">${tags(m)}</span>`}
+      ${m.strengths ? `<span class="arth-model__strengths">${esc(m.strengths)}</span>` : ''}
       ${computeLine(m)}
       ${m.license ? `<span class="arth-model__license">${esc(m.license)}</span>` : ''}
     </button>
   `).join('');
 }
 
-function renderRecommendation(rec) {
-  const box = document.getElementById('arth-recommendation');
-  box.style.display = 'block';
-  box.innerHTML = `
-    <p class="arth-rec__label">Arth recommends</p>
-    <p class="arth-rec__name">${esc(rec.displayName)}
-      <span class="arth-model__vendor">${esc(rec.vendor || '')}</span></p>
-    <div class="arth-model__tags">${tags(rec)}</div>
-    <p class="arth-rec__why">${esc(rec.why || '')}</p>
-    ${rec.compute ? `<p class="arth-rec__compute">${computeLine(rec)}</p>` : ''}
-  `;
-}
 
 // Infrastructure comes from whichever technology capability actually
 // carries it — the generator puts infraItems/techStack on different
@@ -373,7 +368,7 @@ async function saveModelSelection() {
     body: JSON.stringify({
       preference: _chosen,
       modelId: _model,
-      priority: _chosen === 'auto' ? (_priority || 'quality') : '',
+      priority: '',
       rationale: _recommendation?.why || '',
     }),
   });
@@ -426,14 +421,6 @@ async function removeEnvironment() {
   }
 }
 
-function renderPriorities() {
-  document.getElementById('arth-priorities').innerHTML = PRIORITIES.map(p => `
-    <button type="button" class="arth-option arth-option--sm${_priority === p.id ? ' arth-option--on' : ''}" data-priority="${p.id}">
-      <span class="arth-option__title">${esc(p.title)}</span>
-      <span class="arth-option__blurb">${esc(p.blurb)}</span>
-    </button>
-  `).join('');
-}
 
 // True once the environment exists, after which the model and hosting
 // choices are settled and the stage button becomes plain navigation.
@@ -448,7 +435,7 @@ let _frozen = false;
  */
 function freezeSelection(on) {
   _frozen = !!on;
-  const regions = ['arth-options', 'arth-picker', 'arth-auto', 'arth-hosting']
+  const regions = ['arth-options', 'arth-picker', 'arth-hosting']
     .map(id => document.getElementById(id)).filter(Boolean);
 
   for (const region of regions) {
@@ -488,14 +475,45 @@ function refreshConfirm() {
     : 'Choose a model class to continue';
 }
 
+/**
+ * The models on offer: from the catalog, through the band the use case needs.
+ *
+ * Five for Frontier — a shortlist to choose from. One for Auto, already
+ * selected, because Auto means Svarg decides. Both come from the same rule, so
+ * Auto's answer is always the top row of the list Frontier would have shown.
+ *
+ * Open Weight still reads the advisory catalog, which carries the compute and
+ * licence figures the model catalog has no equivalent for. It is locked, so
+ * that path only runs if it is ever unlocked.
+ */
 async function loadModels() {
   const wrap = document.getElementById('arth-models');
   wrap.innerHTML = `<p class="ks-card-body">Loading models…</p>`;
   try {
-    const q = document.getElementById('arth-quant').value;
-    const data = await api(`/strategy-canvas/arth/models?type=${_chosen}&quantization=${q}`);
-    _models = data.models || [];
+    if (_chosen === 'open-weight') {
+      const q = document.getElementById('arth-quant').value;
+      const data = await api(`/strategy-canvas/arth/models?type=${_chosen}&quantization=${q}`);
+      _models = data.models || [];
+      renderModels(_models);
+      return;
+    }
+
+    const auto = _chosen === 'auto';
+    const data = await api(
+      `/strategy-canvas/transformation-blueprint/${_blueprintId}/recommend-models`,
+      { method: 'POST', body: JSON.stringify({ limit: auto ? 1 : 5 }) });
+
+    // modelId is the catalog's key; this screen has always keyed on id, and so
+    // has everything it saves. Renaming here keeps that one name throughout.
+    _models = (data.picks || []).map(m => ({ ...m, id: m.modelId }));
+    _recommendation = auto ? (_models[0] || null) : null;
+
+    // Auto decides. Leaving its single card unselected would make the customer
+    // confirm a choice they were just told they did not have to make.
+    if (auto && _models.length) _model = _models[0].id;
+
     renderModels(_models);
+    refreshConfirm();
   } catch (err) {
     wrap.innerHTML = '';
     showError(err.message);
@@ -518,20 +536,17 @@ function choose(pref, { restoring = false } = {}) {
   _chosen = pref;
   renderOptions();
 
-  const picker = document.getElementById('arth-picker');
-  const auto   = document.getElementById('arth-auto');
-  picker.style.display = pref === 'auto' ? 'none' : '';
-  auto.style.display   = pref === 'auto' ? '' : 'none';
+  // One picker for all three classes. Auto is not a separate flow any more —
+  // it is the same shortlist, cut to its first row.
+  document.getElementById('arth-picker').style.display = '';
+  document.getElementById('arth-picker-label').textContent =
+    pref === 'auto'       ? 'Arth chose this'
+    : pref === 'frontier' ? 'Choose a frontier model'
+    : 'Choose an open-weight model';
 
-  if (pref === 'auto') {
-    renderPriorities();
-  } else {
-    document.getElementById('arth-picker-label').textContent =
-      pref === 'frontier' ? 'Choose a frontier model' : 'Choose an open-weight model';
-    // Precision only changes anything for models you host yourself.
-    document.getElementById('arth-quant-wrap').style.display = pref === 'open-weight' ? '' : 'none';
-    loadModels();
-  }
+  // Precision only changes anything for models you host yourself.
+  document.getElementById('arth-quant-wrap').style.display = pref === 'open-weight' ? '' : 'none';
+  loadModels();
   refreshConfirm();
   return true;
 }
@@ -569,42 +584,6 @@ function wire() {
   document.getElementById('arth-prep-btn').addEventListener('click', prepareEnvironment);
   document.getElementById('arth-prep-remove').addEventListener('click', removeEnvironment);
 
-  document.getElementById('arth-priorities').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-priority]');
-    if (!b) return;
-    _priority = b.dataset.priority;
-    renderPriorities();
-  });
-
-  document.getElementById('arth-recommend-btn').addEventListener('click', async () => {
-    const btn  = document.getElementById('arth-recommend-btn');
-    const hint = document.getElementById('arth-auto-hint');
-    btn.disabled = true;
-    btn.textContent = 'Arth is thinking…';
-    hint.textContent = '';
-    try {
-      const rec = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/arth-recommend`, {
-        method: 'POST',
-        body: JSON.stringify({
-          priority: _priority || 'quality',
-          constraints: document.getElementById('arth-constraints').value.trim(),
-        }),
-      });
-      // The recommendation IS the selection once it comes back — the user
-      // still confirms it, and can ask again with different priorities.
-      _recommendation = rec;
-      _model = rec.id;
-      _models = [rec];
-      renderRecommendation(rec);
-      refreshConfirm();
-      hint.textContent = 'Not what you expected? Change what matters and ask again.';
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = _recommendation ? 'Ask again' : 'Ask Arth to choose';
-    }
-  });
 
   // Chat with Arth can propose a model class; accepting it only moves the
   // selection here, exactly as clicking the card would. Committing it stays
@@ -659,7 +638,6 @@ document.addEventListener('arth:show', (e) => {
   // Re-entering the screen should show the decision already on record, down
   // to which model — not just which class it belonged to.
   const prev = bp.arthSelection || {};
-  _priority = prev.priority || null;
   _model = null;
   _models = [];
   _recommendation = null;

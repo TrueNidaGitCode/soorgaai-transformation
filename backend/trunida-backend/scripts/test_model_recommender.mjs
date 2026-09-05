@@ -224,10 +224,26 @@ console.log('10. confidence bands');
   // which one inside it — so a cheaper model outranks a better one it is banded
   // with, and never outranks the band itself.
   const vh = recommendModels(table, { focus: 'strategyOps', confidence: 'very-high' });
-  check('very high returns the top third', vh.picks.every(p => p.focusScore >= bands[0].min),
-    vh.picks.map(p => p.modelId + '@' + p.focusScore).join(', '));
+  check('every in-band pick is in the top third',
+    vh.picks.filter(p => p.inBand).every(p => p.focusScore >= bands[0].min),
+    vh.picks.filter(p => p.inBand).map(p => p.modelId + '@' + p.focusScore).join(', '));
   check('cheapest first inside the band', vh.picks[0].modelId === 'upper-mid', vh.picks[0].modelId);
   check('the rule is named', vh.rule === 'cheapest-in-confidence-band', vh.rule);
+
+  // A band holds two or three models; a picker offering two is a picker with
+  // no real choice in it. The list is filled from BELOW — cheaper, never more
+  // expensive than the work needs — and every filled row is flagged so the
+  // screen can tell an in-band option from an alternative to it.
+  check('the list fills up to the limit when the band is small',
+    vh.picks.length === 5, vh.picks.length + ' picks from a band of '
+      + table.filter(m => bandOf(bands, m.scores.strategyOps).id === 'very-high').length);
+  check('in-band picks come first', vh.picks.findIndex(p => !p.inBand) === 3,
+    vh.picks.map(p => (p.inBand ? 'in' : 'fill')).join(','));
+  check('filled rows are never above the requested band',
+    vh.picks.filter(p => !p.inBand).every(p => p.focusScore < bands[0].min),
+    vh.picks.filter(p => !p.inBand).map(p => p.modelId + '@' + p.focusScore).join(', '));
+  check('and the fill is reported', vh.filled === true && vh.widened === false,
+    'filled=' + vh.filled + ' widened=' + vh.widened);
 
   const med = recommendModels(table, { focus: 'strategyOps', confidence: 'medium' });
   check('medium never returns a top-third model',

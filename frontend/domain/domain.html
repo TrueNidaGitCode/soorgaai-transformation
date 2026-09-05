@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
-  <link rel="stylesheet" href="domain.css?v=60">
+  <link rel="stylesheet" href="domain.css?v=61">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -653,18 +653,6 @@
 
       <div id="arth-error" class="gen-error" style="display:none"></div>
 
-      <!-- ── Model recommender ────────────────────────────────────────────
-           Which model suits a use case is a question with an answer, not a
-           preference: the indices differ per task, and the cheapest model that
-           clears the bar is usually not the best one. The controls start from
-           what Svarg derived and are meant to be argued with. -->
-      <div class="mr" id="arth-recommender">
-        <p class="pd-substage-label aria-required-label">Model Recommendation</p>
-        <p class="mr__derived" id="mr-derived"></p>
-
-        <div class="mr__result" id="mr-result"></div>
-      </div>
-
       <p class="pd-substage-label aria-required-label">Model Class</p>
       <div class="arth-options" id="arth-options"></div>
       <!-- Why a locked class cannot be picked. Under the row, not in an alert,
@@ -675,7 +663,9 @@
            class decides where the data lives, this decides which model, and
            for Auto it is Arth who decides. Only one of these is ever shown. -->
 
-      <!-- Frontier / Open Weight: the catalog, chosen from directly. -->
+      <!-- The models, for every class. Frontier and Auto both come from the
+           model catalog through the band rule; Auto differs only in that Arth
+           takes the one answer rather than offering the shortlist. -->
       <div id="arth-picker" style="display:none">
         <div class="arth-picker__head">
           <p class="pd-substage-label aria-required-label" id="arth-picker-label">Model</p>
@@ -689,22 +679,6 @@
           </label>
         </div>
         <div class="arth-models" id="arth-models"></div>
-      </div>
-
-      <!-- Auto: Arth reasons about this use case and recommends one. -->
-      <div id="arth-auto" style="display:none">
-        <p class="pd-substage-label aria-required-label">What matters most here</p>
-        <div class="arth-priorities" id="arth-priorities"></div>
-        <label class="arth-constraints">
-          <span>Anything Arth should know? (optional)</span>
-          <input type="text" id="arth-constraints" maxlength="500"
-                 placeholder="e.g. data cannot leave our network, or we already run on Azure">
-        </label>
-        <div class="arth-process-row">
-          <button type="button" class="pw-next-btn" id="arth-recommend-btn">Ask Arth to choose</button>
-          <span class="aria-process-bar__hint" id="arth-auto-hint"></span>
-        </div>
-        <div class="arth-recommendation" id="arth-recommendation" style="display:none"></div>
       </div>
 
       <!-- Arth's second decision: where the application will run. Separate
@@ -1272,8 +1246,7 @@
   <script type="module" src="blueprintGenerate.js?v=8"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=41"></script>
-  <script type="module" src="arthScreen.js?v=15"></script>
-  <script type="module" src="modelRecommender.js?v=6"></script>
+  <script type="module" src="arthScreen.js?v=16"></script>
   <script type="module" src="eameScreen.js?v=12"></script>
   <script type="module" src="yusuScreen.js?v=21"></script>
   <script type="module" src="screenChat.js?v=7"></script>

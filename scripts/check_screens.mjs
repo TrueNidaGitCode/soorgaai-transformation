@@ -159,6 +159,14 @@ const DEP = ${JSON.stringify(
   screen === 'arth' ? { ...DEPLOYMENT, status: 'none', preparedAt: '' } : DEPLOYMENT
 )};
 const MANIFEST = ${JSON.stringify({ fileCount: MANIFEST_FILES.length, totalBytes: MANIFEST_FILES.reduce((n, f) => n + f.bytes, 0), files: MANIFEST_FILES })};
+const RECOMMENDED = ${JSON.stringify([
+  { modelId: 'claude-fable-5-1-xhigh-with-fallback', displayName: 'Claude Fable 5.1 (xhigh with fallback)', vendor: 'Anthropic', type: 'frontier', focusScore: 57, cost: 3.25, inBand: true,  confidenceLabel: 'Very High Confidence' },
+  { modelId: 'claude-fable-5-1-max-with-fallback',   displayName: 'Claude Fable 5.1 (max with fallback)',   vendor: 'Anthropic', type: 'frontier', focusScore: 58, cost: 4.33, inBand: true,  confidenceLabel: 'Very High Confidence' },
+  { modelId: 'muse-spark-1-3-max',                   displayName: 'Muse Spark 1.3 (max)',                   vendor: 'Muse',      type: 'frontier', focusScore: 53, cost: 0.87, inBand: false, confidenceLabel: 'High Confidence' },
+  { modelId: 'gpt-5-6-sol-max',                      displayName: 'GPT-5.6 Sol (max)',                      vendor: 'OpenAI',    type: 'frontier', focusScore: 52, cost: 1.40, inBand: false, confidenceLabel: 'High Confidence' },
+  { modelId: 'claude-opus-5-high',                   displayName: 'Claude Opus 5 (high)',                   vendor: 'Anthropic', type: 'frontier', focusScore: 52, cost: 1.55, inBand: false, confidenceLabel: 'High Confidence' },
+])};
+
 const CATALOG = ${JSON.stringify({
   frontier: [
     { id:'claude-opus', displayName:'Claude Opus', vendor:'Anthropic', type:'frontier', quality:'best', cost:'high', performance:'high', strengths:'Long-context reasoning.' },
@@ -185,6 +193,20 @@ window.fetch = function (url, opts) {
   if (u.includes('/arth/models')) {
     const type = (u.match(/type=([a-z-]+)/) || [])[1] || 'frontier';
     return J({ models: CATALOG[type] || [] });
+  }
+  if (u.includes('/recommend-models')) {
+    // Honours the limit, because Auto asks for one and Frontier for five, and
+    // a stub that ignored it would let a broken Auto pass as working.
+    const limit = (JSON.parse(opts && opts.body || '{}').limit) || 5;
+    window.__lastRecommend = { limit: limit };
+    return J({
+      picks: RECOMMENDED.slice(0, limit),
+      rule: 'cheapest-in-confidence-band',
+      focus: 'strategyOps', confidence: 'very-high', requestedConfidence: 'very-high',
+      widened: false, filled: limit > 3,
+      band: { focus: 'strategyOps', min: 54.7, max: 58, label: 'Very High Confidence' },
+      catalogSize: 24,
+    });
   }
   if (u.includes('/arth-recommend'))    return J({ ...CATALOG.frontier[1], why: 'Best balance for this use case.', priority: 'quality' }, 200);
   if (u.includes('/arth-selection'))    return J({ saved: true, selection: { displayName: 'Claude Sonnet' } });
@@ -332,54 +354,33 @@ setTimeout(function () {
       if (out.tabs.indexOf('upload') === -1) bad('Upload tab missing (tabs: ' + out.tabs + ')');
     }
 
-    // Arth's model classes. Open Weight is shown but not selectable, and the
-    // failure worth pinning is the quiet one: a locked card that dims but
-    // still selects, or refuses without saying why. Both look fine in a
-    // screenshot, so this clicks it and checks what happened.
+    // Arth's shortlist, as the customer meets it: five models under Frontier,
+    // each showing the two numbers the choice is made on.
     if (out.screen === 'arth') {
-      var pick = function (id) { return scr.querySelector('#arth-options [data-pref=' + id + ']'); };
-      var isOn = function (id) { var e = pick(id); return !!e && e.classList.contains('arth-option--on'); };
-      var noteText = function () {
-        var n = document.getElementById('arth-locked-note');
-        return (n && n.style.display !== 'none' && (n.textContent || '').trim()) || '';
-      };
+      var cards = scr.querySelectorAll('#arth-models .arth-model');
+      out.shortlist = cards.length;
+      if (cards.length !== 5) bad('Frontier shortlist has ' + cards.length + ' models, expected 5');
 
-      // A frozen screen disables the row, and a disabled button fires no click.
-      // Saying so beats four assertions failing as if the lock were broken.
-      var frozen = !!(pick('frontier') && pick('frontier').disabled);
-      if (frozen) bad('the model-class row is frozen, so the lock cannot be exercised');
+      // A card without both numbers is a card you cannot choose between.
+      var withBoth = 0;
+      for (var c = 0; c < cards.length; c++) {
+        var t = cards[c].textContent || '';
+        // The currency symbol too: a template-literal slip once dropped it and
+        // left a bare number, which reads as a score rather than a price.
+        var priced = t.indexOf(String.fromCharCode(36)) !== -1;
+        if (t.indexOf('Score') !== -1 && t.indexOf('Cost') !== -1 && priced) withBoth++;
+      }
+      if (withBoth !== cards.length) bad(withBoth + ' of ' + cards.length + ' cards show both score and cost');
 
-      var opts = scr.querySelectorAll('#arth-options .arth-option');
-      out.classes = [].map.call(opts, function (o) {
-        return o.dataset.pref + (o.classList.contains('arth-option--locked') ? '(locked)' : '');
-      }).join('/');
-      if (opts.length !== 3) bad('expected 3 model classes, got ' + opts.length);
-      if (!pick('open-weight')) bad('no open-weight class rendered — it should be visible, just locked');
-      else if (!pick('open-weight').classList.contains('arth-option--locked')) bad('open-weight is not locked');
-
-      // Auto first: an unlocked class that is not already selected proves the
-      // row is wired, so a later refusal can be read as the lock working
-      // rather than as nothing being connected.
-      pick('auto').click();
-      if (!isOn('auto')) bad('an unlocked class could not be selected — the row is not wired');
-
-      pick('open-weight').click();
-      out.lockNote = noteText().slice(0, 52) || "NONE";
-      if (!noteText()) bad('clicking a locked class explained nothing');
-      if (isOn('open-weight')) bad('a locked class was selected anyway');
-      if (!isOn('auto')) bad('a refused click changed the selection');
-
-      // And the lock does not spread: choosing a selectable class still takes
-      // and clears the message on the way.
-      //
-      // Auto rather than Frontier, deliberately. Frontier starts a model fetch
-      // that cannot resolve inside this synchronous pass, so the screen would
-      // still read "Loading models…" when the shared assertions run and fail
-      // for a reason that has nothing to do with the lock. A probe has to
-      // leave the page settled.
-      pick('auto').click();
-      if (!isOn('auto')) bad('a selectable class could not be chosen after the refusal');
-      if (noteText()) bad('the lock message survived choosing a selectable class');
+      // Svarg's own derivation is internal. It used to be printed above the
+      // shortlist as if it were product copy — which benchmark was ranked on,
+      // why that band, what the band measures.
+      var leaked = [
+        'ranking is on the', 'band of what the benchmark offers', 'Domain knowledge across',
+        'cheapest model in that band', 'The company reads as early-stage', 'Ranked on'
+      ].filter(function (phrase) { return (scr.textContent || '').indexOf(phrase) !== -1; });
+      out.leaked = leaked.length ? leaked.join(' | ') : 'none';
+      if (leaked.length) bad('internal reasoning is on screen: ' + leaked.join(' | '));
     }
     // Cob's engagement note. It states what the whole blueprint was steered
     // by, so a note that silently fails to render is worse than a visibly
@@ -450,6 +451,67 @@ setTimeout(function () {
 
     // Nothing may claim to be loading once the screen has settled.
     if (/Loading (project files|models)…/.test(scr.textContent)) bad('still showing a loading state');
+
+    // ── Interactions, last ──────────────────────────────────────────
+    // Everything below clicks something, and every class now starts a
+    // model fetch that cannot resolve inside this synchronous pass.
+    // Anything measured after this measures the probe, not the page.
+    // Arth's model classes. Open Weight is shown but not selectable, and the
+    // failure worth pinning is the quiet one: a locked card that dims but
+    // still selects, or refuses without saying why. Both look fine in a
+    // screenshot, so this clicks it and checks what happened.
+    if (out.screen === 'arth') {
+      var pick = function (id) { return scr.querySelector('#arth-options [data-pref=' + id + ']'); };
+      var isOn = function (id) { var e = pick(id); return !!e && e.classList.contains('arth-option--on'); };
+      var noteText = function () {
+        var n = document.getElementById('arth-locked-note');
+        return (n && n.style.display !== 'none' && (n.textContent || '').trim()) || '';
+      };
+
+      // A frozen screen disables the row, and a disabled button fires no click.
+      // Saying so beats four assertions failing as if the lock were broken.
+      var frozen = !!(pick('frontier') && pick('frontier').disabled);
+      if (frozen) bad('the model-class row is frozen, so the lock cannot be exercised');
+
+      var opts = scr.querySelectorAll('#arth-options .arth-option');
+      out.classes = [].map.call(opts, function (o) {
+        return o.dataset.pref + (o.classList.contains('arth-option--locked') ? '(locked)' : '');
+      }).join('/');
+      if (opts.length !== 3) bad('expected 3 model classes, got ' + opts.length);
+      if (!pick('open-weight')) bad('no open-weight class rendered — it should be visible, just locked');
+      else if (!pick('open-weight').classList.contains('arth-option--locked')) bad('open-weight is not locked');
+
+      // Auto first: an unlocked class that is not already selected proves the
+      // row is wired, so a later refusal can be read as the lock working
+      // rather than as nothing being connected.
+      pick('auto').click();
+      if (!isOn('auto')) bad('an unlocked class could not be selected — the row is not wired');
+
+      // Auto means Svarg decides, so it must ask for one model, not a
+      // shortlist it then leaves the customer to choose from. The request
+      // goes out synchronously, so this is readable in the same pass.
+      out.autoLimit = (window.__lastRecommend || {}).limit;
+      if (out.autoLimit !== 1) bad('Auto asked for ' + out.autoLimit + ' models, expected 1');
+
+      pick('open-weight').click();
+      out.lockNote = noteText().slice(0, 52) || "NONE";
+      if (!noteText()) bad('clicking a locked class explained nothing');
+      if (isOn('open-weight')) bad('a locked class was selected anyway');
+      if (!isOn('auto')) bad('a refused click changed the selection');
+
+      // And the lock does not spread: choosing a selectable class still takes
+      // and clears the message on the way.
+      //
+      // Auto rather than Frontier, deliberately. Frontier starts a model fetch
+      // that cannot resolve inside this synchronous pass, so the screen would
+      // still read "Loading models…" when the shared assertions run and fail
+      // for a reason that has nothing to do with the lock. A probe has to
+      // leave the page settled.
+      pick('auto').click();
+      if (!isOn('auto')) bad('a selectable class could not be chosen after the refusal');
+      if (noteText()) bad('the lock message survived choosing a selectable class');
+    }
+
   } catch (e) { bad('probe threw: ' + e.message); }
 
   out.errs = window.__errs || [];
@@ -531,7 +593,7 @@ for (const screen of list) {
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" · ${r.collect} to collect` : '')
-    + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"` : ''));
+    + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        shortlist ${r.shortlist} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

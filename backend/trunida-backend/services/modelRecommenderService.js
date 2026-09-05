@@ -295,30 +295,48 @@ export function recommendModels(catalog, {
       // down is right — the task asked for at least this much confidence, and
       // the band below is where the next-best models are — but it must be
       // reported, not silently substituted.
-      let used = idx, inBand = [];
-      for (let i = idx; i < bands.length && !inBand.length; i++) {
-        used = i;
-        inBand = candidates
-          .map((m, j) => ({ m, score: scores[j], price: prices[j] }))
-          .filter(x => bandOf(bands, x.score)?.id === bands[i].id);
-      }
-      inBand.sort((a2, b2) => (a2.price ?? Infinity) - (b2.price ?? Infinity));
+      //
+      // The band is also usually smaller than the number of options the screen
+      // wants to offer: Strategy & Ops Very High holds two models, and a picker
+      // showing two is a picker with almost no choice in it. So the band is
+      // filled out from the bands BELOW, never above — downwards is cheaper,
+      // and the whole point of banding is to stop paying for more than the work
+      // needs. Anything past the requested band is flagged, so the screen can
+      // tell an in-band option from a cheaper alternative to it.
+      const rowsIn = (b) => candidates
+        .map((m, j) => ({ m, score: scores[j], price: prices[j] }))
+        .filter(x => bandOf(bands, x.score)?.id === b.id)
+        .sort((a2, b2) => (a2.price ?? Infinity) - (b2.price ?? Infinity));
 
-      const chosen = bands[used];
+      const ordered = [];
+      for (let i = idx; i < bands.length; i++) {
+        for (const row of rowsIn(bands[i])) ordered.push({ ...row, band: bands[i], inBand: i === idx });
+      }
+
+      // Which band the answer actually came from: the requested one when it has
+      // anything in it, otherwise the first one below that does.
+      const chosen = ordered.length ? ordered[0].band : bands[idx];
+      const picks = ordered.slice(0, limit);
+
       return {
-        picks: inBand.slice(0, limit).map(x => ({
+        picks: picks.map(x => ({
           ...plain(x.m),
           focusScore: x.score,
           cost: x.price,
-          confidence: chosen.id,
-          why: `${chosen.label} on ${focusKey} (${chosen.min.toFixed(0)}-${chosen.max.toFixed(0)}), at the lowest cost in that band.`,
+          confidence: x.band.id,
+          confidenceLabel: x.band.label,
+          inBand: x.inBand,
+          why: `${x.band.label} on ${focusKey} (${x.band.min.toFixed(0)}-${x.band.max.toFixed(0)}), at the lowest cost in that band.`,
         })),
         considered: catalog.length,
         excluded,
         rule: 'cheapest-in-confidence-band',
         confidence: chosen.id,
         requestedConfidence: confidence,
+        // True when the requested band could not supply the answer at all —
+        // distinct from merely padding the list out with cheaper alternatives.
         widened: chosen.id !== confidence,
+        filled: picks.some(p => !p.inBand),
         bands: bands.map(b => ({ id: b.id, label: b.label, min: b.min, max: b.max })),
         band: { focus: focusKey, min: chosen.min, max: chosen.max, label: chosen.label },
         focus: focusKey,

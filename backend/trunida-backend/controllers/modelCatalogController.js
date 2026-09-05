@@ -175,6 +175,11 @@ export async function recommendForBlueprint(req, res) {
       sizePreference: req.body?.sizePreference ?? derived.sizePreference,
       providers:      req.body?.providers      ?? derived.providers,
       band:           req.body?.band,
+      // How many to return. Auto asks for one because Auto means Svarg decides;
+      // the picker asks for five. Clamped rather than trusted: it comes from a
+      // request body, and an unbounded limit is a way to ask for the whole
+      // catalog through an endpoint that is meant to narrow it.
+      limit: Math.min(Math.max(Number(req.body?.limit) || 5, 1), 10),
     };
 
     // The stored min/max is deliberately NOT read here any more. It was a

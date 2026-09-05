@@ -16,10 +16,7 @@
  */
 import 'dotenv/config';
 import mongoose from 'mongoose';
-import ModelCatalogEntry from '../models/ModelCatalogEntry.js';
-
-const FORCE = process.argv.includes('--force');
-const SOURCE = 'Strategy & Ops — proprietary';
+import { seedBenchmarkTable, report } from './lib/seedBenchmarkTable.mjs';
 
 // [rank, model, vendor, score, cost per task]
 const ROWS = [
@@ -45,58 +42,11 @@ const ROWS = [
   [20, 'Gemini 3.8 Flash (medium)',               'Google',    48, 0.56],
 ];
 
-const slug = (s) => s.toLowerCase()
-  .replace(/[()]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
 await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
-
-const keep = new Set(ROWS.map(([, name]) => slug(name)));
-let created = 0, updated = 0, skipped = 0;
-
-for (const [rank, name, vendor, score, cost] of ROWS) {
-  const modelId = slug(name);
-  const existing = await ModelCatalogEntry.findOne({ modelId }).lean();
-
-  // Getting a score wrong and having it silently restored on the next run is
-  // worse than a stale row, so a hand edit wins unless forced.
-  if (existing?.updatedBy && !FORCE) { skipped++; continue; }
-
-  await ModelCatalogEntry.updateOne(
-    { modelId },
-    { $set: {
-      modelId,
-      displayName: name,
-      vendor,
-      type: 'frontier',
-      providers: [vendor],
-      indexCost: cost,
-      'scores.strategyOps': score,
-      source: `${SOURCE} · rank ${rank}`,
-    } },
-    { upsert: true }
-  );
-  existing ? updated++ : created++;
-}
-
-// Rows from a previous version of this comparison that the new one does not
-// contain. Left alone, they would sit in the ranking looking current.
-const stale = await ModelCatalogEntry.find({
-  'scores.strategyOps': { $ne: null },
-  modelId: { $nin: [...keep] },
-  updatedBy: { $in: ['', null] },
-}).select('modelId displayName source').lean();
-
-const removable = stale.filter(m => /Strategy & Ops/i.test(m.source || ''));
-if (removable.length) {
-  await ModelCatalogEntry.deleteMany({ modelId: { $in: removable.map(m => m.modelId) } });
-}
-
-console.log(`created ${created}, updated ${updated}, skipped ${skipped} (edited by an admin)`);
-if (removable.length) {
-  console.log(`removed ${removable.length} row(s) from the superseded list:`);
-  removable.forEach(m => console.log(`   ${m.displayName}`));
-}
-const total = await ModelCatalogEntry.countDocuments({ 'scores.strategyOps': { $ne: null } });
-console.log(`${total} models carry a Strategy & Ops score`);
-
+report('Strategy & Ops', await seedBenchmarkTable({
+  category: 'strategyOps',
+  label: 'Strategy & Ops',
+  rows: ROWS,
+  force: process.argv.includes('--force'),
+}));
 await mongoose.disconnect();

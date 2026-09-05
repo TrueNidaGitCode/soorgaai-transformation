@@ -46,6 +46,7 @@ const money = (v) => (v === null || v === undefined ? '—' : `$${Number(v).toFi
  */
 const INDICES = [
   ['strategyOps',             'Strategy & Ops',         'Business and management, accounting, corporate and markets, strategy and planning, customer support, records management'],
+  ['engineering',             'Engineering',            'Building and changing software'],
   ['intelligence',            'General Intelligence',   'AA Intelligence Index'],
   ['agentic',                 'Agentic Capabilities',   'AA Agentic Index'],
   ['coding',                  'Coding',                 'Terminal-Bench'],
@@ -58,7 +59,6 @@ const INDICES = [
 ];
 
 const NUMERIC = [
-  ['indexCost', 'Cost per task ($)'],
   ['priceIn',  'Price in ($/M tokens)'],
   ['priceOut', 'Price out ($/M tokens)'],
   ['medianTokensPerSecond', 'Median tokens/sec'],
@@ -94,51 +94,71 @@ function renderSummary(summary) {
 // ── The ranking ─────────────────────────────────────────────────────────────
 
 /**
- * Every scored model, highest first — the same shape as the published
- * comparison, so a row can be checked against the source without translating
- * between layouts.
+ * One panel per benchmark table: every model scored on that category, highest
+ * first, in the same shape as the published comparison so a row can be checked
+ * against its source without translating between layouts.
  *
  * The acceptable range is shaded and the cheapest row inside it is marked,
  * because that row is the recommendation and it is almost never the top one.
  * Seeing those two facts together is the entire argument for setting a range.
+ *
+ * Cost is read per category. The same model bills differently on each
+ * benchmark — Claude Opus 5 (max) is $3.01 on Strategy & Ops and $2.25 on
+ * Engineering — so showing one cost against both scores would misprice
+ * whichever table it did not come from.
  */
-function renderRanking() {
-  const el = document.getElementById('mc-rank');
-  if (!el) return;
+function costFor(m, category) {
+  return m.indexCosts?.[category] ?? m.indexCost ?? null;
+}
 
+function rankingPanel(category, label) {
   const rows = _models
-    .filter(m => m.scores?.strategyOps != null)
-    .sort((a, b) => (b.scores.strategyOps - a.scores.strategyOps)
-                 || ((a.indexCost ?? Infinity) - (b.indexCost ?? Infinity)));
+    .filter(m => m.scores?.[category] != null)
+    .sort((a, b) => (b.scores[category] - a.scores[category])
+                 || ((costFor(a, category) ?? Infinity) - (costFor(b, category) ?? Infinity)));
+  if (!rows.length) return '';
 
-  if (!rows.length) {
-    el.innerHTML = '<tbody><tr><td class="mc-summary">No model has a Strategy &amp; Ops score yet.</td></tr></tbody>';
-    return;
-  }
-
-  const r = _ranges?.strategyOps || {};
+  const r = _ranges?.[category] || {};
+  const set = r.min != null || r.max != null;
   const lo = r.min ?? -Infinity;
   const hi = r.max ?? Infinity;
-  const inRange = rows.filter(m => m.scores.strategyOps >= lo && m.scores.strategyOps <= hi);
-  const cheapest = inRange.slice()
-    .sort((a, b) => (a.indexCost ?? Infinity) - (b.indexCost ?? Infinity))[0];
-
+  const inside = (m) => set && m.scores[category] >= lo && m.scores[category] <= hi;
+  const cheapest = rows.filter(inside)
+    .sort((a, b) => (costFor(a, category) ?? Infinity) - (costFor(b, category) ?? Infinity))[0];
   const head = '<thead><tr><th>S.No</th><th>Model</th><th>Company</th>'
     + '<th class="mc-rank__num">Score</th><th class="mc-rank__num">Cost</th></tr></thead>';
 
-  el.innerHTML = head + '<tbody>' + rows.map((m, i) => {
-    const inside = m.scores.strategyOps >= lo && m.scores.strategyOps <= hi;
+  const body = rows.map((m, i) => {
     const pick = cheapest && m.modelId === cheapest.modelId;
-    const cls = [inside ? 'mc-rank__row--in' : '', pick ? 'mc-rank__row--pick' : ''].join(' ').trim();
+    const cls = [inside(m) ? 'mc-rank__row--in' : '', pick ? 'mc-rank__row--pick' : ''].join(' ').trim();
     const tag = pick ? '<span class="mc-rank__tag">Arth picks this</span>' : '';
     return `<tr class="${cls}">`
       + `<td class="mc-rank__sno">${i + 1}</td>`
       + `<td>${esc(m.displayName)}${tag}</td>`
       + `<td>${esc(m.vendor || '—')}</td>`
-      + `<td class="mc-rank__num mc-rank__score">${m.scores.strategyOps}</td>`
-      + `<td class="mc-rank__num mc-rank__cost">${money(m.indexCost)}</td>`
+      + `<td class="mc-rank__num mc-rank__score">${m.scores[category]}</td>`
+      + `<td class="mc-rank__num mc-rank__cost">${money(costFor(m, category))}</td>`
       + '</tr>';
-  }).join('') + '</tbody>';
+  }).join('');
+
+  return `<div class="admin-panel">
+    <div class="panel-header"><h2>${esc(label)} — proprietary models</h2></div>
+    <p class="mc-summary">
+      Every model scored on ${esc(label)}, highest first, with the cost measured on that
+      benchmark. ${set
+        ? 'Shaded rows are inside the acceptable range — the only ones Arth can choose from — and within those it takes the cheapest, which is rarely the one at the top.'
+        : 'No acceptable range is set for this category yet, so Arth ranks on balance instead of taking the cheapest that clears a band.'}
+    </p>
+    <div class="mc-rank-wrap"><table class="mc-rank">${head}<tbody>${body}</tbody></table></div>
+  </div>`;
+}
+
+function renderRanking() {
+  const el = document.getElementById('mc-rankings');
+  if (!el) return;
+  const panels = INDICES.map(([key, label]) => rankingPanel(key, label)).filter(Boolean).join('');
+  el.innerHTML = panels || '<div class="admin-panel"><p class="mc-summary">'
+    + 'No model carries a score yet, so there is nothing to rank.</p></div>';
 }
 
 // ── The per-model editor ────────────────────────────────────────────────────
@@ -161,13 +181,17 @@ function renderModel(m) {
     </div>
     <div class="mc-model__body" style="display:none">
 
-      <p class="mc-section-label">Scores (0–100)</p>
+      <p class="mc-section-label">Scores (0–100) and the cost measured with them</p>
       <div class="mc-grid">
         ${INDICES.map(([key, label, source]) => `
           <div class="form-group">
             <label>${esc(label)}<br><span class="mc-model__meta">${esc(source)}</span></label>
-            <input type="number" step="any" min="0" max="100" data-score="${key}"
-                   value="${m.scores?.[key] ?? ''}" placeholder="not published">
+            <div class="mc-pair">
+              <input type="number" step="any" min="0" max="100" data-score="${key}"
+                     value="${m.scores?.[key] ?? ''}" placeholder="score">
+              <input type="number" step="any" min="0" data-cost="${key}"
+                     value="${m.indexCosts?.[key] ?? ''}" placeholder="cost / task">
+            </div>
           </div>`).join('')}
       </div>
 
@@ -250,6 +274,13 @@ async function save(card) {
   const body = { scores: {} };
 
   card.querySelectorAll('[data-score]').forEach(i => { body.scores[i.dataset.score] = readNumber(i); });
+  // Sent whole, so clearing a cost actually clears it. Every category has an
+  // input on the form, so this can never drop one that is not on screen.
+  body.indexCosts = {};
+  card.querySelectorAll('[data-cost]').forEach(i => {
+    const v = readNumber(i);
+    if (v !== null) body.indexCosts[i.dataset.cost] = v;
+  });
   card.querySelectorAll('[data-field]').forEach(i => {
     const f = i.dataset.field;
     if (f === 'providers') body.providers = i.value.split(',').map(s => s.trim()).filter(Boolean);

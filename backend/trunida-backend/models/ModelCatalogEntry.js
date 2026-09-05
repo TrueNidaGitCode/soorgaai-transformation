@@ -72,7 +72,21 @@ const modelCatalogEntrySchema = new mongoose.Schema({
   //
   // Preferred over the token prices when present. It is what a
   // cost-per-task comparison is actually made of.
+  //
+  // Kept as the figure to use when a category has none of its own.
   indexCost: { type: Number, default: null },
+
+  // Cost per task PER CATEGORY, keyed the same way as `scores`.
+  //
+  // The same model costs different amounts on different benchmarks, because a
+  // benchmark is a workload: Claude Opus 5 (max) runs Strategy & Ops for $3.01
+  // and Engineering for $2.25. One number per model cannot hold both, and the
+  // second table entered would have silently overwritten the first.
+  //
+  // Cost and score are therefore a pair. A score without the cost measured
+  // alongside it cannot answer "acceptable quality at the lowest price", which
+  // is the only question this catalog exists to answer.
+  indexCosts: { type: Map, of: Number, default: () => new Map() },
 
   // ── Shape ──────────────────────────────────────────────────────────────
   // paramsB is what the compute requirement is DERIVED from — see
@@ -93,6 +107,7 @@ const modelCatalogEntrySchema = new mongoose.Schema({
   // ── Scores ─────────────────────────────────────────────────────────────
   scores: {
     strategyOps:             scoreField,   // Strategy & Operations
+    engineering:             scoreField,   // Engineering
     intelligence:            scoreField,   // AA Intelligence Index
     agentic:                 scoreField,   // AA Agentic Index
     coding:                  scoreField,   // Terminal-Bench

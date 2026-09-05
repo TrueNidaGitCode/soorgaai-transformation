@@ -171,11 +171,49 @@ console.log('\n9. a startup blueprint derives the band rule');
     Object.keys(d.requirements).length === 0, JSON.stringify(d.requirements));
   check('every derivation carries a reason', d.reasons.length >= 2, d.reasons.join(' | '));
 
+  // Engineering, not 'coding'. Terminal-Bench has no entries in the catalog,
+  // so routing software work there would exclude every model and return
+  // nothing — a ranking on a benchmark nobody has been measured against.
   const coding = deriveRecommendationInputs({ businessObjective: 'Generate code for the developer SDK' });
-  check('a coding use case ranks on coding', coding.focus === 'coding', coding.focus);
+  check('a software use case ranks on Engineering', coding.focus === 'engineering', coding.focus);
   const gov = deriveRecommendationInputs({ businessObjective: 'Automate regulatory compliance reporting' });
   check('a compliance use case ranks on hallucination resistance',
     gov.focus === 'hallucinationResistance', gov.focus);
+}
+
+console.log();
+console.log('10. cost is read from the category being ranked on');
+{
+  // The real case: one model, two benchmarks, two different bills. Cheap on
+  // the index being ranked and expensive on the other one, so using the wrong
+  // cost changes which model wins rather than merely mislabelling it.
+  const twoTables = [
+    { modelId: 'cheap-here', displayName: 'Cheap Here', type: 'frontier', providers: ['A'],
+      scores: { strategyOps: 50, engineering: 60 },
+      indexCosts: { strategyOps: 4.00, engineering: 0.50 } },
+    { modelId: 'cheap-there', displayName: 'Cheap There', type: 'frontier', providers: ['A'],
+      scores: { strategyOps: 50, engineering: 60 },
+      indexCosts: { strategyOps: 0.50, engineering: 4.00 } },
+  ];
+
+  const eng = recommendModels(twoTables, {
+    focus: 'engineering', acceptableRange: { min: 55, max: 65 },
+  });
+  check('the cheapest ON THAT BENCHMARK wins', eng.picks[0]?.modelId === 'cheap-here', eng.picks[0]?.modelId);
+  check('and the cost reported is the one it was ranked on', eng.picks[0]?.cost === 0.50, String(eng.picks[0]?.cost));
+
+  const ops = recommendModels(twoTables, {
+    focus: 'strategyOps', acceptableRange: { min: 45, max: 55 },
+  });
+  check('the other table gives the other answer', ops.picks[0]?.modelId === 'cheap-there', ops.picks[0]?.modelId);
+  check('at the other price', ops.picks[0]?.cost === 0.50, String(ops.picks[0]?.cost));
+
+  // A model measured before costs were split by category still has to price.
+  const legacy = recommendModels(
+    [{ modelId: 'legacy', displayName: 'Legacy', type: 'frontier', providers: ['A'],
+       scores: { engineering: 60 }, indexCost: 1.25 }],
+    { focus: 'engineering', acceptableRange: { min: 55, max: 65 } });
+  check('a model with only a flat cost falls back to it', legacy.picks[0]?.cost === 1.25, String(legacy.picks[0]?.cost));
 }
 
 console.log(pass ? '\nALL PASS' : '\nFAILURES ABOVE');

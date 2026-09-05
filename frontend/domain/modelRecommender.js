@@ -22,10 +22,12 @@ const esc = (t) => String(t ?? '')
  *  not a bare number someone has to take on faith. */
 const FOCUS_ABOUT = {
   strategyOps: 'Domain knowledge across business and management, accounting, corporate and markets, plus strategy and planning, customer support and records management.',
+  engineering: 'Building and changing software — the score and the cost are both measured on that work, not carried over from another benchmark.',
 };
 
 const FOCUS_LABEL = {
   strategyOps:             'Strategy & Ops',
+  engineering:             'Engineering',
   intelligence:            'Intelligence',
   agentic:                 'Agentic',
   coding:                  'Coding',
@@ -102,7 +104,7 @@ function render(state) {
                 <span class="mr__tags">${p.type === 'open-weight' ? 'open weight' : 'frontier'}</span>
               </td>
               <td class="mr__num">${p.focusScore ?? '—'}</td>
-              <td class="mr__num mr__cost">${money(p.indexCost ?? p.cost)}</td>
+              <td class="mr__num mr__cost">${money(p.cost ?? p.indexCost)}</td>
               <td><button type="button" class="aria-action-btn aria-action-btn--primary" data-choose>Choose</button></td>
             </tr>`).join('')}
         </tbody>

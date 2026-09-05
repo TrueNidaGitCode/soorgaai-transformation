@@ -32,7 +32,7 @@
 
 /** The indices a recommendation can be ranked on. */
 export const FOCUS_INDICES = [
-  'strategyOps', 'intelligence', 'agentic', 'coding', 'math', 'instructionFollowing',
+  'strategyOps', 'engineering', 'intelligence', 'agentic', 'coding', 'math', 'instructionFollowing',
   'longContext', 'documentCreation', 'knowledge', 'hallucinationResistance',
 ];
 
@@ -80,8 +80,21 @@ const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
  *
  * Falls back to a blend when the index cost is not published, weighted toward
  * output because generation dominates the bill on the workloads Svarg builds.
+ *
+ * Read PER CATEGORY first. A benchmark is a workload, so the same model bills
+ * differently on each one — Claude Opus 5 (max) is $3.01 on Strategy & Ops and
+ * $2.25 on Engineering. Ranking Engineering on the Strategy & Ops price would
+ * compare models on a bill none of them would send.
  */
-function costOf(m) {
+function costOf(m, focusKey) {
+  const perCategory = m.indexCosts;
+  const own = num(
+    perCategory && typeof perCategory.get === 'function'
+      ? perCategory.get(focusKey)          // hydrated document: a Map
+      : perCategory?.[focusKey]            // .lean(): a plain object
+  );
+  if (own !== null) return own;
+
   const idx = num(m.indexCost);
   if (idx !== null) return idx;
   const i = num(m.priceIn), o = num(m.priceOut);
@@ -184,7 +197,7 @@ export function recommendModels(catalog, {
   }
 
   const scores = candidates.map(m => num(m.scores[focusKey]));
-  const prices = candidates.map(costOf);
+  const prices = candidates.map(m => costOf(m, focusKey));
   const speeds = candidates.map(m => num(m.medianTokensPerSecond));
 
   // ── The band rule ────────────────────────────────────────────────────────
@@ -283,7 +296,8 @@ function plain(m) {
   return {
     modelId: m.modelId, displayName: m.displayName, vendor: m.vendor, type: m.type,
     providers: m.providers || [], providerId: m.providerId || '',
-    priceIn: m.priceIn, priceOut: m.priceOut, indexCost: m.indexCost,
+    priceIn: m.priceIn, priceOut: m.priceOut,
+    indexCost: m.indexCost, indexCosts: m.indexCosts,
     reasoning: !!m.reasoning,
     medianTokensPerSecond: m.medianTokensPerSecond,
     paramsB: m.paramsB, contextTokens: m.contextTokens,
@@ -318,8 +332,8 @@ export function deriveRecommendationInputs(blueprint) {
     focus = 'strategyOps'; reasons.push('The use case is strategy or operations work, so ranking is on the Strategy & Ops score.');
   } else if (/\b(complian|governance|audit|regulat|legal|medical|clinical|safety)/.test(useCase)) {
     focus = 'hallucinationResistance'; reasons.push('The use case carries a cost for being confidently wrong, so ranking is on hallucination resistance.');
-  } else if (/\b(code|coding|refactor|repositor|developer|sdk|program)/.test(useCase)) {
-    focus = 'coding'; reasons.push('The use case is about writing or changing code, so ranking is on the coding benchmark.');
+  } else if (/\b(code|coding|engineer|refactor|repositor|developer|sdk|program|api|migrat|debug|test)/.test(useCase)) {
+    focus = 'engineering'; reasons.push('The use case is about building or changing software, so ranking is on the Engineering score.');
   } else if (/\b(report|document|proposal|summar|memo|contract)/.test(useCase)) {
     focus = 'documentCreation'; reasons.push('The use case produces documents, so ranking is on document creation.');
   } else if (/\b(agent|workflow|tool use|automat|orchestrat)/.test(useCase)) {

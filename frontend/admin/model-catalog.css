@@ -118,3 +118,9 @@
   background: rgba(92,197,167,0.18);
   color: #5CC5A7;
 }
+
+/* Score and its cost, side by side — they are one measurement taken on one
+   benchmark, and entering them apart is how a score ends up paired with a
+   price from a different workload. */
+.mc-pair { display: flex; gap: 8px; }
+.mc-pair input { min-width: 0; flex: 1; }

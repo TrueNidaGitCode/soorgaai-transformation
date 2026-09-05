@@ -142,7 +142,10 @@ export async function prepareInfrastructure(req, res) {
 
     const target = getDeployTarget();
     if (!target.configured()) {
-      return res.status(503).json({ error: 'Svarg hosting is not available yet — no deploy target is configured.' });
+      // Names the variable. 'No deploy target is configured' is true and
+      // unactionable — it does not say whether this is a bug, a plan limit,
+      // or one missing line in .env.
+      return res.status(503).json({ error: 'Svarg hosting is not configured on this server: RAILWAY_API_TOKEN is not set. Choose "Your own environment" to continue without it.' });
     }
 
     // No gateway token here. It is the APPLICATION's credential, and attach()
@@ -262,7 +265,10 @@ export async function attachApplication(req, res) {
 
     const target = getDeployTarget();
     if (!target.configured()) {
-      return res.status(503).json({ error: 'Svarg hosting is not available yet — no deploy target is configured.' });
+      // Names the variable. 'No deploy target is configured' is true and
+      // unactionable — it does not say whether this is a bug, a plan limit,
+      // or one missing line in .env.
+      return res.status(503).json({ error: 'Svarg hosting is not configured on this server: RAILWAY_API_TOKEN is not set. Choose "Your own environment" to continue without it.' });
     }
 
     dep.repo = { owner: String(owner), name: String(name) };

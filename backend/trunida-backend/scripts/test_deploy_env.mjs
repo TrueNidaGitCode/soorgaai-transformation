@@ -5,6 +5,7 @@
  */
 import { buildTenantEnv, tenantDbName, tenantMongoUri, assertDestroyable, tenantProjectName, TENANT_PREFIX } from '../services/deployTargetService.js';
 import { classifyUpstreamError } from '../services/gatewayService.js';
+import { ADVISORY_CATALOG } from '../config/modelCatalog.js';
 
 let pass = 0, fail = 0;
 function check(name, actual, expected) {
@@ -50,8 +51,14 @@ check('generation is routed through the gateway', e.SELFHOSTED_BASE_URL, 'https:
 check('...using the deployment token as its key', e.SELFHOSTED_API_KEY, 'svd_abc');
 check('...and the chain pinned so nothing bypasses it', e.PROVIDER_CHAIN, 'selfhosted');
 check('the model is the one Arth resolved', e.SELFHOSTED_MODEL, 'claude-sonnet-5');
+// Reads the catalog rather than repeating a model name. Pinning the literal
+// left this red when gemini-2.5-flash was retired and the catalog moved to
+// 3.8 — the code was right and the test was asserting last year's answer.
+const geminiFlash = ADVISORY_CATALOG.find(m => m.id === 'gemini-flash');
 check('a different pick yields a different model',
-  env({ deployment: { model: { modelId: 'gemini-flash' } } }).SELFHOSTED_MODEL, 'gemini-2.5-flash');
+  env({ deployment: { model: { modelId: 'gemini-flash' } } }).SELFHOSTED_MODEL, geminiFlash.apiModel);
+check('...and that model is the one the catalog actually names',
+  geminiFlash.apiModel !== undefined && geminiFlash.apiModel.length > 0, true);
 
 // ── Embeddings ──────────────────────────────────────────────────────────────
 check('embeddings go through the gateway too', e.SELFHOSTED_EMBEDDING_BASE_URL, 'https://svarg.example/api/gateway/v1');

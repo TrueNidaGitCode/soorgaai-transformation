@@ -428,6 +428,11 @@ export async function retrieveCode({ userId, blueprintId, queryText, topK = 6 })
  * caller persists them.
  */
 export async function analyzeRepository({ access, repoFullName, userId, blueprintId, datasets = [] }) {
+  // Timed because "how long does a repository take" is the first question
+  // anyone asks before pointing this at a large one, and it was unanswerable.
+  // Reported per phase: fetching is network-bound and profiling is model-bound,
+  // and which dominates decides whether to tune caps or change model.
+  const t0 = Date.now();
   const tree = await readTree(access, repoFullName);
   const { selected, capped } = selectFiles(tree.files);
 
@@ -441,9 +446,20 @@ export async function analyzeRepository({ access, repoFullName, userId, blueprin
     files.push({ path: f.path, category: f.category, content: redactedText });
   }
 
+  const tFetched = Date.now();
   const profile = await deriveProfile(files);
+  const tProfiled = Date.now();
   const matches = await matchDatasets(datasets, profile.entities);
   const { stored } = await storeCodeChunks({ userId, blueprintId, repoFullName, files });
+  const done = Date.now();
+
+  const chars = files.reduce((n, f) => n + f.content.length, 0);
+  const secs = (ms) => (ms / 1000).toFixed(1) + 's';
+  console.log(
+    `[codebaseProfile] ${repoFullName}: ${files.length} files, ${chars.toLocaleString()} chars `
+    + `— fetch ${secs(tFetched - t0)}, profile ${secs(tProfiled - tFetched)}, `
+    + `match+store ${secs(done - tProfiled)}, total ${secs(done - t0)}`
+  );
 
   return {
     profile,
@@ -455,6 +471,8 @@ export async function analyzeRepository({ access, repoFullName, userId, blueprin
       // Both mean "this profile describes part of the repository, not all of
       // it", and the screen should be able to say so.
       partial:     capped || tree.truncated,
+      chars,
+      elapsedMs:   done - t0,
     },
   };
 }

@@ -85,7 +85,10 @@ console.log('\n3. source is redacted before it is stored');
   // measured where storeCodeChunks is DEFINED, not where it is called, so the
   // ordering it reported was meaningless.
   const body = src.slice(src.indexOf('export async function analyzeRepository'));
-  const readIdx   = body.indexOf('getFileContent(');
+  // Renamed when reading moved to githubReadService. The assertion looked for
+  // the old name and silently reported -1, which compares as "before
+  // everything" — the ordering check would have passed no matter what.
+  const readIdx   = body.indexOf('readFile(');
   const redactIdx = body.indexOf('regexRedact(');
   const storeIdx  = body.indexOf('await storeCodeChunks(');
   check('redacts after reading and before storing',

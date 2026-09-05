@@ -1052,7 +1052,9 @@ function showUploadError(message) {
   el.style.display = message ? 'block' : 'none';
 }
 
-const UPLOAD_EXTS = ['.csv', '.json', '.txt', '.md'];
+// Must stay in step with ACCEPTED in uploadController — the browser filters
+// first so the user is not told about a rejection the server would repeat.
+const UPLOAD_EXTS = ['.csv', '.tsv', '.json', '.txt', '.md', '.sql', '.prisma', '.yaml', '.yml', '.xml'];
 const UPLOAD_BATCH = 15;          // files per request; the server caps at 20
 
 /**
@@ -1070,7 +1072,7 @@ async function handleFolderPick(fileList) {
   showUploadError('');
 
   if (!files.length) {
-    showUploadError(`No .csv, .json, .txt or .md files in that folder. Other formats need a parser Svarg does not have yet.`);
+    showUploadError(`No readable text files in that folder. Svarg accepts ${UPLOAD_EXTS.join(', ')} — other formats need a parser it does not have yet.`);
     return;
   }
   if (!_blueprintId) return;

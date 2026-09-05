@@ -31,7 +31,14 @@ import { classifyUploads } from '../services/uploadClassifierService.js';
  * not have, and a truthful refusal is better than storing the mojibake that
  * results from reading a binary as text.
  */
-const ACCEPTED = ['.csv', '.json', '.txt', '.md'];
+const ACCEPTED = [
+  '.csv', '.tsv', '.json', '.txt', '.md',
+  // Schema files are data descriptions, and a blueprint asks for them by name
+  // — one of the first customer's required datasets is literally "Data Schema
+  // Definitions … Prisma schema". Rejecting the format that satisfies a
+  // required dataset made the list narrower than the product's own questions.
+  '.sql', '.prisma', '.yaml', '.yml', '.xml',
+];
 
 /** Matches the 2 MB body limit on this route; see routes/uploadRoutes.js. */
 const MAX_TEXT_CHARS = 2_000_000;

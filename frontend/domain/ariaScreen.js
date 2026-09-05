@@ -1033,11 +1033,6 @@ function renderUploadList() {
   const list = document.getElementById('aria-upload-list');
   if (!list) return;
 
-  if (!_cachedDatasets.length) {
-    list.innerHTML = `<p class="ks-card-body">Data Readiness hasn't finished generating yet.</p>`;
-    return;
-  }
-
   const unplaced = _allUploads.filter(u => !u.datasetName);
   const unplacedHtml = unplaced.length ? `
     <div class="aria-upload-unplaced">
@@ -1047,20 +1042,7 @@ function renderUploadList() {
       ${unplaced.length > 12 ? `<span class="aria-upload-unplaced__file">and ${unplaced.length - 12} more</span>` : ''}
     </div>` : '';
 
-  // A status view, not a set of controls. Per-dataset upload buttons asked the
-  // user to sort their own files into the blueprint's categories, which is
-  // exactly the work the classifier exists to do.
-  list.innerHTML = _cachedDatasets.map(d => {
-    const up = _uploads.get(d.name);
-    return `
-      <div class="aria-upload-row">
-        <div class="aria-upload-row__main">
-          <span class="aria-row-name__title">${esc(d.name)}</span>
-          <span class="aria-row-name__desc">${up ? esc(up.path || up.filename) : esc(d.purpose)}</span>
-        </div>
-        <span class="aria-upload-row__state ${up ? 'aria-upload-row__state--covered' : ''}">${up ? 'Covered' : 'No file yet'}</span>
-      </div>`;
-  }).join('') + unplacedHtml;
+  list.innerHTML = unplacedHtml;
 }
 
 function showUploadError(message) {

@@ -309,11 +309,16 @@ export async function saveArthSelection(req, res) {
       return res.status(400).json({ error: 'preference must be frontier, open-weight or auto.' });
     }
 
-    const { findModel, computeProfile } = await import('../services/modelAdvisorService.js');
+    const { computeProfile } = await import('../services/modelAdvisorService.js');
+    const { resolveSelectableModel } = await import('../services/selectableModelService.js');
     let selection;
 
     if (modelId) {
-      const model = findModel(modelId);
+      // Resolved across both catalogs. Validating only against the advisory ten
+      // meant every model the picker offered was rejected on save — "That model
+      // is not in the catalog", about a catalog page listing exactly those
+      // twenty-four models.
+      const model = await resolveSelectableModel(modelId);
       if (!model) return res.status(400).json({ error: 'That model is not in the catalog.' });
       // A frontier pick recorded under the open-weight class (or the reverse)
       // would misstate the data-residency decision, which is the whole point

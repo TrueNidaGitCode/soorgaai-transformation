@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Catalog - Svarg Admin</title>
+
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="model-catalog.css?v=1">
+    <script src="../login/config.js"></script>
+</head>
+<body>
+    <header>
+        <div id="navbar-container"></div>
+    </header>
+
+    <main class="admin-dashboard">
+        <div class="dashboard-header">
+            <h1>Model Catalog</h1>
+            <p class="header-subtitle">
+                The evidence Arth recommends from. Scores are published benchmark figures —
+                enter them as they are, and record which release they came from. A model with
+                no score on an index is excluded from that ranking with a reason, never
+                treated as zero, because a missing measurement is not a bad one.
+            </p>
+        </div>
+
+        <div id="mc-banner" class="cl-banner" style="display:none" role="alert"></div>
+
+        <!-- Coverage first: an unscored catalog recommends nothing, and that
+             should be the first thing an admin sees rather than something they
+             discover from an empty Arth screen. -->
+        <div class="admin-panel" id="mc-summary-panel">
+            <div class="panel-header"><h2>Coverage</h2></div>
+            <p id="mc-summary" class="mc-summary">Loading…</p>
+        </div>
+
+        <div class="admin-panel">
+            <div class="panel-header"><h2>Add a Model</h2></div>
+            <form id="mc-create-form" class="signal-form">
+                <div class="mc-grid">
+                    <div class="form-group">
+                        <label for="mc-modelId">Model ID</label>
+                        <input type="text" id="mc-modelId" placeholder="claude-opus" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="mc-displayName">Display name</label>
+                        <input type="text" id="mc-displayName" placeholder="Claude Opus" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="mc-vendor">Vendor</label>
+                        <input type="text" id="mc-vendor" placeholder="Anthropic">
+                    </div>
+                    <div class="form-group">
+                        <label for="mc-type">Type</label>
+                        <select id="mc-type">
+                            <option value="frontier">Frontier</option>
+                            <option value="open-weight">Open weight</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">Add model</button>
+            </form>
+        </div>
+
+        <div class="admin-panel">
+            <div class="panel-header">
+                <h2>Models</h2>
+                <input type="search" id="mc-filter" class="mc-filter" placeholder="Filter by name, vendor or provider">
+            </div>
+            <div id="mc-list">Loading…</div>
+        </div>
+    </main>
+
+    <script src="../login/sessionGuard.js"></script>
+    <script src="model-catalog.js?v=1"></script>
+</body>
+</html>

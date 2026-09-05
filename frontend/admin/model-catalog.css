@@ -1,0 +1,73 @@
+/* Svarg — Model Catalog admin
+   A dense editing surface: this page exists to get many numbers in accurately,
+   so it favours a compact grid over generous spacing. */
+
+.mc-summary { margin: 0; font-size: 14px; line-height: 1.6; }
+.mc-summary strong { color: #fff; }
+.mc-summary--warn { color: #D4AF6E; }
+
+.mc-filter {
+  padding: 7px 10px;
+  min-width: 260px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.04);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+}
+
+.mc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.mc-model {
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.mc-model__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  cursor: pointer;
+  background: rgba(255,255,255,0.02);
+}
+.mc-model__head:hover { background: rgba(255,255,255,0.05); }
+.mc-model__name { font-weight: 600; }
+.mc-model__meta { font-size: 12px; color: rgba(255,255,255,0.42); }
+
+/* Whether this row can actually be recommended. An unscored model is the
+   single most useful thing to see at a glance on this page. */
+.mc-model__state {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.mc-model__state--scored   { background: rgba(92,197,167,0.16); color: #5CC5A7; }
+.mc-model__state--unscored { background: rgba(212,175,110,0.16); color: #D4AF6E; }
+
+.mc-model__body { padding: 14px; border-top: 1px solid rgba(255,255,255,0.07); }
+.mc-section-label {
+  margin: 14px 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.mc-section-label:first-child { margin-top: 0; }
+
+.mc-caps { display: flex; flex-wrap: wrap; gap: 14px; }
+.mc-caps label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+
+.mc-actions { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
+.mc-saved { font-size: 12.5px; color: #5CC5A7; }
+.mc-provenance { margin-top: 10px; font-size: 11.5px; color: rgba(255,255,255,0.35); }

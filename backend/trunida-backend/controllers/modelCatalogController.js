@@ -189,8 +189,24 @@ export async function recommendForBlueprint(req, res) {
     const catalog = await ModelCatalogEntry.find({ active: true }).lean();
     const result = recommendModels(catalog, input);
 
+    // The benchmark tables are advice. They say which model is worth wanting
+    // for this kind of work and what it would cost — they are not a list of
+    // things Svarg can run, and none of their rows carries a provider.
+    //
+    // So the answer has two halves, and the screen has to show both: what is
+    // recommended, and what can actually be run. Sending only the first is
+    // what produced a picker whose every option failed on save.
+    const { runnableModels, pickRunnable } = await import('../services/selectableModelService.js');
+    const runnable = runnableModels();
+    const autoPick = pickRunnable(input.confidence);
+
     return res.json({
       ...result,
+      // Advice, explicitly. Every pick is flagged so the screen cannot present
+      // one as selectable by omission.
+      picks: (result.picks || []).map(p => ({ ...p, adviceOnly: !p.providerId })),
+      runnable,
+      autoPick: autoPick?.id || '',
       input,
       derived,
       // Without this, an empty result looks like a broken feature rather than

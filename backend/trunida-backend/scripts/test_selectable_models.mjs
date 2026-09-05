@@ -12,11 +12,19 @@
  *
  *   node scripts/test_selectable_models.mjs
  */
-import 'dotenv/config';
+// Loaded relative to this file, not the working directory. `dotenv/config`
+// resolves .env against cwd, so the test passed from backend/trunida-backend
+// and died with "uri must be a string" from the repo root — which is where the
+// rest of the checks are run from, so it would simply have stopped being run.
+import { config } from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '.env') });
+
 import mongoose from 'mongoose';
 import ModelCatalogEntry from '../models/ModelCatalogEntry.js';
 import { ADVISORY_CATALOG } from '../config/modelCatalog.js';
-import { resolveSelectableModel } from '../services/selectableModelService.js';
+import { resolveSelectableModel, runnableModels, pickRunnable } from '../services/selectableModelService.js';
 import { recommendModels, deriveRecommendationInputs, FOCUS_INDICES } from '../services/modelRecommenderService.js';
 
 let pass = true;
@@ -89,6 +97,51 @@ console.log('\n5. servability is reported, not assumed');
   for (const m of catalog) if (await (async () => (await resolveSelectableModel(m.modelId)).servable)()) servable.push(m.modelId);
   console.log(`  NOTE  ${servable.length} of ${catalog.length} benchmark models carry a providerId`
     + ` — the rest can be chosen and recorded, but the gateway cannot route to them yet.`);
+}
+
+console.log('\n6. what can actually be run');
+{
+  const runnable = runnableModels();
+  check('there is something to run', runnable.length > 0, runnable.map(m => m.id).join(', '));
+  check('every runnable model has a provider behind it',
+    runnable.every(m => m.providerId), runnable.map(m => m.id + '=' + m.providerId).join(', '));
+  check('none of them is open weight — Svarg runs no GPUs for tenants',
+    runnable.every(m => m.type === 'frontier'));
+
+  // The bug this whole split exists for: a picker offering models nothing can
+  // serve. Whatever is runnable must also resolve, or Confirm fails again.
+  const unresolvable = [];
+  for (const m of runnable) if (!await resolveSelectableModel(m.id)) unresolvable.push(m.id);
+  check('and every one of them can be saved', unresolvable.length === 0,
+    unresolvable.join(', ') || 'all resolve');
+}
+
+console.log('\n7. Auto lands on something runnable, at the cheapest that clears the band');
+{
+  const runnableIds = new Set(runnableModels().map(m => m.id));
+  for (const confidence of ['very-high', 'high', 'medium']) {
+    const picked = pickRunnable(confidence);
+    check(`${confidence} picks a model that can be run`,
+      !!picked && runnableIds.has(picked.id), picked ? picked.id : 'nothing');
+  }
+
+  // The rule, not just the outcome: a band that demands more quality must never
+  // come back cheaper than one that demands less.
+  const blended = (m) => (m.priceIn ?? 0) * 0.35 + (m.priceOut ?? 0) * 0.65;
+  const vh = pickRunnable('very-high');
+  const med = pickRunnable('medium');
+  check('a lower band is never more expensive than a higher one',
+    blended(med) <= blended(vh),
+    `medium ${med.id} $${blended(med).toFixed(2)} vs very-high ${vh.id} $${blended(vh).toFixed(2)}`);
+
+  check('the top band only returns a model graded best',
+    pickRunnable('very-high').quality === 'best', vh.quality);
+
+  // Coarse on purpose, and worth saying so: these five are graded by adjective
+  // because that is the only data they have. Scoring them on the same
+  // benchmarks as the tables is the real fix, whenever those numbers exist.
+  console.log('  NOTE  the band-to-quality mapping is a bridge between a measured scale'
+    + ' and an adjective, not a measurement.');
 }
 
 await mongoose.disconnect();

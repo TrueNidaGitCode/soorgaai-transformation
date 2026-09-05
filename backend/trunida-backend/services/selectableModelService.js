@@ -73,3 +73,68 @@ export async function isServable(modelId) {
   const m = await resolveSelectableModel(modelId);
   return !!m?.servable;
 }
+
+// Which provider needs which key. A providerId with no key behind it is a
+// model that looks available and fails on its first request, which is the
+// same lie as an unmapped benchmark row wearing a provider name.
+const PROVIDER_KEY = {
+  claude:     () => process.env.ANTHROPIC_API_KEY,
+  gemini:     () => process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY,
+  openai:     () => process.env.OPENAI_API_KEY,
+  selfhosted: () => process.env.SELFHOSTED_BASE_URL,
+};
+
+/**
+ * The models a customer can actually be put onto today.
+ *
+ * The benchmark tables are advice: they say which model is worth wanting for
+ * this kind of work and what it would cost. They are not a list of things
+ * Svarg can run, and treating them as one is what produced a picker whose
+ * every option failed.
+ *
+ * This is the other list — the models with a provider behind them and a key
+ * for that provider in this environment. Open weight is excluded: it needs a
+ * GPU Svarg does not run for tenants, which is also why the class is locked.
+ */
+export function runnableModels() {
+  return ADVISORY_CATALOG
+    .filter(m => m.type === 'frontier' && m.providerId)
+    .filter(m => !!PROVIDER_KEY[m.providerId]?.())
+    .map(m => ({ ...m, servable: true, source: 'advisory' }));
+}
+
+/** Blended price per million tokens, weighted toward output because generation
+ *  dominates the bill on the workloads Svarg builds. */
+const blended = (m) => (m.priceIn ?? m.priceOut ?? 0) * 0.35 + (m.priceOut ?? m.priceIn ?? 0) * 0.65;
+
+/**
+ * What Auto should run on, given how much confidence the work needs.
+ *
+ * A bridge, and worth naming as one. The confidence band is measured on the
+ * benchmark tables; the runnable models are graded by the adjectives the
+ * advisory catalog has always carried. There is no shared scale between them,
+ * so this maps band to a quality floor and takes the cheapest model clearing
+ * it — the same rule as everywhere else, applied to the only data these five
+ * models actually have.
+ *
+ * It is honest about being coarse. Scoring these five on the same benchmarks
+ * as the tables would replace the judgement with a measurement, and that is
+ * the real fix whenever those numbers exist.
+ */
+export function pickRunnable(confidence) {
+  const runnable = runnableModels();
+  if (!runnable.length) return null;
+
+  const floors = {
+    'very-high': ['best'],
+    high:        ['best', 'good'],
+    medium:      ['best', 'good', 'fair'],
+  };
+  const allowed = floors[confidence] || floors.high;
+
+  const clearing = runnable.filter(m => allowed.includes(m.quality));
+  // Nothing clears the floor: return the best available rather than nothing,
+  // and let the caller say that the floor was not met.
+  const pool = clearing.length ? clearing : runnable;
+  return pool.slice().sort((a, b) => blended(a) - blended(b))[0];
+}

@@ -167,6 +167,14 @@ const RECOMMENDED = ${JSON.stringify([
   { modelId: 'claude-opus-5-high',                   displayName: 'Claude Opus 5 (high)',                   vendor: 'Anthropic', type: 'frontier', focusScore: 52, cost: 1.55, inBand: false, confidenceLabel: 'High Confidence' },
 ])};
 
+const RUNNABLE = ${JSON.stringify([
+  { id: 'claude-opus',   displayName: 'Claude Opus',   vendor: 'Anthropic', type: 'frontier', providerId: 'claude', quality: 'best', cost: 'high',   performance: 'high' },
+  { id: 'claude-sonnet', displayName: 'Claude Sonnet', vendor: 'Anthropic', type: 'frontier', providerId: 'claude', quality: 'best', cost: 'medium', performance: 'high' },
+  { id: 'gpt-5',         displayName: 'GPT-5',         vendor: 'OpenAI',    type: 'frontier', providerId: 'openai', quality: 'best', cost: 'high',   performance: 'high' },
+  { id: 'gemini-pro',    displayName: 'Gemini Pro',    vendor: 'Google',    type: 'frontier', providerId: 'gemini', quality: 'good', cost: 'medium', performance: 'high' },
+  { id: 'gemini-flash',  displayName: 'Gemini Flash',  vendor: 'Google',    type: 'frontier', providerId: 'gemini', quality: 'fair', cost: 'low',    performance: 'high' },
+])};
+
 const CATALOG = ${JSON.stringify({
   frontier: [
     { id:'claude-opus', displayName:'Claude Opus', vendor:'Anthropic', type:'frontier', quality:'best', cost:'high', performance:'high', strengths:'Long-context reasoning.' },
@@ -200,7 +208,9 @@ window.fetch = function (url, opts) {
     const limit = (JSON.parse(opts && opts.body || '{}').limit) || 5;
     window.__lastRecommend = { limit: limit };
     return J({
-      picks: RECOMMENDED.slice(0, limit),
+      picks: RECOMMENDED.slice(0, limit).map(function (m) { return Object.assign({}, m, { adviceOnly: true }); }),
+      runnable: RUNNABLE,
+      autoPick: 'gpt-5',
       rule: 'cheapest-in-confidence-band',
       focus: 'strategyOps', confidence: 'very-high', requestedConfidence: 'very-high',
       widened: false, filled: limit > 3,
@@ -354,23 +364,44 @@ setTimeout(function () {
       if (out.tabs.indexOf('upload') === -1) bad('Upload tab missing (tabs: ' + out.tabs + ')');
     }
 
-    // Arth's shortlist, as the customer meets it: five models under Frontier,
-    // each showing the two numbers the choice is made on.
+    // Arth's two lists. The benchmark tables are advice — they carry no
+    // provider, so nothing on them can be run — and the models that can be
+    // run are the ones that may be chosen. Presenting the first as choices is
+    // what produced a picker whose every option failed on save.
     if (out.screen === 'arth') {
-      var cards = scr.querySelectorAll('#arth-models .arth-model');
-      out.shortlist = cards.length;
-      if (cards.length !== 5) bad('Frontier shortlist has ' + cards.length + ' models, expected 5');
+      var advice = scr.querySelectorAll('#arth-models .arth-model--advice');
+      var pickable = scr.querySelectorAll('#arth-models .arth-model[data-model]');
+      out.advice = advice.length;
+      out.pickable = pickable.length;
 
-      // A card without both numbers is a card you cannot choose between.
+      if (advice.length !== 5) bad('advice list has ' + advice.length + ' models, expected 5');
+      if (!pickable.length) bad('nothing on the picker can be selected');
+
+      // Enforced, not styled: an advice card carries no data-model, so the
+      // click handler cannot reach it however it looks.
+      var selectableAdvice = 0;
+      for (var a = 0; a < advice.length; a++) {
+        if (advice[a].hasAttribute('data-model')) selectableAdvice++;
+      }
+      if (selectableAdvice) bad(selectableAdvice + ' advice cards are selectable');
+
+      // Whatever is selected must be runnable. A selection resting on an
+      // advice row is exactly the state this split exists to prevent, and it
+      // is visible on the settled screen without clicking anything.
+      var sel = scr.querySelector('#arth-models .arth-model--on');
+      out.selected = sel ? (sel.getAttribute('data-model') || 'AN ADVICE ROW') : 'nothing';
+      if (out.selected === 'AN ADVICE ROW') bad('the selected model cannot be run');
+
+      // The two numbers the choice is made on, on every advice card.
       var withBoth = 0;
-      for (var c = 0; c < cards.length; c++) {
-        var t = cards[c].textContent || '';
+      for (var c = 0; c < advice.length; c++) {
+        var t = advice[c].textContent || '';
         // The currency symbol too: a template-literal slip once dropped it and
         // left a bare number, which reads as a score rather than a price.
         var priced = t.indexOf(String.fromCharCode(36)) !== -1;
         if (t.indexOf('Score') !== -1 && t.indexOf('Cost') !== -1 && priced) withBoth++;
       }
-      if (withBoth !== cards.length) bad(withBoth + ' of ' + cards.length + ' cards show both score and cost');
+      if (withBoth !== advice.length) bad(withBoth + ' of ' + advice.length + ' advice cards show both score and cost');
 
       // Svarg's own derivation is internal. It used to be printed above the
       // shortlist as if it were product copy — which benchmark was ranked on,
@@ -593,7 +624,7 @@ for (const screen of list) {
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" · ${r.collect} to collect` : '')
-    + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        shortlist ${r.shortlist} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : ''));
+    + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

@@ -46,6 +46,7 @@ let _blueprintId = null;
 let _chosen = null;          // the class: frontier | open-weight | auto
 let _model = null;           // the specific model id — this is the decision
 let _models = [];            // candidates currently on screen
+let _advice = [];            // what is recommended but cannot be run yet
 let _recommendation = null;  // Arth's pick, kept so its reasoning is saved
 let _hosting = null;         // svarg | self — where the application runs
 let _env = null;             // the prepared environment, once there is one
@@ -152,25 +153,15 @@ function computeLine(m) {
 
 const money = (v) => (v === null || v === undefined ? '—' : '$' + Number(v).toFixed(2));
 
-/**
- * The shortlist.
- *
- * Score and cost, and nothing else. An earlier version printed Svarg's own
- * derivation above this — which benchmark it ranked on, why it picked that
- * band, what the band measures — three paragraphs of internal reasoning shown
- * to the customer as if it were product copy. How the shortlist was arrived at
- * is Svarg's business; what is on it is the customer's.
- */
-function renderModels(models) {
-  const wrap = document.getElementById('arth-models');
-  if (!models.length) {
-    wrap.innerHTML = `<p class="ks-card-body">No models of this class in the catalog.</p>`;
-    return;
-  }
-  wrap.innerHTML = models.map(m => `
-    <button type="button" class="arth-model${_model === m.id ? ' arth-model--on' : ''}" data-model="${esc(m.id)}">
+/** One card. Advice cards carry no data-model, so the click handler cannot
+ *  select them — the thing that makes them advice is enforced, not styled. */
+function modelCard(m, advice) {
+  return `
+    <button type="button" class="arth-model${advice ? ' arth-model--advice' : ''}${
+      !advice && _model === m.id ? ' arth-model--on' : ''}"${advice ? '' : ` data-model="${esc(m.id)}"`}>
       <span class="arth-model__head">
-        <span class="arth-model__name">${esc(m.displayName)}</span>
+        <span class="arth-model__name">${esc(m.displayName)}${
+          advice ? '<span class="arth-model__advice">Advice only</span>' : ''}</span>
         <span class="arth-model__vendor">${esc(m.vendor)}</span>
       </span>
       ${m.focusScore != null ? `<span class="arth-model__tags">
@@ -180,8 +171,43 @@ function renderModels(models) {
       ${m.strengths ? `<span class="arth-model__strengths">${esc(m.strengths)}</span>` : ''}
       ${computeLine(m)}
       ${m.license ? `<span class="arth-model__license">${esc(m.license)}</span>` : ''}
-    </button>
-  `).join('');
+    </button>`;
+}
+
+/**
+ * The shortlist, in two halves, because the honest answer has two halves.
+ *
+ * The benchmark tables say which model is worth wanting for this kind of work
+ * and what it would cost. They do not say which endpoint serves it, and none of
+ * their rows carries a provider — so they are advice, and shown as advice.
+ * Presenting them as choices is what produced a picker whose every option
+ * failed the moment it was confirmed.
+ *
+ * Underneath is what can actually be run today. Fewer models, graded more
+ * coarsely, and real.
+ *
+ * Score and cost, and nothing else. An earlier version printed Svarg's own
+ * derivation above this — which benchmark it ranked on, why it picked that
+ * band, what the band measures — three paragraphs of internal reasoning shown
+ * to the customer as if it were product copy. How the shortlist was arrived at
+ * is Svarg's business; what is on it is the customer's.
+ */
+function renderModels(models, runnable) {
+  const wrap = document.getElementById('arth-models');
+  const advice = (models || []).filter(m => m.adviceOnly);
+  const pickable = (runnable && runnable.length ? runnable : (models || []).filter(m => !m.adviceOnly));
+
+  if (!advice.length && !pickable.length) {
+    wrap.innerHTML = `<p class="ks-card-body">No models of this class in the catalog.</p>`;
+    return;
+  }
+
+  wrap.innerHTML =
+    (advice.length ? `<p class="arth-group">Recommended for this use case</p>
+       <p class="arth-group__note">Benchmark guidance. Svarg does not run these yet.</p>
+       ${advice.map(m => modelCard(m, true)).join('')}` : '')
+    + (pickable.length ? `<p class="arth-group">Available to run</p>
+       ${pickable.map(m => modelCard(m, false)).join('')}` : '');
 }
 
 
@@ -478,9 +504,10 @@ function refreshConfirm() {
 /**
  * The models on offer: from the catalog, through the band the use case needs.
  *
- * Five for Frontier — a shortlist to choose from. One for Auto, already
- * selected, because Auto means Svarg decides. Both come from the same rule, so
- * Auto's answer is always the top row of the list Frontier would have shown.
+ * Five recommendations for Frontier, one for Auto. Both are advice: the
+ * benchmark tables have no provider behind them, so nothing on that list can be
+ * run. The runnable models come back alongside, and those are what is
+ * selectable.
  *
  * Open Weight still reads the advisory catalog, which carries the compute and
  * licence figures the model catalog has no equivalent for. It is locked, so
@@ -494,7 +521,7 @@ async function loadModels() {
       const q = document.getElementById('arth-quant').value;
       const data = await api(`/strategy-canvas/arth/models?type=${_chosen}&quantization=${q}`);
       _models = data.models || [];
-      renderModels(_models);
+      renderModels(_models, []);
       return;
     }
 
@@ -505,14 +532,23 @@ async function loadModels() {
 
     // modelId is the catalog's key; this screen has always keyed on id, and so
     // has everything it saves. Renaming here keeps that one name throughout.
-    _models = (data.picks || []).map(m => ({ ...m, id: m.modelId }));
-    _recommendation = auto ? (_models[0] || null) : null;
+    const advice = (data.picks || []).map(m => ({ ...m, id: m.modelId }));
+    const runnable = data.runnable || [];
 
-    // Auto decides. Leaving its single card unselected would make the customer
-    // confirm a choice they were just told they did not have to make.
-    if (auto && _models.length) _model = _models[0].id;
+    // _models is what a selection is looked up in, so it holds only what can
+    // actually be selected. Advice that leaked into it would let the confirm
+    // hint name a model the customer was never able to choose.
+    _models = runnable;
+    _advice = advice;
+    _recommendation = auto ? (advice[0] || null) : null;
 
-    renderModels(_models);
+    // Auto decides, and must decide on something runnable — the server works
+    // out which, from the same band the advice came from. Leaving it
+    // unselected would make the customer confirm a choice they were just told
+    // they did not have to make.
+    if (auto) _model = data.autoPick || (runnable[0] || {}).id || null;
+
+    renderModels(advice, runnable);
     refreshConfirm();
   } catch (err) {
     wrap.innerHTML = '';
@@ -566,7 +602,9 @@ function wire() {
     const b = e.target.closest('[data-model]');
     if (!b) return;
     _model = b.dataset.model;
-    renderModels(_models);
+    // Re-rendered with both halves, or the advice group would vanish the
+    // moment anything was selected.
+    renderModels(_advice, _models);
     refreshConfirm();
   });
 

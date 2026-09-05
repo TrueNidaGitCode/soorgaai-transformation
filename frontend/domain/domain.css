@@ -13373,3 +13373,35 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
   font-size: 12.5px;
   color: #D4AF6E;
 }
+
+/* A model that is recommended but cannot be run yet.
+   The benchmark tables say what is worth wanting for a kind of work; they carry
+   no provider, so nothing on them is servable. Shown as advice rather than
+   hidden — the recommendation is the useful part — but never as a choice, and
+   the card carries no data-model so it cannot be selected at all. */
+.arth-group {
+  /* .arth-models is a grid, so a heading placed in it becomes a column and
+     sits BESIDE the first card instead of above the group. Both of these span
+     the full row. */
+  grid-column: 1 / -1;
+  margin: 18px 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+}
+.arth-group__note { grid-column: 1 / -1; margin: 0 0 10px; font-size: 12.5px; color: rgba(255,255,255,0.4); }
+.arth-model--advice { opacity: 0.62; cursor: default; }
+.arth-model--advice:hover { border-color: rgba(255,255,255,0.09); }
+.arth-model__advice {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(212,175,110,0.16);
+  color: #D4AF6E;
+  vertical-align: middle;
+}

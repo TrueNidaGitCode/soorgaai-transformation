@@ -40,22 +40,19 @@ const esc = (t) => String(t ?? '')
 const money = (v) => (v === null || v === undefined ? '—' : `$${Number(v).toFixed(2)}`);
 
 /**
- * Each score category, with what it measures. The source sits next to the
- * input on purpose: someone typing a number should be able to see which
- * published figure it is supposed to be.
+ * The maintained benchmark tables, with what each measures. The source sits
+ * next to the input on purpose: someone typing a number should be able to see
+ * which published figure it is supposed to be.
+ *
+ * Two, and everything on this page follows from that — the ranking panels, the
+ * range dropdown, and the score-and-cost pairs on each model. The other eight
+ * categories are still fields on the model, so restoring one is this list plus
+ * its table; but a category with no published scores can only ever produce an
+ * empty ranking, and offering it to be filled in suggests otherwise.
  */
 const INDICES = [
-  ['strategyOps',             'Strategy & Ops',         'Business and management, accounting, corporate and markets, strategy and planning, customer support, records management'],
-  ['engineering',             'Engineering',            'Building and changing software'],
-  ['intelligence',            'General Intelligence',   'AA Intelligence Index'],
-  ['agentic',                 'Agentic Capabilities',   'AA Agentic Index'],
-  ['coding',                  'Coding',                 'Terminal-Bench'],
-  ['math',                    'Math & Reasoning',       'AA Math Index'],
-  ['instructionFollowing',    'Instruction Following',  'IFBench'],
-  ['longContext',             'Long Context Reasoning', 'AA-LCR'],
-  ['documentCreation',        'Document Creation',      'GDPval-AA'],
-  ['knowledge',               'Embedded Knowledge',     'AA-Omniscience'],
-  ['hallucinationResistance', 'Low Hallucination',      'AA-Omniscience'],
+  ['strategyOps', 'Strategy & Ops', 'Business and management, accounting, corporate and markets, strategy and planning, customer support, records management'],
+  ['engineering', 'Engineering',    'Building and changing software'],
 ];
 
 const NUMERIC = [

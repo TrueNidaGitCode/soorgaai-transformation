@@ -12,7 +12,7 @@
  *
  *   node scripts/test_model_recommender.mjs
  */
-import { recommendModels, deriveRecommendationInputs, SIZE_BANDS } from '../services/modelRecommenderService.js';
+import { recommendModels, deriveRecommendationInputs, SIZE_BANDS, FOCUS_INDICES } from '../services/modelRecommenderService.js';
 
 let pass = true;
 const check = (l, ok, d = '') => { console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${l}${d ? ' — ' + d : ''}`); if (!ok) pass = false; };
@@ -23,43 +23,43 @@ const CATALOG = [
   { modelId: 'top-tier',   displayName: 'Top Tier',   type: 'frontier', providers: ['Anthropic'],
     priceIn: 15, priceOut: 75, medianTokensPerSecond: 60, contextTokens: 500_000,
     reasoning: true, imageInput: true, paramsB: null,
-    scores: { intelligence: 59, coding: 60, documentCreation: 55 } },
+    scores: { strategyOps: 59, engineering: 55 } },
 
   { modelId: 'mid-tier',   displayName: 'Mid Tier',   type: 'frontier', providers: ['Google'],
     priceIn: 0.3, priceOut: 2.5, medianTokensPerSecond: 250, contextTokens: 1_000_000,
     reasoning: true, imageInput: true, paramsB: null,
-    // documentCreation deliberately ABOVE top-tier: without a genuinely
-    // different order on some index, "changing the focus changes the ranking"
-    // tests the fixture rather than the code.
-    scores: { intelligence: 50, coding: 44, documentCreation: 62 } },
+    // engineering deliberately ABOVE top-tier: without a genuinely different
+    // order on some index, "changing the focus changes the ranking" tests the
+    // fixture rather than the code.
+    scores: { strategyOps: 50, engineering: 62 } },
 
   { modelId: 'bargain',    displayName: 'Bargain',    type: 'frontier', providers: ['OpenAI'],
     priceIn: 0.05, priceOut: 0.4, medianTokensPerSecond: 300, contextTokens: 400_000,
     reasoning: true, imageInput: false, paramsB: null,
-    scores: { intelligence: 49, coding: 47, documentCreation: 40 } },
+    scores: { strategyOps: 49, engineering: 40 } },
 
   { modelId: 'open-70b',   displayName: 'Open 70B',   type: 'open-weight', providers: ['Together', 'Groq'],
     priceIn: 0.6, priceOut: 0.8, medianTokensPerSecond: 120, contextTokens: 128_000,
     reasoning: false, imageInput: false, paramsB: 70,
-    scores: { intelligence: 42, coding: 40, documentCreation: 38 } },
+    scores: { strategyOps: 42, engineering: 38 } },
 
   { modelId: 'open-8b',    displayName: 'Open 8B',    type: 'open-weight', providers: ['Together'],
     priceIn: 0.05, priceOut: 0.08, medianTokensPerSecond: 900, contextTokens: 128_000,
     reasoning: false, imageInput: false, paramsB: 8,
-    scores: { intelligence: 30, coding: 28, documentCreation: 25 } },
+    scores: { strategyOps: 30, engineering: 25 } },
 
-  // Published without an intelligence score. Must be excluded from an
-  // intelligence ranking rather than treated as zero.
+  // Published without a Strategy & Ops score. Must be excluded from that
+  // ranking rather than treated as zero.
   { modelId: 'unscored',   displayName: 'Unscored',   type: 'frontier', providers: ['Azure'],
     priceIn: 0.01, priceOut: 0.02, medianTokensPerSecond: 400, contextTokens: 200_000,
     reasoning: true, imageInput: true, paramsB: null,
-    scores: { coding: 55 } },
+    scores: { engineering: 55 } },
 ];
 
 console.log('1. cost critical takes the cheapest model clearing the band');
 {
   const r = recommendModels(CATALOG, {
-    focus: 'intelligence',
+    focus: 'strategyOps',
     priorities: { intelligence: 'very-important', speed: 'moderate', cost: 'critical' },
   });
   check('the band rule ran', r.rule === 'cheapest-clearing-band', r.rule);
@@ -76,7 +76,7 @@ console.log('1. cost critical takes the cheapest model clearing the band');
 console.log('\n2. intelligence critical takes the best score');
 {
   const r = recommendModels(CATALOG, {
-    focus: 'intelligence',
+    focus: 'strategyOps',
     priorities: { intelligence: 'critical', speed: 'low', cost: 'low' },
   });
   check('the weighted rule ran', r.rule === 'weighted', r.rule);
@@ -86,7 +86,7 @@ console.log('\n2. intelligence critical takes the best score');
 console.log('\n3. hard requirements exclude, with a reason');
 {
   const r = recommendModels(CATALOG, {
-    focus: 'intelligence',
+    focus: 'strategyOps',
     requirements: { imageInput: true },
     priorities: { intelligence: 'very-important', speed: 'moderate', cost: 'moderate' },
   });
@@ -99,7 +99,7 @@ console.log('\n3. hard requirements exclude, with a reason');
 console.log('\n4. the size band is judged on parameters, not on names');
 {
   const r = recommendModels(CATALOG, {
-    focus: 'intelligence', sizePreference: 'small',
+    focus: 'strategyOps', sizePreference: 'small',
     priorities: { intelligence: 'very-important', speed: 'moderate', cost: 'moderate' },
   });
   check('only 4B-40B survives', r.picks.length === 1 && r.picks[0].modelId === 'open-8b',
@@ -112,23 +112,23 @@ console.log('\n4. the size band is judged on parameters, not on names');
 
 console.log('\n5. an unscored model is excluded from that ranking, not scored zero');
 {
-  const r = recommendModels(CATALOG, { focus: 'intelligence', priorities: { intelligence: 'critical' } });
+  const r = recommendModels(CATALOG, { focus: 'strategyOps', priorities: { intelligence: 'critical' } });
   check('not offered on an index it has no score for', !r.picks.some(p => p.modelId === 'unscored'));
   const why = r.excluded.find(e => e.modelId === 'unscored');
-  check('and says so', /no intelligence score/.test(why?.reason || ''), why?.reason);
+  check('and says so', /no strategyOps score/.test(why?.reason || ''), why?.reason);
 
-  // It has a coding score, so it must be CONSIDERED there — the exclusion is
-  // per index, not a blanket one. It need not rank first; top-tier scores
-  // higher on coding, and asserting otherwise tested my fixture, not the code.
-  const c = recommendModels(CATALOG, { focus: 'coding', priorities: { intelligence: 'critical', speed: 'low', cost: 'low' } });
+  // It has an Engineering score, so it must be CONSIDERED there — the
+  // exclusion is per index, not a blanket one. It need not rank first, and
+  // asserting that it does would test my fixture rather than the code.
+  const c = recommendModels(CATALOG, { focus: 'engineering', priorities: { intelligence: 'critical', speed: 'low', cost: 'low' } });
   check('and is considered where it does have a score',
     c.picks.some(p => p.modelId === 'unscored'), c.picks.map(p => p.modelId).join(', '));
 }
 
 console.log('\n6. changing the focus changes the order');
 {
-  const a = recommendModels(CATALOG, { focus: 'intelligence', priorities: { intelligence: 'critical', speed: 'low', cost: 'low' } });
-  const b = recommendModels(CATALOG, { focus: 'documentCreation', priorities: { intelligence: 'critical', speed: 'low', cost: 'low' } });
+  const a = recommendModels(CATALOG, { focus: 'strategyOps', priorities: { intelligence: 'critical', speed: 'low', cost: 'low' } });
+  const b = recommendModels(CATALOG, { focus: 'engineering', priorities: { intelligence: 'critical', speed: 'low', cost: 'low' } });
   check('a different index gives a different ranking',
     JSON.stringify(a.picks.map(p => p.modelId)) !== JSON.stringify(b.picks.map(p => p.modelId)),
     `${a.picks.map(p => p.modelId).join('>')}  vs  ${b.picks.map(p => p.modelId).join('>')}`);
@@ -137,7 +137,7 @@ console.log('\n6. changing the focus changes the order');
 console.log('\n7. an impossible filter returns nothing, and does not fall back');
 {
   const r = recommendModels(CATALOG, {
-    focus: 'intelligence',
+    focus: 'strategyOps',
     requirements: { videoInput: true },
     priorities: { intelligence: 'critical' },
   });
@@ -149,7 +149,7 @@ console.log('\n7. an impossible filter returns nothing, and does not fall back')
 console.log('\n8. provider constraint is honoured');
 {
   const r = recommendModels(CATALOG, {
-    focus: 'intelligence', providers: ['Together'],
+    focus: 'strategyOps', providers: ['Together'],
     priorities: { intelligence: 'critical' },
   });
   check('only models that provider serves', r.picks.every(p => p.providers.includes('Together')),
@@ -176,9 +176,18 @@ console.log('\n9. a startup blueprint derives the band rule');
   // nothing — a ranking on a benchmark nobody has been measured against.
   const coding = deriveRecommendationInputs({ businessObjective: 'Generate code for the developer SDK' });
   check('a software use case ranks on Engineering', coding.focus === 'engineering', coding.focus);
+  // Only two indices are maintained, so compliance work ranks on Strategy &
+  // Ops. Hallucination resistance would be the better axis for it, and it is
+  // still a field on the model — it is just not a published table yet, and
+  // ranking on an empty index returns nothing at all.
   const gov = deriveRecommendationInputs({ businessObjective: 'Automate regulatory compliance reporting' });
-  check('a compliance use case ranks on hallucination resistance',
-    gov.focus === 'hallucinationResistance', gov.focus);
+  check('a compliance use case ranks on Strategy & Ops', gov.focus === 'strategyOps', gov.focus);
+
+  check('every focus the derivation can produce is one that has a table',
+    ['Generate code for the developer SDK', 'Automate regulatory compliance reporting',
+     'Draft the quarterly board proposal', 'Triage inbound support tickets']
+      .every(o => FOCUS_INDICES.includes(deriveRecommendationInputs({ businessObjective: o }).focus)),
+    FOCUS_INDICES.join(', '));
 }
 
 console.log();

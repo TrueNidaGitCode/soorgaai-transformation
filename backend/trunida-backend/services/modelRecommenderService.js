@@ -30,11 +30,19 @@
  * the first question anyone asks it.
  */
 
-/** The indices a recommendation can be ranked on. */
-export const FOCUS_INDICES = [
-  'strategyOps', 'engineering', 'intelligence', 'agentic', 'coding', 'math', 'instructionFollowing',
-  'longContext', 'documentCreation', 'knowledge', 'hallucinationResistance',
-];
+/**
+ * The indices a recommendation can be ranked on.
+ *
+ * Two, because two are measured. The schema still has fields for the other
+ * eight, so adding one back is a line here and a table in the admin — but an
+ * index nobody has published scores for cannot rank anything, and offering it
+ * only produces an empty result whose cause is invisible.
+ */
+export const FOCUS_INDICES = ['strategyOps', 'engineering'];
+
+/** Ranked on when nothing more specific applies. Has data, unlike the eight
+ *  categories that were previously reachable by default. */
+const DEFAULT_FOCUS = 'strategyOps';
 
 /**
  * Importance → weight. Deliberately not linear: 'critical' is meant to
@@ -131,14 +139,14 @@ function normalise(values, invert = false) {
 export function recommendModels(catalog, {
   requirements = {},
   priorities = {},
-  focus = 'intelligence',
+  focus = DEFAULT_FOCUS,
   sizePreference = 'any',
   providers = [],
   band = DEFAULT_BAND,
   acceptableRange = null,   // { min, max } set by an admin for this category
   limit = 5,
 } = {}) {
-  const focusKey = FOCUS_INDICES.includes(focus) ? focus : 'intelligence';
+  const focusKey = FOCUS_INDICES.includes(focus) ? focus : DEFAULT_FOCUS;
   const [minB, maxB] = SIZE_BANDS[sizePreference] || SIZE_BANDS.any;
   const excluded = [];
 
@@ -319,31 +327,20 @@ export function deriveRecommendationInputs(blueprint) {
   const useCase = String(blueprint?.recommendedUseCase || blueprint?.businessObjective || '').toLowerCase();
 
   // Stems, so no trailing word boundary. /\bcomplian\b/ cannot match
-  // "compliance" — the boundary demands the word END at the stem. Every
-  // pattern here was written that way, so none of them ever fired.
-  let focus = 'intelligence';
+  // "compliance" — the boundary demands the word END at the stem. An earlier
+  // version wrote every pattern that way, so none of them ever fired.
+  //
+  // Two outcomes, because two benchmarks are maintained. Routing anything to
+  // a third would name an index with no published scores behind it, and the
+  // recommendation would come back empty for a reason nobody can see.
+  let focus = DEFAULT_FOCUS;
 
-  // Checked FIRST, and ahead of agentic on purpose. "Automate regulatory
-  // compliance reporting" is both, and where a wrong answer carries a
-  // regulatory cost, resistance to confident invention outranks tool use.
-  // Strategy and operations work ranks on the Strategy & Ops score. Checked
-  // first because it is the category with measured data behind it.
-  if (/\b(strateg|operations|ops |planning|roadmap|prioriti|business|management|accounting|corporate|market|customer support|records|administrat|invoic|billing|schedul)/.test(useCase)) {
-    focus = 'strategyOps'; reasons.push('The use case is strategy or operations work, so ranking is on the Strategy & Ops score.');
-  } else if (/\b(complian|governance|audit|regulat|legal|medical|clinical|safety)/.test(useCase)) {
-    focus = 'hallucinationResistance'; reasons.push('The use case carries a cost for being confidently wrong, so ranking is on hallucination resistance.');
-  } else if (/\b(code|coding|engineer|refactor|repositor|developer|sdk|program|api|migrat|debug|test)/.test(useCase)) {
-    focus = 'engineering'; reasons.push('The use case is about building or changing software, so ranking is on the Engineering score.');
-  } else if (/\b(report|document|proposal|summar|memo|contract)/.test(useCase)) {
-    focus = 'documentCreation'; reasons.push('The use case produces documents, so ranking is on document creation.');
-  } else if (/\b(agent|workflow|tool use|automat|orchestrat)/.test(useCase)) {
-    focus = 'agentic'; reasons.push('The use case is agentic, so ranking is on tool-use capability.');
-  } else if (/\b(extract|classif|triage|route|tag|label)/.test(useCase)) {
-    focus = 'instructionFollowing'; reasons.push('The use case is extraction or classification, where following the output contract matters more than raw intelligence.');
+  if (/\b(code|coding|engineer|refactor|repositor|developer|sdk|program|api|migrat|debug|test|deploy|integrat)/.test(useCase)) {
+    focus = 'engineering';
+    reasons.push('The use case is about building or changing software, so ranking is on the Engineering score.');
   } else {
-    reasons.push('No clearer signal in the use case, so ranking is on general intelligence.');
+    reasons.push('The use case is business or operations work, so ranking is on the Strategy & Ops score.');
   }
-
   // A young company is buying with its own money and has no procurement
   // cushion. That is the case the band rule exists for.
   const cost = engagement.maturity === 'startup' ? 'critical' : 'very-important';

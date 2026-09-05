@@ -25,18 +25,11 @@ const FOCUS_ABOUT = {
   engineering: 'Building and changing software — the score and the cost are both measured on that work, not carried over from another benchmark.',
 };
 
+// The two indices a recommendation can be ranked on — the two that have
+// published tables behind them.
 const FOCUS_LABEL = {
-  strategyOps:             'Strategy & Ops',
-  engineering:             'Engineering',
-  intelligence:            'Intelligence',
-  agentic:                 'Agentic',
-  coding:                  'Coding',
-  math:                    'Math',
-  instructionFollowing:    'Instruction following',
-  longContext:             'Long context',
-  documentCreation:        'Document creation',
-  knowledge:               'Knowledge',
-  hallucinationResistance: 'Low hallucination',
+  strategyOps: 'Strategy & Ops',
+  engineering: 'Engineering',
 };
 
 let _blueprintId = null;

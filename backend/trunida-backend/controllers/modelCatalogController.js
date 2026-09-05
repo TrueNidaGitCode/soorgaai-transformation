@@ -29,7 +29,9 @@ import {
 export async function listCatalog(req, res) {
   try {
     const models = await ModelCatalogEntry.find({}).sort({ type: 1, displayName: 1 }).lean();
-    const scored = models.filter(m => m.scores?.intelligence != null).length;
+    // Counted across ANY category: a catalog scored only on Strategy & Ops
+    // is a usable catalog, and reporting it as empty would be wrong.
+    const scored = models.filter(m => Object.values(m.scores || {}).some(v => v != null)).length;
     return res.json({
       models,
       // Surfaced rather than left to be discovered: an unscored catalog

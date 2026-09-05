@@ -42,6 +42,7 @@ const esc = (t) => String(t ?? '')
  * which published figure it is supposed to be.
  */
 const INDICES = [
+  ['strategyOps',             'Strategy & Ops',         'your own benchmark'],
   ['intelligence',            'General Intelligence',   'AA Intelligence Index'],
   ['agentic',                 'Agentic Capabilities',   'AA Agentic Index'],
   ['coding',                  'Coding',                 'Terminal-Bench'],
@@ -79,10 +80,10 @@ function renderSummary(summary) {
   // Stated plainly. An unscored catalog produces an empty Arth screen, and the
   // cause should not have to be inferred from that emptiness.
   el.innerHTML = unscored
-    ? `<span class="mc-summary--warn"><strong>${scored} of ${total}</strong> models have an intelligence score. `
-      + `The other ${unscored} cannot be ranked on it and are excluded with a reason — `
+    ? `<span class="mc-summary--warn"><strong>${scored} of ${total}</strong> models carry at least one score. `
+      + `The other ${unscored} cannot be ranked and are excluded with a reason — `
       + `Arth recommends nothing from an unscored catalog.</span>`
-    : `<strong>All ${total}</strong> models carry an intelligence score.`;
+    : `<strong>All ${total}</strong> models carry a score.`;
 }
 
 function numberField(m, key, label) {
@@ -93,7 +94,7 @@ function numberField(m, key, label) {
 }
 
 function renderModel(m) {
-  const scored = m.scores?.intelligence != null;
+  const scored = Object.values(m.scores || {}).some(v => v != null);
   return `
   <div class="mc-model" data-model="${esc(m.modelId)}">
     <div class="mc-model__head" data-toggle>

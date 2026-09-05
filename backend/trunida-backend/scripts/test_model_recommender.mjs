@@ -68,7 +68,7 @@ console.log('1. cost critical takes the cheapest model clearing the band');
   // The whole point: 'top-tier' scores highest and must NOT win.
   check('the top scorer does not win on price', r.picks[0]?.modelId !== 'top-tier', r.picks[0]?.modelId);
   check('the cheapest model inside the band wins', r.picks[0]?.modelId === 'bargain',
-    r.picks.map(p => `${p.modelId} $${p.blendedPrice?.toFixed(2)}`).join(', '));
+    r.picks.map(p => `${p.modelId} $${p.cost?.toFixed(2)}`).join(', '));
   check('a model below the band is not offered', !r.picks.some(p => p.modelId === 'open-70b'),
     r.picks.map(p => p.modelId).join(', '));
 }

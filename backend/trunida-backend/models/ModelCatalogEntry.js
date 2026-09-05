@@ -65,6 +65,15 @@ const modelCatalogEntrySchema = new mongoose.Schema({
   priceOut: { type: Number, default: null },
   medianTokensPerSecond: { type: Number, default: null },
 
+  // USD to run the whole Intelligence Index once — Artificial Analysis
+  // publishes this, and it is the single most comparable cost figure there is:
+  // one number over one identical workload, rather than two token prices whose
+  // real cost depends on a mix nobody has measured yet.
+  //
+  // Preferred over the token prices when present. It is what a
+  // cost-per-task comparison is actually made of.
+  indexCost: { type: Number, default: null },
+
   // ── Shape ──────────────────────────────────────────────────────────────
   // paramsB is what the compute requirement is DERIVED from — see
   // modelAdvisorService.computeProfile — rather than a VRAM figure quoted from
@@ -83,6 +92,7 @@ const modelCatalogEntrySchema = new mongoose.Schema({
 
   // ── Scores ─────────────────────────────────────────────────────────────
   scores: {
+    strategyOps:             scoreField,   // Strategy & Operations
     intelligence:            scoreField,   // AA Intelligence Index
     agentic:                 scoreField,   // AA Agentic Index
     coding:                  scoreField,   // Terminal-Bench

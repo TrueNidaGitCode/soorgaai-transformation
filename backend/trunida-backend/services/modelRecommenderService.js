@@ -32,7 +32,7 @@
 
 /** The indices a recommendation can be ranked on. */
 export const FOCUS_INDICES = [
-  'intelligence', 'agentic', 'coding', 'math', 'instructionFollowing',
+  'strategyOps', 'intelligence', 'agentic', 'coding', 'math', 'instructionFollowing',
   'longContext', 'documentCreation', 'knowledge', 'hallucinationResistance',
 ];
 
@@ -70,9 +70,20 @@ const DEFAULT_BAND = 10;
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
-/** Blended price per million tokens. Output is weighted higher because
- *  generation dominates the bill on the workloads Svarg builds. */
-function blendedPrice(m) {
+/**
+ * What a model costs, as one comparable number.
+ *
+ * Prefers Artificial Analysis's cost to run the Intelligence Index: one figure
+ * over one identical workload. Two token prices only become a cost once you
+ * assume an input/output mix, and an assumed mix is how a comparison quietly
+ * stops being a comparison.
+ *
+ * Falls back to a blend when the index cost is not published, weighted toward
+ * output because generation dominates the bill on the workloads Svarg builds.
+ */
+function costOf(m) {
+  const idx = num(m.indexCost);
+  if (idx !== null) return idx;
   const i = num(m.priceIn), o = num(m.priceOut);
   if (i === null && o === null) return null;
   return (i ?? o) * 0.35 + (o ?? i) * 0.65;
@@ -122,7 +133,18 @@ export function recommendModels(catalog, {
 
     // Hard requirements. Each carries its reason out, because being told a
     // model was dropped is useless without being told what for.
+    // Open weights is a deployment constraint, not a quality one: it decides
+    // whether the customer's data can stay on their own infrastructure.
+    if (requirements.openWeightsOnly && m.type !== 'open-weight') {
+      excluded.push({ modelId: m.modelId, reason: 'not open weight' }); return false;
+    }
     if (requirements.reasoning && !m.reasoning)   { excluded.push({ modelId: m.modelId, reason: 'does not support reasoning' }); return false; }
+    // Asked for explicitly rather than inferred from the absence of the other:
+    // a reasoning model costs more and answers slower, and some workloads
+    // genuinely want neither.
+    if (requirements.nonReasoning && m.reasoning) {
+      excluded.push({ modelId: m.modelId, reason: 'is a reasoning model' }); return false;
+    }
     if (requirements.imageInput && !m.imageInput) { excluded.push({ modelId: m.modelId, reason: 'no image input' }); return false; }
     if (requirements.audioInput && !m.audioInput) { excluded.push({ modelId: m.modelId, reason: 'no audio input' }); return false; }
     if (requirements.videoInput && !m.videoInput) { excluded.push({ modelId: m.modelId, reason: 'no video input' }); return false; }
@@ -161,7 +183,7 @@ export function recommendModels(catalog, {
   }
 
   const scores = candidates.map(m => num(m.scores[focusKey]));
-  const prices = candidates.map(blendedPrice);
+  const prices = candidates.map(costOf);
   const speeds = candidates.map(m => num(m.medianTokensPerSecond));
 
   // ── The band rule ────────────────────────────────────────────────────────
@@ -185,7 +207,7 @@ export function recommendModels(catalog, {
       picks: ordered.slice(0, limit).map(x => ({
         ...plain(x.m),
         focusScore: x.score,
-        blendedPrice: x.price,
+        cost: x.price,
         why: `Clears the acceptable band (${floor.toFixed(0)}+ on ${focusKey}) at the lowest price of those that do.`,
       })),
       considered: catalog.length,
@@ -217,7 +239,7 @@ export function recommendModels(catalog, {
     picks: ranked.slice(0, limit).map(x => ({
       ...plain(x.m),
       focusScore: x.score,
-      blendedPrice: x.price,
+      cost: x.price,
       value: Number(x.value.toFixed(4)),
       why: `Best balance of ${focusKey}, speed and price at the importance you set.`,
     })),
@@ -233,7 +255,8 @@ function plain(m) {
   return {
     modelId: m.modelId, displayName: m.displayName, vendor: m.vendor, type: m.type,
     providers: m.providers || [], providerId: m.providerId || '',
-    priceIn: m.priceIn, priceOut: m.priceOut,
+    priceIn: m.priceIn, priceOut: m.priceOut, indexCost: m.indexCost,
+    reasoning: !!m.reasoning,
     medianTokensPerSecond: m.medianTokensPerSecond,
     paramsB: m.paramsB, contextTokens: m.contextTokens,
     scores: m.scores, source: m.source, sourceVersion: m.sourceVersion,
@@ -261,7 +284,11 @@ export function deriveRecommendationInputs(blueprint) {
   // Checked FIRST, and ahead of agentic on purpose. "Automate regulatory
   // compliance reporting" is both, and where a wrong answer carries a
   // regulatory cost, resistance to confident invention outranks tool use.
-  if (/\b(complian|governance|audit|regulat|legal|medical|clinical|safety)/.test(useCase)) {
+  // Strategy and operations work ranks on the Strategy & Ops score. Checked
+  // first because it is the category with measured data behind it.
+  if (/\b(strateg|operations|ops |planning|roadmap|prioriti)/.test(useCase)) {
+    focus = 'strategyOps'; reasons.push('The use case is strategy or operations work, so ranking is on the Strategy & Ops score.');
+  } else if (/\b(complian|governance|audit|regulat|legal|medical|clinical|safety)/.test(useCase)) {
     focus = 'hallucinationResistance'; reasons.push('The use case carries a cost for being confidently wrong, so ranking is on hallucination resistance.');
   } else if (/\b(code|coding|refactor|repositor|developer|sdk|program)/.test(useCase)) {
     focus = 'coding'; reasons.push('The use case is about writing or changing code, so ranking is on the coding benchmark.');

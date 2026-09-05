@@ -5,10 +5,14 @@ import {
   createCatalogEntry,
   patchCatalogEntry,
   deleteCatalogEntry,
+  getSettings,
+  saveSettings,
 } from '../controllers/modelCatalogController.js';
 
 const router = express.Router();
 
+router.get('/settings', protect, getSettings);
+router.post('/settings', protect, saveSettings);
 router.get('/', protect, listCatalog);
 router.post('/', protect, createCatalogEntry);
 router.patch('/:modelId', protect, patchCatalogEntry);

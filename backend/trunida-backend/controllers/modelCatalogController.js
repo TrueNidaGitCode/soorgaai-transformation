@@ -16,6 +16,7 @@
  */
 
 import ModelCatalogEntry from '../models/ModelCatalogEntry.js';
+import CatalogSettings from '../models/CatalogSettings.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import {
   recommendModels,
@@ -43,6 +44,44 @@ export async function listCatalog(req, res) {
   } catch (err) {
     console.error('listCatalog error:', err);
     return res.status(500).json({ error: 'Failed to load the model catalog.' });
+  }
+}
+
+export async function getSettings(req, res) {
+  try {
+    const doc = await CatalogSettings.findOne({ key: 'default' }).lean();
+    return res.json({ acceptableRanges: doc?.acceptableRanges || {}, updatedBy: doc?.updatedBy || '' });
+  } catch (err) {
+    console.error('getSettings error:', err);
+    return res.status(500).json({ error: 'Failed to load settings.' });
+  }
+}
+
+export async function saveSettings(req, res) {
+  try {
+    const { category, min, max } = req.body || {};
+    if (!category) return res.status(400).json({ error: 'category is required.' });
+
+    // Empty clears the range rather than storing a zero. A minimum of 0 and
+    // no minimum at all are different instructions.
+    const n = (v) => (v === '' || v === null || v === undefined ? null : Number(v));
+    const lo = n(min), hi = n(max);
+    if (lo !== null && hi !== null && lo > hi) {
+      return res.status(400).json({ error: 'Minimum cannot be above maximum.' });
+    }
+
+    const doc = await CatalogSettings.findOneAndUpdate(
+      { key: 'default' },
+      { $set: {
+        [`acceptableRanges.${category}`]: { min: lo, max: hi },
+        updatedBy: req.user?.email || String(req.user?._id || ''),
+      } },
+      { upsert: true, new: true }
+    ).lean();
+    return res.json({ acceptableRanges: doc.acceptableRanges || {} });
+  } catch (err) {
+    console.error('saveSettings error:', err);
+    return res.status(500).json({ error: 'Failed to save the range.' });
   }
 }
 
@@ -125,6 +164,12 @@ export async function recommendForBlueprint(req, res) {
       providers:      req.body?.providers      ?? derived.providers,
       band:           req.body?.band,
     };
+
+    const settings = await CatalogSettings.findOne({ key: 'default' }).lean();
+    const ranges = settings?.acceptableRanges || {};
+    // Map or plain object depending on how it was read back.
+    const range = typeof ranges.get === 'function' ? ranges.get(input.focus) : ranges[input.focus];
+    if (range) input.acceptableRange = range;
 
     const catalog = await ModelCatalogEntry.find({ active: true }).lean();
     const result = recommendModels(catalog, input);

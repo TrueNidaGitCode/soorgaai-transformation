@@ -258,3 +258,46 @@ document.getElementById('mc-create-form').addEventListener('submit', async (e) =
 });
 
 load();
+
+let _ranges = {};
+
+async function loadSettings() {
+  try {
+    const { acceptableRanges } = await api('/settings');
+    _ranges = acceptableRanges || {};
+  } catch { _ranges = {}; }
+
+  const sel = document.getElementById('mc-range-category');
+  if (sel && !sel.options.length) {
+    sel.innerHTML = INDICES.map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('');
+  }
+  showRange();
+}
+
+function showRange() {
+  const cat = document.getElementById('mc-range-category')?.value;
+  const r = _ranges?.[cat] || {};
+  const min = document.getElementById('mc-range-min');
+  const max = document.getElementById('mc-range-max');
+  // Blank means no range, which is a different instruction from zero.
+  if (min) min.value = r.min ?? '';
+  if (max) max.value = r.max ?? '';
+}
+
+document.getElementById('mc-range-category')?.addEventListener('change', showRange);
+
+document.getElementById('mc-range-save')?.addEventListener('click', async () => {
+  const saved = document.getElementById('mc-range-saved');
+  try {
+    const { acceptableRanges } = await api('/settings', { method: 'POST', body: JSON.stringify({
+      category: document.getElementById('mc-range-category').value,
+      min: document.getElementById('mc-range-min').value,
+      max: document.getElementById('mc-range-max').value,
+    }) });
+    _ranges = acceptableRanges || {};
+    if (saved) { saved.textContent = 'Saved'; setTimeout(() => { saved.textContent = ''; }, 2000); }
+    banner('');
+  } catch (err) { banner(err.message); }
+});
+
+loadSettings();

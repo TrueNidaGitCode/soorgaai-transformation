@@ -122,6 +122,7 @@ export function recommendModels(catalog, {
   sizePreference = 'any',
   providers = [],
   band = DEFAULT_BAND,
+  acceptableRange = null,   // { min, max } set by an admin for this category
   limit = 5,
 } = {}) {
   const focusKey = FOCUS_INDICES.includes(focus) ? focus : 'intelligence';
@@ -191,6 +192,33 @@ export function recommendModels(catalog, {
   // does the work. A weighted blend cannot express that: it settles in the
   // middle of the field, which is how a task that could cost cents ends up
   // costing dollars.
+  // An explicit acceptable range set by an admin beats every heuristic here:
+  // it is a judgement about what quality the product can ship, arrived at by
+  // testing, and nothing in a leaderboard can infer it. Within the range, the
+  // cheapest wins — which is the whole point of setting one.
+  if (acceptableRange && (acceptableRange.min != null || acceptableRange.max != null)) {
+    const lo = acceptableRange.min ?? -Infinity;
+    const hi = acceptableRange.max ?? Infinity;
+    const inRange = candidates
+      .map((m, i) => ({ m, score: scores[i], price: prices[i] }))
+      .filter(x => x.score >= lo && x.score <= hi)
+      .sort((a2, b2) => (a2.price ?? Infinity) - (b2.price ?? Infinity));
+
+    return {
+      picks: inRange.slice(0, limit).map(x => ({
+        ...plain(x.m),
+        focusScore: x.score,
+        cost: x.price,
+        why: `Inside the acceptable range (${lo === -Infinity ? "any" : lo}–${hi === Infinity ? "any" : hi}) at the lowest cost of those that are.`,
+      })),
+      considered: catalog.length,
+      excluded,
+      rule: 'cheapest-in-range',
+      band: { focus: focusKey, min: acceptableRange.min, max: acceptableRange.max },
+      focus: focusKey,
+    };
+  }
+
   if (priorities.cost === 'critical') {
     const best = Math.max(...scores);
     const floor = best - band;
@@ -307,11 +335,14 @@ export function deriveRecommendationInputs(blueprint) {
   const cost = engagement.maturity === 'startup' ? 'critical' : 'very-important';
   if (cost === 'critical') reasons.push('The company reads as early-stage, so cost is treated as critical — the cheapest model clearing the quality band wins.');
 
+  // No requirements are inferred. An earlier version turned "a repository was
+  // read" into a 200k-context requirement, which excluded every model in a
+  // catalog that simply had no context figures — an inference of mine silently
+  // overruling the data an admin had actually entered.
+  //
+  // Requirements are hard filters. They should come from someone who knows the
+  // constraint, not from a guess about what a use case might need.
   const requirements = {};
-  if (blueprint?.codebaseProfile?.checked) {
-    requirements.ultraLongContext = true;
-    reasons.push('A repository has been read, so long-context handling is required.');
-  }
 
   return {
     focus,

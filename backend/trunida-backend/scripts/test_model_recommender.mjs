@@ -164,7 +164,11 @@ console.log('\n9. a startup blueprint derives the band rule');
     codebaseProfile: { checked: true },
   });
   check('cost is critical for an early-stage company', d.priorities.cost === 'critical', d.priorities.cost);
-  check('long context required once a repo was read', d.requirements.ultraLongContext === true);
+  // Requirements are NOT inferred any more. Turning "a repo was read" into a
+  // 200k-context requirement excluded every model in a catalog with no context
+  // figures — a guess of ours overruling data an admin had entered.
+  check('no hard requirement is invented from the blueprint',
+    Object.keys(d.requirements).length === 0, JSON.stringify(d.requirements));
   check('every derivation carries a reason', d.reasons.length >= 2, d.reasons.join(' | '));
 
   const coding = deriveRecommendationInputs({ businessObjective: 'Generate code for the developer SDK' });

@@ -2479,54 +2479,77 @@
 /* ── Guest preview: paused at the end of the free domain ──────────────────
    Deliberately not styled as an error. Nothing has gone wrong — the preview
    did exactly what it promised and stopped where it was always going to
-   stop, so this reads as a step in the flow rather than a failure. */
+   stop, so this reads as a step in the flow rather than a failure.
+
+   And deliberately thin. It sits directly under the heading, above the
+   recommendation, so every pixel of its height pushes the thing a visitor
+   came to read further down the page. A signpost, not a section. */
 .gpause {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
   border: 1px solid rgba(92,197,167,0.28);
   background: rgba(92,197,167,0.05);
-  border-radius: 0.75rem;
-  padding: 1rem 1.15rem 1.15rem;
-  margin: 0 0 1.5rem;
+  border-radius: 0.6rem;
+  padding: 0.7rem 1rem;
+  margin: 0 0 1.25rem;
+  /* Matches the content column. Letting it run full width made it thin and
+     unreadable instead: it slid under the character portrait, and "Start
+     over" ended up grey text on a photograph. The height came out of the
+     copy rather than the width. */
   max-width: 42rem;
 }
+
+.gpause__body { min-width: 0; }
 
 .gpause__head {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.55rem;
+  gap: 0.6rem;
+  margin: 0 0 0.15rem;
 }
 
 .gpause__label {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: #5CC5A7;
 }
 
 .gpause__count {
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.45);
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
 }
 
-/* Flat, not animated: the ordinary fill pulses to signal work in flight, and
-   the whole point here is that nothing is running. */
-.gpause__fill { animation: none; }
-
 .gpause__text {
-  font-size: 0.88rem;
-  line-height: 1.6;
+  font-size: 0.84rem;
+  line-height: 1.5;
   color: rgba(255,255,255,0.68);
-  margin: 0.75rem 0 0;
+  margin: 0;
 }
 
 .gpause__actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-top: 0.9rem;
+  gap: 0.9rem;
+  flex-shrink: 0;
 }
+
+.gpause__btn {
+  padding: 0.45rem 0.95rem;
+  border: none;
+  border-radius: 0.45rem;
+  background: #5CC5A7;
+  color: #0a0a0f;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.gpause__btn:hover { filter: brightness(1.08); }
 
 /* Quieter than the login button on purpose. Both are ways forward, but only
    one of them is the one being recommended. */
@@ -2534,26 +2557,14 @@
   background: none;
   border: none;
   padding: 0;
-  color: rgba(255,255,255,0.5);
-  font-size: 0.82rem;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.8rem;
+  white-space: nowrap;
   text-decoration: underline;
   cursor: pointer;
   transition: color 0.15s;
 }
 .gpause__restart:hover { color: rgba(255,255,255,0.8); }
-
-.gpause__btn {
-  padding: 0.55rem 1.1rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: #5CC5A7;
-  color: #0a0a0f;
-  font-size: 0.86rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: filter 0.15s;
-}
-.gpause__btn:hover { filter: brightness(1.08); }
 
 /* The link out of a plan limit. Underlined and inherits the red, because it
    sits inside the refusal sentence rather than beside it — the whole point is

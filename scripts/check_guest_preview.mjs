@@ -252,7 +252,7 @@ console.log('\n2. the free domain is done — paused, waiting for a login');
     check('and a way to start over', r.restartBtn === true, r.restartText);
     check('it counts domains, not capabilities', r.count === '1 of 6 domains', r.count);
     check('it names the domain that comes next', /AI Strategy is next/.test(r.next), r.next);
-    check('it promises nothing is lost', /nothing you have seen is lost/i.test(r.next));
+    check('it promises the work is kept', /save this blueprint/i.test(r.next), r.next);
     // Unlock, not resume. Claiming does not generate the remaining domains,
     // and copy that says it does sends someone looking for a run that never
     // starts.
@@ -261,12 +261,19 @@ console.log('\n2. the free domain is done — paused, waiting for a login');
     check('the preview data is on screen', /Retrieval-Augmented Ticket Routing/.test(r.winner), r.winner);
     // The recommendation is the reason to sign up, so it has to be read
     // before the request to sign up — an ask that arrives first is a wall.
-    check('the ask comes after the value', r.pauseBelowValue === true);
-    check('and before the rest of the list', r.pauseAboveOthers === true);
-    // It sat below everything and fell off the bottom of a laptop screen, so
-    // nobody saw the one control that unblocks the flow.
-    check('it is above the fold on a small laptop', r.pauseTop !== null && r.pauseTop < 700,
-      `top ${r.pauseTop}px`);
+    // It leads now — directly under the heading, above the recommendation.
+    // Below the fold on a laptop was the complaint; below everything was the
+    // cause.
+    check('the pause leads the screen', r.pauseAboveValue === true);
+    check('and precedes the rest of the list', r.pauseAboveOthers === true);
+    check('it is well above the fold', r.pauseTop !== null && r.pauseTop < 400, `top ${r.pauseTop}px`);
+    // Thin: it pushes the thing a visitor came to read further down the page,
+    // so height is a requirement rather than a matter of taste. 117px as
+    // built — a label row, one line of text, and the controls. The guard is
+    // set just above that to catch a regression, not as a target to squeeze
+    // toward: going lower means dropping "save this blueprint", and that
+    // reassurance is the persuasive half of the sentence.
+    check('the box is thin', r.pauseHeight !== null && r.pauseHeight <= 125, `${r.pauseHeight}px tall`);
     check('the other opportunities are still listed', r.othersShown === true);
     check('the navbar offers a log in', r.logoutText === 'Log in', r.logoutText);
     check('it says this is a guest preview', r.navUsername === 'Guest preview', r.navUsername);

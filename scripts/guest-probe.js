@@ -29,20 +29,25 @@ const out = {
   approveOn:     !document.getElementById('opp-approve-btn')?.disabled,
   // The value has to come before the ask. Document order, not pixels — a
   // screenshot cannot tell a deliberate order from a lucky one.
-  pauseBelowValue: (() => {
+  // The pause now leads: it sits directly under the heading, above the
+  // recommendation. 4 = DOCUMENT_POSITION_FOLLOWING.
+  pauseAboveValue: (() => {
     const value = document.querySelector('.rp-winner-card');
     const pause = document.getElementById('opp-paused');
     if (!value || !pause) return null;
-    // 4 = DOCUMENT_POSITION_FOLLOWING — the pause comes after the card.
-    return !!(value.compareDocumentPosition(pause) & 4);
+    return !!(pause.compareDocumentPosition(value) & 4);
   })(),
-  // ...and before the rest of the list, so it cannot drift down the page
-  // again as that list grows. Pinned from both sides or it is not pinned.
   pauseAboveOthers: (() => {
     const pause = document.getElementById('opp-paused');
     const others = document.getElementById('opp-others-wrap');
     if (!pause || !others) return null;
     return !!(pause.compareDocumentPosition(others) & 4);
+  })(),
+  // Height, because "make the box thin" is a requirement and an unmeasured
+  // one drifts back the first time someone adds a line to it.
+  pauseHeight: (() => {
+    const p = document.getElementById('opp-paused');
+    return p ? Math.round(p.getBoundingClientRect().height) : null;
   })(),
   // What a 1366x768 laptop actually shows without scrolling.
   pauseTop: (() => {

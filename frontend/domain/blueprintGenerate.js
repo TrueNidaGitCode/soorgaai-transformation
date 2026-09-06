@@ -693,11 +693,11 @@ function renderGuestPause(bp) {
   const remaining = domains.filter(d => !GUEST_PREVIEW_DOMAINS.includes(d.domainId));
   const next = remaining[0];
 
-  const fill  = document.getElementById('opp-paused-fill');
   const count = document.getElementById('opp-paused-count');
   const text  = document.getElementById('opp-paused-next');
 
-  if (fill)  fill.style.width = Math.round((preview.length / (domains.length || 1)) * 100) + '%';
+  // The count carries the progress. A bar beside it said the same thing and
+  // cost three lines of height on the screen where height was the complaint.
   if (count) count.textContent = `${preview.length} of ${domains.length} domains`;
   if (text) {
     // "carries on from here" was a promise the product does not keep. Claiming
@@ -706,10 +706,13 @@ function renderGuestPause(bp) {
     // Whether it SHOULD auto-continue is a real question (it spends a full run
     // the instant someone signs up), but until it does, the panel must not say
     // it does.
+    // Short enough to hold two lines beside the buttons. "Save this
+    // blueprint" already carries the reassurance that the longer version
+    // spelled out, and every extra line here pushes the recommendation down.
     text.textContent = next
-      ? `${next.domainName || 'The next domain'} is next. Log in to keep this blueprint `
-        + `and unlock the remaining ${remaining.length} domains — nothing you have seen is lost.`
-      : 'Log in to keep this blueprint and carry on.';
+      ? `${next.domainName || 'The next domain'} is next. Log in to save this blueprint `
+        + `and unlock the remaining ${remaining.length} domains.`
+      : 'Log in to save this blueprint and carry on.';
   }
 
   // The top banner says the same thing less usefully once this is up, and two

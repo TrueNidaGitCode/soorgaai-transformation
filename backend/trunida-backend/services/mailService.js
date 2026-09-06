@@ -31,6 +31,23 @@ const smtpConfigured = !!(
 
 export const mailConfigured = !!BREVO_API_KEY || smtpConfigured;
 
+/**
+ * How mail is configured, for the boot log.
+ *
+ * Written after an OTP that was never sent looked exactly like an OTP that
+ * was: with nothing configured, sendOtpEmail logged the code and returned,
+ * the endpoint answered "Code sent", and the only trace was one line in a
+ * container log nobody had reason to open. Saying this once at startup is
+ * the difference between "email is down" and "email was never turned on".
+ */
+export function describeMailConfig() {
+  return {
+    transport: BREVO_API_KEY ? 'brevo' : (smtpConfigured ? 'smtp' : 'none'),
+    sender: senderParts().email || '',
+    configured: mailConfigured,
+  };
+}
+
 // Sender: parse 'Name <addr>' out of EMAIL_FROM, fall back to EMAIL_USER
 function senderParts() {
   const raw = process.env.EMAIL_FROM || process.env.EMAIL_USER || '';
@@ -134,10 +151,17 @@ async function sendMail({ to, replyTo, subject, text, html, logLabel }) {
   }
 }
 
+/**
+ * @returns {Promise<'sent'|'console'>} — how the code reached the user.
+ *
+ * Returning this rather than nothing is the point: the caller has to decide
+ * what to tell someone staring at an empty inbox, and it cannot do that if
+ * "delivered" and "written to a log file" are the same return value.
+ */
 export async function sendOtpEmail(to, code) {
   if (!mailConfigured) {
-    console.log(`[mail] Not configured — OTP for ${to}: ${code}`);
-    return;
+    console.warn(`[mail] NOT CONFIGURED — OTP for ${to} was not emailed. The code is: ${code}`);
+    return 'console';
   }
   await sendMail({
     to,
@@ -146,6 +170,7 @@ export async function sendOtpEmail(to, code) {
     html:    otpHtml(code),
     logLabel: 'OTP send',
   });
+  return 'sent';
 }
 
 const CONTACT_FORM_RECIPIENT = 'praneshbabykannan@soorgaai.com';

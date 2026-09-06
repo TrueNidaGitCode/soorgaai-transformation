@@ -116,7 +116,16 @@ export const requestEmailOtp = async (req, res) => {
       return res.status(400).json({ msg: "A valid email address is required" });
     }
 
-    if (!mailConfigured && process.env.NODE_ENV === 'production') {
+    // Unconfigured mail used to be refused only when NODE_ENV was exactly
+    // 'production'. Railway does not guarantee that variable, so a deployment
+    // with no BREVO_API_KEY answered "Code sent" and emailed nobody — the one
+    // failure mode indistinguishable from a delivery problem, and the reason
+    // this comment exists. Now it refuses everywhere unless a developer has
+    // explicitly asked to read codes out of the log.
+    const consoleOtpAllowed = process.env.ALLOW_CONSOLE_OTP === '1'
+      || process.env.NODE_ENV === 'development';
+    if (!mailConfigured && !consoleOtpAllowed) {
+      console.error('[auth] OTP requested but no mail transport is configured — set BREVO_API_KEY.');
       return res.status(503).json({ msg: "Email sign-in is temporarily unavailable. Please continue with Google." });
     }
 
@@ -140,9 +149,23 @@ export const requestEmailOtp = async (req, res) => {
       { upsert: true }
     );
 
-    await sendOtpEmail(email, code);
+    let delivery;
+    try {
+      delivery = await sendOtpEmail(email, code);
+    } catch (err) {
+      // lastSentAt was written before the send, so a failed send would leave a
+      // cooldown behind: the retry a minute later gets "Code already sent" for
+      // a code that never went anywhere. Clear it so retrying works.
+      await EmailOtp.updateOne({ email }, { $set: { lastSentAt: null } }).catch(() => {});
+      throw err;
+    }
 
-    return res.status(200).json({ msg: "Code sent" });
+    return res.status(200).json({
+      msg: delivery === 'console' ? "Code written to the server log" : "Code sent",
+      // The client shows a different instruction for each. Only ever
+      // 'console' on a box that opted in above.
+      delivery,
+    });
   } catch (error) {
     console.error("❌ Email OTP request error:", error);
     return res.status(500).json({ msg: "Failed to send the code. Please try again." });

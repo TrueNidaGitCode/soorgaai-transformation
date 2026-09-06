@@ -125,6 +125,11 @@ export function wireAuthModal() {
             const { msg } = await resp.json().catch(() => ({}));
             throw new Error(msg || 'Failed to send the code. Please try again.');
         }
+        // 'console' means the server has no mail transport and wrote the code
+        // to its log instead. Telling someone to check their email in that
+        // case sends them looking for a message that does not exist.
+        const { delivery } = await resp.json().catch(() => ({}));
+        return delivery || 'sent';
     };
 
     // Step 1 — send the code (or hand Gmail addresses straight to Google)
@@ -149,10 +154,15 @@ export function wireAuthModal() {
         if (btn) { btn.disabled = true; btn.textContent = 'Sending code…'; }
 
         try {
-            await requestCode(email);
+            const delivery = await requestCode(email);
             currentEmail = email;
             const emailEl = document.getElementById('auth-code-email');
             if (emailEl) emailEl.textContent = email;
+            const sub = document.querySelector('#auth-step-code .auth-modal__sub');
+            if (sub && delivery === 'console') {
+                sub.textContent = 'This server has no mail transport configured, so the code was written'
+                    + ' to its log rather than emailed. It expires in 10 minutes.';
+            }
             const codeInput = document.getElementById('auth-code');
             if (codeInput) codeInput.value = '';
             showStep('code');

@@ -285,6 +285,29 @@ async function reportEmbeddingConfig() {
 }
 
 /**
+ * Whether email can leave this instance.
+ *
+ * Same reasoning as the LLM banner below: with no transport configured the
+ * OTP flow answered "Code sent" and emailed nobody, and the only evidence was
+ * a single log line among thousands. This one is at the top and impossible to
+ * miss.
+ */
+async function reportMailConfig() {
+    try {
+        const { describeMailConfig } = await import('./services/mailService.js');
+        const m = describeMailConfig();
+        if (m.configured) {
+            console.log(`✅ Mail: ${m.transport} as ${m.sender || '(no sender address set)'}`);
+            if (!m.sender) console.warn('⚠️  No EMAIL_FROM / EMAIL_USER — Brevo rejects a send with no sender.');
+        } else {
+            console.warn('⚠️  Mail: NOT CONFIGURED — email sign-in will be refused. Set BREVO_API_KEY and EMAIL_FROM.');
+        }
+    } catch (err) {
+        console.warn(`⚠️  Could not read the mail configuration: ${err.message}`);
+    }
+}
+
+/**
  * Say which model this instance will actually use, before it uses one.
  *
  * Three environment variables decide it and none of them are visible from
@@ -315,6 +338,7 @@ connectDB()
         warmCache(); // Pre-load KB files into memory
         await reportEmbeddingConfig();
         await reportLlmConfig();
+        await reportMailConfig();
         console.log("🚀 Starting SoorgaAI Server...");
         app.listen(PORT, () => console.log(`🚀 SoorgaAI Server running on port ${PORT}`));
     })

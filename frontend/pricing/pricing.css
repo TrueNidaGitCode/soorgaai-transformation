@@ -14,7 +14,6 @@
 }
 
 /* Override home.css global h2 for pricing-specific headings */
-.pr-faq__heading,
 .pr-footer-cta__heading {
   font-family: var(--font-serif);
   font-size: clamp(24px, 2.6vw, 34px);
@@ -67,7 +66,10 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 30px;
   padding: 4px;
-  margin-bottom: 52px;
+  /* 52px here plus 56px above the cards used to have the Early Access banner
+     sitting in it. With the banner gone that adds up to a hole rather than a
+     section gap. */
+  margin-bottom: 12px;
 }
 
 .pr-toggle__btn {
@@ -112,43 +114,6 @@
 .pr-price--monthly[hidden],
 .pr-price--yearly[hidden] {
   display: none !important;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   EARLY ACCESS BANNER
-══════════════════════════════════════════════════════════ */
-.pr-early-banner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 13px 32px;
-  background: rgba(92, 197, 167, 0.05);
-  border-top: 1px solid rgba(92, 197, 167, 0.12);
-  border-bottom: 1px solid rgba(92, 197, 167, 0.12);
-  flex-wrap: wrap;
-  text-align: center;
-}
-
-.pr-early-banner__icon {
-  font-size: 15px;
-}
-
-.pr-early-banner__title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--pr-brand);
-  letter-spacing: 0.3px;
-}
-
-.pr-early-banner__sep {
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 13px;
-}
-
-.pr-early-banner__body {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.55);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -390,85 +355,6 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   FAQ — Accordion using <details>/<summary>
-══════════════════════════════════════════════════════════ */
-.pr-faq {
-  padding: 80px 40px;
-  background: rgba(255, 255, 255, 0.015);
-  border-top: 1px solid var(--pr-card-border);
-}
-
-.pr-faq__inner {
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-.pr-faq__heading {
-  text-align: center;
-  margin-bottom: 48px !important;
-}
-
-.pr-faq__list {
-  display: flex;
-  flex-direction: column;
-}
-
-.pr-faq-item {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.pr-faq-item:first-child {
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.pr-faq-q {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-  gap: 16px;
-  transition: color 0.2s;
-}
-
-/* Remove default marker in all browsers */
-.pr-faq-q::-webkit-details-marker { display: none; }
-.pr-faq-q::marker { display: none; }
-
-/* +/× indicator */
-.pr-faq-q::after {
-  content: '+';
-  font-size: 22px;
-  font-weight: 300;
-  color: var(--pr-text-dim);
-  flex-shrink: 0;
-  line-height: 1;
-  transition: transform 0.25s ease, color 0.2s;
-}
-
-.pr-faq-item[open] .pr-faq-q::after {
-  transform: rotate(45deg);
-  color: var(--pr-brand);
-}
-
-.pr-faq-item[open] .pr-faq-q {
-  color: #fff;
-}
-
-.pr-faq-a {
-  font-size: 15px;
-  color: var(--pr-text-dim);
-  line-height: 1.72;
-  padding-bottom: 20px;
-  margin: 0;
-}
-
-/* ═══════════════════════════════════════════════════════════
    FOOTER CTA
 ══════════════════════════════════════════════════════════ */
 .pr-footer-cta {
@@ -619,7 +505,6 @@
   .pr-hero__sub    { font-size: 16px; }
   .pr-toggle       { margin-bottom: 40px; }
 
-  .pr-faq          { padding: 60px 24px; }
   .pr-footer-cta   { padding: 64px 24px; }
 
   .pr-footer-cta__btns { flex-direction: column; align-items: center; }
@@ -638,8 +523,6 @@
   .pr-cards-section { padding: 36px 16px 52px; }
   .pr-card          { padding: 28px 18px 24px; }
   .pr-price__amount { font-size: 34px; }
-  .pr-early-banner  { padding: 12px 16px; gap: 6px; }
   .pr-dialog        { padding: 40px 24px 32px; }
-  .pr-faq           { padding: 48px 16px; }
   .pr-footer-cta    { padding: 52px 16px; }
 }

@@ -20,6 +20,7 @@
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import HostedDeployment from '../models/HostedDeployment.js';
 import { issueToken } from '../services/gatewayService.js';
+import { requireEntitlement, deploymentCeilingUsd } from '../services/entitlements.js';
 import {
   getDeployTarget, buildTenantEnv, tenantDbName, tenantProjectName,
 } from '../services/deployTargetService.js';
@@ -121,7 +122,16 @@ export async function prepareInfrastructure(req, res) {
       });
     }
 
+    // Only a NEW environment spends a slot. Re-preparing one the account
+    // already has would otherwise refuse every customer who is at their limit
+    // by exactly the deployment they are trying to fix.
+    if (!existing && !await requireEntitlement(req, res, 'launch')) return;
+
     const dep = existing || new HostedDeployment({ userId: req.user._id, blueprintId: bp._id });
+    // The inference ceiling belongs to what the customer pays, not to the
+    // deployment — the model default of $5 applied to everyone, including the
+    // free tier. Re-read on every prepare so an upgrade takes effect.
+    dep.limits.maxCostUsd = await deploymentCeilingUsd(req.user._id);
     dep.hosting = hosting;
     dep.statusMessage = '';
     dep.model = {

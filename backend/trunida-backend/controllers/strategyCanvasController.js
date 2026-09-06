@@ -20,6 +20,7 @@ import { MAX_OBJECTIVE_LENGTH } from '../config/objectiveLimits.js';
 import { checkObjective } from '../services/objectiveGuardService.js';
 import { resolveEngagement, CATEGORIES, WORKFLOW_AREAS } from '../services/engagementClassifierService.js';
 import { getCompanyEvidence } from '../services/companyContextService.js';
+import { requireEntitlement } from '../services/entitlements.js';
 
 // Maps UserProfile.industryDomain enum values to knowledge-base folder names.
 // All current sub-domains (ADAS, Diagnostics, etc.) belong to the Automotive layer.
@@ -526,6 +527,11 @@ export async function startTransformationGeneration(req, res) {
     if (objective.length > MAX_OBJECTIVE_LENGTH) {
       return res.status(400).json({ error: `Objective is too long (max ${MAX_OBJECTIVE_LENGTH} characters).` });
     }
+
+    // Before the objective guard, not after: this is two counts against an
+    // index, where the guard is a model call. Refusing for free costs nothing;
+    // refusing after paying for a check is a bill with no product attached.
+    if (!await requireEntitlement(req, res, 'blueprint')) return;
 
     // A full run is six domains and ~16 capability generations. Check once,
     // for a fraction of one capability, that this is worth generating at all

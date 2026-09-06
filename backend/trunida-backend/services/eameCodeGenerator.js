@@ -194,6 +194,9 @@ export async function generateApplication(spec, { provider, maxTokens = MAX_TOKE
     systemPrompt: system,
     userMessage: message,
     maxTokens,
+    // Unlabelled, this was the single most expensive call in the product
+    // landing in the ledger's 'other' bucket.
+    label: 'eame:generate',
     ...(provider ? { provider } : {}),
   });
 

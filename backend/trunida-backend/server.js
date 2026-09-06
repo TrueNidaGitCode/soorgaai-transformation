@@ -36,6 +36,8 @@ import deliveryRoutes               from "./routes/deliveryRoutes.js";
 import websiteRoutes                from "./routes/websiteRoutes.js";
 import governanceChecklistRoutes    from "./routes/governanceChecklistRoutes.js";
 import gatewayRoutes                from "./routes/gatewayRoutes.js";
+import billingRoutes                from "./routes/billingRoutes.js";
+import { usageContextMiddleware }   from "./services/usageContext.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
@@ -90,6 +92,11 @@ const connectDB = async () => {
     }
 };
 
+// Opens the attribution store for this request and everything it starts,
+// including the fire-and-forget generation that outlives the response. Must
+// come before any route, or the auth middleware has nothing to write into.
+app.use(usageContextMiddleware);
+
 // ✅ Ensure DB is connected before handling requests
 app.use(async (req, res, next) => {
     if (mongoose.connection.readyState !== 1) {
@@ -118,6 +125,7 @@ app.use("/api/admin/company-library", companyResearchLibraryRoutes);
 app.use("/api/admin/industry-verticals", industryVerticalKnowledgeRoutes);
 app.use("/api/admin/industry-kb", industryCapabilityKnowledgeRoutes);
 app.use("/api/admin/model-catalog", modelCatalogRoutes);
+app.use("/api/billing",              billingRoutes);
 app.use("/api/feedback",             feedbackRoutes);
 app.use("/api/guest",                guestRoutes);
 // More specific prefix first, per the convention noted above

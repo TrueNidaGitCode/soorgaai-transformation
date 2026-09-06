@@ -2476,6 +2476,18 @@
   padding: 0.65rem 1rem;
 }
 
+/* The link out of a plan limit. Underlined and inherits the red, because it
+   sits inside the refusal sentence rather than beside it — the whole point is
+   that the way forward is part of the message, not a separate control the
+   reader has to go looking for. */
+.gen-error__link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+.gen-error__link:hover { opacity: 0.85; }
+
 .gen-objective-counter {
   font-size: 0.78rem;
   color: rgba(255,255,255,0.4);

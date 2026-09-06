@@ -395,7 +395,11 @@ async function runChain({ systemPrompt, userMessage, model, maxTokens }) {
     try {
       const result = await impl.generate({ systemPrompt, userMessage, model, maxTokens });
       if (i > 0) console.log(`[llm] Failover succeeded via ${name}`);
-      return result;
+      // Which model actually answered. Providers do not report it back, and
+      // the ledger cannot price a call it cannot name — an unknown model is
+      // costed at the most expensive row, so guessing here inflates the whole
+      // breakdown rather than leaving one line blank.
+      return { ...result, provider: name, model: model || DEFAULT_MODELS[name] || '' };
     } catch (err) {
       const msg = err.message || String(err);
       errors.push(`${name}: ${msg}`);
@@ -421,6 +425,9 @@ async function runChain({ systemPrompt, userMessage, model, maxTokens }) {
     `No valid LLM providers in chain.\n${errors.map(e => `  - ${e}`).join('\n')}`
   );
 }
+
+import { currentUsage } from './usageContext.js';
+import { recordLedgerCall } from './usageLedgerService.js';
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
@@ -459,6 +466,7 @@ export async function generate({
     }
     console.log(`[llm] Provider: ${provider} (explicit)`);
     result = await impl.generate({ systemPrompt, userMessage, model, maxTokens });
+    result = { ...result, provider, model: model || DEFAULT_MODELS[provider] || '' };
   } else {
     result = await runChain({ systemPrompt, userMessage, model, maxTokens });
   }
@@ -495,6 +503,17 @@ function recordCall({ label, result, ms }) {
 
   if (process.env.LLM_LOG_USAGE === '1') {
     console.log(`[llm usage] ${key}: ${inTok} in / ${outTok} out (${(ms / 1000).toFixed(1)}s)`);
+  }
+
+  // Durable, per-account, and deliberately not awaited: the counters above
+  // measure a process, this measures a customer. A ledger write that fails
+  // must never fail the generation it is describing — see usageLedgerService.
+  const { userId, stage } = currentUsage();
+  if (userId) {
+    recordLedgerCall({
+      userId, stage, label: key, model: result?.model || '',
+      inputTokens: inTok, outputTokens: outTok,
+    }).catch(() => {});
   }
 }
 

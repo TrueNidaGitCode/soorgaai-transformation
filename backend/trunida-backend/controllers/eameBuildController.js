@@ -17,6 +17,7 @@ import GeneratedApplication from '../models/GeneratedApplication.js';
 import { buildApplication } from '../services/eameBuildService.js';
 import { buildRuntime } from '../services/eameProjectBuilder.js';
 import { tenantMongoUri } from '../services/deployTargetService.js';
+import { requireEntitlement } from '../services/entitlements.js';
 
 /**
  * How long a build may sit in "building" before it is assumed dead.
@@ -62,6 +63,13 @@ export async function startBuild(req, res) {
     const { blueprintId } = req.params;
     const bp = await owned(blueprintId, req.user._id);
     if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    // Only when there is nothing to rebuild. A record that already exists has
+    // already been counted, so re-running a failed or superseded build must not
+    // spend a second slot — the customer would be paying twice for one
+    // application because the first attempt did not work.
+    const already = await GeneratedApplication.findOne({ blueprintId }).select('_id').lean();
+    if (!already && !await requireEntitlement(req, res, 'application')) return;
 
     // One build at a time per blueprint. Two concurrent generations would race
     // to write the same record, and the loser's files would vanish with no

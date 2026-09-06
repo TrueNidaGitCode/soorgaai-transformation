@@ -332,6 +332,13 @@ const transformationBlueprintSchema = new mongoose.Schema({
   businessObjective: { type: String, required: true },
   industry:          { type: String, default: 'Automotive' },
   companyName:       { type: String, default: '' },
+
+  // Retired, not deleted. A plan that caps how many objectives an account
+  // carries at once needs a way to put one down without destroying work the
+  // customer paid for — services/entitlements.js counts only unarchived
+  // blueprints as active.
+  archived:   { type: Boolean, default: false, index: true },
+  archivedAt: { type: Date,    default: null },
   status: {
     type:    String,
     enum:    ['generating', 'completed', 'error'],

@@ -863,6 +863,16 @@ function initGenerateForm() {
       });
 
       if (resp.status === 401) { window.handleSessionExpired(); return; }
+      if (resp.status === 402) {
+        // Not an error the customer can fix by retrying — it is a plan
+        // boundary, and the only useful thing to show is the way past it.
+        const body = await resp.json().catch(() => ({}));
+        showLimitReached(errEl, body);
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitText) submitText.style.display = '';
+        if (submitLoader) submitLoader.style.display = 'none';
+        return;
+      }
       if (!resp.ok) {
         const { error } = await resp.json().catch(() => ({}));
         throw new Error(error || 'Failed to start blueprint generation.');
@@ -892,6 +902,25 @@ async function initProgressFromBlueprint() {
 function showError(el, msg) {
   if (!el) return;
   el.textContent = msg;
+  el.style.display = 'block';
+}
+
+/**
+ * A plan limit, with the tier that lifts it.
+ *
+ * Built with DOM calls rather than innerHTML because the reason string comes
+ * from the server and carries plan names and dates — none of it should ever be
+ * able to become markup.
+ */
+function showLimitReached(el, { error, upgradeLabel }) {
+  if (!el) return;
+  el.textContent = error || 'You have reached a limit on your plan.';
+  const link = document.createElement('a');
+  link.href = '/pricing/pricing.html';
+  link.className = 'gen-error__link';
+  link.textContent = upgradeLabel ? `See what ${upgradeLabel} includes →` : 'See the plans →';
+  el.appendChild(document.createTextNode(' '));
+  el.appendChild(link);
   el.style.display = 'block';
 }
 

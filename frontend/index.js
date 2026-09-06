@@ -479,6 +479,24 @@ export function wireHeroPrompt() {
                     window.location.reload();
                     return;
                 }
+                if (resp.status === 402) {
+                    // A plan boundary, not a failure. Retrying will not help,
+                    // so show the limit and where it is lifted.
+                    const body = await resp.json().catch(() => ({}));
+                    if (errEl) {
+                        errEl.textContent = body.error || 'You have reached a limit on your plan.';
+                        const link = document.createElement('a');
+                        link.href = '/pricing/pricing.html';
+                        link.className = 'prompt__error-link';
+                        link.textContent = body.upgradeLabel
+                            ? `See what ${body.upgradeLabel} includes →` : 'See the plans →';
+                        errEl.appendChild(document.createTextNode(' '));
+                        errEl.appendChild(link);
+                        errEl.style.display = '';
+                    }
+                    if (sendBtn) sendBtn.disabled = false;
+                    return;
+                }
                 if (!resp.ok) {
                     const { error } = await resp.json().catch(() => ({}));
                     throw new Error(error || 'Failed to start generation. Please try again.');

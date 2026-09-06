@@ -50,8 +50,23 @@ export async function authenticate(token) {
 // slightly stale rate changes when a tenant is cut off, never what they owe.
 const EMBEDDING_PRICE_PER_M = Number(process.env.GATEWAY_EMBEDDING_PRICE || 0.02);
 
+/**
+ * A catalog row by either name it goes by.
+ *
+ * Rows carry two ids: the advisory id a customer picks in Arth ('gemini-flash')
+ * and the real API id it resolves to ('gemini-3.8-flash'). Matching only the
+ * first was fine while the gateway was the only caller, because a deployment
+ * stores the advisory id. The usage ledger reports what llmService actually
+ * called, which is the API id — so every internal call missed, fell through to
+ * the "unknown model" branch below, and was priced at Opus rates. A Gemini
+ * Flash call was being recorded at roughly fifty times its cost, in the one
+ * record meant to tell us what a tier really costs.
+ */
 export function findCatalogModel(modelId) {
-  return ADVISORY_CATALOG.find(m => m.id === modelId) || null;
+  if (!modelId) return null;
+  return ADVISORY_CATALOG.find(m => m.id === modelId)
+      || ADVISORY_CATALOG.find(m => m.apiModel === modelId)
+      || null;
 }
 
 export function estimateCostUsd(modelId, inputTokens = 0, outputTokens = 0) {

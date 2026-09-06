@@ -230,16 +230,34 @@ function renderBuildState(build) {
   if (note) {
     // Failures and caveats, never hidden. A build that stopped at install is a
     // different claim from one that booted, and the screen has to say which.
+    //
+    // The two are also not the same KIND of thing, and this block used to run
+    // them together unlabelled: a build that PASSED showed a bare list of
+    // bullets — "backed only by generated sample data", "no repository was
+    // read" — which reads as a list of errors. It was reported as one. A
+    // heading is what separates "this went wrong" from "this is worth knowing".
+    const failed = build.status === 'failed';
     const lines = [];
-    if (build.status === 'failed') {
+
+    if (failed) {
       lines.push(build.reason || 'The build did not pass verification.');
       (build.failures || []).slice(0, 4).forEach(f => lines.push('· ' + f));
     }
-    (build.warnings || []).forEach(w => lines.push('· ' + w));
+
+    const caveats = [...(build.warnings || [])];
     if (build.status === 'passed' && (build.skipped || []).length) {
-      lines.push('Not every gate ran: ' + build.skipped.join(', ') + '.');
+      caveats.push('Not every gate ran: ' + build.skipped.join(', ') + '.');
     }
+    if (caveats.length) {
+      if (lines.length) lines.push('');
+      lines.push(failed
+        ? 'Also worth knowing:'
+        : 'The build passed. Worth knowing about what it was built from:');
+      caveats.forEach(c => lines.push('· ' + c));
+    }
+
     note.textContent = lines.join('\n');
+    note.classList.toggle('eg-build__note--bad', failed);
     note.style.display = lines.length ? '' : 'none';
   }
 }

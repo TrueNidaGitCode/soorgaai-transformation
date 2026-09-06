@@ -247,7 +247,13 @@ window.fetch = function (url, opts) {
     return J({
       status: 'passed', verifiedTo: 'smoke', skipped: [], reason: '',
       useCase: 'Predictive Analytics for Student Churn', provider: 'gemini',
-      warnings: [], failures: [], attempts: 1,
+      // A passed build with caveats. Reported as an error because the bullets
+      // ran unlabelled under a successful build and read as failures.
+      warnings: [
+        'Attendance Log Records are backed only by generated sample data, so the model is shaped by data the customer does not have yet.',
+        'No repository was read, so the generated code cannot be matched to entities the customer already has.',
+      ],
+      failures: [], attempts: 1,
       progress: { attempt: 1, phase: 'passed', detail: 'smoke' },
       generatedPaths: ['models/StudentChurnProfile.js', 'services/churnAnalyticsService.js',
                        'controllers/churnController.js', 'routes/churnRoutes.js',
@@ -709,6 +715,18 @@ setTimeout(async function () {
         bad(passed + ' of ' + gates.length + ' gates show as passed on a passed build');
       }
 
+      var noteEl = document.getElementById('eame-build-note');
+      out.note = noteEl ? noteEl.textContent.replace(/s+/g, ' ').trim().slice(0, 70) : 'missing';
+      if (BUILD_STATE !== 'none' && noteEl && noteEl.style.display !== 'none') {
+        // On a build that worked, caveats must say so before listing anything.
+        if (!/The build passed/.test(noteEl.textContent)) {
+          bad('caveats on a passed build are unlabelled: ' + out.note);
+        }
+        if (noteEl.classList.contains('eg-build__note--bad')) {
+          bad('caveats on a passed build are styled as a failure');
+        }
+      }
+
       var badge = document.getElementById('eame-gen-status');
       out.badge = badge ? badge.textContent.trim() : 'missing';
       // The old text was a hardcoded claim. Anything that still asserts
@@ -944,7 +962,11 @@ for (const screen of list) {
     // Its own clause, not nested inside the arth one — nested, it could only
     // ever print for a screen that also had model classes, so the eame line
     // was unreachable.
-    + (r.gates ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}"${r.freshShows ? ' · fresh shows ' + r.freshShows + ' · claims ' + r.falseClaims : ''}` : ''));
+    + (r.gates
+        ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}"`
+          + (r.freshShows ? ` · fresh shows ${r.freshShows} · claims ${r.falseClaims}` : '')
+          + (r.note && r.note !== 'missing' ? `\n        note "${r.note}"` : '')
+        : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

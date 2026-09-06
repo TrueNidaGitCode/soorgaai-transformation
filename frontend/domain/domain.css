@@ -13622,4 +13622,9 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
   color: #D4AF6E;
   white-space: pre-wrap;
 }
+/* A failure and a caveat are not the same claim, so they do not read the
+   same. Amber for things worth knowing about a build that worked; red only
+   when it did not. Reported as a bug because a passed build showed an
+   unlabelled list of bullets and looked like an error. */
+.eg-build__note--bad { color: #E38C7A; }
 .eg-status--bad .eg-status__dot { background: #E38C7A; }

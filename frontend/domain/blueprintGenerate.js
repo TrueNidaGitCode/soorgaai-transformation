@@ -678,47 +678,83 @@ const isSettled = c => c.status === 'completed' || c.status === 'error';
  * @returns {boolean} whether the pause is showing, so the caller knows to
  *   suppress the ordinary bar rather than draw both.
  */
-function renderGuestPause(bp) {
+/**
+ * The panel that appears when generation has stopped short of the whole
+ * blueprint, and says what restarts it.
+ *
+ * Two ways to arrive here and they need different answers:
+ *
+ *   a guest       — the preview is over; an account is what unlocks the rest
+ *   signed in     — the domains are unlocked but nobody has asked for them,
+ *                   because claiming a preview sets the owner and generates
+ *                   nothing
+ *
+ * The signed-in case is why this stopped being guest-only. A claimed blueprint
+ * has one domain generated and five pending, and the ordinary progress bar
+ * counts capabilities: four of sixteen settled, none running, so it sat at 25%
+ * under "Analysing your objective…" indefinitely. Nothing was being analysed.
+ * The screen was describing work that had never been started.
+ *
+ * @returns {boolean} whether the panel is showing, so the caller suppresses
+ *   the ordinary bar rather than drawing both.
+ */
+function renderStopPanel(bp) {
   const wrap = document.getElementById('opp-paused');
   if (!wrap) return false;
+  const hide = () => { wrap.style.display = 'none'; return false; };
 
   const domains = bp.domains || [];
-  const preview = domains.filter(d => GUEST_PREVIEW_DOMAINS.includes(d.domainId));
-  const previewDone = preview.length
-    && preview.every(d => (d.capabilities || []).length && (d.capabilities || []).every(isSettled));
+  const caps = domains.flatMap(d => d.capabilities || []);
+  const running = caps.some(c => c.status === 'in-progress' || c.status === 'generating');
 
-  // Still generating the free part — the ordinary bar is the right thing.
-  if (!previewDone) { wrap.style.display = 'none'; return false; }
+  // Work genuinely in flight — the ordinary bar is the right thing, and this
+  // panel would be claiming a stop that has not happened.
+  if (running || bp.status === 'generating') return hide();
 
-  const remaining = domains.filter(d => !GUEST_PREVIEW_DOMAINS.includes(d.domainId));
+  const generated = domains.filter(d =>
+    (d.capabilities || []).length && (d.capabilities || []).every(isSettled));
+  const remaining = domains.filter(d => !generated.includes(d));
+  // Nothing generated at all, or everything generated — neither is a stop
+  // worth a panel. The first is a failure the error slot already covers.
+  if (!generated.length || !remaining.length) return hide();
+
+  const isGuest = !!window.SOORGA_GUEST;
   const next = remaining[0];
-
   const count = document.getElementById('opp-paused-count');
   const text  = document.getElementById('opp-paused-next');
+  const label = document.getElementById('opp-paused-label');
 
   // The count carries the progress. A bar beside it said the same thing and
   // cost three lines of height on the screen where height was the complaint.
-  if (count) count.textContent = `${preview.length} of ${domains.length} domains`;
+  if (count) count.textContent = `${generated.length} of ${domains.length} domains`;
+  if (label) label.textContent = isGuest ? 'Preview paused' : 'Not generated yet';
   if (text) {
-    // "carries on from here" was a promise the product does not keep. Claiming
-    // a preview sets the owner and unlocks the other domains; it does not
-    // generate them — that happens per domain, on request, from the workspace.
-    // Whether it SHOULD auto-continue is a real question (it spends a full run
-    // the instant someone signs up), but until it does, the panel must not say
-    // it does.
-    // Short enough to hold two lines beside the buttons. "Save this
-    // blueprint" already carries the reassurance that the longer version
-    // spelled out, and every extra line here pushes the recommendation down.
-    text.textContent = next
+    text.textContent = isGuest
+      // Claiming a preview sets the owner and unlocks the rest; it does not
+      // generate them. "Save this blueprint" carries the reassurance that a
+      // longer sentence spelled out, in a line that fits.
       ? `${next.domainName || 'The next domain'} is next. Log in to save this blueprint `
         + `and unlock the remaining ${remaining.length} domains.`
-      : 'Log in to save this blueprint and carry on.';
+      : `${next.domainName || 'The next domain'} and ${remaining.length - 1} other domains `
+        + `have not been generated yet. Nothing is running until you ask for it.`;
   }
 
-  // The top banner says the same thing less usefully once this is up, and two
-  // login prompts on one screen read as a nag rather than a step.
+  // Guests get a login; owners get the button that actually starts the work.
+  const loginBtn   = document.getElementById('opp-paused-login');
+  const restartBtn = document.getElementById('opp-paused-restart');
+  const genBtn     = document.getElementById('opp-paused-generate');
+  if (loginBtn)   loginBtn.style.display   = isGuest ? '' : 'none';
+  if (restartBtn) restartBtn.style.display = isGuest ? '' : 'none';
+  if (genBtn) {
+    genBtn.style.display = isGuest ? 'none' : '';
+    genBtn.textContent = `Generate the remaining ${remaining.length} domains`;
+    genBtn.dataset.domainIds = remaining.map(d => d.domainId).join(',');
+  }
+
+  // The guest banner says the same thing less usefully once this is up, and
+  // two login prompts on one screen read as a nag rather than a step.
   const banner = document.getElementById('domain-guest-banner');
-  if (banner) banner.style.display = 'none';
+  if (banner && isGuest) banner.style.display = 'none';
 
   wrap.style.display = '';
   return true;
@@ -737,9 +773,11 @@ function renderOpportunitiesProgress(bp) {
   const count = document.getElementById('opp-progress-count');
   if (!wrap || !fill) return;
 
-  // A guest stops at the end of the first domain, and past that point the
-  // ordinary bar would describe work that is never going to run.
-  if (window.SOORGA_GUEST && renderGuestPause(bp)) { wrap.style.display = 'none'; return; }
+  // Generation stopped short of the whole blueprint — for a guest at the end
+  // of the free domain, for an owner because a claimed preview generates
+  // nothing further. Either way the ordinary bar would describe work that is
+  // not running.
+  if (renderStopPanel(bp)) { wrap.style.display = 'none'; return; }
 
   const caps = (bp.domains || []).flatMap(d => d.capabilities || []);
   const total = caps.length;
@@ -864,6 +902,49 @@ function goToStage(stage) {
   }
   showScreen('screen-' + stage);
   document.dispatchEvent(new CustomEvent(stage + ':show', { detail: { blueprint: bp } }));
+}
+
+/**
+ * Start the domains that were never generated.
+ *
+ * A claimed preview leaves five domains pending and nothing running. This is
+ * the explicit ask that starts them — explicit because it is a full run's
+ * worth of model calls, and spending that automatically the moment someone
+ * signs up is a decision nobody made.
+ */
+function wireGenerateRemaining() {
+  const btn = document.getElementById('opp-paused-generate');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const bp = _currentBlueprint;
+    const ids = (btn.dataset.domainIds || '').split(',').filter(Boolean);
+    if (!bp || !ids.length) return;
+    btn.disabled = true;
+    btn.textContent = 'Starting…';
+    try {
+      const resp = await fetch(
+        `${API_BASE}/strategy-canvas/transformation-blueprint/${bp._id}/regenerate-domains`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+          body: JSON.stringify({ domainIds: ids }),
+        }
+      );
+      if (resp.status === 401) { window.handleSessionExpired(); return; }
+      if (!resp.ok) {
+        const { error } = await resp.json().catch(() => ({}));
+        throw new Error(error || 'Could not start generation.');
+      }
+      // Reload rather than patch: the page already renders a run live, and
+      // reusing that path beats a second half-built progress renderer.
+      window.location.reload();
+    } catch (err) {
+      const errEl = document.getElementById('opp-error');
+      if (errEl) { errEl.textContent = err.message; errEl.style.display = 'block'; }
+      btn.disabled = false;
+      btn.textContent = 'Try again';
+    }
+  });
 }
 
 function wireJourneyNavigation() {
@@ -1200,6 +1281,7 @@ async function init() {
     const bp = await fetchTransformationBlueprint();
     _currentBlueprint = bp;
     wireJourneyNavigation();
+    wireGenerateRemaining();
 
     if (!bp) {
       // No blueprint yet — the landing page owns the prompt box

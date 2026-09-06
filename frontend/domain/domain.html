@@ -237,7 +237,7 @@
           <div class="gpause" id="opp-paused" style="display:none" role="status">
             <div class="gpause__body">
               <p class="gpause__head">
-                <span class="gpause__label">Preview paused</span>
+                <span class="gpause__label" id="opp-paused-label">Preview paused</span>
                 <span class="gpause__count" id="opp-paused-count"></span>
               </p>
               <p class="gpause__text" id="opp-paused-next"></p>
@@ -249,6 +249,10 @@
                    objective — or whose run failed — was stuck with the one
                    they had, on every reload, for ever. -->
               <button type="button" class="gpause__restart" id="opp-paused-restart">Start over</button>
+              <!-- Signed-in owners see this instead of the login pair: the
+                   domains are already theirs, they simply have not been asked
+                   for. Explicit because it is a full run's worth of spend. -->
+              <button type="button" class="gpause__btn" id="opp-paused-generate" style="display:none"></button>
             </div>
           </div>
 
@@ -1290,7 +1294,7 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=17"></script>
+  <script type="module" src="blueprintGenerate.js?v=18"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=41"></script>
   <script type="module" src="arthScreen.js?v=18"></script>

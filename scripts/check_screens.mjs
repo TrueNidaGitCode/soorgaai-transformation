@@ -166,6 +166,16 @@ const DEP = ${JSON.stringify(
   screen === 'arth' ? { ...DEPLOYMENT, status: 'none', preparedAt: '' } : DEPLOYMENT
 )};
 const BUILD_STATE = ${JSON.stringify(process.env.EAME_BUILD_STATE || "passed")};
+// ARIA_STATE=all-samples reproduces the state a company before launch reaches
+// after using the Sample data tab: nothing connected, every dataset filled
+// with generated rows. The screen answered "No data connected yet. Continue
+// with 0 of 6" — technically true and exactly the wrong thing to say to
+// someone who had just done what it asked.
+const ARIA_STATE = ${JSON.stringify(process.env.ARIA_STATE || '')};
+// Reported state: a company before launch, nothing connected, every dataset
+// filled from the Sample data tab. The in-code match is dropped too, or the
+// count never reaches zero and the sentence under test is never rendered.
+if (ARIA_STATE === 'all-samples') { BP.codebaseProfile = { checked: false }; }
 const MANIFEST = ${JSON.stringify({ fileCount: MANIFEST_FILES.length, totalBytes: MANIFEST_FILES.reduce((n, f) => n + f.bytes, 0), files: MANIFEST_FILES })};
 const RECOMMENDED = ${JSON.stringify([
   { modelId: 'gemini-3-8-flash', displayName: 'Gemini 3.8 Flash', vendor: 'Google',    type: 'frontier', providerId: 'gemini', apiModel: 'gemini-3.8-flash', focusScore: 48, cost: 0.56, inBand: true, confidenceLabel: 'Medium Confidence' },
@@ -255,6 +265,7 @@ window.fetch = function (url, opts) {
   if (u.includes('/project-manifest'))  return J(MANIFEST);
   if (u.includes('/github/personal/status')) return J({ connected: true, githubLogin: 'acme' });
   if (u.includes('/confluence/personal/status')) return J({ connected: true, siteName: 'acme.atlassian.net', jiraScopeGranted: true });
+  if (u.includes('/confluence/personal/linked/') && ARIA_STATE === 'all-samples') return J({ documents: [] });
   if (u.includes('/confluence/personal/linked/')) return J({ documents: [
     { sourceId: 'p1', title: 'Roadmap', sourceType: 'confluence', spaceKey: 'PM', redactionApplied: true, redactionCount: 2, extractionStatus: 'extracted', keywords: ['a'] },
     { sourceId: 'KAN-1', title: 'Flash abort', sourceType: 'jira', projectKey: 'KAN', redactionApplied: true, redactionCount: 1, extractionStatus: 'extracted', keywords: ['b'] },
@@ -278,10 +289,19 @@ window.fetch = function (url, opts) {
     rowCount: 22,
     generatedAt: new Date().toISOString(),
   });
-  if (u.includes('/uploads/dataset-files/')) return J({
-    uploads: [],
-    samples: [{ datasetName: 'Driver Behaviour Scores', rowCount: 22, generatedAt: new Date().toISOString() }],
-  });
+  if (u.includes('/uploads/dataset-files/')) {
+    if (ARIA_STATE === 'all-samples') {
+      const names = BP.domains.find(d => d.domainId === 'data-readiness')
+        .capabilities[0].sections[0].brief.datasets.map(d => d.name);
+      return J({ uploads: [], samples: names.map(n => ({
+        datasetName: n, rowCount: 20, generatedAt: new Date().toISOString(),
+      })) });
+    }
+    return J({
+      uploads: [],
+      samples: [{ datasetName: 'Driver Behaviour Scores', rowCount: 22, generatedAt: new Date().toISOString() }],
+    });
+  }
   if (u.includes('/screen-chat')) return J({ reply: 'Stubbed reply.', action: null });
   return J({});
 };
@@ -375,7 +395,11 @@ setTimeout(async function () {
       // the file that defines it. The path is the evidence — a match without
       // one is the guesswork this feature exists to replace.
       var inCode = scr.querySelector('.aria-status--incode');
-      if (!inCode) bad('no dataset rendered as found in the codebase');
+      if (!inCode) {
+        // The all-samples fixture deliberately has no repository read: the
+        // reported bug needs zero real sources of any kind.
+        if (ARIA_STATE !== 'all-samples') bad('no dataset rendered as found in the codebase');
+      }
       else {
         // NOTHING in this probe may contain a backslash — not even a comment.
         // The probe is built inside a template literal, so escapes are consumed
@@ -396,6 +420,27 @@ setTimeout(async function () {
       // Arth sat on a tab it was never shown.
       var navBtn = document.getElementById('aria-nav-btn');
       out.nav = navBtn ? (navBtn.disabled ? 'DISABLED' : navBtn.textContent.trim()) : 'missing';
+      out.navHint = (document.getElementById('aria-nav-hint') || {}).textContent || '';
+      if (ARIA_STATE === 'all-samples') {
+        // Readiness stays honest — 0 real datasets — but the sentence must
+        // not tell someone who just filled all six that nothing happened.
+        if (out.navHint.indexOf('No data connected yet') !== -1) {
+          bad('still says "No data connected yet" with every dataset sampled');
+        }
+        if (out.navHint.indexOf('generated samples') === -1) {
+          bad('the hint does not mention the generated samples: ' + out.navHint);
+        }
+        if (out.nav.indexOf('0 of') !== -1) {
+          bad('the button still reads "' + out.nav + '"');
+        }
+        // The exact sentence that was wrong: nothing real, everything sampled.
+        if (out.navHint.indexOf('Enough to design against') === -1) {
+          bad('the hint does not say the samples are enough to design against: ' + out.navHint);
+        }
+        if (out.readiness !== '0 of 5') {
+          bad('readiness reads "' + out.readiness + '" with nothing real connected');
+        }
+      }
       if (!navBtn) bad('no stage-nav button on Aria');
       else if (navBtn.disabled) bad('Move to Arth is disabled — the stage cannot be completed');
 
@@ -421,16 +466,24 @@ setTimeout(async function () {
       else if (sampleRow.textContent.indexOf('not your real data') === -1) {
         bad('the sample row does not say it is not their real data');
       }
-      // 3 of 5, not 4 of 5. This is the assertion the whole feature turns on.
-      if (out.readiness !== '3 of 5') {
-        bad('readiness reads "' + out.readiness + '" — sample data is being counted as available');
+      // Sample data must never inflate readiness. The expected figure differs
+      // by state, but the rule does not: only real sources count.
+      //   default      3 real of 5 (1 sampled, 1 still to collect)
+      //   all-samples  1 real of 5 — the in-code match — and 4 sampled
+      var wantReadiness = ARIA_STATE === 'all-samples' ? '0 of 5' : '3 of 5';
+      if (out.readiness !== wantReadiness) {
+        bad('readiness reads "' + out.readiness + '", expected "' + wantReadiness
+          + '" — sample data may be counted as available');
       }
+      var wantSamples = ARIA_STATE === 'all-samples' ? '5 Sample' : '1 Sample';
       var sampleLegend = document.getElementById('aria-legend-sample');
-      if (!sampleLegend || sampleLegend.textContent.indexOf('1 Sample') === -1) {
-        bad('the legend does not call out the sample data');
+      if (!sampleLegend || sampleLegend.textContent.indexOf(wantSamples) === -1) {
+        bad('the legend reads "' + (sampleLegend ? sampleLegend.textContent : 'missing')
+          + '", expected "' + wantSamples + '"');
       }
-      // The way to make one, for a dataset that has none.
-      if (!document.querySelector('[data-sample-make]')) {
+      // The way to make one, for a dataset that has none. Nothing is uncovered
+      // in the all-samples state, so there is correctly nothing to offer.
+      if (ARIA_STATE !== 'all-samples' && !document.querySelector('[data-sample-make]')) {
         bad('no way to generate sample data for the uncovered dataset');
       }
 
@@ -473,6 +526,17 @@ setTimeout(async function () {
         else {
           var targets = panel.querySelectorAll('.aria-sample__target');
           out.sampleTargets = targets.length;
+
+          if (ARIA_STATE === 'all-samples') {
+            // Nothing left to generate is a real state and needs saying, not
+            // an empty list with a button that would do nothing.
+            if (targets.length !== 0) bad('offered work when every dataset is already covered');
+            if (panel.textContent.indexOf('generated sample') === -1) {
+              bad('the tab does not say everything is covered: ' + panel.textContent.slice(0, 80));
+            }
+            var runBtn = document.getElementById('aria-sample-run');
+            if (runBtn && runBtn.style.display !== 'none') bad('the Generate button is still offered');
+          } else {
           // Exactly the datasets with no route in. The fixture has one
           // (Field Telemetry Feed); Driver Behaviour Scores already has a
           // sample and the other three have real sources, so offering any of
@@ -516,6 +580,7 @@ setTimeout(async function () {
           // row to "waiting", erasing which ones failed.
           if (out.batch.indexOf('18 rows') === -1) {
             bad('the per-dataset result was lost after the run: ' + out.batch);
+          }
           }
           // Exactly one. A tab that shows its own panel without hiding the
           // previous one looks like the wrong panel opened, and is invisible
@@ -854,7 +919,7 @@ for (const screen of list) {
     + `${r.steps ?? '?'} steps · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
-        nav "${r.nav}" · ${r.collect} rows · sample "${r.sample}"
+        nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"
         preview "${r.preview}" · sample tab offers ${r.sampleTargets} · panels ${r.visiblePanels}
         batch ${r.batchProgress} · targets "${r.batch}"` : '')
     + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : '')

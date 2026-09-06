@@ -542,7 +542,7 @@ function updateAriaNav(datasets, confCount, jiraCount) {
   const hint = document.getElementById('aria-nav-hint');
   if (!btn) return;
 
-  const { connected } = tally(datasets, confCount, jiraCount);
+  const { connected, sample } = tally(datasets, confCount, jiraCount);
   const total = datasets.length;
   btn.disabled = false;
 
@@ -557,15 +557,40 @@ function updateAriaNav(datasets, confCount, jiraCount) {
     return;
   }
 
+  // Sample data is still not counted as connected — readiness has to stay
+  // honest. But saying "No data connected yet" to someone who has just
+  // generated a sample for all six is both wrong and dispiriting: they did the
+  // thing the screen asked, and it answered as though nothing had happened.
+  // So the count stays truthful and the sentence acknowledges the samples.
+  const covered = connected + sample;
+  if (covered === total && sample > 0) {
+    btn.textContent = connected === 0
+      ? 'Continue with sample data →'
+      : `Continue with ${connected} real of ${total} →`;
+    if (hint) {
+      hint.textContent = connected === 0
+        ? `All ${total} datasets are filled with generated samples. Enough to design `
+          + 'against — replace them with real exports before trusting any figure.'
+        : `${connected} of ${total} are your own data; the rest are generated samples.`;
+    }
+    return;
+  }
+
   // Naming the number on the button matters: continuing with partial data is a
   // decision, and it should not be made without seeing what is being left out.
   btn.textContent = `Continue with ${connected} of ${total} →`;
   if (hint) {
-    hint.textContent = connected === 0
-      ? 'No data connected yet. Svarg will design for the data you plan to collect.'
+    if (connected === 0 && sample === 0) {
+      hint.textContent = 'No data connected yet. Svarg will design for the data you plan to collect.';
+    } else {
+      const missing = total - covered;
       // "listed below" pointed at the Still to collect section, which is gone.
       // The table above is where they are listed, and it is already on screen.
-      : `${total - connected} dataset${total - connected === 1 ? '' : 's'} still to collect.`;
+      const parts = [];
+      if (sample) parts.push(`${sample} filled with generated samples`);
+      if (missing) parts.push(`${missing} still to collect`);
+      hint.textContent = parts.join(', ') + '.';
+    }
   }
 }
 

@@ -219,6 +219,14 @@ function renderBuildState(build) {
         : 'Eame writes the code for this use case, then installs and starts it to prove it runs.';
   }
 
+  // "Application generated successfully — your running project is ready for
+  // delivery and deployment." That sat in the markup with no display:none and
+  // nothing toggling it, so it greeted every visitor to this screen including
+  // one whose blueprint had never been built. It is the strongest claim the
+  // page makes and it was the only one nothing checked.
+  const onward = document.getElementById('eame-onward');
+  if (onward) onward.style.display = build.status === 'passed' ? '' : 'none';
+
   if (note) {
     // Failures and caveats, never hidden. A build that stopped at install is a
     // different claim from one that booted, and the screen has to say which.

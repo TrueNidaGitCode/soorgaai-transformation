@@ -687,6 +687,24 @@ setTimeout(async function () {
         if (!/No application yet/.test((document.getElementById('eame-tree') || {}).textContent || '')) {
           bad('the file tree does not say there is nothing built yet');
         }
+
+        // Enumerating empty elements missed the loudest claim on the page: a
+        // static "Application generated successfully — your running project is
+        // ready for delivery and deployment" banner with nothing toggling it.
+        // So this asks the opposite question — does ANY visible text on the
+        // screen assert a build exists? — which no future banner can slip past.
+        var claims = [];
+        [].forEach.call(scr.querySelectorAll('*'), function (el) {
+          if (el.children.length || el.offsetParent === null) return;
+          var t = (el.textContent || '').trim();
+          if (/generated successfully|ready for delivery|ready to deploy|project is ready/i.test(t)) {
+            claims.push(t.slice(0, 70));
+          }
+        });
+        out.falseClaims = claims.join(' | ') || 'none';
+        if (claims.length) {
+          bad('the screen claims a build exists with nothing built: ' + out.falseClaims);
+        }
       } else if (passed !== 6) {
         bad(passed + ' of ' + gates.length + ' gates show as passed on a passed build');
       }
@@ -926,7 +944,7 @@ for (const screen of list) {
     // Its own clause, not nested inside the arth one — nested, it could only
     // ever print for a screen that also had model classes, so the eame line
     // was unreachable.
-    + (r.gates ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}"${r.freshShows ? ' · fresh shows ' + r.freshShows : ''}` : ''));
+    + (r.gates ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}"${r.freshShows ? ' · fresh shows ' + r.freshShows + ' · claims ' + r.falseClaims : ''}` : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

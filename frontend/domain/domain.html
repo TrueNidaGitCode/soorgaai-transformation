@@ -985,7 +985,10 @@
         </table>
       </div>
 
-      <div class="eg-done" id="eame-onward">
+      <!-- Shown only once a build has passed. It used to be unconditional
+           markup with nothing toggling it, so a blueprint that had never been
+           built still announced "Application generated successfully". -->
+      <div class="eg-done" id="eame-onward" style="display:none">
         <span class="eg-done__ico">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </span>
@@ -1340,7 +1343,7 @@
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=46"></script>
   <script type="module" src="arthScreen.js?v=18"></script>
-  <script type="module" src="eameScreen.js?v=15"></script>
+  <script type="module" src="eameScreen.js?v=16"></script>
   <script type="module" src="yusuScreen.js?v=21"></script>
   <script type="module" src="screenChat.js?v=7"></script>
 </body>

@@ -29,6 +29,37 @@ async function redirectRespectingProfile(destination) {
     window.location.href = destination;
 }
 
+/**
+ * Where a fresh login lands.
+ *
+ * Kept identical to login.js's computeLoginDestination and the OAuth
+ * callback's, because signing in three different ways should not land you in
+ * three different places. This one used to send people to '/', which was the
+ * product home until the marketing site took that URL — after which anyone
+ * signing in with an email code arrived at the marketing page instead of
+ * their blueprints, while Google sign-in worked.
+ *
+ * It also ignored redirectAfterLogin, so a deep link that bounced someone to
+ * log in was honoured for Google and dropped for email.
+ */
+function loginDestination() {
+    try {
+        const pending = localStorage.getItem('redirectAfterLogin');
+        // Same-origin relative paths only. A pending redirect is attacker-
+        // reachable through localStorage, and '//evil.example' is a valid
+        // protocol-relative URL that would leave the site entirely.
+        if (pending && pending.startsWith('/') && !pending.startsWith('//')
+            && !new RegExp('^/*(https?|ftp|javascript):', 'i').test(pending)) {
+            localStorage.removeItem('redirectAfterLogin');
+            return pending;
+        }
+        // A guest preview waiting to be claimed onto this account —
+        // domain.html's init() does the claim, so it has to load first.
+        if (localStorage.getItem('soorgaai_guest_id')) return '/domain/domain.html';
+    } catch { /* localStorage unavailable — fall through */ }
+    return '/cob.html';
+}
+
 // Must match backend/trunida-backend/config/objectiveLimits.js — a soft guide
 // here (never blocks typing/pasting) backed by a hard, clearly-messaged
 // rejection server-side. No silent truncation either way.
@@ -201,11 +232,7 @@ export function wireAuthModal() {
             localStorage.setItem('username', data.username);
             localStorage.setItem('role',     data.role || 'user');
 
-            // A fresh login lands back on the landing page — unless there's a
-            // guest preview waiting to be claimed onto this account, in which
-            // case domain.html needs to load first (its init() does the claim).
-            const hasGuestPreview = !!localStorage.getItem('soorgaai_guest_id');
-            await redirectRespectingProfile(hasGuestPreview ? '/domain/domain.html' : '/');
+            await redirectRespectingProfile(loginDestination());
         } catch (err) {
             showError(err.message);
             if (btn) { btn.disabled = false; btn.textContent = 'Verify & continue'; }

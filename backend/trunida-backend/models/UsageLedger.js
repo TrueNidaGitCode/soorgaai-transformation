@@ -29,9 +29,20 @@ const stageUsageSchema = new mongoose.Schema({
 }, { _id: false });
 
 const usageLedgerSchema = new mongoose.Schema({
+  /**
+   * Null for guest previews, which have no account by design.
+   *
+   * The unique index below is on (userId, period), and Mongo treats null as a
+   * value — so every guest preview in a month lands in exactly one row. That
+   * is the right shape: nobody wants a row per anonymous visitor, they want
+   * "what did the free tier cost in September".
+   */
   userId: {
-    type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true,
+    type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null, index: true,
   },
+
+  /** user | guest. Readability — the null userId above already carries it. */
+  scope: { type: String, default: 'user' },
 
   /**
    * "YYYY-MM", UTC. A calendar month rather than a rolling window because this

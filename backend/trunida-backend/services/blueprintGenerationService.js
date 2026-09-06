@@ -38,6 +38,7 @@ import CompanyResearchLibrary from '../models/CompanyResearchLibrary.js';
 import { normalizeCompanyName, getApprovedCapabilityMap } from './companyResearchLibraryService.js';
 import { getVerticalContextForCapability, preloadVerticalContextMap } from './industryVerticalKnowledgeService.js';
 import { saveActionItems } from './actionItemService.js';
+import { reportRun } from './usageContext.js';
 
 // Merges Enterprise Blueprint context with Connected Knowledge (Confluence)
 // context into the single string the existing prompt builders already accept —
@@ -4033,6 +4034,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
   );
 
   console.log(`[transformationGen] Transformation ${blueprintId} complete`);
+  reportRun('full blueprint');
 }
 
 /**
@@ -4201,6 +4203,7 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
     { $set: { status: 'completed', updatedAt: new Date() } }
   );
   console.log(`[domainRegen] Done — domains: ${domainIds.join(', ')}`);
+  reportRun(domainIds.join(', '));
 
   } catch (err) {
     console.error(`[domainRegen] Fatal error for blueprint ${blueprintId}:`, err.message);

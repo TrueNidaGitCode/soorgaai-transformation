@@ -20,6 +20,7 @@ import { enabledDomains } from '../config/domainRegistry.js';
 import { getDomainCapabilities } from '../services/strategyCanvasService.js';
 import { generateSpecificDomainsAsync } from '../services/blueprintGenerationService.js';
 import { MAX_OBJECTIVE_LENGTH } from '../config/objectiveLimits.js';
+import { attributeGuest, beginRun } from '../services/usageContext.js';
 
 const GUEST_PREVIEW_DOMAIN_IDS = ['ai-use-cases'];
 
@@ -85,6 +86,13 @@ export async function startGuestGeneration(req, res) {
       status: 'generating',
       domains: domainDocs,
     });
+
+    // There is no account here, and there is still a bill. Marking the
+    // request as a guest preview is what puts this generation in the ledger
+    // at all — without it the free tier was the one thing Svarg pays for and
+    // could not measure.
+    attributeGuest(guestId);
+    beginRun(`guest preview ${blueprint._id}`);
 
     // Guest generation has no user profile — loadCompanyProfile(null) falls
     // back to sensible defaults ("Your Organisation", Automotive).

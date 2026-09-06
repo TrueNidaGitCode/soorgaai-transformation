@@ -21,6 +21,7 @@ import { checkObjective } from '../services/objectiveGuardService.js';
 import { resolveEngagement, CATEGORIES, WORKFLOW_AREAS } from '../services/engagementClassifierService.js';
 import { getCompanyEvidence } from '../services/companyContextService.js';
 import { requireEntitlement } from '../services/entitlements.js';
+import { beginRun } from '../services/usageContext.js';
 
 // Maps UserProfile.industryDomain enum values to knowledge-base folder names.
 // All current sub-domains (ADAS, Diagnostics, etc.) belong to the Automotive layer.
@@ -598,6 +599,11 @@ export async function startTransformationGeneration(req, res) {
         + `${engagement.subArea ? ` / ${engagement.subArea}` : ''}`
         + ` (${engagement.maturity}). ${engagement.reason}`
       : `[engagement] ${blueprint._id}: undecided — generation is not steered. ${engagement.reason}`);
+
+    // Accounting for this run specifically. The generation below outlives
+    // this response, and keeps the request's store with it — which is what
+    // lets the total be reported when it finally finishes.
+    beginRun(`blueprint ${blueprint._id}`);
 
     generateTransformationAsync(blueprint._id, userId, businessObjective.trim())
       .catch(err => console.error('[startTransformationGeneration] async error:', err));

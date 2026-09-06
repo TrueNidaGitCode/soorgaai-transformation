@@ -61,22 +61,36 @@ export function periodKey(date = new Date()) {
 }
 
 /**
- * Add one call to an account's month.
+ * What a call cost, priced from the catalog.
+ *
+ * Exported so llmService can price a call ONCE and hand the figure to both the
+ * per-run accumulator and this ledger — pricing it twice invites the two
+ * numbers to disagree, and then neither can be trusted.
+ */
+export function costOf(model, inputTokens = 0, outputTokens = 0) {
+  return estimateCostUsd(model, inputTokens, outputTokens);
+}
+
+/**
+ * Add one call to an account's month, or to the month's guest bucket.
  *
  * Upsert plus $inc: two generations finishing at the same instant on a fresh
  * month would otherwise race to create the row, and a read-modify-write would
  * lose one of them. The unique index on (userId, period) is what makes the
- * upsert safe rather than a source of duplicate rows.
+ * upsert safe rather than a source of duplicate rows — and, with a null
+ * userId, what collapses every guest preview in a month into one row.
  */
-export async function recordLedgerCall({ userId, label, stage, model, inputTokens = 0, outputTokens = 0 }) {
-  if (!userId) return; // guest preview, or a script with no attribution
+export async function recordLedgerCall({ userId, guest, label, stage, costUsd = 0, inputTokens = 0, outputTokens = 0 }) {
+  // A script with no attribution at all still records nothing. A guest does:
+  // the free preview is the one thing Svarg pays for and could not see.
+  if (!userId && !guest) return;
   const period = periodKey();
   const bucket = stageFromLabel(label, stage);
-  const costUsd = estimateCostUsd(model, inputTokens, outputTokens);
+  const owner = userId || null;
 
   try {
     await UsageLedger.updateOne(
-      { userId, period },
+      { userId: owner, period },
       {
         $inc: {
           calls: 1, inputTokens, outputTokens, costUsd,
@@ -86,16 +100,21 @@ export async function recordLedgerCall({ userId, label, stage, model, inputToken
           [`byStage.${bucket}.costUsd`]: costUsd,
         },
         $set: { lastCallAt: new Date() },
-        $setOnInsert: { userId, period },
+        $setOnInsert: { userId: owner, period, scope: owner ? 'user' : 'guest' },
       },
       { upsert: true }
     );
   } catch (err) {
-    console.warn(`[usage-ledger] could not record a ${bucket} call for ${userId} — ${err.message}`);
+    console.warn(`[usage-ledger] could not record a ${bucket} call for ${owner || 'guest previews'} — ${err.message}`);
   }
 }
 
 /** One account's months, newest first. Admin-facing; costs are Svarg's, not the customer's. */
 export async function ledgerFor(userId, months = 6) {
   return UsageLedger.find({ userId }).sort({ period: -1 }).limit(months).lean().catch(() => []);
+}
+
+/** What the free tier cost, by month. userId null is the guest bucket. */
+export async function guestLedger(months = 6) {
+  return UsageLedger.find({ userId: null }).sort({ period: -1 }).limit(months).lean().catch(() => []);
 }

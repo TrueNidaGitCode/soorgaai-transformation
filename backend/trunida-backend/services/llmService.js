@@ -426,8 +426,8 @@ async function runChain({ systemPrompt, userMessage, model, maxTokens }) {
   );
 }
 
-import { currentUsage } from './usageContext.js';
-import { recordLedgerCall } from './usageLedgerService.js';
+import { currentUsage, currentRun } from './usageContext.js';
+import { recordLedgerCall, costOf } from './usageLedgerService.js';
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
@@ -508,10 +508,23 @@ function recordCall({ label, result, ms }) {
   // Durable, per-account, and deliberately not awaited: the counters above
   // measure a process, this measures a customer. A ledger write that fails
   // must never fail the generation it is describing — see usageLedgerService.
-  const { userId, stage } = currentUsage();
-  if (userId) {
+  const { userId, stage, guest } = currentUsage();
+  const costUsd = costOf(result?.model || '', inTok, outTok);
+
+  // "What did THAT run cost" — accumulated in memory for the piece of work in
+  // flight, and logged when it finishes. The ledger below answers the monthly
+  // question; this answers the one asked after a provider bill moves.
+  const run = currentRun();
+  if (run) {
+    run.calls++;
+    run.inputTokens += inTok;
+    run.outputTokens += outTok;
+    run.costUsd += costUsd;
+  }
+
+  if (userId || guest) {
     recordLedgerCall({
-      userId, stage, label: key, model: result?.model || '',
+      userId, guest, stage, label: key, costUsd,
       inputTokens: inTok, outputTokens: outTok,
     }).catch(() => {});
   }

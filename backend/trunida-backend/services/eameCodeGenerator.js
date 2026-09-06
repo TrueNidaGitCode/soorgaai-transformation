@@ -186,6 +186,18 @@ export async function generateApplication(spec, { provider, maxTokens = MAX_TOKE
         'Return the COMPLETE corrected file for each one below, in the same format.',
         'Do not return a diff, and do not return files that were not at fault.',
         '',
+        // Without this the model guessed at its own earlier filenames and got
+        // them wrong three attempts running — importing
+        // attritionClassificationService.js, then attritionService.js, neither
+        // of which it had actually written.
+        ...(repair.projectPaths?.length
+          ? [
+              'These files already exist in the project. Import from these exact paths',
+              'and do not invent others:',
+              ...repair.projectPaths.map(p => '  ' + p),
+              '',
+            ]
+          : []),
         ...repair.files.map(f => [`${FILE_OPEN} ${f.path} ===`, f.content, FILE_CLOSE].join('\n')),
       ].join('\n')
     : user;

@@ -122,6 +122,12 @@ export function extractImports(rawSource) {
     // behind stripComments, for prose that reaches these patterns some other
     // way — a sentence in a template literal, say.
     if (!s || /\s/.test(s)) continue;
+    // Nor an unresolved template placeholder. A model wrote
+    // `import('${resolvedPath}')` — quotes, not backticks — and this reported
+    // "${resolvedPath} is not a dependency of this project", which is true and
+    // useless: it sent the repair loop after a package that never existed
+    // while the actual mistake, a placeholder in a string, went unmentioned.
+    if (s.includes('${')) continue;
     if (s.startsWith('.') || s.startsWith('/')) relative.push(s);
     else bare.push(s);
   }

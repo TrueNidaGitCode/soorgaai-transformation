@@ -69,6 +69,9 @@ export async function buildApplication(bp, {
 
   const history = [];
   let repair = null;
+  // Every file the model has written across all attempts, latest wins. See the
+  // note at composeProject below for why this cannot be per-attempt.
+  const written = new Map();
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
     onProgress({ attempt, phase: 'generating' });
@@ -93,7 +96,16 @@ export async function buildApplication(bp, {
       continue;
     }
 
-    const files = composeProject(runtimeFiles, generated.files);
+    // Accumulated, not replaced. A repair is asked to rewrite only the files
+    // the errors named, so composing the project from that attempt alone
+    // DELETED everything it was not asked to fix: a one-file repair produced a
+    // project of one file, whose imports then failed because its siblings were
+    // gone. The loop could report the same class of error for three attempts
+    // while making the project worse each time.
+    for (const f of generated.files) written.set(f.path, f);
+    const authored = [...written.values()];
+
+    const files = composeProject(runtimeFiles, authored);
     onProgress({ attempt, phase: 'verifying', detail: `${generated.files.length} files written` });
 
     const result = await verifyProject(files, { staticOnly, mongoUri });
@@ -110,7 +122,10 @@ export async function buildApplication(bp, {
       onProgress({ attempt, phase: 'passed', detail: result.stage });
       return {
         ok: true, spec, files,
-        generatedPaths: generated.files.map(f => f.path),
+        // Everything authored across the run, not just the last attempt's —
+        // otherwise a build repaired on attempt 2 reports one file and the
+        // delivery drops the rest.
+        generatedPaths: authored.map(f => f.path),
         verifiedTo: result.stage,
         skipped: result.skipped || [],
         history,
@@ -121,12 +136,18 @@ export async function buildApplication(bp, {
 
     // Only the files the errors actually name go back. Resending everything
     // invites the model to rewrite code that was already correct.
-    const named = generated.files.filter(f =>
+    //
+    // Chosen from everything authored so far, not just this attempt: after a
+    // repair, "this attempt" is one file, and an error naming any other file
+    // would find nothing to send.
+    const named = authored.filter(f =>
       (result.failures || []).some(msg => msg.includes(f.path)));
     repair = {
       failures: result.failures || [],
       stage: result.stage,
-      files: named.length ? named : generated.files,
+      files: named.length ? named : authored,
+      // What else exists, so the model stops importing files it cannot see.
+      projectPaths: authored.map(f => f.path),
     };
   }
 

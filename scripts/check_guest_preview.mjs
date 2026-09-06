@@ -204,6 +204,11 @@ console.log('\n2. the free domain is done — paused, waiting for a login');
     check('it counts domains, not capabilities', r.count === '1 of 6 domains', r.count);
     check('it names the domain that comes next', /AI Strategy is next/.test(r.next), r.next);
     check('it promises nothing is lost', /nothing you have seen is lost/i.test(r.next));
+    // Unlock, not resume. Claiming does not generate the remaining domains,
+    // and copy that says it does sends someone looking for a run that never
+    // starts.
+    check('it says unlock, not carry on', /unlock the remaining 5 domains/.test(r.next), r.next);
+    check('it does not promise generation resumes', !/carries on from here/i.test(r.next));
     check('the preview data is on screen', /Retrieval-Augmented Ticket Routing/.test(r.winner), r.winner);
     // The recommendation is the reason to sign up, so it has to be read
     // before the request to sign up — an ask that arrives first is a wall.

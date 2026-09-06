@@ -625,8 +625,15 @@ function renderGuestPause(bp) {
   if (fill)  fill.style.width = Math.round((preview.length / (domains.length || 1)) * 100) + '%';
   if (count) count.textContent = `${preview.length} of ${domains.length} domains`;
   if (text) {
+    // "carries on from here" was a promise the product does not keep. Claiming
+    // a preview sets the owner and unlocks the other domains; it does not
+    // generate them — that happens per domain, on request, from the workspace.
+    // Whether it SHOULD auto-continue is a real question (it spends a full run
+    // the instant someone signs up), but until it does, the panel must not say
+    // it does.
     text.textContent = next
-      ? `${next.domainName || 'The next domain'} is next. Log in and the rest of your blueprint carries on from here — nothing you have seen is lost.`
+      ? `${next.domainName || 'The next domain'} is next. Log in to keep this blueprint `
+        + `and unlock the remaining ${remaining.length} domains — nothing you have seen is lost.`
       : 'Log in to keep this blueprint and carry on.';
   }
 

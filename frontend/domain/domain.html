@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
-  <link rel="stylesheet" href="domain.css?v=69">
+  <link rel="stylesheet" href="domain.css?v=70">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -405,6 +405,9 @@
           <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--ready"></span><span id="aria-legend-ready">0 Connected</span></span>
           <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--missing"></span><span id="aria-legend-missing">0 To connect</span></span>
           <span class="aria-legend-item"><span class="aria-legend-dot aria-legend-dot--inferred"></span><span id="aria-legend-inferred">0 From analysis</span></span>
+          <!-- Its own line, hidden until it applies. Generated rows are never
+               folded into the Available count — see tally() in ariaScreen.js. -->
+          <span class="aria-legend-item" style="display:none"><span class="aria-legend-dot aria-legend-dot--sample"></span><span id="aria-legend-sample">0 Sample data</span></span>
         </div>
       </div>
 
@@ -1289,7 +1292,7 @@
 
   <script type="module" src="blueprintGenerate.js?v=18"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
-  <script type="module" src="ariaScreen.js?v=42"></script>
+  <script type="module" src="ariaScreen.js?v=43"></script>
   <script type="module" src="arthScreen.js?v=18"></script>
   <script type="module" src="eameScreen.js?v=15"></script>
   <script type="module" src="yusuScreen.js?v=21"></script>

@@ -111,7 +111,15 @@ function readCodebase(bp) {
  *   warnings: string[]
  * }}
  */
-export function buildSpec(bp) {
+/**
+ * @param {object} bp
+ * @param {object} [opts]
+ * @param {string[]} [opts.sampleBacked]  dataset names whose only evidence is
+ *   generated sample data. Passed in rather than queried here: this function is
+ *   deliberately synchronous and pure, so that when a generation is wrong it is
+ *   the generation that is wrong and not the brief.
+ */
+export function buildSpec(bp, { sampleBacked = [] } = {}) {
   const useCase = resolveUseCase(bp);
   const datasets = readDatasets(bp);
   const codebase = readCodebase(bp);
@@ -127,6 +135,15 @@ export function buildSpec(bp) {
   }
   if (!datasets.length) {
     warnings.push('Aria identified no datasets, so the generated model has no shape to follow.');
+  }
+  // Sample data is a real answer to "we have not collected this yet", but the
+  // application built on it is shaped by rows nobody has ever seen. The screen
+  // should be able to say which datasets those were.
+  if (sampleBacked.length) {
+    warnings.push(
+      `${sampleBacked.join(', ')} ${sampleBacked.length === 1 ? 'is' : 'are'} backed only by `
+      + 'generated sample data, so the model is shaped by data the customer does not have yet.'
+    );
   }
   if (!codebase) {
     warnings.push('No repository was read, so the generated code cannot be matched to entities the customer already has.');

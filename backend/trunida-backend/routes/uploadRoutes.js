@@ -5,6 +5,8 @@ import {
   uploadFolder,
   classifyUploadedFiles,
   listDatasetFiles,
+  generateSyntheticDataset,
+  removeSyntheticDataset,
 } from '../controllers/uploadController.js';
 
 const router = express.Router();
@@ -21,5 +23,10 @@ router.post('/dataset-file', protect, uploadBody, uploadDatasetFile);
 router.post('/folder', protect, uploadBody, uploadFolder);
 router.post('/classify', protect, express.json(), classifyUploadedFiles);
 router.get('/dataset-files/:blueprintId', protect, listDatasetFiles);
+
+// Sample data for a dataset the customer does not have yet. A small body —
+// only ids — so the default json limit is the right one here.
+router.post  ('/synthetic-dataset', protect, express.json(), generateSyntheticDataset);
+router.delete('/synthetic-dataset/:blueprintId/:datasetName', protect, removeSyntheticDataset);
 
 export default router;

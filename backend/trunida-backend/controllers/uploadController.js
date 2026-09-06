@@ -25,6 +25,35 @@ import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import LinkedProjectDocument from '../models/LinkedProjectDocument.js';
 import { regexRedact, hashText } from '../services/jiraContentService.js';
 import { classifyUploads } from '../services/uploadClassifierService.js';
+import { generateSampleDataset } from '../services/syntheticDatasetService.js';
+
+/**
+ * One of the blueprint's required datasets, by name.
+ *
+ * Read from the blueprint rather than trusted from the request: a caller who
+ * could name any dataset could have Svarg generate data for something this
+ * blueprint never asked for, and that row would then be read into its
+ * generation context as though Aria had identified it.
+ *
+ * Mirrors readDatasets() in services/eameSpec.js — the same section of the
+ * data-readiness domain is the single source of what a blueprint needs.
+ */
+function findDataset(blueprint, datasetName) {
+  const domain = (blueprint?.domains || []).find(d => d.domainId === 'data-readiness');
+  for (const cap of domain?.capabilities || []) {
+    for (const section of cap.sections || []) {
+      const match = (section.brief?.datasets || []).find(d => d?.name === datasetName);
+      if (match) {
+        return {
+          name: String(match.name || '').trim(),
+          purpose: String(match.purpose || '').trim(),
+          typicalSource: String(match.typicalSource || '').trim(),
+        };
+      }
+    }
+  }
+  return null;
+}
 
 /**
  * Text formats only. PDF and Office documents need a parser this project does
@@ -142,20 +171,30 @@ export async function listDatasetFiles(req, res) {
     if (!blueprint) return res.status(404).json({ error: 'Blueprint not found.' });
 
     const docs = await LinkedProjectDocument
-      .find({ blueprintId, sourceType: 'upload' })
-      .select('sourceId title datasetName updatedAt redactionCount')
+      .find({ blueprintId, sourceType: { $in: ['upload', 'synthetic'] } })
+      .select('sourceId sourceType title datasetName updatedAt redactionCount synthetic')
       .lean();
 
     // datasetName is what a file was found to serve; the path is what it is.
     // Reporting both lets the screen show which dataset is covered AND which
     // files could not be placed, rather than silently dropping the latter.
+    //
+    // Samples are returned in their OWN list, not merged into uploads. The
+    // whole point of generated data is that it is distinguishable from the
+    // customer's own, and a single list would put the distinction back in the
+    // hands of whoever remembers to check a flag.
     return res.json({
-      uploads: docs.map(d => ({
+      uploads: docs.filter(d => d.sourceType === 'upload').map(d => ({
         path:           d.sourceId.replace(/^upload:/, ''),
         filename:       d.title,
         datasetName:    d.datasetName || '',
         uploadedAt:     d.updatedAt,
         redactionCount: d.redactionCount,
+      })),
+      samples: docs.filter(d => d.sourceType === 'synthetic').map(d => ({
+        datasetName: d.datasetName || '',
+        rowCount:    d.synthetic?.rowCount || 0,
+        generatedAt: d.synthetic?.generatedAt || d.updatedAt,
       })),
     });
   } catch (err) {
@@ -295,5 +334,118 @@ export async function classifyUploadedFiles(req, res) {
   } catch (err) {
     console.error('classifyUploadedFiles error:', err);
     return res.status(500).json({ error: 'Failed to classify the uploaded files.' });
+  }
+}
+
+// ── Sample data ──────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/uploads/synthetic-dataset  { blueprintId, datasetName }
+ *
+ * Generate a representative sample for a dataset the customer does not have.
+ * See services/syntheticDatasetService.js for why this does not contradict
+ * Eame's "do not invent data" rule.
+ */
+export async function generateSyntheticDataset(req, res) {
+  try {
+    const { blueprintId, datasetName } = req.body || {};
+    if (!blueprintId || !datasetName) {
+      return res.status(400).json({ error: 'blueprintId and datasetName are both required.' });
+    }
+
+    // Ownership, not existence — same reason as uploadDatasetFile: without the
+    // userId a caller could attach generated rows to somebody else's blueprint
+    // and have them read into that blueprint's generation context.
+    const blueprint = await TransformationBlueprint
+      .findOne({ _id: blueprintId, userId: req.user._id })
+      .select('_id businessObjective industry companyName domains')
+      .lean();
+    if (!blueprint) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    // Generated data must never displace the customer's own. If they have
+    // uploaded a real export for this dataset, there is nothing to invent.
+    const realUpload = await LinkedProjectDocument
+      .findOne({ blueprintId, sourceType: 'upload', datasetName })
+      .select('_id title').lean();
+    if (realUpload) {
+      return res.status(409).json({
+        error: `You have already uploaded "${realUpload.title}" for this dataset. `
+          + 'Sample data is only for datasets you do not have yet.',
+        code: 'real_data_exists',
+      });
+    }
+
+    const dataset = findDataset(blueprint, datasetName);
+    if (!dataset) {
+      return res.status(404).json({ error: 'That dataset is not part of this blueprint.' });
+    }
+
+    const { csv, rowCount, columns, model } = await generateSampleDataset({
+      dataset,
+      objective:   blueprint.businessObjective || '',
+      industry:    blueprint.industry || '',
+      companyName: blueprint.companyName || '',
+    });
+
+    // No redaction pass. uploadDatasetFile redacts because a customer's export
+    // can carry personal data; nothing here came from a person, and a pass over
+    // invented rows can only produce false positives.
+    const sourceId = `synthetic:${datasetName}`;
+    const title = `${datasetName} — sample data (generated)`;
+
+    const doc = await LinkedProjectDocument.findOneAndUpdate(
+      { blueprintId, sourceId },
+      {
+        blueprintId,
+        linkedByUserId:   req.user._id,
+        sourceType:       'synthetic',
+        sourceId,
+        title,
+        datasetName,
+        rawText:          csv,
+        summary:          `Generated sample data illustrating the shape of "${datasetName}". `
+                          + `${rowCount} invented rows, columns: ${columns.join(', ')}. `
+                          + 'The customer does not have this data.',
+        contentHash:      hashText(csv),
+        synthetic:        { generatedAt: new Date(), model, rowCount },
+        extractionStatus: 'extracted',
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).lean();
+
+    console.log(`[synthetic] ${blueprintId}: "${datasetName}" — ${rowCount} sample rows via ${model || 'default'}`);
+
+    return res.json({
+      datasetName, rowCount, columns,
+      generatedAt: doc.synthetic?.generatedAt,
+      documentId:  String(doc._id),
+    });
+
+  } catch (err) {
+    console.error('generateSyntheticDataset error:', err.message);
+    return res.status(500).json({ error: err.message || 'Could not generate sample data.' });
+  }
+}
+
+/** DELETE /api/uploads/synthetic-dataset/:blueprintId/:datasetName */
+export async function removeSyntheticDataset(req, res) {
+  try {
+    const { blueprintId, datasetName } = req.params;
+
+    const blueprint = await TransformationBlueprint
+      .findOne({ _id: blueprintId, userId: req.user._id })
+      .select('_id').lean();
+    if (!blueprint) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    // sourceType is in the filter as well as the id: a bug in the id format
+    // must not be able to delete a real upload.
+    const result = await LinkedProjectDocument.deleteOne({
+      blueprintId, sourceType: 'synthetic', sourceId: `synthetic:${datasetName}`,
+    });
+
+    return res.json({ datasetName, removed: result.deletedCount > 0 });
+  } catch (err) {
+    console.error('removeSyntheticDataset error:', err.message);
+    return res.status(500).json({ error: 'Could not remove the sample data.' });
   }
 }

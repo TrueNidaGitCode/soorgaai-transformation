@@ -20,6 +20,7 @@
  */
 
 import { buildSpec } from './eameSpec.js';
+import LinkedProjectDocument from '../models/LinkedProjectDocument.js';
 import { generateApplication } from './eameCodeGenerator.js';
 import { buildRuntime } from './eameProjectBuilder.js';
 import { verifyProject } from './generatedProjectVerifier.js';
@@ -55,7 +56,15 @@ export async function buildApplication(bp, {
   provider,
   onProgress = () => {},
 } = {}) {
-  const spec = buildSpec(bp);
+  // Which datasets are backed only by generated rows. Queried here rather than
+  // inside buildSpec so that stays synchronous and pure.
+  const sampleBacked = await LinkedProjectDocument
+    .find({ blueprintId: bp._id, sourceType: 'synthetic' })
+    .select('datasetName').lean()
+    .then(rows => rows.map(r => r.datasetName).filter(Boolean))
+    .catch(() => []);
+
+  const spec = buildSpec(bp, { sampleBacked });
   const runtimeFiles = buildRuntime({ appName: spec.appName });
 
   const history = [];

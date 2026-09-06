@@ -126,6 +126,11 @@ function rowState(d, confCount, jiraCount) {
   // data, which is stronger evidence than a tool being connected.
   if (_uploads.has(d.name)) return { state: 'uploaded', source: null };
 
+  // Generated sample data ranks BELOW every real source and is checked after
+  // all of them. It is evidence of shape, not of fact, and a dataset the
+  // customer actually has must never be reported as invented.
+  if (_samples.has(d.name)) return { state: 'sample', source: null };
+
   const source = resolveSource(d.typicalSource, confCount, jiraCount);
   // No connector reaches this data. Previously reported as "Filled from
   // analysis", which announced that Svarg would invent it; it is now a
@@ -172,6 +177,17 @@ function statusCellHtml(state, source, dataset, match) {
       return `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>`
         + `Available &mdash; ${esc(up?.filename || 'uploaded file')}</span>`;
     }
+    case 'sample': {
+      // Never the green used for Available. This dataset is still missing —
+      // what exists is an illustration of what it would look like, and the row
+      // has to keep saying so every time anyone reads it.
+      const s = _samples.get(dataset.name);
+      return `<span class="aria-status aria-status--sample"><span class="aria-status-dot"></span>`
+        + `Sample data &mdash; not your real data`
+        + `<span class="aria-status__where">${s?.rowCount || 0} generated rows &middot; `
+        + `<button type="button" class="aria-sample__remove" data-sample-remove="${esc(dataset.name)}">Remove</button>`
+        + `</span></span>`;
+    }
     case 'connected':
       return `<span class="aria-status aria-status--connected"><span class="aria-status-dot"></span>`
         + `Available &mdash; linked from ${tool}</span>`;
@@ -184,8 +200,15 @@ function statusCellHtml(state, source, dataset, match) {
     default:
       // The state that made this whole screen necessary. It names the route in
       // rather than announcing that the data will be invented.
+      //
+      // The second route is for a company that does not have this data at all
+      // — pre-launch, there is nothing to export. Offered as a lesser option,
+      // after the real one, because it is one.
       return `<span class="aria-status aria-status--own"><span class="aria-status-dot"></span>`
-        + `In your own systems &mdash; upload an export</span>`;
+        + `In your own systems &mdash; upload an export`
+        + `<span class="aria-status__where">Don't have it yet? `
+        + `<button type="button" class="aria-sample__make" data-sample-make="${esc(dataset.name)}">`
+        + `Generate sample data</button></span></span>`;
   }
 }
 
@@ -203,18 +226,23 @@ function renderRow(d, confCount, jiraCount) {
 }
 
 function tally(datasets, confCount, jiraCount) {
-  let connected = 0, toConnect = 0, ownSystems = 0;
+  let connected = 0, toConnect = 0, ownSystems = 0, sample = 0;
   datasets.forEach(d => {
     const { state } = rowState(d, confCount, jiraCount);
     if (state === 'connected' || state === 'uploaded' || state === 'in-code') connected++;
+    // Sample data does NOT count as available, and this is the line that
+    // matters most in the file. Readiness is the one number this screen exists
+    // to report honestly; counting invented rows would let a customer generate
+    // their way to "6 of 6 datasets available" while having none of them.
+    else if (state === 'sample') sample++;
     else if (state === 'not-connected' || state === 'ready') toConnect++;
     else ownSystems++;
   });
-  return { connected, toConnect, ownSystems };
+  return { connected, toConnect, ownSystems, sample };
 }
 
 function updateReadinessCard(datasets, confCount, jiraCount) {
-  const { connected, toConnect, ownSystems } = tally(datasets, confCount, jiraCount);
+  const { connected, toConnect, ownSystems, sample } = tally(datasets, confCount, jiraCount);
 
   // Over EVERY required dataset, not just the ones a connector can reach.
   // Dividing by the connectable subset is what rendered six required datasets
@@ -231,10 +259,26 @@ function updateReadinessCard(datasets, confCount, jiraCount) {
   document.getElementById('aria-legend-missing').textContent = `${toConnect} To connect`;
   document.getElementById('aria-legend-inferred').textContent = `${ownSystems} In your systems`;
 
+  // Its own line, never folded into another count. A reader scanning the
+  // legend must be able to see that some of this is generated.
+  const sampleLegend = document.getElementById('aria-legend-sample');
+  if (sampleLegend) {
+    sampleLegend.textContent = `${sample} Sample data`;
+    sampleLegend.parentElement.style.display = sample > 0 ? '' : 'none';
+  }
+
   const note = document.getElementById('aria-note');
   const noteText = document.getElementById('aria-note-text');
   if (note && noteText) {
-    if (ownSystems > 0) {
+    if (sample > 0) {
+      // Said first when it applies. A blueprint partly built on invented rows
+      // is the more important fact than a dataset still to upload.
+      noteText.textContent = `${sample} dataset${sample === 1 ? ' is' : 's are'} filled with generated `
+        + `sample data. It shows the right shape, but ${sample === 1 ? 'it is' : 'they are'} not your `
+        + `numbers — replace ${sample === 1 ? 'it' : 'them'} with a real export before trusting any `
+        + `figure the blueprint quotes.`;
+      note.style.display = '';
+    } else if (ownSystems > 0) {
       noteText.textContent = `${ownSystems} dataset${ownSystems === 1 ? '' : 's'} live${ownSystems === 1 ? 's' : ''} `
         + `in systems Svarg has no connector for. Upload an export for `
         + `${ownSystems === 1 ? 'it' : 'each'} so the blueprint is built on your real data.`;
@@ -1115,15 +1159,68 @@ let _allUploads = [];
 
 const MAX_UPLOAD_CHARS = 2_000_000;
 
+/**
+ * datasetName → { rowCount, generatedAt } for generated sample data.
+ *
+ * Deliberately a separate map from _uploads, mirroring the separate list the
+ * endpoint returns. Merging them would put "is this the customer's data or
+ * ours?" behind a flag someone has to remember to check, and that question is
+ * the entire point.
+ */
+let _samples = new Map();
+
 async function loadUploads(blueprintId) {
   try {
-    const { uploads } = await api(`/uploads/dataset-files/${encodeURIComponent(blueprintId)}`);
+    const { uploads, samples } = await api(`/uploads/dataset-files/${encodeURIComponent(blueprintId)}`);
     _allUploads = uploads || [];
     _uploads = new Map(_allUploads.filter(u => u.datasetName).map(u => [u.datasetName, u]));
+    _samples = new Map((samples || []).filter(s => s.datasetName).map(s => [s.datasetName, s]));
   } catch {
     // A failed list must not make the screen claim nothing was uploaded — but
     // it also must not block the rest of Aria. Leave whatever we already have.
   }
+}
+
+/**
+ * Generate or remove sample data for one dataset.
+ *
+ * Delegated on the table so it keeps working across re-renders — the rows are
+ * replaced wholesale every time the readiness figure changes.
+ */
+function wireSampleData() {
+  document.addEventListener('click', async (e) => {
+    const make = e.target.closest('[data-sample-make]');
+    const drop = e.target.closest('[data-sample-remove]');
+    if (!make && !drop) return;
+    e.preventDefault();
+
+    const btn = make || drop;
+    const datasetName = btn.dataset.sampleMake || btn.dataset.sampleRemove;
+    if (!_blueprintId || !datasetName) return;
+
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = make ? 'Generating…' : 'Removing…';
+    showUploadError('');
+
+    try {
+      if (make) {
+        await api('/uploads/synthetic-dataset', {
+          method: 'POST',
+          body: JSON.stringify({ blueprintId: _blueprintId, datasetName }),
+        });
+      } else {
+        await api(`/uploads/synthetic-dataset/${encodeURIComponent(_blueprintId)}`
+          + `/${encodeURIComponent(datasetName)}`, { method: 'DELETE' });
+      }
+      await loadUploads(_blueprintId);
+      renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
+    } catch (err) {
+      showUploadError(err.message || 'Could not change the sample data.');
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  });
 }
 
 function renderUploadList() {
@@ -1280,6 +1377,8 @@ let _wired = false;
 function wireStaticControls() {
   if (_wired) return;
   _wired = true;
+
+  wireSampleData();
 
   document.getElementById('aria-process-btn')?.addEventListener('click', () => {
     const id = _blueprintId;

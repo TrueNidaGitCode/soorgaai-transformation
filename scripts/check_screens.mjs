@@ -104,6 +104,10 @@ const BLUEPRINT = {
           // with less than everything. A fixture where all data is present
           // would leave both untested.
           { name: 'Field Telemetry Feed', purpose: 'Correlate faults with real-world driving', typicalSource: 'Vehicle telemetry platform', priority: 'HIGH' },
+          // Backed only by generated sample data. The readiness figure must
+          // NOT count it — a customer able to generate their way to "5 of 5
+          // available" while having none of it is the failure this guards.
+          { name: 'Driver Behaviour Scores', purpose: 'Rank risk by driving style', typicalSource: 'Telematics scoring service', priority: 'MEDIUM' },
         ] },
       }] }] },
   ],
@@ -257,6 +261,10 @@ window.fetch = function (url, opts) {
   ] });
   if (u.includes('/confluence/personal/spaces')) return J({ spaces: [{ key: 'PM', name: 'Product', type: 'global', itemCount: 12 }] });
   if (u.includes('/jira/personal/projects'))     return J({ projects: [{ key: 'KAN', name: 'Kanban', itemCount: 6 }] });
+  if (u.includes('/uploads/dataset-files/')) return J({
+    uploads: [],
+    samples: [{ datasetName: 'Driver Behaviour Scores', rowCount: 22, generatedAt: new Date().toISOString() }],
+  });
   if (u.includes('/screen-chat')) return J({ reply: 'Stubbed reply.', action: null });
   return J({});
 };
@@ -387,6 +395,26 @@ setTimeout(function () {
       // The one dataset in the fixture that no connector reaches.
       if (reqText.indexOf('Field Telemetry Feed') === -1) {
         bad('the uncovered dataset is no longer listed anywhere');
+      }
+
+      // Generated sample data: visible, labelled, and NOT counted as ready.
+      var sampleRow = document.querySelector('#aria-required-body .aria-status--sample');
+      out.sample = sampleRow ? sampleRow.textContent.replace(/s+/g, ' ').trim() : 'none';
+      if (!sampleRow) bad('the sample-backed dataset is not marked as sample data');
+      else if (sampleRow.textContent.indexOf('not your real data') === -1) {
+        bad('the sample row does not say it is not their real data');
+      }
+      // 3 of 5, not 4 of 5. This is the assertion the whole feature turns on.
+      if (out.readiness !== '3 of 5') {
+        bad('readiness reads "' + out.readiness + '" — sample data is being counted as available');
+      }
+      var sampleLegend = document.getElementById('aria-legend-sample');
+      if (!sampleLegend || sampleLegend.textContent.indexOf('1 Sample') === -1) {
+        bad('the legend does not call out the sample data');
+      }
+      // The way to make one, for a dataset that has none.
+      if (!document.querySelector('[data-sample-make]')) {
+        bad('no way to generate sample data for the uncovered dataset');
       }
 
       var tabs = scr.querySelectorAll('#aria-tabs .aria-tab');
@@ -701,7 +729,7 @@ for (const screen of list) {
     + `${r.steps ?? '?'} steps · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
-        nav "${r.nav}" · ${r.collect} rows in the table` : '')
+        nav "${r.nav}" · ${r.collect} rows · sample "${r.sample}"` : '')
     + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : '')
     // Its own clause, not nested inside the arth one — nested, it could only
     // ever print for a screen that also had model classes, so the eame line

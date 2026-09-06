@@ -3171,6 +3171,41 @@
 .aria-status--own .aria-status-dot { background: var(--aria-accent-2); }
 .aria-status--own { color: rgba(255,255,255,0.62); font-weight: 500; }
 
+/* ── Generated sample data ────────────────────────────────────────────────
+   Amber, never the green used for Available. This dataset is still missing;
+   what exists is an illustration of it. The colour is doing real work here —
+   it is the fastest signal that a figure downstream is not the customer's. */
+.aria-status--sample .aria-status-dot { background: #D4AF6E; }
+/* flex-wrap, like --incode: .aria-status is nowrap by default, and without
+   this the second line runs on inline and pushes the table into a horizontal
+   scroll. .aria-status__where's flex-basis:100% only breaks if wrapping is
+   allowed. */
+.aria-status--sample { color: #D4AF6E; font-weight: 500; flex-wrap: wrap; }
+.aria-legend-dot--sample { background: #D4AF6E; }
+
+/* Same reason: the "generate one" offer is a second line under the state it
+   belongs to, not a continuation of it. */
+.aria-status--own { flex-wrap: wrap; }
+.aria-status--sample .aria-status__where,
+.aria-status--own .aria-status__where { white-space: normal; word-break: normal; }
+
+/* Both read as text, not buttons: they sit inside a status cell, and a real
+   button there would compete with the row's own meaning. */
+.aria-sample__make,
+.aria-sample__remove {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.aria-sample__make:hover,
+.aria-sample__remove:hover { color: #fff; }
+.aria-sample__make:disabled,
+.aria-sample__remove:disabled { opacity: 0.5; cursor: default; text-decoration: none; }
+
 /* The status doubles as the control when a connector exists but isn't
    connected — the Action column used to carry this, and was an em-dash for
    every customer those connectors do not serve. */

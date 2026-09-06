@@ -31,7 +31,17 @@ const linkedProjectDocumentSchema = new mongoose.Schema({
   // lives somewhere no connector reaches — a Postgres database, a billing
   // system. The file itself is never stored: only its extracted, redacted text
   // arrives here, which is all any other source type keeps anyway.
-  sourceType: { type: String, enum: ['confluence', 'jira', 'website', 'upload'], default: 'confluence' },
+  // 'synthetic' is data Svarg generated because the customer does not have it
+  // yet — a company pre-launch cannot export attendance records it has never
+  // collected. It is evidence of SHAPE, not of fact, and every layer that
+  // touches it has to keep saying so: see SOURCE_PREAMBLE in
+  // connectedKnowledgeService.js for what the model is told, and the `_source`
+  // column in the rows themselves.
+  sourceType: {
+    type: String,
+    enum: ['confluence', 'jira', 'website', 'upload', 'synthetic'],
+    default: 'confluence',
+  },
   sourceId:  { type: String, required: true },
   spaceKey:  { type: String, default: '' },   // Confluence
   projectKey: { type: String, default: '' },  // Jira
@@ -47,6 +57,18 @@ const linkedProjectDocumentSchema = new mongoose.Schema({
   // and discarding it silently would be worse than admitting we could not
   // place it. Only used when sourceType is 'upload'.
   datasetName: { type: String, default: '' },
+
+  /**
+   * Only for sourceType 'synthetic'. Kept as its own sub-document so every
+   * fabricated row in the database can be found by a query rather than by
+   * parsing text — which is what makes "remove all the sample data" a thing
+   * anyone can actually do later.
+   */
+  synthetic: {
+    generatedAt: { type: Date,   default: null },
+    model:       { type: String, default: '' },
+    rowCount:    { type: Number, default: 0 },
+  },
 
   summary: { type: String, default: '' },
   keywords: { type: [String], default: [] },

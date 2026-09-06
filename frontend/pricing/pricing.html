@@ -26,23 +26,99 @@
   <link rel="stylesheet" href="../home.css">
   <link rel="stylesheet" href="../landing.css">
   <link rel="stylesheet" href="../workspace/workspace.css">
-  <link rel="stylesheet" href="pricing.css">
+  <link rel="stylesheet" href="../marketing.css?v=2">
+  <link rel="stylesheet" href="pricing.css?v=2">
 
   <script src="../login/config.js"></script>
   <script type="module" src="../index.js"></script>
 </head>
 <body class="workspace-page">
 
-  <!-- ── Navbar ──────────────────────────────────────────────────────────── -->
-  <nav class="workspace-nav" aria-label="Site navigation">
-    <div class="workspace-nav__left">
-      <a href="/cob.html" class="workspace-nav__back" aria-label="Back to home">← Home</a>
-      <img src="/assets/logo-nav.png" alt="Svarg" class="workspace-nav__logo">
+  <!-- ── Top nav ──────────────────────────────────────────────── -->
+  <header class="mkt-nav">
+    <div class="mkt-nav__inner">
+      <a href="/" class="mkt-logo" aria-label="Svarg — home">
+        <img src="../assets/logo-nav.png" alt="Svarg" class="mkt-logo__img">
+      </a>
+
+      <!-- div (not <nav>) — style.css has a global `nav {...}` tag selector that would otherwise paint this as an opaque box -->
+      <div class="mkt-menu" role="navigation" aria-label="Primary navigation">
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Products
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel mkt-menu__panel--rich">
+            <a href="/products/cob.html" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">Cob<span class="mkt-menu__link-tag">Built by Svarg</span></span>
+              <span class="mkt-menu__link-desc">AI use cases &amp; strategy</span>
+            </a>
+            <a href="/products/aria.html" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">Aria<span class="mkt-menu__link-tag">Partner-powered</span></span>
+              <span class="mkt-menu__link-desc">Data readiness</span>
+            </a>
+            <a href="/products/arth.html" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">Arth<span class="mkt-menu__link-tag">Partner-powered</span></span>
+              <span class="mkt-menu__link-desc">Technology &amp; infrastructure</span>
+            </a>
+            <a href="/products/eame.html" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">Eame<span class="mkt-menu__link-tag">Built by Svarg</span></span>
+              <span class="mkt-menu__link-desc">AI application &amp; agents</span>
+            </a>
+            <a href="/products/yusu.html" class="mkt-menu__link mkt-menu__link--rich">
+              <span class="mkt-menu__link-title">Yusu<span class="mkt-menu__link-tag">Built by Svarg</span></span>
+              <span class="mkt-menu__link-desc">Business integration</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Industry
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel">
+            <a href="/industry/automotive.html" class="mkt-menu__link">
+              <span class="mkt-menu__link-title">Automotive</span>
+            </a>
+          </div>
+        </div>
+
+        <a href="/pricing/pricing.html" class="mkt-menu__direct">Pricing</a>
+
+        <div class="mkt-menu__item">
+          <button type="button" class="mkt-menu__trigger" aria-expanded="false">
+            Company
+            <svg class="mkt-menu__chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="mkt-menu__panel">
+            <a href="/company/about.html" class="mkt-menu__link">
+              <span class="mkt-menu__link-title">About us</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="mkt-nav__auth">
+        <a href="/company/contact-us.html" class="mkt-btn mkt-btn--primary">Contact us</a>
+      </div>
+
+      <button type="button" id="mkt-mobile-toggle" class="mkt-mobile-toggle" aria-label="Open menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
     </div>
-    <div id="topbar-auth" class="workspace-nav__right topbar__auth">
-      <a href="/login/login.html" id="topbar-login" class="auth-btn auth-btn--solid">Log in</a>
+
+    <div id="mkt-mobile-panel" class="mkt-mobile-panel">
+      <a href="/products/cob.html" class="mkt-mobile-panel__link">Products — Cob <span class="mkt-menu__link-tag">Built by Svarg</span></a>
+      <a href="/products/aria.html" class="mkt-mobile-panel__link">Products — Aria <span class="mkt-menu__link-tag">Partner-powered</span></a>
+      <a href="/products/arth.html" class="mkt-mobile-panel__link">Products — Arth <span class="mkt-menu__link-tag">Partner-powered</span></a>
+      <a href="/products/eame.html" class="mkt-mobile-panel__link">Products — Eame <span class="mkt-menu__link-tag">Built by Svarg</span></a>
+      <a href="/products/yusu.html" class="mkt-mobile-panel__link">Products — Yusu <span class="mkt-menu__link-tag">Built by Svarg</span></a>
+      <a href="/industry/automotive.html" class="mkt-mobile-panel__link">Industry — Automotive</a>
+      <a href="/pricing/pricing.html" class="mkt-mobile-panel__link">Pricing</a>
+      <a href="/company/about.html" class="mkt-mobile-panel__link">Company — About us</a>
     </div>
-  </nav>
+  </header>
 
   <main>
 
@@ -89,75 +165,109 @@
     <section class="pr-cards-section" aria-label="Pricing plans">
       <div class="pr-cards">
 
-        <!-- ── Free ─────────────────────────────────────── -->
-        <div class="pr-card" data-plan="free">
+        <!-- ── Hobby ────────────────────────────────────── -->
+        <div class="pr-card" data-plan="hobby">
           <div class="pr-card__header">
-            <h3 class="pr-card__name">Free</h3>
+            <h3 class="pr-card__name">Hobby</h3>
             <div class="pr-card__price-wrap">
               <div class="pr-card__price">
-                <span class="pr-price__amount">₹0</span>
+                <span class="pr-price__amount">&#8377;0</span>
               </div>
             </div>
-            <p class="pr-card__sub">Perfect for exploring AI transformation.</p>
+            <p class="pr-card__sub">See what Svarg makes of a business objective, at no cost.</p>
           </div>
 
-          <ul class="pr-features" aria-label="Free plan features">
-            <li class="pr-feature">Generate AI Transformation Blueprints</li>
-            <li class="pr-feature">Automotive Industry Blueprint</li>
-            <li class="pr-feature">AI Assistant</li>
-            <li class="pr-feature">PDF Export</li>
-            <li class="pr-feature">1 Active Project</li>
-            <li class="pr-feature">Community Support</li>
+          <ul class="pr-features" aria-label="Hobby plan features">
+            <li class="pr-feature">3 new blueprints a month</li>
+            <li class="pr-feature">Every AI opportunity ranked and justified</li>
+            <li class="pr-feature">1 application built and verified</li>
+            <li class="pr-feature">1 live deployment</li>
+            <li class="pr-feature">PDF export</li>
+            <li class="pr-feature">Community support</li>
           </ul>
 
           <div class="pr-card__cta">
-            <button class="pr-cta-btn pr-cta-btn--outline" onclick="CTARouter.routeToWorkspace()" aria-label="Get started with the Free plan">
+            <button class="pr-cta-btn pr-cta-btn--outline" onclick="CTARouter.routeToWorkspace()" aria-label="Get started on the Hobby plan">
               Get Started
             </button>
           </div>
         </div>
 
-        <!-- ── Professional (featured) ──────────────────── -->
-        <div class="pr-card pr-card--featured" data-plan="professional" data-price-monthly="2999" data-price-yearly="28999">
+        <!-- ── Pro (featured) ───────────────────────────── -->
+        <div class="pr-card pr-card--featured" data-plan="pro" data-price-monthly="2999" data-price-yearly="28999">
           <div class="pr-card__badge" aria-label="Most popular plan">Most Popular</div>
 
           <div class="pr-card__header">
-            <h3 class="pr-card__name">Professional</h3>
+            <h3 class="pr-card__name">Pro</h3>
             <div class="pr-card__price-wrap">
-              <!-- Monthly price (hidden by default — yearly is default) -->
+              <!-- Monthly price (hidden by default &mdash; yearly is default) -->
               <div class="pr-card__price pr-price--monthly" hidden>
-                <span class="pr-price__amount">₹2,999</span>
+                <span class="pr-price__amount">&#8377;2,999</span>
                 <span class="pr-price__period">/ month</span>
               </div>
               <!-- Yearly price (visible by default) -->
               <div class="pr-card__price pr-price--yearly">
-                <span class="pr-price__amount">₹28,999</span>
+                <span class="pr-price__amount">&#8377;28,999</span>
                 <span class="pr-price__period">/ year</span>
-                <span class="pr-price__saving">Save ₹6,989</span>
+                <span class="pr-price__saving">Save &#8377;6,989</span>
               </div>
             </div>
-            <p class="pr-card__sub">Designed for Product Managers and Project Managers driving AI initiatives.</p>
+            <p class="pr-card__sub">Build every AI opportunity inside one business objective.</p>
           </div>
 
-          <ul class="pr-features" aria-label="Professional plan features">
-            <li class="pr-feature pr-feature--group">Everything in Free</li>
-            <li class="pr-feature">Unlimited Projects</li>
-            <li class="pr-feature">Unlimited AI Transformation Blueprints</li>
-            <li class="pr-feature">AI Assistant</li>
-            <li class="pr-feature">Version History</li>
-            <li class="pr-feature">Executive PDF Export</li>
-            <li class="pr-feature">Priority AI Generation</li>
-            <li class="pr-feature">Priority Support</li>
+          <ul class="pr-features" aria-label="Pro plan features">
+            <li class="pr-feature pr-feature--group">Everything in Hobby</li>
+            <li class="pr-feature">1 active business objective</li>
+            <li class="pr-feature">An application for every opportunity in it</li>
+            <li class="pr-feature">3 live deployments</li>
+            <li class="pr-feature">Version history</li>
+            <li class="pr-feature">Executive PDF export</li>
+            <li class="pr-feature">Priority generation</li>
+            <li class="pr-feature">Priority support</li>
           </ul>
 
           <div class="pr-card__cta">
-            <button class="pr-cta-btn pr-cta-btn--primary" id="btn-pro-trial" aria-haspopup="dialog" aria-label="Start free trial of Professional plan">
-              Start Free Trial
+            <button class="pr-cta-btn pr-cta-btn--primary" id="btn-pro-trial" aria-haspopup="dialog" aria-label="Choose the Pro plan">
+              Choose Pro
             </button>
           </div>
         </div>
 
-        <!-- ── Enterprise ────────────────────────────────── -->
+        <!-- ── Ultra ────────────────────────────────────── -->
+        <div class="pr-card" data-plan="ultra" data-price-monthly="16999" data-price-yearly="163999">
+          <div class="pr-card__header">
+            <h3 class="pr-card__name">Ultra</h3>
+            <div class="pr-card__price-wrap">
+              <div class="pr-card__price pr-price--monthly" hidden>
+                <span class="pr-price__amount">&#8377;16,999</span>
+                <span class="pr-price__period">/ month</span>
+              </div>
+              <div class="pr-card__price pr-price--yearly">
+                <span class="pr-price__amount">&#8377;1,63,999</span>
+                <span class="pr-price__period">/ year</span>
+                <span class="pr-price__saving">Save &#8377;39,989</span>
+              </div>
+            </div>
+            <p class="pr-card__sub">For teams carrying more than one objective at a time.</p>
+          </div>
+
+          <ul class="pr-features" aria-label="Ultra plan features">
+            <li class="pr-feature pr-feature--group">Everything in Pro</li>
+            <li class="pr-feature">Unlimited business objectives</li>
+            <li class="pr-feature">An application for every opportunity</li>
+            <li class="pr-feature">10 live deployments</li>
+            <li class="pr-feature">Higher inference ceiling per deployment</li>
+            <li class="pr-feature">Early access to new stages</li>
+          </ul>
+
+          <div class="pr-card__cta">
+            <button class="pr-cta-btn pr-cta-btn--outline" id="btn-ultra" aria-haspopup="dialog" aria-label="Choose the Ultra plan">
+              Choose Ultra
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Enterprise ───────────────────────────────── -->
         <div class="pr-card" data-plan="enterprise">
           <div class="pr-card__header">
             <h3 class="pr-card__name">Enterprise</h3>
@@ -170,20 +280,19 @@
           </div>
 
           <ul class="pr-features" aria-label="Enterprise plan features">
-            <li class="pr-feature pr-feature--group">Everything in Professional</li>
-            <li class="pr-feature">Unlimited Users</li>
-            <li class="pr-feature">Organization Blueprints</li>
-            <li class="pr-feature">Company Knowledge Base</li>
-            <li class="pr-feature">Role-Based Access Control</li>
-            <li class="pr-feature">Team Collaboration</li>
-            <li class="pr-feature">Admin Dashboard</li>
-            <li class="pr-feature">Dedicated Customer Success</li>
-            <li class="pr-feature">Custom Integrations</li>
-            <li class="pr-feature pr-feature--future">Private Deployment (Future)</li>
+            <li class="pr-feature pr-feature--group">Everything in Ultra</li>
+            <li class="pr-feature">Unlimited users</li>
+            <li class="pr-feature">Organization blueprints</li>
+            <li class="pr-feature">Company knowledge base</li>
+            <li class="pr-feature">Role-based access control</li>
+            <li class="pr-feature">Admin dashboard</li>
+            <li class="pr-feature">Dedicated customer success</li>
+            <li class="pr-feature">Custom integrations</li>
+            <li class="pr-feature pr-feature--future">Private deployment (future)</li>
           </ul>
 
           <div class="pr-card__cta">
-            <button class="pr-cta-btn pr-cta-btn--outline" id="btn-enterprise-contact" aria-haspopup="dialog" aria-label="Contact us about Enterprise plan">
+            <button class="pr-cta-btn pr-cta-btn--outline" id="btn-enterprise-contact" aria-haspopup="dialog" aria-label="Contact us about the Enterprise plan">
               Contact Us
             </button>
           </div>
@@ -203,7 +312,7 @@
 
           <details class="pr-faq-item">
             <summary class="pr-faq-q">Can I start for free?</summary>
-            <p class="pr-faq-a">Yes. You can explore the platform using the Free plan — no credit card required.</p>
+            <p class="pr-faq-a">Yes. Hobby is free and needs no card. It gives you three new blueprints a month, and one application you can build, verify and launch.</p>
           </details>
 
           <details class="pr-faq-item">
@@ -212,8 +321,13 @@
           </details>
 
           <details class="pr-faq-item">
+            <summary class="pr-faq-q">What is the difference between Pro and Ultra?</summary>
+            <p class="pr-faq-a">Pro covers one active business objective and every AI opportunity inside it. Ultra removes the limit on objectives, and raises how many applications you can keep running at once.</p>
+          </details>
+
+          <details class="pr-faq-item">
             <summary class="pr-faq-q">Can I upgrade later?</summary>
-            <p class="pr-faq-a">Yes. You can move to Professional or Enterprise at any time as your needs grow.</p>
+            <p class="pr-faq-a">Yes. You can move to Pro, Ultra or Enterprise at any time as your needs grow.</p>
           </details>
 
           <details class="pr-faq-item">
@@ -265,8 +379,8 @@
       <div class="pr-dialog__icon" aria-hidden="true">🚀</div>
       <h3 id="cs-title" class="pr-dialog__title">Coming Soon</h3>
       <p class="pr-dialog__body">
-        The Professional plan will be available soon as part of our early access program.
-        Start with the Free plan today and upgrade when it launches.
+        Paid plans are part of our early access program and will be available shortly.
+        Start on Hobby today and move up when they launch.
       </p>
       <button class="pr-cta-btn pr-cta-btn--primary pr-dialog__cta" onclick="CTARouter.routeToWorkspace()">
         Get Started Free
@@ -359,6 +473,13 @@
   <!-- CTA Router — must load before any onclick="CTARouter.*" fires -->
   <script src="../shared/ctaRouter.js"></script>
 
+  <!-- Dropdowns, mobile panel and the shrink-on-scroll pill, same as every
+       other .mkt-nav page. -->
+  <script type="module">
+    import { initMarketingNav } from '../shared/marketingNav.js';
+    initMarketingNav();
+  </script>
+
   <!-- Pricing page interactions -->
   <script>
     (function () {
@@ -404,8 +525,10 @@
       }
 
       // Professional — Coming Soon
-      var btnPro = document.getElementById('btn-pro-trial');
-      if (btnPro) btnPro.addEventListener('click', function () { showDialog('dialog-coming-soon'); });
+      var btnPro   = document.getElementById('btn-pro-trial');
+      var btnUltra = document.getElementById('btn-ultra');
+      if (btnPro)   btnPro.addEventListener('click', function () { showDialog('dialog-coming-soon'); });
+      if (btnUltra) btnUltra.addEventListener('click', function () { showDialog('dialog-coming-soon'); });
       document.getElementById('btn-close-cs').addEventListener('click', function () { hideDialog('dialog-coming-soon'); });
 
       // Enterprise & footer — Contact

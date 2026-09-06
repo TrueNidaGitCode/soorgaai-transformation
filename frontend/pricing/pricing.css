@@ -158,11 +158,14 @@
   padding: 56px 40px 80px;
 }
 
+/* Four tiers. --pr-max-w is the reading width for the hero and the FAQ; the
+   card row needs more than that, or four feature lists wrap to two words a
+   line and the plans stop being comparable at a glance. */
 .pr-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  max-width: var(--pr-max-w);
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  max-width: 1320px;
   margin: 0 auto;
   align-items: stretch;
 }
@@ -581,8 +584,20 @@
    RESPONSIVE
 ══════════════════════════════════════════════════════════ */
 
+/* Below a wide desktop, four columns give each card about 240px — narrower
+   than the longest feature line. Two-up keeps them readable, and the extra
+   row-gap is for the "Most Popular" badge, which hangs 14px above its card
+   and would otherwise sit on the card above it. */
+@media (max-width: 1400px) {
+  .pr-cards {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 760px;
+    row-gap: 40px;
+  }
+}
+
 @media (max-width: 1080px) {
-  .pr-cards { gap: 16px; }
+  .pr-cards { gap: 16px; row-gap: 40px; }
   .pr-card  { padding: 32px 22px 28px; }
 }
 

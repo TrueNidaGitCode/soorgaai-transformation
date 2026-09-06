@@ -56,6 +56,31 @@ function findDataset(blueprint, datasetName) {
 }
 
 /**
+ * One CSV line into cells, respecting quotes.
+ *
+ * A plain split(',') tears a generated row apart at the first comma inside a
+ * quoted note — and the generator is asked for realistic values, so quoted
+ * commas are the normal case, not the edge one.
+ */
+function splitCsvLine(line) {
+  const cells = [];
+  let cur = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (quoted) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else cur += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ',') { cells.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  cells.push(cur);
+  return cells.map(c => c.trim());
+}
+
+/**
  * Text formats only. PDF and Office documents need a parser this project does
  * not have, and a truthful refusal is better than storing the mojibake that
  * results from reading a binary as text.
@@ -447,5 +472,42 @@ export async function removeSyntheticDataset(req, res) {
   } catch (err) {
     console.error('removeSyntheticDataset error:', err.message);
     return res.status(500).json({ error: 'Could not remove the sample data.' });
+  }
+}
+
+/**
+ * GET /api/uploads/synthetic-dataset/:blueprintId/:datasetName
+ *
+ * The generated rows themselves. The screen could report "20 generated rows"
+ * but not show them, which asks a customer to take on trust the one thing this
+ * feature exists to let them check — whether the shape is actually right for
+ * their business.
+ */
+export async function readSyntheticDataset(req, res) {
+  try {
+    const { blueprintId, datasetName } = req.params;
+
+    const blueprint = await TransformationBlueprint
+      .findOne({ _id: blueprintId, userId: req.user._id })
+      .select('_id').lean();
+    if (!blueprint) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    const doc = await LinkedProjectDocument.findOne({
+      blueprintId, sourceType: 'synthetic', sourceId: `synthetic:${datasetName}`,
+    }).select('rawText synthetic datasetName').lean();
+    if (!doc) return res.status(404).json({ error: 'No sample data for that dataset.' });
+
+    const lines = String(doc.rawText || '').split(/\r?\n/).filter(l => l.trim());
+    return res.json({
+      datasetName: doc.datasetName,
+      csv:         doc.rawText || '',
+      header:      lines[0] ? splitCsvLine(lines[0]) : [],
+      rows:        lines.slice(1).map(splitCsvLine),
+      rowCount:    doc.synthetic?.rowCount || lines.length - 1,
+      generatedAt: doc.synthetic?.generatedAt || null,
+    });
+  } catch (err) {
+    console.error('readSyntheticDataset error:', err.message);
+    return res.status(500).json({ error: 'Could not read the sample data.' });
   }
 }

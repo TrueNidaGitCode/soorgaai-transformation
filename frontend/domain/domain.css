@@ -3189,8 +3189,42 @@
 .aria-status--sample .aria-status__where,
 .aria-status--own .aria-status__where { white-space: normal; word-break: normal; }
 
+/* The generated rows, expanded under their dataset. Scrolls inside itself —
+   a sample can be a dozen columns wide, and the required-data table must not
+   grow a horizontal scrollbar because one row was expanded. */
+.aria-sample-preview > td { padding: 0 !important; background: rgba(212,175,110,0.04); }
+.aria-sample-table__wrap { padding: 12px 14px 14px; overflow-x: auto; }
+.aria-sample-table__note {
+  margin: 0 0 10px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #D4AF6E;
+  max-width: 80ch;
+}
+.aria-sample-table {
+  border-collapse: collapse;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.aria-sample-table th,
+.aria-sample-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  text-align: left;
+}
+.aria-sample-table th {
+  color: rgba(255,255,255,0.55);
+  font-weight: 600;
+  border-bottom-color: rgba(255,255,255,0.12);
+}
+.aria-sample-table td { color: rgba(255,255,255,0.6); font-weight: 400; }
+/* The marker column, called out rather than blended in. */
+.aria-sample-table td:first-child,
+.aria-sample-table th:first-child { color: #D4AF6E; }
+
 /* Both read as text, not buttons: they sit inside a status cell, and a real
    button there would compete with the row's own meaning. */
+.aria-sample__view,
 .aria-sample__make,
 .aria-sample__remove {
   background: none;
@@ -3201,8 +3235,10 @@
   text-decoration: underline;
   cursor: pointer;
 }
+.aria-sample__view:hover,
 .aria-sample__make:hover,
 .aria-sample__remove:hover { color: #fff; }
+.aria-sample__view:disabled,
 .aria-sample__make:disabled,
 .aria-sample__remove:disabled { opacity: 0.5; cursor: default; text-decoration: none; }
 

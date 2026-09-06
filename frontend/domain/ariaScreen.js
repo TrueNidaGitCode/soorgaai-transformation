@@ -185,6 +185,11 @@ function statusCellHtml(state, source, dataset, match) {
       return `<span class="aria-status aria-status--sample"><span class="aria-status-dot"></span>`
         + `Sample data &mdash; not your real data`
         + `<span class="aria-status__where">${s?.rowCount || 0} generated rows &middot; `
+        // Seeing them is the point. A row count alone asks the customer to
+        // take on trust the one thing this feature exists to let them check:
+        // whether the shape is right for their business.
+        + `<button type="button" class="aria-sample__view" data-sample-view="${esc(dataset.name)}">View</button>`
+        + ` &middot; `
         + `<button type="button" class="aria-sample__remove" data-sample-remove="${esc(dataset.name)}">Remove</button>`
         + `</span></span>`;
     }
@@ -214,6 +219,16 @@ function statusCellHtml(state, source, dataset, match) {
 
 function renderRow(d, confCount, jiraCount) {
   const { state, source, match } = rowState(d, confCount, jiraCount);
+  // A second row, spanning both columns, for the sample preview to expand
+  // into. Rendered empty and collapsed: the table is redrawn on every
+  // readiness change, and holding the fetched rows in a sibling <tr> keeps
+  // the expansion tied to its dataset rather than to a floating panel that
+  // has to be told which row it belongs to.
+  const previewRow = state === 'sample'
+    ? `<tr class="aria-sample-preview" data-sample-preview="${esc(d.name)}" hidden>
+         <td colspan="2"></td>
+       </tr>`
+    : '';
   return `
     <tr>
       <td>
@@ -222,6 +237,7 @@ function renderRow(d, confCount, jiraCount) {
       </td>
       <td>${statusCellHtml(state, source, d, match)}</td>
     </tr>
+    ${previewRow}
   `;
 }
 
@@ -1187,8 +1203,91 @@ async function loadUploads(blueprintId) {
  * Delegated on the table so it keeps working across re-renders — the rows are
  * replaced wholesale every time the readiness figure changes.
  */
+/**
+ * Show the generated rows under their dataset.
+ *
+ * Built with DOM calls rather than innerHTML: the cells come from a model, and
+ * a generated value containing markup must render as text, not as elements.
+ */
+async function toggleSamplePreview(datasetName, btn) {
+  const row = document.querySelector(`[data-sample-preview="${CSS.escape(datasetName)}"]`);
+  if (!row) return;
+
+  if (!row.hidden) {
+    row.hidden = true;
+    btn.textContent = 'View';
+    return;
+  }
+
+  const cell = row.firstElementChild;
+  if (!cell.dataset.loaded) {
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+    try {
+      const data = await api(`/uploads/synthetic-dataset/${encodeURIComponent(_blueprintId)}`
+        + `/${encodeURIComponent(datasetName)}`);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'aria-sample-table__wrap';
+
+      const note = document.createElement('p');
+      note.className = 'aria-sample-table__note';
+      note.textContent = `${data.rowCount} generated rows. Every row carries _source=sample. `
+        + 'These are not your records — they show the columns and spread this dataset would have.';
+      wrap.appendChild(note);
+
+      const table = document.createElement('table');
+      table.className = 'aria-sample-table';
+
+      const thead = document.createElement('thead');
+      const htr = document.createElement('tr');
+      for (const h of data.header) {
+        const th = document.createElement('th');
+        th.textContent = h;
+        htr.appendChild(th);
+      }
+      thead.appendChild(htr);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      for (const r of data.rows) {
+        const tr = document.createElement('tr');
+        for (let i = 0; i < data.header.length; i++) {
+          const td = document.createElement('td');
+          // An empty cell is meaningful in a sample — it is what a null looks
+          // like — so it is shown as a dash rather than as nothing.
+          td.textContent = (r[i] ?? '').trim() || '—';
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+
+      cell.replaceChildren(wrap);
+      cell.dataset.loaded = '1';
+    } catch (err) {
+      showUploadError(err.message || 'Could not load the sample data.');
+      btn.disabled = false;
+      btn.textContent = 'View';
+      return;
+    }
+    btn.disabled = false;
+  }
+
+  row.hidden = false;
+  btn.textContent = 'Hide';
+}
+
 function wireSampleData() {
   document.addEventListener('click', async (e) => {
+    const view = e.target.closest('[data-sample-view]');
+    if (view) {
+      e.preventDefault();
+      await toggleSamplePreview(view.dataset.sampleView, view);
+      return;
+    }
+
     const make = e.target.closest('[data-sample-make]');
     const drop = e.target.closest('[data-sample-remove]');
     if (!make && !drop) return;

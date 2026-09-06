@@ -7,6 +7,7 @@ import {
   listDatasetFiles,
   generateSyntheticDataset,
   removeSyntheticDataset,
+  readSyntheticDataset,
 } from '../controllers/uploadController.js';
 
 const router = express.Router();
@@ -27,6 +28,7 @@ router.get('/dataset-files/:blueprintId', protect, listDatasetFiles);
 // Sample data for a dataset the customer does not have yet. A small body —
 // only ids — so the default json limit is the right one here.
 router.post  ('/synthetic-dataset', protect, express.json(), generateSyntheticDataset);
+router.get   ('/synthetic-dataset/:blueprintId/:datasetName', protect, readSyntheticDataset);
 router.delete('/synthetic-dataset/:blueprintId/:datasetName', protect, removeSyntheticDataset);
 
 export default router;

@@ -261,6 +261,16 @@ window.fetch = function (url, opts) {
   ] });
   if (u.includes('/confluence/personal/spaces')) return J({ spaces: [{ key: 'PM', name: 'Product', type: 'global', itemCount: 12 }] });
   if (u.includes('/jira/personal/projects'))     return J({ projects: [{ key: 'KAN', name: 'Kanban', itemCount: 6 }] });
+  if (u.includes('/uploads/synthetic-dataset/')) return J({
+    datasetName: 'Driver Behaviour Scores',
+    header: ['_source', 'driver_id', 'harsh_braking_events', 'notes'],
+    rows: [
+      ['sample', 'drv_001', '3', 'Two events on the same route'],
+      ['sample', 'drv_002', '0', ''],
+    ],
+    rowCount: 22,
+    generatedAt: new Date().toISOString(),
+  });
   if (u.includes('/uploads/dataset-files/')) return J({
     uploads: [],
     samples: [{ datasetName: 'Driver Behaviour Scores', rowCount: 22, generatedAt: new Date().toISOString() }],
@@ -291,7 +301,7 @@ const SCREENS = {
 function probeScript(screen) {
   const cfg = SCREENS[screen];
   return `<script>
-setTimeout(function () {
+setTimeout(async function () {
   var out = { screen: ${JSON.stringify(screen)}, fail: [] };
   function bad(m) { out.fail.push(m); }
   try {
@@ -415,6 +425,29 @@ setTimeout(function () {
       // The way to make one, for a dataset that has none.
       if (!document.querySelector('[data-sample-make]')) {
         bad('no way to generate sample data for the uncovered dataset');
+      }
+
+      // And the way to READ one. A row count the customer cannot open asks
+      // them to take on trust the only thing they can actually check.
+      var viewBtn = document.querySelector('[data-sample-view]');
+      if (!viewBtn) bad('no way to view the generated rows');
+      else {
+        viewBtn.click();
+        await new Promise(function (r) { setTimeout(r, 500); });
+        var preview = document.querySelector('.aria-sample-preview');
+        out.preview = preview && !preview.hidden
+          ? preview.textContent.replace(/s+/g, ' ').trim().slice(0, 60) : 'not shown';
+        if (!preview || preview.hidden) bad('the preview did not open');
+        else {
+          var cells = preview.querySelectorAll('.aria-sample-table td');
+          if (!cells.length) bad('the preview opened but rendered no rows');
+          // The marker has to be visible in what the customer reads, not just
+          // present in the file.
+          if (preview.textContent.indexOf('_source') === -1) {
+            bad('the preview does not show the sample marker column');
+          }
+          if (viewBtn.textContent.trim() !== 'Hide') bad('the View control did not become Hide');
+        }
       }
 
       var tabs = scr.querySelectorAll('#aria-tabs .aria-tab');
@@ -729,7 +762,8 @@ for (const screen of list) {
     + `${r.steps ?? '?'} steps · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
-        nav "${r.nav}" · ${r.collect} rows · sample "${r.sample}"` : '')
+        nav "${r.nav}" · ${r.collect} rows · sample "${r.sample}"
+        preview "${r.preview}"` : '')
     + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : '')
     // Its own clause, not nested inside the arth one — nested, it could only
     // ever print for a screen that also had model classes, so the eame line

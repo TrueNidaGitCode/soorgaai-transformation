@@ -284,12 +284,37 @@ async function reportEmbeddingConfig() {
     }
 }
 
+/**
+ * Say which model this instance will actually use, before it uses one.
+ *
+ * Three environment variables decide it and none of them are visible from
+ * outside the container. Printing it once at boot is the difference between
+ * "the cloud round ran on Gemini" and assuming it did.
+ */
+async function reportLlmConfig() {
+    try {
+        const { describeLlmConfig } = await import('./services/llmService.js');
+        const c = describeLlmConfig();
+        console.log(`✅ LLM chain: ${c.models.join(' → ')}`);
+        if (c.productProvider) {
+            console.log(`   Aria/Arth/Eame/Yusu: ${c.productProvider} (PRODUCT_LLM_PROVIDER)`);
+        }
+        console.log(`   Eame builds with: ${c.eameProvider}`);
+        if (c.unkeyed.length) {
+            console.warn(`⚠️  No API key for ${c.unkeyed.join(', ')} — failover into ${c.unkeyed.length > 1 ? 'those' : 'that'} would fail rather than degrade.`);
+        }
+    } catch (err) {
+        console.warn(`⚠️  Could not read the LLM configuration: ${err.message}`);
+    }
+}
+
 // ✅ Connect to MongoDB, then start the server
 connectDB()
     .then(async () => {
         await recoverStuckBlueprints();
         warmCache(); // Pre-load KB files into memory
         await reportEmbeddingConfig();
+        await reportLlmConfig();
         console.log("🚀 Starting SoorgaAI Server...");
         app.listen(PORT, () => console.log(`🚀 SoorgaAI Server running on port ${PORT}`));
     })

@@ -517,6 +517,35 @@ function recordCall({ label, result, ms }) {
   }
 }
 
+/**
+ * What this process will actually call, for the boot log.
+ *
+ * Written for cloud rounds: which provider is serving is decided by three
+ * separate environment variables across two files, and the only way to know
+ * what a deployed instance settled on was to make a call and read the log
+ * line. A configuration that differs from the one being tested invalidates
+ * the test, and finding that out afterwards is the expensive way.
+ *
+ * Also flags a chain that fails over into a provider with no key configured,
+ * because that failover does not degrade — it turns one provider's hiccup
+ * into an authentication error from a different vendor.
+ */
+export function describeLlmConfig() {
+  const chain = getProviderChain();
+  const KEYS = {
+    gemini: 'GOOGLE_API_KEY', claude: 'ANTHROPIC_API_KEY',
+    openai: 'OPENAI_API_KEY', kimi: 'OPENROUTER_API_KEY',
+  };
+  return {
+    chain,
+    models: chain.map(p => `${p}:${DEFAULT_MODELS[p] || '?'}`),
+    // 'selfhosted' needs a reachable base URL, not an API key.
+    unkeyed: chain.filter(p => KEYS[p] && !process.env[KEYS[p]]),
+    productProvider: (process.env.PRODUCT_LLM_PROVIDER || '').trim() || null,
+    eameProvider: (process.env.EAME_BUILD_PROVIDER || 'gemini').trim(),
+  };
+}
+
 export function getUsageStats() {
   return JSON.parse(JSON.stringify(usage));
 }

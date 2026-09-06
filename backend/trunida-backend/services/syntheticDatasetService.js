@@ -54,7 +54,7 @@ function systemPrompt() {
   ].join('\n');
 }
 
-function userPrompt({ dataset, objective, industry, companyName }) {
+function userPrompt({ dataset, objective, industry, companyName, context }) {
   return [
     `Dataset: ${dataset.name}`,
     dataset.purpose ? `What it is for: ${dataset.purpose}` : '',
@@ -63,6 +63,13 @@ function userPrompt({ dataset, objective, industry, companyName }) {
     companyName ? `Company: ${companyName}` : '',
     industry ? `Industry: ${industry}` : '',
     objective ? `What they are trying to do: ${objective}` : '',
+    // What the customer told us about their own data. Last, and marked as
+    // theirs, because it is the most specific thing in the prompt — scale,
+    // seasonality, naming conventions — and the part worth honouring when it
+    // contradicts a generic assumption about the industry.
+    ...(context
+      ? ['', 'WHAT THE CUSTOMER SAYS ABOUT THIS DATA (prefer this over any general', 'assumption):', context]
+      : []),
     '',
     'Generate the sample CSV.',
   ].filter(Boolean).join('\n');

@@ -871,6 +871,7 @@ const ICONS = {
   jira:       '<path d="M12 2 3 11a2 2 0 0 0 0 2l9 9"/><path d="M12 11h9a2 2 0 0 1 0 2l-5 5"/>',
   github:     '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12 12 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/>',
   upload:     '<path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
+  sample:     '<path d="M3 3v18h18"/><path d="M7 15l3-4 3 2 4-6"/><circle cx="7" cy="15" r="1"/><circle cx="17" cy="7" r="1"/>',
 };
 
 const TABS = {
@@ -878,6 +879,10 @@ const TABS = {
   jira:       { label: 'Jira',       panel: 'aria-sources-panel', color: '#4C9AFF' },
   github:     { label: 'GitHub',     panel: 'aria-tab-github',    color: '#C9D1D9' },
   upload:     { label: 'Upload',     panel: 'aria-tab-upload',    color: 'var(--aria-accent)' },
+  // Amber, matching the sample rows in the table. Last, because it is the
+  // answer for data that does not exist and every real route should be tried
+  // before that one.
+  sample:     { label: 'Sample data', panel: 'aria-tab-sample',    color: '#D4AF6E' },
 };
 
 function tabIcon(id) {
@@ -897,16 +902,21 @@ let _activeTab = null;
  */
 function relevantTabs(bp) {
   const category = bp?.engagement?.category || '';
-  if (category === 'product-ai') return ['github', 'upload'];
+  // Sample data is appended to every set rather than listed in each: "we have
+  // not collected this yet" is true of every engagement type, and a connector
+  // list is about where data lives, not whether it exists.
+  const withSample = ids => [...ids, 'sample'];
+
+  if (category === 'product-ai') return withSample(['github', 'upload']);
 
   if (category === 'workflow-automation') {
     const area = bp.engagement.subArea || '';
-    if (area === 'requirements' || area === 'design') return ['confluence', 'upload'];
-    if (area === 'code') return ['github', 'upload'];
-    if (area === 'test' || area === 'deploy' || area === 'support') return ['jira', 'confluence', 'upload'];
-    return ['confluence', 'jira', 'upload'];
+    if (area === 'requirements' || area === 'design') return withSample(['confluence', 'upload']);
+    if (area === 'code') return withSample(['github', 'upload']);
+    if (area === 'test' || area === 'deploy' || area === 'support') return withSample(['jira', 'confluence', 'upload']);
+    return withSample(['confluence', 'jira', 'upload']);
   }
-  return ['confluence', 'jira', 'github', 'upload'];
+  return withSample(['confluence', 'jira', 'github', 'upload']);
 }
 
 function selectTab(id) {
@@ -929,6 +939,7 @@ function selectTab(id) {
   if (id === 'confluence' || id === 'jira') renderSourcesTable();
   if (id === 'upload') renderUploadList();
   if (id === 'github') refreshGithubStatus();
+  if (id === 'sample') renderSamplePanel();
 }
 
 function renderTabs(bp) {
@@ -1279,6 +1290,137 @@ async function toggleSamplePreview(datasetName, btn) {
   btn.textContent = 'Hide';
 }
 
+// ── Sample data tab: everything missing, in one run ──────────────────────────
+
+/**
+ * The datasets a sample would actually help with.
+ *
+ * Only rows in the `no-connector` state: no repository match, no upload, no
+ * connector, and no sample already. Anything the customer has supplied is
+ * excluded rather than offered and refused — the server would 409, but making
+ * the user discover that one dataset at a time is not a design.
+ */
+function samplableDatasets() {
+  return (_cachedDatasets || []).filter(d =>
+    rowState(d, _lastConfCount, _lastJiraCount).state === 'no-connector');
+}
+
+function renderSamplePanel() {
+  const list = document.getElementById('aria-sample-targets');
+  const btn = document.getElementById('aria-sample-run');
+  if (!list || !btn) return;
+
+  const targets = samplableDatasets();
+  const have = _samples.size;
+
+  if (!targets.length) {
+    list.innerHTML = `<p class="aria-sample__none">${
+      have
+        ? 'Every dataset now has either your own data or a generated sample.'
+        : 'Every dataset already has a route in. There is nothing to generate.'
+    }</p>`;
+    btn.style.display = 'none';
+    return;
+  }
+
+  list.innerHTML = `
+    <p class="aria-sample__targets-head">Svarg will generate a sample for ${targets.length} dataset${targets.length === 1 ? '' : 's'}:</p>
+    ${targets.map(d => `
+      <div class="aria-sample__target" data-target="${esc(d.name)}">
+        <span class="aria-sample__target-name">${esc(d.name)}</span>
+        <span class="aria-sample__target-state">waiting</span>
+      </div>`).join('')}`;
+
+  btn.style.display = '';
+  btn.disabled = false;
+  btn.textContent = `Generate sample data for ${targets.length} dataset${targets.length === 1 ? '' : 's'}`;
+}
+
+function setSampleProgress(done, total, label) {
+  const wrap = document.getElementById('aria-sample-progress');
+  const fill = document.getElementById('aria-sample-progress-fill');
+  const lab = document.getElementById('aria-sample-progress-label');
+  const count = document.getElementById('aria-sample-progress-count');
+  if (!wrap) return;
+  if (total === 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  if (fill) fill.style.width = `${Math.round((done / total) * 100)}%`;
+  if (lab) lab.textContent = label;
+  if (count) count.textContent = `${done} of ${total}`;
+}
+
+function markTarget(name, state, text) {
+  const row = document.querySelector(`[data-target="${CSS.escape(name)}"]`);
+  if (!row) return;
+  row.classList.remove('is-running', 'is-done', 'is-failed');
+  row.classList.add(state);
+  const cell = row.querySelector('.aria-sample__target-state');
+  if (cell) cell.textContent = text;
+}
+
+/**
+ * Generate for every missing dataset, one at a time.
+ *
+ * Sequential on purpose. Each is a model call of tens of seconds, and firing
+ * five at once would make the progress meaningless, hammer the provider's rate
+ * limit, and turn one failure into an ambiguous result. One at a time means
+ * the failures are attributable and the ones that worked are kept.
+ */
+async function runSampleBatch() {
+  const btn = document.getElementById('aria-sample-run');
+  const errEl = document.getElementById('aria-sample-error');
+  const targets = samplableDatasets();
+  if (!targets.length || !_blueprintId) return;
+
+  const context = (document.getElementById('aria-sample-context')?.value || '').trim();
+  if (errEl) errEl.style.display = 'none';
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+
+  let done = 0;
+  const failures = [];
+
+  for (const d of targets) {
+    markTarget(d.name, 'is-running', 'generating…');
+    setSampleProgress(done, targets.length, `Generating ${d.name}…`);
+    try {
+      const res = await api('/uploads/synthetic-dataset', {
+        method: 'POST',
+        body: JSON.stringify({ blueprintId: _blueprintId, datasetName: d.name, context }),
+      });
+      markTarget(d.name, 'is-done', `${res.rowCount} rows`);
+    } catch (err) {
+      // Kept going. One dataset the model choked on must not cost the other
+      // four, and the ones that worked are already saved.
+      markTarget(d.name, 'is-failed', 'failed');
+      failures.push(`${d.name}: ${err.message}`);
+    }
+    done++;
+    setSampleProgress(done, targets.length, done === targets.length ? 'Done' : `Generating…`);
+  }
+
+  await loadUploads(_blueprintId);
+  renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
+
+  // Deliberately NOT re-rendering the target list. It would rebuild from
+  // what is still missing and reset every row to "waiting", erasing the
+  // per-dataset outcome the user just watched — including which ones failed,
+  // which is the only part worth reading afterwards. The list rebuilds next
+  // time the tab is opened.
+  if (btn) {
+    const ok = targets.length - failures.length;
+    btn.textContent = failures.length
+      ? `${ok} of ${targets.length} generated — try the rest again`
+      : `Generated ${ok} dataset${ok === 1 ? '' : 's'}`;
+    btn.disabled = failures.length === 0;
+  }
+
+  if (failures.length && errEl) {
+    errEl.textContent = `${failures.length} of ${targets.length} could not be generated. `
+      + failures.join(' · ') + ' — the rest were saved; try these again.';
+    errEl.style.display = 'block';
+  }
+}
+
 function wireSampleData() {
   document.addEventListener('click', async (e) => {
     const view = e.target.closest('[data-sample-view]');
@@ -1478,6 +1620,7 @@ function wireStaticControls() {
   _wired = true;
 
   wireSampleData();
+  document.getElementById('aria-sample-run')?.addEventListener('click', runSampleBatch);
 
   document.getElementById('aria-process-btn')?.addEventListener('click', () => {
     const id = _blueprintId;

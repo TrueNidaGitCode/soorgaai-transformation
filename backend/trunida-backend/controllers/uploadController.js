@@ -373,10 +373,13 @@ export async function classifyUploadedFiles(req, res) {
  */
 export async function generateSyntheticDataset(req, res) {
   try {
-    const { blueprintId, datasetName } = req.body || {};
+    const { blueprintId, datasetName, context } = req.body || {};
     if (!blueprintId || !datasetName) {
       return res.status(400).json({ error: 'blueprintId and datasetName are both required.' });
     }
+    // Capped: this is a hint, not a document, and an unbounded string here
+    // would be a way to push arbitrary text into a generation prompt.
+    const note = String(context || '').trim().slice(0, 2000);
 
     // Ownership, not existence — same reason as uploadDatasetFile: without the
     // userId a caller could attach generated rows to somebody else's blueprint
@@ -410,6 +413,7 @@ export async function generateSyntheticDataset(req, res) {
       objective:   blueprint.businessObjective || '',
       industry:    blueprint.industry || '',
       companyName: blueprint.companyName || '',
+      context:     note,
     });
 
     // No redaction pass. uploadDatasetFile redacts because a customer's export

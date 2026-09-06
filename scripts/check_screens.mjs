@@ -261,6 +261,13 @@ window.fetch = function (url, opts) {
   ] });
   if (u.includes('/confluence/personal/spaces')) return J({ spaces: [{ key: 'PM', name: 'Product', type: 'global', itemCount: 12 }] });
   if (u.includes('/jira/personal/projects'))     return J({ projects: [{ key: 'KAN', name: 'Kanban', itemCount: 6 }] });
+  // POST has no trailing slash; the GET below does. Matched separately or
+  // the generate call falls through to the catch-all and "succeeds" with an
+  // undefined row count, which is a pass that proves nothing.
+  if (u.endsWith('/uploads/synthetic-dataset')) return J({
+    datasetName: 'Field Telemetry Feed', rowCount: 18,
+    columns: ['vehicle_id', 'fault_code'], generatedAt: new Date().toISOString(),
+  }, 300);
   if (u.includes('/uploads/synthetic-dataset/')) return J({
     datasetName: 'Driver Behaviour Scores',
     header: ['_source', 'driver_id', 'harsh_braking_events', 'notes'],
@@ -448,6 +455,83 @@ setTimeout(async function () {
           }
           if (viewBtn.textContent.trim() !== 'Hide') bad('the View control did not become Hide');
         }
+      }
+
+      // The Sample data tab: one run for every dataset the customer does not
+      // have, rather than generating them one at a time from the table.
+      var sampleTab = scr.querySelector('#aria-tabs .aria-tab[data-tab="sample"]');
+      if (!sampleTab) bad('no Sample data tab');
+      else {
+        // Remember what was open. Restoring the FIRST tab instead meant the
+        // screenshot could never show whatever CHECK_QUERY asked for — the
+        // probe undid it every time, and the picture disagreed with the run.
+        var wasOpen = scr.querySelector('#aria-tabs .aria-tab--active');
+        sampleTab.click();
+        await new Promise(function (r) { setTimeout(r, 250); });
+        var panel = document.getElementById('aria-tab-sample');
+        if (!panel || panel.style.display === 'none') bad('the Sample data panel did not open');
+        else {
+          var targets = panel.querySelectorAll('.aria-sample__target');
+          out.sampleTargets = targets.length;
+          // Exactly the datasets with no route in. The fixture has one
+          // (Field Telemetry Feed); Driver Behaviour Scores already has a
+          // sample and the other three have real sources, so offering any of
+          // them would be offering work the server would refuse.
+          if (targets.length !== 1) {
+            bad('the sample tab offers ' + targets.length + ' datasets, expected 1');
+          }
+          if (panel.textContent.indexOf('Field Telemetry Feed') === -1) {
+            bad('the sample tab does not name the dataset with no route in');
+          }
+          if (panel.textContent.indexOf('Driver Behaviour Scores') !== -1) {
+            bad('the sample tab offers a dataset that already has a sample');
+          }
+          if (!document.getElementById('aria-sample-context')) {
+            bad('no way to tell Svarg about the data');
+          }
+          if (!document.getElementById('aria-sample-progress')) bad('no progress for the batch run');
+
+          // Run it. The batch is the point of the tab, and its failure modes
+          // — a target that never leaves "waiting", progress that never
+          // moves — are invisible without actually clicking.
+          document.getElementById('aria-sample-context').value = 'three branches, quarterly terms';
+          document.getElementById('aria-sample-run').click();
+          await new Promise(function (r) { setTimeout(r, 1200); });
+
+          var states = [].map.call(
+            document.querySelectorAll('.aria-sample__target-state'),
+            function (s) { return s.textContent.trim(); }
+          );
+          out.batch = states.join(',') || 'no targets';
+          var count = document.getElementById('aria-sample-progress-count');
+          out.batchProgress = count ? count.textContent.trim() : 'missing';
+          if (out.batchProgress !== '1 of 1') {
+            bad('batch progress read "' + out.batchProgress + '", expected 1 of 1');
+          }
+          if (states.length && states[0] === 'waiting') {
+            bad('the dataset never left "waiting" — the batch did not run');
+          }
+          // The outcome has to survive the run. Re-rendering the list
+          // afterwards rebuilt it from what was still missing and reset every
+          // row to "waiting", erasing which ones failed.
+          if (out.batch.indexOf('18 rows') === -1) {
+            bad('the per-dataset result was lost after the run: ' + out.batch);
+          }
+          // Exactly one. A tab that shows its own panel without hiding the
+          // previous one looks like the wrong panel opened, and is invisible
+          // to a check that only asks whether the right one appeared.
+          var visible = [].filter.call(
+            document.querySelectorAll('#screen-aria .aria-tabpanel'),
+            function (p) { return p.offsetParent !== null; }
+          ).map(function (p) { return p.id; });
+          out.visiblePanels = visible.join(',') || 'none';
+          if (visible.length !== 1) {
+            bad(visible.length + ' panels visible at once: ' + out.visiblePanels);
+          }
+        }
+        // Back to where the rest of the probe expects to be.
+        (wasOpen || scr.querySelector('#aria-tabs .aria-tab')).click();
+        await new Promise(function (r) { setTimeout(r, 250); });
       }
 
       var tabs = scr.querySelectorAll('#aria-tabs .aria-tab');
@@ -728,8 +812,16 @@ async function checkScreen(screen) {
   const server = serve(screen);
   await new Promise(r => server.listen(PORT, r));
   try {
-    const url = `http://localhost:${PORT}/domain/domain.html?view=${screen}`;
-    const common = ['--headless', '--disable-gpu', '--window-size=1440,1000', '--virtual-time-budget=9000'];
+    // CHECK_QUERY appends to the URL, so a screenshot can be taken with a
+    // particular tab open — Aria's tabs are otherwise only reachable by a
+    // click the probe makes and undoes before the screenshot is taken.
+    //   CHECK_QUERY='connect=sample' node scripts/check_screens.mjs aria
+    const extra = process.env.CHECK_QUERY ? '&' + process.env.CHECK_QUERY : '';
+    const url = `http://localhost:${PORT}/domain/domain.html?view=${screen}${extra}`;
+    // CHECK_WINDOW lets a run capture something that sits below the fold at
+    // the default height — a panel further down a long screen, say.
+    const win = process.env.CHECK_WINDOW || '1440,1000';
+    const common = ['--headless', '--disable-gpu', `--window-size=${win}`, '--virtual-time-budget=9000'];
     await chrome([...common, `--screenshot=${path.join(SHOTS, screen + '.png')}`, url]);
     const dom = await chrome([...common, '--dump-dom', url]);
     const m = dom.match(/<title>CHECK ([\s\S]*?)<\/title>/);
@@ -763,7 +855,8 @@ for (const screen of list) {
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" · ${r.collect} rows · sample "${r.sample}"
-        preview "${r.preview}"` : '')
+        preview "${r.preview}" · sample tab offers ${r.sampleTargets} · panels ${r.visiblePanels}
+        batch ${r.batchProgress} · targets "${r.batch}"` : '')
     + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : '')
     // Its own clause, not nested inside the arth one — nested, it could only
     // ever print for a screen that also had model classes, so the eame line

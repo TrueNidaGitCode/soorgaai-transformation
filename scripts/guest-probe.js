@@ -16,6 +16,15 @@ const out = {
   navUsername:   flat(document.getElementById('domain-username')),
   logoutText:    flat(document.getElementById('domain-logout')),
   approveOn:     !document.getElementById('opp-approve-btn')?.disabled,
+  // The value has to come before the ask. Document order, not pixels — a
+  // screenshot cannot tell a deliberate order from a lucky one.
+  pauseBelowValue: (() => {
+    const value = document.querySelector('.rp-winner-card');
+    const pause = document.getElementById('opp-paused');
+    if (!value || !pause) return null;
+    // 4 = DOCUMENT_POSITION_FOLLOWING — the pause comes after the card.
+    return !!(value.compareDocumentPosition(pause) & 4);
+  })(),
   cssRules:      [...document.styleSheets].reduce((n, s) => {
                    try { return n + s.cssRules.length; } catch { return n; } }, 0),
   errors:        window.__errs || [],

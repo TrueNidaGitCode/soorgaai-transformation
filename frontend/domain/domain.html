@@ -224,25 +224,6 @@
             </div>
           </div>
 
-          <!-- Where the free preview stops. A guest gets AI Use Cases; the
-               remaining five domains are real model spend, so they are what an
-               account buys. Saying that at the boundary beats a progress bar
-               that sits at 6% for ever with nothing coming — which is what
-               this screen used to do, because the bar counts every capability
-               in the blueprint and a guest only ever generates the first
-               domain's. -->
-          <div class="gpause" id="opp-paused" style="display:none" role="status">
-            <div class="gpause__head">
-              <span class="gpause__label">Preview paused</span>
-              <span class="gpause__count" id="opp-paused-count"></span>
-            </div>
-            <div class="prog-bar__track">
-              <div class="prog-bar__fill gpause__fill" id="opp-paused-fill" style="width:0%"></div>
-            </div>
-            <p class="gpause__text" id="opp-paused-next"></p>
-            <button type="button" class="gpause__btn" id="opp-paused-login">Log in to continue</button>
-          </div>
-
           <div id="opp-loading" class="pw-process-list">
             <div class="pw-process-item">
               <span class="pw-process-item__title">Analyzing your objective and prioritizing AI use cases…</span>
@@ -272,6 +253,25 @@
 
             <p class="pd-substage-label">Other opportunities</p>
             <ol class="rp-others-list" id="opp-others"></ol>
+          </div>
+
+          <!-- Where the free preview stops. A guest gets AI Use Cases; the
+               remaining five domains are real model spend, so they are what an
+               account buys. Saying that at the boundary beats a progress bar
+               that sits at 6% for ever with nothing coming — which is what
+               this screen used to do, because the bar counts every capability
+               in the blueprint and a guest only ever generates the first
+               domain's. -->
+          <div class="gpause" id="opp-paused" style="display:none" role="status">
+            <div class="gpause__head">
+              <span class="gpause__label">Preview paused</span>
+              <span class="gpause__count" id="opp-paused-count"></span>
+            </div>
+            <div class="prog-bar__track">
+              <div class="prog-bar__fill gpause__fill" id="opp-paused-fill" style="width:0%"></div>
+            </div>
+            <p class="gpause__text" id="opp-paused-next"></p>
+            <button type="button" class="gpause__btn" id="opp-paused-login">Log in to continue</button>
           </div>
 
           <div id="opp-error" class="gen-error" style="display:none" role="alert"></div>
@@ -1279,7 +1279,7 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=11"></script>
+  <script type="module" src="blueprintGenerate.js?v=12"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=41"></script>
   <script type="module" src="arthScreen.js?v=18"></script>

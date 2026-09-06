@@ -205,6 +205,9 @@ console.log('\n2. the free domain is done — paused, waiting for a login');
     check('it names the domain that comes next', /AI Strategy is next/.test(r.next), r.next);
     check('it promises nothing is lost', /nothing you have seen is lost/i.test(r.next));
     check('the preview data is on screen', /Retrieval-Augmented Ticket Routing/.test(r.winner), r.winner);
+    // The recommendation is the reason to sign up, so it has to be read
+    // before the request to sign up — an ask that arrives first is a wall.
+    check('the ask comes after the value', r.pauseBelowValue === true);
     check('the navbar offers a log in', r.logoutText === 'Log in', r.logoutText);
     check('it says this is a guest preview', r.navUsername === 'Guest preview', r.navUsername);
     check('no script errors', r.errors.length === 0, r.errors.join(' | '));

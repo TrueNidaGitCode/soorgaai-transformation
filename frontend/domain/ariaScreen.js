@@ -462,7 +462,6 @@ function renderTable(datasets, confCount, jiraCount) {
   updateReadinessCard(datasets, confCount, jiraCount);
   updateProcessBar(datasets);
   updateAriaNav(datasets, confCount, jiraCount);
-  renderCollectionPlan(datasets, confCount, jiraCount);
 }
 
 /**
@@ -504,47 +503,17 @@ function updateAriaNav(datasets, confCount, jiraCount) {
   if (hint) {
     hint.textContent = connected === 0
       ? 'No data connected yet. Svarg will design for the data you plan to collect.'
-      : `${total - connected} dataset${total - connected === 1 ? '' : 's'} still to collect — listed below.`;
+      // "listed below" pointed at the Still to collect section, which is gone.
+      // The table above is where they are listed, and it is already on screen.
+      : `${total - connected} dataset${total - connected === 1 ? '' : 's'} still to collect.`;
   }
 }
 
-/**
- * What the customer does not have yet, as something to act on.
- *
- * A new business is not failing when it cannot supply five of six datasets;
- * it has not started collecting them. Turning the gap into a list of what to
- * instrument is more useful than a warning, and it is derived from what is
- * already on screen rather than generated — nothing here is invented.
- */
-function renderCollectionPlan(datasets, confCount, jiraCount) {
-  const wrap = document.getElementById('aria-collect');
-  const body = document.getElementById('aria-collect-body');
-  if (!wrap || !body) return;
-
-  const missing = datasets.filter(d => {
-    const { state } = rowState(d, confCount, jiraCount);
-    return state !== 'connected' && state !== 'uploaded' && state !== 'in-code';
-  });
-
-  if (!missing.length) { wrap.style.display = 'none'; return; }
-  wrap.style.display = '';
-
-  // Highest priority first: Cob already ranked these, and the order it chose
-  // is the order to start collecting in.
-  const rank = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-  const sorted = [...missing].sort((a, b) =>
-    (rank[(a.priority || '').toUpperCase()] ?? 3) - (rank[(b.priority || '').toUpperCase()] ?? 3));
-
-  body.innerHTML = sorted.map(d => `
-    <div class="aria-collect__row">
-      <div class="aria-collect__main">
-        <span class="aria-row-name__title">${esc(d.name)}</span>
-        <span class="aria-row-name__desc">${esc(d.purpose || '')}</span>
-        ${d.typicalSource ? `<span class="aria-collect__where">Usually lives in: ${esc(d.typicalSource)}</span>` : ''}
-      </div>
-      ${d.priority ? `<span class="aria-collect__pri aria-collect__pri--${esc(String(d.priority).toLowerCase())}">${esc(d.priority)}</span>` : ''}
-    </div>`).join('');
-}
+// renderCollectionPlan lived here. It re-listed every dataset the Required
+// Data table had already shown as not connected — same name, same purpose,
+// same typical source — with only the priority badge added. The intent was to
+// turn a gap into a plan, but with the table directly above it, the second
+// list read as a rendering bug. The table states a dataset and its state once.
 
 // Aria is finished once data has actually been linked. Mark the journey
 // step done and say what comes next — Arth isn't built, so this states

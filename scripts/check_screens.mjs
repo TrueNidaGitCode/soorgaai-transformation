@@ -374,14 +374,19 @@ setTimeout(function () {
       if (!navBtn) bad('no stage-nav button on Aria');
       else if (navBtn.disabled) bad('Move to Arth is disabled — the stage cannot be completed');
 
-      // A dataset nobody has must appear as work to do, not a warning. This is
-      // the ordinary state for a company that has not collected everything yet.
-      var collect = document.getElementById('aria-collect');
-      if (!collect || collect.style.display === 'none') bad('uncovered dataset produced no collection plan');
-      else {
-        var rows = collect.querySelectorAll('.aria-collect__row');
-        out.collect = rows.length;
-        if (!rows.length) bad('collection plan is empty');
+      // The "Still to collect" list is gone — it re-stated what the Required
+      // Data table above already showed. What must NOT go with it is the
+      // information: a dataset nobody has still has to be visible, in the
+      // table, with what it is for. Removing a duplicate is only safe if the
+      // original is still there.
+      if (document.getElementById('aria-collect')) bad('the removed Still-to-collect section is back');
+      var reqRows = document.querySelectorAll('#aria-required-body tr');
+      out.collect = reqRows.length;
+      if (!reqRows.length) bad('the required-data table is empty');
+      var reqText = document.getElementById('aria-required-body').textContent;
+      // The one dataset in the fixture that no connector reaches.
+      if (reqText.indexOf('Field Telemetry Feed') === -1) {
+        bad('the uncovered dataset is no longer listed anywhere');
       }
 
       var tabs = scr.querySelectorAll('#aria-tabs .aria-tab');
@@ -696,7 +701,7 @@ for (const screen of list) {
     + `${r.steps ?? '?'} steps · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
-        nav "${r.nav}" · ${r.collect} to collect` : '')
+        nav "${r.nav}" · ${r.collect} rows in the table` : '')
     + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : '')
     // Its own clause, not nested inside the arth one — nested, it could only
     // ever print for a screen that also had model classes, so the eame line

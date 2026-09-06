@@ -211,9 +211,20 @@ function renderBuildState(build) {
   }
 
   if (sub) {
+    // Elapsed time while building. A clean build is about a minute, so a
+    // "generating" that has been going ten is the only signal that something
+    // upstream has stalled — a rate-limited model call writes no progress at
+    // all, and the screen said "Building…" indefinitely with nothing to
+    // distinguish it from work in flight.
+    const startedAt = build.progress?.startedAt;
+    const mins = startedAt ? Math.floor((Date.now() - new Date(startedAt).getTime()) / 60000) : 0;
+    const elapsed = building && mins >= 2
+      ? ` — ${mins} min so far${mins >= 5 ? ', longer than usual' : ''}`
+      : '';
+
     sub.textContent = building
       ? `Attempt ${build.progress?.attempt || 1}: ${build.progress?.phase || 'working'}${
-          build.progress?.detail ? ' — ' + build.progress.detail : ''}`
+          build.progress?.detail ? ' — ' + build.progress.detail : ''}${elapsed}`
       : build.status === 'passed'
         ? `Written for "${build.useCase || 'this use case'}" and verified by running it.`
         : 'Eame writes the code for this use case, then installs and starts it to prove it runs.';

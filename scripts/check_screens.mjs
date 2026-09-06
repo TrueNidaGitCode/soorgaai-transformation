@@ -244,6 +244,17 @@ window.fetch = function (url, opts) {
     // customer sees, so it has to be renderable here too.
     //   EAME_BUILD_STATE=none node scripts/check_screens.mjs eame
     if (BUILD_STATE === 'none') return J({ status: 'none' });
+    // EAME_BUILD_STATE=stalled — a model call that has not returned. The lock
+    // holds for twenty minutes and nothing writes progress meanwhile, so the
+    // elapsed time is the only thing that can say it is stuck.
+    if (BUILD_STATE === 'stalled') return J({
+      status: 'building',
+      progress: { attempt: 1, phase: 'generating', detail: '',
+                  startedAt: new Date(Date.now() - 9 * 60000).toISOString() },
+      verifiedTo: '', skipped: [], reason: '', useCase: '', provider: 'gemini',
+      warnings: [], failures: [], attempts: 0,
+      generatedPaths: [], files: [], fileCount: 0, totalBytes: 0,
+    });
     return J({
       status: 'passed', verifiedTo: 'smoke', skipped: [], reason: '',
       useCase: 'Predictive Analytics for Student Churn', provider: 'gemini',
@@ -324,8 +335,10 @@ const SCREENS = {
   // Two states, two different sets of things that must be on screen. Before a
   // build there is no project, so requiring a file tree would demand exactly
   // the fabricated one this screen was fixed to stop showing.
+  // A build in flight has no files either — demanding a tree of one would be
+  // demanding the fabricated project this screen was fixed to stop showing.
   eame: { id: 'screen-eame',  launcher: 'Chat with Eame',
-          must: process.env.EAME_BUILD_STATE === 'none'
+          must: ['none', 'stalled'].includes(process.env.EAME_BUILD_STATE)
             ? ['.rp-journey', '#eame-build-btn', '.eg-gate']
             : ['.rp-journey', '.eg-stat', '.eg-tree__row', '.eg-summary__item', '.eg-chip'] },
   yusu: { id: 'screen-yusu',  launcher: 'Chat with Yusu',  must: ['.rp-journey', '.dp__step', '.eg-usecase__name'] },
@@ -711,8 +724,25 @@ setTimeout(async function () {
         if (claims.length) {
           bad('the screen claims a build exists with nothing built: ' + out.falseClaims);
         }
-      } else if (passed !== 6) {
+      } else if (BUILD_STATE !== 'stalled' && passed !== 6) {
+        // A build still running has passed no gates yet, correctly. Only a
+        // build that reported success owes six.
         bad(passed + ' of ' + gates.length + ' gates show as passed on a passed build');
+      }
+
+      if (BUILD_STATE === 'stalled') {
+        var subEl = document.getElementById('eame-build-sub');
+        // No whitespace-collapsing regex here on purpose. This probe is built
+        // inside a template literal, and \s has now been eaten twice on the
+        // way in — leaving /s+/g, which strips every letter s and makes every
+        // assertion below fail against text that was actually correct.
+        out.stallSub = subEl ? subEl.textContent.trim() : 'missing';
+        if (!/min so far/.test(out.stallSub)) {
+          bad('a build stuck for nine minutes shows no elapsed time: ' + out.stallSub);
+        }
+        if (!/longer than usual/.test(out.stallSub)) {
+          bad('a nine-minute build is not flagged as unusual: ' + out.stallSub);
+        }
       }
 
       var noteEl = document.getElementById('eame-build-note');

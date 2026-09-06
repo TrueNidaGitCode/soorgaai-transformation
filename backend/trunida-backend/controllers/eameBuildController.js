@@ -83,7 +83,21 @@ export async function startBuild(req, res) {
       const startedAt = running.progress?.startedAt || running.updatedAt;
       const ageMinutes = startedAt ? (Date.now() - new Date(startedAt).getTime()) / 60000 : Infinity;
       if (ageMinutes < STALE_AFTER_MINUTES) {
-        return res.status(409).json({ error: 'A build is already running for this blueprint.' });
+        // A hung model call holds this lock for the full twenty minutes and the
+        // screen had no way to say so — just "a build is already running",
+        // which is indistinguishable from one that is making progress. Say how
+        // long it has been and when it can be taken over.
+        const reclaimAt = new Date(new Date(startedAt).getTime() + STALE_AFTER_MINUTES * 60000);
+        const mins = Math.round(ageMinutes);
+        return res.status(409).json({
+          error: `A build has been running for ${mins} minute${mins === 1 ? '' : 's'}`
+            + ` (${running.progress?.phase || 'working'}).`
+            + ` If it is stuck, you can start a new one after ${reclaimAt.toISOString().slice(11, 16)} UTC.`,
+          code: 'build_in_progress',
+          phase: running.progress?.phase || '',
+          runningMinutes: mins,
+          reclaimAt,
+        });
       }
       console.warn(`[eame-build] reclaiming a build stuck for ${Math.round(ageMinutes)} minutes`);
     }

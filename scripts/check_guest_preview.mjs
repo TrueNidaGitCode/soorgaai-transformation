@@ -201,7 +201,9 @@ async function run(state) {
   await new Promise(r => server.listen(PORT, r));
   try {
     const url = `http://localhost:${PORT}/domain/domain.html?view=cob`;
-    const common = ['--headless', '--disable-gpu', '--window-size=1440,1000', '--virtual-time-budget=9000'];
+    // 768 tall, not 1000: the complaint was that the pause fell below the
+    // fold, and a check run on a tall window would never see that.
+    const common = ['--headless', '--disable-gpu', '--window-size=1366,768', '--virtual-time-budget=9000'];
     await chrome([...common, `--screenshot=${path.join(SHOTS, 'guest-' + state + '.png')}`, url]);
     const dom = await chrome([...common, '--dump-dom', url]);
     const m = dom.match(/<title>CHECK ([\s\S]*?)<\/title>/);
@@ -260,6 +262,12 @@ console.log('\n2. the free domain is done — paused, waiting for a login');
     // The recommendation is the reason to sign up, so it has to be read
     // before the request to sign up — an ask that arrives first is a wall.
     check('the ask comes after the value', r.pauseBelowValue === true);
+    check('and before the rest of the list', r.pauseAboveOthers === true);
+    // It sat below everything and fell off the bottom of a laptop screen, so
+    // nobody saw the one control that unblocks the flow.
+    check('it is above the fold on a small laptop', r.pauseTop !== null && r.pauseTop < 700,
+      `top ${r.pauseTop}px`);
+    check('the other opportunities are still listed', r.othersShown === true);
     check('the navbar offers a log in', r.logoutText === 'Log in', r.logoutText);
     check('it says this is a guest preview', r.navUsername === 'Guest preview', r.navUsername);
     check('no script errors', r.errors.length === 0, r.errors.join(' | '));

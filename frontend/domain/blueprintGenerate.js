@@ -465,8 +465,12 @@ function renderOpportunitiesContent(view) {
 
   const loadingEl = document.getElementById('opp-loading');
   const contentEl = document.getElementById('opp-content');
+  const othersWrap = document.getElementById('opp-others-wrap');
   if (loadingEl) loadingEl.style.display = 'none';
   if (contentEl) contentEl.style.display = 'block';
+  // Only when there is something in it — an empty "Other opportunities"
+  // heading under a single recommendation reads as a list that failed to load.
+  if (othersWrap) othersWrap.style.display = view.others.length ? 'block' : 'none';
 
   _opportunitiesContentShown = true;
 }

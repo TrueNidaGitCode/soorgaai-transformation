@@ -251,8 +251,6 @@
               </div>
             </div>
 
-            <p class="pd-substage-label">Other opportunities</p>
-            <ol class="rp-others-list" id="opp-others"></ol>
           </div>
 
           <!-- Where the free preview stops. A guest gets AI Use Cases; the
@@ -281,6 +279,16 @@
                 Start over with a different objective
               </button>
             </div>
+          </div>
+
+          <!-- The rest of the list sits below the pause, not above it. The
+               recommendation is the value and comes first; the login ask has
+               to be reachable without scrolling past everything else. Kept out
+               of #opp-content so a run that produced nothing still shows the
+               pause and its login button. -->
+          <div id="opp-others-wrap" style="display:none">
+            <p class="pd-substage-label">Other opportunities</p>
+            <ol class="rp-others-list" id="opp-others"></ol>
           </div>
 
           <div id="opp-error" class="gen-error" style="display:none" role="alert"></div>
@@ -1288,7 +1296,7 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=15"></script>
+  <script type="module" src="blueprintGenerate.js?v=16"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=41"></script>
   <script type="module" src="arthScreen.js?v=18"></script>

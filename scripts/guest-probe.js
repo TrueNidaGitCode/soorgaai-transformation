@@ -36,6 +36,20 @@ const out = {
     // 4 = DOCUMENT_POSITION_FOLLOWING — the pause comes after the card.
     return !!(value.compareDocumentPosition(pause) & 4);
   })(),
+  // ...and before the rest of the list, so it cannot drift down the page
+  // again as that list grows. Pinned from both sides or it is not pinned.
+  pauseAboveOthers: (() => {
+    const pause = document.getElementById('opp-paused');
+    const others = document.getElementById('opp-others-wrap');
+    if (!pause || !others) return null;
+    return !!(pause.compareDocumentPosition(others) & 4);
+  })(),
+  // What a 1366x768 laptop actually shows without scrolling.
+  pauseTop: (() => {
+    const p = document.getElementById('opp-paused');
+    return p ? Math.round(p.getBoundingClientRect().top) : null;
+  })(),
+  othersShown: shown(document.getElementById('opp-others-wrap')),
   cssRules:      [...document.styleSheets].reduce((n, s) => {
                    try { return n + s.cssRules.length; } catch { return n; } }, 0),
   errors:        window.__errs || [],

@@ -49,6 +49,58 @@ const OTHER_DOMAINS = [
   ['governance-security', 'Governance & Ethics'],
 ];
 
+/**
+ * The AI Use Cases capabilities, per state.
+ *
+ * Four capabilities run and any one of them can come back as malformed JSON,
+ * which happens in ordinary runs — a real padhivu preview lost AI Use Case
+ * Classification that way. So the failure states are fixtures, not
+ * hypotheticals: 'degraded' is prioritisation failing while discovery
+ * survives, 'barren' is losing both.
+ */
+function useCaseCapabilities(state) {
+  const RANKED = {
+    title: 'AI Implementation Prioritization',
+    brief: {
+      recommendedStartingPoint: 'Retrieval-Augmented Ticket Routing should go first because the data is already structured.',
+      recommendedInitiativeName: 'Retrieval-Augmented Ticket Routing',
+      priorityQuadrants: [{ initiatives: ['Retrieval-Augmented Ticket Routing', 'Automated Severity Scoring'] }],
+    },
+  };
+  const DISCOVERED = {
+    title: 'AI Opportunity Discovery',
+    brief: {
+      aiOpportunities: [
+        { name: 'Automated Severity Scoring', why: 'Ticket text and resolution times are already captured.' },
+        { name: 'Retrieval-Augmented Ticket Routing', why: 'Historic routing decisions give a training signal.' },
+      ],
+    },
+  };
+  const cap = (capabilityId, capabilityName, status, sections) =>
+    ({ capabilityId, capabilityName, status, sections });
+
+  if (state === 'generating') {
+    return [cap('ai-opportunity-discovery', 'AI Opportunity Discovery', 'in-progress', [])];
+  }
+  if (state === 'degraded') {
+    // Prioritisation failed; discovery did not. The screen must fall back.
+    return [
+      cap('ai-opportunity-discovery', 'AI Opportunity Discovery', 'completed', [DISCOVERED]),
+      cap('ai-implementation-prioritization', 'AI Implementation Prioritization', 'error', []),
+    ];
+  }
+  if (state === 'barren') {
+    return [
+      cap('ai-opportunity-discovery', 'AI Opportunity Discovery', 'error', []),
+      cap('ai-implementation-prioritization', 'AI Implementation Prioritization', 'error', []),
+    ];
+  }
+  return [
+    cap('ai-opportunity-discovery', 'AI Opportunity Discovery', 'completed', [DISCOVERED]),
+    cap('ai-implementation-prioritization', 'AI Implementation Prioritization', 'completed', [RANKED]),
+  ];
+}
+
 function blueprint(state) {
   const running = state === 'generating';
   return {
@@ -65,18 +117,10 @@ function blueprint(state) {
     domains: [
       {
         domainId: 'ai-use-cases', domainName: 'AI Use Cases',
+        // The domain completes even when a capability inside it failed — that
+        // is the case this whole fixture set exists for.
         status: running ? 'generating' : 'completed',
-        capabilities: [{
-          capabilityId: 'opportunity-discovery', capabilityName: 'Opportunity Discovery',
-          status: running ? 'in-progress' : 'completed',
-          sections: running ? [] : [{
-            title: 'AI Implementation Prioritization',
-            brief: {
-              recommendedStartingPoint: 'Start with Retrieval-Augmented Ticket Routing.',
-              priorityQuadrants: [{ initiatives: ['Retrieval-Augmented Ticket Routing', 'Automated Severity Scoring'] }],
-            },
-          }],
-        }],
+        capabilities: useCaseCapabilities(state),
       },
       ...OTHER_DOMAINS.map(([domainId, domainName]) => ({
         domainId, domainName, status: 'pending',
@@ -215,6 +259,36 @@ console.log('\n2. the free domain is done — paused, waiting for a login');
     check('the ask comes after the value', r.pauseBelowValue === true);
     check('the navbar offers a log in', r.logoutText === 'Log in', r.logoutText);
     check('it says this is a guest preview', r.navUsername === 'Guest preview', r.navUsername);
+    check('no script errors', r.errors.length === 0, r.errors.join(' | '));
+  }
+}
+
+console.log('\n3. prioritisation failed, discovery did not — fall back, do not blank');
+{
+  const r = await run('degraded');
+  if (!r) { check('the page rendered', false, 'probe never ran'); }
+  else {
+    check('opportunities are still shown', r.contentShown === true);
+    check('the loading line is gone', r.loadingShown === false);
+    check('it shows the discovered one', r.winner === 'Automated Severity Scoring', r.winner);
+    check('with its reasoning', /already captured/.test(r.winnerWhy), r.winnerWhy);
+    check('the rest are listed', r.others.join(' | ') === 'Retrieval-Augmented Ticket Routing', r.others.join(' | '));
+    // Nothing ranked this list, so the screen must not claim a recommendation.
+    check('it does not claim a recommendation', r.winnerLabel === '★ Top opportunity', r.winnerLabel);
+    check('the pause still appears', r.paused === true);
+    check('no script errors', r.errors.length === 0, r.errors.join(' | '));
+  }
+}
+
+console.log('\n4. everything failed — say so instead of spinning');
+{
+  const r = await run('barren');
+  if (!r) { check('the page rendered', false, 'probe never ran'); }
+  else {
+    check('the loading line is gone', r.loadingShown === false);
+    check('no opportunities are claimed', r.contentShown === false);
+    check('it says the run failed', /finished without producing a usable list/.test(r.errorText), r.errorText);
+    check('it does not blame the objective', /generation failure rather than a verdict/.test(r.errorText));
     check('no script errors', r.errors.length === 0, r.errors.join(' | '));
   }
 }

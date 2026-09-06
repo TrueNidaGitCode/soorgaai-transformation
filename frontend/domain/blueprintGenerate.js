@@ -389,26 +389,71 @@ export function findAiUseCasesPrioritizationSection(bp) {
   return null;
 }
 
-// recommendedStartingPoint is a full justification sentence (e.g.
-// "X should be implemented first because…"), not just the initiative's
-// short name — it embeds the matching priorityQuadrants initiative name
-// as a leading substring, which is how the winner/others split works.
-function renderOpportunitiesContent(section) {
-  const brief = section.brief || {};
-  const allInitiatives = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
-  const recommended = brief.recommendedStartingPoint || '';
-  const winnerInitiative = allInitiatives.find(name => name && recommended.includes(name));
+/**
+ * The opportunities to show on Cob, from whichever capability produced them.
+ *
+ * AI Use Cases runs four capabilities and any one of them can fail — the model
+ * returns malformed JSON often enough that it happens in ordinary runs. When
+ * the failure was Implementation Prioritization, this screen had nothing to
+ * render, kept "Analyzing your objective…" on screen for ever, and a visitor
+ * saw a finished run with no use cases in it. That is the whole value of the
+ * preview, lost to one bad JSON response.
+ *
+ * So: prefer the ranked list, fall back to the unranked one Opportunity
+ * Discovery produces, and say which is which. An unranked list of real
+ * opportunities is worth incomparably more than an empty screen.
+ *
+ * @returns {{winner:string, why:string, others:string[], ranked:boolean}|null}
+ */
+function resolveOpportunities(bp) {
+  const domain = (bp.domains || []).find(d => d.domainId === 'ai-use-cases');
+  if (!domain || domain.status !== 'completed') return null;
+  const sections = (domain.capabilities || []).flatMap(c => c.sections || []);
 
+  const ranked = sections.find(s =>
+    s.title === 'AI Implementation Prioritization' || s.title === 'AI Use Case Prioritization');
+  if (ranked) {
+    const brief = ranked.brief || {};
+    const all = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []).filter(Boolean);
+    const why = brief.recommendedStartingPoint || '';
+    // recommendedInitiativeName is the model naming its own pick. Preferred
+    // over matching the name inside the justification sentence, which breaks
+    // the moment the sentence paraphrases it.
+    const winner = brief.recommendedInitiativeName
+      || all.find(n => why.includes(n))
+      || all[0] || '';
+    if (winner) return { winner, why, others: all.filter(n => n !== winner), ranked: true };
+  }
+
+  const discovery = sections.find(s => s.title === 'AI Opportunity Discovery');
+  const found = (discovery?.brief?.aiOpportunities || []).filter(o => o && o.name);
+  if (found.length) {
+    return {
+      winner: found[0].name,
+      why: found[0].why || '',
+      others: found.slice(1).map(o => o.name),
+      ranked: false,
+    };
+  }
+
+  return null;
+}
+
+/** @param {{winner:string, why:string, others:string[], ranked:boolean}} view */
+function renderOpportunitiesContent(view) {
   const winnerNameEl = document.getElementById('opp-winner-name');
   const winnerWhyEl  = document.getElementById('opp-winner-why');
-  if (winnerNameEl) winnerNameEl.textContent = winnerInitiative || recommended;
-  if (winnerWhyEl)  winnerWhyEl.textContent  = winnerInitiative ? recommended : '';
+  const labelEl      = document.getElementById('opp-winner-label');
+  if (winnerNameEl) winnerNameEl.textContent = view.winner;
+  if (winnerWhyEl)  winnerWhyEl.textContent  = view.why;
 
-  const others = allInitiatives.filter(name => name && name !== winnerInitiative);
+  // Ranked and unranked are different claims, and saying "Recommended" over a
+  // list nothing ranked would be the screen inventing a judgement.
+  if (labelEl) labelEl.textContent = view.ranked ? '★ Recommended' : '★ Top opportunity';
 
   const othersList = document.getElementById('opp-others');
   if (othersList) {
-    othersList.innerHTML = others
+    othersList.innerHTML = view.others
       .map((name, i) => `
         <li class="rp-others-item pw-reveal" style="--i:${i + 1}">
           <span class="rp-others-item__name">${escapeHtml(name)}</span>
@@ -423,6 +468,26 @@ function renderOpportunitiesContent(section) {
   if (loadingEl) loadingEl.style.display = 'none';
   if (contentEl) contentEl.style.display = 'block';
 
+  _opportunitiesContentShown = true;
+}
+
+/**
+ * The run finished and produced no usable opportunities.
+ *
+ * Rare, and it has to be said rather than left as a spinner. "Analyzing your
+ * objective…" over a completed run is the screen lying about what it is doing,
+ * and the visitor waits for something that already gave up.
+ */
+function renderNoOpportunities() {
+  const loadingEl = document.getElementById('opp-loading');
+  const errEl = document.getElementById('opp-error');
+  if (loadingEl) loadingEl.style.display = 'none';
+  if (errEl) {
+    errEl.textContent = 'This run finished without producing a usable list of AI opportunities. '
+      + 'That is a generation failure rather than a verdict on your objective — try again, '
+      + 'and if it happens twice the objective is worth rewording.';
+    errEl.style.display = 'block';
+  }
   _opportunitiesContentShown = true;
 }
 
@@ -478,8 +543,14 @@ function handleOpportunitiesUpdate(bp) {
   renderOpportunitiesProgress(bp);
 
   if (!_opportunitiesContentShown) {
-    const section = findAiUseCasesPrioritizationSection(bp);
-    if (section) renderOpportunitiesContent(section);
+    const view = resolveOpportunities(bp);
+    if (view) {
+      renderOpportunitiesContent(view);
+    } else if ((bp.domains || []).find(d => d.domainId === 'ai-use-cases')?.status === 'completed') {
+      // The domain is done and there is nothing to show. Only reachable when
+      // every capability that could produce opportunities failed.
+      renderNoOpportunities();
+    }
   }
 
   renderEngagementNote(bp);

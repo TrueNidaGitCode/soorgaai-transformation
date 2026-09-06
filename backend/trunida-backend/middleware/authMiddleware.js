@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import { attributeTo } from "../services/usageContext.js";
 
 const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
 
@@ -28,9 +27,6 @@ const protect = (req, res, next) => {
             id:   decoded.userId,
             role: decoded.role || 'user',
         };
-        // Every model call made under this request now lands in this
-        // account's ledger row, without any of the ~30 call sites knowing.
-        attributeTo(decoded.userId);
         next();
     } catch (error) {
         console.error("❌ Token verification failed:", error.message);
@@ -57,7 +53,6 @@ const optionalAuth = (req, res, next) => {
             id:   decoded.userId,
             role: decoded.role || 'user',
         };
-        attributeTo(decoded.userId);
     } catch {
         // Invalid/expired token — treat as anonymous, don't block
     }

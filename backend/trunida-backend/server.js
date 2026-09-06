@@ -38,6 +38,7 @@ import governanceChecklistRoutes    from "./routes/governanceChecklistRoutes.js"
 import gatewayRoutes                from "./routes/gatewayRoutes.js";
 import billingRoutes                from "./routes/billingRoutes.js";
 import { usageContextMiddleware }   from "./services/usageContext.js";
+import { attributeRequest, startUsageAccounting } from "./services/usageAttribution.js";
 
 // ✅ Import KB cache warmer
 import { warmCache } from "./services/kbRetrievalService.js";
@@ -96,6 +97,11 @@ const connectDB = async () => {
 // including the fire-and-forget generation that outlives the response. Must
 // come before any route, or the auth middleware has nothing to write into.
 app.use(usageContextMiddleware);
+// Names the account for the ledger. Separate from authMiddleware because that
+// file is copied into every application Eame generates and must not import
+// anything only Svarg has — see services/usageAttribution.js.
+app.use(attributeRequest);
+startUsageAccounting();
 
 // ✅ Ensure DB is connected before handling requests
 app.use(async (req, res, next) => {

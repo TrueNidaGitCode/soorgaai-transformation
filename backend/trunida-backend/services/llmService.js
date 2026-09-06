@@ -426,8 +426,30 @@ async function runChain({ systemPrompt, userMessage, model, maxTokens }) {
   );
 }
 
-import { currentUsage, currentRun } from './usageContext.js';
-import { recordLedgerCall, costOf } from './usageLedgerService.js';
+/**
+ * ── This file ships to customers ───────────────────────────────────────────
+ *
+ * eameProjectBuilder copies it verbatim into every generated application, so
+ * it may not import anything that only exists in Svarg. Importing the usage
+ * ledger here broke every Eame build the moment it was added: the tenant
+ * project had no usageContext.js, the local-imports gate caught it, and three
+ * attempts burned before the run gave up.
+ *
+ * So accounting is registered from outside instead. Svarg calls
+ * observeLlmCalls() at boot; the copy in a customer's project never does, and
+ * has nothing to import.
+ */
+let _observer = null;
+
+/**
+ * Watch every completed generation. Svarg wires the usage ledger in through
+ * this; see services/usageAttribution.js.
+ *
+ * @param {(call: {label, model, inputTokens, outputTokens, ms}) => void} fn
+ */
+export function observeLlmCalls(fn) {
+  _observer = typeof fn === 'function' ? fn : null;
+}
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
@@ -505,28 +527,18 @@ function recordCall({ label, result, ms }) {
     console.log(`[llm usage] ${key}: ${inTok} in / ${outTok} out (${(ms / 1000).toFixed(1)}s)`);
   }
 
-  // Durable, per-account, and deliberately not awaited: the counters above
-  // measure a process, this measures a customer. A ledger write that fails
-  // must never fail the generation it is describing — see usageLedgerService.
-  const { userId, stage, guest } = currentUsage();
-  const costUsd = costOf(result?.model || '', inTok, outTok);
-
-  // "What did THAT run cost" — accumulated in memory for the piece of work in
-  // flight, and logged when it finishes. The ledger below answers the monthly
-  // question; this answers the one asked after a provider bill moves.
-  const run = currentRun();
-  if (run) {
-    run.calls++;
-    run.inputTokens += inTok;
-    run.outputTokens += outTok;
-    run.costUsd += costUsd;
-  }
-
-  if (userId || guest) {
-    recordLedgerCall({
-      userId, guest, stage, label: key, costUsd,
-      inputTokens: inTok, outputTokens: outTok,
-    }).catch(() => {});
+  // Whoever is watching — Svarg's usage ledger, nothing at all in a customer's
+  // copy. Wrapped because an observer that throws must not take down the
+  // generation it is only describing.
+  if (_observer) {
+    try {
+      _observer({
+        label: key, model: result?.model || '',
+        inputTokens: inTok, outputTokens: outTok, ms,
+      });
+    } catch (err) {
+      console.warn(`[llm] usage observer failed for ${key} — ${err.message}`);
+    }
   }
 }
 

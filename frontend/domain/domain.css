@@ -2476,6 +2476,64 @@
   padding: 0.65rem 1rem;
 }
 
+/* ── Guest preview: paused at the end of the free domain ──────────────────
+   Deliberately not styled as an error. Nothing has gone wrong — the preview
+   did exactly what it promised and stopped where it was always going to
+   stop, so this reads as a step in the flow rather than a failure. */
+.gpause {
+  border: 1px solid rgba(92,197,167,0.28);
+  background: rgba(92,197,167,0.05);
+  border-radius: 0.75rem;
+  padding: 1rem 1.15rem 1.15rem;
+  margin: 0 0 1.5rem;
+  max-width: 42rem;
+}
+
+.gpause__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.55rem;
+}
+
+.gpause__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #5CC5A7;
+}
+
+.gpause__count {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+}
+
+/* Flat, not animated: the ordinary fill pulses to signal work in flight, and
+   the whole point here is that nothing is running. */
+.gpause__fill { animation: none; }
+
+.gpause__text {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.68);
+  margin: 0.75rem 0 0;
+}
+
+.gpause__btn {
+  margin-top: 0.9rem;
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: #5CC5A7;
+  color: #0a0a0f;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.gpause__btn:hover { filter: brightness(1.08); }
+
 /* The link out of a plan limit. Underlined and inherits the red, because it
    sits inside the refusal sentence rather than beside it — the whole point is
    that the way forward is part of the message, not a separate control the

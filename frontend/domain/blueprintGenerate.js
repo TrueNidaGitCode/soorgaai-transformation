@@ -579,6 +579,67 @@ async function switchEngagement(bp, category) {
 }
 
 /**
+ * Which domains a guest generates for free.
+ *
+ * Must match GUEST_PREVIEW_DOMAIN_IDS in guestController.js. Duplicated
+ * rather than fetched because it decides what this screen SAYS, and a screen
+ * that has to wait for a round trip to know whether it is paused shows the
+ * wrong thing first and corrects itself.
+ */
+const GUEST_PREVIEW_DOMAINS = ['ai-use-cases'];
+
+const isSettled = c => c.status === 'completed' || c.status === 'error';
+
+/**
+ * The paused state at the end of the free preview.
+ *
+ * A guest's blueprint is marked completed once AI Use Cases finishes, but the
+ * other five domains stay pending for ever — nothing is coming without an
+ * account. The ordinary progress bar counts every capability in the document,
+ * so it sat at roughly 6% with "Analysing your objective…" underneath,
+ * describing work that had already stopped. This says what actually happened
+ * and what unblocks it.
+ *
+ * @returns {boolean} whether the pause is showing, so the caller knows to
+ *   suppress the ordinary bar rather than draw both.
+ */
+function renderGuestPause(bp) {
+  const wrap = document.getElementById('opp-paused');
+  if (!wrap) return false;
+
+  const domains = bp.domains || [];
+  const preview = domains.filter(d => GUEST_PREVIEW_DOMAINS.includes(d.domainId));
+  const previewDone = preview.length
+    && preview.every(d => (d.capabilities || []).length && (d.capabilities || []).every(isSettled));
+
+  // Still generating the free part — the ordinary bar is the right thing.
+  if (!previewDone) { wrap.style.display = 'none'; return false; }
+
+  const remaining = domains.filter(d => !GUEST_PREVIEW_DOMAINS.includes(d.domainId));
+  const next = remaining[0];
+
+  const fill  = document.getElementById('opp-paused-fill');
+  const count = document.getElementById('opp-paused-count');
+  const text  = document.getElementById('opp-paused-next');
+
+  if (fill)  fill.style.width = Math.round((preview.length / (domains.length || 1)) * 100) + '%';
+  if (count) count.textContent = `${preview.length} of ${domains.length} domains`;
+  if (text) {
+    text.textContent = next
+      ? `${next.domainName || 'The next domain'} is next. Log in and the rest of your blueprint carries on from here — nothing you have seen is lost.`
+      : 'Log in to keep this blueprint and carry on.';
+  }
+
+  // The top banner says the same thing less usefully once this is up, and two
+  // login prompts on one screen read as a nag rather than a step.
+  const banner = document.getElementById('domain-guest-banner');
+  if (banner) banner.style.display = 'none';
+
+  wrap.style.display = '';
+  return true;
+}
+
+/**
  * Progress across every capability, on the Cob screen.
  *
  * Errors count as settled: a failed capability is not coming back, and a bar
@@ -590,6 +651,10 @@ function renderOpportunitiesProgress(bp) {
   const label = document.getElementById('opp-progress-label');
   const count = document.getElementById('opp-progress-count');
   if (!wrap || !fill) return;
+
+  // A guest stops at the end of the first domain, and past that point the
+  // ordinary bar would describe work that is never going to run.
+  if (window.SOORGA_GUEST && renderGuestPause(bp)) { wrap.style.display = 'none'; return; }
 
   const caps = (bp.domains || []).flatMap(d => d.capabilities || []);
   const total = caps.length;
@@ -979,6 +1044,7 @@ async function initGuest(guestId) {
     banner.style.display = '';
     document.getElementById('domain-guest-banner-login')?.addEventListener('click', guestGoToLogin);
   }
+  document.getElementById('opp-paused-login')?.addEventListener('click', guestGoToLogin);
 
   try {
     const resp = await fetch(`${API_BASE}/guest/blueprint/${encodeURIComponent(guestId)}`);

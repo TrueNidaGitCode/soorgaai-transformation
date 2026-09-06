@@ -1123,6 +1123,14 @@ async function initGuest(guestId) {
     document.getElementById('domain-guest-banner-login')?.addEventListener('click', guestGoToLogin);
   }
   document.getElementById('opp-paused-login')?.addEventListener('click', guestGoToLogin);
+  document.getElementById('opp-paused-restart')?.addEventListener('click', () => {
+    // Dropping the id is what actually abandons the preview: the blueprint is
+    // keyed on it and held nowhere else, so it can never be opened or claimed
+    // again. The row is orphaned server-side —
+    // scripts/clear_guest_blueprints.mjs --failed sweeps those up.
+    localStorage.removeItem('soorgaai_guest_id');
+    window.location.href = '/cob.html';
+  });
 
   try {
     const resp = await fetch(`${API_BASE}/guest/blueprint/${encodeURIComponent(guestId)}`);

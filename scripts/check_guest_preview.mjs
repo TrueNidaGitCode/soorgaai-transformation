@@ -245,6 +245,9 @@ console.log('\n2. the free domain is done — paused, waiting for a login');
     check('the ordinary bar is hidden', r.ordinaryBar === false);
     check('the guest banner steps aside for it', r.guestBanner === false);
     check('there is a login button', r.loginBtn === true);
+    // Without devtools: the guest id is the only thing tying a visitor to a
+    // preview, and until this existed there was no way to drop it in the UI.
+    check('and a way to start over', r.restartBtn === true, r.restartText);
     check('it counts domains, not capabilities', r.count === '1 of 6 domains', r.count);
     check('it names the domain that comes next', /AI Strategy is next/.test(r.next), r.next);
     check('it promises nothing is lost', /nothing you have seen is lost/i.test(r.next));

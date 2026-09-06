@@ -9,6 +9,11 @@ const out = {
   ordinaryBar:   shown(document.getElementById('opp-progress')),
   guestBanner:   shown(document.getElementById('domain-guest-banner')),
   loginBtn:      shown(document.getElementById('opp-paused-login')),
+  restartBtn:    shown(document.getElementById('opp-paused-restart')),
+  restartText:   flat(document.getElementById('opp-paused-restart')),
+  // Not clicked on purpose: the handler navigates, and this probe reports
+  // through document.title — clicking destroyed the page before the result
+  // could be read, and every state came back "probe never ran".
   count:         flat(document.getElementById('opp-paused-count')),
   next:          flat(document.getElementById('opp-paused-next')),
   barLabel:      flat(document.getElementById('opp-progress-label')),

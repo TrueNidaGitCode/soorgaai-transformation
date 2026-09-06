@@ -2520,8 +2520,29 @@
   margin: 0.75rem 0 0;
 }
 
-.gpause__btn {
+.gpause__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
   margin-top: 0.9rem;
+}
+
+/* Quieter than the login button on purpose. Both are ways forward, but only
+   one of them is the one being recommended. */
+.gpause__restart {
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.82rem;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.gpause__restart:hover { color: rgba(255,255,255,0.8); }
+
+.gpause__btn {
   padding: 0.55rem 1.1rem;
   border: none;
   border-radius: 0.5rem;

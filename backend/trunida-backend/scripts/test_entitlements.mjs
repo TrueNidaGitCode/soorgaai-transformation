@@ -48,9 +48,38 @@ function newUser() {
   return id;
 }
 
+/**
+ * The marker every fixture blueprint carries.
+ *
+ * Cleanup keys on the throwaway user ids this process created, which is right
+ * while the process is alive and useless once it is not: a run killed partway
+ * leaves rows whose ids nobody remembers, and they sit in the database
+ * indefinitely. Four blueprints and two applications were found doing exactly
+ * that. So the objective doubles as a durable label, and every run sweeps
+ * whatever an earlier one abandoned.
+ */
+const FIXTURE_OBJECTIVE = 'Entitlement test objective, long enough to be real.';
+
+/** Remove fixtures from THIS run and from any run that did not finish. */
+async function sweepFixtures(ids = []) {
+  const stale = await TransformationBlueprint
+    .find({ businessObjective: FIXTURE_OBJECTIVE }).select('userId').lean().catch(() => []);
+  const owners = [...new Set([...ids, ...stale.map(b => b.userId)].map(String))]
+    .map(id => new mongoose.Types.ObjectId(id));
+  if (!owners.length) return 0;
+
+  await Promise.all([
+    TransformationBlueprint.deleteMany({ userId: { $in: owners } }),
+    GeneratedApplication.deleteMany({ userId: { $in: owners } }),
+    HostedDeployment.deleteMany({ userId: { $in: owners } }),
+    AccountPlan.deleteMany({ userId: { $in: owners } }),
+  ]);
+  return owners.length;
+}
+
 async function makeBlueprint(userId, { createdAt = new Date(), archived = false } = {}) {
   const bp = await TransformationBlueprint.create({
-    userId, businessObjective: 'Entitlement test objective, long enough to be real.',
+    userId, businessObjective: FIXTURE_OBJECTIVE,
     industry: 'General', companyName: 'Test Co', archived,
   });
   // createdAt is set by timestamps, so an "old" blueprint has to be written
@@ -224,14 +253,9 @@ try {
   }
 
 } finally {
-  // Always, even on a thrown assertion — leaving rows behind would make the
-  // next run fail for a reason that has nothing to do with the code.
-  await Promise.all([
-    TransformationBlueprint.deleteMany({ userId: { $in: users } }),
-    GeneratedApplication.deleteMany({ userId: { $in: users } }),
-    HostedDeployment.deleteMany({ userId: { $in: users } }),
-    AccountPlan.deleteMany({ userId: { $in: users } }),
-  ]);
+  // Always, even on a thrown assertion. Sweeps this run's fixtures and any an
+  // earlier run abandoned — see sweepFixtures for why the second half matters.
+  await sweepFixtures(users);
   await mongoose.disconnect();
 }
 

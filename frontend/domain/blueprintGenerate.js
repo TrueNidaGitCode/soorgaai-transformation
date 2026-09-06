@@ -63,31 +63,12 @@ function initNav() {
   }
 }
 
-// ── Knowledge Sources nav link ──────────────────────────────────────────────
-// Permanent, blueprint-scoped entry point back to the per-project linking
-// page. Unlike the not-grounded banner (which only shows once, before any
-// connection exists), this is always available — a connected user still
-// needs a way to link documents to a *different* or *new* blueprint.
-
-function initKnowledgeSourcesLink(blueprintId) {
-  const link = document.getElementById('domain-knowledge-link');
-  if (!link || !blueprintId) return;
-  link.href = `/knowledge-sources/knowledge-sources.html?blueprintId=${encodeURIComponent(blueprintId)}`;
-  link.style.display = '';
-}
-
-// ── Aria nav link ────────────────────────────────────────────────────────────
-// Once approved, a plain page load always bounces to the workspace
-// (shouldShowWorkspace) and Aria would otherwise only be reachable in the
-// instant right after clicking Approve — this is the permanent way back,
-// via the same ?view=aria override init() checks.
-
-function initAriaLink(bp) {
-  const link = document.getElementById('domain-aria-link');
-  if (!link || !bp.opportunityApproval?.approved) return;
-  link.href = '/domain/domain.html?view=aria';
-  link.style.display = '';
-}
+// The workspace nav used to carry a "Data Architecture" link and a
+// blueprint-scoped "Knowledge Sources" link. Both are gone: Aria is a step on
+// the journey indicator that every screen already shows, and offering the same
+// stage twice under two different names made them look like two places.
+// Knowledge Sources is reached from the home sidebar and from the
+// not-grounded notice on the blueprint itself.
 
 // ── Enterprise Blueprint nav link ───────────────────────────────────────────
 // CTO only — this points at the caller's OWN org's Enterprise Blueprint
@@ -1045,8 +1026,8 @@ async function init() {
     // straight to the workspace instead of back to where the user was.
     // ?view=aria is the same override as ?view=cob, but for Aria — once a
     // blueprint is approved, every plain page load bounces straight to
-    // the workspace and Aria becomes otherwise unreachable, so the
-    // "Data Architecture" nav link (initAriaLink) always points here.
+    // the workspace and Aria becomes otherwise unreachable, so this is what
+    // the journey indicator's ARIA step relies on.
     const returningToAria = sessionStorage.getItem('svarg_returning_to_aria') === '1';
     sessionStorage.removeItem('svarg_returning_to_aria');
     // Yusu connects GitHub because Yusu is what pushes; the older Eame flag
@@ -1070,8 +1051,6 @@ async function init() {
       document.dispatchEvent(new CustomEvent(view + ':show', { detail: { blueprint: bp } }));
       initGenerateForm();
       initGroundingBanner(bp._id);
-      initKnowledgeSourcesLink(bp._id);
-      initAriaLink(bp);
       initEnterpriseBlueprintLink();
       return;
     }
@@ -1095,8 +1074,6 @@ async function init() {
     }
     initGenerateForm(); // keep form initialised in case user clicks New Blueprint
     initGroundingBanner(bp._id);
-    initKnowledgeSourcesLink(bp._id);
-    initAriaLink(bp);
     initEnterpriseBlueprintLink();
 
   } catch (err) {

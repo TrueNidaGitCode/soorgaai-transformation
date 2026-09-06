@@ -61,12 +61,17 @@
 
 .mkt-menu__item { position: relative; }
 
-.mkt-menu__trigger {
+/* Pricing is a destination rather than a category, so it is an <a> and not
+   a dropdown button. It has to look identical to its neighbours all the same
+   — a row that mixes two visibly different controls reads as a mistake. */
+.mkt-menu__trigger,
+.mkt-menu__direct {
   display: flex;
   align-items: center;
   gap: 6px;
   background: transparent;
   border: none;
+  text-decoration: none;
   color: rgba(255, 255, 255, 0.78);
   font-family: var(--font-primary);
   font-size: 15.5px;
@@ -76,8 +81,10 @@
   cursor: pointer;
   transition: background 0.12s, color 0.12s, font-size 0.25s ease, padding 0.25s ease;
 }
-.mkt-nav.is-scrolled .mkt-menu__trigger { font-size: 13.5px; padding: 8px 13px; }
+.mkt-nav.is-scrolled .mkt-menu__trigger,
+.mkt-nav.is-scrolled .mkt-menu__direct { font-size: 13.5px; padding: 8px 13px; }
 .mkt-menu__trigger:hover,
+.mkt-menu__direct:hover,
 .mkt-menu__item.is-open .mkt-menu__trigger {
   background: rgba(255, 255, 255, 0.06);
   color: #fff;

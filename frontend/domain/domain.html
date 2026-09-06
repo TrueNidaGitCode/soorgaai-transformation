@@ -23,10 +23,12 @@
     </div>
     <div class="workspace-nav__right">
       <span id="domain-username" class="workspace-nav__username"></span>
-      <!-- href set once the blueprint id is known — always points at this
-           specific project's linking page, not a generic/unscoped one -->
-      <a id="domain-aria-link" href="/domain/domain.html?view=aria" class="workspace-nav__link" style="display:none">Data Architecture</a>
-      <a id="domain-knowledge-link" href="/knowledge-sources/knowledge-sources.html" class="workspace-nav__link" style="display:none">Knowledge Sources</a>
+      <!-- "Data Architecture" and "Knowledge Sources" used to sit here. Both
+           were removed: the journey indicator at the top of every screen is
+           now the way back to Aria, and a second control pointing at the same
+           stage read as a different destination. Knowledge Sources is reached
+           from the home sidebar and from the not-grounded notice, which is
+           where linking documents to a project actually belongs. -->
       <!-- CTO/Admin only — shown once role is confirmed (see blueprintGenerate.js initEnterpriseBlueprintLink) -->
       <a id="domain-enterprise-blueprint-link" href="/enterprise-blueprint/enterprise-blueprint.html" class="workspace-nav__link" style="display:none">Enterprise Blueprint</a>
       <!-- AI Assistant button: shown only on Screen 3 -->
@@ -1258,7 +1260,7 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=8"></script>
+  <script type="module" src="blueprintGenerate.js?v=9"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=41"></script>
   <script type="module" src="arthScreen.js?v=18"></script>

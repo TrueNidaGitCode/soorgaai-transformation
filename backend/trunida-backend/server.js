@@ -158,12 +158,24 @@ app.use("/api/contact",              contactRoutes);
 app.use("/api/debug",                debugRoutes); // TEMPORARY
 
 // ✅ Health Check Route
+//
+// `commit` is what this process was actually built from. Without it there is
+// no way to tell a deploy that has landed from one still building, and the
+// difference is not academic: a fix was diagnosed twice as "not working" while
+// the old build was still serving. Railway sets RAILWAY_GIT_COMMIT_SHA itself;
+// running locally there is nothing to set it and it reads "local".
+const BUILT_FROM = (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7) || 'local';
+const STARTED_AT = new Date();
+
 app.get("/", (req, res) => {
     res.status(200).json({
         message: "SoorgaAI Transformation API - Backend is Running!",
         version: "2.1.0",
-        product: "SoorgaAI - AI Maturity Assessment Platform",
-        dynamicRoutes: "enabled"
+        product: "Svarg - AI Transformation Platform",
+        dynamicRoutes: "enabled",
+        commit: BUILT_FROM,
+        startedAt: STARTED_AT.toISOString(),
+        uptimeSeconds: Math.round((Date.now() - STARTED_AT) / 1000),
     });
 });
 

@@ -191,9 +191,28 @@ export async function downloadProject(req, res) {
  */
 export async function projectManifest(req, res) {
   try {
-    const includeJira = req.query.includeJira !== '0';
-    const files = buildManifest({ includeJira });
+    // With a blueprint, this is THE PROJECT — the same files projectFor would
+    // hand to a push or a zip. Without one it is the fixed template, which is
+    // all an unbuilt blueprint has.
+    //
+    // It used to be the template either way, and Yusu's governance checks ran
+    // against it: the screen was validating files the customer was never going
+    // to receive and passing them, while the application it actually shipped
+    // went unchecked. A check that cannot fail on the thing being delivered is
+    // not a check.
+    const bp = req.query.blueprintId
+      ? await ownedBlueprint(req.query.blueprintId, req.user._id)
+      : null;
+    if (req.query.blueprintId && !bp) {
+      return res.status(404).json({ error: 'Blueprint not found.' });
+    }
+
+    const { files, source } = bp
+      ? await projectFor(bp)
+      : { files: buildManifest({ includeJira: req.query.includeJira !== '0' }), source: 'template' };
+
     return res.json({
+      source,
       fileCount: files.length,
       totalBytes: files.reduce((n, f) => n + Buffer.byteLength(f.content || '', 'utf8'), 0),
       files: files.map(f => ({

@@ -23,6 +23,7 @@ import { buildSpec } from './eameSpec.js';
 import LinkedProjectDocument from '../models/LinkedProjectDocument.js';
 import { generateApplication } from './eameCodeGenerator.js';
 import { buildRuntime } from './eameProjectBuilder.js';
+import { sampleDataFiles } from './deliveredSampleData.js';
 import { verifyProject } from './generatedProjectVerifier.js';
 
 /** Attempts before a build is called failed. Each one costs a full generation. */
@@ -64,7 +65,14 @@ export async function buildApplication(bp, {
     .then(rows => rows.map(r => r.datasetName).filter(Boolean))
     .catch(() => []);
 
-  const spec = buildSpec(bp, { sampleBacked });
+  // Shipped alongside the runtime rather than with the generated files: the
+  // model does not write these and must not be able to overwrite them, and the
+  // seed script it writes has to be verified against data that is actually
+  // there. A blueprint with no samples simply gets none.
+  const samples = await sampleDataFiles(bp._id);
+
+  const spec = buildSpec(bp, { sampleBacked, sampleFiles: samples.map(f => f.path) });
+
   // The chat shell's wording, from the blueprint rather than baked into the
   // page. Only what the blueprint actually says is passed; the rest falls back
   // to copy that is true of any application, because a confident sentence about
@@ -76,6 +84,8 @@ export async function buildApplication(bp, {
       ...(spec.useCase?.justification ? { __APP_WELCOME_BODY__: spec.useCase.justification } : {}),
     },
   });
+
+  runtimeFiles.push(...samples);
 
   const history = [];
   let repair = null;

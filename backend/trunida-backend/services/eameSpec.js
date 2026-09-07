@@ -119,7 +119,7 @@ function readCodebase(bp) {
  *   deliberately synchronous and pure, so that when a generation is wrong it is
  *   the generation that is wrong and not the brief.
  */
-export function buildSpec(bp, { sampleBacked = [] } = {}) {
+export function buildSpec(bp, { sampleBacked = [], sampleFiles = [] } = {}) {
   const useCase = resolveUseCase(bp);
   const datasets = readDatasets(bp);
   const codebase = readCodebase(bp);
@@ -162,6 +162,7 @@ export function buildSpec(bp, { sampleBacked = [] } = {}) {
     },
     datasets,
     codebase,
+    sampleFiles,
     authoredDirs: AUTHORED_DIRS,
     authoredFiles: AUTHORED_FILES,
     fixedPaths: FIXED_PATHS,

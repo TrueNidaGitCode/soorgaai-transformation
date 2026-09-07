@@ -50,7 +50,8 @@ let _bp = null;
 let _blueprintId = null;
 let _dep = null;
 let _checksRun = false;      // have the automated checks been run
-let _manifestPaths = [];     // the files the builder emits, for the security check
+let _manifestPaths = [];     // the files that would be delivered, for the security check
+let _manifestSource = '';    // 'generated' once Eame has built one, else 'template'
 let _running = false;        // the automatic build/push/test run is in flight
 let _failed = '';            // what stopped it, if anything
 
@@ -392,10 +393,15 @@ function render(bp, dep) {
   const pushed = !!bp.eameDelivery?.repoName;
   const checksPass = results.length > 0 && results.every(r => r.pass);
 
-  // There is nothing to download until the project has been built.
-  download.disabled = !pushed;
-  document.getElementById('yusu-source-sub').textContent = pushed
-    ? `${bp.eameDelivery.fileCount || _manifestPaths.length} files — the complete project, exactly as deployed. Yours to keep, review, or push to your own Git.`
+  // Tied to a build existing, not to a push having succeeded. Keyed off
+  // `pushed`, a customer whose publish failed could not get their code at all
+  // — even though /delivery/download builds the zip from the same manifest and
+  // never touches GitHub. The one case with genuinely nothing to hand over is
+  // a blueprint Eame has not built.
+  const haveProject = _manifestSource === 'generated' || pushed;
+  download.disabled = !haveProject;
+  document.getElementById('yusu-source-sub').textContent = haveProject
+    ? `${(pushed && bp.eameDelivery.fileCount) || _manifestPaths.length} files — the complete project, exactly as deployed. Yours to keep, review, or push to your own Git.`
     : 'Available as soon as the application has been built.';
 
   if (live) {
@@ -476,9 +482,13 @@ function render(bp, dep) {
 
 async function loadManifest() {
   try {
-    const { files } = await api('/delivery/manifest');
-    _manifestPaths = (files || []).map(f => f.path);
-  } catch { _manifestPaths = []; }
+    // With the blueprint, this is the project the customer will actually
+    // receive. Without it the endpoint answers with the fixed template, and
+    // the governance checks below would be validating files nobody is shipped.
+    const r = await api('/delivery/manifest?blueprintId=' + encodeURIComponent(_blueprintId));
+    _manifestPaths = (r.files || []).map(f => f.path);
+    _manifestSource = r.source || '';
+  } catch { _manifestPaths = []; _manifestSource = ''; }
 }
 
 /**

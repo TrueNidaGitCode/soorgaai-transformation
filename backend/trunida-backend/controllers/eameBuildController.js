@@ -16,6 +16,7 @@ import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
 import { buildApplication } from '../services/eameBuildService.js';
 import { buildRuntime } from '../services/eameProjectBuilder.js';
+import { sampleDataFiles } from '../services/deliveredSampleData.js';
 import { tenantMongoUri } from '../services/deployTargetService.js';
 import { requireEntitlement } from '../services/entitlements.js';
 
@@ -181,8 +182,13 @@ export async function generatedManifest(blueprintId, { appName = '' } = {}) {
     appName,
     copy: app.useCase ? { __APP_TAGLINE__: app.useCase } : {},
   });
-  const fixed = new Set(runtime.map(f => f.path));
-  return [...runtime, ...app.files.filter(f => !fixed.has(f.path))];
+  // The sample data ships with the project, so the delivered seed script has
+  // something to read and the customer sees the application work rather than
+  // an empty database answering as though emptiness were a finding.
+  const samples = await sampleDataFiles(blueprintId);
+
+  const fixed = new Set([...runtime, ...samples].map(f => f.path));
+  return [...runtime, ...samples, ...app.files.filter(f => !fixed.has(f.path))];
 }
 
 export async function getBuild(req, res) {

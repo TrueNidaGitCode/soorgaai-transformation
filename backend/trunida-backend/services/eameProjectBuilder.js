@@ -77,30 +77,55 @@ function readFile(sourcePath, isAbsolute = false) {
  */
 const NAME_TOKEN = /__APP_NAME__/g;
 
-function applyName(content, appName) {
-  return appName ? content.replace(NAME_TOKEN, appName) : content.replace(NAME_TOKEN, 'AI Assistant');
+/**
+ * The chat shell's copy, filled per delivery.
+ *
+ * index.html ships to every customer, so anything written into it directly is
+ * written into all of them — it asked every customer about ECU flash failures
+ * for as long as the only application was defect matching. These come from the
+ * blueprint instead, and each falls back to wording that is true of any
+ * application rather than to a domain that is true of one.
+ */
+const COPY_TOKENS = {
+  __APP_TAGLINE__:       'Ask a question and I will answer from your data.',
+  __APP_WELCOME_TITLE__: 'What would you like to know?',
+  __APP_WELCOME_BODY__:  'Ask in your own words. This answers from the data this application was built on.',
+  __APP_PROMPT__:        'Ask a question…',
+};
+
+function applyName(content, appName, copy = {}) {
+  let out = content.replace(NAME_TOKEN, appName || 'AI Assistant');
+  for (const [token, fallback] of Object.entries(COPY_TOKENS)) {
+    // Escaped for the attribute and text positions these land in. An
+    // apostrophe in a use-case name would otherwise close the placeholder's
+    // own quote and break the page it is meant to describe.
+    const value = String(copy[token] || fallback)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    out = out.split(token).join(value);
+  }
+  return out;
 }
 
 /**
  * @param {{includeJira?: boolean, appName?: string}} [opts]
  * @returns {{path:string, content:string}[]}
  */
-export function buildManifest({ includeJira = true, appName = '' } = {}) {
+export function buildManifest({ includeJira = true, appName = '', copy = {} } = {}) {
   const manifest = [];
 
   for (const [source, dest] of CORE_FILES) {
-    manifest.push({ path: dest, content: applyName(readFile(source), appName) });
+    manifest.push({ path: dest, content: applyName(readFile(source), appName, copy) });
   }
 
   if (includeJira) {
     for (const [source, dest] of JIRA_MODULE_FILES) {
-      manifest.push({ path: dest, content: applyName(readFile(source), appName) });
+      manifest.push({ path: dest, content: applyName(readFile(source), appName, copy) });
     }
   }
 
   for (const [fullPath, dest] of walkTemplateFiles(TEMPLATE_ROOT)) {
     if (!includeJira && (dest.includes('jira') || dest.includes('Jira') || dest === 'JIRA_INTEGRATION.md')) continue;
-    manifest.push({ path: dest, content: applyName(readFile(fullPath, true), appName) });
+    manifest.push({ path: dest, content: applyName(readFile(fullPath, true), appName, copy) });
   }
 
   return manifest;
@@ -118,7 +143,7 @@ export function buildManifest({ includeJira = true, appName = '' } = {}) {
  * Paths come from FIXED_PATHS in eameSpec.js so the generator, the verifier and
  * this cannot disagree about which files are the generator's to write.
  */
-export function buildRuntime({ appName = '' } = {}) {
+export function buildRuntime({ appName = '', copy = {} } = {}) {
   // Where each fixed file is copied from. A path in FIXED_PATHS with no entry
   // here would silently vanish from the delivered project, so the lookup below
   // throws instead.
@@ -147,6 +172,6 @@ export function buildRuntime({ appName = '' } = {}) {
     const content = source.template
       ? readFile(path.join(TEMPLATE_ROOT, source.template), true)
       : readFile(source.repo);
-    return { path: dest, content: applyName(content, appName) };
+    return { path: dest, content: applyName(content, appName, copy) };
   });
 }

@@ -74,8 +74,26 @@ export function buildPrompt(spec) {
     '  services/llmService.js         exports { generate({ systemPrompt, userMessage, maxTokens }) }',
     '                                 -> resolves to { text, ... }',
     '  services/modelSelectionService.js  exports { selectModel({ preference }) }',
-    '  frontend/index.html            loads frontend/app.js as a module, and frontend/config.js',
-    '                                 which sets window.CONFIG.API_BASE',
+    '  frontend/index.html            THE CHAT UI. Already built. See THE PAGE below.',
+    '  frontend/config.js             sets window.CONFIG.API_BASE (same-origin) and attaches the',
+    '                                 session token to every /api call you make. Authentication is',
+    '                                 HANDLED — do not build a login, do not read localStorage for a',
+    '                                 token, do not set an Authorization header.',
+    '',
+    'THE PAGE — index.html is a chat interface and you do not replace it. It is already',
+    'in the DOM when your module runs. Drive these elements:',
+    '  #ch-log       the conversation. Append your turns here.',
+    '  #ch-form      submit fires on send and on Enter.',
+    '  #ch-input     the textarea the user types into.',
+    '  #ch-send      the send button; disable it while a request is in flight.',
+    '  #ch-state     the status pill, which reads "Connecting..." until you set it.',
+    '  #ch-examples  EMPTY. Fill it with 3 buttons of class "ch-example" holding real',
+    '                questions for THIS use case; clicking one submits it.',
+    '  .ch-welcome   the opening block. Remove it once the first turn is sent.',
+    '',
+    'Do NOT call getElementById on anything else and do not build your own layout — an id',
+    'that is not in this list does not exist, and your module will die on null. Styling is',
+    'done: use the ch- classes and add no CSS file.',
     '',
     'RULES',
     `1. Write files ONLY under: ${AUTHORED_DIRS.join(', ')} and exactly: ${AUTHORED_FILES.join(', ')}`,
@@ -93,9 +111,10 @@ export function buildPrompt(spec) {
     FILE_CLOSE,
   ].join('\n');
 
-  // Conditional lines are spread in, not filtered out. `.filter(Boolean)`
-  // removed the blank separators too and ran every section together, which is
-  // the prompt the model actually had to read.
+  // Conditional lines are spread in, and nothing is filtered on the way out.
+  // `.filter(Boolean)` was still here long after the conditionals stopped
+  // needing it, and it removed the blank separators too — every section ran
+  // together into one wall, which is the prompt the model actually had to read.
   const user = [
     `Build: ${spec.useCase.name}`,
     ...(spec.useCase.justification ? [`Why it was chosen: ${spec.useCase.justification}`] : []),
@@ -112,8 +131,15 @@ export function buildPrompt(spec) {
     '',
     'Write the application. Include: the mongoose model(s), the service holding the actual logic,',
     'a controller, a route file, a seed script that imports the customer\'s own export, and',
-    'frontend/app.js driving it. Keep it to the smallest set of files that genuinely does the job.',
-  ].filter(Boolean).join('\n');
+    'frontend/app.js driving the chat page. Keep it to the smallest set that does the job.',
+    '',
+    'The user reaches this application by TYPING A QUESTION, so the route file must expose a',
+    'POST taking { message } that answers it against their data — retrieve what is relevant,',
+    'then put it through services/llmService.js. Whatever else the use case needs (a scored',
+    'list, a batch run, a detail view) is reached by asking for it and rendered as a turn in',
+    'the log, not as a separate screen. Say what each answer was based on: a reply the user',
+    'cannot check is worth less than one they can.',
+  ].join('\n');
 
   return { system, user };
 }

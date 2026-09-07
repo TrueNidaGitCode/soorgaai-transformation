@@ -22,33 +22,30 @@
       </div>
       <div class="ch-head__text">
         <h1 class="ch-head__title">__APP_NAME__</h1>
-        <p class="ch-head__sub">Describe a failure and I'll find similar defects and a likely cause.</p>
+        <p class="ch-head__sub">__APP_TAGLINE__</p>
       </div>
       <span class="ch-head__state" id="ch-state"><span class="ch-head__dot"></span>Connecting…</span>
     </header>
 
     <div class="ch-log" id="ch-log" role="log" aria-live="polite">
-      <!-- Opening turn. Not a fake message from the assistant — it is
-           labelled as the app introducing itself, with real examples the
-           user can click rather than an empty box and a blinking cursor. -->
+      <!-- Opening turn. Not a fake message from the assistant — it is the
+           app introducing itself.
+
+           The copy is filled from the blueprint rather than written here.
+           This file ships to every customer, and it used to ask all of them
+           about ECU flash failures whatever their application actually did.
+           #ch-examples is left empty for the generated app.js to fill, since
+           only it knows what a useful question looks like for this use case. -->
       <div class="ch-welcome">
-        <h2 class="ch-welcome__title">What went wrong?</h2>
-        <p class="ch-welcome__body">
-          Paste a test failure, an error, or a symptom. This searches your
-          historical defect records for the closest matches and drafts a
-          likely root cause from them.
-        </p>
-        <div class="ch-examples" id="ch-examples">
-          <button type="button" class="ch-example">Flash attempt on the gateway ECU failed after transfer; checksum verification did not match.</button>
-          <button type="button" class="ch-example">OTA update stalls at 40% on the telematics unit and then times out.</button>
-          <button type="button" class="ch-example">Diagnostic session drops during reprogramming when the vehicle is on battery power.</button>
-        </div>
+        <h2 class="ch-welcome__title">__APP_WELCOME_TITLE__</h2>
+        <p class="ch-welcome__body">__APP_WELCOME_BODY__</p>
+        <div class="ch-examples" id="ch-examples"></div>
       </div>
     </div>
 
     <form class="ch-compose" id="ch-form">
       <textarea id="ch-input" class="ch-compose__input" rows="1"
-                placeholder="Describe the failure…" aria-label="Describe the failure"></textarea>
+                placeholder="__APP_PROMPT__" aria-label="__APP_PROMPT__"></textarea>
       <button type="submit" class="ch-compose__send" id="ch-send" aria-label="Send">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
       </button>

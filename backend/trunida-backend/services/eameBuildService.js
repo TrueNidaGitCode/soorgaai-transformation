@@ -65,7 +65,17 @@ export async function buildApplication(bp, {
     .catch(() => []);
 
   const spec = buildSpec(bp, { sampleBacked });
-  const runtimeFiles = buildRuntime({ appName: spec.appName });
+  // The chat shell's wording, from the blueprint rather than baked into the
+  // page. Only what the blueprint actually says is passed; the rest falls back
+  // to copy that is true of any application, because a confident sentence about
+  // the wrong domain is worse than a plain one.
+  const runtimeFiles = buildRuntime({
+    appName: spec.appName,
+    copy: {
+      ...(spec.useCase?.name ? { __APP_TAGLINE__: spec.useCase.name } : {}),
+      ...(spec.useCase?.justification ? { __APP_WELCOME_BODY__: spec.useCase.justification } : {}),
+    },
+  });
 
   const history = [];
   let repair = null;

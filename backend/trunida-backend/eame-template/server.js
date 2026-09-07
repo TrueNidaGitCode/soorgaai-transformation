@@ -108,6 +108,46 @@ async function mountRoutes() {
   }
 }
 
+/**
+ * Load the project's own data on first boot.
+ *
+ * The project ships with the data it needs (see data/README_DATA.md), and it
+ * used to ship it nowhere: the seed script sat in scripts/ waiting for someone
+ * to run it by hand, which for a hosted application is nobody. The customer
+ * opened their new application and it answered every question with a confident
+ * "none found", because the database was empty and nothing said so.
+ *
+ * The contract is one function. A seed script exports a default async function
+ * that is safe to call on every boot — it decides for itself whether there is
+ * anything to do. That check belongs in the script, which knows its own
+ * collections; this only knows that it should be offered the chance.
+ *
+ * A seeding failure is logged and the server starts anyway. An application
+ * that runs with no data is worth more than one that will not boot, and the
+ * error is on the first page of the logs either way.
+ */
+async function seedIfEmpty() {
+  if (process.env.SEED_ON_BOOT === '0') return;
+
+  const dir = path.join(__dirname, 'scripts');
+  if (!fs.existsSync(dir)) return;
+
+  const scripts = fs.readdirSync(dir).filter(f => /^seed.*.m?js$/i.test(f)).sort();
+  for (const filename of scripts) {
+    try {
+      const mod = await import(new URL('./scripts/' + filename, import.meta.url).href);
+      if (typeof mod.default !== 'function') {
+        console.warn(`[seed] ${filename} exports no default function — skipped`);
+        continue;
+      }
+      const result = await mod.default();
+      console.log(`[seed] ${filename}: ${result?.message || 'done'}`);
+    } catch (err) {
+      console.error(`[seed] ${filename} failed — ${err.message}`);
+    }
+  }
+}
+
 async function start() {
   if (!process.env.MONGO_URI) {
     throw new Error('MONGO_URI is missing — copy .env.example to .env and fill it in.');
@@ -117,6 +157,8 @@ async function start() {
 
   await mountRoutes();
   console.log(mounted.length ? `Mounted: ${mounted.join(', ')}` : 'No routes found in routes/');
+
+  await seedIfEmpty();
 
   // Registered after the routes, or it would swallow every API path below it.
   app.get('*', (req, res, next) => {

@@ -25,7 +25,7 @@ import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import LinkedProjectDocument from '../models/LinkedProjectDocument.js';
 import { regexRedact, hashText } from '../services/jiraContentService.js';
 import { classifyUploads } from '../services/uploadClassifierService.js';
-import { generateSampleDataset } from '../services/syntheticDatasetService.js';
+import { generateSampleDataset, sharedKeys } from '../services/syntheticDatasetService.js';
 
 /**
  * One of the blueprint's required datasets, by name.
@@ -408,12 +408,22 @@ export async function generateSyntheticDataset(req, res) {
       return res.status(404).json({ error: 'That dataset is not part of this blueprint.' });
     }
 
+    // What the other sample datasets for this blueprint already call things.
+    // Generated one at a time, each call invented its own identifiers and the
+    // datasets did not join at all, which left every application built on them
+    // looking at absent signals and scoring everything the same.
+    const siblings = await LinkedProjectDocument
+      .find({ blueprintId: blueprint._id, sourceType: 'synthetic', datasetName: { $ne: datasetName } })
+      .select('rawText').lean().catch(() => []);
+    const existingKeys = sharedKeys(siblings.map(d => d.rawText));
+
     const { csv, rowCount, columns, model } = await generateSampleDataset({
       dataset,
       objective:   blueprint.businessObjective || '',
       industry:    blueprint.industry || '',
       companyName: blueprint.companyName || '',
       context:     note,
+      existingKeys,
     });
 
     // No redaction pass. uploadDatasetFile redacts because a customer's export

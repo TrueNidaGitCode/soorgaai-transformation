@@ -54,7 +54,7 @@ function systemPrompt() {
   ].join('\n');
 }
 
-function userPrompt({ dataset, objective, industry, companyName, context }) {
+function userPrompt({ dataset, objective, industry, companyName, context, existingKeys = [] }) {
   return [
     `Dataset: ${dataset.name}`,
     dataset.purpose ? `What it is for: ${dataset.purpose}` : '',
@@ -71,6 +71,25 @@ function userPrompt({ dataset, objective, industry, companyName, context }) {
       ? ['', 'WHAT THE CUSTOMER SAYS ABOUT THIS DATA (prefer this over any general', 'assumption):', context]
       : []),
     '',
+    // Identifiers the other sample datasets for this company already use.
+    //
+    // Each dataset was generated in its own model call and invented its own
+    // scheme, so enrollment held STU-9901 while attendance held stu_88201 and
+    // invoices held stu_1092. Nothing joined - zero rows out of twenty - and
+    // the application built on them scored every student identically, because
+    // every signal it looked up was missing. The samples have to describe one
+    // world, not six unrelated tables.
+    ...(existingKeys.length
+      ? [
+          '',
+          'THESE ENTITIES ALREADY EXIST in the other sample datasets for this company.',
+          'Where your dataset refers to the same thing, use THESE EXACT VALUES under',
+          'this exact column name. A new identifier scheme makes the datasets',
+          'unjoinable, and anything built on them cannot work:',
+          ...existingKeys.map(k => '  ' + k.column + ': ' + k.values.join(', ') + (k.more ? ', ...' : '')),
+          'Not every row needs one, and the same entity may appear more than once.',
+        ]
+      : []),
     'Generate the sample CSV.',
   ].filter(Boolean).join('\n');
 }
@@ -135,12 +154,12 @@ export function enforceMarker(csv) {
  *
  * @returns {Promise<{csv, rowCount, columns, model}>}
  */
-export async function generateSampleDataset({ dataset, objective = '', industry = '', companyName = '' }) {
+export async function generateSampleDataset({ dataset, objective = '', industry = '', companyName = '', context = '', existingKeys = [] }) {
   if (!dataset?.name) throw new Error('A dataset name is required.');
 
   const result = await generate({
     systemPrompt: systemPrompt(),
-    userMessage: userPrompt({ dataset, objective, industry, companyName }),
+    userMessage: userPrompt({ dataset, objective, industry, companyName, context, existingKeys }),
     maxTokens: 2000,
     // Prefixed so the usage ledger files it under Cob rather than 'other' —
     // see stageFromLabel in usageLedgerService.js.
@@ -153,4 +172,39 @@ export async function generateSampleDataset({ dataset, objective = '', industry 
 
   const { csv: marked, rowCount, columns } = enforceMarker(csv);
   return { csv: marked, rowCount, columns, model: result.model || '' };
+}
+
+
+/**
+ * The identifier columns a set of already-generated CSVs share.
+ *
+ * Only key-shaped columns, only their distinct values, capped: this goes into
+ * a prompt, and the point is to pin the naming, not to restate the data.
+ */
+export function sharedKeys(csvTexts, { maxColumns = 4, maxValues = 12 } = {}) {
+  const byColumn = new Map();
+
+  for (const text of csvTexts) {
+    const lines = String(text || '').split(String.fromCharCode(10)).filter(l => l.trim());
+    if (lines.length < 2) continue;
+    const headers = lines[0].split(',').map(h => h.trim());
+
+    headers.forEach((header, i) => {
+      if (!/(^|_)id$/i.test(header)) return;
+      const values = byColumn.get(header) || new Set();
+      for (const line of lines.slice(1)) {
+        const cell = (line.split(',')[i] || '').trim();
+        if (cell) values.add(cell);
+      }
+      byColumn.set(header, values);
+    });
+  }
+
+  return [...byColumn.entries()]
+    .sort((a, b) => b[1].size - a[1].size)
+    .slice(0, maxColumns)
+    .map(([column, set]) => {
+      const all = [...set];
+      return { column, values: all.slice(0, maxValues), more: all.length > maxValues };
+    });
 }

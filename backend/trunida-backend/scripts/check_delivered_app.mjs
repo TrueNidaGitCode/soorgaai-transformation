@@ -40,6 +40,16 @@ async function req(path, opts) {
 const field = (row, re, type) => Object.keys(row).find(
   k => re.test(k) && (!type || typeof row[k] === type));
 
+// A score is a score whether it arrives as 12 or as "12%". Requiring a number
+// meant an application that formatted its scores for display skipped every
+// scoring check and reported all-green while every record scored the same.
+const num = (v) => {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  if (typeof v !== 'string') return null;
+  const n = parseFloat(v.trim());
+  return Number.isFinite(n) ? n : null;
+};
+
 console.log('\nDelivered application check — ' + BASE + '\n');
 
 // ── A visitor has to get in ─────────────────────────────────────────────────
@@ -82,9 +92,26 @@ for (const base of routes) {
 if (records.length) ok('the database was seeded', records.length + ' records from ' + from);
 else note('no record listing found', 'the data checks below are skipped');
 
+// An application that answers with its evidence has already handed us the
+// records. Skipping the data checks because no listing endpoint happened to
+// exist let a "every student scores 12%" delivery pass with four green ticks.
+const probe = await req(routes[0] + '/ask', {
+  method: 'POST', headers: auth,
+  body: JSON.stringify({ message: 'Who is most at risk right now, and why?' }),
+});
+if (!records.length && probe.status === 200 && probe.body) {
+  const embedded = Object.values(probe.body)
+    .find(v => Array.isArray(v) && v.length && typeof v[0] === 'object');
+  if (embedded) {
+    records = embedded;
+    ok('records came back with the answer', records.length + ' shown as evidence');
+  }
+}
+
 // ── The scoring has to mean something ───────────────────────────────────────
 const scoreKey = records.length
-  ? field(records[0], /score|rating|probability|risk|rank/i, 'number')
+  ? Object.keys(records[0]).find(k => /score|rating|probability|risk|rank/i.test(k)
+      && records.every(r => num(r[k]) !== null))
   : null;
 
 if (records.length && !scoreKey) {
@@ -92,7 +119,7 @@ if (records.length && !scoreKey) {
 }
 
 if (records.length && scoreKey) {
-  const values = records.map(r => r[scoreKey]).filter(v => typeof v === 'number');
+  const values = records.map(r => num(r[scoreKey])).filter(v => v !== null);
   const distinct = new Set(values);
   const top = Math.max(...values);
 
@@ -115,7 +142,7 @@ if (records.length && scoreKey) {
     if (!settled.length) {
       ok('no already-settled records are present to leak');
     } else {
-      const leaked = settled.filter(r => r[scoreKey] === top);
+      const leaked = settled.filter(r => num(r[scoreKey]) === top);
       if (leaked.length) {
         bad('records whose outcome already happened are scored as top risk',
             leaked.length + ' of ' + settled.length + ' at ' + scoreKey + '=' + top
@@ -132,7 +159,7 @@ if (records.length && scoreKey) {
   // ── A reason that contradicts its score ──────────────────────────────────
   const driverKey = field(records[0], /driver|reason|cause|why|factor|explanation/i);
   if (driverKey) {
-    const bland = records.filter(r => r[scoreKey] === top
+    const bland = records.filter(r => num(r[scoreKey]) === top
       && /normal|none|standard|typical|no issue|healthy|lifecycle|n\/a/i.test(String(r[driverKey] || '')));
     if (bland.length) {
       bad('top-scored records give a reason that says nothing is wrong',

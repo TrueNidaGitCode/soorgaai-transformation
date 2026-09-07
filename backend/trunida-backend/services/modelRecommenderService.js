@@ -463,18 +463,52 @@ export function deriveRecommendationInputs(blueprint) {
   const resolved = resolveUseCase(blueprint);
   const useCase = useCaseText(blueprint).toLowerCase();
 
-  // Stems, so no trailing word boundary. /\bcomplian\b/ cannot match
-  // "compliance" — the boundary demands the word END at the stem. An earlier
-  // version wrote every pattern that way, so none of them ever fired.
+  // Which benchmark to rank on: what the delivered application will DO.
   //
   // Two outcomes, because two benchmarks are maintained. Routing anything to
   // a third would name an index with no published scores behind it, and the
   // recommendation would come back empty for a reason nobody can see.
+  //
+  // ── Why this reads the name and not the justification ─────────────────────
+  //
+  // It used to match a keyword list against the use case name AND Cob's
+  // justification for it. The justification is explanatory prose, and prose
+  // about delivering software says "engineering effort", "integration",
+  // "deployment", "already tested" as a matter of course. One run of an
+  // academy-management objective produced "Predictive Churn Risk
+  // Classification", justified with a sentence containing the word
+  // "engineer" — and that single word ranked a churn predictor on the
+  // Engineering benchmark. The same objective a day earlier ranked on
+  // Strategy & Ops. Nothing about the work had changed; a paragraph had.
+  //
+  // ── Why the engagement leads ──────────────────────────────────────────────
+  //
+  // Cob already classifies what kind of engagement this is, with a stated
+  // confidence, and both of its answers describe business outcomes: an AI
+  // feature inside the customer's product, or a workflow being automated.
+  // Neither says the model's job is writing software. That is a far better
+  // signal than a word appearing somewhere in a paragraph, and it is one the
+  // customer can see and correct on the Cob screen.
+  //
+  // Engineering is for a use case whose OWN SUBJECT is software: reviewing
+  // code, generating tests, triaging defects, migrating an API. The name says
+  // that when it is true, in a handful of words, with no room for incidental
+  // vocabulary.
   let focus = DEFAULT_FOCUS;
 
-  if (/\b(code|coding|engineer|refactor|repositor|developer|sdk|program|api|migrat|debug|test|deploy|integrat)/.test(useCase)) {
+  const subject = String(resolved.name || '').toLowerCase();
+  const aboutSoftware =
+    /\b(code|coding|refactor|repositor|codebase|sdk|api|pull request|unit test|test case|test suite|defect|bug|debug|compil|regression|source control|software engineer)/
+      .test(subject);
+
+  const businessEngagement = ['product-ai', 'workflow-automation'].includes(engagement.category);
+
+  if (aboutSoftware) {
     focus = 'engineering';
-    reasons.push('The use case is about building or changing software, so ranking is on the Engineering score.');
+    reasons.push(`The use case is software work in itself ("${resolved.name}"), so ranking is on the Engineering score.`);
+  } else if (businessEngagement) {
+    reasons.push(`This is ${engagement.category === 'product-ai' ? 'an AI feature inside their product' : 'workflow automation'}, `
+      + 'which is business work whatever it is built with, so ranking is on the Strategy & Ops score.');
   } else {
     reasons.push('The use case is business or operations work, so ranking is on the Strategy & Ops score.');
   }

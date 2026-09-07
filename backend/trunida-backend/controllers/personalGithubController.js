@@ -1,30 +1,36 @@
 /**
- * SoorgaAI — Personal GitHub Connection Controller
+ * Svarg — the customer's own GitHub connection
  *
- * Window 5 (Eame) of the pipeline wizard. Lets a user connect their own
- * GitHub account and push the real, working defect-matching project
- * (see services/eameProjectBuilder.js) as a new repo — the actual
- * deliverable Eame promises, not a static snippet.
+ * A read connection, and only that. Aria uses it to look at a repository the
+ * customer already has, so the generated application can be shaped after
+ * entities they actually own rather than names a model invented.
  *
- * GET  /api/github/personal/connect      → { url } to redirect to GitHub
- * GET  /api/github/personal/callback     → OAuth callback (public — GitHub calls this)
- * GET  /api/github/personal/status       → { connected, githubLogin } for the caller
- * POST /api/github/personal/disconnect   → hard-delete the caller's connection
- * POST /api/github/personal/push-project → create a repo + push the project
+ * It does NOT deliver anything. Eame publishes to a repository Svarg owns
+ * (services/svargGithubService.js) because Railway's GitHub App is installed
+ * once on Svarg's account and can build from there; asking every customer to
+ * host and grant access to the delivered repo was overhead that bought them
+ * nothing. Their copy of the code is the zip from /api/delivery/download.
+ *
+ * Preferred over the GitHub App only when the App is unconfigured — see
+ * connectVia in controllers/githubAppController.js. The App is narrower
+ * (Contents: read-only), so configure it and this becomes the fallback.
+ *
+ * GET  /api/github/personal/connect    → { url } to redirect to GitHub
+ * GET  /api/github/personal/callback   → OAuth callback (public — GitHub calls this)
+ * GET  /api/github/personal/status     → { connected, githubLogin } for the caller
+ * POST /api/github/personal/disconnect → hard-delete the caller's connection
  */
 
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import PersonalGithubConnection from '../models/PersonalGithubConnection.js';
-import { encryptSecret, decryptSecret } from '../utils/encryption.js';
+import { encryptSecret } from '../utils/encryption.js';
 import {
   isGithubOAuthConfigured,
   buildAuthorizeUrl,
   exchangeCodeForToken,
   getAuthenticatedUser,
 } from '../services/githubAuthService.js';
-import { createRepo, pushFiles } from '../services/githubApiService.js';
-import { buildManifest } from '../services/eameProjectBuilder.js';
 
 const JWT_SECRET   = process.env.JWT_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
@@ -143,106 +149,5 @@ export async function disconnectPersonal(req, res) {
   } catch (err) {
     console.error('[PersonalGithub] disconnect error:', err.message);
     return res.status(500).json({ error: 'Failed to disconnect.' });
-  }
-}
-
-// ── POST /api/github/personal/push-project ────────────────────────────────────
-
-export async function pushProject(req, res) {
-  try {
-    const { repoName, isPrivate } = req.body;
-    if (!repoName || typeof repoName !== 'string' || !/^[\w.-]+$/.test(repoName)) {
-      return res.status(400).json({ error: 'repoName is required and may only contain letters, numbers, dots, dashes, and underscores.' });
-    }
-
-    const connection = await PersonalGithubConnection.findOne({ userId: req.user._id });
-    if (!connection) {
-      return res.status(404).json({ error: 'No GitHub connection found. Connect first.', code: 'not_connected' });
-    }
-
-    const accessToken = decryptSecret(connection.encryptedAccessToken);
-
-    const repo = await createRepo(accessToken, {
-      name: repoName,
-      description: 'Retrieval-Augmented Semantic Matching for Defects — delivered by Svarg (Eame).',
-      isPrivate: !!isPrivate,
-    });
-
-    const files = buildManifest({ includeJira: true });
-
-    // An existing repository is left exactly as it is. pushFiles bootstraps
-    // a .gitkeep commit and writes a fresh tree, which would trample whatever
-    // is already in there — and it is the customer's repository, not ours.
-    const pushed = repo.created || repo.isEmpty;
-    if (pushed) {
-      await pushFiles(accessToken, repo.owner, repo.name, repo.defaultBranch, files, 'Initial commit — delivered by Svarg (Eame)');
-      if (repo.isEmpty) console.log(`[PersonalGithub] ${repo.owner}/${repo.name} existed but was empty — populated it`);
-    } else {
-      console.log(`[PersonalGithub] ${repo.owner}/${repo.name} already has content — adopting it, untouched`);
-    }
-
-    auditLog(pushed ? 'PUSHED' : 'ADOPTED', req.user._id, { repoUrl: repo.htmlUrl, fileCount: pushed ? files.length : 0 });
-
-    // Ownership is enforced in the filter — a blueprintId from the body can
-    // only ever update a blueprint this user already owns.
-    if (req.body?.blueprintId) {
-      const { default: TransformationBlueprint } = await import('../models/TransformationBlueprint.js');
-      await TransformationBlueprint.updateOne(
-        { _id: req.body.blueprintId, userId: req.user._id },
-        { $set: { eameDelivery: {
-          repoOwner: repo.owner, repoName: repo.name, repoUrl: repo.htmlUrl,
-          fileCount: pushed ? files.length : 0, pushedAt: new Date(),
-        } } }
-      ).catch(err => console.warn('[PersonalGithub] could not record delivery —', err.message));
-    }
-    return res.json({ repoUrl: repo.htmlUrl, fileCount: pushed ? files.length : 0, owner: repo.owner, name: repo.name, created: pushed });
-  } catch (err) {
-    // GitHub answers 401 "Bad credentials" for a token that has been revoked
-    // or has otherwise stopped working. The connection is dead, so delete it:
-    // leaving it in place makes the screen report a healthy connection and
-    // fail on every push with a message that names no remedy.
-    if (err.response?.status === 401) {
-      await PersonalGithubConnection.deleteOne({ userId: req.user._id })
-        .catch(e => console.warn('[PersonalGithub] could not clear dead connection —', e.message));
-      auditLog('TOKEN_REJECTED', req.user._id);
-      return res.status(401).json({
-        error: 'Your GitHub connection is no longer valid — reconnect to continue.',
-        code: 'not_connected',
-      });
-    }
-    console.error('[PersonalGithub] push-project error:', err.response?.data || err.message);
-    // GitHub's validation errors put the actually useful detail (e.g. "name
-    // already exists on this account") in a nested `errors` array, not the
-    // generic top-level `message` — surface both, since the top-level one
-    // alone (e.g. "Repository creation failed.") isn't actionable.
-    const data = err.response?.data;
-    const nested = data?.errors?.map(e => e.message || e.code).filter(Boolean).join('; ');
-    const detail = [data?.message, nested].filter(Boolean).join(' — ') || err.message;
-    return res.status(500).json({ error: `Failed to push project: ${detail}` });
-  }
-}
-
-/**
- * GET /api/github/personal/project-manifest
- * The file list that a push would deliver — paths and sizes only, no
- * content. Lets the Eame screen show what will actually be built from the
- * same builder the push uses, rather than a hand-maintained list that
- * could drift from reality.
- */
-export async function getProjectManifest(req, res) {
-  try {
-    const includeJira = req.query.includeJira !== '0';
-    const files = buildManifest({ includeJira });
-    return res.json({
-      fileCount: files.length,
-      totalBytes: files.reduce((n, f) => n + Buffer.byteLength(f.content || '', 'utf8'), 0),
-      files: files.map(f => ({
-        path: f.path,
-        bytes: Buffer.byteLength(f.content || '', 'utf8'),
-      })),
-    });
-  } catch (err) {
-    console.error('[PersonalGithub] manifest error:', err.message);
-    return res.status(500).json({ error: 'Failed to build the project manifest.' });
   }
 }

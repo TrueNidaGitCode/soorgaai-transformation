@@ -476,7 +476,7 @@ function render(bp, dep) {
 
 async function loadManifest() {
   try {
-    const { files } = await api('/github/personal/project-manifest');
+    const { files } = await api('/delivery/manifest');
     _manifestPaths = (files || []).map(f => f.path);
   } catch { _manifestPaths = []; }
 }

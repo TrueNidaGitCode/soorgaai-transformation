@@ -78,6 +78,17 @@ export async function ensureSvargRepo({ name, description }) {
       { name, description, private: true, auto_init: false },
       { headers: headers() }
     );
+
+    // /user/repos creates under whoever the TOKEN belongs to — OWNER is not
+    // part of that request. A token minted on the wrong account therefore
+    // succeeds and files every delivered agent under a stranger, with nothing
+    // in the response looking wrong. Compare what GitHub actually made.
+    if (data.owner.login.toLowerCase() !== OWNER.toLowerCase()) {
+      throw new Error(
+        `SVARG_GITHUB_TOKEN belongs to ${data.owner.login}, but SVARG_GITHUB_OWNER is ${OWNER}. `
+        + `The repository was created under ${data.owner.login}/${data.name} — mint the token on ${OWNER}.`
+      );
+    }
     return { owner: data.owner.login, name: data.name, htmlUrl: data.html_url, defaultBranch: data.default_branch || 'main', created: true };
   } catch (err) {
     const already = (err.response?.data?.errors || []).some(e => /already exists/i.test(e.message || ''));

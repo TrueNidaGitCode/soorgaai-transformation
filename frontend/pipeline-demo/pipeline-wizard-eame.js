@@ -1,10 +1,12 @@
 /**
  * Svarg — Pipeline Wizard: Window 5's real Eame — GitHub delivery
  *
- * Eame doesn't preview a snippet — it pushes the real, working
- * defect-matching project (see backend's services/eameProjectBuilder.js)
- * to the user's own GitHub via a dedicated OAuth connection (separate
- * from the Confluence/Jira one, different scope entirely).
+ * SUPERSEDED. This window pushed the built project to the user own GitHub.
+ * Delivery now goes to a repository Svarg owns (controllers/deliveryController.js)
+ * because Railway GitHub App is installed once on Svarg account and can build
+ * from there; the customer copy is a zip download. The push endpoint this
+ * called is gone, and nothing links to this page — it is a deletion candidate,
+ * kept only so the demo still loads.
  *
  * Selection state (repo name, private toggle, push result) mirrors into
  * the wizard's shared sessionStorage state — same pattern Window 3's Jira
@@ -65,28 +67,15 @@ function renderResult(result) {
 }
 
 async function handlePush() {
-  const pushBtn = document.getElementById('pw-eame-push-btn');
-  const repoName = document.getElementById('pw-eame-repo-name').value.trim() || 'defect-matching-agent';
-  const isPrivate = document.getElementById('pw-eame-private').checked;
-
-  hideError();
-  saveEameState({ repoName, isPrivate });
-
-  pushBtn.disabled = true;
-  pushBtn.textContent = 'Pushing…';
-  try {
-    const result = await api('/github/personal/push-project', {
-      method: 'POST',
-      body: JSON.stringify({ repoName, isPrivate }),
-    });
-    renderResult(result);
-    saveEameState({ pushResult: result });
-  } catch (err) {
-    showError(err.message);
-  } finally {
-    pushBtn.disabled = false;
-    pushBtn.textContent = 'Push to GitHub';
-  }
+  // Delivery no longer goes to the customer own GitHub. Eame publishes to a
+  // repository Svarg owns (POST /api/delivery/publish) so Railway can build
+  // from it, and the customer copy is the zip from /api/delivery/download.
+  //
+  // This demo window predates that and has no blueprint to publish, so there
+  // is nothing to call. Left saying so rather than removed, because a button
+  // that silently does nothing reads as a bug.
+  showError("Delivery has moved: Eame now publishes to Svarg own repository. "
+    + "Run it from the Yusu screen, which has the blueprint this page lacks.");
 }
 
 function wireConnectButton() {

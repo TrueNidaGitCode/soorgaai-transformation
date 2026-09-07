@@ -146,3 +146,35 @@ export async function downloadProject(req, res) {
     return res.status(500).json({ error: 'Failed to build the download.' });
   }
 }
+
+// ── GET /api/delivery/manifest ───────────────────────────────────────────────
+
+/**
+ * The file list a delivery would contain — paths and sizes, no content.
+ *
+ * Feeds Yusu's governance checks and the Eame screen's file list, so what is
+ * shown comes from the same builder the delivery uses rather than a
+ * hand-maintained list that could drift from it.
+ *
+ * Lived under /api/github/personal while delivery went to the customer's own
+ * repository. It never had anything to do with that connection — it reads no
+ * token and calls GitHub not at all — and leaving it there implied Svarg still
+ * pushes to customer accounts.
+ */
+export async function projectManifest(req, res) {
+  try {
+    const includeJira = req.query.includeJira !== '0';
+    const files = buildManifest({ includeJira });
+    return res.json({
+      fileCount: files.length,
+      totalBytes: files.reduce((n, f) => n + Buffer.byteLength(f.content || '', 'utf8'), 0),
+      files: files.map(f => ({
+        path: f.path,
+        bytes: Buffer.byteLength(f.content || '', 'utf8'),
+      })),
+    });
+  } catch (err) {
+    console.error('[Delivery] manifest error:', err.message);
+    return res.status(500).json({ error: 'Failed to build the project manifest.' });
+  }
+}

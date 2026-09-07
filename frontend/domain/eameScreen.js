@@ -5,7 +5,7 @@
  *
  * This stage shows the application that will be built — every file and what
  * each is for. The list comes from the same builder the push uses
- * (GET /github/personal/project-manifest), so what is shown here cannot
+ * (GET /delivery/manifest), so what is shown here cannot
  * drift from what Yusu later delivers.
  *
  * Building and pushing moved to Yusu: Eame is the application, Yusu ships it.

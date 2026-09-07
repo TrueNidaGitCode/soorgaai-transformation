@@ -5,8 +5,6 @@ import {
   personalGithubCallback,
   getPersonalStatus,
   disconnectPersonal,
-  pushProject,
-  getProjectManifest,
 } from '../controllers/personalGithubController.js';
 
 const router = express.Router();
@@ -15,7 +13,5 @@ router.get('/connect', protect, initiatePersonalConnect);
 router.get('/callback', personalGithubCallback); // public — GitHub calls this directly
 router.get('/status', protect, getPersonalStatus);
 router.post('/disconnect', protect, disconnectPersonal);
-router.post('/push-project', protect, pushProject);
-router.get('/project-manifest', protect, getProjectManifest);
 
 export default router;

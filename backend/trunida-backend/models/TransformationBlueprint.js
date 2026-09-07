@@ -508,6 +508,10 @@ const transformationBlueprintSchema = new mongoose.Schema({
     // out through a webhook that never fires for a repository created after
     // its GitHub App was installed.
     commitSha: { type: String, default: '' },
+    // Hash of the files last pushed. Timestamps only see the generated code;
+    // a fixed runtime file can change under a build that is otherwise current,
+    // and that change is exactly as undelivered as a stale build.
+    manifestHash: { type: String, default: '' },
   },
 
   domains: { type: [domainSchema], default: [] },

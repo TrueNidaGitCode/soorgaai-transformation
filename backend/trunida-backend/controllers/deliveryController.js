@@ -15,6 +15,7 @@
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { buildManifest } from '../services/eameProjectBuilder.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
+import crypto from 'crypto';
 import { generatedManifest } from './eameBuildController.js';
 import { buildZip } from '../services/zipService.js';
 import {
@@ -43,6 +44,20 @@ async function projectFor(bp) {
   const generated = await generatedManifest(bp._id, { appName: bp.appName });
   if (generated) return { files: generated, source: 'generated' };
   return { files: buildManifest({ includeJira: true, appName: bp.appName }), source: 'template' };
+}
+
+/**
+ * A stable fingerprint of exactly what would be written.
+ *
+ * Path and content, both, in a fixed order — a file moved between directories
+ * is a different delivery, and so is one whose bytes changed.
+ */
+function manifestHash(files) {
+  const h = crypto.createHash('sha256');
+  for (const f of [...files].sort((a, b) => a.path.localeCompare(b.path))) {
+    h.update(f.path).update('\u0000').update(f.content || '').update('\u0000');
+  }
+  return h.digest('hex');
 }
 
 function safeSlug(text) {
@@ -85,13 +100,15 @@ export async function publishProject(req, res) {
     // Decided here rather than on the screen because both timestamps live on
     // this side, and answered BEFORE any GitHub call, so an up-to-date project
     // costs one database read and nothing else.
-    const built = await GeneratedApplication
-      .findOne({ blueprintId: bp._id, status: 'passed' })
-      .select('updatedAt').lean().catch(() => null);
-    const pushedAt = bp.eameDelivery?.pushedAt ? new Date(bp.eameDelivery.pushedAt) : null;
-    if (!req.body?.force && pushedAt && bp.eameDelivery?.repoName
-        && (!built?.updatedAt || new Date(built.updatedAt) <= pushedAt)) {
-      auditLog('PUBLISH_SKIPPED', req.user._id, { repo: bp.eameDelivery.repoName, reason: 'already current' });
+    // Hashed, not dated. Timestamps answer "is the generated code newer?",
+    // which misses a fixed runtime file changing under a build that is
+    // otherwise current — and an undelivered runtime fix is exactly as
+    // undelivered as an unpushed build. Comparing what would be written costs
+    // one compose and is right in both cases.
+    const { files: candidate, source: candidateSource } = await projectFor(bp);
+    const hash = manifestHash(candidate);
+    if (!req.body?.force && bp.eameDelivery?.repoName && bp.eameDelivery?.manifestHash === hash) {
+      auditLog('PUBLISH_SKIPPED', req.user._id, { repo: bp.eameDelivery.repoName, reason: 'identical manifest' });
       return res.json({
         owner: bp.eameDelivery.repoOwner, name: bp.eameDelivery.repoName,
         repoUrl: bp.eameDelivery.repoUrl, fileCount: bp.eameDelivery.fileCount || 0,
@@ -102,7 +119,8 @@ export async function publishProject(req, res) {
     // The name the customer chose on Eame drives both the repository and what
     // the running application calls itself.
     const name = svargRepoName(safeSlug(bp.appName || slug || bp.businessObjective), bp._id);
-    const { files, source } = await projectFor(bp);
+    const files = candidate;
+    const source = candidateSource;
 
     const repo = await ensureSvargRepo({
       name,
@@ -121,6 +139,7 @@ export async function publishProject(req, res) {
         repoOwner: repo.owner, repoName: repo.name, repoUrl: repo.htmlUrl,
         fileCount: files.length, pushedAt: new Date(),
         commitSha: pushed?.commitSha || '',
+        manifestHash: hash,
       } } }
     ).catch(err => console.warn('[Delivery] could not record delivery —', err.message));
 

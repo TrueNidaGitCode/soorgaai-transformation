@@ -61,7 +61,20 @@
    */
   window.fetch = async function (input, init = {}) {
     const raw = typeof input === 'string' ? input : (input && input.url) || '';
-    const url = new URL(raw, window.location.origin);
+    let url = new URL(raw, window.location.origin);
+
+    // API_BASE already ends in /api. Code that reads it as the origin and
+    // appends its own /api produces /api/api/..., which 404s on every single
+    // request — the application looks completely broken while the server is
+    // perfectly healthy. The prompt now says so explicitly; this catches the
+    // guess anyway, because the cost of being wrong is the whole application
+    // and the correction is unambiguous. Warned, not silent.
+    if (url.pathname.startsWith('/api/api/')) {
+      console.warn('[config] collapsing duplicated /api prefix in ' + url.pathname
+        + ' — API_BASE already includes /api');
+      url = new URL(url.pathname.replace('/api/api/', '/api/') + url.search, window.location.origin);
+      input = url.toString();
+    }
     const ours = url.origin === window.location.origin
       && url.pathname.startsWith('/api/')
       && url.pathname !== '/api/session';

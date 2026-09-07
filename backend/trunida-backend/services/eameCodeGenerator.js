@@ -102,7 +102,21 @@ export function buildPrompt(spec) {
     'THE DATA — the project ships with CSVs the seed script must load:',
     ...(spec.sampleFiles?.length
       ? [
-          ...spec.sampleFiles.filter(f => f.endsWith('.csv')).map(f => '  ' + f),
+          // Columns and one real row, not just the path. Guessing produced
+          // Number(roster.frequency) against a column reading "Weekly", and a
+          // single NaN rejected the whole insert — the application shipped with
+          // an empty database and said nothing about why.
+          ...spec.sampleFiles.flatMap(f => [
+            '  ' + f.path,
+            '      columns: ' + f.columns,
+            '      example: ' + f.example,
+          ]),
+          '',
+          'Those are the REAL columns. Read them exactly — do not guess a name or assume a',
+          'type. A column can hold a word where you expect a number ("Weekly", "monthly"),',
+          'and Number() on it gives NaN, which fails validation and rejects the ENTIRE',
+          'insert. Parse defensively and skip a row you cannot read rather than losing all',
+          'of them; never write NaN into a numeric field.',
           '',
           'These are SAMPLE data, not real records. Every row carries a "_source"',
           'column set to "sample". Two things follow and both are required:',

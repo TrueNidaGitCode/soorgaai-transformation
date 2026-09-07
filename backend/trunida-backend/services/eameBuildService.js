@@ -71,7 +71,20 @@ export async function buildApplication(bp, {
   // there. A blueprint with no samples simply gets none.
   const samples = await sampleDataFiles(bp._id);
 
-  const spec = buildSpec(bp, { sampleBacked, sampleFiles: samples.map(f => f.path) });
+  // Paths alone were not enough. The generated seed script guessed column names
+  // from the dataset's title and wrote Number(roster.frequency) against a
+  // column that says "Weekly" — one bad cast rejected the whole insert and the
+  // delivered application started with an empty database. The columns and one
+  // real row cost a few hundred characters and remove the guessing.
+  const spec = buildSpec(bp, {
+    sampleBacked,
+    sampleFiles: samples
+      .filter(f => f.path.endsWith('.csv'))
+      .map(f => {
+        const [header = '', example = ''] = String(f.content || '').split('\n');
+        return { path: f.path, columns: header.trim(), example: example.trim() };
+      }),
+  });
 
   // The chat shell's wording, from the blueprint rather than baked into the
   // page. Only what the blueprint actually says is passed; the rest falls back

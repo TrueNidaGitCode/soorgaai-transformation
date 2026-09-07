@@ -207,18 +207,37 @@ app.get("/api/llm-status", async (req, res) => {
         liveTest: null,
     };
 
-    // ?test=1 runs a minimal real LLM call through the full chain
+    // ?test=1 runs a minimal real LLM call through the full chain.
+    //
+    // ?tokens=N varies the ceiling, because 10 stopped being a fair test of
+    // whether a provider works. A reasoning model spends its budget thinking
+    // before it writes, so a small ceiling returns ok:true with empty text —
+    // which reads as "the provider is fine" and is how a chain can run while
+    // every short call in the product silently returns nothing. Comparing two
+    // ceilings is what tells those apart.
+    //
+    // Capped, and deliberately low: this route has no `protect` in front of it
+    // and every call costs real tokens.
     if (req.query.test === '1') {
+        const asked = parseInt(req.query.tokens, 10);
+        const maxTokens = Number.isFinite(asked) ? Math.min(Math.max(asked, 1), 2000) : 10;
         try {
             const t0 = Date.now();
             const result = await generate({
                 systemPrompt: 'You are a test assistant.',
                 userMessage:  'Reply with exactly: OK',
-                maxTokens:    10,
+                maxTokens,
             });
-            status.liveTest = { ok: true, ms: Date.now() - t0, preview: result.text.slice(0, 80) };
+            const text = result.text || '';
+            status.liveTest = {
+                ok: true, maxTokens, ms: Date.now() - t0,
+                // An empty reply at ok:true is the case worth naming, not hiding.
+                chars: text.length,
+                empty: text.trim().length === 0,
+                preview: text.slice(0, 80),
+            };
         } catch (err) {
-            status.liveTest = { ok: false, error: err.message };
+            status.liveTest = { ok: false, maxTokens, error: err.message };
         }
     }
 

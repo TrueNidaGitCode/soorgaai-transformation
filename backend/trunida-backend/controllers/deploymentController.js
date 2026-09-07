@@ -307,7 +307,12 @@ export async function attachApplication(req, res) {
         appName: bp.appName,
       });
 
-      const attached = await target.attach({ deployment: dep, env });
+      // The commit delivery pushed, not "whatever main is" — Railway only
+      // learns that from a webhook, and for a repository created after its
+      // GitHub App was installed the webhook never fires.
+      const attached = await target.attach({
+        deployment: dep, env, commitSha: bp.eameDelivery?.commitSha || '',
+      });
       dep.railway.serviceId = attached.serviceId;
       dep.railway.url = attached.url || '';
       // Not live yet — Railway now builds the repository, which takes minutes
@@ -395,6 +400,10 @@ export async function redeployApplication(req, res) {
       // added after it was created.
       await getDeployTarget().redeploy({
         deployment: dep,
+        // Naming the commit is the whole point of this button. Without it
+        // Railway rebuilds the commit it resolved when the service was
+        // created, reports success, and the running application is unchanged.
+        commitSha: bp.eameDelivery?.commitSha || '',
         env: {
           APP_NAME: bp.appName || 'AI Assistant',
           APP_PUBLIC_ACCESS: 'true',

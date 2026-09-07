@@ -108,7 +108,7 @@ export async function publishProject(req, res) {
       name,
       description: `Delivered by Svarg (Eame) — ${String(bp.businessObjective || '').slice(0, 180)}`,
     });
-    await publishToSvarg({
+    const pushed = await publishToSvarg({
       repo, files,
       message: repo.created
         ? 'Initial commit — delivered by Svarg (Eame)'
@@ -120,6 +120,7 @@ export async function publishProject(req, res) {
       { $set: { eameDelivery: {
         repoOwner: repo.owner, repoName: repo.name, repoUrl: repo.htmlUrl,
         fileCount: files.length, pushedAt: new Date(),
+        commitSha: pushed?.commitSha || '',
       } } }
     ).catch(err => console.warn('[Delivery] could not record delivery —', err.message));
 

@@ -224,12 +224,26 @@ export async function resolveWorkspaceId() {
  * The older mutation is kept as a fallback rather than removed — it costs one
  * call and covers the case where V2 is not available.
  */
-async function deployService(projectId, environmentId, serviceId) {
+/**
+ * Start a build, on a named commit where one is known.
+ *
+ * Railway learns about new commits from the GitHub App webhook. A delivery
+ * repository is CREATED AFTER that App was installed, so unless the App is
+ * granted every repository the webhook never fires for it, and Railway goes on
+ * believing the branch is whatever it resolved when the service was made. Every
+ * later deploy then rebuilds the first commit — successfully, which is what
+ * makes it so hard to see: the build passes, the service restarts, and the
+ * running application does not change.
+ *
+ * Passing the commit takes the webhook out of the path. Svarg knows exactly
+ * what it pushed, so it says so rather than asking Railway to guess.
+ */
+async function deployService(projectId, environmentId, serviceId, commitSha = '') {
   try {
     await gql(`
-      mutation serviceInstanceDeployV2($serviceId: String!, $environmentId: String!) {
-        serviceInstanceDeployV2(serviceId: $serviceId, environmentId: $environmentId)
-      }`, { serviceId, environmentId });
+      mutation serviceInstanceDeployV2($serviceId: String!, $environmentId: String!, $commitSha: String) {
+        serviceInstanceDeployV2(serviceId: $serviceId, environmentId: $environmentId, commitSha: $commitSha)
+      }`, { serviceId, environmentId, commitSha: commitSha || null });
     return { started: true, via: 'serviceInstanceDeployV2' };
   } catch (err) {
     console.warn('[railway] serviceInstanceDeployV2 failed —', err.message);
@@ -292,7 +306,7 @@ export const railwayTarget = {
    * Attaching the application to an environment Arth already prepared.
    * Needs the repository, so it cannot run before Eame has pushed.
    */
-  async attach({ deployment, env }) {
+  async attach({ deployment, env, commitSha = '' }) {
     if (!deployment.repo?.owner || !deployment.repo?.name) {
       throw new Error('This deployment has no repository recorded. Push the project from Eame first.');
     }
@@ -312,7 +326,7 @@ export const railwayTarget = {
     // environmentTriggersDeploy did not either — a service created this way
     // sat with an empty deployment list until someone pressed Deploy in the
     // dashboard. serviceInstanceDeployV2 is what that button does.
-    await deployService(deployment.railway.projectId, deployment.railway.environmentId, service.id);
+    await deployService(deployment.railway.projectId, deployment.railway.environmentId, service.id, commitSha);
 
     // A domain is what makes it reachable, but a service without one is still
     // attached — report it rather than unwinding the whole thing.
@@ -399,7 +413,7 @@ export const railwayTarget = {
    * can come back with its new UI and still behave as though the settings
    * driving it were never added.
    */
-  async redeploy({ deployment, env }) {
+  async redeploy({ deployment, env, commitSha = '' }) {
     const { projectId, environmentId, serviceId } = deployment.railway || {};
     if (!serviceId) throw new Error('This deployment has no service to redeploy.');
 
@@ -419,7 +433,7 @@ export const railwayTarget = {
       }
     }
 
-    return deployService(projectId, environmentId, serviceId);
+    return deployService(projectId, environmentId, serviceId, commitSha);
   },
 
   async destroy({ deployment }) {

@@ -503,6 +503,11 @@ const transformationBlueprintSchema = new mongoose.Schema({
     repoUrl:   { type: String, default: '' },
     fileCount: { type: Number, default: 0 },
     pushedAt:  { type: Date,   default: null },
+    // The commit delivery actually created. Deploys name it rather than
+    // asking Railway which commit the branch is on — Railway only finds that
+    // out through a webhook that never fires for a repository created after
+    // its GitHub App was installed.
+    commitSha: { type: String, default: '' },
   },
 
   domains: { type: [domainSchema], default: [] },

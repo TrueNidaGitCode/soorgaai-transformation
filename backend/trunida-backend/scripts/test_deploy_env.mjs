@@ -60,6 +60,23 @@ check('a different pick yields a different model',
 check('...and that model is the one the catalog actually names',
   geminiFlash.apiModel !== undefined && geminiFlash.apiModel.length > 0, true);
 
+// The picker offers the benchmark catalog, whose ids the advisory ten do not
+// contain. Passing the resolved row must work, or a valid Arth selection is
+// refused at Go Live with "no model from the catalog" — after publishing.
+const benchmarkPick = {
+  id: 'gemini-3-8-flash', displayName: 'Gemini 3.8 Flash',
+  type: 'frontier', providerId: 'gemini', apiModel: 'gemini-3.8-flash',
+};
+check('a benchmark-catalog pick is accepted, not refused',
+  env({ deployment: { model: { modelId: 'gemini-3-8-flash' } }, model: benchmarkPick }).SELFHOSTED_MODEL,
+  'gemini-3.8-flash');
+check('...and the advisory fallback still applies when none is resolved',
+  env({ deployment: { model: { modelId: 'gemini-flash' } } }).SELFHOSTED_MODEL, geminiFlash.apiModel);
+throws('an open-weight benchmark pick is still refused',
+  () => env({ model: { ...benchmarkPick, type: 'open-weight' } }), /does not host GPUs/i);
+throws('a row with no api model name is refused before the tenant boots',
+  () => env({ model: { ...benchmarkPick, apiModel: '' } }), /nothing for the gateway to request/i);
+
 // ── Embeddings ──────────────────────────────────────────────────────────────
 check('embeddings go through the gateway too', e.SELFHOSTED_EMBEDDING_BASE_URL, 'https://svarg.example/api/gateway/v1');
 // Selfhosted mode defaults to 768 and the vector index is built from it; the

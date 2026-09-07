@@ -291,8 +291,16 @@ export async function attachApplication(req, res) {
       const { token, hash } = issueToken();
       dep.gatewayTokenHash = hash;
 
+      // Resolved across BOTH catalogs, the same way the gateway resolves it at
+      // request time. Arth lets a customer pick from the benchmark catalog, so
+      // anything that only knows the advisory ten rejects a valid selection —
+      // here, at Go Live, with the repository already published.
+      const { resolveSelectableModel } = await import('../services/selectableModelService.js');
+      const model = await resolveSelectableModel(dep.model?.modelId);
+
       const env = buildTenantEnv({
         deployment: dep,
+        model,
         gatewayToken: token,
         gatewayBaseUrl: process.env.GATEWAY_BASE_URL || `${req.protocol}://${req.get('host')}/api/gateway`,
         clusterUri: process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI,

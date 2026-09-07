@@ -48,11 +48,26 @@ export function tenantMongoUri(clusterUri, dbName) {
  * this context; it is the delivered app's generic OpenAI-compatible client
  * pointed at the gateway, which is why hosting needs no code change.
  */
-export function buildTenantEnv({ deployment, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName }) {
-  const catalog = ADVISORY_CATALOG.find(m => m.id === deployment.model?.modelId);
+export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName }) {
+  // Arth ranks and the picker shows the benchmark catalog, not the advisory
+  // ten (see services/selectableModelService.js), so a perfectly legitimate
+  // selection arrives carrying an id the advisory list has never heard of —
+  // gemini-3-8-flash rather than gemini-flash, the same model either way. This
+  // refused it at Go Live, after the repository had already been published.
+  //
+  // The caller resolves, because resolution reads the database and this
+  // function is deliberately pure. The advisory lookup stays as the fallback
+  // so a caller with nothing to resolve still behaves as it always did.
+  const catalog = model || ADVISORY_CATALOG.find(m => m.id === deployment.model?.modelId);
   if (!catalog) throw new Error('This deployment has no model from the catalog.');
   if (catalog.type !== 'frontier') {
     throw new Error(`${catalog.displayName} is an open-weight model. Svarg does not host GPUs for tenants, so this application must run against your own inference endpoint.`);
+  }
+  // A benchmark row can name a provider without naming what to ask it for.
+  // Unchecked, SELFHOSTED_MODEL ships undefined and the tenant fails on its
+  // first generation rather than here, where the cause is still visible.
+  if (!catalog.apiModel) {
+    throw new Error(`${catalog.displayName} has no API model name recorded, so there is nothing for the gateway to request. Choose another model on Arth.`);
   }
   if (!gatewayToken) throw new Error('A gateway token is required.');
 

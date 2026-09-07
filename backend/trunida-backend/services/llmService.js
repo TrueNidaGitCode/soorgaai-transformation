@@ -352,10 +352,18 @@ const PROVIDERS = {
       const baseURL = process.env.SELFHOSTED_BASE_URL;
       if (!baseURL) throw new Error('SELFHOSTED_BASE_URL is not configured.');
 
+      // The same headroom the gemini path applies, for the same reason. An
+      // OpenAI-compatible endpoint can be pointed at a thinking model just as
+      // easily — Sarvam's sarvam-105b reasons on every call — and it charges
+      // that thinking against max_tokens. Measured against it: 200 tokens
+      // returned an empty string after two seconds of work, 400 returned an
+      // answer. The short classification calls in this codebase ask for 200
+      // to 400, so without this they come back empty, and empty is not an
+      // error anyone notices.
       const client = new OpenAI({ apiKey: process.env.SELFHOSTED_API_KEY || 'not-needed', baseURL });
       const resp   = await client.chat.completions.create({
         model:      model || DEFAULT_MODELS.selfhosted,
-        max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
+        max_tokens: (maxTokens || DEFAULT_MAX_TOKENS) + THINKING_HEADROOM,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: userMessage  },

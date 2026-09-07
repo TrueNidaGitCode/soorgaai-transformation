@@ -31,14 +31,19 @@ const STALE_AFTER_MINUTES = 20;
 /**
  * Which model writes the code.
  *
- * Should be the best model on the Engineering benchmark — that is what the
- * table is for. It is not yet, because the models at the top of it are on
- * provider accounts with no credit, and routing to one would fail every build
- * for a reason that has nothing to do with the code. Set EAME_BUILD_PROVIDER
- * to move it once those accounts are funded.
+ * Unset means "whatever PROVIDER_CHAIN says", which is the only answer that
+ * keeps one variable in charge. It used to default to 'gemini', so switching
+ * the chain to another provider moved Cob, Aria and Arth and left Eame behind
+ * — a run that looks like one model's work and is two, with nothing on screen
+ * admitting it. Nobody would find that by reading the config.
+ *
+ * Setting it still pins Eame to one provider regardless of the chain, which is
+ * worth having: this should be the best model on the Engineering benchmark,
+ * and when those accounts are funded that is a different provider from the one
+ * running everything else.
  */
 function buildProvider() {
-  return (process.env.EAME_BUILD_PROVIDER || 'gemini').trim();
+  return (process.env.EAME_BUILD_PROVIDER || '').trim();
 }
 
 /**

@@ -173,7 +173,14 @@ export async function generatedManifest(blueprintId, { appName = '' } = {}) {
   const app = await GeneratedApplication.findOne({ blueprintId, status: 'passed' }).lean();
   if (!app || !app.files?.length) return null;
 
-  const runtime = buildRuntime({ appName });
+  // The chat shell's wording comes from the build, not from the template.
+  // buildApplication already passes this when it composes a project to
+  // verify; delivery composes its own, and without it the shipped page fell
+  // back to generic copy while the verified one carried the use case.
+  const runtime = buildRuntime({
+    appName,
+    copy: app.useCase ? { __APP_TAGLINE__: app.useCase } : {},
+  });
   const fixed = new Set(runtime.map(f => f.path));
   return [...runtime, ...app.files.filter(f => !fixed.has(f.path))];
 }

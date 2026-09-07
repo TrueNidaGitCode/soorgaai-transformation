@@ -44,6 +44,7 @@ import { attributeRequest, startUsageAccounting } from "./services/usageAttribut
 import { warmCache } from "./services/kbRetrievalService.js";
 import CompanyBlueprint from "./models/CompanyBlueprint.js";
 import TransformationBlueprint from "./models/TransformationBlueprint.js";
+import GeneratedApplication from "./models/GeneratedApplication.js";
 import { recoverStuckConfluenceSyncs } from "./services/confluenceExtractionService.js";
 
 dotenv.config();
@@ -271,6 +272,34 @@ async function recoverStuckBlueprints() {
         }
     } catch (err) {
         console.warn('[startup] Blueprint recovery failed (non-fatal):', err.message);
+    }
+
+    try {
+        // An Eame build runs in-process and fire-and-forget, so a deploy in the
+        // middle of one kills it and leaves the record saying 'building' with
+        // nobody building. startBuild will not start another until the twenty
+        // minute staleness window passes, so the customer watches a dead build
+        // for twenty minutes and is then told to try again.
+        //
+        // Any build still marked running at startup is orphaned by definition:
+        // this process is the only one that could have owned it, and it did not
+        // exist a moment ago. (That reasoning is single-instance; running two
+        // of these would need a lock with an owner, not a status field.)
+        const buildResult = await GeneratedApplication.updateMany(
+            { status: 'building' },
+            { $set: {
+                status: 'failed',
+                reason: 'The server restarted while this build was running, so it was stopped. Nothing was delivered — start it again.',
+                'progress.phase': 'failed',
+                'progress.detail': 'interrupted by a restart',
+                'progress.startedAt': null,
+            } }
+        );
+        if (buildResult.modifiedCount > 0) {
+            console.log(`[startup] Recovered ${buildResult.modifiedCount} Eame build(s) interrupted by a restart`);
+        }
+    } catch (err) {
+        console.warn('[startup] Eame build recovery failed (non-fatal):', err.message);
     }
 
     try {

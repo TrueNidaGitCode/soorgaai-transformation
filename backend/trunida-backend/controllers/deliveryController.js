@@ -51,11 +51,19 @@ async function projectFor(bp) {
  *
  * Path and content, both, in a fixed order — a file moved between directories
  * is a different delivery, and so is one whose bytes changed.
+ *
+ * Line endings are normalised first. Several fixed files are copied from
+ * Svarg's own checkout, which is CRLF on a Windows working copy and LF on
+ * Railway, so the same delivery hashed differently depending on where the
+ * process happened to run — and every publish from the other platform looked
+ * like a change, pushing a new commit and rebuilding the customer's
+ * application to deliver nothing.
  */
 function manifestHash(files) {
   const h = crypto.createHash('sha256');
   for (const f of [...files].sort((a, b) => a.path.localeCompare(b.path))) {
-    h.update(f.path).update('\u0000').update(f.content || '').update('\u0000');
+    const content = String(f.content || '').split('\r\n').join('\n');
+    h.update(f.path).update('\u0000').update(content).update('\u0000');
   }
   return h.digest('hex');
 }

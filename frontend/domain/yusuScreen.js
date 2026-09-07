@@ -52,6 +52,7 @@ let _dep = null;
 let _checksRun = false;      // have the automated checks been run
 let _manifestPaths = [];     // the files that would be delivered, for the security check
 let _manifestSource = '';    // 'generated' once Eame has built one, else 'template'
+let _manifestFacts = {};    // what a filename cannot answer — see /api/delivery/manifest
 let _running = false;        // the automatic build/push/test run is in flight
 let _failed = '';            // what stopped it, if anything
 
@@ -117,7 +118,14 @@ function runChecks(bp, manifestPaths) {
     if (!manifestPaths.length) return { pass: false, why: 'The project manifest could not be read.' };
     const gaps = [
       [/authMiddleware|auth/i, 'authentication middleware'],
-      [/encryption|crypto/i, 'credential encryption'],
+      // Required only where there is something to encrypt. Demanding it of
+      // every project came from the era when Eame shipped one application,
+      // which stored Atlassian OAuth tokens. An app holding student records
+      // and reaching its model through the gateway has no credential at rest,
+      // and failing it there only teaches people that a red check is normal.
+      ...(_manifestFacts.storesCredentials
+        ? [[/encryption|crypto/i, 'credential encryption']]
+        : []),
       [/\.env\.example$/, 'a configuration template'],
     ].filter(([re]) => !hasFile(re)).map(([, name]) => name);
     // A real .env would mean secrets in the repository — the one thing this
@@ -488,7 +496,8 @@ async function loadManifest() {
     const r = await api('/delivery/manifest?blueprintId=' + encodeURIComponent(_blueprintId));
     _manifestPaths = (r.files || []).map(f => f.path);
     _manifestSource = r.source || '';
-  } catch { _manifestPaths = []; _manifestSource = ''; }
+    _manifestFacts = r.facts || {};
+  } catch { _manifestPaths = []; _manifestSource = ''; _manifestFacts = {}; }
 }
 
 /**

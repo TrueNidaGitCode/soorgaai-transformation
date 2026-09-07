@@ -14,6 +14,7 @@
 
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { buildManifest } from '../services/eameProjectBuilder.js';
+import { FIXED_PATHS } from '../services/eameSpec.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
 import crypto from 'crypto';
 import { generatedManifest } from './eameBuildController.js';
@@ -66,6 +67,44 @@ function manifestHash(files) {
     h.update(f.path).update('\u0000').update(content).update('\u0000');
   }
   return h.digest('hex');
+}
+
+/**
+ * The few things about a delivered project that a filename cannot answer.
+ *
+ * Yusu's security check used to require a credential-encryption file in every
+ * project. That made sense when Eame shipped one application, which stored
+ * Atlassian OAuth tokens. It makes no sense for an application that holds
+ * student records and reaches its model through a gateway: there is nothing to
+ * encrypt, and demanding the file only teaches people that a red check is
+ * normal.
+ *
+ * So the question becomes conditional, and answering it means reading the code.
+ * Only what Eame wrote is considered — the runtime mentions provider API keys
+ * because it reads them from the environment, which is the opposite of storing
+ * one.
+ */
+function projectFacts(files) {
+  const fixed = new Set(FIXED_PATHS);
+  const authored = files.filter(f => !fixed.has(f.path) && /\.m?js$/.test(f.path));
+  const code = authored.map(f => f.content || '').join(String.fromCharCode(10));
+
+  // A schema field or an assignment that puts a secret somewhere it persists.
+  // Reading process.env is not storing; writing a token onto a document is.
+  const storesCredentials =
+    /(access|refresh|api|client|bearer)[_-]?(token|key|secret)\s*:/i.test(code)
+    || /\b(password|passwordHash|clientSecret|privateKey|credential)\s*:/i.test(code)
+    || /encryptSecret|decryptSecret/.test(code);
+
+  return {
+    storesCredentials,
+    // Reported rather than judged: the screen decides what is required, this
+    // only says what is there.
+    hasAuthMiddleware: files.some(f => /authMiddleware/i.test(f.path)),
+    hasEncryption: files.some(f => /encryption|crypto/i.test(f.path)),
+    hasEnvExample: files.some(f => /\.env\.example$/.test(f.path)),
+    committedEnv: files.some(f => /(^|\/)\.env$/.test(f.path)),
+  };
 }
 
 function safeSlug(text) {
@@ -242,6 +281,11 @@ export async function projectManifest(req, res) {
       source,
       fileCount: files.length,
       totalBytes: files.reduce((n, f) => n + Buffer.byteLength(f.content || '', 'utf8'), 0),
+      // What the screen cannot work out from a list of paths. A governance
+      // check that asks "does this project need credential encryption" has to
+      // read the code; the screen only has filenames, and inferring it from
+      // those is guessing.
+      facts: projectFacts(files),
       files: files.map(f => ({
         path: f.path,
         bytes: Buffer.byteLength(f.content || '', 'utf8'),

@@ -59,16 +59,32 @@ app.set('trust proxy', 1);
 // ✅ Middleware
 app.use(express.json());
 
-// CORS Configuration - Allow custom domain, Vercel, and local development
+/**
+ * Which origins may call this API.
+ *
+ * FRONTEND_URL is where the product actually lives, and it is already the
+ * variable every OAuth redirect is built from — so it belongs here too rather
+ * than being restated. The company domain used to be written into this list
+ * literally, which made moving to a new one a code change in a file nobody
+ * would think to look in while wondering why the site could not reach its API.
+ *
+ * CORS_EXTRA_ORIGINS covers the cases FRONTEND_URL cannot: a bare apex
+ * alongside a www, or an old domain kept alive during a move. Comma separated.
+ */
+const ALLOWED_ORIGINS = [
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+  // Vercel preview builds, which have a generated hostname per deployment.
+  'https://*.vercel.app',
+  process.env.FRONTEND_URL,
+  ...String(process.env.CORS_EXTRA_ORIGINS || '')
+    .split(',').map(o => o.trim()).filter(Boolean),
+].filter(Boolean);
+
+console.log('[cors] allowed origins: ' + ALLOWED_ORIGINS.join(', '));
+
 app.use(cors({
-  origin: [
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'https://soorgaai.com',
-    'https://www.soorgaai.com',
-    'https://*.vercel.app',
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
+  origin: ALLOWED_ORIGINS,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

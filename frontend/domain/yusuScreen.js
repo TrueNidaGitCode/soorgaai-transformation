@@ -303,7 +303,7 @@ async function buildAndPush() {
   out.innerHTML = `<div class="pw-process-item pw-process-item--done">
     <span class="pw-process-item__title">${esc(repoName)}</span>
     <span class="pw-process-item__detail">${r.fileCount} files
-      ${r.created ? 'built and published' : 'rebuilt and published'} to the Svarg build registry.</span>
+      ${r.upToDate ? 'already current in' : r.created ? 'built and published to' : 'rebuilt and published to'} the Svarg build registry.</span>
   </div>`;
 
   // Keep the in-memory blueprint in step so the checks below re-render as met
@@ -573,14 +573,15 @@ async function load() {
 async function autoRun() {
   if (_running) return;
 
-  // Already published for this blueprint — nothing to rebuild. The repository
-  // is Svarg's and holds this blueprint's agent, so unlike the customer-owned
-  // path there is no question of it belonging to the wrong account.
-  if (_bp.eameDelivery?.repoName) {
-    _checksRun = true;
-    render(_bp, _dep);
-    return;
-  }
+  // Whether anything needs pushing is the server's to answer, not this
+  // screen's. This asked "does a repository exist?" and skipped the push if
+  // one did, which was right while a blueprint built its application once and
+  // wrong as soon as Eame could rebuild it: a regenerated application stayed
+  // in the database while Railway rebuilt the previous push, and this screen
+  // reported a successful deploy of code that had never shipped.
+  //
+  // /delivery/publish compares the build against the last push and answers
+  // upToDate without touching GitHub, so asking on every visit is cheap.
 
   _running = true;
   _failed = '';

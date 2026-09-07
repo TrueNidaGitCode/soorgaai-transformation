@@ -14,6 +14,7 @@
 
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { buildManifest } from '../services/eameProjectBuilder.js';
+import GeneratedApplication from '../models/GeneratedApplication.js';
 import { generatedManifest } from './eameBuildController.js';
 import { buildZip } from '../services/zipService.js';
 import {
@@ -71,6 +72,32 @@ export async function publishProject(req, res) {
     const { blueprintId, slug } = req.body || {};
     const bp = await ownedBlueprint(blueprintId, req.user._id);
     if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    // Is what we would push any different from what is already there?
+    //
+    // Yusu used to answer this by checking whether a repository existed at all
+    // and skipping the push if it did — correct while a blueprint produced its
+    // application exactly once, and wrong the moment Eame could rebuild one.
+    // A regenerated application then sat in the database while Railway went on
+    // building the previous push, and the screen reported a successful deploy
+    // of code nobody had shipped.
+    //
+    // Decided here rather than on the screen because both timestamps live on
+    // this side, and answered BEFORE any GitHub call, so an up-to-date project
+    // costs one database read and nothing else.
+    const built = await GeneratedApplication
+      .findOne({ blueprintId: bp._id, status: 'passed' })
+      .select('updatedAt').lean().catch(() => null);
+    const pushedAt = bp.eameDelivery?.pushedAt ? new Date(bp.eameDelivery.pushedAt) : null;
+    if (!req.body?.force && pushedAt && bp.eameDelivery?.repoName
+        && (!built?.updatedAt || new Date(built.updatedAt) <= pushedAt)) {
+      auditLog('PUBLISH_SKIPPED', req.user._id, { repo: bp.eameDelivery.repoName, reason: 'already current' });
+      return res.json({
+        owner: bp.eameDelivery.repoOwner, name: bp.eameDelivery.repoName,
+        repoUrl: bp.eameDelivery.repoUrl, fileCount: bp.eameDelivery.fileCount || 0,
+        created: false, upToDate: true,
+      });
+    }
 
     // The name the customer chose on Eame drives both the repository and what
     // the running application calls itself.

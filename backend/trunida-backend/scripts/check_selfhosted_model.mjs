@@ -1,27 +1,34 @@
 /**
  * Svarg — is this OpenAI-compatible endpoint usable for Svarg's work?
  *
- * SELFHOSTED_MODEL is passed straight through to chat.completions.create, so a
- * wrong id fails on the first real call — usually inside a build, minutes later,
- * as something that reads like a Svarg bug. This asks the provider what it has
- * and then tries the two things Svarg actually needs.
+ * The model id is passed straight through to chat.completions.create, so a
+ * wrong one fails on the first real call — usually inside a build, minutes
+ * later, as something that reads like a Svarg bug. This asks the provider what
+ * it has and then tries the two things Svarg actually needs of it.
  *
  *   node scripts/check_selfhosted_model.mjs            # list what is available
  *   node scripts/check_selfhosted_model.mjs <model-id> # and exercise that one
  *
- * Reads SELFHOSTED_BASE_URL and SELFHOSTED_API_KEY from .env, so the key never
- * has to be pasted anywhere else.
+ * Covers both OpenAI-compatible providers: SARVAM_* when a key is present,
+ * SELFHOSTED_* otherwise. Read from .env, so no key is pasted anywhere else.
  */
 
 import 'dotenv/config';
 import { buildPrompt } from '../services/eameCodeGenerator.js';
 
-const BASE = (process.env.SELFHOSTED_BASE_URL || '').replace(/\/+$/, '');
-const KEY = process.env.SELFHOSTED_API_KEY || '';
-const WANTED = process.argv[2] || process.env.SELFHOSTED_MODEL || '';
+// Works for whichever OpenAI-compatible provider is configured. SARVAM_* is
+// preferred when present, because a deployment can have both and the named
+// provider is the one being adopted.
+const SARVAM = !!process.env.SARVAM_API_KEY;
+const BASE = (SARVAM
+  ? (process.env.SARVAM_BASE_URL || 'https://api.sarvam.ai/v1')
+  : (process.env.SELFHOSTED_BASE_URL || '')).replace(/\/+$/, '');
+const KEY = SARVAM ? process.env.SARVAM_API_KEY : (process.env.SELFHOSTED_API_KEY || '');
+const WANTED = process.argv[2]
+  || (SARVAM ? process.env.SARVAM_MODEL : process.env.SELFHOSTED_MODEL) || '';
 
 if (!BASE) {
-  console.error('SELFHOSTED_BASE_URL is not set. Put it in .env first.');
+  console.error('No endpoint configured. Set SARVAM_API_KEY, or SELFHOSTED_BASE_URL, in .env.');
   process.exit(2);
 }
 
@@ -38,7 +45,7 @@ try {
     const ids = (body.data || body.models || []).map(m => m.id || m.name).filter(Boolean);
     if (ids.length) {
       console.log('Models this key can see:');
-      for (const id of ids) console.log('  ' + id + (id === WANTED ? '   <- SELFHOSTED_MODEL' : ''));
+      for (const id of ids) console.log('  ' + id + (id === WANTED ? '   <- selected' : ''));
     } else {
       console.log('The models endpoint answered but listed nothing recognisable:');
       console.log('  ' + JSON.stringify(body).slice(0, 300));
@@ -139,5 +146,6 @@ if (big.status !== 200) {
 
 console.log(fail
   ? '\nNot suitable for Eame as configured. It may still be fine for shorter work.\n'
-  : '\nUsable. Set SELFHOSTED_MODEL=' + WANTED + ' and run a real build.\n');
+  : '\nUsable. Set ' + (SARVAM ? 'SARVAM_MODEL' : 'SELFHOSTED_MODEL') + '='
+    + WANTED + ' and run a real build.\n');
 process.exit(fail ? 1 : 0);

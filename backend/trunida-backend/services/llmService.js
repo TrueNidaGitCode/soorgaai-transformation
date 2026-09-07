@@ -6,14 +6,19 @@
  *   factory.py     → provider selection + chain
  *   providers/     → gemini.py, claude.py, openai.py
  *
- * Supported providers:  gemini  |  claude  |  openai  |  kimi  |  azure  |  selfhosted
+ * Supported providers:  gemini · claude · openai · sarvam · kimi · azure · selfhosted
  * Default model:        gemini-2.5-flash-lite
  *
- * Note: "kimi", "azure", and "selfhosted" are intentionally NOT in the
- * default chain — opt-in only (explicit `provider: 'kimi'`/`'azure'`/
- * `'selfhosted'`, or add to PROVIDER_CHAIN yourself) so none of them
+ * Note: "sarvam", "kimi", "azure", and "selfhosted" are intentionally NOT in
+ * the default chain — opt-in only (explicit `provider: 'sarvam'`/`'kimi'`/
+ * `'azure'`/`'selfhosted'`, or add to PROVIDER_CHAIN yourself) so none of them
  * silently affects advisorService / confluenceContentService / etc. which
  * all share this same chain via the default PROVIDER_CHAIN env var.
+ *
+ * "sarvam" is Sarvam AI's hosted API, OpenAI-compatible, keyed like any other
+ * paid provider. It is a named provider rather than a use of "selfhosted"
+ * because it is neither self-hosted nor free, and because a deployment should
+ * be able to use it and a local model at the same time.
  *
  * "azure" hosts the same GPT models as "openai" above, just billed against
  * an Azure subscription instead — the point being to draw on Azure credits
@@ -54,9 +59,13 @@
  *                                            dummy value if unset, since the
  *                                            openai SDK requires a non-empty string
  *
+ *  SARVAM_API_KEY    …                      Sarvam AI key
+ *  SARVAM_BASE_URL   https://api.sarvam.ai/v1  Optional override
+ *
  *  GEMINI_MODEL      gemini-2.5-flash-lite  Per-provider model override
  *  CLAUDE_MODEL      claude-sonnet-4-6
  *  OPENAI_MODEL      gpt-4o
+ *  SARVAM_MODEL      sarvam-105b
  *  KIMI_MODEL        moonshotai/kimi-k3
  *  SELFHOSTED_MODEL  llama3.1:8b            Must match a model already
  *                                            pulled/loaded on that server
@@ -94,10 +103,23 @@ const DEFAULT_MODELS = {
   // model id (e.g. 'gpt-4o'); falling back to it would send a model name
   // the self-hosted server almost certainly doesn't have loaded.
   selfhosted: process.env.SELFHOSTED_MODEL || 'llama3.1:8b',
+  sarvam: process.env.SARVAM_MODEL || 'sarvam-105b',
 };
 
 // OpenRouter's OpenAI-compatible endpoint.
 const KIMI_BASE_URL = 'https://openrouter.ai/api/v1';
+
+/**
+ * Sarvam's OpenAI-compatible endpoint.
+ *
+ * A named provider rather than a use of 'selfhosted', which is what it was at
+ * first and which was wrong in three ways: it is a hosted commercial API and
+ * not self-hosted, its default model there is llama3.1:8b, and holding that
+ * slot means the deployment cannot have Sarvam and a local Ollama at the same
+ * time. Named, it takes a key like every other paid provider and shows up in
+ * the unkeyed check.
+ */
+const SARVAM_BASE_URL = process.env.SARVAM_BASE_URL || 'https://api.sarvam.ai/v1';
 
 const DEFAULT_MAX_TOKENS = 1500;
 
@@ -245,6 +267,33 @@ const PROVIDERS = {
 
   // ── OpenAI ───────────────────────────────────────────────────────────────────
   // Mirrors knowledge_base/llm/providers/openai.py
+
+  sarvam: {
+    async generate({ systemPrompt, userMessage, model, maxTokens }) {
+      const apiKey = process.env.SARVAM_API_KEY;
+      if (!apiKey) throw new Error('SARVAM_API_KEY is not configured.');
+
+      const client = new OpenAI({ apiKey, baseURL: SARVAM_BASE_URL });
+      const resp   = await client.chat.completions.create({
+        model:      model || DEFAULT_MODELS.sarvam,
+        // sarvam-105b reasons on every call and charges it against max_tokens,
+        // so a budget sized for the visible answer returns an empty string —
+        // measured: 200 gave nothing after two seconds, 400 gave an answer.
+        // Same headroom, same reason, as the gemini path.
+        max_tokens: (maxTokens || DEFAULT_MAX_TOKENS) + THINKING_HEADROOM,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userMessage  },
+        ],
+      });
+
+      return {
+        text:         resp.choices[0]?.message?.content || '',
+        inputTokens:  resp.usage?.prompt_tokens     || 0,
+        outputTokens: resp.usage?.completion_tokens || 0,
+      };
+    },
+  },
 
   openai: {
     async generate({ systemPrompt, userMessage, model, maxTokens }) {
@@ -568,6 +617,7 @@ export function describeLlmConfig() {
   const KEYS = {
     gemini: 'GOOGLE_API_KEY', claude: 'ANTHROPIC_API_KEY',
     openai: 'OPENAI_API_KEY', kimi: 'OPENROUTER_API_KEY',
+    sarvam: 'SARVAM_API_KEY',
   };
   return {
     chain,

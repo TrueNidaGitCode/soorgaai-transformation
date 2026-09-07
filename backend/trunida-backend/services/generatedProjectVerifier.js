@@ -36,6 +36,7 @@ import os from 'os';
 import path from 'path';
 import { builtinModules } from 'module';
 import { spawn, spawnSync } from 'child_process';
+import { FIXED_PATHS } from './eameSpec.js';
 
 /** Node's own modules are always importable and are not dependencies. */
 const BUILTINS = new Set([...builtinModules, ...builtinModules.map(m => 'node:' + m)]);
@@ -159,6 +160,35 @@ function resolvesInManifest(fromPath, specifier, paths) {
 export function staticGates(files) {
   const paths = new Set(files.map(f => norm(f.path)));
   const failures = [];
+
+  // ── 0. is there an application here at all ──────────────────────────────
+  //
+  // Every other gate asks whether the project is correct. None of them asked
+  // whether it exists. A generation that emitted six mongoose models and
+  // nothing else passed syntax, imports, dependencies, install, boot AND the
+  // smoke test — because the smoke test asks the FIXED runtime for /api, and
+  // the runtime answers perfectly with an empty routes/ directory. The build
+  // was reported as passed, verified to smoke, and there was no application
+  // in it: nothing to call and nothing to open.
+  //
+  // A model layer is not a deliverable. Checked first, because every failure
+  // below it would be a distraction from this one.
+  // Only what Eame wrote. The composed project also carries the runtime, which
+  // supplies services/llmService.js and would satisfy "there is logic here"
+  // for a generation that produced none of it.
+  const fixed = new Set(FIXED_PATHS.map(norm));
+  const authored = files.map(f => norm(f.path)).filter(f => !fixed.has(f));
+  const isJs = (f) => f.endsWith('.js') || f.endsWith('.mjs');
+  const hasRoute = authored.some(f => f.startsWith('routes/') && isJs(f));
+  const hasUi    = authored.includes('frontend/app.js');
+  const hasLogic = authored.some(f => (f.startsWith('services/') || f.startsWith('controllers/')) && isJs(f));
+
+  if (!hasRoute) failures.push('there is no file in routes/, so the application exposes nothing to call');
+  if (!hasLogic) failures.push('there is no file in services/ or controllers/, so nothing holds the logic');
+  if (!hasUi) failures.push('frontend/app.js was not written, so the page has nothing driving it');
+  if (failures.length) {
+    return { ok: false, stage: 'completeness', failures };
+  }
 
   // ── 1. syntax ───────────────────────────────────────────────────────────
   // node --check needs a real file. Written under one temp dir and removed.

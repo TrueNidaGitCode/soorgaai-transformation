@@ -46,7 +46,24 @@ console.log('\n2. nothing imports a file that is not in the project');
 {
   // The gate the customer's build would run, run here instead. syntax and
   // local-imports are the two that do not need node_modules.
-  const result = await staticGates(files);
+  // The runtime is never shipped alone — an application is composed on top of
+  // it — so the completeness gate is satisfied with the smallest stand-in that
+  // is a real one. Without it this asserts that the runtime on its own is a
+  // deliverable, which is the belief that let a six-model project ship.
+  const stub = [
+    { path: 'routes/checkRoutes.js',
+      content: [
+        "import express from 'express';",
+        "const router = express.Router();",
+        "export default router;",
+        "",
+      ].join(String.fromCharCode(10)) },
+    { path: 'services/checkService.js',
+      content: "export function check() { return true; }" + String.fromCharCode(10) },
+    { path: 'frontend/app.js',
+      content: "export const ready = true;" + String.fromCharCode(10) },
+  ];
+  const result = await staticGates([...files, ...stub]);
   const importFailures = (result.failures || []).filter(f => /which is not in the project/.test(f));
 
   check('no unresolvable local imports', importFailures.length === 0,

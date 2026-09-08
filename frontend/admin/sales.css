@@ -632,3 +632,12 @@
 }
 
 .sg-fromlead { margin-top: 0.2rem; font-size: 0.74rem; color: var(--accent-green, #5CC5A7); }
+
+/* The field that caused a refusal, so "something is wrong" becomes "this box". */
+.sg-invalid {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.12) !important;
+}
+
+/* The banner scrolls itself into view, so it must read as urgent when it lands. */
+.cl-banner.error { scroll-margin-top: 1rem; }

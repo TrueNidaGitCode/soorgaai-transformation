@@ -40,12 +40,32 @@ function esc(text) {
   return String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/**
+ * Say something, where the operator is actually looking.
+ *
+ * The banner lives at the top of the page, above the tabs. The buttons that
+ * produce messages are at the bottom of a long form, so a refusal — "no
+ * organisation paragraph written" — was being reported into empty space
+ * several screens away. The operator saw a button do nothing, and concluded
+ * the feature was broken; a message nobody can see is the same as no message.
+ *
+ * So it scrolls itself into view, and errors stay until replaced while
+ * confirmations clear themselves.
+ */
+let bannerTimer = null;
+
 function banner(message, isError = true) {
   const el = document.getElementById('sg-banner');
+  if (bannerTimer) { clearTimeout(bannerTimer); bannerTimer = null; }
   if (!message) { el.style.display = 'none'; return; }
+
   el.textContent = message;
   el.className = `cl-banner ${isError ? 'error' : 'success'}`;
   el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // Success is transient; a refusal is something to act on and stays put.
+  if (!isError) bannerTimer = setTimeout(() => { el.style.display = 'none'; }, 6000);
 }
 
 function age(iso) {
@@ -444,6 +464,22 @@ function wireOutreach() {
 }
 
 /**
+ * Refuse, and point at the box that caused it.
+ *
+ * A banner alone told the operator something was wrong but not which of five
+ * fields to look at, which on a long form is barely better than silence.
+ */
+function complain(fieldId, message) {
+  banner(message);
+  const el = document.getElementById(fieldId);
+  if (el) {
+    el.classList.add('sg-invalid');
+    el.focus();
+    el.addEventListener('input', () => el.classList.remove('sg-invalid'), { once: true });
+  }
+}
+
+/**
  * @param {boolean} thenSend save and immediately send the first email.
  *
  * Two buttons rather than a checkbox, because "did that just email someone"
@@ -455,11 +491,12 @@ async function addLead(thenSend = false) {
   const company    = document.getElementById('sg-lead-company').value.trim();
   const note       = document.getElementById('sg-lead-note').value.trim();
   const orgContext = document.getElementById('sg-lead-context').value.trim();
-  if (!email) return banner('An email address is required.');
+  if (!email) return complain('sg-lead-email', 'An email address is required.');
   // The template supplies everything else, so the only thing worth insisting on
   // is the part that is actually about them.
   if (thenSend && !orgContext) {
-    return banner('Write the organisation paragraph before sending — without it the email is generic.');
+    return complain('sg-lead-context',
+      'Write the organisation paragraph before sending — without it the email is generic.');
   }
 
   const btns = [document.getElementById('sg-lead-add'), document.getElementById('sg-lead-send')];

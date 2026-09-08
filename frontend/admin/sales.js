@@ -128,7 +128,7 @@ function leadRow(r) {
     <input type="text" class="sg-c-subject" placeholder="Subject" value="${esc(q.subject)}">
     <textarea class="sg-c-body" rows="7" placeholder="Your message. {{name}} and {{company}} are filled in; an unsubscribe line is appended automatically.">${esc(q.body)}</textarea>
     <div class="sg-c-controls">
-      <label>Every <input type="number" class="sg-c-interval" min="2" max="90" value="${q.intervalDays}"> days</label>
+      <label>Every <input type="number" class="sg-c-interval" min="7" max="90" value="${q.intervalDays}"> days</label>
       <label>Stop after <input type="number" class="sg-c-max" min="1" max="6" value="${q.maxSends}"> emails</label>
       <label class="sg-c-toggle"><input type="checkbox" class="sg-c-enabled" ${q.enabled ? 'checked' : ''}> Auto follow-up</label>
       <button type="button" class="cta-button sg-c-save" data-save="${esc(r.id)}">Save</button>
@@ -144,7 +144,7 @@ function renderOutreach(s) {
       <input type="text"  id="sg-lead-note" placeholder="Note (optional)" autocomplete="off">
       <button type="button" id="sg-lead-add" class="cta-button">Add</button>
     </div>
-    <p class="field-hint">Add someone, press Compose to write the email, then Send now or switch on Auto follow-up. A lead leaves this stage automatically when they sign up — detected, never ticked off by hand. Follow-ups also stop on a reply, an unsubscribe, or when the count runs out.</p>`;
+    <p class="field-hint">Add someone, press Compose to write the email, then Send now or switch on Auto follow-up. <strong>At most 6 emails to one contact, never more than one a week</strong> — enforced on the server, so Send now cannot get round it either. A lead leaves this stage automatically when they sign up; follow-ups also stop on a reply, an unsubscribe, or when the six run out.</p>`;
 
   const rows = table(
     ['Status', 'Email', 'Company', 'Sent', 'Next', ''],

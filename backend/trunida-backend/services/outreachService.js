@@ -38,8 +38,14 @@ import ColdLead from '../models/ColdLead.js';
 import { User } from '../models/user.js';
 import { sendOutreachEmail } from './mailService.js';
 
-/** Below this, a sequence stops being follow-up and starts being spam. */
-export const MIN_INTERVAL_DAYS = 2;
+/**
+ * The rule: at most six emails to one contact, and never more than one a week.
+ *
+ * Both are enforced here rather than taken from the request, and the weekly gap
+ * applies to the manual button as well as the sweep — see canSend. Slower is
+ * always allowed; faster is not, by any route.
+ */
+export const MIN_INTERVAL_DAYS = 7;
 export const MAX_SENDS_CAP = 6;
 
 /**
@@ -112,14 +118,25 @@ export async function canSend(lead, { ignoreSchedule = false } = {}) {
   const signedUp = await User.exists({ email: String(lead.email).toLowerCase() });
   if (signedUp) return { ok: false, reason: 'They signed up — they are past outreach.' };
 
+  // One email a week to a contact, whatever the path.
+  //
+  // Outside the ignoreSchedule branch on purpose. "Send now" is allowed to
+  // ignore the SCHEDULE — a paused sequence, a date not yet reached — but not
+  // this. With it inside, six clicks of the button in one afternoon would send
+  // a stranger six emails in an afternoon, which is the exact outcome the
+  // limit exists to prevent, reachable by the easiest action on the screen.
+  if (seq.lastSentAt) {
+    const waited = Date.now() - new Date(seq.lastSentAt).getTime();
+    if (waited < MIN_INTERVAL_DAYS * DAY) {
+      const left = Math.ceil((MIN_INTERVAL_DAYS * DAY - waited) / DAY);
+      return { ok: false, reason: `Last email went ${Math.floor(waited / DAY)}d ago — one a week means ${left}d to wait.` };
+    }
+  }
+
   if (!ignoreSchedule) {
     if (!seq.enabled) return { ok: false, reason: 'Sequence is paused.' };
     if (seq.nextSendAt && new Date(seq.nextSendAt) > new Date()) {
       return { ok: false, reason: `Not due until ${new Date(seq.nextSendAt).toISOString().slice(0, 10)}.` };
-    }
-    // A manual send resets the clock; this stops the sweep piling on top of it.
-    if (seq.lastSentAt && Date.now() - new Date(seq.lastSentAt).getTime() < MIN_INTERVAL_DAYS * DAY) {
-      return { ok: false, reason: 'Sent too recently.' };
     }
   }
 

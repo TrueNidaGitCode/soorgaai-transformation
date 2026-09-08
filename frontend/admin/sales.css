@@ -500,3 +500,18 @@
 }
 
 .nl-send:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Addresses ────────────────────────────────────────────────────────────────
+   The domain gets the contrast, not the local part. Two accounts belonging to
+   one person differ only after the @ — soorgaai.com against svargai.com — and
+   dimming the half they share is what stops one being mistaken for the other. */
+
+.sg-local  { color: rgba(255, 255, 255, 0.55); }
+.sg-domain { color: var(--text-primary, #FFFFFF); font-weight: 600; }
+
+.sg-alsoat {
+  margin-top: 0.2rem;
+  font-family: var(--font-primary, inherit);
+  font-size: 0.74rem;
+  color: rgba(251, 191, 36, 0.85);
+}

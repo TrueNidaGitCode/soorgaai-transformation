@@ -288,6 +288,38 @@ export async function collectSignals() {
   onboarding.sort(byRecency);
   sales.sort(byRecency);
 
+  // ── Look-alike accounts ────────────────────────────────────────────────────
+  //
+  // Nothing above can put one account in two stages. But one PERSON can hold
+  // several accounts, and praneshbabykannan@soorgaai.com sitting in Conversion
+  // while praneshbabykannan@svargai.com sits in Onboarding reads, at a glance
+  // down a monospace column, as the same row printed twice — the two domains
+  // differ by one letter.
+  //
+  // So each row is told where its look-alikes are. Deliberately a note and not
+  // a merge: they are genuinely separate accounts with separate blueprints and
+  // separate spend, and collapsing them would hide real work. The heuristic is
+  // the local part with separators removed, which is a guess — hence "looks
+  // like", never a claim.
+  const localOf = (e) => String(e || '').toLowerCase().split('@')[0].replace(/[.+_-]/g, '');
+  const byLocal = new Map();
+  for (const [stage, rows] of [['outreach', outreach], ['conversion', conversion], ['onboarding', onboarding], ['sales', sales]]) {
+    for (const r of rows) {
+      const k = localOf(r.email);
+      if (!k) continue;
+      if (!byLocal.has(k)) byLocal.set(k, []);
+      byLocal.get(k).push({ stage, email: r.email, row: r });
+    }
+  }
+  for (const entries of byLocal.values()) {
+    if (entries.length < 2) continue;
+    for (const e of entries) {
+      e.row.alsoAt = entries
+        .filter(o => o.email !== e.email)
+        .map(o => ({ stage: o.stage, email: o.email }));
+    }
+  }
+
   return {
     outreach, discovery, conversion, onboarding, sales,
     converted,

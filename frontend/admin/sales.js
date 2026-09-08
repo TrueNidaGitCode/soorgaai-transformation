@@ -59,6 +59,23 @@ function clip(s, n) {
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
 
+/**
+ * An address with its domain emphasised, plus a note when a look-alike account
+ * sits at another stage.
+ *
+ * Both exist for the same reason: praneshbabykannan@soorgaai.com in Conversion
+ * and praneshbabykannan@svargai.com in Onboarding are different accounts that
+ * read as one row printed twice. The domain carries the whole distinction, so
+ * it is the part that gets the contrast.
+ */
+function emailCell(r) {
+  const [local, domain] = String(r.email || '').split('@');
+  const addr = `<span class="sg-local">${esc(local)}</span><span class="sg-domain">@${esc(domain || '')}</span>`;
+  if (!r.alsoAt?.length) return addr;
+  const others = r.alsoAt.map(o => `${esc(o.email)} in ${esc(o.stage)}`).join(', ');
+  return `${addr}<div class="sg-alsoat" title="Separate accounts — not merged">also looks like ${others}</div>`;
+}
+
 function table(cols, rows, row) {
   if (!rows.length) return '<div class="sg-empty">Nothing at this stage right now.</div>';
   return `<table class="cl-table">
@@ -104,7 +121,7 @@ function leadRow(r) {
   const done = q.sentCount >= q.maxSends;
   return `<tr class="sg-leadrow">
     <td><span class="sg-pill sg-pill--${esc(r.status)}">${esc(r.status)}</span></td>
-    <td class="sg-who">${esc(r.email)}${r.unsubscribedAt ? ' <span class="sg-unsub">unsubscribed</span>' : ''}</td>
+    <td class="sg-who">${emailCell(r)}${r.unsubscribedAt ? ' <span class="sg-unsub">unsubscribed</span>' : ''}</td>
     <td>${esc(r.company)}</td>
     <td class="sg-seq">
       <span class="sg-sent ${done ? 'sg-sent--done' : ''}">${q.sentCount}/${q.maxSends}</span>
@@ -186,7 +203,7 @@ function renderConversion(s) {
     s.conversion,
     r => `<tr>
       <td class="sg-age">${age(r.at)}</td>
-      <td class="sg-who">${esc(r.email)}</td>
+      <td class="sg-who">${emailCell(r)}</td>
       <td>${esc(clip(r.objective, 60))}</td>
       <td>${r.blueprints}</td>
       <td class="sg-note ${r.blocker ? 'sg-blocked' : ''}">${esc(r.note)}</td>
@@ -199,7 +216,7 @@ function renderOnboarding(s) {
     s.onboarding,
     r => `<tr>
       <td class="sg-age">${age(r.at)}</td>
-      <td class="sg-who">${esc(r.email)}</td>
+      <td class="sg-who">${emailCell(r)}</td>
       <td>${esc(clip(r.objective, 60))}</td>
       <td>${r.liveCount}</td>
       <td class="sg-note ${r.quiet ? 'sg-blocked' : ''}">${esc(r.note)}</td>
@@ -212,7 +229,7 @@ function renderSales(s) {
     s.sales,
     r => `<tr>
       <td class="sg-age">${age(r.at)}</td>
-      <td class="sg-who">${esc(r.email)}</td>
+      <td class="sg-who">${emailCell(r)}</td>
       <td><span class="sg-pill sg-pill--paid">${esc(r.note)}</span></td>
       <td>${r.blueprints}</td>
       <td>$${(r.spendUsd || 0).toFixed(4)}</td>

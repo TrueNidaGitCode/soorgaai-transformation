@@ -16,6 +16,7 @@
 
 import crypto from 'crypto';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
+import { resolveCountryInBackground } from '../services/geoService.js';
 import { enabledDomains } from '../config/domainRegistry.js';
 import { getDomainCapabilities } from '../services/strategyCanvasService.js';
 import { generateSpecificDomainsAsync } from '../services/blueprintGenerationService.js';
@@ -105,6 +106,11 @@ export async function startGuestGeneration(req, res) {
     // request as a guest preview is what puts this generation in the ledger
     // at all — without it the free tier was the one thing Svarg pays for and
     // could not measure.
+    // Where they are, resolved once and written to the record a moment later.
+    // Never awaited: a preview must not wait on a geolocation service — see
+    // services/geoService.js.
+    resolveCountryInBackground(TransformationBlueprint, blueprint._id, req.ip);
+
     attributeGuest(guestId);
     beginRun(`guest preview ${blueprint._id}`);
 

@@ -96,6 +96,24 @@ function emailCell(r) {
   return `${addr}<div class="sg-alsoat" title="Separate accounts — not merged">also looks like ${others}</div>`;
 }
 
+/**
+ * A blank that says which kind of blank it is.
+ *
+ * "not recorded" and "we know there is none" look identical as an empty cell,
+ * and on a sales board the difference decides whether you go and find out.
+ * Organisation comes from the profile, so blank means setup was never
+ * finished; country is derived from the visitor IP, which was only captured
+ * from 8 September, so every earlier row can never have one.
+ */
+function orgBlank() {
+  return '<span class="sg-unknown" title="No organisation on their profile">no profile</span>';
+}
+
+function countryCell(code) {
+  if (!code) return '<span class="sg-unknown" title="Derived from the visitor IP, which was not recorded for this visit">not recorded</span>';
+  return `<span class="sg-country">${esc(code)}</span>`;
+}
+
 function table(cols, rows, row) {
   if (!rows.length) return '<div class="sg-empty">Nothing at this stage right now.</div>';
   return `<table class="cl-table">
@@ -142,7 +160,8 @@ function leadRow(r) {
   return `<tr class="sg-leadrow">
     <td><span class="sg-pill sg-pill--${esc(r.status)}">${esc(r.status)}</span></td>
     <td class="sg-who">${emailCell(r)}${r.unsubscribedAt ? " <span class=\"sg-unsub\">unsubscribed</span>" : ""}${r.clicked ? " <span class=\"sg-clicked\">clicked</span>" : ""}</td>
-    <td>${esc(r.company)}</td>
+    <td>${esc(r.company) || orgBlank()}</td>
+    <td>${countryCell(r.country)}</td>
     <td class="sg-seq">
       <span class="sg-sent ${done ? 'sg-sent--done' : ''}">${q.sentCount}/${q.maxSends}</span>
       <span class="sg-note">every ${q.intervalDays}d</span>
@@ -162,7 +181,7 @@ function leadRow(r) {
       <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
     </td>
   </tr>
-  <tr class="sg-preview" id="preview-${esc(r.id)}" hidden><td colspan="6">
+  <tr class="sg-preview" id="preview-${esc(r.id)}" hidden><td colspan="7">
     <div class="sg-pv">
       <div class="sg-pv__warn"></div>
       <div class="sg-pv__to"></div>
@@ -170,7 +189,7 @@ function leadRow(r) {
       <div class="sg-pv__body"></div>
     </div>
   </td></tr>
-  <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="6">
+  <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="7">
     <input type="text" class="sg-c-name" placeholder="First name — fills {{name}}" value="${esc(r.name || '')}">
     <textarea class="sg-c-context" rows="4" placeholder="The paragraph about THIS organisation — fills {{context}}.">${esc(r.orgContext || '')}</textarea>
     <input type="text" class="sg-c-subject" placeholder="Subject" value="${esc(q.subject)}">
@@ -251,7 +270,7 @@ function renderOutreachBody(s) {
     <p class="field-hint"><strong>At most 6 emails to one contact, never more than one a week</strong> — enforced on the server, so Send cannot get round it either. Use Compose on a row to edit a message you already wrote. A lead leaves this stage automatically when they sign up; follow-ups also stop on a reply, an unsubscribe, or when the six run out.</p>`;
 
   const rows = table(
-    ['Status', 'Email', 'Company', 'Sent', 'Next', ''],
+    ['Status', 'Email', 'Organisation', 'Country', 'Sent', 'Next', ''],
     s.outreach, leadRow);
 
   const converted = s.converted.length
@@ -264,13 +283,15 @@ function renderOutreachBody(s) {
 
 function renderDiscovery(s) {
   return table(
-    ['Visits', 'Last seen', 'Guest', 'Objective', 'IP', 'What happened'],
+    ['Visits', 'Last seen', 'Guest', 'Organisation', 'Country', 'Objective', 'IP', 'What happened'],
     s.discovery,
     r => `<tr>
       <td><span class="sg-visits ${r.visits > 1 ? 'sg-visits--repeat' : ''}">${r.visits}×</span></td>
       <td class="sg-age">${age(r.at)}</td>
       <td class="sg-who">${esc(r.who)}${r.fromLead
         ? `<div class="sg-fromlead">from your email to ${esc(r.fromLead.email)}</div>` : ''}</td>
+      <td>${esc(r.org) || orgBlank()}</td>
+      <td>${r.countries.length ? countryCell(r.countries.join(', ')) : countryCell('')}</td>
       <td>${esc(clip(r.objective, 80))}</td>
       <td class="sg-who ${r.ips.length ? '' : 'sg-unknown'}">${esc(r.ipLabel)}</td>
       <td class="sg-note">${esc(r.note)}</td>
@@ -279,11 +300,13 @@ function renderDiscovery(s) {
 
 function renderConversion(s) {
   return table(
-    ['Age', 'Email', 'Objective', 'Blueprints', 'Where they stopped'],
+    ['Age', 'Email', 'Organisation', 'Country', 'Objective', 'Blueprints', 'Where they stopped'],
     s.conversion,
     r => `<tr>
       <td class="sg-age">${age(r.at)}</td>
       <td class="sg-who">${emailCell(r)}</td>
+      <td>${esc(r.org) || orgBlank()}</td>
+      <td>${countryCell(r.country)}</td>
       <td>${esc(clip(r.objective, 60))}</td>
       <td>${r.blueprints}</td>
       <td class="sg-note ${r.blocker ? 'sg-blocked' : ''}">${esc(r.note)}</td>
@@ -292,11 +315,13 @@ function renderConversion(s) {
 
 function renderOnboarding(s) {
   return table(
-    ['Last query', 'Email', 'Objective', 'Live apps', 'Usage'],
+    ['Last query', 'Email', 'Organisation', 'Country', 'Objective', 'Live apps', 'Usage'],
     s.onboarding,
     r => `<tr>
       <td class="sg-age">${age(r.at)}</td>
       <td class="sg-who">${emailCell(r)}</td>
+      <td>${esc(r.org) || orgBlank()}</td>
+      <td>${countryCell(r.country)}</td>
       <td>${esc(clip(r.objective, 60))}</td>
       <td>${r.liveCount}</td>
       <td class="sg-note ${r.quiet ? 'sg-blocked' : ''}">${esc(r.note)}</td>
@@ -305,11 +330,13 @@ function renderOnboarding(s) {
 
 function renderSales(s) {
   return table(
-    ['Since', 'Email', 'Plan', 'Blueprints', 'Spend'],
+    ['Since', 'Email', 'Organisation', 'Country', 'Plan', 'Blueprints', 'Spend'],
     s.sales,
     r => `<tr>
       <td class="sg-age">${age(r.at)}</td>
       <td class="sg-who">${emailCell(r)}</td>
+      <td>${esc(r.org) || orgBlank()}</td>
+      <td>${countryCell(r.country)}</td>
       <td><span class="sg-pill sg-pill--paid">${esc(r.note)}</span></td>
       <td>${r.blueprints}</td>
       <td>$${(r.spendUsd || 0).toFixed(4)}</td>

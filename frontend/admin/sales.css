@@ -641,3 +641,15 @@
 
 /* The banner scrolls itself into view, so it must read as urgent when it lands. */
 .cl-banner.error { scroll-margin-top: 1rem; }
+
+/* A resolved country reads as data; an unresolved one must not. */
+.sg-country {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #FFFFFF);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}

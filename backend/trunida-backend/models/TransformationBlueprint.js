@@ -355,6 +355,19 @@ const transformationBlueprintSchema = new mongoose.Schema({
     // one. This is what turns an anonymous Discovery row into "the person we
     // emailed on Tuesday" — see models/ColdLead.js refCode.
     ref:       { type: String, default: '', index: true },
+
+    /**
+     * Two-letter country resolved from the IP, once, when the preview was
+     * created — not looked up when the board is rendered.
+     *
+     * A geolocation call per row per page view would put an external service
+     * on the path of a screen that must load while somebody is dialling, and
+     * would keep paying for the same answer about the same visit. Resolution
+     * is also best-effort and non-blocking: a guest preview must never wait on
+     * it, so an empty string means "not resolved", never "unknown country".
+     */
+    country:     { type: String, default: '' },
+    countryName: { type: String, default: '' },
   },
 
   businessObjective: { type: String, required: true },

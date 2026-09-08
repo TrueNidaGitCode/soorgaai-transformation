@@ -43,6 +43,7 @@ import HostedDeployment from '../models/HostedDeployment.js';
 import UsageLedger from '../models/UsageLedger.js';
 import AccountPlan from '../models/AccountPlan.js';
 import ColdLead from '../models/ColdLead.js';
+import UserProfile from '../models/UserProfile.js';
 import { generate } from './llmService.js';
 
 const DAY = 86400000;
@@ -91,7 +92,7 @@ function objectiveKey(text) {
 // ── Collection ───────────────────────────────────────────────────────────────
 
 export async function collectSignals() {
-  const [users, blueprints, apps, deployments, ledgers, plans, leads] = await Promise.all([
+  const [users, blueprints, apps, deployments, ledgers, plans, leads, profiles] = await Promise.all([
     User.find({}).select('_id email name role createdAt').lean(),
     TransformationBlueprint.find({ archived: { $ne: true } })
       .select('_id userId guestId guestMeta businessObjective status createdAt opportunityApproval')
@@ -101,7 +102,14 @@ export async function collectSignals() {
     UsageLedger.find({}).select('userId scope calls costUsd byStage lastCallAt').lean(),
     AccountPlan.find({}).select('userId plan status currentPeriodEnd updatedAt').lean(),
     ColdLead.find({}).lean(),
+    // The organisation an account belongs to. Lives on the profile rather than
+    // the user, so an account with no profile yet simply has no organisation —
+    // which is a real state (signed up, never completed setup), not a gap.
+    UserProfile.find({}).select('userId orgName websiteUrl').lean(),
   ]);
+
+  const orgOf = new Map(profiles.map(p => [String(p.userId), p.orgName || '']));
+  const siteOf = new Map(profiles.map(p => [String(p.userId), p.websiteUrl || '']));
 
   const emailOf   = new Map(users.map(u => [String(u._id), u.email]));
   const bpById    = new Map(blueprints.map(b => [String(b._id), b]));
@@ -195,10 +203,17 @@ export async function collectSignals() {
         who: `guest:${String(b.guestId).slice(0, 8)}`,
         objective: b.businessObjective,
         ips: new Set(), userAgents: new Set(), referers: new Set(), refs: new Set(),
+        countries: new Set(),
+        // A guest sets no company on the blueprint today, so this is almost
+        // always empty. Read anyway rather than hard-coded blank: the day the
+        // preview asks for a company name, this row starts showing it.
+        org: b.companyName || '',
       });
     }
     const g = grouped.get(key);
     g.visits += 1;
+    if (b.guestMeta?.country) g.countries.add(b.guestMeta.country);
+    if (!g.org && b.companyName) g.org = b.companyName;
     if (b.status === 'completed') g.completed += 1;
     if (b.guestMeta?.ref) g.refs.add(b.guestMeta.ref);
     if (b.guestMeta?.ip) g.ips.add(b.guestMeta.ip);
@@ -225,6 +240,11 @@ export async function collectSignals() {
       // Said explicitly rather than left as an empty cell: a blank IP column
       // reads as "different visitor" when it actually means "not recorded".
       ipLabel: ips.length ? ips.join(', ') : 'not recorded',
+      countries: [...g.countries],
+      // Same rule as the IP: say "not recorded" rather than leaving a blank
+      // that reads like a fact. Country is resolved from the IP, so a visit
+      // predating IP capture can never have one.
+      countryLabel: g.countries.size ? [...g.countries].join(', ') : 'not recorded',
       userAgents: [...g.userAgents],
       referers: [...g.referers],
       note: g.visits > 1
@@ -247,10 +267,20 @@ export async function collectSignals() {
     const bps  = bpsByUser.get(uid) || [];
     const ledger = ledgerOf.get(uid);
 
+    // Country for an account is whatever their own guest previews recorded.
+    // A user who signed up directly never presented an IP we stored, so this
+    // is empty for most — which the screen must show as "not recorded".
+    const ownCountry = bps.map(b => b.guestMeta?.country).filter(Boolean)[0] || '';
+
     const base = {
       id: uid,
       email: u.email,
       name: u.name || '',
+      // From their profile. Blank means they never finished profile setup,
+      // which is itself worth seeing on a sales board.
+      org: orgOf.get(uid) || '',
+      website: siteOf.get(uid) || '',
+      country: ownCountry,
       signedUpAt: u.createdAt,
       blueprints: bps.length,
       spendUsd: ledger?.costUsd || 0,

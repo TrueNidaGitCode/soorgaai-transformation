@@ -1,0 +1,108 @@
+/**
+ * Svarg — Sales Signals screen
+ *
+ * Layered on admin.css + company-library.css (the .cl-table rules do the heavy
+ * lifting). Only what this screen adds lives here.
+ */
+
+/* ── Summary strip ─────────────────────────────────────────────────────────── */
+
+.sg-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.sg-stat {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+}
+
+.sg-stat__value { font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
+.sg-stat__label { font-size: 0.78rem; color: #6b7280; margin-top: 0.25rem; }
+
+/* The one bucket that means something is going wrong. */
+.sg-stat--risk .sg-stat__value { color: #b91c1c; }
+.sg-stat--good .sg-stat__value { color: #047857; }
+
+/* ── Ask ───────────────────────────────────────────────────────────────────── */
+
+.sg-ask { display: flex; gap: 0.6rem; margin-top: 0.75rem; }
+
+.sg-ask input {
+  flex: 1;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.sg-ask input:focus { outline: 2px solid #6366f1; outline-offset: -1px; border-color: transparent; }
+
+.sg-answer {
+  margin-top: 1rem;
+  padding: 1rem 1.15rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #6366f1;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
+.sg-answer--waiting { color: #6b7280; font-style: italic; }
+
+/* ── Sections ──────────────────────────────────────────────────────────────── */
+
+.sg-section { margin-bottom: 1.5rem; }
+
+.sg-section__stage {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.sg-section__count { color: #6b7280; font-weight: 400; }
+
+.sg-note { color: #6b7280; font-size: 0.85rem; }
+
+.sg-who { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }
+
+.sg-age { white-space: nowrap; color: #6b7280; font-size: 0.85rem; }
+
+/* A prospect who came back is the loudest row on the board. */
+.sg-visits {
+  display: inline-block;
+  min-width: 1.6rem;
+  text-align: center;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.sg-visits--repeat { background: #fef3c7; color: #92400e; }
+
+.sg-empty { color: #9ca3af; padding: 0.75rem 0; font-size: 0.9rem; }
+
+.sg-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0 3rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sg-stat { background: #1f2937; border-color: #374151; }
+  .sg-answer { background: #1f2937; border-color: #374151; border-left-color: #6366f1; }
+  .sg-ask input { background: #111827; border-color: #374151; color: #f9fafb; }
+}

@@ -20,6 +20,7 @@ import enterpriseBlueprintRoutes    from "./routes/enterpriseBlueprintRoutes.js"
 import companyResearchLibraryRoutes from "./routes/companyResearchLibraryRoutes.js";
 import industryVerticalKnowledgeRoutes from "./routes/industryVerticalKnowledgeRoutes.js";
 import industryCapabilityKnowledgeRoutes from "./routes/industryCapabilityKnowledgeRoutes.js";
+import salesSignalsRoutes from "./routes/salesSignalsRoutes.js";
 import feedbackRoutes               from "./routes/feedbackRoutes.js";
 import guestRoutes                  from "./routes/guestRoutes.js";
 import confluenceRoutes             from "./routes/confluenceRoutes.js";
@@ -147,6 +148,7 @@ app.use("/api/enterprise-blueprint", enterpriseBlueprintRoutes);
 app.use("/api/admin/company-library", companyResearchLibraryRoutes);
 app.use("/api/admin/industry-verticals", industryVerticalKnowledgeRoutes);
 app.use("/api/admin/industry-kb", industryCapabilityKnowledgeRoutes);
+app.use("/api/admin/sales-signals", salesSignalsRoutes);
 app.use("/api/admin/model-catalog", modelCatalogRoutes);
 app.use("/api/billing",              billingRoutes);
 app.use("/api/feedback",             feedbackRoutes);

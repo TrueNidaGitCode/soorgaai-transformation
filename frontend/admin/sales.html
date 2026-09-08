@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Signals - Svarg Admin</title>
+
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="company-library.css">
+    <link rel="stylesheet" href="sales.css?v=1">
+    <script src="../login/config.js"></script>
+</head>
+<body>
+    <header>
+        <div id="navbar-container"></div>
+    </header>
+
+    <main class="admin-dashboard">
+        <div class="dashboard-header">
+            <h1>Sales Signals</h1>
+            <p class="header-subtitle">Who to contact, and why, read from the records the product already writes. Nothing here is a CRM export or a projection — every row is a real blueprint, build, deployment or bill.</p>
+        </div>
+
+        <div id="sg-banner" class="cl-banner" style="display:none" role="alert"></div>
+
+        <!-- ── Summary ───────────────────────────────────────────────────────── -->
+        <div id="sg-summary" class="sg-summary" style="display:none"></div>
+
+        <!-- ── Ask ───────────────────────────────────────────────────────────── -->
+        <div class="admin-panel">
+            <div class="panel-header">
+                <h2>Ask about the board</h2>
+            </div>
+            <p class="field-hint">The model sees exactly the rows below and nothing else, so it cannot tell you something this page does not show. Guest rows are anonymous — there is no email behind them.</p>
+            <div class="sg-ask">
+                <input type="text" id="sg-question" placeholder="Who should I call today, and what do I open with?" autocomplete="off">
+                <button type="button" id="sg-ask-btn" class="cta-button">Ask</button>
+            </div>
+            <div id="sg-answer" class="sg-answer" style="display:none"></div>
+        </div>
+
+        <!-- ── Board ─────────────────────────────────────────────────────────── -->
+        <div id="sg-loading" class="loading-state">
+            <div class="spinner-large"></div>
+            <p>Reading signals…</p>
+        </div>
+
+        <div id="sg-board" style="display:none"></div>
+
+        <div class="sg-actions">
+            <button type="button" id="sg-refresh-btn" class="btn-secondary">Refresh</button>
+            <span id="sg-generated" class="field-hint"></span>
+        </div>
+    </main>
+
+    <script src="sales.js?v=1"></script>
+</body>
+</html>

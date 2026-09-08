@@ -165,9 +165,17 @@ export async function collectSignals() {
         nextSendAt:   l.sequence?.nextSendAt || null,
         stoppedReason: l.sequence?.stoppedReason || '',
       },
-      // Only failures are carried to the screen. A list of successful sends is
-      // just the counter again; a failed one is the thing you must act on.
-      lastError: [...(l.sends || [])].reverse().find(s => !s.ok)?.error || '',
+      // Only the LAST attempt, and only if it failed.
+      //
+      // This used to search the whole log for the most recent failure, so a
+      // lead that failed once and then sent perfectly well kept displaying
+      // "Failed: Brevo 401" for ever. Reporting a failure that has since been
+      // fixed is the same class of lie as reporting a success that never
+      // happened: the operator stops believing the column either way.
+      lastError: (() => {
+        const last = (l.sends || [])[(l.sends || []).length - 1];
+        return last && !last.ok ? last.error : '';
+      })(),
     }))
     .sort(byRecency);
 

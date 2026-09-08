@@ -469,7 +469,7 @@ export async function askBoard(board, question, history = []) {
 
 const LEAD_STATUSES = ['to-contact', 'contacted', 'replied', 'dead'];
 
-export async function addLead({ email, name, company, note, subject, body, addedByUserId }) {
+export async function addLead({ email, name, company, note, orgContext, subject, body, addedByUserId }) {
   const clean = String(email || '').trim().toLowerCase();
   if (!clean || !clean.includes('@')) throw new Error('A valid email is required.');
 
@@ -483,6 +483,12 @@ export async function addLead({ email, name, company, note, subject, body, added
         ...(name    !== undefined ? { name:    String(name).trim() }    : {}),
         ...(company !== undefined ? { company: String(company).trim() } : {}),
         ...(note    !== undefined ? { note:    String(note).trim() }    : {}),
+        // The organisation paragraph — the one field that is not generic, and
+        // for a while the one field this function quietly dropped. The
+        // controller passed it, the signature did not name it, and it went on
+        // the floor: the operator typed the only sentence worth reading and
+        // the email went out without it.
+        ...(orgContext !== undefined ? { orgContext: String(orgContext).slice(0, 4000) } : {}),
         // Written straight onto the sequence so one form can add the person
         // and the message together. `enabled` is untouched — adding a lead
         // never starts a sequence; sending is always an explicit press.

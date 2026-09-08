@@ -336,6 +336,38 @@ function renderStage() {
 
 // ── Outreach actions ─────────────────────────────────────────────────────────
 
+/**
+ * Push everything in one lead's composer to the server.
+ *
+ * One function for all three buttons — Save, Preview and Send now — because
+ * they each used to build their own payload and Send now's listed only
+ * subject and body. An organisation paragraph typed into the composer was
+ * therefore discarded on every send, and Preview, which reads back from the
+ * database, faithfully showed the empty value that had just been saved over
+ * the top of it. Two buttons disagreeing about which fields exist is the same
+ * failure as a guard living on one code path.
+ *
+ * Returns false when the composer is closed, so callers can tell "nothing to
+ * save" from "saved".
+ */
+async function saveComposer(id) {
+  const box = document.getElementById(`compose-${id}`);
+  if (!box) return false;
+  await api(`/leads/${id}/sequence`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      name:         box.querySelector('.sg-c-name').value,
+      orgContext:   box.querySelector('.sg-c-context').value,
+      subject:      box.querySelector('.sg-c-subject').value,
+      body:         box.querySelector('.sg-c-body').value,
+      intervalDays: Number(box.querySelector('.sg-c-interval').value),
+      maxSends:     Number(box.querySelector('.sg-c-max').value),
+      enabled:      box.querySelector('.sg-c-enabled').checked,
+    }),
+  });
+  return true;
+}
+
 function wireOutreach() {
   document.getElementById('sg-lead-add').addEventListener('click', () => addLead(false));
   document.getElementById('sg-lead-send').addEventListener('click', () => addLead(true));
@@ -393,6 +425,11 @@ function wireOutreach() {
     btn.addEventListener('click', async () => {
       btn.disabled = true;
       try {
+        // Save first. Preview reads back from the database, so without this it
+        // shows the stored value rather than what is on screen — which is how
+        // an organisation paragraph that had been typed but not saved looked
+        // exactly like one that had never been written.
+        await saveComposer(btn.dataset.preview);
         const p = await api(`/leads/${btn.dataset.preview}/preview`);
         // Shown exactly as it will arrive — the same fill() the real send uses,
         // so an unreplaced token is visible here rather than in an inbox.
@@ -442,15 +479,7 @@ function wireOutreach() {
       // Save whatever is on screen first, so Send never posts a stale draft.
       btn.disabled = true;
       try {
-        if (box) {
-          await api(`/leads/${id}/sequence`, {
-            method: 'PUT',
-            body: JSON.stringify({
-              subject: box.querySelector('.sg-c-subject').value,
-              body:    box.querySelector('.sg-c-body').value,
-            }),
-          });
-        }
+        await saveComposer(id);
         const r = await api(`/leads/${id}/send`, { method: 'POST', body: JSON.stringify({}) });
         // A refusal comes back 200 with sent:false — it is the guard working,
         // not an error, and the reason is the useful part.

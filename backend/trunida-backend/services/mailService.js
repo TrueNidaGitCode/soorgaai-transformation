@@ -1,5 +1,5 @@
 /**
- * SoorgaAI — Mail Service
+ * Svarg — Mail Service
  *
  * Two delivery paths, checked in order:
  *
@@ -48,12 +48,21 @@ export function describeMailConfig() {
   };
 }
 
+/**
+ * The name a recipient sees in their inbox list.
+ *
+ * Was hard-coded 'SoorgaAI', so every sign-in code and every cold email went
+ * out under the old company name months after the rename. Overridable so it
+ * never has to be a code change again.
+ */
+const SENDER_NAME = process.env.EMAIL_FROM_NAME || 'Svarg';
+
 // Sender: parse 'Name <addr>' out of EMAIL_FROM, fall back to EMAIL_USER
 function senderParts() {
   const raw = process.env.EMAIL_FROM || process.env.EMAIL_USER || '';
   const match = raw.match(/^(.*?)\s*<(.+)>$/);
-  if (match) return { name: match[1].trim() || 'SoorgaAI', email: match[2].trim() };
-  return { name: 'SoorgaAI', email: raw.trim() };
+  if (match) return { name: match[1].trim() || SENDER_NAME, email: match[2].trim() };
+  return { name: SENDER_NAME, email: raw.trim() };
 }
 
 const transporter = smtpConfigured
@@ -73,24 +82,24 @@ const transporter = smtpConfigured
     })
   : null;
 
-function otpSubject(code) { return `${code} is your SoorgaAI sign-in code`; }
+function otpSubject(code) { return `${code} is your Svarg sign-in code`; }
 
 function otpText(code) {
-  return `Your SoorgaAI sign-in code is: ${code}
+  return `Your Svarg sign-in code is: ${code}
 
 It expires in 10 minutes. If you didn't request this, you can ignore this email.`;
 }
 
 function otpHtml(code) {
   return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:420px;margin:0 auto;padding:24px">
-  <h2 style="margin:0 0 4px;color:#111">Soorga<span style="color:#5CC5A7">AI</span></h2>
+  <h2 style="margin:0 0 4px;color:#111">Svarg</h2>
   <p style="color:#444;font-size:14px">Use this code to sign in:</p>
   <p style="font-size:32px;font-weight:700;letter-spacing:6px;color:#111;margin:16px 0">${code}</p>
   <p style="color:#888;font-size:12.5px">The code expires in 10 minutes. If you didn't request it, you can safely ignore this email.</p>
 </div>`;
 }
 
-async function sendViaBrevo({ to, replyTo, subject, text, html }) {
+async function sendViaBrevo({ to, replyTo, subject, text, html, headers }) {
   const body = {
     sender:      senderParts(),
     to:          [{ email: to }],
@@ -99,6 +108,7 @@ async function sendViaBrevo({ to, replyTo, subject, text, html }) {
     htmlContent: html,
   };
   if (replyTo) body.replyTo = { email: replyTo };
+  if (headers && Object.keys(headers).length) body.headers = headers;
 
   const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -117,9 +127,10 @@ async function sendViaBrevo({ to, replyTo, subject, text, html }) {
   }
 }
 
-async function sendViaSmtp({ to, replyTo, subject, text, html }) {
+async function sendViaSmtp({ to, replyTo, subject, text, html, headers }) {
   await transporter.sendMail({
     from:    process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    headers,
     to,
     replyTo,
     subject,
@@ -131,7 +142,7 @@ async function sendViaSmtp({ to, replyTo, subject, text, html }) {
 // Generic send — both sendOtpEmail and sendContactFormEmail funnel through
 // this so the Brevo/SMTP branching and "not configured" fallback only
 // live in one place.
-async function sendMail({ to, replyTo, subject, text, html, logLabel }) {
+async function sendMail({ to, replyTo, subject, text, html, headers, logLabel }) {
   if (!mailConfigured) {
     console.log(`[mail] Not configured — ${logLabel || 'email'} for ${to} not sent`);
     return;
@@ -139,9 +150,9 @@ async function sendMail({ to, replyTo, subject, text, html, logLabel }) {
 
   try {
     if (BREVO_API_KEY) {
-      await sendViaBrevo({ to, replyTo, subject, text, html });
+      await sendViaBrevo({ to, replyTo, subject, text, html, headers });
     } else {
-      await sendViaSmtp({ to, replyTo, subject, text, html });
+      await sendViaSmtp({ to, replyTo, subject, text, html, headers });
     }
   } catch (err) {
     // Failure class in server logs: ETIMEDOUT/ESOCKET = egress blocked or
@@ -225,10 +236,24 @@ ${message}`;
  * operator would believe six emails went out and follow up on a conversation
  * that never started.
  */
-export async function sendOutreachEmail({ to, replyTo, subject, text, html }) {
+export async function sendOutreachEmail({ to, replyTo, subject, text, html, unsubscribeUrl }) {
   if (!mailConfigured) {
     throw new Error('Email is not configured on this server (BREVO_API_KEY missing).');
   }
-  await sendMail({ to, replyTo, subject, text, html, logLabel: 'Outreach send' });
+
+  // List-Unsubscribe is the difference between a filter seeing bulk mail with a
+  // machine-readable way out and bulk mail without one. Gmail and Yahoo require
+  // it from bulk senders, and it puts the native "Unsubscribe" control next to
+  // the sender name — which people click instead of "Report spam", and a spam
+  // complaint is the thing that actually damages a sending domain.
+  //
+  // One-Click (RFC 8058) needs List-Unsubscribe-Post alongside it, and the URL
+  // must accept an unauthenticated POST. Ours is a GET route, so the header
+  // pair is List-Unsubscribe only — a mail client will still offer the link.
+  const headers = unsubscribeUrl
+    ? { 'List-Unsubscribe': `<${unsubscribeUrl}>` }
+    : undefined;
+
+  await sendMail({ to, replyTo, subject, text, html, headers, logLabel: 'Outreach send' });
   return 'sent';
 }

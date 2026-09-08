@@ -168,6 +168,17 @@ export async function canSend(lead, { ignoreSchedule = false } = {}) {
 
 // ── Composing ────────────────────────────────────────────────────────────────
 
+/**
+ * Where a reply should land.
+ *
+ * Cold outreach that replies into an unmonitored address wastes the only
+ * outcome worth having, so this is configurable rather than left to whatever
+ * the sending address happens to be.
+ */
+function defaultReplyTo() {
+  return process.env.OUTREACH_REPLY_TO || '';
+}
+
 function compose(lead, replyTo) {
   const subject = fill(lead.sequence.subject, lead);
   const bodyText = fill(lead.sequence.body, lead);
@@ -186,7 +197,7 @@ function compose(lead, replyTo) {
   </p>` : ''}
 </div>`;
 
-  return { subject, text, html, replyTo };
+  return { subject, text, html, replyTo, unsubscribeUrl: unsub };
 }
 
 // ── Sending ──────────────────────────────────────────────────────────────────
@@ -220,7 +231,7 @@ export async function sendNext(leadId, { manual = false, replyTo = '' } = {}) {
     return { sent: false, reason: verdict.reason };
   }
 
-  const mail = compose(lead, replyTo);
+  const mail = compose(lead, replyTo || defaultReplyTo());
   let ok = false, error = '';
   try {
     await sendOutreachEmail({ to: lead.email, ...mail });

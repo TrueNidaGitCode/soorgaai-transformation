@@ -142,6 +142,21 @@ export async function collectSignals() {
       note: l.note || '',
       addedAt: l.createdAt,
       lastContactedAt: l.lastContactedAt,
+      unsubscribedAt: l.unsubscribedAt || null,
+      sequence: {
+        enabled:      !!l.sequence?.enabled,
+        subject:      l.sequence?.subject || '',
+        body:         l.sequence?.body || '',
+        intervalDays: l.sequence?.intervalDays ?? 7,
+        maxSends:     l.sequence?.maxSends ?? 6,
+        sentCount:    l.sequence?.sentCount || 0,
+        lastSentAt:   l.sequence?.lastSentAt || null,
+        nextSendAt:   l.sequence?.nextSendAt || null,
+        stoppedReason: l.sequence?.stoppedReason || '',
+      },
+      // Only failures are carried to the screen. A list of successful sends is
+      // just the counter again; a failed one is the thing you must act on.
+      lastError: [...(l.sends || [])].reverse().find(s => !s.ok)?.error || '',
     }))
     .sort(byRecency);
 

@@ -88,6 +88,54 @@ function renderTabs() {
 
 // ── Stages ───────────────────────────────────────────────────────────────────
 
+/** When the next follow-up goes out, said in words rather than a raw date. */
+function nextSendLabel(q) {
+  if (q.stoppedReason) return q.stoppedReason;
+  if (!q.enabled) return 'Paused';
+  if (!q.nextSendAt) return 'Not scheduled';
+  const ms = new Date(q.nextSendAt) - Date.now();
+  if (ms <= 0) return 'Due now';
+  const days = ms / 86400000;
+  return days < 1 ? `in ${Math.round(ms / 3600000)}h` : `in ${Math.round(days)}d`;
+}
+
+function leadRow(r) {
+  const q = r.sequence;
+  const done = q.sentCount >= q.maxSends;
+  return `<tr class="sg-leadrow">
+    <td><span class="sg-pill sg-pill--${esc(r.status)}">${esc(r.status)}</span></td>
+    <td class="sg-who">${esc(r.email)}${r.unsubscribedAt ? ' <span class="sg-unsub">unsubscribed</span>' : ''}</td>
+    <td>${esc(r.company)}</td>
+    <td class="sg-seq">
+      <span class="sg-sent ${done ? 'sg-sent--done' : ''}">${q.sentCount}/${q.maxSends}</span>
+      <span class="sg-note">every ${q.intervalDays}d</span>
+    </td>
+    <td class="sg-note ${q.stoppedReason || r.lastError ? 'sg-blocked' : ''}">
+      ${esc(r.lastError ? `Failed: ${clip(r.lastError, 70)}` : nextSendLabel(q))}
+    </td>
+    <td class="sg-rowactions">
+      <button type="button" class="sg-btn" data-compose="${esc(r.id)}">Compose</button>
+      <button type="button" class="sg-btn sg-btn--go" data-send="${esc(r.id)}"
+              ${r.unsubscribedAt ? 'disabled title="They unsubscribed"' : ''}>Send now</button>
+      <select data-lead="${esc(r.id)}" class="sg-status-select">
+        ${['to-contact', 'contacted', 'replied', 'dead'].map(v =>
+          `<option value="${v}" ${v === r.status ? 'selected' : ''}>${v}</option>`).join('')}
+      </select>
+      <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
+    </td>
+  </tr>
+  <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="6">
+    <input type="text" class="sg-c-subject" placeholder="Subject" value="${esc(q.subject)}">
+    <textarea class="sg-c-body" rows="7" placeholder="Your message. {{name}} and {{company}} are filled in; an unsubscribe line is appended automatically.">${esc(q.body)}</textarea>
+    <div class="sg-c-controls">
+      <label>Every <input type="number" class="sg-c-interval" min="2" max="90" value="${q.intervalDays}"> days</label>
+      <label>Stop after <input type="number" class="sg-c-max" min="1" max="6" value="${q.maxSends}"> emails</label>
+      <label class="sg-c-toggle"><input type="checkbox" class="sg-c-enabled" ${q.enabled ? 'checked' : ''}> Auto follow-up</label>
+      <button type="button" class="cta-button sg-c-save" data-save="${esc(r.id)}">Save</button>
+    </div>
+  </td></tr>`;
+}
+
 function renderOutreach(s) {
   const form = `
     <div class="sg-addlead">
@@ -96,26 +144,11 @@ function renderOutreach(s) {
       <input type="text"  id="sg-lead-note" placeholder="Note (optional)" autocomplete="off">
       <button type="button" id="sg-lead-add" class="cta-button">Add</button>
     </div>
-    <p class="field-hint">A lead disappears from this stage automatically when someone signs up with that email — it is detected, never ticked off by hand.</p>`;
+    <p class="field-hint">Add someone, press Compose to write the email, then Send now or switch on Auto follow-up. A lead leaves this stage automatically when they sign up — detected, never ticked off by hand. Follow-ups also stop on a reply, an unsubscribe, or when the count runs out.</p>`;
 
   const rows = table(
-    ['Status', 'Email', 'Company', 'Added', 'Last contacted', 'Note', ''],
-    s.outreach,
-    r => `<tr>
-      <td><span class="sg-pill sg-pill--${esc(r.status)}">${esc(r.status)}</span></td>
-      <td class="sg-who">${esc(r.email)}</td>
-      <td>${esc(r.company)}</td>
-      <td class="sg-age">${age(r.addedAt)}</td>
-      <td class="sg-age">${r.lastContactedAt ? age(r.lastContactedAt) : '—'}</td>
-      <td class="sg-note">${esc(clip(r.note, 60))}</td>
-      <td class="sg-rowactions">
-        <select data-lead="${esc(r.id)}" class="sg-status-select">
-          ${['to-contact', 'contacted', 'replied', 'dead'].map(v =>
-            `<option value="${v}" ${v === r.status ? 'selected' : ''}>${v}</option>`).join('')}
-        </select>
-        <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
-      </td>
-    </tr>`);
+    ['Status', 'Email', 'Company', 'Sent', 'Next', ''],
+    s.outreach, leadRow);
 
   const converted = s.converted.length
     ? `<div class="sg-converted"><strong>${s.converted.length} lead(s) have since signed up:</strong>
@@ -220,6 +253,64 @@ function wireOutreach() {
         await api(`/leads/${btn.dataset.del}`, { method: 'DELETE' });
         await load(state.tab);
       } catch (err) { banner(`Could not remove: ${err.message}`); }
+    });
+  });
+
+  document.querySelectorAll('[data-compose]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = document.getElementById(`compose-${btn.dataset.compose}`);
+      row.hidden = !row.hidden;
+    });
+  });
+
+  document.querySelectorAll('[data-save]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.save;
+      const box = document.getElementById(`compose-${id}`);
+      btn.disabled = true;
+      try {
+        await api(`/leads/${id}/sequence`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            subject:      box.querySelector('.sg-c-subject').value,
+            body:         box.querySelector('.sg-c-body').value,
+            intervalDays: Number(box.querySelector('.sg-c-interval').value),
+            maxSends:     Number(box.querySelector('.sg-c-max').value),
+            enabled:      box.querySelector('.sg-c-enabled').checked,
+          }),
+        });
+        banner('Saved.', false);
+        await load('outreach');
+      } catch (err) {
+        banner(`Could not save: ${err.message}`);
+      } finally { btn.disabled = false; }
+    });
+  });
+
+  document.querySelectorAll('[data-send]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.send;
+      const box = document.getElementById(`compose-${id}`);
+      // Save whatever is on screen first, so Send never posts a stale draft.
+      btn.disabled = true;
+      try {
+        if (box) {
+          await api(`/leads/${id}/sequence`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              subject: box.querySelector('.sg-c-subject').value,
+              body:    box.querySelector('.sg-c-body').value,
+            }),
+          });
+        }
+        const r = await api(`/leads/${id}/send`, { method: 'POST', body: JSON.stringify({}) });
+        // A refusal comes back 200 with sent:false — it is the guard working,
+        // not an error, and the reason is the useful part.
+        banner(r.sent ? `Sent (${r.sentCount} of the sequence).` : `Not sent — ${r.reason}`, !r.sent);
+        await load('outreach');
+      } catch (err) {
+        banner(`Could not send: ${err.message}`);
+      } finally { btn.disabled = false; }
     });
   });
 }

@@ -20,10 +20,20 @@ import {
   collectSignals, renderBoard, askBoard,
   addLead, updateLead, deleteLead,
 } from '../services/salesSignalsService.js';
+import { sendNext, setSequence, unsubscribeByToken } from '../services/outreachService.js';
+
+/** The unsubscribe page echoes a stored address back into HTML. */
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 function fail(res, err, fallback = 'Sales funnel operation failed.') {
   console.error('[salesSignals]', err);
   const msg = err?.message || '';
+  // An error that states its own status is trusted over guessing from wording.
+  if (err?.status) return res.status(err.status).json({ error: msg || fallback });
   if (/required|Unknown status|Nothing to update|valid email/i.test(msg)) return res.status(400).json({ error: msg });
   if (/not found/i.test(msg)) return res.status(404).json({ error: msg });
   return res.status(500).json({ error: fallback });
@@ -82,4 +92,46 @@ export async function removeLead(req, res) {
   } catch (err) {
     return fail(res, err, 'Could not delete the lead.');
   }
+}
+
+// ── Outreach sequences ───────────────────────────────────────────────────────
+
+export async function sendLeadNow(req, res) {
+  try {
+    const r = await sendNext(req.params.id, { manual: true, replyTo: req.body?.replyTo || '' });
+    // A refusal is a 200 with sent:false, not an error. "They unsubscribed" is
+    // the system working, and the screen needs to say so plainly.
+    return res.json(r);
+  } catch (err) {
+    return fail(res, err, 'Could not send.');
+  }
+}
+
+export async function putSequence(req, res) {
+  try {
+    const { subject, body, intervalDays, maxSends, enabled } = req.body || {};
+    const lead = await setSequence(req.params.id, { subject, body, intervalDays, maxSends, enabled });
+    return res.json({ lead });
+  } catch (err) {
+    return fail(res, err, 'Could not update the sequence.');
+  }
+}
+
+/** Public — no auth. The link in the footer of every outreach email. */
+export async function unsubscribe(req, res) {
+  const lead = await unsubscribeByToken(String(req.query.token || '')).catch(() => null);
+  const message = lead
+    ? `You will not receive any more email from Svarg at ${escapeHtml(lead.email)}.`
+    : 'That unsubscribe link is not valid. If you keep receiving email, reply and we will remove you by hand.';
+
+  res.status(lead ? 200 : 404).type('html').send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unsubscribed - Svarg</title></head>
+<body style="font-family:Arial,Helvetica,sans-serif;background:#0D0D0D;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+  <div style="max-width:420px;padding:32px;text-align:center">
+    <h1 style="font-size:20px;margin:0 0 12px">${lead ? 'Unsubscribed' : 'Link not valid'}</h1>
+    <p style="color:#ccc;font-size:15px;line-height:1.6;margin:0">${message}</p>
+  </div>
+</body></html>`);
 }

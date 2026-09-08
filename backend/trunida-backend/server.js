@@ -21,6 +21,8 @@ import companyResearchLibraryRoutes from "./routes/companyResearchLibraryRoutes.
 import industryVerticalKnowledgeRoutes from "./routes/industryVerticalKnowledgeRoutes.js";
 import industryCapabilityKnowledgeRoutes from "./routes/industryCapabilityKnowledgeRoutes.js";
 import salesSignalsRoutes from "./routes/salesSignalsRoutes.js";
+import outreachPublicRoutes from "./routes/outreachPublicRoutes.js";
+import { runOutreachSweep } from "./services/outreachService.js";
 import feedbackRoutes               from "./routes/feedbackRoutes.js";
 import guestRoutes                  from "./routes/guestRoutes.js";
 import confluenceRoutes             from "./routes/confluenceRoutes.js";
@@ -149,6 +151,8 @@ app.use("/api/admin/company-library", companyResearchLibraryRoutes);
 app.use("/api/admin/industry-verticals", industryVerticalKnowledgeRoutes);
 app.use("/api/admin/industry-kb", industryCapabilityKnowledgeRoutes);
 app.use("/api/admin/sales-signals", salesSignalsRoutes);
+// Public on purpose — the unsubscribe link is clicked by non-users.
+app.use("/api/outreach", outreachPublicRoutes);
 app.use("/api/admin/model-catalog", modelCatalogRoutes);
 app.use("/api/billing",              billingRoutes);
 app.use("/api/feedback",             feedbackRoutes);
@@ -415,6 +419,35 @@ async function reportLlmConfig() {
     }
 }
 
+/**
+ * Follow-up emails go out from a timer, not a request.
+ *
+ * Every fifteen minutes rather than once a day: a lead becomes due at an
+ * arbitrary moment, and a daily tick would send some follow-ups almost a full
+ * day late. The sweep itself is cheap — one indexed query that usually returns
+ * nothing — and it claims each lead before sending, so a slow run overlapping
+ * the next one cannot send the same email twice.
+ *
+ * Deliberately in-process. A separate worker would be the right answer at
+ * volume; at one sender and a handful of leads it would be another thing to
+ * deploy, and the failure mode of forgetting to deploy it is silent.
+ */
+const OUTREACH_SWEEP_MS = 15 * 60 * 1000;
+
+function startOutreachScheduler() {
+    if (process.env.OUTREACH_SWEEP_DISABLED === 'true') {
+        console.log('[outreach] scheduler disabled by OUTREACH_SWEEP_DISABLED');
+        return;
+    }
+    const tick = () => runOutreachSweep()
+        .catch(err => console.error('[outreach] sweep failed (non-fatal):', err.message));
+
+    // Not on the first tick: a restart loop would otherwise fire a sweep on
+    // every boot, and a crash-looping server must never become a send loop.
+    setInterval(tick, OUTREACH_SWEEP_MS).unref?.();
+    console.log(`[outreach] scheduler on, every ${OUTREACH_SWEEP_MS / 60000} min`);
+}
+
 // ✅ Connect to MongoDB, then start the server
 connectDB()
     .then(async () => {
@@ -425,6 +458,7 @@ connectDB()
         await reportMailConfig();
         console.log("🚀 Starting SoorgaAI Server...");
         app.listen(PORT, () => console.log(`🚀 SoorgaAI Server running on port ${PORT}`));
+        startOutreachScheduler();
     })
     .catch(error => {
         console.error("❌ Server startup failed:", error.message);

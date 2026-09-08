@@ -1,0 +1,322 @@
+/**
+ * Svarg — cold outreach sequences
+ *
+ * Sends the first email, then follows up on a cadence until the prospect does
+ * something that makes following up wrong.
+ *
+ * ── Every send passes the same gate ─────────────────────────────────────────
+ *
+ * canSend() is the only thing allowed to decide an email may go out, and both
+ * the manual "Send now" button and the background sweep call it. A guard that
+ * one path can skip is not a guard; the manual button is exactly the path
+ * somebody would exempt, and it is the one most likely to be pressed by
+ * accident on a lead who already unsubscribed.
+ *
+ * ── What can stop a sequence ────────────────────────────────────────────────
+ *
+ *   signed up      a User exists with this email — they are a customer now
+ *   replied        marked by hand; there is no inbox integration
+ *   unsubscribed   the recipient clicked the link
+ *   dead           marked by hand
+ *   max reached    sentCount hit maxSends
+ *
+ * Reaching Discovery is NOT among them and cannot be. A guest blueprint is
+ * anonymous — it carries no email — so there is no way to know the person you
+ * emailed is the person who generated it. Only signup is detectable.
+ *
+ * ── Why the interval has a floor ────────────────────────────────────────────
+ *
+ * MIN_INTERVAL_DAYS is enforced here rather than trusted from the request.
+ * Cold email to the same address more often than every few days is what gets a
+ * sending domain blocked by Brevo and by the mailbox providers, and that damage
+ * lands on every email Svarg sends — sign-in codes included. The cost of a
+ * follow-up going out a day late is nothing next to losing the domain.
+ */
+
+import crypto from 'crypto';
+import ColdLead from '../models/ColdLead.js';
+import { User } from '../models/user.js';
+import { sendOutreachEmail } from './mailService.js';
+
+/** Below this, a sequence stops being follow-up and starts being spam. */
+export const MIN_INTERVAL_DAYS = 2;
+export const MAX_SENDS_CAP = 6;
+
+/**
+ * A refusal the operator caused and can fix, as opposed to a server fault.
+ *
+ * Carries its own status so the controller never has to infer intent from the
+ * wording of a message — which is how "Follow-ups must be at least 2 days
+ * apart" first reached the screen as an unexplained 500.
+ */
+export class ValidationError extends Error {
+  constructor(message) { super(message); this.name = 'ValidationError'; this.status = 400; }
+}
+
+const DAY = 86400000;
+
+/** Where the unsubscribe link points. Must be the public API origin. */
+function publicBase() {
+  return (process.env.PUBLIC_API_URL || process.env.BACKEND_URL || '').replace(/\/+$/, '');
+}
+
+function unsubscribeUrl(lead) {
+  const base = publicBase();
+  return base ? `${base}/api/outreach/unsubscribe?token=${lead.unsubscribeToken}` : '';
+}
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/**
+ * Personalisation, kept to what we actually know. A token we cannot fill is
+ * replaced with nothing rather than left as {{name}} in a stranger's inbox.
+ */
+function fill(template, lead) {
+  return String(template || '')
+    .replace(/\{\{\s*name\s*\}\}/gi, lead.name || 'there')
+    .replace(/\{\{\s*company\s*\}\}/gi, lead.company || 'your team')
+    .replace(/\{\{\s*email\s*\}\}/gi, lead.email || '');
+}
+
+// ── The gate ─────────────────────────────────────────────────────────────────
+
+/**
+ * @returns {Promise<{ok: true} | {ok: false, reason: string}>}
+ */
+export async function canSend(lead, { ignoreSchedule = false } = {}) {
+  if (!lead) return { ok: false, reason: 'Lead not found.' };
+  if (lead.unsubscribedAt) return { ok: false, reason: 'They unsubscribed.' };
+  if (lead.status === 'dead') return { ok: false, reason: 'Marked dead.' };
+  if (lead.status === 'replied') return { ok: false, reason: 'They replied — follow-ups stop here.' };
+
+  // Refusing to send is the correct behaviour here, not a degraded one. Without
+  // a public base URL there is no working unsubscribe link, and cold email with
+  // a decorative opt-out is the kind of mistake that ends with the sending
+  // domain blocked and every sign-in code undeliverable.
+  if (!publicBase()) {
+    return { ok: false, reason: 'PUBLIC_API_URL is not set, so no unsubscribe link can be built. Refusing to send.' };
+  }
+
+  const seq = lead.sequence || {};
+  if (!seq.subject || !seq.body) return { ok: false, reason: 'No subject or message written yet.' };
+
+  const max = Math.min(seq.maxSends || MAX_SENDS_CAP, MAX_SENDS_CAP);
+  if ((seq.sentCount || 0) >= max) return { ok: false, reason: `All ${max} emails already sent.` };
+
+  // Checked live rather than trusted from the lead's status, so a signup that
+  // happened five minutes ago still stops the next follow-up.
+  const signedUp = await User.exists({ email: String(lead.email).toLowerCase() });
+  if (signedUp) return { ok: false, reason: 'They signed up — they are past outreach.' };
+
+  if (!ignoreSchedule) {
+    if (!seq.enabled) return { ok: false, reason: 'Sequence is paused.' };
+    if (seq.nextSendAt && new Date(seq.nextSendAt) > new Date()) {
+      return { ok: false, reason: `Not due until ${new Date(seq.nextSendAt).toISOString().slice(0, 10)}.` };
+    }
+    // A manual send resets the clock; this stops the sweep piling on top of it.
+    if (seq.lastSentAt && Date.now() - new Date(seq.lastSentAt).getTime() < MIN_INTERVAL_DAYS * DAY) {
+      return { ok: false, reason: 'Sent too recently.' };
+    }
+  }
+
+  return { ok: true };
+}
+
+// ── Composing ────────────────────────────────────────────────────────────────
+
+function compose(lead, replyTo) {
+  const subject = fill(lead.sequence.subject, lead);
+  const bodyText = fill(lead.sequence.body, lead);
+  const unsub = unsubscribeUrl(lead);
+
+  const text = unsub
+    ? `${bodyText}\n\n—\nNot interested? Unsubscribe: ${unsub}`
+    : bodyText;
+
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:16px;color:#222;font-size:15px;line-height:1.6">
+  <div style="white-space:pre-wrap">${escapeHtml(bodyText)}</div>
+  ${unsub ? `<hr style="border:none;border-top:1px solid #eee;margin:24px 0 12px">
+  <p style="color:#888;font-size:12px;margin:0">
+    You received this because we thought Svarg was relevant to your work.
+    <a href="${unsub}" style="color:#888">Unsubscribe</a> and we will not email you again.
+  </p>` : ''}
+</div>`;
+
+  return { subject, text, html, replyTo };
+}
+
+// ── Sending ──────────────────────────────────────────────────────────────────
+
+/**
+ * Send the next email for one lead.
+ *
+ * @param {string} leadId
+ * @param {{manual?: boolean, replyTo?: string}} opts
+ *   manual bypasses only the SCHEDULE, never the gate — see canSend.
+ */
+export async function sendNext(leadId, { manual = false, replyTo = '' } = {}) {
+  const lead = await ColdLead.findById(leadId);
+  if (!lead) throw new Error('Lead not found.');
+
+  if (!lead.unsubscribeToken) {
+    lead.unsubscribeToken = crypto.randomUUID();
+    await lead.save();
+  }
+
+  const verdict = await canSend(lead, { ignoreSchedule: manual });
+  if (!verdict.ok) {
+    // A blocked send is a normal outcome, not an exception: the sweep hits
+    // this constantly and the screen needs the reason, not a stack trace.
+    if (!manual) {
+      lead.sequence.enabled = false;
+      lead.sequence.nextSendAt = null;
+      lead.sequence.stoppedReason = verdict.reason;
+      await lead.save();
+    }
+    return { sent: false, reason: verdict.reason };
+  }
+
+  const mail = compose(lead, replyTo);
+  let ok = false, error = '';
+  try {
+    await sendOutreachEmail({ to: lead.email, ...mail });
+    ok = true;
+  } catch (err) {
+    error = err.message || String(err);
+  }
+
+  lead.sends.push({ at: new Date(), subject: mail.subject, ok, error, manual });
+
+  if (ok) {
+    const interval = Math.max(lead.sequence.intervalDays || 7, MIN_INTERVAL_DAYS);
+    const max = Math.min(lead.sequence.maxSends || MAX_SENDS_CAP, MAX_SENDS_CAP);
+    lead.sequence.sentCount = (lead.sequence.sentCount || 0) + 1;
+    lead.sequence.lastSentAt = new Date();
+
+    if (lead.sequence.sentCount >= max) {
+      lead.sequence.enabled = false;
+      lead.sequence.nextSendAt = null;
+      lead.sequence.stoppedReason = `All ${max} emails sent.`;
+    } else {
+      lead.sequence.nextSendAt = new Date(Date.now() + interval * DAY);
+      lead.sequence.stoppedReason = '';
+    }
+
+    if (lead.status === 'to-contact') lead.status = 'contacted';
+    lead.lastContactedAt = new Date();
+  } else {
+    // A failed send does not burn one of the six. It does back the schedule
+    // off, so a misconfigured key does not retry every fifteen minutes.
+    lead.sequence.nextSendAt = new Date(Date.now() + DAY);
+    lead.sequence.stoppedReason = `Last attempt failed: ${error.slice(0, 200)}`;
+  }
+
+  await lead.save();
+  return { sent: ok, reason: ok ? '' : error, sentCount: lead.sequence.sentCount };
+}
+
+// ── The sweep ────────────────────────────────────────────────────────────────
+
+/**
+ * Send every follow-up that is due.
+ *
+ * Claims each lead by clearing nextSendAt under a condition before sending, so
+ * two overlapping runs cannot both send the same email.
+ */
+export async function runOutreachSweep({ limit = 25 } = {}) {
+  const now = new Date();
+  const due = await ColdLead.find({
+    'sequence.enabled': true,
+    'sequence.nextSendAt': { $ne: null, $lte: now },
+    unsubscribedAt: null,
+  }).select('_id').limit(limit).lean();
+
+  const results = { due: due.length, sent: 0, skipped: 0, failed: 0 };
+
+  for (const { _id } of due) {
+    // Claim: only one run can flip nextSendAt away from a due value.
+    const claimed = await ColdLead.findOneAndUpdate(
+      { _id, 'sequence.nextSendAt': { $ne: null, $lte: now } },
+      { $set: { 'sequence.nextSendAt': null } },
+      { new: false }
+    );
+    if (!claimed) continue; // another run got it
+
+    try {
+      const r = await sendNext(String(_id));
+      if (r.sent) results.sent += 1; else results.skipped += 1;
+    } catch (err) {
+      results.failed += 1;
+      console.error(`[outreach] send failed for ${_id}:`, err.message);
+    }
+  }
+
+  if (results.due) console.log('[outreach] sweep', JSON.stringify(results));
+  return results;
+}
+
+// ── Unsubscribe ──────────────────────────────────────────────────────────────
+
+export async function unsubscribeByToken(token) {
+  if (!token) return null;
+  const lead = await ColdLead.findOneAndUpdate(
+    { unsubscribeToken: token },
+    {
+      $set: {
+        unsubscribedAt: new Date(),
+        status: 'dead',
+        'sequence.enabled': false,
+        'sequence.nextSendAt': null,
+        'sequence.stoppedReason': 'They unsubscribed.',
+      },
+    },
+    { new: true }
+  ).lean();
+  return lead;
+}
+
+// ── Sequence settings ────────────────────────────────────────────────────────
+
+export async function setSequence(leadId, { subject, body, intervalDays, maxSends, enabled }) {
+  const lead = await ColdLead.findById(leadId);
+  if (!lead) throw new Error('Lead not found.');
+  if (lead.unsubscribedAt && enabled) throw new ValidationError('They unsubscribed — a sequence cannot be restarted.');
+
+  if (subject !== undefined) lead.sequence.subject = String(subject).slice(0, 300);
+  if (body !== undefined)    lead.sequence.body    = String(body).slice(0, 10000);
+
+  if (intervalDays !== undefined) {
+    const n = Number(intervalDays);
+    if (!Number.isFinite(n)) throw new ValidationError('intervalDays must be a number.');
+    if (n < MIN_INTERVAL_DAYS) throw new ValidationError(`Follow-ups must be at least ${MIN_INTERVAL_DAYS} days apart.`);
+    lead.sequence.intervalDays = Math.round(n);
+  }
+
+  if (maxSends !== undefined) {
+    const n = Number(maxSends);
+    if (!Number.isFinite(n) || n < 1) throw new ValidationError('maxSends must be at least 1.');
+    if (n > MAX_SENDS_CAP) throw new ValidationError(`At most ${MAX_SENDS_CAP} emails per lead.`);
+    lead.sequence.maxSends = Math.round(n);
+  }
+
+  if (enabled !== undefined) {
+    lead.sequence.enabled = !!enabled;
+    if (enabled) {
+      if (!lead.sequence.subject || !lead.sequence.body) throw new ValidationError('Write a subject and a message first.');
+      lead.sequence.stoppedReason = '';
+      // Starting a sequence schedules the first email now rather than sending
+      // it inline, so turning it on never blocks the request on Brevo.
+      if (!lead.sequence.nextSendAt) lead.sequence.nextSendAt = new Date();
+    } else {
+      lead.sequence.nextSendAt = null;
+      lead.sequence.stoppedReason = 'Paused.';
+    }
+  }
+
+  await lead.save();
+  return lead.toObject();
+}

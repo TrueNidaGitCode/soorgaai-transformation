@@ -58,6 +58,64 @@ const coldLeadSchema = new mongoose.Schema({
     ref:  'User',
     default: null,
   },
+
+  /**
+   * The follow-up sequence.
+   *
+   * intervalDays and maxSends are per-lead rather than global constants
+   * because the right cadence is a judgement about one prospect, and a single
+   * hard-coded number is how a sensible follow-up becomes a complaint. The
+   * floor on intervalDays is enforced in outreachService, not here, so the
+   * limit lives next to the thing that could break the sending domain.
+   */
+  sequence: {
+    enabled:      { type: Boolean, default: false },
+    subject:      { type: String,  default: '' },
+    body:         { type: String,  default: '' },
+    intervalDays: { type: Number,  default: 7 },
+    maxSends:     { type: Number,  default: 6 },
+    sentCount:    { type: Number,  default: 0 },
+    lastSentAt:   { type: Date,    default: null },
+
+    /**
+     * When the sweep may next send. Null means "not scheduled".
+     *
+     * The sweep claims a lead by conditionally clearing this, so two overlapping
+     * runs cannot both send the same email — the cheap failure is a follow-up a
+     * day late, the expensive one is the same message twice in a minute.
+     */
+    nextSendAt:   { type: Date,    default: null, index: true },
+
+    /** Why the sequence stopped, in words, for the screen to show. */
+    stoppedReason: { type: String, default: '' },
+  },
+
+  /**
+   * Every attempt, successful or not.
+   *
+   * Kept on the document rather than inferred from sentCount because "did this
+   * person actually receive six emails" is the question you need answered when
+   * they complain, and a counter cannot answer it.
+   */
+  sends: {
+    type: [new mongoose.Schema({
+      at:      { type: Date,   default: Date.now },
+      subject: { type: String, default: '' },
+      ok:      { type: Boolean, default: false },
+      error:   { type: String, default: '' },
+      manual:  { type: Boolean, default: false },
+    }, { _id: false })],
+    default: [],
+  },
+
+  /**
+   * Opt-out. Set by the public unsubscribe link, never by an admin.
+   *
+   * A cold email without a working unsubscribe is not a product decision, it is
+   * a legal one, so this is checked before every send including a manual one.
+   */
+  unsubscribedAt: { type: Date, default: null },
+  unsubscribeToken: { type: String, default: '', index: true },
 }, { timestamps: true });
 
 export default mongoose.model('ColdLead', coldLeadSchema);

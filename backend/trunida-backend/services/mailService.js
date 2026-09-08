@@ -213,3 +213,22 @@ ${message}`;
     logLabel: 'Contact form send',
   });
 }
+
+/**
+ * Send an arbitrary message — used by outreach, which composes its own body.
+ *
+ * Exported deliberately narrow: it still funnels through sendMail, so the
+ * Brevo/SMTP branching and the "not configured" behaviour stay in one place.
+ * Unlike sendOtpEmail this THROWS when mail is unconfigured rather than
+ * logging and returning, because a cold-email sequence that silently sends
+ * nothing while incrementing its counters is worse than one that stops: the
+ * operator would believe six emails went out and follow up on a conversation
+ * that never started.
+ */
+export async function sendOutreachEmail({ to, replyTo, subject, text, html }) {
+  if (!mailConfigured) {
+    throw new Error('Email is not configured on this server (BREVO_API_KEY missing).');
+  }
+  await sendMail({ to, replyTo, subject, text, html, logLabel: 'Outreach send' });
+  return 'sent';
+}

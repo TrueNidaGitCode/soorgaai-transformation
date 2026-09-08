@@ -44,6 +44,7 @@ import UsageLedger from '../models/UsageLedger.js';
 import AccountPlan from '../models/AccountPlan.js';
 import ColdLead from '../models/ColdLead.js';
 import UserProfile from '../models/UserProfile.js';
+import { classify } from './accountKindService.js';
 import { generate } from './llmService.js';
 
 const DAY = 86400000;
@@ -93,7 +94,7 @@ function objectiveKey(text) {
 
 export async function collectSignals() {
   const [users, blueprints, apps, deployments, ledgers, plans, leads, profiles] = await Promise.all([
-    User.find({}).select('_id email name role createdAt').lean(),
+    User.find({}).select('_id email name role createdAt accountKind').lean(),
     TransformationBlueprint.find({ archived: { $ne: true } })
       .select('_id userId guestId guestMeta businessObjective status createdAt opportunityApproval')
       .lean(),
@@ -155,6 +156,9 @@ export async function collectSignals() {
       status: l.status || 'to-contact',
       note: l.note || '',
       orgContext: l.orgContext || '',
+      // Leads are classified by the same rules. A +svargtest address is a
+      // probe whether it is a lead or an account.
+      ...classify(l.email, {}),
       // Did the email actually do anything? A ref that shows up on a guest
       // blueprint is the only proof available, and it is the single most
       // useful fact about a cold lead.
@@ -281,6 +285,10 @@ export async function collectSignals() {
       org: orgOf.get(uid) || '',
       website: siteOf.get(uid) || '',
       country: ownCountry,
+      // Real prospect, one of ours, or a test row — see accountKindService.
+      // Carried on every row rather than filtered here: the screen decides
+      // what to show, and it has to be able to say what it is leaving out.
+      ...classify(u.email, u),
       signedUpAt: u.createdAt,
       blueprints: bps.length,
       spendUsd: ledger?.costUsd || 0,

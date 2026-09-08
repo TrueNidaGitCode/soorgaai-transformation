@@ -23,7 +23,25 @@ const TABS = [
   { key: 'sales',      label: 'Sales',      hint: 'On a paid plan.' },
 ];
 
-let state = { signals: null, mail: null, template: null, tab: 'outreach' };
+/**
+ * Which kinds of row to show. Real only, by default.
+ *
+ * A third of the accounts are test@example.com and Svarg's own addresses. A
+ * board you have to mentally filter every time you read it is one you stop
+ * reading — but the filter is a view, never a deletion, and the screen always
+ * says how many rows it is leaving out. A silent filter that hides a genuine
+ * customer would be far worse than the noise it removes.
+ */
+let state = { signals: null, mail: null, template: null, tab: 'outreach', kinds: new Set(['real']) };
+
+/** The rows of one stage, after the kind filter. */
+function visible(rows) {
+  return (rows || []).filter(r => !r.kind || state.kinds.has(r.kind));
+}
+
+function hiddenCount(rows) {
+  return (rows || []).length - visible(rows).length;
+}
 
 function authHeaders() {
   return { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' };
@@ -124,15 +142,41 @@ function table(cols, rows, row) {
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 
+const KIND_LABELS = { real: 'Real', internal: 'Internal', test: 'Test' };
+
+function renderKindFilter() {
+  const all = TABS.flatMap(t => state.signals[t.key] || []);
+  const totals = { real: 0, internal: 0, test: 0 };
+  for (const r of all) if (r.kind) totals[r.kind] = (totals[r.kind] || 0) + 1;
+
+  document.getElementById('sg-kinds').innerHTML =
+    `<span class="sg-kinds__label">Showing</span>` +
+    Object.keys(KIND_LABELS).map(k => `
+      <button type="button" data-kind="${k}"
+              class="sg-kind sg-kind--${k} ${state.kinds.has(k) ? 'sg-kind--on' : ''}">
+        ${esc(KIND_LABELS[k])} <span class="sg-kind__n">${totals[k] || 0}</span>
+      </button>`).join('');
+
+  document.querySelectorAll('.sg-kind').forEach(b => {
+    b.addEventListener('click', () => {
+      const k = b.dataset.kind;
+      // Never allow every kind to be switched off — an empty board looks
+      // exactly like a board with nothing in it.
+      if (state.kinds.has(k) && state.kinds.size === 1) return;
+      state.kinds.has(k) ? state.kinds.delete(k) : state.kinds.add(k);
+      renderKindFilter(); renderTabs(); renderStage();
+    });
+  });
+}
+
 function renderTabs() {
-  const c = state.signals.counts;
   document.getElementById('sg-tabs').innerHTML = TABS.map((t, i) => `
     <button type="button" role="tab" data-tab="${t.key}"
             class="sg-tab ${state.tab === t.key ? 'sg-tab--active' : ''}"
             aria-selected="${state.tab === t.key}">
       <span class="sg-tab__n">${i + 1}</span>
       <span class="sg-tab__label">${esc(t.label)}</span>
-      <span class="sg-tab__count">${c[t.key]}</span>
+      <span class="sg-tab__count">${visible(state.signals[t.key]).length}</span>
     </button>
   `).join('<span class="sg-tab__arrow">→</span>');
 
@@ -271,7 +315,7 @@ function renderOutreachBody(s) {
 
   const rows = table(
     ['Status', 'Email', 'Organisation', 'Country', 'Sent', 'Next', ''],
-    s.outreach, leadRow);
+    visible(s.outreach), leadRow);
 
   const converted = s.converted.length
     ? `<div class="sg-converted"><strong>${s.converted.length} lead(s) have since signed up:</strong>
@@ -284,7 +328,7 @@ function renderOutreachBody(s) {
 function renderDiscovery(s) {
   return table(
     ['Visits', 'Last seen', 'Guest', 'Organisation', 'Country', 'Objective', 'IP', 'What happened'],
-    s.discovery,
+    visible(s.discovery),
     r => `<tr>
       <td><span class="sg-visits ${r.visits > 1 ? 'sg-visits--repeat' : ''}">${r.visits}×</span></td>
       <td class="sg-age">${age(r.at)}</td>
@@ -301,10 +345,10 @@ function renderDiscovery(s) {
 function renderConversion(s) {
   return table(
     ['Age', 'Email', 'Organisation', 'Country', 'Objective', 'Blueprints', 'Where they stopped'],
-    s.conversion,
+    visible(s.conversion),
     r => `<tr>
       <td class="sg-age">${age(r.at)}</td>
-      <td class="sg-who">${emailCell(r)}</td>
+      <td class="sg-who">${emailCell(r)}${kindTag(r)}</td>
       <td>${esc(r.org) || orgBlank()}</td>
       <td>${countryCell(r.country)}</td>
       <td>${esc(clip(r.objective, 60))}</td>
@@ -316,7 +360,7 @@ function renderConversion(s) {
 function renderOnboarding(s) {
   return table(
     ['Last query', 'Email', 'Organisation', 'Country', 'Objective', 'Live apps', 'Usage'],
-    s.onboarding,
+    visible(s.onboarding),
     r => `<tr>
       <td class="sg-age">${age(r.at)}</td>
       <td class="sg-who">${emailCell(r)}</td>
@@ -331,7 +375,7 @@ function renderOnboarding(s) {
 function renderSales(s) {
   return table(
     ['Since', 'Email', 'Organisation', 'Country', 'Plan', 'Blueprints', 'Spend'],
-    s.sales,
+    visible(s.sales),
     r => `<tr>
       <td class="sg-age">${age(r.at)}</td>
       <td class="sg-who">${emailCell(r)}</td>
@@ -351,14 +395,17 @@ const RENDERERS = {
 function renderStage() {
   const tab = TABS.find(t => t.key === state.tab);
   const el = document.getElementById('sg-stage');
+  const hidden = hiddenCount(state.signals[state.tab]);
   el.innerHTML = `<div class="admin-panel sg-section">
     <div class="panel-header"><h2>${esc(tab.label)}</h2></div>
     <p class="field-hint">${esc(tab.hint)}</p>
+    ${hidden ? `<p class="sg-hidden-note">${hidden} row${hidden === 1 ? '' : 's'} hidden by the filter above.</p>` : ''}
     ${RENDERERS[state.tab](state.signals)}
   </div>`;
   el.style.display = 'block';
 
   if (state.tab === 'outreach') wireOutreach();
+  wireKindSelects();
 }
 
 // ── Outreach actions ─────────────────────────────────────────────────────────
@@ -669,6 +716,7 @@ async function load(keepTab) {
     state.mail = mail?.mail || null;
     state.template = tpl?.template || state.template;
     if (keepTab) state.tab = keepTab;
+    renderKindFilter();
     renderTabs();
     renderStage();
     document.getElementById('sg-generated').textContent =
@@ -715,3 +763,38 @@ document.addEventListener('DOMContentLoaded', () => {
   renderNole();
   load();
 });
+
+/**
+ * The classification, and a way to correct it.
+ *
+ * Shown on every account row rather than only the odd ones, because a guess
+ * the operator cannot see is a guess they cannot disagree with — and the
+ * heuristic is definitely wrong about some addresses. "guessed" is stated
+ * explicitly so a wrong one is obviously a guess rather than a fact.
+ */
+function kindTag(r) {
+  if (!r.kind) return '';
+  const title = esc(r.why || '');
+  return `<div class="sg-kindtag">
+    <select class="sg-kind-select" data-account="${esc(r.id)}" title="${title}">
+      ${['real', 'internal', 'test'].map(k =>
+        `<option value="${k}" ${k === r.kind ? 'selected' : ''}>${KIND_LABELS[k]}</option>`).join('')}
+      <option value="" ${r.inferred ? '' : 'selected'}>— infer —</option>
+    </select>
+    ${r.inferred ? '<span class="sg-guessed" title="' + title + '">guessed</span>' : ''}
+  </div>`;
+}
+
+/** Wired after every stage render, since the rows are rebuilt each time. */
+function wireKindSelects() {
+  document.querySelectorAll('.sg-kind-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      try {
+        await api(`/accounts/${sel.dataset.account}/kind`, {
+          method: 'PATCH', body: JSON.stringify({ kind: sel.value }),
+        });
+        await load(state.tab);
+      } catch (err) { banner(`Could not reclassify: ${err.message}`); }
+    });
+  });
+}

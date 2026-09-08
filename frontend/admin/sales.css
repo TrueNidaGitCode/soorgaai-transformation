@@ -653,3 +653,75 @@
   font-weight: 600;
   letter-spacing: 0.04em;
 }
+
+/* ── Real / Internal / Test filter ────────────────────────────────────────────
+   A view, never a deletion. Every stage says how many rows it is leaving out,
+   because a silent filter that hides a genuine customer is worse than noise. */
+
+.sg-kinds {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.sg-kinds__label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.4);
+  margin-right: 0.2rem;
+}
+
+.sg-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.sg-kind__n { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+.sg-kind--on { color: var(--text-primary, #FFFFFF); border-color: rgba(255, 255, 255, 0.4); }
+.sg-kind--real.sg-kind--on     { border-color: var(--accent-green, #5CC5A7); color: var(--accent-green, #5CC5A7); }
+.sg-kind--internal.sg-kind--on { border-color: #93c5fd; color: #93c5fd; }
+.sg-kind--test.sg-kind--on     { border-color: #fbbf24; color: #fbbf24; }
+
+.sg-hidden-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* ── Per-row classification ─────────────────────────────────────────────── */
+
+.sg-kindtag { display: flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem; }
+
+.sg-kind-select {
+  padding: 0.1rem 0.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.65);
+  font-family: var(--font-primary, inherit);
+  font-size: 0.72rem;
+}
+
+.sg-kind-select option { background: #1a1a1a; color: #fff; }
+
+/* A guess must never read as a fact. */
+.sg-guessed {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.3);
+}

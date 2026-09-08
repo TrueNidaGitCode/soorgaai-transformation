@@ -203,3 +203,34 @@ export async function mailStatus(req, res) {
     return fail(res, err, 'Could not read the mail configuration.');
   }
 }
+
+/**
+ * Reclassify an account: real, internal, test — or '' to go back to inferring.
+ *
+ * Needed because no heuristic can know that a gmail address belongs to the
+ * founder, or that a colleague's address at a former employer is not a
+ * prospect. The inference proposes; this decides.
+ */
+export async function setAccountKind(req, res) {
+  const kind = String(req.body?.kind ?? '').trim().toLowerCase();
+  if (kind !== '' && !KINDS.includes(kind)) {
+    return res.status(400).json({ error: `kind must be one of ${KINDS.join(', ')} — or empty to infer it.` });
+  }
+  try {
+    const u = await User.findByIdAndUpdate(
+      req.params.id, { $set: { accountKind: kind } }, { new: true }
+    ).select('email accountKind').lean();
+    if (!u) return res.status(404).json({ error: 'Account not found.' });
+    auditKind(req.user._id, u.email, kind);
+    return res.json({ email: u.email, accountKind: u.accountKind });
+  } catch (err) {
+    return fail(res, err, 'Could not reclassify the account.');
+  }
+}
+
+function auditKind(byUserId, email, kind) {
+  console.log(JSON.stringify({
+    audit: 'AccountKind', action: 'SET', by: String(byUserId),
+    email, kind: kind || '(inferred)', ts: new Date().toISOString(),
+  }));
+}

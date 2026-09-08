@@ -1,19 +1,29 @@
 /**
- * Svarg — Sales Signals (platform admin only)
+ * Svarg — Sales Funnel (platform admin only)
  *
- * Renders the board built by services/salesSignalsService.js. The same service
- * backs scripts/sales_agent.mjs, so this screen and the terminal can never show
- * different numbers.
+ * Five tabs in funnel order. The board comes from
+ * services/salesSignalsService.js, which also backs scripts/sales_agent.mjs,
+ * so this screen and the terminal can never show different numbers.
  *
- * The ask box does NOT send the board up with the question — the server rebuilds
- * it. A client that could supply the board could supply the facts, and the whole
- * value of this screen is that a row can be trusted while dialling.
+ * The ask box does NOT send the board up with the question — the server
+ * rebuilds it. A client that could supply the board could supply the facts.
  *
- * Client-side role guard only — the backend independently enforces adminOnly on
- * every /api/admin/sales-signals/* route.
+ * Client-side role guard only — the backend independently enforces adminOnly
+ * on every /api/admin/sales-signals/* route.
  */
 
 const API_BASE = window.CONFIG.API_BASE;
+
+/** Order matters: this is the funnel. */
+const TABS = [
+  { key: 'outreach',   label: 'Outreach',   hint: 'Cold emails you are working — the only stage typed in by hand.' },
+  { key: 'discovery',  label: 'Discovery',  hint: 'Anonymous guests who generated a blueprint. No email exists for these — the IP is the only way to tell one company returning from several visitors.' },
+  { key: 'conversion', label: 'Conversion', hint: 'Signed up, nothing live yet. The blocker is the useful part.' },
+  { key: 'onboarding', label: 'Onboarding', hint: 'Running a live application.' },
+  { key: 'sales',      label: 'Sales',      hint: 'On a paid plan.' },
+];
+
+let state = { signals: null, tab: 'outreach' };
 
 function authHeaders() {
   return { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' };
@@ -38,8 +48,6 @@ function banner(message, isError = true) {
   el.style.display = 'block';
 }
 
-// ── Formatting ───────────────────────────────────────────────────────────────
-
 function age(iso) {
   if (!iso) return '—';
   const d = (Date.now() - new Date(iso).getTime()) / 86400000;
@@ -51,128 +59,191 @@ function clip(s, n) {
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
 
-// ── Rendering ────────────────────────────────────────────────────────────────
-
-function stat(value, label, tone = '') {
-  return `<div class="sg-stat ${tone}">
-    <div class="sg-stat__value">${value}</div>
-    <div class="sg-stat__label">${esc(label)}</div>
-  </div>`;
+function table(cols, rows, row) {
+  if (!rows.length) return '<div class="sg-empty">Nothing at this stage right now.</div>';
+  return `<table class="cl-table">
+    <thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(row).join('')}</tbody>
+  </table>`;
 }
 
-function renderSummary(s) {
-  document.getElementById('sg-summary').innerHTML = [
-    stat(s.outreach.length, 'Unclaimed blueprints'),
-    stat(s.conversion.length, 'Approved, not built'),
-    stat(s.onboarding.length, 'Built, not live'),
-    stat(s.quiet.length, 'Live but quiet', s.quiet.length ? 'sg-stat--risk' : ''),
-    stat(s.active.length, 'Live and used', 'sg-stat--good'),
-  ].join('');
-  document.getElementById('sg-summary').style.display = 'grid';
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+
+function renderTabs() {
+  const c = state.signals.counts;
+  document.getElementById('sg-tabs').innerHTML = TABS.map((t, i) => `
+    <button type="button" role="tab" data-tab="${t.key}"
+            class="sg-tab ${state.tab === t.key ? 'sg-tab--active' : ''}"
+            aria-selected="${state.tab === t.key}">
+      <span class="sg-tab__n">${i + 1}</span>
+      <span class="sg-tab__label">${esc(t.label)}</span>
+      <span class="sg-tab__count">${c[t.key]}</span>
+    </button>
+  `).join('<span class="sg-tab__arrow">→</span>');
+
+  document.querySelectorAll('.sg-tab').forEach(b => {
+    b.addEventListener('click', () => { state.tab = b.dataset.tab; renderTabs(); renderStage(); });
+  });
 }
 
-/**
- * One section. `cols` are header labels; `row` returns the <td> cells.
- */
-function section(title, stage, rows, cols, row) {
-  const body = rows.length
-    ? `<table class="cl-table">
-         <thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead>
-         <tbody>${rows.map(row).join('')}</tbody>
-       </table>`
-    : '<div class="sg-empty">Nothing here right now.</div>';
+// ── Stages ───────────────────────────────────────────────────────────────────
 
-  return `<div class="admin-panel sg-section">
-    <div class="panel-header">
-      <h2>${esc(title)} <span class="sg-section__count">· ${rows.length}</span></h2>
-      <div class="sg-section__stage">${esc(stage)}</div>
+function renderOutreach(s) {
+  const form = `
+    <div class="sg-addlead">
+      <input type="email" id="sg-lead-email" placeholder="email@company.com" autocomplete="off">
+      <input type="text"  id="sg-lead-company" placeholder="Company (optional)" autocomplete="off">
+      <input type="text"  id="sg-lead-note" placeholder="Note (optional)" autocomplete="off">
+      <button type="button" id="sg-lead-add" class="cta-button">Add</button>
     </div>
-    ${body}
+    <p class="field-hint">A lead disappears from this stage automatically when someone signs up with that email — it is detected, never ticked off by hand.</p>`;
+
+  const rows = table(
+    ['Status', 'Email', 'Company', 'Added', 'Last contacted', 'Note', ''],
+    s.outreach,
+    r => `<tr>
+      <td><span class="sg-pill sg-pill--${esc(r.status)}">${esc(r.status)}</span></td>
+      <td class="sg-who">${esc(r.email)}</td>
+      <td>${esc(r.company)}</td>
+      <td class="sg-age">${age(r.addedAt)}</td>
+      <td class="sg-age">${r.lastContactedAt ? age(r.lastContactedAt) : '—'}</td>
+      <td class="sg-note">${esc(clip(r.note, 60))}</td>
+      <td class="sg-rowactions">
+        <select data-lead="${esc(r.id)}" class="sg-status-select">
+          ${['to-contact', 'contacted', 'replied', 'dead'].map(v =>
+            `<option value="${v}" ${v === r.status ? 'selected' : ''}>${v}</option>`).join('')}
+        </select>
+        <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
+      </td>
+    </tr>`);
+
+  const converted = s.converted.length
+    ? `<div class="sg-converted"><strong>${s.converted.length} lead(s) have since signed up:</strong>
+        ${s.converted.map(c => esc(c.email)).join(', ')}</div>`
+    : '';
+
+  return form + rows + converted;
+}
+
+function renderDiscovery(s) {
+  return table(
+    ['Visits', 'Last seen', 'Guest', 'Objective', 'IP', 'What happened'],
+    s.discovery,
+    r => `<tr>
+      <td><span class="sg-visits ${r.visits > 1 ? 'sg-visits--repeat' : ''}">${r.visits}×</span></td>
+      <td class="sg-age">${age(r.at)}</td>
+      <td class="sg-who">${esc(r.who)}</td>
+      <td>${esc(clip(r.objective, 80))}</td>
+      <td class="sg-who ${r.ips.length ? '' : 'sg-unknown'}">${esc(r.ipLabel)}</td>
+      <td class="sg-note">${esc(r.note)}</td>
+    </tr>`);
+}
+
+function renderConversion(s) {
+  return table(
+    ['Age', 'Email', 'Objective', 'Blueprints', 'Where they stopped'],
+    s.conversion,
+    r => `<tr>
+      <td class="sg-age">${age(r.at)}</td>
+      <td class="sg-who">${esc(r.email)}</td>
+      <td>${esc(clip(r.objective, 60))}</td>
+      <td>${r.blueprints}</td>
+      <td class="sg-note ${r.blocker ? 'sg-blocked' : ''}">${esc(r.note)}</td>
+    </tr>`);
+}
+
+function renderOnboarding(s) {
+  return table(
+    ['Last query', 'Email', 'Objective', 'Live apps', 'Usage'],
+    s.onboarding,
+    r => `<tr>
+      <td class="sg-age">${age(r.at)}</td>
+      <td class="sg-who">${esc(r.email)}</td>
+      <td>${esc(clip(r.objective, 60))}</td>
+      <td>${r.liveCount}</td>
+      <td class="sg-note ${r.quiet ? 'sg-blocked' : ''}">${esc(r.note)}</td>
+    </tr>`);
+}
+
+function renderSales(s) {
+  return table(
+    ['Since', 'Email', 'Plan', 'Blueprints', 'Spend'],
+    s.sales,
+    r => `<tr>
+      <td class="sg-age">${age(r.at)}</td>
+      <td class="sg-who">${esc(r.email)}</td>
+      <td><span class="sg-pill sg-pill--paid">${esc(r.note)}</span></td>
+      <td>${r.blueprints}</td>
+      <td>$${(r.spendUsd || 0).toFixed(4)}</td>
+    </tr>`);
+}
+
+const RENDERERS = {
+  outreach: renderOutreach, discovery: renderDiscovery, conversion: renderConversion,
+  onboarding: renderOnboarding, sales: renderSales,
+};
+
+function renderStage() {
+  const tab = TABS.find(t => t.key === state.tab);
+  const el = document.getElementById('sg-stage');
+  el.innerHTML = `<div class="admin-panel sg-section">
+    <div class="panel-header"><h2>${esc(tab.label)}</h2></div>
+    <p class="field-hint">${esc(tab.hint)}</p>
+    ${RENDERERS[state.tab](state.signals)}
   </div>`;
+  el.style.display = 'block';
+
+  if (state.tab === 'outreach') wireOutreach();
 }
 
-function renderBoard(s) {
-  const html = [
-    section('Unclaimed blueprints', 'Outreach — proven demand, no way to contact them',
-      s.outreach, ['Visits', 'Last seen', 'Who', 'Objective', 'What happened'],
-      r => `<tr>
-        <td><span class="sg-visits ${r.visits > 1 ? 'sg-visits--repeat' : ''}">${r.visits}×</span></td>
-        <td class="sg-age">${age(r.at)}</td>
-        <td class="sg-who">${esc(r.who)}</td>
-        <td>${esc(clip(r.objective, 90))}</td>
-        <td class="sg-note">${esc(r.note)}</td>
-      </tr>`),
+// ── Outreach actions ─────────────────────────────────────────────────────────
 
-    section('Approved, not built', 'Conversion — the decision is made, something after it stopped them',
-      s.conversion, ['Age', 'Who', 'Objective', 'What happened'],
-      r => `<tr>
-        <td class="sg-age">${age(r.at)}</td>
-        <td class="sg-who">${esc(r.who)}</td>
-        <td>${esc(clip(r.objective, 90))}</td>
-        <td class="sg-note">${esc(r.note)}</td>
-      </tr>`),
+function wireOutreach() {
+  document.getElementById('sg-lead-add').addEventListener('click', addLead);
+  document.getElementById('sg-lead-email').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addLead();
+  });
 
-    section('Built, not live', 'Onboarding — the work is done and delivering nothing',
-      s.onboarding, ['Age', 'Who', 'Application', 'What happened'],
-      r => `<tr>
-        <td class="sg-age">${age(r.at)}</td>
-        <td class="sg-who">${esc(r.who)}</td>
-        <td>${esc(clip(r.objective, 90))}</td>
-        <td class="sg-note">${esc(r.note)}</td>
-      </tr>`),
+  document.querySelectorAll('.sg-status-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      try {
+        await api(`/leads/${sel.dataset.lead}`, { method: 'PATCH', body: JSON.stringify({ status: sel.value }) });
+        await load(state.tab);
+      } catch (err) { banner(`Could not update: ${err.message}`); }
+    });
+  });
 
-    section('Live but quiet', 'Post-sales — the earliest churn evidence you get',
-      s.quiet, ['Age', 'Who', 'Objective', 'What happened'],
-      r => `<tr>
-        <td class="sg-age">${age(r.at)}</td>
-        <td class="sg-who">${esc(r.who)}</td>
-        <td>${esc(clip(r.objective, 90))}</td>
-        <td class="sg-note">${esc(r.note)}</td>
-      </tr>`),
-
-    section('Live and used', 'Post-sales — value realised',
-      s.active, ['Last query', 'Who', 'Objective', 'Usage'],
-      r => `<tr>
-        <td class="sg-age">${age(r.at)}</td>
-        <td class="sg-who">${esc(r.who)}</td>
-        <td>${esc(clip(r.objective, 90))}</td>
-        <td class="sg-note">${esc(r.note)}</td>
-      </tr>`),
-
-    section('Depth of use', 'Expansion — where the spend actually goes',
-      s.expansion, ['Spend', 'Who', 'Calls', 'By stage'],
-      r => `<tr>
-        <td>$${(r.costUsd || 0).toFixed(4)}</td>
-        <td class="sg-who">${esc(r.who)}</td>
-        <td>${r.calls}</td>
-        <td class="sg-note">${esc(r.note)}</td>
-      </tr>`),
-  ].join('');
-
-  const board = document.getElementById('sg-board');
-  board.innerHTML = html;
-  board.style.display = 'block';
+  document.querySelectorAll('.sg-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Remove this lead?')) return;
+      try {
+        await api(`/leads/${btn.dataset.del}`, { method: 'DELETE' });
+        await load(state.tab);
+      } catch (err) { banner(`Could not remove: ${err.message}`); }
+    });
+  });
 }
 
-// ── Loading ──────────────────────────────────────────────────────────────────
+async function addLead() {
+  const email   = document.getElementById('sg-lead-email').value.trim();
+  const company = document.getElementById('sg-lead-company').value.trim();
+  const note    = document.getElementById('sg-lead-note').value.trim();
+  if (!email) return;
 
-async function load() {
-  document.getElementById('sg-loading').style.display = 'block';
-  document.getElementById('sg-board').style.display = 'none';
-  banner('');
-
+  const btn = document.getElementById('sg-lead-add');
+  btn.disabled = true;
   try {
-    const { signals } = await api('');
-    renderSummary(signals);
-    renderBoard(signals);
-    document.getElementById('sg-generated').textContent =
-      `Read at ${new Date(signals.generatedAt).toLocaleTimeString()}`;
+    await api('/leads', { method: 'POST', body: JSON.stringify({ email, company, note }) });
+    banner('');
+    await load('outreach');
   } catch (err) {
-    banner(`Could not load the board: ${err.message}`);
+    banner(`Could not add the lead: ${err.message}`);
   } finally {
-    document.getElementById('sg-loading').style.display = 'none';
+    btn.disabled = false;
   }
 }
+
+// ── Ask ──────────────────────────────────────────────────────────────────────
 
 async function handleAsk() {
   const input = document.getElementById('sg-question');
@@ -184,7 +255,7 @@ async function handleAsk() {
   btn.disabled = true;
   out.style.display = 'block';
   out.className = 'sg-answer sg-answer--waiting';
-  out.textContent = 'Reading the board…';
+  out.textContent = 'Reading the funnel…';
 
   try {
     const { answer } = await api('/ask', { method: 'POST', body: JSON.stringify({ question }) });
@@ -195,6 +266,27 @@ async function handleAsk() {
     out.textContent = `Could not answer: ${err.message}`;
   } finally {
     btn.disabled = false;
+  }
+}
+
+// ── Loading ──────────────────────────────────────────────────────────────────
+
+async function load(keepTab) {
+  document.getElementById('sg-loading').style.display = 'block';
+  document.getElementById('sg-stage').style.display = 'none';
+
+  try {
+    const { signals } = await api('');
+    state.signals = signals;
+    if (keepTab) state.tab = keepTab;
+    renderTabs();
+    renderStage();
+    document.getElementById('sg-generated').textContent =
+      `Read at ${new Date(signals.generatedAt).toLocaleTimeString()}`;
+  } catch (err) {
+    banner(`Could not load the funnel: ${err.message}`);
+  } finally {
+    document.getElementById('sg-loading').style.display = 'none';
   }
 }
 
@@ -213,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sg-question').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleAsk();
   });
-  document.getElementById('sg-refresh-btn').addEventListener('click', load);
+  document.getElementById('sg-refresh-btn').addEventListener('click', () => load(state.tab));
 
   load();
 });

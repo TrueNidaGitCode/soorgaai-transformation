@@ -1,108 +1,232 @@
 /**
- * Svarg — Sales Signals screen
+ * Svarg — Sales Funnel screen
  *
  * Layered on admin.css + company-library.css (the .cl-table rules do the heavy
  * lifting). Only what this screen adds lives here.
+ *
+ * Dark unconditionally, using style.css's tokens — --bg-dark, --accent-green,
+ * --text-primary. NOT behind prefers-color-scheme: the app is dark whatever
+ * the operating system says, so a light default would render white controls on
+ * a black page for anyone whose OS is set to light. Inputs copy admin.css's
+ * .form-group treatment (translucent white fill, green border) so this screen
+ * is not the one place fields look different.
  */
 
-/* ── Summary strip ─────────────────────────────────────────────────────────── */
+/* ── Funnel tabs ───────────────────────────────────────────────────────────── */
 
-.sg-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 0.75rem;
+.sg-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
   margin-bottom: 1.5rem;
 }
 
-.sg-stat {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 0.9rem 1rem;
-}
-
-.sg-stat__value { font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
-.sg-stat__label { font-size: 0.78rem; color: #6b7280; margin-top: 0.25rem; }
-
-/* The one bucket that means something is going wrong. */
-.sg-stat--risk .sg-stat__value { color: #b91c1c; }
-.sg-stat--good .sg-stat__value { color: #047857; }
-
-/* ── Ask ───────────────────────────────────────────────────────────────────── */
-
-.sg-ask { display: flex; gap: 0.6rem; margin-top: 0.75rem; }
-
-.sg-ask input {
-  flex: 1;
-  padding: 0.65rem 0.85rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.95rem;
+.sg-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.95rem;
+  border: 2px solid rgba(92, 197, 167, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
   font-family: inherit;
-}
-
-.sg-ask input:focus { outline: 2px solid #6366f1; outline-offset: -1px; border-color: transparent; }
-
-.sg-answer {
-  margin-top: 1rem;
-  padding: 1rem 1.15rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-left: 3px solid #6366f1;
-  border-radius: 6px;
-  white-space: pre-wrap;
-  line-height: 1.55;
   font-size: 0.92rem;
+  color: var(--text-secondary, #CCCCCC);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
-.sg-answer--waiting { color: #6b7280; font-style: italic; }
+.sg-tab:hover {
+  border-color: rgba(92, 197, 167, 0.5);
+  color: var(--text-primary, #FFFFFF);
+}
 
-/* ── Sections ──────────────────────────────────────────────────────────────── */
-
-.sg-section { margin-bottom: 1.5rem; }
-
-.sg-section__stage {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #6b7280;
+.sg-tab--active {
+  border-color: var(--accent-green, #5CC5A7);
+  background: rgba(92, 197, 167, 0.12);
+  color: var(--text-primary, #FFFFFF);
   font-weight: 600;
 }
 
-.sg-section__count { color: #6b7280; font-weight: 400; }
+.sg-tab__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary, #CCCCCC);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
 
-.sg-note { color: #6b7280; font-size: 0.85rem; }
+.sg-tab--active .sg-tab__n {
+  background: var(--accent-green, #5CC5A7);
+  color: #0D0D0D;
+}
 
-.sg-who { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }
+.sg-tab__count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--text-primary, #FFFFFF);
+}
 
-.sg-age { white-space: nowrap; color: #6b7280; font-size: 0.85rem; }
+.sg-tab--active .sg-tab__count { color: var(--accent-green, #5CC5A7); }
+
+.sg-tab__arrow { color: rgba(255, 255, 255, 0.25); font-size: 0.85rem; }
+
+/* ── Inputs — same treatment as admin.css .form-group ──────────────────────── */
+
+.sg-addlead {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 0.5rem;
+}
+
+.sg-addlead input,
+.sg-ask input,
+.sg-status-select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(92, 197, 167, 0.2);
+  border-radius: 12px;
+  color: var(--text-primary, #FFFFFF);
+  font-family: inherit;
+}
+
+.sg-addlead input {
+  flex: 1;
+  min-width: 170px;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+}
+
+.sg-addlead input::placeholder,
+.sg-ask input::placeholder { color: rgba(255, 255, 255, 0.35); }
+
+.sg-addlead input:focus,
+.sg-ask input:focus,
+.sg-status-select:focus {
+  outline: none;
+  border-color: var(--accent-green, #5CC5A7);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 4px rgba(92, 197, 167, 0.1);
+}
+
+.sg-rowactions { white-space: nowrap; }
+
+.sg-status-select {
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border-width: 1px;
+  font-size: 0.8rem;
+}
+
+/* The dropdown list itself is painted by the OS, not the page. */
+.sg-status-select option { background: #1a1a1a; color: #fff; }
+
+.sg-del {
+  margin-left: 0.45rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+}
+
+.sg-del:hover { color: #fca5a5; background: rgba(220, 38, 38, 0.15); }
+
+.sg-converted {
+  margin-top: 1.25rem;
+  padding: 0.85rem 1.1rem;
+  background: rgba(92, 197, 167, 0.1);
+  border: 1px solid rgba(92, 197, 167, 0.35);
+  border-radius: 12px;
+  font-size: 0.88rem;
+  color: var(--accent-green, #5CC5A7);
+}
+
+/* ── Pills ─────────────────────────────────────────────────────────────────── */
+
+.sg-pill {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary, #CCCCCC);
+}
+
+.sg-pill--contacted { background: rgba(96, 165, 250, 0.18); color: #93c5fd; }
+.sg-pill--replied   { background: rgba(92, 197, 167, 0.18); color: #5CC5A7; }
+.sg-pill--dead      { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.35); }
+.sg-pill--paid      { background: rgba(92, 197, 167, 0.18); color: #5CC5A7; }
 
 /* A prospect who came back is the loudest row on the board. */
 .sg-visits {
   display: inline-block;
-  min-width: 1.6rem;
+  min-width: 1.7rem;
   text-align: center;
-  padding: 0.1rem 0.35rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
-  background: #eef2ff;
-  color: #4338ca;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary, #CCCCCC);
 }
 
-.sg-visits--repeat { background: #fef3c7; color: #92400e; }
+.sg-visits--repeat { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
 
-.sg-empty { color: #9ca3af; padding: 0.75rem 0; font-size: 0.9rem; }
+/* ── Cells ─────────────────────────────────────────────────────────────────── */
+
+.sg-note { color: var(--text-secondary, #CCCCCC); font-size: 0.85rem; }
+.sg-who  { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }
+.sg-age  { white-space: nowrap; color: rgba(255, 255, 255, 0.5); font-size: 0.85rem; }
+
+/* "not recorded" must not read like a value. */
+.sg-unknown { color: rgba(255, 255, 255, 0.3); font-style: italic; }
+
+/* Where someone is stuck, or an account going quiet. */
+.sg-blocked { color: #fca5a5; }
+
+.sg-empty { color: rgba(255, 255, 255, 0.4); padding: 1rem 0; font-size: 0.9rem; }
+
+/* ── Ask ───────────────────────────────────────────────────────────────────── */
+
+.sg-ask { display: flex; gap: 0.7rem; margin-top: 1rem; }
+
+.sg-ask input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-size: 0.98rem;
+}
+
+.sg-answer {
+  margin-top: 1.25rem;
+  padding: 1.1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--accent-green, #5CC5A7);
+  border-radius: 12px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 0.92rem;
+  color: var(--text-primary, #FFFFFF);
+}
+
+.sg-answer--waiting { color: rgba(255, 255, 255, 0.5); font-style: italic; }
+
+.sg-section { margin-bottom: 1.5rem; }
 
 .sg-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
   margin: 1.5rem 0 3rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  .sg-stat { background: #1f2937; border-color: #374151; }
-  .sg-answer { background: #1f2937; border-color: #374151; border-left-color: #6366f1; }
-  .sg-ask input { background: #111827; border-color: #374151; color: #f9fafb; }
 }

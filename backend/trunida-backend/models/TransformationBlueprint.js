@@ -329,6 +329,29 @@ const transformationBlueprintSchema = new mongoose.Schema({
     index:  true,
     sparse: true,
   },
+
+  /**
+   * Where an anonymous preview came from.
+   *
+   * A guest blueprint is the strongest demand signal the product produces and
+   * the only one with no way to contact the person. The IP does not give you
+   * an email, but it does tell you when four separate guestIds are one
+   * company coming back — which is the difference between six weak leads and
+   * one strong one.
+   *
+   * req.ip is already correct here: server.js sets trust proxy for Railway,
+   * and guestController reads the same value for rate limiting. Captured only
+   * for guest previews; a signed-in user is identified by their account.
+   *
+   * Blueprints created before this field existed have no guestMeta and never
+   * will — every reader must treat a missing ip as unknown, not as a match.
+   */
+  guestMeta: {
+    ip:        { type: String, default: '' },
+    userAgent: { type: String, default: '' },
+    referer:   { type: String, default: '' },
+  },
+
   businessObjective: { type: String, required: true },
   industry:          { type: String, default: 'Automotive' },
   companyName:       { type: String, default: '' },

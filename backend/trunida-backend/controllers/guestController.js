@@ -80,6 +80,14 @@ export async function startGuestGeneration(req, res) {
 
     const blueprint = await TransformationBlueprint.create({
       guestId,
+      // Same req.ip the rate limiter above already trusts. Stored so the
+      // Discovery board can tell one company returning from several
+      // unrelated visitors — see models/TransformationBlueprint.js guestMeta.
+      guestMeta: {
+        ip:        req.ip || '',
+        userAgent: String(req.get('user-agent') || '').slice(0, 300),
+        referer:   String(req.get('referer') || '').slice(0, 300),
+      },
       businessObjective: objective,
       industry: 'Automotive',
       companyName: '',

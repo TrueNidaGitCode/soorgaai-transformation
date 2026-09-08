@@ -41,10 +41,20 @@ export const mailConfigured = !!BREVO_API_KEY || smtpConfigured;
  * the difference between "email is down" and "email was never turned on".
  */
 export function describeMailConfig() {
+  const parts = senderParts();
   return {
     transport: BREVO_API_KEY ? 'brevo' : (smtpConfigured ? 'smtp' : 'none'),
-    sender: senderParts().email || '',
+    sender: parts.email || '',
+    senderName: parts.name || '',
+    // The domain is the whole deliverability story — mail sent as
+    // @something.brevosend.com is on the provider's shared domain and will be
+    // filtered, however well the rest is configured. Split out so a screen can
+    // say that without the reader having to parse an address.
+    senderDomain: (parts.email || '').split('@')[1] || '',
+    replyTo: process.env.OUTREACH_REPLY_TO || '',
     configured: mailConfigured,
+    // No secrets: whether a key exists, never any part of it.
+    keyPresent: !!BREVO_API_KEY,
   };
 }
 

@@ -371,3 +371,21 @@ export async function setSequence(leadId, { subject, body, intervalDays, maxSend
   await lead.save();
   return lead.toObject();
 }
+
+/**
+ * Whether outreach could send right now, and what would stop it.
+ *
+ * Separate from canSend because that answers "may this lead be emailed"; this
+ * answers "is the machinery wired up at all", which is the question during a
+ * provider migration.
+ */
+export function outreachReadiness() {
+  const base = publicBase();
+  return {
+    unsubscribeBase: base,
+    canBuildUnsubscribeLink: !!base,
+    minIntervalDays: MIN_INTERVAL_DAYS,
+    maxSends: MAX_SENDS_CAP,
+    schedulerDisabled: process.env.OUTREACH_SWEEP_DISABLED === 'true',
+  };
+}

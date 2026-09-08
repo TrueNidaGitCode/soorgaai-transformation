@@ -145,3 +145,23 @@ export async function unsubscribe(req, res) {
   </div>
 </body></html>`);
 }
+
+/**
+ * What mail is actually configured, so a key swap can be checked without a
+ * deploy and without sending anything.
+ *
+ * Reports no secret — whether a key exists, never any part of it. The sending
+ * DOMAIN is the field that matters: mail leaving on a provider's shared domain
+ * is filtered however good the rest of the setup is, and until this endpoint
+ * existed there was no way to see that from outside the container logs.
+ */
+export async function mailStatus(req, res) {
+  try {
+    const { describeMailConfig } = await import('../services/mailService.js');
+    const cfg = describeMailConfig();
+    const { outreachReadiness } = await import('../services/outreachService.js');
+    return res.json({ mail: cfg, outreach: outreachReadiness() });
+  } catch (err) {
+    return fail(res, err, 'Could not read the mail configuration.');
+  }
+}

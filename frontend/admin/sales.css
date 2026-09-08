@@ -515,3 +515,20 @@
   font-size: 0.74rem;
   color: rgba(251, 191, 36, 0.85);
 }
+
+/* ── Mail configuration state ─────────────────────────────────────────────────
+   Said above the compose box, not after a failed send. The sending domain is
+   the part that decides inbox or spam, and it is otherwise invisible here. */
+
+.sg-mailstate {
+  margin: 0 0 1rem;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  border: 1px solid;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.sg-mailstate--ok   { background: rgba(92, 197, 167, 0.1);  border-color: rgba(92, 197, 167, 0.35); color: #5CC5A7; }
+.sg-mailstate--warn { background: rgba(251, 191, 36, 0.1);  border-color: rgba(251, 191, 36, 0.35); color: #fbbf24; }
+.sg-mailstate--bad  { background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.35); color: #FCA5A5; }

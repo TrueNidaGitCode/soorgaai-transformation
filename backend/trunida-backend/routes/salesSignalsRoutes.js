@@ -2,7 +2,7 @@ import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { adminOnly } from '../middleware/adminMiddleware.js';
 import {
-  getBoard, ask, createLead, patchLead, removeLead,
+  getBoard, ask, createLead, patchLead, removeLead, mailStatus,
   sendLeadNow, putSequence,
 } from '../controllers/salesSignalsController.js';
 
@@ -10,6 +10,7 @@ const router = express.Router();
 
 // Platform-admin-only. This board names customers, objectives, IPs and spend.
 router.get('/',                    protect, adminOnly, getBoard);
+router.get('/mail-status',         protect, adminOnly, mailStatus);
 router.post('/ask',                protect, adminOnly, ask);
 router.post('/leads',              protect, adminOnly, createLead);
 router.patch('/leads/:id',         protect, adminOnly, patchLead);

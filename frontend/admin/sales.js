@@ -23,7 +23,7 @@ const TABS = [
   { key: 'sales',      label: 'Sales',      hint: 'On a paid plan.' },
 ];
 
-let state = { signals: null, tab: 'outreach' };
+let state = { signals: null, mail: null, tab: 'outreach' };
 
 function authHeaders() {
   return { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' };
@@ -153,7 +153,39 @@ function leadRow(r) {
   </td></tr>`;
 }
 
+/**
+ * What mail is configured, said before the compose box rather than after a
+ * failed send.
+ *
+ * The sending domain is the headline: on a provider's shared domain
+ * (…brevosend.com, …sendgrid.net) mail is filtered however good the rest of
+ * the setup is, and that is invisible from the compose form.
+ */
+function mailBanner(m) {
+  if (!m) return '';
+  if (!m.configured) {
+    return `<div class="sg-mailstate sg-mailstate--bad">
+      No email provider is configured — nothing can send, including sign-in codes.
+      Set BREVO_API_KEY on the server.</div>`;
+  }
+  const shared = /brevosend\.com|sendgrid\.net|sendinblue/i.test(m.senderDomain || '');
+  const noSender = !m.sender;
+  const cls = (shared || noSender) ? 'sg-mailstate--warn' : 'sg-mailstate--ok';
+  const detail = noSender
+    ? 'No sender address is set (EMAIL_FROM), so the provider picks one — usually on its own shared domain, which lands in spam.'
+    : shared
+      ? `Sending as <strong>${esc(m.sender)}</strong> on the provider's shared domain. Authenticate svargai.com and set EMAIL_FROM, or expect spam.`
+      : `Sending as <strong>${esc(m.senderName)} &lt;${esc(m.sender)}&gt;</strong>${m.replyTo ? `, replies to ${esc(m.replyTo)}` : ''}.`;
+  return `<div class="sg-mailstate ${cls}">${detail}</div>`;
+}
+
 function renderOutreach(s) {
+  const form = `
+    ${mailBanner(state.mail)}`;
+  return form + renderOutreachBody(s);
+}
+
+function renderOutreachBody(s) {
   const form = `
     <div class="sg-addlead">
       <input type="email" id="sg-lead-email" placeholder="email@company.com" autocomplete="off">
@@ -461,8 +493,14 @@ async function load(keepTab) {
   document.getElementById('sg-stage').style.display = 'none';
 
   try {
-    const { signals } = await api('');
+    const [{ signals }, mail] = await Promise.all([
+      api(''),
+      // Never fatal: a funnel you can read is worth more than a banner about
+      // mail configuration, so this failing must not blank the screen.
+      api('/mail-status').catch(() => null),
+    ]);
     state.signals = signals;
+    state.mail = mail?.mail || null;
     if (keepTab) state.tab = keepTab;
     renderTabs();
     renderStage();

@@ -19,6 +19,7 @@ import {
   approveCapability,
   discardCapabilityDraft,
   triggerGeneration,
+  ensureIndustryCoverage,
 } from '../services/industryCapabilityKnowledgeService.js';
 
 function auditLog(action, userId, extra = {}) {
@@ -43,6 +44,32 @@ export async function listEntries(req, res) {
   try {
     const entries = await listIndustryEntries();
     return res.json({ entries });
+  } catch (err) {
+    return handleServiceError(res, err);
+  }
+}
+
+/**
+ * Create the shell for an industry the platform does not cover yet.
+ *
+ * Until this existed, an industry could only appear as a side effect of adding
+ * a company to the Company Research Library — so covering a market you had not
+ * sold into yet meant inventing a company in it. ensureIndustryCoverage is
+ * unchanged and still does not fire generation: this creates a 'pending' entry
+ * and an admin decides when to spend the ~16 web-search-grounded calls.
+ *
+ * Naming an industry that already exists returns the existing entry rather than
+ * erroring, so the button is safe to press twice.
+ */
+export async function createEntry(req, res) {
+  const industry = String(req.body?.industry || '').trim();
+  if (!industry) return res.status(400).json({ error: 'An industry name is required.' });
+  if (industry.length > 80) return res.status(400).json({ error: 'That industry name is too long.' });
+
+  try {
+    const entry = await ensureIndustryCoverage(industry, req.user._id);
+    auditLog('CREATE', req.user._id, { industry, industryKnowledgeId: String(entry._id) });
+    return res.status(201).json({ entry });
   } catch (err) {
     return handleServiceError(res, err);
   }

@@ -3,6 +3,7 @@ import { protect } from '../middleware/authMiddleware.js';
 import { adminOnly } from '../middleware/adminMiddleware.js';
 import {
   listEntries,
+  createEntry,
   getEntry,
   streamGenerationProgress,
   generate,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 // Platform-admin-only.
 router.get('/',                                          protect, adminOnly, listEntries);
+router.post('/',                                          protect, adminOnly, createEntry);
 router.get('/:id',                                        protect, adminOnly, getEntry);
 router.get('/:id/stream',                                 protect, adminOnly, streamGenerationProgress);
 router.post('/:id/generate',                              protect, adminOnly, generate);

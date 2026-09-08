@@ -19,7 +19,7 @@
     <main class="admin-dashboard">
         <div class="dashboard-header">
             <h1>Industry KB</h1>
-            <p class="header-subtitle">Auto-generated Industry-overlay KB coverage for industries with no hand-authored KB files yet. Created automatically the first time a company in a new industry is added to the Company Research Library — review and approve each capability below before it's used in real generation.</p>
+            <p class="header-subtitle">Auto-generated Industry-overlay KB coverage for industries with no hand-authored KB files yet. Created automatically the first time a company in a new industry is added to the Company Research Library, or added directly below for a market you haven't sold into yet — review and approve each capability before it's used in real generation.</p>
         </div>
 
         <div id="ik-banner" class="cl-banner" style="display:none" role="alert"></div>
@@ -30,6 +30,12 @@
                 <div class="panel-header">
                     <h2>All Industries</h2>
                 </div>
+
+                <div class="ik-add">
+                    <input type="text" id="ik-new-industry" placeholder="Add an industry, e.g. Logistics" autocomplete="off" maxlength="80">
+                    <button type="button" id="ik-add-btn" class="btn-secondary">Add Industry</button>
+                </div>
+                <p class="field-hint">Creates the coverage shell only. Nothing is generated and nothing is spent until you open it and press Generate Industry KB.</p>
                 <div id="ik-list-loading" class="loading-state">
                     <div class="spinner-large"></div>
                     <p>Loading…</p>

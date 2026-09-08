@@ -5,8 +5,12 @@
  * created automatically by industryCapabilityKnowledgeService.js's
  * ensureIndustryCoverage() the first time a company in a new industry is
  * added to the Company Research Library (see company-library.js's
- * renderIndustryKbIndicator). No manual "create" here — entries only ever
- * come from that automatic flow.
+ * renderIndustryKbIndicator), or created here directly. The manual path exists
+ * because the automatic one could only cover an industry you had already sold
+ * into — covering a market ahead of the first customer meant inventing a
+ * company in it. Both paths call ensureIndustryCoverage, which creates a
+ * 'pending' shell and never fires the (real, non-trivial cost) generation
+ * batch; that stays an explicit decision.
  *
  * Unlike company-library.js/industry-verticals.js, each capability here
  * holds ONE whole generated markdown document (draft or published), not a
@@ -433,6 +437,34 @@ async function connectProgressStream(industryKnowledgeId) {
   }
 }
 
+// ── Create ─────────────────────────────────────────────────────────────────
+
+/**
+ * Add coverage for an industry nobody has sold into yet.
+ *
+ * Naming one that already exists is not an error — the server returns the
+ * existing entry — so the worst outcome of a double press is seeing the row
+ * you already had.
+ */
+async function handleCreate() {
+  const input = document.getElementById('ik-new-industry');
+  const btn   = document.getElementById('ik-add-btn');
+  const industry = input.value.trim();
+  if (!industry) return;
+
+  btn.disabled = true;
+  try {
+    const { entry } = await api('', { method: 'POST', body: JSON.stringify({ industry }) });
+    input.value = '';
+    showBanner(`"${entry.industry}" added. Open it to generate the KB when you're ready.`, 'success');
+    await loadList();
+  } catch (err) {
+    showBanner(`Could not add the industry: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -446,6 +478,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('ik-back-btn').addEventListener('click', showListView);
   document.getElementById('ik-generate-btn').addEventListener('click', handleGenerate);
+  document.getElementById('ik-add-btn').addEventListener('click', handleCreate);
+  document.getElementById('ik-new-industry').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleCreate();
+  });
 
   const id = new URLSearchParams(window.location.search).get('id');
   if (id) {

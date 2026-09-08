@@ -299,3 +299,33 @@
   transition: width 0.4s ease;
   width: 0%;
 }
+
+/* ── Industry KB: add an industry ─────────────────────────────────────────── */
+/* Manual coverage for a market not yet sold into — see industry-kb.js's
+   handleCreate. Sits directly under the All Industries panel header. */
+
+.ik-add {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0.75rem 0 0.35rem;
+}
+
+.ik-add input {
+  flex: 1;
+  max-width: 380px;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  font-family: inherit;
+}
+
+.ik-add input:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: -1px;
+  border-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ik-add input { background: #111827; border-color: #374151; color: #f9fafb; }
+}

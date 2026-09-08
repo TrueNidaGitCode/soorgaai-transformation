@@ -35,6 +35,11 @@ function outreachRef() {
     try { return localStorage.getItem(OUTREACH_REF_KEY) || ''; } catch { return ''; }
 }
 
+/** Called once the ref has been spent on a generation. See the call site. */
+function clearOutreachRef() {
+    try { localStorage.removeItem(OUTREACH_REF_KEY); } catch { /* nothing to do */ }
+}
+
 captureOutreachRef();
 
 // New users have no UserProfile yet — detour through profile setup once,
@@ -578,6 +583,11 @@ export function wireHeroPrompt() {
                 }
                 const { guestId } = await resp.json();
                 localStorage.setItem('soorgaai_guest_id', guestId);
+                // Spent. A ref belongs to one prospect and one visit; left in
+                // place it would keep crediting every later preview from this
+                // browser to the same cold email, which is worse than no
+                // attribution because it reads as a result.
+                clearOutreachRef();
             }
 
             // Straight into the blueprint view — it renders live, filling in

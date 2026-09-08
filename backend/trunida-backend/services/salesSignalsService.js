@@ -346,9 +346,9 @@ export function renderBoard(s) {
 // ── The agent ────────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT =
-`You are a sales analyst for Svarg, an AI transformation platform. You are given
-a live five-stage funnel read from Svarg's own database, and you answer the
-operator's question about it while they are actively selling.
+`You are Nole, the sales analyst for Svarg, an AI transformation platform. You
+are given a live five-stage funnel read from Svarg's own database, and you
+answer the operator's question about it while they are actively selling.
 
 The stages are Outreach (cold emails, typed in by hand), Discovery (anonymous
 guests who generated a blueprint), Conversion (signed up), Onboarding (running
@@ -369,12 +369,35 @@ Rules:
   many times they came back.
 - If the board does not support an answer, say what is missing. Never invent a
   row, a name, a number, or a date.
-- Be brief. The operator is between calls.`;
+- Be brief. The operator is between calls.
 
-export async function askBoard(board, question) {
+Write in PLAIN TEXT. The chat panel renders your reply literally, so markdown
+does not become formatting — it becomes visible punctuation. No asterisks for
+bold, no backticks around addresses, no # headings, no markdown tables. Use
+short paragraphs, and a plain "- " where you need a list.`;
+
+/**
+ * @param {string} board renderBoard() output — the only evidence the model gets.
+ * @param {string} question
+ * @param {Array<{role: string, text: string}>} history
+ *   Earlier turns, so "what about the second one" means something. Replayed as
+ *   plain text rather than provider message roles because generate() takes a
+ *   single user message, and because the board — not the transcript — has to
+ *   stay the authority on facts.
+ */
+export async function askBoard(board, question, history = []) {
+  const transcript = history
+    .slice(-8) // enough for a follow-up to make sense, short enough to stay cheap
+    .map(t => `${t.role === 'user' ? 'Operator' : 'Nole'}: ${String(t.text).slice(0, 1500)}`)
+    .join('\n');
+
+  const userMessage = transcript
+    ? `${board}\n\n---\nEarlier in this conversation:\n${transcript}\n\n---\nOperator: ${question}`
+    : `${board}\n\n---\nOperator: ${question}`;
+
   const { text } = await generate({
     systemPrompt: SYSTEM_PROMPT,
-    userMessage: `${board}\n\n---\nQuestion: ${question}`,
+    userMessage,
     label: 'sales-agent',
     maxTokens: 1200,
   });
@@ -385,7 +408,7 @@ export async function askBoard(board, question) {
 
 const LEAD_STATUSES = ['to-contact', 'contacted', 'replied', 'dead'];
 
-export async function addLead({ email, name, company, note, addedByUserId }) {
+export async function addLead({ email, name, company, note, subject, body, addedByUserId }) {
   const clean = String(email || '').trim().toLowerCase();
   if (!clean || !clean.includes('@')) throw new Error('A valid email is required.');
 
@@ -399,6 +422,11 @@ export async function addLead({ email, name, company, note, addedByUserId }) {
         ...(name    !== undefined ? { name:    String(name).trim() }    : {}),
         ...(company !== undefined ? { company: String(company).trim() } : {}),
         ...(note    !== undefined ? { note:    String(note).trim() }    : {}),
+        // Written straight onto the sequence so one form can add the person
+        // and the message together. `enabled` is untouched — adding a lead
+        // never starts a sequence; sending is always an explicit press.
+        ...(subject !== undefined ? { 'sequence.subject': String(subject).slice(0, 300) }   : {}),
+        ...(body    !== undefined ? { 'sequence.body':    String(body).slice(0, 10000) }    : {}),
       },
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }

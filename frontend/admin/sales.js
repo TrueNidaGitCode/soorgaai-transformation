@@ -141,10 +141,18 @@ function renderOutreach(s) {
     <div class="sg-addlead">
       <input type="email" id="sg-lead-email" placeholder="email@company.com" autocomplete="off">
       <input type="text"  id="sg-lead-company" placeholder="Company (optional)" autocomplete="off">
-      <input type="text"  id="sg-lead-note" placeholder="Note (optional)" autocomplete="off">
-      <button type="button" id="sg-lead-add" class="cta-button">Add</button>
+      <input type="text"  id="sg-lead-note" placeholder="Private note — never sent (optional)" autocomplete="off">
     </div>
-    <p class="field-hint">Add someone, press Compose to write the email, then Send now or switch on Auto follow-up. <strong>At most 6 emails to one contact, never more than one a week</strong> — enforced on the server, so Send now cannot get round it either. A lead leaves this stage automatically when they sign up; follow-ups also stop on a reply, an unsubscribe, or when the six run out.</p>`;
+    <div class="sg-addmail">
+      <input type="text" id="sg-lead-subject" placeholder="Subject line" autocomplete="off">
+      <textarea id="sg-lead-body" rows="8" placeholder="Write the email. {{name}} and {{company}} are filled in from the fields above; an unsubscribe line is added automatically."></textarea>
+      <div class="sg-addmail__actions">
+        <span class="field-hint sg-addmail__hint">Nothing sends until you press Send. Follow-ups stay off until you switch them on per lead.</span>
+        <button type="button" id="sg-lead-add" class="btn-secondary">Save only</button>
+        <button type="button" id="sg-lead-send" class="cta-button">Save &amp; send</button>
+      </div>
+    </div>
+    <p class="field-hint"><strong>At most 6 emails to one contact, never more than one a week</strong> — enforced on the server, so Send cannot get round it either. Use Compose on a row to edit a message you already wrote. A lead leaves this stage automatically when they sign up; follow-ups also stop on a reply, an unsubscribe, or when the six run out.</p>`;
 
   const rows = table(
     ['Status', 'Email', 'Company', 'Sent', 'Next', ''],
@@ -232,9 +240,12 @@ function renderStage() {
 // ── Outreach actions ─────────────────────────────────────────────────────────
 
 function wireOutreach() {
-  document.getElementById('sg-lead-add').addEventListener('click', addLead);
+  document.getElementById('sg-lead-add').addEventListener('click', () => addLead(false));
+  document.getElementById('sg-lead-send').addEventListener('click', () => addLead(true));
   document.getElementById('sg-lead-email').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addLead();
+    // Enter saves; it never sends. The one action that reaches a stranger
+    // should require aiming at a button.
+    if (e.key === 'Enter') addLead(false);
   });
 
   document.querySelectorAll('.sg-status-select').forEach(sel => {
@@ -315,48 +326,114 @@ function wireOutreach() {
   });
 }
 
-async function addLead() {
+/**
+ * @param {boolean} thenSend save and immediately send the first email.
+ *
+ * Two buttons rather than a checkbox, because "did that just email someone"
+ * must never be a thing you have to look at a tick box to answer.
+ */
+async function addLead(thenSend = false) {
   const email   = document.getElementById('sg-lead-email').value.trim();
   const company = document.getElementById('sg-lead-company').value.trim();
   const note    = document.getElementById('sg-lead-note').value.trim();
-  if (!email) return;
+  const subject = document.getElementById('sg-lead-subject').value.trim();
+  const body    = document.getElementById('sg-lead-body').value.trim();
+  if (!email) return banner('An email address is required.');
+  if (thenSend && (!subject || !body)) return banner('Write a subject and a message before sending.');
 
-  const btn = document.getElementById('sg-lead-add');
-  btn.disabled = true;
+  const btns = [document.getElementById('sg-lead-add'), document.getElementById('sg-lead-send')];
+  btns.forEach(b => { b.disabled = true; });
   try {
-    await api('/leads', { method: 'POST', body: JSON.stringify({ email, company, note }) });
-    banner('');
+    const { lead } = await api('/leads', {
+      method: 'POST',
+      body: JSON.stringify({ email, company, note, subject, body }),
+    });
+
+    if (thenSend) {
+      const r = await api(`/leads/${lead._id}/send`, { method: 'POST', body: JSON.stringify({}) });
+      banner(r.sent ? `Sent to ${email}.` : `Saved, but not sent — ${r.reason}`, !r.sent);
+    } else {
+      banner(`Saved ${email}. Nothing has been emailed.`, false);
+    }
     await load('outreach');
   } catch (err) {
-    banner(`Could not add the lead: ${err.message}`);
+    banner(`Could not save the lead: ${err.message}`);
   } finally {
-    btn.disabled = false;
+    btns.forEach(b => { if (b) b.disabled = false; });
   }
 }
 
 // ── Ask ──────────────────────────────────────────────────────────────────────
 
-async function handleAsk() {
-  const input = document.getElementById('sg-question');
-  const btn = document.getElementById('sg-ask-btn');
-  const out = document.getElementById('sg-answer');
+/**
+ * The transcript, kept in memory only.
+ *
+ * Not persisted: the funnel is rebuilt on the server for every question, so a
+ * conversation restored tomorrow would be reasoning aloud about rows that have
+ * since moved. A short session that starts fresh is the honest shape.
+ */
+let noleTurns = [];
+
+const NOLE_GREETING =
+  'I can see all five stages — who is where, how long they have been there, and '
+  + 'where each one stopped. Ask me who to contact today, or about any row.';
+
+function noleBubble(role, text, extraClass = '') {
+  const div = document.createElement('div');
+  div.className = `nl-msg nl-msg--${role} ${extraClass}`.trim();
+  const body = document.createElement('div');
+  body.className = 'nl-msg__body';
+  body.textContent = text;   // textContent, not innerHTML — this is model output
+  div.appendChild(body);
+  return div;
+}
+
+function noleScroll() {
+  const log = document.getElementById('nl-log');
+  log.scrollTop = log.scrollHeight;
+}
+
+function renderNole() {
+  const log = document.getElementById('nl-log');
+  log.innerHTML = '';
+  log.appendChild(noleBubble('bot', NOLE_GREETING));
+  for (const t of noleTurns) log.appendChild(noleBubble(t.role, t.text));
+  noleScroll();
+}
+
+async function handleAsk(e) {
+  if (e) e.preventDefault();
+  const input = document.getElementById('nl-input');
+  const send  = document.getElementById('nl-send');
+  const log   = document.getElementById('nl-log');
   const question = input.value.trim();
   if (!question) return;
 
-  btn.disabled = true;
-  out.style.display = 'block';
-  out.className = 'sg-answer sg-answer--waiting';
-  out.textContent = 'Reading the funnel…';
+  const history = noleTurns.slice();
+  noleTurns.push({ role: 'user', text: question });
+  log.appendChild(noleBubble('user', question));
+  input.value = '';
+  input.style.height = 'auto';
+  send.disabled = true;
+
+  const pending = noleBubble('bot', 'Reading the funnel…', 'nl-msg--pending');
+  log.appendChild(pending);
+  noleScroll();
 
   try {
-    const { answer } = await api('/ask', { method: 'POST', body: JSON.stringify({ question }) });
-    out.className = 'sg-answer';
-    out.textContent = answer;
+    const { answer } = await api('/ask', { method: 'POST', body: JSON.stringify({ question, history }) });
+    pending.remove();
+    noleTurns.push({ role: 'bot', text: answer });
+    log.appendChild(noleBubble('bot', answer));
   } catch (err) {
-    out.className = 'sg-answer';
-    out.textContent = `Could not answer: ${err.message}`;
+    pending.remove();
+    // Left out of noleTurns on purpose — replaying a failure as context would
+    // have Nole apologising for it on every later turn.
+    log.appendChild(noleBubble('bot', `I could not answer that: ${err.message}`, 'nl-msg--error'));
   } finally {
-    btn.disabled = false;
+    send.disabled = false;
+    noleScroll();
+    input.focus();
   }
 }
 
@@ -392,11 +469,27 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  document.getElementById('sg-ask-btn').addEventListener('click', handleAsk);
-  document.getElementById('sg-question').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleAsk();
+  document.getElementById('nl-form').addEventListener('submit', handleAsk);
+
+  const nlInput = document.getElementById('nl-input');
+  nlInput.addEventListener('keydown', (e) => {
+    // Enter sends, Shift+Enter starts a new line — the convention every other
+    // chat box on the site follows.
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAsk(); }
   });
+  // Grow with the message rather than scrolling a one-line box.
+  nlInput.addEventListener('input', () => {
+    nlInput.style.height = 'auto';
+    nlInput.style.height = `${Math.min(nlInput.scrollHeight, 110)}px`;
+  });
+
+  document.getElementById('nl-clear').addEventListener('click', () => {
+    noleTurns = [];
+    renderNole();
+  });
+
   document.getElementById('sg-refresh-btn').addEventListener('click', () => load(state.tab));
 
+  renderNole();
   load();
 });

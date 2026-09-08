@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="company-library.css">
-    <link rel="stylesheet" href="sales.css?v=4">
+    <link rel="stylesheet" href="sales.css?v=5">
     <script src="../login/config.js"></script>
 </head>
 <body>
@@ -35,18 +35,26 @@
 
         <div id="sg-stage" style="display:none"></div>
 
-        <!-- ── Ask ───────────────────────────────────────────────────────────── -->
-        <div class="admin-panel">
-            <div class="panel-header">
-                <h2>Ask about the funnel</h2>
-            </div>
-            <p class="field-hint">The model sees every stage, not just the open tab, and nothing beyond it. Discovery rows are anonymous — there is no email behind a guest id.</p>
-            <div class="sg-ask">
-                <input type="text" id="sg-question" placeholder="Who should I call today, and what do I open with?" autocomplete="off">
-                <button type="button" id="sg-ask-btn" class="cta-button">Ask</button>
-            </div>
-            <div id="sg-answer" class="sg-answer" style="display:none"></div>
-        </div>
+        <!-- ── Nole ──────────────────────────────────────────────────────────
+             Same shape as the Cob/Aria/Arth panels on domain.html (see its
+             .sc-* block), but laid out inline rather than floating in a
+             character lane, because this screen has no lane to float in.
+             There is no Nole portrait yet, so the avatar is a lettered disc.
+        ─────────────────────────────────────────────────────────────────────── -->
+        <section class="nl-panel" aria-label="Chat with Nole">
+            <header class="nl-panel__head">
+                <span class="nl-panel__avatar" aria-hidden="true">N</span>
+                <span class="nl-panel__name">Nole</span>
+                <span class="nl-panel__role">reads the funnel above, and nothing else</span>
+                <button type="button" class="nl-panel__clear" id="nl-clear" title="Clear this conversation">Clear</button>
+            </header>
+            <div class="nl-log" id="nl-log" role="log" aria-live="polite"></div>
+            <form class="nl-form" id="nl-form">
+                <textarea class="nl-input" id="nl-input" rows="1"
+                          placeholder="Ask Nole who to contact today…" aria-label="Message"></textarea>
+                <button type="submit" class="nl-send" id="nl-send" aria-label="Send">&uarr;</button>
+            </form>
+        </section>
 
         <div class="sg-actions">
             <button type="button" id="sg-refresh-btn" class="btn-secondary">Refresh</button>
@@ -54,6 +62,6 @@
         </div>
     </main>
 
-    <script src="sales.js?v=4"></script>
+    <script src="sales.js?v=5"></script>
 </body>
 </html>

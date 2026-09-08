@@ -53,12 +53,22 @@ export async function ask(req, res) {
   if (!question) return res.status(400).json({ error: 'A question is required.' });
   if (question.length > 2000) return res.status(400).json({ error: 'Question is too long.' });
 
+  // History is the one thing that DOES come from the client — it is the
+  // client's own transcript. The board never does, so a replayed turn can
+  // colour the conversation but cannot invent a lead.
+  const history = Array.isArray(req.body?.history)
+    ? req.body.history
+        .filter(t => t && typeof t.text === 'string')
+        .slice(-8)
+        .map(t => ({ role: t.role === 'user' ? 'user' : 'bot', text: t.text.slice(0, 1500) }))
+    : [];
+
   try {
     // Rebuilt here rather than accepted from the client: the board is the
     // model's only evidence, so letting a caller supply it would let a caller
     // supply facts. It is also what keeps the answer current with the screen.
     const board = renderBoard(await collectSignals());
-    return res.json({ answer: await askBoard(board, question) });
+    return res.json({ answer: await askBoard(board, question, history) });
   } catch (err) {
     console.error('[salesSignals] ask failed:', err);
     return res.status(502).json({ error: `The model could not answer: ${err.message}` });
@@ -67,8 +77,8 @@ export async function ask(req, res) {
 
 export async function createLead(req, res) {
   try {
-    const { email, name, company, note } = req.body || {};
-    const lead = await addLead({ email, name, company, note, addedByUserId: req.user._id });
+    const { email, name, company, note, subject, body } = req.body || {};
+    const lead = await addLead({ email, name, company, note, subject, body, addedByUserId: req.user._id });
     return res.status(201).json({ lead });
   } catch (err) {
     return fail(res, err, 'Could not add the lead.');

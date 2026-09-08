@@ -151,6 +151,7 @@ function leadRow(r) {
     </div>
   </td></tr>
   <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="6">
+    <input type="text" class="sg-c-name" placeholder="First name — fills {{name}}" value="${esc(r.name || '')}">
     <textarea class="sg-c-context" rows="4" placeholder="The paragraph about THIS organisation — fills {{context}}.">${esc(r.orgContext || '')}</textarea>
     <input type="text" class="sg-c-subject" placeholder="Subject" value="${esc(q.subject)}">
     <textarea class="sg-c-body" rows="7" placeholder="Your message. {{name}}, {{company}}, {{context}} and {{link}} are filled in; an unsubscribe line is appended automatically.">${esc(q.body)}</textarea>
@@ -199,8 +200,9 @@ function renderOutreachBody(s) {
   const form = `
     <div class="sg-addlead">
       <input type="email" id="sg-lead-email" placeholder="email@company.com" autocomplete="off">
-      <input type="text"  id="sg-lead-company" placeholder="Company (optional)" autocomplete="off">
-      <input type="text"  id="sg-lead-note" placeholder="Private note — never sent (optional)" autocomplete="off">
+      <input type="text"  id="sg-lead-name" placeholder="First name — fills {{name}}" autocomplete="off">
+      <input type="text"  id="sg-lead-company" placeholder="Company — fills {{company}}" autocomplete="off">
+      <input type="text"  id="sg-lead-note" placeholder="Private note — never sent" autocomplete="off">
     </div>
     <div class="sg-addmail">
       <textarea id="sg-lead-context" rows="4" placeholder="What is true about THIS organisation — the one paragraph that is not generic. Goes wherever {{context}} appears in the template."></textarea>
@@ -396,6 +398,7 @@ function wireOutreach() {
         await api(`/leads/${id}/sequence`, {
           method: 'PUT',
           body: JSON.stringify({
+            name:         box.querySelector('.sg-c-name').value,
             orgContext:   box.querySelector('.sg-c-context').value,
             subject:      box.querySelector('.sg-c-subject').value,
             body:         box.querySelector('.sg-c-body').value,
@@ -448,6 +451,7 @@ function wireOutreach() {
  */
 async function addLead(thenSend = false) {
   const email      = document.getElementById('sg-lead-email').value.trim();
+  const name       = document.getElementById('sg-lead-name').value.trim();
   const company    = document.getElementById('sg-lead-company').value.trim();
   const note       = document.getElementById('sg-lead-note').value.trim();
   const orgContext = document.getElementById('sg-lead-context').value.trim();
@@ -463,7 +467,7 @@ async function addLead(thenSend = false) {
   try {
     const { lead } = await api('/leads', {
       method: 'POST',
-      body: JSON.stringify({ email, company, note, orgContext }),
+      body: JSON.stringify({ email, name, company, note, orgContext }),
     });
 
     if (thenSend) {

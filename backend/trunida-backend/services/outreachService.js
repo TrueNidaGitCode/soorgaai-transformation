@@ -158,6 +158,18 @@ export async function canSend(lead, { ignoreSchedule = false } = {}) {
   const seq = lead.sequence || {};
   if (!seq.subject || !seq.body) return { ok: false, reason: 'No subject or message written yet.' };
 
+  // A template that asks for an organisation paragraph and never gets one
+  // sends an email with a hole where the only reason to reply should be.
+  //
+  // Guarded here rather than on the add form, because the form was only one
+  // of two ways to send: the per-row Send now button skipped the check, and
+  // the first real cold email went out entirely generic because of it. Only
+  // fires when the body actually asks for {{context}} — a body written
+  // without the token is a deliberate choice and is left alone.
+  if (/\{\{\s*context\s*\}\}/i.test(seq.body) && !String(lead.orgContext || '').trim()) {
+    return { ok: false, reason: 'No organisation paragraph written — the email would be entirely generic.' };
+  }
+
   const max = Math.min(seq.maxSends || MAX_SENDS_CAP, MAX_SENDS_CAP);
   if ((seq.sentCount || 0) >= max) return { ok: false, reason: `All ${max} emails already sent.` };
 
@@ -362,7 +374,7 @@ export async function unsubscribeByToken(token) {
 
 // ── Sequence settings ────────────────────────────────────────────────────────
 
-export async function setSequence(leadId, { subject, body, orgContext, intervalDays, maxSends, enabled }) {
+export async function setSequence(leadId, { subject, body, orgContext, name, intervalDays, maxSends, enabled }) {
   const lead = await ColdLead.findById(leadId);
   if (!lead) throw new Error('Lead not found.');
   if (lead.unsubscribedAt && enabled) throw new ValidationError('They unsubscribed — a sequence cannot be restarted.');
@@ -370,6 +382,10 @@ export async function setSequence(leadId, { subject, body, orgContext, intervalD
   if (subject !== undefined) lead.sequence.subject = String(subject).slice(0, 300);
   if (body !== undefined)    lead.sequence.body    = String(body).slice(0, 10000);
   if (orgContext !== undefined) lead.orgContext    = String(orgContext).slice(0, 4000);
+  // Editable from the composer as well as the add form: the name is the first
+  // word a prospect reads, and "Hi there," went out because there was nowhere
+  // on the screen to type it.
+  if (name !== undefined) lead.name = String(name).trim().slice(0, 120);
 
   if (intervalDays !== undefined) {
     const n = Number(intervalDays);

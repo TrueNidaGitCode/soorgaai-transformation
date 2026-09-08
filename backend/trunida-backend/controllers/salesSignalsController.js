@@ -157,8 +157,8 @@ export async function sendLeadNow(req, res) {
 
 export async function putSequence(req, res) {
   try {
-    const { subject, body, orgContext, intervalDays, maxSends, enabled } = req.body || {};
-    const lead = await setSequence(req.params.id, { subject, body, orgContext, intervalDays, maxSends, enabled });
+    const { subject, body, orgContext, name, intervalDays, maxSends, enabled } = req.body || {};
+    const lead = await setSequence(req.params.id, { subject, body, orgContext, name, intervalDays, maxSends, enabled });
     return res.json({ lead });
   } catch (err) {
     return fail(res, err, 'Could not update the sequence.');

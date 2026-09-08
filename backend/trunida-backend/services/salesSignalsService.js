@@ -129,6 +129,12 @@ export async function collectSignals() {
     liveByUser.get(k).push(d);
   }
 
+  // Ref codes seen on anonymous previews — computed before Outreach so a lead
+  // row can say whether its email produced a visit.
+  const unclaimedRefs = new Set(
+    blueprints.filter(b => b.guestId && !b.userId && b.guestMeta?.ref).map(b => b.guestMeta.ref)
+  );
+
   // ── 1. Outreach — cold emails, minus anyone who has since signed up ────────
   const outreach = leads
     .filter(l => !knownEmails.has(String(l.email || '').toLowerCase()))
@@ -140,6 +146,11 @@ export async function collectSignals() {
       company: l.company || '',
       status: l.status || 'to-contact',
       note: l.note || '',
+      orgContext: l.orgContext || '',
+      // Did the email actually do anything? A ref that shows up on a guest
+      // blueprint is the only proof available, and it is the single most
+      // useful fact about a cold lead.
+      clicked: !!(l.refCode && unclaimedRefs.has(l.refCode)),
       addedAt: l.createdAt,
       lastContactedAt: l.lastContactedAt,
       unsubscribedAt: l.unsubscribedAt || null,
@@ -175,12 +186,13 @@ export async function collectSignals() {
         at: b.createdAt, firstSeen: b.createdAt, visits: 0, completed: 0,
         who: `guest:${String(b.guestId).slice(0, 8)}`,
         objective: b.businessObjective,
-        ips: new Set(), userAgents: new Set(), referers: new Set(),
+        ips: new Set(), userAgents: new Set(), referers: new Set(), refs: new Set(),
       });
     }
     const g = grouped.get(key);
     g.visits += 1;
     if (b.status === 'completed') g.completed += 1;
+    if (b.guestMeta?.ref) g.refs.add(b.guestMeta.ref);
     if (b.guestMeta?.ip) g.ips.add(b.guestMeta.ip);
     if (b.guestMeta?.userAgent) g.userAgents.add(b.guestMeta.userAgent);
     if (b.guestMeta?.referer) g.referers.add(b.guestMeta.referer);
@@ -188,10 +200,19 @@ export async function collectSignals() {
     if (new Date(b.createdAt) < new Date(g.firstSeen)) g.firstSeen = b.createdAt;
   }
 
+  // A ref code turns an anonymous guest into a named prospect: it can only
+  // have come from the link in one person's email.
+  const leadByRef = new Map(leads.filter(l => l.refCode).map(l => [l.refCode, l]));
+
   const discovery = [...grouped.values()].map(g => {
     const ips = [...g.ips];
+    const fromLead = [...g.refs].map(r => leadByRef.get(r)).filter(Boolean)[0] || null;
     return {
       ...g,
+      refs: [...g.refs],
+      // The whole reason the tracked link exists: this row stops being
+      // "someone" and becomes "the person we emailed".
+      fromLead: fromLead ? { email: fromLead.email, company: fromLead.company || '' } : null,
       ips,
       // Said explicitly rather than left as an empty cell: a blank IP column
       // reads as "different visitor" when it actually means "not recorded".

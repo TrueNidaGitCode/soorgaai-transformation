@@ -11,6 +11,31 @@ import { MATURITY_STAGES } from './data/maturityStages.js';
 
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';
+const OUTREACH_REF_KEY = 'svarg_outreach_ref';
+
+/**
+ * The ref code from a cold email's link, remembered across the visit.
+ *
+ * Captured on arrival and stored, because the prompt box is rarely used on the
+ * first pageview — people read, wander, come back. Reading it only at submit
+ * time would attribute nothing the moment the query string is gone.
+ *
+ * Stored rather than kept in a variable so it survives the navigation into the
+ * blueprint view. Cleared once used: a ref belongs to one prospect, and a stale
+ * one would quietly credit their visit to someone else's email.
+ */
+function captureOutreachRef() {
+    try {
+        const ref = new URLSearchParams(window.location.search).get('ref');
+        if (ref) localStorage.setItem(OUTREACH_REF_KEY, ref.slice(0, 64));
+    } catch { /* private mode — attribution is not worth an exception */ }
+}
+
+function outreachRef() {
+    try { return localStorage.getItem(OUTREACH_REF_KEY) || ''; } catch { return ''; }
+}
+
+captureOutreachRef();
 
 // New users have no UserProfile yet — detour through profile setup once,
 // then on to the original destination. A failed check fails open (never
@@ -542,7 +567,10 @@ export function wireHeroPrompt() {
                 const resp = await fetch(`${API_BASE()}/guest/generate-blueprint`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ businessObjective: objective }),
+                    // ref comes from ?ref= on a cold email's link, stashed on
+                    // arrival. Without it a prospect who was emailed is
+                    // indistinguishable from a stranger who found the site.
+                    body: JSON.stringify({ businessObjective: objective, ref: outreachRef() }),
                 });
                 if (!resp.ok) {
                     const { error } = await resp.json().catch(() => ({}));

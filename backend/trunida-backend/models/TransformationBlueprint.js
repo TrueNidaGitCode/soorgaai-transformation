@@ -350,6 +350,11 @@ const transformationBlueprintSchema = new mongoose.Schema({
     ip:        { type: String, default: '' },
     userAgent: { type: String, default: '' },
     referer:   { type: String, default: '' },
+
+    // The refCode from a cold email's tracked link, when the visit came from
+    // one. This is what turns an anonymous Discovery row into "the person we
+    // emailed on Tuesday" — see models/ColdLead.js refCode.
+    ref:       { type: String, default: '', index: true },
   },
 
   businessObjective: { type: String, required: true },

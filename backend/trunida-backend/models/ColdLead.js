@@ -48,8 +48,19 @@ const coldLeadSchema = new mongoose.Schema({
    */
   status: { type: String, default: 'to-contact' },
 
-  /** Whatever the person needs to remember before the next call. */
+  /** Whatever the person needs to remember before the next call. Never sent. */
   note: { type: String, default: '' },
+
+  /**
+   * The one paragraph that is about THIS organisation, dropped into the shared
+   * template wherever {{context}} appears.
+   *
+   * Split from the body so the generic ninety percent is written once and the
+   * specific ten percent is the only thing typed per lead. That ratio is also
+   * the honest one: everything else in a cold email is framing any founder
+   * could send, and the line about their business is the only reason to reply.
+   */
+  orgContext: { type: String, default: '' },
 
   lastContactedAt: { type: Date, default: null },
 
@@ -116,6 +127,21 @@ const coldLeadSchema = new mongoose.Schema({
    */
   unsubscribedAt: { type: Date, default: null },
   unsubscribeToken: { type: String, default: '', index: true },
+
+  /**
+   * The code in this lead's tracked link, so a click that turns into a guest
+   * blueprint can be traced back to the email that caused it.
+   *
+   * Without it, outreach and discovery are two lists that never meet: a
+   * prospect who reads the email, visits, and generates a blueprint arrives as
+   * an anonymous guest indistinguishable from a stranger, and the one thing
+   * worth knowing — that the email worked — is the thing that is lost.
+   *
+   * Separate from unsubscribeToken on purpose. That one appears in a footer
+   * everyone can see and is a destructive action; this one is shared in the
+   * body of the mail. One should never be guessable from the other.
+   */
+  refCode: { type: String, default: '', index: true },
 }, { timestamps: true });
 
 export default mongoose.model('ColdLead', coldLeadSchema);

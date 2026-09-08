@@ -532,3 +532,103 @@
 .sg-mailstate--ok   { background: rgba(92, 197, 167, 0.1);  border-color: rgba(92, 197, 167, 0.35); color: #5CC5A7; }
 .sg-mailstate--warn { background: rgba(251, 191, 36, 0.1);  border-color: rgba(251, 191, 36, 0.35); color: #fbbf24; }
 .sg-mailstate--bad  { background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.35); color: #FCA5A5; }
+
+/* ── Shared template + preview ────────────────────────────────────────────── */
+
+.sg-template {
+  margin: 0.75rem 0 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.sg-template > summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text-secondary, #CCCCCC);
+  font-weight: 600;
+}
+
+.sg-template input[type="text"],
+.sg-template textarea,
+.sg-c-context {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.6rem 0 0;
+  padding: 0.7rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(92, 197, 167, 0.2);
+  border-radius: 12px;
+  color: var(--text-primary, #FFFFFF);
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.sg-template input:focus,
+.sg-template textarea:focus,
+.sg-c-context:focus {
+  outline: none;
+  border-color: var(--accent-green, #5CC5A7);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sg-template code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  background: rgba(92, 197, 167, 0.15);
+  color: var(--accent-green, #5CC5A7);
+  font-size: 0.82em;
+}
+
+/* The preview is the last chance to see an unfilled token before a stranger
+   does, so it is styled like paper rather than like the admin chrome. */
+.sg-pv {
+  margin: 0.5rem 0;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 3px solid var(--accent-green, #5CC5A7);
+  border-radius: 12px;
+}
+
+.sg-pv__warn:not(:empty) {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  font-size: 0.82rem;
+}
+
+.sg-pv__to { font-size: 0.8rem; color: rgba(255, 255, 255, 0.45); }
+
+.sg-pv__subject {
+  margin: 0.2rem 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary, #FFFFFF);
+}
+
+.sg-pv__body {
+  white-space: pre-wrap;
+  line-height: 1.65;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Proof the email did something. */
+.sg-clicked {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(92, 197, 167, 0.2);
+  color: var(--accent-green, #5CC5A7);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.sg-fromlead { margin-top: 0.2rem; font-size: 0.74rem; color: var(--accent-green, #5CC5A7); }

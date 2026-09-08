@@ -48,6 +48,7 @@ export async function startGuestGeneration(req, res) {
   try {
     const { businessObjective } = req.body;
     const objective = businessObjective?.trim();
+    // `ref` rides along in the body — see guestMeta below.
 
     if (!objective) {
       return res.status(400).json({ error: 'businessObjective is required.' });
@@ -87,6 +88,11 @@ export async function startGuestGeneration(req, res) {
         ip:        req.ip || '',
         userAgent: String(req.get('user-agent') || '').slice(0, 300),
         referer:   String(req.get('referer') || '').slice(0, 300),
+        // From ?ref= on a cold email's tracked link. This is the only thing
+        // that connects an anonymous preview back to the person we emailed —
+        // without it, a prospect who reads the mail and tries the product is
+        // indistinguishable from a stranger who found the site.
+        ref:       String(req.body?.ref || '').slice(0, 64),
       },
       businessObjective: objective,
       industry: 'Automotive',

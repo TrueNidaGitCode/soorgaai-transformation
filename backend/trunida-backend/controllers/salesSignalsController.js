@@ -20,7 +20,10 @@ import {
   collectSignals, renderBoard, askBoard,
   addLead, updateLead, deleteLead,
 } from '../services/salesSignalsService.js';
-import { sendNext, setSequence, unsubscribeByToken } from '../services/outreachService.js';
+import {
+  sendNext, setSequence, unsubscribeByToken,
+  getTemplate, setTemplate, previewFor,
+} from '../services/outreachService.js';
 
 /** The unsubscribe page echoes a stored address back into HTML. */
 function escapeHtml(str) {
@@ -77,11 +80,46 @@ export async function ask(req, res) {
 
 export async function createLead(req, res) {
   try {
-    const { email, name, company, note, subject, body } = req.body || {};
-    const lead = await addLead({ email, name, company, note, subject, body, addedByUserId: req.user._id });
+    const { email, name, company, note, subject, body, orgContext } = req.body || {};
+    // A new lead with nothing written starts from the shared template, so the
+    // generic body is authored once and only orgContext is typed per prospect.
+    const tpl = await getTemplate();
+    const lead = await addLead({
+      email, name, company, note, orgContext,
+      subject: subject || tpl.subject,
+      body:    body    || tpl.body,
+      addedByUserId: req.user._id,
+    });
     return res.status(201).json({ lead });
   } catch (err) {
     return fail(res, err, 'Could not add the lead.');
+  }
+}
+
+export async function readTemplate(req, res) {
+  try {
+    return res.json({ template: await getTemplate() });
+  } catch (err) {
+    return fail(res, err, 'Could not read the template.');
+  }
+}
+
+export async function writeTemplate(req, res) {
+  try {
+    const { subject, body } = req.body || {};
+    const t = await setTemplate({ subject, body, updatedByUserId: req.user._id });
+    return res.json({ template: { subject: t.subject, body: t.body } });
+  } catch (err) {
+    return fail(res, err, 'Could not save the template.');
+  }
+}
+
+/** The email exactly as it would arrive, without sending it. */
+export async function previewLead(req, res) {
+  try {
+    return res.json(await previewFor(req.params.id));
+  } catch (err) {
+    return fail(res, err, 'Could not build the preview.');
   }
 }
 
@@ -119,8 +157,8 @@ export async function sendLeadNow(req, res) {
 
 export async function putSequence(req, res) {
   try {
-    const { subject, body, intervalDays, maxSends, enabled } = req.body || {};
-    const lead = await setSequence(req.params.id, { subject, body, intervalDays, maxSends, enabled });
+    const { subject, body, orgContext, intervalDays, maxSends, enabled } = req.body || {};
+    const lead = await setSequence(req.params.id, { subject, body, orgContext, intervalDays, maxSends, enabled });
     return res.json({ lead });
   } catch (err) {
     return fail(res, err, 'Could not update the sequence.');

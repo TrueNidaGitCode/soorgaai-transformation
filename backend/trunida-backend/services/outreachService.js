@@ -35,6 +35,7 @@
 
 import crypto from 'crypto';
 import ColdLead from '../models/ColdLead.js';
+import OutreachTemplate from '../models/OutreachTemplate.js';
 import { User } from '../models/user.js';
 import { sendOutreachEmail } from './mailService.js';
 
@@ -100,15 +101,39 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/** Where a tracked link sends the prospect. The public site, not the API. */
+function siteBase() {
+  return (process.env.FRONTEND_URL || 'https://www.svargai.com').replace(/\/+$/, '');
+}
+
+/**
+ * This lead's tracked link.
+ *
+ * The ref is what lets a click become an attributed row rather than another
+ * anonymous guest — see models/ColdLead.js refCode.
+ */
+export function trackedLink(lead) {
+  return lead.refCode ? `${siteBase()}/?ref=${encodeURIComponent(lead.refCode)}` : siteBase();
+}
+
 /**
  * Personalisation, kept to what we actually know. A token we cannot fill is
  * replaced with nothing rather than left as {{name}} in a stranger's inbox.
+ *
+ * {{context}} is the organisation-specific paragraph, which is the whole point
+ * of the split: the template is generic, this is not.
  */
 function fill(template, lead) {
   return String(template || '')
     .replace(/\{\{\s*name\s*\}\}/gi, lead.name || 'there')
     .replace(/\{\{\s*company\s*\}\}/gi, lead.company || 'your team')
-    .replace(/\{\{\s*email\s*\}\}/gi, lead.email || '');
+    .replace(/\{\{\s*email\s*\}\}/gi, lead.email || '')
+    .replace(/\{\{\s*context\s*\}\}/gi, lead.orgContext || '')
+    .replace(/\{\{\s*link\s*\}\}/gi, trackedLink(lead))
+    // A {{context}} that filled to nothing leaves its own blank line behind,
+    // which reads as a missing paragraph rather than a tighter email.
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 // ── The gate ─────────────────────────────────────────────────────────────────
@@ -213,8 +238,13 @@ export async function sendNext(leadId, { manual = false, replyTo = '' } = {}) {
   const lead = await ColdLead.findById(leadId);
   if (!lead) throw new Error('Lead not found.');
 
-  if (!lead.unsubscribeToken) {
-    lead.unsubscribeToken = crypto.randomUUID();
+  // Both tokens are minted lazily so leads created before either existed pick
+  // them up on their first send rather than needing a migration.
+  if (!lead.unsubscribeToken || !lead.refCode) {
+    if (!lead.unsubscribeToken) lead.unsubscribeToken = crypto.randomUUID();
+    // Short and URL-safe: this one is read by a human out of an email body,
+    // and a UUID in a visible link looks like tracking, because it is.
+    if (!lead.refCode) lead.refCode = crypto.randomBytes(6).toString('base64url');
     await lead.save();
   }
 
@@ -332,13 +362,14 @@ export async function unsubscribeByToken(token) {
 
 // ── Sequence settings ────────────────────────────────────────────────────────
 
-export async function setSequence(leadId, { subject, body, intervalDays, maxSends, enabled }) {
+export async function setSequence(leadId, { subject, body, orgContext, intervalDays, maxSends, enabled }) {
   const lead = await ColdLead.findById(leadId);
   if (!lead) throw new Error('Lead not found.');
   if (lead.unsubscribedAt && enabled) throw new ValidationError('They unsubscribed — a sequence cannot be restarted.');
 
   if (subject !== undefined) lead.sequence.subject = String(subject).slice(0, 300);
   if (body !== undefined)    lead.sequence.body    = String(body).slice(0, 10000);
+  if (orgContext !== undefined) lead.orgContext    = String(orgContext).slice(0, 4000);
 
   if (intervalDays !== undefined) {
     const n = Number(intervalDays);
@@ -387,5 +418,76 @@ export function outreachReadiness() {
     minIntervalDays: MIN_INTERVAL_DAYS,
     maxSends: MAX_SENDS_CAP,
     schedulerDisabled: process.env.OUTREACH_SWEEP_DISABLED === 'true',
+  };
+}
+
+// ── The shared template ──────────────────────────────────────────────────────
+
+/**
+ * What a brand-new lead starts from when nothing has been written yet.
+ *
+ * Deliberately carries {{context}} on its own line: the surrounding paragraphs
+ * are the same for everyone, and the sentence that earns a reply is the one
+ * about their business. Seeing the token sitting alone makes that obvious
+ * without a paragraph of instructions on the screen.
+ */
+const STARTER_TEMPLATE = {
+  subject: 'An AI opportunity blueprint for {{company}}',
+  body: `Hi {{name}},
+
+{{context}}
+
+SvargAI takes a business problem described in plain English and returns a
+working application — deployed, running, with the source code handed over.
+Not a mockup. Something you open and use, usually inside fifteen minutes.
+
+You can try it on your own problem here:
+{{link}}
+
+I'd genuinely like to hear what you make of it.
+
+Best,
+Pranesh
+Founder, SvargAI`,
+};
+
+export async function getTemplate() {
+  const doc = await OutreachTemplate.findOne({ key: 'default' }).lean();
+  if (doc && (doc.subject || doc.body)) return { subject: doc.subject, body: doc.body };
+  return { ...STARTER_TEMPLATE };
+}
+
+export async function setTemplate({ subject, body, updatedByUserId }) {
+  const set = { updatedByUserId: updatedByUserId || null };
+  if (subject !== undefined) set.subject = String(subject).slice(0, 300);
+  if (body !== undefined)    set.body    = String(body).slice(0, 10000);
+  if (!Object.keys(set).length) throw new ValidationError('Nothing to update.');
+
+  return OutreachTemplate.findOneAndUpdate(
+    { key: 'default' },
+    { $set: set, $setOnInsert: { key: 'default' } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  ).lean();
+}
+
+/**
+ * The email exactly as this lead would receive it, without sending anything.
+ *
+ * The point of a preview is to catch an unfilled {{context}} or a stray token
+ * before a stranger reads it, which a preview built any other way could not do
+ * — so it runs the same fill() the real send does.
+ */
+export async function previewFor(leadId) {
+  const lead = await ColdLead.findById(leadId).lean();
+  if (!lead) throw new Error('Lead not found.');
+  const tpl = await getTemplate();
+  const subject = lead.sequence?.subject || tpl.subject;
+  const body    = lead.sequence?.body    || tpl.body;
+  return {
+    to: lead.email,
+    subject: fill(subject, lead),
+    body: fill(body, lead),
+    link: trackedLink(lead),
+    missingContext: /\{\{\s*context\s*\}\}/i.test(body) && !lead.orgContext,
   };
 }

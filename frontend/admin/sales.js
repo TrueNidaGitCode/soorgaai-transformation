@@ -23,7 +23,7 @@ const TABS = [
   { key: 'sales',      label: 'Sales',      hint: 'On a paid plan.' },
 ];
 
-let state = { signals: null, mail: null, tab: 'outreach' };
+let state = { signals: null, mail: null, template: null, tab: 'outreach' };
 
 function authHeaders() {
   return { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' };
@@ -121,7 +121,7 @@ function leadRow(r) {
   const done = q.sentCount >= q.maxSends;
   return `<tr class="sg-leadrow">
     <td><span class="sg-pill sg-pill--${esc(r.status)}">${esc(r.status)}</span></td>
-    <td class="sg-who">${emailCell(r)}${r.unsubscribedAt ? ' <span class="sg-unsub">unsubscribed</span>' : ''}</td>
+    <td class="sg-who">${emailCell(r)}${r.unsubscribedAt ? " <span class=\"sg-unsub\">unsubscribed</span>" : ""}${r.clicked ? " <span class=\"sg-clicked\">clicked</span>" : ""}</td>
     <td>${esc(r.company)}</td>
     <td class="sg-seq">
       <span class="sg-sent ${done ? 'sg-sent--done' : ''}">${q.sentCount}/${q.maxSends}</span>
@@ -132,6 +132,7 @@ function leadRow(r) {
     </td>
     <td class="sg-rowactions">
       <button type="button" class="sg-btn" data-compose="${esc(r.id)}">Compose</button>
+      <button type="button" class="sg-btn" data-preview="${esc(r.id)}">Preview</button>
       <button type="button" class="sg-btn sg-btn--go" data-send="${esc(r.id)}"
               ${r.unsubscribedAt ? 'disabled title="They unsubscribed"' : ''}>Send now</button>
       <select data-lead="${esc(r.id)}" class="sg-status-select">
@@ -141,9 +142,18 @@ function leadRow(r) {
       <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
     </td>
   </tr>
+  <tr class="sg-preview" id="preview-${esc(r.id)}" hidden><td colspan="6">
+    <div class="sg-pv">
+      <div class="sg-pv__warn"></div>
+      <div class="sg-pv__to"></div>
+      <div class="sg-pv__subject"></div>
+      <div class="sg-pv__body"></div>
+    </div>
+  </td></tr>
   <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="6">
+    <textarea class="sg-c-context" rows="4" placeholder="The paragraph about THIS organisation — fills {{context}}.">${esc(r.orgContext || '')}</textarea>
     <input type="text" class="sg-c-subject" placeholder="Subject" value="${esc(q.subject)}">
-    <textarea class="sg-c-body" rows="7" placeholder="Your message. {{name}} and {{company}} are filled in; an unsubscribe line is appended automatically.">${esc(q.body)}</textarea>
+    <textarea class="sg-c-body" rows="7" placeholder="Your message. {{name}}, {{company}}, {{context}} and {{link}} are filled in; an unsubscribe line is appended automatically.">${esc(q.body)}</textarea>
     <div class="sg-c-controls">
       <label>Every <input type="number" class="sg-c-interval" min="7" max="90" value="${q.intervalDays}"> days</label>
       <label>Stop after <input type="number" class="sg-c-max" min="1" max="6" value="${q.maxSends}"> emails</label>
@@ -193,14 +203,29 @@ function renderOutreachBody(s) {
       <input type="text"  id="sg-lead-note" placeholder="Private note — never sent (optional)" autocomplete="off">
     </div>
     <div class="sg-addmail">
-      <input type="text" id="sg-lead-subject" placeholder="Subject line" autocomplete="off">
-      <textarea id="sg-lead-body" rows="8" placeholder="Write the email. {{name}} and {{company}} are filled in from the fields above; an unsubscribe line is added automatically."></textarea>
+      <textarea id="sg-lead-context" rows="4" placeholder="What is true about THIS organisation — the one paragraph that is not generic. Goes wherever {{context}} appears in the template."></textarea>
       <div class="sg-addmail__actions">
-        <span class="field-hint sg-addmail__hint">Nothing sends until you press Send. Follow-ups stay off until you switch them on per lead.</span>
+        <span class="field-hint sg-addmail__hint">The rest of the email comes from the shared template below. Nothing sends until you press Send.</span>
         <button type="button" id="sg-lead-add" class="btn-secondary">Save only</button>
         <button type="button" id="sg-lead-send" class="cta-button">Save &amp; send</button>
       </div>
     </div>
+
+    <details class="sg-template">
+      <summary>Shared template — used for every new lead</summary>
+      <input type="text" id="sg-tpl-subject" placeholder="Subject line" autocomplete="off"
+             value="${esc(state.template?.subject || '')}">
+      <textarea id="sg-tpl-body" rows="14">${esc(state.template?.body || '')}</textarea>
+      <div class="sg-addmail__actions">
+        <span class="field-hint sg-addmail__hint">
+          Tokens: <code>{{name}}</code> <code>{{company}}</code> <code>{{context}}</code>
+          <code>{{link}}</code> — the link is tracked per lead, so a visit it produces
+          shows up against that person in Discovery instead of as an anonymous guest.
+          An unsubscribe line is appended automatically.
+        </span>
+        <button type="button" id="sg-tpl-save" class="btn-secondary">Save template</button>
+      </div>
+    </details>
     <p class="field-hint"><strong>At most 6 emails to one contact, never more than one a week</strong> — enforced on the server, so Send cannot get round it either. Use Compose on a row to edit a message you already wrote. A lead leaves this stage automatically when they sign up; follow-ups also stop on a reply, an unsubscribe, or when the six run out.</p>`;
 
   const rows = table(
@@ -222,7 +247,8 @@ function renderDiscovery(s) {
     r => `<tr>
       <td><span class="sg-visits ${r.visits > 1 ? 'sg-visits--repeat' : ''}">${r.visits}×</span></td>
       <td class="sg-age">${age(r.at)}</td>
-      <td class="sg-who">${esc(r.who)}</td>
+      <td class="sg-who">${esc(r.who)}${r.fromLead
+        ? `<div class="sg-fromlead">from your email to ${esc(r.fromLead.email)}</div>` : ''}</td>
       <td>${esc(clip(r.objective, 80))}</td>
       <td class="sg-who ${r.ips.length ? '' : 'sg-unknown'}">${esc(r.ipLabel)}</td>
       <td class="sg-note">${esc(r.note)}</td>
@@ -323,6 +349,44 @@ function wireOutreach() {
     });
   });
 
+  const tplSave = document.getElementById('sg-tpl-save');
+  if (tplSave) tplSave.addEventListener('click', async () => {
+    tplSave.disabled = true;
+    try {
+      const { template } = await api('/template', {
+        method: 'PUT',
+        body: JSON.stringify({
+          subject: document.getElementById('sg-tpl-subject').value,
+          body:    document.getElementById('sg-tpl-body').value,
+        }),
+      });
+      state.template = template;
+      banner('Template saved. New leads will start from it.', false);
+    } catch (err) {
+      banner(`Could not save the template: ${err.message}`);
+    } finally { tplSave.disabled = false; }
+  });
+
+  document.querySelectorAll('[data-preview]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        const p = await api(`/leads/${btn.dataset.preview}/preview`);
+        // Shown exactly as it will arrive — the same fill() the real send uses,
+        // so an unreplaced token is visible here rather than in an inbox.
+        const box = document.getElementById(`preview-${btn.dataset.preview}`);
+        box.hidden = false;
+        box.querySelector('.sg-pv__to').textContent = `To: ${p.to}`;
+        box.querySelector('.sg-pv__subject').textContent = p.subject;
+        box.querySelector('.sg-pv__body').textContent = p.body;
+        box.querySelector('.sg-pv__warn').textContent = p.missingContext
+          ? 'No organisation paragraph written — this email is entirely generic.' : '';
+      } catch (err) {
+        banner(`Could not preview: ${err.message}`);
+      } finally { btn.disabled = false; }
+    });
+  });
+
   document.querySelectorAll('[data-save]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.dataset.save;
@@ -332,6 +396,7 @@ function wireOutreach() {
         await api(`/leads/${id}/sequence`, {
           method: 'PUT',
           body: JSON.stringify({
+            orgContext:   box.querySelector('.sg-c-context').value,
             subject:      box.querySelector('.sg-c-subject').value,
             body:         box.querySelector('.sg-c-body').value,
             intervalDays: Number(box.querySelector('.sg-c-interval').value),
@@ -382,20 +447,23 @@ function wireOutreach() {
  * must never be a thing you have to look at a tick box to answer.
  */
 async function addLead(thenSend = false) {
-  const email   = document.getElementById('sg-lead-email').value.trim();
-  const company = document.getElementById('sg-lead-company').value.trim();
-  const note    = document.getElementById('sg-lead-note').value.trim();
-  const subject = document.getElementById('sg-lead-subject').value.trim();
-  const body    = document.getElementById('sg-lead-body').value.trim();
+  const email      = document.getElementById('sg-lead-email').value.trim();
+  const company    = document.getElementById('sg-lead-company').value.trim();
+  const note       = document.getElementById('sg-lead-note').value.trim();
+  const orgContext = document.getElementById('sg-lead-context').value.trim();
   if (!email) return banner('An email address is required.');
-  if (thenSend && (!subject || !body)) return banner('Write a subject and a message before sending.');
+  // The template supplies everything else, so the only thing worth insisting on
+  // is the part that is actually about them.
+  if (thenSend && !orgContext) {
+    return banner('Write the organisation paragraph before sending — without it the email is generic.');
+  }
 
   const btns = [document.getElementById('sg-lead-add'), document.getElementById('sg-lead-send')];
   btns.forEach(b => { b.disabled = true; });
   try {
     const { lead } = await api('/leads', {
       method: 'POST',
-      body: JSON.stringify({ email, company, note, subject, body }),
+      body: JSON.stringify({ email, company, note, orgContext }),
     });
 
     if (thenSend) {
@@ -493,14 +561,16 @@ async function load(keepTab) {
   document.getElementById('sg-stage').style.display = 'none';
 
   try {
-    const [{ signals }, mail] = await Promise.all([
+    const [{ signals }, mail, tpl] = await Promise.all([
       api(''),
       // Never fatal: a funnel you can read is worth more than a banner about
       // mail configuration, so this failing must not blank the screen.
       api('/mail-status').catch(() => null),
+      api('/template').catch(() => null),
     ]);
     state.signals = signals;
     state.mail = mail?.mail || null;
+    state.template = tpl?.template || state.template;
     if (keepTab) state.tab = keepTab;
     renderTabs();
     renderStage();

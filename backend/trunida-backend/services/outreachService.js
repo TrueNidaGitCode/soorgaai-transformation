@@ -61,9 +61,32 @@ export class ValidationError extends Error {
 
 const DAY = 86400000;
 
-/** Where the unsubscribe link points. Must be the public API origin. */
+/**
+ * Where the unsubscribe link points — the public origin of THIS API, since the
+ * link resolves to /api/outreach/unsubscribe on the backend, not the marketing
+ * site. FRONTEND_URL is deliberately not a fallback for that reason.
+ *
+ * RAILWAY_PUBLIC_DOMAIN is injected by the platform, so the common deployment
+ * needs no configuration at all. The explicit variables come first for anyone
+ * running behind their own domain or off Railway entirely.
+ *
+ * This started life as PUBLIC_API_URL only, which meant a brand-new variable
+ * had to be set before a single email could go out — on a server where mail
+ * itself was already working fine for sign-in codes. A guard nobody can
+ * satisfy without being told the secret is not a guard, it is an outage.
+ */
 function publicBase() {
-  return (process.env.PUBLIC_API_URL || process.env.BACKEND_URL || '').replace(/\/+$/, '');
+  const explicit = process.env.PUBLIC_API_URL || process.env.BACKEND_URL || '';
+  if (explicit) return explicit.replace(/\/+$/, '');
+
+  const railway = process.env.RAILWAY_PUBLIC_DOMAIN || '';
+  if (railway) return `https://${railway.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`;
+
+  // Older Railway images expose the full URL under a different name.
+  const legacy = process.env.RAILWAY_STATIC_URL || '';
+  if (legacy) return (legacy.startsWith('http') ? legacy : `https://${legacy}`).replace(/\/+$/, '');
+
+  return '';
 }
 
 function unsubscribeUrl(lead) {
@@ -104,7 +127,7 @@ export async function canSend(lead, { ignoreSchedule = false } = {}) {
   // a decorative opt-out is the kind of mistake that ends with the sending
   // domain blocked and every sign-in code undeliverable.
   if (!publicBase()) {
-    return { ok: false, reason: 'PUBLIC_API_URL is not set, so no unsubscribe link can be built. Refusing to send.' };
+    return { ok: false, reason: 'No public API URL is resolvable (set PUBLIC_API_URL), so no unsubscribe link can be built. Refusing to send.' };
   }
 
   const seq = lead.sequence || {};

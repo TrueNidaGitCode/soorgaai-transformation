@@ -176,8 +176,12 @@ export function buildPrompt(spec) {
     '      <span class="ch-dot"></span><span class="ch-dot"></span><span class="ch-dot"></span>',
     '      <span class="ch-thinking__text">…</span></div></div>',
     '',
-    '  Records behind an answer — THE reason a reply can be trusted, so show them whenever',
-    '  the answer came from rows. Goes inside the bot bubble, under the .ch-answer:',
+    '  Records behind an answer. Include them ONLY when the question was about particular',
+    '  records — who is at risk, which ones, show me the top five, tell me about record X.',
+    '  A question about totals, causes, trends or how something works is answered in prose',
+    '  and returns NO records: attaching the same table to every reply trains the reader to',
+    '  stop looking at it, and buries the one answer where the rows actually mattered.',
+    '  Goes inside the bot bubble, under the .ch-answer:',
     '    <p class="ch-matches__label">…</p>',
     '    <ul class="ch-matches">',
     '      <li class="ch-match">',
@@ -257,6 +261,18 @@ export function buildPrompt(spec) {
     ...(spec.useCase.justification ? [`Why it was chosen: ${spec.useCase.justification}`] : []),
     ...(spec.appName ? [`The customer calls this application: ${spec.appName}`] : []),
     '',
+    // The customer's own words. Everything else in this brief is derived from
+    // them, and without it the application can describe what it computes but
+    // not the problem it was built for — so it answers in the vocabulary of
+    // its own tables rather than the vocabulary of the person who asked.
+    ...(spec.businessObjective ? [
+      'THE PROBLEM THE CUSTOMER DESCRIBED, IN THEIR WORDS:',
+      spec.businessObjective,
+      'Use their language. When the answer touches something they named here —',
+      'their customers, their staff, the outcome that costs them money — say it',
+      'the way they said it, not in the names of your database columns.',
+      '',
+    ] : []),
     `Who uses it: ${audience}`,
     ...(spec.engagement.maturity ? [`Company stage: ${spec.engagement.maturity}`] : []),
     '',

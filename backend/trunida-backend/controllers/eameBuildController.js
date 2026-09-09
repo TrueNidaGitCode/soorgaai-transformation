@@ -16,6 +16,7 @@ import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
 import { buildApplication } from '../services/eameBuildService.js';
 import { buildRuntime } from '../services/eameProjectBuilder.js';
+import { resolveAppName } from '../services/eameSpec.js';
 import { sampleDataFiles } from '../services/deliveredSampleData.js';
 import { tenantMongoUri } from '../services/deployTargetService.js';
 import { requireEntitlement } from '../services/entitlements.js';
@@ -206,7 +207,7 @@ export async function getBuild(req, res) {
     if (!app) return res.json({ status: 'none' });
 
     const files = app.status === 'passed'
-      ? await generatedManifest(blueprintId, { appName: bp.appName })
+      ? await generatedManifest(blueprintId, { appName: resolveAppName(bp) })
       : null;
 
     return res.json({

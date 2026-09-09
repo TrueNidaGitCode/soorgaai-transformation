@@ -18,6 +18,7 @@ import { FIXED_PATHS } from '../services/eameSpec.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
 import crypto from 'crypto';
 import { generatedManifest } from './eameBuildController.js';
+import { resolveAppName } from '../services/eameSpec.js';
 import { buildZip } from '../services/zipService.js';
 import {
   isSvargGithubConfigured, svargRepoName, ensureSvargRepo, publishToSvarg,
@@ -42,9 +43,9 @@ async function ownedBlueprint(blueprintId, userId) {
  * as their application.
  */
 async function projectFor(bp) {
-  const generated = await generatedManifest(bp._id, { appName: bp.appName });
+  const generated = await generatedManifest(bp._id, { appName: resolveAppName(bp) });
   if (generated) return { files: generated, source: 'generated' };
-  return { files: buildManifest({ includeJira: true, appName: bp.appName }), source: 'template' };
+  return { files: buildManifest({ includeJira: true, appName: resolveAppName(bp) }), source: 'template' };
 }
 
 /**

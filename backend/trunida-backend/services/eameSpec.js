@@ -153,7 +153,13 @@ export function buildSpec(bp, { sampleBacked = [], sampleFiles = [] } = {}) {
   }
 
   return {
-    appName: String(bp?.appName || '').trim(),
+    appName: resolveAppName(bp, useCase),
+    // The customer's own words. Everything else in this brief is derived from
+    // them — the use case, the datasets, the engagement — and the generated
+    // application could describe what it does without ever knowing why it
+    // existed. Passed through so the app can answer in the terms the person
+    // who asked for it would recognise.
+    businessObjective: String(bp?.businessObjective || '').trim(),
     useCase,
     engagement: {
       category: engagement.category || '',
@@ -186,4 +192,35 @@ export function isAuthoredPath(p) {
   if (FIXED_PATHS.includes(clean)) return false;
   if (AUTHORED_FILES.includes(clean)) return true;
   return AUTHORED_DIRS.some(d => clean.startsWith(d)) && clean.length > 0;
+}
+
+/**
+ * What the delivered application is called.
+ *
+ * bp.appName is what the customer typed on the Eame screen, and it is usually
+ * empty — nothing forces it. Every application built without one shipped
+ * titled "AI Assistant", which is the template's placeholder: the customer
+ * received software named after the tool that made it rather than after the
+ * job it does.
+ *
+ * So it falls back to the approved use case, which is already a sentence
+ * somebody agreed to — "Predictive Classification for Student Attrition" is a
+ * far better name than a placeholder, and it needs no extra input.
+ *
+ * Trimmed to the same 48 characters the field allows, so a fallback can never
+ * produce a name the customer could not have typed themselves.
+ */
+export function resolveAppName(bp, useCase = null) {
+  const explicit = String(bp?.appName || '').trim();
+  if (explicit) return explicit.slice(0, 48);
+
+  const uc = useCase || resolveUseCase(bp);
+  // Only an APPROVED use case is a name. When nothing has been approved,
+  // resolveUseCase echoes the raw objective back as the name, and using that
+  // titles the application with a paragraph the customer wrote about their
+  // problem — worse than the placeholder it replaces.
+  if (uc?.source !== 'approved-use-case') return '';
+
+  const derived = String(uc.name || '').trim();
+  return derived.length && derived.length <= 48 ? derived : '';
 }

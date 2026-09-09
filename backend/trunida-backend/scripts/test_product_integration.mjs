@@ -24,7 +24,8 @@ import 'dotenv/config';
 import mongoose from 'mongoose';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
-import { integrateIntoProduct, checkIntegration } from '../services/productIntegrationService.js';
+import { integrateIntoProduct, checkIntegration, verifyAgainstRepo } from '../services/productIntegrationService.js';
+import { resolveRepoAccess } from '../services/githubReadService.js';
 
 await mongoose.connect(process.env.MONGO_URI);
 
@@ -86,6 +87,79 @@ console.log('  duplicate model       :', declaresDuplicate ? 'YES — would spli
 console.log('  secrets inlined       :', leakedSecret ? 'YES' : 'none');
 console.log('  guide produced        :', r.guide ? r.guide.split('\n').length + ' lines' : 'NO');
 
+// ── Did it actually check against their repository? ──────────────────────────
+//
+// The checks above look at the files in isolation. These ask the question that
+// decides whether the pull request builds: do the imports point at things that
+// exist in the repository this is going into?
+
+const v = r.repoVerified;
+console.log('');
+console.log('AGAINST THEIR REPOSITORY');
+
+let verifyOk = false;
+const failures = [];
+
+if (!v || !v.checkedAt) {
+  console.log('  NOT CHECKED — no repo access, or no repoFullName on the profile.');
+  failures.push('the integration was never checked against their repository');
+} else if (v.truncated) {
+  console.log('  tree truncated — GitHub would not list', p.repoFullName, 'in one request.');
+} else {
+  console.log('  their tree           :', v.treeSize, 'files');
+  console.log('  imports resolved     :', v.resolved);
+  console.log('  imports pointing at nothing:', v.missingFiles.length || 'none');
+  console.log('  missing exports      :', v.missingExports.length || 'none');
+  console.log('  packages to add      :', v.missingPackages.join(', ') || 'none');
+
+  // 1. Resolution is real. A pass must not be obtainable by checking nothing:
+  //    if zero imports were resolved, every "no problems found" below is vacuous.
+  if (v.resolved > 0) {
+    verifyOk = true;
+  } else {
+    failures.push('zero imports were resolved, so a clean result means nothing');
+  }
+}
+
+// 2 and 3. Feed it code with faults it must catch. Without this, a verifier that
+//    silently returns an empty result looks identical to a clean repository.
+if (v && v.checkedAt && !v.truncated) {
+  const access = await resolveRepoAccess(String(bp.userId));
+  const probe = await verifyAgainstRepo([{
+    path: 'services/svargProbe.js',
+    content: [
+      "import DoesNotExist from '../models/DoesNotExist.js';",
+      "import weird from 'a-package-nobody-depends-on';",
+      'export const probe = () => DoesNotExist && weird;',
+    ].join('\n'),
+  }], { access, repoFullName: p.repoFullName });
+
+  const caughtFile = probe.missingFiles.some(m => /DoesNotExist/.test(m));
+  const caughtPkg = probe.missingPackages.includes('a-package-nobody-depends-on');
+
+  console.log('');
+  console.log('  fault injection');
+  console.log('    missing file caught   :', caughtFile ? 'yes' : 'NO');
+  console.log('    missing package caught:', caughtPkg ? 'yes (reported to add)' : 'NO');
+
+  if (!caughtFile) failures.push('an import of a file that does not exist was not reported');
+  if (!caughtPkg) failures.push('an import of a package they do not have was not reported');
+
+  // 3b. A package to add is not a failure. It is a normal outcome, and putting
+  //     it in warnings would make every correct integration look broken.
+  const pkgInWarnings = r.warnings.some(w => /a-package-nobody-depends-on/.test(w));
+  if (pkgInWarnings) failures.push('a package to add was reported as a warning rather than as an addition');
+
+  // 4. No source retained. The point of resolving against the tree rather than
+  //    cloning is that Svarg never holds a copy of their code — so the result
+  //    must carry paths and counts, and no file content.
+  const serialized = JSON.stringify(v);
+  const leaked = (v.missingFiles.length + v.missingExports.length) > 0
+    && /function |const |=>|class /.test(serialized);
+  console.log('    holds no source       :', leaked ? 'NO — content in the result' : 'yes');
+  if (leaked) failures.push('the verification result carries content from their repository');
+}
+
 if (r.warnings.length) {
   console.log('');
   console.log('WARNINGS');
@@ -118,10 +192,17 @@ if (!reusedEntities.length && theirEntities.length) {
 }
 
 const verdict = !parseErrors.length && usesTheirFramework
-  && !declaresDuplicate && !leakedSecret && !!r.guide;
+  && !declaresDuplicate && !leakedSecret && !!r.guide
+  && verifyOk && !failures.length;
 console.log('');
+if (failures.length) {
+  console.log('VERIFICATION PROBLEMS');
+  for (const f of failures) console.log('   -', f);
+  console.log('');
+}
 console.log(verdict
-  ? 'PASS — parses, uses their stack, no duplicate model, no secrets, guide present'
+  ? 'PASS — parses, uses their stack, no duplicate model, no secrets, guide present,\n'
+    + '       and every import resolves against their real repository'
   : 'NOT READY — see the checks above');
 if (verdict && !r.groundedInSource) {
   console.log('       Grounded in the profile only. Embed their code to match house style too.');

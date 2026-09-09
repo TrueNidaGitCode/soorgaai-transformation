@@ -328,6 +328,7 @@ export async function integrateProduct(req, res) {
       'productIntegration.guide': result.guide,
       'productIntegration.warnings': result.warnings,
       'productIntegration.groundedInSource': result.groundedInSource,
+      'productIntegration.repoVerified': result.repoVerified,
       'productIntegration.files': result.files,
       'productIntegration.error': '',
     } });
@@ -343,6 +344,7 @@ export async function integrateProduct(req, res) {
       database: result.profile.database,
       entitiesReused: result.profile.entitiesReused,
       groundedInSource: result.groundedInSource,
+      repoVerified: result.repoVerified,
       guide: result.guide,
       warnings: result.warnings,
       files: result.files.map(f => ({ path: f.path, bytes: Buffer.byteLength(f.content, 'utf8') })),
@@ -371,6 +373,7 @@ export async function getIntegration(req, res) {
       guide: i.guide || '',
       warnings: i.warnings || [],
       groundedInSource: i.groundedInSource || 0,
+      repoVerified: i.repoVerified || null,
       error: i.error || '',
       files: (i.files || []).map(f => ({ path: f.path, bytes: Buffer.byteLength(f.content || '', 'utf8') })),
       // Whether the button can even be pressed, said rather than left to the

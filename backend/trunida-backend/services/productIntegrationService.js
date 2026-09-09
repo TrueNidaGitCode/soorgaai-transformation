@@ -43,6 +43,8 @@ import GeneratedApplication from '../models/GeneratedApplication.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { retrieveCode } from './codebaseProfileService.js';
 import CustomerCodeChunk from '../models/CustomerCodeChunk.js';
+import { extractImports, packageOf, resolvesInManifest } from './generatedProjectVerifier.js';
+import { readTree, readFile, resolveRepoAccess } from './githubReadService.js';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -248,10 +250,36 @@ export async function integrateIntoProduct(blueprintId, { userId, onProgress = n
   say('Checking what was written');
   warnings.push(...checkIntegration(files, profile));
 
+  // Then the question the checks above cannot answer: does this fit THEIR
+  // repository? Best effort — their GitHub App install can be gone since the
+  // profile was taken, and an integration that was written is still worth
+  // returning without the verdict. The screen says which of the two happened.
+  let repoVerified = null;
+  if (profile.repoFullName) {
+    say('Checking it against their repository');
+    try {
+      const access = await resolveRepoAccess(userId);
+      repoVerified = await verifyAgainstRepo(files, {
+        access,
+        repoFullName: profile.repoFullName,
+      });
+      warnings.push(...repoVerified.missingFiles);
+      warnings.push(...repoVerified.missingExports);
+      if (repoVerified.truncated) {
+        warnings.push(`${profile.repoFullName} is too large for GitHub to return in one tree, `
+          + 'so imports could not be checked against it. The files above are unverified against their repo.');
+      }
+    } catch (err) {
+      warnings.push(`Could not read ${profile.repoFullName} to check the imports (${err.message}). `
+        + 'The files were not verified against their repository.');
+    }
+  }
+
   return {
     files,
     guide,
     warnings,
+    repoVerified,
     profile: {
       repoFullName: profile.repoFullName || '',
       frameworks: profile.frameworks || [],
@@ -352,3 +380,158 @@ export function checkIntegration(files, profile = {}) {
 
   return warnings;
 }
+
+/**
+ * Does this actually fit their repository?
+ *
+ * The checks above verify the files in isolation — they parse, leak nothing,
+ * declare no duplicate model. None of that confirms that
+ * `routes/churnRoutes.js` importing `../models/StudentChurnProfile` refers to
+ * anything that exists, which is the first thing to break their build and the
+ * first thing a reviewer would find by being annoyed.
+ *
+ * ── Why this is not a clone ─────────────────────────────────────────────────
+ *
+ * Import resolution needs the file LIST, not the file contents, and readTree
+ * returns every path in one call. So this answers the same question as
+ * cloning, installing and booting — will this break their build — for two API
+ * calls and a handful of targeted reads.
+ *
+ * It also means Svarg never holds a copy of a customer's proprietary source.
+ * Nothing read here is stored: the tree and the few files fetched live for the
+ * length of this function and are never written to the blueprint or to disk.
+ *
+ * ── What it cannot tell you ─────────────────────────────────────────────────
+ *
+ * It does not install, boot, or run their tests. Those need their environment
+ * and their secrets. The screen says so rather than implying the diff is proven.
+ */
+export async function verifyAgainstRepo(files, { access, repoFullName }) {
+  const result = {
+    checkedAt: new Date(),
+    resolved: 0,
+    missingFiles: [],
+    missingPackages: [],
+    missingExports: [],
+    treeSize: 0,
+  };
+
+  const tree = await readTree(access, repoFullName);
+  const paths = new Set((tree.files || []).map(f => f.path.replace(/\\/g, '/')));
+  result.treeSize = paths.size;
+
+  // A truncated tree means paths are missing from the set, and every "missing"
+  // verdict below would then be unsafe. Say so and check nothing rather than
+  // report confident nonsense.
+  if (tree.truncated) {
+    result.truncated = true;
+    return result;
+  }
+
+  // Their own files count too: an integration file may import another one.
+  const own = new Set(files.map(f => f.path.replace(/\\/g, '/')));
+  const known = new Set([...paths, ...own]);
+
+  // 1. Relative imports must land on something real.
+  // 2. Bare imports must be a package they already depend on.
+  const bareNeeded = new Set();
+  const importedFrom = new Map();   // their file -> symbols the integration wants
+
+  for (const f of files) {
+    if (!/\.(js|mjs)$/.test(f.path)) continue;
+    const { relative, bare } = extractImports(f.content);
+
+    for (const spec of relative) {
+      if (resolvesInManifest(f.path, spec, known)) {
+        result.resolved += 1;
+        // Only their files need an export check; ours are in this same set.
+        const target = resolveTo(f.path, spec, paths);
+        if (target) {
+          if (!importedFrom.has(target)) importedFrom.set(target, new Set());
+          for (const sym of namedImportsOf(f.content, spec)) importedFrom.get(target).add(sym);
+        }
+      } else {
+        result.missingFiles.push(`${f.path} imports "${spec}", which is not in ${repoFullName}`);
+      }
+    }
+
+    for (const spec of bare) bareNeeded.add(packageOf(spec));
+  }
+
+  // Node builtins are not dependencies and never appear in package.json.
+  const pkgRaw = await readFile(access, repoFullName, 'package.json').catch(() => null);
+  if (pkgRaw) {
+    let deps = {};
+    try {
+      const pkg = JSON.parse(pkgRaw);
+      deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+    } catch { /* unparseable package.json — skip rather than guess */ }
+    for (const name of bareNeeded) {
+      if (name.startsWith('node:') || BUILTINS.has(name)) continue;
+      if (!deps[name]) result.missingPackages.push(name);
+    }
+  }
+
+  // 3. The symbols actually exported. Only the files being imported from, so a
+  //    handful of reads rather than a repository.
+  for (const [target, symbols] of importedFrom) {
+    if (!symbols.size) continue;
+    const src = await readFile(access, repoFullName, target).catch(() => null);
+    if (!src) continue;
+    for (const sym of symbols) {
+      if (!exportsSymbol(src, sym)) {
+        result.missingExports.push(`${target} does not export "${sym}"`);
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Which of THEIR paths a relative specifier lands on, or null.
+ *
+ * Deliberately the same base computation and the same three candidate forms as
+ * resolvesInManifest in generatedProjectVerifier.js. If these two ever
+ * disagreed, an import could be counted as resolved and then have its exports
+ * checked against the wrong file, or against nothing.
+ */
+function resolveTo(fromPath, specifier, theirPaths) {
+  const clean = (p) => p.split(path.sep).join('/').replace(/^\.\//, '');
+  const base = clean(path.posix.join(path.posix.dirname(clean(fromPath)), specifier));
+  for (const candidate of [base, `${base}.js`, `${base}/index.js`]) {
+    if (theirPaths.has(candidate)) return candidate;
+  }
+  return null;
+}
+
+/** The named bindings one import statement pulls from a specifier. */
+function namedImportsOf(source, specifier) {
+  const esc = specifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rx = new RegExp(`import\\s*\\{([^}]+)\\}\\s*from\\s*['"\`]${esc}['"\`]`, 'g');
+  const out = new Set();
+  let m;
+  while ((m = rx.exec(source)) !== null) {
+    for (const raw of m[1].split(',')) {
+      const name = raw.trim().split(/\s+as\s+/)[0].trim();
+      if (name) out.add(name);
+    }
+  }
+  return out;
+}
+
+/** Whether a module exports that name, in any of the forms people write. */
+function exportsSymbol(source, name) {
+  const n = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(
+    `export\\s+(async\\s+)?(function|const|let|var|class)\\s+${n}\\b`
+    + `|export\\s*\\{[^}]*\\b${n}\\b[^}]*\\}`
+    + `|exports\\.${n}\\s*=`,
+  ).test(source);
+}
+
+const BUILTINS = new Set([
+  'fs', 'path', 'os', 'url', 'util', 'crypto', 'http', 'https', 'events', 'stream',
+  'child_process', 'zlib', 'buffer', 'assert', 'net', 'dns', 'tls', 'querystring',
+  'readline', 'worker_threads', 'perf_hooks', 'timers', 'string_decoder', 'vm',
+]);

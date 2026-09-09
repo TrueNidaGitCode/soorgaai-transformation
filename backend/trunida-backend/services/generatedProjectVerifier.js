@@ -144,7 +144,7 @@ export function packageOf(specifier) {
 const norm = (p) => p.split(path.sep).join('/').replace(/^\.\//, '');
 
 /** Gate 2 — a relative import must land on a file that is actually shipped. */
-function resolvesInManifest(fromPath, specifier, paths) {
+export function resolvesInManifest(fromPath, specifier, paths) {
   const base = norm(path.posix.join(path.posix.dirname(norm(fromPath)), specifier));
   // Node resolves an extensionless ESM specifier only in some configurations,
   // so all three forms are accepted here and gate 5 is what settles it.

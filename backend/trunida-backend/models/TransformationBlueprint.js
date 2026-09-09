@@ -463,6 +463,22 @@ const transformationBlueprintSchema = new mongoose.Schema({
     // the profile alone, which matches their stack but not their house style —
     // a real difference in how much review the diff needs.
     groundedInSource: { type: Number, default: 0 },
+    // What resolving the integration's imports against their real repository
+    // found. null means it could not be checked — no repo, or their GitHub App
+    // install has since gone — which is a different state from "checked, clean"
+    // and the screen must not show the two the same way.
+    repoVerified: {
+      type: new mongoose.Schema({
+        checkedAt:       { type: Date,     default: null },
+        resolved:        { type: Number,   default: 0 },   // imports that landed on a real path
+        treeSize:        { type: Number,   default: 0 },   // files in their repo, for scale
+        truncated:       { type: Boolean,  default: false },
+        missingFiles:    { type: [String], default: [] },  // build breakers
+        missingExports:  { type: [String], default: [] },  // build breakers
+        missingPackages: { type: [String], default: [] },  // to add, not a fault
+      }, { _id: false }),
+      default: null,
+    },
     files: {
       type: [new mongoose.Schema({
         path:    { type: String, required: true },

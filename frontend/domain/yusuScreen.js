@@ -741,10 +741,47 @@ function renderIntegration(r) {
       `<li><code>${esc(f.path)}</code></li>`).join('')}</ul>
     ${r.warnings?.length ? `<ul class="yusu-int__warn">${r.warnings.map(w =>
       `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+    ${verificationBlock(r.repoVerified, r.repoFullName)}
     ${r.guide ? `<details class="yusu-int__guide"><summary>Integration guide</summary>
       <pre>${esc(r.guide)}</pre></details>` : ''}
     <p class="yusu-int__note">Review these as a pull request in your own repository. Svarg reads
       your code but never writes to it, and never deploys your product.</p>`;
+}
+
+/**
+ * What checking against the real repository found — and what it did not check.
+ *
+ * The second half matters as much as the first. Resolving imports against your
+ * file tree proves the diff will not break your build on a missing module; it
+ * does not install, boot or run your tests, because those need your environment
+ * and your secrets. Saying "verified" with nothing after it would let a reviewer
+ * read far more assurance into this than it earns.
+ */
+function verificationBlock(v, repo) {
+  if (!v || !v.checkedAt) {
+    return `<p class="yusu-int__note">These files were not checked against
+      ${esc(repo || 'your repository')} — the imports they use are unverified.</p>`;
+  }
+  if (v.truncated) {
+    return `<p class="yusu-int__note">${esc(repo)} is too large for GitHub to list in one
+      request, so the imports could not be checked against it.</p>`;
+  }
+
+  const breaks = (v.missingFiles?.length || 0) + (v.missingExports?.length || 0);
+  return `
+    <div class="yusu-int__verify${breaks ? ' yusu-int__verify--bad' : ''}">
+      <p class="yusu-int__verify-head">${breaks
+        ? `${breaks} import${breaks === 1 ? '' : 's'} in these files point at something
+           ${esc(repo)} does not have — listed above.`
+        : `Every import resolves against ${esc(repo)}.`}</p>
+      <p class="yusu-int__verify-sub">${v.resolved} import${v.resolved === 1 ? '' : 's'}
+        checked against the ${v.treeSize} files in your repository.</p>
+      ${v.missingPackages?.length ? `<p class="yusu-int__verify-sub">Add to your
+        <code>package.json</code>: ${v.missingPackages.map(p =>
+          `<code>${esc(p)}</code>`).join(', ')}</p>` : ''}
+      <p class="yusu-int__verify-sub yusu-int__verify-sub--limit">Not checked: this did not
+        install, run or test anything — that needs your environment and your secrets.</p>
+    </div>`;
 }
 
 async function buildIntegration() {

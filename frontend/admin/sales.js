@@ -32,7 +32,7 @@ const TABS = [
  * says how many rows it is leaving out. A silent filter that hides a genuine
  * customer would be far worse than the noise it removes.
  */
-let state = { signals: null, mail: null, template: null, tab: 'outreach', kinds: new Set(['real']) };
+let state = { signals: null, mail: null, template: null, tab: 'outreach', kinds: new Set(['real']), view: 'funnel' };
 
 /** The rows of one stage, after the kind filter. */
 function visible(rows) {
@@ -354,9 +354,8 @@ function renderOutreachBody(s) {
     ['Status', 'Organisation', 'Contact', 'Sent', 'Next', ''],
     visible(s.outreach), leadRow);
 
-  const converted = renderConverted(s.converted);
 
-  return form + rows + converted;
+  return form + rows;
 }
 
 function renderDiscovery(s) {
@@ -440,7 +439,6 @@ function renderStage() {
 
   if (state.tab === 'outreach') wireOutreach();
   wireKindSelects();
-  renderAccounts();
 }
 
 // ── Outreach actions ─────────────────────────────────────────────────────────
@@ -758,6 +756,7 @@ async function load(keepTab) {
     renderKindFilter();
     renderTabs();
     renderStage();
+    if (state.view === 'reports') renderReports();
     document.getElementById('sg-generated').textContent =
       `Read at ${new Date(signals.generatedAt).toLocaleTimeString()}`;
   } catch (err) {
@@ -809,6 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderNole();
   });
 
+  wireAccountControls();
   document.getElementById('sg-refresh-btn').addEventListener('click', () => load(state.tab));
 
   renderNole();
@@ -996,4 +996,66 @@ function renderConverted(converted) {
       </tr>`).join('')}</tbody>
     </table>
   </details>`;
+}
+
+// ── Views ────────────────────────────────────────────────────────────────────
+
+/**
+ * Funnel is work; Reports is reading.
+ *
+ * Accounts and converted leads carry no buttons — nothing on them is actioned —
+ * so they were sitting between the operator and the rows they came to work. A
+ * report mixed into a worklist makes the worklist longer without making it
+ * more useful, and it is the report that gets scrolled past.
+ */
+function setView(view) {
+  state.view = view;
+  const funnel = view === 'funnel';
+
+  document.getElementById('sg-kinds').hidden = !funnel;
+  document.getElementById('sg-tabs').hidden = !funnel;
+  document.getElementById('sg-stage').hidden = !funnel;
+  document.getElementById('nl-panel').hidden = !funnel;
+  document.getElementById('sg-reports').hidden = funnel;
+
+  document.getElementById('sg-subtitle').textContent = funnel
+    ? 'Five stages, in the order a customer moves through them. Only Outreach is typed in — the rest are records the product already writes. Each account appears once, at the furthest stage it has reached, so the counts add up.'
+    : 'Read-only. Which organisations have someone using this, and which cold emails turned into accounts.';
+
+  for (const [id, on] of [['sg-view-funnel', funnel], ['sg-view-reports', !funnel]]) {
+    const b = document.getElementById(id);
+    b.classList.toggle('sg-view--on', on);
+    b.setAttribute('aria-selected', String(on));
+  }
+
+  if (!funnel) renderReports();
+}
+
+function renderReports() {
+  document.getElementById('sg-conversions').innerHTML = state.signals
+    ? renderConverted(state.signals.converted) : '';
+  renderAccounts();
+}
+
+/**
+ * Signing out clears the whole session, not only the token.
+ *
+ * role and username decide what the client-side guards let you see, so leaving
+ * them behind on a shared machine shows the next person an admin shell that
+ * then fails every request — which looks like a broken product rather than a
+ * finished logout.
+ */
+function wireAccountControls() {
+  document.getElementById('sg-username').textContent =
+    localStorage.getItem('username') || 'admin';
+
+  document.getElementById('sg-view-funnel').addEventListener('click', () => setView('funnel'));
+  document.getElementById('sg-view-reports').addEventListener('click', () => setView('reports'));
+
+  document.getElementById('sg-logout').addEventListener('click', () => {
+    ['token', 'role', 'username', 'redirectAfterLogin'].forEach(k => {
+      try { localStorage.removeItem(k); } catch { /* private mode */ }
+    });
+    window.location.href = '/admin/login.html';
+  });
 }

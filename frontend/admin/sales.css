@@ -997,3 +997,88 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 }
 
 .sg-conv__table { margin-top: 0.85rem; }
+
+/* ── Top bar: title left, account and view right ──────────────────────────────
+   The admin section had no way to sign out at all, and the read-only roll-ups
+   were sitting between the operator and the rows they came to work. */
+
+.sg-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.sg-topbar__title { flex: 1; min-width: 300px; }
+.sg-topbar__title h1 { margin-bottom: 0.4rem; }
+.sg-topbar__title .header-subtitle { max-width: 68ch; margin: 0; }
+
+.sg-account {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.7rem;
+  flex-shrink: 0;
+}
+
+/* Segmented control — the two things are alternatives, so they share an edge. */
+.sg-views {
+  display: inline-flex;
+  border: 1px solid rgba(92, 197, 167, 0.3);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.sg-view {
+  padding: 0.42rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #CCCCCC);
+  font-family: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.sg-view + .sg-view { border-left: 1px solid rgba(92, 197, 167, 0.3); }
+.sg-view:hover:not(.sg-view--on) { background: rgba(255, 255, 255, 0.04); }
+
+.sg-view--on {
+  background: rgba(92, 197, 167, 0.16);
+  color: var(--accent-green, #5CC5A7);
+  font-weight: 600;
+}
+
+.sg-whoami { display: flex; align-items: center; gap: 0.7rem; }
+
+.sg-whoami__name {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sg-logout {
+  padding: 0.28rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.sg-logout:hover { border-color: #fca5a5; color: #fca5a5; }
+
+/* Reports carry no actions, so they read as documents rather than tools. */
+#sg-reports .sg-conv { margin-top: 0; margin-bottom: 1.25rem; }
+
+@media (max-width: 720px) {
+  .sg-account { align-items: flex-start; width: 100%; }
+}

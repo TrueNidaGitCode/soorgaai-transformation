@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="company-library.css">
-    <link rel="stylesheet" href="sales.css?v=20">
+    <link rel="stylesheet" href="sales.css?v=21">
     <script src="../login/config.js"></script>
 </head>
 <body>
@@ -17,9 +17,24 @@
     </header>
 
     <main class="admin-dashboard">
-        <div class="dashboard-header">
-            <h1>Sales Funnel</h1>
-            <p class="header-subtitle">Five stages, in the order a customer moves through them. Only Outreach is typed in — Discovery, Conversion, Onboarding and Sales are records the product already writes. Each account appears once, at the furthest stage it has reached, so the counts add up.</p>
+        <!-- Title left, account and view controls right. The admin section had
+             no way to sign out at all before this. -->
+        <div class="sg-topbar">
+            <div class="sg-topbar__title">
+                <h1>Sales Funnel</h1>
+                <p class="header-subtitle" id="sg-subtitle">Five stages, in the order a customer moves through them. Only Outreach is typed in — the rest are records the product already writes. Each account appears once, at the furthest stage it has reached, so the counts add up.</p>
+            </div>
+
+            <div class="sg-account">
+                <div class="sg-views" role="tablist" aria-label="View">
+                    <button type="button" id="sg-view-funnel" class="sg-view sg-view--on" aria-selected="true">Funnel</button>
+                    <button type="button" id="sg-view-reports" class="sg-view" aria-selected="false">Reports</button>
+                </div>
+                <div class="sg-whoami">
+                    <span class="sg-whoami__name" id="sg-username">—</span>
+                    <button type="button" id="sg-logout" class="sg-logout">Log out</button>
+                </div>
+            </div>
         </div>
 
         <div id="sg-banner" class="cl-banner" style="display:none" role="alert"></div>
@@ -37,9 +52,12 @@
 
         <div id="sg-stage" style="display:none"></div>
 
-        <!-- Accounts: the same people rolled up by organisation, which is the
-             unit a bottom-up motion actually works in. -->
-        <div id="sg-accounts"></div>
+        <!-- Reports — read-only roll-ups. Nothing here is actioned, so it does
+             not belong in the funnel the operator works down. -->
+        <div id="sg-reports" hidden>
+            <div id="sg-conversions"></div>
+            <div id="sg-accounts"></div>
+        </div>
 
         <!-- ── Nole ──────────────────────────────────────────────────────────
              Same shape as the Cob/Aria/Arth panels on domain.html (see its
@@ -69,6 +87,6 @@
         </div>
     </main>
 
-    <script src="sales.js?v=20"></script>
+    <script src="sales.js?v=21"></script>
 </body>
 </html>

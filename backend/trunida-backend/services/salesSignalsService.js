@@ -74,6 +74,17 @@ function clip(s, n) {
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
 
+/**
+ * How to refer to this person in text.
+ *
+ * The address where there is one, the number otherwise, and something explicit
+ * when there is neither — never a blank column, which reads as a rendering
+ * fault rather than as a contact you reach a different way.
+ */
+function contactOf(r) {
+  return String(r.email || '').trim() || String(r.phone || '').trim() || '(no contact details)';
+}
+
 export function usd(n) {
   return `$${(Number(n) || 0).toFixed(4)}`;
 }
@@ -190,7 +201,17 @@ export async function collectSignals() {
     .map(l => ({
       id: String(l._id),
       at: l.lastContactedAt || l.createdAt,
-      email: l.email,
+      /**
+       * Always a string, never undefined.
+       *
+       * Email became optional when warm introductions arrived, and this went
+       * out as undefined for any lead entered with only a mobile number. Every
+       * consumer had been written against a guaranteed string — the text board
+       * called .padEnd on it and threw, which reached the operator as "Could
+       * not read the sales funnel". The read was fine. The rendering of it was
+       * not, and the message blamed the wrong thing entirely.
+       */
+      email: l.email || '',
       name: l.name || '',
       company: l.company || '',
       status: l.status || 'to-contact',
@@ -278,7 +299,8 @@ export async function collectSignals() {
       const motion = l.motion || DEFAULT_MOTION;
       return {
         id: String(l._id),
-        email: l.email,
+        email: l.email || '',
+        phone: l.phone || '',
         company: l.company || '',
         role: l.role || '',
         // Which motion produced this customer — the reason for filing leads by
@@ -617,7 +639,10 @@ export function renderBoard(s) {
     // Nole answers from this text alone, so "which motion is actually working"
     // and "what has stalled" are unanswerable unless they are printed here.
     section(1, 'Outreach', 'everyone you are working toward a first conversation, by motion', s.outreach,
-      r => `${age(r.at).padStart(5)}  ${String(r.status).padEnd(11)} ${r.email.padEnd(32)} `
+      // Whatever this person can actually be reached on. A warm introduction has
+      // a number and no address, and a blank column would leave Nole unable to
+      // name the row it is recommending.
+      r => `${age(r.at).padStart(5)}  ${String(r.status).padEnd(11)} ${contactOf(r).padEnd(32)} `
          + `${clip(r.company, 24)}\n         via ${r.motion}${r.via ? ` (${clip(r.via, 40)})` : ''}`
          + ` — next: ${r.nextStep ? clip(r.nextStep, 50) : (motionEmails(r.motion) ? 'scheduled' : 'NOTHING RECORDED')}`
          + `${r.note ? `\n         ${clip(r.note, 90)}` : ''}`),
@@ -637,7 +662,7 @@ export function renderBoard(s) {
 
     s.converted.length
       ? `\nCONVERTED FROM OUTREACH · ${s.converted.length}\n`
-        + s.converted.map(r => `   ${r.email}${r.company ? ` (${r.company})` : ''}`).join('\n')
+        + s.converted.map(r => `   ${contactOf(r)}${r.company ? ` (${r.company})` : ''}`).join('\n')
       : '',
   ].filter(Boolean).join('\n');
 }

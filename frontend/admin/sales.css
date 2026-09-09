@@ -946,3 +946,54 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 /* The stage panel is the page; give its own header room and the rest less. */
 .sg-section .panel-header { margin-bottom: 0.35rem; }
 .sg-section .field-hint { margin-top: 0; }
+
+/* ── Converted leads ──────────────────────────────────────────────────────────
+   A dropdown, not a banner: one conversion is a sentence, twenty is a wall
+   across the top of the stage you are trying to work. */
+
+.sg-conv {
+  margin-top: 1.25rem;
+  padding: 0.7rem 1rem;
+  background: rgba(92, 197, 167, 0.07);
+  border: 1px solid rgba(92, 197, 167, 0.28);
+  border-radius: 12px;
+}
+
+.sg-conv > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--accent-green, #5CC5A7);
+  font-weight: 600;
+}
+
+.sg-conv > summary::-webkit-details-marker { display: none; }
+.sg-conv > summary::before { content: '▸'; font-size: 0.8em; }
+.sg-conv[open] > summary::before { content: '▾'; }
+
+.sg-conv__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--accent-green, #5CC5A7);
+  color: #0D0D0D;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* The count that is actually creditable, said next to the count that is not. */
+.sg-conv__sub {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.sg-conv__table { margin-top: 0.85rem; }

@@ -196,9 +196,36 @@ export async function collectSignals() {
     .sort(byRecency);
 
   // Leads that did sign up — not a stage, but the only proof outreach works.
+  // Leads that became accounts. Not a stage — nobody sits here — but the only
+  // evidence outreach works at all, so it carries what makes it evidence:
+  // how long it took and how many emails it cost, not just who.
+  const userByEmail = new Map(users.map(u => [String(u.email || '').toLowerCase(), u]));
+
   const converted = leads
     .filter(l => knownEmails.has(String(l.email || '').toLowerCase()))
-    .map(l => ({ id: String(l._id), email: l.email, company: l.company || '', at: l.createdAt }));
+    .map(l => {
+      const u = userByEmail.get(String(l.email).toLowerCase());
+      const signedUpAt = u?.createdAt || null;
+      const sent = l.sequence?.sentCount || 0;
+      // Negative when the account predates the lead — they signed up on their
+      // own and were added to outreach afterwards. That is not a conversion
+      // and saying so is the difference between a metric and a flattering one.
+      const days = signedUpAt ? Math.round((new Date(signedUpAt) - new Date(l.createdAt)) / DAY) : null;
+      return {
+        id: String(l._id),
+        email: l.email,
+        company: l.company || '',
+        role: l.role || '',
+        addedAt: l.createdAt,
+        signedUpAt,
+        daysToConvert: days,
+        emailsSent: sent,
+        // The honest label. Only a signup that came AFTER the first email can
+        // be credited to it.
+        attributed: days !== null && days >= 0 && sent > 0,
+      };
+    })
+    .sort((a, b) => new Date(b.signedUpAt || 0) - new Date(a.signedUpAt || 0));
 
   // ── 2. Discovery — anonymous guests, grouped into one row per prospect ─────
   const unclaimed = blueprints.filter(b => b.guestId && !b.userId);
@@ -417,6 +444,14 @@ export async function collectSignals() {
         : 'Power user active, no decision-maker approached yet',
     };
   }).sort((x, y) => (y.powerUsers.length - x.powerUsers.length) || (y.blueprints - x.blueprints));
+
+  // Where each converted lead actually got to. Attached after the stages are
+  // built so it can never disagree with them.
+  const stageOf = new Map();
+  for (const [stage, rows] of [['conversion', conversion], ['onboarding', onboarding], ['sales', sales]]) {
+    for (const r of rows) stageOf.set(String(r.email).toLowerCase(), stage);
+  }
+  for (const c of converted) c.stage = stageOf.get(String(c.email).toLowerCase()) || 'conversion';
 
   conversion.sort(byRecency);
   onboarding.sort(byRecency);

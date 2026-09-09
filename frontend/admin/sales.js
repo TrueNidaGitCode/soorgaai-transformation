@@ -354,10 +354,7 @@ function renderOutreachBody(s) {
     ['Status', 'Organisation', 'Contact', 'Sent', 'Next', ''],
     visible(s.outreach), leadRow);
 
-  const converted = s.converted.length
-    ? `<div class="sg-converted"><strong>${s.converted.length} lead(s) have since signed up:</strong>
-        ${s.converted.map(c => esc(c.email)).join(', ')}</div>`
-    : '';
+  const converted = renderConverted(s.converted);
 
   return form + rows + converted;
 }
@@ -956,4 +953,47 @@ function renderAlternates(box, leadId, alternates) {
       } catch (err) { banner(`Could not change the subject: ${err.message}`); }
     });
   });
+}
+
+/**
+ * Leads that became accounts — the only evidence outreach works at all.
+ *
+ * A dropdown rather than a banner because it grows: one converted lead is a
+ * sentence, twenty is a wall across the top of the stage you are trying to
+ * work. Collapsed it answers "is any of this working"; opened it answers
+ * "what did it cost", which is the question that decides whether to keep going.
+ *
+ * "Attributed" is deliberately strict. A signup dated before the lead was added
+ * means they found Svarg on their own and were entered into outreach
+ * afterwards — real, but not something the email did. Counting those would
+ * make the number flattering rather than useful.
+ */
+function renderConverted(converted) {
+  if (!converted?.length) return '';
+
+  const credited = converted.filter(c => c.attributed);
+  const stageLabel = { conversion: 'Signed up', onboarding: 'Live', sales: 'Paying' };
+
+  return `<details class="sg-conv">
+    <summary class="sg-conv__head">
+      <span class="sg-conv__n">${converted.length}</span>
+      lead${converted.length === 1 ? '' : 's'} converted
+      ${credited.length < converted.length
+        ? `<span class="sg-conv__sub">${credited.length} attributable to an email</span>` : ''}
+    </summary>
+    <table class="cl-table sg-conv__table">
+      <thead><tr>
+        <th>Contact</th><th>Organisation</th><th>Emails</th><th>Days</th><th>Reached</th>
+      </tr></thead>
+      <tbody>${converted.map(c => `<tr>
+        <td class="sg-who">${esc(c.email)}</td>
+        <td>${esc(c.company) || '<span class="sg-unknown">—</span>'}</td>
+        <td>${c.emailsSent || '<span class="sg-unknown">0</span>'}</td>
+        <td>${c.attributed
+          ? `${c.daysToConvert}d`
+          : '<span class="sg-unknown" title="Signed up before the lead was added, or before any email went out — not something the outreach did">not attributable</span>'}</td>
+        <td><span class="sg-pill ${c.stage === 'sales' ? 'sg-pill--paid' : ''}">${esc(stageLabel[c.stage] || c.stage)}</span></td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </details>`;
 }

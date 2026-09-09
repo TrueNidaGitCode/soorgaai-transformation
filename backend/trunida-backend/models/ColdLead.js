@@ -35,6 +35,21 @@ const coldLeadSchema = new mongoose.Schema({
   },
 
   name:    { type: String, default: '', trim: true },
+
+  /**
+   * The function you are approaching, not their job title.
+   *
+   * The go-to-market is bottom-up: a power user shows up inside a company,
+   * and the outreach that follows goes to whoever holds budget for their
+   * department. What matters is therefore which FUNCTION was approached at
+   * an organisation — engineering, marketing, sales — because that decides
+   * the proposition, and because approaching the same function twice at one
+   * company is a mistake you can only see if it was recorded.
+   *
+   * Free text with suggestions rather than an enum: titles vary wildly, and
+   * a lead nobody can file under the available options gets filed wrongly.
+   */
+  role: { type: String, default: '', trim: true },
   company: { type: String, default: '', trim: true },
 
   /**

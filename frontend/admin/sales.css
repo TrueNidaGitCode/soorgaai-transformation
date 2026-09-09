@@ -725,3 +725,32 @@
   letter-spacing: 0.05em;
   color: rgba(255, 255, 255, 0.3);
 }
+
+/* ── Accounts roll-up ─────────────────────────────────────────────────────────
+   The organisation is the unit a bottom-up motion works in: a power user shows
+   up, and the buyer is found afterwards. */
+
+.sg-power {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(92, 197, 167, 0.18);
+  color: var(--accent-green, #5CC5A7);
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sg-fn {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(147, 197, 253, 0.16);
+  color: #93c5fd;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* An account with a power user and nobody approached is the whole worklist. */
+.sg-todo { color: var(--accent-green, #5CC5A7); font-weight: 600; }

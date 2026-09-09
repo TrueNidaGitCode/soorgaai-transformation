@@ -80,12 +80,12 @@ export async function ask(req, res) {
 
 export async function createLead(req, res) {
   try {
-    const { email, name, company, note, subject, body, orgContext } = req.body || {};
+    const { email, name, company, role, note, subject, body, orgContext } = req.body || {};
     // A new lead with nothing written starts from the shared template, so the
     // generic body is authored once and only orgContext is typed per prospect.
     const tpl = await getTemplate();
     const lead = await addLead({
-      email, name, company, note, orgContext,
+      email, name, company, role, note, orgContext,
       subject: subject || tpl.subject,
       body:    body    || tpl.body,
       addedByUserId: req.user._id,

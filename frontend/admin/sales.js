@@ -285,6 +285,13 @@ function renderOutreachBody(s) {
       <input type="email" id="sg-lead-email" placeholder="email@company.com" autocomplete="off">
       <input type="text"  id="sg-lead-name" placeholder="First name — fills {{name}}" autocomplete="off">
       <input type="text"  id="sg-lead-company" placeholder="Company — fills {{company}}" autocomplete="off">
+      <input type="text"  id="sg-lead-role" list="sg-fn-list" placeholder="Function you are approaching" autocomplete="off">
+      <datalist id="sg-fn-list">
+        <option value="VP Engineering"></option>
+        <option value="VP Marketing"></option>
+        <option value="VP Sales"></option>
+        <option value="Founder / CEO"></option>
+      </datalist>
       <input type="text"  id="sg-lead-note" placeholder="Private note — never sent" autocomplete="off">
     </div>
     <div class="sg-addmail">
@@ -406,6 +413,7 @@ function renderStage() {
 
   if (state.tab === 'outreach') wireOutreach();
   wireKindSelects();
+  renderAccounts();
 }
 
 // ── Outreach actions ─────────────────────────────────────────────────────────
@@ -592,6 +600,7 @@ async function addLead(thenSend = false) {
   const email      = document.getElementById('sg-lead-email').value.trim();
   const name       = document.getElementById('sg-lead-name').value.trim();
   const company    = document.getElementById('sg-lead-company').value.trim();
+  const role       = document.getElementById('sg-lead-role').value.trim();
   const note       = document.getElementById('sg-lead-note').value.trim();
   const orgContext = document.getElementById('sg-lead-context').value.trim();
   if (!email) return complain('sg-lead-email', 'An email address is required.');
@@ -607,7 +616,7 @@ async function addLead(thenSend = false) {
   try {
     const { lead } = await api('/leads', {
       method: 'POST',
-      body: JSON.stringify({ email, name, company, note, orgContext }),
+      body: JSON.stringify({ email, name, company, role, note, orgContext }),
     });
 
     if (thenSend) {
@@ -797,4 +806,45 @@ function wireKindSelects() {
       } catch (err) { banner(`Could not reclassify: ${err.message}`); }
     });
   });
+}
+
+// ── Accounts ─────────────────────────────────────────────────────────────────
+
+const STAGE_LABEL = { conversion: 'Signed up', onboarding: 'Live', sales: 'Paying' };
+
+/**
+ * The same people, rolled up by organisation.
+ *
+ * The funnel answers "who is where". A bottom-up motion asks something else:
+ * which companies have somebody actually using this, and has anyone with
+ * budget there been approached. One person generating four blueprints is a
+ * reason to go find their VP — and that is invisible in a list sorted by
+ * person, which is what every other view on this screen is.
+ */
+function renderAccounts() {
+  const list = state.signals.accounts || [];
+  const el = document.getElementById('sg-accounts');
+  if (!list.length) { el.innerHTML = ''; return; }
+
+  el.innerHTML = `<div class="admin-panel sg-section">
+    <div class="panel-header"><h2>Accounts <span class="sg-section__count">· ${list.length}</span></h2>
+      <div class="sg-section__stage">Bottom-up — find the power user, then their decision-maker</div>
+    </div>
+    ${table(
+      ['Organisation', 'Reached', 'Power users', 'Approached', 'Next action'],
+      list,
+      a => `<tr>
+        <td><strong>${esc(a.org)}</strong>${a.dormant
+          ? `<div class="sg-note">${a.dormant} signed up, no activity</div>` : ''}</td>
+        <td><span class="sg-pill ${a.paid ? 'sg-pill--paid' : ''}">${esc(STAGE_LABEL[a.furthest] || a.furthest)}</span></td>
+        <td>${a.powerUsers.length
+          ? a.powerUsers.map(u => `<div class="sg-who">${esc(u.email)}
+              <span class="sg-power">${u.blueprints}</span></div>`).join('')
+          : '<span class="sg-unknown">none yet</span>'}</td>
+        <td>${a.functionsContacted.length
+          ? a.functionsContacted.map(f => `<span class="sg-fn">${esc(f)}</span>`).join(' ')
+          : '<span class="sg-unknown">nobody</span>'}</td>
+        <td class="sg-note ${a.powerUsers.length && !a.leads.length ? 'sg-todo' : ''}">${esc(a.nextAction)}</td>
+      </tr>`)}
+  </div>`;
 }

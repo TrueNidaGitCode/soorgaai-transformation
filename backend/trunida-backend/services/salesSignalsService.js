@@ -156,6 +156,7 @@ export async function collectSignals() {
       status: l.status || 'to-contact',
       note: l.note || '',
       orgContext: l.orgContext || '',
+      role: l.role || '',
       // Leads are classified by the same rules. A +svargtest address is a
       // probe whether it is a lead or an account.
       ...classify(l.email, {}),
@@ -351,6 +352,69 @@ export async function collectSignals() {
     });
   }
 
+
+  // ── Accounts — the same people rolled up by organisation ───────────────────
+  //
+  // The funnel answers "who is where". The go-to-market asks a different
+  // question: which COMPANIES have someone using this, and has anyone with
+  // budget there been approached yet.
+  //
+  // Bottom-up means a power user appears first and the buyer is found second,
+  // so the useful unit is the organisation — one person generating four
+  // blueprints is a reason to go looking for their VP, and that is invisible
+  // in a list sorted by person.
+  //
+  // Built from the stage rows rather than re-queried, so an account can never
+  // disagree with the funnel it was derived from.
+  const accounts = new Map();
+  const account = (name) => {
+    const key = String(name).trim();
+    if (!accounts.has(key)) {
+      accounts.set(key, {
+        org: key, users: [], leads: [], blueprints: 0,
+        live: 0, paid: 0, furthest: 'conversion',
+      });
+    }
+    return accounts.get(key);
+  };
+
+  const RANK = { conversion: 1, onboarding: 2, sales: 3 };
+  for (const [stage, rows] of [['conversion', conversion], ['onboarding', onboarding], ['sales', sales]]) {
+    for (const r of rows) {
+      if (r.kind !== 'real' || !r.org) continue;
+      const a = account(r.org);
+      a.users.push({ email: r.email, blueprints: r.blueprints, stage });
+      a.blueprints += r.blueprints || 0;
+      if (stage === 'onboarding') a.live += 1;
+      if (stage === 'sales') a.paid += 1;
+      if (RANK[stage] > RANK[a.furthest]) a.furthest = stage;
+    }
+  }
+
+  // Cold leads attach to the same organisation, so "have we approached anyone
+  // with budget here" is answerable without cross-referencing two screens.
+  for (const l of outreach) {
+    if (!l.company) continue;
+    account(l.company).leads.push({ email: l.email, role: l.role || '', status: l.status });
+  }
+
+  const accountList = [...accounts.values()].map(a => {
+    // A power user is someone who did the work, not merely someone who signed
+    // up. That distinction is the whole trigger for the outreach that follows.
+    const powerUsers = a.users.filter(u => (u.blueprints || 0) > 0);
+    return {
+      ...a,
+      powerUsers,
+      dormant: a.users.length - powerUsers.length,
+      functionsContacted: [...new Set(a.leads.map(l => l.role).filter(Boolean))],
+      // What to do next, said rather than left to be worked out per row.
+      nextAction: a.paid ? 'Paying — expand to another department'
+        : !powerUsers.length ? 'Signed up, no activity — activate before selling'
+        : a.leads.length ? 'Decision-maker approached — follow up'
+        : 'Power user active, no decision-maker approached yet',
+    };
+  }).sort((x, y) => (y.powerUsers.length - x.powerUsers.length) || (y.blueprints - x.blueprints));
+
   conversion.sort(byRecency);
   onboarding.sort(byRecency);
   sales.sort(byRecency);
@@ -389,6 +453,7 @@ export async function collectSignals() {
 
   return {
     outreach, discovery, conversion, onboarding, sales,
+    accounts: accountList,
     converted,
     counts: {
       outreach: outreach.length, discovery: discovery.length, conversion: conversion.length,
@@ -507,7 +572,7 @@ export async function askBoard(board, question, history = []) {
 
 const LEAD_STATUSES = ['to-contact', 'contacted', 'replied', 'dead'];
 
-export async function addLead({ email, name, company, note, orgContext, subject, body, addedByUserId }) {
+export async function addLead({ email, name, company, role, note, orgContext, subject, body, addedByUserId }) {
   const clean = String(email || '').trim().toLowerCase();
   if (!clean || !clean.includes('@')) throw new Error('A valid email is required.');
 
@@ -520,6 +585,7 @@ export async function addLead({ email, name, company, note, orgContext, subject,
       $set: {
         ...(name    !== undefined ? { name:    String(name).trim() }    : {}),
         ...(company !== undefined ? { company: String(company).trim() } : {}),
+        ...(role    !== undefined ? { role:    String(role).trim().slice(0, 80) } : {}),
         ...(note    !== undefined ? { note:    String(note).trim() }    : {}),
         // The organisation paragraph — the one field that is not generic, and
         // for a while the one field this function quietly dropped. The

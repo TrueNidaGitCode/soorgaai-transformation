@@ -543,8 +543,12 @@ function wireOutreach() {
         box.querySelector('.sg-pv__subject').textContent = p.subject;
         box.querySelector('.sg-pv__body').textContent = p.body;
         renderAlternates(box, btn.dataset.preview, p.alternates || []);
-        box.querySelector('.sg-pv__warn').textContent = p.missingContext
-          ? 'No organisation paragraph written — this email is entirely generic.' : '';
+        // Both can be true. Preview is the last look before Send, so it shows
+        // everything wrong rather than only the first thing.
+        box.querySelector('.sg-pv__warn').textContent = [
+          p.unbackedClaim || '',
+          p.missingContext ? 'No organisation paragraph written — this email is entirely generic.' : '',
+        ].filter(Boolean).join(' ');
       } catch (err) {
         banner(`Could not preview: ${err.message}`);
       } finally { btn.disabled = false; }
@@ -889,10 +893,14 @@ function wireGenerate() {
         const r = await api(`/leads/${btn.dataset.generate}/generate`, {
           method: 'POST', body: JSON.stringify({}),
         });
-        banner(r.groundedInWebsite
-          ? 'Written from their website. Preview it before sending.'
-          : 'Written — but no website was read, so it stays general. Preview it before sending.',
-          !r.groundedInWebsite);
+        // An unbacked story claim outranks the website note: one is about how
+        // specific the email is, the other is about whether it is true.
+        banner(r.unbackedClaim
+          ? r.unbackedClaim
+          : r.groundedInWebsite
+            ? 'Written from their website. Preview it before sending.'
+            : 'Written — but no website was read, so it stays general. Preview it before sending.',
+          !!r.unbackedClaim || !r.groundedInWebsite);
         await load('outreach');
       } catch (err) {
         banner(`Could not write the email: ${err.message}`);

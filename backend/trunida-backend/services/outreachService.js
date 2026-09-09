@@ -40,6 +40,8 @@ import { User } from '../models/user.js';
 import { sendOutreachEmail } from './mailService.js';
 import { generate } from './llmService.js';
 import { readCompanySite } from './websiteService.js';
+import TransformationBlueprint from '../models/TransformationBlueprint.js';
+import { resolveUseCase } from './blueprintUseCase.js';
 
 /**
  * The rule: at most six emails to one contact, and never more than one a week.
@@ -501,13 +503,22 @@ export async function previewFor(leadId) {
   const tpl = await getTemplate();
   const subject = lead.sequence?.subject || tpl.subject;
   const body    = lead.sequence?.body    || tpl.body;
+  const filledSubject = fill(subject, lead);
+
+  // Checked here as well as at generation, because the subject can be swapped
+  // to an alternate afterwards — and Preview is the last thing seen before
+  // Send. Only runs when the subject actually makes the claim.
+  const unbackedClaim = makesStoryClaim(filledSubject) && !(await blueprintForCompany(lead.company))
+    ? storyWarning(lead) : '';
+
   return {
     to: lead.email,
-    subject: fill(subject, lead),
+    subject: filledSubject,
     body: fill(body, lead),
     link: trackedLink(lead),
     alternates: (lead.subjectAlternates || []).map(a => fill(a, lead)),
     missingContext: /\{\{\s*context\s*\}\}/i.test(body) && !lead.orgContext,
+    unbackedClaim,
   };
 }
 
@@ -583,11 +594,15 @@ their company, their function's actual problem, or something true you read on
 their site. A subject the body then delivers on is what makes the second email
 get opened too — and there are five more after this one.
 
-Good shapes:
-  their tooling backlog
-  a question about <company>'s <specific thing>
-  <company> — <the problem their function owns>
-  fifteen minutes from problem to running app
+Three angles. The subject takes one and the two alternates take the other two,
+so the operator is choosing between real options rather than three rewordings:
+
+  STORY    I gave <company>'s problem to an AI
+           I ran <company> through it
+  PROBLEM  <company>'s <the problem their function owns>
+           a question about <company>'s <specific thing>
+  OUTCOME  <their specific thing>, without the build
+           fifteen minutes, one running app
 
 BANNED, all of it. Every one of these is either a spam-filter trigger, a
 marketing tell, or a lie:
@@ -628,6 +643,14 @@ export async function generateOutreach(leadId) {
     throw new ValidationError('Add an organisation or a designation first — there is nothing to write about.');
   }
 
+  // Minted here as well as on first send, so the Preview shows the tracked link
+  // the recipient will actually get. Without it the operator reviews a bare
+  // svargai.com and the sent mail carries a ?ref they never saw.
+  if (!lead.refCode) {
+    lead.refCode = crypto.randomBytes(6).toString('base64url');
+    await lead.save();
+  }
+
   const icp = icpFor(lead.role);
 
   let siteText = '';
@@ -644,11 +667,22 @@ export async function generateOutreach(leadId) {
     }
   }
 
+  // Has their problem actually been through Svarg? The STORY angle claims it
+  // has, so the writer is told the truth either way — not to block it, but so
+  // a story subject can name what was found instead of gesturing at it.
+  const blueprint = await blueprintForCompany(lead.company);
+
   const userMessage = [
     `Organisation: ${lead.company || '(not given)'}`,
     `Person: ${lead.name || '(name not given)'}`,
     `Their function: ${lead.role || '(not given)'}`,
     icp ? `\nHOW THIS FUNCTION IS APPROACHED — ${icp.label}:\n${icp.brief}` : '',
+    blueprint
+      ? `\nYOU HAVE RUN THEIR PROBLEM THROUGH SVARG. It returned: "${blueprint.useCase}".\n`
+        + 'A STORY subject may say so, and should name that rather than being vague.'
+      : '\nYOU HAVE NOT RUN THEIR PROBLEM THROUGH SVARG. A STORY subject may still\n'
+        + 'speak generally about giving a problem to an AI, but must never claim a\n'
+        + 'finding, a result or a number you do not have.',
     siteText ? `\nFROM THEIR WEBSITE:\n${siteText}` : `\n${siteNote}`,
   ].filter(Boolean).join('\n');
 
@@ -684,5 +718,66 @@ export async function generateOutreach(leadId) {
   lead.orgContext = context;
   await lead.save();
 
-  return { subject, alternates, context, groundedInWebsite: !!siteText };
+  return {
+    subject, alternates, context,
+    groundedInWebsite: !!siteText,
+    hasBlueprint: !!blueprint,
+    // The operator verifies the story claim rather than the system blocking it,
+    // so the fact has to arrive with the draft. Empty when there is nothing to
+    // check — a warning that fires on every send is one nobody reads.
+    unbackedClaim: !blueprint && makesStoryClaim(subject) ? storyWarning(lead) : '',
+  };
+}
+
+/**
+ * Does this subject imply their problem has been through Svarg?
+ *
+ * Two forms, because the writer uses both. The first is explicit — "I ran
+ * Zetwerk through it". The second is the gerund, "giving Flux Auto's problem to
+ * an AI", which claims nothing grammatically and everything in practice: it was
+ * the first subject the model actually produced, and a check that missed it
+ * would have been decorative.
+ */
+const STORY_CLAIM = [
+  /\b(i|we)\s+(gave|ran|put|built|fed|took|showed)\b/i,
+  /\b(giving|running|putting|feeding|showing)\b[^.]*\b(to an ai|through it|through svarg|to svarg)\b/i,
+];
+
+export function makesStoryClaim(subject) {
+  const s = String(subject || '');
+  return STORY_CLAIM.some(rx => rx.test(s));
+}
+
+function storyWarning(lead) {
+  const whose = lead.company ? `${lead.company}'s` : 'their';
+  return `This subject says you ran ${whose} problem through Svarg. `
+       + 'No blueprint exists for them yet — generate one, or pick another subject.';
+}
+
+/**
+ * The most recent blueprint belonging to this company, if any.
+ *
+ * Matched on the company name appearing in either the stored companyName or the
+ * objective text, because the objective is where a name reliably ends up and
+ * companyName is often blank. Deliberately loose: this decides whether a
+ * warning is shown, never whether an email may be sent, so a false positive
+ * costs a warning nobody needed and a false negative costs nothing at all.
+ */
+async function blueprintForCompany(company) {
+  const name = String(company || '').trim();
+  if (name.length < 3) return null;
+
+  // Escaped: a company name is operator input and reaches a regex here.
+  const safe = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rx = new RegExp(safe, 'i');
+
+  const bp = await TransformationBlueprint
+    .findOne({ archived: { $ne: true }, $or: [{ companyName: rx }, { businessObjective: rx }] })
+    .sort({ createdAt: -1 })
+    .lean()
+    .catch(() => null);
+  if (!bp) return null;
+
+  const uc = resolveUseCase(bp);
+  return { id: String(bp._id), useCase: uc?.name || String(bp.businessObjective).slice(0, 120) };
 }

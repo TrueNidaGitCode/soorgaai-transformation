@@ -203,9 +203,11 @@ function leadRow(r) {
   const done = q.sentCount >= q.maxSends;
   return `<tr class="sg-leadrow">
     <td><span class="sg-pill sg-pill--${esc(r.status)}">${esc(r.status)}</span></td>
-    <td class="sg-who">${emailCell(r)}${r.unsubscribedAt ? " <span class=\"sg-unsub\">unsubscribed</span>" : ""}${r.clicked ? " <span class=\"sg-clicked\">clicked</span>" : ""}</td>
     <td>${esc(r.company) || orgBlank()}</td>
-    <td>${countryCell(r.country)}</td>
+    <td>${esc(r.name) || '<span class="sg-unknown">—</span>'}</td>
+    <td>${r.role ? '<span class="sg-fn">' + esc(r.role) + '</span>' : '<span class="sg-unknown">not set</span>'}</td>
+    <td class="sg-who">${emailCell(r)}${r.unsubscribedAt ? ' <span class="sg-unsub">unsubscribed</span>' : ''}${r.clicked ? ' <span class="sg-clicked">clicked</span>' : ''}</td>
+    <td class="sg-links">${r.linkedinUrl ? '<a href="' + esc(r.linkedinUrl) + '" target="_blank" rel="noopener">in</a>' : ''}${r.companyUrl ? '<a href="' + esc(r.companyUrl) + '" target="_blank" rel="noopener">web</a>' : ''}${!r.linkedinUrl && !r.companyUrl ? '<span class="sg-unknown">—</span>' : ''}</td>
     <td class="sg-seq">
       <span class="sg-sent ${done ? 'sg-sent--done' : ''}">${q.sentCount}/${q.maxSends}</span>
       <span class="sg-note">every ${q.intervalDays}d</span>
@@ -214,7 +216,7 @@ function leadRow(r) {
       ${esc(r.lastError ? `Failed: ${clip(r.lastError, 70)}` : nextSendLabel(q))}
     </td>
     <td class="sg-rowactions">
-      <button type="button" class="sg-btn" data-compose="${esc(r.id)}">Compose</button>
+      <button type="button" class="sg-btn sg-btn--gen" data-generate="${esc(r.id)}">Generate</button>
       <button type="button" class="sg-btn" data-preview="${esc(r.id)}">Preview</button>
       <button type="button" class="sg-btn sg-btn--go" data-send="${esc(r.id)}"
               ${r.unsubscribedAt ? 'disabled title="They unsubscribed"' : ''}>Send now</button>
@@ -225,7 +227,7 @@ function leadRow(r) {
       <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
     </td>
   </tr>
-  <tr class="sg-preview" id="preview-${esc(r.id)}" hidden><td colspan="7">
+  <tr class="sg-preview" id="preview-${esc(r.id)}" hidden><td colspan="9">
     <div class="sg-pv">
       <div class="sg-pv__warn"></div>
       <div class="sg-pv__to"></div>
@@ -233,7 +235,7 @@ function leadRow(r) {
       <div class="sg-pv__body"></div>
     </div>
   </td></tr>
-  <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="7">
+  <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="9">
     <input type="text" class="sg-c-name" placeholder="First name — fills {{name}}" value="${esc(r.name || '')}">
     <textarea class="sg-c-context" rows="4" placeholder="The paragraph about THIS organisation — fills {{context}}.">${esc(r.orgContext || '')}</textarea>
     <input type="text" class="sg-c-subject" placeholder="Subject" value="${esc(q.subject)}">
@@ -281,26 +283,45 @@ function renderOutreach(s) {
 
 function renderOutreachBody(s) {
   const form = `
-    <div class="sg-addlead">
-      <input type="email" id="sg-lead-email" placeholder="email@company.com" autocomplete="off">
-      <input type="text"  id="sg-lead-name" placeholder="First name — fills {{name}}" autocomplete="off">
-      <input type="text"  id="sg-lead-company" placeholder="Company — fills {{company}}" autocomplete="off">
-      <input type="text"  id="sg-lead-role" list="sg-fn-list" placeholder="Function you are approaching" autocomplete="off">
+    <div class="sg-icp">
+      <p class="sg-icp__head">Who we sell to, and how each one is approached</p>
+      <div class="sg-icp__grid">
+        <div>
+          <span class="sg-icp__fn">VP of Engineering</span>
+          <p>Primary decision-maker — holds budget for engineering productivity tools.
+             Approach directly: crisp, concrete, and offer the self-serve route rather
+             than a meeting.</p>
+        </div>
+        <div>
+          <span class="sg-icp__fn">VP of Marketing / VP of Sales</span>
+          <p>Approach with a proposition matched to their team size, company scale and
+             how they actually operate. Lead with the operational load, not the
+             technology.</p>
+        </div>
+      </div>
+      <p class="field-hint sg-icp__foot">Generate reads this. Set the designation and the
+        email is written for that function — the same rules, applied every time rather
+        than remembered.</p>
+    </div>
+
+    <div class="sg-addlead sg-addlead--wide">
+      <input type="text"  id="sg-lead-company" placeholder="Organisation" autocomplete="off">
+      <input type="text"  id="sg-lead-name" placeholder="Name" autocomplete="off">
+      <input type="text"  id="sg-lead-role" list="sg-fn-list" placeholder="Designation" autocomplete="off">
       <datalist id="sg-fn-list">
         <option value="VP Engineering"></option>
         <option value="VP Marketing"></option>
         <option value="VP Sales"></option>
         <option value="Founder / CEO"></option>
       </datalist>
+      <input type="email" id="sg-lead-email" placeholder="Email address" autocomplete="off">
+      <input type="url"   id="sg-lead-linkedin" placeholder="LinkedIn profile URL" autocomplete="off">
+      <input type="url"   id="sg-lead-companyurl" placeholder="Company website — read when generating" autocomplete="off">
       <input type="text"  id="sg-lead-note" placeholder="Private note — never sent" autocomplete="off">
     </div>
-    <div class="sg-addmail">
-      <textarea id="sg-lead-context" rows="4" placeholder="What is true about THIS organisation — the one paragraph that is not generic. Goes wherever {{context}} appears in the template."></textarea>
-      <div class="sg-addmail__actions">
-        <span class="field-hint sg-addmail__hint">The rest of the email comes from the shared template below. Nothing sends until you press Send.</span>
-        <button type="button" id="sg-lead-add" class="btn-secondary">Save only</button>
-        <button type="button" id="sg-lead-send" class="cta-button">Save &amp; send</button>
-      </div>
+    <div class="sg-addmail__actions">
+      <span class="field-hint sg-addmail__hint">Add them, then press Generate on the row — the agent reads their website and writes the email for their function. Nothing sends until you press Send.</span>
+      <button type="button" id="sg-lead-add" class="cta-button">Add lead</button>
     </div>
 
     <details class="sg-template">
@@ -321,7 +342,7 @@ function renderOutreachBody(s) {
     <p class="field-hint"><strong>At most 6 emails to one contact, never more than one a week</strong> — enforced on the server, so Send cannot get round it either. Use Compose on a row to edit a message you already wrote. A lead leaves this stage automatically when they sign up; follow-ups also stop on a reply, an unsubscribe, or when the six run out.</p>`;
 
   const rows = table(
-    ['Status', 'Email', 'Organisation', 'Country', 'Sent', 'Next', ''],
+    ['Status', 'Organisation', 'Name', 'Designation', 'Email', 'Links', 'Sent', 'Next', ''],
     visible(s.outreach), leadRow);
 
   const converted = s.converted.length
@@ -451,13 +472,13 @@ async function saveComposer(id) {
 }
 
 function wireOutreach() {
-  document.getElementById('sg-lead-add').addEventListener('click', () => addLead(false));
-  document.getElementById('sg-lead-send').addEventListener('click', () => addLead(true));
+  document.getElementById('sg-lead-add').addEventListener('click', () => addLead());
   document.getElementById('sg-lead-email').addEventListener('keydown', e => {
-    // Enter saves; it never sends. The one action that reaches a stranger
-    // should require aiming at a button.
-    if (e.key === 'Enter') addLead(false);
+    // Enter adds the row. It has never sent anything, and now it cannot even
+    // write anything — Generate is a separate, deliberate press.
+    if (e.key === 'Enter') addLead();
   });
+  wireGenerate();
 
   document.querySelectorAll('.sg-status-select').forEach(sel => {
     sel.addEventListener('change', async () => {
@@ -596,35 +617,33 @@ function complain(fieldId, message) {
  * Two buttons rather than a checkbox, because "did that just email someone"
  * must never be a thing you have to look at a tick box to answer.
  */
-async function addLead(thenSend = false) {
+async function addLead() {
   const email      = document.getElementById('sg-lead-email').value.trim();
   const name       = document.getElementById('sg-lead-name').value.trim();
   const company    = document.getElementById('sg-lead-company').value.trim();
-  const role       = document.getElementById('sg-lead-role').value.trim();
+  const role        = document.getElementById('sg-lead-role').value.trim();
+  const linkedinUrl = document.getElementById('sg-lead-linkedin').value.trim();
+  const companyUrl  = document.getElementById('sg-lead-companyurl').value.trim();
   const note       = document.getElementById('sg-lead-note').value.trim();
-  const orgContext = document.getElementById('sg-lead-context').value.trim();
   if (!email) return complain('sg-lead-email', 'An email address is required.');
-  // The template supplies everything else, so the only thing worth insisting on
-  // is the part that is actually about them.
-  if (thenSend && !orgContext) {
-    return complain('sg-lead-context',
-      'Write the organisation paragraph before sending — without it the email is generic.');
+  // Adding no longer writes anything — Generate does. So the only field that
+  // has to be here is the address; everything the writer needs can be filled
+  // in on the row before pressing Generate.
+  if (!company && !role) {
+    return complain('sg-lead-company',
+      'Add an organisation or a designation — Generate has nothing to write about without one.');
   }
 
-  const btns = [document.getElementById('sg-lead-add'), document.getElementById('sg-lead-send')];
+  const btns = [document.getElementById('sg-lead-add')];
   btns.forEach(b => { b.disabled = true; });
   try {
-    const { lead } = await api('/leads', {
+    await api('/leads', {
       method: 'POST',
-      body: JSON.stringify({ email, name, company, role, note, orgContext }),
+      body: JSON.stringify({ email, name, company, role, companyUrl, linkedinUrl, note }),
     });
-
-    if (thenSend) {
-      const r = await api(`/leads/${lead._id}/send`, { method: 'POST', body: JSON.stringify({}) });
-      banner(r.sent ? `Sent to ${email}.` : `Saved, but not sent — ${r.reason}`, !r.sent);
-    } else {
-      banner(`Saved ${email}. Nothing has been emailed.`, false);
-    }
+    banner(`Added ${email}. Press Generate on their row to write the email.`, false);
+    ['email', 'name', 'company', 'role', 'linkedin', 'companyurl', 'note']
+      .forEach(f => { const el = document.getElementById(`sg-lead-${f}`); if (el) el.value = ''; });
     await load('outreach');
   } catch (err) {
     banner(`Could not save the lead: ${err.message}`);
@@ -847,4 +866,35 @@ function renderAccounts() {
         <td class="sg-note ${a.powerUsers.length && !a.leads.length ? 'sg-todo' : ''}">${esc(a.nextAction)}</td>
       </tr>`)}
   </div>`;
+}
+
+/**
+ * Have the agent write this lead's email.
+ *
+ * Reads their website when one was given, applies the ICP rule for their
+ * designation, and writes the subject and the organisation paragraph onto the
+ * lead. The operator's next two actions are Preview and Send — the draft is
+ * saved server-side first, so it cannot be generated, admired, and then lost
+ * to a reload.
+ */
+function wireGenerate() {
+  document.querySelectorAll('[data-generate]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Writing…';
+      try {
+        const r = await api(`/leads/${btn.dataset.generate}/generate`, {
+          method: 'POST', body: JSON.stringify({}),
+        });
+        banner(r.groundedInWebsite
+          ? 'Written from their website. Preview it before sending.'
+          : 'Written — but no website was read, so it stays general. Preview it before sending.',
+          !r.groundedInWebsite);
+        await load('outreach');
+      } catch (err) {
+        banner(`Could not write the email: ${err.message}`);
+      } finally { btn.disabled = false; btn.textContent = original; }
+    });
+  });
 }

@@ -22,7 +22,7 @@ import {
 } from '../services/salesSignalsService.js';
 import {
   sendNext, setSequence, unsubscribeByToken,
-  getTemplate, setTemplate, previewFor,
+  getTemplate, setTemplate, previewFor, generateOutreach,
 } from '../services/outreachService.js';
 
 /** The unsubscribe page echoes a stored address back into HTML. */
@@ -80,12 +80,12 @@ export async function ask(req, res) {
 
 export async function createLead(req, res) {
   try {
-    const { email, name, company, role, note, subject, body, orgContext } = req.body || {};
+    const { email, name, company, role, companyUrl, linkedinUrl, note, subject, body, orgContext } = req.body || {};
     // A new lead with nothing written starts from the shared template, so the
     // generic body is authored once and only orgContext is typed per prospect.
     const tpl = await getTemplate();
     const lead = await addLead({
-      email, name, company, role, note, orgContext,
+      email, name, company, role, companyUrl, linkedinUrl, note, orgContext,
       subject: subject || tpl.subject,
       body:    body    || tpl.body,
       addedByUserId: req.user._id,
@@ -233,4 +233,19 @@ function auditKind(byUserId, email, kind) {
     audit: 'AccountKind', action: 'SET', by: String(byUserId),
     email, kind: kind || '(inferred)', ts: new Date().toISOString(),
   }));
+}
+
+/**
+ * Have the agent draft this lead's email.
+ *
+ * Writes the draft onto the lead rather than returning it for the screen to
+ * hold, so a generated email can never be previewed and then lost by a reload.
+ * The operator's next two actions are Preview and Send — nothing else.
+ */
+export async function generateLeadEmail(req, res) {
+  try {
+    return res.json(await generateOutreach(req.params.id));
+  } catch (err) {
+    return fail(res, err, 'Could not write the email.');
+  }
 }

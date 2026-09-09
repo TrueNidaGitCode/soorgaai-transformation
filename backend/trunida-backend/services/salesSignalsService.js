@@ -157,6 +157,8 @@ export async function collectSignals() {
       note: l.note || '',
       orgContext: l.orgContext || '',
       role: l.role || '',
+      companyUrl: l.companyUrl || '',
+      linkedinUrl: l.linkedinUrl || '',
       // Leads are classified by the same rules. A +svargtest address is a
       // probe whether it is a lead or an account.
       ...classify(l.email, {}),
@@ -572,7 +574,7 @@ export async function askBoard(board, question, history = []) {
 
 const LEAD_STATUSES = ['to-contact', 'contacted', 'replied', 'dead'];
 
-export async function addLead({ email, name, company, role, note, orgContext, subject, body, addedByUserId }) {
+export async function addLead({ email, name, company, role, companyUrl, linkedinUrl, note, orgContext, subject, body, addedByUserId }) {
   const clean = String(email || '').trim().toLowerCase();
   if (!clean || !clean.includes('@')) throw new Error('A valid email is required.');
 
@@ -586,6 +588,8 @@ export async function addLead({ email, name, company, role, note, orgContext, su
         ...(name    !== undefined ? { name:    String(name).trim() }    : {}),
         ...(company !== undefined ? { company: String(company).trim() } : {}),
         ...(role    !== undefined ? { role:    String(role).trim().slice(0, 80) } : {}),
+        ...(companyUrl  !== undefined ? { companyUrl:  String(companyUrl).trim().slice(0, 300) }  : {}),
+        ...(linkedinUrl !== undefined ? { linkedinUrl: String(linkedinUrl).trim().slice(0, 300) } : {}),
         ...(note    !== undefined ? { note:    String(note).trim() }    : {}),
         // The organisation paragraph — the one field that is not generic, and
         // for a while the one field this function quietly dropped. The

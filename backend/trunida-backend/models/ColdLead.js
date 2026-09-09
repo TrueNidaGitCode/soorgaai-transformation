@@ -53,6 +53,19 @@ const coldLeadSchema = new mongoose.Schema({
   company: { type: String, default: '', trim: true },
 
   /**
+   * Where to read about them before writing.
+   *
+   * companyUrl is fetched at generation time so the email can name something
+   * true about the business rather than something plausible about its
+   * industry. linkedinUrl is stored for the human to open — it is not
+   * fetched, because LinkedIn does not serve its pages to servers and a
+   * scraper that quietly returns a login wall would ground the email in
+   * nothing while looking like it worked.
+   */
+  companyUrl:  { type: String, default: '', trim: true },
+  linkedinUrl: { type: String, default: '', trim: true },
+
+  /**
    * to-contact — on the list, not yet emailed
    * contacted  — reached out, no reply yet
    * replied    — they responded; a real conversation exists

@@ -38,6 +38,8 @@ import ColdLead from '../models/ColdLead.js';
 import OutreachTemplate from '../models/OutreachTemplate.js';
 import { User } from '../models/user.js';
 import { sendOutreachEmail } from './mailService.js';
+import { generate } from './llmService.js';
+import { readCompanySite } from './websiteService.js';
 
 /**
  * The rule: at most six emails to one contact, and never more than one a week.
@@ -506,4 +508,141 @@ export async function previewFor(leadId) {
     link: trackedLink(lead),
     missingContext: /\{\{\s*context\s*\}\}/i.test(body) && !lead.orgContext,
   };
+}
+
+// ── Writing the email ────────────────────────────────────────────────────────
+
+/**
+ * Who we sell to, and how each one is approached.
+ *
+ * This is the ICP, stated once and given to the model verbatim. It is here
+ * rather than on the screen because the screen can only remind a person; the
+ * model has to be told, every time, or "tailored by function" becomes three
+ * identical emails with a different job title at the top.
+ */
+export const ICP = [
+  {
+    match: /engineering|cto|vp eng|head of eng|platform|technology/i,
+    label: 'VP of Engineering',
+    brief: 'Holds budget for engineering productivity tools. Approach directly: '
+         + 'crisp, concrete, no marketing language, and offer the self-serve route '
+         + 'rather than a meeting. They will judge it on whether the thing works.',
+  },
+  {
+    match: /marketing|growth|demand/i,
+    label: 'VP of Marketing',
+    brief: 'Approach with a proposition matched to their team size, company scale '
+         + 'and how they actually operate. Lead with the operational load their '
+         + 'team carries, not with the technology.',
+  },
+  {
+    match: /sales|revenue|cro|business development/i,
+    label: 'VP of Sales',
+    brief: 'Approach with a proposition matched to their team size, company scale '
+         + 'and how they actually operate. Lead with what slows the revenue motion '
+         + 'down, not with the technology.',
+  },
+];
+
+export function icpFor(role) {
+  const r = String(role || '');
+  return ICP.find(p => p.match.test(r)) || null;
+}
+
+const WRITER_PROMPT =
+`You write one cold email for Svarg, an AI transformation platform.
+
+Svarg takes a business problem described in plain English and returns a working
+AI application — deployed, running, with the source code handed over — usually
+inside fifteen minutes. It decides what to build, what data it needs, builds it
+and puts it live. It is not a code assistant: the user does not have to know
+what to build.
+
+WHAT TO WRITE
+Return ONLY compact JSON, no other text:
+{"subject": "...", "context": "..."}
+
+subject  One line. Specific to their organisation. No colons-and-buzzwords, no
+         "Transform your business with AI". Under 70 characters.
+context  ONE paragraph, 2-3 sentences, about THIS organisation and this
+         person's function. It is dropped into a template that already carries
+         the pitch and the link, so write only the part that is about them.
+
+RULES
+- Write about THEIR business. If you were given text from their website, use
+  something specific and true from it. If you were not, stay at the level of
+  what their function plainly involves — never invent a product, a customer,
+  a metric, a funding round or a headcount.
+- Plain sentences a person would actually type. No bullet points, no bold, no
+  markdown, no greeting, no sign-off — the template supplies those.
+- Never claim to have used their product, met them, or been referred.
+- If you genuinely have nothing specific, write about the problem their
+  function owns. A short honest paragraph beats a confident invented one.`;
+
+/**
+ * Draft the subject and the organisation paragraph for one lead.
+ *
+ * Reads their website when one is given, because an email that names something
+ * true about the business is the only kind worth sending — and the difference
+ * between that and a generic one is entirely in what the model was shown.
+ *
+ * Writes the result onto the lead rather than returning it for the caller to
+ * save, so a draft can never be previewed and then lost.
+ */
+export async function generateOutreach(leadId) {
+  const lead = await ColdLead.findById(leadId);
+  if (!lead) throw new Error('Lead not found.');
+  if (!lead.company && !lead.role) {
+    throw new ValidationError('Add an organisation or a designation first — there is nothing to write about.');
+  }
+
+  const icp = icpFor(lead.role);
+
+  let siteText = '';
+  let siteNote = 'No website was given, so nothing specific about this company was read.';
+  if (lead.companyUrl) {
+    try {
+      const { pages } = await readCompanySite(lead.companyUrl);
+      siteText = pages.slice(0, 3).map(p => `[${p.title}]\n${p.text.slice(0, 1800)}`).join('\n\n');
+      siteNote = siteText ? '' : 'Their website returned no readable text.';
+    } catch (err) {
+      // Never fatal. A site that will not load is a reason to write a more
+      // general paragraph, not a reason to refuse to write one.
+      siteNote = `Their website could not be read (${err.message}). Do not invent what it might say.`;
+    }
+  }
+
+  const userMessage = [
+    `Organisation: ${lead.company || '(not given)'}`,
+    `Person: ${lead.name || '(name not given)'}`,
+    `Their function: ${lead.role || '(not given)'}`,
+    icp ? `\nHOW THIS FUNCTION IS APPROACHED — ${icp.label}:\n${icp.brief}` : '',
+    siteText ? `\nFROM THEIR WEBSITE:\n${siteText}` : `\n${siteNote}`,
+  ].filter(Boolean).join('\n');
+
+  const { text } = await generate({
+    systemPrompt: WRITER_PROMPT,
+    userMessage,
+    label: 'outreach-writer',
+    maxTokens: 700,
+  });
+
+  let parsed;
+  try {
+    parsed = JSON.parse(String(text).replace(/^```(?:json)?|```$/gm, '').trim());
+  } catch {
+    throw new Error('The model did not return usable JSON. Try Generate again.');
+  }
+
+  const subject = String(parsed.subject || '').trim().slice(0, 300);
+  const context = String(parsed.context || '').trim().slice(0, 4000);
+  if (!subject || !context) throw new Error('The model returned an empty draft. Try Generate again.');
+
+  const tpl = await getTemplate();
+  lead.sequence.subject = subject;
+  if (!lead.sequence.body) lead.sequence.body = tpl.body;
+  lead.orgContext = context;
+  await lead.save();
+
+  return { subject, context, groundedInWebsite: !!siteText };
 }

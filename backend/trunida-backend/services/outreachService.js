@@ -162,6 +162,14 @@ export async function canSend(lead, { ignoreSchedule = false } = {}) {
     return { ok: false, reason: `${m.label} is not an email motion — Svarg never sends automatically on this lane.` };
   }
 
+  // Belt and braces behind the motion gate above. Email is optional on the
+  // model now, so "no address" is a state that can reach here rather than one
+  // the schema ruled out — and a send to undefined fails at the provider with
+  // a message about the provider rather than about the lead.
+  if (!String(lead.email || '').trim()) {
+    return { ok: false, reason: 'No email address on this lead — only a mobile number.' };
+  }
+
   if (lead.unsubscribedAt) return { ok: false, reason: 'They unsubscribed.' };
   if (lead.status === 'dead') return { ok: false, reason: 'Marked dead.' };
   if (lead.status === 'replied') return { ok: false, reason: 'They replied — follow-ups stop here.' };

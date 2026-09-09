@@ -22,9 +22,9 @@ import {
 } from '../services/salesSignalsService.js';
 import {
   sendNext, setSequence, unsubscribeByToken,
-  getTemplate, setTemplate, previewFor, generateOutreach,
+  getTemplate, setTemplate, previewFor, generateOutreach, trackedLink,
 } from '../services/outreachService.js';
-import { motionRegistry, motionEmails, DEFAULT_MOTION } from '../services/gtmMotions.js';
+import { motionRegistry, motionEmails, motionSharesLink, DEFAULT_MOTION } from '../services/gtmMotions.js';
 
 /** The unsubscribe page echoes a stored address back into HTML. */
 function escapeHtml(str) {
@@ -83,7 +83,7 @@ export async function createLead(req, res) {
   try {
     const {
       email, name, company, role, companyUrl, linkedinUrl, note, subject, body, orgContext,
-      motion, via, nextStep, nextStepAt,
+      motion, via, nextStep, nextStepAt, phone, relationship, location,
     } = req.body || {};
     // A new lead with nothing written starts from the shared template, so the
     // generic body is authored once and only orgContext is typed per prospect.
@@ -93,12 +93,19 @@ export async function createLead(req, res) {
     const tpl = wantsMail ? await getTemplate() : { subject: '', body: '' };
     const lead = await addLead({
       email, name, company, role, companyUrl, linkedinUrl, note, orgContext,
-      motion, via, nextStep, nextStepAt,
+      motion, via, nextStep, nextStepAt, phone, relationship, location,
       subject: subject || tpl.subject,
       body:    body    || tpl.body,
       addedByUserId: req.user._id,
     });
-    return res.status(201).json({ lead });
+    // The link comes back with the row so the screen can offer it immediately.
+    // On a warm introduction this IS the deliverable — the operator adds the
+    // person in order to get something to paste into WhatsApp, and making them
+    // reload the board to find it would be the slowest possible way to say it.
+    return res.status(201).json({
+      lead,
+      inviteLink: motionSharesLink(lead.motion || DEFAULT_MOTION) ? trackedLink(lead) : '',
+    });
   } catch (err) {
     return fail(res, err, 'Could not add the lead.');
   }
@@ -147,9 +154,13 @@ export async function previewLead(req, res) {
 
 export async function patchLead(req, res) {
   try {
-    const { status, note, name, company, markContacted, motion, via, nextStep, nextStepAt } = req.body || {};
+    const {
+      status, note, name, company, markContacted, motion, via, nextStep, nextStepAt,
+      phone, relationship, location,
+    } = req.body || {};
     const lead = await updateLead(req.params.id, {
       status, note, name, company, markContacted, motion, via, nextStep, nextStepAt,
+      phone, relationship, location,
     });
     return res.json({ lead });
   } catch (err) {

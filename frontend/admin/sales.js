@@ -53,6 +53,15 @@ let state = {
   lane: 'introduced',
   /** Which motion the add form is set to, within the open lane. */
   addMotion: null,
+  /**
+   * The link just produced for a newly added lead, if any.
+   *
+   * Kept here rather than in the DOM because adding a lead reloads the board,
+   * which re-renders the panel the link sits in. Cleared as soon as the context
+   * changes — another lane, another motion — since a link belongs to one person
+   * and a stale one is a link sent to the wrong contact.
+   */
+  invite: null,
 };
 
 /** The rows of one stage, after the kind filter. */
@@ -128,6 +137,14 @@ function clip(s, n) {
  * it is the part that gets the contrast.
  */
 function emailCell(r) {
+  // Email is optional now — a warm introduction often has only a number. The
+  // naive split rendered a bare "@" for those, which reads as a broken row
+  // rather than as a contact you reach a different way.
+  if (!String(r.email || '').trim()) {
+    return r.phone
+      ? `<span class="sg-local">${esc(r.phone)}</span>`
+      : '<span class="sg-unknown">no email or number</span>';
+  }
   const [local, domain] = String(r.email || '').split('@');
   const addr = `<span class="sg-local">${esc(local)}</span><span class="sg-domain">@${esc(domain || '')}</span>`;
   if (!r.alsoAt?.length) return addr;
@@ -242,6 +259,25 @@ function nextStepLabel(r) {
   return `${esc(clip(r.nextStep, 44)) || '<span class="sg-unknown">unnamed</span>'}${due ? `<div class="sg-note">${due}</div>` : ''}`;
 }
 
+/**
+ * The "Route in" cell — whatever this motion actually knows about the approach.
+ *
+ * Most motions store one string in `via`: which firm, which event, which post.
+ * A warm introduction stores how you know them and where they are instead,
+ * because those are the two things that change what you say. Rendering `via`
+ * for a motion that never collects it would leave the column permanently empty
+ * on the lane the operator uses most.
+ */
+function routeInCell(r) {
+  const bits = [r.relationship, r.location].filter(Boolean);
+  if (bits.length) {
+    return `${esc(bits.join(' · '))}${r.phone ? `<div class="sg-note">${esc(r.phone)}</div>` : ''}`;
+  }
+  if (r.via) return esc(clip(r.via, 40));
+  if (r.phone) return esc(r.phone);
+  return `<span class="sg-unknown">${esc(motionByKey(r.motion)?.viaLabel || 'not recorded')}</span>`;
+}
+
 /** The motion this lead is filed under, as a chip beside the contact. */
 function motionChip(r) {
   const m = motionByKey(r.motion);
@@ -283,9 +319,13 @@ function motionRow(r) {
       <div class="sg-who">${emailCell(r)}</div>
       ${motionChip(r)}
     </td>
-    <td class="sg-note">${esc(clip(r.via, 40)) || `<span class="sg-unknown">${esc(motionByKey(r.motion)?.viaLabel || 'not recorded')}</span>`}</td>
+    <td class="sg-note">${routeInCell(r)}</td>
     <td class="sg-note">${nextStepLabel(r)}</td>
     <td class="sg-rowactions">
+      ${r.inviteLink
+        ? `<button type="button" class="sg-btn" data-copylink="${esc(r.inviteLink)}"
+             title="The link to send them — signups through it are attributed to this lead">Link</button>`
+        : ''}
       <button type="button" class="sg-btn" data-log="${esc(r.id)}">Log</button>
       <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
     </td>
@@ -492,52 +532,108 @@ function renderIcp() {
 }
 
 /**
+ * One input, built from the motion's own field definition.
+ *
+ * The id is derived from the field key, so addLead can read every field back
+ * generically. A hand-written form plus a hand-written reader is exactly how
+ * this screen once came to collect an organisation paragraph on every lead and
+ * send none of them.
+ */
+function renderField(f) {
+  const id = `sg-lead-${f.key}`;
+  const title = f.hint ? ` title="${esc(f.hint)}"` : '';
+
+  if (f.type === 'select') {
+    return `<select id="${id}" class="sg-field-select"${title} aria-label="${esc(f.label)}">
+      <option value="">${esc(f.label)}</option>
+      ${f.options.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}
+    </select>`;
+  }
+
+  const list = f.suggestions ? ` list="${id}-list"` : '';
+  const datalist = f.suggestions
+    ? `<datalist id="${id}-list">${f.suggestions.map(o => `<option value="${esc(o)}"></option>`).join('')}</datalist>`
+    : '';
+  return `<input type="${esc(f.type)}" id="${id}" placeholder="${esc(f.label)}" autocomplete="off"${list}${title}>${datalist}`;
+}
+
+/**
  * The add form for the open lane.
  *
  * The motion picker is scoped to the lane, so a warm introduction cannot be
- * filed under Broadcast by a mis-click. The `via` field is labelled by the
- * chosen motion — "who is introducing you" and "which event" are the same
- * column and a different question, and a placeholder that says which one keeps
- * it from becoming a field nobody fills in.
+ * filed under Broadcast by a mis-click. Everything below it comes from that
+ * motion's own field list: a cold email asks for a designation and a website
+ * because those are what the writer reads, and a warm introduction to someone
+ * you already know asks for a mobile number and how you know them, because
+ * that is what you actually have. One shared form for eleven motions is how a
+ * form becomes something people fill in with whatever gets past validation.
  */
 function renderAddForm(laneKey) {
   const ms = motionsInLane(laneKey);
   if (!ms.length) return '';
   const first = ms.find(m => m.key === state.addMotion) || ms[0];
-  const emails = !!first.emails;
 
   return `
     <div class="sg-addlead sg-addlead--wide">
       <select id="sg-lead-motion" class="sg-motion-select" aria-label="Motion">
-        ${ms.map(m => `<option value="${esc(m.key)}" ${m.key === first.key ? 'selected' : ''}
-          data-emails="${m.emails ? '1' : ''}" data-via="${esc(m.viaLabel)}">${esc(m.label)}</option>`).join('')}
+        ${ms.map(m => `<option value="${esc(m.key)}" ${m.key === first.key ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}
       </select>
-      <input type="text"  id="sg-lead-company" placeholder="Organisation" autocomplete="off">
-      <input type="text"  id="sg-lead-name" placeholder="Name" autocomplete="off">
-      <input type="text"  id="sg-lead-role" list="sg-fn-list" placeholder="Designation" autocomplete="off">
-      <datalist id="sg-fn-list">
-        <option value="VP Engineering"></option>
-        <option value="VP Marketing"></option>
-        <option value="VP Sales"></option>
-        <option value="Founder / CEO"></option>
-      </datalist>
-      <input type="email" id="sg-lead-email" placeholder="Email address" autocomplete="off">
-      <input type="url"   id="sg-lead-linkedin" placeholder="LinkedIn profile URL" autocomplete="off">
-      <input type="url"   id="sg-lead-companyurl" placeholder="Company website${emails ? ' — read when generating' : ''}" autocomplete="off">
-      <input type="text"  id="sg-lead-via" placeholder="${esc(first.viaLabel || 'Route in')}"
-             autocomplete="off" ${emails ? 'hidden' : ''}>
-      <input type="text"  id="sg-lead-note" placeholder="Private note — never sent" autocomplete="off">
+      ${(first.fields || []).map(renderField).join('\n      ')}
     </div>
     <div class="sg-addmail__actions">
       <button type="button" id="sg-lead-add" class="cta-button">Add</button>
       <span class="field-hint sg-addmail__hint" id="sg-add-hint">${esc(addHint(first))}</span>
-    </div>`;
+    </div>
+    <div id="sg-invite" class="sg-invite" ${state.invite ? '' : 'hidden'}>${
+      state.invite ? renderInvite(state.invite.link, state.invite.lead) : ''}</div>`;
+}
+
+/**
+ * The link, shown the moment the lead is added.
+ *
+ * On a warm introduction this is the whole point of adding them: you are not
+ * filing a contact, you are getting something to paste into WhatsApp. Putting
+ * it behind a board reload would make the slowest step the one thing you came
+ * for.
+ *
+ * It is not a credential. It carries a ref that ties whatever they do back to
+ * this lead, and they still sign in normally when they arrive — so a forwarded
+ * message costs nothing worse than a slightly wrong attribution.
+ */
+function renderInvite(link, lead) {
+  if (!link) return '';
+  const digits = String(lead?.phone || '').replace(/[^0-9]/g, '');
+  const wa = digits
+    ? `https://wa.me/${digits}?text=${encodeURIComponent(inviteMessage(link, lead))}`
+    : '';
+  return `
+    <p class="sg-invite__head">Send this to ${esc(lead?.name || 'them')}</p>
+    <div class="sg-invite__row">
+      <input type="text" class="sg-invite__link" id="sg-invite-link" readonly value="${esc(link)}">
+      <button type="button" class="sg-btn sg-btn--go" id="sg-invite-copy">Copy</button>
+      ${wa ? `<a class="sg-btn" href="${esc(wa)}" target="_blank" rel="noopener">Open WhatsApp</a>` : ''}
+    </div>
+    <p class="sg-invite__note">Anyone who signs up through this link is attributed to this lead, which
+      is how they leave Outreach. It is not a password — they still sign in normally.</p>`;
+}
+
+/** A first draft of the message. Edit it in WhatsApp before sending. */
+function inviteMessage(link, lead) {
+  return `Hi ${lead?.name || ''}, I have been building Svarg — you describe a business problem and `
+    + `it works out where AI could actually help, then builds a working application for it. `
+    + `Would love your eyes on it: ${link}`;
 }
 
 function addHint(m) {
-  return m.emails
-    ? 'Then press Generate on the row — the agent reads their website and writes the email for their function.'
-    : 'Nothing is sent on this lane. Add them, then record the route in and what happens next on the row.';
+  if (m.emails) {
+    return 'Then press Generate on the row — the agent reads their website and writes the email for their function.';
+  }
+  // Svarg sends nothing here, so say what actually happens: you get a link and
+  // you send it. A hint that only says "nothing is sent" leaves the operator
+  // wondering what adding the person achieved.
+  return m.sharesLink
+    ? 'Svarg sends nothing on this lane. Adding them gives you a link to send yourself — anyone who signs up through it is attributed to this lead.'
+    : 'Nothing is sent on this lane. Add them, then record what happens next on the row.';
 }
 
 /**
@@ -712,36 +808,47 @@ function wireOutreach() {
     btn.addEventListener('click', () => {
       state.lane = btn.dataset.lane;
       state.addMotion = null;   // the picker is scoped to the lane
+      state.invite = null;      // a link belongs to one person, not to a screen
       renderStage();
     });
   });
 
-  // The motion picker relabels the route-in field and the hint, and shows or
-  // hides the field entirely: cold email has no route in, and an input with a
-  // placeholder that does not fit the motion is one nobody fills in.
+  // Changing motion changes which fields exist, so the form is re-rendered
+  // rather than adjusted in place — the fields come from the motion, and there
+  // is no set of tweaks that turns a cold-email form into a warm-intro one.
   const motionSel = document.getElementById('sg-lead-motion');
   if (motionSel) motionSel.addEventListener('change', () => {
     state.addMotion = motionSel.value;
-    const m = motionByKey(motionSel.value);
-    const via = document.getElementById('sg-lead-via');
-    const hint = document.getElementById('sg-add-hint');
-    if (via) {
-      via.hidden = !!m?.emails;
-      via.placeholder = m?.viaLabel || 'Route in';
-      if (m?.emails) via.value = '';
-    }
-    if (hint && m) hint.textContent = addHint(m);
+    state.invite = null;
+    renderStage();
   });
 
   const addBtn = document.getElementById('sg-lead-add');
   if (addBtn) addBtn.addEventListener('click', () => addLead());
-  const emailInput = document.getElementById('sg-lead-email');
-  if (emailInput) emailInput.addEventListener('keydown', e => {
-    // Enter adds the row. It has never sent anything, and now it cannot even
-    // write anything — Generate is a separate, deliberate press.
-    if (e.key === 'Enter') addLead();
+  // Enter on any field in the add form adds the row. It has never sent
+  // anything, and cannot write anything either — Generate is a separate press.
+  document.querySelectorAll('.sg-addlead input').forEach(el => {
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') addLead(); });
   });
+  wireInvite();
   wireGenerate();
+
+  // Get the link back later, without re-adding the person.
+  document.querySelectorAll('[data-copylink]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const original = btn.textContent;
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copylink);
+        btn.textContent = 'Copied';
+      } catch {
+        // A clipboard the browser refuses is not a copy. Say the link instead
+        // of claiming a copy that did not happen.
+        banner(btn.dataset.copylink, false);
+        btn.textContent = 'Shown above';
+      }
+      setTimeout(() => { btn.textContent = original; }, 2500);
+    });
+  });
 
   // ── The non-email lanes: record the route in and what happens next ────────
   document.querySelectorAll('[data-log]').forEach(btn => {
@@ -912,54 +1019,76 @@ function complain(fieldId, message) {
 }
 
 /**
- * @param {boolean} thenSend save and immediately send the first email.
+ * Add whoever is in the form, reading exactly the fields this motion declared.
  *
- * Two buttons rather than a checkbox, because "did that just email someone"
- * must never be a thing you have to look at a tick box to answer.
+ * The ids come from renderField, so the form and the reader cannot disagree
+ * about which fields exist. That disagreement is not hypothetical: this screen
+ * previously collected an organisation paragraph on every lead and dropped it
+ * on the way to the server, because two places listed the fields by hand.
  */
 async function addLead() {
-  const email      = document.getElementById('sg-lead-email').value.trim();
-  const name       = document.getElementById('sg-lead-name').value.trim();
-  const company    = document.getElementById('sg-lead-company').value.trim();
-  const role        = document.getElementById('sg-lead-role').value.trim();
-  const linkedinUrl = document.getElementById('sg-lead-linkedin').value.trim();
-  const companyUrl  = document.getElementById('sg-lead-companyurl').value.trim();
-  const note       = document.getElementById('sg-lead-note').value.trim();
-  const motion     = document.getElementById('sg-lead-motion')?.value || '';
-  const via        = document.getElementById('sg-lead-via')?.value.trim() || '';
-  const m          = motionByKey(motion);
-  if (!email) return complain('sg-lead-email', 'An email address is required.');
-  // Adding no longer writes anything — Generate does. So the only field that
-  // has to be here is the address; everything the writer needs can be filled
-  // in on the row before pressing Generate.
-  if (!company && !role) {
-    return complain('sg-lead-company',
-      'Add an organisation or a designation — Generate has nothing to write about without one.');
-  }
-  // On a motion that never sends, the route in IS the lead. A warm introduction
-  // with no introducer recorded is a name you will not remember how to reach.
-  if (m && !m.emails && !via) {
-    return complain('sg-lead-via', `${m.viaLabel} — without it there is no record of how you reach them.`);
+  const motion = document.getElementById('sg-lead-motion')?.value || '';
+  const m = motionByKey(motion);
+  if (!m) return banner('No motion is selected.');
+
+  const payload = { motion };
+  for (const f of m.fields || []) {
+    const v = (document.getElementById(`sg-lead-${f.key}`)?.value || '').trim();
+    if (f.required && !v) return complain(`sg-lead-${f.key}`, `${f.label} is required.`);
+    if (v) payload[f.key] = v;
   }
 
   const btns = [document.getElementById('sg-lead-add')];
   btns.forEach(b => { b.disabled = true; });
   try {
-    await api('/leads', {
-      method: 'POST',
-      body: JSON.stringify({ email, name, company, role, companyUrl, linkedinUrl, note, motion, via }),
-    });
-    banner(m && !m.emails
-      ? `Added ${email} under ${m.label}. Nothing is sent on this lane — press Log on their row to record what happens next.`
-      : `Added ${email}. Press Generate on their row to write the email.`, false);
-    ['email', 'name', 'company', 'role', 'linkedin', 'companyurl', 'note', 'via']
-      .forEach(f => { const el = document.getElementById(`sg-lead-${f}`); if (el) el.value = ''; });
+    const res = await api('/leads', { method: 'POST', body: JSON.stringify(payload) });
+    const who = payload.name || payload.email || payload.phone || 'them';
+
+    /**
+     * On a motion you send yourself, the link IS the result — so it goes on
+     * screen rather than being announced. A banner reading "a link was
+     * generated" would mean going to look for it.
+     *
+     * Held in state rather than written straight into the box, because the
+     * board reload below re-renders this whole panel and would otherwise wipe
+     * the one thing the operator is here to copy.
+     */
+    state.invite = res.inviteLink ? { link: res.inviteLink, lead: res.lead } : null;
+    if (!res.inviteLink) {
+      banner(`Added ${who}. Press Generate on their row to write the email.`, false);
+    }
+
+    // The new row appears in the table, and the invite survives it.
     await load('outreach');
+    document.getElementById('sg-invite')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   } catch (err) {
     banner(`Could not save the lead: ${err.message}`);
   } finally {
     btns.forEach(b => { if (b) b.disabled = false; });
   }
+}
+
+/**
+ * Copy, with the button reporting what actually happened.
+ *
+ * Clipboard access can be refused outright by the browser. Saying "Copied"
+ * regardless would send someone to WhatsApp to paste an empty clipboard, so a
+ * refusal selects the text and says to press Ctrl+C instead.
+ */
+function wireInvite() {
+  const copy = document.getElementById('sg-invite-copy');
+  const field = document.getElementById('sg-invite-link');
+  if (!copy || !field) return;
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(field.value);
+      copy.textContent = 'Copied';
+    } catch {
+      field.select();
+      copy.textContent = 'Press Ctrl+C';
+    }
+    setTimeout(() => { copy.textContent = 'Copy'; }, 2500);
+  });
 }
 
 // ── Ask ──────────────────────────────────────────────────────────────────────

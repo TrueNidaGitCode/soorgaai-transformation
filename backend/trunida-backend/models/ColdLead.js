@@ -26,13 +26,45 @@ const coldLeadSchema = new mongoose.Schema({
    * collection is worth having, and a case difference would silently break it.
    */
   email: {
-    type:     String,
-    required: true,
-    unique:   true,
-    index:    true,
-    trim:     true,
+    type:      String,
+    trim:      true,
     lowercase: true,
+    /**
+     * Optional, and unique only when it exists.
+     *
+     * A warm introduction to someone you already know starts with a mobile
+     * number and a WhatsApp message; there is often no email address for weeks,
+     * and demanding one would mean inventing them. But the plain unique index
+     * that was here treats "no email" as a value, so the SECOND such lead
+     * collided with the first on null and could not be saved at all.
+     *
+     * A partial index keeps the guarantee that matters — two leads can never
+     * share an address — and stops making a claim about leads that have none.
+     */
+    index: { unique: true, partialFilterExpression: { email: { $type: 'string' } } },
   },
+
+  /**
+   * The mobile number, for the motions that reach people on a phone.
+   *
+   * Stored as typed, including the country code. Not normalised, because
+   * normalising international numbers correctly needs a library and a wrong
+   * normalisation silently turns a reachable contact into an unreachable one —
+   * a worse outcome than a column that is occasionally formatted two ways.
+   */
+  phone: { type: String, default: '', trim: true },
+
+  /**
+   * How you know them, and where they are.
+   *
+   * Both change the approach rather than describing it: what you say to a
+   * friend is not what you say to a former colleague, and an Indian contact and
+   * a US one differ on time zone, pricing expectation and how direct the first
+   * message should be. Plain strings validated in the service, never enums —
+   * an enum whose default is not a member rejects every document on save.
+   */
+  relationship: { type: String, default: '', trim: true },
+  location:     { type: String, default: '', trim: true },
 
   name:    { type: String, default: '', trim: true },
 

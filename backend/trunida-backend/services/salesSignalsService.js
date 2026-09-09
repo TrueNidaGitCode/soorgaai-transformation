@@ -45,7 +45,9 @@ import AccountPlan from '../models/AccountPlan.js';
 import ColdLead from '../models/ColdLead.js';
 import UserProfile from '../models/UserProfile.js';
 import { classify } from './accountKindService.js';
-import { isMotion, laneOf, motionEmails, DEFAULT_MOTION } from './gtmMotions.js';
+import { isMotion, laneOf, motionEmails, motionSharesLink, fieldsFor, DEFAULT_MOTION } from './gtmMotions.js';
+import { trackedLink } from './outreachService.js';
+import crypto from 'crypto';
 import { generate } from './llmService.js';
 
 const DAY = 86400000;
@@ -145,9 +147,46 @@ export async function collectSignals() {
     blueprints.filter(b => b.guestId && !b.userId && b.guestMeta?.ref).map(b => b.guestMeta.ref)
   );
 
-  // ── 1. Outreach — cold emails, minus anyone who has since signed up ────────
+  /**
+   * Refs that now sit on a blueprint someone OWNS.
+   *
+   * The other half of the tracked link. A guest blueprint carries the ref of
+   * whoever's link brought them; signing in claims that blueprint by setting
+   * userId and unsetting guestId, and guestMeta survives untouched. So a ref
+   * found on an owned blueprint is proof that this specific lead's link
+   * produced this specific account.
+   *
+   * This is the only way a warm introduction can ever leave Outreach. Those
+   * leads are added with a mobile number and frequently no email at all, and
+   * the email match below can never fire for them — without this they would
+   * sit at the top of the funnel for ever while the person was already paying.
+   */
+  const claimedRefs = new Map();
+  for (const b of blueprints) {
+    if (b.userId && b.guestMeta?.ref) claimedRefs.set(b.guestMeta.ref, String(b.userId));
+  }
+
+  const userByEmail = new Map(users.map(u => [String(u.email || '').toLowerCase(), u]));
+  const userById    = new Map(users.map(u => [String(u._id), u]));
+
+  /**
+   * The account this lead became, and how we know — or null.
+   *
+   * Two routes, deliberately in this order: an address match is the stronger
+   * claim because it identifies the person, while a link match identifies the
+   * click. Both are real; the report says which one applies.
+   */
+  function accountFor(l) {
+    const addr = String(l.email || '').toLowerCase();
+    if (addr && userByEmail.has(addr)) return { user: userByEmail.get(addr), how: 'email' };
+    const uid = l.refCode ? claimedRefs.get(l.refCode) : null;
+    if (uid && userById.has(uid)) return { user: userById.get(uid), how: 'link' };
+    return null;
+  }
+
+  // ── 1. Outreach — everyone in flight, minus anyone who has since signed up ─
   const outreach = leads
-    .filter(l => !knownEmails.has(String(l.email || '').toLowerCase()))
+    .filter(l => !accountFor(l))
     .map(l => ({
       id: String(l._id),
       at: l.lastContactedAt || l.createdAt,
@@ -169,6 +208,18 @@ export async function collectSignals() {
       via: l.via || '',
       nextStep: l.nextStep || '',
       nextStepAt: l.nextStepAt || null,
+      phone: l.phone || '',
+      relationship: l.relationship || '',
+      location: l.location || '',
+      /**
+       * The link to send them, for the motions where you do the sending.
+       *
+       * Cold email puts this in the mail itself; a warm introduction is a
+       * WhatsApp message you write, so the link has to be something you can
+       * copy. Same ref either way — it is what turns their visit into an
+       * attributed row instead of another anonymous guest.
+       */
+      inviteLink: motionSharesLink(l.motion || DEFAULT_MOTION) ? trackedLink(l) : '',
       // Leads are classified by the same rules. A +svargtest address is a
       // probe whether it is a lead or an account.
       ...classify(l.email, {}),
@@ -208,12 +259,11 @@ export async function collectSignals() {
   // Leads that became accounts. Not a stage — nobody sits here — but the only
   // evidence outreach works at all, so it carries what makes it evidence:
   // how long it took and how many emails it cost, not just who.
-  const userByEmail = new Map(users.map(u => [String(u.email || '').toLowerCase(), u]));
-
   const converted = leads
-    .filter(l => knownEmails.has(String(l.email || '').toLowerCase()))
-    .map(l => {
-      const u = userByEmail.get(String(l.email).toLowerCase());
+    .map(l => ({ l, hit: accountFor(l) }))
+    .filter(x => x.hit)
+    .map(({ l, hit }) => {
+      const u = hit.user;
       const signedUpAt = u?.createdAt || null;
       const sent = l.sequence?.sentCount || 0;
       // Negative when the account predates the lead — they signed up on their
@@ -249,6 +299,17 @@ export async function collectSignals() {
          * a customer, which would be precisely backwards.
          */
         attributed: days !== null && days >= 0 && (motionEmails(motion) ? sent > 0 : true),
+        /**
+         * Which of the two joins found them.
+         *
+         * "link" is the stronger evidence of the two despite being the weaker
+         * identifier: an address match only proves the same person exists as an
+         * account, while a claimed ref proves they arrived through this lead's
+         * own link. Worth distinguishing on the report rather than collapsing
+         * both into a tick.
+         */
+        matchedBy: hit.how,
+        account: u ? String(u.email || '') : '',
       };
     })
     .sort((a, b) => new Date(b.signedUpAt || 0) - new Date(a.signedUpAt || 0));
@@ -643,25 +704,80 @@ const LEAD_STATUSES = ['to-contact', 'contacted', 'replied', 'dead'];
 
 export async function addLead({
   email, name, company, role, companyUrl, linkedinUrl, note, orgContext,
-  motion, via, nextStep, nextStepAt, subject, body, addedByUserId,
+  motion, via, nextStep, nextStepAt, phone, relationship, location,
+  subject, body, addedByUserId,
 }) {
-  const clean = String(email || '').trim().toLowerCase();
-  if (!clean || !clean.includes('@')) throw new Error('A valid email is required.');
-
   // An unrecognised motion is rejected rather than stored: a lead filed under a
   // key no lane matches would not appear on any tab, which is worse than a
   // refusal because nothing tells you it happened.
   if (motion !== undefined && motion !== '' && !isMotion(motion)) {
     throw new Error(`Unknown motion "${motion}".`);
   }
+  const key = motion || DEFAULT_MOTION;
+
+  const clean = String(email || '').trim().toLowerCase();
+  const tel   = String(phone || '').trim();
+  if (clean && !clean.includes('@')) throw new Error('That is not a valid email address.');
+
+  /**
+   * The fields this motion declares are checked here, not only on the form.
+   *
+   * The screen renders from the same list, so in practice the form catches
+   * these first. But the form is one of two ways in and the API is the other,
+   * and a rule that lives only in the browser is a rule that is not enforced.
+   */
+  const supplied = { name, phone: tel, company, relationship, location, email: clean, role, via, note };
+  for (const f of fieldsFor(key)) {
+    if (f.required && !String(supplied[f.key] ?? '').trim()) {
+      throw new Error(`${f.label} is required for this motion.`);
+    }
+    // A select whose value is not one of its options came from something other
+    // than the form. Store it and the row renders a value no filter matches.
+    if (f.options && supplied[f.key] && !f.options.includes(supplied[f.key])) {
+      throw new Error(`${f.label} must be one of: ${f.options.join(', ')}.`);
+    }
+  }
+
+  /**
+   * A backstop: some way to reach them, whatever the motion declares.
+   *
+   * The per-motion rules above give the precise message wherever there is one
+   * to give — "Email address is required for this motion". This catches the
+   * motion that declares neither field mandatory. A cold email needs an
+   * address; a warm introduction to someone you already know needs a number and
+   * often has no address for weeks. What neither can be is a row with no way to
+   * reach the person at all — that is a name in a list, and it will sit at the
+   * top of the funnel for ever.
+   */
+  if (!clean && !tel) {
+    throw new Error('An email address or a mobile number is required — otherwise there is no way to reach them.');
+  }
 
   // Upsert rather than reject: re-adding someone you already have should show
   // you the row you already have, not an error you have to read and dismiss.
+  //
+  // Matched on the address when there is one and the number otherwise, so the
+  // same person added twice is one row either way.
+  const filter = clean ? { email: clean } : { phone: tel };
+
   return ColdLead.findOneAndUpdate(
-    { email: clean },
+    filter,
     {
       $setOnInsert: {
-        email: clean, status: 'to-contact', addedByUserId: addedByUserId || null,
+        status: 'to-contact', addedByUserId: addedByUserId || null,
+        // Only when there is one. An empty string is a value as far as the
+        // partial unique index is concerned, so writing '' here would put every
+        // number-only lead back into collision with every other one.
+        ...(clean ? { email: clean } : {}),
+        /**
+         * The ref, minted now rather than at send time.
+         *
+         * Cold email could leave this until the mail went out, because the mail
+         * was what carried the link. On every other motion YOU send the link,
+         * by hand, the moment the lead is added — so it has to exist by then or
+         * the screen has nothing to give you to paste.
+         */
+        refCode: crypto.randomBytes(6).toString('base64url'),
         // On insert only. Re-adding an address must not silently move an
         // existing lead into a different lane — that would make a row vanish
         // from the tab someone was working it on.
@@ -683,6 +799,9 @@ export async function addLead({
         // The route in, and what has to happen next. For every motion but cold
         // email these are the only things that say whether this is moving.
         ...(via      !== undefined ? { via:      String(via).trim().slice(0, 300) }      : {}),
+        ...(phone        !== undefined ? { phone:        tel.slice(0, 40) }                          : {}),
+        ...(relationship !== undefined ? { relationship: String(relationship).trim().slice(0, 40) }  : {}),
+        ...(location     !== undefined ? { location:     String(location).trim().slice(0, 40) }      : {}),
         ...(nextStep !== undefined ? { nextStep: String(nextStep).trim().slice(0, 300) } : {}),
         ...(nextStepAt !== undefined
           ? { nextStepAt: nextStepAt ? new Date(nextStepAt) : null } : {}),
@@ -699,6 +818,7 @@ export async function addLead({
 
 export async function updateLead(id, {
   status, note, name, company, markContacted, motion, via, nextStep, nextStepAt,
+  phone, relationship, location,
 }) {
   const set = {};
   if (motion !== undefined) {
@@ -709,6 +829,9 @@ export async function updateLead(id, {
     set.motion = motion;
   }
   if (via      !== undefined) set.via      = String(via).trim().slice(0, 300);
+  if (phone        !== undefined) set.phone        = String(phone).trim().slice(0, 40);
+  if (relationship !== undefined) set.relationship = String(relationship).trim().slice(0, 40);
+  if (location     !== undefined) set.location     = String(location).trim().slice(0, 40);
   if (nextStep !== undefined) set.nextStep = String(nextStep).trim().slice(0, 300);
   if (nextStepAt !== undefined) set.nextStepAt = nextStepAt ? new Date(nextStepAt) : null;
   if (status !== undefined) {

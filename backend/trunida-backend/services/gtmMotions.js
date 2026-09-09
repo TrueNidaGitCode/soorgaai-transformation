@@ -260,5 +260,93 @@ export function motionEmails(key) {
  * the strategy, and two copies of reasoning drift into two different strategies.
  */
 export function motionRegistry() {
-  return { lanes: LANES, motions: MOTIONS, defaultMotion: DEFAULT_MOTION };
+  return {
+    lanes: LANES,
+    defaultMotion: DEFAULT_MOTION,
+    // Fields travel with the motion so the form is rendered from the same
+    // definition the API validates against.
+    motions: MOTIONS.map((m) => ({ ...m, fields: fieldsFor(m.key), sharesLink: motionSharesLink(m.key) })),
+  };
+}
+
+/**
+ * ── What each motion asks for ───────────────────────────────────────────────
+ *
+ * A cold email needs a designation and a website, because those are what the
+ * writer reads. A warm introduction to someone you already know needs neither
+ * — it needs a mobile number and how you know them. Asking every motion for
+ * the same seven boxes is how a form becomes something people fill in with
+ * whatever gets past the validation.
+ *
+ * Declared here rather than in sales.js so the screen renders precisely the
+ * fields the server accepts. A field the form collects and the API drops is a
+ * failure this codebase has already paid for once, with the organisation
+ * paragraph that was typed on every lead and stored on none.
+ */
+
+/** Every field a motion may ask for. `key` is the column on ColdLead. */
+export const FIELDS = {
+  name:    { key: 'name',    label: 'Name',              type: 'text',  required: true },
+  phone:   { key: 'phone',   label: 'Mobile number',     type: 'tel',   required: true,
+             hint: 'With country code — it is what the invite gets sent over.' },
+  company: { key: 'company', label: 'Company (optional)', type: 'text' },
+  relationship: {
+    key: 'relationship', label: 'Relationship', type: 'select', required: true,
+    options: ['Friend', 'Colleague'],
+  },
+  location: {
+    key: 'location', label: 'Location', type: 'select', required: true,
+    options: ['India', 'US'],
+  },
+  email:      { key: 'email',      label: 'Email (optional)', type: 'email',
+                hint: 'Only if you have it. The invite link works without one.' },
+  emailReq:   { key: 'email',      label: 'Email address',    type: 'email', required: true },
+  role:       { key: 'role',       label: 'Designation',      type: 'text',
+                suggestions: ['VP Engineering', 'VP Marketing', 'VP Sales', 'Founder / CEO'] },
+  linkedinUrl: { key: 'linkedinUrl', label: 'LinkedIn profile URL', type: 'url' },
+  companyUrl:  { key: 'companyUrl',  label: 'Company website',      type: 'url' },
+  companyOnly: { key: 'company',     label: 'Organisation',         type: 'text' },
+  note:        { key: 'note',        label: 'Private note — never sent', type: 'text' },
+};
+
+/**
+ * Which fields each motion collects, in the order they are shown.
+ *
+ * Anything not listed here falls back to the cold-email set, so a motion added
+ * to the registry without a form still works rather than rendering nothing.
+ */
+const MOTION_FIELDS = {
+  // You already know this person. The whole exchange is a WhatsApp message
+  // with a link in it, so the number matters and the job title does not.
+  'warm-intro': ['name', 'phone', 'company', 'relationship', 'location', 'email', 'note'],
+};
+
+const DEFAULT_FIELDS =
+  ['companyOnly', 'name', 'role', 'emailReq', 'linkedinUrl', 'companyUrl', 'via', 'note'];
+
+export function fieldsFor(motionKey) {
+  const names = MOTION_FIELDS[motionKey] || DEFAULT_FIELDS;
+  const m = motionOf(motionKey);
+  return names.map((n) => {
+    // `via` is the one field whose label is the motion's own, so it is built
+    // here rather than sitting eleven times over in the catalogue.
+    if (n === 'via') {
+      return m.viaLabel
+        ? { key: 'via', label: m.viaLabel, type: 'text', required: !m.emails }
+        : null;
+    }
+    return FIELDS[n] || null;
+  }).filter(Boolean);
+}
+
+/**
+ * Does this motion hand you a link to send yourself?
+ *
+ * Cold email puts the tracked link in the mail it sends. Every other motion is
+ * a conversation you are having in person, on a call or over WhatsApp, so the
+ * link has to be something you can copy. Same ref either way — what changes is
+ * who does the sending.
+ */
+export function motionSharesLink(key) {
+  return !motionEmails(key);
 }

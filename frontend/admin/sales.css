@@ -1243,3 +1243,76 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 .sg-l-via,
 .sg-l-next,
 .sg-l-note { width: 100%; margin-bottom: 0.5rem; }
+
+/* ── The invite link ───────────────────────────────────────────────────────────
+   On a warm introduction this is the deliverable, not a confirmation: you add
+   the person in order to get something to paste into WhatsApp. So it is given
+   the weight of a result rather than the weight of a toast. */
+
+.sg-invite {
+  margin: 0.9rem 0 1.25rem;
+  padding: 0.95rem 1.15rem;
+  background: rgba(92, 197, 167, 0.08);
+  border: 1px solid rgba(92, 197, 167, 0.32);
+  border-radius: 12px;
+}
+
+.sg-invite__head {
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent-green, #5CC5A7);
+}
+
+.sg-invite__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sg-invite__link {
+  flex: 1 1 22rem;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-primary, #FFFFFF);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+}
+
+.sg-invite__note {
+  margin: 0.6rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* A select in the add form, matching the text inputs beside it. */
+.sg-field-select {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary, #FFFFFF);
+  font-family: inherit;
+  font-size: 0.88rem;
+}
+
+/* Placeholders carry the field name here — there are no labels — so an input
+   narrower than its own placeholder is a field whose name you cannot read.
+   "Company (optional)" was rendering as "Company (option". */
+.sg-addlead input { min-width: 12.5rem; }
+
+.sg-field-select {
+  flex: 1;
+  min-width: 9.5rem;
+  border: 2px solid rgba(92, 197, 167, 0.2);
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+}

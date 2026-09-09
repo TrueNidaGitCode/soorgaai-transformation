@@ -158,6 +158,7 @@ export async function collectSignals() {
       orgContext: l.orgContext || '',
       role: l.role || '',
       companyUrl: l.companyUrl || '',
+      subjectAlternates: l.subjectAlternates || [],
       linkedinUrl: l.linkedinUrl || '',
       // Leads are classified by the same rules. A +svargtest address is a
       // probe whether it is a lead or an account.

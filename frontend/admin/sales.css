@@ -825,3 +825,35 @@
 .sg-links a:hover { color: var(--accent-green, #5CC5A7); }
 
 .sg-addlead--wide input { min-width: 150px; }
+
+/* ── Alternate subject lines ──────────────────────────────────────────────────
+   The paragraph is usually right and the subject is the part worth arguing
+   with, so swapping it is a click rather than a regeneration. */
+
+.sg-pv__alts { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin: -0.4rem 0 0.85rem; }
+
+.sg-pv__altlabel {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.sg-alt {
+  padding: 0.28rem 0.6rem;
+  border: 1px dashed rgba(92, 197, 167, 0.4);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary, #CCCCCC);
+  font-family: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.sg-alt:hover:not(:disabled) {
+  border-style: solid;
+  border-color: var(--accent-green, #5CC5A7);
+  color: var(--text-primary, #FFFFFF);
+}
+
+.sg-alt:disabled { opacity: 0.5; cursor: default; }

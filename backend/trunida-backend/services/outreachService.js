@@ -506,6 +506,7 @@ export async function previewFor(leadId) {
     subject: fill(subject, lead),
     body: fill(body, lead),
     link: trackedLink(lead),
+    alternates: (lead.subjectAlternates || []).map(a => fill(a, lead)),
     missingContext: /\{\{\s*context\s*\}\}/i.test(body) && !lead.orgContext,
   };
 }
@@ -560,13 +561,44 @@ what to build.
 
 WHAT TO WRITE
 Return ONLY compact JSON, no other text:
-{"subject": "...", "context": "..."}
+{"subject": "...", "alternates": ["...", "..."], "context": "..."}
 
-subject  One line. Specific to their organisation. No colons-and-buzzwords, no
-         "Transform your business with AI". Under 70 characters.
-context  ONE paragraph, 2-3 sentences, about THIS organisation and this
-         person's function. It is dropped into a template that already carries
-         the pitch and the link, so write only the part that is about them.
+subject     The line that decides whether any of this gets read.
+alternates  Two more, each taking a DIFFERENT angle from the first and from
+            each other — not three rewordings of one idea.
+context     ONE paragraph, 2-3 sentences, about THIS organisation and this
+            person's function. It is dropped into a template that already
+            carries the pitch and the link, so write only the part that is
+            about them.
+
+WRITING THE SUBJECT
+Four to eight words. Under 50 characters — a phone truncates around forty, and
+a subject that arrives cut in half has already failed.
+
+Write it the way one person writes to another, not the way a company writes to
+a list. Sentence case, or plain lowercase. Title Case Reads As A Campaign.
+
+Earn the open with specificity, never with curiosity you do not pay off. Name
+their company, their function's actual problem, or something true you read on
+their site. A subject the body then delivers on is what makes the second email
+get opened too — and there are five more after this one.
+
+Good shapes:
+  their tooling backlog
+  a question about <company>'s <specific thing>
+  <company> — <the problem their function owns>
+  fifteen minutes from problem to running app
+
+BANNED, all of it. Every one of these is either a spam-filter trigger, a
+marketing tell, or a lie:
+  transform · unlock · revolutionise · supercharge · boost · game-changer
+  AI-powered · cutting-edge · solution · leverage · synergy · elevate
+  exclamation marks · ALL CAPS · emoji · "FREE" · "URGENT" · "ACT NOW"
+  fake "Re:" or "Fwd:" prefixes · [BRACKETS] · a personal name you were not given
+
+Never promise in the subject what the paragraph does not deliver. This domain
+has almost no sending history: one spam complaint costs more than every open a
+clever subject could win.
 
 RULES
 - Write about THEIR business. If you were given text from their website, use
@@ -636,13 +668,21 @@ export async function generateOutreach(leadId) {
 
   const subject = String(parsed.subject || '').trim().slice(0, 300);
   const context = String(parsed.context || '').trim().slice(0, 4000);
+  // Kept so a different angle is one click away rather than another
+  // generation — the operator knows their market better than the model does,
+  // and re-rolling the whole email to change six words is a bad trade.
+  const alternates = (Array.isArray(parsed.alternates) ? parsed.alternates : [])
+    .map(a => String(a || '').trim().slice(0, 300))
+    .filter(a => a && a !== subject)
+    .slice(0, 2);
   if (!subject || !context) throw new Error('The model returned an empty draft. Try Generate again.');
 
   const tpl = await getTemplate();
   lead.sequence.subject = subject;
+  lead.subjectAlternates = alternates;
   if (!lead.sequence.body) lead.sequence.body = tpl.body;
   lead.orgContext = context;
   await lead.save();
 
-  return { subject, context, groundedInWebsite: !!siteText };
+  return { subject, alternates, context, groundedInWebsite: !!siteText };
 }

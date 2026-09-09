@@ -232,6 +232,7 @@ function leadRow(r) {
       <div class="sg-pv__warn"></div>
       <div class="sg-pv__to"></div>
       <div class="sg-pv__subject"></div>
+      <div class="sg-pv__alts"></div>
       <div class="sg-pv__body"></div>
     </div>
   </td></tr>
@@ -541,6 +542,7 @@ function wireOutreach() {
         box.querySelector('.sg-pv__to').textContent = `To: ${p.to}`;
         box.querySelector('.sg-pv__subject').textContent = p.subject;
         box.querySelector('.sg-pv__body').textContent = p.body;
+        renderAlternates(box, btn.dataset.preview, p.alternates || []);
         box.querySelector('.sg-pv__warn').textContent = p.missingContext
           ? 'No organisation paragraph written — this email is entirely generic.' : '';
       } catch (err) {
@@ -895,6 +897,35 @@ function wireGenerate() {
       } catch (err) {
         banner(`Could not write the email: ${err.message}`);
       } finally { btn.disabled = false; btn.textContent = original; }
+    });
+  });
+}
+
+/**
+ * The other two subject lines, one click away.
+ *
+ * The paragraph is usually right and the subject is the part worth arguing
+ * with, so swapping it must not cost a regeneration — that would throw away a
+ * good paragraph to change six words. Each alternate takes a different angle
+ * rather than rewording the first, so this is a real choice.
+ */
+function renderAlternates(box, leadId, alternates) {
+  const wrap = box.querySelector('.sg-pv__alts');
+  if (!alternates.length) { wrap.innerHTML = ''; return; }
+
+  wrap.innerHTML = `<span class="sg-pv__altlabel">Or use</span>` +
+    alternates.map((a, i) => `<button type="button" class="sg-alt" data-alt="${i}">${esc(a)}</button>`).join('');
+
+  wrap.querySelectorAll('.sg-alt').forEach((b, i) => {
+    b.addEventListener('click', async () => {
+      b.disabled = true;
+      try {
+        await api(`/leads/${leadId}/sequence`, {
+          method: 'PUT', body: JSON.stringify({ subject: alternates[i] }),
+        });
+        banner('Subject changed. The message is unchanged.', false);
+        await load('outreach');
+      } catch (err) { banner(`Could not change the subject: ${err.message}`); }
     });
   });
 }

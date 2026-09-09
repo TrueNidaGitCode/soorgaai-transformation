@@ -90,6 +90,15 @@ const coldLeadSchema = new mongoose.Schema({
    */
   orgContext: { type: String, default: '' },
 
+  /**
+   * Two other subject lines the writer produced, each on a different angle.
+   *
+   * Stored so changing the subject is a click rather than a regeneration. The
+   * operator knows which framing lands in their market; re-rolling the whole
+   * email to change six words throws away a paragraph that was already right.
+   */
+  subjectAlternates: { type: [String], default: [] },
+
   lastContactedAt: { type: Date, default: null },
 
   addedByUserId: {

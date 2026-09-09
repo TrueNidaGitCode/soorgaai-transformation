@@ -1082,3 +1082,164 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 @media (max-width: 720px) {
   .sg-account { align-items: flex-start; width: 100%; }
 }
+
+/* ── GTM motions ───────────────────────────────────────────────────────────────
+   Outreach is no longer one thing. The lanes are how the conversation started —
+   introduced, shown, broadcast — because that is the distinction that changes
+   what you actually do next.
+
+   Visually subordinate to .sg-tabs on purpose: those are the funnel, these are
+   a division inside one of its stages, and two tab strips with equal weight
+   read as two funnels. Hence the pill treatment rather than the bordered card. */
+
+.sg-lanes {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.9rem;
+  padding: 0.3rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.sg-lane {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.8rem;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.86rem;
+  color: var(--text-secondary, #CCCCCC);
+  transition: background 0.15s, color 0.15s;
+}
+
+.sg-lane:hover { color: var(--text-primary, #FFFFFF); background: rgba(255, 255, 255, 0.05); }
+
+.sg-lane--on {
+  background: rgba(92, 197, 167, 0.16);
+  color: var(--text-primary, #FFFFFF);
+  font-weight: 600;
+}
+
+.sg-lane__n {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sg-lane--on .sg-lane__n { color: var(--accent-green, #5CC5A7); }
+
+.sg-lane__blurb {
+  margin: 0 0 1rem;
+  max-width: 68ch;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-secondary, #CCCCCC);
+}
+
+/* ── The plays ─────────────────────────────────────────────────────────────────
+   Collapsed by default. Someone working the board every day does not need the
+   strategy re-explained; someone deciding what to do next does. */
+
+.sg-plays {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1.15rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.sg-plays > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent-green, #5CC5A7);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sg-plays > summary::-webkit-details-marker { display: none; }
+.sg-plays > summary::before { content: '▸'; color: var(--accent-green, #5CC5A7); }
+.sg-plays[open] > summary::before { content: '▾'; }
+.sg-plays[open] > summary { margin-bottom: 1.1rem; }
+
+.sg-plays__n {
+  font-size: 0.7rem;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 700;
+}
+
+.sg-plays__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.4rem 1.9rem;
+}
+
+.sg-play__name {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #FFFFFF);
+  margin-bottom: 0.35rem;
+}
+
+.sg-play__sum,
+.sg-play__note {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-secondary, #CCCCCC);
+}
+
+.sg-play__note {
+  margin-top: 0.5rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.82rem;
+}
+
+/* The exact words to say. Quoted, because the wording is the whole difference
+   between an ask that gets an answer and one that gets a shrug. */
+.sg-play__ask {
+  margin: 0.6rem 0 0;
+  padding: 0.55rem 0.85rem;
+  border-left: 2px solid var(--accent-green, #5CC5A7);
+  background: rgba(92, 197, 167, 0.07);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* ── The motion on a row ───────────────────────────────────────────────────── */
+
+.sg-motion {
+  display: inline-block;
+  margin-top: 0.3rem;
+  padding: 0.1rem 0.42rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.sg-motion-select { min-width: 11rem; }
+
+/* The Log editor. Same shape as the cold-email composer it sits beside, so a
+   row that sends and a row that does not open the same way. */
+.sg-l-via,
+.sg-l-next,
+.sg-l-note { width: 100%; margin-bottom: 0.5rem; }

@@ -24,6 +24,7 @@ import {
   sendNext, setSequence, unsubscribeByToken,
   getTemplate, setTemplate, previewFor, generateOutreach,
 } from '../services/outreachService.js';
+import { motionRegistry, motionEmails, DEFAULT_MOTION } from '../services/gtmMotions.js';
 
 /** The unsubscribe page echoes a stored address back into HTML. */
 function escapeHtml(str) {
@@ -37,7 +38,7 @@ function fail(res, err, fallback = 'Sales funnel operation failed.') {
   const msg = err?.message || '';
   // An error that states its own status is trusted over guessing from wording.
   if (err?.status) return res.status(err.status).json({ error: msg || fallback });
-  if (/required|Unknown status|Nothing to update|valid email/i.test(msg)) return res.status(400).json({ error: msg });
+  if (/required|Unknown status|Unknown motion|Nothing to update|valid email/i.test(msg)) return res.status(400).json({ error: msg });
   if (/not found/i.test(msg)) return res.status(404).json({ error: msg });
   return res.status(500).json({ error: fallback });
 }
@@ -80,12 +81,19 @@ export async function ask(req, res) {
 
 export async function createLead(req, res) {
   try {
-    const { email, name, company, role, companyUrl, linkedinUrl, note, subject, body, orgContext } = req.body || {};
+    const {
+      email, name, company, role, companyUrl, linkedinUrl, note, subject, body, orgContext,
+      motion, via, nextStep, nextStepAt,
+    } = req.body || {};
     // A new lead with nothing written starts from the shared template, so the
     // generic body is authored once and only orgContext is typed per prospect.
-    const tpl = await getTemplate();
+    // Only for the one motion that sends: seeding a warm introduction with a
+    // cold-email body would put a draft nobody wrote behind a Send button.
+    const wantsMail = motionEmails(motion || DEFAULT_MOTION);
+    const tpl = wantsMail ? await getTemplate() : { subject: '', body: '' };
     const lead = await addLead({
       email, name, company, role, companyUrl, linkedinUrl, note, orgContext,
+      motion, via, nextStep, nextStepAt,
       subject: subject || tpl.subject,
       body:    body    || tpl.body,
       addedByUserId: req.user._id,
@@ -93,6 +101,20 @@ export async function createLead(req, res) {
     return res.status(201).json({ lead });
   } catch (err) {
     return fail(res, err, 'Could not add the lead.');
+  }
+}
+
+/**
+ * The go-to-market motions, for the screen.
+ *
+ * Served rather than hard-coded in sales.js so the plays, the lanes and the
+ * validator cannot drift apart. Static, so it is cheap to fetch on load.
+ */
+export async function getMotions(req, res) {
+  try {
+    return res.json(motionRegistry());
+  } catch (err) {
+    return fail(res, err, 'Could not read the motions.');
   }
 }
 
@@ -125,8 +147,10 @@ export async function previewLead(req, res) {
 
 export async function patchLead(req, res) {
   try {
-    const { status, note, name, company, markContacted } = req.body || {};
-    const lead = await updateLead(req.params.id, { status, note, name, company, markContacted });
+    const { status, note, name, company, markContacted, motion, via, nextStep, nextStepAt } = req.body || {};
+    const lead = await updateLead(req.params.id, {
+      status, note, name, company, markContacted, motion, via, nextStep, nextStepAt,
+    });
     return res.json({ lead });
   } catch (err) {
     return fail(res, err, 'Could not update the lead.');

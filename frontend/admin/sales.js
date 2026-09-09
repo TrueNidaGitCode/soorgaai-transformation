@@ -16,7 +16,7 @@ const API_BASE = window.CONFIG.API_BASE;
 
 /** Order matters: this is the funnel. */
 const TABS = [
-  { key: 'outreach',   label: 'Outreach',   hint: 'Cold emails you are working — the only stage typed in by hand.' },
+  { key: 'outreach',   label: 'Outreach',   hint: 'Everyone you are working toward a first conversation, grouped by how that conversation started. The only stage typed in by hand.' },
   { key: 'discovery',  label: 'Discovery',  hint: 'Anonymous guests who generated a blueprint. No email exists for these — the IP is the only way to tell one company returning from several visitors.' },
   { key: 'conversion', label: 'Conversion', hint: 'Signed up, nothing live yet. The blocker is the useful part.' },
   { key: 'onboarding', label: 'Onboarding', hint: 'Running a live application.' },
@@ -32,7 +32,28 @@ const TABS = [
  * says how many rows it is leaving out. A silent filter that hides a genuine
  * customer would be far worse than the noise it removes.
  */
-let state = { signals: null, mail: null, template: null, tab: 'outreach', kinds: new Set(['real']), view: 'funnel' };
+let state = {
+  signals: null, mail: null, template: null, tab: 'outreach',
+  kinds: new Set(['real']), view: 'funnel',
+  /**
+   * The go-to-market motions, fetched from the server.
+   *
+   * Not hard-coded here. The plays are the reasoning behind the strategy and
+   * the server validates against the same list, so two copies would drift into
+   * two different strategies — one the operator reads, one the API enforces.
+   */
+  motions: null,
+  /**
+   * Which lane of Outreach is open.
+   *
+   * Introduced by default, not Broadcast. Cold email is a motion, not the
+   * plan: for a new category the first enterprise sale turns on trust and a
+   * sponsor, and whichever lane opens first is the one that gets worked.
+   */
+  lane: 'introduced',
+  /** Which motion the add form is set to, within the open lane. */
+  addMotion: null,
+};
 
 /** The rows of one stage, after the kind filter. */
 function visible(rows) {
@@ -198,6 +219,88 @@ function nextSendLabel(q) {
   return days < 1 ? `in ${Math.round(ms / 3600000)}h` : `in ${Math.round(days)}d`;
 }
 
+/**
+ * What has to happen next, for a motion with no machinery behind it.
+ *
+ * Cold email has a scheduler that knows; every other motion has a person who
+ * has to remember. A lane whose Next column is blank looks identical whether
+ * it is moving or has stalled, which is the failure this whole screen exists
+ * to avoid — so a missing next step is stated, not left as an empty cell.
+ */
+function nextStepLabel(r) {
+  if (!r.nextStep && !r.nextStepAt) {
+    return '<span class="sg-unknown" title="Nothing recorded — this lane has no scheduler, so an empty next step means it has stalled">no next step</span>';
+  }
+  const when = r.nextStepAt ? new Date(r.nextStepAt) : null;
+  let due = '';
+  if (when) {
+    const days = Math.round((when - Date.now()) / 86400000);
+    due = days < 0 ? `<span class="sg-blocked">${-days}d overdue</span>`
+      : days === 0 ? '<span class="sg-blocked">today</span>'
+      : `in ${days}d`;
+  }
+  return `${esc(clip(r.nextStep, 44)) || '<span class="sg-unknown">unnamed</span>'}${due ? `<div class="sg-note">${due}</div>` : ''}`;
+}
+
+/** The motion this lead is filed under, as a chip beside the contact. */
+function motionChip(r) {
+  const m = motionByKey(r.motion);
+  if (!m) return '';
+  return `<span class="sg-motion" title="${esc(m.summary)}">${esc(m.label)}</span>`;
+}
+
+/** Which renderer a row gets — decided per row, because a lane holds both kinds. */
+function outreachRow(r) {
+  return motionByKey(r.motion)?.emails ? leadRow(r) : motionRow(r);
+}
+
+/**
+ * A lead on a motion that never sends.
+ *
+ * Same six columns as a cold lead so one table holds both, and deliberately
+ * no Generate, Preview or Send. Those buttons on a warm introduction would be
+ * an invitation to spend the introduction on a templated email — the server
+ * refuses it too, but a button you must not press should not be there at all.
+ */
+function motionRow(r) {
+  return `<tr class="sg-leadrow">
+    <td>
+      <select data-lead="${esc(r.id)}" class="sg-status-select sg-status-select--${esc(r.status)}">
+        ${['to-contact', 'contacted', 'replied', 'dead'].map(v =>
+          `<option value="${v}" ${v === r.status ? 'selected' : ''}>${v}</option>`).join('')}
+      </select>
+    </td>
+    <td>
+      <div class="sg-org">${esc(r.company) || orgBlank()}</div>
+      <div class="sg-links">
+        ${r.linkedinUrl ? `<a href="${esc(r.linkedinUrl)}" target="_blank" rel="noopener">in</a>` : ''}
+        ${r.companyUrl ? `<a href="${esc(r.companyUrl)}" target="_blank" rel="noopener">web</a>` : ''}
+      </div>
+    </td>
+    <td>
+      <div class="sg-contact__name">${esc(r.name) || '<span class="sg-unknown">no name</span>'}
+        ${r.role ? `<span class="sg-fn">${esc(r.role)}</span>` : ''}</div>
+      <div class="sg-who">${emailCell(r)}</div>
+      ${motionChip(r)}
+    </td>
+    <td class="sg-note">${esc(clip(r.via, 40)) || `<span class="sg-unknown">${esc(motionByKey(r.motion)?.viaLabel || 'not recorded')}</span>`}</td>
+    <td class="sg-note">${nextStepLabel(r)}</td>
+    <td class="sg-rowactions">
+      <button type="button" class="sg-btn" data-log="${esc(r.id)}">Log</button>
+      <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
+    </td>
+  </tr>
+  <tr class="sg-composer" id="log-${esc(r.id)}" hidden><td colspan="6">
+    <input type="text" class="sg-l-via" placeholder="${esc(motionByKey(r.motion)?.viaLabel || 'Route in')}" value="${esc(r.via || '')}">
+    <input type="text" class="sg-l-next" placeholder="What has to happen next" value="${esc(r.nextStep || '')}">
+    <div class="sg-c-controls">
+      <label>By <input type="date" class="sg-l-when" value="${r.nextStepAt ? new Date(r.nextStepAt).toISOString().slice(0, 10) : ''}"></label>
+      <button type="button" class="cta-button sg-l-save" data-logsave="${esc(r.id)}">Save</button>
+    </div>
+    <textarea class="sg-l-note" rows="3" placeholder="Private note — never sent">${esc(r.note || '')}</textarea>
+  </td></tr>`;
+}
+
 function leadRow(r) {
   const q = r.sequence;
   const done = q.sentCount >= q.maxSends;
@@ -219,6 +322,7 @@ function leadRow(r) {
       <div class="sg-contact__name">${esc(r.name) || '<span class="sg-unknown">no name</span>'}
         ${r.role ? `<span class="sg-fn">${esc(r.role)}</span>` : ''}</div>
       <div class="sg-who">${emailCell(r)}${r.unsubscribedAt ? ' <span class="sg-unsub">unsubscribed</span>' : ''}${r.clicked ? ' <span class="sg-clicked">clicked</span>' : ''}</div>
+      ${motionChip(r)}
     </td>
     <td class="sg-seq">
       <span class="sg-sent ${done ? 'sg-sent--done' : ''}">${q.sentCount}/${q.maxSends}</span>
@@ -284,36 +388,130 @@ function mailBanner(m) {
   return `<div class="sg-mailstate ${cls}">${detail}</div>`;
 }
 
-function renderOutreach(s) {
-  const form = `
-    ${mailBanner(state.mail)}`;
-  return form + renderOutreachBody(s);
+// ── Motions ──────────────────────────────────────────────────────────────────
+
+/** The lanes, or an empty list if the registry could not be fetched. */
+function lanes() { return state.motions?.lanes || []; }
+
+function motionsInLane(laneKey) {
+  return (state.motions?.motions || []).filter(m => m.lane === laneKey);
 }
 
-function renderOutreachBody(s) {
-  const form = `
-    <details class="sg-icp">
-      <summary class="sg-icp__head">Who we sell to, and how each one is approached</summary>
-      <div class="sg-icp__grid">
-        <div>
-          <span class="sg-icp__fn">VP of Engineering</span>
-          <p>Primary decision-maker — holds budget for engineering productivity tools.
-             Approach directly: crisp, concrete, and offer the self-serve route rather
-             than a meeting.</p>
-        </div>
-        <div>
-          <span class="sg-icp__fn">VP of Marketing / VP of Sales</span>
-          <p>Approach with a proposition matched to their team size, company scale and
-             how they actually operate. Lead with the operational load, not the
-             technology.</p>
-        </div>
-      </div>
-      <p class="field-hint sg-icp__foot">Generate reads this. Set the designation and the
-        email is written for that function — the same rules, applied every time rather
-        than remembered.</p>
-    </details>
+function motionByKey(key) {
+  return (state.motions?.motions || []).find(m => m.key === key) || null;
+}
 
+function laneObj(key) {
+  return lanes().find(l => l.key === key) || null;
+}
+
+/** The rows of one lane, after the kind filter. */
+function laneRows(s, laneKey) {
+  return visible(s.outreach).filter(r => (r.lane || 'broadcast') === laneKey);
+}
+
+/**
+ * How the conversation started, as a tab strip.
+ *
+ * Three lanes rather than eleven tabs. The distinction that changes what you
+ * actually do is not which of ten plays you picked, it is whether someone
+ * vouched for you, whether they watched it work, or whether you arrived cold.
+ * The count is on the tab because a lane with nothing in it is the useful
+ * thing to notice — an empty Introduced lane is a strategy that is not running.
+ */
+function renderLaneStrip(s) {
+  if (!lanes().length) return '';
+  return `<div class="sg-lanes" role="tablist" aria-label="How the conversation started">
+    ${lanes().map(l => {
+      const n = laneRows(s, l.key).length;
+      const on = l.key === state.lane;
+      return `<button type="button" class="sg-lane ${on ? 'sg-lane--on' : ''}"
+        data-lane="${esc(l.key)}" role="tab" aria-selected="${on}">
+        ${esc(l.label)}<span class="sg-lane__n">${n}</span></button>`;
+    }).join('')}
+  </div>`;
+}
+
+/**
+ * The plays in this lane, with the exact words to use.
+ *
+ * The ask is the part that is actually hard about most of these — "do you know
+ * anyone who might buy Svarg?" and "who is responsible for AI adoption at
+ * [company]?" are the same request and only one of them gets an answer. A
+ * playbook that lists motions and omits the sentence is decoration, so the ask
+ * is quoted here verbatim, at the point where a lead gets added.
+ */
+function renderPlays(laneKey) {
+  const lane = laneObj(laneKey);
+  const ms = motionsInLane(laneKey);
+  if (!lane || !ms.length) return '';
+
+  return `<p class="sg-lane__blurb">${esc(lane.blurb)}</p>
+    <details class="sg-plays">
+      <summary class="sg-plays__head">How to run the ${esc(lane.label.toLowerCase())} motions
+        <span class="sg-plays__n">${ms.length}</span></summary>
+      <div class="sg-plays__list">
+        ${ms.map(m => `<div class="sg-play">
+          <span class="sg-play__name">${esc(m.label)}</span>
+          <p class="sg-play__sum">${esc(m.summary)}</p>
+          ${m.ask ? `<blockquote class="sg-play__ask">${esc(m.ask)}</blockquote>` : ''}
+          <p class="sg-play__note">${esc(m.note)}</p>
+        </div>`).join('')}
+      </div>
+    </details>`;
+}
+
+/**
+ * The ICP, shown only where an email is written.
+ *
+ * It exists to tell Generate which function it is writing for. On the lanes
+ * that never send, it is guidance for a conversation nobody is templating, and
+ * putting it above every form would push the actual work further down the page.
+ */
+function renderIcp() {
+  return `<details class="sg-icp">
+    <summary class="sg-icp__head">Who we sell to, and how each one is approached</summary>
+    <div class="sg-icp__grid">
+      <div>
+        <span class="sg-icp__fn">VP of Engineering</span>
+        <p>Primary decision-maker — holds budget for engineering productivity tools.
+           Approach directly: crisp, concrete, and offer the self-serve route rather
+           than a meeting.</p>
+      </div>
+      <div>
+        <span class="sg-icp__fn">VP of Marketing / VP of Sales</span>
+        <p>Approach with a proposition matched to their team size, company scale and
+           how they actually operate. Lead with the operational load, not the
+           technology.</p>
+      </div>
+    </div>
+    <p class="field-hint sg-icp__foot">Generate reads this. Set the designation and the
+      email is written for that function — the same rules, applied every time rather
+      than remembered.</p>
+  </details>`;
+}
+
+/**
+ * The add form for the open lane.
+ *
+ * The motion picker is scoped to the lane, so a warm introduction cannot be
+ * filed under Broadcast by a mis-click. The `via` field is labelled by the
+ * chosen motion — "who is introducing you" and "which event" are the same
+ * column and a different question, and a placeholder that says which one keeps
+ * it from becoming a field nobody fills in.
+ */
+function renderAddForm(laneKey) {
+  const ms = motionsInLane(laneKey);
+  if (!ms.length) return '';
+  const first = ms.find(m => m.key === state.addMotion) || ms[0];
+  const emails = !!first.emails;
+
+  return `
     <div class="sg-addlead sg-addlead--wide">
+      <select id="sg-lead-motion" class="sg-motion-select" aria-label="Motion">
+        ${ms.map(m => `<option value="${esc(m.key)}" ${m.key === first.key ? 'selected' : ''}
+          data-emails="${m.emails ? '1' : ''}" data-via="${esc(m.viaLabel)}">${esc(m.label)}</option>`).join('')}
+      </select>
       <input type="text"  id="sg-lead-company" placeholder="Organisation" autocomplete="off">
       <input type="text"  id="sg-lead-name" placeholder="Name" autocomplete="off">
       <input type="text"  id="sg-lead-role" list="sg-fn-list" placeholder="Designation" autocomplete="off">
@@ -325,16 +523,29 @@ function renderOutreachBody(s) {
       </datalist>
       <input type="email" id="sg-lead-email" placeholder="Email address" autocomplete="off">
       <input type="url"   id="sg-lead-linkedin" placeholder="LinkedIn profile URL" autocomplete="off">
-      <input type="url"   id="sg-lead-companyurl" placeholder="Company website — read when generating" autocomplete="off">
+      <input type="url"   id="sg-lead-companyurl" placeholder="Company website${emails ? ' — read when generating' : ''}" autocomplete="off">
+      <input type="text"  id="sg-lead-via" placeholder="${esc(first.viaLabel || 'Route in')}"
+             autocomplete="off" ${emails ? 'hidden' : ''}>
       <input type="text"  id="sg-lead-note" placeholder="Private note — never sent" autocomplete="off">
     </div>
     <div class="sg-addmail__actions">
-      <button type="button" id="sg-lead-add" class="cta-button">Add lead</button>
-      <span class="field-hint sg-addmail__hint">Then press Generate on the row — the agent reads their website and writes the email for their function.</span>
-    </div>
+      <button type="button" id="sg-lead-add" class="cta-button">Add</button>
+      <span class="field-hint sg-addmail__hint" id="sg-add-hint">${esc(addHint(first))}</span>
+    </div>`;
+}
 
-    <details class="sg-template">
-      <summary>Shared template — used for every new lead</summary>
+function addHint(m) {
+  return m.emails
+    ? 'Then press Generate on the row — the agent reads their website and writes the email for their function.'
+    : 'Nothing is sent on this lane. Add them, then record the route in and what happens next on the row.';
+}
+
+/**
+ * The shared cold-email template, shown only on the lane that sends.
+ */
+function renderTemplate() {
+  return `<details class="sg-template">
+      <summary>Shared template — used for every new cold lead</summary>
       <input type="text" id="sg-tpl-subject" placeholder="Subject line" autocomplete="off"
              value="${esc(state.template?.subject || '')}">
       <textarea id="sg-tpl-body" rows="14">${esc(state.template?.body || '')}</textarea>
@@ -349,13 +560,31 @@ function renderOutreachBody(s) {
       </div>
     </details>
     <p class="field-hint"><strong>At most 6 emails to one contact, one a week</strong> — enforced on the server, so Send cannot get round it. Leads leave this stage on signup, reply, or unsubscribe.</p>`;
+}
 
-  const rows = table(
-    ['Status', 'Organisation', 'Contact', 'Sent', 'Next', ''],
-    visible(s.outreach), leadRow);
+function renderOutreach(s) {
+  return renderOutreachBody(s);
+}
 
+function renderOutreachBody(s) {
+  if (!state.motions) {
+    // The registry is what defines the lanes; without it, show the rows rather
+    // than an empty screen, and say why the lanes are missing.
+    return `<p class="sg-hidden-note">Could not load the go-to-market motions, so the lanes
+      are unavailable. Every lead is listed below.</p>`
+      + table(['Status', 'Organisation', 'Contact', 'Route in', 'Next', ''], visible(s.outreach), outreachRow);
+  }
 
-  return form + rows;
+  const lane = state.lane;
+  const sendsHere = motionsInLane(lane).some(m => m.emails);
+
+  return renderLaneStrip(s)
+    + renderPlays(lane)
+    + (sendsHere ? mailBanner(state.mail) + renderIcp() : '')
+    + renderAddForm(lane)
+    + (sendsHere ? renderTemplate() : '')
+    + table(['Status', 'Organisation', 'Contact', 'Route in', 'Next', ''],
+        laneRows(s, lane), outreachRow);
 }
 
 function renderDiscovery(s) {
@@ -476,13 +705,75 @@ async function saveComposer(id) {
 }
 
 function wireOutreach() {
-  document.getElementById('sg-lead-add').addEventListener('click', () => addLead());
-  document.getElementById('sg-lead-email').addEventListener('keydown', e => {
+  // Switching lane is a view change — no reload, because the board already
+  // holds every lead and a round trip would blank the screen to show rows it
+  // is already holding.
+  document.querySelectorAll('[data-lane]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.lane = btn.dataset.lane;
+      state.addMotion = null;   // the picker is scoped to the lane
+      renderStage();
+    });
+  });
+
+  // The motion picker relabels the route-in field and the hint, and shows or
+  // hides the field entirely: cold email has no route in, and an input with a
+  // placeholder that does not fit the motion is one nobody fills in.
+  const motionSel = document.getElementById('sg-lead-motion');
+  if (motionSel) motionSel.addEventListener('change', () => {
+    state.addMotion = motionSel.value;
+    const m = motionByKey(motionSel.value);
+    const via = document.getElementById('sg-lead-via');
+    const hint = document.getElementById('sg-add-hint');
+    if (via) {
+      via.hidden = !!m?.emails;
+      via.placeholder = m?.viaLabel || 'Route in';
+      if (m?.emails) via.value = '';
+    }
+    if (hint && m) hint.textContent = addHint(m);
+  });
+
+  const addBtn = document.getElementById('sg-lead-add');
+  if (addBtn) addBtn.addEventListener('click', () => addLead());
+  const emailInput = document.getElementById('sg-lead-email');
+  if (emailInput) emailInput.addEventListener('keydown', e => {
     // Enter adds the row. It has never sent anything, and now it cannot even
     // write anything — Generate is a separate, deliberate press.
     if (e.key === 'Enter') addLead();
   });
   wireGenerate();
+
+  // ── The non-email lanes: record the route in and what happens next ────────
+  document.querySelectorAll('[data-log]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = document.getElementById(`log-${btn.dataset.log}`);
+      row.hidden = !row.hidden;
+    });
+  });
+
+  document.querySelectorAll('[data-logsave]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.logsave;
+      const box = document.getElementById(`log-${id}`);
+      btn.disabled = true;
+      try {
+        await api(`/leads/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            via:      box.querySelector('.sg-l-via').value.trim(),
+            nextStep: box.querySelector('.sg-l-next').value.trim(),
+            // An empty date clears the deadline rather than leaving a stale one.
+            nextStepAt: box.querySelector('.sg-l-when').value || null,
+            note:     box.querySelector('.sg-l-note').value.trim(),
+          }),
+        });
+        banner('Saved.', false);
+        await load(state.tab);
+      } catch (err) {
+        banner(`Could not save: ${err.message}`);
+      } finally { btn.disabled = false; }
+    });
+  });
 
   document.querySelectorAll('.sg-status-select').forEach(sel => {
     sel.addEventListener('change', async () => {
@@ -634,6 +925,9 @@ async function addLead() {
   const linkedinUrl = document.getElementById('sg-lead-linkedin').value.trim();
   const companyUrl  = document.getElementById('sg-lead-companyurl').value.trim();
   const note       = document.getElementById('sg-lead-note').value.trim();
+  const motion     = document.getElementById('sg-lead-motion')?.value || '';
+  const via        = document.getElementById('sg-lead-via')?.value.trim() || '';
+  const m          = motionByKey(motion);
   if (!email) return complain('sg-lead-email', 'An email address is required.');
   // Adding no longer writes anything — Generate does. So the only field that
   // has to be here is the address; everything the writer needs can be filled
@@ -642,16 +936,23 @@ async function addLead() {
     return complain('sg-lead-company',
       'Add an organisation or a designation — Generate has nothing to write about without one.');
   }
+  // On a motion that never sends, the route in IS the lead. A warm introduction
+  // with no introducer recorded is a name you will not remember how to reach.
+  if (m && !m.emails && !via) {
+    return complain('sg-lead-via', `${m.viaLabel} — without it there is no record of how you reach them.`);
+  }
 
   const btns = [document.getElementById('sg-lead-add')];
   btns.forEach(b => { b.disabled = true; });
   try {
     await api('/leads', {
       method: 'POST',
-      body: JSON.stringify({ email, name, company, role, companyUrl, linkedinUrl, note }),
+      body: JSON.stringify({ email, name, company, role, companyUrl, linkedinUrl, note, motion, via }),
     });
-    banner(`Added ${email}. Press Generate on their row to write the email.`, false);
-    ['email', 'name', 'company', 'role', 'linkedin', 'companyurl', 'note']
+    banner(m && !m.emails
+      ? `Added ${email} under ${m.label}. Nothing is sent on this lane — press Log on their row to record what happens next.`
+      : `Added ${email}. Press Generate on their row to write the email.`, false);
+    ['email', 'name', 'company', 'role', 'linkedin', 'companyurl', 'note', 'via']
       .forEach(f => { const el = document.getElementById(`sg-lead-${f}`); if (el) el.value = ''; });
     await load('outreach');
   } catch (err) {
@@ -742,16 +1043,19 @@ async function load(keepTab) {
   document.getElementById('sg-stage').style.display = 'none';
 
   try {
-    const [{ signals }, mail, tpl] = await Promise.all([
+    const [{ signals }, mail, tpl, motions] = await Promise.all([
       api(''),
       // Never fatal: a funnel you can read is worth more than a banner about
       // mail configuration, so this failing must not blank the screen.
       api('/mail-status').catch(() => null),
       api('/template').catch(() => null),
+      // Static, so it is fetched once and kept.
+      state.motions ? Promise.resolve(null) : api('/motions').catch(() => null),
     ]);
     state.signals = signals;
     state.mail = mail?.mail || null;
     state.template = tpl?.template || state.template;
+    if (motions) state.motions = motions;
     if (keepTab) state.tab = keepTab;
     renderKindFilter();
     renderTabs();
@@ -979,19 +1283,21 @@ function renderConverted(converted) {
       <span class="sg-conv__n">${converted.length}</span>
       lead${converted.length === 1 ? '' : 's'} converted
       ${credited.length < converted.length
-        ? `<span class="sg-conv__sub">${credited.length} attributable to an email</span>` : ''}
+        ? `<span class="sg-conv__sub">${credited.length} attributable to a motion</span>` : ''}
     </summary>
     <table class="cl-table sg-conv__table">
       <thead><tr>
-        <th>Contact</th><th>Organisation</th><th>Emails</th><th>Days</th><th>Reached</th>
+        <th>Contact</th><th>Organisation</th><th>Motion</th><th>Emails</th><th>Days</th><th>Reached</th>
       </tr></thead>
       <tbody>${converted.map(c => `<tr>
         <td class="sg-who">${esc(c.email)}</td>
         <td>${esc(c.company) || '<span class="sg-unknown">—</span>'}</td>
+        <td>${motionChip(c) || '<span class="sg-unknown">—</span>'}
+          ${c.via ? `<div class="sg-note">${esc(clip(c.via, 30))}</div>` : ''}</td>
         <td>${c.emailsSent || '<span class="sg-unknown">0</span>'}</td>
         <td>${c.attributed
           ? `${c.daysToConvert}d`
-          : '<span class="sg-unknown" title="Signed up before the lead was added, or before any email went out — not something the outreach did">not attributable</span>'}</td>
+          : '<span class="sg-unknown" title="Signed up before the lead was added — they found Svarg on their own and were entered afterwards, so no motion can claim it">not attributable</span>'}</td>
         <td><span class="sg-pill ${c.stage === 'sales' ? 'sg-pill--paid' : ''}">${esc(stageLabel[c.stage] || c.stage)}</span></td>
       </tr>`).join('')}</tbody>
     </table>

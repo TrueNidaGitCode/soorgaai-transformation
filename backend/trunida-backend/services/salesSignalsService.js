@@ -45,6 +45,7 @@ import AccountPlan from '../models/AccountPlan.js';
 import ColdLead from '../models/ColdLead.js';
 import UserProfile from '../models/UserProfile.js';
 import { classify } from './accountKindService.js';
+import { isMotion, laneOf, motionEmails, DEFAULT_MOTION } from './gtmMotions.js';
 import { generate } from './llmService.js';
 
 const DAY = 86400000;
@@ -160,6 +161,14 @@ export async function collectSignals() {
       companyUrl: l.companyUrl || '',
       subjectAlternates: l.subjectAlternates || [],
       linkedinUrl: l.linkedinUrl || '',
+      // How this conversation started, and therefore which lane it renders on.
+      // Leads predating motions have no value stored, so they read as cold
+      // email — which is what they were.
+      motion: l.motion || DEFAULT_MOTION,
+      lane: laneOf(l.motion || DEFAULT_MOTION),
+      via: l.via || '',
+      nextStep: l.nextStep || '',
+      nextStepAt: l.nextStepAt || null,
       // Leads are classified by the same rules. A +svargtest address is a
       // probe whether it is a lead or an account.
       ...classify(l.email, {}),
@@ -211,18 +220,35 @@ export async function collectSignals() {
       // own and were added to outreach afterwards. That is not a conversion
       // and saying so is the difference between a metric and a flattering one.
       const days = signedUpAt ? Math.round((new Date(signedUpAt) - new Date(l.createdAt)) / DAY) : null;
+      const motion = l.motion || DEFAULT_MOTION;
       return {
         id: String(l._id),
         email: l.email,
         company: l.company || '',
         role: l.role || '',
+        // Which motion produced this customer — the reason for filing leads by
+        // motion at all. Without it the lanes are just a tidier list.
+        motion,
+        lane: laneOf(motion),
+        via: l.via || '',
         addedAt: l.createdAt,
         signedUpAt,
         daysToConvert: days,
         emailsSent: sent,
-        // The honest label. Only a signup that came AFTER the first email can
-        // be credited to it.
-        attributed: days !== null && days >= 0 && sent > 0,
+        /**
+         * The honest label, and it differs by motion.
+         *
+         * For cold email the evidence is an email that actually went out before
+         * they signed up. For every other motion there is nothing to count —
+         * an introduction leaves no send log — so the evidence is that the lead
+         * was on the board, being worked, before the account existed.
+         *
+         * Weaker evidence, and worth knowing that it is weaker. But requiring a
+         * send would mark every hand-worked conversion "not attributable" and
+         * leave cold email looking like the only motion that has ever produced
+         * a customer, which would be precisely backwards.
+         */
+        attributed: days !== null && days >= 0 && (motionEmails(motion) ? sent > 0 : true),
       };
     })
     .sort((a, b) => new Date(b.signedUpAt || 0) - new Date(a.signedUpAt || 0));
@@ -521,9 +547,14 @@ export function renderBoard(s) {
       + `→ onboarding ${c.onboarding} → sales ${c.sales}`,
     `(each account appears once, at the furthest stage it has reached)`,
 
-    section(1, 'Outreach', 'cold emails you are working', s.outreach,
+    // The motion and the next step are on the line, not just in the database.
+    // Nole answers from this text alone, so "which motion is actually working"
+    // and "what has stalled" are unanswerable unless they are printed here.
+    section(1, 'Outreach', 'everyone you are working toward a first conversation, by motion', s.outreach,
       r => `${age(r.at).padStart(5)}  ${String(r.status).padEnd(11)} ${r.email.padEnd(32)} `
-         + `${clip(r.company, 24)}${r.note ? `\n         ${clip(r.note, 90)}` : ''}`),
+         + `${clip(r.company, 24)}\n         via ${r.motion}${r.via ? ` (${clip(r.via, 40)})` : ''}`
+         + ` — next: ${r.nextStep ? clip(r.nextStep, 50) : (motionEmails(r.motion) ? 'scheduled' : 'NOTHING RECORDED')}`
+         + `${r.note ? `\n         ${clip(r.note, 90)}` : ''}`),
 
     section(2, 'Discovery', 'anonymous guests — no email exists for these', s.discovery,
       r => `${age(r.at).padStart(5)}  ${String(r.visits).padStart(2)}×  ${r.who.padEnd(16)} `
@@ -610,16 +641,32 @@ export async function askBoard(board, question, history = []) {
 
 const LEAD_STATUSES = ['to-contact', 'contacted', 'replied', 'dead'];
 
-export async function addLead({ email, name, company, role, companyUrl, linkedinUrl, note, orgContext, subject, body, addedByUserId }) {
+export async function addLead({
+  email, name, company, role, companyUrl, linkedinUrl, note, orgContext,
+  motion, via, nextStep, nextStepAt, subject, body, addedByUserId,
+}) {
   const clean = String(email || '').trim().toLowerCase();
   if (!clean || !clean.includes('@')) throw new Error('A valid email is required.');
+
+  // An unrecognised motion is rejected rather than stored: a lead filed under a
+  // key no lane matches would not appear on any tab, which is worse than a
+  // refusal because nothing tells you it happened.
+  if (motion !== undefined && motion !== '' && !isMotion(motion)) {
+    throw new Error(`Unknown motion "${motion}".`);
+  }
 
   // Upsert rather than reject: re-adding someone you already have should show
   // you the row you already have, not an error you have to read and dismiss.
   return ColdLead.findOneAndUpdate(
     { email: clean },
     {
-      $setOnInsert: { email: clean, status: 'to-contact', addedByUserId: addedByUserId || null },
+      $setOnInsert: {
+        email: clean, status: 'to-contact', addedByUserId: addedByUserId || null,
+        // On insert only. Re-adding an address must not silently move an
+        // existing lead into a different lane — that would make a row vanish
+        // from the tab someone was working it on.
+        motion: motion || DEFAULT_MOTION,
+      },
       $set: {
         ...(name    !== undefined ? { name:    String(name).trim() }    : {}),
         ...(company !== undefined ? { company: String(company).trim() } : {}),
@@ -633,6 +680,12 @@ export async function addLead({ email, name, company, role, companyUrl, linkedin
         // the floor: the operator typed the only sentence worth reading and
         // the email went out without it.
         ...(orgContext !== undefined ? { orgContext: String(orgContext).slice(0, 4000) } : {}),
+        // The route in, and what has to happen next. For every motion but cold
+        // email these are the only things that say whether this is moving.
+        ...(via      !== undefined ? { via:      String(via).trim().slice(0, 300) }      : {}),
+        ...(nextStep !== undefined ? { nextStep: String(nextStep).trim().slice(0, 300) } : {}),
+        ...(nextStepAt !== undefined
+          ? { nextStepAt: nextStepAt ? new Date(nextStepAt) : null } : {}),
         // Written straight onto the sequence so one form can add the person
         // and the message together. `enabled` is untouched — adding a lead
         // never starts a sequence; sending is always an explicit press.
@@ -644,8 +697,20 @@ export async function addLead({ email, name, company, role, companyUrl, linkedin
   ).lean();
 }
 
-export async function updateLead(id, { status, note, name, company, markContacted }) {
+export async function updateLead(id, {
+  status, note, name, company, markContacted, motion, via, nextStep, nextStepAt,
+}) {
   const set = {};
+  if (motion !== undefined) {
+    // Re-filing a lead under another motion is legitimate — an intro that goes
+    // nowhere becomes a cold email, a cold reply becomes a workshop — so this
+    // is editable here even though addLead only sets it on insert.
+    if (!isMotion(motion)) throw new Error(`Unknown motion "${motion}".`);
+    set.motion = motion;
+  }
+  if (via      !== undefined) set.via      = String(via).trim().slice(0, 300);
+  if (nextStep !== undefined) set.nextStep = String(nextStep).trim().slice(0, 300);
+  if (nextStepAt !== undefined) set.nextStepAt = nextStepAt ? new Date(nextStepAt) : null;
   if (status !== undefined) {
     if (!LEAD_STATUSES.includes(status)) throw new Error(`Unknown status "${status}".`);
     set.status = status;

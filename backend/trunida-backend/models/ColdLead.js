@@ -37,6 +37,46 @@ const coldLeadSchema = new mongoose.Schema({
   name:    { type: String, default: '', trim: true },
 
   /**
+   * How this conversation started — see services/gtmMotions.js.
+   *
+   * The collection is still named ColdLead because that is what it was when
+   * cold email was the only motion with machinery behind it. It isn't any more:
+   * a warm introduction, a design partner and a workshop attendee are all
+   * someone you are working toward a first real conversation with, and they all
+   * need the same row. Renaming a live collection to fix a name is not worth
+   * the migration.
+   *
+   * Plain String with validation in the service, not an enum. An enum whose
+   * default is not a member rejects every document on save — the same trap the
+   * status field above already documents.
+   */
+  motion: { type: String, default: 'cold-email', index: true },
+
+  /**
+   * The route in, meaning whatever `via` means for THIS motion: who is making
+   * the introduction, which firm is bringing the relationship, which event,
+   * which post, which existing account.
+   *
+   * One shared field with a per-motion label rather than nine bespoke ones.
+   * Nine columns that are each null eight times out of nine is how a thin
+   * record becomes the CRM this file exists to avoid being.
+   */
+  via: { type: String, default: '', trim: true },
+
+  /**
+   * What has to happen next, and when.
+   *
+   * The cold-email lane has a machine that knows when to act again —
+   * sequence.nextSendAt below. Every other motion has a person who has to
+   * remember, and a motion whose next step lives only in someone's head is
+   * indistinguishable on this screen from one that has stalled. These two
+   * fields are the human equivalent of that schedule, and they are why the
+   * other lanes can be tracked at all.
+   */
+  nextStep:   { type: String, default: '', trim: true },
+  nextStepAt: { type: Date,   default: null },
+
+  /**
    * The function you are approaching, not their job title.
    *
    * The go-to-market is bottom-up: a power user shows up inside a company,

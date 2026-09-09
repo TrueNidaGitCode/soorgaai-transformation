@@ -42,6 +42,7 @@ import { generate } from './llmService.js';
 import { readCompanySite } from './websiteService.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { resolveUseCase } from './blueprintUseCase.js';
+import { motionEmails, motionOf, DEFAULT_MOTION } from './gtmMotions.js';
 
 /**
  * The rule: at most six emails to one contact, and never more than one a week.
@@ -147,6 +148,20 @@ function fill(template, lead) {
  */
 export async function canSend(lead, { ignoreSchedule = false } = {}) {
   if (!lead) return { ok: false, reason: 'Lead not found.' };
+
+  // Only one motion sends anything.
+  //
+  // First gate on purpose. A warm introduction, a design partner or a workshop
+  // attendee reached you through a person who vouched for you, and the fastest
+  // way to spend that is a templated cold email arriving from a sweep. This is
+  // checked here rather than on the screen because the sweep does not go
+  // through the screen, and because re-filing a lead into another lane must
+  // stop the machinery immediately rather than at the next page load.
+  if (!motionEmails(lead.motion || DEFAULT_MOTION)) {
+    const m = motionOf(lead.motion || DEFAULT_MOTION);
+    return { ok: false, reason: `${m.label} is not an email motion — Svarg never sends automatically on this lane.` };
+  }
+
   if (lead.unsubscribedAt) return { ok: false, reason: 'They unsubscribed.' };
   if (lead.status === 'dead') return { ok: false, reason: 'Marked dead.' };
   if (lead.status === 'replied') return { ok: false, reason: 'They replied — follow-ups stop here.' };

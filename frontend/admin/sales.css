@@ -1316,3 +1316,20 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   padding: 0.7rem 1rem;
   font-size: 0.95rem;
 }
+
+/* The message itself, not just the link. Shown in full because it is what
+   actually gets sent, and a draft you cannot read before sending is a draft
+   you will send with the wrong name in it. */
+.sg-invite__msg {
+  width: 100%;
+  margin-bottom: 0.6rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.86);
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  resize: vertical;
+}

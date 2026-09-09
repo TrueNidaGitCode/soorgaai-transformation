@@ -573,12 +573,27 @@ function renderAddForm(laneKey) {
   if (!ms.length) return '';
   const first = ms.find(m => m.key === state.addMotion) || ms[0];
 
+  /**
+   * The fields come from the server. If they are missing, the API is running a
+   * build that predates them.
+   *
+   * Without this the form renders as a lone dropdown and an Add button that
+   * refuses everything — a mystery rather than a message. The frontend and the
+   * API are separate deployments here, so one being ahead of the other is a
+   * real state that happens for a few minutes after every release.
+   */
+  if (!first.fields?.length) {
+    return `<p class="sg-hidden-note">The server has not sent the fields for
+      <strong>${esc(first.label)}</strong> yet — it is still running an older build.
+      Wait a moment and press Refresh; the form appears as soon as the API catches up.</p>`;
+  }
+
   return `
     <div class="sg-addlead sg-addlead--wide">
       <select id="sg-lead-motion" class="sg-motion-select" aria-label="Motion">
         ${ms.map(m => `<option value="${esc(m.key)}" ${m.key === first.key ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}
       </select>
-      ${(first.fields || []).map(renderField).join('\n      ')}
+      ${first.fields.map(renderField).join('\n      ')}
     </div>
     <div class="sg-addmail__actions">
       <button type="button" id="sg-lead-add" class="cta-button">Add</button>
@@ -606,22 +621,54 @@ function renderInvite(link, lead) {
   const wa = digits
     ? `https://wa.me/${digits}?text=${encodeURIComponent(inviteMessage(link, lead))}`
     : '';
+  const msg = inviteMessage(link, lead);
   return `
     <p class="sg-invite__head">Send this to ${esc(lead?.name || 'them')}</p>
+    <textarea class="sg-invite__msg" id="sg-invite-msg" rows="13" readonly>${esc(msg)}</textarea>
     <div class="sg-invite__row">
-      <input type="text" class="sg-invite__link" id="sg-invite-link" readonly value="${esc(link)}">
-      <button type="button" class="sg-btn sg-btn--go" id="sg-invite-copy">Copy</button>
+      <button type="button" class="sg-btn sg-btn--go" id="sg-invite-copymsg">Copy message</button>
       ${wa ? `<a class="sg-btn" href="${esc(wa)}" target="_blank" rel="noopener">Open WhatsApp</a>` : ''}
+      <input type="text" class="sg-invite__link" id="sg-invite-link" readonly value="${esc(link)}">
+      <button type="button" class="sg-btn" id="sg-invite-copy">Copy link only</button>
     </div>
-    <p class="sg-invite__note">Anyone who signs up through this link is attributed to this lead, which
-      is how they leave Outreach. It is not a password — they still sign in normally.</p>`;
+    <p class="sg-invite__note">The link in the message is this lead's own — anyone who signs up
+      through it is attributed to them, which is how they leave Outreach. Sending a plain
+      www.svargai.com instead loses that. It is not a password: they still sign in normally.</p>`;
 }
 
-/** A first draft of the message. Edit it in WhatsApp before sending. */
+/**
+ * The message, opened in WhatsApp ready to send. Editable there first.
+ *
+ * ── The link replaces the bare domain, deliberately ─────────────────────────
+ *
+ * The written draft says "www.svargai.com". Sending that plain address would
+ * lose the ref, and the ref is the only reason this lead can ever leave
+ * Outreach: without it, a friend who signs up arrives as an anonymous visitor
+ * and nothing connects them back to the introduction. Same site, same landing
+ * page, one query parameter — and the difference between an attributed first
+ * customer and a stranger.
+ */
 function inviteMessage(link, lead) {
-  return `Hi ${lead?.name || ''}, I have been building Svarg — you describe a business problem and `
-    + `it works out where AI could actually help, then builds a working application for it. `
-    + `Would love your eyes on it: ${link}`;
+  const greeting = lead?.name ? `Hi ${lead.name},` : 'Hi,';
+  return [
+    greeting,
+    '',
+    'I’m building SvargAI — it turns a business or engineering objective described in '
+      + 'plain English into a working AI application in less than 30 minutes, at around $0.10.',
+    '',
+    'Would really appreciate it if you could spend a few minutes trying the product:',
+    link,
+    '',
+    'We’re now working on our first few enterprise customers, and these early customers are '
+      + 'extremely important to us. I’m reaching out to friends and colleagues who can genuinely '
+      + 'help — either by introducing us to the right person in your organization or connecting '
+      + 'us with someone in your network who may have a relevant problem.',
+    '',
+    'If you see potential in SvargAI, one good introduction would mean a lot to us.',
+    '',
+    'Thanks!',
+    'Pranesh',
+  ].join('\n');
 }
 
 function addHint(m) {
@@ -1076,19 +1123,25 @@ async function addLead() {
  * refusal selects the text and says to press Ctrl+C instead.
  */
 function wireInvite() {
-  const copy = document.getElementById('sg-invite-copy');
-  const field = document.getElementById('sg-invite-link');
-  if (!copy || !field) return;
-  copy.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(field.value);
-      copy.textContent = 'Copied';
-    } catch {
-      field.select();
-      copy.textContent = 'Press Ctrl+C';
-    }
-    setTimeout(() => { copy.textContent = 'Copy'; }, 2500);
-  });
+  const pairs = [
+    ['sg-invite-copymsg', 'sg-invite-msg', 'Copy message'],
+    ['sg-invite-copy',    'sg-invite-link', 'Copy link only'],
+  ];
+  for (const [btnId, fieldId, label] of pairs) {
+    const btn = document.getElementById(btnId);
+    const field = document.getElementById(fieldId);
+    if (!btn || !field) continue;
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(field.value);
+        btn.textContent = 'Copied';
+      } catch {
+        field.select();
+        btn.textContent = 'Press Ctrl+C';
+      }
+      setTimeout(() => { btn.textContent = label; }, 2500);
+    });
+  }
 }
 
 // ── Ask ──────────────────────────────────────────────────────────────────────

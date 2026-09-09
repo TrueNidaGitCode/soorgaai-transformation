@@ -61,8 +61,29 @@ function parts(email) {
  *
  * @returns {{kind: 'real'|'internal'|'test', why: string}}
  */
-export function inferKind(email, { role = '' } = {}) {
+export function inferKind(email, { role = '', phone = '' } = {}) {
   const { local, domain, valid } = parts(email);
+
+  /**
+   * No email at all is not the same as a broken one.
+   *
+   * This rule was written when every lead had to have an address, so anything
+   * that was not deliverable was junk — "Ciaz@0808" is in the users collection
+   * because somebody typed a password into the email box. A warm introduction
+   * is now added with a mobile number and often no address for weeks, and
+   * calling those test filed every one of them behind a filter that defaults
+   * to real: the operator added a lead, got the invite link, and watched the
+   * row not appear.
+   *
+   * So the distinction is between an address that is missing and one that is
+   * wrong. Missing plus a number to call is a real contact reached another way.
+   */
+  const hasPhone = /[0-9]{6,}/.test(String(phone || '').replace(/[^0-9]/g, ''));
+  if (!String(email || '').trim()) {
+    return hasPhone
+      ? { kind: 'real', why: 'no email — reached on a phone number' }
+      : { kind: 'test', why: 'no email address and no phone number' };
+  }
 
   if (!valid) return { kind: 'test', why: 'not a deliverable address' };
   if (TEST_DOMAINS.has(domain)) return { kind: 'test', why: `${domain} is a placeholder domain` };
@@ -88,7 +109,7 @@ export function inferKind(email, { role = '' } = {}) {
  * The classification to use, preferring an explicit one.
  *
  * @param {string} email
- * @param {{role?: string, accountKind?: string}} account
+ * @param {{role?: string, accountKind?: string, phone?: string}} account
  * @returns {{kind: string, why: string, inferred: boolean}}
  */
 export function classify(email, account = {}) {
@@ -96,6 +117,6 @@ export function classify(email, account = {}) {
   if (KINDS.includes(explicit)) {
     return { kind: explicit, why: 'set by hand', inferred: false };
   }
-  const guess = inferKind(email, { role: account.role || '' });
+  const guess = inferKind(email, { role: account.role || '', phone: account.phone || '' });
   return { ...guess, inferred: true };
 }

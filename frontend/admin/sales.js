@@ -544,7 +544,9 @@ function renderField(f) {
   const title = f.hint ? ` title="${esc(f.hint)}"` : '';
 
   if (f.type === 'select') {
-    return `<select id="${id}" class="sg-field-select"${title} aria-label="${esc(f.label)}">
+    // Starts empty, so it starts wearing the placeholder colour. wireOutreach
+    // takes the class off as soon as something is chosen.
+    return `<select id="${id}" class="sg-field-select sg-field-select--empty"${title} aria-label="${esc(f.label)}">
       <option value="">${esc(f.label)}</option>
       ${f.options.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}
     </select>`;
@@ -877,6 +879,14 @@ function wireOutreach() {
   document.querySelectorAll('.sg-addlead input').forEach(el => {
     el.addEventListener('keydown', e => { if (e.key === 'Enter') addLead(); });
   });
+  // A select with nothing chosen should look like an empty field, not a filled
+  // one — the label in the first slot is a prompt, not an answer.
+  document.querySelectorAll('.sg-field-select').forEach(sel => {
+    sel.addEventListener('change', () => {
+      sel.classList.toggle('sg-field-select--empty', !sel.value);
+    });
+  });
+
   wireInvite();
   wireGenerate();
 

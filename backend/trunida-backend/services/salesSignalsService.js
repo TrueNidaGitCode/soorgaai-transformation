@@ -222,7 +222,12 @@ export async function collectSignals() {
       inviteLink: motionSharesLink(l.motion || DEFAULT_MOTION) ? trackedLink(l) : '',
       // Leads are classified by the same rules. A +svargtest address is a
       // probe whether it is a lead or an account.
-      ...classify(l.email, {}),
+      //
+      // The phone goes in because "no email" is not evidence of a test row on a
+      // motion that never uses email. Without it every warm introduction was
+      // classified test and hidden by the filter, which defaults to real — the
+      // lead saved, the invite link appeared, and the row silently did not.
+      ...classify(l.email, { phone: l.phone }),
       // Did the email actually do anything? A ref that shows up on a guest
       // blueprint is the only proof available, and it is the single most
       // useful fact about a cold lead.

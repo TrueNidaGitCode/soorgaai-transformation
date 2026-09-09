@@ -1293,21 +1293,13 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 }
 
 /* A select in the add form, matching the text inputs beside it. */
-.sg-field-select {
-  padding: 0.6rem 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary, #FFFFFF);
-  font-family: inherit;
-  font-size: 0.88rem;
-}
-
 /* Placeholders carry the field name here — there are no labels — so an input
    narrower than its own placeholder is a field whose name you cannot read.
    "Company (optional)" was rendering as "Company (option". */
 .sg-addlead input { min-width: 12.5rem; }
 
+/* The two selects in the add form — Relationship and Location.
+   Matched to the text inputs beside them so the row reads as one form. */
 .sg-field-select {
   flex: 1;
   min-width: 9.5rem;
@@ -1315,7 +1307,31 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   border-radius: 12px;
   padding: 0.7rem 1rem;
   font-size: 0.95rem;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary, #FFFFFF);
 }
+
+/* The open list is painted by the operating system, not by the rules above.
+   Chrome on Windows draws the popup on a white ground while the options
+   inherit the select's white text — so the choices were white on white and
+   effectively invisible. The ground and the text both have to be set here. */
+.sg-field-select option,
+.sg-motion-select option,
+.sg-status-select option {
+  background: #16181A;
+  color: #FFFFFF;
+}
+
+/* The unchosen first entry is a label, not a value, and should read as the
+   placeholder it is rather than as a selectable answer. */
+.sg-field-select option[value=""] { color: rgba(255, 255, 255, 0.45); }
+
+/* Chrome renders the collapsed control's text at the select's own colour, so a
+   select with nothing chosen must look like an empty field rather than a
+   filled one. */
+.sg-field-select:invalid,
+.sg-field-select.sg-field-select--empty { color: rgba(255, 255, 255, 0.35); }
 
 /* The message itself, not just the link. Shown in full because it is what
    actually gets sent, and a draft you cannot read before sending is a draft

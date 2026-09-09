@@ -1349,3 +1349,15 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   line-height: 1.6;
   resize: vertical;
 }
+
+/* Location. A short, repeating value read down the column rather than across
+   the row, so it gets a chip and tabular alignment rather than running text. */
+.sg-loc {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}

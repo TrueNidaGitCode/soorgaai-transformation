@@ -269,13 +269,27 @@ function nextStepLabel(r) {
  * on the lane the operator uses most.
  */
 function routeInCell(r) {
-  const bits = [r.relationship, r.location].filter(Boolean);
-  if (bits.length) {
-    return `${esc(bits.join(' · '))}${r.phone ? `<div class="sg-note">${esc(r.phone)}</div>` : ''}`;
+  // Location moved to its own column — it is something you scan down, not
+  // something you read per row, and repeating it here would say it twice.
+  if (r.relationship) {
+    return `${esc(r.relationship)}${r.phone ? `<div class="sg-note">${esc(r.phone)}</div>` : ''}`;
   }
   if (r.via) return esc(clip(r.via, 40));
   if (r.phone) return esc(r.phone);
   return `<span class="sg-unknown">${esc(motionByKey(r.motion)?.viaLabel || 'not recorded')}</span>`;
+}
+
+/**
+ * Where this lead is.
+ *
+ * Recorded on the motions that ask for it, blank on the ones that do not — so
+ * the cell says which of the two it is rather than leaving an ambiguous gap.
+ * It is settable on any lead from Log, because a cold lead has a location too;
+ * it was simply never asked for at the point of adding one.
+ */
+function locationCell(r) {
+  if (r.location) return `<span class="sg-loc">${esc(r.location)}</span>`;
+  return '<span class="sg-unknown" title="Not recorded — press Log to set it">—</span>';
 }
 
 /** The motion this lead is filed under, as a chip beside the contact. */
@@ -319,6 +333,7 @@ function motionRow(r) {
       <div class="sg-who">${emailCell(r)}</div>
       ${motionChip(r)}
     </td>
+    <td>${locationCell(r)}</td>
     <td class="sg-note">${routeInCell(r)}</td>
     <td class="sg-note">${nextStepLabel(r)}</td>
     <td class="sg-rowactions">
@@ -330,10 +345,17 @@ function motionRow(r) {
       <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
     </td>
   </tr>
-  <tr class="sg-composer" id="log-${esc(r.id)}" hidden><td colspan="6">
+  <tr class="sg-composer" id="log-${esc(r.id)}" hidden><td colspan="7">
     <input type="text" class="sg-l-via" placeholder="${esc(motionByKey(r.motion)?.viaLabel || 'Route in')}" value="${esc(r.via || '')}">
     <input type="text" class="sg-l-next" placeholder="What has to happen next" value="${esc(r.nextStep || '')}">
     <div class="sg-c-controls">
+      <label>Location
+        <select class="sg-l-loc">
+          <option value="">not recorded</option>
+          ${['India', 'US'].map(o =>
+            `<option value="${o}" ${r.location === o ? 'selected' : ''}>${o}</option>`).join('')}
+        </select>
+      </label>
       <label>By <input type="date" class="sg-l-when" value="${r.nextStepAt ? new Date(r.nextStepAt).toISOString().slice(0, 10) : ''}"></label>
       <button type="button" class="cta-button sg-l-save" data-logsave="${esc(r.id)}">Save</button>
     </div>
@@ -364,6 +386,7 @@ function leadRow(r) {
       <div class="sg-who">${emailCell(r)}${r.unsubscribedAt ? ' <span class="sg-unsub">unsubscribed</span>' : ''}${r.clicked ? ' <span class="sg-clicked">clicked</span>' : ''}</div>
       ${motionChip(r)}
     </td>
+    <td>${locationCell(r)}</td>
     <td class="sg-seq">
       <span class="sg-sent ${done ? 'sg-sent--done' : ''}">${q.sentCount}/${q.maxSends}</span>
       <div class="sg-note">every ${q.intervalDays}d</div>
@@ -379,7 +402,7 @@ function leadRow(r) {
       <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
     </td>
   </tr>
-  <tr class="sg-preview" id="preview-${esc(r.id)}" hidden><td colspan="6">
+  <tr class="sg-preview" id="preview-${esc(r.id)}" hidden><td colspan="7">
     <div class="sg-pv">
       <div class="sg-pv__warn"></div>
       <div class="sg-pv__to"></div>
@@ -388,7 +411,7 @@ function leadRow(r) {
       <div class="sg-pv__body"></div>
     </div>
   </td></tr>
-  <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="6">
+  <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="7">
     <input type="text" class="sg-c-name" placeholder="First name — fills {{name}}" value="${esc(r.name || '')}">
     <textarea class="sg-c-context" rows="4" placeholder="The paragraph about THIS organisation — fills {{context}}.">${esc(r.orgContext || '')}</textarea>
     <input type="text" class="sg-c-subject" placeholder="Subject" value="${esc(q.subject)}">
@@ -396,6 +419,13 @@ function leadRow(r) {
     <div class="sg-c-controls">
       <label>Every <input type="number" class="sg-c-interval" min="7" max="90" value="${q.intervalDays}"> days</label>
       <label>Stop after <input type="number" class="sg-c-max" min="1" max="6" value="${q.maxSends}"> emails</label>
+      <label>Location
+        <select class="sg-c-loc">
+          <option value="">not recorded</option>
+          ${['India', 'US'].map(o =>
+            `<option value="${o}" ${r.location === o ? 'selected' : ''}>${o}</option>`).join('')}
+        </select>
+      </label>
       <label class="sg-c-toggle"><input type="checkbox" class="sg-c-enabled" ${q.enabled ? 'checked' : ''}> Auto follow-up</label>
       <button type="button" class="cta-button sg-c-save" data-save="${esc(r.id)}">Save</button>
     </div>
@@ -717,7 +747,7 @@ function renderOutreachBody(s) {
     // than an empty screen, and say why the lanes are missing.
     return `<p class="sg-hidden-note">Could not load the go-to-market motions, so the lanes
       are unavailable. Every lead is listed below.</p>`
-      + table(['Status', 'Organisation', 'Contact', 'Route in', 'Next', ''], visible(s.outreach), outreachRow);
+      + table(['Status', 'Organisation', 'Contact', 'Location', 'Route in', 'Next', ''], visible(s.outreach), outreachRow);
   }
 
   const lane = state.lane;
@@ -728,7 +758,7 @@ function renderOutreachBody(s) {
     + (sendsHere ? mailBanner(state.mail) + renderIcp() : '')
     + renderAddForm(lane)
     + (sendsHere ? renderTemplate() : '')
-    + table(['Status', 'Organisation', 'Contact', 'Route in', 'Next', ''],
+    + table(['Status', 'Organisation', 'Contact', 'Location', 'Route in', 'Next', ''],
         laneRows(s, lane), outreachRow);
 }
 
@@ -846,6 +876,11 @@ async function saveComposer(id) {
       enabled:      box.querySelector('.sg-c-enabled').checked,
     }),
   });
+  // Location is a property of the lead, not of the sequence, so it goes to the
+  // lead endpoint. Two calls rather than widening setSequence to write fields
+  // that have nothing to do with sending.
+  const loc = box.querySelector('.sg-c-loc');
+  if (loc) await api(`/leads/${id}`, { method: 'PATCH', body: JSON.stringify({ location: loc.value }) });
   return true;
 }
 
@@ -928,6 +963,7 @@ function wireOutreach() {
             nextStep: box.querySelector('.sg-l-next').value.trim(),
             // An empty date clears the deadline rather than leaving a stale one.
             nextStepAt: box.querySelector('.sg-l-when').value || null,
+            location: box.querySelector('.sg-l-loc').value,
             note:     box.querySelector('.sg-l-note').value.trim(),
           }),
         });

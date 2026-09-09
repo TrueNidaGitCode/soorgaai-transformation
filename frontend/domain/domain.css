@@ -13628,3 +13628,57 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
    unlabelled list of bullets and looked like an error. */
 .eg-build__note--bad { color: #E38C7A; }
 .eg-status--bad .eg-status__dot { background: #E38C7A; }
+
+/* ── Integrate into their product ─────────────────────────────────────────────
+   A second, separate artefact: the same capability rewritten to live inside the
+   customer's codebase. It never touches the standalone application that Go Live
+   deploys, and Svarg never writes to their repository. */
+
+.yusu-integrate { align-items: flex-start; }
+
+.yusu-int__result {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.yusu-int__head { margin: 0 0 8px; font-size: 13.5px; color: rgba(255, 255, 255, 0.85); }
+
+.yusu-int__files { margin: 0 0 10px; padding-left: 18px; }
+.yusu-int__files li { font-size: 12.5px; color: rgba(255, 255, 255, 0.6); line-height: 1.7; }
+.yusu-int__files code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.yusu-int__warn { margin: 0 0 10px; padding-left: 18px; }
+.yusu-int__warn li { font-size: 12.5px; color: #E5A867; line-height: 1.55; }
+
+.yusu-int__err { margin: 0; font-size: 13px; color: #FCA5A5; }
+
+.yusu-int__guide > summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--accent-teal, #5CC5A7);
+  margin-bottom: 8px;
+}
+
+.yusu-int__guide pre {
+  margin: 0;
+  padding: 10px 12px;
+  max-height: 320px;
+  overflow: auto;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* The boundary, stated where the files are, not buried in a doc. */
+.yusu-int__note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.42);
+  line-height: 1.55;
+}

@@ -439,6 +439,39 @@ const transformationBlueprintSchema = new mongoose.Schema({
   //
   // Plain Strings throughout, no enum with a non-member default — the same
   // discipline as `engagement` above, for the same reason.
+  /**
+   * The application ported into the customer's own codebase.
+   *
+   * A SEPARATE artefact from the standalone build, deliberately. The
+   * standalone one is what Yusu deploys and what a demo runs on; a customer
+   * who asks for the integration and dislikes the result still has a working
+   * application. Nothing here ever overwrites GeneratedApplication.
+   *
+   * Files are relative to THEIR repository root and are never pushed there —
+   * Svarg's GitHub App is read-only, and a generated diff is not something to
+   * put on somebody's main branch unreviewed. See
+   * services/productIntegrationService.js.
+   */
+  productIntegration: {
+    status:      { type: String, default: '' },   // '' | running | ready | failed
+    generatedAt: { type: Date,   default: null },
+    repoFullName: { type: String, default: '' },
+    guide:       { type: String, default: '' },
+    warnings:    { type: [String], default: [] },
+    error:       { type: String, default: '' },
+    // How much of their real source grounded it. Zero means the port followed
+    // the profile alone, which matches their stack but not their house style —
+    // a real difference in how much review the diff needs.
+    groundedInSource: { type: Number, default: 0 },
+    files: {
+      type: [new mongoose.Schema({
+        path:    { type: String, required: true },
+        content: { type: String, required: true },
+      }, { _id: false })],
+      default: [],
+    },
+  },
+
   codebaseProfile: {
     checked:      { type: Boolean, default: false },
     repoFullName: { type: String,  default: '' },

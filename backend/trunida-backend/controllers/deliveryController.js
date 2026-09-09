@@ -19,6 +19,7 @@ import GeneratedApplication from '../models/GeneratedApplication.js';
 import crypto from 'crypto';
 import { generatedManifest } from './eameBuildController.js';
 import { resolveAppName } from '../services/eameSpec.js';
+import { integrateIntoProduct } from '../services/productIntegrationService.js';
 import { buildZip } from '../services/zipService.js';
 import {
   isSvargGithubConfigured, svargRepoName, ensureSvargRepo, publishToSvarg,
@@ -295,5 +296,89 @@ export async function projectManifest(req, res) {
   } catch (err) {
     console.error('[Delivery] manifest error:', err.message);
     return res.status(500).json({ error: 'Failed to build the project manifest.' });
+  }
+}
+
+// ── POST /api/delivery/integrate ─────────────────────────────────────────────
+
+/**
+ * Port the built application into the customer's own codebase.
+ *
+ * Separate from every other delivery path on purpose: it writes to
+ * blueprint.productIntegration and never touches the GeneratedApplication that
+ * Yusu deploys. A customer who tries this and dislikes the result still has a
+ * working standalone application.
+ */
+export async function integrateProduct(req, res) {
+  try {
+    const bp = await ownedBlueprint(req.params.blueprintId, req.user._id);
+    if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
+
+    await TransformationBlueprint.updateOne(
+      { _id: bp._id },
+      { $set: { 'productIntegration.status': 'running', 'productIntegration.error': '' } }
+    );
+
+    const result = await integrateIntoProduct(String(bp._id), { userId: req.user._id });
+
+    await TransformationBlueprint.updateOne({ _id: bp._id }, { $set: {
+      'productIntegration.status': 'ready',
+      'productIntegration.generatedAt': new Date(),
+      'productIntegration.repoFullName': result.profile.repoFullName,
+      'productIntegration.guide': result.guide,
+      'productIntegration.warnings': result.warnings,
+      'productIntegration.groundedInSource': result.groundedInSource,
+      'productIntegration.files': result.files,
+      'productIntegration.error': '',
+    } });
+
+    auditLog('INTEGRATE', req.user._id, {
+      blueprintId: String(bp._id), repo: result.profile.repoFullName, files: result.files.length,
+    });
+
+    return res.json({
+      status: 'ready',
+      repoFullName: result.profile.repoFullName,
+      frameworks: result.profile.frameworks,
+      database: result.profile.database,
+      entitiesReused: result.profile.entitiesReused,
+      groundedInSource: result.groundedInSource,
+      guide: result.guide,
+      warnings: result.warnings,
+      files: result.files.map(f => ({ path: f.path, bytes: Buffer.byteLength(f.content, 'utf8') })),
+    });
+  } catch (err) {
+    console.error('[Delivery] integrate failed:', err.message);
+    await TransformationBlueprint.updateOne(
+      { _id: req.params.blueprintId },
+      { $set: { 'productIntegration.status': 'failed', 'productIntegration.error': err.message } }
+    ).catch(() => {});
+    const status = err.status || 500;
+    return res.status(status).json({ error: err.message || 'Could not build the integration.' });
+  }
+}
+
+/** The integration as stored, for the screen to show without regenerating it. */
+export async function getIntegration(req, res) {
+  try {
+    const bp = await ownedBlueprint(req.params.blueprintId, req.user._id);
+    if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
+    const i = bp.productIntegration || {};
+    return res.json({
+      status: i.status || '',
+      generatedAt: i.generatedAt || null,
+      repoFullName: i.repoFullName || '',
+      guide: i.guide || '',
+      warnings: i.warnings || [],
+      groundedInSource: i.groundedInSource || 0,
+      error: i.error || '',
+      files: (i.files || []).map(f => ({ path: f.path, bytes: Buffer.byteLength(f.content || '', 'utf8') })),
+      // Whether the button can even be pressed, said rather than left to the
+      // screen to work out from three separate fields.
+      canIntegrate: !!bp.codebaseProfile?.checked,
+      repoConnected: bp.codebaseProfile?.repoFullName || '',
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Could not read the integration.' });
   }
 }

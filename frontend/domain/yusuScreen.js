@@ -654,6 +654,7 @@ function wire() {
   document.getElementById('yusu-golive-btn').addEventListener('click', act);
   document.getElementById('yusu-redeploy-btn').addEventListener('click', redeployNow);
   document.getElementById('yusu-download-btn').addEventListener('click', downloadSource);
+  document.getElementById('yusu-integrate-btn')?.addEventListener('click', buildIntegration);
 }
 
 document.addEventListener('screen:show', (e) => {
@@ -674,9 +675,96 @@ document.addEventListener('yusu:show', (e) => {
   _failed = '';
   _manifestPaths = [];
   render(bp, null);
-  Promise.all([loadManifest(), load(), refreshDelivery()]).then(() => {
+  Promise.all([loadManifest(), load(), refreshDelivery(), loadIntegration()]).then(() => {
     render(_bp, _dep);
     pollWhileBuilding();
     autoRun();
   });
 });
+
+// ── Integrate into their product ─────────────────────────────────────────────
+
+/**
+ * Port the built application into the customer's own codebase.
+ *
+ * Deliberately separate from Go Live. That deploys Svarg's standalone
+ * application and keeps working whatever this produces — a customer who tries
+ * the integration and dislikes the result still has something running.
+ *
+ * It is shown only when a repository has actually been read. Offering it
+ * without one would produce a plausible port of an architecture nobody has,
+ * which is worse than not offering it.
+ */
+async function loadIntegration() {
+  const panel = document.getElementById('yusu-integrate');
+  if (!panel || !_blueprintId) return;
+
+  let state;
+  try {
+    state = await api('/delivery/integrate/' + encodeURIComponent(_blueprintId));
+  } catch { panel.style.display = 'none'; return; }
+
+  panel.style.display = '';
+  const sub = document.getElementById('yusu-integrate-sub');
+  const btn = document.getElementById('yusu-integrate-btn');
+  const out = document.getElementById('yusu-integrate-result');
+
+  if (!state.canIntegrate) {
+    sub.textContent = 'Connect your repository on Aria first — without your architecture there is '
+      + 'nothing to integrate into, and the result would be a guess.';
+    btn.disabled = true;
+    out.style.display = 'none';
+    return;
+  }
+
+  btn.disabled = false;
+  sub.textContent = `Rewrite this capability to live inside ${state.repoConnected} — your framework, `
+    + 'your models, your conventions. Your deployed application is untouched.';
+
+  if (state.status === 'ready') renderIntegration(state);
+  else if (state.status === 'failed' && state.error) {
+    out.style.display = '';
+    out.innerHTML = `<p class="yusu-int__err">${esc(state.error)}</p>`;
+  } else {
+    out.style.display = 'none';
+  }
+}
+
+function renderIntegration(r) {
+  const out = document.getElementById('yusu-integrate-result');
+  out.style.display = '';
+  out.innerHTML = `
+    <p class="yusu-int__head">${r.files.length} file${r.files.length === 1 ? '' : 's'} for
+      <strong>${esc(r.repoFullName || 'your repository')}</strong>${r.groundedInSource
+        ? ` &middot; grounded in ${r.groundedInSource} of your own files` : ''}</p>
+    <ul class="yusu-int__files">${r.files.map(f =>
+      `<li><code>${esc(f.path)}</code></li>`).join('')}</ul>
+    ${r.warnings?.length ? `<ul class="yusu-int__warn">${r.warnings.map(w =>
+      `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+    ${r.guide ? `<details class="yusu-int__guide"><summary>Integration guide</summary>
+      <pre>${esc(r.guide)}</pre></details>` : ''}
+    <p class="yusu-int__note">Review these as a pull request in your own repository. Svarg reads
+      your code but never writes to it, and never deploys your product.</p>`;
+}
+
+async function buildIntegration() {
+  const btn = document.getElementById('yusu-integrate-btn');
+  const out = document.getElementById('yusu-integrate-result');
+  const original = btn.textContent;
+
+  btn.disabled = true;
+  btn.textContent = 'Reading your code…';
+  out.style.display = '';
+  out.innerHTML = '<p class="yusu-int__head">Reading your repository and porting the application. '
+    + 'This takes about a minute.</p>';
+
+  try {
+    const r = await api('/delivery/integrate/' + encodeURIComponent(_blueprintId), { method: 'POST' });
+    renderIntegration(r);
+  } catch (err) {
+    out.innerHTML = `<p class="yusu-int__err">${esc(err.message || 'Could not build the integration.')}</p>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}

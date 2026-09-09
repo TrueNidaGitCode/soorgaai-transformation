@@ -577,10 +577,34 @@ Return ONLY compact JSON, no other text:
 subject     The line that decides whether any of this gets read.
 alternates  Two more, each taking a DIFFERENT angle from the first and from
             each other — not three rewordings of one idea.
-context     ONE paragraph, 2-3 sentences, about THIS organisation and this
-            person's function. It is dropped into a template that already
-            carries the pitch and the link, so write only the part that is
-            about them.
+context     TWO sentences. Not three. It is dropped into a template that
+            already carries the pitch and the link, so write only the part
+            that is about them.
+
+WRITING THE TWO SENTENCES
+Sentence one — what they visibly do, and where their effort therefore goes:
+  "With <company> working on <what they actually build>, I imagine a lot of
+   <their function>'s bandwidth naturally goes toward <their core work>."
+
+Sentence two — the common need that sits AROUND that core:
+  "Yet teams often still need <the unglamorous work nobody is staffed for>."
+
+HEDGE THE FIRST SENTENCE. "I imagine", "I'd guess", "presumably". You are
+outside their company looking in, and writing as though you know their sprint
+allocation is the fastest way to be dismissed by someone who actually does.
+A reader forgives a guess offered as a guess; they do not forgive being told
+about their own team.
+
+GENERALISE THE SECOND. "teams often", "usually", "tends to". The pain is a
+pattern you have seen, not an accusation about them specifically — which is
+also the honest framing, because you have not seen inside their backlog.
+
+Name the core work from their website. That specificity is what makes the
+guess land as informed rather than generic.
+
+Do not pitch, do not mention Svarg, do not propose anything. The template
+does all of that immediately below. These two sentences exist only to show
+you understood what they do before asking for their time.
 
 WRITING THE SUBJECT
 Four to eight words. Under 50 characters — a phone truncates around forty, and

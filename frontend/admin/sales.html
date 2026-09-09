@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="company-library.css">
-    <link rel="stylesheet" href="sales.css?v=16">
+    <link rel="stylesheet" href="sales.css?v=19">
     <script src="../login/config.js"></script>
 </head>
 <body>
@@ -47,12 +47,13 @@
              character lane, because this screen has no lane to float in.
              There is no Nole portrait yet, so the avatar is a lettered disc.
         ─────────────────────────────────────────────────────────────────────── -->
-        <section class="nl-panel" aria-label="Chat with Nole">
+        <section class="nl-panel nl-panel--min" id="nl-panel" aria-label="Chat with Nole">
             <header class="nl-panel__head">
                 <span class="nl-panel__avatar" aria-hidden="true">N</span>
                 <span class="nl-panel__name">Nole</span>
                 <span class="nl-panel__role">reads the funnel above, and nothing else</span>
                 <button type="button" class="nl-panel__clear" id="nl-clear" title="Clear this conversation">Clear</button>
+                <button type="button" class="nl-panel__toggle" id="nl-toggle" aria-expanded="false">Open</button>
             </header>
             <div class="nl-log" id="nl-log" role="log" aria-live="polite"></div>
             <form class="nl-form" id="nl-form">
@@ -68,6 +69,6 @@
         </div>
     </main>
 
-    <script src="sales.js?v=17"></script>
+    <script src="sales.js?v=19"></script>
 </body>
 </html>

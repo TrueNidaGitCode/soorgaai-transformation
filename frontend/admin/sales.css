@@ -857,3 +857,92 @@
 }
 
 .sg-alt:disabled { opacity: 0.5; cursor: default; }
+
+/* ══ UI pass ═══════════════════════════════════════════════════════════════════
+   The screen grew a feature at a time and ended up 2,900px tall for one row of
+   data: nine columns spilling 116px past their panel, 400px of instructions
+   before any content, and an empty 520px chat box in the middle of it. */
+
+/* ── Chat, minimised by default ───────────────────────────────────────────── */
+
+.nl-panel--min { height: auto; }
+.nl-panel--min .nl-log,
+.nl-panel--min .nl-form { display: none; }
+
+/* Open, it is sized to hold a conversation without dwarfing the page. */
+.nl-panel--open { height: min(52vh, 440px); }
+
+.nl-panel__toggle {
+  background: transparent;
+  border: 1px solid rgba(92, 197, 167, 0.4);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--accent-green, #5CC5A7);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 0.2rem 0.6rem;
+}
+
+.nl-panel__toggle:hover { background: rgba(92, 197, 167, 0.12); }
+
+/* ── Denser lead rows ─────────────────────────────────────────────────────── */
+
+.sg-org { font-weight: 600; }
+
+.sg-contact__name {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.15rem;
+}
+
+.sg-links { display: flex; gap: 0.3rem; margin-top: 0.2rem; }
+.sg-links:empty { display: none; }
+
+.sg-rowactions { white-space: nowrap; text-align: right; }
+.sg-rowactions .sg-btn { margin-left: 0.25rem; }
+
+/* The status pill and a separate dropdown said the same thing twice; the
+   dropdown alone now carries it, tinted so a scan still reads status by colour. */
+.sg-status-select--replied  { border-color: rgba(92, 197, 167, 0.5); color: #5CC5A7; }
+.sg-status-select--contacted { border-color: rgba(147, 197, 253, 0.5); color: #93c5fd; }
+.sg-status-select--dead      { opacity: 0.55; }
+
+/* ── Reference material stays folded ──────────────────────────────────────── */
+
+details.sg-icp { padding: 0.7rem 1rem; }
+details.sg-icp > summary { cursor: pointer; list-style: none; }
+details.sg-icp > summary::-webkit-details-marker { display: none; }
+details.sg-icp > summary::before { content: '▸ '; color: var(--accent-green, #5CC5A7); }
+details.sg-icp[open] > summary::before { content: '▾ '; }
+details.sg-icp[open] > summary { margin-bottom: 0.75rem; }
+details.sg-icp:not([open]) .sg-icp__grid,
+details.sg-icp:not([open]) .sg-icp__foot { display: none; }
+
+/* ── Hierarchy ────────────────────────────────────────────────────────────────
+   The stage table is the page. Accounts and the chat support it, so they get a
+   lighter surface rather than the same card weight — border and fill each say
+   "separate object", and stamping them on everything flattens the hierarchy. */
+
+#sg-accounts .admin-panel,
+.nl-panel {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+#sg-accounts .admin-panel { margin-top: 0.5rem; }
+
+/* One hint voice, not three. */
+.sg-section .field-hint,
+.sg-addmail__hint { font-style: normal; }
+
+/* Button leads, explanation follows — it was floating opposite a paragraph
+   with a gap between them, reading as two unrelated things. */
+.sg-addmail__actions { justify-content: flex-start; gap: 1rem; }
+.sg-addmail__hint { flex: 1; min-width: 0; }
+
+/* The stage panel is the page; give its own header room and the rest less. */
+.sg-section .panel-header { margin-bottom: 0.35rem; }
+.sg-section .field-hint { margin-top: 0; }

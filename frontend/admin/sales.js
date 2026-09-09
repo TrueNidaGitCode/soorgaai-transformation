@@ -202,32 +202,40 @@ function leadRow(r) {
   const q = r.sequence;
   const done = q.sentCount >= q.maxSends;
   return `<tr class="sg-leadrow">
-    <td><span class="sg-pill sg-pill--${esc(r.status)}">${esc(r.status)}</span></td>
-    <td>${esc(r.company) || orgBlank()}</td>
-    <td>${esc(r.name) || '<span class="sg-unknown">—</span>'}</td>
-    <td>${r.role ? '<span class="sg-fn">' + esc(r.role) + '</span>' : '<span class="sg-unknown">not set</span>'}</td>
-    <td class="sg-who">${emailCell(r)}${r.unsubscribedAt ? ' <span class="sg-unsub">unsubscribed</span>' : ''}${r.clicked ? ' <span class="sg-clicked">clicked</span>' : ''}</td>
-    <td class="sg-links">${r.linkedinUrl ? '<a href="' + esc(r.linkedinUrl) + '" target="_blank" rel="noopener">in</a>' : ''}${r.companyUrl ? '<a href="' + esc(r.companyUrl) + '" target="_blank" rel="noopener">web</a>' : ''}${!r.linkedinUrl && !r.companyUrl ? '<span class="sg-unknown">—</span>' : ''}</td>
+    <td>
+      <select data-lead="${esc(r.id)}" class="sg-status-select sg-status-select--${esc(r.status)}">
+        ${['to-contact', 'contacted', 'replied', 'dead'].map(v =>
+          `<option value="${v}" ${v === r.status ? 'selected' : ''}>${v}</option>`).join('')}
+      </select>
+    </td>
+    <td>
+      <div class="sg-org">${esc(r.company) || orgBlank()}</div>
+      <div class="sg-links">
+        ${r.linkedinUrl ? `<a href="${esc(r.linkedinUrl)}" target="_blank" rel="noopener">in</a>` : ''}
+        ${r.companyUrl ? `<a href="${esc(r.companyUrl)}" target="_blank" rel="noopener">web</a>` : ''}
+      </div>
+    </td>
+    <td>
+      <div class="sg-contact__name">${esc(r.name) || '<span class="sg-unknown">no name</span>'}
+        ${r.role ? `<span class="sg-fn">${esc(r.role)}</span>` : ''}</div>
+      <div class="sg-who">${emailCell(r)}${r.unsubscribedAt ? ' <span class="sg-unsub">unsubscribed</span>' : ''}${r.clicked ? ' <span class="sg-clicked">clicked</span>' : ''}</div>
+    </td>
     <td class="sg-seq">
       <span class="sg-sent ${done ? 'sg-sent--done' : ''}">${q.sentCount}/${q.maxSends}</span>
-      <span class="sg-note">every ${q.intervalDays}d</span>
+      <div class="sg-note">every ${q.intervalDays}d</div>
     </td>
     <td class="sg-note ${q.stoppedReason || r.lastError ? 'sg-blocked' : ''}">
-      ${esc(r.lastError ? `Failed: ${clip(r.lastError, 70)}` : nextSendLabel(q))}
+      ${esc(r.lastError ? `Failed: ${clip(r.lastError, 50)}` : nextSendLabel(q))}
     </td>
     <td class="sg-rowactions">
       <button type="button" class="sg-btn sg-btn--gen" data-generate="${esc(r.id)}">Generate</button>
       <button type="button" class="sg-btn" data-preview="${esc(r.id)}">Preview</button>
       <button type="button" class="sg-btn sg-btn--go" data-send="${esc(r.id)}"
-              ${r.unsubscribedAt ? 'disabled title="They unsubscribed"' : ''}>Send now</button>
-      <select data-lead="${esc(r.id)}" class="sg-status-select">
-        ${['to-contact', 'contacted', 'replied', 'dead'].map(v =>
-          `<option value="${v}" ${v === r.status ? 'selected' : ''}>${v}</option>`).join('')}
-      </select>
+              ${r.unsubscribedAt ? 'disabled title="They unsubscribed"' : ''}>Send</button>
       <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
     </td>
   </tr>
-  <tr class="sg-preview" id="preview-${esc(r.id)}" hidden><td colspan="9">
+  <tr class="sg-preview" id="preview-${esc(r.id)}" hidden><td colspan="6">
     <div class="sg-pv">
       <div class="sg-pv__warn"></div>
       <div class="sg-pv__to"></div>
@@ -236,7 +244,7 @@ function leadRow(r) {
       <div class="sg-pv__body"></div>
     </div>
   </td></tr>
-  <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="9">
+  <tr class="sg-composer" id="compose-${esc(r.id)}" hidden><td colspan="6">
     <input type="text" class="sg-c-name" placeholder="First name — fills {{name}}" value="${esc(r.name || '')}">
     <textarea class="sg-c-context" rows="4" placeholder="The paragraph about THIS organisation — fills {{context}}.">${esc(r.orgContext || '')}</textarea>
     <input type="text" class="sg-c-subject" placeholder="Subject" value="${esc(q.subject)}">
@@ -284,8 +292,8 @@ function renderOutreach(s) {
 
 function renderOutreachBody(s) {
   const form = `
-    <div class="sg-icp">
-      <p class="sg-icp__head">Who we sell to, and how each one is approached</p>
+    <details class="sg-icp">
+      <summary class="sg-icp__head">Who we sell to, and how each one is approached</summary>
       <div class="sg-icp__grid">
         <div>
           <span class="sg-icp__fn">VP of Engineering</span>
@@ -303,7 +311,7 @@ function renderOutreachBody(s) {
       <p class="field-hint sg-icp__foot">Generate reads this. Set the designation and the
         email is written for that function — the same rules, applied every time rather
         than remembered.</p>
-    </div>
+    </details>
 
     <div class="sg-addlead sg-addlead--wide">
       <input type="text"  id="sg-lead-company" placeholder="Organisation" autocomplete="off">
@@ -321,8 +329,8 @@ function renderOutreachBody(s) {
       <input type="text"  id="sg-lead-note" placeholder="Private note — never sent" autocomplete="off">
     </div>
     <div class="sg-addmail__actions">
-      <span class="field-hint sg-addmail__hint">Add them, then press Generate on the row — the agent reads their website and writes the email for their function. Nothing sends until you press Send.</span>
       <button type="button" id="sg-lead-add" class="cta-button">Add lead</button>
+      <span class="field-hint sg-addmail__hint">Then press Generate on the row — the agent reads their website and writes the email for their function.</span>
     </div>
 
     <details class="sg-template">
@@ -340,10 +348,10 @@ function renderOutreachBody(s) {
         <button type="button" id="sg-tpl-save" class="btn-secondary">Save template</button>
       </div>
     </details>
-    <p class="field-hint"><strong>At most 6 emails to one contact, never more than one a week</strong> — enforced on the server, so Send cannot get round it either. Use Compose on a row to edit a message you already wrote. A lead leaves this stage automatically when they sign up; follow-ups also stop on a reply, an unsubscribe, or when the six run out.</p>`;
+    <p class="field-hint"><strong>At most 6 emails to one contact, one a week</strong> — enforced on the server, so Send cannot get round it. Leads leave this stage on signup, reply, or unsubscribe.</p>`;
 
   const rows = table(
-    ['Status', 'Organisation', 'Name', 'Designation', 'Email', 'Links', 'Sent', 'Next', ''],
+    ['Status', 'Organisation', 'Contact', 'Sent', 'Next', ''],
     visible(s.outreach), leadRow);
 
   const converted = s.converted.length
@@ -785,6 +793,18 @@ document.addEventListener('DOMContentLoaded', () => {
   nlInput.addEventListener('input', () => {
     nlInput.style.height = 'auto';
     nlInput.style.height = `${Math.min(nlInput.scrollHeight, 110)}px`;
+  });
+
+  const nlPanel = document.getElementById('nl-panel');
+  const nlToggle = document.getElementById('nl-toggle');
+  nlToggle.addEventListener('click', () => {
+    // Minimised by default. It was 520px of empty box between the table and
+    // the accounts roll-up, on a screen whose job is to be read quickly.
+    const open = nlPanel.classList.toggle('nl-panel--open');
+    nlPanel.classList.toggle('nl-panel--min', !open);
+    nlToggle.textContent = open ? 'Close' : 'Open';
+    nlToggle.setAttribute('aria-expanded', String(open));
+    if (open) { noleScroll(); document.getElementById('nl-input').focus(); }
   });
 
   document.getElementById('nl-clear').addEventListener('click', () => {

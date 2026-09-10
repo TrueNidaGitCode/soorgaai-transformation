@@ -5,6 +5,15 @@ import {
   streamGuestProgress,
 } from '../controllers/guestController.js';
 import { recordVisit } from '../controllers/visitController.js';
+import { transcribeAudio, voiceStatus } from '../controllers/voiceController.js';
+
+/**
+ * Audio arrives as base64 inside JSON, so this route needs a bigger body than
+ * the 100kb default express.json is mounted with globally in server.js. Scoped
+ * to the one route that needs it, exactly as uploadRoutes.js does — raising the
+ * global limit would widen every endpoint to accommodate one.
+ */
+const audioBody = express.json({ limit: '9mb' });
 
 const router = express.Router();
 
@@ -14,6 +23,11 @@ const router = express.Router();
 // board can tell "nobody came" from "everybody bounced" — two zeroes that look
 // identical and call for opposite fixes.
 router.post('/visit',                     recordVisit);
+
+// Speaking the objective instead of typing it. Public for the same reason
+// generation is: the first thing anyone does with Svarg needs no account.
+router.get('/voice-status',               voiceStatus);
+router.post('/transcribe',                audioBody, transcribeAudio);
 router.post('/generate-blueprint',        startGuestGeneration);
 router.get('/blueprint/:guestId',         getGuestBlueprint);
 router.get('/blueprint/:guestId/stream',  streamGuestProgress);

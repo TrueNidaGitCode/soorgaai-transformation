@@ -60,7 +60,35 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 
 // ✅ Middleware
-app.use(express.json());
+
+/**
+ * The global JSON parser, minus the routes that need a bigger body.
+ *
+ * express.json() defaults to 100 kb, which is right for every ordinary request
+ * and far too small for a folder of extracted text or a voice recording. Those
+ * routers already declare their own limit — see routes/uploadRoutes.js and
+ * routes/guestRoutes.js — but a router-scoped parser can only take effect if
+ * nothing has read the stream first.
+ *
+ * Mounted globally, this ran BEFORE any router and rejected an oversized body
+ * itself, so the larger limits below it were unreachable. Folder uploads over
+ * 100 kb were failing on that, with a raw HTML PayloadTooLargeError rather than
+ * anything the screen could explain.
+ *
+ * So it steps aside for exactly those paths and lets their own parser run.
+ * Raising the global limit instead would widen the body every endpoint on the
+ * server accepts, to accommodate two.
+ */
+const OWN_BODY_LIMIT = [
+  /^\/api\/uploads\/(dataset-file|folder)$/,
+  /^\/api\/guest\/transcribe$/,
+];
+
+const globalJson = express.json();
+app.use((req, res, next) => {
+  if (OWN_BODY_LIMIT.some(rx => rx.test(req.path))) return next();
+  return globalJson(req, res, next);
+});
 
 /**
  * Which origins may call this API.

@@ -10,6 +10,7 @@
 import { MATURITY_STAGES } from './data/maturityStages.js';
 import { captureOutreachRef, outreachRef, clearOutreachRef, visitorId, recordVisit }
   from './shared/visitor.js';
+import { attachVoiceInput } from './shared/voiceInput.js';
 
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';
@@ -476,6 +477,30 @@ export function wireHeroPrompt() {
         autogrow(input);
         updateObjectiveCounter(input, counter);
         input.focus();
+    });
+
+    /**
+     * Say it instead of typing it.
+     *
+     * Awaited nowhere and appended asynchronously: attaching asks the server
+     * whether transcription is configured, and the prompt box must be usable
+     * the instant the page paints rather than after a round trip. If the answer
+     * is no — or the browser cannot record — no button appears at all, which is
+     * the right outcome for a control that would otherwise fail on first press.
+     */
+    attachVoiceInput({
+        field: input,
+        mountInto: form,
+        onError: (msg) => {
+            if (!errEl) return;
+            errEl.textContent = msg;
+            errEl.style.display = '';
+        },
+        onText: () => {
+            autogrow(input);
+            updateObjectiveCounter(input, counter);
+            if (errEl) errEl.style.display = 'none';
+        },
     });
 
     // ChatGPT-style input: grow with content, Enter submits, Shift+Enter = newline

@@ -693,3 +693,64 @@
 }
 .profile-dropdown__item:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
 .profile-dropdown__item--danger:hover { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+
+/* ── Voice input ───────────────────────────────────────────────────────────────
+   A microphone beside the send button on the objective box. Describing a
+   business problem into an empty box is the slowest step in the product;
+   spoken, the same description takes fifteen seconds and usually comes out
+   better, because it is how someone would explain it to a colleague.
+
+   Secondary to Send on purpose. Send is the action; this is a way of filling
+   the box, and a second gradient circle would make the form read as two equal
+   choices. */
+
+.voice-btn {
+  order: -1;                 /* mic, then send — appended last, shown first */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.voice-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.voice-btn:disabled { cursor: default; opacity: 0.75; }
+
+/* Recording. Red because it is the one universally understood signal that a
+   microphone is live, and someone must never be unsure whether it is. */
+.voice-btn--on,
+.voice-btn--on:hover {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.55);
+  color: #FCA5A5;
+  animation: voice-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+  50%      { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0); }
+}
+
+.voice-btn--busy { animation: voice-spin 0.9s linear infinite; }
+
+@keyframes voice-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* A pulsing, spinning control is exactly what motion sensitivity exists to
+   avoid. The colour still says what state it is in. */
+@media (prefers-reduced-motion: reduce) {
+  .voice-btn--on, .voice-btn--busy { animation: none; }
+}

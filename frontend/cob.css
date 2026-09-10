@@ -139,7 +139,7 @@ body.landing2::after {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 22px;
+  padding: 16px 22px;
 }
 
 .sv-top__brand {
@@ -516,7 +516,9 @@ body.landing2 {
 /* Logo.png already contains the wordmark, so the text beside it said "svarg"
    twice. */
 .sv-top__word { display: none; }
-.sv-top__logo { width: auto; height: 26px; }
+/* The mark carries the wordmark, so its height sets the whole brand lockup.
+   At 26px it read as an afterthought beside the account chip. */
+.sv-top__logo { width: auto; height: 36px; }
 
 /* The textarea's own scrollbar, which arrived as a bright native one sitting
    inside a dark card. */

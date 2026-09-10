@@ -82,11 +82,11 @@ export const MOTIONS = [
     note: 'Do not ask "do you know anyone who might buy Svarg?". Ask "who is responsible for '
       + 'AI adoption / engineering transformation / digital initiatives at [company]?" — a '
       + 'question about a role gets an answer; a question about a purchase gets a shrug.',
-    messageSubject: 'Something I have been building',
+    messageSubject: 'Something we have been building',
     message: [
       'Hi {{name}},',
       '',
-      'I’m building SvargAI — it turns a business or engineering objective described in '
+      'We’re building SvargAI — it turns a business or engineering objective described in '
         + 'plain English into a working AI application in less than 30 minutes, at around $0.10.',
       '',
       'Would really appreciate it if you could spend a few minutes trying the product:',
@@ -99,8 +99,9 @@ export const MOTIONS = [
       '',
       'If you see potential in SvargAI, one good introduction would mean a lot to us.',
       '',
+      // No sign-off name: WhatsApp already shows who sent it, and a typed name
+      // under a message from your own number reads like a template.
       'Thanks!',
-      'Pranesh',
     ],
   },
   {

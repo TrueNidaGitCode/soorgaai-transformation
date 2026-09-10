@@ -19,104 +19,127 @@
   <title>Svarg — AI for the workflows you already run</title>
 
   <link rel="stylesheet" href="style.css">
+  <!-- landing.css still owns the auth modal; cob.css owns this screen. -->
   <link rel="stylesheet" href="landing.css?v=2">
+  <link rel="stylesheet" href="cob.css?v=2">
 
   <script src="login/config.js"></script>
-  <script type="module" src="index.js?v=5"></script>
+  <script type="module" src="index.js?v=6"></script>
 </head>
 <body class="landing2">
 
-  <!-- ── Left sidebar (fixed) ─────────────────────────────────── -->
-  <aside id="side" class="side">
-    <a href="/" class="side__logo" aria-label="Svarg — home"><img src="/assets/Logo.png" alt="Svarg" class="side__logo-img"></a>
+  <!-- ── Icon rail ────────────────────────────────────────────────────────
+       Icons only. The three text links this replaced were destinations nobody
+       opens mid-thought, and they were spending the page's width to say so. -->
+  <nav class="sv-rail" aria-label="Main">
+    <button type="button" id="sv-menu" class="sv-rail__btn" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
 
-    <p class="side__label">Blueprints</p>
-    <div id="side-blueprints" class="side__bps" aria-label="Your blueprints"></div>
+    <a href="/cob.html" class="sv-rail__btn sv-rail__btn--on" aria-label="Start" aria-current="page">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.6V21h14V9.6"/></svg>
+    </a>
+    <a href="/domain/domain.html" class="sv-rail__btn" aria-label="Your blueprints" title="Your blueprints">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </a>
+    <a href="/knowledge-sources/knowledge-sources.html" class="sv-rail__btn" aria-label="Knowledge sources" title="Knowledge sources">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+    </a>
 
-    <div class="side__nav" role="navigation" aria-label="Site navigation">
-      <a href="/knowledge-sources/knowledge-sources.html" class="side__link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <span>Knowledge Sources</span>
+    <span class="sv-rail__spacer"></span>
+
+    <a href="/privacy/privacy.html" class="sv-rail__btn" aria-label="Privacy" title="Privacy">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </a>
+  </nav>
+
+  <div class="sv-shell">
+
+    <header class="sv-top">
+      <a href="/" class="sv-top__brand" aria-label="Svarg — home">
+        <img src="/assets/Logo.png" alt="" class="sv-top__logo">
+        <span class="sv-top__word">svarg</span>
       </a>
-      <a href="/pricing/pricing.html" class="side__link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        <span>Pricing</span>
-      </a>
-      <a href="/privacy/privacy.html" class="side__link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span>Privacy</span>
-      </a>
-    </div>
-  </aside>
+      <span class="sv-top__gap"></span>
 
-  <!-- ── Main column ─────────────────────────────────────────── -->
-  <div class="main-col">
-
-    <header class="topbar">
-      <button id="side-toggle-mobile" class="side__toggle side__toggle--mobile" aria-label="Open menu">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
+      <!-- index.js swaps this for the account chip once a session is found. -->
       <div id="topbar-auth" class="topbar__auth">
         <a href="/login/login.html" id="topbar-login" class="auth-btn auth-btn--solid">Log in</a>
       </div>
     </header>
 
-    <main class="center">
-      <h1 class="center__heading">
-        Turn Your Business Objective<br>
-        <span class="center__heading-accent">into an AI-Enabled Project</span>
-      </h1>
+    <main class="sv-main">
+      <h1 class="sv-ask">What are you <em>working on?</em></h1>
+      <p class="sv-sub">Describe the outcome you want to achieve.</p>
 
-      <p class="center__desc">
-        Most teams recognize the importance of AI but struggle to
-        identify where it can create business value. Generate a structured AI strategy
-        tailored to your project, identify high-impact opportunities, and create an
-        executive-ready blueprint that can be refined and shared with stakeholders.
-      </p>
+      <form id="hero-prompt-form" class="sv-card" aria-label="Describe what you want to improve">
 
-      <form id="hero-prompt-form" class="prompt" aria-label="Generate your AI blueprint">
-        <textarea
-          id="hero-objective"
-          class="prompt__input"
-          rows="1"
-          placeholder="Describe your project and what you want to improve"
-          aria-label="Your business objective"
-        ></textarea>
-        <button type="submit" class="prompt__send" aria-label="Generate my blueprint" title="Generate my blueprint">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-        </button>
+        <div class="sv-modes" role="tablist" aria-label="How to answer">
+          <button type="button" id="sv-mode-chat" class="sv-mode sv-mode--on" role="tab" aria-selected="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/></svg>
+            Chat
+          </button>
+          <!-- Only rendered when the server says transcription is configured;
+               a control that fails on first press is the worst possible thing
+               to put on the first screen a stranger sees. -->
+          <button type="button" id="sv-mode-speak" class="sv-mode" role="tab" aria-selected="false" hidden>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+            Speak
+          </button>
+        </div>
+
+        <div class="sv-chat" id="sv-panel-chat">
+          <textarea
+            id="hero-objective"
+            class="sv-input"
+            rows="1"
+            placeholder="Tell us what you'd like to improve…"
+            aria-label="What you want to improve"
+          ></textarea>
+          <button type="submit" class="sv-send" aria-label="Continue" title="Continue">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          </button>
+        </div>
+
+        <div class="sv-speak" id="sv-panel-speak" hidden>
+          <div class="sv-wave" id="sv-wave" aria-hidden="true"></div>
+          <button type="button" id="sv-mic" class="sv-mic" aria-label="Start recording">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+          </button>
+          <p class="sv-speak__state" id="sv-speak-state">Tap to speak</p>
+          <p class="sv-speak__hint" id="sv-speak-hint">Describe it the way you'd explain it to a colleague</p>
+        </div>
       </form>
-      <p id="hero-objective-counter" class="prompt__counter" style="display:none"></p>
-      <p id="hero-prompt-error" class="prompt__error" role="alert" style="display:none"></p>
 
-      <div class="confluence-connect" id="confluence-connect">
+      <p id="hero-prompt-error" class="sv-note sv-note--error" role="alert" style="display:none"></p>
+      <p id="hero-objective-counter" class="sv-note" style="display:none"></p>
+
+      <div class="sv-try">
+        <button type="button" class="sv-try__btn" id="example-card"
+                title="Fill the box with a real example objective">
+          Try an example
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+
+      <div class="sv-ground-link" id="confluence-connect">
         <div id="confluence-connect-badge" class="confluence-connect__badge" style="display:none">
           <span class="confluence-connect__dot"></span>
           Connected to <strong id="confluence-connect-site"></strong>
         </div>
-        <button type="button" id="confluence-connect-btn" class="confluence-connect__btn">
-          Connect your project documents
-          <span class="confluence-connect__hint">— optional, grounds your blueprint in real project docs</span>
-        </button>
-        <p id="confluence-connect-error" class="prompt__error" style="display:none"></p>
-      </div>
-
-      <div class="examples">
-        <div class="examples__divider"><span>Example prompts</span></div>
-        <button type="button" class="example-card" id="example-card">
-          We manage a software maintenance and development program where teams spend considerable
-          effort analyzing defects, incidents, and support tickets from multiple sources. The current
-          process involves issue understanding, validation, triage, root-cause assessment,
-          prioritization, and assignment to the appropriate teams. We want to leverage AI to reduce
-          analysis effort, improve classification accuracy, accelerate ticket routing, and increase
-          overall delivery efficiency while maintaining quality and governance standards.
-        </button>
+        <button type="button" id="confluence-connect-btn">Connect your project documents</button>
+        <p id="confluence-connect-error" class="sv-note sv-note--error" style="display:none"></p>
       </div>
     </main>
 
-    <p class="bottom-note">Free preview, no signup needed.</p>
+    <p class="sv-foot">Free preview, no signup needed.</p>
 
   </div>
+
+  <!-- The example objective the Try button loads. Kept out of the visible page
+       because it is 90 words, and it was the largest block of text on a screen
+       whose whole problem was too much to read. -->
+  <template id="sv-example">We manage a software maintenance and development program where teams spend considerable effort analyzing defects, incidents, and support tickets from multiple sources. The current process involves issue understanding, validation, triage, root-cause assessment, prioritization, and assignment to the appropriate teams. We want to leverage AI to reduce analysis effort, improve classification accuracy, accelerate ticket routing, and increase overall delivery efficiency while maintaining quality and governance standards.</template>
 
   <!-- ── Log in / sign up modal ───────────────────────────────── -->
   <div id="auth-modal" class="auth-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">

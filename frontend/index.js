@@ -10,7 +10,7 @@
 import { MATURITY_STAGES } from './data/maturityStages.js';
 import { captureOutreachRef, outreachRef, clearOutreachRef, visitorId, recordVisit }
   from './shared/visitor.js';
-import { attachVoiceInput } from './shared/voiceInput.js';
+import { voiceAvailable, createVoiceRecorder } from './shared/voiceInput.js';
 
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';
@@ -463,6 +463,123 @@ export function wireTopbarAuth() {
  * Anonymous  → objective saved to sessionStorage, off to /try/try.html
  * Signed in  → same save, off to the workspace (its form prefills from it)
  */
+/** How many bars the waveform draws. Odd, so one sits dead centre under the mic. */
+const WAVE_BARS = 27;
+
+/**
+ * Chat and Speak, on one card.
+ *
+ * Speak is only offered when the server says transcription is configured AND
+ * the browser can record. Everything else on this screen degrades to the Chat
+ * panel, which is the panel that always works — a stranger who opens the page
+ * never sees a control that cannot do anything.
+ */
+async function wireAnswerModes({ form, input, counter, errEl }) {
+  const chatBtn  = document.getElementById('sv-mode-chat');
+  const speakBtn = document.getElementById('sv-mode-speak');
+  const chatPane = document.getElementById('sv-panel-chat');
+  const speakPane = document.getElementById('sv-panel-speak');
+  const mic = document.getElementById('sv-mic');
+  const wave = document.getElementById('sv-wave');
+  const stateEl = document.getElementById('sv-speak-state');
+  const hintEl = document.getElementById('sv-speak-hint');
+  if (!chatBtn || !speakBtn || !chatPane || !speakPane || !mic || !wave) return;
+
+  const say = (msg) => {
+    if (!errEl) return;
+    errEl.textContent = msg;
+    errEl.style.display = msg ? '' : 'none';
+  };
+
+  // Asked before the toggle is shown at all, and never awaited by anything the
+  // page needs to paint.
+  if (!(await voiceAvailable())) return;
+  speakBtn.hidden = false;
+
+  /**
+   * A resting shape, not a flat line.
+   *
+   * At idle the panel is not claiming to hear anything, so a gentle static
+   * waveform is honest and looks like a microphone rather than like a dead
+   * control. The moment recording starts these are driven by the real signal,
+   * and a flat line THEN is real information: nothing is reaching the mic.
+   */
+  const mid = (WAVE_BARS - 1) / 2;
+  const restHeight = (i) => 4 + Math.round(Math.cos((i - mid) / mid * 1.35) * 7 + Math.sin(i * 1.7) * 2.5);
+
+  const bars = [];
+  for (let i = 0; i < WAVE_BARS; i += 1) {
+    const b = document.createElement('span');
+    b.className = 'sv-wave__bar';
+    b.style.height = Math.max(3, restHeight(i)) + 'px';
+    wave.appendChild(b);
+    bars.push(b);
+  }
+
+  const rest = () => bars.forEach((b, i) => { b.style.height = Math.max(3, restHeight(i)) + 'px'; });
+
+  function show(mode) {
+    const speaking = mode === 'speak';
+    chatBtn.classList.toggle('sv-mode--on', !speaking);
+    speakBtn.classList.toggle('sv-mode--on', speaking);
+    chatBtn.setAttribute('aria-selected', String(!speaking));
+    speakBtn.setAttribute('aria-selected', String(speaking));
+    chatPane.hidden = speaking;
+    speakPane.hidden = !speaking;
+    if (!speaking && recorder.isRecording()) recorder.stop();
+    if (!speaking) input.focus();
+  }
+
+  const recorder = createVoiceRecorder({
+    /**
+     * Bars taper from the centre, so the row reads as one shape rather than as
+     * a wall. The level is the real microphone signal — a flat line means
+     * nothing is being heard, which is information worth showing honestly.
+     */
+    onLevel: (level) => {
+      for (let i = 0; i < bars.length; i += 1) {
+        const falloff = 1 - Math.abs(i - mid) / (mid + 2);
+        const jitter = 0.55 + Math.random() * 0.45;
+        const h = 3 + level * falloff * jitter * 40;
+        bars[i].style.height = h.toFixed(1) + 'px';
+      }
+    },
+    onState: (st) => {
+      mic.classList.toggle('sv-mic--live', st === 'recording');
+      mic.disabled = st === 'working';
+      if (stateEl) {
+        stateEl.textContent = st === 'recording' ? 'Listening…'
+          : st === 'working' ? 'Writing it down…'
+          : 'Tap to speak';
+      }
+      if (hintEl) {
+        hintEl.textContent = st === 'recording' ? 'Tap to finish'
+          : st === 'working' ? 'One moment'
+          : 'Describe it the way you would explain it to a colleague';
+      }
+      if (st !== 'recording') rest();
+    },
+    onError: say,
+    onText: (text) => {
+      // Appended, never replacing. Someone who typed half a sentence and then
+      // spoke the rest meant to add to it, and silently discarding what they
+      // had written would be the last time they pressed this.
+      const existing = input.value.trim();
+      input.value = existing ? existing + ' ' + text : text;
+      autogrow(input);
+      updateObjectiveCounter(input, counter);
+      say('');
+      // Straight back to the words, because the next thing anybody does is
+      // read what was heard and fix a name.
+      show('chat');
+    },
+  });
+
+  chatBtn.addEventListener('click', () => show('chat'));
+  speakBtn.addEventListener('click', () => { say(''); show('speak'); });
+  mic.addEventListener('click', () => recorder.toggle());
+}
+
 export function wireHeroPrompt() {
     const form     = document.getElementById('hero-prompt-form');
     const input    = document.getElementById('hero-objective');
@@ -471,37 +588,25 @@ export function wireHeroPrompt() {
     if (!form || !input) return;
 
     // Example prompt card fills the input
+    /**
+     * The example, demonstrated rather than displayed.
+     *
+     * It used to sit on the page as a 90-word block — the largest thing to read
+     * on a screen whose whole problem was too much to read, and still 3 of the
+     * first 12 strangers typed something unusable into the box beneath it.
+     * Pressing it fills the field, which is the only way an example actually
+     * teaches anything.
+     */
     const example = document.getElementById('example-card');
+    const exampleText = document.getElementById('sv-example');
     example?.addEventListener('click', () => {
-        input.value = example.textContent.replace(/\s+/g, ' ').trim();
+        input.value = (exampleText?.innerHTML || '').replace(/\s+/g, ' ').trim();
         autogrow(input);
         updateObjectiveCounter(input, counter);
         input.focus();
     });
 
-    /**
-     * Say it instead of typing it.
-     *
-     * Awaited nowhere and appended asynchronously: attaching asks the server
-     * whether transcription is configured, and the prompt box must be usable
-     * the instant the page paints rather than after a round trip. If the answer
-     * is no — or the browser cannot record — no button appears at all, which is
-     * the right outcome for a control that would otherwise fail on first press.
-     */
-    attachVoiceInput({
-        field: input,
-        mountInto: form,
-        onError: (msg) => {
-            if (!errEl) return;
-            errEl.textContent = msg;
-            errEl.style.display = '';
-        },
-        onText: () => {
-            autogrow(input);
-            updateObjectiveCounter(input, counter);
-            if (errEl) errEl.style.display = 'none';
-        },
-    });
+    wireAnswerModes({ form, input, counter, errEl });
 
     // ChatGPT-style input: grow with content, Enter submits, Shift+Enter = newline
     input.addEventListener('input', () => {

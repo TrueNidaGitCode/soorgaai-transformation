@@ -180,3 +180,154 @@ export async function attachVoiceInput({ field, mountInto, onError = null, onTex
 
   return btn;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The recorder, without a button attached to it
+
+   attachVoiceInput above owns a small microphone that lives beside a field.
+   The Speak panel on the first screen is a different shape entirely — a large
+   mic, a live waveform, and a state line — so it needs the recording and the
+   transcribing without any of the chrome.
+
+   This is that half. It exposes start/stop and reports level, so whatever is
+   drawing can decide how to draw it.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** Whether voice can work at all, asked once so nothing is offered that fails. */
+export async function voiceAvailable() {
+  return canRecord() && await serverReady();
+}
+
+/**
+ * @param {object} handlers
+ * @param {(level:number)=>void} [handlers.onLevel]  0..1, roughly 20x a second
+ * @param {(text:string)=>void}  [handlers.onText]   the transcript
+ * @param {(msg:string)=>void}   [handlers.onError]
+ * @param {(state:'idle'|'recording'|'working')=>void} [handlers.onState]
+ */
+export function createVoiceRecorder({ onLevel, onText, onError, onState } = {}) {
+  let recorder = null;
+  let stream = null;
+  let audioCtx = null;
+  let raf = 0;
+  let chunks = [];
+  let stopTimer = null;
+
+  const say = (m) => { if (onError) onError(m); };
+  const state = (s) => { if (onState) onState(s); };
+
+  function teardown() {
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+    if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; }
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  }
+
+  /**
+   * Read the live microphone level so the bars mean something.
+   *
+   * A waveform that animates on a timer looks identical whether or not anyone
+   * is being heard, which makes it decoration. This is the actual signal, so a
+   * flat line is real information: check your microphone.
+   */
+  function watchLevel(src) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const node = audioCtx.createMediaStreamSource(src);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      node.connect(analyser);
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+
+      const tick = () => {
+        analyser.getByteTimeDomainData(buf);
+        let peak = 0;
+        for (let i = 0; i < buf.length; i += 1) {
+          const v = Math.abs(buf[i] - 128) / 128;
+          if (v > peak) peak = v;
+        }
+        if (onLevel) onLevel(Math.min(1, peak * 1.7));
+        raf = requestAnimationFrame(tick);
+      };
+      tick();
+    } catch {
+      // No analyser is survivable — the recording still works, the bars just
+      // sit still. Not worth failing the whole interaction over.
+    }
+  }
+
+  async function start() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      say(err?.name === 'NotAllowedError'
+        ? 'Microphone access was blocked. Allow it in your browser to describe this out loud.'
+        : 'No microphone was available.');
+      teardown();
+      state('idle');
+      return false;
+    }
+
+    const mimeType = pickMimeType();
+    try {
+      recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    } catch {
+      say('This browser could not start a recording.');
+      teardown();
+      state('idle');
+      return false;
+    }
+
+    chunks = [];
+    recorder.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
+    recorder.onstop = () => { send(new Blob(chunks, { type: mimeType || 'audio/webm' })); };
+    recorder.start();
+    watchLevel(stream);
+    state('recording');
+
+    // The server refuses anything over two minutes, so stopping here first
+    // turns a refusal into a transcript.
+    stopTimer = setTimeout(() => { if (recorder?.state === 'recording') recorder.stop(); }, MAX_MS);
+    return true;
+  }
+
+  function stop() {
+    if (recorder?.state === 'recording') recorder.stop();
+  }
+
+  async function send(blob) {
+    teardown();
+    state('working');
+    if (onLevel) onLevel(0);
+
+    try {
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      // Chunked: String.fromCharCode(...bytes) overflows the call stack on
+      // anything longer than a few seconds of audio.
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      }
+
+      const resp = await fetch(`${API_BASE()}/guest/transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audio: btoa(binary), mimeType: blob.type || 'audio/webm' }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || 'Could not transcribe that.');
+      if (onText) onText(data.text);
+    } catch (err) {
+      say(err.message || 'Could not transcribe that.');
+    } finally {
+      state('idle');
+    }
+  }
+
+  return {
+    start,
+    stop,
+    toggle: () => (recorder?.state === 'recording' ? (stop(), false) : start()),
+    isRecording: () => recorder?.state === 'recording',
+  };
+}

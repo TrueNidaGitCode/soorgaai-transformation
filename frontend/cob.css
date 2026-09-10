@@ -1,0 +1,538 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   Svarg — the first screen
+
+   One question, one box, one action. Everything else earned its way off this
+   page: 3 of the first 12 strangers typed something unusable into the old one
+   ("Hello"), and half of the rest retyped the same objective two to four times.
+   A page that explains itself in four paragraphs is a page nobody reads before
+   guessing.
+
+   Loaded AFTER landing.css, which still owns the auth modal. The shell here
+   uses its own sv- prefix so the two never argue.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Cyan is the accent the design asks for, and it is already the far end of
+     the send-button gradient this site has always used — so the page reads as
+     new without reading as a different product. */
+  --sv-accent:      #3DAFD3;
+  --sv-accent-2:    #5CC5A7;
+  --sv-accent-soft: rgba(61, 175, 211, 0.14);
+
+  --sv-ground:   #06080B;
+  --sv-surface:  rgba(255, 255, 255, 0.035);
+  --sv-line:     rgba(255, 255, 255, 0.09);
+  --sv-line-hi:  rgba(255, 255, 255, 0.16);
+
+  --sv-text:     #F2F5F8;
+  --sv-muted:    rgba(255, 255, 255, 0.52);
+  --sv-faint:    rgba(255, 255, 255, 0.34);
+
+  --sv-rail: 56px;
+}
+
+/* ── Ground ───────────────────────────────────────────────────────────────
+   Two large, very soft cyan washes in opposite corners. They do the entire
+   job of making a near-black page feel lit rather than empty, and they cost
+   one element and no images. Fixed, so they do not travel with scroll. */
+
+body.landing2 {
+  background: var(--sv-ground);
+  color: var(--sv-text);
+  min-height: 100vh;
+  margin: 0;
+}
+
+body.landing2::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(58rem 40rem at 108% -8%,  rgba(61, 175, 211, 0.16), transparent 62%),
+    radial-gradient(52rem 38rem at -12% 106%, rgba(92, 197, 167, 0.13), transparent 62%);
+}
+
+/* A pair of hairline arcs, echoing the corner sweeps in the design. Drawn with
+   borders on an oversized circle so there is no SVG to load and nothing to
+   scale badly. */
+body.landing2::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 128% -22%, transparent 41.7%, rgba(61, 175, 211, 0.10) 41.85%, transparent 42.05%),
+    radial-gradient(circle at 128% -22%, transparent 53.7%, rgba(61, 175, 211, 0.055) 53.85%, transparent 54.05%),
+    radial-gradient(circle at -28% 124%, transparent 41.7%, rgba(92, 197, 167, 0.085) 41.85%, transparent 42.05%),
+    radial-gradient(circle at -28% 124%, transparent 53.7%, rgba(92, 197, 167, 0.05) 53.85%, transparent 54.05%);
+}
+
+/* ── Icon rail ────────────────────────────────────────────────────────────
+   Icons only. The old sidebar spent its width on three text links to pages
+   nobody opens mid-thought; the rail gives that width back to the page and
+   keeps the destinations one hover away. */
+
+.sv-rail {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: var(--sv-rail);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0;
+  background: rgba(255, 255, 255, 0.022);
+  border-right: 1px solid var(--sv-line);
+  backdrop-filter: blur(12px);
+}
+
+.sv-rail__btn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--sv-faint);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sv-rail__btn:hover { color: var(--sv-text); background: rgba(255, 255, 255, 0.06); }
+
+.sv-rail__btn--on { color: var(--sv-accent); background: var(--sv-accent-soft); }
+
+/* The active marker sits outside the button so it lines up with the rail edge
+   rather than with the icon's padding. */
+.sv-rail__btn--on::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 18px;
+  border-radius: 0 2px 2px 0;
+  background: var(--sv-accent);
+}
+
+.sv-rail__spacer { flex: 1; }
+
+/* ── Top bar ──────────────────────────────────────────────────────────────── */
+
+.sv-shell {
+  position: relative;
+  z-index: 1;
+  margin-left: var(--sv-rail);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sv-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+}
+
+.sv-top__brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  color: var(--sv-text);
+}
+
+.sv-top__logo { width: 26px; height: 26px; display: block; }
+
+.sv-top__word {
+  font-size: 1.16rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.sv-top__gap { flex: 1; }
+
+/* The account chip. Quiet by default — it is a destination, not an action. */
+.sv-who {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 12px 5px 5px;
+  border: 1px solid var(--sv-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--sv-text);
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.sv-who:hover { border-color: var(--sv-line-hi); background: rgba(255, 255, 255, 0.07); }
+
+.sv-who__avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--sv-accent-2), var(--sv-accent));
+  color: #04262E;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.sv-who__chev { color: var(--sv-faint); }
+
+/* ── The question ─────────────────────────────────────────────────────────── */
+
+.sv-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3vh 22px 6vh;
+}
+
+.sv-ask {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: clamp(1.9rem, 3.4vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.sv-ask em {
+  font-style: normal;
+  background: linear-gradient(96deg, var(--sv-accent), #6FD8E8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sv-sub {
+  margin: 0 0 30px;
+  text-align: center;
+  font-size: 0.98rem;
+  color: var(--sv-muted);
+}
+
+/* ── The card ─────────────────────────────────────────────────────────────
+   One surface holding both ways of answering. The inset highlight along the
+   top edge is what stops a flat dark rectangle reading as a hole in the page. */
+
+.sv-card {
+  width: 100%;
+  max-width: 620px;
+  padding: 14px;
+  border: 1px solid var(--sv-line);
+  border-radius: 20px;
+  background: var(--sv-surface);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 22px 60px -28px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(14px);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.sv-card:focus-within {
+  border-color: rgba(61, 175, 211, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 0 3px rgba(61, 175, 211, 0.11),
+    0 22px 60px -28px rgba(0, 0, 0, 0.9);
+}
+
+/* ── Chat / Speak ─────────────────────────────────────────────────────────── */
+
+.sv-modes {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sv-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sv-muted);
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sv-mode:hover { color: var(--sv-text); }
+
+.sv-mode--on {
+  background: linear-gradient(135deg, var(--sv-accent-2), var(--sv-accent));
+  color: #04262E;
+  font-weight: 600;
+}
+
+.sv-mode--on:hover { color: #04262E; }
+
+/* ── Chat panel ───────────────────────────────────────────────────────────── */
+
+.sv-chat { display: flex; align-items: flex-end; gap: 10px; }
+
+.sv-input {
+  flex: 1;
+  min-height: 74px;
+  max-height: 260px;
+  padding: 10px 4px 10px 10px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--sv-text);
+  font: inherit;
+  font-size: 0.97rem;
+  line-height: 1.6;
+}
+
+.sv-input::placeholder { color: var(--sv-faint); }
+
+.sv-send {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sv-accent-2), var(--sv-accent));
+  color: #04262E;
+  cursor: pointer;
+  box-shadow: 0 4px 16px -4px rgba(61, 175, 211, 0.6);
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+
+.sv-send:hover { transform: translateY(-1px); box-shadow: 0 7px 22px -5px rgba(61, 175, 211, 0.75); }
+.sv-send:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+
+/* ── Speak panel ──────────────────────────────────────────────────────────── */
+
+.sv-speak {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0 12px;
+}
+
+.sv-wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 46px;
+  width: 100%;
+}
+
+/* Each bar is driven from the live microphone level, so the row is a reading
+   rather than a decoration — someone can see that they are being heard, which
+   is the one thing a recording UI has to communicate. */
+.sv-wave__bar {
+  width: 3px;
+  min-height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--sv-accent), rgba(61, 175, 211, 0.35));
+  transition: height 0.08s linear;
+}
+
+.sv-mic {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(61, 175, 211, 0.5);
+  border-radius: 50%;
+  background: rgba(61, 175, 211, 0.12);
+  color: var(--sv-accent);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+}
+
+.sv-mic:hover { background: rgba(61, 175, 211, 0.2); transform: translateY(-1px); }
+
+.sv-mic--live {
+  background: linear-gradient(135deg, var(--sv-accent-2), var(--sv-accent));
+  color: #04262E;
+  border-color: transparent;
+  animation: sv-pulse 1.9s ease-out infinite;
+}
+
+@keyframes sv-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(61, 175, 211, 0.42); }
+  70%  { box-shadow: 0 0 0 16px rgba(61, 175, 211, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(61, 175, 211, 0); }
+}
+
+.sv-speak__state { margin: 0; font-size: 0.92rem; color: var(--sv-text); }
+.sv-speak__hint  { margin: 0; font-size: 0.8rem;  color: var(--sv-faint); }
+
+/* ── Try now ──────────────────────────────────────────────────────────────
+   The old page put a 90-word example in a box below the field. It was the only
+   thing showing what a good objective looks like, and it was also the largest
+   block of text on the screen. This is the same help as one line: press it and
+   the box fills, so the example is demonstrated rather than read. */
+
+.sv-try {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 620px;
+  margin-top: 26px;
+}
+
+.sv-try::before,
+.sv-try::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--sv-line), transparent);
+}
+
+.sv-try__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 15px;
+  border: 1px solid var(--sv-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sv-muted);
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.sv-try__btn:hover {
+  color: var(--sv-text);
+  border-color: rgba(61, 175, 211, 0.4);
+  background: var(--sv-accent-soft);
+}
+
+/* ── Notes under the card ─────────────────────────────────────────────────── */
+
+.sv-note {
+  margin: 14px 0 0;
+  min-height: 1.1rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--sv-faint);
+}
+
+.sv-note--error { color: #FCA5A5; }
+
+.sv-foot {
+  padding: 0 22px 22px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.26);
+}
+
+/* A quiet way back to grounding the blueprint in real documents. It was a
+   full-width button competing with the objective box; it is optional, so it
+   reads as optional now. */
+.sv-ground-link {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 0.83rem;
+  color: var(--sv-faint);
+}
+
+.sv-ground-link button {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--sv-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.sv-ground-link button:hover { color: var(--sv-accent); }
+
+/* ── Narrow screens ───────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  :root { --sv-rail: 0px; }
+  .sv-rail { display: none; }
+  .sv-main { justify-content: flex-start; padding-top: 6vh; }
+  .sv-ask { font-size: 1.9rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sv-mic--live { animation: none; }
+  .sv-wave__bar { transition: none; }
+  .sv-send:hover, .sv-mic:hover { transform: none; }
+}
+
+/* ── Undoing the old shell ────────────────────────────────────────────────
+   landing.css sets .landing2 to display:flex, height:100vh, overflow:hidden —
+   correct for the fixed sidebar plus scrolling column it was built for, wrong
+   here. As a flex item .sv-shell shrank to its content, which left the whole
+   page hugging the left edge, and overflow:hidden meant it could not scroll to
+   reach anything below the fold. */
+
+body.landing2 {
+  display: block;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* [hidden] is display:none in the user-agent sheet, which any class setting
+   display beats on specificity. Both panels rendered at once because of it —
+   the Speak controls sat under the textarea in Chat mode. */
+.sv-chat[hidden],
+.sv-speak[hidden],
+.sv-mode[hidden] { display: none !important; }
+
+/* Logo.png already contains the wordmark, so the text beside it said "svarg"
+   twice. */
+.sv-top__word { display: none; }
+.sv-top__logo { width: auto; height: 26px; }
+
+/* The textarea's own scrollbar, which arrived as a bright native one sitting
+   inside a dark card. */
+.sv-input { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent; }
+.sv-input::-webkit-scrollbar { width: 8px; }
+.sv-input::-webkit-scrollbar-track { background: transparent; }
+.sv-input::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.sv-input::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.26); background-clip: content-box; }
+
+/* The inactive half of the toggle was sitting at 52% white on a dark pill and
+   read as disabled rather than as the other option. A tab you cannot read is a
+   tab you do not press. */
+.sv-mode { color: rgba(255, 255, 255, 0.72); }
+.sv-mode:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }

@@ -70,27 +70,31 @@ const TIMEOUT_MS = 30000;
  * most people describing an objective into this box speak Indian-accented
  * English. Whisper is the floor, not the preference.
  *
- * ── Off unless somebody turns it on ────────────────────────────────────────
+ * ── On, through Gemini, by decision ────────────────────────────────────────
  *
- * TRANSCRIPTION_CHAIN is empty by default, which means no microphone appears
- * anywhere and no provider is ever called. That is deliberate: every provider
- * here bills per use, and a feature that quietly starts spending because a key
- * for something else happens to be present is not a feature anybody chose.
+ * This defaulted to empty for a while — no microphone anywhere, no provider
+ * ever called — because every provider here bills per use and a feature that
+ * starts spending on its own because a key for something else happens to exist
+ * is not a feature anybody chose.
  *
- * Gemini in particular would have switched itself on the moment it was added,
- * because GOOGLE_API_KEY is already set for generation — the same key, the same
- * bill, no decision taken.
+ * That decision has since been taken: voice runs through Gemini, on the
+ * GOOGLE_API_KEY that already pays for every blueprint. A spoken objective is a
+ * fraction of a cent against the same bill, and it needs no second billing
+ * relationship. Leaving it behind an unset variable meant the Speak control
+ * this product now leads with was invisible on the deployed site.
  *
- * To turn it on, set the variable to the providers to try, in order:
+ * The variable still decides everything, it just has a default now:
  *
- *   TRANSCRIPTION_CHAIN=gemini                      cheapest, key already funded
- *   TRANSCRIPTION_CHAIN=elevenlabs,gemini           best accents, needs a paid plan
+ *   TRANSCRIPTION_CHAIN=elevenlabs,gemini   best accents, needs a paid plan
+ *   TRANSCRIPTION_CHAIN=off                 no microphone, nothing called
  *
- * Nothing else changes. The screen asks the server whether voice is available
- * before it offers a microphone, so the button appears and disappears with this
- * one variable and no redeploy of the frontend.
+ * The screen asks the server whether voice is available before offering a
+ * microphone, so it appears and disappears with this one setting and no
+ * redeploy of the frontend.
  */
-const CHAIN = (process.env.TRANSCRIPTION_CHAIN || '')
+const CHAIN = (process.env.TRANSCRIPTION_CHAIN === 'off'
+  ? ''
+  : process.env.TRANSCRIPTION_CHAIN || 'gemini')
   .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
 /**

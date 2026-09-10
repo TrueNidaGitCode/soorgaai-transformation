@@ -69,8 +69,28 @@ const TIMEOUT_MS = 30000;
  * accuracy across accents better, which is the whole reason it was chosen —
  * most people describing an objective into this box speak Indian-accented
  * English. Whisper is the floor, not the preference.
+ *
+ * ── Off unless somebody turns it on ────────────────────────────────────────
+ *
+ * TRANSCRIPTION_CHAIN is empty by default, which means no microphone appears
+ * anywhere and no provider is ever called. That is deliberate: every provider
+ * here bills per use, and a feature that quietly starts spending because a key
+ * for something else happens to be present is not a feature anybody chose.
+ *
+ * Gemini in particular would have switched itself on the moment it was added,
+ * because GOOGLE_API_KEY is already set for generation — the same key, the same
+ * bill, no decision taken.
+ *
+ * To turn it on, set the variable to the providers to try, in order:
+ *
+ *   TRANSCRIPTION_CHAIN=gemini                      cheapest, key already funded
+ *   TRANSCRIPTION_CHAIN=elevenlabs,gemini           best accents, needs a paid plan
+ *
+ * Nothing else changes. The screen asks the server whether voice is available
+ * before it offers a microphone, so the button appears and disappears with this
+ * one variable and no redeploy of the frontend.
  */
-const CHAIN = (process.env.TRANSCRIPTION_CHAIN || 'elevenlabs,openai,gemini')
+const CHAIN = (process.env.TRANSCRIPTION_CHAIN || '')
   .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
 /**

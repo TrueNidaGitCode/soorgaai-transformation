@@ -86,8 +86,29 @@ export const MOTIONS = [
     message: [
       'Hi {{name}},',
       '',
-      'We’re building SvargAI — it turns a business or engineering objective described in '
-        + 'plain English into a working AI application in less than 30 minutes, at around $0.10.',
+      /**
+       * The positioning sentence, and the reason it is not about speed.
+       *
+       * This used to open with "a working AI application in less than 30
+       * minutes, at around $0.10" — almost word for word the claim Lovable and
+       * Bolt make. It invited exactly that comparison, filing Svarg next to
+       * consumer app builders where the questions are about price and speed
+       * rather than about the reader's business.
+       *
+       * It also undersold the product: Aria reads their real data sources, Arth
+       * picks a model against their constraints, and Yusu integrates the result
+       * into a codebase they already run. None of that is app-building.
+       *
+       * "Existing" is the word doing the work. It says brownfield, integration
+       * and enterprise, and it is a claim an app builder cannot make.
+       *
+       * The speed and the cost are still true and still useful — as evidence,
+       * once somebody believes Svarg does serious work. Not as the first thing
+       * they read.
+       */
+      'We’re building SvargAI — it transforms existing business workflows and products with AI. '
+        + 'You describe a real problem your team has, and Svarg works out where AI fits, builds '
+        + 'the solution, and integrates it into the systems you already run.',
       '',
       'Would really appreciate it if you could spend a few minutes trying the product:',
       '{{link}}',
@@ -141,16 +162,18 @@ export const MOTIONS = [
      * whether your product belongs in a demonstration they already give, and
      * the argument is about their clients' problem rather than yours.
      */
-    messageSubject: 'AI training → working AI applications',
+    messageSubject: 'After AI training — getting it into production',
     message: [
       'Hi {{name}},',
       '',
-      'I’m building SvargAI — it turns a business or engineering objective described in '
-        + 'plain English into a working AI application in less than 30 minutes.',
+      'I’m building SvargAI — it transforms existing business workflows and products with AI.',
       '',
+      // "inside the systems they already run" is the whole pitch to a trainer.
+      // The gap they watch their clients fall into is not writing the solution,
+      // it is landing it in software that is already in production.
       'I’ve been thinking about the journey after AI training: companies learn AI, identify '
-        + 'use cases, and then often struggle with actually turning those ideas into working '
-        + 'solutions.',
+        + 'use cases, and then often struggle to turn those ideas into working solutions '
+        + 'inside the systems they already run.',
       '',
       'I think SvargAI could fit naturally into that gap.',
       '',

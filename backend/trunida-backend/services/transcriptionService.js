@@ -103,9 +103,21 @@ export async function transcribe(audio, mimeType = 'audio/webm') {
 
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
-    if (res.status === 401) throw new TranscriptionError('The transcription key was rejected.', 502);
+
+    /**
+     * Say what THEY said, including on a 401.
+     *
+     * This used to collapse every 401 to "the transcription key was rejected",
+     * which is the least useful true sentence available: a rejected key, a key
+     * without the speech-to-text permission, an account with no credit and a
+     * model the plan does not include all arrive as 401 and all need different
+     * fixes. Swallowing the provider's own explanation at exactly the moment
+     * somebody needs it is the same failure as a stale error on a lead row.
+     *
+     * The body is a diagnostic, not a secret — it never contains the key.
+     */
     throw new TranscriptionError(
-      `Transcription failed (${res.status})${detail ? `: ${detail.slice(0, 160)}` : ''}.`, 502);
+      `Transcription failed (${res.status})${detail ? `: ${detail.slice(0, 300)}` : ' with no detail'}.`, 502);
   }
 
   const data = await res.json().catch(() => null);

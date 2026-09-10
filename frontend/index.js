@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wirePrimaryCta();
     wireSidebar();
     wireSidebarBlueprints();
+    wireBlueprintsFlyout();
     wireTopbarAuth();
     wireHeroPrompt();
     const authModal = wireAuthModal();
@@ -324,6 +325,42 @@ export async function wireKnowledgeSourcesIndicator() {
  * Signed-in  → list the user's blueprints; clicking one opens it in the workspace.
  * Anonymous  → show the guest preview blueprint if one exists.
  */
+/**
+ * Your blueprints, from the rail.
+ *
+ * The list used to hold a permanent column on the left. It is worth reading
+ * once a session and never again after that, so it is behind an icon now — the
+ * width goes back to the question, and the objectives are one press away.
+ *
+ * wireSidebarBlueprints still fills #side-blueprints; this only decides when
+ * it is on screen.
+ */
+function wireBlueprintsFlyout() {
+  const btn = document.getElementById('sv-bps-btn');
+  const panel = document.getElementById('sv-bps');
+  if (!btn || !panel) return;
+
+  const setOpen = (open) => {
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    btn.classList.toggle('sv-rail__btn--on', open);
+  };
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setOpen(panel.hidden);
+  });
+
+  // Anywhere else, and Escape. A panel that only closes by pressing the same
+  // icon again is a panel people leave open and then work around.
+  document.addEventListener('click', (e) => {
+    if (!panel.hidden && !panel.contains(e.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !panel.hidden) setOpen(false);
+  });
+}
+
 export async function wireSidebarBlueprints() {
     const wrap = document.getElementById('side-blueprints');
     if (!wrap) return;
@@ -516,7 +553,30 @@ async function wireAnswerModes({ form, input, counter, errEl }) {
     bars.push(b);
   }
 
+  let idleTimer = 0;
+  let phase = 0;
+
   const rest = () => bars.forEach((b, i) => { b.style.height = Math.max(3, restHeight(i)) + 'px'; });
+
+  /**
+   * A slow travelling swell while idle.
+   *
+   * Not pretending to hear anything — the panel says "Tap to speak" — but a
+   * row of motionless dots reads as a broken control, and this is the one
+   * screen where nothing may look broken.
+   */
+  function idleAnimate(on) {
+    clearInterval(idleTimer);
+    idleTimer = 0;
+    if (!on) return;
+    idleTimer = setInterval(() => {
+      phase += 0.16;
+      bars.forEach((b, i) => {
+        const swell = Math.sin(phase + i * 0.42) * 0.5 + 0.5;
+        b.style.height = (4 + restHeight(i) * 0.55 * (0.45 + swell * 0.55)).toFixed(1) + 'px';
+      });
+    }, 90);
+  }
 
   function show(mode) {
     const speaking = mode === 'speak';
@@ -527,6 +587,7 @@ async function wireAnswerModes({ form, input, counter, errEl }) {
     chatPane.hidden = speaking;
     speakPane.hidden = !speaking;
     if (!speaking && recorder.isRecording()) recorder.stop();
+    idleAnimate(speaking && !recorder.isRecording());
     if (!speaking) input.focus();
   }
 
@@ -557,7 +618,9 @@ async function wireAnswerModes({ form, input, counter, errEl }) {
           : st === 'working' ? 'One moment'
           : 'Describe it the way you would explain it to a colleague';
       }
-      if (st !== 'recording') rest();
+      // Real levels while recording; the idle swell whenever it is not.
+      idleAnimate(st !== 'recording');
+      if (st === 'working') rest();
     },
     onError: say,
     onText: (text) => {
@@ -576,7 +639,21 @@ async function wireAnswerModes({ form, input, counter, errEl }) {
   });
 
   chatBtn.addEventListener('click', () => show('chat'));
-  speakBtn.addEventListener('click', () => { say(''); show('speak'); });
+
+  /**
+   * Picking Speak starts listening.
+   *
+   * The alternative is choosing Speak and then pressing a microphone, which is
+   * two decisions for one intention. The browser still asks permission the
+   * first time, so nothing records without consent — and if that is refused,
+   * onError says so and the panel falls back to its resting state.
+   */
+  speakBtn.addEventListener('click', () => {
+    say('');
+    show('speak');
+    if (!recorder.isRecording()) recorder.start();
+  });
+
   mic.addEventListener('click', () => recorder.toggle());
 }
 

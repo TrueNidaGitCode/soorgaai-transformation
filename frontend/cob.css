@@ -536,3 +536,75 @@ body.landing2 {
    tab you do not press. */
 .sv-mode { color: rgba(255, 255, 255, 0.72); }
 .sv-mode:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+
+/* ── The toggle, above the box ────────────────────────────────────────────
+   Outside the card now. It chooses which card you get, so it belongs above
+   the thing it changes rather than inside one of the two answers. */
+
+.sv-modes {
+  align-self: center;
+  margin-bottom: 14px;
+}
+
+/* ── Your blueprints ──────────────────────────────────────────────────────
+   A flyout from the rail rather than a permanent column. The list is worth
+   reading once a session; the width it used to hold is worth more to the
+   question in the middle of the screen. */
+
+.sv-bps {
+  position: fixed;
+  top: 62px;
+  left: calc(var(--sv-rail) + 10px);
+  z-index: 30;
+  width: 310px;
+  max-height: min(66vh, 520px);
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid var(--sv-line);
+  border-radius: 14px;
+  background: rgba(14, 17, 21, 0.96);
+  box-shadow: 0 24px 60px -22px rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(16px);
+}
+
+.sv-bps__head {
+  margin: 0 0 8px;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sv-faint);
+}
+
+.sv-bps__list { display: flex; flex-direction: column; gap: 2px; }
+
+/* The objective itself is the label — a blueprint called "Blueprint 3" tells
+   you nothing about which one to open. */
+.sv-bps__list .side__bp {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font: inherit;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+
+.sv-bps__list .side__bp:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.sv-bps__list .side__bp--generating { color: var(--sv-accent); }
+
+.sv-bps__list .side__bps-empty,
+.sv-bps__list .side__bps-error {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--sv-faint);
+}
+
+.sv-bps__list .side__bps-error { color: #FCA5A5; }

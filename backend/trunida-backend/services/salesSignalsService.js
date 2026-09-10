@@ -43,6 +43,7 @@ import HostedDeployment from '../models/HostedDeployment.js';
 import UsageLedger from '../models/UsageLedger.js';
 import AccountPlan from '../models/AccountPlan.js';
 import ColdLead from '../models/ColdLead.js';
+import SiteVisit from '../models/SiteVisit.js';
 import UserProfile from '../models/UserProfile.js';
 import { classify } from './accountKindService.js';
 import { isMotion, laneOf, motionEmails, motionSharesLink, fieldsFor, DEFAULT_MOTION } from './gtmMotions.js';
@@ -107,7 +108,7 @@ function objectiveKey(text) {
 // ── Collection ───────────────────────────────────────────────────────────────
 
 export async function collectSignals() {
-  const [users, blueprints, apps, deployments, ledgers, plans, leads, profiles] = await Promise.all([
+  const [users, blueprints, apps, deployments, ledgers, plans, leads, profiles, siteVisits] = await Promise.all([
     User.find({}).select('_id email name role createdAt accountKind').lean(),
     TransformationBlueprint.find({ archived: { $ne: true } })
       .select('_id userId guestId guestMeta businessObjective status createdAt opportunityApproval')
@@ -121,6 +122,14 @@ export async function collectSignals() {
     // the user, so an account with no profile yet simply has no organisation —
     // which is a real state (signed up, never completed setup), not a gap.
     UserProfile.find({}).select('userId orgName websiteUrl').lean(),
+    /**
+     * People who opened the site, whether or not they went on to try it.
+     *
+     * Capped and newest-first: this is the only collection here that grows
+     * with traffic rather than with customers, and a board that gets slower
+     * the better marketing works is a board that stops being read.
+     */
+    SiteVisit.find({}).sort({ createdAt: -1 }).limit(500).lean(),
   ]);
 
   const orgOf = new Map(profiles.map(p => [String(p.userId), p.orgName || '']));
@@ -376,6 +385,74 @@ export async function collectSignals() {
   // have come from the link in one person's email.
   const leadByRef = new Map(leads.filter(l => l.refCode).map(l => [l.refCode, l]));
 
+  /**
+   * Everyone who opened the site, grouped into one row per visitor.
+   *
+   * Sits above Discovery rather than inside it, because they answer different
+   * questions. Discovery says "somebody described a business problem" — real
+   * intent, rare, worth a call. This says "somebody looked", which is the
+   * number that tells you whether the outreach reached anyone at all.
+   *
+   * Reported apart from the five stages and never added to their counts: a
+   * visit is not a stage, and folding it in would break the one property the
+   * board is built on — that each account appears exactly once, at its
+   * furthest stage, so the five numbers form a funnel that adds up.
+   */
+  const visitsBy = new Map();
+  for (const v of siteVisits) {
+    // A visitor with no id (private mode, storage blocked) is grouped by
+    // address instead, which is the closest honest approximation.
+    const key = v.visitorId || `ip:${v.ip || 'unknown'}`;
+    if (!visitsBy.has(key)) {
+      visitsBy.set(key, {
+        key, visits: 0, at: v.createdAt, firstAt: v.createdAt,
+        ips: new Set(), countries: new Set(), refs: new Set(),
+        referers: new Set(), guestIds: new Set(),
+      });
+    }
+    const g = visitsBy.get(key);
+    g.visits += 1;
+    if (new Date(v.createdAt) > new Date(g.at)) g.at = v.createdAt;
+    if (new Date(v.createdAt) < new Date(g.firstAt)) g.firstAt = v.createdAt;
+    if (v.ip) g.ips.add(v.ip);
+    if (v.country) g.countries.add(v.country);
+    if (v.ref) g.refs.add(v.ref);
+    if (v.referer) g.referers.add(v.referer);
+    if (v.guestId) g.guestIds.add(v.guestId);
+  }
+
+  const visits = [...visitsBy.values()].map(g => {
+    const ips = [...g.ips];
+    const fromLead = [...g.refs].map(r => leadByRef.get(r)).filter(Boolean)[0] || null;
+    return {
+      key: g.key,
+      at: g.at,
+      firstAt: g.firstAt,
+      visits: g.visits,
+      ips,
+      // Said explicitly. A blank IP column reads as "a different visitor" when
+      // it actually means the address was never captured.
+      ipLabel: ips.length ? ips.join(', ') : 'not recorded',
+      countries: [...g.countries],
+      refs: [...g.refs],
+      // Which lead's link brought them — the difference between "someone
+      // looked" and "the person you messaged on Tuesday looked".
+      fromLead: fromLead
+        ? { contact: contactOf(fromLead), company: fromLead.company || '', motion: fromLead.motion || DEFAULT_MOTION }
+        : null,
+      referers: [...g.referers],
+      /**
+       * Did looking turn into trying?
+       *
+       * The whole point of recording visits. A page that everyone opens and
+       * nobody uses is a copy problem; nobody opening it is a delivery
+       * problem. One number cannot tell those apart, and these two can.
+       */
+      generated: g.guestIds.size > 0,
+      guestIds: [...g.guestIds],
+    };
+  }).sort(byRecency);
+
   const discovery = [...grouped.values()].map(g => {
     const ips = [...g.ips];
     const fromLead = [...g.refs].map(r => leadByRef.get(r)).filter(Boolean)[0] || null;
@@ -607,6 +684,16 @@ export async function collectSignals() {
     outreach, discovery, conversion, onboarding, sales,
     accounts: accountList,
     converted,
+    // Deliberately outside `counts`. A visit is not a stage: adding it would
+    // break the property the whole board rests on, which is that the five
+    // numbers are a funnel each account appears in exactly once.
+    visits,
+    visitTotals: {
+      people: visits.length,
+      sessions: visits.reduce((n, v) => n + v.visits, 0),
+      generated: visits.filter(v => v.generated).length,
+      fromOutreach: visits.filter(v => v.fromLead).length,
+    },
     counts: {
       outreach: outreach.length, discovery: discovery.length, conversion: conversion.length,
       onboarding: onboarding.length, sales: sales.length,

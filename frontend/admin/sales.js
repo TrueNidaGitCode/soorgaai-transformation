@@ -844,8 +844,58 @@ function renderLaneTables(s, laneKey) {
   return out;
 }
 
+/**
+ * Who opened the site, above who used it.
+ *
+ * Discovery has always meant "generated a blueprint" — real intent, and rare.
+ * Everyone who opened the link, read the page and left used to leave no trace
+ * at all, which made an empty Discovery column ambiguous in the worst possible
+ * way: nobody came, or everybody came and bounced. Those call for opposite
+ * fixes — one is a delivery problem, the other a copy problem — and the board
+ * could not tell you which you had.
+ */
+function renderVisits(s) {
+  const t = s.visitTotals || { people: 0, sessions: 0, generated: 0, fromOutreach: 0 };
+  const rows = s.visits || [];
+
+  const summary = `<div class="sg-kpi">
+    <div class="sg-kpi__item"><span class="sg-kpi__n">${t.people}</span> opened the site</div>
+    <div class="sg-kpi__item"><span class="sg-kpi__n">${t.sessions}</span> sessions</div>
+    <div class="sg-kpi__item"><span class="sg-kpi__n">${t.fromOutreach}</span> from your outreach</div>
+    <div class="sg-kpi__item"><span class="sg-kpi__n">${t.generated}</span> went on to generate</div>
+  </div>`;
+
+  if (!rows.length) {
+    return summary + `<p class="field-hint">No visits recorded yet. Visits are counted from the
+      moment this shipped — anything before that was never captured, and a zero here does not
+      mean nobody came in the past.</p>`;
+  }
+
+  return summary + table(
+    ['Sessions', 'Last seen', 'IP', 'Country', 'Came from', 'Referrer', 'Then what'],
+    rows,
+    r => `<tr>
+      <td><span class="sg-visits ${r.visits > 1 ? 'sg-visits--repeat' : ''}">${r.visits}×</span></td>
+      <td class="sg-age">${age(r.at)}</td>
+      <td class="sg-note">${r.ips.length
+        ? `<span class="sg-ip">${esc(r.ips.join(', '))}</span>`
+        : '<span class="sg-unknown" title="The request arrived without one — never the same as another blank">not recorded</span>'}</td>
+      <td>${countryCell(r.countries[0] || '')}</td>
+      <td>${r.fromLead
+        ? `<span class="sg-todo">${esc(r.fromLead.contact)}</span>${r.fromLead.company
+            ? `<div class="sg-note">${esc(r.fromLead.company)}</div>` : ''}`
+        : '<span class="sg-unknown" title="No tracked link — they found the site some other way">direct</span>'}</td>
+      <td class="sg-note">${esc(clip(r.referers[0] || '', 28)) || '<span class="sg-unknown">—</span>'}</td>
+      <td>${r.generated
+        ? '<span class="sg-pill">generated a blueprint</span>'
+        : '<span class="sg-unknown">looked and left</span>'}</td>
+    </tr>`);
+}
+
 function renderDiscovery(s) {
-  return table(
+  return renderVisits(s) + `
+    <h3 class="sg-group__head sg-group__head--spaced">Generated a blueprint
+      <span class="sg-group__n">${visible(s.discovery).length}</span></h3>` + table(
     ['Visits', 'Last seen', 'Guest', 'Organisation', 'Country', 'Objective', 'IP', 'What happened'],
     visible(s.discovery),
     r => `<tr>

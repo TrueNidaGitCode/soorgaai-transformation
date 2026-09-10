@@ -1413,3 +1413,42 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   font-variant-numeric: tabular-nums;
   color: var(--accent-green, #5CC5A7);
 }
+
+/* ── Opened the site ───────────────────────────────────────────────────────────
+   The number above Discovery. Presented as a summary strip because it is read
+   at a glance and acted on rarely — unlike the rows beneath it, where every
+   line is somebody to call. */
+
+.sg-kpi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+  margin: 0 0 1.1rem;
+  padding: 0.85rem 1.15rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.sg-kpi__item {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.sg-kpi__n {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary, #FFFFFF);
+  margin-right: 0.3rem;
+}
+
+/* An address is read character by character when it is compared with another,
+   so it gets a monospace face and does not wrap mid-octet. */
+.sg-ip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.sg-group__head--spaced { margin-top: 1.9rem; }

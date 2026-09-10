@@ -8,6 +8,12 @@
 
 import { MATURITY_STAGES } from './data/maturityStages.js';
 import { initMarketingNav } from './shared/marketingNav.js';
+import { onArrival, outreachRef } from './shared/visitor.js';
+
+// Before anything renders. This is the page tracked links point at, so it is
+// the only place the ref can be captured — and it was not being captured
+// anywhere, which is why every tracked link ever sent attributed nothing.
+onArrival();
 
 document.addEventListener('DOMContentLoaded', () => {
   initMarketingNav();
@@ -198,7 +204,11 @@ function wireCtaButtons() {
   const ids = ['mkt-cta-hero'];
   ids.forEach((id) => {
     document.getElementById(id)?.addEventListener('click', () => {
-      window.location.href = '/cob.html';
+      // Carry the ref across. localStorage already holds it, so this is
+      // belt-and-braces — but a visitor with storage blocked would otherwise
+      // lose the attribution entirely at exactly this line.
+      const ref = outreachRef();
+      window.location.href = ref ? `/cob.html?ref=${encodeURIComponent(ref)}` : '/cob.html';
     });
   });
 }

@@ -85,6 +85,24 @@ export async function countryForIp(ip) {
  * through a stale in-memory document would risk clobbering whatever the
  * generation run has written since.
  */
+/**
+ * The same lookup, for a record that keeps country at the top level.
+ *
+ * A blueprint nests this under guestMeta because the whole visitor record is
+ * nested there; a SiteVisit IS the visitor record, so it does not. Rather than
+ * teach one function about two shapes, there are two functions — the important
+ * part being that neither writes to a path the model does not have, which fails
+ * silently in Mongoose and would leave every country blank with nothing said.
+ */
+export function resolveVisitCountry(Model, id, ip) {
+  countryForIp(ip)
+    .then(geo => {
+      if (!geo) return null;
+      return Model.updateOne({ _id: id }, { $set: { country: geo.country, countryName: geo.countryName } });
+    })
+    .catch(err => console.error('[geo] non-fatal:', err.message));
+}
+
 export function resolveCountryInBackground(Model, id, ip) {
   countryForIp(ip)
     .then(geo => {

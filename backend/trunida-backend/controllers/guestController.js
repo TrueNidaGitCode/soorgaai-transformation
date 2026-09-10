@@ -17,6 +17,7 @@
 import crypto from 'crypto';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { resolveCountryInBackground } from '../services/geoService.js';
+import SiteVisit from '../models/SiteVisit.js';
 import { enabledDomains } from '../config/domainRegistry.js';
 import { getDomainCapabilities } from '../services/strategyCanvasService.js';
 import { generateSpecificDomainsAsync } from '../services/blueprintGenerationService.js';
@@ -110,6 +111,26 @@ export async function startGuestGeneration(req, res) {
     // Never awaited: a preview must not wait on a geolocation service — see
     // services/geoService.js.
     resolveCountryInBackground(TransformationBlueprint, blueprint._id, req.ip);
+
+    /**
+     * Close the loop on the visit that brought them.
+     *
+     * The landing page recorded that someone opened the site; this says that
+     * same someone went on to actually try it. Without the link the two records
+     * stay separate and the only question worth asking of them — how many of
+     * the people who looked went on to build something — cannot be answered.
+     *
+     * Matched on visitorId where the page sent one, falling back to the most
+     * recent visit from this address. Never awaited and never fatal: a preview
+     * that generated is worth more than a tidy join.
+     */
+    const visitorId = String(req.body?.visitorId || '').slice(0, 64);
+    const match = visitorId ? { visitorId } : { ip: req.ip || '__none__' };
+    SiteVisit.findOneAndUpdate(
+      { ...match, guestId: '' },
+      { $set: { guestId } },
+      { sort: { createdAt: -1 } }
+    ).catch(err => console.error('[visit] link non-fatal:', err.message));
 
     attributeGuest(guestId);
     beginRun(`guest preview ${blueprint._id}`);

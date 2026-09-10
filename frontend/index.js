@@ -8,39 +8,22 @@
  */
 
 import { MATURITY_STAGES } from './data/maturityStages.js';
+import { captureOutreachRef, outreachRef, clearOutreachRef, visitorId, recordVisit }
+  from './shared/visitor.js';
 
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';
-const OUTREACH_REF_KEY = 'svarg_outreach_ref';
-
 /**
- * The ref code from a cold email's link, remembered across the visit.
+ * Ref capture and the visit beacon now live in shared/visitor.js, because this
+ * file is loaded by cob.html and every tracked link lands on index.html. Both
+ * pages call the same code; the ref survives the hop between them in
+ * localStorage.
  *
- * Captured on arrival and stored, because the prompt box is rarely used on the
- * first pageview — people read, wander, come back. Reading it only at submit
- * time would attribute nothing the moment the query string is gone.
- *
- * Stored rather than kept in a variable so it survives the navigation into the
- * blueprint view. Cleared once used: a ref belongs to one prospect, and a stale
- * one would quietly credit their visit to someone else's email.
+ * Called again here rather than only on the marketing page: cob.html is also
+ * reachable directly, and both functions are safe to run twice.
  */
-function captureOutreachRef() {
-    try {
-        const ref = new URLSearchParams(window.location.search).get('ref');
-        if (ref) localStorage.setItem(OUTREACH_REF_KEY, ref.slice(0, 64));
-    } catch { /* private mode — attribution is not worth an exception */ }
-}
-
-function outreachRef() {
-    try { return localStorage.getItem(OUTREACH_REF_KEY) || ''; } catch { return ''; }
-}
-
-/** Called once the ref has been spent on a generation. See the call site. */
-function clearOutreachRef() {
-    try { localStorage.removeItem(OUTREACH_REF_KEY); } catch { /* nothing to do */ }
-}
-
 captureOutreachRef();
+recordVisit();
 
 // New users have no UserProfile yet — detour through profile setup once,
 // then on to the original destination. A failed check fails open (never
@@ -575,7 +558,7 @@ export function wireHeroPrompt() {
                     // ref comes from ?ref= on a cold email's link, stashed on
                     // arrival. Without it a prospect who was emailed is
                     // indistinguishable from a stranger who found the site.
-                    body: JSON.stringify({ businessObjective: objective, ref: outreachRef() }),
+                    body: JSON.stringify({ businessObjective: objective, ref: outreachRef(), visitorId: visitorId() }),
                 });
                 if (!resp.ok) {
                     const { error } = await resp.json().catch(() => ({}));

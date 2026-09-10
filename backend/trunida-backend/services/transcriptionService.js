@@ -7,34 +7,45 @@
  * description than typing does, because it is how they would explain it to a
  * colleague.
  *
- * ── Why ElevenLabs Scribe ───────────────────────────────────────────────────
+ * ── Which provider, and why there are three ────────────────────────────────
  *
- * Wispr Flow was the first choice and cannot be used: it is a desktop app, and
- * its API is closed to new partners. (Worth knowing that Flow already works
- * with Svarg for anyone who has it installed — it types into any field, so the
- * objective box is already dictatable today. This is for everyone else.)
+ * Wispr Flow was the first choice and cannot be used: it is a desktop app and
+ * its API is closed to new partners. (It already works with Svarg for anyone
+ * who has it installed, since it types into any field. This is for everyone
+ * else.)
  *
- * Scribe is a public API with self-serve keys, cheaper than Whisper ($0.22/hr
- * against roughly $0.36) and built to hold accuracy across accents and
- * dialects. That last part decides it: most of the people describing an
- * objective into this box speak Indian-accented English, and that is precisely
- * where the browser's own speech API falls apart.
+ * ElevenLabs Scribe was the second, and is still first in the chain: it holds
+ * accuracy across accents better than the alternatives, which decides it —
+ * most people describing an objective into this box speak Indian-accented
+ * English, and that is exactly where cheaper speech recognition falls apart.
  *
- * ── Why the batch endpoint and not the realtime one ─────────────────────────
+ * It is first in the chain rather than the only entry because every provider
+ * here failed for a different billing reason on the way in, and none of those
+ * failures were visible until the code stopped summarising them:
  *
- * Scribe v2 Realtime streams words as you speak, over a WebSocket, for $0.39/hr.
- * It feels better. It also needs WebSocket infrastructure this backend does not
- * have, and a 30-second objective costs a fifth of a cent either way. Record,
- * stop, transcribe is the honest first version; realtime is an upgrade that
- * changes no interface but this file.
+ *   elevenlabs  free tier refuses datacenter addresses, and Railway is one
+ *   openai      key valid, account out of credit
+ *   gemini      funded, working, and already paying for every generation
+ *
+ * So the order is preference, and the fallback is what makes the feature ship
+ * without waiting on a subscription. Fund any provider above the one currently
+ * answering and it takes over on the next request, with nothing to redeploy.
+ *
+ * ── Batch, not realtime ────────────────────────────────────────────────────
+ *
+ * Scribe v2 Realtime streams words as you speak, over a WebSocket. It feels
+ * better. It also needs WebSocket infrastructure this backend does not have,
+ * and a 30-second objective costs a fifth of a cent either way. Record, stop,
+ * transcribe is the honest first version; realtime is an upgrade that changes
+ * no interface but this file.
  *
  * ── Why no multer ──────────────────────────────────────────────────────────
  *
  * Svarg's backend accepts no multipart bodies anywhere by deliberate choice
  * (see controllers/uploadController.js). The browser sends base64 inside JSON,
- * matching how folder uploads already work, and THIS file builds the multipart
- * request — as a client, using Node 22's native FormData and Blob. No new
- * dependency, and no new class of request the server has to accept.
+ * matching how folder uploads already work, and this file builds a multipart
+ * request where one is needed — as a client, using Node 22's native FormData
+ * and Blob. No new dependency, and no new class of request the server accepts.
  */
 
 const TIMEOUT_MS = 30000;
@@ -59,45 +70,120 @@ const TIMEOUT_MS = 30000;
  * most people describing an objective into this box speak Indian-accented
  * English. Whisper is the floor, not the preference.
  */
-const CHAIN = (process.env.TRANSCRIPTION_CHAIN || 'elevenlabs,openai')
+const CHAIN = (process.env.TRANSCRIPTION_CHAIN || 'elevenlabs,openai,gemini')
   .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
+/**
+ * Each provider owns its whole request.
+ *
+ * They do not share a shape: the two speech APIs take multipart uploads, and
+ * Gemini takes the audio inline in a JSON generateContent call like any other
+ * part of a prompt. A common "build a form" helper would have to grow a special
+ * case for the third one, which is how a helper becomes the thing you work
+ * around. Each `run` returns {text, language} or throws.
+ */
 const PROVIDERS = {
   elevenlabs: {
-    keyEnv: 'ELEVENLABS_API_KEY',
-    url: 'https://api.elevenlabs.io/v1/speech-to-text',
-    model: () => process.env.ELEVENLABS_STT_MODEL || 'scribe_v2',
-    headers: () => ({ 'xi-api-key': process.env.ELEVENLABS_API_KEY }),
-    form: (blob, name, model) => {
-      const f = new FormData();
-      f.append('file', blob, name);
-      f.append('model_id', model);
-      return f;
+    hasKey: () => !!process.env.ELEVENLABS_API_KEY,
+    async run(audio, mimeType, ext) {
+      const form = new FormData();
+      form.append('file', new Blob([audio], { type: mimeType }), `speech.${ext}`);
+      form.append('model_id', process.env.ELEVENLABS_STT_MODEL || 'scribe_v2');
+
+      const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+        method: 'POST',
+        headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY },
+        body: form,
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!res.ok) throw await providerError(res);
+      const d = await res.json().catch(() => null);
+      return { text: d?.text || '', language: d?.language_code || '' };
     },
-    textOf: (d) => d?.text,
   },
 
   openai: {
-    keyEnv: 'OPENAI_API_KEY',
-    url: 'https://api.openai.com/v1/audio/transcriptions',
-    // whisper-1 rather than the newer transcribe models: it is on every account
-    // that has any OpenAI access at all, and a default that 404s on somebody's
-    // plan is a default that fails for a reason they cannot see.
-    model: () => process.env.OPENAI_STT_MODEL || 'whisper-1',
-    headers: () => ({ Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }),
-    form: (blob, name, model) => {
-      const f = new FormData();
-      f.append('file', blob, name);
-      f.append('model', model);
-      return f;
+    hasKey: () => !!process.env.OPENAI_API_KEY,
+    async run(audio, mimeType, ext) {
+      const form = new FormData();
+      form.append('file', new Blob([audio], { type: mimeType }), `speech.${ext}`);
+      // whisper-1 rather than the newer transcribe models: it is on every
+      // account with any OpenAI access at all, and a default that 404s on
+      // somebody's plan fails for a reason they cannot see.
+      form.append('model', process.env.OPENAI_STT_MODEL || 'whisper-1');
+
+      const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+        body: form,
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!res.ok) throw await providerError(res);
+      const d = await res.json().catch(() => null);
+      return { text: d?.text || '', language: '' };
     },
-    textOf: (d) => d?.text,
+  },
+
+  /**
+   * Gemini, which is the one that actually works here.
+   *
+   * Not a speech API — a multimodal model given the audio as a part of a
+   * prompt. Worth having in the chain for a reason beyond quality: it is the
+   * only provider on this server with credit on it. Every blueprint Svarg has
+   * ever generated went through this key, so transcription costs nothing new to
+   * set up and fails only when generation is already failing.
+   */
+  gemini: {
+    hasKey: () => !!(process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY),
+    async run(audio, mimeType) {
+      const key = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+      const model = process.env.GEMINI_STT_MODEL || process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                {
+                  // Explicit about what NOT to do. Asked plainly to "transcribe",
+                  // a chat model will happily answer the question it heard, or
+                  // preface the transcript with "Sure, here is". Either would
+                  // land in the objective box as if the speaker had typed it.
+                  text: 'Transcribe this audio exactly. Output only the transcription, '
+                    + 'with no preamble, no commentary, no quotation marks and no formatting. '
+                    + 'If there is no speech, output nothing at all.',
+                },
+                { inline_data: { mime_type: mimeType, data: Buffer.from(audio).toString('base64') } },
+              ],
+            }],
+            generationConfig: { temperature: 0 },
+          }),
+        });
+
+      if (!res.ok) throw await providerError(res);
+      const d = await res.json().catch(() => null);
+      const text = (d?.candidates?.[0]?.content?.parts || [])
+        .map(p => p?.text || '').join('').trim();
+      return { text, language: '' };
+    },
   },
 };
 
+/** The provider's own words, kept for the chain to report. */
+async function providerError(res) {
+  const detail = await res.text().catch(() => '');
+  const err = new Error(`${res.status}${detail ? `: ${detail.slice(0, 260)}` : ''}`);
+  err.isProvider = true;
+  return err;
+}
+
 /** The providers that are actually usable right now, in preference order. */
 function availableProviders() {
-  return CHAIN.filter(name => PROVIDERS[name] && process.env[PROVIDERS[name].keyEnv]);
+  return CHAIN.filter(name => PROVIDERS[name]?.hasKey());
 }
 
 /** Roughly two minutes of Opus. Enough for any objective, small enough to post. */
@@ -141,55 +227,39 @@ export async function transcribe(audio, mimeType = 'audio/webm') {
 
   // The extension matters to some decoders even though the type is declared.
   const ext = /ogg/.test(mimeType) ? 'ogg' : /mp4|m4a/.test(mimeType) ? 'mp4' : /wav/.test(mimeType) ? 'wav' : 'webm';
-  const blob = new Blob([audio], { type: mimeType });
 
   const failures = [];
 
   for (const name of usable) {
-    const p = PROVIDERS[name];
     try {
-      const res = await fetch(p.url, {
-        method: 'POST',
-        headers: p.headers(),
-        body: p.form(blob, `speech.${ext}`, p.model()),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
-
-      if (!res.ok) {
-        const detail = await res.text().catch(() => '');
-        /**
-         * The provider's own words, kept verbatim, including on a 401.
-         *
-         * Collapsing every 401 to "the key was rejected" is the least useful
-         * true sentence available: a wrong key, a key missing the
-         * speech-to-text permission, and a free account blocked for running on
-         * a datacenter address all arrive as 401 and all need different fixes.
-         * Two of those three actually happened here, and the summary would
-         * have hidden both.
-         *
-         * The body is a diagnostic, never a secret — it does not contain a key.
-         */
-        failures.push(`${name} (${res.status})${detail ? `: ${detail.slice(0, 260)}` : ''}`);
-        continue;
-      }
-
-      const data = await res.json().catch(() => null);
-      const text = String(p.textOf(data) || '').trim();
+      const { text, language } = await PROVIDERS[name].run(audio, mimeType, ext);
+      const clean = String(text || '').trim();
 
       /**
        * Silence stops the chain rather than falling through.
        *
        * A recording with nothing in it will be empty at the next provider too,
-       * and trying again would spend a second call and several seconds to
-       * arrive at the same answer. It is also not a provider failure — it is a
-       * fact about the recording, and the speaker needs to hear that rather
-       * than watch the button spin.
+       * and trying again would spend a second call and several seconds to reach
+       * the same answer. It is also not a provider failure — it is a fact about
+       * the recording, and the speaker needs to hear that rather than watch the
+       * button spin.
        */
-      if (!text) throw new TranscriptionError('Nothing was heard in that recording.', 422);
+      if (!clean) throw new TranscriptionError('Nothing was heard in that recording.', 422);
 
-      return { text, language: String(data?.language_code || ''), provider: name };
+      return { text: clean, language: language || '', provider: name };
     } catch (err) {
       if (err instanceof TranscriptionError) throw err;
+      /**
+       * Each provider's own words, kept verbatim.
+       *
+       * Collapsing these into one summary is the least useful thing available:
+       * a key missing a permission, a free account blocked for running on a
+       * datacenter address, and an account with no credit all look the same
+       * summarised and need entirely different things done about them. All
+       * three actually happened while building this.
+       *
+       * A response body is a diagnostic, never a secret — it contains no key.
+       */
       failures.push(`${name}: ${err.name === 'TimeoutError' ? 'timed out' : err.message}`);
     }
   }

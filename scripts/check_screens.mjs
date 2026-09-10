@@ -385,13 +385,37 @@ setTimeout(async function () {
       if (!btn) bad('no chat launcher');
       else if (btn.textContent.trim() !== ${JSON.stringify(cfg.launcher)}) bad('launcher reads "' + btn.textContent.trim() + '"');
 
-      // Regression guard: the lane must start below the journey nav and must
-      // not reach over the page scrollbar.
-      var body = lane.closest('.rp-shell__body').getBoundingClientRect();
+      /**
+       * The lane is docked to the right edge now, not floating in a column.
+       *
+       * This used to assert a top of exactly 165px, which was the right guard
+       * for a panel that hovered beside the content and had twice drifted over
+       * it. Docked, the invariants that matter are different: it must reach the
+       * right edge without overhanging the scrollbar, it must start below the
+       * fixed header and journey rather than under them, and — the one that
+       * actually protects the reader — it must not sit on top of the content it
+       * is discussing.
+       */
       var l = lane.getBoundingClientRect();
-      out.laneTop = Math.round(l.top - body.top);
-      if (Math.abs(out.laneTop - 165) > 2) bad('lane top is ' + out.laneTop + ', expected 165');
-      if (Math.round(l.right) > document.documentElement.clientWidth) bad('lane overhangs the scrollbar');
+      var vw = document.documentElement.clientWidth;
+      out.laneTop = Math.round(l.top);
+      out.laneRight = Math.round(l.right);
+      out.laneWidth = Math.round(l.width);
+
+      if (out.laneRight > vw) bad('lane overhangs the scrollbar');
+      if (vw >= 1180) {
+        if (Math.abs(out.laneRight - vw) > 2) bad('lane is not flush to the right edge');
+        if (out.laneTop < 100) bad('lane starts at ' + out.laneTop + ', under the fixed header');
+
+        var main = scr.querySelector('.rp-main');
+        if (main) {
+          var m = main.getBoundingClientRect();
+          out.contentOverlap = Math.round(m.right - l.left);
+          if (out.contentOverlap > 0) {
+            bad('the panel covers the content by ' + out.contentOverlap + 'px');
+          }
+        }
+      }
     }
 
     // Aria's required-data table and connector tabs. The readiness denominator

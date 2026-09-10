@@ -1,0 +1,730 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   Svarg — the workspace shell, redesigned
+
+   Loaded after domain.css and deliberately an override layer rather than a
+   rewrite. domain.css is 355 KB across 1,715 classes and every one of the five
+   screens depends on it; replacing it to restyle a frame would put the whole
+   workspace at risk to change a border radius.
+
+   So this restyles what is already there — the top bar, the journey, the
+   opportunity card, the character panel — and adds only the two things that
+   did not exist: the icon rail and the role labels under each stage.
+
+   Scope: the shell applies to all five screens, because a frame that changes
+   when you click Aria reads as two different products. Only Cob's content is
+   rebuilt here.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+body.domain-page {
+  --ws-accent:   #22D9E8;
+  --ws-accent-2: #35E0C4;
+  --ws-glow:     rgba(34, 217, 232, 0.42);
+  --ws-soft:     rgba(34, 217, 232, 0.10);
+
+  --ws-ground:  #04080D;
+  --ws-panel:   rgba(12, 22, 30, 0.72);
+  --ws-line:    rgba(34, 217, 232, 0.16);
+  --ws-line-hi: rgba(34, 217, 232, 0.38);
+
+  --ws-text:  #EAF6F9;
+  --ws-muted: rgba(234, 246, 249, 0.56);
+  --ws-faint: rgba(234, 246, 249, 0.34);
+
+  --ws-rail: 64px;
+
+  background: var(--ws-ground);
+  color: var(--ws-text);
+}
+
+/* The same corner light as the first screen, so arriving here is continuous. */
+body.domain-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(56rem 38rem at 106% -6%,  rgba(34, 217, 232, 0.10), transparent 62%),
+    radial-gradient(50rem 36rem at -10% 104%, rgba(53, 224, 196, 0.08), transparent 62%);
+}
+
+/* ── Icon rail ────────────────────────────────────────────────────────────
+   New. The workspace had no persistent navigation at all — every route out
+   was a link in the top bar, which is why Help and Settings had nowhere to
+   live. Fixed, so it survives every screen change. */
+
+.ws-rail {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: var(--ws-rail);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 76px 0 16px;
+  background: rgba(6, 13, 19, 0.9);
+  border-right: 1px solid rgba(34, 217, 232, 0.1);
+  backdrop-filter: blur(14px);
+}
+
+.ws-rail__btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ws-faint);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+.ws-rail__btn:hover { color: var(--ws-text); background: rgba(34, 217, 232, 0.08); }
+
+.ws-rail__btn--on { color: var(--ws-accent); background: var(--ws-soft); }
+
+.ws-rail__btn--on::before {
+  content: '';
+  position: absolute;
+  left: -11px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ws-accent);
+  box-shadow: 0 0 10px var(--ws-glow);
+}
+
+.ws-rail__spacer { flex: 1; }
+
+/* Help and Settings carry their labels, because they are reached rarely and
+   an unlabelled icon you use once a month is an icon you never learn. */
+.ws-rail__foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0 2px;
+  border: none;
+  background: none;
+  color: var(--ws-faint);
+  font: inherit;
+  font-size: 0.62rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.ws-rail__foot:hover { color: var(--ws-text); }
+
+/* ── Top bar ──────────────────────────────────────────────────────────────── */
+
+body.domain-page .workspace-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 68px;
+  padding: 0 24px;
+  background: rgba(6, 13, 19, 0.92);
+  border-bottom: 1px solid rgba(34, 217, 232, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+body.domain-page .workspace-nav__left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+body.domain-page .workspace-nav__logo { height: 38px; width: auto; }
+
+/* "← Home" becomes the hamburger the design shows: same destination, less ink,
+   and it stops competing with the logo beside it. */
+body.domain-page .workspace-nav__back {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--ws-muted);
+  font-size: 0;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+body.domain-page .workspace-nav__back::before {
+  content: '';
+  width: 18px;
+  height: 12px;
+  border-top: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  position: relative;
+}
+
+body.domain-page .workspace-nav__back::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 2px;
+  background: currentColor;
+}
+
+body.domain-page .workspace-nav__back:hover { color: var(--ws-text); background: rgba(34, 217, 232, 0.08); }
+
+body.domain-page .workspace-nav__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+body.domain-page .workspace-nav__link {
+  color: var(--ws-muted);
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+body.domain-page .workspace-nav__link:hover { color: var(--ws-text); }
+
+/* The account chip. The username used to be loose text next to a Logout
+   button; both now read as one control, which is what the design shows. */
+body.domain-page .workspace-nav__username {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 6px 5px 5px;
+  border: 1px solid var(--ws-line);
+  border-radius: 999px;
+  background: rgba(34, 217, 232, 0.06);
+  color: var(--ws-text);
+  font-size: 0.87rem;
+}
+
+body.domain-page .workspace-nav__username::before {
+  content: attr(data-initial);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--ws-accent-2), var(--ws-accent));
+  color: #032027;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+body.domain-page .workspace-nav__logout {
+  padding: 7px 14px;
+  border: 1px solid var(--ws-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ws-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+body.domain-page .workspace-nav__logout:hover { color: var(--ws-text); border-color: var(--ws-line-hi); }
+
+/* ── The journey ──────────────────────────────────────────────────────────
+   Circular nodes with the character's role beneath, and a rule running
+   between them. Numbers are gone: five products people are meant to learn by
+   name are not "step 3". */
+
+body.domain-page .rp-journey {
+  position: fixed;
+  top: 68px; left: var(--ws-rail); right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  gap: 0;
+  height: 78px;
+  padding: 0 26px;
+  margin: 0;
+  background: rgba(6, 13, 19, 0.72);
+  border-bottom: 1px solid rgba(34, 217, 232, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+body.domain-page .rp-journey::-webkit-scrollbar { display: none; }
+
+body.domain-page .pw-step {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 40px auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 11px;
+  cursor: pointer;
+  opacity: 1;
+}
+
+body.domain-page .pw-step__node {
+  grid-row: 1 / 3;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ws-line);
+  border-radius: 50%;
+  background: rgba(34, 217, 232, 0.05);
+  color: var(--ws-muted);
+  transition: border-color 0.18s, box-shadow 0.18s, color 0.18s, background 0.18s;
+}
+
+/* The number is replaced by the stage's own glyph, injected as a data
+   attribute so the markup in five screens did not have to change. */
+body.domain-page .pw-step__num { display: none; }
+
+body.domain-page .pw-step__label {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ws-muted);
+  transition: color 0.18s;
+}
+
+/* Added by workspaceShell.js — the role each character plays, which is the
+   part a first-time user actually needs. */
+body.domain-page .pw-step__role {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 0.76rem;
+  color: var(--ws-faint);
+  white-space: nowrap;
+}
+
+body.domain-page .pw-step--current .pw-step__node,
+body.domain-page .pw-step.is-active .pw-step__node {
+  border-color: var(--ws-accent);
+  background: rgba(34, 217, 232, 0.16);
+  color: var(--ws-accent);
+  box-shadow: 0 0 0 4px rgba(34, 217, 232, 0.1), 0 0 22px -4px var(--ws-glow);
+}
+
+body.domain-page .pw-step--current .pw-step__label,
+body.domain-page .pw-step.is-active .pw-step__label { color: var(--ws-accent); }
+
+body.domain-page .rp-journey__locked { opacity: 0.55; }
+body.domain-page .rp-journey__locked:hover { opacity: 0.8; }
+
+body.domain-page .pw-step-line {
+  flex: 1 1 auto;
+  height: 1px;
+  min-width: 18px;
+  margin: 0 14px;
+  background: linear-gradient(90deg, var(--ws-line), rgba(34, 217, 232, 0.06));
+}
+
+/* ── The screens sit below the fixed frame ────────────────────────────────── */
+
+body.domain-page .screen { position: relative; z-index: 1; }
+
+body.domain-page .rp-shell,
+body.domain-page .screen > .rp-shell {
+  padding-top: 146px;
+  padding-left: var(--ws-rail);
+  box-sizing: border-box;
+}
+
+body.domain-page .rp-main { padding: 26px 34px 40px; }
+
+/* ── Opportunity Discovery ────────────────────────────────────────────────── */
+
+body.domain-page .rp-main__head { margin-bottom: 22px; }
+
+body.domain-page .cob-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+body.domain-page .cob-title__icon { display: none; }
+
+/* ── The recommended card ────────────────────────────────────────────────── */
+
+body.domain-page .rp-winner-card {
+  position: relative;
+  padding: 26px 28px;
+  border: 1px solid var(--ws-line-hi);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(34, 217, 232, 0.07), rgba(12, 22, 30, 0.5) 46%),
+    var(--ws-panel);
+  box-shadow: inset 0 1px 0 rgba(34, 217, 232, 0.12), 0 26px 60px -34px #000;
+  overflow: hidden;
+}
+
+body.domain-page .pd-winner__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 20px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--ws-accent-2), var(--ws-accent));
+  color: #032027;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+body.domain-page .pd-winner__name {
+  margin: 0 0 10px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  color: var(--ws-text);
+}
+
+body.domain-page .pd-winner__why {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.97rem;
+  line-height: 1.65;
+  color: var(--ws-muted);
+}
+
+/* A rule above the actions, as in the design — it separates what this IS from
+   what you can do about it. */
+body.domain-page .rp-winner-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(34, 217, 232, 0.12);
+}
+
+/* View Full Blueprint — the filled action. */
+body.domain-page #opp-view-blueprint-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 26px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--ws-accent-2), var(--ws-accent));
+  color: #032027;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 24px -8px var(--ws-glow);
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+
+body.domain-page #opp-view-blueprint-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px -8px var(--ws-glow);
+}
+
+body.domain-page #opp-view-blueprint-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+
+/* Other AI Opportunities — text, because it is the alternative, not the path. */
+body.domain-page .ws-others-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--ws-accent);
+  font: inherit;
+  font-size: 0.93rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.14s;
+}
+
+body.domain-page .ws-others-link:hover { opacity: 0.78; }
+body.domain-page .ws-others-link[hidden] { display: none; }
+
+/* ── Continue to Provision ────────────────────────────────────────────────
+   Moved out of the card and onto its own line at the foot of the screen. It is
+   not a property of the opportunity — it is what you do once you accept it,
+   and the design puts it where the eye lands last. */
+
+body.domain-page .ws-advance {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 18px;
+  margin-top: 40px;
+  padding-top: 26px;
+  border-top: 1px solid rgba(34, 217, 232, 0.1);
+}
+
+body.domain-page #opp-approve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 30px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--ws-accent-2), var(--ws-accent));
+  color: #032027;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 30px -10px var(--ws-glow);
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+
+body.domain-page #opp-approve-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 38px -10px var(--ws-glow);
+}
+
+body.domain-page #opp-approve-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+
+/* ── The character panel, docked ──────────────────────────────────────────
+   It used to float in a lane with a portrait above a launcher button. Docked
+   to the right edge it stops overlapping the content it is discussing, and the
+   portrait becomes part of the panel's own header rather than a separate
+   object hovering beside it. */
+
+body.domain-page .sc-lane {
+  position: fixed;
+  top: 146px; right: 0; bottom: 0;
+  width: 404px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  background: rgba(7, 15, 21, 0.94);
+  border-left: 1px solid rgba(34, 217, 232, 0.13);
+  backdrop-filter: blur(16px);
+}
+
+/* The portrait moves into the panel header; the standalone one goes. */
+body.domain-page .sc-lane > .sc-portrait { display: none; }
+
+/* The launcher only matters when the panel is closed. */
+body.domain-page .sc-launcher {
+  margin: 16px;
+  padding: 12px 18px;
+  border: 1px solid var(--ws-line-hi);
+  border-radius: 999px;
+  background: rgba(34, 217, 232, 0.09);
+  color: var(--ws-accent);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body.domain-page .sc-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.domain-page .sc-panel[hidden] { display: none; }
+
+/* Open by default — see workspaceShell.js. While it is open the launcher is
+   redundant, and two ways to reach the same panel on screen at once is the
+   clutter this redesign is meant to remove. */
+body.domain-page .sc-lane:has(.sc-panel:not([hidden])) .sc-launcher { display: none; }
+
+body.domain-page .sc-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(34, 217, 232, 0.1);
+}
+
+body.domain-page .sc-panel__avatar {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--ws-line-hi);
+  background: rgba(34, 217, 232, 0.08);
+}
+
+body.domain-page .sc-panel__avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+body.domain-page .sc-panel__name {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ws-text);
+}
+
+/* The live dot and the role line, added by workspaceShell.js. */
+body.domain-page .sc-panel__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ws-accent-2);
+  box-shadow: 0 0 8px var(--ws-accent-2);
+}
+
+body.domain-page .sc-panel__role {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ws-faint);
+}
+
+body.domain-page .sc-panel__close {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ws-faint);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+body.domain-page .sc-panel__close:hover { color: var(--ws-text); background: rgba(255, 255, 255, 0.06); }
+
+body.domain-page .sc-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+body.domain-page .sc-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+  margin: 0 16px 16px;
+  padding: 9px 9px 9px 15px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: rgba(34, 217, 232, 0.05);
+}
+
+body.domain-page .sc-form:focus-within { border-color: var(--ws-line-hi); }
+
+body.domain-page .sc-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--ws-text);
+  font: inherit;
+  font-size: 0.92rem;
+  max-height: 130px;
+}
+
+body.domain-page .sc-input::placeholder { color: var(--ws-faint); }
+
+body.domain-page .sc-send {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ws-accent-2), var(--ws-accent));
+  color: #032027;
+  cursor: pointer;
+}
+
+/* Chat / Speak, matching the first screen so the same choice looks the same
+   in both places. */
+.ws-modes {
+  display: flex;
+  gap: 8px;
+  margin: 0 16px 16px;
+}
+
+.ws-mode {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border: 1px solid var(--ws-line);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(234, 246, 249, 0.72);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.ws-mode:hover { color: var(--ws-text); border-color: var(--ws-line-hi); }
+
+.ws-mode--on {
+  background: linear-gradient(135deg, var(--ws-accent-2), var(--ws-accent));
+  border-color: transparent;
+  color: #032027;
+  font-weight: 700;
+}
+
+.ws-mode[hidden] { display: none; }
+
+/* ── Making room for the docked panel ─────────────────────────────────────── */
+
+@media (min-width: 1180px) {
+  /* margin, not padding: padding insets the text but leaves the element
+     itself running under the docked panel, so anything measuring the box —
+     a click target, an overlap check — still finds it covered. */
+  body.domain-page .rp-main { margin-right: 404px; padding-right: 34px; }
+}
+
+@media (max-width: 1179px) {
+  body.domain-page .sc-lane {
+    position: static;
+    width: auto;
+    border-left: none;
+    border-top: 1px solid rgba(34, 217, 232, 0.13);
+  }
+}
+
+@media (max-width: 860px) {
+  body.domain-page { --ws-rail: 0px; }
+  .ws-rail { display: none; }
+  body.domain-page .rp-journey { position: static; height: auto; padding: 12px 16px; overflow-x: auto; }
+  body.domain-page .rp-shell { padding-top: 68px; }
+  body.domain-page .pw-step__role { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.domain-page #opp-approve-btn:hover,
+  body.domain-page #opp-view-blueprint-btn:hover { transform: none; }
+}

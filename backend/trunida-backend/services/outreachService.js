@@ -480,9 +480,10 @@ const STARTER_TEMPLATE = {
 
 {{context}}
 
-SvargAI takes a business problem described in plain English and returns a
-working application — deployed, running, with the source code handed over.
-Not a mockup. Something you open and use, usually inside fifteen minutes.
+SvargAI transforms existing business workflows and products with AI. You
+describe a real problem your team has, and Svarg works out where AI fits,
+builds the solution, and integrates it into the systems you already run —
+deployed, running, with the source code handed over. Not a mockup.
 
 You can try it on your own problem here:
 {{link}}
@@ -587,11 +588,20 @@ export function icpFor(role) {
 const WRITER_PROMPT =
 `You write one cold email for Svarg, an AI transformation platform.
 
-Svarg takes a business problem described in plain English and returns a working
-AI application — deployed, running, with the source code handed over — usually
-inside fifteen minutes. It decides what to build, what data it needs, builds it
-and puts it live. It is not a code assistant: the user does not have to know
-what to build.
+Svarg transforms existing business workflows and products with AI. Someone
+describes a real problem in their business; Svarg works out where AI fits,
+prepares the data, chooses the model, builds the solution, and integrates it
+into the systems they already run — deployed, running, with the source code
+handed over. It decides what to build and what data it needs. It is not a code
+assistant: the user does not have to know what to build.
+
+NEVER pitch this on speed or price. "A working app in fifteen minutes" is the
+claim every consumer app builder makes, and it invites exactly that comparison
+— the reader files Svarg beside them and asks about price instead of about
+their business. It also undersells the work: reading their real data sources,
+choosing a model against their constraints, and landing the result inside a
+codebase they already run is not app-building. Write about their existing
+workflow and what it would take to change it.
 
 WHAT TO WRITE
 Return ONLY compact JSON, no other text:

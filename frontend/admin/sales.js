@@ -305,6 +305,32 @@ function outreachRow(r) {
 }
 
 /**
+ * "Shared" — the one action that actually happens on these rows.
+ *
+ * Svarg cannot see that you sent the link; WhatsApp is not something it can
+ * observe. So this is the one place in the funnel where a human has to tell the
+ * board what happened, and it is worth a button of its own rather than being
+ * buried in the status dropdown beside it.
+ *
+ * Once it has been pressed the button stops being an action and becomes a
+ * record. Offering "Shared" again on a lead you already shared with invites
+ * exactly the mistake it exists to prevent — two messages to the same friend —
+ * so it shows the date instead and does nothing.
+ */
+function sharedButton(r) {
+  if (r.status === 'to-contact') {
+    return `<button type="button" class="sg-btn sg-btn--go" data-shared="${esc(r.id)}"
+      title="Mark that you have sent them the link — moves this lead to contacted">Shared</button>`;
+  }
+  const when = r.lastContactedAt
+    ? new Date(r.lastContactedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+    : '';
+  return `<span class="sg-shared" title="${r.lastContactedAt
+    ? `Shared on ${new Date(r.lastContactedAt).toLocaleString()}`
+    : 'Already past to-contact'}">Shared${when ? ` ${esc(when)}` : ''}</span>`;
+}
+
+/**
  * A lead on a motion that never sends.
  *
  * Same six columns as a cold lead so one table holds both, and deliberately
@@ -335,13 +361,14 @@ function motionRow(r) {
     </td>
     <td>${locationCell(r)}</td>
     <td class="sg-note">${routeInCell(r)}</td>
-    <td class="sg-note">${nextStepLabel(r)}</td>
+    <td class="sg-note sg-editable" data-log="${esc(r.id)}"
+        title="Click to record the route in, what happens next, and where they are">${nextStepLabel(r)}</td>
     <td class="sg-rowactions">
       ${r.inviteLink
         ? `<button type="button" class="sg-btn" data-copylink="${esc(r.inviteLink)}"
              title="The link to send them — signups through it are attributed to this lead">Link</button>`
         : ''}
-      <button type="button" class="sg-btn" data-log="${esc(r.id)}">Log</button>
+      ${sharedButton(r)}
       <button type="button" class="sg-del" data-del="${esc(r.id)}" title="Remove">×</button>
     </td>
   </tr>
@@ -924,6 +951,29 @@ function wireOutreach() {
 
   wireInvite();
   wireGenerate();
+
+  /**
+   * You sent it. The board could not have known.
+   *
+   * Sets status to contacted, which is what the stage actually means here —
+   * the server stamps lastContactedAt on that transition, so "when did I send
+   * this" is answerable afterwards rather than being a thing you remember.
+   */
+  document.querySelectorAll('[data-shared]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        await api(`/leads/${btn.dataset.shared}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'contacted' }),
+        });
+        await load(state.tab);
+      } catch (err) {
+        banner(`Could not mark as shared: ${err.message}`);
+        btn.disabled = false;
+      }
+    });
+  });
 
   // Get the link back later, without re-adding the person.
   document.querySelectorAll('[data-copylink]').forEach(btn => {

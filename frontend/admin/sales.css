@@ -1361,3 +1361,23 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   font-size: 0.78rem;
   white-space: nowrap;
 }
+
+/* ── Shared ────────────────────────────────────────────────────────────────────
+   Svarg cannot observe a WhatsApp message, so this is the one point in the
+   funnel where a person tells the board what happened. Once pressed it stops
+   being an action and becomes a record — offering it twice invites the mistake
+   it exists to prevent. */
+.sg-shared {
+  display: inline-block;
+  padding: 0.22rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(92, 197, 167, 0.12);
+  color: rgba(92, 197, 167, 0.85);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+/* The Log button became a click on the cell it edits, so the row could keep to
+   two actions. Marked so it does not read as inert text. */
+.sg-editable { cursor: pointer; }
+.sg-editable:hover { color: var(--text-primary, #FFFFFF); }

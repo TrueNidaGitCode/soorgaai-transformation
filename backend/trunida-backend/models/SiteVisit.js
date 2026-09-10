@@ -89,4 +89,17 @@ const siteVisitSchema = new mongoose.Schema({
  */
 siteVisitSchema.index({ createdAt: -1 });
 
+/**
+ * Ninety days, then gone — enforced by MongoDB rather than by remembering.
+ *
+ * These rows are about campaigns, and a campaign is over long before three
+ * months are up. Keeping them beyond that would mean holding data on people
+ * who visited once, for a question nobody is going to ask, which is the
+ * definition of collecting more than is needed.
+ *
+ * A TTL index deletes them whether or not anyone thinks about it again, which
+ * is the only kind of retention policy that survives contact with a busy year.
+ */
+siteVisitSchema.index({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
+
 export default mongoose.model('SiteVisit', siteVisitSchema);

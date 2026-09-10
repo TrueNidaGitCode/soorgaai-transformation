@@ -871,14 +871,42 @@ function renderVisits(s) {
       mean nobody came in the past.</p>`;
   }
 
-  return summary + table(
-    ['Sessions', 'Last seen', 'IP', 'Country', 'Came from', 'Referrer', 'Then what'],
+  /**
+   * Two audiences, two tables.
+   *
+   * Someone who arrived on a link you sent is a name you already know, moving
+   * down the funnel. Someone who arrived from a LinkedIn post or a search
+   * result is a stranger, and the interesting fact about them is which channel
+   * produced them. Pooled into one list the second group buries the first, and
+   * neither number means much on its own — "12 visits" answers no question,
+   * while "3 of the people I messaged came, and 9 strangers found us" answers
+   * two.
+   */
+  return summary
+    + visitGroup('From your outreach', rows.filter(r => r.fromLead),
+        'They opened a link you sent, so the row names who it went to.')
+    + visitGroup('Found you on their own', rows.filter(r => !r.fromLead),
+        'No tracked link — LinkedIn, a search result, or a link someone forwarded on. '
+        + 'The referrer is the only clue to which.');
+}
+
+function visitGroup(heading, rows, blurb) {
+  return `<div class="sg-group">
+    <h3 class="sg-group__head">${esc(heading)}<span class="sg-group__n">${rows.length}</span></h3>
+    <p class="field-hint">${esc(blurb)}</p>
+    ${rows.length ? visitTable(rows) : '<div class="sg-empty">Nobody yet.</div>'}
+  </div>`;
+}
+
+function visitTable(rows) {
+  return table(
+    ['Sessions', 'Last seen', 'IP block', 'Country', 'Came from', 'Referrer', 'Then what'],
     rows,
     r => `<tr>
       <td><span class="sg-visits ${r.visits > 1 ? 'sg-visits--repeat' : ''}">${r.visits}×</span></td>
       <td class="sg-age">${age(r.at)}</td>
       <td class="sg-note">${r.ips.length
-        ? `<span class="sg-ip">${esc(r.ips.join(', '))}</span>`
+        ? `<span class="sg-ip" title="The network block, not the machine — the last octet is never stored">${esc(r.ips.join(', '))}</span>`
         : '<span class="sg-unknown" title="The request arrived without one — never the same as another blank">not recorded</span>'}</td>
       <td>${countryCell(r.countries[0] || '')}</td>
       <td>${r.fromLead

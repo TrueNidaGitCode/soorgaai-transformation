@@ -45,19 +45,71 @@ export function normaliseIp(ip) {
 }
 
 /**
+ * The address with its last octet removed — 152.233.15.120 → 152.233.15.0
+ *
+ * ── Why anything is dropped at all ──────────────────────────────────────────
+ *
+ * A full IP address identifies one machine, which makes it personal data under
+ * GDPR and under India's DPDP Act. The site now records every visitor, not just
+ * the handful who generate a blueprint, so keeping exact addresses would mean
+ * holding identifying data on every stranger who arrives from a search result.
+ *
+ * ── Why this loses nothing that was wanted ──────────────────────────────────
+ *
+ * The reason to keep an address was to tell one company returning several times
+ * from several unrelated visitors. A /24 answers that as well as a full address
+ * does — everyone behind one office router shares it — and the per-browser
+ * visitor id already separates individuals better than an IP ever could.
+ *
+ * Country resolution is unaffected: geolocation is assigned by network block,
+ * and a /24 sits inside one.
+ *
+ * IPv6 keeps its first four groups, which is the same idea: the network, not
+ * the interface. A /64 is a single customer and often a single device.
+ *
+ * ── Where the full address is still used ────────────────────────────────────
+ *
+ * Rate limiting, in memory, for the length of a window. That is a transient
+ * security control rather than a record, and truncating it there would let one
+ * abusive host spend a whole neighbourhood's quota.
+ */
+export function truncateIp(ip) {
+  const s = normaliseIp(ip);
+  if (!s) return '';
+  if (s.includes(':')) {
+    const groups = s.split(':').filter(Boolean).slice(0, 4);
+    return groups.length ? `${groups.join(':')}::` : '';
+  }
+  const parts = s.split('.');
+  if (parts.length !== 4) return s;
+  return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
+}
+
+/**
  * @param {string} ip
  * @returns {Promise<{country: string, countryName: string} | null>}
  *   null when it could not be resolved, for any reason. Callers must treat
  *   that as "unknown", not as an error worth surfacing.
  */
 export async function countryForIp(ip) {
-  const clean = normaliseIp(ip);
-  if (!clean || isPrivate(clean)) return null;
+  const full = normaliseIp(ip);
+  if (!full || isPrivate(full)) return null;
+
+  /**
+   * The block, not the address.
+   *
+   * ipapi.co is a third party with no contract behind it — a free, keyless
+   * endpoint. Sending it every visitor's exact address would be disclosing
+   * personal data to a processor nobody has agreed to, for a country code that
+   * a /24 answers identically. So it is told the network and never the machine.
+   */
+  const clean = truncateIp(full);
+  if (!clean) return null;
 
   try {
-    // ipapi.co needs no key for low volume, which suits a handful of previews a
-    // day. If this ever runs hot, the fix is a local MaxMind database rather
-    // than a paid tier — the data barely changes and the lookup is offline.
+    // Keyless and free, which suits this volume. If it ever runs hot the fix is
+    // a local MaxMind database rather than a paid tier — the data barely
+    // changes and the lookup is then offline, which is better on both counts.
     const res = await fetch(`https://ipapi.co/${encodeURIComponent(clean)}/json/`, {
       headers: { 'User-Agent': 'svarg-funnel/1.0' },
       signal: AbortSignal.timeout(TIMEOUT_MS),

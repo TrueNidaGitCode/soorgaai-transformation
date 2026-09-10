@@ -20,7 +20,7 @@
  */
 
 import SiteVisit from '../models/SiteVisit.js';
-import { resolveVisitCountry } from '../services/geoService.js';
+import { resolveVisitCountry, truncateIp } from '../services/geoService.js';
 
 /**
  * The same shape of protection the guest generator uses: in-memory, per-IP,
@@ -47,8 +47,18 @@ export async function recordVisit(req, res) {
   res.status(204).end();
 
   try {
-    const ip = req.ip || '';
-    if (tooMany(ip)) return;
+    /**
+     * Rate limiting sees the full address; the database never does.
+     *
+     * The limiter is transient and in memory — a security control for the
+     * length of a window, not a record. Truncating there would let one abusive
+     * host spend a whole /24's quota. Everything that is written down is the
+     * network block instead, which answers "is this the same office coming
+     * back" without identifying a machine.
+     */
+    const fullIp = req.ip || '';
+    if (tooMany(fullIp)) return;
+    const ip = truncateIp(fullIp);
 
     const visitorId = String(req.body?.visitorId || '').slice(0, 64);
     const ref = String(req.body?.ref || '').slice(0, 64);

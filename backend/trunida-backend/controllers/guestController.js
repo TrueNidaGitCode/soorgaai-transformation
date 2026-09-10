@@ -16,7 +16,7 @@
 
 import crypto from 'crypto';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
-import { resolveCountryInBackground } from '../services/geoService.js';
+import { resolveCountryInBackground, truncateIp } from '../services/geoService.js';
 import SiteVisit from '../models/SiteVisit.js';
 import { enabledDomains } from '../config/domainRegistry.js';
 import { getDomainCapabilities } from '../services/strategyCanvasService.js';
@@ -87,7 +87,9 @@ export async function startGuestGeneration(req, res) {
       // Discovery board can tell one company returning from several
       // unrelated visitors — see models/TransformationBlueprint.js guestMeta.
       guestMeta: {
-        ip:        req.ip || '',
+        // The network block, not the machine — see geoService.truncateIp. The
+        // rate limiter above still works on the full address.
+        ip:        truncateIp(req.ip || ''),
         userAgent: String(req.get('user-agent') || '').slice(0, 300),
         referer:   String(req.get('referer') || '').slice(0, 300),
         // From ?ref= on a cold email's tracked link. This is the only thing

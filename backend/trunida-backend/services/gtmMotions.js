@@ -82,6 +82,26 @@ export const MOTIONS = [
     note: 'Do not ask "do you know anyone who might buy Svarg?". Ask "who is responsible for '
       + 'AI adoption / engineering transformation / digital initiatives at [company]?" — a '
       + 'question about a role gets an answer; a question about a purchase gets a shrug.',
+    messageSubject: 'Something I have been building',
+    message: [
+      'Hi {{name}},',
+      '',
+      'I’m building SvargAI — it turns a business or engineering objective described in '
+        + 'plain English into a working AI application in less than 30 minutes, at around $0.10.',
+      '',
+      'Would really appreciate it if you could spend a few minutes trying the product:',
+      '{{link}}',
+      '',
+      'We’re now working on our first few enterprise customers, and these early customers are '
+        + 'extremely important to us. I’m reaching out to friends and colleagues who can '
+        + 'genuinely help — either by introducing us to the right person in your organization '
+        + 'or connecting us with someone in your network who may have a relevant problem.',
+      '',
+      'If you see potential in SvargAI, one good introduction would mean a lot to us.',
+      '',
+      'Thanks!',
+      'Pranesh',
+    ],
   },
   {
     key: 'referral',
@@ -103,13 +123,49 @@ export const MOTIONS = [
     label: 'Consultant / SI partner',
     emails: false,
     viaLabel: 'Which firm',
-    summary: 'Firms already advising enterprises on digital transformation, engineering '
-      + 'transformation, AI strategy, ASPICE, product development or manufacturing. They '
-      + 'bring the enterprise relationship; Svarg becomes their execution layer.',
-    ask: 'You identify the opportunity. Svarg turns it into a working AI solution.',
-    note: 'Their problem is that they can name a transformation opportunity but '
-      + 'implementation takes months. That gap is the whole pitch. This can shorten the '
-      + 'enterprise acquisition cycle more than anything else in this list.',
+    summary: 'People who run AI training for companies, and who already demonstrate several '
+      + 'products in the room. They meet the exact moment Svarg is for: a team that has just '
+      + 'learned what AI can do and has a list of use cases and no way to build any of them.',
+    ask: 'Would love to explore whether we could take one of your existing client problems '
+      + 'and build it together as an experiment.',
+    note: 'The gap is after the training, not during it. Companies learn AI, identify use '
+      + 'cases, and then stall on turning those ideas into working solutions — which is a '
+      + 'problem the trainer sees repeatedly and cannot currently solve. Pitch the joint '
+      + 'offering (training plus implementation), not a referral fee: they are already '
+      + 'demonstrating products, so the question is whether Svarg earns a place in that set.',
+    /**
+     * The pitch, which is a different one from every other motion here.
+     *
+     * A warm introduction asks a friend for a favour. This asks a professional
+     * whether your product belongs in a demonstration they already give, and
+     * the argument is about their clients' problem rather than yours.
+     */
+    messageSubject: 'AI training → working AI applications',
+    message: [
+      'Hi {{name}},',
+      '',
+      'I’m building SvargAI — it turns a business or engineering objective described in '
+        + 'plain English into a working AI application in less than 30 minutes.',
+      '',
+      'I’ve been thinking about the journey after AI training: companies learn AI, identify '
+        + 'use cases, and then often struggle with actually turning those ideas into working '
+        + 'solutions.',
+      '',
+      'I think SvargAI could fit naturally into that gap.',
+      '',
+      'Would love to explore whether we could take one of your existing client problems and '
+        + 'build it together as an experiment.',
+      '',
+      'If it works, there could be an interesting AI training + implementation offering for '
+        + 'your clients.',
+      '',
+      'Would you be open to a quick conversation?',
+      '',
+      'You can try it here: {{link}}',
+      '',
+      'Thanks!',
+      'Pranesh',
+    ],
   },
   {
     key: 'expansion',
@@ -300,6 +356,22 @@ export const FIELDS = {
   },
   email:      { key: 'email',      label: 'Email (optional)', type: 'email',
                 hint: 'Only if you have it. The invite link works without one.' },
+
+  /**
+   * The training or consultancy the person runs, which is the whole reason to
+   * approach them — so it is required here, where a warm introduction's
+   * employer is not.
+   */
+  companyTraining: { key: 'company', label: 'Training / consultancy company', type: 'text',
+                     required: true },
+
+  /**
+   * Neither is individually required on a partner: you will have one or the
+   * other and rarely both at first contact. addLead's backstop refuses a lead
+   * with no way to reach the person at all, which is the rule that matters.
+   */
+  phoneOpt:  { key: 'phone', label: 'Mobile number', type: 'tel' },
+  emailAddr: { key: 'email', label: 'Email address', type: 'email' },
   emailReq:   { key: 'email',      label: 'Email address',    type: 'email', required: true },
   role:       { key: 'role',       label: 'Designation',      type: 'text',
                 suggestions: ['VP Engineering', 'VP Marketing', 'VP Sales', 'Founder / CEO'] },
@@ -319,6 +391,11 @@ const MOTION_FIELDS = {
   // You already know this person. The whole exchange is a WhatsApp message
   // with a link in it, so the number matters and the job title does not.
   'warm-intro': ['name', 'phone', 'company', 'relationship', 'location', 'email', 'note'],
+
+  // A training company, approached as a business rather than as a favour. The
+  // firm is the point — which is why it is required and `via` is gone: "which
+  // firm" and the company name were the same question asked twice.
+  partner: ['name', 'companyTraining', 'phoneOpt', 'emailAddr', 'note'],
 };
 
 const DEFAULT_FIELDS =

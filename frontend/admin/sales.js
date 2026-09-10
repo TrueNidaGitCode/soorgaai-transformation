@@ -681,12 +681,29 @@ function renderInvite(link, lead) {
     ? `https://wa.me/${digits}?text=${encodeURIComponent(inviteMessage(link, lead))}`
     : '';
   const msg = inviteMessage(link, lead);
+  const m = motionByKey(lead?.motion);
+
+  // Email as well as WhatsApp, because who you reach and how differs by motion:
+  // a friend gets a message on their phone, a training company gets an email
+  // with a subject line.
+  const mail = lead?.email && msg
+    ? `mailto:${encodeURIComponent(lead.email)}`
+      + `?subject=${encodeURIComponent(m?.messageSubject || 'SvargAI')}`
+      + `&body=${encodeURIComponent(msg)}`
+    : '';
+
   return `
-    <p class="sg-invite__head">Send this to ${esc(lead?.name || 'them')}</p>
-    <textarea class="sg-invite__msg" id="sg-invite-msg" rows="13" readonly>${esc(msg)}</textarea>
+    <p class="sg-invite__head">Send this to ${esc(lead?.name || 'them')}${
+      m ? ` · ${esc(m.label)}` : ''}</p>
+    ${msg
+      ? `<textarea class="sg-invite__msg" id="sg-invite-msg" rows="13">${esc(msg)}</textarea>`
+      : `<p class="sg-invite__note">There is no message template for ${esc(m?.label || 'this motion')}
+          yet, so only the link is below. Write one and it can live with the motion like the
+          others.</p>`}
     <div class="sg-invite__row">
-      <button type="button" class="sg-btn sg-btn--go" id="sg-invite-copymsg">Copy message</button>
+      ${msg ? '<button type="button" class="sg-btn sg-btn--go" id="sg-invite-copymsg">Copy message</button>' : ''}
       ${wa ? `<a class="sg-btn" href="${esc(wa)}" target="_blank" rel="noopener">Open WhatsApp</a>` : ''}
+      ${mail ? `<a class="sg-btn" href="${esc(mail)}">Open email</a>` : ''}
       <input type="text" class="sg-invite__link" id="sg-invite-link" readonly value="${esc(link)}">
       <button type="button" class="sg-btn" id="sg-invite-copy">Copy link only</button>
     </div>
@@ -696,38 +713,30 @@ function renderInvite(link, lead) {
 }
 
 /**
- * The message, opened in WhatsApp ready to send. Editable there first.
+ * The message for THIS motion, filled in for this person.
+ *
+ * The pitch is not one pitch. A warm introduction asks a friend for a favour;
+ * a training partner is asked whether Svarg belongs in a demonstration they
+ * already give, and the argument there is about their clients' problem rather
+ * than yours. Sending one to the other reads as a mail-merge, which is the
+ * precise impression these motions exist to avoid.
+ *
+ * The templates live on the motion in gtmMotions.js, beside its play and its
+ * fields, and arrive with the registry.
  *
  * ── The link replaces the bare domain, deliberately ─────────────────────────
  *
- * The written draft says "www.svargai.com". Sending that plain address would
- * lose the ref, and the ref is the only reason this lead can ever leave
- * Outreach: without it, a friend who signs up arrives as an anonymous visitor
- * and nothing connects them back to the introduction. Same site, same landing
- * page, one query parameter — and the difference between an attributed first
- * customer and a stranger.
+ * Where a draft names www.svargai.com, the token puts this lead's tracked link.
+ * The plain address would lose the ref, and the ref is the only thing that
+ * connects someone who signs up back to the conversation that produced them.
  */
 function inviteMessage(link, lead) {
-  const greeting = lead?.name ? `Hi ${lead.name},` : 'Hi,';
-  return [
-    greeting,
-    '',
-    'I’m building SvargAI — it turns a business or engineering objective described in '
-      + 'plain English into a working AI application in less than 30 minutes, at around $0.10.',
-    '',
-    'Would really appreciate it if you could spend a few minutes trying the product:',
-    link,
-    '',
-    'We’re now working on our first few enterprise customers, and these early customers are '
-      + 'extremely important to us. I’m reaching out to friends and colleagues who can genuinely '
-      + 'help — either by introducing us to the right person in your organization or connecting '
-      + 'us with someone in your network who may have a relevant problem.',
-    '',
-    'If you see potential in SvargAI, one good introduction would mean a lot to us.',
-    '',
-    'Thanks!',
-    'Pranesh',
-  ].join('\n');
+  const m = motionByKey(lead?.motion);
+  if (!m?.message?.length) return '';
+  return m.message.join('\n')
+    .replace(/\{\{\s*name\s*\}\}/gi, lead?.name || 'there')
+    .replace(/\{\{\s*company\s*\}\}/gi, lead?.company || 'your team')
+    .replace(/\{\{\s*link\s*\}\}/gi, link);
 }
 
 function addHint(m) {

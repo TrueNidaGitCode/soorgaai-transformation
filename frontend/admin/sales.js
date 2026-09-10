@@ -794,8 +794,54 @@ function renderOutreachBody(s) {
     + (sendsHere ? mailBanner(state.mail) + renderIcp() : '')
     + renderAddForm(lane)
     + (sendsHere ? renderTemplate() : '')
-    + table(['Status', 'Organisation', 'Contact', 'Location', 'Route in', 'Next', ''],
-        laneRows(s, lane), outreachRow);
+    + renderLaneTables(s, lane);
+}
+
+const OUTREACH_COLS = ['Status', 'Organisation', 'Contact', 'Location', 'Route in', 'Next', ''];
+
+/**
+ * One table per motion, not one table per lane.
+ *
+ * A lane groups motions that share a shape — someone vouches for you — but the
+ * work inside it does not pool. A warm introduction to a friend and a pitch to
+ * an AI training company are different conversations, sent with different
+ * messages, and worked on different days; stacked in one list they read as a
+ * single queue and you lose the ability to see that one of them has stalled
+ * while the other is moving.
+ *
+ * Only motions with rows get a section. An empty heading for each of the eleven
+ * motions would be a page of headings, and the lane tab already carries the
+ * count for the lane as a whole.
+ */
+function renderLaneTables(s, laneKey) {
+  const rows = laneRows(s, laneKey);
+  if (!rows.length) return '<div class="sg-empty">Nothing at this stage right now.</div>';
+
+  const ms = motionsInLane(laneKey);
+  const seen = new Set();
+  let out = '';
+
+  for (const m of ms) {
+    const mine = rows.filter(r => r.motion === m.key);
+    if (!mine.length) continue;
+    mine.forEach(r => seen.add(r.id));
+    out += `<div class="sg-group">
+      <h3 class="sg-group__head">${esc(m.label)}<span class="sg-group__n">${mine.length}</span></h3>
+      ${table(OUTREACH_COLS, mine, outreachRow)}
+    </div>`;
+  }
+
+  // A lead filed under a motion this lane no longer lists would otherwise
+  // vanish from a screen that just told you the lane holds it.
+  const orphans = rows.filter(r => !seen.has(r.id));
+  if (orphans.length) {
+    out += `<div class="sg-group">
+      <h3 class="sg-group__head">Other<span class="sg-group__n">${orphans.length}</span></h3>
+      <p class="field-hint">Filed under a motion that is no longer listed in this lane.</p>
+      ${table(OUTREACH_COLS, orphans, outreachRow)}
+    </div>`;
+  }
+  return out;
 }
 
 function renderDiscovery(s) {

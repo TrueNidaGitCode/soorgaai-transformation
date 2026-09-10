@@ -1381,3 +1381,35 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
    two actions. Marked so it does not read as inert text. */
 .sg-editable { cursor: pointer; }
 .sg-editable:hover { color: var(--text-primary, #FFFFFF); }
+
+/* ── One section per motion ────────────────────────────────────────────────────
+   A lane groups motions that share a shape, but the work inside it does not
+   pool: a warm introduction to a friend and a pitch to a training company are
+   different conversations worked on different days. Stacked in one list they
+   read as a single queue, and a motion that has stalled looks the same as one
+   that is moving. */
+
+.sg-group { margin-top: 1.6rem; }
+.sg-group:first-child { margin-top: 0.6rem; }
+
+.sg-group__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.sg-group__n {
+  font-size: 0.7rem;
+  letter-spacing: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-green, #5CC5A7);
+}

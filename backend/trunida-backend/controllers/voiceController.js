@@ -67,7 +67,33 @@ export async function transcribeAudio(req, res) {
     return res.json({ text, language });
   } catch (err) {
     const status = err.status || 500;
-    if (status >= 500) console.error('[voice]', err.message);
+
+    /**
+     * Detail goes to the log; the visitor gets a sentence they can act on.
+     *
+     * This endpoint is public and unauthenticated — it serves the first box a
+     * stranger touches. It was returning the provider's message verbatim, which
+     * meant a Google billing failure put "Your project has exceeded its monthly
+     * spending cap" and a link to the spend console into the browser of every
+     * prospect who pressed Speak. That is internal financial state, shown to
+     * exactly the people it should never be shown to.
+     *
+     * Not the same thing as swallowing an error. The provider's own words still
+     * matter and are still kept — they go to the server log, and an operator can
+     * reproduce the whole chain at /api/llm-status?test=1. What changes is who
+     * reads them.
+     *
+     * The 4xx messages stay verbatim because they are about the recording and
+     * the speaker is the only person who can fix them: too long, nothing heard,
+     * nothing sent.
+     */
+    if (status >= 500) {
+      console.error('[voice]', err.message);
+      return res.status(status).json({
+        error: 'Voice input is temporarily unavailable. Please type your objective instead.',
+      });
+    }
+
     return res.status(status).json({ error: err.message || 'Could not transcribe that.' });
   }
 }

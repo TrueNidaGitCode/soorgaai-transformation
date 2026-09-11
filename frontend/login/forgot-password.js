@@ -54,29 +54,27 @@ async function handleForgotPassword(event) {
             body: JSON.stringify({ email })
         });
 
-        const data = await response.json();
-        console.log("Response:", data);
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
+            // 503 = mail was never configured, 502 = it failed just now. Both
+            // come with a sentence written for the person reading it.
             throw new Error(data.msg || "Failed to send reset link");
         }
 
-        // Success
+        // The server no longer returns the token — it goes into the email and
+        // nowhere else — so there is nothing to redirect to from here. The
+        // person's next step is their inbox.
+        //
+        // The wording is the server's, not ours: it is the same sentence
+        // whether or not the account exists, and saying "sent!" here would
+        // undo that on the client.
         showMessage(
-            "Password reset link sent! Check your email (or console for testing)",
+            data.delivery === 'console'
+                ? "No mail transport is configured in this environment — the reset link is in the server log."
+                : (data.msg || "If an account exists with this email, we've sent a link to reset the password."),
             "success"
         );
-
-        // ⚠️ DEVELOPMENT ONLY - Show reset link in console
-        if (data.resetToken) {
-            console.log("🔐 Reset Token:", data.resetToken);
-            console.log("🔗 Reset URL:", data.resetUrl);
-
-            // Auto-redirect to reset page for testing (remove in production)
-            setTimeout(() => {
-                window.location.href = `reset-password.html?token=${data.resetToken}&email=${email}`;
-            }, 2000);
-        }
 
         // Clear form
         emailInput.value = "";

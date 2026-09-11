@@ -194,6 +194,49 @@ export async function sendOtpEmail(to, code) {
   return 'sent';
 }
 
+function resetSubject() { return 'Reset your Svarg password'; }
+
+function resetText(url) {
+  return `Someone asked to reset the password for your Svarg account.
+
+Open this link to choose a new one:
+${url}
+
+It expires in one hour. If you didn't ask for this, you can ignore this email — your password has not changed.`;
+}
+
+function resetHtml(url) {
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:420px;margin:0 auto;padding:24px">
+  <h2 style="margin:0 0 4px;color:#111">Svarg</h2>
+  <p style="color:#444;font-size:14px">Someone asked to reset the password for your account. Open the link below to choose a new one.</p>
+  <p style="margin:20px 0"><a href="${url}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;font-size:14px">Reset password</a></p>
+  <p style="color:#888;font-size:12.5px">The link expires in one hour. If you didn't ask for this, you can safely ignore this email — your password has not changed.</p>
+  <p style="color:#aaa;font-size:11px;word-break:break-all">${url}</p>
+</div>`;
+}
+
+/**
+ * @returns {Promise<'sent'|'console'>} — how the link reached the user.
+ *
+ * Same contract as sendOtpEmail, for the same reason: the caller has to tell
+ * someone whether to check their inbox, and "delivered" and "logged to a
+ * container nobody reads" must not be the same return value.
+ */
+export async function sendPasswordResetEmail(to, url) {
+  if (!mailConfigured) {
+    console.warn(`[mail] NOT CONFIGURED — password reset for ${to} was not emailed. The link is: ${url}`);
+    return 'console';
+  }
+  await sendMail({
+    to,
+    subject: resetSubject(),
+    text:    resetText(url),
+    html:    resetHtml(url),
+    logLabel: 'Password reset send',
+  });
+  return 'sent';
+}
+
 const CONTACT_FORM_RECIPIENT = 'praneshbabykannan@soorgaai.com';
 
 function escapeHtml(str) {

@@ -1,6 +1,6 @@
 import { User } from "../models/user.js"; // ✅ Use named import (lowercase filename)
 import EmailOtp from "../models/EmailOtp.js";
-import { sendOtpEmail, mailConfigured } from "../services/mailService.js";
+import { sendOtpEmail, sendPasswordResetEmail, mailConfigured } from "../services/mailService.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -231,47 +231,85 @@ export const verifyEmailOtp = async (req, res) => {
   }
 };
 
+/**
+ * The user schema stores email exactly as typed and looks it up the same way,
+ * so "Name@x.com" at signup and "name@x.com" at reset never match — and the
+ * person is told a link was sent when nothing was looked up. Matched
+ * case-insensitively here, anchored and escaped so the address cannot become
+ * a pattern.
+ */
+function emailMatcher(email) {
+  const escaped = String(email).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped}$`, 'i');
+}
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
+
+/** The same sentence whether or not the account exists. Saying anything else
+ *  turns this endpoint into a way to check who has an account. */
+const RESET_REQUESTED = "If an account exists with this email, we've sent a link to reset the password.";
+
 // ✅ Request Password Reset
 export const requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return res.status(400).json({ msg: "Email is required" });
     }
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      // Don't reveal if user exists or not (security best practice)
-      return res.status(200).json({
-        msg: "If an account exists with this email, a reset link will be sent"
+    // Said once, before any lookup. This flow only works by email, and the
+    // old version answered "instructions sent" with nothing configured to
+    // send them — the person sat watching an empty inbox. In production that
+    // is an outage to name, not a success to fake.
+    if (!mailConfigured && process.env.NODE_ENV === 'production') {
+      console.error('[auth] password reset requested but no mail transport is configured');
+      return res.status(503).json({
+        msg: "Password reset by email isn't available right now. Please contact us and we'll sort it out.",
       });
     }
 
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const user = await User.findOne({ email: emailMatcher(email) });
+    if (!user) {
+      return res.status(200).json({ msg: RESET_REQUESTED });
+    }
 
-    // Save hashed token and expiry to user
-    user.resetPasswordToken = resetTokenHash;
+    // The raw token goes into the email and nowhere else. It used to be
+    // returned in this response as a "development only" convenience that
+    // shipped to production: anyone who knew an address could POST here, read
+    // the token back, and set that account's password. The hash is what is
+    // stored, so a copy of the database is not a copy of every reset link.
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // In production, send email with reset link
-    // For now, return token in response (development only!)
-    const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}&email=${email}`;
+    // Built from FRONTEND_URL like every other link the backend hands out,
+    // and pointing at the page that actually exists. The old one was a
+    // hard-coded localhost with a path the frontend has never served.
+    // The stored address is used, not the typed one, so the link carries the
+    // casing the reset endpoint will match against.
+    const resetUrl = `${FRONTEND_URL}/login/reset-password.html`
+      + `?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
 
-    console.log("🔐 Password Reset Token:", resetToken);
-    console.log("🔗 Reset URL:", resetUrl);
+    try {
+      const how = await sendPasswordResetEmail(user.email, resetUrl);
+      if (how === 'console') {
+        // Development with no mailbox: the link is in the server log, and the
+        // response says so rather than sending someone to check their email.
+        return res.status(200).json({ msg: RESET_REQUESTED, delivery: 'console' });
+      }
+    } catch (err) {
+      // The token is saved and valid, but the person will never see it. Tell
+      // them the truth so they try again later or reach out, rather than
+      // waiting for an email that is not coming.
+      console.error('[auth] password reset email failed:', err.message);
+      return res.status(502).json({
+        msg: "We couldn't send the reset email just now. Please try again in a few minutes.",
+      });
+    }
 
-    // TODO: Send email with resetUrl
-    // For now, just return success (in production, always return success)
-    return res.status(200).json({
-      msg: "Password reset instructions sent to email",
-      // ⚠️ REMOVE IN PRODUCTION - only for testing
-      resetToken: resetToken,
-      resetUrl: resetUrl
-    });
+    return res.status(200).json({ msg: RESET_REQUESTED });
 
   } catch (error) {
     console.error("❌ Password Reset Request Error:", error);
@@ -295,9 +333,10 @@ export const resetPassword = async (req, res) => {
     // Hash the token to compare with stored hash
     const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-    // Find user with matching token and email
+    // Find user with matching token and email. Same case-insensitive match as
+    // the request, so the two halves of the flow agree on which account.
     const user = await User.findOne({
-      email: email,
+      email: emailMatcher(email),
       resetPasswordToken: resetTokenHash,
       resetPasswordExpires: { $gt: Date.now() } // Token not expired
     });

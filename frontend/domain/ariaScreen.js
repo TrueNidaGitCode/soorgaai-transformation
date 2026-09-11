@@ -522,6 +522,8 @@ function renderTable(datasets, confCount, jiraCount) {
   updateReadinessCard(datasets, confCount, jiraCount);
   updateProcessBar(datasets);
   updateAriaNav(datasets, confCount, jiraCount);
+  // Same inputs as the table, so the report and the detail cannot disagree.
+  renderPostRun();
 }
 
 /**
@@ -625,6 +627,212 @@ function markAriaComplete(ok) {
   // it is never disabled. This only reports that processing finished.
   const navHint = document.getElementById('aria-nav-hint');
   if (navHint) navHint.textContent = 'Data processed — Eame can build on it.';
+}
+
+// ── The report after the run ──────────────────────────────────────────────
+//
+// The screen has two jobs and they want different pages: a workbench for
+// connecting sources, and a report on what came back. Showing the workbench
+// to someone who has finished is how a customer ends up wondering whether it
+// worked.
+//
+// Every figure below is derived from the same state renderTable uses, so the
+// summary and the detail cannot drift apart — which is the failure that would
+// matter here, because the summary is the part people will believe.
+
+const POST_ICONS = {
+  data:   '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/>',
+  file:   '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  code:   '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+  sample: '<path d="M9 3h6M10 3v6l-5 9a3 3 0 0 0 2.6 4.5h8.8A3 3 0 0 0 19 18l-5-9V3"/>',
+  cloud:  '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
+  info:   '<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>',
+};
+
+const postIcon = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"`
+  + ` stroke-linecap="round" stroke-linejoin="round">${POST_ICONS[k] || ''}</svg>`;
+
+/** What one dataset actually amounts to, in the terms the row already uses. */
+function postRow(d, confCount, jiraCount) {
+  const { state, source } = rowState(d, confCount, jiraCount);
+
+  if (state === 'in-code') {
+    return { icon: 'code', count: 'in your code', label: 'Found', cls: '' };
+  }
+  if (state === 'uploaded') {
+    const up = _uploads.get(d.name);
+    return { icon: 'file', count: up?.filename || 'uploaded file', label: _processed ? 'Processed' : 'Uploaded', cls: '' };
+  }
+  if (state === 'sample') {
+    const s = _samples.get(d.name);
+    // Never reported as connected. This dataset is still missing; what exists
+    // is an illustration of its shape, and the report has to keep saying so.
+    return { icon: 'sample', count: `${s?.rowCount || 0} generated rows`, label: 'Simulated', cls: 'warn' };
+  }
+  if (state === 'connected') {
+    return { icon: 'cloud', count: source?.label || '', label: _processed ? 'Processed' : 'Connected', cls: '' };
+  }
+  if (state === 'ready') {
+    return { icon: 'cloud', count: source?.label || '', label: _processed ? 'Processed' : 'Ready', cls: 'muted' };
+  }
+  if (state === 'no-connector') {
+    return { icon: 'info', count: '—', label: 'Not applicable', cls: 'muted' };
+  }
+  return { icon: 'cloud', count: source?.label || '', label: 'To connect', cls: 'muted' };
+}
+
+/** The connectors that actually contributed, with what each supplied. */
+function postSources(confCount, jiraCount) {
+  const out = [];
+  if (confCount > 0) out.push({ icon: 'cloud', name: 'Confluence', what: `${confCount} page${confCount === 1 ? '' : 's'} linked`, state: 'Connected' });
+  if (jiraCount > 0) out.push({ icon: 'cloud', name: 'Jira', what: `${jiraCount} issue${jiraCount === 1 ? '' : 's'} linked`, state: 'Connected' });
+
+  if (_uploads.size) {
+    out.push({ icon: 'file', name: 'Uploaded files', what: [..._uploads.values()].map(u => u.filename).filter(Boolean).slice(0, 3).join(', ') || 'Your exports', state: 'Connected' });
+  }
+  if (_codeMatches.size) {
+    out.push({ icon: 'code', name: 'Your repository', what: `${_codeMatches.size} table${_codeMatches.size === 1 ? '' : 's'} matched in your schema`, state: 'Read' });
+  }
+  if (_samples.size) {
+    out.push({ icon: 'sample', name: 'Simulated data', what: `${_samples.size} dataset${_samples.size === 1 ? '' : 's'} filled with generated rows`, state: 'Not real data', muted: true });
+  }
+  return out;
+}
+
+/**
+ * Is there prepared data to report on?
+ *
+ * Not the same question as "did a run happen in this browser tab". _processed
+ * is set by runProcess and starts false on every load, so keying the report to
+ * it alone would show it exactly once — the customer who processed yesterday
+ * would come back to the workbench, the Process button live again, and no sign
+ * that anything had ever worked.
+ *
+ * What the report describes is the state of the data, and that is on the
+ * server: a dataset reads 'connected' only when content is actually linked to
+ * this blueprint, which is what processing does. Uploads, matched tables and
+ * generated rows count too — each is data the application can be built on.
+ */
+function hasPreparedData() {
+  if (_processed) return true;
+  if (_uploads.size || _samples.size || _codeMatches.size) return true;
+  const { connected } = tally(_cachedDatasets || [], _sources.confluence.length, _sources.jira.length);
+  return connected > 0;
+}
+
+function renderPostRun() {
+  const post = document.getElementById('aria-postrun');
+  const during = document.getElementById('aria-during');
+  if (!post || !during) return;
+
+  // The report exists only once there is something to report. Before that the
+  // workbench is the page.
+  const ready = hasPreparedData();
+  const toggle = document.getElementById('aria-details-toggle');
+  post.hidden = !ready;
+  if (!ready) {
+    during.hidden = false;
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    return;
+  }
+  // After the run the workbench is behind the disclosure, and stays open if
+  // the customer had opened it.
+  if (toggle && toggle.getAttribute('aria-expanded') !== 'true') during.hidden = true;
+
+  const datasets = _cachedDatasets || [];
+  const confCount = _sources.confluence.length;
+  const jiraCount = _sources.jira.length;
+  const { connected, sample } = tally(datasets, confCount, jiraCount);
+
+  // The dial counts real data only, for the same reason the readiness number
+  // does: a customer must not be able to generate their way to a full circle.
+  const total = datasets.length;
+  const pct = total ? Math.round((connected / total) * 100) : 0;
+  const dial = document.getElementById('aria-post-dial');
+  if (dial) {
+    dial.innerHTML = `
+      <div class="dr-dial__ring" style="background: conic-gradient(var(--ws-accent, #2ee6d6) ${pct * 3.6}deg, rgba(93,143,155,.2) 0deg)">
+        <span class="dr-dial__inner">
+          <span class="dr-dial__num">${connected}</span>
+          <span class="dr-dial__unit">of ${total}</span>
+        </span>
+      </div>
+      <span>${connected === total && total ? 'Connected successfully' : 'Data sources connected'}</span>`;
+  }
+
+  const rows = document.getElementById('aria-post-rows');
+  if (rows) {
+    rows.innerHTML = datasets.map(d => {
+      const r = postRow(d, confCount, jiraCount);
+      return `
+        <li class="dr-row">
+          <span class="dr-row__icon" aria-hidden="true">${postIcon(r.icon)}</span>
+          <span class="dr-row__meta">
+            <span class="dr-row__name">${esc(d.name)}</span>
+            <span class="dr-row__count">${esc(r.count)}</span>
+          </span>
+          <span class="dr-row__state${r.cls ? ' dr-row__state--' + r.cls : ''}">${esc(r.label)}</span>
+        </li>`;
+    }).join('') || '<li class="dr-row"><span class="dr-row__name">No datasets were identified for this use case.</span></li>';
+  }
+
+  const srcEl = document.getElementById('aria-post-sources');
+  const sources = postSources(confCount, jiraCount);
+  if (srcEl) {
+    srcEl.innerHTML = sources.map(s => `
+      <li class="dr-source">
+        <span class="dr-source__icon" aria-hidden="true">${postIcon(s.icon)}</span>
+        <span class="dr-row__meta">
+          <span class="dr-source__name">${esc(s.name)}</span>
+          <span class="dr-source__what">${esc(s.what)}</span>
+        </span>
+        <span class="dr-source__state${s.muted ? ' dr-source__state--muted' : ''}">${esc(s.state)}</span>
+      </li>`).join('') || '<li class="dr-source"><span class="dr-source__what">Nothing was connected for this use case.</span></li>';
+  }
+
+  const sub = document.getElementById('aria-post-sources-sub');
+  if (sub) {
+    sub.textContent = connected > 0
+      ? 'Real data has been collected from your connected sources.'
+      : 'No real data was connected, so the application will run on generated rows.';
+  }
+
+  // Two futures, and only one of them is this customer's. The one that applies
+  // is lit; the other is stated plainly rather than hidden, because a customer
+  // running on generated rows needs to know it will be replaced.
+  const next = document.getElementById('aria-post-next');
+  if (next) {
+    const real = connected > 0;
+    next.innerHTML = `
+      <div class="dr-note ${real ? 'dr-note--on' : 'dr-note--off'}">
+        <span class="dr-note__icon" aria-hidden="true">${postIcon('cloud')}</span>
+        <div>
+          <p class="dr-note__title">Data is ready for use</p>
+          <p class="dr-note__body">Your application will use this real data to give answers grounded in your own records.</p>
+        </div>
+      </div>
+      <div class="dr-note ${!real || sample ? 'dr-note--on' : 'dr-note--off'}">
+        <span class="dr-note__icon" aria-hidden="true">${postIcon('sample')}</span>
+        <div>
+          <p class="dr-note__title">${sample ? 'Some data is simulated' : 'If no real data is connected'}</p>
+          <p class="dr-note__body">Arth fills the gap with generated rows so you can test and explore the
+            application. They carry <code>_source=sample</code>, and are replaced by your real data once it is connected.</p>
+        </div>
+      </div>`;
+  }
+
+  const stateText = document.getElementById('aria-post-state-text');
+  const state = document.getElementById('aria-post-state');
+  const allReal = total > 0 && connected === total;
+  if (stateText) stateText.textContent = allReal ? 'Ready' : (connected > 0 ? 'Partly simulated' : 'Simulated');
+  if (state) state.classList.toggle('ae-state--pending', !allReal);
+
+  const postSub = document.getElementById('aria-post-sub');
+  if (postSub) {
+    postSub.textContent = allReal
+      ? 'Arth has collected and prepared the required data for this use case.'
+      : 'Arth has prepared what it could reach, and filled the rest so you can still build.';
+  }
 }
 
 // ── Sources: one table for every connected tool ─────────────────────────────
@@ -1644,6 +1852,22 @@ let _wired = false;
 function wireStaticControls() {
   if (_wired) return;
   _wired = true;
+
+  // After a run the workbench moves behind this. Before one, the report is
+  // hidden and the control with it, so this is only ever reachable when there
+  // is something to go back to.
+  const detailsToggle = document.getElementById('aria-details-toggle');
+  const during = document.getElementById('aria-during');
+  if (detailsToggle && during) {
+    detailsToggle.addEventListener('click', () => {
+      const open = detailsToggle.getAttribute('aria-expanded') === 'true';
+      detailsToggle.setAttribute('aria-expanded', String(!open));
+      during.hidden = open;
+      const label = detailsToggle.querySelector('span');
+      if (label) label.textContent = open ? 'View technical details' : 'Hide technical details';
+      if (!open) during.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
 
   wireSampleData();
   document.getElementById('aria-sample-run')?.addEventListener('click', runSampleBatch);

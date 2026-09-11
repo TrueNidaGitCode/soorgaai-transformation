@@ -427,6 +427,31 @@ setTimeout(async function () {
     // is the specific regression worth pinning: dividing by the connectable
     // subset rendered six required datasets as "0 of 0".
     if (out.screen === 'aria') {
+      // The screen now has two pages. Once data is prepared it shows the
+      // report and puts the workbench behind "View technical details", so
+      // everything below this — the table, the tabs, the sample batch — is
+      // only reachable with that open. Assert the report first, then open the
+      // workbench and carry on as before.
+      var post = document.getElementById('aria-postrun');
+      out.postRun = post && !post.hidden ? 'shown' : 'hidden';
+      if (post && !post.hidden) {
+        out.postRows = scr.querySelectorAll('#aria-post-rows .dr-row').length;
+        out.postSources = scr.querySelectorAll('#aria-post-sources .dr-source').length;
+        out.postDial = ((document.getElementById('aria-post-dial') || {}).textContent || '')
+          .replace(/\s+/g, ' ').trim().slice(0, 40);
+        if (!out.postRows) bad('the report is shown but summarises no datasets');
+        if (!out.postSources) bad('the report is shown but names no sources');
+
+        var dt = document.getElementById('aria-details-toggle');
+        if (!dt) bad('the report has no way back to the workbench');
+        else {
+          dt.click();
+          await new Promise(function (r) { setTimeout(r, 150); });
+          var during = document.getElementById('aria-during');
+          if (during && during.hidden) bad('"View technical details" did not open the workbench');
+        }
+      }
+
       var reqTable = (document.getElementById('aria-required-body') || {}).closest ? document.getElementById('aria-required-body').closest('table') : null;
       var head = reqTable ? reqTable.querySelectorAll('thead th') : [];
       out.ariaCols = head.length;
@@ -654,6 +679,37 @@ setTimeout(async function () {
       // Upload is the only route in for data no connector reaches, so it must
       // be offered whatever the engagement says.
       if (out.tabs.indexOf('upload') === -1) bad('Upload tab missing (tabs: ' + out.tabs + ')');
+
+      // Put the workbench away again. The screenshot is taken by a separate
+      // run of this same probe, so whatever state it finishes in is the state
+      // that gets eyeballed — leaving it expanded means never seeing the page
+      // the customer actually lands on.
+      var dt2 = document.getElementById('aria-details-toggle');
+      if (dt2 && dt2.getAttribute('aria-expanded') === 'true') {
+        dt2.click();
+        await new Promise(function (r) { setTimeout(r, 150); });
+      }
+
+      // Opening the workbench scrolls to it, and that scroll outlives the
+      // close. The screenshot comes from a run of this same probe, so a page
+      // left scrolled is a page whose hero never appears in the picture.
+      window.scrollTo(0, 0);
+
+      // And with it closed, the report must still stand on its own: inside the
+      // viewport, and not painted over by the character lane beside it.
+      var postEl = document.getElementById('aria-postrun');
+      if (postEl && !postEl.hidden) {
+        var pr = postEl.getBoundingClientRect();
+        out.postWidth = Math.round(pr.width);
+        if (pr.width < 320) bad('the report collapsed to ' + Math.round(pr.width) + 'px wide');
+        var lane = scr.querySelector('.sc-lane');
+        if (lane) {
+          var lr = lane.getBoundingClientRect();
+          if (pr.right > lr.left + 2) {
+            bad('the report runs under the chat lane by ' + Math.round(pr.right - lr.left) + 'px');
+          }
+        }
+      }
     }
 
     // Arth's two lists. The benchmark tables are advice — they carry no
@@ -1043,6 +1099,7 @@ for (const screen of list) {
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"
         preview "${r.preview}" · sample tab offers ${r.sampleTargets} · panels ${r.visiblePanels}
+        report ${r.postRun} · ${r.postRows} rows · ${r.postSources} sources · dial "${r.postDial}"
         batch ${r.batchProgress} · targets "${r.batch}"` : '')
     + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : '')
     // Its own clause, not nested inside the arth one — nested, it could only

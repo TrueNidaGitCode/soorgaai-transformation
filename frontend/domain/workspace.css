@@ -957,19 +957,25 @@ body.domain-page .sc-panel {
    controls still exist under "View technical details"; these styles only
    describe the outcome above them.
 
-   Everything here is scoped under #screen-arth. domain.css carries 1,715
-   class names and outspecifies this file on two of them, so a bare .ae-card
-   would be a coin toss — the id prefix settles it without !important.
+   Scoped under .screen--aria, which BOTH the model screen and the data screen
+   carry — the data screen's after-the-run report reuses .ae-hero, .ae-card,
+   .ae-pill and .ae-state, and while these were scoped to #screen-arth it got
+   none of them: the hero icon rendered at the SVG default size and filled the
+   page. Shared styles need a shared scope.
+
+   Still one class deep, which is enough. domain.css carries 1,715 class names
+   and outspecifies this file on two of them, but none of them is an .ae-*
+   name — those are only defined here.
    ══════════════════════════════════════════════════════════════════════════ */
 
-#screen-arth .ae-hero {
+.screen--aria .ae-hero {
     display: flex;
     align-items: center;
     gap: 1.35rem;
     margin: 0 0 1.6rem;
 }
 
-#screen-arth .ae-hero__mark {
+.screen--aria .ae-hero__mark {
     flex: 0 0 auto;
     width: 74px;
     height: 74px;
@@ -980,15 +986,15 @@ body.domain-page .sc-panel {
     border: 2px solid currentColor;
     box-shadow: 0 0 0 6px rgba(46, 230, 214, 0.07), 0 0 26px rgba(46, 230, 214, 0.22);
 }
-#screen-arth .ae-hero__mark svg { width: 34px; height: 34px; }
+.screen--aria .ae-hero__mark svg { width: 34px; height: 34px; }
 
 /* Waiting on a decision rather than reporting one: same shape, no claim. */
-#screen-arth .ae-hero__mark--pending {
+.screen--aria .ae-hero__mark--pending {
     color: #7f96a0;
     box-shadow: none;
 }
 
-#screen-arth .ae-pill {
+.screen--aria .ae-pill {
     display: inline-block;
     font-size: .68rem;
     font-weight: 700;
@@ -1001,20 +1007,20 @@ body.domain-page .sc-panel {
     padding: .32rem .8rem;
     margin: 0 0 .55rem;
 }
-#screen-arth .ae-pill--pending {
+.screen--aria .ae-pill--pending {
     color: #9fb3bb;
     background: rgba(159, 179, 187, 0.09);
     border-color: rgba(159, 179, 187, 0.26);
 }
 
-#screen-arth .ae-hero__title {
+.screen--aria .ae-hero__title {
     margin: 0 0 .3rem;
     font-size: clamp(1.6rem, 1.2rem + 1.5vw, 2.3rem);
     font-weight: 700;
     line-height: 1.12;
     letter-spacing: -.01em;
 }
-#screen-arth .ae-hero__sub {
+.screen--aria .ae-hero__sub {
     margin: 0;
     color: var(--ws-text-dim, #9fb3bb);
     font-size: .95rem;
@@ -1022,7 +1028,7 @@ body.domain-page .sc-panel {
 
 /* The card and the artwork share the row; the artwork is the first thing to
    go, because it says nothing the tiles do not. */
-#screen-arth .ae-stage {
+.screen--aria .ae-stage {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
     gap: 1.5rem;
@@ -1036,26 +1042,26 @@ body.domain-page .sc-panel {
    and folding them onto three rows. Below ~1500 the row of five is worth more
    than the picture, which says nothing the tiles do not. */
 @media (max-width: 1650px) {
-    #screen-arth .ae-stage { grid-template-columns: minmax(0, 1fr); }
+    .screen--aria .ae-stage { grid-template-columns: minmax(0, 1fr); }
     /* Hiding the art lives at the foot of this block, after .ae-art sets
        display:grid — same specificity, and the later rule wins. Put here it
        lost silently, and the art rendered full-width under the card. */
 }
 
-#screen-arth .ae-card {
+.screen--aria .ae-card {
     background: linear-gradient(180deg, rgba(20, 42, 48, 0.5), rgba(12, 26, 30, 0.4));
     border: 1px solid rgba(93, 143, 155, 0.22);
     border-radius: 16px;
     padding: 1.4rem 1.5rem 1.1rem;
 }
 
-#screen-arth .ae-card__head {
+.screen--aria .ae-card__head {
     display: flex;
     align-items: flex-start;
     gap: 1rem;
     margin: 0 0 1.25rem;
 }
-#screen-arth .ae-card__icon {
+.screen--aria .ae-card__icon {
     flex: 0 0 auto;
     width: 48px;
     height: 48px;
@@ -1066,21 +1072,21 @@ body.domain-page .sc-panel {
     background: rgba(46, 230, 214, 0.09);
     border: 1px solid rgba(46, 230, 214, 0.2);
 }
-#screen-arth .ae-card__icon svg { width: 24px; height: 24px; }
-#screen-arth .ae-card__headings { flex: 1 1 auto; min-width: 0; }
-#screen-arth .ae-card__title {
+.screen--aria .ae-card__icon svg { width: 24px; height: 24px; }
+.screen--aria .ae-card__headings { flex: 1 1 auto; min-width: 0; }
+.screen--aria .ae-card__title {
     margin: 0 0 .25rem;
     font-size: 1.16rem;
     font-weight: 650;
     line-height: 1.25;
 }
-#screen-arth .ae-card__sub {
+.screen--aria .ae-card__sub {
     margin: 0;
     font-size: .86rem;
     color: var(--ws-text-dim, #9fb3bb);
 }
 
-#screen-arth .ae-state {
+.screen--aria .ae-state {
     flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
@@ -1094,22 +1100,22 @@ body.domain-page .sc-panel {
     padding: .35rem .85rem;
     white-space: nowrap;
 }
-#screen-arth .ae-state__dot {
+.screen--aria .ae-state__dot {
     width: 8px; height: 8px; border-radius: 50%;
     background: currentColor;
 }
-#screen-arth .ae-state--pending { color: #9fb3bb; background: rgba(159,179,187,.09); border-color: rgba(159,179,187,.24); }
+.screen--aria .ae-state--pending { color: #9fb3bb; background: rgba(159,179,187,.09); border-color: rgba(159,179,187,.24); }
 
 /* Five tiles, and they must not strand one on a row of its own — auto-fit
    with a floor wide enough for "Dedicated + Vector Search" to wrap to two
    lines rather than overflow. */
-#screen-arth .ae-tiles {
+.screen--aria .ae-tiles {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: .7rem;
 }
 
-#screen-arth .ae-tile {
+.screen--aria .ae-tile {
     background: rgba(10, 24, 28, 0.55);
     border: 1px solid rgba(93, 143, 155, 0.18);
     border-radius: 12px;
@@ -1120,25 +1126,25 @@ body.domain-page .sc-panel {
     align-items: center;
     gap: .3rem;
 }
-#screen-arth .ae-tile__icon {
+.screen--aria .ae-tile__icon {
     width: 34px; height: 34px;
     display: grid; place-items: center;
     color: var(--ws-accent, #2ee6d6);
     margin-bottom: .1rem;
 }
-#screen-arth .ae-tile__icon svg { width: 22px; height: 22px; }
-#screen-arth .ae-tile__label {
+.screen--aria .ae-tile__icon svg { width: 22px; height: 22px; }
+.screen--aria .ae-tile__label {
     font-size: .78rem;
     color: var(--ws-text-dim, #9fb3bb);
 }
-#screen-arth .ae-tile__value {
+.screen--aria .ae-tile__value {
     font-size: .9rem;
     font-weight: 650;
     line-height: 1.3;
     /* Long model names and "$0 · 0 requests" both land here. */
     overflow-wrap: anywhere;
 }
-#screen-arth .ae-tile__tag {
+.screen--aria .ae-tile__tag {
     margin-top: .3rem;
     font-size: .7rem;
     color: var(--ws-text-dim, #9fb3bb);
@@ -1147,11 +1153,11 @@ body.domain-page .sc-panel {
     padding: .18rem .6rem;
 }
 /* The one tile that can carry bad news. */
-#screen-arth .ae-tile--over .ae-tile__value,
-#screen-arth .ae-tile--over .ae-tile__icon { color: #f0a05a; }
-#screen-arth .ae-tile--over .ae-tile__tag { color: #f0a05a; border-color: rgba(240, 160, 90, .4); }
+.screen--aria .ae-tile--over .ae-tile__value,
+.screen--aria .ae-tile--over .ae-tile__icon { color: #f0a05a; }
+.screen--aria .ae-tile--over .ae-tile__tag { color: #f0a05a; border-color: rgba(240, 160, 90, .4); }
 
-#screen-arth .ae-card__foot {
+.screen--aria .ae-card__foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1162,7 +1168,7 @@ body.domain-page .sc-panel {
     border-top: 1px solid rgba(93, 143, 155, 0.16);
 }
 
-#screen-arth .ae-details-toggle {
+.screen--aria .ae-details-toggle {
     display: inline-flex;
     align-items: center;
     gap: .5rem;
@@ -1175,21 +1181,21 @@ body.domain-page .sc-panel {
     font-weight: 600;
     color: var(--ws-accent, #2ee6d6);
 }
-#screen-arth .ae-details-toggle__chev {
+.screen--aria .ae-details-toggle__chev {
     width: 15px; height: 15px;
     transition: transform .18s ease;
 }
-#screen-arth .ae-details-toggle[aria-expanded="true"] .ae-details-toggle__chev { transform: rotate(90deg); }
-#screen-arth .ae-details-toggle:focus-visible { outline: 2px solid var(--ws-accent, #2ee6d6); outline-offset: 3px; border-radius: 4px; }
+.screen--aria .ae-details-toggle[aria-expanded="true"] .ae-details-toggle__chev { transform: rotate(90deg); }
+.screen--aria .ae-details-toggle:focus-visible { outline: 2px solid var(--ws-accent, #2ee6d6); outline-offset: 3px; border-radius: 4px; }
 
-#screen-arth .ae-assurances {
+.screen--aria .ae-assurances {
     margin: 0;
     font-size: .82rem;
     color: var(--ws-text-dim, #9fb3bb);
 }
-#screen-arth .ae-assurances span { opacity: .4; margin: 0 .4rem; }
+.screen--aria .ae-assurances span { opacity: .4; margin: 0 .4rem; }
 
-#screen-arth .ae-details {
+.screen--aria .ae-details {
     border-top: 1px solid rgba(93, 143, 155, 0.16);
     padding-top: 1.4rem;
     margin-bottom: .5rem;
@@ -1197,17 +1203,17 @@ body.domain-page .sc-panel {
 
 /* Artwork: drawn rather than shipped as an image, so it takes the accent with
    it into either theme and costs no request. */
-#screen-arth .ae-art { position: relative; display: grid; place-items: center; min-height: 260px; }
-#screen-arth .ae-art__glow {
+.screen--aria .ae-art { position: relative; display: grid; place-items: center; min-height: 260px; }
+.screen--aria .ae-art__glow {
     position: absolute;
     width: 74%; aspect-ratio: 1;
     border-radius: 50%;
     background: radial-gradient(circle, rgba(46, 230, 214, 0.16), transparent 66%);
     filter: blur(6px);
 }
-#screen-arth .ae-art__svg { position: relative; width: 100%; height: auto; color: var(--ws-accent, #2ee6d6); }
-#screen-arth .ae-art__stack path { fill: var(--ws-accent, #2ee6d6); }
-#screen-arth .ae-art__chips rect { fill: rgba(46, 230, 214, 0.05); }
+.screen--aria .ae-art__svg { position: relative; width: 100%; height: auto; color: var(--ws-accent, #2ee6d6); }
+.screen--aria .ae-art__stack path { fill: var(--ws-accent, #2ee6d6); }
+.screen--aria .ae-art__chips rect { fill: rgba(46, 230, 214, 0.05); }
 
 /* The only thing on the screen the customer has to do. */
 #screen-arth .stage-nav--centred {
@@ -1221,12 +1227,249 @@ body.domain-page .sc-panel {
 #screen-arth .stage-nav--centred .stage-nav__btn { order: 1; min-width: 240px; }
 
 @media (prefers-reduced-motion: reduce) {
-    #screen-arth .ae-details-toggle__chev { transition: none; }
+    .screen--aria .ae-details-toggle__chev { transition: none; }
 }
 
 /* Last, so it beats .ae-art's own display:grid. See the note on .ae-stage's
    media query above for why the threshold is 1500 rather than a viewport
    breakpoint that sounds more natural. */
 @media (max-width: 1650px) {
-    #screen-arth .ae-art { display: none; }
+    .screen--aria .ae-art { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Arth — the report after the run
+   ══════════════════════════════════════════════════════════════════════════
+   The data screen has two jobs that want different pages: a workbench for
+   connecting sources, and a report on what came back. These styles are the
+   report; the workbench keeps the styles it already had.
+
+   Scoped under #screen-aria for the same reason the Aria block is scoped —
+   domain.css outspecifies a bare class here.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+#screen-aria .dr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(248px, 1fr));
+    gap: 1rem;
+    align-items: start;
+    margin: 0 0 1.6rem;
+}
+
+#screen-aria .dr-card { padding: 1.15rem 1.2rem 1.1rem; }
+
+#screen-aria .dr-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    /* Wraps rather than squeezing: three cards side by side leave each one
+       narrow, and a state pill holding its width pushed "Data Summary" onto
+       two lines. The pill drops under the heading instead. */
+    flex-wrap: wrap;
+    gap: .5rem .75rem;
+    margin: 0 0 1rem;
+}
+#screen-aria .dr-card__title {
+    margin: 0 0 .2rem;
+    font-size: 1rem;
+    font-weight: 650;
+}
+#screen-aria .dr-card__sub {
+    margin: 0;
+    font-size: .8rem;
+    line-height: 1.45;
+    color: var(--ws-text-dim, #9fb3bb);
+}
+#screen-aria .dr-spark { color: var(--ws-accent, #2ee6d6); }
+
+/* ── Data Summary ──────────────────────────────────────────────────────── */
+
+#screen-aria .dr-summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.1rem;
+}
+/* The dial drops below the rows before the rows start truncating: the rows
+   carry the facts, the dial only totals them. */
+@media (max-width: 1500px) {
+    #screen-aria .dr-summary { flex-direction: column; align-items: center; }
+}
+
+#screen-aria .dr-dial {
+    flex: 0 0 auto;
+    width: 118px;
+    text-align: center;
+    color: var(--ws-text-dim, #9fb3bb);
+    font-size: .72rem;
+    line-height: 1.35;
+}
+#screen-aria .dr-dial__ring {
+    position: relative;
+    width: 104px;
+    height: 104px;
+    margin: 0 auto .5rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+}
+#screen-aria .dr-dial__ring::after {
+    content: "";
+    position: absolute;
+    inset: 9px;
+    border-radius: 50%;
+    background: var(--ws-ground, #04080d);
+}
+#screen-aria .dr-dial__inner { position: relative; z-index: 1; line-height: 1.1; }
+#screen-aria .dr-dial__num {
+    display: block;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--ws-text, #eaf6f9);
+}
+#screen-aria .dr-dial__unit { display: block; font-size: .7rem; }
+
+#screen-aria .dr-rows {
+    flex: 1 1 auto;
+    min-width: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+#screen-aria .dr-row {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .6rem;
+    padding: .5rem 0;
+    border-bottom: 1px solid rgba(93, 143, 155, 0.13);
+}
+#screen-aria .dr-row:last-child { border-bottom: 0; }
+#screen-aria .dr-row__icon {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    display: grid; place-items: center;
+    background: rgba(46, 230, 214, 0.08);
+    color: var(--ws-accent, #2ee6d6);
+}
+#screen-aria .dr-row__icon svg { width: 14px; height: 14px; }
+#screen-aria .dr-row__name {
+    font-size: .82rem;
+    overflow-wrap: anywhere;
+}
+#screen-aria .dr-row__count {
+    font-size: .76rem;
+    color: var(--ws-text-dim, #9fb3bb);
+    white-space: nowrap;
+}
+#screen-aria .dr-row__state {
+    font-size: .76rem;
+    white-space: nowrap;
+    color: var(--ws-accent, #2ee6d6);
+}
+#screen-aria .dr-row__state--muted { color: var(--ws-text-dim, #9fb3bb); }
+#screen-aria .dr-row__state--warn  { color: #f0a05a; }
+
+/* The count sits with the name when there is room, and under it when the
+   three-column row would otherwise squeeze the name to nothing. */
+#screen-aria .dr-row__meta { display: flex; flex-direction: column; min-width: 0; }
+
+/* ── Data Source Details ───────────────────────────────────────────────── */
+
+#screen-aria .dr-sources { list-style: none; margin: 0; padding: 0; }
+#screen-aria .dr-source {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .65rem;
+    padding: .6rem 0;
+    border-bottom: 1px solid rgba(93, 143, 155, 0.13);
+}
+#screen-aria .dr-source:last-child { border-bottom: 0; }
+#screen-aria .dr-source__icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    background: rgba(46, 230, 214, 0.08);
+    color: var(--ws-accent, #2ee6d6);
+    font-size: .72rem;
+    font-weight: 700;
+}
+#screen-aria .dr-source__icon svg { width: 16px; height: 16px; }
+#screen-aria .dr-source__name { font-size: .85rem; font-weight: 600; }
+#screen-aria .dr-source__what {
+    font-size: .74rem;
+    color: var(--ws-text-dim, #9fb3bb);
+    overflow-wrap: anywhere;
+}
+#screen-aria .dr-source__state { font-size: .76rem; color: var(--ws-accent, #2ee6d6); white-space: nowrap; }
+#screen-aria .dr-source__state--muted { color: var(--ws-text-dim, #9fb3bb); }
+
+#screen-aria .dr-foot-note {
+    display: flex;
+    gap: .5rem;
+    margin: .9rem 0 0;
+    padding-top: .8rem;
+    border-top: 1px solid rgba(93, 143, 155, 0.16);
+    font-size: .75rem;
+    line-height: 1.5;
+    color: var(--ws-text-dim, #9fb3bb);
+}
+#screen-aria .dr-foot-note__icon { color: var(--ws-accent, #2ee6d6); }
+
+/* ── What's Next ───────────────────────────────────────────────────────── */
+
+#screen-aria .dr-next { display: grid; gap: .7rem; }
+#screen-aria .dr-note {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: .7rem;
+    padding: .8rem .85rem;
+    border-radius: 10px;
+    background: rgba(10, 24, 28, 0.55);
+    border: 1px solid rgba(93, 143, 155, 0.16);
+}
+/* The one that is true right now reads as the answer; the other is a
+   contingency and should not compete with it. */
+#screen-aria .dr-note--on {
+    background: rgba(46, 230, 214, 0.07);
+    border-color: rgba(46, 230, 214, 0.26);
+}
+#screen-aria .dr-note__icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    color: var(--ws-accent, #2ee6d6);
+    background: rgba(46, 230, 214, 0.09);
+}
+#screen-aria .dr-note--off .dr-note__icon { color: var(--ws-text-dim, #9fb3bb); background: rgba(159, 179, 187, 0.08); }
+#screen-aria .dr-note__icon svg { width: 17px; height: 17px; }
+#screen-aria .dr-note__title { margin: 0 0 .2rem; font-size: .82rem; font-weight: 650; }
+#screen-aria .dr-note__body { margin: 0; font-size: .76rem; line-height: 1.5; color: var(--ws-text-dim, #9fb3bb); }
+
+#screen-aria .dr-tech {
+    width: 100%;
+    justify-content: center;
+    margin-top: .9rem;
+    padding: .6rem .9rem;
+    border: 1px solid rgba(46, 230, 214, 0.26);
+    border-radius: 10px;
+    background: rgba(46, 230, 214, 0.06);
+}
+#screen-aria .dr-tech .ae-details-toggle__chev { transition: transform .18s ease; }
+#screen-aria .dr-tech[aria-expanded="true"] .ae-details-toggle__chev { transform: rotate(90deg); }
+
+/* Shared with the Aria screen: the forward control is the only thing the
+   customer has to do, so it sits centred under everything. */
+#screen-aria .stage-nav--centred {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    text-align: center;
+}
+#screen-aria .stage-nav--centred .stage-nav__hint { order: 2; }
+#screen-aria .stage-nav--centred .stage-nav__btn { order: 1; min-width: 240px; }
+
+@media (prefers-reduced-motion: reduce) {
+    #screen-aria .dr-tech .ae-details-toggle__chev { transition: none; }
 }

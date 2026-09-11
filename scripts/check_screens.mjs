@@ -819,6 +819,33 @@ setTimeout(async function () {
       if (panel && !panel.hasAttribute('hidden')) {
         var pr = panel.getBoundingClientRect();
         out.chatW = Math.round(pr.width);
+        /**
+         * The panel must not cover the navigation either.
+         *
+         * The existing check below measures the panel against CONTENT, so a
+         * panel sitting on top of the top bar or the journey passed it
+         * cleanly. Both are fixed, both are above the fold, and a stage you
+         * cannot click because a chat window is over it is the most expensive
+         * kind of overlap on this screen.
+         */
+        var bar = document.querySelector('.workspace-nav');
+        var journey = scr.querySelector('.rp-journey') || document.querySelector('.rp-journey');
+        [['top bar', bar], ['journey', journey]].forEach(function (pair) {
+          var el = pair[1];
+          if (!el) return;
+          var r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) return;
+          var hits = r.right > pr.left + 1 && r.left < pr.right - 1
+                  && r.bottom > pr.top + 1 && r.top < pr.bottom - 1;
+          out[pair[0] === 'top bar' ? 'barBox' : 'journeyBox'] =
+            Math.round(r.left) + ',' + Math.round(r.top) + ' ' +
+            Math.round(r.right) + 'x' + Math.round(r.bottom);
+          if (hits) {
+            bad('chat panel overlaps the ' + pair[0] +
+                ' (' + pair[0] + ' ends at ' + Math.round(r.right) + '/' + Math.round(r.bottom) +
+                ', panel starts at ' + Math.round(pr.left) + '/' + Math.round(pr.top) + ')');
+          }
+        });
         if (pr.width < 300) bad('chat panel is only ' + Math.round(pr.width) + 'px wide');
 
         // Only elements that actually PAINT. Full-width containers like

@@ -886,3 +886,70 @@ body.domain-page {
     max-width: calc(100vw - var(--ws-rail) - var(--ws-panel-w) - 104px) !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Winning the layout outright
+
+   The journey and the lane were being placed by domain.css selectors deeper
+   than two class names, so the position/top/right declarations earlier in this
+   file never took. At 1280px the journey was still a content-sized row inside
+   the column — ending at x=803 with the panel docked at 784, and 11px of it
+   under the panel's top edge.
+
+   These four properties decide where the frame sits, so they are stated to
+   win. Everything else in this file is ordinary cascade.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+body.domain-page .rp-journey {
+  position: fixed !important;
+  top: 68px !important;
+  left: var(--ws-rail) !important;
+  right: 0 !important;
+  height: 78px !important;
+  margin: 0 !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+}
+
+body.domain-page .sc-lane {
+  position: fixed !important;
+  top: 146px !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: auto !important;
+  margin: 0 !important;
+  max-width: none !important;
+}
+
+@media (min-width: 1180px) {
+  /* The journey stops before the panel so the last stage is not sitting in
+     the chat's column, and the panel starts below the journey so neither is
+     ever on top of the other. */
+  body.domain-page .rp-journey { right: var(--ws-panel-w) !important; }
+  body.domain-page .sc-lane { width: var(--ws-panel-w) !important; }
+}
+
+@media (max-width: 1179px) {
+  /* Below the breakpoint the panel stacks under the content instead of
+     docking, so nothing is fixed and nothing can cover the journey. */
+  body.domain-page .sc-lane {
+    position: static !important;
+    width: auto !important;
+    inset: auto !important;
+  }
+}
+
+/* The panel had escaped its own lane.
+   domain.css positions .sc-panel absolutely — it floated beside the portrait,
+   so it was placed against the viewport rather than against its container.
+   Docked, that left it sitting 26px to the left of the lane and 11px above it,
+   which is precisely the sliver that kept landing on the journey. It fills the
+   lane now and is positioned by nothing but the lane. */
+body.domain-page .sc-panel {
+  position: static !important;
+  inset: auto !important;
+  margin: 0 !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: none !important;
+}

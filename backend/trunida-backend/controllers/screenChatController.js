@@ -19,6 +19,7 @@ import { JIRA_SCOPES } from '../services/atlassianAuthService.js';
 import { askScreenChat } from '../services/screenChatService.js';
 import { recordExchange } from '../services/conversationMemoryService.js';
 import { learnFromConversation } from '../services/customerUnderstandingService.js';
+import { considerCapabilities } from '../services/capabilityDecisionService.js';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -238,6 +239,13 @@ export async function screenChat(req, res) {
       .then(recorded => {
         if (!recorded) return null;
         return learnFromConversation({ userId: req.user._id, blueprintId });
+      })
+      // Only consider building when this pass actually learned something.
+      // Deciding against an unchanged understanding would re-run the guards on
+      // every message to no purpose, and the guards cost database round trips.
+      .then(result => {
+        if (!result?.learned) return null;
+        return considerCapabilities({ userId: req.user._id, blueprintId, blueprint: bp });
       })
       .catch(err => console.error('[screenChat] learning pass failed:', err.message));
 

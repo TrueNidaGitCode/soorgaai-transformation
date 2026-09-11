@@ -17,6 +17,7 @@ import LinkedProjectDocument from '../models/LinkedProjectDocument.js';
 import PersonalConfluenceConnection from '../models/PersonalConfluenceConnection.js';
 import { JIRA_SCOPES } from '../services/atlassianAuthService.js';
 import { askScreenChat } from '../services/screenChatService.js';
+import { recordExchange } from '../services/conversationMemoryService.js';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -211,6 +212,20 @@ export async function screenChat(req, res) {
       context,
       message: message.trim(),
       conversationHistory: Array.isArray(conversationHistory) ? conversationHistory : [],
+    });
+
+    // Kept, not awaited. The reply is what the customer is waiting for, and a
+    // write that fails or is slow must not hold it up or turn a good answer
+    // into a 500 — recordExchange swallows its own errors for the same reason.
+    // The client still sends conversationHistory and still drives the visible
+    // thread; this is a server-side record for the Learner to read, not a
+    // replacement for it.
+    recordExchange({
+      userId: req.user._id,
+      blueprintId,
+      screen,
+      message: message.trim(),
+      reply: result.reply,
     });
 
     return res.json(result);

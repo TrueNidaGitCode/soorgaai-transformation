@@ -17,7 +17,7 @@
  * satisfies it rather than just refusing.
  */
 
-import { findAiUseCasesPrioritizationSection } from './blueprintGenerate.js';
+import { findAiUseCasesPrioritizationSection } from './blueprintSections.js';
 
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
@@ -755,7 +755,9 @@ document.addEventListener('yusu:show', (e) => {
   _blueprintId = bp._id;
   wire();
 
-  document.dispatchEvent(new CustomEvent('screen:show', { detail: { id: 'screen-yusu' } }));
+  // Not shown from here any more: revealStage() shows this screen once it
+  // reports ready below, so what appears is the real state and not the
+  // markup default with the real state arriving a round trip later.
   // The token block went with the handover section. Guarded: this ran on
   // every show and was the first thing to throw once the element was gone,
   // which left the hero stuck at its markup default in every state.
@@ -770,6 +772,11 @@ document.addEventListener('yusu:show', (e) => {
     render(_bp, _dep);
     pollWhileBuilding();
     autoRun();
+  }).finally(() => {
+    // Ready on settle either way. A load that failed still has an honest
+    // state to show -- the error -- and holding the screen back would leave
+    // the customer on the previous one with no idea why.
+    document.dispatchEvent(new CustomEvent('stage:ready', { detail: { stage: 'yusu' } }));
   });
 });
 

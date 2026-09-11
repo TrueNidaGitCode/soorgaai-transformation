@@ -11,7 +11,7 @@
  * Building and pushing moved to Yusu: Eame is the application, Yusu ships it.
  */
 
-import { findAiUseCasesPrioritizationSection } from './blueprintGenerate.js';
+import { findAiUseCasesPrioritizationSection } from './blueprintSections.js';
 
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
@@ -682,8 +682,10 @@ document.addEventListener('eame:show', (e) => {
   _bp = bp;
   wire();
 
-  // Screen switching lives in blueprintGenerate.js's showScreen list.
-  document.dispatchEvent(new CustomEvent('screen:show', { detail: { id: 'screen-eame' } }));
+  // No longer shown from here. revealStage() in blueprintGenerate.js shows
+  // this screen once it reports ready below -- showing it first meant the
+  // customer saw "Generate the Application" and no cards, then a round trip
+  // later, the built application. Rendering into a hidden screen is fine.
 
   updateEameGate(false);   // reopened by renderFiles once a build has passed
 
@@ -700,6 +702,13 @@ document.addEventListener('eame:show', (e) => {
   // The build is the only source of files. No build, no project — there is no
   // second list to fall back to that would be true.
   renderEmptyProject();
-  pollBuild();
-  renderBadges(bp);
+
+  // Ready once the first build response has been drawn and the badges are
+  // in. pollBuild() resolves after its first response (later polls schedule
+  // themselves), so this is "the screen shows its real state", not "the
+  // build is finished". Settled, not all: a badge that fails to load must not
+  // hold the whole screen back.
+  Promise.allSettled([pollBuild(), renderBadges(bp)]).then(() => {
+    document.dispatchEvent(new CustomEvent('stage:ready', { detail: { stage: 'eame' } }));
+  });
 });

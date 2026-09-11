@@ -332,6 +332,22 @@ body.domain-page .pw-step--done .pw-step__node {
 }
 
 body.domain-page .rp-journey__locked { opacity: 0.55; }
+
+/* The stage that has been clicked and is still loading. The previous screen
+   stays until the new one is ready, so without this the click would look
+   ignored for the length of a round trip. */
+body.domain-page .pw-step--loading .pw-step__node {
+  border-color: var(--ws-accent);
+  color: var(--ws-accent);
+  animation: ws-step-loading 0.9s ease-in-out infinite;
+}
+@keyframes ws-step-loading {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 217, 232, 0.35); }
+  50%      { box-shadow: 0 0 0 7px rgba(34, 217, 232, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.domain-page .pw-step--loading .pw-step__node { animation: none; }
+}
 body.domain-page .rp-journey__locked:hover { opacity: 0.8; }
 
 body.domain-page .pw-step-line {

@@ -22,7 +22,7 @@
  * shows as unsupported rather than offering a dead link.
  */
 
-import { findAiUseCasesPrioritizationSection } from './blueprintGenerate.js';
+import { findAiUseCasesPrioritizationSection } from './blueprintSections.js';
 
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
@@ -1927,12 +1927,20 @@ document.addEventListener('aria:show', (e) => {
 
   // Uploads decide dataset status, so the table has to be redrawn once they
   // are known — the first render above cannot know them yet.
-  loadUploads(bp._id).then(() => {
+  const uploadsIn = loadUploads(bp._id).then(() => {
     renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
     if (_activeTab === 'upload') renderUploadList();
   });
 
-  initSources(bp._id);
+  const sourcesIn = initSources(bp._id);
+
+  // Ready once uploads and sources are both known: every dataset's state
+  // depends on them, and a screen shown before they arrive marks the lot
+  // "To connect" for a round trip, then flips them to what they are.
+  // Settled, not all -- a source check that fails still has an honest state.
+  Promise.allSettled([uploadsIn, sourcesIn]).then(() => {
+    document.dispatchEvent(new CustomEvent('stage:ready', { detail: { stage: 'aria' } }));
+  });
 
   // A ?connect= link lands back here; renderTabs has already opened the
   // matching tab, so this only has to bring it into view.

@@ -17,7 +17,7 @@
  * preference, never a model name.
  */
 
-import { findAiUseCasesPrioritizationSection } from './blueprintGenerate.js';
+import { findAiUseCasesPrioritizationSection } from './blueprintSections.js';
 
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
@@ -654,7 +654,18 @@ function refreshConfirm() {
  * licence figures the model catalog has no equivalent for. It is locked, so
  * that path only runs if it is ever unlocked.
  */
+/** The in-flight catalog load, so arrival can wait for it. choose() starts
+ *  this from two different branches; neither returns the promise, and the
+ *  show handler needs it to know when the model tile has a real name. */
+let _modelsLoading = Promise.resolve();
+
 async function loadModels() {
+  const p = loadModelsInner();
+  _modelsLoading = p.catch(() => {});
+  return p;
+}
+
+async function loadModelsInner() {
   const wrap = document.getElementById('arth-models');
   wrap.innerHTML = `<p class="ks-card-body">Loading models…</p>`;
   try {
@@ -874,5 +885,12 @@ document.addEventListener('arth:show', (e) => {
   _env = null;
   renderHostingOptions();
   renderPrepared(null);
-  loadEnvironment();
+
+  // Ready once the deployment record and the model catalog are both in: the
+  // tiles read from both, and a screen shown before either arrives says
+  // "No limit set" and "Not chosen yet" for a round trip, then the truth.
+  // Settled, not all -- a catalog that fails still leaves an honest screen.
+  Promise.allSettled([loadEnvironment(), _modelsLoading]).then(() => {
+    document.dispatchEvent(new CustomEvent('stage:ready', { detail: { stage: 'arth' } }));
+  });
 });

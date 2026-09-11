@@ -213,9 +213,15 @@ const CATALOG = ${JSON.stringify({
   ],
 })};
 
+// CHECK_LATENCY=ms delays every stubbed response. The stub answers instantly
+// by default, which hides a whole class of bug: the screen shows its markup
+// defaults until the data lands, and with instant data that is one frame.
+// With real latency it is a page that says one thing and then another.
+const LATENCY = ${Number(process.env.CHECK_LATENCY || 0)};
 function J(body, ms) {
   const res = new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  return ms ? new Promise(r => setTimeout(() => r(res), ms)) : Promise.resolve(res);
+  const wait = (ms || 0) + LATENCY;
+  return wait ? new Promise(r => setTimeout(() => r(res), wait)) : Promise.resolve(res);
 }
 
 window.fetch = function (url, opts) {
@@ -376,11 +382,64 @@ const SCREENS = {
 function probeScript(screen) {
   const cfg = SCREENS[screen];
   return `<script>
+// ── What the screen says before its data arrives ─────────────────────────
+// Runs from the first frame, not from the probe's 3.2s mark. It records what
+// the hero and the pills say the moment the screen is visible, then every
+// 100ms after, and keeps every distinct thing it saw. The probe compares the
+// first thing shown with the last: if they differ, the customer saw one page
+// and then another. Only visible under CHECK_LATENCY, which is the point --
+// with instant data the flash is one frame and looks like nothing.
+(function () {
+  var seen = [];
+  var start = performance.now();
+  function signature() {
+    var scr = document.getElementById(${JSON.stringify(cfg.id)});
+    if (!scr || scr.offsetParent === null) return null;
+    var hero = scr.querySelector('.ae-stage--hero');
+    var title = hero ? (hero.querySelector('.ae-hero__title') || {}).textContent || '' : '';
+    var pills = hero ? [].map.call(hero.querySelectorAll('.ae-pill'), function (p) { return p.textContent.trim(); }).join('|') : '';
+    var cards = [].filter.call(scr.querySelectorAll('.ae-card, .eg-card, .dr-card, .yu-app'), function (c) { return c.offsetParent !== null; }).length;
+    // The values under the heading are where most of the change happens:
+    // tiles that read "Not chosen yet" and then a model name, a state pill
+    // that reads one thing and then another, rows that arrive late.
+    var values = [].filter.call(
+      scr.querySelectorAll('.ae-tile__value, .ae-state, .dr-row__state, .dr-source__name, .eg-tree__name, .tr-card__verdict, #arth-tiles, .eg-tree__loading'),
+      function (el) { return el.offsetParent !== null; }
+    ).map(function (el) { return el.textContent.replace(/[ \\t\\r\\n]+/g, ' ').trim().slice(0, 24); }).join(',');
+    return pills + ' :: ' + title.trim() + ' :: ' + cards + ' cards :: ' + values.slice(0, 160);
+  }
+  var timer = setInterval(function () {
+    var sig = signature();
+    if (sig === null) return;
+    if (!seen.length || seen[seen.length - 1].sig !== sig) seen.push({ t: Math.round(performance.now() - start), sig: sig });
+    if (performance.now() - start > 3000) clearInterval(timer);
+  }, 50);
+  window.__seen = seen;
+  // And when each stage said it was ready -- the signal revealStage waits on.
+  window.__ready = [];
+  document.addEventListener('stage:ready', function (e) {
+    window.__ready.push(((e.detail || {}).stage) + '@' + Math.round(performance.now() - start) + 'ms');
+  });
+  // How many times each stage was asked to load. Twice means twice the
+  // requests, on every visit.
+  window.__shows = [];
+  ['aria', 'arth', 'eame', 'yusu'].forEach(function (st) {
+    document.addEventListener(st + ':show', function () { window.__shows.push(st + '@' + Math.round(performance.now() - start) + 'ms'); });
+  });
+})();
+
 setTimeout(async function () {
   var out = { screen: ${JSON.stringify(screen)}, fail: [] };
   function bad(m) { out.fail.push(m); }
   try {
     var scr = document.getElementById(${JSON.stringify(cfg.id)});
+    // Screens are shown once they report ready, and a stage that needs
+    // several round trips takes several times CHECK_LATENCY to get there.
+    // Wait for it rather than reading at a fixed moment.
+    for (var sv = 0; sv < 60 && (!scr || scr.offsetParent === null); sv++) {
+      await new Promise(function (r) { setTimeout(r, 100); });
+      scr = document.getElementById(${JSON.stringify(cfg.id)});
+    }
     if (!scr || scr.offsetParent === null) bad('screen not visible');
 
     // The stylesheet actually parsed. A CSS comment closing early silently
@@ -444,6 +503,29 @@ setTimeout(async function () {
       var idleRing = idle ? getComputedStyle(idle).borderColor : '';
       out.activeRing = ring;
       if (idle && ring === idleRing) bad('the active stage is drawn the same as an idle one (' + ring + ')');
+    }
+
+    // ── Did the screen change its story after it appeared? ───────────────
+    var seen = window.__seen || [];
+    out.transitions = seen.length;
+    out.readyEvents = (window.__ready || []).join(',') || 'none';
+    out.showEvents = (window.__shows || []).join(',') || 'none';
+    var showsForThis = (window.__shows || []).filter(function (x) { return x.indexOf(out.screen + '@') === 0; }).length;
+    if (showsForThis > 1) bad('the stage was asked to load ' + showsForThis + ' times on one visit: ' + out.showEvents);
+    out.story = seen.map(function (e) { return e.t + 'ms "' + e.sig + '"'; }).join(' -> ');
+    if (seen.length > 1) {
+      var first = seen[0].sig, last = seen[seen.length - 1].sig;
+      // A screen that first says it is WORKING and then shows the result is
+      // telling the truth twice -- Yusu runs its governance checks on arrival
+      // and says "Preparing the release" while it does. What is not allowed
+      // is a first state that claims a fact ("No limit set", "To connect")
+      // and a second that contradicts it.
+      // "Not run" is the governance card before autoRun has run the checks --
+      // a pending state that says so, not a result that is about to change.
+      var honestStart = /preparing|building|loading|running|checking|working|not run/i.test(first);
+      if (first !== last && !honestStart) {
+        bad('the screen showed one thing and then another: first "' + first + '" then "' + last + '" (' + (seen.length - 1) + ' change(s))');
+      }
     }
 
     // ── One hero, five screens ──────────────────────────────────────────
@@ -710,7 +792,9 @@ setTimeout(async function () {
       if (!viewBtn) bad('no way to view the generated rows');
       else {
         viewBtn.click();
-        await new Promise(function (r) { setTimeout(r, 500); });
+        // The preview fetches its rows; under CHECK_LATENCY the fixed wait
+        // has to cover that round trip too.
+        await new Promise(function (r) { setTimeout(r, 500 + ${Number(process.env.CHECK_LATENCY || 0)}); });
         var preview = document.querySelector('.aria-sample-preview');
         out.preview = preview && !preview.hidden
           ? preview.textContent.replace(/s+/g, ' ').trim().slice(0, 60) : 'not shown';
@@ -1327,7 +1411,7 @@ for (const screen of list) {
   if (!ok) failed++;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${screen.padEnd(6)}`
     + `css ${String(r.cssRules ?? '?').padStart(4)} rules · `
-    + `${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · hero ${r.pills ?? '-'} art ${r.art ?? '-'} · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
+    + `${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · ready ${r.readyEvents ?? '-'} · shows ${r.showEvents ?? '-'} · hero ${r.pills ?? '-'} art ${r.art ?? '-'} · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"
@@ -1347,6 +1431,7 @@ for (const screen of list) {
     + (r.yusuPill !== undefined
         ? `\n        pill "${r.yusuPill}" · title "${r.yusuTitle}" · checks ${r.yusuChecks}`
         : ''));
+  if (r.story && r.transitions > 1) console.log(`        story ${r.story}`);
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }
 

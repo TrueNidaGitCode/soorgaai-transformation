@@ -20,6 +20,8 @@
  *   'blueprint:ready' — { blueprint } — tells workspace module to take over
  */
 
+import { findAiUseCasesPrioritizationSection } from './blueprintSections.js';
+
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
       ? 'http://localhost:3000/api'
@@ -376,18 +378,8 @@ function escapeHtml(str) {
 
 let _opportunitiesContentShown = false;
 
-export function findAiUseCasesPrioritizationSection(bp) {
-  const domain = (bp.domains || []).find(d => d.domainId === 'ai-use-cases');
-  if (!domain || domain.status !== 'completed') return null;
-  for (const cap of (domain.capabilities || [])) {
-    for (const section of (cap.sections || [])) {
-      if (section.title === 'AI Implementation Prioritization' || section.title === 'AI Use Case Prioritization') {
-        return section;
-      }
-    }
-  }
-  return null;
-}
+// findAiUseCasesPrioritizationSection now lives in blueprintSections.js --
+// see the note there for why importing it from HERE loaded this module twice.
 
 /**
  * The opportunities to show on Cob, from whichever capability produced them.
@@ -893,6 +885,60 @@ function wireOpportunitiesButtons(guestId) {
 // blueprint already in memory and avoids a refetch on every hop.
 let _currentBlueprint = null;
 
+/**
+ * Longest a stage is given to say it is ready before it is shown anyway.
+ *
+ * A stage that never reports -- a module that forgot, an API that hangs --
+ * must not leave the customer on the previous screen forever. Past this the
+ * old behaviour returns: show it and let it fill in. Two and a half seconds
+ * is longer than any of the loads take and shorter than a person starts to
+ * wonder whether the click registered.
+ */
+const STAGE_READY_TIMEOUT_MS = 2500;
+
+/** Resolves when `stage` reports it has rendered its first real state. */
+function stageReady(stage) {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = (how) => {
+      if (done) return;
+      done = true;
+      document.removeEventListener('stage:ready', onReady);
+      resolve(how);
+    };
+    const onReady = (e) => { if (e.detail?.stage === stage) finish('ready'); };
+    document.addEventListener('stage:ready', onReady);
+    setTimeout(() => finish('timeout'), STAGE_READY_TIMEOUT_MS);
+  });
+}
+
+/**
+ * Start a stage loading, and show it only once it has something true to show.
+ *
+ * Every stage used to be shown first and filled in afterwards: the screen
+ * appeared with its markup defaults -- "Generate the Application", a spend
+ * limit of "No limit set", datasets marked "To connect" -- and then, a round
+ * trip later, replaced all of it with the truth. Under real latency that is a
+ * page that says one thing and then another, on every click.
+ *
+ * Now the previous screen stays until the new one reports ready, so what
+ * appears is finished. The clicked stage pulses meanwhile so the click reads
+ * as taken. Cob needs none of this: it renders from the blueprint already in
+ * memory.
+ */
+async function revealStage(stage, bp) {
+  const steps = document.querySelectorAll(`.rp-journey .pw-step[data-goto="${stage}"]`);
+  steps.forEach(s => s.classList.add('pw-step--loading'));
+
+  const ready = stageReady(stage);
+  document.dispatchEvent(new CustomEvent(stage + ':show', { detail: { blueprint: bp } }));
+  const how = await ready;
+  if (how === 'timeout') console.warn(`[stage] ${stage} did not report ready in ${STAGE_READY_TIMEOUT_MS}ms — showing it anyway`);
+
+  steps.forEach(s => s.classList.remove('pw-step--loading'));
+  showScreen('screen-' + stage);
+}
+
 function goToStage(stage) {
   const bp = _currentBlueprint;
   if (!bp) return;
@@ -903,8 +949,7 @@ function goToStage(stage) {
     handleOpportunitiesUpdate(bp);
     return;
   }
-  showScreen('screen-' + stage);
-  document.dispatchEvent(new CustomEvent(stage + ':show', { detail: { blueprint: bp } }));
+  revealStage(stage, bp);
 }
 
 /**
@@ -1320,8 +1365,9 @@ async function init() {
     const forceAria = view === 'aria';
     // Aria and Eame are reachable directly too, same override as Arth.
     if (view === 'arth' || view === 'eame' || view === 'yusu') {
-      showScreen('screen-' + view);
-      document.dispatchEvent(new CustomEvent(view + ':show', { detail: { blueprint: bp } }));
+      // Same reveal as a click: the loading screen stays until the stage has
+      // rendered its real state, rather than the stage appearing half-filled.
+      revealStage(view, bp);
       initGenerateForm();
       initGroundingBanner(bp._id);
       initEnterpriseBlueprintLink();
@@ -1329,8 +1375,7 @@ async function init() {
     }
 
     if (returningToAria || forceAria) {
-      showScreen('screen-aria');
-      document.dispatchEvent(new CustomEvent('aria:show', { detail: { blueprint: bp } }));
+      revealStage('aria', bp);
     } else if (shouldShowWorkspace(bp)) {
       document.dispatchEvent(new CustomEvent('blueprint:ready', { detail: { blueprint: bp } }));
     } else {

@@ -450,13 +450,21 @@ setTimeout(async function () {
         var cards = [].map.call(scr.querySelectorAll('#aria-postrun .dr-card'),
           function (c) { return Math.round(c.getBoundingClientRect().height); });
         out.cardHeights = cards.join('/');
-        if (cards.length === 3) {
+        if (cards.length < 2) bad('the report rendered ' + cards.length + ' card(s), expected 2');
+        if (cards.length >= 2) {
           var tallest = Math.max.apply(null, cards);
           var shortest = Math.min.apply(null, cards);
           if (tallest - shortest > 24) {
-            bad('the three report cards differ by ' + (tallest - shortest) + 'px: ' + out.cardHeights);
+            bad('the report cards differ by ' + (tallest - shortest) + 'px: ' + out.cardHeights);
           }
         }
+
+        // The simulated-data warning moved out of the card that was removed.
+        // It is the one thing on this screen a customer could act on while
+        // believing something false, so assert it survived the move.
+        var noteEl = document.getElementById('aria-post-note');
+        out.postNote = (noteEl ? noteEl.textContent : '').replace(/\s+/g, ' ').trim().slice(0, 60);
+        if (out.postRows && !out.postNote) bad('the report lost its data-handling note');
 
         var dt = document.getElementById('aria-details-toggle');
         if (!dt) bad('the report has no way back to the workbench');
@@ -1115,7 +1123,8 @@ for (const screen of list) {
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"
         preview "${r.preview}" · sample tab offers ${r.sampleTargets} · panels ${r.visiblePanels}
-        report ${r.postRun} · ${r.postRows} rows · ${r.postSources} sources · cards ${r.cardHeights} · dial "${r.postDial}"
+        report ${r.postRun} · ${r.postRows} rows · ${r.postSources} sources · cards ${r.cardHeights}
+        note "${r.postNote}" · dial "${r.postDial}"
         batch ${r.batchProgress} · targets "${r.batch}"` : '')
     + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : '')
     // Its own clause, not nested inside the arth one — nested, it could only

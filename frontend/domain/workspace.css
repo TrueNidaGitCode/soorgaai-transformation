@@ -1258,7 +1258,9 @@ body.domain-page .sc-panel {
    than five. */
 #screen-aria .dr-grid {
     display: grid;
-    grid-template-columns: 1.3fr 1fr 1.05fr;
+    /* Two cards now. The summary still carries a row per dataset against a
+       short fixed list, so it keeps the larger share. */
+    grid-template-columns: 1.25fr 1fr;
     gap: 1rem;
     align-items: stretch;
     margin: 0 0 1.6rem;
@@ -1268,8 +1270,7 @@ body.domain-page .sc-panel {
    its natural height, instead of leaving it under the last element. */
 #screen-aria .dr-card { display: flex; flex-direction: column; }
 #screen-aria .dr-summary { flex: 1 1 auto; }
-#screen-aria .dr-sources,
-#screen-aria .dr-next { flex: 0 0 auto; align-content: start; }
+#screen-aria .dr-sources { flex: 0 0 auto; }
 /* Where the slack goes is set at the foot of this block — .dr-tech declares
    its own margin-top later on, and would win here. */
 
@@ -1297,7 +1298,6 @@ body.domain-page .sc-panel {
     line-height: 1.45;
     color: var(--ws-text-dim, #9fb3bb);
 }
-#screen-aria .dr-spark { color: var(--ws-accent, #2ee6d6); }
 
 /* ── Data Summary ──────────────────────────────────────────────────────── */
 
@@ -1453,36 +1453,6 @@ body.domain-page .sc-panel {
 }
 #screen-aria .dr-foot-note__icon { color: var(--ws-accent, #2ee6d6); }
 
-/* ── What's Next ───────────────────────────────────────────────────────── */
-
-#screen-aria .dr-next { display: grid; gap: .7rem; }
-#screen-aria .dr-note {
-    display: grid;
-    grid-template-columns: 32px minmax(0, 1fr);
-    gap: .7rem;
-    padding: .8rem .85rem;
-    border-radius: 10px;
-    background: rgba(10, 24, 28, 0.55);
-    border: 1px solid rgba(93, 143, 155, 0.16);
-}
-/* The one that is true right now reads as the answer; the other is a
-   contingency and should not compete with it. */
-#screen-aria .dr-note--on {
-    background: rgba(46, 230, 214, 0.07);
-    border-color: rgba(46, 230, 214, 0.26);
-}
-#screen-aria .dr-note__icon {
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    display: grid; place-items: center;
-    color: var(--ws-accent, #2ee6d6);
-    background: rgba(46, 230, 214, 0.09);
-}
-#screen-aria .dr-note--off .dr-note__icon { color: var(--ws-text-dim, #9fb3bb); background: rgba(159, 179, 187, 0.08); }
-#screen-aria .dr-note__icon svg { width: 17px; height: 17px; }
-#screen-aria .dr-note__title { margin: 0 0 .2rem; font-size: .82rem; font-weight: 650; }
-#screen-aria .dr-note__body { margin: 0; font-size: .76rem; line-height: 1.5; color: var(--ws-text-dim, #9fb3bb); }
-
 #screen-aria .dr-tech {
     width: 100%;
     justify-content: center;
@@ -1519,3 +1489,20 @@ body.domain-page .sc-panel {
    off into empty space below them. */
 #screen-aria .dr-foot-note,
 #screen-aria .dr-tech { margin-top: auto; }
+
+/* The disclosure no longer sits in a card. Centred under the two that remain,
+   because it is the only route back to the workbench and a control that hides
+   in a corner is one nobody finds. */
+#screen-aria .dr-tech--loose {
+    /* flex + fit-content, not inline-flex: auto margins do not centre an
+       inline box, and it sat against the left edge. */
+    display: flex;
+    width: fit-content;
+    min-width: 240px;
+    margin: 0 auto 1.6rem;
+}
+
+/* Wraps to one column before either card gets too narrow to read. */
+@media (max-width: 900px) {
+    #screen-aria .dr-grid { grid-template-columns: minmax(0, 1fr); }
+}

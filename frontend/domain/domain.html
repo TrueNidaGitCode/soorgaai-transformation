@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=15">
+  <link rel="stylesheet" href="workspace.css?v=17">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -423,26 +423,26 @@
               </div>
             </header>
             <ul class="dr-sources" id="aria-post-sources"></ul>
+            <!-- Second line is written only when generated rows are in play.
+                 The "What's Next" card used to carry that warning; it is kept
+                 here rather than dropped with the card, because a customer
+                 running on invented data has to be told it is invented and
+                 that their own will replace it. -->
             <p class="dr-foot-note">
               <span class="dr-foot-note__icon" aria-hidden="true">&#9432;</span>
-              <span>All data is securely processed and stored in your Svarg environment.</span>
+              <span id="aria-post-note">All data is securely processed and stored in your Svarg environment.</span>
             </p>
           </section>
-
-          <section class="ae-card dr-card">
-            <header class="dr-card__head">
-              <div>
-                <h2 class="dr-card__title"><span class="dr-spark" aria-hidden="true">&#10022;</span> What&rsquo;s Next?</h2>
-              </div>
-            </header>
-            <div class="dr-next" id="aria-post-next"></div>
-            <button type="button" class="ae-details-toggle dr-tech" id="aria-details-toggle"
-                    aria-expanded="false" aria-controls="aria-during">
-              <span>View technical details</span>
-              <svg class="ae-details-toggle__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          </section>
         </div>
+
+        <!-- Outside the cards now that it has no card to live in. It is the
+             only route back to the workbench, so it cannot travel with the
+             column that was removed. -->
+        <button type="button" class="ae-details-toggle dr-tech dr-tech--loose" id="aria-details-toggle"
+                aria-expanded="false" aria-controls="aria-during">
+          <span>View technical details</span>
+          <svg class="ae-details-toggle__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
 
       <!-- ── During the run ─────────────────────────────────────────────────

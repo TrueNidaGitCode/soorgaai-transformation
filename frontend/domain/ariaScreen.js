@@ -797,28 +797,16 @@ function renderPostRun() {
       : 'No real data was connected, so the application will run on generated rows.';
   }
 
-  // Two futures, and only one of them is this customer's. The one that applies
-  // is lit; the other is stated plainly rather than hidden, because a customer
-  // running on generated rows needs to know it will be replaced.
-  const next = document.getElementById('aria-post-next');
-  if (next) {
-    const real = connected > 0;
-    next.innerHTML = `
-      <div class="dr-note ${real ? 'dr-note--on' : 'dr-note--off'}">
-        <span class="dr-note__icon" aria-hidden="true">${postIcon('cloud')}</span>
-        <div>
-          <p class="dr-note__title">Data is ready for use</p>
-          <p class="dr-note__body">Your application will use this real data to give answers grounded in your own records.</p>
-        </div>
-      </div>
-      <div class="dr-note ${!real || sample ? 'dr-note--on' : 'dr-note--off'}">
-        <span class="dr-note__icon" aria-hidden="true">${postIcon('sample')}</span>
-        <div>
-          <p class="dr-note__title">${sample ? 'Some data is simulated' : 'If no real data is connected'}</p>
-          <p class="dr-note__body">Arth fills the gap with generated rows so you can test and explore the
-            application. They carry <code>_source=sample</code>, and are replaced by your real data once it is connected.</p>
-        </div>
-      </div>`;
+  // The "What's Next" card is gone, but the warning it carried is not. A
+  // customer running partly on invented rows has to be told they are invented
+  // and that their own data will replace them — that is the one thing on this
+  // screen they could otherwise act on while believing something false.
+  const note = document.getElementById('aria-post-note');
+  if (note) {
+    note.textContent = sample
+      ? `${sample} dataset${sample === 1 ? ' is' : 's are'} filled with generated rows carrying _source=sample, `
+        + 'replaced by your own data once it is connected. Everything else is stored securely in your Svarg environment.'
+      : 'All data is securely processed and stored in your Svarg environment.';
   }
 
   const stateText = document.getElementById('aria-post-state-text');

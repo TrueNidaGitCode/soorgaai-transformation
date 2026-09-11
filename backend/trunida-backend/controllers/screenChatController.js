@@ -20,6 +20,8 @@ import { askScreenChat } from '../services/screenChatService.js';
 import { recordExchange } from '../services/conversationMemoryService.js';
 import { learnFromConversation } from '../services/customerUnderstandingService.js';
 import { considerCapabilities } from '../services/capabilityDecisionService.js';
+import { runNextPlannedBuild } from '../services/capabilityBuildService.js';
+import { announcePending } from '../services/notificationService.js';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -246,6 +248,23 @@ export async function screenChat(req, res) {
       .then(result => {
         if (!result?.learned) return null;
         return considerCapabilities({ userId: req.user._id, blueprintId, blueprint: bp });
+      })
+      // Decided, so build it — unattended, which is the point of the feature.
+      // Every guard that makes that safe has already run inside
+      // considerCapabilities, and runCapabilityBuild claims the request with a
+      // conditional update so a second pass cannot build it twice.
+      //
+      // This takes minutes and nobody is waiting for it. It is deliberately
+      // not awaited anywhere up the chain: the customer's reply left long ago.
+      .then(decision => {
+        if (!decision?.decided) return null;
+        return runNextPlannedBuild({ blueprintId })
+          .then(build => (build?.built
+            // Announcing is its own step so a notification that fails cannot
+            // undo a build that worked. If this one fails, opening the
+            // notification list sweeps it up later.
+            ? announcePending({ userId: req.user._id, blueprintId })
+            : null));
       })
       .catch(err => console.error('[screenChat] learning pass failed:', err.message));
 

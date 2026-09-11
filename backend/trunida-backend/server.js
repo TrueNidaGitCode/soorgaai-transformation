@@ -24,6 +24,7 @@ import salesSignalsRoutes from "./routes/salesSignalsRoutes.js";
 import outreachPublicRoutes from "./routes/outreachPublicRoutes.js";
 import { runOutreachSweep } from "./services/outreachService.js";
 import feedbackRoutes               from "./routes/feedbackRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import guestRoutes                  from "./routes/guestRoutes.js";
 import confluenceRoutes             from "./routes/confluenceRoutes.js";
 import personalConfluenceRoutes     from "./routes/personalConfluenceRoutes.js";
@@ -184,6 +185,7 @@ app.use("/api/outreach", outreachPublicRoutes);
 app.use("/api/admin/model-catalog", modelCatalogRoutes);
 app.use("/api/billing",              billingRoutes);
 app.use("/api/feedback",             feedbackRoutes);
+app.use("/api/notifications",        notificationRoutes);
 app.use("/api/guest",                guestRoutes);
 // More specific prefix first, per the convention noted above
 app.use("/api/confluence/personal",  personalConfluenceRoutes);

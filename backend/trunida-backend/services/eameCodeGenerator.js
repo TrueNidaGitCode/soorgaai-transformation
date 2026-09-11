@@ -282,6 +282,29 @@ export function buildPrompt(spec) {
     'THE CUSTOMER\'S EXISTING SYSTEM:',
     describeCodebase(spec),
     '',
+    // Everything the application has grown since it was first built. This is
+    // written as a requirement rather than a note because the failure it
+    // prevents is silent: the generator rewrites the whole authored tree, so a
+    // capability left out of the brief is a capability deleted from the
+    // customer's working application, with a passing build and no error.
+    ...(spec.addedCapabilities?.length ? [
+      'THIS APPLICATION HAS ALREADY BEEN EXTENDED. It must keep doing everything',
+      'described above AND everything listed here. Nothing below is optional, and',
+      'nothing above may be dropped to make room for it — the customer is using',
+      'all of it today.',
+      '',
+      ...spec.addedCapabilities.flatMap(c => [
+        `- ${c.title}`,
+        ...(c.summary ? [`  ${c.summary}`] : []),
+        ...c.steps.map(s => `    · ${s}`),
+        ...(c.connectorsNeeded.length ? [
+          `  Needs the customer to connect: ${c.connectorsNeeded.join(', ')}.`,
+          '  Write it so the credentials come from environment variables and the',
+          '  feature reports that it is not connected yet rather than crashing.',
+        ] : []),
+      ]),
+      '',
+    ] : []),
     'Write the application. Include: the mongoose model(s), the service holding the actual logic,',
     'a controller, a route file, a seed script that imports the customer\'s own export, and',
     'frontend/app.js driving the chat page. Keep it to the smallest set that does the job.',

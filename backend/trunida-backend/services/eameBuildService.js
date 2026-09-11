@@ -49,6 +49,11 @@ export function composeProject(runtimeFiles, generatedFiles) {
  * @param {string}  [opts.mongoUri]    throwaway database for the boot gate
  * @param {string}  [opts.provider]    override which model writes the code
  * @param {function} [opts.onProgress] ({ attempt, phase, detail })
+ * @param {object[]} [opts.addedCapabilities] capabilities the Learner added after
+ *        the first build. Every one ever added must travel with every build:
+ *        the generator rewrites the authored tree, so a brief that mentions
+ *        only the newest requirement builds an application that only does the
+ *        newest thing.
  */
 export async function buildApplication(bp, {
   attempts = DEFAULT_ATTEMPTS,
@@ -56,6 +61,7 @@ export async function buildApplication(bp, {
   mongoUri = '',
   provider,
   onProgress = () => {},
+  addedCapabilities = [],
 } = {}) {
   // Which datasets are backed only by generated rows. Queried here rather than
   // inside buildSpec so that stays synchronous and pure.
@@ -78,6 +84,7 @@ export async function buildApplication(bp, {
   // real row cost a few hundred characters and remove the guessing.
   const spec = buildSpec(bp, {
     sampleBacked,
+    addedCapabilities,
     sampleFiles: samples
       .filter(f => f.path.endsWith('.csv'))
       .map(f => {

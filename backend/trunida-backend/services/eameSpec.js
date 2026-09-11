@@ -119,7 +119,25 @@ function readCodebase(bp) {
  *   deliberately synchronous and pure, so that when a generation is wrong it is
  *   the generation that is wrong and not the brief.
  */
-export function buildSpec(bp, { sampleBacked = [], sampleFiles = [] } = {}) {
+/**
+ * Capabilities the Learner added after the application was first built.
+ *
+ * This brief describes ONE use case, because that is what Eame was asked for:
+ * the application is generated whole, every time, from the objective the
+ * customer approved. That is fine while an application is built once.
+ *
+ * It stops being fine the moment anything rebuilds. The generator rewrites the
+ * authored tree from this spec, so a rebuild that mentions only the newest
+ * requirement produces an application that only does the newest thing — the
+ * violin teacher who asked for WhatsApp messages gets them and loses student
+ * management, and under unattended building they find out before we do.
+ *
+ * So every capability ever added travels with every build, and the brief says
+ * plainly that all of them must still work. Empty for an application that has
+ * never been extended, which is every application built before this existed —
+ * their briefs are byte-identical to what they were.
+ */
+export function buildSpec(bp, { sampleBacked = [], sampleFiles = [], addedCapabilities = [] } = {}) {
   const useCase = resolveUseCase(bp);
   const datasets = readDatasets(bp);
   const codebase = readCodebase(bp);
@@ -169,6 +187,16 @@ export function buildSpec(bp, { sampleBacked = [], sampleFiles = [] } = {}) {
     datasets,
     codebase,
     sampleFiles,
+    // Normalised here so the generator never has to guess at the shape, and a
+    // half-filled plan cannot reach the brief as an unnamed capability.
+    addedCapabilities: (addedCapabilities || [])
+      .filter(c => c && c.title)
+      .map(c => ({
+        title:   String(c.title).trim(),
+        summary: String(c.summary || '').trim(),
+        steps:   (c.steps || []).map(s => String(s).trim()).filter(Boolean),
+        connectorsNeeded: (c.connectorsNeeded || []).map(s => String(s).trim()).filter(Boolean),
+      })),
     authoredDirs: AUTHORED_DIRS,
     authoredFiles: AUTHORED_FILES,
     fixedPaths: FIXED_PATHS,

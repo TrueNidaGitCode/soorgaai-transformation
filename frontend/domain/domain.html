@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=1">
+  <link rel="stylesheet" href="workspace.css?v=5">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -716,22 +716,88 @@
 
       <div class="aria-body">
 
-      <div class="pd-header aria-header">
-        <div class="aria-header__icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-        </div>
-        <div>
-          <h1 class="aria-header__title">Model &amp; Infrastructure</h1>
-          <p class="pd-header__sub">Choose what this use case runs on.</p>
-        </div>
-      </div>
+      <!-- ── The outcome, not the controls ──────────────────────────────────
+           Aria picks the model and describes the environment; this states what
+           she arrived at. The choosing did not go away — it is under "View
+           technical details" below, Open Weight included, because a regulated
+           buyer who cannot find that option concludes we do not have it.
 
-      <div class="aria-breadcrumb" id="arth-breadcrumb">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span>Selected use case: <strong id="arth-recap-name"></strong></span>
+           The headline tracks real state. It says "ready" only when an
+           environment has actually been prepared; before that it says what has
+           been chosen and offers to prepare it. A screen that announces a
+           ready environment the customer does not have is the one mistake
+           here that would cost trust rather than a click. -->
+      <div class="ae-hero">
+        <div class="ae-hero__mark" id="arth-hero-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="ae-hero__text">
+          <span class="ae-pill" id="arth-hero-pill">Environment ready</span>
+          <h1 class="ae-hero__title" id="arth-hero-title">Your environment is ready!</h1>
+          <p class="ae-hero__sub" id="arth-hero-sub">Aria has prepared everything required for this use case.</p>
+        </div>
       </div>
 
       <div id="arth-error" class="gen-error" style="display:none"></div>
+
+      <div class="ae-stage">
+        <section class="ae-card" aria-labelledby="arth-recap-name">
+          <header class="ae-card__head">
+            <span class="ae-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            </span>
+            <div class="ae-card__headings">
+              <h2 class="ae-card__title" id="arth-recap-name"></h2>
+              <p class="ae-card__sub">The right model, infrastructure and resources are now ready to go.</p>
+            </div>
+            <span class="ae-state" id="arth-card-state"><span class="ae-state__dot"></span><span id="arth-card-state-text">Ready</span></span>
+          </header>
+
+          <!-- Filled by renderEnvironment() in arthScreen.js. Every value is
+               read from the deployment record, never written here: a tile
+               that hard-codes "Secure" would keep saying it after the thing
+               it describes stopped being true. -->
+          <div class="ae-tiles" id="arth-tiles"></div>
+
+          <footer class="ae-card__foot">
+            <button type="button" class="ae-details-toggle" id="arth-details-toggle"
+                    aria-expanded="false" aria-controls="arth-details">
+              <svg class="ae-details-toggle__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              <span>View technical details</span>
+            </button>
+            <p class="ae-assurances">Secure <span>|</span> Scalable <span>|</span> Enterprise Ready</p>
+          </footer>
+        </section>
+
+        <!-- Decorative only, and hidden from assistive tech: it carries no
+             information the tiles do not already state. -->
+        <div class="ae-art" aria-hidden="true">
+          <div class="ae-art__glow"></div>
+          <svg class="ae-art__svg" viewBox="0 0 320 300" fill="none">
+            <g class="ae-art__chips" stroke="currentColor" stroke-width="1.4" opacity=".55">
+              <rect x="22"  y="62"  width="58" height="58" rx="12"/>
+              <rect x="150" y="18"  width="54" height="54" rx="12"/>
+              <rect x="246" y="92"  width="54" height="54" rx="12"/>
+            </g>
+            <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".8">
+              <path d="M44 84a7 7 0 0 1 7-7h0a7 7 0 0 1 7 7v14a7 7 0 0 1-7 7h0a7 7 0 0 1-7-7z"/>
+              <path d="M166 34c6-4 16-4 22 0 M166 44h22 M166 54h22"/>
+              <path d="M273 108v22 M262 112c0 6 22 6 22 0 M262 126c0 6 22 6 22 0"/>
+            </g>
+            <g class="ae-art__stack">
+              <path d="M160 232 58 178l102-54 102 54z" opacity=".30"/>
+              <path d="M160 204 58 150l102-54 102 54z" opacity=".55"/>
+              <path d="M160 176 58 122l102-54 102 54z" opacity=".95"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Everything the customer would otherwise have had to decide. Kept
+           whole rather than trimmed: this is still the only place Open Weight
+           and self-hosting are visible, and hiding them would quietly remove
+           the sovereignty story from the product. -->
+      <div class="ae-details" id="arth-details" hidden>
 
       <p class="pd-substage-label aria-required-label">Model Class</p>
       <div class="arth-options" id="arth-options"></div>
@@ -821,11 +887,15 @@
         </div>
       </div>
 
+      </div><!-- /#arth-details -->
+
       <!-- One control, two jobs: it confirms the choice while the choice is
            still open, and becomes the stage navigation once the environment
            exists and the selection is frozen. Same button, so there is never
-           a moment with two competing "continue" affordances. -->
-      <div class="stage-nav">
+           a moment with two competing "continue" affordances.
+           Centred now, and outside the details, because it is the only thing
+           on this screen the customer has to do. -->
+      <div class="stage-nav stage-nav--centred">
         <span class="stage-nav__hint" id="arth-hint">Choose a model class to continue</span>
         <button type="button" class="stage-nav__btn" id="arth-confirm-btn" disabled>Confirm &amp; Continue</button>
       </div>
@@ -1359,7 +1429,7 @@
   <script type="module" src="blueprintGenerate.js?v=18"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=46"></script>
-  <script type="module" src="arthScreen.js?v=18"></script>
+  <script type="module" src="arthScreen.js?v=19"></script>
   <script type="module" src="eameScreen.js?v=19"></script>
   <script type="module" src="yusuScreen.js?v=27"></script>
   <script type="module" src="workspaceShell.js?v=1"></script>

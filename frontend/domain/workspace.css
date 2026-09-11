@@ -949,3 +949,284 @@ body.domain-page .sc-panel {
   width: 100% !important;
   max-width: none !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Aria — the environment summary
+   ══════════════════════════════════════════════════════════════════════════
+   The screen leads with what Aria arrived at rather than with controls. The
+   controls still exist under "View technical details"; these styles only
+   describe the outcome above them.
+
+   Everything here is scoped under #screen-arth. domain.css carries 1,715
+   class names and outspecifies this file on two of them, so a bare .ae-card
+   would be a coin toss — the id prefix settles it without !important.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+#screen-arth .ae-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.35rem;
+    margin: 0 0 1.6rem;
+}
+
+#screen-arth .ae-hero__mark {
+    flex: 0 0 auto;
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--ws-accent, #2ee6d6);
+    border: 2px solid currentColor;
+    box-shadow: 0 0 0 6px rgba(46, 230, 214, 0.07), 0 0 26px rgba(46, 230, 214, 0.22);
+}
+#screen-arth .ae-hero__mark svg { width: 34px; height: 34px; }
+
+/* Waiting on a decision rather than reporting one: same shape, no claim. */
+#screen-arth .ae-hero__mark--pending {
+    color: #7f96a0;
+    box-shadow: none;
+}
+
+#screen-arth .ae-pill {
+    display: inline-block;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ws-accent, #2ee6d6);
+    background: rgba(46, 230, 214, 0.1);
+    border: 1px solid rgba(46, 230, 214, 0.28);
+    border-radius: 999px;
+    padding: .32rem .8rem;
+    margin: 0 0 .55rem;
+}
+#screen-arth .ae-pill--pending {
+    color: #9fb3bb;
+    background: rgba(159, 179, 187, 0.09);
+    border-color: rgba(159, 179, 187, 0.26);
+}
+
+#screen-arth .ae-hero__title {
+    margin: 0 0 .3rem;
+    font-size: clamp(1.6rem, 1.2rem + 1.5vw, 2.3rem);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -.01em;
+}
+#screen-arth .ae-hero__sub {
+    margin: 0;
+    color: var(--ws-text-dim, #9fb3bb);
+    font-size: .95rem;
+}
+
+/* The card and the artwork share the row; the artwork is the first thing to
+   go, because it says nothing the tiles do not. */
+#screen-arth .ae-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+    gap: 1.5rem;
+    align-items: center;
+    margin: 0 0 1.8rem;
+}
+/* The art goes early, and the threshold is high on purpose.
+   What constrains this card is not the viewport but the main column: the icon
+   rail takes ~64px and the chat lane ~440px, so a 1280 viewport leaves roughly
+   860px here. Five tiles need ~800 of that, and at 1280 the art was taking 320
+   and folding them onto three rows. Below ~1500 the row of five is worth more
+   than the picture, which says nothing the tiles do not. */
+@media (max-width: 1650px) {
+    #screen-arth .ae-stage { grid-template-columns: minmax(0, 1fr); }
+    /* Hiding the art lives at the foot of this block, after .ae-art sets
+       display:grid — same specificity, and the later rule wins. Put here it
+       lost silently, and the art rendered full-width under the card. */
+}
+
+#screen-arth .ae-card {
+    background: linear-gradient(180deg, rgba(20, 42, 48, 0.5), rgba(12, 26, 30, 0.4));
+    border: 1px solid rgba(93, 143, 155, 0.22);
+    border-radius: 16px;
+    padding: 1.4rem 1.5rem 1.1rem;
+}
+
+#screen-arth .ae-card__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin: 0 0 1.25rem;
+}
+#screen-arth .ae-card__icon {
+    flex: 0 0 auto;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: var(--ws-accent, #2ee6d6);
+    background: rgba(46, 230, 214, 0.09);
+    border: 1px solid rgba(46, 230, 214, 0.2);
+}
+#screen-arth .ae-card__icon svg { width: 24px; height: 24px; }
+#screen-arth .ae-card__headings { flex: 1 1 auto; min-width: 0; }
+#screen-arth .ae-card__title {
+    margin: 0 0 .25rem;
+    font-size: 1.16rem;
+    font-weight: 650;
+    line-height: 1.25;
+}
+#screen-arth .ae-card__sub {
+    margin: 0;
+    font-size: .86rem;
+    color: var(--ws-text-dim, #9fb3bb);
+}
+
+#screen-arth .ae-state {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ws-accent, #2ee6d6);
+    background: rgba(46, 230, 214, 0.09);
+    border: 1px solid rgba(46, 230, 214, 0.24);
+    border-radius: 999px;
+    padding: .35rem .85rem;
+    white-space: nowrap;
+}
+#screen-arth .ae-state__dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+}
+#screen-arth .ae-state--pending { color: #9fb3bb; background: rgba(159,179,187,.09); border-color: rgba(159,179,187,.24); }
+
+/* Five tiles, and they must not strand one on a row of its own — auto-fit
+   with a floor wide enough for "Dedicated + Vector Search" to wrap to two
+   lines rather than overflow. */
+#screen-arth .ae-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: .7rem;
+}
+
+#screen-arth .ae-tile {
+    background: rgba(10, 24, 28, 0.55);
+    border: 1px solid rgba(93, 143, 155, 0.18);
+    border-radius: 12px;
+    padding: 1rem .8rem .85rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .3rem;
+}
+#screen-arth .ae-tile__icon {
+    width: 34px; height: 34px;
+    display: grid; place-items: center;
+    color: var(--ws-accent, #2ee6d6);
+    margin-bottom: .1rem;
+}
+#screen-arth .ae-tile__icon svg { width: 22px; height: 22px; }
+#screen-arth .ae-tile__label {
+    font-size: .78rem;
+    color: var(--ws-text-dim, #9fb3bb);
+}
+#screen-arth .ae-tile__value {
+    font-size: .9rem;
+    font-weight: 650;
+    line-height: 1.3;
+    /* Long model names and "$0 · 0 requests" both land here. */
+    overflow-wrap: anywhere;
+}
+#screen-arth .ae-tile__tag {
+    margin-top: .3rem;
+    font-size: .7rem;
+    color: var(--ws-text-dim, #9fb3bb);
+    border: 1px solid rgba(93, 143, 155, 0.26);
+    border-radius: 999px;
+    padding: .18rem .6rem;
+}
+/* The one tile that can carry bad news. */
+#screen-arth .ae-tile--over .ae-tile__value,
+#screen-arth .ae-tile--over .ae-tile__icon { color: #f0a05a; }
+#screen-arth .ae-tile--over .ae-tile__tag { color: #f0a05a; border-color: rgba(240, 160, 90, .4); }
+
+#screen-arth .ae-card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.1rem;
+    padding-top: .95rem;
+    border-top: 1px solid rgba(93, 143, 155, 0.16);
+}
+
+#screen-arth .ae-details-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--ws-accent, #2ee6d6);
+}
+#screen-arth .ae-details-toggle__chev {
+    width: 15px; height: 15px;
+    transition: transform .18s ease;
+}
+#screen-arth .ae-details-toggle[aria-expanded="true"] .ae-details-toggle__chev { transform: rotate(90deg); }
+#screen-arth .ae-details-toggle:focus-visible { outline: 2px solid var(--ws-accent, #2ee6d6); outline-offset: 3px; border-radius: 4px; }
+
+#screen-arth .ae-assurances {
+    margin: 0;
+    font-size: .82rem;
+    color: var(--ws-text-dim, #9fb3bb);
+}
+#screen-arth .ae-assurances span { opacity: .4; margin: 0 .4rem; }
+
+#screen-arth .ae-details {
+    border-top: 1px solid rgba(93, 143, 155, 0.16);
+    padding-top: 1.4rem;
+    margin-bottom: .5rem;
+}
+
+/* Artwork: drawn rather than shipped as an image, so it takes the accent with
+   it into either theme and costs no request. */
+#screen-arth .ae-art { position: relative; display: grid; place-items: center; min-height: 260px; }
+#screen-arth .ae-art__glow {
+    position: absolute;
+    width: 74%; aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(46, 230, 214, 0.16), transparent 66%);
+    filter: blur(6px);
+}
+#screen-arth .ae-art__svg { position: relative; width: 100%; height: auto; color: var(--ws-accent, #2ee6d6); }
+#screen-arth .ae-art__stack path { fill: var(--ws-accent, #2ee6d6); }
+#screen-arth .ae-art__chips rect { fill: rgba(46, 230, 214, 0.05); }
+
+/* The only thing on the screen the customer has to do. */
+#screen-arth .stage-nav--centred {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    text-align: center;
+}
+#screen-arth .stage-nav--centred .stage-nav__hint { order: 2; }
+#screen-arth .stage-nav--centred .stage-nav__btn { order: 1; min-width: 240px; }
+
+@media (prefers-reduced-motion: reduce) {
+    #screen-arth .ae-details-toggle__chev { transition: none; }
+}
+
+/* Last, so it beats .ae-art's own display:grid. See the note on .ae-stage's
+   media query above for why the threshold is 1500 rather than a viewport
+   breakpoint that sounds more natural. */
+@media (max-width: 1650px) {
+    #screen-arth .ae-art { display: none; }
+}

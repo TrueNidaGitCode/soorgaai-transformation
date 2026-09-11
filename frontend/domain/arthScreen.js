@@ -94,16 +94,32 @@ function showError(msg) {
   el.style.display = 'block';
 }
 
+/**
+ * The use case, which is now the summary card's heading rather than a
+ * breadcrumb above the controls.
+ *
+ * The old #arth-breadcrumb wrapper is gone; the lookup is kept optional so
+ * this works either way rather than throwing on a screen that no longer has
+ * the element it used to hide.
+ */
 function renderBreadcrumb(bp) {
   const crumb = document.getElementById('arth-breadcrumb');
+  const nameEl = document.getElementById('arth-recap-name');
   const section = findAiUseCasesPrioritizationSection(bp);
   const brief = section?.brief || {};
   const all = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
   const rec = brief.recommendedStartingPoint || '';
   const label = all.find(n => n && rec.includes(n)) || rec;
-  if (!label) { crumb.style.display = 'none'; return; }
-  crumb.style.display = '';
-  document.getElementById('arth-recap-name').textContent = label;
+
+  if (!label) {
+    if (crumb) crumb.style.display = 'none';
+    // Never leave the card headless: without an approved use case the
+    // application is still being built for the objective they typed.
+    if (nameEl) nameEl.textContent = String(bp?.businessObjective || '').trim() || 'Your application';
+    return;
+  }
+  if (crumb) crumb.style.display = '';
+  if (nameEl) nameEl.textContent = label;
 }
 
 function renderOptions() {
@@ -312,6 +328,8 @@ function fact(label, value) {
  */
 function renderPrepared(dep) {
   _env = dep;
+  // The summary reads from _env, so it repaints wherever _env changes.
+  renderEnvironment();
   const prep  = document.getElementById('arth-prep');
   const offer = document.getElementById('arth-prep-offer');
   const ready = document.getElementById('arth-prep-ready');
@@ -452,6 +470,124 @@ async function removeEnvironment() {
 }
 
 
+// ── The environment summary ───────────────────────────────────────────────
+//
+// What the screen leads with. Every value is read from the deployment record
+// or the selection on file — nothing is written into the markup, because a
+// tile that hard-codes "Secure" keeps saying it after the thing it describes
+// has stopped being true.
+
+const TILE_ICONS = {
+  cloud:  '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
+  db:     '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/>',
+  model:  '<path d="M12 3a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3V6a3 3 0 0 0-3-3z"/>',
+  spend:  '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5a2.5 2.5 0 0 1 5 0c0 2.5-5 1.5-5 4a2.5 2.5 0 0 0 5 0"/>',
+  usage:  '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+};
+
+function tile({ icon, label, value, tag, over = false }) {
+  return `
+    <div class="ae-tile${over ? ' ae-tile--over' : ''}">
+      <span class="ae-tile__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round">${TILE_ICONS[icon] || ''}</svg>
+      </span>
+      <span class="ae-tile__label">${esc(label)}</span>
+      <span class="ae-tile__value">${esc(value)}</span>
+      ${tag ? `<span class="ae-tile__tag">${esc(tag)}</span>` : ''}
+    </div>`;
+}
+
+/** Distinct from `money` above, which is for model pricing and always shows
+ *  two decimals. A spend limit reads better as "$2 / month" than "$2.00". */
+const usd = (v) => '$' + (Math.round((Number(v) || 0) * 100) / 100).toFixed(2).replace(/\.00$/, '');
+
+/**
+ * Paint the hero and the five tiles.
+ *
+ * The headline is the part worth being careful about. It claims a ready
+ * environment only when one has actually been prepared; otherwise it says
+ * what has been chosen and leaves the claim unmade. A screen that announces
+ * an environment the customer does not have is the single mistake here that
+ * would cost trust rather than a click.
+ */
+function renderEnvironment() {
+  const tiles = document.getElementById('arth-tiles');
+  if (!tiles) return;
+
+  const prepared = _env?.status && _env.status !== 'destroyed' && !!_env?.preparedAt;
+  const picked   = _models.find(m => m.id === _model) || null;
+  const modelName = picked?.displayName || _env?.model?.displayName || _bp?.arthSelection?.displayName || '';
+  const hosting  = _hosting || _env?.hosting || '';
+  const selfHosted = hosting === 'self';
+
+  const capUsd  = Number(_env?.limits?.maxCostUsd) || 0;
+  const costUsd = Number(_env?.usage?.costUsd) || 0;
+  const requests = Number(_env?.usage?.requests) || 0;
+  const over = capUsd > 0 && costUsd >= capUsd;
+
+  tiles.innerHTML = [
+    tile({
+      icon: 'cloud', label: 'Runs on',
+      value: selfHosted ? 'Your own environment' : 'Svarg Environment',
+      tag: selfHosted ? 'Self-managed' : 'Managed',
+    }),
+    tile({
+      icon: 'db', label: 'Database',
+      // Only true of an environment Svarg prepared; a customer running it
+      // themselves brings their own, and we should not describe theirs.
+      value: selfHosted ? 'Yours to provide' : 'Dedicated + Vector Search',
+      tag: selfHosted ? 'Your control' : 'Secure',
+    }),
+    tile({
+      icon: 'model', label: 'AI Model',
+      value: modelName || 'Not chosen yet',
+      tag: modelName ? (_chosen === 'auto' ? 'Optimal' : 'Your choice') : '',
+    }),
+    tile({
+      icon: 'spend', label: 'Spend Limit',
+      value: capUsd > 0 ? `${usd(capUsd)} / month` : 'No limit set',
+      tag: capUsd > 0 ? 'Cost Controlled' : '',
+    }),
+    tile({
+      icon: 'usage', label: 'Used So Far',
+      value: `${usd(costUsd)} · ${requests} request${requests === 1 ? '' : 's'}`,
+      tag: over ? 'Limit reached' : 'Within Limit',
+      over,
+    }),
+  ].join('');
+
+  const mark  = document.getElementById('arth-hero-mark');
+  const pill  = document.getElementById('arth-hero-pill');
+  const title = document.getElementById('arth-hero-title');
+  const sub   = document.getElementById('arth-hero-sub');
+  const state = document.getElementById('arth-card-state');
+  const stateText = document.getElementById('arth-card-state-text');
+
+  if (mark)  mark.classList.toggle('ae-hero__mark--pending', !prepared);
+  if (pill)  pill.classList.toggle('ae-pill--pending', !prepared);
+  if (state) state.classList.toggle('ae-state--pending', !prepared);
+
+  if (prepared) {
+    if (pill)  pill.textContent = 'Environment ready';
+    if (title) title.textContent = 'Your environment is ready!';
+    if (sub)   sub.textContent = 'Aria has prepared everything required for this use case.';
+    if (stateText) stateText.textContent = 'Ready';
+  } else if (modelName) {
+    if (pill)  pill.textContent = 'Ready to prepare';
+    if (title) title.textContent = 'Your environment is ready to build.';
+    if (sub)   sub.textContent = selfHosted
+      ? 'Aria has chosen what this runs on. You are hosting it yourself, so there is nothing for us to prepare.'
+      : 'Aria has chosen the model and sized the infrastructure. Prepare it under technical details, or continue.';
+    if (stateText) stateText.textContent = selfHosted ? 'Self-hosted' : 'Not prepared';
+  } else {
+    if (pill)  pill.textContent = 'Choosing';
+    if (title) title.textContent = 'Aria is choosing what this runs on.';
+    if (sub)   sub.textContent = 'One moment — reading the use case against the model catalog.';
+    if (stateText) stateText.textContent = 'Working';
+  }
+}
+
 // True once the environment exists, after which the model and hosting
 // choices are settled and the stage button becomes plain navigation.
 let _frozen = false;
@@ -478,6 +614,7 @@ function freezeSelection(on) {
 // Only a specific model counts as a decision. Picking a class narrows the
 // question; it does not answer it.
 function refreshConfirm() {
+  renderEnvironment();
   const btn  = document.getElementById('arth-confirm-btn');
   const hint = document.getElementById('arth-hint');
   if (!btn || !hint) return;
@@ -597,6 +734,23 @@ function wire() {
   if (_wired) return;
   _wired = true;
 
+  // Choosing did not go away, it moved. What opens here is the whole original
+  // screen — model class, picker, hosting, target architecture — Open Weight
+  // and self-hosting included, because this is still the only place a
+  // regulated buyer can see that we have them.
+  const toggle = document.getElementById('arth-details-toggle');
+  const details = document.getElementById('arth-details');
+  if (toggle && details) {
+    toggle.addEventListener('click', () => {
+      const open = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!open));
+      details.hidden = open;
+      const label = toggle.querySelector('span:last-child');
+      if (label) label.textContent = open ? 'View technical details' : 'Hide technical details';
+      if (!open) details.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+
   document.getElementById('arth-options').addEventListener('click', (e) => {
     const b = e.target.closest('[data-pref]');
     if (b) choose(b.dataset.pref);
@@ -702,6 +856,16 @@ document.addEventListener('arth:show', (e) => {
       document.getElementById('arth-hint').textContent =
         `Previously selected: ${prev.displayName || prev.modelId}`;
     }
+  } else {
+    // Nothing on record, so Aria decides rather than presenting a form. This
+    // costs no model call: 'auto' posts to recommend-models, which reads the
+    // catalog and ranks it with recommendModels() — rule-based server-side.
+    // The LLM path is arth-recommend, and nothing here touches it.
+    //
+    // The decision is not persisted here. Saving is what Confirm & Continue
+    // does, and writing a selection nobody looked at would make an untouched
+    // screen indistinguishable from a considered one.
+    choose('auto');
   }
 
   // An environment prepared in an earlier session should show as prepared,

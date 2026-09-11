@@ -163,10 +163,10 @@ export async function screenChat(req, res) {
       // already ticked — or the reverse.
       context.selectedUseCase = selectedUseCase;
       context.checks = [
-        { title: 'A model is chosen', ok: !!bp.arthSelection?.modelId, fix: 'choose one on Arth' },
+        { title: 'A model is chosen', ok: !!bp.arthSelection?.modelId, fix: 'choose one on Aria' },
         { title: 'An environment is ready',
           ok: ['prepared', 'live'].includes(dep?.status) || dep?.hosting === 'self',
-          fix: 'prepare it on Arth' },
+          fix: 'prepare it on Aria' },
         { title: 'The application is built', ok: !!bp.eameDelivery?.repoName, fix: 'build and push it on Eame' },
         { title: 'Governance is accepted',
           ok: govAreas.length === 0 || !!bp.governanceReview?.acknowledged,

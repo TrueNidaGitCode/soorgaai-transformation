@@ -1,12 +1,12 @@
 /**
  * Svarg — Screen Chat Service
  *
- * Conversational chat for the Cob (opportunity selection), Aria (data
- * connections), Arth (model & infrastructure) and Eame (the application)
+ * Conversational chat for the Cob (opportunity selection), Arth (data
+ * connections), Aria (model & infrastructure) and Eame (the application)
  * screens. Unlike advisorService (structured 5-field report,
  * capability-scoped) or conversationService (mutates DomainCanvas), this
  * returns plain conversational text scoped to a blueprint and a screen,
- * so the user feels they are talking to Cob or Aria directly.
+ * so the user feels they are talking to Cob or Arth directly.
  *
  * ACTIONS — the model may PROPOSE one action per reply, but never performs
  * it. The proposal is validated here against a per-screen whitelist AND
@@ -23,7 +23,7 @@ import { generate } from './llmService.js';
 const ALLOWED_ACTIONS = {
   cob:  ['approve_opportunity'],
   aria: ['connect_confluence', 'connect_jira'],
-  // Arth's actions only move the selection on the screen — the commit stays
+  // Aria's actions only move the selection on the screen — the commit stays
   // behind its own Confirm & Continue button, so chat never writes a choice.
   arth: ['choose_frontier', 'choose_open_weight', 'choose_auto'],
   // Eame proposes nothing. Pushing to a repository and deploying are both
@@ -51,12 +51,12 @@ const PERSONAS = {
     focus: 'which AI use case to start with and why, the trade-offs between the options, and what makes one a better first step than another',
   },
   aria: {
-    name: 'Aria',
+    name: 'Arth',
     role: 'the data architect who connects the sources an AI initiative needs',
     focus: 'which datasets the chosen use case needs, which are connected, what is still missing, and what happens to data with no connector',
   },
   arth: {
-    name: 'Arth',
+    name: 'Aria',
     role: 'the engineer who decides what an AI use case actually runs on',
     focus: 'the trade-off between frontier, open-weight and auto model classes — quality against cost, and cloud against keeping data in the customer\'s own environment — and where the application itself will run',
   },
@@ -88,7 +88,7 @@ VOICE
 SCOPE
 - Stay on ${p.focus}.
 - If asked about something outside your scope, say so briefly and point them to
-  the right stage of the journey (Cob = opportunities, Aria = data, Arth =
+  the right stage of the journey (Cob = opportunities, Arth = data, Aria =
   models and infrastructure, Eame = building the application, Yusu = rolling it
   into the business).
 
@@ -198,7 +198,7 @@ function buildContext(screen, ctx) {
       if (ctx.deploymentUrl) lines.push(`Running at: ${ctx.deploymentUrl}`);
       if (ctx.model) lines.push(`Configured to use ${ctx.model}, reached through Svarg's gateway — the API key stays on Svarg's side and never reaches the application.`);
     } else {
-      lines.push(`\nNo environment has been prepared yet. That happens on the Arth screen.`);
+      lines.push(`\nNo environment has been prepared yet. That happens on the Aria screen.`);
     }
 
     lines.push(`\nYou do not perform actions. Pushing to GitHub and deploying are buttons`);

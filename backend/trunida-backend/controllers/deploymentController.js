@@ -221,7 +221,7 @@ export async function attachApplication(req, res) {
         && dep.repo?.owner && dep.repo.owner.toLowerCase() !== bp.eameDelivery.repoOwner.toLowerCase()) {
       return res.status(409).json({
         error: `This environment is wired to ${dep.repo.owner}/${dep.repo.name}, but the project now lives in `
-          + `${bp.eameDelivery.repoOwner}/${bp.eameDelivery.repoName}. Remove the environment on Arth and `
+          + `${bp.eameDelivery.repoOwner}/${bp.eameDelivery.repoName}. Remove the environment on Aria and `
           + `prepare it again so it points at the new repository.`,
         deployment: publicView(dep),
       });
@@ -252,17 +252,17 @@ export async function attachApplication(req, res) {
       // shown for every one of them, which sent people to the wrong screen
       // for a problem that was not there.
       const reason = !dep
-        ? 'Prepare the environment on the Arth screen before deploying.'
+        ? 'Prepare the environment on the Aria screen before deploying.'
         : dep.status === 'live'      ? 'This application is already running.'
         : dep.status === 'attaching' ? 'A deployment is already in progress — it is still building.'
         : dep.status === 'preparing' ? 'The environment is still being prepared.'
         : dep.status === 'suspended' ? 'This deployment is suspended.'
-        : dep.status === 'destroyed' ? 'This environment was removed. Prepare a new one on the Arth screen.'
-        : 'Prepare the environment on the Arth screen before deploying.';
+        : dep.status === 'destroyed' ? 'This environment was removed. Prepare a new one on the Aria screen.'
+        : 'Prepare the environment on the Aria screen before deploying.';
       return res.status(400).json({ error: reason, deployment: publicView(dep) });
     }
     if (dep.hosting === 'self') {
-      return res.status(400).json({ error: 'This blueprint is set to run in your own environment, so Svarg has nothing to deploy. Change it on the Arth screen to have Svarg host it.' });
+      return res.status(400).json({ error: 'This blueprint is set to run in your own environment, so Svarg has nothing to deploy. Change it on the Aria screen to have Svarg host it.' });
     }
 
     // Prefer what the blueprint recorded at push time over what the client

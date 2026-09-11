@@ -330,8 +330,13 @@ window.fetch = function (url, opts) {
 const SCREENS = {
   cob:  { id: 'screen-opportunities', launcher: 'Chat with Cob',
           must: ['.rp-journey', '.pd-winner, .rp-winner, .cob-title'] },
-  aria: { id: 'screen-aria',  launcher: 'Chat with Aria',  must: ['.rp-journey', '.aria-header__title'] },
-  arth: { id: 'screen-arth',  launcher: 'Chat with Arth',  must: ['.rp-journey', '#arth-options .arth-option'] },
+  // The key and the displayed name deliberately differ from here on: the two
+  // products swapped names and portraits without swapping what their screens
+  // do, so screen-aria is the data stage shown as "Arth" and screen-arth is
+  // the model stage shown as "Aria". Asserting the pairing is the point —
+  // it is what catches a half-finished rename.
+  aria: { id: 'screen-aria',  launcher: 'Chat with Arth',  must: ['.rp-journey', '.aria-header__title'] },
+  arth: { id: 'screen-arth',  launcher: 'Chat with Aria',  must: ['.rp-journey', '#arth-options .arth-option'] },
   // Two states, two different sets of things that must be on screen. Before a
   // build there is no project, so requiring a file tree would demand exactly
   // the fabricated one this screen was fixed to stop showing.

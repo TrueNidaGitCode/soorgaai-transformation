@@ -134,7 +134,7 @@ export function buildSpec(bp, { sampleBacked = [], sampleFiles = [] } = {}) {
     warnings.push('No use case has been approved yet, so this builds from the original business objective.');
   }
   if (!datasets.length) {
-    warnings.push('Aria identified no datasets, so the generated model has no shape to follow.');
+    warnings.push('Arth identified no datasets, so the generated model has no shape to follow.');
   }
   // Sample data is a real answer to "we have not collected this yet", but the
   // application built on it is shaped by rows nobody has ever seen. The screen

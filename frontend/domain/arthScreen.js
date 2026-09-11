@@ -1,7 +1,7 @@
 /**
- * Svarg — Arth screen (model & infrastructure)
+ * Svarg — Aria screen (model & infrastructure)
  *
- * Reached from Aria once data has been linked (dispatches 'arth:show').
+ * Reached from Cob once an opportunity is approved (dispatches 'arth:show').
  *
  * Both halves are real, not illustrative:
  *  - the model options come from the actual catalog, resolved server-side
@@ -47,7 +47,7 @@ let _chosen = null;          // the class: frontier | open-weight | auto
 let _model = null;           // the specific model id — this is the decision
 let _models = [];            // candidates currently on screen
 let _advice = [];            // what is recommended but cannot be run yet
-let _recommendation = null;  // Arth's pick, kept so its reasoning is saved
+let _recommendation = null;  // Aria's pick, kept so its reasoning is saved
 let _hosting = null;         // svarg | self — where the application runs
 let _env = null;             // the prepared environment, once there is one
 let _savedModelId = null;    // what is actually persisted, vs what is merely picked
@@ -64,14 +64,14 @@ const OPTIONS = [
   { id: 'frontier',    title: 'Frontier',    blurb: 'Best quality, per-call cloud pricing. Data leaves your environment.' },
   { id: 'open-weight', title: 'Open Weight', blurb: 'Runs on your own hardware. Fixed cost, full data control, some quality traded away.',
     locked: 'Available to large enterprise customers once a contract is in place. Talk to us and we will enable it for your account.' },
-  { id: 'auto',        title: 'Auto',        blurb: 'Arth reads this use case and picks the model that fits it, weighing cost, quality and performance.' },
+  { id: 'auto',        title: 'Auto',        blurb: 'Aria reads this use case and picks the model that fits it, weighing cost, quality and performance.' },
 ];
 
 const optionById = (id) => OPTIONS.find(o => o.id === id) || null;
 
 
 // Where the application itself runs — a separate question from which model
-// answers its requests. Svarg's environment is the one Arth can prepare
+// answers its requests. Svarg's environment is the one Aria can prepare
 // today; preparing a customer's own target environment comes later, the way
 // GPUNet does for open-weight models.
 const HOSTING = [
@@ -483,11 +483,11 @@ function refreshConfirm() {
   if (!btn || !hint) return;
 
   // Frozen: the decision is made and the environment is built on it, so the
-  // one control left is the move to Eame.
+  // one control left is the move to Arth.
   if (_frozen) {
     btn.disabled = false;
-    btn.textContent = 'Move to Eame →';
-    btn.dataset.goto = 'eame';
+    btn.textContent = 'Move to Arth →';
+    btn.dataset.goto = 'aria';
     const picked = _models.find(m => m.id === _model);
     const name = picked?.displayName || _env?.model?.displayName || '';
     hint.textContent = name
@@ -580,7 +580,7 @@ function choose(pref, { restoring = false } = {}) {
   // it is the same shortlist, cut to its first row.
   document.getElementById('arth-picker').style.display = '';
   document.getElementById('arth-picker-label').textContent =
-    pref === 'auto'       ? 'Arth chose this'
+    pref === 'auto'       ? 'Aria chose this'
     : pref === 'frontier' ? 'Choose a frontier model'
     : 'Choose an open-weight model';
 
@@ -627,7 +627,7 @@ function wire() {
   document.getElementById('arth-prep-remove').addEventListener('click', removeEnvironment);
 
 
-  // Chat with Arth can propose a model class; accepting it only moves the
+  // Chat with Aria can propose a model class; accepting it only moves the
   // selection here, exactly as clicking the card would. Committing it stays
   // behind Confirm & Continue so there is still one way to make the choice.
   document.addEventListener('arth:choose', (e) => {
@@ -655,7 +655,7 @@ function wire() {
       await saveModelSelection();
       btn.textContent = '✓ Model Selected';
       document.getElementById('arth-next-stage').style.display = 'flex';
-      // Forward progress, same pattern Aria uses to reach this screen.
+      // Forward progress, same pattern Cob uses to reach this screen.
       setTimeout(() => {
         document.dispatchEvent(new CustomEvent('eame:show', { detail: { blueprint: _bp } }));
       }, 900);

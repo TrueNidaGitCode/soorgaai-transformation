@@ -187,7 +187,7 @@ export async function integrateIntoProduct(blueprintId, { userId, onProgress = n
   const profile = bp.codebaseProfile;
   if (!profile?.checked) {
     throw new IntegrationError(
-      'No repository has been read for this blueprint. Connect the customer\'s repository on Aria first — '
+      'No repository has been read for this blueprint. Connect the customer\'s repository on Arth first — '
       + 'without their architecture there is nothing to integrate into, and the result would be a guess.');
   }
 

@@ -5,7 +5,7 @@
  * three things the markup does not have, once, for all five screens:
  *
  *   the icon rail          there was no persistent navigation at all
- *   the role under each    "Aria" tells a first-time user nothing; "Your
+ *   the role under each    "Arth" tells a first-time user nothing; "Your
  *   stage                  Preparer" tells them what happens next
  *   the character's glyph  replacing the step number, because five products
  *                          people are meant to learn by name are not "step 3"
@@ -18,11 +18,11 @@
 /**
  * Who each character is.
  *
- * ── The roles Aria and Arth are given here ────────────────────────────────
+ * ── The roles Arth and Aria are given here ────────────────────────────────
  *
- * The design that prompted this labelled Aria "Your Provisioner" and Arth
- * "Your Preparer", which is the wrong way round. Aria is Data Readiness — she
- * prepares data. Arth is Technology & Infrastructure — it provisions compute
+ * The design that prompted this labelled Arth "Your Provisioner" and Aria
+ * "Your Preparer", which is the wrong way round. Arth is Data Readiness — she
+ * prepares data. Aria is Technology & Infrastructure — it provisions compute
  * and models. The marketing site already publishes the sequence as
  * Define → Prepare → Provision → Build → Adopt, and the product pages say so
  * too, so the labels follow the product rather than the mock.

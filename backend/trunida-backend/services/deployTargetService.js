@@ -67,7 +67,7 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
   // Unchecked, SELFHOSTED_MODEL ships undefined and the tenant fails on its
   // first generation rather than here, where the cause is still visible.
   if (!catalog.apiModel) {
-    throw new Error(`${catalog.displayName} has no API model name recorded, so there is nothing for the gateway to request. Choose another model on Arth.`);
+    throw new Error(`${catalog.displayName} has no API model name recorded, so there is nothing for the gateway to request. Choose another model on Aria.`);
   }
   if (!gatewayToken) throw new Error('A gateway token is required.');
 
@@ -311,7 +311,7 @@ export const railwayTarget = {
       throw new Error('This deployment has no repository recorded. Push the project from Eame first.');
     }
     if (!deployment.railway?.projectId) {
-      throw new Error('No environment has been prepared for this blueprint. Prepare it on the Arth screen first.');
+      throw new Error('No environment has been prepared for this blueprint. Prepare it on the Aria screen first.');
     }
     const repo = `${deployment.repo.owner}/${deployment.repo.name}`;
 

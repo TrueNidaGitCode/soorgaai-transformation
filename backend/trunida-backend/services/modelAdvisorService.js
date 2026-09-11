@@ -149,7 +149,7 @@ export function deterministicPick(priority) {
   return findModel('claude-sonnet');
 }
 
-const SYSTEM_PROMPT = `You are Arth, the engineer who decides what an AI use case should run on.
+const SYSTEM_PROMPT = `You are Aria, the engineer who decides what an AI use case should run on.
 
 You are choosing ONE model from a fixed catalog for a specific use case. Weigh
 quality, cost and performance against what this use case actually demands —

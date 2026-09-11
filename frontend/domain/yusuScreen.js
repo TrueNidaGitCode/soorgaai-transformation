@@ -1,7 +1,7 @@
 /**
  * Svarg — Yusu screen (go live and hand over)
  *
- * The last stage, and the only one that ships anything. Arth prepared the
+ * The last stage, and the only one that ships anything. Aria prepared the
  * environment and Eame described the application; Yusu builds it, pushes it
  * to the customer's own repository, puts it live, and states plainly what
  * they now own and what Svarg runs for them.
@@ -484,7 +484,7 @@ function render(bp, dep) {
   sub.textContent = !checksPass
     ? 'Go Live stays closed until the failing checks are resolved.'
     : dep?.status !== 'prepared'
-      ? 'No environment is prepared yet — that happens on Arth.'
+      ? 'No environment is prepared yet — that happens on Aria.'
       : 'Deploy your application to your target environment and make it available to your users.';
 }
 
@@ -710,7 +710,7 @@ async function loadIntegration() {
   const out = document.getElementById('yusu-integrate-result');
 
   if (!state.canIntegrate) {
-    sub.textContent = 'Connect your repository on Aria first — without your architecture there is '
+    sub.textContent = 'Connect your repository on Arth first — without your architecture there is '
       + 'nothing to integrate into, and the result would be a guess.';
     btn.disabled = true;
     out.style.display = 'none';

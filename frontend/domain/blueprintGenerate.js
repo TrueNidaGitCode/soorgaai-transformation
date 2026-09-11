@@ -64,7 +64,7 @@ function initNav() {
 }
 
 // The workspace nav used to carry a "Data Architecture" link and a
-// blueprint-scoped "Knowledge Sources" link. Both are gone: Aria is a step on
+// blueprint-scoped "Knowledge Sources" link. Both are gone: Arth is a step on
 // the journey indicator that every screen already shows, and offering the same
 // stage twice under two different names made them look like two places.
 // Knowledge Sources is reached from the home sidebar and from the
@@ -528,8 +528,11 @@ function updateOpportunitiesGate(bp) {
   const navHint = document.getElementById('cob-nav-hint');
   if (navBtn) navBtn.disabled = !approved;
   if (navHint) {
+    // Nothing once approved: the button beside it already says where next,
+    // and naming the stage here is a second place to keep in step with the
+    // order. (Asked for on the Cob redesign; it was still being set here.)
     navHint.textContent = approved
-      ? 'Opportunity approved — Aria is ready for your data.'
+      ? ''
       : done ? 'Approve an opportunity to continue'
              : 'Still analysing your objective…';
   }
@@ -1002,7 +1005,7 @@ async function fetchTransformationBlueprint() {
   // the backend falls back to "most recently created", which for an
   // account with several blueprints (approved and not) can silently pick
   // a *different* one on the next call than the one just approved,
-  // bouncing a refresh back to the Cob gate instead of Aria/workspace.
+  // bouncing a refresh back to the Cob gate instead of Arth/workspace.
   // Same key the sidebar-pick flow already uses, so this is just closing
   // the gap for the "landed here without picking" path.
   if (bp?._id) sessionStorage.setItem('soorgaai_open_blueprint_id', bp._id);
@@ -1289,14 +1292,14 @@ async function init() {
       return;
     }
 
-    // Confluence/Jira OAuth on the Aria screen redirects back to this
+    // Confluence/Jira OAuth on the Arth screen redirects back to this
     // same page (no query-string round trip through the backend's
     // RETURN_PATHS — this flag is set client-side right before leaving,
     // see ariaScreen.js) — an approved blueprint would otherwise default
     // straight to the workspace instead of back to where the user was.
-    // ?view=aria is the same override as ?view=cob, but for Aria — once a
+    // ?view=aria is the same override as ?view=cob, but for Arth — once a
     // blueprint is approved, every plain page load bounces straight to
-    // the workspace and Aria becomes otherwise unreachable, so this is what
+    // the workspace and Arth becomes otherwise unreachable, so this is what
     // the journey indicator's ARIA step relies on.
     const returningToAria = sessionStorage.getItem('svarg_returning_to_aria') === '1';
     sessionStorage.removeItem('svarg_returning_to_aria');
@@ -1315,7 +1318,7 @@ async function init() {
     }
     const view = new URLSearchParams(window.location.search).get('view');
     const forceAria = view === 'aria';
-    // Arth and Eame are reachable directly too, same override as Aria.
+    // Aria and Eame are reachable directly too, same override as Arth.
     if (view === 'arth' || view === 'eame' || view === 'yusu') {
       showScreen('screen-' + view);
       document.dispatchEvent(new CustomEvent(view + ':show', { detail: { blueprint: bp } }));

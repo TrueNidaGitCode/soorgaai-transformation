@@ -1,5 +1,5 @@
 /**
- * Svarg — Aria screen (real product)
+ * Svarg — Arth screen (real product)
  *
  * Reached from Approve on the Cob/Opportunities screen (dispatches
  * 'aria:show', see blueprintGenerate.js). Renders one table row per
@@ -529,7 +529,7 @@ function renderTable(datasets, confCount, jiraCount) {
  *
  * The gate used to be owned by runProcess — the Confluence/Jira linking path —
  * so a company whose engagement shows only GitHub and Upload could never
- * enable it at all. The one control that unlocked Arth sat on a tab they were
+ * enable it at all. The one control that unlocked Eame sat on a tab they were
  * never shown.
  *
  * Beyond that bug, blocking on coverage is wrong on its own terms. A company
@@ -547,12 +547,12 @@ function updateAriaNav(datasets, confCount, jiraCount) {
   btn.disabled = false;
 
   if (!total) {
-    btn.textContent = 'Move to Arth →';
+    btn.textContent = 'Move to Eame →';
     if (hint) hint.textContent = '';
     return;
   }
   if (connected === total) {
-    btn.textContent = 'Move to Arth →';
+    btn.textContent = 'Move to Eame →';
     if (hint) hint.textContent = 'Every required dataset has a source.';
     return;
   }
@@ -600,30 +600,31 @@ function updateAriaNav(datasets, confCount, jiraCount) {
 // turn a gap into a plan, but with the table directly above it, the second
 // list read as a rendering bug. The table states a dataset and its state once.
 
-// Aria is finished once data has actually been linked. Mark the journey
-// step done and say what comes next — Arth isn't built, so this states
-// that plainly instead of offering a link that goes nowhere.
+// Arth is finished once data has actually been linked. Mark the journey
+// step done and say what comes next.
 function markAriaComplete(ok) {
   if (!ok) return;
-  const steps = document.querySelectorAll('#screen-aria .pw-step');
-  const aria = steps[1];
-  if (aria) {
-    aria.classList.remove('pw-step--active');
-    aria.classList.add('pw-step--done');
+  // Found by its own data-goto, not by index: this screen used to be second
+  // in the journey and is now third, so steps[1] silently marked the stage
+  // above it done and left this one active.
+  const step = document.querySelector('#screen-aria .pw-step[data-goto="aria"]');
+  if (step) {
+    step.classList.remove('pw-step--active');
+    step.classList.add('pw-step--done');
+    const line = step.nextElementSibling;
+    if (line && line.classList.contains('pw-step-line')) line.classList.add('pw-step-line--done');
   }
-  const line = document.querySelector('#screen-aria .pw-step-line:nth-of-type(2)');
-  if (line) line.classList.add('pw-step-line--done');
 
   const banner = document.getElementById('aria-next-stage');
   if (banner) banner.style.display = 'flex';
 
   // Moving on is the stage-navigation button's job. The banner used to carry
-  // its own "Continue to Arth" link, which meant two different controls for
+  // its own "Continue to Eame" link, which meant two different controls for
   // the same act in two different places on the page.
   // The nav button is no longer enabled from here — updateAriaNav owns it, and
   // it is never disabled. This only reports that processing finished.
   const navHint = document.getElementById('aria-nav-hint');
-  if (navHint) navHint.textContent = 'Data processed — Arth is ready to choose a model.';
+  if (navHint) navHint.textContent = 'Data processed — Eame can build on it.';
 }
 
 // ── Sources: one table for every connected tool ─────────────────────────────
@@ -889,7 +890,7 @@ async function initSources(blueprintId) {
 //
 // Colours are the vendors' own, lightened where their brand value was chosen
 // for a white interface — Jira's #0052CC on this background is a smudge, not a
-// signal. Upload takes Aria's accent because it is not a vendor: it is the way
+// signal. Upload takes Arth's accent because it is not a vendor: it is the way
 // in that always exists.
 const ICONS = {
   confluence: '<path d="M2 15.5c2.5-4 5-4.5 8-1.5l4 4"/><path d="M22 8.5c-2.5 4-5 4.5-8 1.5l-4-4"/>',
@@ -1229,7 +1230,7 @@ async function loadUploads(blueprintId) {
     _samples = new Map((samples || []).filter(s => s.datasetName).map(s => [s.datasetName, s]));
   } catch {
     // A failed list must not make the screen claim nothing was uploaded — but
-    // it also must not block the rest of Aria. Leave whatever we already have.
+    // it also must not block the rest of Arth. Leave whatever we already have.
   }
 }
 

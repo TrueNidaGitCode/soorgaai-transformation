@@ -27,7 +27,7 @@
       <span id="domain-username" class="workspace-nav__username"></span>
       <!-- "Data Architecture" and "Knowledge Sources" used to sit here. Both
            were removed: the journey indicator at the top of every screen is
-           now the way back to Aria, and a second control pointing at the same
+           now the way back to Arth, and a second control pointing at the same
            stage read as a different destination. Knowledge Sources is reached
            from the home sidebar and from the not-grounded notice, which is
            where linking documents to a project actually belongs. -->
@@ -164,12 +164,12 @@
               <span class="pw-step__label">Cob</span>
             </div>
             <span class="pw-step-line" id="rp-line-1"><span class="pw-step-line__flow"></span></span>
-            <div class="pw-step rp-journey__locked" data-goto="aria">
+            <div class="pw-step rp-journey__locked" data-goto="arth">
               <span class="pw-step__node"><span class="pw-step__num">2</span></span>
               <span class="pw-step__label">Aria</span>
             </div>
             <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
-            <div class="pw-step rp-journey__locked" data-goto="arth">
+            <div class="pw-step rp-journey__locked" data-goto="aria">
               <span class="pw-step__node"><span class="pw-step__num">3</span></span>
               <span class="pw-step__label">Arth</span>
             </div>
@@ -299,7 +299,7 @@
                stage's own work is done. -->
           <div class="stage-nav">
             <span class="stage-nav__hint" id="cob-nav-hint">Approve an opportunity to continue</span>
-            <button type="button" class="stage-nav__btn" id="cob-nav-btn" data-goto="aria" disabled>Move to Aria &rarr;</button>
+            <button type="button" class="stage-nav__btn" id="cob-nav-btn" data-goto="arth" disabled>Move to Aria &rarr;</button>
           </div>
 
         </main>
@@ -332,13 +332,13 @@
   </main>
 
   <!-- ══════════════════════════════════════════════════════════════════════
-       SCREEN 2.7 — Aria
+       SCREEN 2.7 — Arth
        Reached from Approve on the Cob/Opportunities screen. Recaps the
        approved opportunity, shows Cob's real required-datasets list, and
        lets the user connect Confluence/Jira and link real sources to
        ground this specific blueprint — see ariaScreen.js.
   ══════════════════════════════════════════════════════════════════════════ -->
-  <main id="screen-aria" class="screen screen--aria" style="display:none" aria-label="Aria — connect and structure your data">
+  <main id="screen-aria" class="screen screen--aria" style="display:none" aria-label="Arth — connect and structure your data">
 
    <div class="rp-shell">
     <div class="rp-shell__body">
@@ -353,12 +353,12 @@
           <span class="pw-step__label">Cob</span>
         </div>
         <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step pw-step--active" data-goto="aria">
+        <div class="pw-step pw-step--done" data-goto="arth">
           <span class="pw-step__node"><span class="pw-step__num">2</span></span>
           <span class="pw-step__label">Aria</span>
         </div>
-        <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step rp-journey__locked" data-goto="arth">
+        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step pw-step--active" data-goto="aria">
           <span class="pw-step__node"><span class="pw-step__num">3</span></span>
           <span class="pw-step__label">Arth</span>
         </div>
@@ -450,11 +450,11 @@
            connector someone actually needs is the worse failure. -->
       <div class="aria-tabs" id="aria-tabs" role="tablist"></div>
 
-      <!-- GitHub, on Aria, is for READING: a product company's schema and
+      <!-- GitHub, on Arth, is for READING: a product company's schema and
            migrations are the authoritative answer to where each dataset lives.
            No endpoint reads a customer repository yet, so this panel states the
            intent without claiming the capability. It must never describe
-           delivery — Aria is a data screen, and writing to a customer's
+           delivery — Arth is a data screen, and writing to a customer's
            repository is not what connecting here is for. -->
       <div class="aria-tabpanel" id="aria-tab-github" style="display:none" role="tabpanel">
         <div class="aria-gh">
@@ -637,13 +637,13 @@
         <span class="aria-next__tick">&check;</span>
         <div>
           <p class="aria-next__title">Data is ready for this use case</p>
-          <p class="aria-next__body">Next is <strong>Arth</strong> — choosing the models and infrastructure to run it on.</p>
+          <p class="aria-next__body">Next is <strong>Eame</strong> — building the application that does the work.</p>
         </div>
       </div>
 
       <div class="stage-nav">
         <span class="stage-nav__hint" id="aria-nav-hint">Process your connected data to continue</span>
-        <button type="button" class="stage-nav__btn" id="aria-nav-btn" data-goto="arth" disabled>Move to Arth &rarr;</button>
+        <button type="button" class="stage-nav__btn" id="aria-nav-btn" data-goto="eame" disabled>Move to Eame &rarr;</button>
       </div>
 
       </div><!-- /.aria-body -->
@@ -651,19 +651,19 @@
      </main>
 
      <div class="sc-lane" data-screen="aria">
-       <img src="/assets/aria-character.png?v=2" class="rp-character sc-portrait" alt="" aria-hidden="true">
+       <img src="/assets/arth-character.png?v=2" class="rp-character sc-portrait" alt="" aria-hidden="true">
        <button type="button" class="sc-launcher" data-sc-open>
-         <span class="sc-launcher__dot"></span>Chat with Aria
+         <span class="sc-launcher__dot"></span>Chat with Arth
        </button>
-       <section class="sc-panel" hidden aria-label="Chat with Aria">
+       <section class="sc-panel" hidden aria-label="Chat with Arth">
          <header class="sc-panel__head">
-           <span class="sc-panel__avatar"><img src="/assets/aria-character.png?v=2" alt=""></span>
-           <span class="sc-panel__name">Aria</span>
+           <span class="sc-panel__avatar"><img src="/assets/arth-character.png?v=2" alt=""></span>
+           <span class="sc-panel__name">Arth</span>
            <button type="button" class="sc-panel__close" data-sc-close aria-label="Close chat">&times;</button>
          </header>
          <div class="sc-log" data-sc-log role="log" aria-live="polite"></div>
          <form class="sc-form" data-sc-form>
-           <textarea class="sc-input" data-sc-input rows="1" placeholder="Ask Aria about your data…" aria-label="Message"></textarea>
+           <textarea class="sc-input" data-sc-input rows="1" placeholder="Ask Arth about your data…" aria-label="Message"></textarea>
            <button type="submit" class="sc-send" data-sc-send aria-label="Send">&uarr;</button>
          </form>
        </section>
@@ -676,13 +676,13 @@
 
 
   <!-- ══════════════════════════════════════════════════════════════════════
-       SCREEN 2.8 — Arth (model & infrastructure)
-       Reached from Aria once data is linked. The model options come from
+       SCREEN 2.8 — Aria (model & infrastructure)
+       Reached from Cob once an opportunity is approved. The model options come from
        the real catalog via GET /defect-matching/model-selection, and the
        infrastructure rows from the blueprint's own technology domain — see
        arthScreen.js.
   ══════════════════════════════════════════════════════════════════════════ -->
-  <main id="screen-arth" class="screen screen--aria" style="display:none" aria-label="Arth — model and infrastructure">
+  <main id="screen-arth" class="screen screen--aria" style="display:none" aria-label="Aria — model and infrastructure">
    <div class="rp-shell">
     <div class="rp-shell__body">
      <main class="rp-main">
@@ -693,12 +693,12 @@
           <span class="pw-step__label">Cob</span>
         </div>
         <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step pw-step--done" data-goto="aria">
+        <div class="pw-step pw-step--active" data-goto="arth">
           <span class="pw-step__node"><span class="pw-step__num">2</span></span>
           <span class="pw-step__label">Aria</span>
         </div>
-        <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step pw-step--active" data-goto="arth">
+        <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
+        <div class="pw-step rp-journey__locked" data-goto="aria">
           <span class="pw-step__node"><span class="pw-step__num">3</span></span>
           <span class="pw-step__label">Arth</span>
         </div>
@@ -741,10 +741,10 @@
 
       <!-- Step 2 of the choice. Picking a class no longer settles it: the
            class decides where the data lives, this decides which model, and
-           for Auto it is Arth who decides. Only one of these is ever shown. -->
+           for Auto it is Aria who decides. Only one of these is ever shown. -->
 
       <!-- The models, for every class. Frontier and Auto both come from the
-           model catalog through the band rule; Auto differs only in that Arth
+           model catalog through the band rule; Auto differs only in that Aria
            takes the one answer rather than offering the shortlist. -->
       <div id="arth-picker" style="display:none">
         <div class="arth-picker__head">
@@ -761,7 +761,7 @@
         <div class="arth-models" id="arth-models"></div>
       </div>
 
-      <!-- Arth's second decision: where the application will run. Separate
+      <!-- Aria's second decision: where the application will run. Separate
            from the model above — that is where inference happens, this is
            where the app itself lives. -->
       <p class="pd-substage-label aria-required-label">Where the application runs</p>
@@ -817,7 +817,7 @@
         <span class="aria-next__tick">&check;</span>
         <div>
           <p class="aria-next__title">Model selected</p>
-          <p class="aria-next__body">Next is <strong>Eame</strong> — building the application itself.</p>
+          <p class="aria-next__body">Next is <strong>Arth</strong> — connecting the data it will run on.</p>
         </div>
       </div>
 
@@ -834,19 +834,19 @@
      </main>
 
      <div class="sc-lane" data-screen="arth">
-       <img src="/assets/arth-character.png?v=2" class="rp-character sc-portrait" alt="" aria-hidden="true">
+       <img src="/assets/aria-character.png?v=2" class="rp-character sc-portrait" alt="" aria-hidden="true">
        <button type="button" class="sc-launcher" data-sc-open>
-         <span class="sc-launcher__dot"></span>Chat with Arth
+         <span class="sc-launcher__dot"></span>Chat with Aria
        </button>
-       <section class="sc-panel" hidden aria-label="Chat with Arth">
+       <section class="sc-panel" hidden aria-label="Chat with Aria">
          <header class="sc-panel__head">
-           <span class="sc-panel__avatar"><img src="/assets/arth-character.png?v=2" alt=""></span>
-           <span class="sc-panel__name">Arth</span>
+           <span class="sc-panel__avatar"><img src="/assets/aria-character.png?v=2" alt=""></span>
+           <span class="sc-panel__name">Aria</span>
            <button type="button" class="sc-panel__close" data-sc-close aria-label="Close chat">&times;</button>
          </header>
          <div class="sc-log" data-sc-log role="log" aria-live="polite"></div>
          <form class="sc-form" data-sc-form>
-           <textarea class="sc-input" data-sc-input rows="1" placeholder="Ask Arth about these model options…" aria-label="Message"></textarea>
+           <textarea class="sc-input" data-sc-input rows="1" placeholder="Ask Aria about these model options…" aria-label="Message"></textarea>
            <button type="submit" class="sc-send" data-sc-send aria-label="Send">&uarr;</button>
          </form>
        </section>
@@ -873,12 +873,12 @@
           <span class="pw-step__label">Cob</span>
         </div>
         <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step pw-step--done" data-goto="aria">
+        <div class="pw-step pw-step--done" data-goto="arth">
           <span class="pw-step__node"><span class="pw-step__num">2</span></span>
           <span class="pw-step__label">Aria</span>
         </div>
         <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step pw-step--done" data-goto="arth">
+        <div class="pw-step pw-step--done" data-goto="aria">
           <span class="pw-step__node"><span class="pw-step__num">3</span></span>
           <span class="pw-step__label">Arth</span>
         </div>
@@ -906,7 +906,7 @@
           <p class="pd-header__sub">Turn the approved architecture into a production-ready application.</p>
         </div>
         <!-- Both read from real state, not decoration: the approval Cob
-             recorded, and whether Aria actually linked anything. -->
+             recorded, and whether Arth actually linked anything. -->
         <div class="eg-badges" id="eame-badges"></div>
       </div>
 
@@ -1048,7 +1048,7 @@
        SCREEN 4.5 — Yusu
        The last stage: put the application live and hand it over. Deploying
        lives here rather than on Eame because Eame writes the application and
-       Yusu ships it — Arth prepared the environment, Eame filled it, Yusu
+       Yusu ships it — Aria prepared the environment, Eame filled it, Yusu
        turns it on and says what the customer now owns. See yusuScreen.js.
   ══════════════════════════════════════════════════════════════════════════ -->
   <main id="screen-yusu" class="screen screen--aria" style="display:none" aria-label="Yusu — go live and hand over">
@@ -1062,12 +1062,12 @@
           <span class="pw-step__label">Cob</span>
         </div>
         <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step pw-step--done" data-goto="aria">
+        <div class="pw-step pw-step--done" data-goto="arth">
           <span class="pw-step__node"><span class="pw-step__num">2</span></span>
           <span class="pw-step__label">Aria</span>
         </div>
         <span class="pw-step-line pw-step-line--done"><span class="pw-step-line__flow"></span></span>
-        <div class="pw-step pw-step--done" data-goto="arth">
+        <div class="pw-step pw-step--done" data-goto="aria">
           <span class="pw-step__node"><span class="pw-step__num">3</span></span>
           <span class="pw-step__label">Arth</span>
         </div>

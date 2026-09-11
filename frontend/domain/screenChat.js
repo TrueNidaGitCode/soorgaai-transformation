@@ -33,16 +33,16 @@ function getBlueprintId() {
 
 const GREETINGS = {
   cob: "I'm Cob. I picked the recommended starting point for you — ask me why, or how it compares to the other options.",
-  aria: "I'm Aria. I map the data this use case needs. Ask me what's missing, or what happens to the data we can't connect.",
-  arth: "I'm Arth. I work out what this use case should run on. Ask me how the model classes differ, or which one fits your constraints.",
+  aria: "I'm Arth. I map the data this use case needs. Ask me what's missing, or what happens to the data we can't connect.",
+  arth: "I'm Aria. I work out what this use case should run on. Ask me how the model classes differ, or which one fits your constraints.",
   eame: "I'm Eame. I build the application itself. Ask me what's in the project, how to run it, or what happens when you deploy it.",
   yusu: "I'm Yusu. I put it live and hand it over. Ask me what's still outstanding, or what you own once it's running.",
 };
 
 const PLACEHOLDER_BUSY = {
   cob: 'Cob is thinking…',
-  aria: 'Aria is thinking…',
-  arth: 'Arth is thinking…',
+  aria: 'Arth is thinking…',
+  arth: 'Aria is thinking…',
   eame: 'Eame is thinking…',
   yusu: 'Yusu is thinking…',
 };

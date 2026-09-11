@@ -69,10 +69,30 @@ function renderBreadcrumb(bp) {
   const all = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
   const rec = brief.recommendedStartingPoint || '';
   const label = all.find(n => n && rec.includes(n)) || rec;
-  if (!label) { crumb.style.display = 'none'; return null; }
+
+  // Never hidden. This element is the application card now, and the Go Live
+  // button lives in it — a blueprint with no recommended starting point used
+  // to lose a breadcrumb here, and would now lose the way to go live. The
+  // name falls back to what the customer called the application, then to
+  // what they asked for.
   crumb.style.display = '';
-  document.getElementById('yusu-recap-name').textContent = label;
-  return label;
+  document.getElementById('yusu-recap-name').textContent =
+    label || appName(bp) || String(bp?.businessObjective || '').trim() || 'Your application';
+
+  // Cob's reason for choosing it, under the name, with the name and the
+  // lead-in stripped so the card does not say the same thing twice.
+  const descEl = document.getElementById('yusu-recap-desc');
+  if (descEl) {
+    const rest = label
+      ? rec.replace(label, '')
+          .replace(/^[\s:—–-]*(start with|begin with)?[\s:—–-]*/i, '')
+          .replace(/^[\s.,;:!?—–-]+|[\s.,;:!?—–-]+$/g, '')
+          .trim()
+      : '';
+    descEl.textContent = rest.length > 3 ? rest.charAt(0).toUpperCase() + rest.slice(1) : '';
+    descEl.style.display = descEl.textContent ? '' : 'none';
+  }
+  return label || null;
 }
 
 /** The Governance & Ethics sections this blueprint actually produced. */
@@ -150,11 +170,21 @@ function renderChecks(bp) {
   const status = document.getElementById('yusu-run-status');
   const verdict = document.getElementById('yusu-verdict');
 
+  const sub = document.getElementById('yusu-gov-sub');
+
+  // The status pill is the shared .ae-state now, so its classes are the
+  // shared ones: --pending while nothing has run, --bad on a failure, plain
+  // once everything passed.
+  const setStatus = (text, tone) => {
+    status.innerHTML = `<span class="ae-state__dot"></span>${text}`;
+    status.className = 'ae-state' + (tone ? ' ae-state--' + tone : '');
+  };
+
   if (!_checksRun) {
     wrap.innerHTML = `<p class="tr-idle">Checks run once the application has been pushed.</p>`;
-    status.innerHTML = `<span class="eg-status__dot"></span>Not run`;
-    status.className = 'eg-status eg-status--idle';
+    setStatus('Not run', 'pending');
     verdict.style.display = 'none';
+    if (sub) sub.textContent = 'Automated checks for governance, ethics and compliance.';
     return [];
   }
 
@@ -165,24 +195,33 @@ function renderChecks(bp) {
     <div class="tr-card${r.pass ? '' : ' tr-card--fail'}">
       <span class="tr-card__icon">${r.icon}</span>
       <p class="tr-card__title">${esc(r.title)}</p>
-      <p class="tr-card__verdict">${r.pass ? '&#10003; Passed' : '&#10007; Failed'}</p>
       <p class="tr-card__why">${esc(r.why)}</p>
+      <p class="tr-card__verdict">${r.pass ? '&#10003; Passed' : '&#10007; Failed'}</p>
     </div>
   `).join('');
 
-  status.innerHTML = `<span class="eg-status__dot"></span>${allPass ? 'Completed' : 'Failed'}`;
-  status.className = 'eg-status' + (allPass ? '' : ' eg-status--fail');
+  setStatus(allPass ? 'Completed' : 'Failed', allPass ? '' : 'bad');
+  if (sub) {
+    sub.textContent = allPass
+      ? 'Your application has passed all required checks.'
+      : 'One or more checks did not pass. Go Live stays closed until they do.';
+  }
 
+  // The verdict is the shield beside the tiles. It says "All checks passed"
+  // only when they all did; a failure is drawn as one, not softened.
   verdict.style.display = '';
-  verdict.className = 'tr-verdict' + (allPass ? '' : ' tr-verdict--fail');
+  verdict.className = 'tr-verdict yu-gov__verdict' + (allPass ? '' : ' tr-verdict--fail');
   verdict.innerHTML = `
-    <span class="tr-verdict__mark">${allPass ? '&#10003;' : '&#10007;'}</span>
-    <span>
-      <strong>${allPass ? 'All checks passed' : 'Some checks did not pass'}</strong>
-      <span>${allPass
-        ? 'Your application is ready for deployment to your environment.'
-        : 'Go Live stays closed until these are resolved.'}</span>
-    </span>`;
+    <span class="yu-shield${allPass ? '' : ' yu-shield--fail'}" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        ${allPass ? '<polyline points="9 12 11 14 15 10"/>' : '<line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>'}
+      </svg>
+    </span>
+    <strong class="yu-gov__verdict-title">${allPass ? 'All checks passed' : 'Some checks did not pass'}</strong>
+    <span class="yu-gov__verdict-sub">${allPass
+      ? 'Ready for deployment to your environment.'
+      : 'Go Live stays closed until these are resolved.'}</span>`;
 
   return results;
 }
@@ -207,10 +246,16 @@ function renderPipeline(bp, dep) {
     { name: 'Deploy',  sub: 'Release to environment',       done: !!live },
   ];
 
+  // The strip that drew these was removed from the page; the steps are still
+  // computed because the hero and the app card read them. Guarded so the
+  // function keeps working with or without somewhere to draw.
+  const strip = document.getElementById('yusu-pipeline');
+  if (!strip) return steps;
+
   // The first step that is not done is the one in flight, so the strip
   // reads as progress rather than a checklist.
   const active = _running ? steps.findIndex(s => !s.done) : -1;
-  document.getElementById('yusu-pipeline').innerHTML = steps.map((s, i) => `
+  strip.innerHTML = steps.map((s, i) => `
     <li class="dp__step${s.done ? ' dp__step--done' : (i === active ? ' dp__step--busy' : '')}">
       <span class="dp__node">${s.done ? '&#10003;' : i + 1}</span>
       <span class="dp__name">${esc(s.name)}</span>
@@ -308,11 +353,15 @@ async function buildAndPush() {
 
   // No link to the repository: it is private to Svarg, so a link would 404
   // for the person reading this. Their copy is the download below.
+  // Counted from the response when it says, from the manifest when it does
+  // not. Interpolating r.fileCount raw printed "undefined files rebuilt and
+  // published" the moment a response omitted it.
+  const count = Number.isFinite(r.fileCount) ? r.fileCount : _manifestPaths.length;
   out.style.display = 'block';
   out.innerHTML = `<div class="pw-process-item pw-process-item--done">
-    <span class="pw-process-item__title">${esc(repoName)}</span>
-    <span class="pw-process-item__detail">${r.fileCount} files
-      ${r.upToDate ? 'already current in' : r.created ? 'built and published to' : 'rebuilt and published to'} the Svarg build registry.</span>
+    <span class="pw-process-item__title">${esc(repoName || 'Your application')}</span>
+    <span class="pw-process-item__detail">${count ? count + ' files ' : ''}${
+      r.upToDate ? 'already current in' : r.created ? 'built and published to' : 'rebuilt and published to'} the Svarg build registry.</span>
   </div>`;
 
   // Keep the in-memory blueprint in step so the checks below re-render as met
@@ -409,8 +458,41 @@ function render(bp, dep) {
   const haveProject = _manifestSource === 'generated' || pushed;
   download.disabled = !haveProject;
   document.getElementById('yusu-source-sub').textContent = haveProject
-    ? `${(pushed && bp.eameDelivery.fileCount) || _manifestPaths.length} files — the complete project, exactly as deployed. Yours to keep, review, or push to your own Git.`
-    : 'Available as soon as the application has been built.';
+    ? `${(pushed && bp.eameDelivery.fileCount) || _manifestPaths.length} files — the complete project, exactly as deployed. Yours to keep.`
+    : 'Source available as soon as the application has been built.';
+
+  // The hero, the app card's pill, the address and the closing line all
+  // follow one fact: whether the deployment is live. Nothing on this page
+  // says "live" on the strength of anything less.
+  const heroMark  = document.getElementById('yusu-hero-mark');
+  const heroPill  = document.getElementById('yusu-hero-pill');
+  const appState  = document.getElementById('yusu-app-state');
+  const appText   = document.getElementById('yusu-app-state-text');
+  const appUrl    = document.getElementById('yusu-app-url');
+  const appUrlTxt = document.getElementById('yusu-app-url-text');
+  const foot      = document.getElementById('yusu-foot');
+
+  const stateWord = live ? (dep.status === 'suspended' ? 'Suspended' : 'Live')
+    : building ? 'Deploying'
+    : _running ? 'Preparing'
+    : _failed ? 'Stopped'
+    : dep?.hosting === 'self' ? 'Self-hosted'
+    : 'Not live';
+  const isLive = live && dep.status !== 'suspended';
+
+  if (heroMark) heroMark.classList.toggle('ae-hero__mark--pending', !isLive);
+  if (heroPill) {
+    heroPill.textContent = isLive ? 'Application live' : stateWord;
+    heroPill.classList.toggle('ae-pill--pending', !isLive);
+  }
+  if (appState) appState.classList.toggle('ae-state--pending', !isLive);
+  if (appText) appText.textContent = stateWord;
+  if (appUrl) {
+    const url = live ? (dep.url || '') : '';
+    appUrl.style.display = url ? '' : 'none';
+    if (url) { appUrl.href = url; if (appUrlTxt) appUrlTxt.textContent = url.replace(/^https?:\/\//, ''); }
+  }
+  if (foot) foot.style.display = isLive ? '' : 'none';
 
   if (live) {
     // A live deployment still needs a way to be rebuilt — a platform with no

@@ -1686,3 +1686,224 @@ body.domain-page .sc-panel {
 @media (prefers-reduced-motion: reduce) {
     #screen-eame .eg-source-btn .ae-details-toggle__chev { transition: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Yusu — the application, live
+   ══════════════════════════════════════════════════════════════════════════
+   Three full-width cards under the hero: the application, the checks, the
+   integration. The design drew each beside a second card (a journey, a
+   summary, a what's-next); those were removed, so each of these takes the
+   row. Hero, pills, cards and art are the shared .ae-* layer.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+#screen-yusu .ae-stage--hero { margin-bottom: 1.2rem; align-items: center; }
+#screen-yusu .ae-stage--hero .ae-art { min-height: 200px; }
+#screen-yusu .ae-stage--hero .ae-art__svg { max-width: 260px; }
+
+/* Live gets the accent; every other state is the quiet ring. */
+#screen-yusu .ae-hero__mark:not(.ae-hero__mark--pending) {
+    color: #35e0a0;
+    box-shadow: 0 0 0 6px rgba(53, 224, 160, 0.08), 0 0 28px rgba(53, 224, 160, 0.26);
+}
+#screen-yusu .ae-pill:not(.ae-pill--pending) {
+    color: #35e0a0;
+    background: rgba(53, 224, 160, 0.1);
+    border-color: rgba(53, 224, 160, 0.3);
+}
+#screen-yusu .ae-state:not(.ae-state--pending):not(.ae-state--bad) {
+    color: #35e0a0;
+    background: rgba(53, 224, 160, 0.09);
+    border-color: rgba(53, 224, 160, 0.28);
+}
+#screen-yusu .ae-state--bad { color: #f0a05a; background: rgba(240,160,90,.09); border-color: rgba(240,160,90,.32); }
+
+/* ── The application ───────────────────────────────────────────────────── */
+
+#screen-yusu .yu-app {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    gap: 1.1rem;
+    align-items: start;
+    padding: 1.3rem 1.4rem;
+    margin: 0 0 1rem;
+}
+@media (max-width: 900px) {
+    #screen-yusu .yu-app { grid-template-columns: 56px minmax(0, 1fr); }
+    #screen-yusu .yu-app__side { grid-column: 1 / -1; align-items: flex-start; }
+}
+#screen-yusu .yu-app__icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    display: grid; place-items: center;
+    color: var(--ws-accent, #2ee6d6);
+    background: rgba(46, 230, 214, 0.1);
+    border: 1px solid rgba(46, 230, 214, 0.22);
+}
+#screen-yusu .yu-app__icon svg { width: 26px; height: 26px; }
+#screen-yusu .yu-app__body { min-width: 0; }
+#screen-yusu .yu-app__name { margin: .1rem 0 .3rem; font-size: 1.25rem; font-weight: 650; line-height: 1.25; }
+#screen-yusu .yu-app__desc { margin: 0 0 .7rem; font-size: .88rem; line-height: 1.5; color: var(--ws-text-dim, #9fb3bb); max-width: 62ch; }
+#screen-yusu .yu-app__url {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    margin: 0 0 .6rem;
+    padding: .45rem .8rem;
+    border-radius: 9px;
+    border: 1px solid rgba(46, 230, 214, 0.28);
+    background: rgba(46, 230, 214, 0.06);
+    color: var(--ws-accent, #2ee6d6);
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: .82rem;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+#screen-yusu .yu-app__url svg { width: 14px; height: 14px; flex: 0 0 auto; }
+#screen-yusu .yu-app__files { margin: 0; font-size: .76rem; color: var(--ws-text-dim, #9fb3bb); }
+
+#screen-yusu .yu-app__side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .8rem;
+}
+#screen-yusu .yu-app__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin: 0; }
+#screen-yusu .yu-app__download { display: inline-flex; align-items: center; gap: .4rem; }
+#screen-yusu .yu-app__download svg { width: 14px; height: 14px; }
+
+/* ── Governance ────────────────────────────────────────────────────────── */
+
+#screen-yusu .yu-gov { padding: 1.2rem 1.4rem 1.3rem; margin: 0 0 1rem; }
+#screen-yusu .yu-gov__head { margin-bottom: 1rem; }
+#screen-yusu .yu-gov__head .eg-card__headings { flex: 1 1 0%; min-width: 0; }
+#screen-yusu .yu-gov__head .ae-state { align-self: center; }
+
+/* Tiles and the shield share the row; the shield goes first when narrow. */
+#screen-yusu .yu-gov__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 190px;
+    gap: 1rem;
+    align-items: stretch;
+}
+@media (max-width: 1000px) {
+    #screen-yusu .yu-gov__body { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The result tiles. Restated here because domain.css lays .tr-grid out for
+   the old panel. */
+#screen-yusu .yu-gov__grid {
+    display: grid;
+    /* Three checks, one row. At 190px the third wrapped under the first two
+       once the shield took its column; 168 keeps all three abreast at 1440
+       and still leaves the descriptions readable. */
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+    gap: .75rem;
+}
+#screen-yusu .yu-gov__grid .tr-card {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    padding: 1rem 1rem .9rem;
+    border-radius: 12px;
+    background: rgba(10, 24, 28, 0.55);
+    border: 1px solid rgba(93, 143, 155, 0.18);
+}
+#screen-yusu .yu-gov__grid .tr-card--fail { border-color: rgba(240, 160, 90, 0.4); }
+#screen-yusu .yu-gov__grid .tr-card__icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    display: grid; place-items: center;
+    font-size: 1rem;
+    color: var(--ws-accent, #2ee6d6);
+    background: rgba(46, 230, 214, 0.09);
+    margin-bottom: .2rem;
+}
+#screen-yusu .yu-gov__grid .tr-card__title { margin: 0; font-size: .9rem; font-weight: 650; }
+#screen-yusu .yu-gov__grid .tr-card__why { margin: 0; font-size: .76rem; line-height: 1.45; color: var(--ws-text-dim, #9fb3bb); flex: 1 1 auto; }
+#screen-yusu .yu-gov__grid .tr-card__verdict {
+    margin: .5rem 0 0;
+    align-self: flex-start;
+    font-size: .74rem;
+    font-weight: 600;
+    color: #35e0a0;
+    border: 1px solid rgba(53, 224, 160, 0.35);
+    border-radius: 999px;
+    padding: .2rem .6rem;
+}
+#screen-yusu .yu-gov__grid .tr-card--fail .tr-card__verdict { color: #f0a05a; border-color: rgba(240,160,90,.4); }
+#screen-yusu .tr-idle { margin: 0; font-size: .85rem; color: var(--ws-text-dim, #9fb3bb); }
+
+/* The verdict, drawn as the shield beside the tiles. */
+#screen-yusu .yu-gov__verdict {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: .3rem;
+    padding: 1rem;
+    border-radius: 12px;
+    background: rgba(53, 224, 160, 0.06);
+    border: 1px solid rgba(53, 224, 160, 0.22);
+}
+#screen-yusu .yu-gov__verdict.tr-verdict--fail { background: rgba(240,160,90,.06); border-color: rgba(240,160,90,.3); }
+#screen-yusu .yu-shield {
+    width: 72px; height: 72px;
+    display: grid; place-items: center;
+    color: #35e0a0;
+    filter: drop-shadow(0 0 14px rgba(53, 224, 160, 0.35));
+    margin-bottom: .3rem;
+}
+#screen-yusu .yu-shield--fail { color: #f0a05a; filter: drop-shadow(0 0 14px rgba(240,160,90,.3)); }
+#screen-yusu .yu-shield svg { width: 60px; height: 60px; }
+#screen-yusu .yu-gov__verdict-title { font-size: .9rem; color: #35e0a0; }
+#screen-yusu .tr-verdict--fail .yu-gov__verdict-title { color: #f0a05a; }
+#screen-yusu .yu-gov__verdict-sub { font-size: .74rem; line-height: 1.4; color: var(--ws-text-dim, #9fb3bb); }
+
+/* ── Connect ───────────────────────────────────────────────────────────── */
+
+#screen-yusu .yu-connect {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+    padding: 1.2rem 1.4rem;
+    margin: 0 0 1rem;
+}
+#screen-yusu .yu-connect__body { min-width: 0; }
+#screen-yusu .yu-connect .eg-card__sub { max-width: 62ch; }
+#screen-yusu .yu-connect__btn { width: auto; min-width: 220px; margin-top: .9rem; }
+
+/* ── The closing line ──────────────────────────────────────────────────── */
+
+#screen-yusu .yu-foot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.4rem 0 1rem;
+    padding: 1.1rem 1.4rem;
+    border-radius: 14px;
+    background: linear-gradient(90deg, rgba(46, 230, 214, 0.05), rgba(53, 224, 160, 0.08), rgba(46, 230, 214, 0.05));
+    border: 1px solid rgba(46, 230, 214, 0.14);
+}
+#screen-yusu .yu-foot__mark { width: 34px; height: 34px; color: var(--ws-accent, #2ee6d6); }
+#screen-yusu .yu-foot__mark svg { width: 34px; height: 34px; }
+#screen-yusu .yu-foot__title { margin: 0; font-size: 1rem; font-weight: 650; }
+#screen-yusu .yu-foot__sub { margin: 0; font-size: .82rem; color: var(--ws-text-dim, #9fb3bb); }
+
+/* Card icon styles are shared with Eame; restate the scope so they reach here. */
+#screen-yusu .eg-card__head { display: flex; align-items: flex-start; gap: .85rem; flex-wrap: wrap; margin: 0 0 1rem; }
+#screen-yusu .eg-card__icon {
+    flex: 0 0 auto;
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    color: var(--ws-accent, #2ee6d6);
+    background: rgba(46, 230, 214, 0.09);
+    border: 1px solid rgba(46, 230, 214, 0.2);
+}
+#screen-yusu .eg-card__icon svg { width: 20px; height: 20px; }
+#screen-yusu .eg-card__headings { flex: 1 1 0%; min-width: 0; }
+#screen-yusu .eg-card__title { margin: 0 0 .2rem; font-size: 1rem; font-weight: 650; }
+#screen-yusu .eg-card__sub { margin: 0; font-size: .8rem; line-height: 1.45; color: var(--ws-text-dim, #9fb3bb); }

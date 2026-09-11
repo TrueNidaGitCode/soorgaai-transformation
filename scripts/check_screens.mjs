@@ -113,12 +113,20 @@ const BLUEPRINT = {
   ],
 };
 
+// YUSU_STATE=live renders the page in the state it exists to reach. Without
+// it the fixture is 'prepared', so the strongest sentence on the screen —
+// "is live", with an address and a closing line — had never been drawn by
+// the check, only asserted absent.
+const YUSU_LIVE = process.env.YUSU_STATE === 'live';
 const DEPLOYMENT = {
-  status: 'prepared', hosting: 'svarg', environmentName: 'svarg-tenant-000001',
-  region: 'us-west', dbName: 'tenant_000001', appAttached: false, url: '',
+  status: YUSU_LIVE ? 'live' : 'prepared', hosting: 'svarg', environmentName: 'svarg-tenant-000001',
+  region: 'us-west', dbName: 'tenant_000001', appAttached: YUSU_LIVE,
+  url: YUSU_LIVE ? 'https://svarg-tenant-000001.up.railway.app' : '',
   model: { modelId: 'gemini-3-8-flash', displayName: 'Gemini 3.8 Flash' },
   usage: { requests: 0, costUsd: 0 }, limits: { maxCostUsd: 5 },
   preparedAt: new Date().toISOString(),
+  liveAt: YUSU_LIVE ? new Date().toISOString() : null,
+  statusMessage: YUSU_LIVE ? 'Your application is running and available to your users.' : '',
 };
 
 // The real paths the project builder emits. Generic names would let the
@@ -346,7 +354,7 @@ const SCREENS = {
           must: ['none', 'stalled'].includes(process.env.EAME_BUILD_STATE)
             ? ['.rp-journey', '#eame-build-btn', '.eg-gate']
             : ['.rp-journey', '#eame-stats .ae-tile', '.eg-tree__row', '#eame-onward'] },
-  yusu: { id: 'screen-yusu',  launcher: 'Chat with Yusu',  must: ['.rp-journey', '.dp__step', '.eg-usecase__name'] },
+  yusu: { id: 'screen-yusu',  launcher: 'Chat with Yusu',  must: ['.rp-journey', '.eg-usecase__name', '#yusu-golive-btn', '#yusu-checks'] },
 };
 
 function probeScript(screen) {
@@ -792,6 +800,49 @@ setTimeout(async function () {
     // Eame's build gates. The screen used to say "Generation Complete" as a
     // hardcoded string over a project nobody had built; these are real states,
     // and a passed build must show every gate as passed.
+    // Yusu's page leads with "live". The fixture's deployment is 'prepared',
+    // not live, so nothing on the page may say live: not the pill, not the
+    // address, not the closing line. The strongest claim the product makes
+    // is the one that must be checked hardest.
+    if (out.screen === 'yusu') {
+      var pill = (document.getElementById('yusu-hero-pill') || {}).textContent || '';
+      var title = (document.getElementById('yusu-ready-title') || {}).textContent || '';
+      out.yusuPill = pill.trim();
+      out.yusuTitle = title.trim().slice(0, 40);
+      var depLive = ${JSON.stringify(['live', 'suspended'].includes(DEPLOYMENT.status))};
+      if (!depLive) {
+        // No backslash classes here: this probe is built inside a template
+        // literal, and \b arrives as a backspace — the same way \s was eaten
+        // further down. Spelt out as character classes instead.
+        var saysLive = /(^|[^a-z])live([^a-z]|$)/i;
+        var saysIsLive = /(^|[^a-z])is live([^a-z]|$)/i;
+        if (saysLive.test(pill)) bad('hero pill says "' + pill.trim() + '" on a deployment that is not live');
+        if (saysIsLive.test(title)) bad('hero title says live on a deployment that is not live: ' + title.trim());
+        var footEl = document.getElementById('yusu-foot');
+        if (footEl && footEl.style.display !== 'none') bad('the "Your application is live" closing line is shown on a deployment that is not live');
+        var urlEl = document.getElementById('yusu-app-url');
+        if (urlEl && urlEl.style.display !== 'none') bad('an application address is offered on a deployment that is not live');
+      } else {
+        // And when it IS live, the page must say so everywhere it should.
+        if (!/(^|[^a-z])live([^a-z]|$)/i.test(pill)) bad('hero pill does not say live on a live deployment: "' + pill.trim() + '"');
+        if (!/(^|[^a-z])is live([^a-z]|$)/i.test(title)) bad('hero title does not say live on a live deployment: ' + title.trim());
+        var footOn = document.getElementById('yusu-foot');
+        if (!footOn || footOn.style.display === 'none') bad('the closing line is missing on a live deployment');
+        var urlOn = document.getElementById('yusu-app-url');
+        if (!urlOn || urlOn.style.display === 'none' || !/railway\.app/.test(urlOn.href)) bad('the application address is missing on a live deployment');
+        var openBtn = document.getElementById('yusu-view-app');
+        if (!openBtn || openBtn.style.display === 'none') bad('"Open Application" is missing on a live deployment');
+        var goLive = document.getElementById('yusu-golive-btn');
+        if (goLive && goLive.style.display !== 'none') bad('"Go Live" is still offered on a deployment that is already live');
+      }
+      // The pieces that were removed must stay removed.
+      if (scr.querySelector('#yusu-pipeline, .dp__step')) bad('the deployment journey strip is back');
+      // And the app card must never vanish: it holds Go Live.
+      var appCard = document.getElementById('yusu-breadcrumb');
+      if (!appCard || appCard.style.display === 'none' || appCard.offsetParent === null) bad('the application card (which holds Go Live) is hidden');
+      out.yusuChecks = scr.querySelectorAll('#yusu-checks .tr-card').length;
+    }
+
     if (out.screen === 'eame') {
       var gates = scr.querySelectorAll('#eame-gates .eg-gate');
       out.gates = gates.length;
@@ -1158,6 +1209,9 @@ for (const screen of list) {
         ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}" · cards ${r.eameCards || "-"} · tiles ${r.tiles ?? "-"} · banner ${r.readyBanner || "-"}`
           + (r.freshShows ? ` · fresh shows ${r.freshShows} · claims ${r.falseClaims}` : '')
           + (r.note && r.note !== 'missing' ? `\n        note "${r.note}"` : '')
+        : '')
+    + (r.yusuPill !== undefined
+        ? `\n        pill "${r.yusuPill}" · title "${r.yusuTitle}" · checks ${r.yusuChecks}`
         : ''));
   (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
 }

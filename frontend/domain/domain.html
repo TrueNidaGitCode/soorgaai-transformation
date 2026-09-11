@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=20">
+  <link rel="stylesheet" href="workspace.css?v=22">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -1264,104 +1264,139 @@
 
       <div class="aria-body">
 
-      <div class="pd-header aria-header">
-        <div class="aria-header__icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.1 2.1 0 0 0-2.9-.1z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.7-6 11a22 22 0 0 1-4 2z"/><path d="M9 12H4s.6-3.3 2-4c1.6-.8 5 0 5 0"/><path d="M12 15v5s3.3-.6 4-2c.8-1.6 0-5 0-5"/></svg>
+      <!-- ── The hero is the state ──────────────────────────────────────────
+           #yusu-ready-title and #yusu-ready-sub are written by render() and
+           already carry the honest sentence for every state: "X is live",
+           "Ready to Go Live", "Building your application", "The run did not
+           finish". They used to sit in a strip at the foot of the page; they
+           are the headline now. The pill and the mark follow the same state,
+           so the page only ever says "live" when the deployment is. -->
+      <div class="ae-stage ae-stage--hero">
+        <div class="ae-hero">
+          <div class="ae-hero__mark ae-hero__mark--pending" id="yusu-hero-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="ae-hero__text">
+            <span class="ae-pill ae-pill--pending" id="yusu-hero-pill">Go live</span>
+            <h1 class="ae-hero__title" id="yusu-ready-title">Ready to Go Live</h1>
+            <p class="ae-hero__sub" id="yusu-ready-sub">Deploy your application to your target environment and make it available to your users.</p>
+          </div>
         </div>
-        <div>
-          <h1 class="aria-header__title">Go Live &amp; Handover</h1>
-          <p class="pd-header__sub">Build, validate and deploy your AI application to your environment.</p>
+        <div class="ae-art" aria-hidden="true">
+          <div class="ae-art__glow"></div>
+          <svg class="ae-art__svg" viewBox="0 0 320 300" fill="none">
+            <g class="ae-art__chips" stroke="currentColor" stroke-width="1.4" opacity=".55">
+              <rect x="22"  y="62"  width="58" height="58" rx="12"/>
+              <rect x="150" y="18"  width="54" height="54" rx="12"/>
+              <rect x="246" y="92"  width="54" height="54" rx="12"/>
+            </g>
+            <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".8">
+              <path d="M51 79a10 10 0 1 0 0 20 10 10 0 0 0 0-20z M51 84v5l3 3"/>
+              <path d="M166 34c6-4 16-4 22 0 M166 44h22 M166 54h22"/>
+              <path d="M262 122h22 M273 111v22 M266 115l7-4 7 4"/>
+            </g>
+            <g class="ae-art__stack">
+              <path d="M160 232 58 178l102-54 102 54z" opacity=".30"/>
+              <path d="M160 204 58 150l102-54 102 54z" opacity=".55"/>
+              <path d="M160 176 58 122l102-54 102 54z" opacity=".95"/>
+            </g>
+          </svg>
         </div>
       </div>
 
       <div id="yusu-error" class="gen-error" style="display:none"></div>
 
-      <div class="eg-usecase" id="yusu-breadcrumb">
-        <span class="eg-usecase__icon">
+      <!-- ── The application ───────────────────────────────────────────────
+           What was built, where it runs, and the one thing to do about it.
+           The actions moved up from the foot of the page: Go Live before it
+           is live, Open Application and Deploy once it is. Download sits
+           beside them because the code is the customer's whether or not they
+           ever open the running copy. -->
+      <section class="ae-card yu-app" id="yusu-breadcrumb" aria-labelledby="yusu-recap-name">
+        <span class="yu-app__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
         </span>
-        <span class="eg-usecase__body">
-          <span class="eg-usecase__label">Application from Eame</span>
-          <span class="eg-usecase__name" id="yusu-recap-name"></span>
-        </span>
-      </div>
-
-      <!-- The four acts, each reflecting real state: the manifest exists, the
-           repository exists, the checks passed, the service is running. -->
-      <section class="eg-panel">
-        <div class="eg-panel__head">
-          <span class="eg-panel__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.1 2.1 0 0 0-2.9-.1z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.7-6 11a22 22 0 0 1-4 2z"/></svg>
-          </span>
-          <div>
-            <h2 class="eg-panel__title">Delivery Pipeline</h2>
-            <p class="eg-panel__sub">From application artifact to production deployment</p>
+        <div class="yu-app__body">
+          <span class="eg-usecase__label">Your application</span>
+          <h2 class="eg-usecase__name yu-app__name" id="yusu-recap-name"></h2>
+          <p class="yu-app__desc" id="yusu-recap-desc"></p>
+          <!-- The address, once there is one. render() fills it when live. -->
+          <a class="yu-app__url" id="yusu-app-url" href="#" target="_blank" rel="noopener" style="display:none">
+            <span id="yusu-app-url-text"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+          <p class="yu-app__files" id="yusu-source-sub">Available as soon as the application has been built.</p>
+        </div>
+        <div class="yu-app__side">
+          <span class="ae-state ae-state--pending" id="yusu-app-state"><span class="ae-state__dot"></span><span id="yusu-app-state-text">Not live</span></span>
+          <div class="yusu-actions yu-app__actions">
+            <button type="button" class="pw-next-btn" id="yusu-golive-btn" disabled>Go Live</button>
+            <a class="pw-next-btn" id="yusu-view-app" href="#" target="_blank" rel="noopener" style="display:none">Open Application &rarr;</a>
+            <button type="button" class="pw-back-btn" id="yusu-redeploy-btn" style="display:none">Deploy</button>
+            <button type="button" class="pw-back-btn yu-app__download" id="yusu-download-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+              Download source
+            </button>
           </div>
         </div>
-        <ol class="dp" id="yusu-pipeline"></ol>
       </section>
 
-      <section class="eg-panel">
-        <div class="eg-panel__head">
-          <span class="eg-panel__icon">
+      <!-- ── Governance, ethics and security ───────────────────────────────
+           Real checks, run against the manifest once the application has
+           been pushed. Each tile is a result, and the shield on the right is
+           the verdict — it says "All checks passed" only when they all did. -->
+      <section class="ae-card yu-gov" aria-labelledby="yusu-gov-title">
+        <header class="eg-card__head yu-gov__head">
+          <span class="eg-card__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </span>
-          <div>
-            <h2 class="eg-panel__title">Test Run Summary</h2>
-            <p class="eg-panel__sub">Automated checks for governance, ethics and compliance</p>
+          <div class="eg-card__headings">
+            <h2 class="eg-card__title" id="yusu-gov-title">Governance, Ethics &amp; Security</h2>
+            <p class="eg-card__sub" id="yusu-gov-sub">Automated checks for governance, ethics and compliance.</p>
           </div>
-          <span class="eg-status" id="yusu-run-status"><span class="eg-status__dot"></span>Not run</span>
+          <span class="ae-state ae-state--pending" id="yusu-run-status"><span class="ae-state__dot"></span>Not run</span>
+        </header>
+        <div class="yu-gov__body">
+          <div class="tr-grid yu-gov__grid" id="yusu-checks"></div>
+          <div class="tr-verdict yu-gov__verdict" id="yusu-verdict" style="display:none"></div>
         </div>
-
-        <div class="tr-grid" id="yusu-checks"></div>
-        <div class="tr-verdict" id="yusu-verdict" style="display:none"></div>
       </section>
 
       <div id="yusu-push-result" class="pw-process-list" style="display:none"></div>
 
-      <!-- The source code is the customer's, whether or not they ever touch
-           the running copy. Svarg builds and runs the agent from its own
-           repository; this is how the customer takes it away. -->
-      <div class="yusu-source" id="yusu-source">
-        <div class="yusu-source__body">
-          <h3 class="yusu-source__title">Your source code</h3>
-          <p class="yusu-source__sub" id="yusu-source-sub">The complete project, exactly as deployed &mdash; yours to keep, review, or push to your own Git.</p>
-        </div>
-        <button type="button" class="yusu-source__btn" id="yusu-download-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-          Download project
-        </button>
-      </div>
-
-      <!-- Porting the same capability into the customer's own codebase. A
-           SEPARATE artefact: it never touches the standalone application above,
-           which stays deployed and working whatever this produces. -->
-      <div class="yusu-source yusu-integrate" id="yusu-integrate" style="display:none">
-        <div class="yusu-source__body">
-          <h3 class="yusu-source__title">Integrate into your product</h3>
-          <p class="yusu-source__sub" id="yusu-integrate-sub">Rewrite this capability to live inside your own codebase &mdash; your framework, your models, your conventions.</p>
-          <div class="yusu-int__result" id="yusu-integrate-result" style="display:none"></div>
-        </div>
-        <button type="button" class="yusu-source__btn" id="yusu-integrate-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
-          Build the integration
-        </button>
-      </div>
-
-      <div class="eg-done" id="yusu-ready">
-        <span class="eg-done__ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.1 2.1 0 0 0-2.9-.1z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.7-6 11a22 22 0 0 1-4 2z"/></svg>
+      <!-- ── Connect to your existing systems ──────────────────────────────
+           Porting the same capability into the customer's own codebase. A
+           SEPARATE artefact: it never touches the standalone application
+           above, which stays deployed and working whatever this produces.
+           Hidden until loadIntegration() decides it applies. -->
+      <section class="ae-card yu-connect" id="yusu-integrate" style="display:none">
+        <span class="eg-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
         </span>
-        <div class="eg-done__body">
-          <p class="eg-done__title" id="yusu-ready-title">Ready to Go Live</p>
-          <p class="eg-done__sub" id="yusu-ready-sub">Deploy your application to your target environment and make it available to your users.</p>
+        <div class="yu-connect__body">
+          <h2 class="eg-card__title">Connect to your existing systems</h2>
+          <p class="eg-card__sub" id="yusu-integrate-sub">Rewrite this capability to live inside your own codebase &mdash; your framework, your models, your conventions.</p>
+          <div class="yusu-int__result" id="yusu-integrate-result" style="display:none"></div>
+          <button type="button" class="ae-details-toggle dr-tech yu-connect__btn" id="yusu-integrate-btn">
+            <span>Build the integration</span>
+            <svg class="ae-details-toggle__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
         </div>
-        <div class="yusu-actions">
-          <button type="button" class="pw-next-btn" id="yusu-golive-btn" disabled>Go Live</button>
-          <a class="pw-next-btn" id="yusu-view-app" href="#" target="_blank" rel="noopener" style="display:none">Open your application &rarr;</a>
-          <button type="button" class="pw-back-btn" id="yusu-redeploy-btn" style="display:none">Deploy</button>
+      </section>
+
+      <!-- The closing line, only once it is true. Ties the last stage to the
+           first thing the customer will notice next: the application changes
+           as they talk to it. -->
+      <div class="yu-foot" id="yusu-foot" style="display:none">
+        <span class="yu-foot__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>
+        </span>
+        <div>
+          <p class="yu-foot__title">Your application is live.</p>
+          <p class="yu-foot__sub">Now let it evolve with your business.</p>
         </div>
       </div>
+
 
       <!-- Handover: what is running, and where the line falls. -->
       <div id="yusu-handover" style="display:none">
@@ -1540,7 +1575,7 @@
   <script type="module" src="ariaScreen.js?v=47"></script>
   <script type="module" src="arthScreen.js?v=19"></script>
   <script type="module" src="eameScreen.js?v=22"></script>
-  <script type="module" src="yusuScreen.js?v=27"></script>
+  <script type="module" src="yusuScreen.js?v=29"></script>
   <script type="module" src="workspaceShell.js?v=1"></script>
   <script type="module" src="screenChat.js?v=7"></script>
 </body>

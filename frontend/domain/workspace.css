@@ -1248,13 +1248,30 @@ body.domain-page .sc-panel {
    domain.css outspecifies a bare class here.
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* Three cards, one height.
+   They were content-height (align-items:start), and the summary is the only
+   one whose height depends on how many datasets a customer has — so it ran
+   half as tall again as the other two and the row read as broken. Stretching
+   alone would have made the other two tall and empty, so the summary is
+   compacted to meet them rather than the reverse: single-line rows, and a list
+   that scrolls once it passes its cap so ten datasets cost no more height
+   than five. */
 #screen-aria .dr-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(248px, 1fr));
+    grid-template-columns: 1.3fr 1fr 1.05fr;
     gap: 1rem;
-    align-items: start;
+    align-items: stretch;
     margin: 0 0 1.6rem;
 }
+
+/* Column layout so the body can take the slack when a card is stretched past
+   its natural height, instead of leaving it under the last element. */
+#screen-aria .dr-card { display: flex; flex-direction: column; }
+#screen-aria .dr-summary { flex: 1 1 auto; }
+#screen-aria .dr-sources,
+#screen-aria .dr-next { flex: 0 0 auto; align-content: start; }
+/* Where the slack goes is set at the foot of this block — .dr-tech declares
+   its own margin-top later on, and would win here. */
 
 #screen-aria .dr-card { padding: 1.15rem 1.2rem 1.1rem; }
 
@@ -1297,7 +1314,7 @@ body.domain-page .sc-panel {
 
 #screen-aria .dr-dial {
     flex: 0 0 auto;
-    width: 118px;
+    width: 96px;
     text-align: center;
     color: var(--ws-text-dim, #9fb3bb);
     font-size: .72rem;
@@ -1305,8 +1322,8 @@ body.domain-page .sc-panel {
 }
 #screen-aria .dr-dial__ring {
     position: relative;
-    width: 104px;
-    height: 104px;
+    width: 84px;
+    height: 84px;
     margin: 0 auto .5rem;
     border-radius: 50%;
     display: grid;
@@ -1322,18 +1339,36 @@ body.domain-page .sc-panel {
 #screen-aria .dr-dial__inner { position: relative; z-index: 1; line-height: 1.1; }
 #screen-aria .dr-dial__num {
     display: block;
-    font-size: 1.7rem;
+    font-size: 1.45rem;
     font-weight: 700;
     color: var(--ws-text, #eaf6f9);
 }
 #screen-aria .dr-dial__unit { display: block; font-size: .7rem; }
 
+/* The one part of these three cards whose height depends on the customer.
+   Five datasets or fifteen, the card stays the same height and the list
+   scrolls — which is what keeps the row of three looking like a row rather
+   than one tall card with two short ones beside it.
+
+   Capped in rem rather than by row count: rows are two lines when a dataset
+   has a source and one when it does not, so counting them predicts nothing. */
 #screen-aria .dr-rows {
     flex: 1 1 auto;
     min-width: 0;
     list-style: none;
     margin: 0;
     padding: 0;
+    /* Tall enough for a normal engagement to show every dataset without
+       scrolling. The cap is a backstop for a customer with fifteen of them,
+       not a routine crop — a summary that hides most of what it summarises
+       is worse than one that is slightly taller than its neighbours. */
+    max-height: 23rem;
+    overflow-y: auto;
+    /* Reserved, not overlaid. The scrollbar was painting over the status
+       column and cutting "Connected" in half. */
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    padding-right: .3rem;
 }
 #screen-aria .dr-row {
     display: grid;
@@ -1369,8 +1404,10 @@ body.domain-page .sc-panel {
 #screen-aria .dr-row__state--muted { color: var(--ws-text-dim, #9fb3bb); }
 #screen-aria .dr-row__state--warn  { color: #f0a05a; }
 
-/* The count sits with the name when there is room, and under it when the
-   three-column row would otherwise squeeze the name to nothing. */
+/* The source sits under the name rather than beside it, and the name is never
+   truncated: a clipped dataset name is worse than a taller row, and the whole
+   point of this card is telling the customer which of their datasets Svarg
+   actually found. Height is bounded by the list instead — see .dr-rows. */
 #screen-aria .dr-row__meta { display: flex; flex-direction: column; min-width: 0; }
 
 /* ── Data Source Details ───────────────────────────────────────────────── */
@@ -1473,3 +1510,12 @@ body.domain-page .sc-panel {
 @media (prefers-reduced-motion: reduce) {
     #screen-aria .dr-tech .ae-details-toggle__chev { transition: none; }
 }
+
+/* Last in the block, so it beats the margin-top these two declare for
+   themselves above.
+   Stretching a card to match its neighbours must not stretch what is inside
+   it. The extra height collects here — above the closing element — so cards
+   two and three end on their footnote and their button rather than trailing
+   off into empty space below them. */
+#screen-aria .dr-foot-note,
+#screen-aria .dr-tech { margin-top: auto; }

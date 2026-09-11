@@ -442,6 +442,22 @@ setTimeout(async function () {
         if (!out.postRows) bad('the report is shown but summarises no datasets');
         if (!out.postSources) bad('the report is shown but names no sources');
 
+        // Three cards in a row have to read as a row. The summary is the only
+        // one whose height follows the customer's data, so it is the one that
+        // drifts — it ran half as tall again as its neighbours until the list
+        // was capped. Measured rather than eyeballed, because this regresses
+        // the moment a fixture gains a dataset.
+        var cards = [].map.call(scr.querySelectorAll('#aria-postrun .dr-card'),
+          function (c) { return Math.round(c.getBoundingClientRect().height); });
+        out.cardHeights = cards.join('/');
+        if (cards.length === 3) {
+          var tallest = Math.max.apply(null, cards);
+          var shortest = Math.min.apply(null, cards);
+          if (tallest - shortest > 24) {
+            bad('the three report cards differ by ' + (tallest - shortest) + 'px: ' + out.cardHeights);
+          }
+        }
+
         var dt = document.getElementById('aria-details-toggle');
         if (!dt) bad('the report has no way back to the workbench');
         else {
@@ -1099,7 +1115,7 @@ for (const screen of list) {
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"
         preview "${r.preview}" · sample tab offers ${r.sampleTargets} · panels ${r.visiblePanels}
-        report ${r.postRun} · ${r.postRows} rows · ${r.postSources} sources · dial "${r.postDial}"
+        report ${r.postRun} · ${r.postRows} rows · ${r.postSources} sources · cards ${r.cardHeights} · dial "${r.postDial}"
         batch ${r.batchProgress} · targets "${r.batch}"` : '')
     + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : '')
     // Its own clause, not nested inside the arth one — nested, it could only

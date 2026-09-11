@@ -353,7 +353,7 @@ window.fetch = function (url, opts) {
 
 const SCREENS = {
   cob:  { id: 'screen-opportunities', launcher: 'Chat with Cob',
-          must: ['.rp-journey', '.pd-winner, .rp-winner, .cob-title'] },
+          must: ['.rp-journey', '.pd-winner, .rp-winner, #opp-hero-mark'] },
   // The key and the displayed name deliberately differ from here on: the two
   // products swapped names and portraits without swapping what their screens
   // do, so screen-aria is the data stage shown as "Arth" and screen-arth is
@@ -444,6 +444,44 @@ setTimeout(async function () {
       var idleRing = idle ? getComputedStyle(idle).borderColor : '';
       out.activeRing = ring;
       if (idle && ring === idleRing) bad('the active stage is drawn the same as an idle one (' + ring + ')');
+    }
+
+    // ── One hero, five screens ──────────────────────────────────────────
+    // Every product opens the same way: a tick in a ring, the product pill
+    // and the role pill, a heading, a subheading, and the art beside them.
+    // Five screens had five different versions of this until they did not,
+    // so the shape is asserted rather than trusted.
+    var heroes = [].filter.call(scr.querySelectorAll('.ae-stage--hero'), function (h) { return h.offsetParent !== null; });
+    out.heroes = heroes.length;
+    if (heroes.length !== 1) bad(heroes.length + ' visible hero rows on this screen, expected 1');
+    else {
+      var hero = heroes[0];
+      var mark = hero.querySelector('.ae-hero__mark');
+      if (!mark) bad('hero has no mark');
+      else if (!mark.querySelector('polyline[points=\"20 6 9 17 4 12\"]')) bad('hero mark is not the tick');
+      var pills = hero.querySelectorAll('.ae-pill');
+      out.pills = [].map.call(pills, function (p) { return p.textContent.trim(); }).join('|');
+      if (pills.length < 2) bad('hero has ' + pills.length + ' pill(s), expected the product and role pills at least');
+      else if (!hero.querySelector('.ae-pill--role')) bad('hero has no role pill');
+      if (!hero.querySelector('h1.ae-hero__title')) bad('hero has no h1 heading');
+      var heroSub = hero.querySelector('.ae-hero__sub');
+      if (!heroSub || !heroSub.textContent.trim()) bad('hero has no subheading');
+      var art = hero.querySelector('.ae-art');
+      if (!art) bad('hero has no art (workspaceShell.placeHeroArt did not run?)');
+      else {
+        // Present always; visible only where there is room for it.
+        var artShown = art.offsetParent !== null;
+        var wide = window.innerWidth > 1650;
+        out.art = artShown ? 'shown' : 'hidden';
+        if (wide && !artShown) bad('the hero art is hidden at ' + window.innerWidth + 'px');
+        if (!wide && artShown) bad('the hero art is shown at ' + window.innerWidth + 'px, below the width it is meant for');
+      }
+      // The mark sits on the hero's row, not somewhere else on the page.
+      var hr = hero.getBoundingClientRect();
+      if (mark) {
+        var mr = mark.getBoundingClientRect();
+        if (mr.top < hr.top - 1 || mr.bottom > hr.bottom + 1) bad('hero mark is outside the hero row');
+      }
     }
 
     // Every stage's ring is drawn and inside the bar. Spreading five stages
@@ -1289,7 +1327,7 @@ for (const screen of list) {
   if (!ok) failed++;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${screen.padEnd(6)}`
     + `css ${String(r.cssRules ?? '?').padStart(4)} rules · `
-    + `${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
+    + `${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · hero ${r.pills ?? '-'} art ${r.art ?? '-'} · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"

@@ -254,9 +254,46 @@ function openPanelsOnLoad() {
   else window.addEventListener('load', open, { once: true });
 }
 
+/**
+ * The picture beside every hero.
+ *
+ * One drawing, placed by the shell, rather than the same twenty lines of SVG
+ * pasted into five screens — which is how two screens had it, one had it
+ * beside the wrong element, and two had none. Decorative and hidden from
+ * assistive tech: it says nothing the heading does not.
+ */
+const HERO_ART = `
+  <div class="ae-art" aria-hidden="true">
+    <div class="ae-art__glow"></div>
+    <svg class="ae-art__svg" viewBox="0 0 320 300" fill="none">
+      <g class="ae-art__chips" stroke="currentColor" stroke-width="1.4" opacity=".55">
+        <rect x="22"  y="62"  width="58" height="58" rx="12"/>
+        <rect x="150" y="18"  width="54" height="54" rx="12"/>
+        <rect x="246" y="92"  width="54" height="54" rx="12"/>
+      </g>
+      <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".8">
+        <path d="M40 91l-8 7 8 7 M62 91l8 7-8 7"/>
+        <path d="M166 34c6-4 16-4 22 0 M166 44h22 M166 54h22"/>
+        <path d="M273 108v22 M262 112c0 6 22 6 22 0 M262 126c0 6 22 6 22 0"/>
+      </g>
+      <g class="ae-art__stack">
+        <path d="M160 232 58 178l102-54 102 54z" opacity=".30"/>
+        <path d="M160 204 58 150l102-54 102 54z" opacity=".55"/>
+        <path d="M160 176 58 122l102-54 102 54z" opacity=".95"/>
+      </g>
+    </svg>
+  </div>`;
+
+function placeHeroArt() {
+  document.querySelectorAll('.ae-stage--hero').forEach(stage => {
+    if (!stage.querySelector('.ae-art')) stage.insertAdjacentHTML('beforeend', HERO_ART);
+  });
+}
+
 function init() {
   buildRail();
   openPanelsOnLoad();
+  placeHeroArt();
   labelJourney();
   labelChatPanels();
   watchAccountInitial();

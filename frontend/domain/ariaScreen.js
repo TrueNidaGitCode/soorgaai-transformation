@@ -730,7 +730,22 @@ function renderPostRun() {
   const ready = hasPreparedData();
   const toggle = document.getElementById('aria-details-toggle');
   post.hidden = !ready;
+
+  // The hero sits above both pages of this screen and says which one this
+  // is. Written here so it can never disagree with what is shown under it.
+  const heroMark = document.getElementById('aria-hero-mark');
+  const heroPill = document.getElementById('aria-hero-pill');
+  const heroTitle = document.getElementById('aria-hero-title');
+  const postSubEl = document.getElementById('aria-post-sub');
+  if (heroMark) heroMark.classList.toggle('ae-hero__mark--pending', !ready);
+  if (heroPill) {
+    heroPill.textContent = ready ? 'Data ready' : 'Connecting';
+    heroPill.classList.toggle('ae-pill--pending', !ready);
+  }
+  if (heroTitle) heroTitle.textContent = ready ? 'Your data is ready!' : 'Connect your data';
+
   if (!ready) {
+    if (postSubEl) postSubEl.textContent = 'Connect the sources this use case needs, or fill them with generated rows to keep moving.';
     during.hidden = false;
     if (toggle) toggle.setAttribute('aria-expanded', 'false');
     return;

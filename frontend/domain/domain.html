@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=25">
+  <link rel="stylesheet" href="workspace.css?v=26">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -189,24 +189,19 @@
                where it collided with the Chat with Cob launcher. Generation
                state is already visible in the card below, so the badge was
                redundant as well as in the way. -->
-          <div class="rp-main__head">
-            <div class="cob-title">
-              <span class="cob-title__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="7.7" y1="8.4" x2="10.4" y2="11.5"/>
-                  <line x1="16.3" y1="7.6" x2="13.6" y2="11.2"/>
-                  <line x1="10.3" y1="14.8" x2="6.7" y2="16.5"/>
-                  <line x1="13.9" y1="14.6" x2="16.5" y2="15.8"/>
-                  <circle cx="6" cy="7" r="2.1"/>
-                  <circle cx="18" cy="6" r="2.1"/>
-                  <circle cx="12" cy="13" r="2.5"/>
-                  <circle cx="5" cy="18" r="2.1"/>
-                  <circle cx="18" cy="17" r="2.1"/>
-                </svg>
-              </span>
-              <div>
-                <p class="pd-header__eyebrow">Opportunity Discovery</p>
-                <h1 class="pd-stage__title">AI opportunities</h1>
+          <!-- The same hero every stage has: the mark, the product and role
+               pills, the heading, the subheading, and the art beside them.
+               Cob had a title block of its own design and none of this. -->
+          <div class="ae-stage ae-stage--hero">
+            <div class="ae-hero">
+              <div class="ae-hero__mark" id="opp-hero-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="ae-hero__text">
+                <span class="ae-pill">Cob</span>
+                <span class="ae-pill ae-pill--role">Your Planner</span>
+                <h1 class="ae-hero__title">Your AI opportunities</h1>
+                <p class="ae-hero__sub">Cob has read your objective and ranked where AI would help most. The one to start with is below.</p>
               </div>
             </div>
           </div>
@@ -391,18 +386,25 @@
 
            Every figure here is read from the same state the table below uses,
            so the summary and the detail cannot disagree. -->
-      <div class="dr-post" id="aria-postrun" hidden>
+      <!-- One hero above both pages of this screen, so the pattern holds
+           whether the customer is still connecting sources or reading the
+           report. renderPostRun() writes the state into it. -->
+      <div class="ae-stage ae-stage--hero">
         <div class="ae-hero">
-          <div class="ae-hero__mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></svg>
+          <div class="ae-hero__mark ae-hero__mark--pending" id="aria-hero-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div class="ae-hero__text">
-            <span class="ae-pill">Data ready</span>
-            <h1 class="ae-hero__title">Your data is ready!</h1>
-            <p class="ae-hero__sub" id="aria-post-sub">Arth has collected and prepared the required data for this use case.</p>
+            <span class="ae-pill">Arth</span>
+            <span class="ae-pill ae-pill--role">Your Preparer</span>
+            <span class="ae-pill ae-pill--pending" id="aria-hero-pill">Connecting</span>
+            <h1 class="ae-hero__title" id="aria-hero-title">Connect your data</h1>
+            <p class="ae-hero__sub" id="aria-post-sub">Connect the sources this use case needs, or fill them with generated rows to keep moving.</p>
           </div>
         </div>
+      </div>
 
+      <div class="dr-post" id="aria-postrun" hidden>
         <div class="dr-grid">
           <section class="ae-card dr-card">
             <header class="dr-card__head">
@@ -454,15 +456,10 @@
            opens. -->
       <div id="aria-during">
 
-      <div class="pd-header aria-header">
-        <div class="aria-header__icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-        </div>
-        <div>
-          <h1 class="aria-header__title">Data Connections</h1>
-          <p class="pd-header__sub">Connect the sources required by this blueprint.</p>
-        </div>
-      </div>
+      <!-- The workbench's own header is gone; the shared hero above serves
+           both pages of this screen. The heading is kept for the check and
+           for screen readers, visually folded into the hero. -->
+      <h2 class="aria-header__title visually-hidden">Data Connections</h2>
 
       <div class="aria-breadcrumb">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -805,20 +802,28 @@
            been chosen and offers to prepare it. A screen that announces a
            ready environment the customer does not have is the one mistake
            here that would cost trust rather than a click. -->
-      <div class="ae-hero">
-        <div class="ae-hero__mark" id="arth-hero-mark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <div class="ae-hero__text">
-          <span class="ae-pill" id="arth-hero-pill">Environment ready</span>
-          <h1 class="ae-hero__title" id="arth-hero-title">Your environment is ready!</h1>
-          <p class="ae-hero__sub" id="arth-hero-sub">Aria has prepared everything required for this use case.</p>
+      <div class="ae-stage ae-stage--hero">
+        <div class="ae-hero">
+          <div class="ae-hero__mark" id="arth-hero-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="ae-hero__text">
+            <span class="ae-pill">Aria</span>
+            <span class="ae-pill ae-pill--role">Your Provisioner</span>
+            <span class="ae-pill" id="arth-hero-pill">Environment ready</span>
+            <h1 class="ae-hero__title" id="arth-hero-title">Your environment is ready!</h1>
+            <p class="ae-hero__sub" id="arth-hero-sub">Aria has prepared everything required for this use case.</p>
+          </div>
         </div>
       </div>
 
       <div id="arth-error" class="gen-error" style="display:none"></div>
 
-      <div class="ae-stage">
+      <!-- A plain block now. It was a two-column .ae-stage with the art in
+           the second column; the art belongs beside the hero, where every
+           other stage has it, and a grid with an empty second column would
+           have left the card short. -->
+      <div class="ae-report">
         <section class="ae-card" aria-labelledby="arth-env-title">
           <header class="ae-card__head">
             <span class="ae-card__icon" aria-hidden="true">
@@ -850,28 +855,8 @@
           </footer>
         </section>
 
-        <!-- Decorative only, and hidden from assistive tech: it carries no
-             information the tiles do not already state. -->
-        <div class="ae-art" aria-hidden="true">
-          <div class="ae-art__glow"></div>
-          <svg class="ae-art__svg" viewBox="0 0 320 300" fill="none">
-            <g class="ae-art__chips" stroke="currentColor" stroke-width="1.4" opacity=".55">
-              <rect x="22"  y="62"  width="58" height="58" rx="12"/>
-              <rect x="150" y="18"  width="54" height="54" rx="12"/>
-              <rect x="246" y="92"  width="54" height="54" rx="12"/>
-            </g>
-            <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".8">
-              <path d="M44 84a7 7 0 0 1 7-7h0a7 7 0 0 1 7 7v14a7 7 0 0 1-7 7h0a7 7 0 0 1-7-7z"/>
-              <path d="M166 34c6-4 16-4 22 0 M166 44h22 M166 54h22"/>
-              <path d="M273 108v22 M262 112c0 6 22 6 22 0 M262 126c0 6 22 6 22 0"/>
-            </g>
-            <g class="ae-art__stack">
-              <path d="M160 232 58 178l102-54 102 54z" opacity=".30"/>
-              <path d="M160 204 58 150l102-54 102 54z" opacity=".55"/>
-              <path d="M160 176 58 122l102-54 102 54z" opacity=".95"/>
-            </g>
-          </svg>
-        </div>
+        <!-- The art moved beside the hero, where every other stage has it;
+             the shell places it there. -->
       </div>
 
       <!-- Everything the customer would otherwise have had to decide. Kept
@@ -1052,7 +1037,7 @@
       <div class="ae-stage ae-stage--hero">
         <div class="ae-hero">
           <div class="ae-hero__mark ae-hero__mark--pending" id="eame-hero-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div class="ae-hero__text">
             <span class="ae-pill">Eame</span>
@@ -1067,26 +1052,7 @@
             <div class="eg-badges" id="eame-badges"></div>
           </div>
         </div>
-        <div class="ae-art" aria-hidden="true">
-          <div class="ae-art__glow"></div>
-          <svg class="ae-art__svg" viewBox="0 0 320 300" fill="none">
-            <g class="ae-art__chips" stroke="currentColor" stroke-width="1.4" opacity=".55">
-              <rect x="22"  y="62"  width="58" height="58" rx="12"/>
-              <rect x="150" y="18"  width="54" height="54" rx="12"/>
-              <rect x="246" y="92"  width="54" height="54" rx="12"/>
-            </g>
-            <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".8">
-              <path d="M40 91l-8 7 8 7 M62 91l8 7-8 7"/>
-              <path d="M166 34c6-4 16-4 22 0 M166 44h22 M166 54h22"/>
-              <path d="M273 108v22 M262 112c0 6 22 6 22 0 M262 126c0 6 22 6 22 0"/>
-            </g>
-            <g class="ae-art__stack">
-              <path d="M160 232 58 178l102-54 102 54z" opacity=".30"/>
-              <path d="M160 204 58 150l102-54 102 54z" opacity=".55"/>
-              <path d="M160 176 58 122l102-54 102 54z" opacity=".95"/>
-            </g>
-          </svg>
-        </div>
+        <!-- Art placed here by workspaceShell.js. -->
       </div>
 
       <div id="eame-error" class="gen-error" style="display:none"></div>
@@ -1268,31 +1234,14 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div class="ae-hero__text">
+            <span class="ae-pill">Yusu</span>
+            <span class="ae-pill ae-pill--role">Your Adopter</span>
             <span class="ae-pill ae-pill--pending" id="yusu-hero-pill">Go live</span>
             <h1 class="ae-hero__title" id="yusu-ready-title">Ready to Go Live</h1>
             <p class="ae-hero__sub" id="yusu-ready-sub">Deploy your application to your target environment and make it available to your users.</p>
           </div>
         </div>
-        <div class="ae-art" aria-hidden="true">
-          <div class="ae-art__glow"></div>
-          <svg class="ae-art__svg" viewBox="0 0 320 300" fill="none">
-            <g class="ae-art__chips" stroke="currentColor" stroke-width="1.4" opacity=".55">
-              <rect x="22"  y="62"  width="58" height="58" rx="12"/>
-              <rect x="150" y="18"  width="54" height="54" rx="12"/>
-              <rect x="246" y="92"  width="54" height="54" rx="12"/>
-            </g>
-            <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".8">
-              <path d="M51 79a10 10 0 1 0 0 20 10 10 0 0 0 0-20z M51 84v5l3 3"/>
-              <path d="M166 34c6-4 16-4 22 0 M166 44h22 M166 54h22"/>
-              <path d="M262 122h22 M273 111v22 M266 115l7-4 7 4"/>
-            </g>
-            <g class="ae-art__stack">
-              <path d="M160 232 58 178l102-54 102 54z" opacity=".30"/>
-              <path d="M160 204 58 150l102-54 102 54z" opacity=".55"/>
-              <path d="M160 176 58 122l102-54 102 54z" opacity=".95"/>
-            </g>
-          </svg>
-        </div>
+        <!-- Art placed here by workspaceShell.js. -->
       </div>
 
       <div id="yusu-error" class="gen-error" style="display:none"></div>
@@ -1522,11 +1471,11 @@
 
   <script type="module" src="blueprintGenerate.js?v=18"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
-  <script type="module" src="ariaScreen.js?v=47"></script>
+  <script type="module" src="ariaScreen.js?v=48"></script>
   <script type="module" src="arthScreen.js?v=20"></script>
   <script type="module" src="eameScreen.js?v=24"></script>
   <script type="module" src="yusuScreen.js?v=31"></script>
-  <script type="module" src="workspaceShell.js?v=1"></script>
+  <script type="module" src="workspaceShell.js?v=2"></script>
   <script type="module" src="screenChat.js?v=7"></script>
 </body>
 </html>

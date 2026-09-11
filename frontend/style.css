@@ -309,3 +309,48 @@ nav a:hover {
         max-height: 300px;
     }
 }
+/* ══════════════════════════════════════════════════════════════════════════
+   Ambient ground — every page
+
+   Two soft washes in opposite corners and four hairline arcs. It is what stops
+   a near-black page reading as empty, and it costs no elements, no images and
+   no script.
+
+   Painted as body's own background layers rather than as a fixed pseudo-
+   element. cob.css draws it with ::before and ::after, which works there
+   because that page stacks its content above them explicitly. Thirty-eight
+   pages do not, and a fixed pseudo-element at z-index 0 on a page whose content
+   was never positioned paints straight over the content. An element's own
+   background is always behind its children, so this is the one version that
+   cannot cover anything.
+
+   background-attachment: fixed keeps it still while the page scrolls, which is
+   what makes it read as light in the room rather than as a pattern printed on
+   the document.
+
+   Tint it per page by overriding --ambient-a / --ambient-b.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+    --ambient-a: 61, 175, 211;   /* cyan  — top right */
+    --ambient-b: 92, 197, 167;   /* green — bottom left */
+}
+
+body {
+    background-image:
+        /* the two washes */
+        radial-gradient(58rem 40rem at 108% -8%,  rgba(var(--ambient-a), 0.16), transparent 62%),
+        radial-gradient(52rem 38rem at -12% 106%, rgba(var(--ambient-b), 0.13), transparent 62%),
+        /* the arcs — two per corner, the outer one fainter */
+        radial-gradient(circle at 128% -22%, transparent 41.7%, rgba(var(--ambient-a), 0.10)  41.85%, transparent 42.05%),
+        radial-gradient(circle at 128% -22%, transparent 53.7%, rgba(var(--ambient-a), 0.055) 53.85%, transparent 54.05%),
+        radial-gradient(circle at -28% 124%, transparent 41.7%, rgba(var(--ambient-b), 0.085) 41.85%, transparent 42.05%),
+        radial-gradient(circle at -28% 124%, transparent 53.7%, rgba(var(--ambient-b), 0.05)  53.85%, transparent 54.05%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+/* A printed page wants ink, not atmosphere. */
+@media print {
+    body { background-image: none; }
+}

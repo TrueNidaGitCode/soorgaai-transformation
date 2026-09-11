@@ -37,38 +37,15 @@
    one element and no images. Fixed, so they do not travel with scroll. */
 
 body.landing2 {
-  background: var(--sv-ground);
+  background-color: var(--sv-ground);
   color: var(--sv-text);
   min-height: 100vh;
   margin: 0;
 }
 
-body.landing2::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(58rem 40rem at 108% -8%,  rgba(61, 175, 211, 0.16), transparent 62%),
-    radial-gradient(52rem 38rem at -12% 106%, rgba(92, 197, 167, 0.13), transparent 62%);
-}
-
-/* A pair of hairline arcs, echoing the corner sweeps in the design. Drawn with
-   borders on an oversized circle so there is no SVG to load and nothing to
-   scale badly. */
-body.landing2::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(circle at 128% -22%, transparent 41.7%, rgba(61, 175, 211, 0.10) 41.85%, transparent 42.05%),
-    radial-gradient(circle at 128% -22%, transparent 53.7%, rgba(61, 175, 211, 0.055) 53.85%, transparent 54.05%),
-    radial-gradient(circle at -28% 124%, transparent 41.7%, rgba(92, 197, 167, 0.085) 41.85%, transparent 42.05%),
-    radial-gradient(circle at -28% 124%, transparent 53.7%, rgba(92, 197, 167, 0.05) 53.85%, transparent 54.05%);
-}
+/* The ambient ground now comes from style.css, which paints it for every
+   page as body background layers. Drawing it here as well was the same
+   light twice. */
 
 /* ── Icon rail ────────────────────────────────────────────────────────────
    Icons only. The old sidebar spent its width on three text links to pages

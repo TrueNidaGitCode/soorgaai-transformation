@@ -2,7 +2,9 @@
 
 .workspace-page {
   min-height: 100vh;
-  background: var(--color-bg, #0a0a0f);
+  /* Colour only: a background shorthand resets background-image, which would
+     drop the ambient layers style.css paints on every page. */
+  background-color: var(--color-bg, #0a0a0f);
   color: #fff;
 }
 

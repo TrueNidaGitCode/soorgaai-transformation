@@ -32,21 +32,17 @@ body.domain-page {
 
   --ws-rail: 64px;
 
-  background: var(--ws-ground);
+  /* The workspace runs a brighter cyan than the first screen, so it tints
+     the shared ambient rather than redrawing it. */
+  --ambient-a: 34, 217, 232;
+  --ambient-b: 53, 224, 196;
+
+  background-color: var(--ws-ground);
   color: var(--ws-text);
 }
 
-/* The same corner light as the first screen, so arriving here is continuous. */
-body.domain-page::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(56rem 38rem at 106% -6%,  rgba(34, 217, 232, 0.10), transparent 62%),
-    radial-gradient(50rem 36rem at -10% 104%, rgba(53, 224, 196, 0.08), transparent 62%);
-}
+/* The ambient ground comes from style.css now — one definition, every page.
+   Tinted here only, through the two --ambient- channels. */
 
 /* ── Icon rail ────────────────────────────────────────────────────────────
    New. The workspace had no persistent navigation at all — every route out

@@ -7,7 +7,7 @@
 
 .domain-page {
   min-height: 100vh;
-  background: var(--color-bg, #0a0a0f);
+  background-color: var(--color-bg, #0a0a0f);
   color: #fff;
   display: flex;
   flex-direction: column;

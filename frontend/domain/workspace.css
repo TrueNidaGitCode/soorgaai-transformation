@@ -1742,7 +1742,6 @@ body.domain-page .sc-panel {
 #screen-yusu .yu-app__icon svg { width: 26px; height: 26px; }
 #screen-yusu .yu-app__body { min-width: 0; }
 #screen-yusu .yu-app__name { margin: .1rem 0 .3rem; font-size: 1.25rem; font-weight: 650; line-height: 1.25; }
-#screen-yusu .yu-app__desc { margin: 0 0 .7rem; font-size: .88rem; line-height: 1.5; color: var(--ws-text-dim, #9fb3bb); max-width: 62ch; }
 #screen-yusu .yu-app__url {
     display: inline-flex;
     align-items: center;

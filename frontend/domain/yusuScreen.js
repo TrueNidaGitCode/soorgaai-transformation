@@ -79,19 +79,8 @@ function renderBreadcrumb(bp) {
   document.getElementById('yusu-recap-name').textContent =
     label || appName(bp) || String(bp?.businessObjective || '').trim() || 'Your application';
 
-  // Cob's reason for choosing it, under the name, with the name and the
-  // lead-in stripped so the card does not say the same thing twice.
-  const descEl = document.getElementById('yusu-recap-desc');
-  if (descEl) {
-    const rest = label
-      ? rec.replace(label, '')
-          .replace(/^[\s:—–-]*(start with|begin with)?[\s:—–-]*/i, '')
-          .replace(/^[\s.,;:!?—–-]+|[\s.,;:!?—–-]+$/g, '')
-          .trim()
-      : '';
-    descEl.textContent = rest.length > 3 ? rest.charAt(0).toUpperCase() + rest.slice(1) : '';
-    descEl.style.display = descEl.textContent ? '' : 'none';
-  }
+  // The justification line under the name was removed at the customer's
+  // request -- Cob's screen already carries it.
   return label || null;
 }
 
@@ -353,16 +342,19 @@ async function buildAndPush() {
 
   // No link to the repository: it is private to Svarg, so a link would 404
   // for the person reading this. Their copy is the download below.
-  // Counted from the response when it says, from the manifest when it does
-  // not. Interpolating r.fileCount raw printed "undefined files rebuilt and
-  // published" the moment a response omitted it.
-  const count = Number.isFinite(r.fileCount) ? r.fileCount : _manifestPaths.length;
-  out.style.display = 'block';
-  out.innerHTML = `<div class="pw-process-item pw-process-item--done">
-    <span class="pw-process-item__title">${esc(repoName || 'Your application')}</span>
-    <span class="pw-process-item__detail">${count ? count + ' files ' : ''}${
-      r.upToDate ? 'already current in' : r.created ? 'built and published to' : 'rebuilt and published to'} the Svarg build registry.</span>
-  </div>`;
+  // The "N files published to the Svarg build registry" line was removed from
+  // the page at the customer's request -- the repository is Svarg's, and the
+  // sentence named it to someone who can never open it. The publish still
+  // happens; it is just not narrated. Guarded in case the element returns.
+  if (out) {
+    const count = Number.isFinite(r.fileCount) ? r.fileCount : _manifestPaths.length;
+    out.style.display = 'block';
+    out.innerHTML = `<div class="pw-process-item pw-process-item--done">
+      <span class="pw-process-item__title">${esc(repoName || 'Your application')}</span>
+      <span class="pw-process-item__detail">${count ? count + ' files ' : ''}${
+        r.upToDate ? 'already current in' : r.created ? 'built and published to' : 'rebuilt and published to'} the Svarg build registry.</span>
+    </div>`;
+  }
 
   // Keep the in-memory blueprint in step so the checks below re-render as met
   // without a round trip.
@@ -378,6 +370,10 @@ function fact(label, value) {
 
 function renderHandover(bp, dep) {
   const box = document.getElementById('yusu-handover');
+  // The handover block was removed from the page at the customer's request.
+  // Kept as a function so the page still works if it ever comes back, and
+  // a no-op without it rather than a throw on the first missing id.
+  if (!box) return;
   const live = dep && ['live', 'suspended'].includes(dep.status);
   box.style.display = live ? '' : 'none';
   if (!live) return;
@@ -500,7 +496,11 @@ function render(bp, dep) {
     // called Deploy, because from here on that is what the button does:
     // pushes the current build out again.
     btn.style.display = 'none';
-    redeploy.style.display = '';
+    // Deploy was removed from the page at the customer's request. A live
+    // application can still be rebuilt: redeployNow() and the endpoint behind
+    // it are intact, and the self-learning pipeline is what redeploys from
+    // here on. Guarded so this is a no-op without the button.
+    if (redeploy) redeploy.style.display = '';
     title.textContent = `${appName(bp)} is live`;
     sub.textContent = dep.statusMessage || 'Your application is running and available to your users.';
     if (dep.url) { view.href = dep.url; view.style.display = ''; }
@@ -511,7 +511,7 @@ function render(bp, dep) {
   // It used to appear as soon as a service existed, which put two competing
   // deploy actions on screen at once.
   view.style.display = 'none';
-  redeploy.style.display = 'none';
+  if (redeploy) redeploy.style.display = 'none';
 
   // Railway is building the repository. It is deployed but not yet serving,
   // and offering the URL now would hand over a page that cannot answer.
@@ -719,8 +719,13 @@ async function act() {
     pollWhileBuilding();
     if (r.alreadyLive) showError('This deployment was already live — the screen was showing an older state, now refreshed.');
     if (r.gatewayToken) {
-      document.getElementById('yusu-token-value').textContent = r.gatewayToken;
-      document.getElementById('yusu-token').style.display = '';
+      // Nowhere on the page to show it now that the handover block is gone.
+      // It is already set on the running application, so nothing is lost for
+      // a Svarg-hosted app; it only ever mattered to someone rebuilding
+      // elsewhere. Guarded so the go-live response never throws over it.
+      const tv = document.getElementById('yusu-token-value');
+      const tb = document.getElementById('yusu-token');
+      if (tv && tb) { tv.textContent = r.gatewayToken; tb.style.display = ''; }
     }
   } catch (err) {
     showError(err.message);
@@ -734,7 +739,7 @@ function wire() {
   if (_wired) return;
   _wired = true;
   document.getElementById('yusu-golive-btn').addEventListener('click', act);
-  document.getElementById('yusu-redeploy-btn').addEventListener('click', redeployNow);
+  document.getElementById('yusu-redeploy-btn')?.addEventListener('click', redeployNow);
   document.getElementById('yusu-download-btn').addEventListener('click', downloadSource);
   document.getElementById('yusu-integrate-btn')?.addEventListener('click', buildIntegration);
 }
@@ -751,7 +756,11 @@ document.addEventListener('yusu:show', (e) => {
   wire();
 
   document.dispatchEvent(new CustomEvent('screen:show', { detail: { id: 'screen-yusu' } }));
-  document.getElementById('yusu-token').style.display = 'none';
+  // The token block went with the handover section. Guarded: this ran on
+  // every show and was the first thing to throw once the element was gone,
+  // which left the hero stuck at its markup default in every state.
+  const tokenBox = document.getElementById('yusu-token');
+  if (tokenBox) tokenBox.style.display = 'none';
   _checksRun = false;
   _running = false;
   _failed = '';

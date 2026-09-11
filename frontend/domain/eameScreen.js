@@ -54,6 +54,23 @@ function renderBreadcrumb(bp) {
   if (!label) { crumb.style.display = 'none'; return null; }
   crumb.style.display = '';
   document.getElementById('eame-recap-name').textContent = label;
+
+  // The line under the name is Cob's justification for choosing it — the
+  // recommended-starting-point sentence with the name itself taken out, so
+  // the card does not say the same thing twice. Empty when there is nothing
+  // beyond the name, rather than a placeholder pretending to be a reason.
+  const descEl = document.getElementById('eame-recap-desc');
+  if (descEl) {
+    // Strip the lead-in and any punctuation left stranded once the name is
+    // gone — "Start with X." minus X is "Start with .", which rendered as a
+    // lone full stop under the heading.
+    const rest = rec.replace(label, '')
+      .replace(/^[\s:—–-]*(start with|begin with)?[\s:—–-]*/i, '')
+      .replace(/^[\s.,;:!?—–-]+|[\s.,;:!?—–-]+$/g, '')
+      .trim();
+    descEl.textContent = rest.length > 3 && rest !== rec ? rest.charAt(0).toUpperCase() + rest.slice(1) : '';
+    descEl.style.display = descEl.textContent ? '' : 'none';
+  }
   return label;
 }
 
@@ -84,6 +101,32 @@ function fmtBytes(n) {
  */
 const DIR_ORDER = ['models', 'services', 'controllers', 'routes', 'middleware',
                    'frontend', 'config', 'utils', 'scripts', 'documentation', 'project root'];
+
+/**
+ * What each top-level directory is for, in the customer's terms.
+ *
+ * describe() names individual files and falls back to "Part of models/" for
+ * anything it does not recognise — which, used as the description OF models/,
+ * says nothing at all. These are the directories the runtime fixes (see
+ * AUTHORED_DIRS and FIXED_PATHS in eameSpec.js), so their purpose is known.
+ */
+const DIR_PURPOSE = {
+  models:          'What the application stores',
+  services:        'The logic, and the calls to the model',
+  controllers:     'What happens when a request arrives',
+  routes:          'The endpoints the application exposes',
+  middleware:      'Sign-in and request checks',
+  frontend:        'The page your users open',
+  config:          'Settings and environment',
+  utils:           'Shared helpers',
+  scripts:         'Seeding and maintenance',
+  documentation:   'How to run and deploy the project',
+  'project root':  'Dependencies and the entry point',
+};
+
+function describeDir(dir) {
+  return DIR_PURPOSE[dir] || `Files under ${dir}/`;
+}
 
 function groupByDirectory(files) {
   const groups = new Map();
@@ -130,21 +173,50 @@ function techStack(paths) {
   ].filter(([, ok]) => ok).map(([name]) => name);
 }
 
-function renderStats(fileCount, totalBytes) {
-  const stats = [
-    { icon: '&#128193;', value: `${fileCount} Files`,          label: 'Full-stack application' },
-    { icon: '&#128190;', value: fmtBytes(totalBytes),          label: 'Optimised codebase' },
-    { icon: '&#9881;',   value: 'Node.js',                     label: 'Modern, scalable stack' },
-  ];
-  document.getElementById('eame-stats').innerHTML = stats.map(s => `
-    <div class="eg-stat">
-      <span class="eg-stat__icon">${s.icon}</span>
-      <span class="eg-stat__text">
-        <span class="eg-stat__value">${esc(s.value)}</span>
-        <span class="eg-stat__label">${esc(s.label)}</span>
+const TILE_ICONS = {
+  files:     '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+  runtime:   '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+  framework: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/>',
+  model:     '<path d="M12 3a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3V6a3 3 0 0 0-3-3z"/>',
+};
+
+function tile({ icon, label, value, tag }) {
+  return `
+    <div class="ae-tile">
+      <span class="ae-tile__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round">${TILE_ICONS[icon] || ''}</svg>
       </span>
-    </div>
-  `).join('');
+      <span class="ae-tile__label">${esc(label)}</span>
+      <span class="ae-tile__value">${esc(value)}</span>
+      ${tag ? `<span class="ae-tile__tag">${esc(tag)}</span>` : ''}
+    </div>`;
+}
+
+/**
+ * The four figures the Build Summary leads with.
+ *
+ * Runtime and framework are read off the manifest, not asserted: a project
+ * with no routes/ is not described as Express. The model is the one Aria
+ * chose, from the blueprint, because that is what the delivered code calls.
+ * The mockup's "Python / FastAPI / scikit-learn" is what a build LIKE this
+ * might say; this says what THIS build is.
+ */
+function renderStats(fileCount, totalBytes, paths = []) {
+  const el = document.getElementById('eame-stats');
+  if (!el) return;
+  const has = re => paths.some(p => re.test(p));
+
+  const runtime   = has(/package\.json$/) ? 'Node.js' : '';
+  const framework = has(/^server\.js$|^routes\//) ? 'Express' : '';
+  const model     = _bp?.arthSelection?.displayName || '';
+
+  el.innerHTML = [
+    tile({ icon: 'files',     label: 'Total Files',  value: String(fileCount), tag: fmtBytes(totalBytes) }),
+    tile({ icon: 'runtime',   label: 'Project Type', value: runtime   || 'Unknown', tag: runtime ? 'Full stack' : '' }),
+    tile({ icon: 'framework', label: 'Framework',    value: framework || 'Unknown', tag: has(/^models\//) ? 'MongoDB' : '' }),
+    tile({ icon: 'model',     label: 'Model',        value: model     || 'Not chosen', tag: model ? 'Via Svarg gateway' : '' }),
+  ].join('');
 }
 
 /**
@@ -199,6 +271,13 @@ function renderBuildState(build) {
   renderGates(build);
 
   const building = build.status === 'building';
+
+  // Six green ticks say what "Verified — it runs" already says. While a build
+  // is running or has failed, the gates are the only thing telling the
+  // customer how far it got, so they stay; once it has passed they fold away
+  // and the report below leads.
+  const gatesEl = document.getElementById('eame-gates');
+  if (gatesEl) gatesEl.style.display = build.status === 'passed' ? 'none' : '';
   btn.disabled = building;
   btn.textContent = building ? 'Building…' : (build.status === 'none' ? 'Build' : 'Rebuild');
 
@@ -328,23 +407,43 @@ function renderFiles({ files, fileCount, totalBytes }) {
     updateEameGate(true);
     const paths = files.map(f => f.path);
 
-    renderStats(fileCount, totalBytes);
+    renderStats(fileCount, totalBytes, paths);
 
-    tree.innerHTML = groupByDirectory(files).map(g => `
+    // One row per top-level directory, with what it is for.
+    tree.innerHTML = groupByDirectory(files).map(g => {
+      const name = g.dir + (g.dir.includes(' ') ? '' : '/');
+      return `
       <li class="eg-tree__row">
-        <span class="eg-tree__name"><span class="eg-folder-ico">&#128193;</span>${esc(g.dir)}${g.dir.includes(' ') ? '' : '/'}</span>
+        <span class="eg-tree__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </span>
+        <span class="eg-tree__meta">
+          <span class="eg-tree__name">${esc(name)}</span>
+          <span class="eg-tree__desc">${esc(describeDir(g.dir))}</span>
+        </span>
         <span class="eg-tree__count">${g.files.length} file${g.files.length === 1 ? '' : 's'}</span>
-      </li>
-    `).join('');
+      </li>`;
+    }).join('');
 
-    document.getElementById('eame-summary').innerHTML = buildSummary(paths).map(s => `
-      <li class="eg-summary__item${s.ok ? '' : ' eg-summary__item--no'}">
-        <span class="eg-summary__mark">${s.ok ? '&#10003;' : '&middot;'}</span>${esc(s.text)}
-      </li>
-    `).join('');
+    // The checklist and the chip row were retired with the panel that held
+    // them; the same facts now live in the tiles. Guarded so a page that still
+    // carries the old elements keeps working and one that does not does not
+    // throw.
+    const summaryEl = document.getElementById('eame-summary');
+    if (summaryEl) {
+      summaryEl.innerHTML = buildSummary(paths).map(s => `
+        <li class="eg-summary__item${s.ok ? '' : ' eg-summary__item--no'}">
+          <span class="eg-summary__mark">${s.ok ? '&#10003;' : '&middot;'}</span>${esc(s.text)}
+        </li>
+      `).join('');
+    }
+    const stackEl = document.getElementById('eame-stack');
+    if (stackEl) {
+      stackEl.innerHTML = techStack(paths).map(t => `<span class="eg-chip">${esc(t)}</span>`).join('');
+    }
 
-    document.getElementById('eame-stack').innerHTML =
-      techStack(paths).map(t => `<span class="eg-chip">${esc(t)}</span>`).join('');
+    const sub = document.getElementById('eame-summary-sub');
+    if (sub) sub.textContent = 'Application has been generated and verified by running it.';
 
     // The full list stays available behind "View Source Structure".
     document.getElementById('eame-manifest-body').innerHTML = files.map(f => `
@@ -379,12 +478,12 @@ function renderFiles({ files, fileCount, totalBytes }) {
  * application, and there is no honest way to display it as one.
  */
 function renderEmptyProject() {
-  document.getElementById('eame-tree').innerHTML =
-    `<li class="eg-tree__loading">No application yet — press Build.</li>`;
-  document.getElementById('eame-stats').innerHTML = '';
-  document.getElementById('eame-summary').innerHTML = '';
-  document.getElementById('eame-stack').innerHTML = '';
-  document.getElementById('eame-manifest-body').innerHTML = '';
+  const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+  set('eame-tree', `<li class="eg-tree__loading">No application yet — press Build.</li>`);
+  set('eame-stats', '');
+  set('eame-summary', '');
+  set('eame-stack', '');
+  set('eame-manifest-body', '');
   // Hidden rather than left as two empty headings. A "Build Summary" with
   // nothing under it reads as a panel that failed to load, not as one that
   // has nothing to summarise yet.
@@ -425,13 +524,18 @@ function wire() {
   _wired = true;
 
   // The file list is the detail behind the summary, not a replacement for it.
-  document.getElementById('eame-source-btn').addEventListener('click', () => {
+  const sourceBtn = document.getElementById('eame-source-btn');
+  sourceBtn?.addEventListener('click', () => {
     const box = document.getElementById('eame-files');
     const open = box.style.display !== 'none';
     box.style.display = open ? 'none' : '';
-    document.getElementById('eame-source-btn').innerHTML = open
-      ? '<span class=eg-folder-ico>&#128193;</span> View Source Structure &rarr;'
-      : '<span class=eg-folder-ico>&#128193;</span> Hide Source Structure';
+    // Only the label changes; the icons in the button stay where they are.
+    // Rewriting the whole innerHTML here used to reintroduce a folder emoji
+    // the markup had stopped using.
+    const label = sourceBtn.querySelector('span');
+    if (label) label.textContent = open ? 'View complete structure' : 'Hide complete structure';
+    sourceBtn.setAttribute('aria-expanded', String(!open));
+    if (!open) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 
   document.getElementById('eame-view-details').addEventListener('click', () => {

@@ -345,7 +345,7 @@ const SCREENS = {
   eame: { id: 'screen-eame',  launcher: 'Chat with Eame',
           must: ['none', 'stalled'].includes(process.env.EAME_BUILD_STATE)
             ? ['.rp-journey', '#eame-build-btn', '.eg-gate']
-            : ['.rp-journey', '.eg-stat', '.eg-tree__row', '.eg-summary__item', '.eg-chip'] },
+            : ['.rp-journey', '#eame-stats .ae-tile', '.eg-tree__row', '#eame-onward'] },
   yusu: { id: 'screen-yusu',  launcher: 'Chat with Yusu',  must: ['.rp-journey', '.dp__step', '.eg-usecase__name'] },
 };
 
@@ -807,7 +807,7 @@ setTimeout(async function () {
         // application" and a summary of green ticks — directly under a badge
         // reading "Not built yet".
         if (passed !== 0) bad(passed + ' gates show as passed before anything was built');
-        var stats = scr.querySelectorAll('#eame-stats .eg-stat').length;
+        var stats = scr.querySelectorAll('#eame-stats .ae-tile').length;
         var summary = scr.querySelectorAll('#eame-summary li').length;
         var rows = scr.querySelectorAll('#eame-manifest-body tr').length;
         out.freshShows = stats + ' stats, ' + summary + ' summary, ' + rows + ' files';
@@ -868,6 +868,30 @@ setTimeout(async function () {
 
       var badge = document.getElementById('eame-gen-status');
       out.badge = badge ? badge.textContent.trim() : 'missing';
+
+      // The report after a build: two cards that must read as a row. The
+      // structure card's height follows the manifest (a row per directory),
+      // so it is the one that drifts. Measured, because this regresses the
+      // moment a fixture gains a directory.
+      var report = document.getElementById('eame-summary-card');
+      if (report && report.style.display !== 'none') {
+        var ecards = [].map.call(report.querySelectorAll('.eg-card'),
+          function (c) { return Math.round(c.getBoundingClientRect().height); });
+        out.eameCards = ecards.join('/');
+        if (ecards.length !== 2) bad('the build report rendered ' + ecards.length + ' card(s), expected 2');
+        else if (Math.max.apply(null, ecards) - Math.min.apply(null, ecards) > 24) {
+          bad('the two build-report cards differ by '
+            + (Math.max.apply(null, ecards) - Math.min.apply(null, ecards)) + 'px: ' + out.eameCards);
+        }
+        out.tiles = scr.querySelectorAll('#eame-stats .ae-tile').length;
+        if (out.tiles !== 4) bad('expected 4 summary tiles, got ' + out.tiles);
+        var tileText = (document.getElementById('eame-stats') || {}).textContent || '';
+        // The tiles describe THIS build, never the mockup's placeholder stack.
+        if (/python|fastapi|scikit/i.test(tileText)) bad('summary tiles carry placeholder values: ' + tileText.slice(0, 60));
+        var onward = document.getElementById('eame-onward');
+        out.readyBanner = onward && onward.style.display !== 'none' ? 'shown' : 'hidden';
+        if (BUILD_STATE === 'passed' && out.readyBanner !== 'shown') bad('a passed build does not show the ready banner');
+      }
       // The old text was a hardcoded claim. Anything that still asserts
       // completion without reference to verification is the same bug.
       if (/Generation Complete/.test(out.badge)) bad('the status badge still claims completion unconditionally');
@@ -1131,7 +1155,7 @@ for (const screen of list) {
     // ever print for a screen that also had model classes, so the eame line
     // was unreachable.
     + (r.gates
-        ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}"`
+        ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}" · cards ${r.eameCards || "-"} · tiles ${r.tiles ?? "-"} · banner ${r.readyBanner || "-"}`
           + (r.freshShows ? ` · fresh shows ${r.freshShows} · claims ${r.falseClaims}` : '')
           + (r.note && r.note !== 'missing' ? `\n        note "${r.note}"` : '')
         : ''));

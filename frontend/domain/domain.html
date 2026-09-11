@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=17">
+  <link rel="stylesheet" href="workspace.css?v=20">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -1041,29 +1041,56 @@
 
       <div class="aria-body">
 
-      <div class="pd-header aria-header eg-header">
-        <div class="aria-header__icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      <!-- Same hero as Aria and Arth: the shared .ae-* styles are scoped to
+           .screen--aria, which this screen carries. -->
+      <div class="ae-stage ae-stage--hero">
+        <div class="ae-hero">
+          <div class="ae-hero__mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <div class="ae-hero__text">
+            <span class="ae-pill">Eame</span>
+            <span class="ae-pill ae-pill--role">Your Builder</span>
+            <h1 class="ae-hero__title">Generate the Application</h1>
+            <p class="ae-hero__sub">Turn the approved architecture into a production-ready application.</p>
+            <!-- Both read from real state, not decoration: the approval Cob
+                 recorded, and whether Arth actually linked anything. -->
+            <div class="eg-badges" id="eame-badges"></div>
+          </div>
         </div>
-        <div class="eg-header__text">
-          <span class="eg-eyebrow">Eame</span>
-          <h1 class="aria-header__title">Generate the Application</h1>
-          <p class="pd-header__sub">Turn the approved architecture into a production-ready application.</p>
+        <div class="ae-art" aria-hidden="true">
+          <div class="ae-art__glow"></div>
+          <svg class="ae-art__svg" viewBox="0 0 320 300" fill="none">
+            <g class="ae-art__chips" stroke="currentColor" stroke-width="1.4" opacity=".55">
+              <rect x="22"  y="62"  width="58" height="58" rx="12"/>
+              <rect x="150" y="18"  width="54" height="54" rx="12"/>
+              <rect x="246" y="92"  width="54" height="54" rx="12"/>
+            </g>
+            <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".8">
+              <path d="M40 91l-8 7 8 7 M62 91l8 7-8 7"/>
+              <path d="M166 34c6-4 16-4 22 0 M166 44h22 M166 54h22"/>
+              <path d="M273 108v22 M262 112c0 6 22 6 22 0 M262 126c0 6 22 6 22 0"/>
+            </g>
+            <g class="ae-art__stack">
+              <path d="M160 232 58 178l102-54 102 54z" opacity=".30"/>
+              <path d="M160 204 58 150l102-54 102 54z" opacity=".55"/>
+              <path d="M160 176 58 122l102-54 102 54z" opacity=".95"/>
+            </g>
+          </svg>
         </div>
-        <!-- Both read from real state, not decoration: the approval Cob
-             recorded, and whether Arth actually linked anything. -->
-        <div class="eg-badges" id="eame-badges"></div>
       </div>
 
       <div id="eame-error" class="gen-error" style="display:none"></div>
 
       <div class="eg-usecase" id="eame-breadcrumb">
         <span class="eg-usecase__icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </span>
         <span class="eg-usecase__body">
           <span class="eg-usecase__label">Selected Use Case</span>
           <span class="eg-usecase__name" id="eame-recap-name"></span>
+          <!-- The justification Cob recorded, when there is one. -->
+          <span class="eg-usecase__desc" id="eame-recap-desc"></span>
         </span>
         <button type="button" class="eg-usecase__link" id="eame-view-details">View Details &rarr;</button>
       </div>
@@ -1083,42 +1110,62 @@
         <p class="eg-build__note" id="eame-build-note" style="display:none"></p>
       </section>
 
-      <section class="eg-panel">
-        <div class="eg-panel__head">
-          <span class="eg-panel__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
-          </span>
-          <div>
-            <h2 class="eg-panel__title">Application Generation</h2>
-            <p class="eg-panel__sub">Generating a production-ready application based on the approved architecture.</p>
-          </div>
-          <span class="eg-status" id="eame-gen-status"><span class="eg-status__dot"></span>Not built yet</span>
-        </div>
+      <!-- ── What was built ────────────────────────────────────────────────
+           Two cards, one height: the files on the left, what they add up to
+           on the right. Hidden until a build has produced a manifest —
+           before that there is nothing honest to put in either, and a Build
+           Summary with nothing under it reads as a panel that failed to load.
 
-        <div class="eg-stats" id="eame-stats"></div>
-      </section>
-
-      <p class="pd-substage-label aria-required-label">
-        <span class="eg-folder-ico">&#128193;</span> Application Structure
-      </p>
-
-      <div class="eg-structure">
-        <div class="eg-tree-card">
+           Every figure comes from the manifest the build actually returned.
+           Nothing here is typed into the markup. -->
+      <div class="eg-report" id="eame-summary-card" style="display:none">
+        <section class="ae-card eg-card" aria-labelledby="eame-structure-title">
+          <header class="eg-card__head">
+            <span class="eg-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </span>
+            <div class="eg-card__headings">
+              <h2 class="eg-card__title" id="eame-structure-title">Application Structure</h2>
+              <p class="eg-card__sub">The following structure was created for your application.</p>
+            </div>
+            <!-- Real state: what renderBuildState writes here follows the
+                 build — "Verified — it runs", "Build failed", "Building…". -->
+            <span class="ae-state" id="eame-gen-status"><span class="ae-state__dot"></span>Not built yet</span>
+          </header>
           <ul class="eg-tree" id="eame-tree"></ul>
           <button type="button" class="eg-source-btn" id="eame-source-btn">
-            <span class="eg-folder-ico">&#128193;</span> View Source Structure &rarr;
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span>View complete structure</span>
+            <svg class="ae-details-toggle__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
-        </div>
+        </section>
 
-        <div class="eg-summary-card" id="eame-summary-card">
-          <p class="eg-summary__title">
-            <span class="eg-summary__ico">&#10003;</span> Build Summary
-          </p>
-          <ul class="eg-summary" id="eame-summary"></ul>
+        <section class="ae-card eg-card" aria-labelledby="eame-summary-title">
+          <header class="eg-card__head">
+            <span class="eg-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+            </span>
+            <div class="eg-card__headings">
+              <h2 class="eg-card__title" id="eame-summary-title">Build Summary</h2>
+              <p class="eg-card__sub" id="eame-summary-sub">What the build produced.</p>
+            </div>
+          </header>
+          <!-- Total files, runtime, framework, model — filled by renderStats. -->
+          <div class="ae-tiles eg-tiles" id="eame-stats"></div>
 
-          <p class="eg-stack__title">Technology Stack</p>
-          <div class="eg-stack" id="eame-stack"></div>
-        </div>
+          <!-- Shown only once a build has passed. It used to be unconditional
+               markup with nothing toggling it, so a blueprint that had never
+               been built still announced "Application generated successfully". -->
+          <div class="eg-done" id="eame-onward" style="display:none">
+            <span class="eg-done__ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <div class="eg-done__body">
+              <p class="eg-done__title">Application is ready for deployment</p>
+              <p class="eg-done__sub">It was written, installed and started to prove it runs. You can move to the next step.</p>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- The full file list, behind the summary rather than instead of it —
@@ -1130,19 +1177,6 @@
           </thead>
           <tbody id="eame-manifest-body"></tbody>
         </table>
-      </div>
-
-      <!-- Shown only once a build has passed. It used to be unconditional
-           markup with nothing toggling it, so a blueprint that had never been
-           built still announced "Application generated successfully". -->
-      <div class="eg-done" id="eame-onward" style="display:none">
-        <span class="eg-done__ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </span>
-        <div class="eg-done__body">
-          <p class="eg-done__title">Application generated successfully</p>
-          <p class="eg-done__sub">Your running project is ready for delivery and deployment.</p>
-        </div>
       </div>
 
       <!-- Named before it is built, so the name reaches the repository, the
@@ -1158,7 +1192,7 @@
         </div>
       </div>
 
-      <div class="stage-nav">
+      <div class="stage-nav stage-nav--centred">
         <span class="stage-nav__hint" id="eame-nav-hint">Generate the application to continue</span>
         <button type="button" class="stage-nav__btn" id="eame-nav-btn" data-goto="yusu" disabled>Move to Yusu &rarr;</button>
       </div>
@@ -1505,7 +1539,7 @@
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=47"></script>
   <script type="module" src="arthScreen.js?v=19"></script>
-  <script type="module" src="eameScreen.js?v=19"></script>
+  <script type="module" src="eameScreen.js?v=22"></script>
   <script type="module" src="yusuScreen.js?v=27"></script>
   <script type="module" src="workspaceShell.js?v=1"></script>
   <script type="module" src="screenChat.js?v=7"></script>

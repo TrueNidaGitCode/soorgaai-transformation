@@ -1506,3 +1506,183 @@ body.domain-page .sc-panel {
 @media (max-width: 900px) {
     #screen-aria .dr-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Eame — what was built
+   ══════════════════════════════════════════════════════════════════════════
+   The hero, pills, cards, tiles and art are the shared .ae-* layer (scoped
+   to .screen--aria, which this screen carries). Only what is particular to
+   Eame lives here: the two-card report, the directory rows, the ready banner.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* The hero and the art share a row here, unlike Aria where the art sat beside
+   the summary card. Same threshold as the Aria art for the same reason. */
+#screen-eame .ae-stage--hero { margin-bottom: 1.2rem; align-items: center; }
+#screen-eame .ae-stage--hero .ae-art { min-height: 200px; }
+#screen-eame .ae-stage--hero .ae-art__svg { max-width: 260px; }
+
+#screen-eame .ae-pill--role { margin-left: .4rem; }
+#screen-eame .eg-badges { margin-top: .6rem; }
+
+/* The use-case card gains a description line. */
+#screen-eame .eg-usecase__desc {
+    display: block;
+    margin-top: .2rem;
+    font-size: .82rem;
+    color: var(--ws-text-dim, #9fb3bb);
+}
+
+/* Two cards, one height. The structure card is the one whose height follows
+   the build (a row per directory), so it gets the larger share and the
+   summary stretches to meet it — with its banner pinned to the foot, so the
+   slack sits above it and the card ends on its strongest line. */
+#screen-eame .eg-report {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 1rem;
+    align-items: stretch;
+    margin: 1.2rem 0 1.4rem;
+}
+@media (max-width: 1000px) {
+    #screen-eame .eg-report { grid-template-columns: minmax(0, 1fr); }
+}
+
+#screen-eame .eg-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.15rem 1.2rem 1.1rem;
+}
+
+#screen-eame .eg-card__head {
+    display: flex;
+    align-items: flex-start;
+    gap: .85rem;
+    flex-wrap: wrap;
+    margin: 0 0 1rem;
+}
+#screen-eame .eg-card__icon {
+    flex: 0 0 auto;
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    color: var(--ws-accent, #2ee6d6);
+    background: rgba(46, 230, 214, 0.09);
+    border: 1px solid rgba(46, 230, 214, 0.2);
+}
+#screen-eame .eg-card__icon svg { width: 20px; height: 20px; }
+/* Basis 0, not auto: with wrap on, an auto basis is the heading's full
+   content width, and in the narrower card that exceeded the row and threw the
+   icon onto a line of its own. */
+#screen-eame .eg-card__headings { flex: 1 1 0%; min-width: 0; }
+#screen-eame .eg-card__title { margin: 0 0 .2rem; font-size: 1rem; font-weight: 650; }
+#screen-eame .eg-card__sub { margin: 0; font-size: .8rem; line-height: 1.45; color: var(--ws-text-dim, #9fb3bb); }
+#screen-eame .eg-card__head .ae-state { align-self: center; }
+
+/* Directory rows. Restated here because domain.css already styles .eg-tree
+   for the old card and this reads the row as three columns. */
+#screen-eame .eg-tree {
+    list-style: none;
+    margin: 0;
+    padding: 0 .3rem 0 0;
+    flex: 1 1 auto;
+    /* A generated project has eleven top-level directories; the design draws
+       six. Unbounded, the structure card ran to 830px and dragged the summary
+       with it, leaving the tiles floating over a quarter-screen of nothing.
+       Capped to about seven rows; the rest scroll, and the full list is one
+       click away under "View complete structure". Gutter reserved so the
+       scrollbar never paints over the file counts. */
+    max-height: 27rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+}
+#screen-eame .eg-tree__row {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .7rem;
+    padding: .6rem 0;
+    border-bottom: 1px solid rgba(93, 143, 155, 0.13);
+}
+#screen-eame .eg-tree__row:last-child { border-bottom: 0; }
+#screen-eame .eg-tree__icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    display: grid; place-items: center;
+    color: var(--ws-accent, #2ee6d6);
+    background: rgba(46, 230, 214, 0.08);
+}
+#screen-eame .eg-tree__icon svg { width: 17px; height: 17px; }
+#screen-eame .eg-tree__meta { display: flex; flex-direction: column; min-width: 0; }
+#screen-eame .eg-tree__name { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .86rem; font-weight: 600; }
+#screen-eame .eg-tree__desc { font-size: .74rem; color: var(--ws-text-dim, #9fb3bb); overflow-wrap: anywhere; }
+#screen-eame .eg-tree__count { font-size: .78rem; color: var(--ws-text-dim, #9fb3bb); white-space: nowrap; }
+#screen-eame .eg-tree__loading { padding: .8rem 0; color: var(--ws-text-dim, #9fb3bb); font-size: .85rem; }
+
+/* The way to the full file list. Pinned to the foot so the card ends on it. */
+#screen-eame .eg-source-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    margin-top: auto;
+    padding: .9rem 0 0;
+    background: none;
+    border: 0;
+    border-top: 1px solid rgba(93, 143, 155, 0.16);
+    width: 100%;
+    cursor: pointer;
+    font: inherit;
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--ws-accent, #2ee6d6);
+    text-align: left;
+}
+#screen-eame .eg-source-btn svg { width: 15px; height: 15px; flex: 0 0 auto; }
+#screen-eame .eg-source-btn .ae-details-toggle__chev { transition: transform .18s ease; }
+#screen-eame .eg-source-btn[aria-expanded="true"] .ae-details-toggle__chev { transform: rotate(90deg); }
+#screen-eame .eg-source-btn:focus-visible { outline: 2px solid var(--ws-accent, #2ee6d6); outline-offset: 3px; border-radius: 4px; }
+
+/* Four tiles in the summary — two by two at this width, which is what the
+   design draws. */
+#screen-eame .eg-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* The one claim the page makes that matters, shown only when it is true. */
+#screen-eame .eg-done {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-top: auto;
+    padding: .9rem 1rem;
+    border-radius: 10px;
+    background: rgba(46, 230, 214, 0.08);
+    border: 1px solid rgba(46, 230, 214, 0.28);
+}
+#screen-eame .eg-done__ico {
+    flex: 0 0 auto;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: #06231f;
+    background: var(--ws-accent, #2ee6d6);
+}
+#screen-eame .eg-done__ico svg { width: 16px; height: 16px; }
+#screen-eame .eg-done__title { margin: 0 0 .15rem; font-size: .9rem; font-weight: 650; color: var(--ws-accent, #2ee6d6); }
+#screen-eame .eg-done__sub { margin: 0; font-size: .78rem; color: var(--ws-text-dim, #9fb3bb); }
+
+/* When the banner is hidden the tiles still need something to push against,
+   or the summary ends short of its neighbour. */
+#screen-eame .eg-tiles { margin-bottom: 1rem; }
+
+#screen-eame .stage-nav--centred {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    text-align: center;
+}
+#screen-eame .stage-nav--centred .stage-nav__hint { order: 2; }
+#screen-eame .stage-nav--centred .stage-nav__btn { order: 1; min-width: 240px; }
+
+@media (prefers-reduced-motion: reduce) {
+    #screen-eame .eg-source-btn .ae-details-toggle__chev { transition: none; }
+}

@@ -30,7 +30,8 @@ body.domain-page {
   --ws-muted: rgba(234, 246, 249, 0.56);
   --ws-faint: rgba(234, 246, 249, 0.34);
 
-  --ws-rail: 64px;
+  /* The rail is shared/rail.css; the workspace starts where it ends. */
+  --ws-rail: var(--rail, 56px);
 
   /* The workspace runs a brighter cyan than the first screen, so it tints
      the shared ambient rather than redrawing it. */
@@ -44,85 +45,11 @@ body.domain-page {
 /* The ambient ground comes from style.css now — one definition, every page.
    Tinted here only, through the two --ambient- channels. */
 
-/* ── Icon rail ────────────────────────────────────────────────────────────
-   New. The workspace had no persistent navigation at all — every route out
-   was a link in the top bar, which is why Help and Settings had nowhere to
-   live. Fixed, so it survives every screen change. */
-
-.ws-rail {
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  width: var(--ws-rail);
-  z-index: 60;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 76px 0 16px;
-  background: rgba(6, 13, 19, 0.9);
-  border-right: 1px solid rgba(34, 217, 232, 0.1);
-  backdrop-filter: blur(14px);
-}
-
-.ws-rail__btn {
-  position: relative;
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border: none;
-  border-radius: 12px;
-  background: transparent;
-  color: var(--ws-faint);
-  cursor: pointer;
-  text-decoration: none;
-  transition: color 0.15s, background 0.15s;
-}
-
-.ws-rail__btn:hover { color: var(--ws-text); background: rgba(34, 217, 232, 0.08); }
-
-.ws-rail__btn--on { color: var(--ws-accent); background: var(--ws-soft); }
-
-.ws-rail__btn--on::before {
-  content: '';
-  position: absolute;
-  left: -11px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  border-radius: 0 3px 3px 0;
-  background: var(--ws-accent);
-  box-shadow: 0 0 10px var(--ws-glow);
-}
-
-.ws-rail__spacer { flex: 1; }
-
-/* Help and Settings carry their labels, because they are reached rarely and
-   an unlabelled icon you use once a month is an icon you never learn. */
-.ws-rail__foot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 8px 0 2px;
-  border: none;
-  background: none;
-  color: var(--ws-faint);
-  font: inherit;
-  font-size: 0.62rem;
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.15s;
-}
-
-.ws-rail__foot:hover { color: var(--ws-text); }
-
 /* ── Top bar ──────────────────────────────────────────────────────────────── */
 
 body.domain-page .workspace-nav {
   position: fixed;
-  top: 0; left: 0; right: 0;
+  top: 0; left: var(--ws-rail); right: 0;
   z-index: 70;
   display: flex;
   align-items: center;
@@ -142,36 +69,21 @@ body.domain-page .workspace-nav__left {
 
 body.domain-page .workspace-nav__logo { height: 38px; width: auto; }
 
-/* "← Home" becomes the hamburger the design shows: same destination, less ink,
-   and it stops competing with the logo beside it. */
+/* "← Home" went to the rail. The link stays only on the full blueprint, which
+   has no journey bar: blueprintWorkspace.js repoints it at Cob there. */
 body.domain-page .workspace-nav__back {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
+  display: none;
+  padding: 7px 12px;
+  border-radius: 999px;
   color: var(--ws-muted);
-  font-size: 0;
+  font-size: 0.85rem;
   text-decoration: none;
   transition: color 0.15s, background 0.15s;
 }
 
-body.domain-page .workspace-nav__back::before {
-  content: '';
-  width: 18px;
-  height: 12px;
-  border-top: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  position: relative;
-}
-
-body.domain-page .workspace-nav__back::after {
-  content: '';
-  position: absolute;
-  width: 18px;
-  height: 2px;
-  background: currentColor;
-}
+/* The markup writes display:none and showScreen() writes "display: none;", so
+   the test is for the word rather than either spelling. */
+body.domain-page:has(#screen-workspace:not([style*="none"])) .workspace-nav__back { display: inline-flex; }
 
 body.domain-page .workspace-nav__back:hover { color: var(--ws-text); background: rgba(34, 217, 232, 0.08); }
 
@@ -747,8 +659,6 @@ body.domain-page .sc-send {
 }
 
 @media (max-width: 860px) {
-  body.domain-page { --ws-rail: 0px; }
-  .ws-rail { display: none; }
   body.domain-page .rp-journey { position: static; height: auto; padding: 12px 16px; overflow-x: auto; }
   body.domain-page .rp-shell { padding-top: 68px; }
   body.domain-page .pw-step__role { display: none; }

@@ -1,5 +1,8 @@
 /* ── Knowledge Sources page ───────────────────────────────────────────────── */
 
+/* The page starts where the rail (shared/rail.css) ends. */
+.workspace-page { padding-left: var(--rail, 0px); box-sizing: border-box; }
+
 .ks-main {
   max-width: 760px;
 }

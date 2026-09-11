@@ -1,8 +1,8 @@
 /**
  * Svarg — Landing Page Module (ChatGPT-style layout)
  *
- * Wires: sidebar collapse/expand, auth-aware topbar, and the hero
- * prompt composer (try-before-login entry point).
+ * Wires: auth-aware topbar and the hero prompt composer (try-before-login
+ * entry point). The rail on the left is shared/rail.js.
  *
  * Loaded as <script type="module"> — runs after DOM is parsed.
  */
@@ -84,14 +84,10 @@ const OBJECTIVE_COUNTER_THRESHOLD = 0.85; // start showing the counter at 85% of
 document.addEventListener('DOMContentLoaded', () => {
     renderStages(MATURITY_STAGES, document.querySelector('.stages'));
     wirePrimaryCta();
-    wireSidebar();
-    wireSidebarBlueprints();
-    wireBlueprintsFlyout();
     wireTopbarAuth();
     wireHeroPrompt();
     const authModal = wireAuthModal();
     wireCobConfluenceConnector(authModal?.open);
-    wireKnowledgeSourcesIndicator();
 });
 
 /**
@@ -272,170 +268,9 @@ export function wireAuthModal() {
     return { open };
 }
 
-/**
- * Sidebar: fixed on desktop, off-canvas drawer on mobile.
- */
-export function wireSidebar() {
-    const body = document.body;
-
-    document.getElementById('side-toggle-mobile')?.addEventListener('click', () => {
-        body.classList.toggle('side-open');
-    });
-
-    // Tap outside closes the mobile drawer
-    document.addEventListener('click', (e) => {
-        if (!body.classList.contains('side-open')) return;
-        const side = document.getElementById('side');
-        if (side && !side.contains(e.target) && !e.target.closest('#side-toggle-mobile')) {
-            body.classList.remove('side-open');
-        }
-    });
-
-}
-
-/**
- * Adds a small connected-state dot to the "Knowledge Sources" sidebar link
- * once the user has a personal Confluence connection. Silent no-op for
- * guests (no token) or anyone who hasn't connected — never blocks the link.
- */
-export async function wireKnowledgeSourcesIndicator() {
-    const link = document.querySelector('.side__link[href="/knowledge-sources/knowledge-sources.html"]');
-    if (!link) return;
-
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    try {
-        const resp = await fetch(`${API_BASE()}/confluence/personal/status`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!resp.ok) return;
-        const { connected } = await resp.json();
-        if (connected && !link.querySelector('.side__link-dot')) {
-            const dot = document.createElement('span');
-            dot.className = 'side__link-dot';
-            dot.setAttribute('aria-label', 'Connected');
-            link.appendChild(dot);
-        }
-    } catch { /* non-critical */ }
-}
-
-/**
- * Sidebar blueprint history.
- * Signed-in  → list the user's blueprints; clicking one opens it in the workspace.
- * Anonymous  → show the guest preview blueprint if one exists.
- */
-/**
- * Your blueprints, from the rail.
- *
- * The list used to hold a permanent column on the left. It is worth reading
- * once a session and never again after that, so it is behind an icon now — the
- * width goes back to the question, and the objectives are one press away.
- *
- * wireSidebarBlueprints still fills #side-blueprints; this only decides when
- * it is on screen.
- */
-function wireBlueprintsFlyout() {
-  const btn = document.getElementById('sv-bps-btn');
-  const panel = document.getElementById('sv-bps');
-  if (!btn || !panel) return;
-
-  const setOpen = (open) => {
-    panel.hidden = !open;
-    btn.setAttribute('aria-expanded', String(open));
-    btn.classList.toggle('sv-rail__btn--on', open);
-  };
-
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    setOpen(panel.hidden);
-  });
-
-  // Anywhere else, and Escape. A panel that only closes by pressing the same
-  // icon again is a panel people leave open and then work around.
-  document.addEventListener('click', (e) => {
-    if (!panel.hidden && !panel.contains(e.target)) setOpen(false);
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !panel.hidden) setOpen(false);
-  });
-}
-
-export async function wireSidebarBlueprints() {
-    const wrap = document.getElementById('side-blueprints');
-    if (!wrap) return;
-
-    const token   = localStorage.getItem('token');
-    const guestId = localStorage.getItem('soorgaai_guest_id');
-
-    const empty = (msg) => { wrap.innerHTML = `<p class="side__bps-empty">${msg}</p>`; };
-
-    // A failure is not an absence. Reporting a dead backend or an expired
-    // session as "No blueprints yet" reads as data loss — it sent someone
-    // hunting for a blueprint that was in the database the whole time, while
-    // the only real problem was that nothing was listening on the API port.
-    // Same slot in the sidebar, deliberately different voice.
-    const problem = (msg) => { wrap.innerHTML = `<p class="side__bps-error">${msg}</p>`; };
-
-    try {
-        if (token) {
-            const resp = await fetch(`${API_BASE()}/strategy-canvas/transformation-blueprints`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!resp.ok) {
-                problem(resp.status === 401
-                    ? 'Your session has expired — sign in again to see your blueprints.'
-                    : 'Could not load your blueprints. Please try again.');
-                return;
-            }
-            const { blueprints } = await resp.json();
-            if (!blueprints?.length) { empty('No blueprints yet.'); return; }
-
-            wrap.innerHTML = '';
-            blueprints.forEach(bp => {
-                const btn = document.createElement('button');
-                btn.className = 'side__bp' + (bp.status === 'generating' ? ' side__bp--generating' : '');
-                btn.title = bp.businessObjective || '';
-                btn.textContent = (bp.status === 'generating' ? '⋯ ' : '') + truncate(bp.businessObjective, 46);
-                btn.addEventListener('click', () => {
-                    sessionStorage.setItem(OPEN_BLUEPRINT_KEY, bp._id);
-                    // ?view=cob so a picked blueprint opens on the Cob stage.
-                    // Without it, an already-approved blueprint jumps straight
-                    // to the workspace (see shouldShowWorkspace), skipping the
-                    // journey the user picked it in order to look at.
-                    window.location.href = '/domain/domain.html?view=cob';
-                });
-                wrap.appendChild(btn);
-            });
-        } else if (guestId) {
-            const resp = await fetch(`${API_BASE()}/guest/blueprint/${encodeURIComponent(guestId)}`);
-            // 404 is the honest empty case here: a guestId in localStorage
-            // whose preview has since been claimed or never existed. Any
-            // other status is a fault and should say so.
-            if (resp.status === 404) { empty('No blueprints yet — describe your project to start.'); return; }
-            if (!resp.ok) { problem('Could not load your preview blueprint. Please try again.'); return; }
-            const bp = await resp.json();
-            const btn = document.createElement('button');
-            btn.className = 'side__bp';
-            btn.title = bp.businessObjective || '';
-            btn.textContent = 'Preview — ' + truncate(bp.businessObjective, 38);
-            btn.addEventListener('click', () => { window.location.href = '/domain/domain.html'; });
-            wrap.innerHTML = '';
-            wrap.appendChild(btn);
-        } else {
-            empty('No blueprints yet — describe your project to start.');
-        }
-    } catch {
-        // fetch() rejects only when the request never completed at all — the
-        // API is down, or the browser refused it. Never an empty account.
-        problem('Could not reach the server — check that the backend is running.');
-    }
-}
-
-function truncate(s, n) {
-    const str = (s || '').trim();
-    return str.length > n ? str.slice(0, n - 1) + '…' : str;
-}
+// The rail — Home, Blueprints (and their list), Knowledge sources, Privacy —
+// is shared/rail.js now, the same element on every page. The sidebar, the
+// flyout and the blueprint list that used to be wired here went with it.
 
 /**
  * Topbar: signed-in visitors see their profile name with a dropdown

@@ -2,9 +2,9 @@
  * Svarg — the workspace frame
  *
  * The redesign is mostly CSS over markup that already exists. This adds the
- * three things the markup does not have, once, for all five screens:
+ * two things the markup does not have, once, for all five screens (the rail
+ * on the left is shared/rail.js, the same element on every page):
  *
- *   the icon rail          there was no persistent navigation at all
  *   the role under each    "Arth" tells a first-time user nothing; "Your
  *   stage                  Preparer" tells them what happens next
  *   the character's glyph  replacing the step number, because five products
@@ -35,43 +35,9 @@ const CHARACTERS = {
   yusu: { role: 'Your Adopter',     glyph: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M2.5 20a6.5 6.5 0 0 1 13 0 M17 11.5a2.5 2.5 0 1 0 0-5 M17.5 20a6 6 0 0 0-2-4.5' },
 };
 
-const RAIL = [
-  { href: '/cob.html',                                     label: 'Start',
-    d: 'M3 10.5 12 3l9 7.5 M5 9.6V21h14V9.6' },
-  { href: '/domain/domain.html',                           label: 'Blueprint', current: true,
-    d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6' },
-  { href: '/knowledge-sources/knowledge-sources.html',     label: 'Knowledge sources',
-    d: 'M3 3v18h18 M7 15l4-5 3 3 5-7' },
-  { href: '/privacy/privacy.html',                         label: 'Privacy',
-    d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
-];
-
-const FOOT = [
-  { href: '/company/contact-us.html', label: 'Help',
-    d: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M9.4 9.2a2.7 2.7 0 0 1 5.2.9c0 1.8-2.6 2.7-2.6 2.7 M12 17h.01' },
-  { href: '/profile-setup/profile.html', label: 'Settings',
-    d: 'M12 15.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.9-2.9l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.9-2.9l.1.1A1.7 1.7 0 0 0 10 4a2 2 0 1 1 4 0a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.9 2.9l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z' },
-];
-
 function icon(d, size = 20) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
-}
-
-/** The rail. Built once and shared by every screen, because it is fixed. */
-function buildRail() {
-  if (document.querySelector('.ws-rail')) return;
-  const rail = document.createElement('nav');
-  rail.className = 'ws-rail';
-  rail.setAttribute('aria-label', 'Workspace');
-
-  rail.innerHTML =
-    RAIL.map(r => `<a href="${r.href}" class="ws-rail__btn${r.current ? ' ws-rail__btn--on' : ''}"
-        aria-label="${r.label}" title="${r.label}"${r.current ? ' aria-current="page"' : ''}>${icon(r.d)}</a>`).join('')
-    + '<span class="ws-rail__spacer"></span>'
-    + FOOT.map(f => `<a href="${f.href}" class="ws-rail__foot" title="${f.label}">${icon(f.d, 18)}<span>${f.label}</span></a>`).join('');
-
-  document.body.appendChild(rail);
 }
 
 /**
@@ -291,7 +257,6 @@ function placeHeroArt() {
 }
 
 function init() {
-  buildRail();
   openPanelsOnLoad();
   placeHeroArt();
   labelJourney();

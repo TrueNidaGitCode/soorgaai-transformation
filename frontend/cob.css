@@ -28,7 +28,8 @@
   --sv-muted:    rgba(255, 255, 255, 0.52);
   --sv-faint:    rgba(255, 255, 255, 0.34);
 
-  --sv-rail: 56px;
+  /* The rail is shared/rail.css; the page starts where it ends. */
+  --sv-rail: var(--rail, 56px);
 }
 
 /* ── Ground ───────────────────────────────────────────────────────────────
@@ -46,60 +47,6 @@ body.landing2 {
 /* The ambient ground now comes from style.css, which paints it for every
    page as body background layers. Drawing it here as well was the same
    light twice. */
-
-/* ── Icon rail ────────────────────────────────────────────────────────────
-   Icons only. The old sidebar spent its width on three text links to pages
-   nobody opens mid-thought; the rail gives that width back to the page and
-   keeps the destinations one hover away. */
-
-.sv-rail {
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  width: var(--sv-rail);
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 14px 0;
-  background: rgba(255, 255, 255, 0.022);
-  border-right: 1px solid var(--sv-line);
-  backdrop-filter: blur(12px);
-}
-
-.sv-rail__btn {
-  position: relative;
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--sv-faint);
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-}
-
-.sv-rail__btn:hover { color: var(--sv-text); background: rgba(255, 255, 255, 0.06); }
-
-.sv-rail__btn--on { color: var(--sv-accent); background: var(--sv-accent-soft); }
-
-/* The active marker sits outside the button so it lines up with the rail edge
-   rather than with the icon's padding. */
-.sv-rail__btn--on::before {
-  content: '';
-  position: absolute;
-  left: -9px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2px;
-  height: 18px;
-  border-radius: 0 2px 2px 0;
-  background: var(--sv-accent);
-}
-
-.sv-rail__spacer { flex: 1; }
 
 /* ── Top bar ──────────────────────────────────────────────────────────────── */
 
@@ -457,8 +404,6 @@ body.landing2 {
 /* ── Narrow screens ───────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-  :root { --sv-rail: 0px; }
-  .sv-rail { display: none; }
   .sv-main { justify-content: flex-start; padding-top: 6vh; }
   .sv-ask { font-size: 1.9rem; }
 }
@@ -525,65 +470,3 @@ body.landing2 {
   margin-bottom: 14px;
 }
 
-/* ── Your blueprints ──────────────────────────────────────────────────────
-   A flyout from the rail rather than a permanent column. The list is worth
-   reading once a session; the width it used to hold is worth more to the
-   question in the middle of the screen. */
-
-.sv-bps {
-  position: fixed;
-  top: 62px;
-  left: calc(var(--sv-rail) + 10px);
-  z-index: 30;
-  width: 310px;
-  max-height: min(66vh, 520px);
-  overflow-y: auto;
-  padding: 12px;
-  border: 1px solid var(--sv-line);
-  border-radius: 14px;
-  background: rgba(14, 17, 21, 0.96);
-  box-shadow: 0 24px 60px -22px rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(16px);
-}
-
-.sv-bps__head {
-  margin: 0 0 8px;
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--sv-faint);
-}
-
-.sv-bps__list { display: flex; flex-direction: column; gap: 2px; }
-
-/* The objective itself is the label — a blueprint called "Blueprint 3" tells
-   you nothing about which one to open. */
-.sv-bps__list .side__bp {
-  display: block;
-  width: 100%;
-  padding: 9px 10px;
-  border: none;
-  border-radius: 9px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.78);
-  font: inherit;
-  font-size: 0.84rem;
-  line-height: 1.45;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.14s, color 0.14s;
-}
-
-.sv-bps__list .side__bp:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
-.sv-bps__list .side__bp--generating { color: var(--sv-accent); }
-
-.sv-bps__list .side__bps-empty,
-.sv-bps__list .side__bps-error {
-  margin: 0;
-  padding: 6px 10px;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: var(--sv-faint);
-}
-
-.sv-bps__list .side__bps-error { color: #FCA5A5; }

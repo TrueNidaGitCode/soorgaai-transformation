@@ -460,6 +460,23 @@ setTimeout(async function () {
     out.steps = nav.length;
     if (nav.length !== 5) bad('journey has ' + nav.length + ' steps, expected 5');
 
+    // The rail is the same four controls on every page -- Home, Blueprints,
+    // Knowledge sources, Privacy -- with the page you are on lit. Here that
+    // is Blueprints. The workspace used to build its own rail with Help and
+    // Settings on it, so clicking between pages changed how many icons there
+    // were.
+    var rail = document.querySelector('.sv-rail');
+    var railItems = rail ? [].map.call(rail.querySelectorAll('.sv-rail__btn'), function (b) { return b.getAttribute('aria-label'); }) : [];
+    out.rail = railItems.join(',') || 'none';
+    if (railItems.join(',') !== 'Home,Blueprints,Knowledge sources,Privacy') bad('rail is [' + out.rail + '], expected Home, Blueprints, Knowledge sources, Privacy');
+    var lit = rail ? [].map.call(rail.querySelectorAll('.sv-rail__btn--on'), function (b) { return b.getAttribute('aria-label'); }) : [];
+    if (lit.join(',') !== 'Blueprints') bad('rail lights [' + lit.join(',') + '], expected Blueprints');
+    if (rail && Math.round(rail.getBoundingClientRect().top) !== 0) bad('rail starts ' + Math.round(rail.getBoundingClientRect().top) + 'px down, expected the top of the page');
+    var topbar = document.querySelector('.workspace-nav');
+    if (rail && topbar && topbar.getBoundingClientRect().left < rail.getBoundingClientRect().right - 1) bad('top bar starts under the rail');
+    var back = document.querySelector('.workspace-nav__back');
+    if (back && back.getBoundingClientRect().width > 0) bad('"Home" is in the top bar as well as the rail');
+
     // The bar runs to the right edge. It used to stop at the chat panel, and
     // three-quarters of a bar read as a bar that had not finished loading.
     // clientWidth, not innerWidth: innerWidth counts the scrollbar, and a
@@ -1411,7 +1428,7 @@ for (const screen of list) {
   if (!ok) failed++;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${screen.padEnd(6)}`
     + `css ${String(r.cssRules ?? '?').padStart(4)} rules · `
-    + `${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · ready ${r.readyEvents ?? '-'} · shows ${r.showEvents ?? '-'} · hero ${r.pills ?? '-'} art ${r.art ?? '-'} · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
+    + `rail [${r.rail ?? '?'}] · ${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · ready ${r.readyEvents ?? '-'} · shows ${r.showEvents ?? '-'} · hero ${r.pills ?? '-'} art ${r.art ?? '-'} · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"

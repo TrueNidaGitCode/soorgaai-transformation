@@ -13,43 +13,23 @@
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../home.css">
   <link rel="stylesheet" href="../landing.css">
-  <link rel="stylesheet" href="privacy.css">
+  <link rel="stylesheet" href="privacy.css?v=2">
+  <!-- The rail: the same four controls on every signed-in page. -->
+  <link rel="stylesheet" href="../shared/rail.css?v=1">
 
   <script src="../login/config.js"></script>
-  <script type="module" src="../index.js"></script>
+  <script type="module" src="../shared/rail.js?v=1"></script>
+  <script type="module" src="../index.js?v=8"></script>
 </head>
 <body class="landing2">
 
-  <!-- ── Left sidebar (fixed) — replicated from the landing page ─────────── -->
-  <aside id="side" class="side">
-    <a href="/index.html" class="side__logo" aria-label="Svarg — home"><img src="/assets/Logo.png" alt="Svarg" class="side__logo-img"></a>
-
-    <p class="side__label">Blueprints</p>
-    <div id="side-blueprints" class="side__bps" aria-label="Your blueprints"></div>
-
-    <div class="side__nav" role="navigation" aria-label="Site navigation">
-      <a href="/knowledge-sources/knowledge-sources.html" class="side__link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <span>Knowledge Sources</span>
-      </a>
-      <a href="/pricing/pricing.html" class="side__link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        <span>Pricing</span>
-      </a>
-      <a href="/privacy/privacy.html" class="side__link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span>Privacy</span>
-      </a>
-    </div>
-  </aside>
+  <!-- The rail (Home, Blueprints, Knowledge sources, Privacy) is built by
+       shared/rail.js so it is the same element on every page. -->
 
   <!-- ── Main column ─────────────────────────────────────────── -->
   <div class="main-col">
 
     <header class="topbar">
-      <button id="side-toggle-mobile" class="side__toggle side__toggle--mobile" aria-label="Open menu">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
       <div id="topbar-auth" class="topbar__auth">
         <a href="/login/login.html" id="topbar-login" class="auth-btn auth-btn--solid">Log in</a>
       </div>

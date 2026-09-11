@@ -578,7 +578,7 @@ function renderEnvironment() {
     if (title) title.textContent = 'Your environment is ready to build.';
     if (sub)   sub.textContent = selfHosted
       ? 'Aria has chosen what this runs on. You are hosting it yourself, so there is nothing for us to prepare.'
-      : 'Aria has chosen the model and sized the infrastructure. Prepare it under technical details, or continue.';
+      : 'Aria has chosen the model and sized the infrastructure. Confirming prepares it.';
     if (stateText) stateText.textContent = selfHosted ? 'Self-hosted' : 'Not prepared';
   } else {
     if (pill)  pill.textContent = 'Choosing';
@@ -745,23 +745,6 @@ function wire() {
   if (_wired) return;
   _wired = true;
 
-  // Choosing did not go away, it moved. What opens here is the whole original
-  // screen — model class, picker, hosting, target architecture — Open Weight
-  // and self-hosting included, because this is still the only place a
-  // regulated buyer can see that we have them.
-  const toggle = document.getElementById('arth-details-toggle');
-  const details = document.getElementById('arth-details');
-  if (toggle && details) {
-    toggle.addEventListener('click', () => {
-      const open = toggle.getAttribute('aria-expanded') === 'true';
-      toggle.setAttribute('aria-expanded', String(!open));
-      details.hidden = open;
-      const label = toggle.querySelector('span:last-child');
-      if (label) label.textContent = open ? 'View technical details' : 'Hide technical details';
-      if (!open) details.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    });
-  }
-
   document.getElementById('arth-options').addEventListener('click', (e) => {
     const b = e.target.closest('[data-pref]');
     if (b) choose(b.dataset.pref);
@@ -804,6 +787,16 @@ function wire() {
     if (!choose(pref)) e.detail.rejected = optionById(pref).locked;
   });
 
+  // Confirm & Continue saves the choice AND prepares the environment. The
+  // Prepare button lived under "View technical details", which went as not
+  // useful -- and Yusu's Go Live is closed until an environment exists, so
+  // if this did not prepare one, nothing would.
+  //
+  // Hosting is Svarg's unless a record already says otherwise; the choice of
+  // hosting went with the disclosure.
+  //
+  // A prepare that fails keeps the customer here with the reason shown, not
+  // moved on to a stage that will only refuse them later for the same reason.
   document.getElementById('arth-confirm-btn').addEventListener('click', async () => {
     // Frozen, the button is pure navigation and carries data-goto — the
     // delegated stage-nav handler owns the click. Saving again here would
@@ -813,17 +806,25 @@ function wire() {
     const btn = document.getElementById('arth-confirm-btn');
     btn.disabled = true;
     btn.textContent = 'Saving…';
+    document.getElementById('arth-error').style.display = 'none';
     try {
-      // Force a write even when Prepare already saved it, so Confirm is
+      // Force a write even when an earlier attempt saved it, so Confirm is
       // never a no-op that looks like one.
       _savedModelId = null;
       await saveModelSelection();
-      btn.textContent = '✓ Model Selected';
-      document.getElementById('arth-next-stage').style.display = 'flex';
-      // Forward progress, same pattern Cob uses to reach this screen.
-      setTimeout(() => {
-        document.dispatchEvent(new CustomEvent('eame:show', { detail: { blueprint: _bp } }));
-      }, 900);
+
+      btn.textContent = 'Preparing…';
+      const r = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/infrastructure`, {
+        method: 'POST',
+        body: JSON.stringify({ hosting: _hosting || 'svarg' }),
+      });
+      _hosting = r.deployment?.hosting || _hosting || 'svarg';
+      // Freezes the selection and turns this button into the move to the
+      // next stage, with its data-goto; the click below hands that to the
+      // delegated stage-nav handler, which reveals the stage once it is ready.
+      renderPrepared(r.deployment);
+      btn.textContent = '✓ Environment ready';
+      setTimeout(() => { if (btn.dataset.goto) btn.click(); }, 900);
     } catch (err) {
       btn.disabled = false;
       btn.textContent = 'Confirm & Continue';

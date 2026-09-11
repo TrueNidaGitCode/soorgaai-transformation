@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=28">
+  <link rel="stylesheet" href="workspace.css?v=29">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=1">
   <script src="../login/config.js"></script>
@@ -442,20 +442,11 @@
           </section>
         </div>
 
-        <!-- Outside the cards now that it has no card to live in. It is the
-             only route back to the workbench, so it cannot travel with the
-             column that was removed. -->
-        <button type="button" class="ae-details-toggle dr-tech dr-tech--loose" id="aria-details-toggle"
-                aria-expanded="false" aria-controls="aria-during">
-          <span>View technical details</span>
-          <svg class="ae-details-toggle__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
       </div>
 
       <!-- ── During the run ─────────────────────────────────────────────────
-           The workbench, unchanged. It is the whole page until data has been
-           processed, and afterwards it is what "View technical details"
-           opens. -->
+           The workbench. It is the whole page until data has been processed;
+           afterwards the report above replaces it. -->
       <div id="aria-during">
 
       <!-- The workbench's own header is gone; the shared hero above serves
@@ -795,9 +786,8 @@
 
       <!-- ── The outcome, not the controls ──────────────────────────────────
            Aria picks the model and describes the environment; this states what
-           she arrived at. The choosing did not go away — it is under "View
-           technical details" below, Open Weight included, because a regulated
-           buyer who cannot find that option concludes we do not have it.
+           she arrived at. The choosing machinery is still below, hidden: the
+           screen decides, Confirm & Continue prepares the environment.
 
            The headline tracks real state. It says "ready" only when an
            environment has actually been prepared; before that it says what has
@@ -848,11 +838,6 @@
           <div class="ae-tiles" id="arth-tiles"></div>
 
           <footer class="ae-card__foot">
-            <button type="button" class="ae-details-toggle" id="arth-details-toggle"
-                    aria-expanded="false" aria-controls="arth-details">
-              <svg class="ae-details-toggle__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-              <span>View technical details</span>
-            </button>
             <p class="ae-assurances">Secure <span>|</span> Scalable <span>|</span> Enterprise Ready</p>
           </footer>
         </section>
@@ -861,10 +846,11 @@
              the shell places it there. -->
       </div>
 
-      <!-- Everything the customer would otherwise have had to decide. Kept
-           whole rather than trimmed: this is still the only place Open Weight
-           and self-hosting are visible, and hiding them would quietly remove
-           the sovereignty story from the product. -->
+      <!-- Everything the customer would otherwise have had to decide. Never
+           shown now -- "View technical details" opened it, and that went as
+           not useful -- but the choosing still runs through these elements:
+           the recommendation is rendered into the picker and read back from
+           it. Kept as machinery, not as a page. -->
       <div class="ae-details" id="arth-details" hidden>
 
       <p class="pd-substage-label aria-required-label">Model Class</p>
@@ -1473,8 +1459,8 @@
 
   <script type="module" src="blueprintGenerate.js?v=19"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
-  <script type="module" src="ariaScreen.js?v=49"></script>
-  <script type="module" src="arthScreen.js?v=21"></script>
+  <script type="module" src="ariaScreen.js?v=50"></script>
+  <script type="module" src="arthScreen.js?v=22"></script>
   <script type="module" src="eameScreen.js?v=25"></script>
   <script type="module" src="yusuScreen.js?v=32"></script>
   <script type="module" src="../shared/rail.js?v=1"></script>

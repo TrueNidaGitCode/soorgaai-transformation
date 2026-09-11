@@ -728,7 +728,6 @@ function renderPostRun() {
   // The report exists only once there is something to report. Before that the
   // workbench is the page.
   const ready = hasPreparedData();
-  const toggle = document.getElementById('aria-details-toggle');
   post.hidden = !ready;
 
   // The hero sits above both pages of this screen and says which one this
@@ -747,12 +746,11 @@ function renderPostRun() {
   if (!ready) {
     if (postSubEl) postSubEl.textContent = 'Connect the sources this use case needs, or fill them with generated rows to keep moving.';
     during.hidden = false;
-    if (toggle) toggle.setAttribute('aria-expanded', 'false');
     return;
   }
-  // After the run the workbench is behind the disclosure, and stays open if
-  // the customer had opened it.
-  if (toggle && toggle.getAttribute('aria-expanded') !== 'true') during.hidden = true;
+  // After the run the report is the page. The workbench used to sit behind
+  // a "View technical details" disclosure; that went as not useful.
+  during.hidden = true;
 
   const datasets = _cachedDatasets || [];
   const confCount = _sources.confluence.length;
@@ -1855,22 +1853,6 @@ let _wired = false;
 function wireStaticControls() {
   if (_wired) return;
   _wired = true;
-
-  // After a run the workbench moves behind this. Before one, the report is
-  // hidden and the control with it, so this is only ever reachable when there
-  // is something to go back to.
-  const detailsToggle = document.getElementById('aria-details-toggle');
-  const during = document.getElementById('aria-during');
-  if (detailsToggle && during) {
-    detailsToggle.addEventListener('click', () => {
-      const open = detailsToggle.getAttribute('aria-expanded') === 'true';
-      detailsToggle.setAttribute('aria-expanded', String(!open));
-      during.hidden = open;
-      const label = detailsToggle.querySelector('span');
-      if (label) label.textContent = open ? 'View technical details' : 'Hide technical details';
-      if (!open) during.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    });
-  }
 
   wireSampleData();
   document.getElementById('aria-sample-run')?.addEventListener('click', runSampleBatch);

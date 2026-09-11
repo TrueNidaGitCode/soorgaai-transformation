@@ -1224,8 +1224,8 @@ body.domain-page .ae-art__chips rect { fill: rgba(46, 230, 214, 0.05); }
 #screen-aria .dr-card { display: flex; flex-direction: column; }
 #screen-aria .dr-summary { flex: 1 1 auto; }
 #screen-aria .dr-sources { flex: 0 0 auto; }
-/* Where the slack goes is set at the foot of this block — .dr-tech declares
-   its own margin-top later on, and would win here. */
+/* Where the slack goes is set at the foot of this block — .dr-foot-note
+   declares its own margin-top later on, and would win here. */
 
 #screen-aria .dr-card { padding: 1.15rem 1.2rem 1.1rem; }
 
@@ -1406,18 +1406,6 @@ body.domain-page .ae-art__chips rect { fill: rgba(46, 230, 214, 0.05); }
 }
 #screen-aria .dr-foot-note__icon { color: var(--ws-accent, #2ee6d6); }
 
-#screen-aria .dr-tech {
-    width: 100%;
-    justify-content: center;
-    margin-top: .9rem;
-    padding: .6rem .9rem;
-    border: 1px solid rgba(46, 230, 214, 0.26);
-    border-radius: 10px;
-    background: rgba(46, 230, 214, 0.06);
-}
-#screen-aria .dr-tech .ae-details-toggle__chev { transition: transform .18s ease; }
-#screen-aria .dr-tech[aria-expanded="true"] .ae-details-toggle__chev { transform: rotate(90deg); }
-
 /* Shared with the Aria screen: the forward control is the only thing the
    customer has to do, so it sits centred under everything. */
 #screen-aria .stage-nav--centred {
@@ -1430,30 +1418,12 @@ body.domain-page .ae-art__chips rect { fill: rgba(46, 230, 214, 0.05); }
 #screen-aria .stage-nav--centred .stage-nav__hint { order: 2; }
 #screen-aria .stage-nav--centred .stage-nav__btn { order: 1; min-width: 240px; }
 
-@media (prefers-reduced-motion: reduce) {
-    #screen-aria .dr-tech .ae-details-toggle__chev { transition: none; }
-}
-
-/* Last in the block, so it beats the margin-top these two declare for
-   themselves above.
-   Stretching a card to match its neighbours must not stretch what is inside
-   it. The extra height collects here — above the closing element — so cards
-   two and three end on their footnote and their button rather than trailing
-   off into empty space below them. */
-#screen-aria .dr-foot-note,
-#screen-aria .dr-tech { margin-top: auto; }
-
-/* The disclosure no longer sits in a card. Centred under the two that remain,
-   because it is the only route back to the workbench and a control that hides
-   in a corner is one nobody finds. */
-#screen-aria .dr-tech--loose {
-    /* flex + fit-content, not inline-flex: auto margins do not centre an
-       inline box, and it sat against the left edge. */
-    display: flex;
-    width: fit-content;
-    min-width: 240px;
-    margin: 0 auto 1.6rem;
-}
+/* Last in the block, so it beats the margin-top it declares for itself
+   above. Stretching a card to match its neighbours must not stretch what is
+   inside it. The extra height collects here — above the closing element — so
+   the cards end on their footnote rather than trailing off into empty space
+   below them. */
+#screen-aria .dr-foot-note { margin-top: auto; }
 
 /* Wraps to one column before either card gets too narrow to read. */
 @media (max-width: 900px) {

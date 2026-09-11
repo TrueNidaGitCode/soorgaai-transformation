@@ -305,8 +305,16 @@ window.fetch = function (url, opts) {
   }
   if (u.includes('/arth-selection'))    return J({ saved: true, selection: { displayName: 'Gemini 3.8 Flash' } });
   if (u.includes('/governance-review')) return J({ acknowledged: true });
-  if (u.includes('/infrastructure'))    return J({ deployment: DEP }, 200);
-  if (u.includes('/deployment'))        return J({ deployment: DEP });
+  if (u.includes('/infrastructure')) {
+    // Preparing answers with a prepared record, whatever the fixture started
+    // as; the probe counts the calls to prove Confirm & Continue prepares.
+    window.__prepared = (window.__prepared || 0) + 1;
+    // Remembered, so re-entering the stage reads the prepared record back,
+    // as the real server would.
+    window.__preparedDep = Object.assign({}, DEP, { status: 'prepared', preparedAt: new Date().toISOString(), hosting: 'svarg' });
+    return J({ deployment: window.__preparedDep }, 201);
+  }
+  if (u.includes('/deployment'))        return J({ deployment: window.__preparedDep || DEP });
   if (u.includes('/deploy'))            return J({ deployment: { ...DEP, status: 'live', url: 'https://svarg-tenant-000001.up.railway.app', appAttached: true, liveAt: new Date().toISOString() }, gatewayToken: 'svd_' + '0'.repeat(48) }, 200);
   if (u.includes('/transformation-blueprint')) return J(BP);
   if (u.includes('/project-manifest'))  return J(MANIFEST);
@@ -503,7 +511,7 @@ setTimeout(async function () {
     // with the same classes read the accent immediately. What this check is
     // for is whether the RULE applies; the clock is the harness's problem.
     var noTransitions = document.createElement('style');
-    noTransitions.textContent = '* { transition: none !important; }';
+    noTransitions.textContent = '* { transition: none !important; animation: none !important; }';
     document.head.appendChild(noTransitions);
     void document.body.offsetWidth;
 
@@ -646,11 +654,11 @@ setTimeout(async function () {
     // is the specific regression worth pinning: dividing by the connectable
     // subset rendered six required datasets as "0 of 0".
     if (out.screen === 'aria') {
-      // The screen now has two pages. Once data is prepared it shows the
-      // report and puts the workbench behind "View technical details", so
-      // everything below this — the table, the tabs, the sample batch — is
-      // only reachable with that open. Assert the report first, then open the
-      // workbench and carry on as before.
+      // The screen has two pages. Once data is prepared it shows the report
+      // and the workbench is gone from the page -- the "View technical
+      // details" disclosure that used to open it went as not useful. Assert
+      // the report first, then unhide the workbench by hand for the
+      // structural checks below, and put it away again after.
       var post = document.getElementById('aria-postrun');
       out.postRun = post && !post.hidden ? 'shown' : 'hidden';
       if (post && !post.hidden) {
@@ -685,14 +693,13 @@ setTimeout(async function () {
         out.postNote = (noteEl ? noteEl.textContent : '').replace(/\s+/g, ' ').trim().slice(0, 60);
         if (out.postRows && !out.postNote) bad('the report lost its data-handling note');
 
-        var dt = document.getElementById('aria-details-toggle');
-        if (!dt) bad('the report has no way back to the workbench');
-        else {
-          dt.click();
-          await new Promise(function (r) { setTimeout(r, 150); });
-          var during = document.getElementById('aria-during');
-          if (during && during.hidden) bad('"View technical details" did not open the workbench');
+        if (document.getElementById('aria-details-toggle')) bad('"View technical details" is back on the report');
+        if ([].some.call(scr.querySelectorAll('button, a'), function (b) { return /technical details/i.test(b.textContent); })) {
+          bad('a "technical details" control is on the screen');
         }
+        var during = document.getElementById('aria-during');
+        if (during && !during.hidden) bad('the workbench is still shown under the report');
+        if (during) during.hidden = false;
       }
 
       var reqTable = (document.getElementById('aria-required-body') || {}).closest ? document.getElementById('aria-required-body').closest('table') : null;
@@ -903,6 +910,10 @@ setTimeout(async function () {
           // Exactly one. A tab that shows its own panel without hiding the
           // previous one looks like the wrong panel opened, and is invisible
           // to a check that only asks whether the right one appeared.
+          // The batch run re-rendered the report, which puts the workbench
+          // away again; open it by hand once more so the panels can be seen.
+          var during2 = document.getElementById('aria-during');
+          if (during2 && out.postRun === 'shown') during2.hidden = false;
           var visible = [].filter.call(
             document.querySelectorAll('#screen-aria .aria-tabpanel'),
             function (p) { return p.offsetParent !== null; }
@@ -927,13 +938,9 @@ setTimeout(async function () {
 
       // Put the workbench away again. The screenshot is taken by a separate
       // run of this same probe, so whatever state it finishes in is the state
-      // that gets eyeballed — leaving it expanded means never seeing the page
+      // that gets eyeballed — leaving it open means never seeing the page
       // the customer actually lands on.
-      var dt2 = document.getElementById('aria-details-toggle');
-      if (dt2 && dt2.getAttribute('aria-expanded') === 'true') {
-        dt2.click();
-        await new Promise(function (r) { setTimeout(r, 150); });
-      }
+      if (out.postRun === 'shown' && during) during.hidden = true;
 
       // Opening the workbench scrolls to it, and that scroll outlives the
       // close. The screenshot comes from a run of this same probe, so a page
@@ -1341,6 +1348,58 @@ setTimeout(async function () {
       pick('auto').click();
       if (!isOn('auto')) bad('a selectable class could not be chosen after the refusal');
       if (noteText()) bad('the lock message survived choosing a selectable class');
+
+      // "View technical details" is gone, and with it the only Prepare
+      // button. Confirm & Continue has to prepare the environment itself --
+      // Yusu's Go Live is closed until one exists -- and then move on to the
+      // next stage, which is the data stage (key aria), not Eame. It used to
+      // dispatch eame:show, a leftover from before the model stage was moved
+      // second, which skipped the data stage entirely.
+      if ([].some.call(scr.querySelectorAll('button, a'), function (b) { return /technical details/i.test(b.textContent); })) {
+        bad('a "technical details" control is on the screen');
+      }
+      // The last click above re-ran the recommendation; wait for it to land
+      // (a round trip, under CHECK_LATENCY), or Confirm is still disabled for
+      // want of a model.
+      var confirm = document.getElementById('arth-confirm-btn');
+      for (var cw = 0; cw < 40 && confirm && confirm.disabled; cw++) {
+        await new Promise(function (r) { setTimeout(r, 100); });
+      }
+      out.confirm = confirm ? (confirm.disabled ? 'disabled: ' : '') + confirm.textContent.trim() : 'missing';
+      if (!confirm || confirm.disabled) bad('Confirm & Continue is not clickable with a model chosen: ' + out.confirm);
+      else {
+        var showsBefore = (window.__shows || []).length;
+        confirm.click();
+        // Save, prepare, the 900ms pause, then the reveal: three round trips
+        // and a beat. Polled rather than slept, so latency does not fail it.
+        for (var pw = 0; pw < 60 && (window.__shows || []).length === showsBefore; pw++) {
+          await new Promise(function (r) { setTimeout(r, 100); });
+        }
+        out.prepared = window.__prepared || 0;
+        if (!window.__prepared) bad('Confirm & Continue did not prepare the environment');
+        var after = (window.__shows || []).slice(showsBefore).map(function (x) { return x.split('@')[0]; });
+        out.confirmLeadsTo = after.join(',') || 'nowhere';
+        if (after[0] !== 'aria') bad('after Confirm the screen went to [' + out.confirmLeadsTo + '], expected the data stage (aria)');
+        var envPill = (document.getElementById('arth-hero-pill') || {}).textContent || '';
+        if (!/environment ready/i.test(envPill)) bad('the hero still says "' + envPill + '" after preparing');
+
+        // Back to this screen for the screenshot, which comes from a separate
+        // run of this same probe: what it shows is the prepared state, which
+        // is the one worth eyeballing. Re-entry goes through the journey, the
+        // way a customer would come back.
+        var backStep = document.querySelector('.rp-journey .pw-step[data-goto="arth"]');
+        var showsNow = (window.__shows || []).length;
+        if (backStep) backStep.click();
+        // The show fires at dispatch; the record it reads arrives a round
+        // trip later. Wait for the words, not the event.
+        var pillEl = document.getElementById('arth-hero-pill');
+        for (var bw = 0; bw < 40 && !((window.__shows || []).length > showsNow && /environment ready/i.test(pillEl ? pillEl.textContent : '')); bw++) {
+          await new Promise(function (r) { setTimeout(r, 100); });
+        }
+        var backPill = pillEl ? pillEl.textContent : '';
+        out.reentry = backPill;
+        if (!/environment ready/i.test(backPill)) bad('re-entering the stage shows "' + backPill + '", expected the prepared environment');
+      }
     }
 
   } catch (e) { bad('probe threw: ' + e.message); }
@@ -1398,7 +1457,7 @@ async function checkScreen(screen) {
     // CHECK_WINDOW lets a run capture something that sits below the fold at
     // the default height — a panel further down a long screen, say.
     const win = process.env.CHECK_WINDOW || '1440,1000';
-    const common = ['--headless', '--disable-gpu', `--window-size=${win}`, '--virtual-time-budget=9000'];
+    const common = ['--headless', '--disable-gpu', `--window-size=${win}`, `--virtual-time-budget=${9000 + Number(process.env.CHECK_LATENCY || 0) * 8}`];
     await chrome([...common, `--screenshot=${path.join(SHOTS, screen + '.png')}`, url]);
     const dom = await chrome([...common, '--dump-dom', url]);
     const m = dom.match(/<title>CHECK ([\s\S]*?)<\/title>/);
@@ -1436,7 +1495,8 @@ for (const screen of list) {
         report ${r.postRun} · ${r.postRows} rows · ${r.postSources} sources · cards ${r.cardHeights}
         note "${r.postNote}" · dial "${r.postDial}"
         batch ${r.batchProgress} · targets "${r.batch}"` : '')
-    + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}` : '')
+    + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}
+        confirm "${r.confirm}" · prepares ${r.prepared ?? '?'}x · then ${r.confirmLeadsTo ?? '?'}` : '')
     // Its own clause, not nested inside the arth one — nested, it could only
     // ever print for a screen that also had model classes, so the eame line
     // was unreachable.

@@ -506,7 +506,7 @@ body.domain-page #opp-approve-btn:disabled { opacity: 0.4; cursor: default; box-
 body.domain-page .sc-lane {
   position: fixed;
   top: 146px; right: 0; bottom: 0;
-  width: 404px;
+  width: var(--ws-panel-w);
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -704,7 +704,7 @@ body.domain-page .sc-send {
   /* margin, not padding: padding insets the text but leaves the element
      itself running under the docked panel, so anything measuring the box —
      a click target, an overlap check — still finds it covered. */
-  body.domain-page .rp-main { margin-right: 404px; padding-right: 34px; }
+  body.domain-page .rp-main { margin-right: var(--ws-panel-w); padding-right: 34px; }
 }
 
 @media (max-width: 1179px) {
@@ -727,4 +727,162 @@ body.domain-page .sc-send {
 @media (prefers-reduced-motion: reduce) {
   body.domain-page #opp-approve-btn:hover,
   body.domain-page #opp-view-blueprint-btn:hover { transform: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Cob screen — second pass
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── The two columns end together ─────────────────────────────────────────
+   The chat panel is fixed to the viewport bottom; the content column ended
+   wherever its content did. So "Move to Aria" floated at whatever height the
+   opportunity happened to reach, which looked accidental beside a panel that
+   always reached the floor. The column now runs the same height, and the
+   stage bar is pushed to its foot. */
+
+body.domain-page .rp-main {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 146px);
+  box-sizing: border-box;
+}
+
+body.domain-page .stage-nav {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding-top: 26px;
+  border-top: 1px solid rgba(34, 217, 232, 0.1);
+}
+
+/* The hint beside it said "Opportunity approved — Aria is ready for your data",
+   which restated the state of a button sitting next to it. */
+body.domain-page .stage-nav__hint { display: none; }
+
+/* Move to Aria wears the same gradient as every other action on the screen.
+   It was the one primary control in a different colour, which read as a
+   different kind of thing. */
+body.domain-page .stage-nav__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 34px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--ws-accent-2), var(--ws-accent));
+  color: #032027;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 30px -10px var(--ws-glow);
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+
+body.domain-page .stage-nav__btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 38px -10px var(--ws-glow);
+}
+
+body.domain-page .stage-nav__btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+
+/* ── Approve is gone ──────────────────────────────────────────────────────
+   The recommendation is approved on arrival — see workspaceShell.js. A button
+   whose only correct answer is yes is a step, not a decision. */
+body.domain-page #opp-approve-btn,
+body.domain-page .ws-advance { display: none; }
+
+/* ── Other opportunities, on request ──────────────────────────────────────
+   Hidden until the link above asks for them. The recommendation is the point
+   of the screen; a full second list under it competes with the thing it is
+   recommending. */
+body.domain-page #opp-others-wrap:not(.ws-others--shown) { display: none !important; }
+
+/* ── The journey stops before the panel ───────────────────────────────────
+   It ran the full width with the panel starting below it, which was correct
+   arithmetic and looked wrong: the last stage sat over the panel's column and
+   read as though it belonged to the chat. */
+@media (min-width: 1180px) {
+  body.domain-page .rp-journey { right: var(--ws-panel-w); }
+}
+
+/* The reservation belongs on the shell, not the column inside it.
+   .rp-main carried a margin-right to clear the docked panel, and the stage bar
+   still finished past the panel's left edge — a margin on one child does not
+   constrain a sibling, and every rule that touched .rp-main afterwards was one
+   more chance for it to be dropped. Padding the container is a bound nothing
+   inside can exceed. */
+@media (min-width: 1180px) {
+  body.domain-page .rp-shell { padding-right: var(--ws-panel-w); }
+  body.domain-page .rp-main { margin-right: 0; }
+}
+
+/* domain.css bounds this with max-width: calc(70vw - 100px) — written when the
+   portrait lane owned the right 30% of the viewport. The panel is a fixed
+   404px now, so a proportional bound is both wrong and unpredictable: it moves
+   with the window while the thing it is avoiding does not. The column it sits
+   in is already bounded, so it simply fills that. */
+body.domain-page .stage-nav { max-width: none; width: 100%; }
+
+/* !important because domain.css bounds this more specifically than the two
+   class names here can reach. The value is the principle rather than a number:
+   fill the column, which the shell already stops before the docked panel. A
+   fixed pixel bound would drift the moment either width changed. */
+body.domain-page .stage-nav {
+  /* Stated as arithmetic rather than inherited from a parent, because the
+     parents are laid out by selectors deeper than two class names can reach
+     and neither a margin on the column nor padding on the shell constrained
+     this. The sum is the screen minus the things that are not content: the
+     rail, the docked panel, and the column padding either side. */
+  max-width: calc(100vw - var(--ws-rail) - var(--ws-panel-w) - 104px) !important;
+}
+
+/* The panel's width, reserved on the shell.
+   domain.css lays these columns out with selectors more specific than two class
+   names, so the earlier padding-right never took. This is the one bound the
+   whole screen depends on — the docked panel is 404px and fixed, so the content
+   column must stop 404px from the right — and it is worth stating once,
+   unambiguously, rather than discovering it moved again three screens later. */
+@media (min-width: 1180px) {
+  body.domain-page .rp-shell { padding-right: var(--ws-panel-w) !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The overlap, at its root
+
+   Every screen reported the chat panel covering content by roughly the same
+   amount, and patching each element it touched was treating the symptom.
+
+   domain.css sizes .sc-panel at 440px, from when the panel floated inside a
+   proportional lane. Docking the lane at 404px left the panel 36px wider than
+   the thing containing it, so it hung out to the left over whatever was there.
+   The lane now matches, and the panel simply fills it.
+
+   The three proportional bounds below come from the same era: they reserved
+   30vw for a lane that no longer exists and no longer moves with the window.
+   All of them become the one real number — the panel's width.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+body.domain-page {
+  --ws-panel-w: 440px;
+}
+
+@media (min-width: 1180px) {
+  body.domain-page .sc-lane { width: var(--ws-panel-w); }
+  body.domain-page .sc-panel { width: 100%; max-width: none; min-width: 0; }
+
+  body.domain-page .rp-journey { right: var(--ws-panel-w); }
+  body.domain-page .rp-shell { padding-right: var(--ws-panel-w) !important; }
+
+  /* The old 70vw caps, restated against the panel that actually exists. */
+  body.domain-page .aria-body,
+  body.domain-page .stage-nav,
+  body.domain-page .eg-panel,
+  body.domain-page .rp-others-list,
+  body.domain-page .arth-card,
+  body.domain-page .host-card {
+    max-width: calc(100vw - var(--ws-rail) - var(--ws-panel-w) - 104px) !important;
+  }
 }

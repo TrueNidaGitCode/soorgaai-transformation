@@ -165,7 +165,7 @@ function wireOtherOpportunities() {
   actions.appendChild(link);
 
   link.addEventListener('click', () => {
-    wrap.style.display = '';
+    wrap.classList.add('ws-others--shown');
     wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
@@ -182,23 +182,42 @@ function wireOtherOpportunities() {
  * is not a property of the opportunity card — it is what you do once you accept
  * what the card says, and it belongs where the eye lands last.
  */
-function moveAdvanceButton() {
+/**
+ * The recommendation is approved on arrival.
+ *
+ * Approve was a button whose only correct answer was yes: the screen has
+ * already chosen an opportunity, explained why, and offers nothing to compare
+ * it against until you ask. Standing between the reader and the next stage to
+ * collect that answer is a step, not a decision.
+ *
+ * Done by pressing the real button rather than by enabling the one after it,
+ * because approval is recorded on the blueprint — Aria and everything past it
+ * read opportunityApproval.approved. Flipping the nav button on its own would
+ * move somebody forward into a stage that still believed nothing was chosen.
+ *
+ * Fires once, only when the blueprint is finished and not already approved.
+ * The button is hidden either way.
+ */
+function approveOnArrival() {
   const btn = document.getElementById('opp-approve-btn');
-  const card = document.querySelector('.rp-winner-card');
-  if (!btn || !card || document.querySelector('.ws-advance')) return;
+  if (!btn) return;
 
-  const row = document.createElement('div');
-  row.className = 'ws-advance';
-  card.after(row);
-  row.appendChild(btn);
+  const tryOnce = () => {
+    // disabled covers both "still generating" and "already approved" — the
+    // gate in blueprintGenerate.js sets it for both, which is exactly the
+    // condition under which this must not fire.
+    if (btn.disabled) return false;
+    btn.click();
+    return true;
+  };
 
-  // Renamed, not re-purposed: it still approves. "Continue to Provision" says
-  // where approving takes you, which "Approve" never did.
-  btn.innerHTML = 'Continue to Provision '
-    + '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" '
-    + 'stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/>'
-    + '<polyline points="12 5 19 12 12 19"/></svg>';
+  if (tryOnce()) return;
+  // Generation finishes after this runs, so wait for the gate to open.
+  const stop = new MutationObserver(() => { if (tryOnce()) stop.disconnect(); });
+  stop.observe(btn, { attributes: true, attributeFilter: ['disabled'] });
+}
 
+function relabelViewButton() {
   const view = document.getElementById('opp-view-blueprint-btn');
   if (view) {
     view.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
@@ -242,7 +261,8 @@ function init() {
   labelChatPanels();
   watchAccountInitial();
   wireOtherOpportunities();
-  moveAdvanceButton();
+  relabelViewButton();
+  approveOnArrival();
 }
 
 if (document.readyState === 'loading') {

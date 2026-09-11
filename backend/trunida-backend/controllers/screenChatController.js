@@ -18,6 +18,7 @@ import PersonalConfluenceConnection from '../models/PersonalConfluenceConnection
 import { JIRA_SCOPES } from '../services/atlassianAuthService.js';
 import { askScreenChat } from '../services/screenChatService.js';
 import { recordExchange } from '../services/conversationMemoryService.js';
+import { learnFromConversation } from '../services/customerUnderstandingService.js';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -226,7 +227,19 @@ export async function screenChat(req, res) {
       screen,
       message: message.trim(),
       reply: result.reply,
-    });
+    })
+      // Learn only once the exchange is actually on disk, or the pass would
+      // read up to the previous turn and the watermark would carry on past
+      // it. Chained rather than fired alongside for that reason alone.
+      //
+      // learnFromConversation decides for itself whether this is worth a model
+      // call — it needs LEARN_THRESHOLD new turns first, so a short back and
+      // forth costs nothing. Both halves swallow their own failures.
+      .then(recorded => {
+        if (!recorded) return null;
+        return learnFromConversation({ userId: req.user._id, blueprintId });
+      })
+      .catch(err => console.error('[screenChat] learning pass failed:', err.message));
 
     return res.json(result);
 

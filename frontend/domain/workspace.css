@@ -1907,3 +1907,17 @@ body.domain-page .sc-panel {
 #screen-yusu .eg-card__headings { flex: 1 1 0%; min-width: 0; }
 #screen-yusu .eg-card__title { margin: 0 0 .2rem; font-size: 1rem; font-weight: 650; }
 #screen-yusu .eg-card__sub { margin: 0; font-size: .8rem; line-height: 1.45; color: var(--ws-text-dim, #9fb3bb); }
+
+/* The build in flight. Replaces the Build panel: no button, just what is
+   happening and, after three failed attempts, the one thing left to do. */
+#screen-eame .eg-progress {
+    margin: 0 0 1.2rem;
+    padding: 1rem 1.2rem;
+    border-radius: 14px;
+    background: rgba(12, 26, 30, 0.45);
+    border: 1px solid rgba(93, 143, 155, 0.2);
+}
+#screen-eame .eg-progress__line { margin: 0 0 .7rem; font-size: .9rem; color: var(--ws-text-dim, #9fb3bb); }
+#screen-eame .eg-progress .eg-gates { margin: 0 0 .6rem; }
+#screen-eame .eg-progress .eg-build__note { margin: .4rem 0 0; }
+#screen-eame #eame-retry-btn { margin-top: .9rem; }

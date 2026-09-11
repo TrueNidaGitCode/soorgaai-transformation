@@ -51,9 +51,13 @@ function renderBreadcrumb(bp) {
   const all = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
   const rec = brief.recommendedStartingPoint || '';
   const label = all.find(n => n && rec.includes(n)) || rec;
-  if (!label) { crumb.style.display = 'none'; return null; }
-  crumb.style.display = '';
-  document.getElementById('eame-recap-name').textContent = label;
+  // The card this used to fill is gone from the screen. The label is still
+  // resolved because the app-name fallback reads it; the DOM writes below are
+  // guarded so they are no-ops without the elements.
+  if (!label) { if (crumb) crumb.style.display = 'none'; return null; }
+  if (crumb) crumb.style.display = '';
+  const nameEl = document.getElementById('eame-recap-name');
+  if (nameEl) nameEl.textContent = label;
 
   // The line under the name is Cob's justification for choosing it — the
   // recommended-starting-point sentence with the name itself taken out, so
@@ -262,24 +266,53 @@ function renderGates(build) {
 }
 
 function renderBuildState(build) {
-  const btn = document.getElementById('eame-build-btn');
   const sub = document.getElementById('eame-build-sub');
   const note = document.getElementById('eame-build-note');
   const badge = document.getElementById('eame-gen-status');
-  if (!btn) return;
+  const progress = document.getElementById('eame-progress');
+  const retry = document.getElementById('eame-retry-btn');
+  const heroTitle = document.getElementById('eame-hero-title');
+  const heroSub = document.getElementById('eame-hero-sub');
+  const heroMark = document.getElementById('eame-hero-mark');
 
   renderGates(build);
 
   const building = build.status === 'building';
+  const passed = build.status === 'passed';
+  const failed = build.status === 'failed';
 
-  // Six green ticks say what "Verified — it runs" already says. While a build
-  // is running or has failed, the gates are the only thing telling the
-  // customer how far it got, so they stay; once it has passed they fold away
-  // and the report below leads.
+  // The progress block exists for a build in flight or one that did not make
+  // it. Before anything has started there is nothing to report, and after a
+  // pass the report below leads.
+  if (progress) progress.style.display = building || failed ? '' : 'none';
   const gatesEl = document.getElementById('eame-gates');
-  if (gatesEl) gatesEl.style.display = build.status === 'passed' ? 'none' : '';
-  btn.disabled = building;
-  btn.textContent = building ? 'Building…' : (build.status === 'none' ? 'Build' : 'Rebuild');
+  if (gatesEl) gatesEl.style.display = passed ? 'none' : '';
+
+  // The only button on the screen, and it appears only once Eame has already
+  // tried three times -- each attempt sending the failing files and the
+  // errors back to the model. A fourth attempt on every page load would be a
+  // cost trap; a fourth attempt when a person decides to is a decision.
+  if (retry) retry.style.display = failed ? '' : 'none';
+
+  // The hero is the state. A build costs a minute or more of a customer's
+  // attention, and "Generate the Application" tells them nothing about
+  // whether it is happening.
+  if (heroTitle && heroSub) {
+    if (passed) {
+      heroTitle.textContent = 'Your application is built';
+      heroSub.textContent = 'Written, installed and started to prove it runs. Review it below, then move on to Yusu.';
+    } else if (building) {
+      heroTitle.textContent = 'Building your application';
+      heroSub.textContent = 'Eame is writing the code, then installing and starting it to prove it runs.';
+    } else if (failed) {
+      heroTitle.textContent = 'The application could not be built';
+      heroSub.textContent = 'Eame tried three times, fixing what failed each time, and it still did not run. The details are below.';
+    } else {
+      heroTitle.textContent = 'Generate the Application';
+      heroSub.textContent = 'Turn the approved architecture into a production-ready application.';
+    }
+  }
+  if (heroMark) heroMark.classList.toggle('ae-hero__mark--pending', !passed);
 
   if (badge) {
     badge.innerHTML = '<span class="eg-status__dot"></span>' + (
@@ -301,12 +334,30 @@ function renderBuildState(build) {
       ? ` — ${mins} min so far${mins >= 5 ? ', longer than usual' : ''}`
       : '';
 
+    // Attempt two onwards is a repair: the previous attempt's failures went
+    // back to the model with the files they named. Saying so is the
+    // difference between "it is trying again" and "it is fixing what broke".
+    const attempt = build.progress?.attempt || 1;
+    const repairing = building && attempt > 1
+      ? `Fixing what failed in attempt ${attempt - 1}, then `
+      : '';
+
     sub.textContent = building
-      ? `Attempt ${build.progress?.attempt || 1}: ${build.progress?.phase || 'working'}${
+      ? `${repairing}attempt ${attempt} of 3: ${build.progress?.phase || 'working'}${
           build.progress?.detail ? ' — ' + build.progress.detail : ''}${elapsed}`
-      : build.status === 'passed'
+      : passed
         ? `Written for "${build.useCase || 'this use case'}" and verified by running it.`
-        : 'Eame writes the code for this use case, then installs and starts it to prove it runs.';
+        : failed
+          // The repair history, not the reason -- the note below already
+          // carries the reason. This is the part the customer cannot see
+          // anywhere else: that each attempt fixed the previous one's
+          // failure and got further, or did not.
+          ? ((build.history || []).length
+              ? 'Where each attempt stopped: '
+                + build.history.map(h => `${h.attempt} — ${h.stage}`).join(', ') + '.'
+              : (build.reason || 'The application did not pass verification.'))
+          : '';
+    if (repairing) sub.textContent = sub.textContent.charAt(0).toUpperCase() + sub.textContent.slice(1);
   }
 
   // "Application generated successfully — your running project is ready for
@@ -352,6 +403,17 @@ function renderBuildState(build) {
   }
 }
 
+/**
+ * Which blueprint this visit has already started a build for.
+ *
+ * Arriving at Eame with nothing built starts the build -- there is no button.
+ * But "nothing built" is also the state after a start request that has not
+ * been written yet, and pollBuild runs every 2.5 seconds, so without this a
+ * slow first response would start a second build behind the first. One start
+ * per blueprint per visit; the server's own one-at-a-time lock is the backstop.
+ */
+let _autoStartedFor = null;
+
 async function pollBuild() {
   if (!_bp?._id) return;
   try {
@@ -364,6 +426,18 @@ async function pollBuild() {
       return;
     }
     clearTimeout(_pollTimer);
+
+    // Nothing built and nothing started: start it. A build that has FAILED is
+    // deliberately not restarted here -- Eame already made three attempts,
+    // fixing what failed between each, and a fourth on every page load would
+    // spend a generation per visit on a project that does not work. That one
+    // is the customer's call, and it is the only button on the screen.
+    if (build.status === 'none' && _autoStartedFor !== _bp._id) {
+      _autoStartedFor = _bp._id;
+      await startBuild();
+      return;
+    }
+
     if (build.status === 'passed') renderFiles(build);
     else updateEameGate(false);
   } catch (err) {
@@ -372,16 +446,17 @@ async function pollBuild() {
 }
 
 async function startBuild() {
-  const btn = document.getElementById('eame-build-btn');
-  btn.disabled = true;
-  btn.textContent = 'Building…';
+  const retry = document.getElementById('eame-retry-btn');
+  if (retry) { retry.disabled = true; retry.textContent = 'Starting…'; }
   document.getElementById('eame-error').style.display = 'none';
   try {
     await api(`/strategy-canvas/transformation-blueprint/${_bp._id}/eame-build`, { method: 'POST', body: '{}' });
     pollBuild();
   } catch (err) {
-    btn.disabled = false;
-    btn.textContent = 'Build';
+    // Entitlement, a build already running, a server fault: each comes with
+    // its own sentence from the server, and none of them should be retried
+    // automatically. Shown, and the poll stops here until the customer acts.
+    if (retry) { retry.disabled = false; retry.textContent = 'Try again'; }
     showError(err.message);
   }
 }
@@ -514,10 +589,11 @@ async function renderBadges(bp) {
 let _wired = false;
 
 function wire() {
-  const buildBtn = document.getElementById('eame-build-btn');
-  if (buildBtn && !buildBtn.dataset.wired) {
-    buildBtn.dataset.wired = '1';
-    buildBtn.addEventListener('click', startBuild);
+  // The one button, shown only after three failed attempts.
+  const retryBtn = document.getElementById('eame-retry-btn');
+  if (retryBtn && !retryBtn.dataset.wired) {
+    retryBtn.dataset.wired = '1';
+    retryBtn.addEventListener('click', startBuild);
   }
 
   if (_wired) return;
@@ -538,7 +614,10 @@ function wire() {
     if (!open) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 
-  document.getElementById('eame-view-details').addEventListener('click', () => {
+  // The use-case card and its View Details link are gone from this screen;
+  // Cob's screen names the use case. Guarded rather than deleted so a page
+  // that still has the element keeps working.
+  document.getElementById('eame-view-details')?.addEventListener('click', () => {
     window.open('/domain/domain.html?openBlueprint=1', '_blank', 'noopener');
   });
 

@@ -252,6 +252,22 @@ window.fetch = function (url, opts) {
     // customer sees, so it has to be renderable here too.
     //   EAME_BUILD_STATE=none node scripts/check_screens.mjs eame
     if (BUILD_STATE === 'none') return J({ status: 'none' });
+    // EAME_BUILD_STATE=failed — three attempts, each repairing what the one
+    // before it broke, and still no running application. The state in which
+    // the screen's only button appears.
+    if (BUILD_STATE === 'failed') return J({
+      status: 'failed',
+      progress: { attempt: 3, phase: 'failed', detail: 'boot: Cannot find module ./services/matchService.js', startedAt: null },
+      verifiedTo: 'install', skipped: [], useCase: 'Retrieval-Augmented Semantic Matching for Defects', provider: 'gemini',
+      reason: 'The application did not pass verification in 3 attempts. Last failure at the boot stage.',
+      failures: ['boot: Cannot find module ./services/matchService.js', 'imported from controllers/matchController.js'],
+      warnings: ['No repository was read, so the generated code cannot be matched to entities the customer already has.'],
+      history: [
+        { attempt: 1, stage: 'local-imports', failures: ['controllers/matchController.js imports ./services/match.js which does not exist'], wrote: ['models/Defect.js', 'services/matchService.js', 'controllers/matchController.js', 'routes/match.js'] },
+        { attempt: 2, stage: 'boot',          failures: ['boot: matchService is not a function'], wrote: ['controllers/matchController.js'] },
+        { attempt: 3, stage: 'boot',          failures: ['boot: Cannot find module ./services/matchService.js'], wrote: ['controllers/matchController.js'] },
+      ],
+    });
     // EAME_BUILD_STATE=stalled — a model call that has not returned. The lock
     // holds for twenty minutes and nothing writes progress meanwhile, so the
     // elapsed time is the only thing that can say it is stuck.
@@ -351,8 +367,8 @@ const SCREENS = {
   // A build in flight has no files either — demanding a tree of one would be
   // demanding the fabricated project this screen was fixed to stop showing.
   eame: { id: 'screen-eame',  launcher: 'Chat with Eame',
-          must: ['none', 'stalled'].includes(process.env.EAME_BUILD_STATE)
-            ? ['.rp-journey', '#eame-build-btn', '.eg-gate']
+          must: ['none', 'stalled', 'failed'].includes(process.env.EAME_BUILD_STATE)
+            ? ['.rp-journey', '#eame-progress', '.eg-gate']
             : ['.rp-journey', '#eame-stats .ae-tile', '.eg-tree__row', '#eame-onward'] },
   yusu: { id: 'screen-yusu',  launcher: 'Chat with Yusu',  must: ['.rp-journey', '.eg-usecase__name', '#yusu-golive-btn', '#yusu-checks'] },
 };
@@ -814,9 +830,12 @@ setTimeout(async function () {
         // No backslash classes here: this probe is built inside a template
         // literal, and \b arrives as a backspace — the same way \s was eaten
         // further down. Spelt out as character classes instead.
+        // "Not live" contains the word; it is the opposite claim. A positive
+        // claim is the word without a negation in front of it.
         var saysLive = /(^|[^a-z])live([^a-z]|$)/i;
+        var negated = /(^|[^a-z])(not|isn.t|never) +live([^a-z]|$)/i;
         var saysIsLive = /(^|[^a-z])is live([^a-z]|$)/i;
-        if (saysLive.test(pill)) bad('hero pill says "' + pill.trim() + '" on a deployment that is not live');
+        if (saysLive.test(pill) && !negated.test(pill)) bad('hero pill says "' + pill.trim() + '" on a deployment that is not live');
         if (saysIsLive.test(title)) bad('hero title says live on a deployment that is not live: ' + title.trim());
         var footEl = document.getElementById('yusu-foot');
         if (footEl && footEl.style.display !== 'none') bad('the "Your application is live" closing line is shown on a deployment that is not live');
@@ -884,7 +903,7 @@ setTimeout(async function () {
         if (claims.length) {
           bad('the screen claims a build exists with nothing built: ' + out.falseClaims);
         }
-      } else if (BUILD_STATE !== 'stalled' && passed !== 6) {
+      } else if (BUILD_STATE === 'passed' && passed !== 6) {
         // A build still running has passed no gates yet, correctly. Only a
         // build that reported success owes six.
         bad(passed + ' of ' + gates.length + ' gates show as passed on a passed build');
@@ -907,7 +926,7 @@ setTimeout(async function () {
 
       var noteEl = document.getElementById('eame-build-note');
       out.note = noteEl ? noteEl.textContent.replace(/s+/g, ' ').trim().slice(0, 70) : 'missing';
-      if (BUILD_STATE !== 'none' && noteEl && noteEl.style.display !== 'none') {
+      if (BUILD_STATE === 'passed' && noteEl && noteEl.style.display !== 'none') {
         // On a build that worked, caveats must say so before listing anything.
         if (!/The build passed/.test(noteEl.textContent)) {
           bad('caveats on a passed build are unlabelled: ' + out.note);
@@ -947,8 +966,27 @@ setTimeout(async function () {
       // completion without reference to verification is the same bug.
       if (/Generation Complete/.test(out.badge)) bad('the status badge still claims completion unconditionally');
 
-      var btn = document.getElementById('eame-build-btn');
-      if (!btn) bad('no build control on the Eame screen');
+      // There is no Build button any more: the build starts on arrival, and
+      // after three failed repair attempts the one control is Try again. It
+      // must show then and only then -- a retry offered on a build in flight
+      // starts a second one behind the first.
+      if (document.getElementById('eame-build-btn')) bad('the Build button is back');
+      var retryEl = document.getElementById('eame-retry-btn');
+      var retryShown = retryEl && retryEl.style.display !== 'none';
+      out.retry = retryShown ? 'shown' : 'hidden';
+      if (BUILD_STATE === 'failed' && !retryShown) bad('a build that failed three times offers no way to try again');
+      if (BUILD_STATE !== 'failed' && retryShown) bad('Try again is offered on a build that has not failed');
+      var progEl = document.getElementById('eame-progress');
+      out.progress = progEl && progEl.style.display !== 'none' ? 'shown' : 'hidden';
+      if (BUILD_STATE === 'passed' && out.progress === 'shown') bad('the progress block is still shown after a pass');
+      if ((BUILD_STATE === 'stalled' || BUILD_STATE === 'failed') && out.progress !== 'shown') bad('the progress block is hidden on a build that is ' + BUILD_STATE);
+      // And the pieces that were removed stay removed.
+      if (document.getElementById('eame-breadcrumb')) bad('the use-case card is back on Eame');
+      if (document.getElementById('eame-app-name')) bad('the name field is back on Eame');
+      var heroT = (document.getElementById('eame-hero-title') || {}).textContent || '';
+      out.heroTitle = heroT.trim().slice(0, 40);
+      if (BUILD_STATE === 'failed' && !/could not be built/i.test(heroT)) bad('hero does not say the build failed: ' + heroT);
+      if (BUILD_STATE === 'passed' && !/is built/i.test(heroT)) bad('hero does not say the build passed: ' + heroT);
     }
 
     // Cob's engagement note. It states what the whole blueprint was steered
@@ -1206,7 +1244,7 @@ for (const screen of list) {
     // ever print for a screen that also had model classes, so the eame line
     // was unreachable.
     + (r.gates
-        ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}" · cards ${r.eameCards || "-"} · tiles ${r.tiles ?? "-"} · banner ${r.readyBanner || "-"}`
+        ? `\n        gates ${r.gatesPassed}/${r.gates} passed · badge "${r.badge}" · cards ${r.eameCards || "-"} · tiles ${r.tiles ?? "-"} · banner ${r.readyBanner || "-"} · hero "${r.heroTitle || "-"}" · progress ${r.progress || "-"} · retry ${r.retry || "-"}`
           + (r.freshShows ? ` · fresh shows ${r.freshShows} · claims ${r.falseClaims}` : '')
           + (r.note && r.note !== 'missing' ? `\n        note "${r.note}"` : '')
         : '')

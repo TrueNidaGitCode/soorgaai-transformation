@@ -306,6 +306,10 @@ body.domain-page .pw-step__role {
   white-space: nowrap;
 }
 
+/* --active is the class the markup and renderJourneyIndicator actually
+   set; --current and is-active never were. Styling only those two meant the
+   stage you were on looked exactly like the ones you were not. */
+body.domain-page .pw-step--active .pw-step__node,
 body.domain-page .pw-step--current .pw-step__node,
 body.domain-page .pw-step.is-active .pw-step__node {
   border-color: var(--ws-accent);
@@ -314,8 +318,18 @@ body.domain-page .pw-step.is-active .pw-step__node {
   box-shadow: 0 0 0 4px rgba(34, 217, 232, 0.1), 0 0 22px -4px var(--ws-glow);
 }
 
+body.domain-page .pw-step--active .pw-step__label,
 body.domain-page .pw-step--current .pw-step__label,
 body.domain-page .pw-step.is-active .pw-step__label { color: var(--ws-accent); }
+
+/* Stages already passed: the accent on the ring, without the glow or the
+   label colour that mark the one you are on. Three states, three looks --
+   done, here, not yet. */
+body.domain-page .pw-step--done .pw-step__node {
+  border-color: rgba(34, 217, 232, 0.55);
+  color: var(--ws-accent);
+  background: rgba(34, 217, 232, 0.08);
+}
 
 body.domain-page .rp-journey__locked { opacity: 0.55; }
 body.domain-page .rp-journey__locked:hover { opacity: 0.8; }
@@ -796,13 +810,13 @@ body.domain-page .ws-advance { display: none; }
    recommending. */
 body.domain-page #opp-others-wrap:not(.ws-others--shown) { display: none !important; }
 
-/* ── The journey stops before the panel ───────────────────────────────────
-   It ran the full width with the panel starting below it, which was correct
-   arithmetic and looked wrong: the last stage sat over the panel's column and
-   read as though it belonged to the chat. */
-@media (min-width: 1180px) {
-  body.domain-page .rp-journey { right: var(--ws-panel-w); }
-}
+/* ── The journey runs to the right edge ───────────────────────────────────
+   It used to stop at the chat panel, on the theory that the last stage sat
+   over the panel's column and read as though it belonged to the chat. In
+   practice the bar ending three-quarters of the way across read as a bar
+   that had not finished loading. It runs the full width now; the panel
+   starts below it (top: 146px), so nothing overlaps, and the connectors are
+   flex: 1 so the five stages spread across the width they are given. */
 
 /* The reservation belongs on the shell, not the column inside it.
    .rp-main carried a margin-right to clear the docked panel, and the stage bar
@@ -869,7 +883,6 @@ body.domain-page {
   body.domain-page .sc-lane { width: var(--ws-panel-w); }
   body.domain-page .sc-panel { width: 100%; max-width: none; min-width: 0; }
 
-  body.domain-page .rp-journey { right: var(--ws-panel-w); }
   body.domain-page .rp-shell { padding-right: var(--ws-panel-w) !important; }
 
   /* The old 70vw caps, restated against the panel that actually exists. */
@@ -918,10 +931,8 @@ body.domain-page .sc-lane {
 }
 
 @media (min-width: 1180px) {
-  /* The journey stops before the panel so the last stage is not sitting in
-     the chat's column, and the panel starts below the journey so neither is
-     ever on top of the other. */
-  body.domain-page .rp-journey { right: var(--ws-panel-w) !important; }
+  /* The panel starts below the journey, so the journey can run the full
+     width above it without either ever being on top of the other. */
   body.domain-page .sc-lane { width: var(--ws-panel-w) !important; }
 }
 

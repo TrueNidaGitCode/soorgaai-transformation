@@ -401,6 +401,64 @@ setTimeout(async function () {
     out.steps = nav.length;
     if (nav.length !== 5) bad('journey has ' + nav.length + ' steps, expected 5');
 
+    // The bar runs to the right edge. It used to stop at the chat panel, and
+    // three-quarters of a bar read as a bar that had not finished loading.
+    // clientWidth, not innerWidth: innerWidth counts the scrollbar, and a
+    // fixed element with right:0 correctly ends 15px before it.
+    var jr = scr.querySelector('.rp-journey');
+    var edge = document.documentElement.clientWidth;
+    if (jr) {
+      var jrect = jr.getBoundingClientRect();
+      out.journeyRight = Math.round(jrect.right) + '/' + edge;
+      if (edge - jrect.right > 2) {
+        bad('the journey bar stops ' + Math.round(edge - jrect.right) + 'px short of the right edge');
+      }
+    }
+
+    // On Cob the active class is added by JS once the blueprint has loaded.
+    // Wait for it to exist.
+    for (var w = 0; w < 40 && !scr.querySelector('.rp-journey .pw-step--active'); w++) {
+      await new Promise(function (r) { setTimeout(r, 100); });
+    }
+    // Then switch transitions off before reading any colour. The ring fades
+    // in over 180ms, and under headless Chrome's virtual clock a transition
+    // that starts after first paint never advances -- the node sat at its
+    // starting colour for two full seconds while a freshly created sibling
+    // with the same classes read the accent immediately. What this check is
+    // for is whether the RULE applies; the clock is the harness's problem.
+    var noTransitions = document.createElement('style');
+    noTransitions.textContent = '* { transition: none !important; }';
+    document.head.appendChild(noTransitions);
+    void document.body.offsetWidth;
+
+    // Exactly one stage is marked as the one you are on, and it is this one.
+    // The highlight rule used to target a class nothing set, so every stage
+    // looked the same and the bar could not tell you where you were.
+    var actives = [].filter.call(nav, function (s) { return s.classList.contains('pw-step--active'); });
+    out.activeStep = actives.map(function (s) { return s.dataset.goto; }).join(',') || 'none';
+    if (actives.length !== 1) bad(actives.length + ' stages marked active, expected 1: ' + out.activeStep);
+    else {
+      var node = actives[0].querySelector('.pw-step__node');
+      var ring = node ? getComputedStyle(node).borderColor : '';
+      var idle = scr.querySelector('.rp-journey .pw-step:not(.pw-step--active):not(.pw-step--done) .pw-step__node');
+      var idleRing = idle ? getComputedStyle(idle).borderColor : '';
+      out.activeRing = ring;
+      if (idle && ring === idleRing) bad('the active stage is drawn the same as an idle one (' + ring + ')');
+    }
+
+    // Every stage's ring is drawn and inside the bar. Spreading five stages
+    // across the full width put the last one at the far right, where a ring
+    // that overflows the bar or collapses to nothing is easy to miss by eye.
+    if (jr) {
+      var jb = jr.getBoundingClientRect();
+      [].forEach.call(nav, function (s) {
+        var nd = s.querySelector('.pw-step__node');
+        var rr = nd ? nd.getBoundingClientRect() : null;
+        if (!rr || rr.width < 20 || rr.height < 20) bad('stage ' + s.dataset.goto + ' has no visible ring');
+        else if (rr.right > jb.right + 1 || rr.left < jb.left - 1) bad('stage ' + s.dataset.goto + ' ring is outside the bar (' + Math.round(rr.left) + '-' + Math.round(rr.right) + ' vs ' + Math.round(jb.left) + '-' + Math.round(jb.right) + ')');
+      });
+    }
+
     var lane = scr.querySelector('.sc-lane');
     if (!lane) { bad('no character lane'); }
     else {
@@ -1231,7 +1289,7 @@ for (const screen of list) {
   if (!ok) failed++;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${screen.padEnd(6)}`
     + `css ${String(r.cssRules ?? '?').padStart(4)} rules · `
-    + `${r.steps ?? '?'} steps · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
+    + `${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"

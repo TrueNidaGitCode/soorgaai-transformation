@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=24">
+  <link rel="stylesheet" href="workspace.css?v=25">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
 </head>
@@ -369,7 +369,10 @@
         </div>
         <span class="pw-step-line"><span class="pw-step-line__flow"></span></span>
         <div class="pw-step" data-goto="yusu">
-          <span class="pw-step__num">5</span>
+          <!-- The one stepper of five that was missing this wrapper, so
+               Yusu had no ring on this screen. Invisible while the bar
+               stopped short of the right edge; obvious once it did not. -->
+          <span class="pw-step__node"><span class="pw-step__num">5</span></span>
           <span class="pw-step__label">Yusu</span>
         </div>
       </nav>

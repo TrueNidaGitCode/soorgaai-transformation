@@ -30,10 +30,16 @@ export function capabilityMessage(request) {
   const summary = String(request?.plan?.summary || '').trim();
   const connectors = (request?.plan?.connectorsNeeded || []).filter(Boolean);
 
+  // 'ready' means built and verified, not running. Delivery pushes the code
+  // and names the commit a redeploy rebuilds, and that step is not automatic
+  // yet — so this says what is true rather than what the customer would most
+  // like to hear. A notification that says a thing is live when it is not is
+  // worse than one that asks for a click, because the customer goes looking
+  // for a feature that is not there and concludes the product is broken.
   const body = [summary]
     .concat(connectors.length
-      ? [`Connect ${connectors.join(' and ')} to start using it.`]
-      : [])
+      ? [`Connect ${connectors.join(' and ')}, then publish it to start using it.`]
+      : ['Publish it to your application to start using it.'])
     .filter(Boolean)
     .join(' ')
     .slice(0, MAX_BODY);
@@ -41,7 +47,7 @@ export function capabilityMessage(request) {
   return {
     title: `${title} is ready`,
     body,
-    actionLabel: connectors.length ? `Connect ${connectors[0]}` : '',
+    actionLabel: connectors.length ? `Connect ${connectors[0]}` : 'Publish it',
   };
 }
 
@@ -73,7 +79,9 @@ export async function announceCapability({ requestId }) {
         title,
         body,
         actionLabel,
-        actionHref: actionLabel ? '/domain/domain.html?view=eame' : '',
+        // Yusu is where an application is published, which is the step this
+        // is asking for. Eame only shows what was written.
+        actionHref: '/domain/domain.html?view=yusu',
       });
     } catch (err) {
       // Already announced by a pass that raced this one. The stamp below still

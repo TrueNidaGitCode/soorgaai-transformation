@@ -68,8 +68,24 @@ async function ownerIsOrg() {
  * overwriting it is correct: it holds a previous build of the same agent for
  * the same blueprint, and a re-push is how a rebuilt agent reaches Railway.
  */
+/**
+ * GitHub's repository description is one line of at most 350 characters and
+ * refuses control characters outright. An objective that was spoken or pasted
+ * arrives with line breaks in it, and went into this field as typed -- the
+ * whole delivery failed on "control characters are not allowed" for a newline
+ * nobody could see. Collapse every run of whitespace and control characters
+ * to one space, and keep it to the length GitHub takes.
+ */
+export function repoDescription(text) {
+  return String(text || '')
+    .replace(/[\u0000-\u001f\u007f-\u009f\s]+/g, ' ')
+    .trim()
+    .slice(0, 300);
+}
+
 export async function ensureSvargRepo({ name, description }) {
   const isOrg = await ownerIsOrg();
+  description = repoDescription(description);
   const createUrl = isOrg ? `${API_BASE}/orgs/${OWNER}/repos` : `${API_BASE}/user/repos`;
 
   try {

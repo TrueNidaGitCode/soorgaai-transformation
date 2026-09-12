@@ -21,13 +21,13 @@
   <link rel="stylesheet" href="style.css">
   <!-- landing.css still owns the auth modal; cob.css owns this screen. -->
   <link rel="stylesheet" href="landing.css?v=2">
-  <link rel="stylesheet" href="cob.css?v=5">
+  <link rel="stylesheet" href="cob.css?v=6">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="shared/rail.css?v=1">
 
   <script src="login/config.js"></script>
   <script type="module" src="shared/rail.js?v=1"></script>
-  <script type="module" src="index.js?v=9"></script>
+  <script type="module" src="index.js?v=10"></script>
 </head>
 <body class="landing2">
 
@@ -94,24 +94,16 @@
       <p id="hero-prompt-error" class="sv-note sv-note--error" role="alert" style="display:none"></p>
       <p id="hero-objective-counter" class="sv-note" style="display:none"></p>
 
-      <div class="sv-try">
-        <button type="button" class="sv-try__btn" id="example-card"
-                title="Fill the box with a real example objective">
-          Try Now
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
-      </div>
+      <!-- "Try Now" sat here: a second button under the box that filled it with
+           a 90-word example objective. Two buttons on one box read as two things
+           to decide between, and the example is taught by the placeholder now.
+           One control: the arrow. -->
 
     </main>
 
     <p class="sv-foot">Free preview, no signup needed.</p>
 
   </div>
-
-  <!-- The example objective the Try button loads. Kept out of the visible page
-       because it is 90 words, and it was the largest block of text on a screen
-       whose whole problem was too much to read. -->
-  <template id="sv-example">We manage a software maintenance and development program where teams spend considerable effort analyzing defects, incidents, and support tickets from multiple sources. The current process involves issue understanding, validation, triage, root-cause assessment, prioritization, and assignment to the appropriate teams. We want to leverage AI to reduce analysis effort, improve classification accuracy, accelerate ticket routing, and increase overall delivery efficiency while maintaining quality and governance standards.</template>
 
   <!-- ── Log in / sign up modal ───────────────────────────────── -->
   <div id="auth-modal" class="auth-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">

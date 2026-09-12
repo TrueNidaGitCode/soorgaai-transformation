@@ -314,51 +314,6 @@ body.landing2 {
 .sv-speak__state { margin: 0; font-size: 0.92rem; color: var(--sv-text); }
 .sv-speak__hint  { margin: 0; font-size: 0.8rem;  color: var(--sv-faint); }
 
-/* ── Try now ──────────────────────────────────────────────────────────────
-   The old page put a 90-word example in a box below the field. It was the only
-   thing showing what a good objective looks like, and it was also the largest
-   block of text on the screen. This is the same help as one line: press it and
-   the box fills, so the example is demonstrated rather than read. */
-
-.sv-try {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  max-width: 620px;
-  margin-top: 26px;
-}
-
-.sv-try::before,
-.sv-try::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--sv-line), transparent);
-}
-
-.sv-try__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 15px;
-  border: 1px solid var(--sv-line);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--sv-muted);
-  font: inherit;
-  font-size: 0.86rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-
-.sv-try__btn:hover {
-  color: var(--sv-text);
-  border-color: rgba(61, 175, 211, 0.4);
-  background: var(--sv-accent-soft);
-}
-
 /* ── Notes under the card ─────────────────────────────────────────────────── */
 
 .sv-note {

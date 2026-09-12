@@ -499,24 +499,9 @@ export function wireHeroPrompt() {
     const counter  = document.getElementById('hero-objective-counter');
     if (!form || !input) return;
 
-    // Example prompt card fills the input
-    /**
-     * The example, demonstrated rather than displayed.
-     *
-     * It used to sit on the page as a 90-word block — the largest thing to read
-     * on a screen whose whole problem was too much to read, and still 3 of the
-     * first 12 strangers typed something unusable into the box beneath it.
-     * Pressing it fills the field, which is the only way an example actually
-     * teaches anything.
-     */
-    const example = document.getElementById('example-card');
-    const exampleText = document.getElementById('sv-example');
-    example?.addEventListener('click', () => {
-        input.value = (exampleText?.innerHTML || '').replace(/\s+/g, ' ').trim();
-        autogrow(input);
-        updateObjectiveCounter(input, counter);
-        input.focus();
-    });
+    // "Try Now", which filled the box with an example objective, is gone:
+    // it was a second button under a box that already has one, and read as
+    // a second thing to decide. The placeholder carries the example now.
 
     wireAnswerModes({ form, input, counter, errEl });
 

@@ -337,6 +337,23 @@ body.domain-page .pd-winner__name {
   color: var(--ws-text);
 }
 
+/* The technique under the plain-words headline: for the engineer in the
+   room, small and quiet, because the customer has already read what it does. */
+body.domain-page .pd-winner__tech {
+  margin: -4px 0 12px;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  color: var(--ws-faint);
+}
+body.domain-page .pd-winner__tech::before { content: 'Built as: '; }
+
+body.domain-page .rp-others-item__tech {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.74rem;
+  color: var(--ws-faint);
+}
+
 body.domain-page .pd-winner__why {
   margin: 0;
   max-width: 62ch;

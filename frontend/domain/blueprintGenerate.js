@@ -402,6 +402,18 @@ function resolveOpportunities(bp) {
   if (!domain || domain.status !== 'completed') return null;
   const sections = (domain.capabilities || []).flatMap(c => c.sections || []);
 
+  // The opportunity's name is its technique -- "Retrieval-Augmented Semantic
+  // Matching for Defects" -- and it is the anchor every later capability is
+  // keyed on, so it stays what it is. The customer reads the same
+  // opportunity in their own words: the discovery section carries a plain
+  // line for each ("Find past faults like this one in seconds"), and the
+  // screen leads with that, with the technique as the caption. A blueprint
+  // generated before the plain line existed shows the name.
+  const discovery = sections.find(s => s.title === 'AI Opportunity Discovery');
+  const found = (discovery?.brief?.aiOpportunities || []).filter(o => o && o.name);
+  const plainOf = new Map(found.map(o => [o.name, o.plain || '']));
+  const say = (name) => ({ name, plain: plainOf.get(name) || name });
+
   const ranked = sections.find(s =>
     s.title === 'AI Implementation Prioritization' || s.title === 'AI Use Case Prioritization');
   if (ranked) {
@@ -414,16 +426,14 @@ function resolveOpportunities(bp) {
     const winner = brief.recommendedInitiativeName
       || all.find(n => why.includes(n))
       || all[0] || '';
-    if (winner) return { winner, why, others: all.filter(n => n !== winner), ranked: true };
+    if (winner) return { winner: say(winner), why, others: all.filter(n => n !== winner).map(say), ranked: true };
   }
 
-  const discovery = sections.find(s => s.title === 'AI Opportunity Discovery');
-  const found = (discovery?.brief?.aiOpportunities || []).filter(o => o && o.name);
   if (found.length) {
     return {
-      winner: found[0].name,
+      winner: say(found[0].name),
       why: found[0].why || '',
-      others: found.slice(1).map(o => o.name),
+      others: found.slice(1).map(o => say(o.name)),
       ranked: false,
     };
   }
@@ -431,12 +441,20 @@ function resolveOpportunities(bp) {
   return null;
 }
 
-/** @param {{winner:string, why:string, others:string[], ranked:boolean}} view */
+/** @param {{winner:{name:string,plain:string}, why:string, others:{name:string,plain:string}[], ranked:boolean}} view */
 function renderOpportunitiesContent(view) {
   const winnerNameEl = document.getElementById('opp-winner-name');
+  const winnerTechEl = document.getElementById('opp-winner-tech');
   const winnerWhyEl  = document.getElementById('opp-winner-why');
   const labelEl      = document.getElementById('opp-winner-label');
-  if (winnerNameEl) winnerNameEl.textContent = view.winner;
+  if (winnerNameEl) winnerNameEl.textContent = view.winner.plain;
+  // The technique under the headline, only when the headline is not already
+  // the technique -- a caption that repeats the title is noise.
+  if (winnerTechEl) {
+    const show = view.winner.plain !== view.winner.name;
+    winnerTechEl.textContent = show ? view.winner.name : '';
+    winnerTechEl.style.display = show ? '' : 'none';
+  }
   if (winnerWhyEl)  winnerWhyEl.textContent  = view.why;
 
   // Ranked and unranked are different claims, and saying "Recommended" over a
@@ -446,9 +464,10 @@ function renderOpportunitiesContent(view) {
   const othersList = document.getElementById('opp-others');
   if (othersList) {
     othersList.innerHTML = view.others
-      .map((name, i) => `
+      .map((o, i) => `
         <li class="rp-others-item pw-reveal" style="--i:${i + 1}">
-          <span class="rp-others-item__name">${escapeHtml(name)}</span>
+          <span class="rp-others-item__name">${escapeHtml(o.plain)}${o.plain !== o.name
+            ? `<span class="rp-others-item__tech">${escapeHtml(o.name)}</span>` : ''}</span>
           <span class="rp-others-item__arrow">&rarr;</span>
         </li>
       `)

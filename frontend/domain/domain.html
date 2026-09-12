@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=29">
+  <link rel="stylesheet" href="workspace.css?v=30">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=1">
   <script src="../login/config.js"></script>
@@ -269,6 +269,9 @@
             <div class="pd-winner pw-reveal rp-winner-card" style="--i:0">
               <p class="pd-winner__label" id="opp-winner-label">&#9733; Recommended</p>
               <p class="pd-winner__name" id="opp-winner-name"></p>
+              <!-- The technique, for whoever builds it. The headline above is
+                   the same opportunity in the customer's words. -->
+              <p class="pd-winner__tech" id="opp-winner-tech" style="display:none"></p>
               <p class="pd-winner__why" id="opp-winner-why"></p>
               <div class="rp-winner-card__actions">
                 <button type="button" class="pw-back-btn" id="opp-view-blueprint-btn" disabled>Open Blueprint</button>
@@ -1457,7 +1460,7 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=20"></script>
+  <script type="module" src="blueprintGenerate.js?v=21"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=51"></script>
   <script type="module" src="arthScreen.js?v=23"></script>

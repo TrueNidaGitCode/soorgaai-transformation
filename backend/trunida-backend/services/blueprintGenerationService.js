@@ -781,7 +781,7 @@ SECTION-SPECIFIC EXTRAS — "AI Opportunity Discovery" sections only:
    Example: ["Validate", "Assign", "Document"]
 
 8. aiOpportunities (3 to 4 items)
-   Each item is an OBJECT with two fields: { "name": "...", "why": "..." } — not a plain string.
+   Each item is an OBJECT with three fields: { "name": "...", "plain": "...", "why": "..." } — not a plain string.
 
    "name": the specific AI TECHNIQUE matched to one of the company's high-effort activities — not
    a restatement of the business problem in AI-flavoured words. Draw from the AI Approach Options
@@ -791,18 +791,30 @@ SECTION-SPECIFIC EXTRAS — "AI Opportunity Discovery" sections only:
    applied to this company's actual context. 3–6 words.
    REJECT any name that is just the business problem reworded (e.g. "manual defect analysis" ->
    "Defect Summarisation" is NOT acceptable — it doesn't say how). A reader must be able to tell
-   what kind of AI system this is.
+   what kind of AI system this is. The engineers building it read this field.
 
-   "why": 1–2 sentences explaining why THIS technique fits THIS specific situation — the
-   characteristic of the data or workflow that makes it the right match (e.g. "Historical defect
-   descriptions are largely unstructured. Semantic retrieval finds similar failures even when
-   keywords differ, improving engineer productivity and defect reuse."). Must reference something
-   specific from the company's actual context, not a generic benefit of AI in general.
+   "plain": the SAME opportunity, said the way the person who runs the business would say it to a
+   colleague — what will happen for them, not how the software does it. 4–9 words, starting with
+   a verb. NO AI vocabulary at all: not model, embedding, retrieval, semantic, classifier, anomaly,
+   predictive, inference, pipeline, agent, LLM, NLP, vector. If a word would need explaining to
+   someone who has never worked in software, it does not belong here. This is the headline the
+   customer sees; "name" is the caption under it.
+   REJECT a "plain" that is the name with the jargon deleted ("Similarity Matching for Defects" ->
+   "Matching for Defects" is NOT acceptable) — say the outcome ("Find past faults like this one
+   in seconds").
+
+   "why": 1–2 sentences, in the same plain voice, explaining why THIS fits THIS company — the
+   characteristic of their data or workflow that makes it the right match. Name the technique at
+   most once, and only if the sentence still reads without it. Must reference something specific
+   from the company's actual context, not a generic benefit of AI in general.
+   REJECT a "why" written for an engineer ("Historical defect descriptions are largely unstructured,
+   so semantic retrieval outperforms keyword search" is NOT acceptable here — it is true, and the
+   customer cannot tell what it means for them).
 
    Example:
    [
-     { "name": "Embedding-Based Similarity Matching", "why": "Historical defect descriptions are largely unstructured. Semantic retrieval finds similar failures even when keywords differ, improving engineer productivity and defect reuse." },
-     { "name": "Anomaly Detection on Diagnostic Traces", "why": "Trace and log deviations that precede failures follow patterns too subtle for manual review at scale, but are well suited to statistical anomaly detection." }
+     { "name": "Embedding-Based Similarity Matching", "plain": "Find past faults like this one in seconds", "why": "Your engineers describe the same fault in different words, so searching by keyword misses cases that were solved last year. This finds them by what they mean, not how they were typed." },
+     { "name": "Anomaly Detection on Diagnostic Traces", "plain": "Flag a vehicle that is about to fail", "why": "The traces that precede a failure look almost normal to a person reading them one at a time. Across thousands of them the pattern is clear, and this watches for it." }
    ]
 
    If the business objective states a constraint on data handling, security, governance, IP
@@ -882,6 +894,13 @@ Distribute the remaining identified opportunities across the other quadrants bas
    Business Value Definition) or how it works (already covered in AI Opportunity Discovery) — the
    reader has seen both. Answer only the sequencing question: relative to the OTHER identified
    opportunities, what makes this one comparatively easier, lower-risk, or better-timed to start first.
+   PLAIN VOICE: this sentence is the first thing the customer reads on their screen, and the
+   customer runs a business, not a data team. Say it the way you would across a table — no AI
+   vocabulary (model, embedding, retrieval, semantic, classifier, pipeline, inference), and refer
+   to the initiative by what it does for them rather than by its technique. "Start with finding
+   past faults like this one: your defect history is already in Jira, so nothing has to be
+   collected first" is the register. "Retrieval-augmented matching offers the best feasibility
+   given existing unstructured data" is NOT acceptable.
 
 5b. recommendedInitiativeName (1 string)
    The SAME initiative named in recommendedStartingPoint, but copied verbatim — exact characters,
@@ -1772,8 +1791,8 @@ function parseBriefOutput(rawSections, validTitles) {
       const aiOpportunities      = Array.isArray(b.aiOpportunities)
         ? b.aiOpportunities
             .map(o => (o && typeof o === 'object')
-              ? { name: String(o.name || '').trim(), why: String(o.why || '').trim() }
-              : { name: String(o || '').trim(), why: '' })
+              ? { name: String(o.name || '').trim(), plain: String(o.plain || '').trim(), why: String(o.why || '').trim() }
+              : { name: String(o || '').trim(), plain: '', why: '' })
             .filter(o => o.name)
             .slice(0, 6)
         : [];
@@ -2904,7 +2923,7 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanati
 {
   "workflowSteps": ["<step 1>", "<step 2>", "..."],
   "highEffortActivities": ["<activity 1>", "<activity 2>", "..."],
-  "aiOpportunities": [{ "name": "<AI technique>", "why": "<1-2 sentences>" }, ...],
+  "aiOpportunities": [{ "name": "<AI technique>", "plain": "<what happens for the business, 4-9 words, no AI vocabulary>", "why": "<1-2 sentences, plain voice>" }, ...],
   "actionItems": [
     { "title": "<specific, action-oriented next step — one sentence>", "description": "<what completing it actually involves — one sentence>", "assignee": "<suggested owner role>", "reviewer": "<suggested sign-off role — empty string if no review is naturally implied>" }
   ]

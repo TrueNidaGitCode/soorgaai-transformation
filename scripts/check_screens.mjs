@@ -85,13 +85,22 @@ const BLUEPRINT = {
     { domainId: 'governance-security', status: 'completed',
       capabilities: [{ capabilityId: 'ai-governance-ethics', status: 'error', sections: GOV_SECTIONS }] },
     { domainId: 'ai-use-cases', status: 'completed',
-      capabilities: [{ capabilityId: 'opportunity-discovery', status: 'completed', sections: [{
-        title: 'AI Implementation Prioritization',
-        brief: {
-          recommendedStartingPoint: 'Start with Retrieval-Augmented Semantic Matching for Defects.',
-          priorityQuadrants: [{ initiatives: ['Retrieval-Augmented Semantic Matching for Defects', 'Automated Log Plausibility Checks'] }],
-        },
-      }] }] },
+      capabilities: [{ capabilityId: 'opportunity-discovery', status: 'completed', sections: [
+        // The discovery section carries each opportunity in the customer's
+        // words beside its technique. Cob leads with the plain line; the
+        // technique is the caption.
+        { title: 'AI Opportunity Discovery',
+          brief: { aiOpportunities: [
+            { name: 'Retrieval-Augmented Semantic Matching for Defects', plain: 'Find past faults like this one in seconds', why: 'Engineers describe the same fault in different words.' },
+            { name: 'Automated Log Plausibility Checks', plain: 'Spot a flashing log that cannot be right', why: 'The logs follow patterns a person cannot hold in their head.' },
+          ] } },
+        { title: 'AI Implementation Prioritization',
+          brief: {
+            recommendedStartingPoint: 'Start with finding past faults like this one: the defect history is already in Jira, so nothing has to be collected first.',
+            recommendedInitiativeName: 'Retrieval-Augmented Semantic Matching for Defects',
+            priorityQuadrants: [{ initiatives: ['Retrieval-Augmented Semantic Matching for Defects', 'Automated Log Plausibility Checks'] }],
+          } },
+      ] }] },
     { domainId: 'data-readiness', status: 'completed',
       capabilities: [{ capabilityId: 'critical-data', status: 'completed', sections: [{
         title: 'Critical Data Identification',
@@ -674,7 +683,10 @@ setTimeout(async function () {
     // with the same classes read the accent immediately. What this check is
     // for is whether the RULE applies; the clock is the harness's problem.
     var noTransitions = document.createElement('style');
-    noTransitions.textContent = '* { transition: none !important; animation: none !important; }';
+    // Animations are jumped to their end, not removed: .pw-reveal rests at
+    // opacity 0 and is only visible once its animation has FINISHED, so
+    // 'animation: none' would hide every card the probe is there to see.
+    noTransitions.textContent = '* { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; }';
     document.head.appendChild(noTransitions);
     void document.body.offsetWidth;
 
@@ -1360,6 +1372,17 @@ setTimeout(async function () {
     // by, so a note that silently fails to render is worse than a visibly
     // wrong one — assert it drew, said something, and offers the way out.
     if (out.screen === 'cob') {
+      // The headline is the opportunity in the customer's words; the
+      // technique -- what the engineers build -- is the caption under it,
+      // and the other opportunities read the same way.
+      var headline = (document.getElementById('opp-winner-name') || {}).textContent || '';
+      var caption = document.getElementById('opp-winner-tech');
+      out.headline = headline.trim();
+      if (!/find past faults/i.test(headline)) bad('the recommendation leads with "' + headline.trim() + '", expected the plain words');
+      if (!caption || caption.style.display === 'none' || !/Retrieval-Augmented/.test(caption.textContent)) bad('the technique is not captioned under the headline');
+      var otherNames = [].map.call(document.querySelectorAll('#opp-others .rp-others-item__name'), function (n) { return n.textContent.trim(); });
+      out.others = otherNames.join(' | ');
+      if (!otherNames.some(function (n) { return /cannot be right/i.test(n); })) bad('the other opportunities are not in plain words: ' + out.others);
       var eng = document.getElementById('opp-engagement');
       var engText = document.getElementById('opp-engagement-text');
       var engSwitch = document.getElementById('opp-engagement-switch');
@@ -1660,6 +1683,7 @@ for (const screen of list) {
     + `css ${String(r.cssRules ?? '?').padStart(4)} rules · `
     + `rail [${r.rail ?? '?'}] · ${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · ready ${r.readyEvents ?? '-'} · shows ${r.showEvents ?? '-'} · hero ${r.pills ?? '-'} art ${r.art ?? '-'} · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
+    + (r.headline ? `\n        headline "${r.headline}" · others ${r.others}` : '')
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"
         preview "${r.preview}" · sample tab offers ${r.sampleTargets} · panels ${r.visiblePanels}

@@ -1451,4 +1451,14 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   white-space: nowrap;
 }
 
+/* Under the address when another browser shares its block. A note, not a
+   merge: the count above stays per browser, and this says why it may read
+   high for one office. */
+.sg-same {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: #fbbf24;
+  white-space: nowrap;
+}
+
 .sg-group__head--spaced { margin-top: 1.9rem; }

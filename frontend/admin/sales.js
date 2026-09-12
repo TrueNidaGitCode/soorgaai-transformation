@@ -855,11 +855,12 @@ function renderLaneTables(s, laneKey) {
  * could not tell you which you had.
  */
 function renderVisits(s) {
-  const t = s.visitTotals || { people: 0, sessions: 0, generated: 0, fromOutreach: 0 };
+  const t = s.visitTotals || { people: 0, addresses: 0, sessions: 0, generated: 0, fromOutreach: 0 };
   const rows = s.visits || [];
 
   const summary = `<div class="sg-kpi">
-    <div class="sg-kpi__item"><span class="sg-kpi__n">${t.people}</span> opened the site</div>
+    <div class="sg-kpi__item" title="Browsers, not people: the same person on a phone and a laptop is two. The address count beside it says how many places they came from."><span class="sg-kpi__n">${t.people}</span> opened the site</div>
+    <div class="sg-kpi__item" title="Distinct network blocks. Two browsers from one block are usually one office, sometimes one person."><span class="sg-kpi__n">${t.addresses ?? t.people}</span> addresses</div>
     <div class="sg-kpi__item"><span class="sg-kpi__n">${t.sessions}</span> sessions</div>
     <div class="sg-kpi__item"><span class="sg-kpi__n">${t.fromOutreach}</span> from your outreach</div>
     <div class="sg-kpi__item"><span class="sg-kpi__n">${t.generated}</span> went on to generate</div>
@@ -907,6 +908,9 @@ function visitTable(rows) {
       <td class="sg-age">${age(r.at)}</td>
       <td class="sg-note">${r.ips.length
         ? `<span class="sg-ip" title="The network block, not the machine — the last octet is never stored">${esc(r.ips.join(', '))}</span>`
+          + (r.sameAddress
+            ? `<div class="sg-same" title="Another browser came from this block — the same person on another device, or a colleague. Counted separately above, because a block can hold a whole office.">same address as ${r.sameAddress} other${r.sameAddress === 1 ? '' : 's'}</div>`
+            : '')
         : '<span class="sg-unknown" title="The request arrived without one — never the same as another blank">not recorded</span>'}</td>
       <td>${countryCell(r.countries[0] || '')}</td>
       <td>${r.fromLead

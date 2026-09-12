@@ -453,6 +453,34 @@ export async function collectSignals() {
     };
   }).sort(byRecency);
 
+  /**
+   * Who shares an address with whom.
+   *
+   * A row is a browser, not a person: the same prospect on a phone and a
+   * laptop, or in a private window, is two rows. They are not merged -- the
+   * stored address is a /24, and merging by it would fold a whole ISP block
+   * or a whole office into one person, under-counting exactly when a team
+   * looks together. Instead each row says how many other rows share its
+   * block, so "3 opened the site" can be read as "one office, three browsers"
+   * when that is what it is. The people total stays honest about what it
+   * counts; the address total sits beside it.
+   */
+  const rowsByIp = new Map();
+  for (const v of visits) {
+    for (const ip of v.ips) {
+      if (!rowsByIp.has(ip)) rowsByIp.set(ip, new Set());
+      rowsByIp.get(ip).add(v.key);
+    }
+  }
+  for (const v of visits) {
+    const others = new Set();
+    for (const ip of v.ips) for (const k of rowsByIp.get(ip) || []) if (k !== v.key) others.add(k);
+    v.sameAddress = others.size;
+  }
+  // Distinct blocks, plus every row that arrived without an address -- those
+  // are never "the same as another blank".
+  const addresses = rowsByIp.size + visits.filter(v => !v.ips.length).length;
+
   const discovery = [...grouped.values()].map(g => {
     const ips = [...g.ips];
     const fromLead = [...g.refs].map(r => leadByRef.get(r)).filter(Boolean)[0] || null;
@@ -690,6 +718,7 @@ export async function collectSignals() {
     visits,
     visitTotals: {
       people: visits.length,
+      addresses,
       sessions: visits.reduce((n, v) => n + v.visits, 0),
       generated: visits.filter(v => v.generated).length,
       fromOutreach: visits.filter(v => v.fromLead).length,

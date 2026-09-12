@@ -177,8 +177,21 @@ const PROVIDERS = {
                   // a chat model will happily answer the question it heard, or
                   // preface the transcript with "Sure, here is". Either would
                   // land in the objective box as if the speaker had typed it.
-                  text: 'Transcribe this audio exactly. Output only the transcription, '
-                    + 'with no preamble, no commentary, no quotation marks and no formatting. '
+                  //
+                  // And explicit about tidying. A verbatim transcript of someone
+                  // describing their business is "you know, yeah, you know" every
+                  // few words, which nobody would type and which the objective
+                  // then carries. What lands in the box should read as the
+                  // sentence they would have written: fillers and false starts
+                  // gone, grammar fixed, every fact and figure and their own
+                  // words kept. Cleaning is not summarising; nothing is dropped
+                  // or added.
+                  text: 'Transcribe this audio as clean written text, the way the speaker would '
+                    + 'have typed it. Remove filler words (um, uh, you know, yeah, like, so, '
+                    + 'actually) and false starts, and fix grammar and punctuation. Keep every '
+                    + 'fact, number, name and the speaker\'s own wording otherwise; do not '
+                    + 'summarise, shorten, reorder or add anything. Output only the text, with '
+                    + 'no preamble, no commentary, no quotation marks and no formatting. '
                     + 'If there is no speech, output nothing at all.',
                 },
                 { inline_data: { mime_type: mimeType, data: Buffer.from(audio).toString('base64') } },

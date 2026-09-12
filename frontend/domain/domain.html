@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=30">
+  <link rel="stylesheet" href="workspace.css?v=31">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=1">
   <script src="../login/config.js"></script>
@@ -202,30 +202,73 @@
               <div class="ae-hero__text">
                 <span class="ae-pill">Cob</span>
                 <span class="ae-pill ae-pill--role">Your Planner</span>
-                <h1 class="ae-hero__title">Your AI opportunities</h1>
-                <p class="ae-hero__sub">Cob has read your objective and ranked where AI would help most. The one to start with is below.</p>
+                <!-- Filled by setCobMode(): the run and the result are two
+                     different pages under one hero. -->
+                <span class="ae-pill ae-pill--pending" id="opp-hero-pill" style="display:none">Running</span>
+                <h1 class="ae-hero__title" id="opp-hero-title">Your AI opportunities</h1>
+                <p class="ae-hero__sub" id="opp-hero-sub">Cob has read your objective and ranked where AI would help most. The one to start with is below.</p>
               </div>
             </div>
           </div>
 
-          <!-- Deliberately a sibling of #opp-loading, not a child. Cob's own
-               capability finishes early and hides the loading block, but the
-               other five domains are still generating — nesting this inside
-               would take the progress bar away while most of the work
-               remained. It hides itself when everything has settled. -->
-          <div class="prog-bar" id="opp-progress" role="status" aria-live="polite" style="display:none">
-            <div class="prog-bar__head">
-              <span class="prog-bar__label" id="opp-progress-label">Analysing your objective…</span>
-              <span class="prog-bar__count" id="opp-progress-count"></span>
-            </div>
-            <div class="prog-bar__track">
-              <div class="prog-bar__fill" id="opp-progress-fill" style="width:0%"></div>
-            </div>
-          </div>
+          <!-- ── The run ────────────────────────────────────────────────
+               Cob has two pages under one hero: this one while the blueprint
+               is generating, and the recommendation once it is done. Nothing
+               of the result is shown during the run -- not the card, not the
+               move to Aria -- because the journey moves on by itself and a
+               half-finished recommendation over a progress bar read as
+               finished. The four phases below are the six domains grouped
+               the way a customer would think of them; renderRun() drives
+               every state and figure from the blueprint the poll delivers. -->
+          <div class="cr-run" id="opp-run" role="status" aria-live="polite" style="display:none">
 
-          <div id="opp-loading" class="pw-process-list">
-            <div class="pw-process-item">
-              <span class="pw-process-item__title">Analyzing your objective and prioritizing AI use cases…</span>
+            <div class="cr-progress">
+              <div class="cr-ring" id="opp-run-ring" style="--p:0" aria-hidden="true">
+                <span class="cr-ring__pct" id="opp-run-pct">0%</span>
+              </div>
+              <div class="cr-progress__body">
+                <div class="prog-bar__track">
+                  <div class="prog-bar__fill" id="opp-progress-fill" style="width:0%"></div>
+                </div>
+                <p class="cr-progress__line">
+                  <span id="opp-progress-label">Reading your objective…</span>
+                  <span class="cr-progress__count" id="opp-progress-count"></span>
+                </p>
+              </div>
+              <div class="cr-eta">
+                <span class="cr-eta__label">Estimated time remaining</span>
+                <strong class="cr-eta__value" id="opp-run-eta">Estimating…</strong>
+              </div>
+            </div>
+
+            <div class="cr-cards">
+              <section class="ae-card cr-steps" aria-labelledby="opp-run-steps-title">
+                <header class="ae-card__head">
+                  <span class="ae-card__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  </span>
+                  <div class="ae-card__headings">
+                    <h2 class="ae-card__title" id="opp-run-steps-title">What's happening now</h2>
+                  </div>
+                </header>
+                <ol class="cr-phases" id="opp-run-steps"></ol>
+              </section>
+
+              <section class="ae-card cr-wait" aria-labelledby="opp-run-wait-title">
+                <header class="ae-card__head">
+                  <span class="ae-card__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </span>
+                  <div class="ae-card__headings">
+                    <h2 class="ae-card__title" id="opp-run-wait-title">While you wait…</h2>
+                  </div>
+                </header>
+                <p class="cr-wait__body">Cob is reading your objective and working out where AI would help most. When the blueprint is ready it moves on by itself: Aria prepares the environment, Arth prepares the data, Eame builds the application.</p>
+                <p class="cr-wait__note">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  This usually takes 3–8 minutes, depending on the objective.
+                </p>
+              </section>
             </div>
           </div>
 
@@ -1460,7 +1503,7 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=21"></script>
+  <script type="module" src="blueprintGenerate.js?v=22"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=51"></script>
   <script type="module" src="arthScreen.js?v=23"></script>

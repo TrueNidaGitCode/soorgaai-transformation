@@ -556,9 +556,10 @@ function handleOpportunitiesUpdate(bp) {
   const screen = document.getElementById('screen-opportunities');
   if (!screen || screen.style.display === 'none') return;
 
-  // This screen is what a user watches during a run, so it carries the
-  // progress bar. Driven from the blueprint each poll delivers.
-  renderOpportunitiesProgress(bp);
+  // Two pages under one hero. The run while it generates; the result once
+  // it is done -- or once it has stopped short, which the stop panel says.
+  const running = bp.status === 'generating' && !renderStopPanel(bp);
+  if (running) renderOpportunitiesProgress(bp);
 
   if (!_opportunitiesContentShown) {
     const view = resolveOpportunities(bp);
@@ -571,6 +572,9 @@ function handleOpportunitiesUpdate(bp) {
     }
   }
 
+  // After the result renderers, which show their blocks as soon as they
+  // have something -- the run keeps them off the page until it is done.
+  setCobMode(running);
   renderEngagementNote(bp);
   updateOpportunitiesGate(bp);
 }
@@ -607,7 +611,8 @@ function renderEngagementNote(bp) {
 
   const category = bp.engagement?.category || '';
   if (!ENGAGEMENT_LABEL[category]) { wrap.style.display = 'none'; return; }
-  wrap.style.display = '';
+  // Off while the run is on screen; setCobMode() decides the page.
+  wrap.style.display = bp.status === 'generating' ? 'none' : '';
 
   const area = bp.engagement.subArea ? ` (${bp.engagement.subArea})` : '';
   textEl.textContent = bp.engagement.userSet
@@ -780,38 +785,151 @@ function renderStopPanel(bp) {
  * Errors count as settled: a failed capability is not coming back, and a bar
  * that stops short implies work still in flight that never arrives.
  */
+/**
+ * The four phases of a run, as a customer would think of them.
+ *
+ * Six domains generate; nobody waiting wants six rows of capability names.
+ * Grouped into what is being done for them, in the order the journey uses it:
+ * the opportunities and the strategy are the blueprint, data and technology
+ * are what Arth and Aria prepare, people and governance finish it. The first
+ * phase is the objective being read, which is done the moment the run exists.
+ */
+const RUN_PHASES = [
+  { title: 'Understanding your objective',   sub: 'Reading your goal and what your business runs on', domains: [] },
+  { title: 'Finding the AI opportunities',   sub: 'Where AI would help most, and which to start with',  domains: ['ai-use-cases', 'ai-strategy'] },
+  { title: 'Preparing data & infrastructure', sub: 'The data, the model and the environment it needs',  domains: ['data-readiness', 'technology-infrastructure'] },
+  { title: 'Finalising the plan',            sub: 'People, adoption and governance for the roll-out',   domains: ['skills-workforce', 'governance-security'] },
+];
+
+const isRunning = (c) => c.status === 'in-progress' || c.status === 'generating';
+
+function etaText(ms) {
+  const s = Math.max(10, Math.round(ms / 1000));
+  const m = Math.floor(s / 60);
+  return m ? `${m} min ${String(s % 60).padStart(2, '0')} sec` : `${s} sec`;
+}
+
+/**
+ * The run stage: a ring, a bar, an estimate, and the four phases with their
+ * real state. Every figure comes from the blueprint the poll delivers; the
+ * estimate is the pace so far applied to what is left, and says
+ * "Estimating…" until there is a pace to apply.
+ */
 function renderOpportunitiesProgress(bp) {
-  const wrap  = document.getElementById('opp-progress');
+  const wrap  = document.getElementById('opp-run');
   const fill  = document.getElementById('opp-progress-fill');
   const label = document.getElementById('opp-progress-label');
   const count = document.getElementById('opp-progress-count');
+  const ring  = document.getElementById('opp-run-ring');
+  const pct   = document.getElementById('opp-run-pct');
+  const eta   = document.getElementById('opp-run-eta');
+  const steps = document.getElementById('opp-run-steps');
   if (!wrap || !fill) return;
 
   // Generation stopped short of the whole blueprint — for a guest at the end
   // of the free domain, for an owner because a claimed preview generates
-  // nothing further. Either way the ordinary bar would describe work that is
+  // nothing further. Either way the run stage would describe work that is
   // not running.
-  if (renderStopPanel(bp)) { wrap.style.display = 'none'; return; }
+  if (renderStopPanel(bp)) return;
 
-  const caps = (bp.domains || []).flatMap(d => d.capabilities || []);
+  // In the first seconds the blueprint has no domains yet -- the shell is
+  // written before the run starts -- and the page still has to say what is
+  // about to happen rather than show an empty list. The figures below are
+  // simply zero then; the phases render as waiting.
+  const domains = bp.domains || [];
+  const caps = domains.flatMap(d => d.capabilities || []);
   const total = caps.length;
-  if (!total) return;
 
   const done    = caps.filter(c => c.status === 'completed').length;
   const failed  = caps.filter(c => c.status === 'error').length;
-  const active  = caps.find(c => c.status === 'in-progress' || c.status === 'generating');
+  const active  = caps.find(isRunning);
   const settled = done + failed;
+  const share   = total ? Math.round((settled / total) * 100) : 0;
 
-  // Only worth showing while there is something still to wait for. A
-  // finished bar sitting above the recommendation is just clutter.
-  wrap.style.display = settled === total ? 'none' : '';
+  fill.style.width = share + '%';
+  fill.classList.toggle('prog-bar__fill--done', total > 0 && settled === total);
+  if (ring) ring.style.setProperty('--p', share);
+  if (pct) pct.textContent = share + '%';
+  if (count) count.textContent = total ? `${settled} of ${total} steps` : '';
+  if (label) {
+    label.textContent = total && settled === total
+      ? (failed ? `${done} of ${total} generated — ${failed} could not be completed` : 'Blueprint complete')
+      : (active ? `Generating ${active.capabilityName || active.name}…` : 'Reading your objective…');
+  }
 
-  fill.style.width = Math.round((settled / total) * 100) + '%';
-  fill.classList.toggle('prog-bar__fill--done', settled === total);
-  count.textContent = `${settled} of ${total}`;
-  label.textContent = settled === total
-    ? (failed ? `${done} of ${total} generated — ${failed} could not be completed` : 'Blueprint complete')
-    : (active ? `Generating ${active.capabilityName || active.name}…` : 'Analysing your objective…');
+  if (eta) {
+    const started = bp.createdAt ? new Date(bp.createdAt).getTime() : 0;
+    const elapsed = started ? Date.now() - started : 0;
+    eta.textContent = total && settled === total ? 'Done'
+      : (settled >= 1 && elapsed > 0) ? etaText(elapsed / settled * (total - settled))
+      : 'Estimating…';
+  }
+
+  if (steps) {
+    const capsOf = (ids) => domains.filter(d => ids.includes(d.domainId)).flatMap(d => d.capabilities || []);
+    const anyStarted = caps.some(c => isRunning(c) || c.status === 'completed' || c.status === 'error');
+    steps.innerHTML = RUN_PHASES.map((ph, i) => {
+      let state, detail = ph.sub;
+      if (i === 0) {
+        state = anyStarted ? 'done' : 'active';
+      } else {
+        const mine = capsOf(ph.domains);
+        const running = mine.find(isRunning);
+        const settledMine = mine.filter(c => c.status === 'completed' || c.status === 'error').length;
+        state = mine.length && settledMine === mine.length ? 'done'
+          : (running || settledMine) ? 'active'
+          : 'waiting';
+        if (running) detail = `Generating ${running.capabilityName || running.name}…`;
+        else if (state === 'done' && mine.some(c => c.status === 'error')) detail = 'Finished, with a part that could not be completed';
+      }
+      const word = state === 'done' ? 'Completed' : state === 'active' ? 'In progress…' : 'Waiting…';
+      return `
+        <li class="cr-phase cr-phase--${state}">
+          <span class="cr-phase__mark" aria-hidden="true"></span>
+          <span class="cr-phase__text">
+            <span class="cr-phase__title">${escapeHtml(ph.title)}</span>
+            <span class="cr-phase__sub">${escapeHtml(detail)}</span>
+          </span>
+          <span class="cr-phase__state">${word}</span>
+        </li>`;
+    }).join('');
+  }
+}
+
+/**
+ * Cob is two pages under one hero: the run, and the result.
+ *
+ * During the run nothing of the result is shown -- the recommendation card,
+ * the other opportunities, the engagement note, the move to Aria. The
+ * journey moves on by itself when the blueprint is done, and a recommendation
+ * sitting under a progress bar read as finished when most of the work
+ * remained. The hero says which page this is.
+ */
+function setCobMode(running) {
+  const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+  show('opp-run', running);
+  const nav = document.querySelector('#screen-opportunities .stage-nav');
+  if (nav) nav.style.display = running ? 'none' : '';
+  // The result blocks are shown by their own renderers once there is
+  // something in them; the run simply keeps them off the page meanwhile.
+  if (running) {
+    show('opp-content', false);
+    show('opp-others-wrap', false);
+    show('opp-engagement', false);
+  } else if (_opportunitiesContentShown) {
+    show('opp-content', true);
+  }
+
+  const pill  = document.getElementById('opp-hero-pill');
+  const title = document.getElementById('opp-hero-title');
+  const sub   = document.getElementById('opp-hero-sub');
+  const mark  = document.getElementById('opp-hero-mark');
+  if (pill)  pill.style.display = running ? '' : 'none';
+  if (mark)  mark.classList.toggle('ae-hero__mark--pending', running);
+  if (title) title.textContent = running ? 'Generating the blueprint' : 'Your AI opportunities';
+  if (sub)   sub.textContent = running
+    ? 'Cob is reading your objective and working out where AI would help most. This takes a few minutes.'
+    : 'Cob has read your objective and ranked where AI would help most. The one to start with is below.';
 }
 
 async function transitionToWorkspace(guestId) {

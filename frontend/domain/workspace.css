@@ -283,6 +283,125 @@ body.domain-page .screen > .rp-shell {
 
 body.domain-page .rp-main { padding: 26px 34px 40px; }
 
+/* ── Cob, while it runs ───────────────────────────────────────────────────
+   The run stage: a ring and a bar with the estimate beside them, then two
+   cards -- what is happening now, and what to expect. Everything that
+   moves is driven from the blueprint; nothing here animates on a timer. */
+
+body.domain-page .cr-run { display: flex; flex-direction: column; gap: 22px; margin: 6px 0 26px; }
+
+body.domain-page .cr-progress {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  padding: 18px 22px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: rgba(12, 22, 30, 0.55);
+}
+
+/* A ring drawn from --p (0..100), so it is the same number as the bar. */
+body.domain-page .cr-ring {
+  --p: 0;
+  width: 58px; height: 58px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background:
+    radial-gradient(closest-side, rgba(12, 22, 30, 1) 74%, transparent 76%),
+    conic-gradient(var(--ws-accent) calc(var(--p) * 1%), rgba(34, 217, 232, 0.14) 0);
+}
+body.domain-page .cr-ring__pct {
+  font-size: 0.78rem; font-weight: 700;
+  color: var(--ws-text);
+  font-variant-numeric: tabular-nums;
+}
+
+body.domain-page .cr-progress__body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+body.domain-page .cr-progress__line {
+  display: flex; justify-content: space-between; gap: 12px;
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--ws-muted);
+}
+body.domain-page .cr-progress__count { color: var(--ws-faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+body.domain-page .cr-eta {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  padding-left: 22px;
+  border-left: 1px solid var(--ws-line);
+  white-space: nowrap;
+}
+body.domain-page .cr-eta__label { font-size: 0.72rem; letter-spacing: 0.04em; color: var(--ws-faint); }
+body.domain-page .cr-eta__value { font-size: 1.15rem; font-weight: 700; color: var(--ws-accent); font-variant-numeric: tabular-nums; }
+
+body.domain-page .cr-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+body.domain-page .cr-phases { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+body.domain-page .cr-phase {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(93, 143, 155, 0.14);
+}
+body.domain-page .cr-phase:first-child { border-top: 0; }
+body.domain-page .cr-phase__mark {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(93, 143, 155, 0.4);
+  display: grid; place-items: center;
+  box-sizing: border-box;
+}
+body.domain-page .cr-phase--done .cr-phase__mark {
+  border-color: var(--ws-accent);
+  background: var(--ws-accent) center / 12px no-repeat
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23032027' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
+}
+body.domain-page .cr-phase--active .cr-phase__mark {
+  border-color: var(--ws-accent);
+  box-shadow: 0 0 0 4px rgba(34, 217, 232, 0.14);
+}
+body.domain-page .cr-phase--active .cr-phase__mark::after {
+  content: '';
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ws-accent);
+  animation: ws-step-loading 1.2s ease-in-out infinite;
+}
+body.domain-page .cr-phase__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+body.domain-page .cr-phase__title { font-size: 0.95rem; font-weight: 600; color: var(--ws-text); }
+body.domain-page .cr-phase--waiting .cr-phase__title { color: var(--ws-muted); }
+body.domain-page .cr-phase__sub { font-size: 0.8rem; color: var(--ws-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.domain-page .cr-phase__state { font-size: 0.8rem; white-space: nowrap; color: var(--ws-faint); }
+body.domain-page .cr-phase--done .cr-phase__state { color: var(--ws-accent); }
+body.domain-page .cr-phase--active .cr-phase__state { color: var(--ws-text); }
+
+body.domain-page .cr-wait { display: flex; flex-direction: column; }
+body.domain-page .cr-wait__body { margin: 0; font-size: 0.92rem; line-height: 1.6; color: var(--ws-muted); }
+body.domain-page .cr-wait__note {
+  display: flex; align-items: center; gap: 10px;
+  margin: auto 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ws-line);
+  border-radius: 12px;
+  background: rgba(34, 217, 232, 0.05);
+  font-size: 0.84rem;
+  color: var(--ws-text);
+}
+body.domain-page .cr-wait__note svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--ws-accent); }
+
+@media (max-width: 980px) {
+  body.domain-page .cr-cards { grid-template-columns: minmax(0, 1fr); }
+  body.domain-page .cr-progress { grid-template-columns: auto minmax(0, 1fr); }
+  body.domain-page .cr-eta { grid-column: 1 / -1; align-items: flex-start; padding-left: 0; border-left: 0; }
+}
+
 /* ── Opportunity Discovery ────────────────────────────────────────────────── */
 
 body.domain-page .rp-main__head { margin-bottom: 22px; }

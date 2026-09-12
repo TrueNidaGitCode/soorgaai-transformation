@@ -208,6 +208,29 @@ if (ARIA_STATE === 'all-samples') { BP.codebaseProfile = { checked: false }; }
 const AUTO = ${JSON.stringify(!!process.env.CHECK_AUTOPILOT)};
 const SCREEN = ${JSON.stringify(screen)};
 if (AUTO && SCREEN === 'cob')  BP.opportunityApproval = { approved: false };
+// COB_STATE=running renders Cob mid-generation: the run stage, not the
+// result. Two domains done, one generating, three not started, and a
+// blueprint old enough for the estimate to have a pace to work from.
+const COB_RUNNING = ${JSON.stringify(process.env.COB_STATE === 'running')};
+if (COB_RUNNING) {
+  BP.status = 'generating';
+  BP.createdAt = new Date(Date.now() - 90 * 1000).toISOString();
+  BP.opportunityApproval = { approved: false };
+  const gov = BP.domains.find(d => d.domainId === 'governance-security');
+  gov.status = 'pending'; gov.capabilities.forEach(c => { c.status = 'pending'; });
+  BP.domains.push(
+    { domainId: 'ai-strategy', status: 'in-progress', capabilities: [
+      { capabilityId: 'ai-initiative-leadership', capabilityName: 'AI Initiative Leadership', status: 'completed', sections: [] },
+      { capabilityId: 'business-strategy-alignment', capabilityName: 'Business Strategy Alignment', status: 'in-progress', sections: [] },
+    ] },
+    { domainId: 'technology-infrastructure', status: 'pending', capabilities: [
+      { capabilityId: 'ai-platform-readiness', capabilityName: 'AI Platform Readiness', status: 'pending', sections: [] },
+    ] },
+    { domainId: 'skills-workforce', status: 'pending', capabilities: [
+      { capabilityId: 'ai-roles-capability-planning', capabilityName: 'AI Roles & Capability Planning', status: 'pending', sections: [] },
+    ] },
+  );
+}
 if (AUTO && SCREEN === 'arth') delete BP.arthSelection;
 if (AUTO && SCREEN === 'aria') BP.codebaseProfile = { checked: false };
 window.__approved = 0;
@@ -1371,7 +1394,41 @@ setTimeout(async function () {
     // Cob's engagement note. It states what the whole blueprint was steered
     // by, so a note that silently fails to render is worse than a visibly
     // wrong one — assert it drew, said something, and offers the way out.
-    if (out.screen === 'cob') {
+    if (out.screen === 'cob' && ${JSON.stringify(process.env.COB_STATE === 'running')}) {
+      // Mid-run, Cob is the run stage and nothing of the result: no
+      // recommendation, no other opportunities, no move to Aria. The four
+      // phases carry real states from the fixture, and the estimate has a
+      // pace to work from.
+      var vis = function (id) { var el = document.getElementById(id); return !!el && el.offsetParent !== null; };
+      out.runShown = vis('opp-run');
+      if (!vis('opp-run')) bad('the run stage is not shown while generating');
+      if (vis('opp-content')) bad('the recommendation is shown while generating');
+      if (vis('opp-others-wrap')) bad('the other opportunities are shown while generating');
+      var navEl = scr.querySelector('.stage-nav');
+      if (navEl && navEl.offsetParent !== null) bad('"Move to Aria" is shown while generating');
+      if (vis('opp-engagement')) bad('the engagement note is shown while generating');
+      out.runTitle = (document.getElementById('opp-hero-title') || {}).textContent || '';
+      if (!/generating/i.test(out.runTitle)) bad('the hero does not say it is generating: "' + out.runTitle + '"');
+      var runPill = document.getElementById('opp-hero-pill');
+      if (!runPill || runPill.offsetParent === null || !/running/i.test(runPill.textContent)) bad('no Running pill on the hero');
+      var phases = [].map.call(scr.querySelectorAll('#opp-run-steps .cr-phase'), function (li) {
+        return (li.className.match(/cr-phase--([a-z]+)/) || [])[1] + ':' + li.querySelector('.cr-phase__state').textContent.trim();
+      });
+      out.phases = phases.join(',');
+      if (phases.length !== 4) bad('expected 4 phases, got ' + phases.length);
+      if (phases[0] !== 'done:Completed') bad('the objective phase should be done: ' + phases[0]);
+      if (!/^active:/.test(phases[1] || '')) bad('the opportunities phase should be in progress (ai-strategy is generating): ' + phases[1]);
+      // Data readiness is done and technology has not started: half a
+      // phase, which is in progress, not waiting and not done.
+      if (!/^active:/.test(phases[2] || '')) bad('data & infrastructure should be in progress (data done, technology pending): ' + phases[2]);
+      if (phases[3] !== 'waiting:Waiting…') bad('the final phase should be waiting: ' + phases[3]);
+      out.eta = (document.getElementById('opp-run-eta') || {}).textContent || '';
+      if (!/min|sec/.test(out.eta)) bad('no estimate after 90s and settled steps: "' + out.eta + '"');
+      out.pct = (document.getElementById('opp-run-pct') || {}).textContent || '';
+      if (!/^[0-9]+%$/.test(out.pct)) bad('the ring shows "' + out.pct + '"');
+    }
+
+    if (out.screen === 'cob' && !${JSON.stringify(process.env.COB_STATE === 'running')}) {
       // The headline is the opportunity in the customer's words; the
       // technique -- what the engineers build -- is the caption under it,
       // and the other opportunities read the same way.
@@ -1684,6 +1741,7 @@ for (const screen of list) {
     + `rail [${r.rail ?? '?'}] · ${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · ready ${r.readyEvents ?? '-'} · shows ${r.showEvents ?? '-'} · hero ${r.pills ?? '-'} art ${r.art ?? '-'} · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.headline ? `\n        headline "${r.headline}" · others ${r.others}` : '')
+    + (r.runShown !== undefined ? `\n        run "${r.runTitle}" · ${r.pct} · eta ${r.eta} · phases ${r.phases}` : '')
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"
         preview "${r.preview}" · sample tab offers ${r.sampleTargets} · panels ${r.visiblePanels}

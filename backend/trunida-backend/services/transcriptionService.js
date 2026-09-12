@@ -48,7 +48,9 @@
  * and Blob. No new dependency, and no new class of request the server accepts.
  */
 
-const TIMEOUT_MS = 30000;
+/** Ninety seconds: a five-minute recording takes a multimodal model a while
+ *  to read, and thirty was tuned for a two-minute cap. */
+const TIMEOUT_MS = 90000;
 
 /**
  * ── Why there is a chain and not one provider ───────────────────────────────
@@ -197,14 +199,23 @@ const PROVIDERS = {
                 { inline_data: { mime_type: mimeType, data: Buffer.from(audio).toString('base64') } },
               ],
             }],
-            generationConfig: { temperature: 0 },
+            // Explicit, so a long dictation cannot be cut by a default the
+            // model picked. Five minutes of speech is under a thousand words.
+            generationConfig: { temperature: 0, maxOutputTokens: 4096 },
           }),
         });
 
       if (!res.ok) throw await providerError(res);
       const d = await res.json().catch(() => null);
-      const text = (d?.candidates?.[0]?.content?.parts || [])
+      const cand = d?.candidates?.[0];
+      const text = (cand?.content?.parts || [])
         .map(p => p?.text || '').join('').trim();
+      // A transcript that ends mid-sentence is either the recording or the
+      // model stopping; the finish reason is the only way to tell which
+      // afterwards, so it is logged whenever it is not a plain stop.
+      if (cand?.finishReason && cand.finishReason !== 'STOP') {
+        console.warn(`[transcription] gemini finished with ${cand.finishReason} after ${text.length} chars`);
+      }
       return { text, language: '' };
     },
   },

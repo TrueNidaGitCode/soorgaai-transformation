@@ -28,8 +28,14 @@
 
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 
-/** Two minutes, matched to the server's cap so the refusal happens here first. */
-const MAX_MS = 120000;
+/**
+ * Five minutes. It was two, and a spoken objective with pauses in it reached
+ * that: the recording stopped by itself, mid-sentence, and the transcript
+ * ended on "handled through Excel or" with nothing on screen to say why.
+ * Five minutes is more than any objective needs and well under the server's
+ * size cap; and when the cap does stop a recording, it now says so.
+ */
+const MAX_MS = 5 * 60 * 1000;
 
 /**
  * What counts as having heard someone.
@@ -306,9 +312,14 @@ export function createVoiceRecorder({ onLevel, onText, onError, onState } = {}) 
     watchLevel(stream);
     state('recording');
 
-    // The server refuses anything over two minutes, so stopping here first
-    // turns a refusal into a transcript.
-    stopTimer = setTimeout(() => { if (recorder?.state === 'recording') recorder.stop(); }, MAX_MS);
+    // The server has a size cap, so stopping here first turns a refusal into
+    // a transcript -- and says that it did, because a recording that stops on
+    // its own looks like a fault.
+    stopTimer = setTimeout(() => {
+      if (recorder?.state !== 'recording') return;
+      say('Stopped at five minutes and writing down what was heard. Say the rest in a second recording.');
+      recorder.stop();
+    }, MAX_MS);
     return true;
   }
 

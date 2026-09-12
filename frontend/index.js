@@ -10,7 +10,7 @@
 import { MATURITY_STAGES } from './data/maturityStages.js';
 import { captureOutreachRef, outreachRef, clearOutreachRef, visitorId, recordVisit }
   from './shared/visitor.js';
-import { voiceAvailable, createVoiceRecorder } from './shared/voiceInput.js?v=2';
+import { voiceAvailable, createVoiceRecorder } from './shared/voiceInput.js?v=3';
 
 const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 const OPEN_BLUEPRINT_KEY = 'soorgaai_open_blueprint_id';

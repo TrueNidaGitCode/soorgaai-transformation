@@ -95,6 +95,8 @@ const customerUnderstandingSchema = new mongoose.Schema({
   needs:          { type: [needSchema],        default: [] },
 
   watermarks: { type: [watermarkSchema], default: [] },
+  /** The newest live-application signal the Learner has read (tenantSignalService). */
+  signalsReadAt: { type: Date, default: null },
 
   /** Accounting, so a runaway learner is visible rather than merely expensive. */
   lastLearnedAt: { type: Date,   default: null },

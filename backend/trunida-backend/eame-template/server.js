@@ -25,6 +25,8 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { startScheduler } from './services/connectorService.js';
+import { turnMiddleware } from './services/turnLog.js';
 
 dotenv.config();
 
@@ -52,6 +54,14 @@ app.use(cors({
  * of the product — the API was running, but nothing was using it.
  */
 app.use(express.static(path.join(__dirname, 'frontend')));
+
+/**
+ * Every question answered is kept in this application's own database, and
+ * only a count of it reaches Svarg (services/turnLog.js, tenantSignals.js).
+ * Registered before the routes so it sees every answer; it changes nothing
+ * about them.
+ */
+app.use(turnMiddleware);
 
 /** Health/version, where a machine looks for it rather than at the front door. */
 app.get('/api', (req, res) => {
@@ -162,6 +172,12 @@ async function start() {
   console.log(mounted.length ? `Mounted: ${mounted.join(', ')}` : 'No routes found in routes/');
 
   await seedIfEmpty();
+
+  // Scheduled connector syncs run from this process -- the owner's Jira,
+  // Confluence or GitHub pulled on the hour or the day they chose. Nothing
+  // here calls back into Svarg; the source, the credentials and the rows all
+  // stay in this application.
+  startScheduler();
 
   // Registered after the routes, or it would swallow every API path below it.
   app.get('*', (req, res, next) => {

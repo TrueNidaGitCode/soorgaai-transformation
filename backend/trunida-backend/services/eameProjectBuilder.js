@@ -3,10 +3,10 @@
  *
  * Assembles the file manifest for the real, deployable defect-matching
  * project Window 5 (Eame) pushes to the user's GitHub. Two sources:
- *  - CORE_FILES / JIRA_MODULE_FILES: real, already-working files copied
- *    verbatim from this repo (same relative layout: models/, services/,
- *    controllers/, routes/, middleware/, scripts/, frontend/) — nothing
- *    here is regenerated or LLM-authored, it's the actual tested code.
+ *  - CORE_FILES: real, already-working files copied verbatim from this repo
+ *    (same relative layout: models/, services/, controllers/, routes/,
+ *    middleware/, scripts/, frontend/) — nothing here is regenerated or
+ *    LLM-authored, it's the actual tested code.
  *  - eame-template/: new files written specifically for the standalone
  *    package (entrypoint, package.json, docs, dev-token frontend shell).
  */
@@ -38,13 +38,10 @@ const CORE_FILES = [
   ['../../frontend/defect-matching/defect-matching.css', 'frontend/defect-matching.css'],
 ];
 
-const JIRA_MODULE_FILES = [
-  ['services/atlassianAuthService.js', 'services/atlassianAuthService.js'],
-  ['services/jiraApiService.js', 'services/jiraApiService.js'],
-  ['services/jiraContentService.js', 'services/jiraContentService.js'],
-  ['services/confluenceContentService.js', 'services/confluenceContentService.js'],
-  ['utils/encryption.js', 'utils/encryption.js'],
-];
+// The Jira, Confluence and GitHub connectors ship with every application as
+// part of the template (services/connectors/), with credentials kept in the
+// application's own database. The older OAuth Jira module that depended on
+// Svarg's Atlassian app is gone with it.
 
 // Every file under eame-template/ is pushed at the same relative path,
 // minus the eame-template/ prefix — walked recursively so adding a file
@@ -107,24 +104,18 @@ function applyName(content, appName, copy = {}) {
 }
 
 /**
- * @param {{includeJira?: boolean, appName?: string}} [opts]
+ * @param {{appName?: string}} [opts]  (includeJira is accepted and ignored: the
+ *   connectors are part of the template now, not an optional module)
  * @returns {{path:string, content:string}[]}
  */
-export function buildManifest({ includeJira = true, appName = '', copy = {} } = {}) {
+export function buildManifest({ appName = '', copy = {} } = {}) {
   const manifest = [];
 
   for (const [source, dest] of CORE_FILES) {
     manifest.push({ path: dest, content: applyName(readFile(source), appName, copy) });
   }
 
-  if (includeJira) {
-    for (const [source, dest] of JIRA_MODULE_FILES) {
-      manifest.push({ path: dest, content: applyName(readFile(source), appName, copy) });
-    }
-  }
-
   for (const [fullPath, dest] of walkTemplateFiles(TEMPLATE_ROOT)) {
-    if (!includeJira && (dest.includes('jira') || dest.includes('Jira') || dest === 'JIRA_INTEGRATION.md')) continue;
     manifest.push({ path: dest, content: applyName(readFile(fullPath, true), appName, copy) });
   }
 
@@ -163,6 +154,17 @@ export function buildRuntime({ appName = '', copy = {} } = {}) {
     'controllers/dataController.js':    { template: 'controllers/dataController.js' },
     'routes/dataRoutes.js':             { template: 'routes/dataRoutes.js' },
     'frontend/data.js':                 { template: 'frontend/data.js' },
+    'services/connectorService.js':     { template: 'services/connectorService.js' },
+    'services/connectors/jira.js':      { template: 'services/connectors/jira.js' },
+    'services/connectors/confluence.js':{ template: 'services/connectors/confluence.js' },
+    'services/connectors/github.js':    { template: 'services/connectors/github.js' },
+    'controllers/connectorController.js': { template: 'controllers/connectorController.js' },
+    'routes/connectorsRoutes.js':       { template: 'routes/connectorsRoutes.js' },
+    'services/tenantSignals.js':        { template: 'services/tenantSignals.js' },
+    'services/turnLog.js':              { template: 'services/turnLog.js' },
+    'controllers/signalController.js':  { template: 'controllers/signalController.js' },
+    'routes/signalsRoutes.js':          { template: 'routes/signalsRoutes.js' },
+    'frontend/feedback.js':             { template: 'frontend/feedback.js' },
     'middleware/authMiddleware.js':     { repo: 'middleware/authMiddleware.js' },
     'services/llmService.js':           { repo: 'services/llmService.js' },
     'services/modelSelectionService.js':{ repo: 'services/modelSelectionService.js' },

@@ -116,12 +116,20 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
     // The key that unlocks the application's Data page. Records never come to
     // Svarg: they are imported inside the application, by whoever holds this.
     ...(ownerKey ? { APP_OWNER_KEY: ownerKey } : {}),
+    // Keys the credentials of the connectors the owner attaches on the Data
+    // page. Generated here, kept only in the tenant's environment: Svarg
+    // holds neither the credentials nor the key that opens them.
+    CONNECTOR_ENCRYPTION_KEY: crypto.randomBytes(32).toString('base64'),
 
     // Generation: the app's 'selfhosted' provider is a plain OpenAI client
     // against an arbitrary base URL, so pointing it at the gateway is enough.
     PROVIDER_CHAIN: 'selfhosted',
     SELFHOSTED_BASE_URL: `${gatewayBaseUrl}/v1`,
     SELFHOSTED_API_KEY: gatewayToken,
+    // Where the application reports usage -- counts, votes, corrections --
+    // with the same token. The list of what it may send is fixed on its side
+    // (services/tenantSignals.js) and refused here if it strays.
+    SVARG_SIGNALS_URL: `${gatewayBaseUrl}/v1/signals`,
     SELFHOSTED_MODEL: catalog.apiModel,
 
     // Embeddings through the same gateway. The dimension MUST be pinned:

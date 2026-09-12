@@ -1,33 +1,33 @@
-# Defect Matching Agent
+# __APP_NAME__
 
-Retrieval-Augmented Semantic Matching for Defects — describe a new test
-failure, get back a suggested root cause plus the historical defect
-records it was matched against. Delivered by Svarg's Eame layer as a
-real, standalone, deployable project — not a snippet.
+An AI application built by Svarg for one use case: yours. It is a real,
+standalone, deployable project -- a Node server, a MongoDB database, and a
+chat interface -- that you own outright. Svarg built it; it runs on its
+own.
 
-## How it works
+## How it is put together
 
-1. **`services/embeddingService.js`** — embeds text (OpenAI by default,
-   or a self-hosted model — see below).
-2. **`services/hybridRetrievalService.js`** — embeds the new failure
-   description and finds the closest historical `DefectRecord`s in
-   MongoDB Atlas Vector Search.
-3. **`services/modelSelectionService.js`** + **`config/modelCatalog.js`**
-   — picks which LLM answers, by Quality/Cost/Performance tradeoff
-   (`frontier` = highest quality cloud model, `open-weight` = a
-   self-hosted model, `auto` = the resilient failover chain).
-4. **`services/llmService.js`** — calls that model with the retrieved
-   matches as context.
-5. **`services/defectMatchingService.js`** — ties the above together;
-   **`controllers/defectMatchingController.js`** exposes it as
-   `POST /api/defect-matching/match`.
+```
+server.js                  boots the process, mounts every routes/ file, seeds on first start
+routes/  controllers/      the application itself, written for this use case
+services/  models/         (see the file headers -- each says what it does)
+scripts/seed*.js           loads the data the application was built on
+data/                      the datasets: sample rows to start, yours once imported
+frontend/                  the chat interface and the Data page
+services/llmService.js     talks to the model, through Svarg's gateway or your own keys
+```
 
-## Setup
+Two kinds of file live here. The **application** -- routes, controllers,
+services, models, the seed script and `frontend/app.js` -- was written for
+your use case. The **runtime** -- `server.js`, the sign-in middleware, the
+model client, the Data page and the connectors -- is the same in every
+application Svarg builds, and is tested as one piece.
+
+## Running it
 
 ```bash
 npm install
-cp .env.example .env   # fill in MONGO_URI, JWT_SECRET, and at least one LLM key
-npm run seed            # loads 14 synthetic OTA/ECU defect records
+cp .env.example .env    # fill in MONGO_URI, JWT_SECRET, and how the model is reached
 npm start
 ```
 
@@ -38,60 +38,52 @@ session from `POST /api/session`, which is on when `APP_PUBLIC_ACCESS=true`
 set `token` in local storage -- `npm run mint-token` prints one -- and the
 door will let you through.
 
-Test the API directly:
+On first start the seed script loads the sample data in `data/`, so the
+application answers straight away. It says on screen that the answers come
+from sample data until yours is in.
 
-```bash
-npm run mint-token   # prints a ready-to-use curl command
-```
+## Your data
 
-## Bringing in real defect data
+Your records never go to Svarg. The application was built from the *shape*
+of its data -- column names and a few invented rows -- and the rows
+themselves come in here, inside the application, into the database that is
+yours.
 
-`npm run seed` loads synthetic, representative records so the app is
-immediately testable. To pull in real data instead:
+Open the **Data** page from the chat header. It is unlocked with the owner
+key (`APP_OWNER_KEY`; on Svarg it was shown once on the go-live screen).
+For each dataset the application was built on, you can:
 
-- **From Jira** — see [JIRA_INTEGRATION.md](./JIRA_INTEGRATION.md) (real,
-  working OAuth integration included in this repo, `services/jira*.js` +
-  `controllers/jiraController.js`).
-- **From anywhere else** — insert directly into the `DefectRecord`
-  collection (see `models/DefectRecord.js` for the shape), then call
-  `syncDefectRecordToChunk()` from `services/hybridRetrievalService.js`
-  to index it for retrieval. `scripts/seed_defect_records.mjs` is the
-  simplest working example of both steps.
+- **Import a file** -- CSV or Excel, read in your browser, matched onto the
+  dataset's columns, sent to this server and nowhere else.
+- **Import a WhatsApp chat export** -- every message, or just the yes / no
+  replies as attendance, per person, per day.
+- **Connect a source** -- Jira, Confluence or GitHub, with an API token you
+  create. The token is kept encrypted in this application's own database
+  (`CONNECTOR_ENCRYPTION_KEY`), and the rows are pulled on demand or every
+  hour or day, from this process. Removing a source forgets the token and
+  leaves the rows.
 
-## Self-hosted / open-weight models
+Every row carries a `_source` column saying where it came from (`sample`,
+`own`, `whatsapp`, `jira`, `confluence`, `github`), every import is logged,
+and the public chat session cannot reach any of it.
 
-Both generation and embeddings can point at a self-hosted, Ollama-
-compatible endpoint instead of a cloud API — set `EMBEDDING_PROVIDER`,
-`SELFHOSTED_BASE_URL`, and add `selfhosted` to `PROVIDER_CHAIN`. See the
-comments in `.env.example`.
+## The model
+
+`services/llmService.js` fails over through `PROVIDER_CHAIN`. On Svarg the
+chain is `selfhosted` pointed at Svarg's gateway, which meters usage and
+never stores a prompt. Running it yourself, set your own `GOOGLE_API_KEY`,
+`ANTHROPIC_API_KEY` or `OPENAI_API_KEY`, or point `SELFHOSTED_BASE_URL` at
+an Ollama-compatible endpoint. See `.env.example`.
 
 ## Deploy
 
-**Backend (Railway, or any Node host):**
+Any Node host. On Railway: deploy from this repository, start command
+`npm start`, and set the variables from `.env.example`. The database is any
+MongoDB Atlas cluster; the free tier is enough to start.
 
-1. Push this repo to GitHub (Eame already did this for you, if you're
-   reading this from that repo).
-2. Create a new Railway project → **Deploy from GitHub repo**.
-3. Railway auto-detects Node.js from `package.json`; if it asks, the
-   start command is `npm start`.
-4. Add environment variables under the **Variables** tab — same keys as
-   `.env.example`.
-5. Deploy. You'll get a URL like `https://your-app.up.railway.app`.
+## What is deliberately not included
 
-**Frontend:** `frontend/` is fully static — drag the folder into any
-static host (Vercel, Netlify, GitHub Pages), or serve it from the same
-Node process if you prefer (add `express.static('frontend')` to
-`server.js`). Update `frontend/config.js`'s `API_BASE` to your deployed
-backend URL either way.
-
-**MongoDB:** any MongoDB Atlas cluster with Vector Search enabled — the
-free M0 tier works for this. `hybridRetrievalService.js` creates its
-Atlas Search index automatically on first use.
-
-## What's deliberately not included
-
-No user signup/login system (see "Setup" above), no admin UI, no
-multi-tenant org model — this is the one capability, built to be read,
-run, and extended, not a framework. Auth is a single shared JWT secret
-(`middleware/authMiddleware.js`) — swap in real user accounts before
-using this with more than one person's data.
+No user accounts, no admin UI, no multi-tenant model. This is one
+capability, built to be read, run and extended. The sign-in is a shared JWT
+secret (`middleware/authMiddleware.js`); put real accounts in front before
+more than one team uses it.

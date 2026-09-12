@@ -114,7 +114,7 @@
     <header class="dt__head">
       <a href="#" class="dt__back" id="dt-back">&larr; Back to the chat</a>
       <h1 class="dt__title">Your data</h1>
-      <p class="dt__sub">The application was built on the shape of these datasets. Replace the sample rows with your own — your file is read here, in your browser, and the rows go to this application and nowhere else.</p>
+      <p class="dt__sub">The application was built on the shape of these datasets. Replace the sample rows with your own — a file read here in your browser, or a source connected to this application directly. Either way the rows and the credentials stay in this application and never go to Svarg.</p>
     </header>
 
     <div class="dt__gate" id="dt-gate">
@@ -136,8 +136,13 @@
         <ul class="dt__log" id="dt-log"></ul>
       </section>
       <section class="dt__next">
-        <h2 class="dt__h2">Connectors</h2>
-        <p class="dt__hint">Connecting a source directly — a WhatsApp export, Confluence, Jira, GitHub — is next. Until then, an export from any of them imports as a file above.</p>
+        <h2 class="dt__h2">Where things are kept</h2>
+        <p class="dt__hint">Connected sources keep their credentials encrypted in this application's own database, and every row they bring says where it came from. Removing a source forgets its credentials and leaves the rows. Every conversation in this application is kept here too, and never sent anywhere.</p>
+      </section>
+      <section class="dt__signals" id="dt-signals">
+        <h2 class="dt__h2">What Svarg is told</h2>
+        <p class="dt__hint" id="dt-signals-note">The whole list. Nothing else leaves this application.</p>
+        <ul class="dt__siglist" id="dt-signals-list"></ul>
       </section>
       <p class="dt__lockrow"><button type="button" class="dt-btn dt-btn--quiet" id="dt-lock">Lock the Data page</button></p>
     </div>
@@ -222,6 +227,10 @@
        nothing. Loaded here rather than bundled: it is large and rarely used. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
   <script src="data.js" defer></script>
+  <!-- Thumbs up / down under every answer, and the one thing it needs to know
+       about the module's requests (which capability answered). Plain script,
+       before app.js, so its fetch wrapper is in place when the module runs. -->
+  <script src="feedback.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

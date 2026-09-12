@@ -52,6 +52,21 @@ export const FIXED_PATHS = [
   'controllers/dataController.js',
   'routes/dataRoutes.js',
   'frontend/data.js',
+  // Connectors: live sources attached inside the application, credentials
+  // kept in its own database. Fixed for the same reason as the Data page.
+  'services/connectorService.js',
+  'services/connectors/jira.js',
+  'services/connectors/confluence.js',
+  'services/connectors/github.js',
+  'controllers/connectorController.js',
+  'routes/connectorsRoutes.js',
+  // The conversation stays in the tenant; only a short list of signals
+  // reaches Svarg. Fixed so the list cannot be widened by a build.
+  'services/tenantSignals.js',
+  'services/turnLog.js',
+  'controllers/signalController.js',
+  'routes/signalsRoutes.js',
+  'frontend/feedback.js',
 ];
 
 /**

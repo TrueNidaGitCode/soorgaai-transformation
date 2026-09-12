@@ -83,3 +83,6 @@ body.landing2 { padding-left: var(--rail, 0px); box-sizing: border-box; }
   text-underline-offset: 2px;
 }
 .pv-section a:hover { color: #7fd9bc; }
+
+/* The list of signals a hosted application sends: the whole of it. */
+.pv-signals code { padding: 1px 6px; border-radius: 5px; background: rgba(127,127,127,0.12); font-size: 0.9em; }

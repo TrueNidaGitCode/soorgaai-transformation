@@ -544,9 +544,54 @@ body {
 .dt-map__sample { color: var(--ch-dim); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dt-map__actions { display: flex; gap: 10px; margin-top: 12px; }
 
+/* Sources attached to a dataset: the live ones, and the WhatsApp export. */
+.dt-src { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--ch-line); }
+.dt-src__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.dt-src__title { margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ch-faint); }
+.dt-src__add { display: flex; flex-wrap: wrap; gap: 6px; }
+.dt-chip { padding: 5px 11px; border: 1px solid var(--ch-line-hi); border-radius: 999px; background: transparent; color: var(--ch-dim); font: inherit; font-size: 12.5px; cursor: pointer; }
+.dt-chip:hover { color: var(--ch-text); border-color: rgba(92,197,167,0.5); }
+.dt-src__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.dt-conn { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 12px; border: 1px solid var(--ch-line); border-radius: 10px; font-size: 13px; }
+.dt-conn__kind { padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,0.06); color: var(--ch-text); font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.dt-conn__meta { color: var(--ch-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dt-conn__meta b { color: var(--ch-text); font-weight: 600; }
+.dt-conn__meta--bad { color: #FCA5A5; }
+.dt-conn__acts { display: flex; gap: 6px; align-items: center; }
+.dt-conn__acts select { padding: 5px 8px; border: 1px solid var(--ch-line-hi); border-radius: 8px; background: var(--ch-panel); color: var(--ch-text); font: inherit; font-size: 12px; }
+.dt-mini { padding: 5px 10px; border: 1px solid var(--ch-line-hi); border-radius: 8px; background: transparent; color: var(--ch-dim); font: inherit; font-size: 12px; cursor: pointer; }
+.dt-mini:hover { color: var(--ch-text); }
+.dt-mini:disabled { opacity: 0.6; cursor: wait; }
+.dt-form { margin-top: 12px; padding: 14px; border: 1px solid var(--ch-line-hi); border-radius: 12px; background: rgba(255,255,255,0.02); }
+.dt-form__head { margin: 0 0 4px; font-size: 14px; font-weight: 700; }
+.dt-form__help { margin: 0 0 12px; font-size: 12.5px; color: var(--ch-faint); line-height: 1.5; }
+.dt-form__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.dt-form__field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ch-dim); }
+.dt-form__field input, .dt-form__field select { padding: 8px 10px; border: 1px solid var(--ch-line-hi); border-radius: 8px; background: var(--ch-panel); color: var(--ch-text); font: inherit; font-size: 13px; }
+.dt-form__field input:focus { outline: none; border-color: rgba(92,197,167,0.55); }
+.dt-form__actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+.dt-form__actions .dt-note { margin: 0; }
+.dt-wa__mode { display: flex; gap: 14px; margin: 6px 0 10px; font-size: 13px; color: var(--ch-dim); }
+.dt-wa__mode label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+
+/* Feedback under an answer. */
+.ch-fb { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.ch-fb__btn { padding: 2px 7px; border: 1px solid var(--ch-line); border-radius: 999px; background: transparent; font-size: 13px; line-height: 1.4; cursor: pointer; opacity: 0.55; }
+.ch-fb__btn:hover, .ch-fb__btn--on { opacity: 1; border-color: rgba(92,197,167,0.5); }
+.ch-fb__btn:disabled { cursor: default; }
+.ch-fb__said { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--ch-faint); flex: 1 1 200px; }
+.ch-fb__fix { flex: 1 1 160px; min-width: 0; padding: 5px 9px; border: 1px solid var(--ch-line-hi); border-radius: 8px; background: var(--ch-panel); color: var(--ch-text); font: inherit; font-size: 12.5px; }
+.ch-fb__send { padding: 5px 10px; border: 0; border-radius: 999px; background: var(--ch-accent); color: #08130F; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+/* What Svarg is told, on the Data page. */
+.dt__signals { margin-bottom: 26px; }
+.dt__siglist { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dt__siglist li { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; padding: 8px 12px; border: 1px solid var(--ch-line); border-radius: 10px; font-size: 13px; color: var(--ch-dim); }
+.dt__siglist code { font-size: 12px; color: var(--ch-text); }
+
 .dt__logwrap { margin-bottom: 26px; }
 .dt__log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.dt__log li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 14px; padding: 8px 12px; border: 1px solid var(--ch-line); border-radius: 10px; font-size: 13px; color: var(--ch-dim); }
+.dt__log li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 14px; padding: 8px 12px; border: 1px solid var(--ch-line); border-radius: 10px; font-size: 13px; color: var(--ch-dim); }
 .dt__log li span:first-child { color: var(--ch-text); }
 .dt__next { margin-bottom: 26px; }
 .dt__lockrow { margin: 0; }

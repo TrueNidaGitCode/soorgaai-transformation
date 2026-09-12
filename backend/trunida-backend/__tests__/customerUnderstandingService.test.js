@@ -26,6 +26,12 @@ vi.mock('../services/conversationMemoryService.js', () => ({
   threadsForBlueprint: mockThreads,
 }));
 vi.mock('../services/llmService.js', () => ({ generate: mockGenerate }));
+// No live application in these tests: the signal store answers empty. The
+// live path is covered in tenantSignals.test.js.
+vi.mock('../services/tenantSignalService.js', async () => {
+  const real = await vi.importActual('../services/tenantSignalService.js');
+  return { ...real, signalsSince: async () => ({ rows: [], newest: null }) };
+});
 
 const {
   normalise, sameObservation, mergeObservations, unreadTurns,

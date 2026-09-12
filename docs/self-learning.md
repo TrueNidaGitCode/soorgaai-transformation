@@ -41,6 +41,14 @@ Each stage only runs if the one before it did something: no new turns means no
 learning pass, nothing learned means no decision, nothing decided means no
 build. A quiet conversation costs nothing beyond the reply itself.
 
+Once the application is live, the conversation that matters happens inside it
+and stays there. What reaches the Learner from a live application is a fixed
+list of signals -- counts by capability, votes, corrections the owner chose to
+write, imports -- received at `POST /api/gateway/v1/signals` and read as a
+"THE LIVE APPLICATION" block by `learnFromConversation`. Corrections and
+down-votes count toward the threshold; usage counts alone never buy a model
+call. See docs/connectors-in-the-application.md, Phase C.
+
 ---
 
 ## What each piece stores

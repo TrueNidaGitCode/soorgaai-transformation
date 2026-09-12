@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../home.css">
   <link rel="stylesheet" href="../landing.css">
-  <link rel="stylesheet" href="privacy.css?v=2">
+  <link rel="stylesheet" href="privacy.css?v=3">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=1">
 
@@ -39,7 +39,7 @@
 
       <p class="pv-eyebrow">Legal</p>
       <h1 class="pv-title">Privacy Policy</h1>
-      <p class="pv-updated">Last updated: 10 September 2026</p>
+      <p class="pv-updated">Last updated: 13 September 2026</p>
 
       <p class="pv-intro">
         This page explains what information Svarg collects, why, and how it's protected — including
@@ -154,6 +154,39 @@
           <li>This content may include personal data if your source pages contain it (e.g. author names) — we don't filter or redact this, so we recommend connecting spaces you're comfortable using for this purpose.</li>
           <li>Disconnecting immediately and permanently deletes the stored connection and tokens. For an organisation-wide connection, all extracted documents for that organisation are deleted as well. For a personal connection, documents already linked to a specific blueprint remain as part of that blueprint's history, since they're already baked into content that's been generated — disconnecting stops any *new* linking, it doesn't retroactively unwind past generations.</li>
         </ul>
+      </section>
+
+      <section class="pv-section" id="applications">
+        <h2>The application Svarg builds for you</h2>
+        <p>
+          When Svarg builds and hosts an application for you, your operational records never come to
+          Svarg. The application is built from the <em>shape</em> of your data — column names and a few
+          invented example rows — and the records themselves go into the application, into a database
+          that is yours, through its own Data page:
+        </p>
+        <ul>
+          <li><strong>Files and exports</strong> (CSV, Excel, a WhatsApp chat export) are read in your browser and sent to your application's own server, never to Svarg.</li>
+          <li><strong>Connected sources</strong> (Jira, Confluence, GitHub) keep their credentials encrypted in your application's database, with a key that exists only in your application's environment. Svarg holds neither the credentials nor the key.</li>
+          <li><strong>Conversations</strong> inside your application — every question and answer — are kept in your application's database and are not sent to Svarg.</li>
+          <li><strong>The Data page</strong> is unlocked by an owner key shown to you once at go-live; Svarg keeps only a hash of it. The public chat session cannot reach it.</li>
+        </ul>
+        <p>
+          What your application does tell Svarg is a short, fixed list of signals, so that Svarg can
+          notice what you need next. The list is the whole of it, and your application shows the same
+          list on its Data page:
+        </p>
+        <ul class="pv-signals">
+          <li><code>question_asked</code> — one question was answered: which capability answered, and when. Not the question.</li>
+          <li><code>feedback</code> — a thumbs up or down on an answer: the vote, the capability, and when. Not the answer.</li>
+          <li><code>correction</code> — what you said the answer should have been, in your words, when you chose to write it.</li>
+          <li><code>import</code> — rows arrived on a dataset: the dataset name, the kind of source, and the count. Not a row.</li>
+        </ul>
+        <p>
+          Model calls your application makes pass through Svarg's gateway to the model provider so that
+          usage can be metered; the gateway records token counts and cost and does not store the
+          prompt or the reply. If you host the application yourself, you can point it at your own model
+          keys and switch reporting off, and it runs in full.
+        </p>
       </section>
 
       <section class="pv-section">

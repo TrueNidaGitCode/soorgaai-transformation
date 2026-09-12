@@ -571,6 +571,11 @@ setTimeout(async function () {
       if (out.ownerKey !== 'sok_1111') bad('the owner key is not shown after going live: ' + out.ownerKey);
       var dataLink = document.getElementById('yusu-owner-data');
       if (!dataLink || dataLink.offsetParent === null || dataLink.href.indexOf('railway.app/#data') === -1) bad('no "Connect your data" link to the Data page of the application: ' + (dataLink ? dataLink.href : 'none'));
+      // And the plan under it: each dataset named with its way in (Phase B).
+      var plan = [].map.call(document.querySelectorAll('#yusu-owner-plan li'), function (li) { return li.querySelector('span').textContent + ' <- ' + li.querySelector('em').textContent; });
+      out.plan = plan.length + ' datasets';
+      if (plan.length !== 5) bad('the connect plan lists ' + plan.length + ' datasets, expected 5');
+      if (!/Confluence/.test(plan[0] || '') || !/Jira/.test(plan[1] || '') || !/file export/.test(plan[2] || '')) bad('the connect plan mis-names a source: ' + plan.join(' | '));
     }
 
     // The stage it moved to is the next one and it settles there: the fixture

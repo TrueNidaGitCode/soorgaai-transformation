@@ -738,6 +738,7 @@ function showOwnerKey(key, url) {
   if (!box || !el) return;
   el.textContent = key;
   box.style.display = '';
+  renderConnectPlan(_bp);
   if (copy && !copy.dataset.wired) {
     copy.dataset.wired = '1';
     copy.addEventListener('click', async () => {
@@ -755,6 +756,58 @@ function setOwnerDataLink(url) {
   if (!_ownerDataLink) return;
   _ownerDataLink.href = url ? url.replace(/\/$/, '') + '/#data' : '#';
   _ownerDataLink.style.display = url ? '' : 'none';
+}
+
+// ── What to connect ──────────────────────────────────────────────────────────
+//
+// The blueprint knows where each dataset usually lives (Cob wrote a
+// typicalSource per dataset). The application's Data page can take a file, a
+// WhatsApp export, or a live Jira, Confluence or GitHub. Naming the match here
+// is what turns "Connect your data" from a link into a plan: the owner lands
+// on the Data page knowing which button is theirs for each dataset.
+
+const APP_SOURCES = [
+  { match: /whatsapp/i,            label: 'WhatsApp export' },
+  { match: /jira/i,                label: 'Jira' },
+  { match: /confluence/i,          label: 'Confluence' },
+  { match: /github|gitlab|bitbucket|\bgit\b|pull request/i, label: 'GitHub' },
+  { match: /excel|sheet|csv|xls|spreadsheet|register|ledger|tally/i, label: 'Excel or CSV file' },
+];
+
+function datasetsOf(bp) {
+  const domain = (bp?.domains || []).find(d => d.domainId === 'data-readiness');
+  if (!domain) return [];
+  for (const cap of (domain.capabilities || [])) {
+    for (const section of (cap.sections || [])) {
+      const rows = section.brief?.datasets;
+      if (Array.isArray(rows) && rows.length) {
+        return rows.map(d => ({ name: String(d.name || '').trim(), typicalSource: String(d.typicalSource || '').trim() })).filter(d => d.name);
+      }
+    }
+  }
+  return [];
+}
+
+/** The way in for a dataset, from where the blueprint says it usually lives. */
+function sourceFor(typicalSource) {
+  const hit = APP_SOURCES.find(s => s.match.test(typicalSource || ''));
+  return hit ? hit.label : 'a file export';
+}
+
+function renderConnectPlan(bp) {
+  const box = document.getElementById('yusu-owner-plan');
+  if (!box) return;
+  const rows = datasetsOf(bp);
+  if (!rows.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  box.innerHTML = '<p class="yu-owner__planhead">On the Data page, each of these has its own button:</p>'
+    + '<ul class="yu-owner__plan">'
+    + rows.slice(0, 8).map(d => '<li><span>' + escapeHtml(d.name) + '</span><em>' + escapeHtml(sourceFor(d.typicalSource)) + '</em></li>').join('')
+    + '</ul>';
+}
+
+function escapeHtml(t) {
+  return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 /** Go Live. Pressed by autoRun once the checks pass; still a button, so a

@@ -27,6 +27,7 @@
 import CustomerUnderstanding from '../models/CustomerUnderstanding.js';
 import { threadsForBlueprint } from './conversationMemoryService.js';
 import { generate } from './llmService.js';
+import { signalsSince, summariseSignals, signalsToText } from './tenantSignalService.js';
 
 /** Turns that must accumulate before an extraction is worth its cost. A
  *  customer typing three short messages should not buy three model calls. */
@@ -254,7 +255,7 @@ Rules:
 - Do not repeat something as a need if it is plainly already working for them.
 - Short phrases, not sentences. No commentary outside the JSON.`;
 
-function buildUserMessage(current, passes) {
+function buildUserMessage(current, passes, liveText = '') {
   const lines = [];
 
   if (current?.business) {
@@ -265,13 +266,22 @@ function buildUserMessage(current, passes) {
     lines.push('');
   }
 
-  lines.push('NEW CONVERSATION');
-  for (const p of passes) {
-    const stage = p.threadId.split(':').pop();
-    lines.push(`\n[${stage}]`);
-    for (const t of p.turns) {
-      lines.push(`${t.role === 'user' ? 'Customer' : 'Svarg'}: ${t.content}`);
+  if (passes.length) {
+    lines.push('NEW CONVERSATION');
+    for (const p of passes) {
+      const stage = p.threadId.split(':').pop();
+      lines.push(`\n[${stage}]`);
+      for (const t of p.turns) {
+        lines.push(`${t.role === 'user' ? 'Customer' : 'Svarg'}: ${t.content}`);
+      }
     }
+  }
+  // Once the application is live, the conversation that matters happens
+  // inside it and stays there. What reaches us is counts, votes and the
+  // corrections the customer chose to write (tenantSignalService.js).
+  if (liveText) {
+    if (passes.length) lines.push('');
+    lines.push(liveText);
   }
   return lines.join('\n');
 }
@@ -302,10 +312,18 @@ export async function learnFromConversation({ userId, blueprintId, force = false
       threadsForBlueprint({ userId, blueprintId }),
       CustomerUnderstanding.findOne({ userId }).lean(),
     ]);
-    if (!threads.length) return { learned: false, reason: 'no-conversation' };
+
+    // Signals from the live application, since the last pass. A correction
+    // is a turn in every sense that matters here; counts are context.
+    const live = await signalsSince({ blueprintId, since: current?.signalsReadAt || null });
+    const liveSummary = summariseSignals(live.rows);
+    const liveText = signalsToText(liveSummary);
+    const liveTurns = liveSummary.corrections.length + liveSummary.votes.down;
+
+    if (!threads.length && !live.rows.length) return { learned: false, reason: 'no-conversation' };
 
     const passes = unreadTurns(threads, current?.watermarks || []);
-    const newTurns = passes.reduce((n, p) => n + p.turns.length, 0);
+    const newTurns = passes.reduce((n, p) => n + p.turns.length, 0) + liveTurns;
     if (!newTurns) return { learned: false, reason: 'nothing-new' };
     if (!force && newTurns < LEARN_THRESHOLD) {
       return { learned: false, reason: 'below-threshold', newTurns };
@@ -313,7 +331,7 @@ export async function learnFromConversation({ userId, blueprintId, force = false
 
     const { text } = await generate({
       systemPrompt: SYSTEM_PROMPT,
-      userMessage:  buildUserMessage(current, passes),
+      userMessage:  buildUserMessage(current, passes, liveText),
       maxTokens:    700,
       label:        'learn:understanding',
     });
@@ -334,6 +352,7 @@ export async function learnFromConversation({ userId, blueprintId, force = false
         }),
         watermarks:    advanceWatermarks(current?.watermarks || [], passes),
         lastLearnedAt: now,
+        ...(live.newest ? { signalsReadAt: live.newest } : {}),
       },
       $inc: { learnCount: 1 },
     };

@@ -3,6 +3,7 @@
  *
  * POST /api/gateway/v1/chat/completions
  * POST /api/gateway/v1/embeddings
+ * POST /api/gateway/v1/signals        what a live application reports about itself
  *
  * These are the ONLY routes in this codebase authenticated by a deployment
  * token rather than a user JWT — the caller is a machine (a hosted customer
@@ -18,6 +19,8 @@ import {
   estimateCostUsd, estimateEmbeddingCostUsd, toChatCompletion, classifyUpstreamError,
 } from '../services/gatewayService.js';
 import { embedBatchWithUsage } from '../services/embeddingService.js';
+import { acceptSignals } from '../services/tenantSignalService.js';
+import { learnFromConversation } from '../services/customerUnderstandingService.js';
 
 const MAX_MESSAGES = 50;
 const MAX_EMBEDDING_INPUTS = 256;
@@ -115,5 +118,32 @@ export async function embeddings(req, res) {
   } catch (err) {
     console.error('[gateway] embeddings error:', err.message);
     return fail(res, 502, classifyUpstreamError(err.message), 'api_error');
+  }
+}
+
+/**
+ * Signals from a live application: counts, votes, corrections, imports.
+ * Never a message body or a row -- tenantSignalService refuses anything not
+ * on the list. Authenticated by the deployment token; not subject to the
+ * spend allowance, because reporting costs nothing and a capped application
+ * is exactly the one whose usage we want to know about.
+ *
+ * A batch that carries a correction or a down-vote is a moment worth
+ * learning from, so the Learner is nudged -- unawaited, as everywhere else.
+ */
+export async function signals(req, res) {
+  try {
+    const deployment = await authenticate(bearer(req));
+    if (!deployment) return fail(res, 401, 'Invalid or missing deployment token.', 'authentication_error');
+
+    const result = await acceptSignals(deployment, req.body?.signals);
+    if (result.corrections || result.downvotes) {
+      learnFromConversation({ userId: deployment.userId, blueprintId: deployment.blueprintId, force: true })
+        .catch(err => console.error('[gateway] learner nudge failed:', err.message));
+    }
+    return res.json({ ok: true, kept: result.kept, refused: result.refused });
+  } catch (err) {
+    console.error('[gateway] signals error:', err.message);
+    return fail(res, 500, 'Could not record the signals.', 'api_error');
   }
 }

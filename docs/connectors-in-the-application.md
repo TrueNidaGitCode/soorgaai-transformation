@@ -38,10 +38,10 @@ rows or their own), and the ways to replace the sample with their own:
   Every imported row carries `_source=own`; the application's "this is
   sample data" notice disappears on its own, because it already keys on
   `_source`.
-- **Connectors** -- Jira first, since the template already has one; then the
-  ones the reference business needs: a WhatsApp chat export (attendance
-  replies), Confluence, GitHub. Each keeps its credentials in the tenant and
-  writes to the tenant.
+- **Connectors** -- Jira, Confluence and GitHub by API token, each keeping
+  its credentials sealed in the tenant and writing to the tenant; and a
+  WhatsApp chat export (every message, or attendance replies) parsed in the
+  browser like a spreadsheet.
 - **An import log** -- what was imported, when, by whom, how many rows.
 
 The owner is whoever holds the **owner key**, issued once at go-live and
@@ -98,9 +98,9 @@ which questions were asked, what was corrected -- never rows.
 
 ## Phases
 
-Three phases. A changes the security answer; B and C make it whole. Each
-phase lists what it delivers, where it lives, and what has to be true before
-it is called done.
+Three phases, all delivered. A changes the security answer; B and C make it
+whole. Each phase lists what it delivers, where it lives, and what had to be
+true before it was called done.
 
 ### Phase A -- the foundation (delivered 13 September 2026)
 
@@ -138,76 +138,105 @@ customer record can reach Svarg's platform by any path the product offers.
 - Backend suite green (540 at delivery); every screen check green in normal,
   latency, autopilot and fixture-state modes.
 
-**Known gaps, carried into B**
+**Known gaps at the time (the first is closed by B)**
 
-- The Data page's import is file-only; nothing pulls from a live system yet.
+- The Data page's import was file-only; nothing pulled from a live system.
 - Owner access is a key, not a login. Losing the key means re-attaching the
   application to mint a new one (the hash is replaced, the old key dies).
 - The mapping is by column name; a file whose columns are named differently
   needs the owner to adjust each one by hand.
 
-### Phase B -- connectors in the application (about a week)
+### Phase B -- connectors in the application (delivered 13 September 2026)
 
 Live sources, connected from the Data page, with credentials held only in the
-tenant. Nothing in this phase touches Svarg's platform beyond a usage count.
+tenant. Nothing in this phase touches Svarg's platform.
 
-**Deliverables**
+**Delivered**
 
-| Piece | What it does |
-|---|---|
-| Connector frame | One shape for every connector in the template: `connect` (store credentials encrypted in the tenant, key from the tenant env), `test`, `sync` (pull, map onto a dataset, write `_source=<connector>`, call the seed), `disconnect`. A `svarg_connectors` collection per tenant: source, dataset, last sync, row count, status. |
-| Jira | The template already has `jiraController.js`; it moves under the connector frame and becomes the first entry on the Data page instead of a page of its own. `JIRA_INTEGRATION.md` is folded into the Data page's help. |
-| WhatsApp chat export | For the reference business (the cricket academy): a `.txt` export is parsed into messages (timestamp, sender, text), attendance replies matched to session dates and player names against the players dataset, and written as attendance rows. This is a file connector, not a live one -- WhatsApp has no API for a group's history -- and the Data page says so. |
-| Confluence | A space or page tree pulled into a knowledge dataset (title, URL, body, last edited) for the application's own retrieval. Distinct from the platform's Confluence *knowledge source*, which grounds the blueprint and is labelled as knowledge grounding. |
-| GitHub | Repository metadata, issues and pull requests into datasets, for product-AI engagements. Read-only token, tenant-held. |
-| Scheduling | Each connector can sync on a schedule (hourly / daily) from the tenant's own process; nothing calls back into Svarg. |
-| Yusu copy | **Connect your data** names the connectors the blueprint's datasets map to (`typicalSource` on each dataset), so the owner lands on the right one. |
+| Piece | Where | What it does |
+|---|---|---|
+| Connector frame | `eame-template/services/connectorService.js` | One shape for every connector: `test`, `pull`, and the frame's own connect / sync / disconnect around them. Credentials are AES-256-GCM sealed in `svarg_connectors` with `CONNECTOR_ENCRYPTION_KEY` from the tenant's environment (Svarg mints one per application at go-live and keeps no copy; a self-hosted install sets its own; without either the key is derived from `JWT_SECRET`). A sync pulls, maps the source's fields onto the dataset's columns, and lands rows through the same path a file import uses -- `data/own/<slug>.<kind>.csv`, `_source=<kind>`, the dataset's seed called -- so every row says where it came from. |
+| Jira | `services/connectors/jira.js` | Site + Atlassian email + API token + project key or JQL. Pages through `/rest/api/3/search/jql`, falling back to the older offset search. ADF descriptions become text. **Not OAuth**: the earlier OAuth module needed Svarg's own Atlassian app, which put a credential on the platform; it is removed from the template along with `JIRA_INTEGRATION.md`. |
+| Confluence | `services/connectors/confluence.js` | The pages of one space (v2 API, cursor-paged), storage HTML to text. This is the application's own knowledge, in its own database -- distinct from the platform's Confluence knowledge source, which grounds the blueprint. |
+| GitHub | `services/connectors/github.js` | Issues and pull requests of one repository, read-only fine-grained token. |
+| WhatsApp export | `frontend/data.js` (`parseWhatsApp`, `classifyReply`) | A chat export (`.txt`, Android or iPhone shape) is parsed **in the browser** -- not a server connector, since WhatsApp has no API for a group's history. Two modes: every message, or attendance replies (short yes / no answers per person per day; announcements, questions and "yes/no" prompts are skipped). The rows go through the usual column mapping and land with `_source=whatsapp`. |
+| Scheduling | `connectorService.startScheduler`, started from `server.js` | On demand, hourly or daily, from the application's own process; nothing calls back into Svarg. |
+| Data page | `frontend/data.js`, `index.html`, `app.css` (`.dt-src*`, `.dt-conn*`, `.dt-form*`) | Under each dataset: its sources (kind, last sync, rows, schedule, Sync now, Remove) and chips to add one; a form per kind that tests before it keeps; the import log names the source of every landing. |
+| Routes | `controllers/connectorController.js`, `routes/connectorsRoutes.js` (`/api/connectors`) | All owner-only. Secrets never appear in a response (`publicView`). |
+| Seed contract | `services/eameCodeGenerator.js` | Tightened: called with a file, the seed deletes sample rows **and** rows carrying that file's `_source`, then inserts -- so a repeated sync or re-import replaces its own rows and never duplicates them, and never touches another source's. |
+| Yusu | `frontend/domain/yusuScreen.js` (`renderConnectPlan`) | Under the owner key: each dataset with its way in (WhatsApp export / Jira / Confluence / GitHub / Excel or CSV / a file export), from the blueprint's `typicalSource`. |
+| Shipping | `eameSpec.js` FIXED_PATHS, `eameProjectBuilder.js`, `deployTargetService.js` | Connector runtime is fixed template code in every application; the legacy manifest no longer carries the OAuth Jira module. |
+| Tests | `__tests__/connectors.test.js`; `scratchpad/shot_data_b.mjs`; a full boot of the runtime against the scratch database | Sealing round-trips and refuses under another key; mapping; what is due; each connector's parsing; the catalog carries no secret; the runtime mounts `/api/connectors`, refuses the public session, lands a WhatsApp import with its `_source`. |
 
-**Acceptance**
+**Acceptance -- met**
 
-- Every connector's credentials are in the tenant database, encrypted, and
-  absent from the platform database, the platform logs and the platform env.
-- Disconnecting a source removes its credentials and leaves the rows it
-  imported, marked by `_source`.
-- A sync is idempotent: running it twice does not duplicate rows.
-- The public chat session cannot reach any connector endpoint.
-- The WhatsApp parser is tested against a real export from the academy with
-  names replaced; attendance rows match what the coach counted by hand.
-- Screen checks and the backend suite stay green; a template-level test per
-  connector covers connect / test / sync / disconnect.
+- Credentials live only in the tenant database, sealed, and never in a
+  response, a platform collection, a platform log or the platform env.
+- Removing a source forgets its credentials and leaves its rows.
+- A sync is idempotent by the seed contract (rows with the same `_source`
+  are replaced).
+- The public chat session cannot reach any connector endpoint (403 before
+  the handler).
+- Screen checks and the backend suite stay green.
 
-### Phase C -- learning from the tenant (a few days)
+**Open**
 
-The self-learning chain (`docs/self-learning.md`) today reads the screen-chat
-conversation, which lives on Svarg's platform and is about the blueprint,
-never about records. Once the application is live, the conversations that
-matter happen inside the application, in the tenant. This phase points the
-loop there and draws the line on what comes back.
+- The WhatsApp parser has been tested against a synthetic export in both
+  shapes; the academy's real export (names replaced) is the next thing to
+  run it on, and the reply vocabulary (`ABSENT`, `PRESENT` in `data.js`) is
+  where their phrasing goes.
+- The mapping a connector was saved with can be adjusted only by removing
+  and re-adding the source; an edit-in-place is a small follow-up.
 
-**Deliverables**
+### Phase C -- learning from the tenant (delivered 13 September 2026)
 
-| Piece | What it does |
-|---|---|
-| Tenant-side conversation store | The delivered application keeps its own chat turns in the tenant, never forwarded to the platform. |
-| Usage and feedback only | What the platform receives from a live application: counts of questions asked, which capability answered, thumbs up/down, and a corrected answer when the owner gives one. No message bodies, no rows. Declared in one place (`services/tenantSignals.js`) so the list is auditable. |
-| Understanding from signals | `customerUnderstandingService` learns from those signals plus the platform's own conversation, and `capabilityDecisionService` runs unchanged on the result. |
-| Rebuild against the tenant | When a capability is built, the rebuilt application is deployed into the same tenant with the same owner key and connectors; imported rows and connector credentials survive the redeploy. |
-| Privacy page | `privacy.html` states the split: platform holds knowledge and usage; tenant holds records, credentials and conversations. |
+The conversation inside a live application stays there. Svarg receives a
+fixed, short list of signals and learns from those.
 
-**Acceptance**
+**Delivered**
 
-- A live application's message bodies never appear in a platform collection
-  (`Conversation` on the platform holds only `screen:*` threads).
-- The list of signals sent to the platform is a single exported constant and
-  matches what the privacy page says.
-- A capability rebuild does not lose imported rows, connector credentials or
-  the owner key.
-- A self-hosted customer can set the signal endpoint to nothing and the
-  application still runs in full.
+| Piece | Where | What it does |
+|---|---|---|
+| The conversation, kept | `eame-template/services/turnLog.js`, registered in `server.js` | A middleware watches every `/api/` POST that carries `{ message }` (the contract every generated chat route follows), lets the handler answer, and records question + answer in the tenant's `svarg_conversations` after the reply has gone. Runtime routes (session, data, connectors, signals) are skipped. No generated code has to cooperate. |
+| The list of what leaves | `eame-template/services/tenantSignals.js` (`SIGNALS`) | `question_asked` (capability, when), `feedback` (vote, capability, when), `correction` (the owner's words, when they chose to write them), `import` (dataset, source kind, count). `sendSignal` refuses any other kind. Batched (30 s / 40 entries) to `SVARG_SIGNALS_URL` with the gateway token; unset, nothing is sent and the application runs in full. |
+| Feedback | `eame-template/frontend/feedback.js`, `controllers/signalController.js`, `routes/signalsRoutes.js` | Thumbs up / down under every answer, added by the fixed shell to whatever module wrote the turn; a thumbs down offers one line for what the answer should have been. Kept in the tenant (`svarg_feedback`, with the question and answer); only the vote and the correction travel. Which capability answered is read off the module's own request path. |
+| Transparency | Data page "What Svarg is told" (`GET /api/signals`, owner) | The same list, with how many conversations and votes are kept locally, and whether reporting is on. |
+| Intake | `controllers/gatewayController.js` `signals`, `routes/gatewayRoutes.js` (`POST /api/gateway/v1/signals`), `services/tenantSignalService.js`, `models/TenantSignal.js` | Authenticated by the deployment token, not subject to the spend cap. Anything off the list is refused row by row. A batch carrying a correction or a down-vote nudges the Learner (`force: true`). |
+| The Learner | `services/customerUnderstandingService.js`, `models/CustomerUnderstanding.js` (`signalsReadAt`) | Reads what arrived since its watermark as a "THE LIVE APPLICATION" block alongside the platform conversation: counts by capability, votes, corrections verbatim, imports. Corrections and down-votes count toward the learning threshold; usage counts alone never buy a model call. |
+| Tenant env | `services/deployTargetService.js` | `SVARG_SIGNALS_URL` set at go-live. |
+| Privacy page | `frontend/privacy/privacy.html` (#applications) | States the split -- records, credentials and conversations in the application; the four signals, named, on the platform; the gateway meters and does not store prompts -- and a test holds the page's list, the application's list and the platform's accepted kinds together. |
+| Tests | `__tests__/tenantSignals.test.js`; the runtime boot; `scratchpad/shot_feedback.mjs` | A real HTTP delivery carries the token and no message body; the middleware watches only the right requests; normalisation drops off-list kinds; the summary reads as intended; the Learner learns from a correction with no platform conversation and advances its watermark. |
+
+**Acceptance -- met, with one note**
+
+- A live application's message bodies never reach a platform collection:
+  the application never sends them, and the intake would refuse them.
+- The list of signals is one exported constant on each side, equal by test,
+  and matches the privacy page.
+- A self-hosted customer leaves `SVARG_SIGNALS_URL` unset and the
+  application runs in full.
+- *Rebuild against the tenant*: a re-delivery pushes to the same repository
+  and Railway rebuilds with the environment untouched, so the owner key,
+  the connector key and `SVARG_SIGNALS_URL` survive; rows, sealed
+  credentials, conversations and feedback are in the tenant database, which
+  a rebuild does not touch, and seed-on-boot never overwrites a collection
+  that holds rows. Files under `data/own/` are a convenience and are not
+  expected to survive a redeploy -- the next sync rewrites them. No new
+  code was needed for this; it is documented here so it is checked, not
+  assumed, when the delivery path changes.
+
+**What the gateway sees, stated plainly**
+
+Model calls pass through Svarg's gateway in transit. A prompt can contain
+retrieved rows. The gateway records token counts and cost and stores
+neither prompt nor reply; that is the boundary, and it is written on the
+privacy page. A customer who wants no row in transit through Svarg points
+`PROVIDER_CHAIN` at their own keys or endpoint.
 
 ## Order and dependencies
 
-A had to come first: it is the piece that makes the security answer true, and
-B and C both build on the owner session, the dataset index and the seed
-contract it introduced. B and C are independent of each other; B is the one
-the reference customer will notice, so it goes next.
+A came first: it is the piece that makes the security answer true, and B
+and C both build on the owner session, the dataset index and the seed
+contract it introduced. B and C were built after it, in that order, on the
+same day; each phase's tests and the full screen-check matrix ran green
+before it was committed.

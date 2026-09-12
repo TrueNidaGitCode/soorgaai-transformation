@@ -2,7 +2,7 @@
 
 **Layer:** Sports Academies
 **Extends:** Core/Business_Value_Definition.md
-**Version:** 1.0
+**Version:** 1.1
 
 ---
 
@@ -24,6 +24,18 @@ venues and a small admin team holding it together. Value has to be expressed
 in the owner's own units: players retained, batches filled, fees collected on
 time, admin hours given back. "Productivity" means nothing at the boundary
 rope.
+
+### The value underneath the levers
+
+The deeper value in this industry is not any one task automated. It is a
+persistent understanding of how the academy works — its students, parents,
+coaches, batches, schedules, payments, attendance, matches, venues, its
+decisions and exceptions and the rules its staff carry in their heads — kept
+current and usable. Today that understanding exists only in people; when a
+coach or an admin leaves, it leaves with them. Value it as what the academy
+could not previously do at all: answer a question across its systems in
+seconds, explain why a side was picked, notice a family drifting. Then count
+the levers below as the places that understanding shows up in the numbers.
 
 ### The four value levers that matter
 
@@ -78,6 +90,9 @@ fill numbers recover it.
   visibly shorter.
 - **Player performance improvement.** Real, but it belongs to the coach, and
   claiming it for software loses the coaches.
+- **Tools replaced.** Retiring the spreadsheet is not value; the spreadsheet
+  was free. Value is what the academy can now know and do across the tools
+  it keeps.
 
 ---
 

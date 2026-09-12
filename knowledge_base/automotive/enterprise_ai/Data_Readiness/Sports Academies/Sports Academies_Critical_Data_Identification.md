@@ -2,15 +2,16 @@
 
 **Layer:** Sports Academies
 **Extends:** Core/Critical_Data_Identification.md
-**Version:** 1.0
+**Version:** 1.1
 
 ---
 
 # Purpose
 
 This layer supplies sports academy context for identifying the minimum data an
-AI initiative needs: what an academy actually records, where it lives, how
-reliable it is, and which datasets are worth asking for first.
+AI initiative needs: what an academy actually records, which system each
+piece lives in, how reliable it is, and which datasets are worth asking for
+first.
 
 Identification method and output structure are inherited from the Core Asset.
 
@@ -20,13 +21,21 @@ Identification method and output structure are inherited from the Core Asset.
 
 An academy's data is operationally rich and badly split. Almost everything an
 early initiative needs is already captured — because the business cannot run
-without it — but it is spread across an academy-management app (if there is
-one), spreadsheets, the accounts package, and thousands of WhatsApp messages.
-The task is rarely to collect new data; it is to name the six datasets that
-matter, say where each one lives today, and be honest about which are clean.
+without it — but there is no single system. The reference academy runs on
+four: an **enrolment form** (where a student's record begins), an **Excel
+spreadsheet** (where staff copy it and where the working student list lives),
+a **payment system** (card and GPay; monthly and yearly subscriptions) and
+**WhatsApp groups**, one per batch, where attendance is asked, matches are
+announced and families are talked to. The staff's memory is the fifth system,
+and it holds the rules.
 
-Name datasets in the academy's words — batches, sessions, nets, fees, trials
-— not in software words. The person reading this runs the front desk.
+The task is rarely to collect new data. It is to name the datasets that matter,
+say which system each lives in today, be honest about which are clean and which
+exist only as messages — and to separate what is recorded from what is merely
+known.
+
+Name datasets in the academy's words — batches, sessions, subscriptions,
+matches — not in software words. The person reading this runs the front desk.
 
 ---
 
@@ -35,89 +44,110 @@ Name datasets in the academy's words — batches, sessions, nets, fees, trials
 Listed by how reliably they exist and how much most early initiatives depend
 on them.
 
-1. **Player roster and enrolment.** Every enrolled player: name, age group,
-   batch, level, start date, guardian contact, status (active, paused, left).
-   Lives in the management app or the master spreadsheet. The spine every
-   other dataset joins to. Usually complete; the "left" status is the field
-   most often missing, because nobody records a quiet departure.
+1. **Student roster and enrolment.** Every enrolled student: name, age, batch,
+   level, start date, guardian contacts, status. Origin: the enrolment form.
+   Working copy: the spreadsheet, keyed in by hand. The spine every other
+   dataset joins to. The two disagree where a copy went wrong, and the
+   "left" status is the field most often missing, because a quiet departure
+   is never typed in.
 
-2. **Session attendance.** Who attended which session, marked by the coach on
-   a phone at the ground. Lives in the app or in per-batch sheets; older
-   academies have it in WhatsApp group messages. The single most valuable
-   signal for disengagement, and reliably captured because coaches are paid
-   from it.
+2. **Batches and coaches.** Which batch each student is in, by age, skill,
+   schedule, venue or coach; which coach runs it; which WhatsApp group
+   belongs to it. Lives in the spreadsheet and in the group names. Small,
+   stable, and the key to everything else.
 
-3. **Fee ledger.** Invoices raised per player per month or term, payments
-   received, partial and late payments, discounts, refunds. Lives in the
-   accounts package or a spreadsheet, occasionally in the app. Reliable for
-   amounts, unreliable for dates — reminders and follow-ups are rarely logged.
+3. **Subscriptions and payments.** Plan type (monthly, yearly), status
+   (active, due, lapsed), payments received by card or GPay, renewal dates.
+   Lives in the payment system, with the plan type sometimes only in the
+   spreadsheet. Reliable for amounts and dates paid; unreliable for who is
+   "active", because that is a judgment joined across two systems.
 
-4. **Weekly roster and venue schedule.** Which coach takes which batch at which
-   venue and time, with substitutions and cancellations. Lives in a spreadsheet
-   or a shared calendar, changes daily, and the history of changes is usually
-   lost — only the current version survives. Weather cancellations are often
-   recorded only as a message.
+4. **Attendance requests and replies.** The day-before request in each batch
+   group and each family's reply: coming, not coming, or nothing. Lives only
+   in WhatsApp. The most valuable and the least structured dataset the
+   academy has: it is expected attendance, it is the disengagement signal,
+   and it has never been a table. Three values, not two — "no reply" must
+   survive the export.
 
-5. **Coach records.** Coaches, their qualifications, availability, batches they
-   can take, sessions delivered, pay rate. Lives partly in the roster, partly
-   in payroll, partly in the head admin's memory.
+5. **Sessions and the weekly roster.** Which coach takes which batch at which
+   venue and time; substitutions and cancellations. A spreadsheet or a
+   calendar; the history of changes is usually lost. Weather cancellations
+   exist only as a message.
 
-6. **Player assessments and coach notes.** Skill grades, net observations,
-   match statistics, camp reports, sometimes video. The most valuable and the
-   least structured: free text in the app, notes on paper, voice messages.
-   Sparse for most players, rich for the ones being pushed toward selection.
+6. **Match records.** Each match — date, venue, opponent, details — who
+   expressed willingness, who was selected, who was selected but unavailable,
+   who played. Roughly two matches a month. Lives in the coach's messages and
+   memory; sometimes a sheet. This is the dataset the fairness rule needs and
+   the one that least exists. Reconstruct it from the threads once, then keep
+   it.
 
-7. **Enquiries and trials.** Prospective families: source, sport and age,
-   trial date, outcome. Lives in WhatsApp and a lead sheet, if anywhere.
-   Seasonal and rarely complete, but it is where enrolment conversion is won.
+7. **Coach notes and assessments.** Skill grades, net observations, camp
+   reports, occasionally video. Free text, paper, voice notes. Sparse for most
+   players, rich for the ones being pushed toward selection.
 
-8. **Parent communication log.** Messages sent and received per family.
-   Almost never structured — it is the WhatsApp history — and therefore the
-   dataset most often assumed to exist and least often usable.
+8. **Enquiries and trials.** Prospective families: source, age, trial date,
+   outcome. WhatsApp and a lead sheet, if anywhere. Seasonal, incomplete, and
+   where enrolment conversion is won.
+
+9. **Parent communication.** Messages sent and received per batch and per
+   family. The WhatsApp history. Assumed to exist, rarely usable as data —
+   but it is where the academy's implicit rules can be read from.
 
 ---
 
 # What Early Initiatives Typically Need
 
-- **Disengagement early warning:** roster and enrolment, session attendance,
-  fee ledger. Three datasets, all captured, all in the app or a sheet. The
-  "left" status on past players is what turns this from a rule of thumb into
-  something learned from the academy's own history.
-- **Roster and substitution assistance:** roster and venue schedule, coach
-  records, roster and enrolment (batch sizes). The change history matters
-  more than the current roster and is the thing to start keeping.
-- **Drafted parent communication:** roster and enrolment, session attendance,
-  fee ledger, coach notes where they exist. The message is only as good as
-  the record it is drafted from.
-- **Progress answers:** assessments and coach notes, attendance. Expect the
-  notes to be thin; the initiative should say so rather than pad the gap.
-- **Enquiry handling:** the batch schedule, the price list, current
-  availability per batch. Small, and usually held only in an admin's head.
+- **A joined view that answers questions:** roster and enrolment, batches
+  and coaches, subscriptions and payments, attendance replies, match records.
+  The join key — one identifier per student across the form, the sheet, the
+  payment app and the group — is the first thing to make.
+- **Expected-attendance summary:** attendance replies, roster, batches. The
+  export has to keep "no reply" distinct from "not coming".
+- **Disengagement early warning:** attendance replies over time, sessions,
+  subscriptions and payments, roster with the "left" status filled in for
+  past students.
+- **Match selection recommendation:** match records (willingness, selected,
+  unavailable, played), attendance replies for the match date, roster and
+  batches. The history is the point; two months of it is enough to start.
+- **Subscription and renewal follow-up:** subscriptions and payments, roster.
+- **Drafted batch communication:** roster, batches, sessions, match records,
+  subscriptions.
+- **Enquiry handling:** batches and their schedule, the price list, current
+  places per batch — small, and usually held only in an admin's head.
 
 ---
 
 # Data Realities in This Industry
 
-- **Identity is the first problem.** The same player appears as "Arjun S.",
-  "Arjun Sharma" and "Arjun (U-13 Tue/Thu)" across three systems. A join key
-  usually has to be made before anything else.
-- **Attendance is honest; dates are not.** Coaches mark who came. When the fee
-  reminder was sent, when the roster changed, when the parent was told — those
-  timestamps are the ones missing.
+- **Identity is the first problem.** The same student is "Arjun S." on the
+  form, "Arjun Sharma" in the sheet, a parent's phone number in the payment
+  app and "Arjun U-13 Tue/Thu" in the group. A join key has to be made before
+  anything else.
+- **Recorded is not the same as known.** The spreadsheet knows who is
+  enrolled; it does not know why a student should play on Sunday. The thread
+  knows who replied; it does not know that silence means "chase". The payment
+  app knows a plan was paid; it does not know what the academy does when one
+  lapses. Those rules are data too, and they have to be captured from the
+  people who apply them.
+- **Attendance replies are honest; silence is ambiguous.** Keep three states.
+  A model that reads no reply as absent will cry wolf and lose the coaches.
+- **Dates are the missing field.** When the reminder was sent, when the
+  roster changed, when the parent was told, when the student was picked and
+  could not come — the events happened; the timestamps did not.
 - **Children's data.** Names, ages, guardian contacts, photographs and
-  performance records of minors. Minimise what is copied, keep it in one
-  place, and decide retention before the first export.
-- **Seasonal gaps are real, not errors.** Exam months and the monsoon empty
-  the attendance data. A model that reads a school-exam fortnight as
-  disengagement will cry wolf in March.
-- **WhatsApp is not a source system.** Treat anything that lives only in a
-  chat thread as unavailable until it has been exported once and shown to be
-  usable.
+  performance records of minors. Copy the minimum, keep it in one place,
+  decide retention before the first export.
+- **Seasonal gaps are real, not errors.** Exam fortnights and the monsoon
+  empty the attendance data. A model must know the calendar.
+- **WhatsApp is not a source system, but it is a source.** Treat anything
+  that lives only in a thread as unavailable until it has been exported once
+  and shown to be usable — and then treat the export as the most important
+  dataset the academy has.
 
 ---
 
 # Leadership Question
 
-Of the six datasets this initiative needs, which two are already in one place
-with a player identifier the others can join to — and which one would the
-admin team have to start keeping properly this month?
+Of the datasets this initiative needs, which two already share a student
+identifier — and which one exists today only as a WhatsApp thread that
+someone would have to export before the end of the month?

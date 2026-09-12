@@ -2,7 +2,7 @@
 
 **Layer:** Sports Academies
 **Extends:** Core/AI_Use_Case_Classification.md
-**Version:** 1.0
+**Version:** 1.1
 
 ---
 
@@ -19,11 +19,35 @@ Classification method and output structure are inherited from the Core Asset.
 
 ## AI Use Case Classification
 
-Academy use cases sort along one axis this industry cares about more than most:
-**whether the AI acts, or drafts for a person to act.** Anything touching a
-player's record, a family's money, a coach's roster or a judgment about a
-child's ability belongs in the drafting category, whatever the model's
-confidence.
+Academy use cases sort along two axes.
+
+The first is **how far up the progression the use case sits**: understand →
+answer → recommend → prepare → act. An academy whose operation lives in a
+form, a spreadsheet, a payment app and WhatsApp has to be understood before
+any question can be answered from it; questions have to be answered reliably
+before a recommendation is trusted; recommendations before prepared actions;
+prepared actions before anything is done on the academy's behalf. Classify
+every candidate by the step it needs, and expect the first successes to be
+"answer" and "recommend", not "act".
+
+The second is **whether the AI acts, or drafts for a person to act.**
+Anything touching a player's record, a family's money, a coach's roster or a
+judgment about a child's ability belongs in the drafting category, whatever
+the model's confidence. Match selection is the clearest case: the fairness
+rule can be learned and a side can be suggested, and the coach still decides.
+
+### Category 0 — Operational Understanding
+
+Joining the fragments — form, spreadsheet, payment app, batch groups — into
+one picture of students, batches, coaches, parents, subscriptions, attendance
+replies and match history, and learning the rules the staff apply to it: how
+a thread is read, what silence means, how a side is picked.
+
+Characteristics: no automation at all, and the prerequisite for everything
+below. Its output is answers — "who is expected tomorrow", "who has not
+replied", "whose plan lapses this month", "who played last match" — with the
+unknowns kept unknown. Value shows the first time an admin gets an answer
+without opening three things.
 
 ### Category 1 — Operations Automation
 
@@ -89,6 +113,9 @@ Use these to place a candidate use case:
 - **Does the data already exist?** Academies will not start recording
   something new to enable AI. Use cases needing new capture — video, wearables,
   detailed skill scoring — are systematically over-ranked and under-adopted.
+- **Which step of the progression does it need?** A use case that acts on the
+  academy's behalf before the academy has been understood is misclassified,
+  however good the demo. Place it at the step it really needs.
 - **Does it take work off the admin team?** In a multi-coach academy the
   admins are the constraint. A use case that helps coaches but adds a step
   for admins will not survive.
@@ -104,6 +131,12 @@ Use these to place a candidate use case:
 
 # Anti-Patterns in This Industry
 
+- **Replacing the tools before learning the business.** "Move everything
+  into our app" asks the academy to abandon Excel, WhatsApp and the payment
+  app on day one. It will not, and it should not have to: the layer learns
+  how each tool participates and joins them.
+- **Treating "no reply" as "absent".** The attendance thread has three
+  states. A system with two will be wrong in the way that loses coaches.
 - **Automated judgments about a player's ability or selection.** The coach's
   word is the product and the parents' trust rests on it. A machine grading a
   child is the fastest way to lose both coaches and families.

@@ -2,7 +2,7 @@
 
 **Layer:** Sports Academies
 **Extends:** Core/AI_Implementation_Prioritization.md
-**Version:** 1.0
+**Version:** 1.1
 
 ---
 
@@ -34,6 +34,12 @@ So the first initiative should be one where the data already exists, the
 workflow already exists, and an admin already performs the task by hand — AI
 removes effort from something happening this week rather than introducing
 something new.
+
+And it should sit at the right step of the progression. The academy is
+understood before it is answered, answered before it is advised, advised
+before anything is prepared for it, and prepared for before anything is done
+on its behalf. Sequencing that skips a step produces a demo the admins
+admire and do not trust.
 
 ---
 
@@ -71,22 +77,29 @@ Weight these more heavily than generic effort/impact scoring:
 
 A defensible order for a first season, adjusted to the academy:
 
-**Start with** a single admin task that is high-frequency, disliked, and
-already captured as data. In a multi-coach academy this is most often one of:
-disengagement early warning from attendance and payments (the data is there,
-the intervention is a coach's phone call, and every player kept is a month's
-fee); roster and substitution assistance (the hour lost every time a coach or
-ground drops out); or drafted parent communication. Pick the one whose data is
-cleanest today. It proves value inside one fee cycle and asks nobody to record
-anything new.
+**Start with understanding, delivered as answers.** Join the form, the
+spreadsheet, the payment app and the batch groups into one picture, and let
+the admins ask it: who is expected tomorrow, who has not replied, whose plan
+lapses this month, who played in the last three matches. The data is there,
+nobody records anything new, and the first correct answer to a question that
+used to take three windows is the proof. The expected-attendance summary from
+the day-before thread — coming, not coming, not yet answered — is the
+sharpest first deliverable inside this, because it is asked every single day.
 
-**Follow with** the next of those three over the same data now flowing
-reliably. Rostering earns credibility for communication; early warning earns
-it for fee follow-up, because both act on the same families.
+**Follow with** recommendations over the same joined data: the disengagement
+flag (a player who has stopped replying, coming or paying on time), the
+suggested match side that respects availability, recent participation and
+fair opportunity with the coach deciding, and the renewal list. These earn
+trust because the answers underneath them have already been checked by the
+people who know.
 
-**Then** extend to enquiry handling and natural-language reporting, which
-touch more of the operation — the owner, prospective families — and therefore
-need the trust earned earlier.
+**Then** prepare actions: the follow-up list for the silent parents, the
+batch message, the fee reminder, the match announcement — drafted for a
+person to send. Rostering and enquiry handling join here, touching more of the
+operation and needing the credibility earned earlier.
+
+**Last**, and only with permissions and safeguards, act: send the reminder,
+post the summary, update the record.
 
 **Defer** anything assessing a player's technique, ability or selection. It is
 the most requested and the least suitable first step: it needs new capture, it

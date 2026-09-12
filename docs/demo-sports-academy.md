@@ -55,22 +55,12 @@ called. They read what it does."
 Nothing to do. Talking point: "This is the part every other vendor makes you
 hire someone for."
 
-**Arth** — the one decision. Open **Sample data** and, in the context box,
-paste:
-
-> A cricket academy in one city: about 450 enrolled players aged 8 to 19 in
-> under-11, under-13, under-15, under-17 and senior batches, each batch with
-> one coach and one WhatsApp group; 30 coaches, mostly part-time, paid per
-> session; 5 grounds and 3 indoor net centres; sessions on weekday evenings
-> and all day at weekends. Each batch gets an attendance request the day
-> before and parents reply yes, no, or not at all — about a fifth never
-> reply. Monthly and yearly subscriptions paid by card or GPay; some lapse
-> quietly. Two matches a month; for each, who put their name forward, who was
-> selected, who was selected but unavailable, and who played. A summer camp
-> in April–May; attendance dips in exam months and during the monsoon.
-
-Press **Generate**. It fills each dataset with rows that fit that description
-and moves to Eame.
+**Arth** — the one decision. Open **Sample data** and press **Generate**.
+Each dataset is filled from its own name and purpose (which Arth derived from
+the objective), the objective, the industry and the company name — nothing
+else is needed. The context box is optional: use it only to say something the
+model could not know ("fees are termly, not monthly"). It moves to Eame when
+the data is ready.
 
 Talking point: "With a real customer this is where we connect their app,
 their spreadsheets, their accounts. For today it is invented data that looks

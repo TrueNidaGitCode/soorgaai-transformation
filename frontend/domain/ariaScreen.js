@@ -1822,6 +1822,18 @@ async function runSampleBatch() {
   renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
   renderRunStrip(failures.length ? 2 : 3, failures.length ? `${failures.length} could not be generated` : 'Moving on to Eame');
   if (!failures.length) renderRunStrip(4);
+  // The reason, on the page the customer is looking at. The batch keeps the
+  // ones that worked, so trying again generates only what is missing.
+  const failBox = document.getElementById('aria-runstrip-error');
+  const failText = document.getElementById('aria-runstrip-error-text');
+  if (failBox && failText) {
+    const ok = targets.length - failures.length;
+    failText.textContent = failures.length
+      ? `${failures.length} of ${targets.length} could not be generated${ok ? ` (${ok} saved)` : ''}: ${failures[0]}`
+        + (failures.length > 1 ? ` — and ${failures.length - 1} more like it.` : '')
+      : '';
+    failBox.style.display = failures.length ? 'flex' : 'none';
+  }
 
   // Deliberately NOT re-rendering the target list. It would rebuild from
   // what is still missing and reset every row to "waiting", erasing the
@@ -2057,6 +2069,11 @@ function wireStaticControls() {
   });
   document.getElementById('aria-choose-upload')?.addEventListener('click', () => {
     chooseData('upload');
+  });
+  document.getElementById('aria-runstrip-retry')?.addEventListener('click', () => {
+    const box = document.getElementById('aria-runstrip-error');
+    if (box) box.style.display = 'none';
+    simulateNow();
   });
 
   document.getElementById('aria-process-btn')?.addEventListener('click', () => {

@@ -504,6 +504,16 @@ body.domain-page .cr-wait__note svg { width: 16px; height: 16px; flex: 0 0 auto;
 #screen-aria .dc-step--waiting .dc-step__title { color: var(--ws-muted); }
 #screen-aria .dc-step__sub { font-size: 0.76rem; color: var(--ws-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+#screen-aria .dc-fail { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: -8px 0 18px; }
+#screen-aria .dc-fail__retry {
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  border: 1px solid currentColor; border-radius: 999px;
+  background: transparent; color: inherit;
+  font: inherit; font-size: 0.82rem; font-weight: 700;
+  cursor: pointer;
+}
+
 /* The connectors: cards in a row, the status list beside them. */
 #screen-aria .dc-connect {
   display: grid;

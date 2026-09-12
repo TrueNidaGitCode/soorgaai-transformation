@@ -12,7 +12,53 @@
 </head>
 <body>
 
-  <div class="ch-app">
+  <!-- Three surfaces, one at a time: the front door, the welcome, the chat.
+       The shell script at the foot of this file owns the first two and the
+       move between them; app.js -- the one file Eame writes -- owns the chat
+       and nothing else. The ids and classes app.js drives (#ch-log, #ch-form,
+       #ch-input, #ch-send, #ch-state, #ch-examples, .ch-welcome) are exactly
+       as they were; everything new is outside the chat. -->
+
+  <!-- ── The front door ─────────────────────────────────────────────────── -->
+  <section class="ch-door" id="ch-home" aria-label="Welcome">
+    <div class="ch-door__glow" aria-hidden="true"></div>
+    <div class="ch-door__body">
+      <div class="ch-door__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.9 8.4 8.4 0 0 1 8.4-8.4h.6A8.4 8.4 0 0 1 21 11v.5z"/>
+        </svg>
+      </div>
+      <h1 class="ch-door__title">__APP_NAME__</h1>
+      <p class="ch-door__tagline">__APP_TAGLINE__</p>
+
+      <ul class="ch-door__points">
+        <li><strong>Ask in plain language.</strong> No menus, no reports to find — just the question.</li>
+        <li><strong>Answers from your own data.</strong> Built on what this business actually runs on.</li>
+        <li><strong>The evidence underneath.</strong> Every answer shows the records it came from.</li>
+      </ul>
+
+      <button type="button" class="ch-door__cta" id="ch-login">Log in</button>
+      <p class="ch-door__note" id="ch-login-note" hidden></p>
+    </div>
+    <p class="ch-foot ch-foot--door">Built with Svarg</p>
+  </section>
+
+  <!-- ── The welcome, after signing in ──────────────────────────────────── -->
+  <section class="ch-door ch-door--greet" id="ch-greet" aria-label="Welcome" hidden>
+    <div class="ch-door__glow" aria-hidden="true"></div>
+    <div class="ch-greet">
+      <p class="ch-greet__eyebrow">Welcome to __APP_NAME__</p>
+      <h1 class="ch-greet__title">Welcome to the future of running your business.</h1>
+      <p class="ch-greet__body">It is totally different. There is nothing to learn and nothing to set up:
+        you ask, in your own words, and it answers from your data — with the records behind every answer,
+        so you can see for yourself.</p>
+      <p class="ch-greet__body ch-greet__body--dim">__APP_WELCOME_BODY__</p>
+      <button type="button" class="ch-door__cta" id="ch-continue">Continue</button>
+    </div>
+  </section>
+
+  <!-- ── The chat ───────────────────────────────────────────────────────── -->
+  <div class="ch-app" id="ch-app" hidden>
 
     <header class="ch-head">
       <div class="ch-head__mark" aria-hidden="true">
@@ -50,10 +96,82 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
       </button>
     </form>
+    <p class="ch-compose__hint">Enter to send · Shift+Enter for a new line</p>
 
     <p class="ch-foot">Built with Svarg</p>
 
   </div>
+
+  <!-- The shell: the front door, the sign-in, the welcome, and the hand-over
+       to the chat. Plain script, before app.js, so it never depends on what
+       the generated module does or when. -->
+  <script>
+  (function () {
+    var API = (window.CONFIG && window.CONFIG.API_BASE) || '';
+    var home = document.getElementById('ch-home');
+    var greet = document.getElementById('ch-greet');
+    var app = document.getElementById('ch-app');
+    var login = document.getElementById('ch-login');
+    var note = document.getElementById('ch-login-note');
+
+    function show(which) {
+      home.hidden = which !== 'home';
+      greet.hidden = which !== 'greet';
+      app.hidden = which !== 'app';
+      if (which === 'app') { var input = document.getElementById('ch-input'); if (input) input.focus(); }
+    }
+
+    function say(text) { note.textContent = text; note.hidden = !text; }
+
+    /**
+     * Signing in. The application has one kind of session: a token the
+     * deployment mints when public access is on (hosted deployments turn it
+     * on, so the door simply opens). When it is off, the customer has put
+     * their own sign-in in front, and the door says so rather than failing
+     * on every message later with an unexplained 401.
+     */
+    async function signIn() {
+      if (localStorage.getItem('token')) return true;
+      try {
+        var res = await fetch(API + '/api/session', { method: 'POST' });
+        if (res.ok) {
+          var data = await res.json();
+          localStorage.setItem('token', data.token);
+          return true;
+        }
+        if (res.status === 403) {
+          say('This deployment requires a sign-in token. Paste one into local storage as "token", or enable public access on the server.');
+          return false;
+        }
+        say('Could not sign in (' + res.status + ').');
+      } catch (e) {
+        say('Could not reach the server.');
+      }
+      return false;
+    }
+
+    // A reload mid-conversation must not send someone back through the
+    // front door: within one tab session, the chat is where they were.
+    if (sessionStorage.getItem('ch-entered')) { show('app'); return; }
+
+    login.textContent = localStorage.getItem('token') ? 'Continue' : 'Log in';
+    show('home');
+
+    login.addEventListener('click', async function () {
+      login.disabled = true;
+      login.textContent = 'Signing in…';
+      say('');
+      if (await signIn()) { show('greet'); }
+      else { login.textContent = 'Log in'; }
+      login.disabled = false;
+    });
+
+    document.getElementById('ch-continue').addEventListener('click', function () {
+      sessionStorage.setItem('ch-entered', '1');
+      show('app');
+    });
+  })();
+  </script>
 
   <script type="module" src="app.js"></script>
 </body>

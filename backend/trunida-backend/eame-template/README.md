@@ -31,10 +31,12 @@ npm run seed            # loads 14 synthetic OTA/ECU defect records
 npm start
 ```
 
-Open `frontend/index.html` directly in a browser (or serve it with any
-static server), run `npm run mint-token` and paste the token into the
-"Dev token" bar at the top of the page — there's no signup/login system
-in this starter kit, that's the whole substitute for one.
+Open the address the server prints. The page opens on a front door with a
+Log in button, then a welcome, then the chat. Signing in mints a browser
+session from `POST /api/session`, which is on when `APP_PUBLIC_ACCESS=true`
+(hosted deployments set it). With it off, put your own sign-in in front and
+set `token` in local storage -- `npm run mint-token` prints one -- and the
+door will let you through.
 
 Test the API directly:
 

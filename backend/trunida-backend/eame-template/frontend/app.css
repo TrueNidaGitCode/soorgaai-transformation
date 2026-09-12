@@ -1,25 +1,37 @@
 /**
- * __APP_NAME__ — chat interface
+ * __APP_NAME__ — the front door, the welcome, and the chat
  *
- * A single column that fills the viewport: header, scrolling log, composer
- * pinned to the bottom. Dark by default because the product it was built
- * from is, but it paints every colour explicitly so it never inherits a
- * half-theme from the browser.
+ * Three surfaces, one at a time. The door and the welcome are a centred
+ * card over an ambient glow; the chat is a single column that fills the
+ * viewport: header, scrolling log, composer pinned to the bottom. Dark by
+ * default because the product it was built from is, but it paints every
+ * colour explicitly so it never inherits a half-theme from the browser.
+ *
+ * The chat's markup vocabulary (.ch-turn, .ch-bubble, .ch-match, ...) is
+ * what the generated app.js writes; it is styled here and only here, so a
+ * module that writes these structures looks finished.
  */
 
 :root {
   --ch-bg:        #0B0D10;
   --ch-panel:     #12151A;
+  --ch-panel-hi:  #171B21;
   --ch-line:      rgba(255,255,255,0.08);
+  --ch-line-hi:   rgba(255,255,255,0.14);
   --ch-text:      rgba(255,255,255,0.90);
-  --ch-dim:       rgba(255,255,255,0.52);
+  --ch-dim:       rgba(255,255,255,0.56);
   --ch-faint:     rgba(255,255,255,0.34);
   --ch-accent:    #5CC5A7;
-  --ch-user:      #1B2733;
-  --ch-radius:    14px;
+  --ch-accent-2:  #7DD3FC;
+  --ch-accent-soft: rgba(92,197,167,0.12);
+  --ch-user:      #1B2A33;
+  --ch-radius:    16px;
 }
 
 * { box-sizing: border-box; }
+
+/* .ch-app is display:flex, which would beat the hidden attribute. */
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -30,16 +42,191 @@ body {
   line-height: 1.6;
 }
 
+/* ── The door and the welcome ───────────────────────────────────────────── */
+
+.ch-door {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px 24px;
+  overflow: hidden;
+}
+
+/* Two soft washes in opposite corners, so a near-black page reads as lit
+   rather than empty. Fixed, so they do not travel with the scroll. */
+.ch-door__glow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60vw 60vw at 12% 8%,  rgba(92,197,167,0.16), transparent 60%),
+    radial-gradient(70vw 70vw at 90% 95%, rgba(125,211,252,0.10), transparent 60%);
+}
+
+.ch-door__body,
+.ch-greet {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 640px;
+  text-align: center;
+}
+
+.ch-door__mark {
+  width: 64px; height: 64px;
+  margin: 0 auto 22px;
+  display: grid; place-items: center;
+  border-radius: 18px;
+  background: var(--ch-accent-soft);
+  color: var(--ch-accent);
+  box-shadow: 0 0 0 1px rgba(92,197,167,0.25), 0 24px 60px -30px rgba(92,197,167,0.8);
+}
+.ch-door__mark svg { width: 30px; height: 30px; }
+
+.ch-door__title {
+  margin: 0 0 10px;
+  font-size: clamp(34px, 6vw, 54px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.ch-door__tagline {
+  margin: 0 auto 30px;
+  max-width: 44ch;
+  font-size: 17px;
+  color: var(--ch-dim);
+  text-wrap: balance;
+}
+
+.ch-door__points {
+  list-style: none;
+  margin: 0 auto 34px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  text-align: left;
+  max-width: 520px;
+}
+.ch-door__points li {
+  padding: 13px 16px 13px 44px;
+  position: relative;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ch-dim);
+  background: var(--ch-panel);
+  border: 1px solid var(--ch-line);
+  border-radius: 12px;
+}
+.ch-door__points li strong { color: var(--ch-text); font-weight: 600; }
+.ch-door__points li::before {
+  content: '';
+  position: absolute;
+  left: 16px; top: 17px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--ch-accent-soft);
+  box-shadow: inset 0 0 0 1px rgba(92,197,167,0.5);
+}
+.ch-door__points li::after {
+  content: '';
+  position: absolute;
+  left: 21px; top: 21px;
+  width: 5px; height: 8px;
+  border-right: 2px solid var(--ch-accent);
+  border-bottom: 2px solid var(--ch-accent);
+  transform: rotate(45deg);
+}
+
+.ch-door__cta {
+  min-width: 200px;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 999px;
+  background: var(--ch-accent);
+  color: #08130F;
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 14px 40px -14px rgba(92,197,167,0.7);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.ch-door__cta:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+.ch-door__cta:disabled { opacity: 0.7; cursor: wait; }
+.ch-door__cta:focus-visible { outline: 2px solid var(--ch-accent); outline-offset: 3px; }
+
+.ch-door__note {
+  margin: 16px auto 0;
+  max-width: 52ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ch-dim);
+}
+
+.ch-foot--door {
+  position: relative;
+  z-index: 1;
+  margin-top: 40px;
+}
+
+/* The welcome: a card, so it reads as something that appeared. */
+.ch-greet {
+  padding: 40px 36px 36px;
+  border: 1px solid var(--ch-line-hi);
+  border-radius: 22px;
+  background: rgba(18, 21, 26, 0.88);
+  box-shadow: 0 40px 100px -40px rgba(0,0,0,0.9);
+  backdrop-filter: blur(14px);
+  animation: ch-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ch-greet__eyebrow {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ch-accent);
+}
+.ch-greet__title {
+  margin: 0 0 16px;
+  font-size: clamp(26px, 4.4vw, 38px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+.ch-greet__body {
+  margin: 0 auto 12px;
+  max-width: 52ch;
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--ch-text);
+}
+.ch-greet__body--dim { color: var(--ch-dim); font-size: 14px; margin-bottom: 26px; }
+
+@keyframes ch-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── The chat ───────────────────────────────────────────────────────────── */
+
 .ch-app {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  max-width: 820px;
+  max-width: 860px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-/* ── Header ─────────────────────────────────────────────────────────────── */
+/* Header */
 
 .ch-head {
   display: flex;
@@ -50,10 +237,10 @@ body {
 }
 .ch-head__mark {
   flex-shrink: 0;
-  width: 38px; height: 38px;
+  width: 40px; height: 40px;
   display: grid; place-items: center;
-  border-radius: 10px;
-  background: rgba(92,197,167,0.12);
+  border-radius: 12px;
+  background: var(--ch-accent-soft);
   color: var(--ch-accent);
 }
 .ch-head__mark svg { width: 20px; height: 20px; }
@@ -72,6 +259,9 @@ body {
 .ch-head__state {
   flex-shrink: 0;
   display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid var(--ch-line);
+  border-radius: 999px;
   font-size: 12px;
   color: var(--ch-faint);
 }
@@ -79,9 +269,9 @@ body {
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--ch-faint);
 }
-.ch-head__dot--ok { background: var(--ch-accent); }
+.ch-head__dot--ok { background: var(--ch-accent); box-shadow: 0 0 8px rgba(92,197,167,0.7); }
 
-/* ── Log ────────────────────────────────────────────────────────────────── */
+/* Log */
 
 .ch-log {
   flex: 1;
@@ -90,52 +280,81 @@ body {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  scrollbar-width: thin;
 }
 
+/* The opening block: the application introducing itself. */
 .ch-welcome { margin: auto 0; padding: 8px 0 20px; }
 .ch-welcome__title {
   margin: 0 0 8px;
-  font-size: 26px; font-weight: 700; letter-spacing: -0.02em;
+  font-size: 28px; font-weight: 800; letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 .ch-welcome__body {
-  margin: 0 0 20px;
+  margin: 0 0 22px;
   color: var(--ch-dim);
   max-width: 62ch;
 }
-.ch-examples { display: flex; flex-direction: column; gap: 9px; }
+.ch-examples { display: flex; flex-wrap: wrap; gap: 9px; }
+/* A label over the examples, only once app.js has put some in. */
+.ch-examples:not(:empty)::before {
+  content: 'Try asking';
+  flex-basis: 100%;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ch-faint);
+}
 .ch-example {
   text-align: left;
-  padding: 12px 14px;
+  padding: 11px 16px;
   font-family: inherit; font-size: 13.5px; line-height: 1.5;
-  color: var(--ch-dim);
+  color: var(--ch-text);
   background: var(--ch-panel);
   border: 1px solid var(--ch-line);
-  border-radius: 10px;
+  border-radius: 999px;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
-.ch-example:hover { border-color: rgba(92,197,167,0.4); color: var(--ch-text); }
+.ch-example:hover {
+  border-color: rgba(92,197,167,0.5);
+  background: var(--ch-panel-hi);
+  transform: translateY(-1px);
+}
+.ch-example:focus-visible { outline: 2px solid var(--ch-accent); outline-offset: 2px; }
 
-.ch-turn { display: flex; }
+/* Turns. The assistant's carry the app's mark beside them, so a long
+   conversation reads as two voices rather than two columns of boxes. */
+.ch-turn { display: flex; align-items: flex-start; gap: 10px; }
 .ch-turn--user { justify-content: flex-end; }
 .ch-turn--bot  { justify-content: flex-start; }
+.ch-turn--bot::before {
+  content: '';
+  flex-shrink: 0;
+  margin-top: 6px;
+  width: 28px; height: 28px;
+  border-radius: 9px;
+  background: var(--ch-accent-soft) center / 16px no-repeat
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235CC5A7' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.9 8.4 8.4 0 0 1 8.4-8.4h.6A8.4 8.4 0 0 1 21 11v.5z'/></svg>");
+}
 
 .ch-bubble {
-  max-width: 88%;
-  padding: 13px 16px;
+  max-width: 82%;
+  padding: 13px 17px;
   border-radius: var(--ch-radius);
   background: var(--ch-panel);
   border: 1px solid var(--ch-line);
+  animation: ch-rise 0.28s ease both;
 }
 .ch-turn--user .ch-bubble {
   background: var(--ch-user);
-  border-color: rgba(255,255,255,0.1);
-  border-bottom-right-radius: 4px;
+  border-color: rgba(125,211,252,0.16);
+  border-bottom-right-radius: 5px;
   white-space: pre-wrap;
 }
-.ch-turn--bot .ch-bubble { border-bottom-left-radius: 4px; }
+.ch-turn--bot .ch-bubble { border-bottom-left-radius: 5px; }
 
 .ch-answer { margin: 0; }
+.ch-answer + .ch-answer { margin-top: 8px; }
 
 .ch-matches__label {
   margin: 14px 0 8px;
@@ -147,8 +366,8 @@ body {
 .ch-match {
   padding: 11px 13px;
   border: 1px solid var(--ch-line);
-  border-radius: 10px;
-  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.025);
 }
 .ch-match__head { display: flex; align-items: center; gap: 10px; margin-bottom: 3px; }
 .ch-match__id {
@@ -158,8 +377,11 @@ body {
 }
 .ch-match__score {
   margin-left: auto;
-  font-size: 11.5px;
-  color: var(--ch-faint);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ch-accent-soft);
+  font-size: 11px;
+  color: var(--ch-accent);
   font-variant-numeric: tabular-nums;
 }
 .ch-match__title { margin: 0; font-size: 13.5px; }
@@ -190,22 +412,24 @@ body {
   0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
   30%           { opacity: 1;    transform: translateY(-3px); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .ch-dot { animation: none; opacity: 0.6; }
-}
 
-/* ── Composer ───────────────────────────────────────────────────────────── */
+/* Composer */
 
 .ch-compose {
   display: flex;
   align-items: flex-end;
   gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--ch-line);
-  border-radius: var(--ch-radius);
+  padding: 12px 12px 12px 18px;
+  border: 1px solid var(--ch-line-hi);
+  border-radius: 22px;
   background: var(--ch-panel);
+  box-shadow: 0 20px 50px -30px rgba(0,0,0,0.9);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.ch-compose:focus-within { border-color: rgba(92,197,167,0.45); }
+.ch-compose:focus-within {
+  border-color: rgba(92,197,167,0.55);
+  box-shadow: 0 0 0 4px rgba(92,197,167,0.10), 0 20px 50px -30px rgba(0,0,0,0.9);
+}
 .ch-compose__input {
   flex: 1;
   resize: none;
@@ -213,23 +437,30 @@ body {
   outline: none;
   background: transparent;
   color: var(--ch-text);
-  font-family: inherit; font-size: 14.5px; line-height: 1.55;
+  font-family: inherit; font-size: 15px; line-height: 1.55;
   max-height: 180px;
+  padding: 6px 0;
 }
 .ch-compose__input::placeholder { color: var(--ch-faint); }
 .ch-compose__send {
   flex-shrink: 0;
-  width: 34px; height: 34px;
+  width: 38px; height: 38px;
   display: grid; place-items: center;
-  border: none; border-radius: 9px;
+  border: none; border-radius: 50%;
   background: var(--ch-accent);
   color: #08130F;
   cursor: pointer;
-  transition: filter 0.15s ease;
+  transition: filter 0.15s ease, transform 0.15s ease;
 }
 .ch-compose__send svg { width: 17px; height: 17px; }
-.ch-compose__send:hover:not(:disabled) { filter: brightness(1.08); }
-.ch-compose__send:disabled { background: rgba(255,255,255,0.1); color: var(--ch-faint); cursor: not-allowed; }
+.ch-compose__send:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+.ch-compose__send:disabled { background: rgba(255,255,255,0.1); color: var(--ch-faint); cursor: not-allowed; transform: none; }
+.ch-compose__hint {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--ch-faint);
+}
 
 .ch-foot {
   margin: 10px 0 14px;
@@ -240,6 +471,14 @@ body {
 
 @media (max-width: 600px) {
   .ch-app { padding: 0 14px; }
-  .ch-bubble { max-width: 94%; }
+  .ch-bubble { max-width: 92%; }
   .ch-head__sub { display: none; }
+  .ch-greet { padding: 30px 22px 28px; }
+  .ch-compose__hint { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ch-dot { animation: none; opacity: 0.6; }
+  .ch-greet, .ch-bubble { animation: none; }
+  .ch-door__cta, .ch-example, .ch-compose__send { transition: none; }
 }

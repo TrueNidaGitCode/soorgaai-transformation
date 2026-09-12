@@ -355,6 +355,26 @@ export async function recommendArthModel(req, res) {
  * class and a model id, never a display name, provider or compute figure, so
  * it cannot record a model that does not exist or overstate what one needs.
  */
+/**
+ * PATCH /transformation-blueprint/:blueprintId/data-intent  { intent }
+ *
+ * 'own' means the records stay with the customer and are imported inside
+ * the application; nothing else is stored here but the word.
+ */
+export async function saveDataIntent(req, res) {
+  try {
+    const { blueprintId } = req.params;
+    const intent = String(req.body?.intent || '');
+    if (!['simulate', 'own'].includes(intent)) return res.status(400).json({ error: 'intent must be simulate or own.' });
+    const { default: TransformationBlueprint } = await import('../models/TransformationBlueprint.js');
+    const r = await TransformationBlueprint.updateOne({ _id: blueprintId, userId: req.user._id }, { $set: { dataIntent: intent } });
+    if (!r.matchedCount) return res.status(404).json({ error: 'Blueprint not found.' });
+    return res.json({ dataIntent: intent });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 export async function saveArthSelection(req, res) {
   try {
     const { blueprintId } = req.params;

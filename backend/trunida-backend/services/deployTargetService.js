@@ -76,7 +76,7 @@ export function tenantMongoUri(clusterUri, dbName) {
  * this context; it is the delivered app's generic OpenAI-compatible client
  * pointed at the gateway, which is why hosting needs no code change.
  */
-export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName }) {
+export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName, ownerKey }) {
   // Arth ranks and the picker shows the benchmark catalog, not the advisory
   // ten (see services/selectableModelService.js), so a perfectly legitimate
   // selection arrives carrying an id the advisory list has never heard of —
@@ -113,6 +113,9 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
     // own sign-in in front (see server.js).
     APP_NAME: appName || 'AI Assistant',
     APP_PUBLIC_ACCESS: 'true',
+    // The key that unlocks the application's Data page. Records never come to
+    // Svarg: they are imported inside the application, by whoever holds this.
+    ...(ownerKey ? { APP_OWNER_KEY: ownerKey } : {}),
 
     // Generation: the app's 'selfhosted' provider is a plain OpenAI client
     // against an arbitrary base URL, so pointing it at the gateway is enough.

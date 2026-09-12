@@ -186,6 +186,17 @@ export function staticGates(files) {
   if (!hasRoute) failures.push('there is no file in routes/, so the application exposes nothing to call');
   if (!hasLogic) failures.push('there is no file in services/ or controllers/, so nothing holds the logic');
   if (!hasUi) failures.push('frontend/app.js was not written, so the page has nothing driving it');
+  // The Data page imports the owner's file by calling the seed script with
+  // { datasetName, filePath }. A seed script that never reads either cannot
+  // honour that, and the owner's import would write a file nothing loads.
+  for (const f of files) {
+    const p = norm(f.path);
+    if (!/^scripts[/]seed.*[.]m?js$/i.test(p) || fixed.has(p)) continue;
+    const src = String(f.content || '');
+    if (!/datasetName/.test(src) || !/filePath/.test(src)) {
+      failures.push(`${p} does not accept { datasetName, filePath }, so the owner's own file could never be imported onto its dataset`);
+    }
+  }
   if (failures.length) {
     return { ok: false, stage: 'completeness', failures };
   }

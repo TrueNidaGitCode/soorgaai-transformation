@@ -544,6 +544,14 @@ const transformationBlueprintSchema = new mongoose.Schema({
   // preference the user chose plus the resolved pick at that moment, since
   // the catalog can change later and we want the decision as it was made.
   // providerId is null for 'auto' — see modelSelectionService.selectModel.
+  /**
+   * How the customer said the data will be provided, on Arth: 'simulate'
+   * (generated samples, the default) or 'own' (theirs, imported inside the
+   * application after go-live -- never uploaded to Svarg). Read by Eame and
+   * Yusu to lead with the Data page when it is 'own'.
+   */
+  dataIntent: { type: String, enum: ['simulate', 'own', ''], default: '' },
+
   arthSelection: {
     // null is in the enum on purpose: it is the default, it means "no class
     // chosen yet", and Mongoose validates defaults on save. Without it every

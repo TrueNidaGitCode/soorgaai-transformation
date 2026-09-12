@@ -70,6 +70,14 @@ const hostedDeploymentSchema = new mongoose.Schema({
 
   // SHA-256 of the bearer token the deployed app presents to the gateway.
   gatewayTokenHash: { type: String, default: '', index: true },
+  /**
+   * The owner key's hash. The key unlocks the application's Data page --
+   * importing the customer's own records, connecting their sources -- and is
+   * issued at go-live, injected into the tenant as APP_OWNER_KEY, shown once,
+   * and never stored in plaintext here. The public session that opens the
+   * chat cannot reach any of that.
+   */
+  ownerKeyHash: { type: String, default: '' },
 
   // Snapshot of the Arth decision, as env vars were derived from it. Kept
   // because the catalog can change and the deployment should still explain

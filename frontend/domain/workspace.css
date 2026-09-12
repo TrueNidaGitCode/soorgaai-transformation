@@ -573,6 +573,37 @@ body.domain-page .cr-wait__note svg { width: 16px; height: 16px; flex: 0 0 auto;
   #screen-aria .dc-strip__steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* ── Yusu: the owner key, shown once at go-live ───────────────────────────── */
+
+#screen-yusu .yu-owner {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(34, 217, 232, 0.35);
+  border-radius: 14px;
+  background: rgba(34, 217, 232, 0.06);
+}
+#screen-yusu .yu-owner__head { margin: 0 0 8px; font-size: 0.9rem; font-weight: 700; color: var(--ws-text); }
+#screen-yusu .yu-owner__once { margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--ws-soft); color: var(--ws-accent); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+#screen-yusu .yu-owner__row { display: flex; gap: 10px; align-items: center; }
+#screen-yusu .yu-owner__key {
+  flex: 1; min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--ws-line-hi); border-radius: 10px;
+  background: rgba(6, 13, 19, 0.7);
+  color: var(--ws-text);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+#screen-yusu .yu-owner__copy {
+  padding: 8px 14px;
+  border: 1px solid var(--ws-line-hi); border-radius: 999px;
+  background: transparent; color: var(--ws-text);
+  font: inherit; font-size: 0.82rem; font-weight: 700;
+  cursor: pointer;
+}
+#screen-yusu .yu-owner__note { margin: 10px 0 12px; font-size: 0.82rem; line-height: 1.55; color: var(--ws-muted); }
+#screen-yusu .yu-owner__go { display: inline-flex; text-decoration: none; }
+
 /* ── Opportunity Discovery ────────────────────────────────────────────────── */
 
 body.domain-page .rp-main__head { margin-bottom: 22px; }

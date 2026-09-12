@@ -77,7 +77,35 @@ export async function sampleDataFiles(blueprintId) {
   if (!files.length) return [];
 
   files.push({ path: 'data/README_DATA.md', content: readme(index) });
+  // The same index as data, for the application's own Data page: which
+  // datasets it was built on, their files, and the columns each expects --
+  // the shape the customer's own file is matched onto when they import it.
+  files.push({
+    path: 'data/datasets.json',
+    content: JSON.stringify(index.map(d => {
+      const csv = files.find(f => f.path === d.file)?.content || '';
+      const header = csv.split('\n')[0] || '';
+      return { name: d.name, slug: d.file.replace(/^data\/samples\//, '').replace(/\.sample\.csv$/, ''), file: d.file, sampleRows: d.rows, columns: splitCsvLine(header) };
+    }), null, 2) + '\n',
+  });
   return files;
+}
+
+/** One CSV line into cells, quotes honoured. */
+function splitCsvLine(line) {
+  const out = []; let cur = ''; let q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (q) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') q = false;
+      else cur += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === ',') { out.push(cur.trim()); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur.trim());
+  return out;
 }
 
 function readme(index) {
@@ -101,8 +129,11 @@ function readme(index) {
     'not have that column, which is how the application tells the two apart and',
     'why it stops calling itself a demonstration once you load real data.',
     '',
-    'Put your export in this directory with the same columns, drop the sample',
-    'file, and run the seed script. Nothing else needs to change.',
+    'Open the application, go to Data (the owner key is on your Svarg go-live',
+    'screen), and import your file: the columns are matched to these, the rows',
+    'replace the sample, and the application stops calling itself a',
+    'demonstration by itself. Or put your export in this directory with the',
+    'same columns and run the seed script for that dataset.',
     '',
   ].join('\n');
 }

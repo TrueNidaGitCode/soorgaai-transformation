@@ -46,6 +46,12 @@ export const FIXED_PATHS = [
   'frontend/config.js',
   'frontend/app.css',
   'scripts/mint-token.mjs',
+  // The Data page: the owner's records are imported inside the application,
+  // never sent to Svarg. Fixed, so it is the same in every application and
+  // tested once; the generated seed script is what it calls into.
+  'controllers/dataController.js',
+  'routes/dataRoutes.js',
+  'frontend/data.js',
 ];
 
 /**

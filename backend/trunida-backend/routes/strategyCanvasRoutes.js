@@ -2,7 +2,7 @@ import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { recommendForBlueprint } from '../controllers/modelCatalogController.js';
 import { startBuild, getBuild } from '../controllers/eameBuildController.js';
-import { screenChat, saveArthSelection, listArthModels, recommendArthModel } from '../controllers/screenChatController.js';
+import { screenChat, saveArthSelection, saveDataIntent, listArthModels, recommendArthModel } from '../controllers/screenChatController.js';
 import { getDeployment, prepareInfrastructure, attachApplication, destroyDeployment, acknowledgeGovernance, redeployApplication } from '../controllers/deploymentController.js';
 import {
   listCapabilities,
@@ -47,6 +47,7 @@ router.post('/screen-chat',            protect, screenChat);
 router.get('/arth/models',             protect, listArthModels);
 router.post('/transformation-blueprint/:blueprintId/arth-recommend',  protect, recommendArthModel);
 router.patch('/transformation-blueprint/:blueprintId/arth-selection', protect, saveArthSelection);
+router.patch('/transformation-blueprint/:blueprintId/data-intent',    protect, saveDataIntent);
 
 // Arth prepares the environment; Eame (later Yusu) attaches the application.
 router.get   ('/transformation-blueprint/:blueprintId/deployment',     protect, getDeployment);

@@ -70,6 +70,9 @@
         <h1 class="ch-head__title">__APP_NAME__</h1>
         <p class="ch-head__sub">__APP_TAGLINE__</p>
       </div>
+      <!-- The owner's way in to their data. Everyone can see the link; the
+           room behind it opens only to the owner key. -->
+      <a href="#data" class="ch-head__link" id="ch-data-link">Data</a>
       <span class="ch-head__state" id="ch-state"><span class="ch-head__dot"></span>Connecting…</span>
     </header>
 
@@ -102,6 +105,44 @@
 
   </div>
 
+  <!-- ── The Data page ──────────────────────────────────────────────────
+       The owner's: the datasets this application was built on, and the way
+       to replace each one's sample with their own file. Parsed in the
+       browser, sent to this application's own server, written to the
+       database that is theirs. Nothing goes to Svarg. data.js drives it. -->
+  <section class="dt" id="ch-data" hidden aria-label="Your data">
+    <header class="dt__head">
+      <a href="#" class="dt__back" id="dt-back">&larr; Back to the chat</a>
+      <h1 class="dt__title">Your data</h1>
+      <p class="dt__sub">The application was built on the shape of these datasets. Replace the sample rows with your own — your file is read here, in your browser, and the rows go to this application and nowhere else.</p>
+    </header>
+
+    <div class="dt__gate" id="dt-gate">
+      <form class="dt__keyform" id="dt-key-form">
+        <label class="dt__label" for="dt-key">Owner key</label>
+        <p class="dt__hint">The key from your Svarg go-live screen. It was shown once; if you did not keep it, redeploying from Svarg issues a new one.</p>
+        <div class="dt__keyrow">
+          <input type="password" id="dt-key" class="dt__input" autocomplete="off" placeholder="sok_…">
+          <button type="submit" class="dt-btn">Unlock</button>
+        </div>
+        <p class="dt-note" id="dt-key-note" hidden></p>
+      </form>
+    </div>
+
+    <div class="dt__room" id="dt-room" hidden>
+      <div class="dt__datasets" id="dt-datasets"></div>
+      <section class="dt__logwrap">
+        <h2 class="dt__h2">Imports</h2>
+        <ul class="dt__log" id="dt-log"></ul>
+      </section>
+      <section class="dt__next">
+        <h2 class="dt__h2">Connectors</h2>
+        <p class="dt__hint">Connecting a source directly — a WhatsApp export, Confluence, Jira, GitHub — is next. Until then, an export from any of them imports as a file above.</p>
+      </section>
+      <p class="dt__lockrow"><button type="button" class="dt-btn dt-btn--quiet" id="dt-lock">Lock the Data page</button></p>
+    </div>
+  </section>
+
   <!-- The shell: the front door, the sign-in, the welcome, and the hand-over
        to the chat. Plain script, before app.js, so it never depends on what
        the generated module does or when. -->
@@ -114,10 +155,12 @@
     var login = document.getElementById('ch-login');
     var note = document.getElementById('ch-login-note');
 
+    var data = document.getElementById('ch-data');
     function show(which) {
       home.hidden = which !== 'home';
       greet.hidden = which !== 'greet';
       app.hidden = which !== 'app';
+      if (data) data.hidden = true;
       if (which === 'app') { var input = document.getElementById('ch-input'); if (input) input.focus(); }
     }
 
@@ -151,8 +194,10 @@
     }
 
     // A reload mid-conversation must not send someone back through the
-    // front door: within one tab session, the chat is where they were.
-    if (sessionStorage.getItem('ch-entered')) { show('app'); return; }
+    // front door: within one tab session, the chat is where they were. And
+    // #data is the owner arriving from the Svarg go-live screen: data.js
+    // takes them straight to the Data page.
+    if (sessionStorage.getItem('ch-entered') || window.location.hash === '#data') { show('app'); return; }
 
     login.textContent = localStorage.getItem('token') ? 'Continue' : 'Log in';
     show('home');
@@ -173,6 +218,10 @@
   })();
   </script>
 
+  <!-- The spreadsheet reader, for .xlsx imports on the Data page; a CSV needs
+       nothing. Loaded here rather than bundled: it is large and rarely used. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+  <script src="data.js" defer></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -160,6 +160,9 @@ export function buildRuntime({ appName = '', copy = {} } = {}) {
     // Eame writes — is what actually drives the page.
     'frontend/app.css':                 { template: 'frontend/app.css' },
     'scripts/mint-token.mjs':           { template: 'scripts/mint-token.mjs' },
+    'controllers/dataController.js':    { template: 'controllers/dataController.js' },
+    'routes/dataRoutes.js':             { template: 'routes/dataRoutes.js' },
+    'frontend/data.js':                 { template: 'frontend/data.js' },
     'middleware/authMiddleware.js':     { repo: 'middleware/authMiddleware.js' },
     'services/llmService.js':           { repo: 'services/llmService.js' },
     'services/modelSelectionService.js':{ repo: 'services/modelSelectionService.js' },

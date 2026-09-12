@@ -1237,7 +1237,8 @@ function chooseData(choice, { remember = true } = {}) {
   const strip = document.getElementById('aria-runstrip');
   const connectors = document.getElementById('aria-connectors');
   const workbench = document.getElementById('aria-workbench');
-  if (strip) strip.style.display = choice === 'simulate' ? '' : 'none';
+  // Both paths run the simulated shape, so both show the strip.
+  if (strip) strip.style.display = (choice === 'simulate' || choice === 'own') ? '' : 'none';
   if (connectors) connectors.style.display = choice === 'upload' ? '' : 'none';
   // The readiness card and the required-data table answer "what does this
   // need" -- the question the Upload path asks. The Simulate path does not.
@@ -2067,8 +2068,18 @@ function wireStaticControls() {
     chooseData('simulate');
     simulateNow();
   });
-  document.getElementById('aria-choose-upload')?.addEventListener('click', () => {
-    chooseData('upload');
+  // Their own data: recorded as the intent, and the shape is still
+  // simulated -- the application is built on the shape either way, and their
+  // rows are imported inside it after go-live. Nothing is uploaded here.
+  document.getElementById('aria-choose-own')?.addEventListener('click', async () => {
+    if (_choice === 'own') return;
+    chooseData('own');
+    try {
+      await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/data-intent`, {
+        method: 'PATCH', body: JSON.stringify({ intent: 'own' }),
+      });
+    } catch { /* the word is a courtesy to later stages; the run does not depend on it */ }
+    simulateNow();
   });
   document.getElementById('aria-runstrip-retry')?.addEventListener('click', () => {
     const box = document.getElementById('aria-runstrip-error');

@@ -20,6 +20,7 @@
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import HostedDeployment from '../models/HostedDeployment.js';
 import { issueToken } from '../services/gatewayService.js';
+import crypto from 'crypto';
 import { requireEntitlement, deploymentCeilingUsd } from '../services/entitlements.js';
 import {
   getDeployTarget, buildTenantEnv, tenantDbName, tenantProjectName, provisionTenantDatabase,
@@ -299,6 +300,10 @@ export async function attachApplication(req, res) {
       // never stored, so it cannot be recovered to inject here.
       const { token, hash } = issueToken();
       dep.gatewayTokenHash = hash;
+      // The owner key, the same way: plaintext to the tenant's environment and
+      // once to the screen; only the hash kept here.
+      const ownerKey = 'sok_' + crypto.randomBytes(24).toString('hex');
+      dep.ownerKeyHash = crypto.createHash('sha256').update(ownerKey).digest('hex');
 
       // Resolved across BOTH catalogs, the same way the gateway resolves it at
       // request time. Arth lets a customer pick from the benchmark catalog, so
@@ -314,6 +319,7 @@ export async function attachApplication(req, res) {
         gatewayBaseUrl: process.env.GATEWAY_BASE_URL || `${req.protocol}://${req.get('host')}/api/gateway`,
         clusterUri: process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI,
         appName: bp.appName,
+        ownerKey,
       });
 
       // The commit delivery pushed, not "whatever main is" — Railway only
@@ -334,7 +340,7 @@ export async function attachApplication(req, res) {
       dep.repoIsPrivate = true;
       await dep.save();
 
-      return res.status(201).json({ deployment: publicView(dep), gatewayToken: token });
+      return res.status(201).json({ deployment: publicView(dep), gatewayToken: token, ownerKey });
     } catch (err) {
       dep.status = 'failed';
       dep.statusMessage = err.message.slice(0, 400);

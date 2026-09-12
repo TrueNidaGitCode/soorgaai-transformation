@@ -488,6 +488,7 @@ function render(bp, dep) {
     const url = live ? (dep.url || '') : '';
     appUrl.style.display = url ? '' : 'none';
     if (url) { appUrl.href = url; if (appUrlTxt) appUrlTxt.textContent = url.replace(/^https?:\/\//, ''); }
+    setOwnerDataLink(url);
   }
   if (foot) foot.style.display = isLive ? '' : 'none';
 
@@ -719,6 +720,43 @@ async function autoRun() {
   }
 }
 
+/**
+ * The owner key, shown once.
+ *
+ * It unlocks the application's Data page, where the customer imports their
+ * own records -- into their application's database, never to Svarg. Svarg
+ * keeps only the hash, so this response is the only time the key exists
+ * outside the tenant, and the block says so. The Data link needs the
+ * application's address, which arrives with the deployment record; it is
+ * filled here and refreshed as the address lands.
+ */
+function showOwnerKey(key, url) {
+  const box = document.getElementById('yusu-owner');
+  const el = document.getElementById('yusu-owner-key');
+  const copy = document.getElementById('yusu-owner-copy');
+  const go = document.getElementById('yusu-owner-data');
+  if (!box || !el) return;
+  el.textContent = key;
+  box.style.display = '';
+  if (copy && !copy.dataset.wired) {
+    copy.dataset.wired = '1';
+    copy.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(el.textContent); copy.textContent = 'Copied'; }
+      catch { copy.textContent = 'Select and copy'; }
+      setTimeout(() => { copy.textContent = 'Copy'; }, 1800);
+    });
+  }
+  _ownerDataLink = go;
+  setOwnerDataLink(url);
+}
+
+let _ownerDataLink = null;
+function setOwnerDataLink(url) {
+  if (!_ownerDataLink) return;
+  _ownerDataLink.href = url ? url.replace(/\/$/, '') + '/#data' : '#';
+  _ownerDataLink.style.display = url ? '' : 'none';
+}
+
 /** Go Live. Pressed by autoRun once the checks pass; still a button, so a
  *  customer whose checks failed and were fixed can press it themselves. */
 async function act() {
@@ -743,6 +781,8 @@ async function act() {
       const tb = document.getElementById('yusu-token');
       if (tv && tb) { tv.textContent = r.gatewayToken; tb.style.display = ''; }
     }
+    // The owner key: the one time it can be read. Svarg keeps only its hash.
+    if (r.ownerKey) showOwnerKey(r.ownerKey, r.deployment?.url || '');
   } catch (err) {
     showError(err.message);
     render(_bp, _dep);

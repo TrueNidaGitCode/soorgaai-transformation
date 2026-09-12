@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=34">
+  <link rel="stylesheet" href="workspace.css?v=35">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=1">
   <script src="../login/config.js"></script>
@@ -520,18 +520,22 @@
           </span>
           <span class="dc-card__arrow" aria-hidden="true">&rsaquo;</span>
         </button>
-        <button type="button" class="dc-card" id="aria-choose-upload" data-choice="upload">
+        <!-- No upload. The customer's records never come to Svarg: the
+             application is built on the shape of the data and their own rows
+             are imported inside it, after go-live, on its Data page. This
+             card records that intent and proceeds on the simulated shape. -->
+        <button type="button" class="dc-card" id="aria-choose-own" data-choice="own">
           <span class="dc-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           </span>
           <span class="dc-card__text">
-            <span class="dc-card__title">Upload your own data</span>
-            <span class="dc-card__sub">Connect your data sources and we will prepare it for you.</span>
+            <span class="dc-card__title">Use my own data</span>
+            <span class="dc-card__sub">Your records stay with you. You import them inside your application once it is built &mdash; nothing is uploaded to Svarg.</span>
           </span>
           <span class="dc-card__arrow" aria-hidden="true">&rsaquo;</span>
         </button>
       </div>
-      <p class="dc-note" id="aria-choice-note">Simulated data lets you test, validate and experience your application with realistic scenarios &mdash; without using your own data. Replace it with your own at any time.</p>
+      <p class="dc-note" id="aria-choice-note">Either way the application is built on the shape of the data, not the rows. Simulated data lets you see it working straight away; your own is imported inside the application, into a database that is yours alone.</p>
 
       <!-- ── Simulate: the run ───────────────────────────────────────
            Four steps and an estimate, driven from the batch as it runs. -->
@@ -1424,6 +1428,18 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </a>
           <p class="yu-app__files" id="yusu-source-sub">Available as soon as the application has been built.</p>
+          <!-- Shown once, at go-live: the key that unlocks the application's
+               Data page, where the customer imports their own records. Svarg
+               keeps only its hash, so this is the one time it can be read. -->
+          <div class="yu-owner" id="yusu-owner" style="display:none">
+            <p class="yu-owner__head">Your owner key <span class="yu-owner__once">shown once</span></p>
+            <div class="yu-owner__row">
+              <code class="yu-owner__key" id="yusu-owner-key"></code>
+              <button type="button" class="yu-owner__copy" id="yusu-owner-copy">Copy</button>
+            </div>
+            <p class="yu-owner__note">It unlocks the Data page in your application, where you import your own records. They go into your application's own database and never to Svarg. Keep the key somewhere safe; if it is lost, going live again issues a new one.</p>
+            <a class="pw-next-btn yu-owner__go" id="yusu-owner-data" href="#" target="_blank" rel="noopener">Connect your data &rarr;</a>
+          </div>
         </div>
         <div class="yu-app__side">
           <span class="ae-state ae-state--pending" id="yusu-app-state"><span class="ae-state__dot"></span><span id="yusu-app-state-text">Not live</span></span>
@@ -1630,10 +1646,10 @@
 
   <script type="module" src="blueprintGenerate.js?v=23"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
-  <script type="module" src="ariaScreen.js?v=53"></script>
+  <script type="module" src="ariaScreen.js?v=54"></script>
   <script type="module" src="arthScreen.js?v=24"></script>
   <script type="module" src="eameScreen.js?v=26"></script>
-  <script type="module" src="yusuScreen.js?v=33"></script>
+  <script type="module" src="yusuScreen.js?v=34"></script>
   <script type="module" src="../shared/rail.js?v=1"></script>
   <script type="module" src="workspaceShell.js?v=3"></script>
   <script type="module" src="screenChat.js?v=7"></script>

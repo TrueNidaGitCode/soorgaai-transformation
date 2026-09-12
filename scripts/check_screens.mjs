@@ -393,7 +393,7 @@ window.fetch = function (url, opts) {
     // Remembered, so the poll that follows going live reads live back rather
     // than the prepared record it started from.
     window.__deployedDep = { ...DEP, status: 'live', url: 'https://svarg-tenant-000001.up.railway.app', appAttached: true, liveAt: new Date().toISOString() };
-    return J({ deployment: window.__deployedDep, gatewayToken: 'svd_' + '0'.repeat(48) }, 200);
+    return J({ deployment: window.__deployedDep, gatewayToken: 'svd_' + '0'.repeat(48), ownerKey: 'sok_' + '1'.repeat(48) }, 200);
   }
   // The delivered project, which the security check reads. Served only under
   // autopilot on Yusu: everywhere else it is absent, the check fails honestly
@@ -565,6 +565,12 @@ setTimeout(async function () {
       var checks = [].map.call(document.querySelectorAll('#yusu-checks .tr-card__verdict'), function (v) { return v.textContent.trim(); });
       out.checks = checks.join(',');
       if (checks.some(function (c) { return /fail/i.test(c); })) bad('a check failed and it still went live: ' + out.checks);
+      // The owner key, shown once at go-live, with the way to the Data page.
+      var ownerBox = document.getElementById('yusu-owner');
+      out.ownerKey = ownerBox && ownerBox.offsetParent !== null ? ((document.getElementById('yusu-owner-key') || {}).textContent || '').slice(0, 8) : 'hidden';
+      if (out.ownerKey !== 'sok_1111') bad('the owner key is not shown after going live: ' + out.ownerKey);
+      var dataLink = document.getElementById('yusu-owner-data');
+      if (!dataLink || dataLink.offsetParent === null || dataLink.href.indexOf('railway.app/#data') === -1) bad('no "Connect your data" link to the Data page of the application: ' + (dataLink ? dataLink.href : 'none'));
     }
 
     // The stage it moved to is the next one and it settles there: the fixture
@@ -919,6 +925,12 @@ setTimeout(async function () {
         out.choice = choice ? choice.querySelectorAll('.dc-card').length : 0;
         if (out.choice !== 2) bad('expected the two data choices, got ' + out.choice);
         if (!scr.querySelector('#aria-choose-simulate .dc-card__flag')) bad('Simulate is not marked as recommended');
+      // The second card is the customer's own data, imported inside the
+      // application -- and says so. Nothing is uploaded to Svarg from here.
+      var ownCard = document.getElementById('aria-choose-own');
+      if (!ownCard) bad('no "Use my own data" card');
+      else if (!/nothing is uploaded to Svarg/i.test(ownCard.textContent)) bad('the own-data card does not say the records stay with the customer');
+      if (document.getElementById('aria-choose-upload')) bad('an Upload card is still on Arth');
       }
 
       var reqTable = (document.getElementById('aria-required-body') || {}).closest ? document.getElementById('aria-required-body').closest('table') : null;

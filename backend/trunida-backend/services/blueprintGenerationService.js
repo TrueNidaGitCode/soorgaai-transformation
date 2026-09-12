@@ -20,7 +20,7 @@
 
 import CompanyBlueprint        from '../models/CompanyBlueprint.js';
 import TransformationBlueprint  from '../models/TransformationBlueprint.js';
-import CompanyContext            from '../models/CompanyContext.js';
+import { getCompanyEvidence }    from './companyContextService.js';
 import UserProfile               from '../models/UserProfile.js';
 import { generate }              from './llmService.js';
 import {
@@ -62,9 +62,16 @@ function combineContexts(...blocks) {
  */
 export async function loadCompanyProfile(userId, blueprintId = null) {
   try {
-    const [profile, ctx, bp] = await Promise.all([
+    // contextDoc is the company in its own words: the approved Company
+    // Context where one was written, otherwise the pages of the website the
+    // account connected at setup. It used to read only the Company Context,
+    // which almost no account has -- the modal that produced it is no longer
+    // on the workspace -- so the website every account is asked for at setup
+    // reached the engagement classifier and nothing else. Every capability's
+    // COMPANY PROFILE block was empty for the customers it was meant to serve.
+    const [profile, evidence, bp] = await Promise.all([
       UserProfile.findOne({ userId }).lean(),
-      CompanyContext.findOne({ userId }).lean(),
+      getCompanyEvidence(userId).catch(() => ''),
       blueprintId
         ? TransformationBlueprint.findById(blueprintId, { engagement: 1 }).lean().catch(() => null)
         : null,
@@ -78,7 +85,7 @@ export async function loadCompanyProfile(userId, blueprintId = null) {
       orgName:     profile?.orgName        || '',
       role:        profile?.role           || 'Executive',
       industry:    profile?.industryDomain || '',
-      contextDoc:  ctx?.content            || '',
+      contextDoc:  evidence                || '',
       subVertical: libraryEntry?.subVertical || '',
       engagement:  bp?.engagement          || null,
     };
@@ -2911,6 +2918,19 @@ Extract the intent and identify the industry problems.`;
     ? `\nCOMPANY CAPABILITY MAP (admin-approved — ground opportunities in these actual products where relevant):\n${capabilityMap.map(m => `- ${m.industryChallenge} -> ${m.companyCapability}${m.mechanism ? ` (${m.mechanism})` : ''}`).join('\n')}\n`
     : '';
 
+  // The company itself: its name from the account, and its own words from
+  // the website connected at setup (or an approved Company Context). This is
+  // what turns "an academy" into "this academy" -- the batches it runs, the
+  // tools it names, the way it describes itself. It was never given to this
+  // stage; only the admin-curated capability map was, which most companies
+  // do not have. Capped so a long site cannot crowd out the objective.
+  const companyBlock = companyProfile.orgName || companyProfile.contextDoc
+    ? `\nTHE COMPANY: ${companyProfile.orgName || 'not named on the account'}\n`
+      + (companyProfile.contextDoc
+        ? `WHAT THEY SAY ABOUT THEMSELVES (from their own website or approved profile):\n${String(companyProfile.contextDoc).slice(0, 6000)}\n`
+        : 'No website or profile is connected for this company; nothing is known beyond the objective.\n')
+    : '';
+
   const stage2System = `You are an AI transformation strategist. Given the industry problems already identified, generate the specific AI opportunities that address them — grounded in this company's actual products where a mapping is provided, and consistent with any project constraints given below.
 
 ${SECTION_TEMPLATES['AI Opportunity Discovery'].promptInstruction}
@@ -2918,6 +2938,8 @@ ${SECTION_TEMPLATES['AI Opportunity Discovery'].promptInstruction}
 ADDITIONAL RULES FOR THIS STAGE:
 - The industry problems (businessProblems) were already identified in a prior step and are given to you below — do NOT regenerate or restate them.
 - When a COMPANY CAPABILITY MAP is provided below, prefer AI opportunities that strengthen one of the company's existing mapped capabilities, and name that capability explicitly in "why" (e.g. "This strengthens the Odin retrofit platform's fleet coordination by..."). If a project-context block below states a constraint (data handling, security, existing systems, architecture), the opportunities must respect it — do not propose something incompatible with a stated constraint.
+- When THE COMPANY block below carries the company's own words, ground the opportunities in them: the products, services, batches, teams, tools and customers they actually name, in the words they use. "why" should point at something true of THIS company, not of the industry. Never invent a product, a customer or a number the words do not support.
+- THE BUSINESS OBJECTIVE IS AUTHORITATIVE about which business this is for. If the company on the account is plainly a different business from the one the objective describes -- an agency, a consultant, a software vendor or a platform writing on a client's behalf -- follow the objective and set the company's own words aside; do not pull the opportunities toward the account holder's products.
 
 OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation, and NO fields other than these four:
 {
@@ -2933,7 +2955,7 @@ Generate 2-4 actionItems — concrete things a real project team would need to d
   const stage2User = `BUSINESS OBJECTIVE: ${businessObjective}
 INTENT: ${intent}
 INDUSTRY PROBLEMS IDENTIFIED: ${businessProblemsFromStage1.join(', ')}
-${capabilityMapBlock}${enterpriseContext ? `\n${enterpriseContext}\n` : ''}
+${companyBlock}${capabilityMapBlock}${enterpriseContext ? `\n${enterpriseContext}\n` : ''}
 Generate workflowSteps, highEffortActivities, and aiOpportunities as specified.`;
 
   const stage2 = await callLLM(stage2System, stage2User, 120_000, `${cap.name} (Stage 2 — opportunities)`);

@@ -213,6 +213,16 @@ function availableProviders() {
 /** Roughly two minutes of Opus. Enough for any objective, small enough to post. */
 export const MAX_AUDIO_BYTES = 6 * 1024 * 1024;
 
+/**
+ * Less than about half a second of anything. A press-and-release, or a
+ * container with no samples in it. Refused here rather than sent, because a
+ * chat model asked to transcribe silence will sometimes transcribe a sentence
+ * that was never said -- an empty WAV came back as "and let the children know
+ * where to locate you should they need you" -- and that would land in the
+ * objective box as though the visitor had spoken it.
+ */
+export const MIN_AUDIO_BYTES = 2000;
+
 export class TranscriptionError extends Error {
   constructor(message, status = 400) {
     super(message);
@@ -245,6 +255,9 @@ export async function transcribe(audio, mimeType = 'audio/webm') {
       'Voice input is not configured on this server — no transcription key is set.', 503);
   }
   if (!audio?.length) throw new TranscriptionError('No audio was received.');
+  if (audio.length < MIN_AUDIO_BYTES) {
+    throw new TranscriptionError('Nothing was heard. Hold the microphone and speak, then press it again.');
+  }
   if (audio.length > MAX_AUDIO_BYTES) {
     throw new TranscriptionError('That recording is too long. Keep it under two minutes.', 413);
   }

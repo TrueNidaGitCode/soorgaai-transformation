@@ -23,6 +23,16 @@
  * The cost is that the reset is a moving date, so usageSummary() returns it
  * explicitly rather than leaving the customer to guess.
  *
+ * ── The admin account is not a customer ────────────────────────────────────
+ *
+ * An account whose role is admin is the one running the platform: it tests
+ * every journey, rehearses every demo, and was running out of accounts to do
+ * it with. It is resolved as Enterprise -- every limit unlimited -- whatever
+ * AccountPlan says, and the summary marks it viaAdmin so a screen can say
+ * why. Nothing else about it is special: the same gates run, they just never
+ * refuse. Role is read from the User record, not the token, so promoting or
+ * demoting an account takes effect on its next request.
+ *
  * ── Failure is closed for paid, open for free ──────────────────────────────
  *
  * No AccountPlan row means Hobby. That is the default for every account that
@@ -34,6 +44,7 @@
  */
 
 import AccountPlan from '../models/AccountPlan.js';
+import { User } from '../models/user.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
 import HostedDeployment from '../models/HostedDeployment.js';
@@ -114,9 +125,19 @@ export function planKey(name) {
  * showing Hobby's numbers.
  */
 export async function resolvePlan(userId) {
-  const doc = userId
-    ? await AccountPlan.findOne({ userId }).lean().catch(() => null)
-    : null;
+  const [doc, user] = userId
+    ? await Promise.all([
+        AccountPlan.findOne({ userId }).lean().catch(() => null),
+        User.findById(userId).select('role').lean().catch(() => null),
+      ])
+    : [null, null];
+
+  if (user?.role === 'admin') {
+    return {
+      plan: 'enterprise', status: 'active', effective: 'enterprise', lapsed: false,
+      limits: { ...PLANS.enterprise }, currentPeriodEnd: null, viaAdmin: true,
+    };
+  }
 
   const plan = planKey(doc?.plan);
   const status = doc?.status || 'active';
@@ -131,7 +152,7 @@ export async function resolvePlan(userId) {
     if (value !== null && value !== undefined && key in limits) limits[key] = value;
   }
 
-  return { plan, status, effective, lapsed, limits, currentPeriodEnd: doc?.currentPeriodEnd || null };
+  return { plan, status, effective, lapsed, limits, currentPeriodEnd: doc?.currentPeriodEnd || null, viaAdmin: false };
 }
 
 // ── Counting what exists ────────────────────────────────────────────────────
@@ -148,7 +169,7 @@ function windowStart(now = new Date()) {
  * would let the numbers disagree with each other mid-render.
  */
 export async function usageSummary(userId, now = new Date()) {
-  const { plan, status, effective, lapsed, limits, currentPeriodEnd } = await resolvePlan(userId);
+  const { plan, status, effective, lapsed, limits, currentPeriodEnd, viaAdmin } = await resolvePlan(userId);
   const since = windowStart(now);
 
   const [newBlueprints, activeBlueprints, applications, launches, oldest] = await Promise.all([
@@ -165,7 +186,7 @@ export async function usageSummary(userId, now = new Date()) {
   ]);
 
   return {
-    plan, status, effective, lapsed, limits, currentPeriodEnd,
+    plan, status, effective, lapsed, limits, currentPeriodEnd, viaAdmin,
     used: { newBlueprints, activeBlueprints, applications, launches },
     // Null when nothing is in the window — there is nothing to wait for.
     windowResetsAt: oldest ? new Date(new Date(oldest.createdAt).getTime() + PERIOD_MS) : null,

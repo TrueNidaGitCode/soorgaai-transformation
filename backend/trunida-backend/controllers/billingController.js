@@ -43,6 +43,9 @@ export async function getMyPlan(req, res) {
       // while a subscription is unpaid.
       effective: s.effective,
       effectiveLabel: PLANS[planKey(s.effective)].label,
+      // True for the platform admin account, which is resolved as Enterprise
+      // regardless of AccountPlan so it can test every journey.
+      viaAdmin: !!s.viaAdmin,
       lapsed: s.lapsed,
       currentPeriodEnd: s.currentPeriodEnd,
       limits: s.limits,

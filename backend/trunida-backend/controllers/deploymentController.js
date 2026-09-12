@@ -22,7 +22,7 @@ import HostedDeployment from '../models/HostedDeployment.js';
 import { issueToken } from '../services/gatewayService.js';
 import { requireEntitlement, deploymentCeilingUsd } from '../services/entitlements.js';
 import {
-  getDeployTarget, buildTenantEnv, tenantDbName, tenantProjectName,
+  getDeployTarget, buildTenantEnv, tenantDbName, tenantProjectName, provisionTenantDatabase,
 } from '../services/deployTargetService.js';
 
 /** Never leak the token hash or internal ids to the browser. */
@@ -168,9 +168,17 @@ export async function prepareInfrastructure(req, res) {
     // A re-prepared environment starts with a clean ledger, so an earlier
     // attempt's spend cannot leave the new one capped from the first request.
     dep.usage = { requests: 0, inputTokens: 0, outputTokens: 0, costUsd: 0, periodStart: new Date(), lastRequestAt: null };
-    await dep.save();
+
+    // Each step is written to statusMessage and saved before it runs, so the
+    // Aria screen -- which polls the deployment while this request is open --
+    // can show what is happening rather than a spinner over one long call.
+    const step = async (message) => { dep.statusMessage = message; await dep.save(); };
 
     try {
+      await step('Creating your database…');
+      await provisionTenantDatabase(dep.dbName, { blueprintId: bp._id, userId: req.user._id });
+
+      await step('Setting up the environment…');
       const placed = await target.prepare({ deployment: dep });
       dep.railway = {
         projectId: placed.projectId,
@@ -181,6 +189,7 @@ export async function prepareInfrastructure(req, res) {
         url: '',
       };
       dep.status = 'prepared';
+      dep.statusMessage = '';
       dep.preparedAt = new Date();
       await dep.save();
 

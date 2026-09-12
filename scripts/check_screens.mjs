@@ -376,12 +376,18 @@ window.fetch = function (url, opts) {
     // Preparing answers with a prepared record, whatever the fixture started
     // as; the probe counts the calls to prove Confirm & Continue prepares.
     window.__prepared = (window.__prepared || 0) + 1;
+    // In steps, as the server does: the deployment reads "preparing" with the
+    // step it is on while the request is open, and prepared once it answers.
+    window.__preparingDep = Object.assign({}, DEP, { status: 'preparing', statusMessage: 'Creating your database…', hosting: 'svarg' });
+    setTimeout(function () { window.__preparingDep.statusMessage = 'Setting up the environment…'; }, 500);
     // Remembered, so re-entering the stage reads the prepared record back,
     // as the real server would.
-    window.__preparedDep = Object.assign({}, DEP, { status: 'prepared', preparedAt: new Date().toISOString(), hosting: 'svarg' });
-    return J({ deployment: window.__preparedDep }, 201);
+    setTimeout(function () {
+      window.__preparedDep = Object.assign({}, DEP, { status: 'prepared', preparedAt: new Date().toISOString(), hosting: 'svarg' });
+    }, 1100);
+    return new Promise(function (r) { setTimeout(function () { r(new Response(JSON.stringify({ deployment: window.__preparedDep }), { status: 200, headers: { 'Content-Type': 'application/json' } })); }, 1200 + LATENCY); });
   }
-  if (u.includes('/deployment'))        return J({ deployment: window.__deployedDep || window.__preparedDep || DEP });
+  if (u.includes('/deployment'))        return J({ deployment: window.__deployedDep || window.__preparedDep || window.__preparingDep || DEP });
   if (u.includes('/deploy')) {
     window.__deployed++;
     // Remembered, so the poll that follows going live reads live back rather
@@ -533,7 +539,8 @@ setTimeout(async function () {
 
     // Wait for the hop.
     var t0 = performance.now();
-    for (var h = 0; NEXT && h < 120 && hops().indexOf(NEXT) === -1; h++) await wait(100);
+    // Aria holds its finished page for fifteen seconds before moving on.
+    for (var h = 0; NEXT && h < 300 && hops().indexOf(NEXT) === -1; h++) await wait(100);
     out.hops = hops().join(',') || 'none';
     out.hopAfter = Math.round(performance.now() - t0) + 'ms';
     if (NEXT && hops().indexOf(NEXT) === -1) bad('the journey did not move on to ' + NEXT + ' by itself (shows: ' + out.hops + ')');
@@ -1623,7 +1630,38 @@ setTimeout(async function () {
         confirm.click();
         // Save, prepare, the 900ms pause, then the reveal: three round trips
         // and a beat. Polled rather than slept, so latency does not fail it.
-        for (var pw = 0; pw < 60 && (window.__shows || []).length === showsBefore; pw++) {
+        // While the request is open the run stage is on screen with the
+        // server's step in it; the environment card is not.
+        // Wait for a server step to reach the label: the save, then the
+        // request, then a poll -- three round trips under CHECK_LATENCY.
+        for (var rl = 0; rl < 60 && !/database|environment/i.test((document.getElementById('arth-run-label') || {}).textContent || ''); rl++) {
+          await new Promise(function (r) { setTimeout(r, 100); });
+        }
+        var runEl = document.getElementById('arth-run');
+        out.runShown = !!runEl && runEl.offsetParent !== null;
+        if (!out.runShown) bad('the run stage is not shown while the environment is being prepared');
+        var reportEl = scr.querySelector('.ae-report');
+        if (reportEl && reportEl.offsetParent !== null) bad('the environment card is shown during the run');
+        out.runPhases = [].map.call(scr.querySelectorAll('#arth-run-steps .cr-phase'), function (li) {
+          return (li.className.match(/cr-phase--([a-z]+)/) || [])[1];
+        }).join(',');
+        if (!/^done,(active|done,active)/.test(out.runPhases)) bad('the run phases read ' + out.runPhases + ', expected the model done and a server step in progress');
+        var runLabel = (document.getElementById('arth-run-label') || {}).textContent || '';
+        if (!/database|environment/i.test(runLabel)) bad('the run does not show the step the server is on: "' + runLabel + '"');
+
+        // Then the finished page, held: the card back, a countdown in the
+        // hint, and no move yet.
+        for (var pp = 0; pp < 40 && !window.__prepared; pp++) await new Promise(function (r) { setTimeout(r, 100); });
+        for (var ph = 0; ph < 40 && !/Moving to Arth in/.test((document.getElementById('arth-hint') || {}).textContent || ''); ph++) {
+          await new Promise(function (r) { setTimeout(r, 100); });
+        }
+        out.hold = ((document.getElementById('arth-hint') || {}).textContent || '').trim();
+        if (!/Moving to Arth in [0-9]+s/.test(out.hold)) bad('the finished page is not held with a countdown: "' + out.hold + '"');
+        if ((window.__shows || []).length !== showsBefore) bad('the journey moved on before the hold');
+        if (runEl.offsetParent !== null) bad('the run stage is still shown after the environment is prepared');
+
+        // The hold is fifteen seconds; then the move.
+        for (var pw = 0; pw < 250 && (window.__shows || []).length === showsBefore; pw++) {
           await new Promise(function (r) { setTimeout(r, 100); });
         }
         out.prepared = window.__prepared || 0;
@@ -1708,7 +1746,7 @@ async function checkScreen(screen) {
     // CHECK_WINDOW lets a run capture something that sits below the fold at
     // the default height — a panel further down a long screen, say.
     const win = process.env.CHECK_WINDOW || '1440,1000';
-    const common = ['--headless', '--disable-gpu', `--window-size=${win}`, `--virtual-time-budget=${(process.env.CHECK_AUTOPILOT ? 20000 : 9000) + Number(process.env.CHECK_LATENCY || 0) * 8}`];
+    const common = ['--headless', '--disable-gpu', `--window-size=${win}`, `--virtual-time-budget=${(process.env.CHECK_AUTOPILOT ? 40000 : screen === 'arth' ? 45000 : 9000) + Number(process.env.CHECK_LATENCY || 0) * 8}`];
     await chrome([...common, `--screenshot=${path.join(SHOTS, screen + '.png')}`, url]);
     const dom = await chrome([...common, '--dump-dom', url]);
     const m = dom.match(/<title>CHECK ([\s\S]*?)<\/title>/);
@@ -1757,7 +1795,7 @@ for (const screen of list) {
         note "${r.postNote}" · dial "${r.postDial}"
         batch ${r.batchProgress} · targets "${r.batch}"` : '')
     + (r.classes ? `\n        classes ${r.classes} · lock note "${r.lockNote}"\n        advice ${r.advice} · pickable ${r.pickable} · selected ${r.selected} · auto asks for ${r.autoLimit} · internal text: ${r.leaked}
-        confirm "${r.confirm}" · prepares ${r.prepared ?? '?'}x · then ${r.confirmLeadsTo ?? '?'}` : '')
+        confirm "${r.confirm}" · run ${r.runShown ? 'shown' : 'NOT shown'} [${r.runPhases}] · hold "${r.hold}" · prepares ${r.prepared ?? '?'}x · then ${r.confirmLeadsTo ?? '?'}` : '')
     // Its own clause, not nested inside the arth one — nested, it could only
     // ever print for a screen that also had model classes, so the eame line
     // was unreachable.

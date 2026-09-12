@@ -858,6 +858,62 @@
 
       <div id="arth-error" class="gen-error" style="display:none"></div>
 
+      <!-- ── The run ────────────────────────────────────────────────
+           Aria has two pages under one hero, like Cob: this one while the
+           model is chosen and the environment prepared, and the environment
+           card once it exists. Same shape as Cob's run stage -- the ring, the
+           steps, what to expect -- so the journey reads as one product. The
+           steps are real: the server writes each one to the deployment as it
+           starts it, and this screen polls while the request is open. -->
+      <div class="cr-run" id="arth-run" role="status" aria-live="polite" style="display:none">
+        <div class="cr-progress">
+          <div class="cr-ring" id="arth-run-ring" style="--p:0" aria-hidden="true">
+            <span class="cr-ring__pct" id="arth-run-pct">0%</span>
+          </div>
+          <div class="cr-progress__body">
+            <div class="prog-bar__track">
+              <div class="prog-bar__fill" id="arth-run-fill" style="width:0%"></div>
+            </div>
+            <p class="cr-progress__line">
+              <span id="arth-run-label">Choosing the model…</span>
+              <span class="cr-progress__count" id="arth-run-count"></span>
+            </p>
+          </div>
+          <div class="cr-eta">
+            <span class="cr-eta__label">Usually takes</span>
+            <strong class="cr-eta__value">under a minute</strong>
+          </div>
+        </div>
+        <div class="cr-cards">
+          <section class="ae-card cr-steps" aria-labelledby="arth-run-steps-title">
+            <header class="ae-card__head">
+              <span class="ae-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </span>
+              <div class="ae-card__headings">
+                <h2 class="ae-card__title" id="arth-run-steps-title">What's happening now</h2>
+              </div>
+            </header>
+            <ol class="cr-phases" id="arth-run-steps"></ol>
+          </section>
+          <section class="ae-card cr-wait" aria-labelledby="arth-run-wait-title">
+            <header class="ae-card__head">
+              <span class="ae-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </span>
+              <div class="ae-card__headings">
+                <h2 class="ae-card__title" id="arth-run-wait-title">While you wait…</h2>
+              </div>
+            </header>
+            <p class="cr-wait__body">Aria is choosing the model for this use case and setting up an environment of your own: a database that is yours alone, a private space for the application to run in, and the model connected through Svarg's gateway with a spend limit on it. When it is ready, Arth prepares the data.</p>
+            <p class="cr-wait__note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              This usually takes under a minute.
+            </p>
+          </section>
+        </div>
+      </div>
+
       <!-- A plain block now. It was a two-column .ae-stage with the art in
            the second column; the art belongs beside the hero, where every
            other stage has it, and a grid with an empty second column would
@@ -1507,7 +1563,7 @@
   <script type="module" src="blueprintGenerate.js?v=23"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=51"></script>
-  <script type="module" src="arthScreen.js?v=23"></script>
+  <script type="module" src="arthScreen.js?v=24"></script>
   <script type="module" src="eameScreen.js?v=26"></script>
   <script type="module" src="yusuScreen.js?v=33"></script>
   <script type="module" src="../shared/rail.js?v=1"></script>

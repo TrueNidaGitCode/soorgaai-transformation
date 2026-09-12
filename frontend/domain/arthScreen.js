@@ -537,8 +537,11 @@ function renderEnvironment() {
       icon: 'db', label: 'Database',
       // Only true of an environment Svarg prepared; a customer running it
       // themselves brings their own, and we should not describe theirs.
-      value: selfHosted ? 'Yours to provide' : 'Dedicated + Vector Search',
-      tag: selfHosted ? 'Your control' : 'Secure',
+      // "Your own" is exact: a database of theirs alone, created at prepare,
+      // with its own connection string -- on Svarg's cluster, which every
+      // tenant shares underneath. The tag says which.
+      value: selfHosted ? 'Yours to provide' : 'Your own database',
+      tag: selfHosted ? 'Your control' : 'Isolated per customer',
     }),
     tile({
       icon: 'model', label: 'AI Model',
@@ -569,10 +572,15 @@ function renderEnvironment() {
   if (pill)  pill.classList.toggle('ae-pill--pending', !prepared);
   if (state) state.classList.toggle('ae-state--pending', !prepared);
 
-  if (prepared) {
+  if (_running) {
+    if (pill)  pill.textContent = 'Running';
+    if (title) title.textContent = 'Preparing your environment';
+    if (sub)   sub.textContent = 'Aria is choosing the model and setting up an environment of your own. This takes under a minute.';
+    if (stateText) stateText.textContent = 'Working';
+  } else if (prepared) {
     if (pill)  pill.textContent = 'Environment ready';
     if (title) title.textContent = 'Your environment is ready!';
-    if (sub)   sub.textContent = 'Aria has prepared everything required for this use case.';
+    if (sub)   sub.textContent = 'Aria has prepared everything required for this use case. Yours alone: its own database, its own space, its own spend limit.';
     if (stateText) stateText.textContent = 'Ready';
   } else if (modelName) {
     if (pill)  pill.textContent = 'Ready to prepare';
@@ -740,6 +748,128 @@ function choose(pref, { restoring = false } = {}) {
   return true;
 }
 
+/**
+ * ── The run stage ─────────────────────────────────────────────────────────
+ *
+ * Aria is two pages under one hero, like Cob. While the model is chosen and
+ * the environment prepared, the run stage is on screen and the environment
+ * card is not; once the environment exists, the card is the page. The four
+ * steps are the four things that actually happen, and their state comes
+ * from what has actually happened: the recommendation landing, and the
+ * statusMessage the server writes to the deployment before each step of the
+ * prepare -- read here by polling the deployment while the request is open.
+ */
+const ARIA_PHASES = [
+  { key: 'model',    title: 'Choosing the model',                     sub: 'Reading the use case against the model catalog' },
+  { key: 'database', title: 'Creating your database',                 sub: 'A database that is yours alone, on Svarg\'s cluster' },
+  { key: 'space',    title: 'Setting up the environment',             sub: 'A private space for the application to run in' },
+  { key: 'gateway',  title: 'Locking in the model and spend limit',   sub: 'The model reached through Svarg\'s gateway, capped per month' },
+];
+
+let _running = false;
+let _runPoll = null;
+let _holdTimer = null;
+
+/** Which phase index the server's message means, and what it is doing. */
+function phaseFromMessage(message) {
+  const m = String(message || '');
+  if (/database/i.test(m)) return 1;
+  if (/environment/i.test(m)) return 2;
+  return -1;
+}
+
+function setAriaMode(running) {
+  _running = running;
+  const run = document.getElementById('arth-run');
+  const report = document.querySelector('#screen-arth .ae-report');
+  const nav = document.querySelector('#screen-arth .stage-nav');
+  if (run) run.style.display = running ? '' : 'none';
+  if (report) report.style.display = running ? 'none' : '';
+  if (nav) nav.style.display = running ? 'none' : '';
+  renderEnvironment();
+}
+
+/**
+ * @param {number} reached  index of the phase in progress; phases before it
+ *                          are done. 4 means every phase is done.
+ * @param {string} [detail] what the phase in progress is doing right now
+ */
+function renderAriaRun(reached, detail = '') {
+  const steps = document.getElementById('arth-run-steps');
+  const fill  = document.getElementById('arth-run-fill');
+  const ring  = document.getElementById('arth-run-ring');
+  const pct   = document.getElementById('arth-run-pct');
+  const label = document.getElementById('arth-run-label');
+  const count = document.getElementById('arth-run-count');
+  const total = ARIA_PHASES.length;
+  const done  = Math.min(reached, total);
+  const share = Math.round((done / total) * 100);
+  if (fill) fill.style.width = share + '%';
+  if (ring) ring.style.setProperty('--p', share);
+  if (pct)  pct.textContent = share + '%';
+  if (count) count.textContent = `${done} of ${total} steps`;
+  if (label) label.textContent = done === total ? 'Environment ready' : (detail || ARIA_PHASES[reached]?.title + '…');
+  if (steps) {
+    steps.innerHTML = ARIA_PHASES.map((ph, i) => {
+      const state = i < reached ? 'done' : i === reached ? 'active' : 'waiting';
+      const word = state === 'done' ? 'Completed' : state === 'active' ? 'In progress…' : 'Waiting…';
+      const sub = state === 'active' && detail ? detail : ph.sub;
+      return `
+        <li class="cr-phase cr-phase--${state}">
+          <span class="cr-phase__mark" aria-hidden="true"></span>
+          <span class="cr-phase__text">
+            <span class="cr-phase__title">${esc(ph.title)}</span>
+            <span class="cr-phase__sub">${esc(sub)}</span>
+          </span>
+          <span class="cr-phase__state">${word}</span>
+        </li>`;
+    }).join('');
+  }
+}
+
+/** While the prepare request is open, read the step the server is on. */
+function startRunPoll() {
+  stopRunPoll();
+  const tick = async () => {
+    try {
+      const { deployment } = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/deployment`);
+      if (deployment?.status === 'preparing') {
+        const p = phaseFromMessage(deployment.statusMessage);
+        if (p >= 0) renderAriaRun(p, deployment.statusMessage);
+      }
+    } catch { /* the request itself reports failure */ }
+  };
+  _runPoll = setInterval(tick, 800);
+}
+function stopRunPoll() { if (_runPoll) { clearInterval(_runPoll); _runPoll = null; } }
+
+/**
+ * The pause before moving on.
+ *
+ * The environment appeared and the screen left in under a second; nobody
+ * saw what had been prepared for them. So the finished page is held for a
+ * few seconds with a countdown in the hint, and the move to Arth is the
+ * button's own click -- which the customer can press early, or the journey
+ * presses when the count reaches zero. Cancelled if they leave the screen.
+ */
+const HOLD_SECONDS = 15;
+
+function holdThenMoveOn() {
+  clearTimeout(_holdTimer);
+  const btn  = document.getElementById('arth-confirm-btn');
+  const hint = document.getElementById('arth-hint');
+  let left = HOLD_SECONDS;
+  const tick = () => {
+    const screen = document.getElementById('screen-arth');
+    if (!screen || screen.style.display === 'none' || !btn?.dataset.goto) return;
+    if (left <= 0) { press('arth-confirm-btn'); return; }
+    if (hint) hint.textContent = `Moving to Arth in ${left}s — or press to go now.`;
+    left -= 1;
+    _holdTimer = setTimeout(tick, 1000);
+  };
+  tick();
+}
+
 let _wired = false;
 
 function wire() {
@@ -808,6 +938,11 @@ function wire() {
     btn.disabled = true;
     btn.textContent = 'Saving…';
     document.getElementById('arth-error').style.display = 'none';
+    // The run stage: the model is chosen (phase 1 done), and the server's
+    // steps follow as it writes them.
+    setAriaMode(true);
+    renderAriaRun(1, 'Saving the choice…');
+    startRunPoll();
     try {
       // Force a write even when an earlier attempt saved it, so Confirm is
       // never a no-op that looks like one.
@@ -819,14 +954,18 @@ function wire() {
         method: 'POST',
         body: JSON.stringify({ hosting: _hosting || 'svarg' }),
       });
+      stopRunPoll();
       _hosting = r.deployment?.hosting || _hosting || 'svarg';
+      renderAriaRun(ARIA_PHASES.length);
       // Freezes the selection and turns this button into the move to the
-      // next stage, with its data-goto; the click below hands that to the
-      // delegated stage-nav handler, which reveals the stage once it is ready.
+      // next stage, with its data-goto. The finished page is then held so
+      // what was prepared can be seen before the journey moves on.
+      setAriaMode(false);
       renderPrepared(r.deployment);
-      btn.textContent = '✓ Environment ready';
-      setTimeout(() => { if (btn.dataset.goto) btn.click(); }, 900);
+      holdThenMoveOn();
     } catch (err) {
+      stopRunPoll();
+      setAriaMode(false);
       btn.disabled = false;
       btn.textContent = 'Confirm & Continue';
       showError(err.message);
@@ -848,8 +987,14 @@ document.addEventListener('arth:show', (e) => {
   // to which model — not just which class it belonged to.
   const prev = bp.arthSelection || {};
   // Fresh: nothing chosen yet, so this visit is the run that chooses. The
-  // confirm below is pressed once the recommendation has landed.
+  // confirm below is pressed once the recommendation has landed -- and the
+  // screen opens on the run stage, choosing, rather than on a card that
+  // says "ready to prepare" for the second before it is pressed.
   const fresh = !prev.preference;
+  clearTimeout(_holdTimer);
+  stopRunPoll();
+  setAriaMode(fresh);
+  if (fresh) renderAriaRun(0);
   _model = null;
   _models = [];
   _recommendation = null;
@@ -905,5 +1050,8 @@ document.addEventListener('arth:show', (e) => {
     // is left where they are; a frozen screen (environment prepared) has a
     // Confirm that is plain navigation and is not pressed either.
     if (fresh && _model && !_frozen) press('arth-confirm-btn');
+    // A fresh visit whose recommendation did not land, or which found an
+    // environment already prepared, has nothing to run: back to the page.
+    else if (fresh) setAriaMode(false);
   });
 });

@@ -15,12 +15,40 @@
  */
 
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 import { ADVISORY_CATALOG } from '../config/modelCatalog.js';
 
 /** Mongo database names are limited; derive a legal, collision-free one. */
 export function tenantDbName(blueprintId) {
   const id = String(blueprintId).replace(/[^a-zA-Z0-9]/g, '').slice(-16);
   return `tenant_${id}`;
+}
+
+/**
+ * Create the tenant's database, now, so "Creating your database" is a thing
+ * that happens rather than a name that is written down.
+ *
+ * MongoDB makes a database on its first write, which for a tenant used to be
+ * the application's first request after going live -- so for the whole
+ * journey up to that point the "dedicated database" on the Aria screen was
+ * a string. It is created here with one metadata document, on the same
+ * cluster this server is connected to, which is the cluster the tenant's
+ * MONGO_URI will point at. Dedicated means its own database and its own
+ * connection string; the cluster underneath is Svarg's, shared by every
+ * tenant, and that is what the screen should say too.
+ *
+ * Idempotent: preparing twice updates the same document.
+ */
+export async function provisionTenantDatabase(dbName, { blueprintId, userId } = {}) {
+  if (mongoose.connection.readyState !== 1) throw new Error('Not connected to the database cluster.');
+  const db = mongoose.connection.useDb(dbName, { useCache: true });
+  await db.collection('svarg_meta').updateOne(
+    { _id: 'tenant' },
+    { $set: { blueprintId: String(blueprintId || ''), userId: String(userId || ''), preparedAt: new Date() },
+      $setOnInsert: { createdAt: new Date() } },
+    { upsert: true },
+  );
+  return dbName;
 }
 
 /**

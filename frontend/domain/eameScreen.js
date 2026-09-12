@@ -242,6 +242,134 @@ const GATES = [
 
 let _pollTimer = null;
 
+// ── The run stage ───────────────────────────────────────────────────────────
+//
+// Six steps, the way Cob and Aria show theirs. The server reports a phase
+// (generating, verifying) and, inside verifying, which gate it is on
+// (static, install, boot, smoke); stepFromBuild turns that into the index of
+// the step in progress. Reading the blueprint is done the moment generation
+// starts -- the brief was assembled before the model was called.
+
+const EAME_STEPS = [
+  { title: 'Reading the blueprint',    sub: 'What to build, from the approved plan',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="11.5" cy="14.5" r="2.5"/><path d="m13.5 16.5 2 2"/></svg>' },
+  { title: 'Writing the code',         sub: 'Models, services, routes and the chat page',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' },
+  { title: 'Checking the files',       sub: 'Every file parses, every import resolves',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>' },
+  { title: 'Installing dependencies',  sub: 'npm install, in a sandbox of its own',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>' },
+  { title: 'Starting the server',      sub: 'Booted against a throwaway database',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>' },
+  { title: 'Proving it answers',       sub: 'A real request, a real reply',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
+];
+
+/** The index of the step in progress (6 = all done), from the build's progress. */
+function stepFromBuild(build) {
+  if (build.status === 'passed') return EAME_STEPS.length;
+  const phase = build.progress?.phase || '';
+  const detail = String(build.progress?.detail || '');
+  if (phase === 'generating') return 1;
+  if (phase === 'verifying') {
+    if (/^install/.test(detail)) return 3;
+    if (/^boot/.test(detail)) return 4;
+    if (/^smoke/.test(detail)) return 5;
+    return 2;
+  }
+  return 0;
+}
+
+/** "4 min 12 sec", floored at ten seconds while work remains. */
+function etaText(ms) {
+  const s = Math.max(10, Math.round(ms / 1000));
+  const m = Math.floor(s / 60);
+  return m ? `${m} min ${String(s % 60).padStart(2, '0')} sec` : `${s} sec`;
+}
+function aboutText(ms) {
+  const m = Math.max(1, Math.round(ms / 60000));
+  return `about ${m} minute${m === 1 ? '' : 's'}`;
+}
+
+// How long a build usually takes, measured from the last passed builds on the
+// server, so the estimate is honest from the first second. Same endpoint as
+// Cob's, which carries the build figure under `build`.
+let _typicalBuildMs = null;
+let _typicalAsked = false;
+function askTypicalBuildTime() {
+  if (_typicalAsked) return;
+  _typicalAsked = true;
+  fetch(`${API_BASE}/guest/generation-time`)
+    .then(r => (r.ok ? r.json() : null))
+    .then(d => {
+      if (!d?.build?.typicalMs) return;
+      _typicalBuildMs = d.build.typicalMs;
+      const typical = document.getElementById('eame-run-typical');
+      if (typical) typical.textContent = `Usually ${aboutText(_typicalBuildMs)} in total`;
+      renderEameEta(_lastBuild);
+    })
+    .catch(() => { /* the estimate stays "Estimating…" until a pace shows */ });
+}
+
+let _lastBuild = null;
+let _etaTimer = null;
+
+function renderEameEta(build) {
+  const eta = document.getElementById('eame-run-eta');
+  if (!eta || !build) return;
+  const reached = stepFromBuild(build);
+  if (reached >= EAME_STEPS.length) { eta.textContent = 'Done'; return; }
+  const startedAt = build.progress?.startedAt || build.createdAt;
+  const elapsed = startedAt ? Date.now() - new Date(startedAt).getTime() : 0;
+  // The typical build less what has elapsed. A repair attempt starts the
+  // steps over but not the clock, so the estimate keeps shrinking honestly
+  // toward "a little longer than usual" rather than resetting.
+  eta.textContent = _typicalBuildMs ? etaText(_typicalBuildMs - elapsed) : 'Estimating…';
+}
+
+function renderEameRun(build) {
+  _lastBuild = build;
+  askTypicalBuildTime();
+  const reached = stepFromBuild(build);
+  const total = EAME_STEPS.length;
+  const done = Math.min(reached, total);
+  const share = Math.round((done / total) * 100);
+  const fill = document.getElementById('eame-run-fill');
+  const count = document.getElementById('eame-run-count');
+  const label = document.getElementById('eame-run-label');
+  const sub = document.getElementById('eame-run-sub');
+  const steps = document.getElementById('eame-run-steps');
+  if (fill) fill.style.width = share + '%';
+  if (count) count.textContent = `${done} of ${total} steps`;
+
+  const attempt = build.progress?.attempt || 1;
+  const current = EAME_STEPS[reached];
+  if (label) label.textContent = current ? current.title + '…' : 'Built';
+  if (sub) {
+    sub.textContent = attempt > 1 && reached <= 1
+      ? `Attempt ${attempt} of 3 — fixing what failed in attempt ${attempt - 1}, then writing again.`
+      : (current ? current.sub : 'Every gate passed.');
+  }
+  if (steps) {
+    steps.innerHTML = EAME_STEPS.map((st, i) => {
+      const state = i < reached ? 'done' : i === reached ? 'active' : 'waiting';
+      const word = state === 'done' ? 'Completed' : state === 'active' ? 'In progress' : 'Pending';
+      return `<li class="eb-step eb-step--${state}">
+        <span class="eb-step__icon" aria-hidden="true">${st.icon}</span>
+        <span class="eb-step__row"><span class="eb-step__mark" aria-hidden="true"></span><span class="eb-step__title">${i + 1}. ${esc(st.title)}</span></span>
+        <span class="eb-step__state">${word}</span>
+      </li>`;
+    }).join('');
+  }
+  renderEameEta(build);
+  if (!_etaTimer) _etaTimer = setInterval(() => renderEameEta(_lastBuild), 1000);
+}
+
+function stopEameEta() {
+  if (_etaTimer) clearInterval(_etaTimer);
+  _etaTimer = null;
+}
+
 function renderGates(build) {
   const el = document.getElementById('eame-gates');
   if (!el) return;
@@ -286,8 +414,13 @@ function renderBuildState(build) {
   // it. Before anything has started there is nothing to report, and after a
   // pass the report below leads.
   if (progress) progress.style.display = building || failed ? '' : 'none';
+  // While it runs, the run stage is the block: the steps, the time left. The
+  // gate list is the failed build's -- it says where each attempt stopped.
+  const runEl = document.getElementById('eame-run');
+  if (runEl) runEl.style.display = building ? '' : 'none';
+  if (building) renderEameRun(build); else stopEameEta();
   const gatesEl = document.getElementById('eame-gates');
-  if (gatesEl) gatesEl.style.display = passed ? 'none' : '';
+  if (gatesEl) gatesEl.style.display = passed || building ? 'none' : '';
 
   // The only button on the screen, and it appears only once Eame has already
   // tried three times -- each attempt sending the failing files and the
@@ -314,6 +447,15 @@ function renderBuildState(build) {
     }
   }
   if (heroMark) heroMark.classList.toggle('ae-hero__mark--pending', !passed);
+  // The state, as a pill beside the role -- and the run stage has no Move
+  // button: it moves on by itself once the build passes.
+  const heroPill = document.getElementById('eame-hero-pill');
+  if (heroPill) {
+    heroPill.style.display = building || failed ? '' : 'none';
+    heroPill.textContent = building ? 'Running' : 'Failed';
+  }
+  const nav = document.querySelector('#screen-eame .stage-nav');
+  if (nav) nav.style.display = building ? 'none' : '';
 
   if (badge) {
     badge.innerHTML = '<span class="eg-status__dot"></span>' + (
@@ -359,6 +501,10 @@ function renderBuildState(build) {
               : (build.reason || 'The application did not pass verification.'))
           : '';
     if (repairing) sub.textContent = sub.textContent.charAt(0).toUpperCase() + sub.textContent.slice(1);
+    // While building, the run stage above says what is happening; this line
+    // comes back only when there is something it alone can say -- a build
+    // that has run long, or a repair attempt.
+    sub.style.display = building && !elapsed && !repairing ? 'none' : '';
   }
 
   // "Application generated successfully — your running project is ready for

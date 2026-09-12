@@ -284,8 +284,12 @@ function writeProject(files, dir) {
  *   start" would say nothing about the generated code.
  * @param {string} [opts.smokePath] A GET path expected to answer.
  * @param {number} [opts.timeoutMs]
+ * @param {(stage:string)=>void} [opts.onStage] Told 'install', 'boot' and
+ *   'smoke' as each begins, so a screen can show which gate a build is on
+ *   rather than one "verifying" for the minute the runtime gates take.
  */
-export async function runtimeGates(files, { mongoUri = '', smokePath = '/api', timeoutMs = 120000 } = {}) {
+export async function runtimeGates(files, { mongoUri = '', smokePath = '/api', timeoutMs = 120000, onStage = null } = {}) {
+  const stage = (s) => { try { if (typeof onStage === 'function') onStage(s); } catch { /* a listener must not fail a build */ } };
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'svarg-build-'));
 
   /**
@@ -310,6 +314,7 @@ export async function runtimeGates(files, { mongoUri = '', smokePath = '/api', t
     writeProject(files, dir);
 
     // ── 4. install ────────────────────────────────────────────────────────
+    stage('install');
     const install = spawnSync('npm', ['install', '--omit=dev', '--no-audit', '--no-fund'], {
       cwd: dir, encoding: 'utf8', timeout: timeoutMs, shell: process.platform === 'win32',
     });
@@ -325,6 +330,7 @@ export async function runtimeGates(files, { mongoUri = '', smokePath = '/api', t
     }
 
     // ── 5. boot ───────────────────────────────────────────────────────────
+    stage('boot');
     const port = 3000 + Math.floor(Math.random() * 2000);
     const child = spawn(process.execPath, ['server.js'], {
       cwd: dir,
@@ -372,6 +378,7 @@ export async function runtimeGates(files, { mongoUri = '', smokePath = '/api', t
     }
 
     // ── 6. smoke ──────────────────────────────────────────────────────────
+    stage('smoke');
     if (started.status >= 400) {
       return { ok: false, stage: 'smoke',
                failures: [`${smokePath} answered ${started.status}`] };
@@ -387,6 +394,7 @@ export async function runtimeGates(files, { mongoUri = '', smokePath = '/api', t
 
 /** Static gates, then runtime gates if those pass. */
 export async function verifyProject(files, opts = {}) {
+  if (typeof opts.onStage === 'function') { try { opts.onStage('static'); } catch { /* see runtimeGates */ } }
   const stat = staticGates(files);
   if (!stat.ok) return stat;
   if (opts.staticOnly) return stat;

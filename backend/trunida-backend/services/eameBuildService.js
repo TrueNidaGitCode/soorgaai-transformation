@@ -148,7 +148,13 @@ export async function buildApplication(bp, {
     const files = composeProject(runtimeFiles, authored);
     onProgress({ attempt, phase: 'verifying', detail: `${generated.files.length} files written` });
 
-    const result = await verifyProject(files, { staticOnly, mongoUri });
+    // Each gate reported as it begins: 'static', 'install', 'boot', 'smoke'.
+    // The screen turns those into steps; "verifying" alone sat still for the
+    // minute the runtime gates take and read as stuck.
+    const result = await verifyProject(files, {
+      staticOnly, mongoUri,
+      onStage: (stage) => onProgress({ attempt, phase: 'verifying', detail: stage }),
+    });
     history.push({
       attempt,
       stage: result.stage,

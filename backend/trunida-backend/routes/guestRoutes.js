@@ -6,7 +6,7 @@ import {
 } from '../controllers/guestController.js';
 import { recordVisit } from '../controllers/visitController.js';
 import { transcribeAudio, voiceStatus } from '../controllers/voiceController.js';
-import { typicalGenerationTime } from '../services/generationTimeService.js';
+import { typicalGenerationTime, typicalBuildTime } from '../services/generationTimeService.js';
 
 /**
  * Audio arrives as base64 inside JSON, so this route needs a bigger body than
@@ -32,7 +32,10 @@ router.get('/voice-status',               voiceStatus);
 // watch or step away from the first second. Public: guests run Cob too, and
 // the number is an average with nothing of anyone's in it.
 router.get('/generation-time', async (req, res) => {
-  res.json(await typicalGenerationTime());
+  const [run, build] = await Promise.all([typicalGenerationTime(), typicalBuildTime()]);
+  // The blueprint run at the top level, as before; the Eame build under
+  // `build`, so the one screen that needs it reads it from the same place.
+  res.json({ ...run, build });
 });
 router.post('/transcribe',                audioBody, transcribeAudio);
 router.post('/generate-blueprint',        startGuestGeneration);

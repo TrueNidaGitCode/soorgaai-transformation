@@ -307,7 +307,7 @@ window.fetch = function (url, opts) {
   if (u.includes('/arth-recommend'))    return J({ ...CATALOG.frontier[1], why: 'Best balance for this use case.', priority: 'quality' }, 200);
   if (u.includes('/approve-opportunity')) { window.__approved++; return J({ ok: true }); }
   // How long a run usually takes, measured server-side from finished runs.
-  if (u.includes('/generation-time')) return J({ typicalMs: 5 * 60 * 1000, samples: 12 });
+  if (u.includes('/generation-time')) return J({ typicalMs: 5 * 60 * 1000, samples: 12, build: { typicalMs: 3 * 60 * 1000, samples: 7 } });
   if (u.includes('/eame-build')) {
     // Under autopilot the build is a real sequence: nothing, then a start
     // request, then building, then passed -- so the screen can be seen to
@@ -343,6 +343,17 @@ window.fetch = function (url, opts) {
     // EAME_BUILD_STATE=stalled — a model call that has not returned. The lock
     // holds for twenty minutes and nothing writes progress meanwhile, so the
     // elapsed time is the only thing that can say it is stuck.
+    // EAME_BUILD_STATE=building — forty seconds in, on the install gate. The
+    // run stage must say so: four steps of six reached, the time left from
+    // the typical build, and the step strip lit to the fourth step.
+    if (BUILD_STATE === 'building') return J({
+      status: 'building',
+      progress: { attempt: 1, phase: 'verifying', detail: 'install',
+                  startedAt: new Date(Date.now() - 40000).toISOString() },
+      verifiedTo: '', skipped: [], reason: '', useCase: '', provider: 'gemini',
+      warnings: [], failures: [], attempts: 0,
+      generatedPaths: [], files: [], fileCount: 0, totalBytes: 0,
+    });
     if (BUILD_STATE === 'stalled') return J({
       status: 'building',
       progress: { attempt: 1, phase: 'generating', detail: '',
@@ -479,7 +490,7 @@ const SCREENS = {
   // A build in flight has no files either — demanding a tree of one would be
   // demanding the fabricated project this screen was fixed to stop showing.
   eame: { id: 'screen-eame',  launcher: 'Chat with Eame',
-          must: ['none', 'stalled', 'failed'].includes(process.env.EAME_BUILD_STATE)
+          must: ['none', 'stalled', 'failed', 'building'].includes(process.env.EAME_BUILD_STATE)
             ? ['.rp-journey', '#eame-progress', '.eg-gate']
             : ['.rp-journey', '#eame-stats .ae-tile', '.eg-tree__row', '#eame-onward'] },
   yusu: { id: 'screen-yusu',  launcher: 'Chat with Yusu',  must: ['.rp-journey', '.eg-usecase__name', '#yusu-golive-btn', '#yusu-checks'] },
@@ -1438,7 +1449,42 @@ setTimeout(async function () {
       var progEl = document.getElementById('eame-progress');
       out.progress = progEl && progEl.style.display !== 'none' ? 'shown' : 'hidden';
       if (BUILD_STATE === 'passed' && out.progress === 'shown') bad('the progress block is still shown after a pass');
-      if ((BUILD_STATE === 'stalled' || BUILD_STATE === 'failed') && out.progress !== 'shown') bad('the progress block is hidden on a build that is ' + BUILD_STATE);
+      if ((BUILD_STATE === 'stalled' || BUILD_STATE === 'failed' || BUILD_STATE === 'building') && out.progress !== 'shown') bad('the progress block is hidden on a build that is ' + BUILD_STATE);
+
+      // The run stage: shown while building and only then, six steps across,
+      // the count and the bar agreeing with the strip, and a time left.
+      var runEl = document.getElementById('eame-run');
+      out.run = runEl && runEl.style.display !== 'none' && runEl.offsetParent !== null ? 'shown' : 'hidden';
+      if ((BUILD_STATE === 'building' || BUILD_STATE === 'stalled') && out.run !== 'shown') bad('the run stage is hidden on a build in flight');
+      if (BUILD_STATE !== 'building' && BUILD_STATE !== 'stalled' && out.run === 'shown') bad('the run stage is shown on a build that is ' + BUILD_STATE);
+      if (out.run === 'shown') {
+        var ebSteps = [].map.call(document.querySelectorAll('#eame-run-steps .eb-step'), function (li) { return li.className.replace('eb-step eb-step--', ''); });
+        out.runSteps = ebSteps.join(',');
+        out.runCount = (document.getElementById('eame-run-count') || {}).textContent;
+        out.runLabel = (document.getElementById('eame-run-label') || {}).textContent;
+        out.runEta = (document.getElementById('eame-run-eta') || {}).textContent;
+        if (ebSteps.length !== 6) bad('the run stage shows ' + ebSteps.length + ' steps, expected 6');
+        if (BUILD_STATE === 'building') {
+          if (out.runSteps !== 'done,done,done,active,waiting,waiting') bad('on the install gate the strip reads ' + out.runSteps);
+          if (out.runCount !== '3 of 6 steps') bad('the count reads "' + out.runCount + '" on the install gate');
+          if (!/Installing dependencies/.test(out.runLabel)) bad('the phase line reads "' + out.runLabel + '" on the install gate');
+          var fillW = (document.getElementById('eame-run-fill') || {}).style.width;
+          if (fillW !== '50%') bad('the bar is at ' + fillW + ' with 3 of 6 done');
+          for (var e = 0; e < 30 && !/min|sec/.test((document.getElementById('eame-run-eta') || {}).textContent); e++) await wait(100);
+          out.runEta = (document.getElementById('eame-run-eta') || {}).textContent;
+          if (!/2 min [0-9][0-9] sec/.test(out.runEta)) bad('forty seconds into a three-minute build the time left reads "' + out.runEta + '"');
+          var typ = (document.getElementById('eame-run-typical') || {}).textContent;
+          if (!/Usually about 3 minutes/.test(typ)) bad('the typical build time reads "' + typ + '"');
+          var gatesShown = (document.getElementById('eame-gates') || {}).style.display !== 'none';
+          if (gatesShown) bad('the gate list is shown alongside the run stage');
+          var subShown = (document.getElementById('eame-build-sub') || {}).style.display !== 'none';
+          if (subShown) bad('the elapsed line is shown on a build forty seconds in');
+          var navEl = document.querySelector('#screen-eame .stage-nav');
+          if (navEl && navEl.style.display !== 'none') bad('the Move to Yusu button is shown while the build runs');
+          var pillEl = document.getElementById('eame-hero-pill');
+          if (!pillEl || pillEl.style.display === 'none' || pillEl.textContent !== 'Running') bad('the hero does not carry a Running pill while the build runs');
+        }
+      }
       // And the pieces that were removed stay removed.
       if (document.getElementById('eame-breadcrumb')) bad('the use-case card is back on Eame');
       if (document.getElementById('eame-app-name')) bad('the name field is back on Eame');

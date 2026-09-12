@@ -2184,6 +2184,86 @@ body.domain-page .ae-art__chips rect { fill: rgba(46, 230, 214, 0.05); }
 #screen-eame .eg-progress .eg-build__note { margin: .4rem 0 0; }
 #screen-eame #eame-retry-btn { margin-top: .9rem; }
 
+/* ── Eame's run stage ─────────────────────────────────────────────────────
+   While the build runs the progress block IS the page: the panel with the
+   time left, the step in progress and the bar; the six steps across under
+   it. The gate list and the elapsed-time line are the failed build's, and
+   the elapsed line comes back only when a build has run long. */
+#screen-eame .eg-progress:has(.eb-run:not([style*="display: none"])) { padding: 0; background: transparent; border: 0; }
+#screen-eame .eb-run { display: flex; flex-direction: column; gap: 16px; }
+#screen-eame .eb-panel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "eta phase" "bar bar";
+  align-items: center;
+  column-gap: 26px; row-gap: 14px;
+  padding: 18px 22px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: rgba(12, 22, 30, 0.55);
+}
+#screen-eame .eb-eta { grid-area: eta; display: flex; align-items: center; gap: 14px; padding-right: 26px; border-right: 1px solid var(--ws-line); }
+#screen-eame .eb-eta__icon { width: 40px; height: 40px; color: var(--ws-accent); }
+#screen-eame .eb-eta__icon svg { width: 100%; height: 100%; }
+#screen-eame .eb-eta__text { display: flex; flex-direction: column; gap: 2px; white-space: nowrap; }
+#screen-eame .eb-eta .cr-eta__value { font-size: 1.5rem; line-height: 1.15; }
+#screen-eame .eb-phase { grid-area: phase; display: flex; align-items: center; gap: 12px; min-width: 0; }
+#screen-eame .eb-phase__icon { width: 26px; height: 26px; color: var(--ws-accent); flex-shrink: 0; }
+#screen-eame .eb-phase__icon svg { width: 100%; height: 100%; }
+#screen-eame .eb-phase__text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+#screen-eame .eb-phase__title { font-size: 1.02rem; font-weight: 700; color: var(--ws-text); }
+#screen-eame .eb-phase__sub { font-size: 0.82rem; color: var(--ws-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#screen-eame .eb-bar { grid-area: bar; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; }
+#screen-eame .eb-bar .prog-bar__track { width: 100%; }
+#screen-eame .eb-steps {
+  list-style: none; margin: 0; padding: 22px 18px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: rgba(12, 22, 30, 0.55);
+}
+#screen-eame .eb-step { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 0 6px; }
+#screen-eame .eb-step + .eb-step::before {
+  content: ''; position: absolute; left: -10px; top: 22px;
+  width: 8px; height: 8px;
+  border-right: 2px solid rgba(93, 143, 155, 0.45); border-bottom: 2px solid rgba(93, 143, 155, 0.45);
+  transform: rotate(-45deg);
+}
+#screen-eame .eb-step__icon {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: grid; place-items: center; box-sizing: border-box;
+  border: 2px solid rgba(93, 143, 155, 0.3);
+  color: var(--ws-muted);
+  background: rgba(12, 22, 30, 0.8);
+}
+#screen-eame .eb-step__icon svg { width: 24px; height: 24px; }
+#screen-eame .eb-step--done .eb-step__icon { border-color: var(--ws-accent); color: var(--ws-accent); }
+#screen-eame .eb-step--active .eb-step__icon { border-color: var(--ws-accent); color: var(--ws-accent); box-shadow: 0 0 0 5px rgba(34, 217, 232, 0.14), 0 0 22px rgba(34, 217, 232, 0.28); animation: ws-step-loading 1.4s ease-in-out infinite; }
+#screen-eame .eb-step__row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+#screen-eame .eb-step__mark {
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid rgba(93, 143, 155, 0.4); box-sizing: border-box;
+}
+#screen-eame .eb-step--done .eb-step__mark, #screen-eame .eb-step--active .eb-step__mark {
+  border-color: var(--ws-accent);
+  background: var(--ws-accent) center / 11px no-repeat
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23032027' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
+}
+#screen-eame .eb-step--active .eb-step__mark { background-image: none; box-shadow: inset 0 0 0 3px rgba(3, 32, 39, 0.9); }
+#screen-eame .eb-step__title { font-size: 0.88rem; font-weight: 600; color: var(--ws-text); line-height: 1.3; }
+#screen-eame .eb-step--waiting .eb-step__title { color: var(--ws-muted); }
+#screen-eame .eb-step__state { font-size: 0.78rem; color: var(--ws-faint); }
+#screen-eame .eb-step--done .eb-step__state { color: var(--ws-accent); }
+#screen-eame .eb-step--active .eb-step__state { color: var(--ws-accent); font-weight: 600; }
+@media (max-width: 1100px) {
+  #screen-eame .eb-panel { grid-template-columns: 1fr; grid-template-areas: "eta" "phase" "bar"; }
+  #screen-eame .eb-eta { border-right: 0; padding-right: 0; }
+  #screen-eame .eb-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 20px; }
+  #screen-eame .eb-step + .eb-step::before { display: none; }
+}
+
 /* Present for assistive tech and for checks that look for the heading, drawn
    nowhere. The one clipping recipe that survives every screen reader. */
 body.domain-page .visually-hidden {

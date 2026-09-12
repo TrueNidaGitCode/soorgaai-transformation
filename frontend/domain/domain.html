@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=36">
+  <link rel="stylesheet" href="workspace.css?v=37">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=1">
   <script src="../login/config.js"></script>
@@ -1205,6 +1205,7 @@
           <div class="ae-hero__text">
             <span class="ae-pill">Eame</span>
             <span class="ae-pill ae-pill--role">Your Builder</span>
+            <span class="ae-pill ae-pill--pending" id="eame-hero-pill" style="display:none">Running</span>
             <!-- Written by renderBuildState: the title and sub follow the
                  build -- generating, verifying, verified, could not be built --
                  so the headline is the state rather than a caption. -->
@@ -1232,6 +1233,37 @@
            Hidden once a build has passed: six green ticks say what "Verified
            -- it runs" already says. -->
       <div class="eg-progress" id="eame-progress" style="display:none">
+        <!-- The run stage, the same shape as Cob's and Aria's: the time left
+             and the step in progress up top, the six steps across below.
+             Written by renderEameRun from the build's progress. -->
+        <div class="eb-run" id="eame-run" style="display:none" role="status" aria-live="polite">
+          <div class="eb-panel">
+            <div class="eb-eta">
+              <span class="eb-eta__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </span>
+              <div class="eb-eta__text">
+                <span class="cr-eta__label">Estimated time remaining</span>
+                <strong class="cr-eta__value" id="eame-run-eta">Estimating&hellip;</strong>
+                <span class="cr-eta__typical" id="eame-run-typical"></span>
+              </div>
+            </div>
+            <div class="eb-phase">
+              <span class="eb-phase__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/><path d="M4 14l.7 1.6L6.3 16.3l-1.6.7L4 18.6l-.7-1.6L1.7 16.3l1.6-.7z"/></svg>
+              </span>
+              <div class="eb-phase__text">
+                <span class="eb-phase__title" id="eame-run-label">Reading the blueprint&hellip;</span>
+                <span class="eb-phase__sub" id="eame-run-sub">Eame is working out what to build from the approved plan.</span>
+              </div>
+            </div>
+            <div class="eb-bar">
+              <div class="prog-bar__track"><div class="prog-bar__fill" id="eame-run-fill" style="width:0%"></div></div>
+              <span class="cr-progress__count" id="eame-run-count">0 of 6 steps</span>
+            </div>
+          </div>
+          <ol class="eb-steps" id="eame-run-steps"></ol>
+        </div>
         <p class="eg-progress__line" id="eame-build-sub"></p>
         <ul class="eg-gates" id="eame-gates"></ul>
         <p class="eg-build__note" id="eame-build-note" style="display:none"></p>
@@ -1649,7 +1681,7 @@
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=54"></script>
   <script type="module" src="arthScreen.js?v=24"></script>
-  <script type="module" src="eameScreen.js?v=26"></script>
+  <script type="module" src="eameScreen.js?v=27"></script>
   <script type="module" src="yusuScreen.js?v=35"></script>
   <script type="module" src="../shared/rail.js?v=1"></script>
   <script type="module" src="workspaceShell.js?v=3"></script>

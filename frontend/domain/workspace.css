@@ -334,6 +334,7 @@ body.domain-page .cr-eta {
 }
 body.domain-page .cr-eta__label { font-size: 0.72rem; letter-spacing: 0.04em; color: var(--ws-faint); }
 body.domain-page .cr-eta__value { font-size: 1.15rem; font-weight: 700; color: var(--ws-accent); font-variant-numeric: tabular-nums; }
+body.domain-page .cr-eta__typical { font-size: 0.74rem; color: var(--ws-faint); }
 
 body.domain-page .cr-cards {
   display: grid;

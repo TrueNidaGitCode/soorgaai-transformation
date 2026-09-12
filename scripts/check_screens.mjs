@@ -306,6 +306,8 @@ window.fetch = function (url, opts) {
   }
   if (u.includes('/arth-recommend'))    return J({ ...CATALOG.frontier[1], why: 'Best balance for this use case.', priority: 'quality' }, 200);
   if (u.includes('/approve-opportunity')) { window.__approved++; return J({ ok: true }); }
+  // How long a run usually takes, measured server-side from finished runs.
+  if (u.includes('/generation-time')) return J({ typicalMs: 5 * 60 * 1000, samples: 12 });
   if (u.includes('/eame-build')) {
     // Under autopilot the build is a real sequence: nothing, then a start
     // request, then building, then passed -- so the screen can be seen to
@@ -1424,6 +1426,12 @@ setTimeout(async function () {
       if (phases[3] !== 'waiting:Waiting…') bad('the final phase should be waiting: ' + phases[3]);
       out.eta = (document.getElementById('opp-run-eta') || {}).textContent || '';
       if (!/min|sec/.test(out.eta)) bad('no estimate after 90s and settled steps: "' + out.eta + '"');
+      // The typical run is shown beside the estimate and in the note, so the
+      // customer knows from the first second whether to step away.
+      out.typical = (document.getElementById('opp-run-typical') || {}).textContent || '';
+      if (!/usually about 5 minutes/i.test(out.typical)) bad('the typical run time is not shown beside the estimate: "' + out.typical + '"');
+      var noteText = (document.getElementById('opp-run-note') || {}).textContent || '';
+      if (!/about 5 minutes/i.test(noteText)) bad('the wait note does not carry the measured time: "' + noteText + '"');
       out.pct = (document.getElementById('opp-run-pct') || {}).textContent || '';
       if (!/^[0-9]+%$/.test(out.pct)) bad('the ring shows "' + out.pct + '"');
     }
@@ -1741,7 +1749,7 @@ for (const screen of list) {
     + `rail [${r.rail ?? '?'}] · ${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · ready ${r.readyEvents ?? '-'} · shows ${r.showEvents ?? '-'} · hero ${r.pills ?? '-'} art ${r.art ?? '-'} · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `
     + `${r.greetings ?? '?'} greeting · ${r.launcher || 'no launcher'}`
     + (r.headline ? `\n        headline "${r.headline}" · others ${r.others}` : '')
-    + (r.runShown !== undefined ? `\n        run "${r.runTitle}" · ${r.pct} · eta ${r.eta} · phases ${r.phases}` : '')
+    + (r.runShown !== undefined ? `\n        run "${r.runTitle}" · ${r.pct} · eta ${r.eta} (${r.typical}) · phases ${r.phases}` : '')
     + (r.tabs ? `\n        tabs ${r.tabs} · ${r.ariaCols} cols · readiness "${r.readiness}" · in-code "${r.inCode || 'none'}"
         nav "${r.nav}" — "${r.navHint}" · ${r.collect} rows · sample "${r.sample}"
         preview "${r.preview}" · sample tab offers ${r.sampleTargets} · panels ${r.visiblePanels}

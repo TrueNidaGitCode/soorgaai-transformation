@@ -809,6 +809,39 @@ function etaText(ms) {
   return m ? `${m} min ${String(s % 60).padStart(2, '0')} sec` : `${s} sec`;
 }
 
+/** "about 5 minutes" -- the typical run, in words for the note. */
+function aboutText(ms) {
+  const m = Math.max(1, Math.round(ms / 60000));
+  return `about ${m} minute${m === 1 ? '' : 's'}`;
+}
+
+/**
+ * How long a run usually takes, measured from the last runs on the server.
+ *
+ * A run takes about the same time for every objective, so this is the number
+ * that tells someone on the first second whether to watch or step away --
+ * before any step has finished and a pace can be measured. Fetched once per
+ * page; null until it arrives, and the screen says "Estimating…" meanwhile.
+ */
+let _typicalMs = null;
+let _typicalAsked = false;
+
+function askTypicalTime() {
+  if (_typicalAsked) return;
+  _typicalAsked = true;
+  fetch(`${API_BASE}/guest/generation-time`)
+    .then(r => (r.ok ? r.json() : null))
+    .then(d => {
+      if (!d?.typicalMs) return;
+      _typicalMs = d.typicalMs;
+      const note = document.getElementById('opp-run-note');
+      if (note) note.textContent = `This usually takes ${aboutText(_typicalMs)}.`;
+      const typical = document.getElementById('opp-run-typical');
+      if (typical) typical.textContent = `Usually ${aboutText(_typicalMs)} in total`;
+    })
+    .catch(() => { /* the estimate falls back to the pace */ });
+}
+
 /**
  * The run stage: a ring, a bar, an estimate, and the four phases with their
  * real state. Every figure comes from the blueprint the poll delivers; the
@@ -858,10 +891,19 @@ function renderOpportunitiesProgress(bp) {
   }
 
   if (eta) {
+    askTypicalTime();
     const started = bp.createdAt ? new Date(bp.createdAt).getTime() : 0;
     const elapsed = started ? Date.now() - started : 0;
+    // The typical run less what has elapsed, from the first second; once two
+    // steps have finished the pace of THIS run takes over, since an objective
+    // can be a little quicker or slower than the average. Never below ten
+    // seconds while work remains: a countdown that reaches zero and sits
+    // there is worse than one that is a little long.
+    const byPace = settled >= 2 && elapsed > 0 ? elapsed / settled * (total - settled) : null;
+    const byTypical = _typicalMs ? _typicalMs - elapsed : null;
+    const remaining = byPace ?? byTypical;
     eta.textContent = total && settled === total ? 'Done'
-      : (settled >= 1 && elapsed > 0) ? etaText(elapsed / settled * (total - settled))
+      : remaining !== null ? etaText(remaining)
       : 'Estimating…';
   }
 

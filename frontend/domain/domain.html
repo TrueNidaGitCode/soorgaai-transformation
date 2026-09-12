@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=31">
+  <link rel="stylesheet" href="workspace.css?v=32">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=1">
   <script src="../login/config.js"></script>
@@ -238,6 +238,7 @@
               <div class="cr-eta">
                 <span class="cr-eta__label">Estimated time remaining</span>
                 <strong class="cr-eta__value" id="opp-run-eta">Estimating…</strong>
+                <span class="cr-eta__typical" id="opp-run-typical"></span>
               </div>
             </div>
 
@@ -263,10 +264,10 @@
                     <h2 class="ae-card__title" id="opp-run-wait-title">While you wait…</h2>
                   </div>
                 </header>
-                <p class="cr-wait__body">Cob is reading your objective and working out where AI would help most. When the blueprint is ready it moves on by itself: Aria prepares the environment, Arth prepares the data, Eame builds the application.</p>
+                <p class="cr-wait__body">Cob is reading your objective and working out where AI would help most. When the blueprint is ready it moves on by itself: Aria prepares the environment, Arth prepares the data, Eame builds the application. You can step away — nothing here needs you.</p>
                 <p class="cr-wait__note">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  This usually takes 3–8 minutes, depending on the objective.
+                  <span id="opp-run-note">This usually takes about 5 minutes.</span>
                 </p>
               </section>
             </div>
@@ -1503,7 +1504,7 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=22"></script>
+  <script type="module" src="blueprintGenerate.js?v=23"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=51"></script>
   <script type="module" src="arthScreen.js?v=23"></script>

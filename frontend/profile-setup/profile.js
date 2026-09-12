@@ -63,11 +63,15 @@ function hideError() {
   el.style.display = 'none';
 }
 
+// Busy, not greyed: the button is disabled so it cannot be pressed twice,
+// but it keeps its colour and says what it is doing. Dimming it made the
+// seconds spent reading the website look like a dead control.
 function setLoading(on) {
   const btn    = document.getElementById('profile-submit');
   const text   = btn.querySelector('.button-text');
   const loader = btn.querySelector('.button-loader');
   btn.disabled       = on;
+  btn.classList.toggle('is-busy', on);
   text.style.display = on ? 'none' : 'block';
   loader.style.display = on ? 'flex' : 'none';
 }

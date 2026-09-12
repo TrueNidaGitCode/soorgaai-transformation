@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Svarg — Set Up Your Workspace</title>
   <link rel="stylesheet" href="../style.css">
-  <link rel="stylesheet" href="profile.css">
+  <link rel="stylesheet" href="profile.css?v=3">
   <script src="../login/config.js"></script>
 </head>
 <body class="profile-setup-page">
@@ -14,7 +14,7 @@
     <div class="profile-setup-card">
 
       <header class="profile-setup-header">
-        <div class="profile-setup-logo">SOORGA<span>AI</span></div>
+        <div class="profile-setup-logo"><img src="/assets/logo-nav.png" alt="Svarg"></div>
         <h1 class="profile-setup-title">Set Up Your Workspace</h1>
         <p class="profile-setup-subtitle">Tell us about your organisation so we can personalise your AI transformation workspace.</p>
       </header>
@@ -54,8 +54,12 @@
 
         <button type="submit" id="profile-submit" class="cta-button profile-submit-btn">
           <span class="button-text">Launch My Workspace →</span>
+          <!-- Says what is happening rather than just spinning: the website is
+               read on this click and that takes a few seconds, during which a
+               greyed-out button read as "stuck". -->
           <span class="button-loader" style="display:none">
             <span class="spinner-small"></span>
+            <span class="button-loader__text">Launching your workspace…</span>
           </span>
         </button>
 
@@ -90,6 +94,6 @@
     </div>
   </main>
 
-  <script type="module" src="profile.js"></script>
+  <script type="module" src="profile.js?v=2"></script>
 </body>
 </html>

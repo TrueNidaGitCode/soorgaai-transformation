@@ -32,9 +32,7 @@
   color: #fff;
   margin-bottom: 1.5rem;
 }
-.profile-setup-logo span {
-  color: #5CC5A7;
-}
+.profile-setup-logo img { height: 36px; width: auto; display: block; }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 
@@ -147,6 +145,22 @@
 .profile-submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Working, not unavailable. Full colour, a spinner and the words. */
+.profile-submit-btn.is-busy {
+  opacity: 1;
+  cursor: progress;
+}
+.profile-submit-btn .button-loader {
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+.profile-submit-btn .button-loader__text { font-weight: 600; }
+.profile-submit-btn .spinner-small {
+  border-color: rgba(0, 0, 0, 0.18);
+  border-top-color: #0B0D10;
 }
 
 .spinner-small {

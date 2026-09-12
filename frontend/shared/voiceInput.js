@@ -31,6 +31,22 @@ const API_BASE = () => window.CONFIG?.API_BASE || 'http://localhost:3000/api';
 /** Two minutes, matched to the server's cap so the refusal happens here first. */
 const MAX_MS = 120000;
 
+/**
+ * What counts as having heard someone.
+ *
+ * A chat model asked to transcribe silence will sometimes transcribe a
+ * sentence nobody said -- a few seconds of nothing came back as "Mr. Speaker".
+ * The server cannot tell silence from speech without decoding the audio, but
+ * the browser is listening to the live signal anyway to draw the level bars,
+ * so it can. A frame counts as speech when its peak clears SPEECH_LEVEL (about
+ * -22 dBFS: a voice at arm's length, well above room noise and mic hiss), and
+ * a recording is sent only if at least SPEECH_FRAMES such frames were seen --
+ * roughly a quarter of a second of voice, so a single click or cough does not
+ * qualify and a single word does.
+ */
+const SPEECH_LEVEL = 0.08;
+const SPEECH_FRAMES = 15;
+
 /** Formats in preference order — Opus is small, and Safari only does mp4. */
 function pickMimeType() {
   const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
@@ -212,6 +228,9 @@ export function createVoiceRecorder({ onLevel, onText, onError, onState } = {}) 
   let raf = 0;
   let chunks = [];
   let stopTimer = null;
+  // Frames with a voice in them, this recording. null while no analyser ran,
+  // which is the one case a recording is sent unjudged.
+  let speechFrames = null;
 
   const say = (m) => { if (onError) onError(m); };
   const state = (s) => { if (onState) onState(s); };
@@ -238,6 +257,7 @@ export function createVoiceRecorder({ onLevel, onText, onError, onState } = {}) 
       analyser.fftSize = 512;
       node.connect(analyser);
       const buf = new Uint8Array(analyser.frequencyBinCount);
+      speechFrames = 0;
 
       const tick = () => {
         analyser.getByteTimeDomainData(buf);
@@ -246,6 +266,7 @@ export function createVoiceRecorder({ onLevel, onText, onError, onState } = {}) 
           const v = Math.abs(buf[i] - 128) / 128;
           if (v > peak) peak = v;
         }
+        if (peak >= SPEECH_LEVEL) speechFrames += 1;
         if (onLevel) onLevel(Math.min(1, peak * 1.7));
         raf = requestAnimationFrame(tick);
       };
@@ -297,8 +318,16 @@ export function createVoiceRecorder({ onLevel, onText, onError, onState } = {}) 
 
   async function send(blob) {
     teardown();
-    state('working');
     if (onLevel) onLevel(0);
+
+    // Judged here, not on the server: the server never hears the signal, and
+    // sending silence to the model is how "Mr. Speaker" got into the box.
+    if (speechFrames !== null && speechFrames < SPEECH_FRAMES) {
+      say('Nothing was heard. Press the microphone, speak, then press it again.');
+      state('idle');
+      return;
+    }
+    state('working');
 
     try {
       const bytes = new Uint8Array(await blob.arrayBuffer());

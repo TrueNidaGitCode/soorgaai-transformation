@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=32">
+  <link rel="stylesheet" href="workspace.css?v=33">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=1">
   <script src="../login/config.js"></script>
@@ -501,6 +501,65 @@
            for screen readers, visually folded into the hero. -->
       <h2 class="aria-header__title visually-hidden">Data Connections</h2>
 
+      <!-- ── The one decision ───────────────────────────────────────────
+           Simulate the data, or bring your own. Everything past this runs by
+           itself: Simulate generates every dataset it can and moves on; Upload
+           opens the connectors, and the first source that lands moves on with
+           whatever is there. The workbench detail -- the readiness card and the
+           required-data table -- sits under the Upload path, where it answers
+           "what does this need", and nowhere else. -->
+      <div class="dc-choice" id="aria-choice">
+        <button type="button" class="dc-card dc-card--sim" id="aria-choose-simulate" data-choice="simulate">
+          <span class="dc-card__flag">&#9733; Recommended</span>
+          <span class="dc-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2m0 20v-2m7-7h-2M4 13H2m15.5-5.5 1.5-1.5M5 19l1.5-1.5M5 7l1.5 1.5m11 11L19 19"/><path d="M12 8 4 16l4 4 8-8z"/></svg>
+          </span>
+          <span class="dc-card__text">
+            <span class="dc-card__title">Simulate your data</span>
+            <span class="dc-card__sub">Let Svarg create realistic data for your use case. The quickest way to see your application working.</span>
+          </span>
+          <span class="dc-card__arrow" aria-hidden="true">&rsaquo;</span>
+        </button>
+        <button type="button" class="dc-card" id="aria-choose-upload" data-choice="upload">
+          <span class="dc-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/></svg>
+          </span>
+          <span class="dc-card__text">
+            <span class="dc-card__title">Upload your own data</span>
+            <span class="dc-card__sub">Connect your data sources and we will prepare it for you.</span>
+          </span>
+          <span class="dc-card__arrow" aria-hidden="true">&rsaquo;</span>
+        </button>
+      </div>
+      <p class="dc-note" id="aria-choice-note">Simulated data lets you test, validate and experience your application with realistic scenarios &mdash; without using your own data. Replace it with your own at any time.</p>
+
+      <!-- ── Simulate: the run ───────────────────────────────────────
+           Four steps and an estimate, driven from the batch as it runs. -->
+      <div class="dc-strip" id="aria-runstrip" style="display:none" role="status" aria-live="polite">
+        <ol class="dc-strip__steps" id="aria-runstrip-steps"></ol>
+        <div class="cr-eta">
+          <span class="cr-eta__label">Estimated time remaining</span>
+          <strong class="cr-eta__value" id="aria-runstrip-eta">Estimating&hellip;</strong>
+        </div>
+      </div>
+
+      <!-- ── Upload: the connectors ─────────────────────────────────
+           One card per source this use case can be fed from; Connect opens
+           that source's own panel below. The status list beside them is
+           what is connected right now. -->
+      <div class="dc-connect" id="aria-connectors" style="display:none">
+        <div class="dc-connect__grid">
+          <p class="dc-connect__head">Select a data connector</p>
+          <div class="dc-connect__cards" id="aria-connector-cards"></div>
+        </div>
+        <aside class="dc-connect__side">
+          <p class="dc-connect__head">Selected connectors</p>
+          <ul class="dc-connect__list" id="aria-connector-status"></ul>
+        </aside>
+      </div>
+
+      <div id="aria-workbench" style="display:none">
+
       <div class="aria-breadcrumb">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         <span>Selected use case: <strong id="aria-recap-name"></strong></span>
@@ -745,6 +804,8 @@
       </div>
 
       <!-- Shown once linking succeeds. -->
+      </div><!-- /#aria-workbench -->
+
       <div class="aria-next" id="aria-next-stage" style="display:none">
         <span class="aria-next__tick">&check;</span>
         <div>
@@ -1562,7 +1623,7 @@
 
   <script type="module" src="blueprintGenerate.js?v=23"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
-  <script type="module" src="ariaScreen.js?v=51"></script>
+  <script type="module" src="ariaScreen.js?v=52"></script>
   <script type="module" src="arthScreen.js?v=24"></script>
   <script type="module" src="eameScreen.js?v=26"></script>
   <script type="module" src="yusuScreen.js?v=33"></script>

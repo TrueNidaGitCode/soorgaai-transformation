@@ -520,13 +520,14 @@ setTimeout(async function () {
       // The one decision: generated samples for everything.
       var before = hops().length;
       if (document.getElementById('aria-postrun') && !document.getElementById('aria-postrun').hidden) bad('the report is shown before any data exists');
-      var tab = document.querySelector('#aria-tabs .aria-tab[data-tab="sample"]');
-      if (!tab) bad('no Sample data tab'); else tab.click();
+      // The way the customer does it: the Simulate card, which starts the
+      // batch for every dataset it can and needs no further click.
+      var choiceEl = document.getElementById('aria-choice');
+      if (!choiceEl || choiceEl.offsetParent === null) bad('the data choice is not shown on an empty data stage');
+      var sim = document.getElementById('aria-choose-simulate');
+      if (!sim) bad('no Simulate card'); else sim.click();
       await wait(250);
-      var run = document.getElementById('aria-sample-run');
       out.sampleTargets = document.querySelectorAll('#aria-tab-sample .aria-sample__target').length;
-      if (!run || run.disabled) bad('the Generate button is not offered on an empty data stage');
-      else run.click();
       // Five generations, then the report, then the beat, then the hop.
       for (var a = 0; a < 120 && hops().length === before; a++) await wait(100);
       out.sampled = window.__sampled || 0;
@@ -907,6 +908,17 @@ setTimeout(async function () {
         var during = document.getElementById('aria-during');
         if (during && !during.hidden) bad('the workbench is still shown under the report');
         if (during) during.hidden = false;
+        // The tab strip is hidden for good and the workbench detail sits
+        // under the Upload choice; both are opened by hand for the
+        // structural checks below, which are about the machinery.
+        var bench = document.getElementById('aria-workbench');
+        if (bench) bench.style.display = '';
+
+        // The decision itself: two cards, one recommended, and the note.
+        var choice = document.getElementById('aria-choice');
+        out.choice = choice ? choice.querySelectorAll('.dc-card').length : 0;
+        if (out.choice !== 2) bad('expected the two data choices, got ' + out.choice);
+        if (!scr.querySelector('#aria-choose-simulate .dc-card__flag')) bad('Simulate is not marked as recommended');
       }
 
       var reqTable = (document.getElementById('aria-required-body') || {}).closest ? document.getElementById('aria-required-body').closest('table') : null;
@@ -1087,12 +1099,31 @@ setTimeout(async function () {
           }
           if (!document.getElementById('aria-sample-progress')) bad('no progress for the batch run');
 
-          // Run it. The batch is the point of the tab, and its failure modes
-          // — a target that never leaves "waiting", progress that never
-          // moves — are invisible without actually clicking.
-          document.getElementById('aria-sample-context').value = 'three branches, quarterly terms';
-          document.getElementById('aria-sample-run').click();
-          await new Promise(function (r) { setTimeout(r, 1200); });
+          // Run it, the way the customer does: the Simulate card. No
+          // Generate button to find -- the card starts the batch and the run
+          // strip reports it. Its failure modes -- a target that never leaves
+          // "waiting", progress that never moves -- are invisible without
+          // actually clicking.
+          document.getElementById('aria-choose-simulate').click();
+          // Mid-batch: the strip is on screen, generating, and the workbench
+          // detail is not.
+          await new Promise(function (r) { setTimeout(r, 120); });
+          var stripEl = document.getElementById('aria-runstrip');
+          var stripStates = function () {
+            return [].map.call(stripEl.querySelectorAll('.dc-step'), function (li) { return (li.className.match(/dc-step--([a-z]+)/) || [])[1]; }).join(',');
+          };
+          out.stripMid = stripEl && stripEl.offsetParent !== null ? stripStates() : 'hidden';
+          if (out.stripMid === 'hidden') bad('the run strip is not shown while the batch runs');
+          else if (!/^active,waiting/.test(out.stripMid)) bad('mid-batch the strip reads ' + out.stripMid + ', expected generating in progress');
+          if (bench.offsetParent !== null) bad('the workbench detail is shown on the Simulate path');
+          // Then done: every step, and the report takes the page. Generation,
+          // then the reload: two round trips per dataset under CHECK_LATENCY.
+          for (var sw = 0; sw < 80 && !/^done,done,done,done$/.test(stripStates()); sw++) {
+            await new Promise(function (r) { setTimeout(r, 100); });
+          }
+          out.strip = stripStates();
+          if (!/^done,done,done,done$/.test(out.strip)) bad('the run strip reads ' + out.strip + ' after the batch, expected every step done');
+          bench.style.display = '';
 
           var states = [].map.call(
             document.querySelectorAll('.aria-sample__target-state'),

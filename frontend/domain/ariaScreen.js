@@ -761,16 +761,19 @@ function renderPostRun() {
     heroPill.textContent = ready ? 'Data ready' : 'Connecting';
     heroPill.classList.toggle('ae-pill--pending', !ready);
   }
-  if (heroTitle) heroTitle.textContent = ready ? 'Your data is ready!' : 'Connect your data';
+  if (heroTitle) heroTitle.textContent = ready ? 'Your data is ready!' : 'Prepare your data';
 
   if (!ready) {
-    if (postSubEl) postSubEl.textContent = 'Connect the sources this use case needs, or fill them with generated rows to keep moving.';
+    if (postSubEl) postSubEl.textContent = 'Choose how to provide the data for your application: simulate it, or connect your own.';
     during.hidden = false;
     return;
   }
   // After the run the report is the page. The workbench used to sit behind
   // a "View technical details" disclosure; that went as not useful.
   during.hidden = true;
+  // And the move on is offered whatever was chosen to get here.
+  const navEl = document.querySelector('#screen-aria .stage-nav');
+  if (navEl) navEl.style.display = '';
 
   const datasets = _cachedDatasets || [];
   const confCount = _sources.confluence.length;
@@ -1197,6 +1200,157 @@ function selectTab(id) {
   if (id === 'sample') renderSamplePanel();
 }
 
+/**
+ * ── The one decision ────────────────────────────────────────────────────────
+ *
+ * Before the run, the screen asks one thing: simulate the data, or bring your
+ * own. Simulate runs the sample batch for every dataset it can, at once, and
+ * moves on when it is done; Upload opens the connectors, and the first source
+ * that lands moves on with whatever is there. Neither path shows a Generate
+ * or Process button that the customer then has to find.
+ *
+ * The choice is remembered for the tab session, because connecting
+ * Confluence or GitHub leaves the page for OAuth and comes back to it.
+ */
+const CHOICE_KEY = 'svarg_arth_choice';
+
+const SOURCE_CARDS = {
+  github:     { title: 'GitHub',       sub: 'Read your repositories to find the data your product already has.' },
+  upload:     { title: 'Local folder', sub: 'Upload exports and files from your own computer.' },
+  confluence: { title: 'Confluence',   sub: 'Connect your Confluence space for documents and knowledge.' },
+  jira:       { title: 'Jira',         sub: 'Connect your Jira projects for tickets, defects and history.' },
+};
+
+let _choice = null;
+let _githubConnected = false;
+
+function chooseData(choice, { remember = true } = {}) {
+  _choice = choice;
+  if (remember) { try { sessionStorage.setItem(CHOICE_KEY, choice); } catch { /* fine */ } }
+
+  const wrap = document.getElementById('aria-choice');
+  wrap?.classList.toggle('dc-choice--decided', !!choice);
+  wrap?.querySelectorAll('.dc-card').forEach(c => c.classList.toggle('dc-card--on', c.dataset.choice === choice));
+  const note = document.getElementById('aria-choice-note');
+  if (note) note.style.display = choice ? 'none' : '';
+
+  const strip = document.getElementById('aria-runstrip');
+  const connectors = document.getElementById('aria-connectors');
+  const workbench = document.getElementById('aria-workbench');
+  if (strip) strip.style.display = choice === 'simulate' ? '' : 'none';
+  if (connectors) connectors.style.display = choice === 'upload' ? '' : 'none';
+  // The readiness card and the required-data table answer "what does this
+  // need" -- the question the Upload path asks. The Simulate path does not.
+  if (workbench) workbench.style.display = choice === 'upload' ? '' : 'none';
+  // Before the choice, the choice is the action; a "Continue with 0 of 5"
+  // beside it is a second one. Back once a path is taken: Upload can
+  // legitimately continue with part of the data.
+  const nav = document.querySelector('#screen-aria .stage-nav');
+  // Simulate moves on by itself, so no Continue sits under it while it runs.
+  if (nav) nav.style.display = (choice === 'upload' || hasPreparedData()) ? '' : 'none';
+
+  if (choice === 'upload') renderConnectors();
+}
+
+/** The connector cards for this engagement, and what is connected. */
+function renderConnectors() {
+  const cards = document.getElementById('aria-connector-cards');
+  const list = document.getElementById('aria-connector-status');
+  if (!cards || !_ariaBlueprint) return;
+  const ids = relevantTabs(_ariaBlueprint).filter(id => id !== 'sample');
+
+  const connectedOf = (id) => id === 'github' ? _githubConnected
+    : id === 'upload' ? _allUploads.length > 0
+    : id === 'confluence' ? _sources.confluence.length > 0
+    : id === 'jira' ? _sources.jira.length > 0
+    : false;
+
+  cards.innerHTML = ids.map(id => {
+    const c = SOURCE_CARDS[id];
+    const on = connectedOf(id);
+    return `
+      <div class="dc-src${on ? ' dc-src--on' : ''}" style="--tab-color:${TABS[id].color}">
+        <div class="dc-src__head">
+          <span class="dc-src__icon">${tabIcon(id)}</span>
+          <span class="dc-src__title">${esc(c.title)}</span>
+        </div>
+        <p class="dc-src__sub">${esc(c.sub)}</p>
+        <button type="button" class="dc-src__btn" data-connector="${id}">${on ? 'Open' : 'Connect'}</button>
+      </div>`;
+  }).join('');
+
+  if (list) {
+    list.innerHTML = ids.map(id => {
+      const on = connectedOf(id);
+      return `<li class="dc-connect__item"><span>${esc(SOURCE_CARDS[id].title)}</span>
+        <span class="dc-connect__state${on ? ' dc-connect__state--on' : ''}">${on ? '✓ Connected' : 'Not connected'}</span></li>`;
+    }).join('');
+  }
+
+  cards.querySelectorAll('[data-connector]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.connector;
+      selectTab(id);
+      cards.querySelectorAll('.dc-src').forEach(s => s.classList.toggle('dc-src--on', s.contains(btn) || connectedOf(s.querySelector('[data-connector]').dataset.connector)));
+      // A local folder is one click: the picker opens straight away.
+      if (id === 'upload') document.getElementById('aria-upload-folder-btn')?.click();
+      document.getElementById(TABS[id].panel)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
+/**
+ * Simulate: the batch, started from the card, with the strip reporting it.
+ * The sample panel's own controls stay hidden; renderSamplePanel builds the
+ * target list the batch reads, and runSampleBatch does the work.
+ */
+async function simulateNow() {
+  selectTab('sample');
+  const targets = samplableDatasets();
+  if (!targets.length) {
+    // Nothing to generate: every dataset already has data. That is ready.
+    renderRunStrip(4);
+    moveOnIfReadyNow(false);
+    return;
+  }
+  await runSampleBatch();
+}
+
+/**
+ * The four steps of the Simulate run. Generating is the batch itself, one
+ * dataset at a time; validation and preparation are the reload and the
+ * redraw that follow it, quick but real; ready is the move.
+ */
+const STRIP_STEPS = [
+  { title: 'Generating data', sub: 'Creating realistic datasets…' },
+  { title: 'Validating',      sub: 'Checking what came back' },
+  { title: 'Preparing',       sub: 'Preparing for the model' },
+  { title: 'Ready',           sub: 'Moving on to Eame' },
+];
+let _stripStart = 0;
+
+function renderRunStrip(reached, detail = '', eta = '') {
+  const ol = document.getElementById('aria-runstrip-steps');
+  const etaEl = document.getElementById('aria-runstrip-eta');
+  if (ol) {
+    ol.innerHTML = STRIP_STEPS.map((st, i) => {
+      const state = i < reached ? 'done' : i === reached ? 'active' : 'waiting';
+      const sub = state === 'active' && detail ? detail : (state === 'done' ? 'Done' : st.sub);
+      return `<li class="dc-step dc-step--${state}"><span class="dc-step__mark" aria-hidden="true"></span>
+        <span class="dc-step__text"><span class="dc-step__title">${esc(st.title)}</span><span class="dc-step__sub">${esc(sub)}</span></span></li>`;
+    }).join('');
+  }
+  if (etaEl) etaEl.textContent = reached >= STRIP_STEPS.length ? 'Done' : (eta || 'Estimating…');
+}
+
+function stripEta(done, total) {
+  if (!done || !_stripStart) return '';
+  const perOne = (Date.now() - _stripStart) / done;
+  const s = Math.max(5, Math.round(perOne * (total - done) / 1000) + 6);
+  const m = Math.floor(s / 60);
+  return m ? `${m} min ${String(s % 60).padStart(2, '0')} sec` : `${s} sec`;
+}
+
 function renderTabs(bp) {
   const wrap = document.getElementById('aria-tabs');
   if (!wrap) return;
@@ -1255,6 +1409,8 @@ async function refreshGithubStatus() {
         + (scopeNote ? ` (${scopeNote}).` : '.')
       : 'Not connected.';
     btn.style.display = connected ? 'none' : '';
+    _githubConnected = !!connected;
+    if (_choice === 'upload') renderConnectors();
 
     const repos = document.getElementById('aria-gh-repos');
     if (repos) repos.style.display = connected ? '' : 'none';
@@ -1408,10 +1564,13 @@ async function pollForProfile() {
     try {
       const bp = await api(`/strategy-canvas/transformation-blueprint?id=${encodeURIComponent(_blueprintId)}`);
       if (bp?.codebaseProfile?.checked) {
+        const readyBefore = hasPreparedData();
         _ariaBlueprint = bp;
         applyCodeMatches(bp);
         renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
         ghProgress(null);
+        // A repository that matched datasets is data; the journey moves on.
+        moveOnIfReadyNow(readyBefore);
         return;
       }
       ghProgress(bp?.codebaseProfile?.progress || { phase: 'listing' }, started);
@@ -1634,10 +1793,13 @@ async function runSampleBatch() {
   const readyBefore = hasPreparedData();
   let done = 0;
   const failures = [];
+  _stripStart = Date.now();
+  renderRunStrip(0, `0 of ${targets.length} datasets`);
 
   for (const d of targets) {
     markTarget(d.name, 'is-running', 'generating…');
     setSampleProgress(done, targets.length, `Generating ${d.name}…`);
+    renderRunStrip(0, `${d.name} (${done + 1} of ${targets.length})`, stripEta(done, targets.length));
     try {
       const res = await api('/uploads/synthetic-dataset', {
         method: 'POST',
@@ -1654,8 +1816,12 @@ async function runSampleBatch() {
     setSampleProgress(done, targets.length, done === targets.length ? 'Done' : `Generating…`);
   }
 
+  renderRunStrip(1, 'Checking what came back', stripEta(targets.length - 0.5, targets.length));
   await loadUploads(_blueprintId);
+  renderRunStrip(2, 'Preparing for the model');
   renderTable(_cachedDatasets, _lastConfCount, _lastJiraCount);
+  renderRunStrip(failures.length ? 2 : 3, failures.length ? `${failures.length} could not be generated` : 'Moving on to Eame');
+  if (!failures.length) renderRunStrip(4);
 
   // Deliberately NOT re-rendering the target list. It would rebuild from
   // what is still missing and reset every row to "waiting", erasing the
@@ -1884,6 +2050,15 @@ function wireStaticControls() {
   wireSampleData();
   document.getElementById('aria-sample-run')?.addEventListener('click', runSampleBatch);
 
+  document.getElementById('aria-choose-simulate')?.addEventListener('click', () => {
+    if (_choice === 'simulate') return;
+    chooseData('simulate');
+    simulateNow();
+  });
+  document.getElementById('aria-choose-upload')?.addEventListener('click', () => {
+    chooseData('upload');
+  });
+
   document.getElementById('aria-process-btn')?.addEventListener('click', () => {
     const id = _blueprintId;
     if (id) runProcess(id);
@@ -1932,6 +2107,14 @@ document.addEventListener('aria:show', (e) => {
   // render so the opening tab is right on the first paint.
   renderTabs(bp);
 
+  // The decision. A choice made before leaving for OAuth is restored so the
+  // customer lands back on the connectors; a ?connect= link is an Upload
+  // choice by definition. Otherwise the two cards.
+  let remembered = null;
+  try { remembered = sessionStorage.getItem(CHOICE_KEY); } catch { /* fine */ }
+  const connectWanted = new URLSearchParams(window.location.search).get('connect');
+  chooseData(connectWanted ? 'upload' : (remembered === 'upload' ? 'upload' : null), { remember: false });
+
   renderTable(_cachedDatasets, 0, 0);
 
   // Uploads decide dataset status, so the table has to be redrawn once they
@@ -1948,6 +2131,7 @@ document.addEventListener('aria:show', (e) => {
   // "To connect" for a round trip, then flips them to what they are.
   // Settled, not all -- a source check that fails still has an honest state.
   Promise.allSettled([uploadsIn, sourcesIn]).then(() => {
+    if (_choice === 'upload') renderConnectors();
     document.dispatchEvent(new CustomEvent('stage:ready', { detail: { stage: 'aria' } }));
   });
 

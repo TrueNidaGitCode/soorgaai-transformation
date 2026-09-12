@@ -403,6 +403,166 @@ body.domain-page .cr-wait__note svg { width: 16px; height: 16px; flex: 0 0 auto;
   body.domain-page .cr-eta { grid-column: 1 / -1; align-items: flex-start; padding-left: 0; border-left: 0; }
 }
 
+/* ── Arth, before the run: the choice ─────────────────────────────────────
+   Two cards, one decision. The selected one keeps its accent; the other
+   dims. Then either the run strip or the connectors, never both. */
+
+#screen-aria .dc-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 4px 0 14px;
+}
+#screen-aria .dc-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 20px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(20, 42, 48, 0.5), rgba(12, 26, 30, 0.4));
+  color: var(--ws-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+#screen-aria .dc-card:hover { border-color: var(--ws-line-hi); }
+#screen-aria .dc-card:focus-visible { outline: 2px solid var(--ws-accent); outline-offset: 3px; }
+#screen-aria .dc-card--on {
+  border-color: rgba(34, 217, 232, 0.6);
+  box-shadow: 0 0 0 3px rgba(34, 217, 232, 0.12), 0 24px 60px -30px var(--ws-glow);
+}
+#screen-aria .dc-choice--decided .dc-card:not(.dc-card--on) { opacity: 0.55; }
+#screen-aria .dc-card__flag {
+  position: absolute; top: 12px; right: 14px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--ws-accent-2), var(--ws-accent));
+  color: #032027;
+  font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+}
+#screen-aria .dc-card__icon {
+  width: 52px; height: 52px;
+  display: grid; place-items: center;
+  border-radius: 14px;
+  background: var(--ws-soft);
+  color: var(--ws-accent);
+}
+#screen-aria .dc-card__icon svg { width: 26px; height: 26px; }
+#screen-aria .dc-card__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+#screen-aria .dc-card__title { font-size: 1.05rem; font-weight: 700; }
+#screen-aria .dc-card__sub { font-size: 0.86rem; line-height: 1.5; color: var(--ws-muted); }
+#screen-aria .dc-card__arrow { font-size: 1.6rem; color: var(--ws-faint); }
+#screen-aria .dc-card--on .dc-card__arrow { color: var(--ws-accent); }
+#screen-aria .dc-card__done {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--ws-accent) center / 14px no-repeat
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23032027' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
+}
+#screen-aria .dc-note { margin: 0 0 18px; max-width: 70ch; font-size: 0.88rem; line-height: 1.55; color: var(--ws-muted); }
+
+/* The run strip: four steps across, the estimate at the end. */
+#screen-aria .dc-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  margin: 0 0 20px;
+  padding: 18px 22px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: rgba(12, 22, 30, 0.55);
+}
+#screen-aria .dc-strip__steps {
+  list-style: none; margin: 0; padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+#screen-aria .dc-step { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; }
+#screen-aria .dc-step__mark {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid rgba(93, 143, 155, 0.4);
+  display: grid; place-items: center; box-sizing: border-box;
+}
+#screen-aria .dc-step--done .dc-step__mark {
+  border-color: var(--ws-accent);
+  background: var(--ws-accent) center / 12px no-repeat
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23032027' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
+}
+#screen-aria .dc-step--active .dc-step__mark { border-color: var(--ws-accent); box-shadow: 0 0 0 4px rgba(34, 217, 232, 0.14); }
+#screen-aria .dc-step--active .dc-step__mark::after {
+  content: ''; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ws-accent);
+  animation: ws-step-loading 1.2s ease-in-out infinite;
+}
+#screen-aria .dc-step__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+#screen-aria .dc-step__title { font-size: 0.9rem; font-weight: 600; color: var(--ws-text); }
+#screen-aria .dc-step--waiting .dc-step__title { color: var(--ws-muted); }
+#screen-aria .dc-step__sub { font-size: 0.76rem; color: var(--ws-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* The connectors: cards in a row, the status list beside them. */
+#screen-aria .dc-connect {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr);
+  gap: 16px;
+  margin: 0 0 20px;
+}
+#screen-aria .dc-connect__grid,
+#screen-aria .dc-connect__side {
+  padding: 16px 18px;
+  border: 1px solid var(--ws-line);
+  border-radius: 16px;
+  background: rgba(12, 22, 30, 0.55);
+}
+#screen-aria .dc-connect__head { margin: 0 0 14px; font-size: 0.95rem; font-weight: 700; color: var(--ws-text); }
+#screen-aria .dc-connect__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+#screen-aria .dc-src {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--ws-line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(20, 42, 48, 0.5), rgba(12, 26, 30, 0.4));
+}
+#screen-aria .dc-src--on { border-color: rgba(34, 217, 232, 0.55); }
+#screen-aria .dc-src__head { display: flex; align-items: center; gap: 12px; }
+#screen-aria .dc-src__icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--tab-color, var(--ws-accent));
+}
+#screen-aria .dc-src__icon svg { width: 20px; height: 20px; }
+#screen-aria .dc-src__title { font-size: 0.98rem; font-weight: 700; color: var(--ws-text); }
+#screen-aria .dc-src__sub { margin: 0; font-size: 0.8rem; line-height: 1.5; color: var(--ws-muted); min-height: 2.4em; }
+#screen-aria .dc-src__btn {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 7px 16px;
+  border: 0; border-radius: 999px;
+  background: var(--ws-accent);
+  color: #032027;
+  font: inherit; font-size: 0.82rem; font-weight: 700;
+  cursor: pointer;
+}
+#screen-aria .dc-src--on .dc-src__btn { background: transparent; color: var(--ws-accent); border: 1px solid rgba(34, 217, 232, 0.5); }
+#screen-aria .dc-connect__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+#screen-aria .dc-connect__item { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.88rem; color: var(--ws-text); }
+#screen-aria .dc-connect__state { font-size: 0.78rem; color: var(--ws-faint); }
+#screen-aria .dc-connect__state--on { color: var(--ws-accent); }
+
+/* The workbench detail sits under the connectors; the tab strip is gone. */
+#screen-aria #aria-tabs { display: none; }
+
+@media (max-width: 980px) {
+  #screen-aria .dc-choice, #screen-aria .dc-connect { grid-template-columns: minmax(0, 1fr); }
+  #screen-aria .dc-strip { grid-template-columns: minmax(0, 1fr); }
+  #screen-aria .dc-strip__steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* ── Opportunity Discovery ────────────────────────────────────────────────── */
 
 body.domain-page .rp-main__head { margin-bottom: 22px; }

@@ -66,11 +66,14 @@ describe('ask()', () => {
       question:     '  How do we focus on SDV?  ',
     });
     await ask(req, res);
-    expect(mockAskAdvisor).toHaveBeenCalledWith({
+    // The advisor also receives who is asking, the conversation so far and
+    // the company memory; those are read from the request and the store,
+    // not from this body, so only the three fields under test are pinned.
+    expect(mockAskAdvisor).toHaveBeenCalledWith(expect.objectContaining({
       capabilityId: 'ai-initiative-leadership',
       blueprint:    STUB_BLUEPRINT,
       question:     'How do we focus on SDV?',
-    });
+    }));
   });
 
   it('returns 400 when question is missing', async () => {

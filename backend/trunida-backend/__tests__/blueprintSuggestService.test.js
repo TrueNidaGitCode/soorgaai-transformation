@@ -90,7 +90,11 @@ beforeEach(() => {
 // ── Contract fields ───────────────────────────────────────────────────────────
 
 describe('suggestBlueprintSection() — response contract', () => {
-  it('returns a suggestion object with all six structured fields', async () => {
+  // The contract is two fields now. The six-field shape (observations,
+  // strengths, gaps, alternatives) was retired when the service became a
+  // chat that either talks or rewrites; a legacy six-field reply is still
+  // read, and only the two it keeps come through.
+  it('returns a suggestion object with the two structured fields', async () => {
     const result = await suggestBlueprintSection({
       capabilityId:   'ai-initiative-leadership',
       blueprint:      STUB_BLUEPRINT,
@@ -99,14 +103,13 @@ describe('suggestBlueprintSection() — response contract', () => {
       request:        'Make this more measurable.',
     });
 
+    expect(result.mode).toBe('blueprint');
     expect(result).toHaveProperty('suggestion');
     const { suggestion } = result;
-    expect(suggestion).toHaveProperty('currentObservations');
-    expect(suggestion).toHaveProperty('strengths');
-    expect(suggestion).toHaveProperty('potentialGaps');
     expect(suggestion).toHaveProperty('suggestedRevision');
     expect(suggestion).toHaveProperty('whyThisHelps');
-    expect(suggestion).toHaveProperty('alternatives');
+    expect(suggestion).not.toHaveProperty('currentObservations');
+    expect(suggestion).not.toHaveProperty('alternatives');
   });
 
   it('returns capabilityName, industry, and sectionTitle metadata', async () => {
@@ -135,7 +138,7 @@ describe('suggestBlueprintSection() — response contract', () => {
     expect(result.outputTokens).toBe(250);
   });
 
-  it('correctly maps all six LLM JSON fields into the suggestion object', async () => {
+  it('maps the LLM JSON into the suggestion object', async () => {
     const result = await suggestBlueprintSection({
       capabilityId:   'ai-initiative-leadership',
       blueprint:      STUB_BLUEPRINT,
@@ -145,12 +148,8 @@ describe('suggestBlueprintSection() — response contract', () => {
     });
 
     const { suggestion } = result;
-    expect(suggestion.currentObservations).toBe(STUB_SUGGESTION.currentObservations);
-    expect(suggestion.strengths).toEqual(STUB_SUGGESTION.strengths);
-    expect(suggestion.potentialGaps).toEqual(STUB_SUGGESTION.potentialGaps);
     expect(suggestion.suggestedRevision).toBe(STUB_SUGGESTION.suggestedRevision);
     expect(suggestion.whyThisHelps).toBe(STUB_SUGGESTION.whyThisHelps);
-    expect(suggestion.alternatives).toEqual(STUB_SUGGESTION.alternatives);
   });
 });
 
@@ -251,7 +250,7 @@ describe('suggestBlueprintSection() — prompt construction', () => {
     expect(userMessage).toContain('OEMs are facing intense competitive pressure.');
   });
 
-  it('user message notes "not yet written" when currentContent is empty', async () => {
+  it('user message says there is no draft yet when currentContent is empty', async () => {
     await suggestBlueprintSection({
       capabilityId:   'ai-initiative-leadership',
       blueprint:      STUB_BLUEPRINT,
@@ -261,7 +260,7 @@ describe('suggestBlueprintSection() — prompt construction', () => {
     });
 
     const { userMessage } = mockGenerate.mock.calls[0][0];
-    expect(userMessage).toContain('not yet written');
+    expect(userMessage).toContain('Company Draft: (none yet)');
   });
 
   it('includes the blueprint definition in user message when no current draft exists', async () => {
@@ -337,7 +336,9 @@ describe('suggestBlueprintSection() — fallback and resilience', () => {
     expect(result.suggestion.suggestedRevision).toBe(STUB_SUGGESTION.suggestedRevision);
   });
 
-  it('falls back gracefully when LLM returns non-JSON text', async () => {
+  // Prose that is not JSON is an answer, not a failure: it comes back as a
+  // conversation turn, and the caller renders it as one.
+  it('treats non-JSON text from the LLM as a conversation reply', async () => {
     mockGenerate.mockResolvedValueOnce({
       text:         'Here is my suggested revision for your Vision section.',
       inputTokens:  300,
@@ -351,11 +352,9 @@ describe('suggestBlueprintSection() — fallback and resilience', () => {
       request:      'Improve.',
     });
 
-    const { suggestion } = result;
-    expect(suggestion.suggestedRevision).toContain('Here is my suggested revision');
-    expect(Array.isArray(suggestion.strengths)).toBe(true);
-    expect(Array.isArray(suggestion.potentialGaps)).toBe(true);
-    expect(Array.isArray(suggestion.alternatives)).toBe(true);
+    expect(result.mode).toBe('conversation');
+    expect(result.response).toContain('Here is my suggested revision');
+    expect(result).not.toHaveProperty('suggestion');
   });
 
   it('re-throws when generate() rejects due to provider unavailability', async () => {

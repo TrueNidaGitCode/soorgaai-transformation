@@ -60,16 +60,19 @@ describe('createProfile() — input validation', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
-  it('returns 400 when role is missing', async () => {
+  // Role and industry are optional: setup asks for the organisation and
+  // nothing else, and both fields fall back to the schema defaults. Sending
+  // them is harmless and changes nothing on create.
+  it('creates the profile when role is missing', async () => {
     const { req, res } = makeReqRes({ orgName: 'Acme', industryDomain: 'ADAS' });
     await createProfile(req, res);
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(201);
   });
 
-  it('returns 400 when industryDomain is missing', async () => {
+  it('creates the profile when industryDomain is missing', async () => {
     const { req, res } = makeReqRes({ orgName: 'Acme', role: 'CTO' });
     await createProfile(req, res);
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(201);
   });
 });
 
@@ -85,10 +88,12 @@ describe('createProfile() — happy path', () => {
   it('calls UserProfile.create with the correct fields', async () => {
     const { req, res } = makeReqRes(VALID_BODY);
     await createProfile(req, res);
-    expect(mockProfileCreate).toHaveBeenCalledWith(expect.objectContaining({
+    // Only the organisation and the owner are written; role and industry
+    // are left to the schema defaults even when the body carries them.
+    expect(mockProfileCreate).toHaveBeenCalledWith({
+      userId:  'user-id-123',
       orgName: 'Acme Motors GmbH',
-      role:    'CTO',
-    }));
+    });
   });
 
   it('calls DomainCanvas.insertMany with exactly 6 canvas documents', async () => {

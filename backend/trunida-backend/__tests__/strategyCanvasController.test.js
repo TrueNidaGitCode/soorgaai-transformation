@@ -137,14 +137,17 @@ describe('listCapabilities()', () => {
     );
   });
 
-  it('defaults to Automotive when profile is not found', async () => {
+  // An undeclared industry is unknown, not automotive: the platform serves
+  // every business, and grounding falls back to core content rather than to
+  // one vertical's.
+  it('reports no industry when the profile is not found', async () => {
     mockProfileFindOne.mockReturnValue({
       lean: () => Promise.resolve(null),
     });
     const { req, res } = makeReqRes();
     await listCapabilities(req, res);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ industry: 'Automotive' }),
+      expect.objectContaining({ industry: '' }),
     );
   });
 
@@ -196,7 +199,7 @@ describe('fetchCapabilityBlueprint()', () => {
     expect(res.status).toHaveBeenCalledWith(500);
   });
 
-  it('defaults to Automotive industry when profile lookup fails', async () => {
+  it('reads the blueprint with no industry when the profile lookup fails', async () => {
     mockProfileFindOne.mockReturnValue({
       lean: () => Promise.reject(new Error('DB error')),
     });
@@ -204,7 +207,7 @@ describe('fetchCapabilityBlueprint()', () => {
     await fetchCapabilityBlueprint(req, res);
     expect(mockGetCapabilityBlueprint).toHaveBeenCalledWith(
       'ai-initiative-leadership',
-      'Automotive',
+      '',
     );
   });
 });
@@ -221,7 +224,9 @@ describe('suggestSection()', () => {
       request:        'Make this more measurable.',
     });
     await suggestSection(req, res);
-    expect(res.json).toHaveBeenCalledWith(STUB_SUGGEST_RESULT);
+    // Plus how many knowledge suggestions were captured from the reply --
+    // none in this stub.
+    expect(res.json).toHaveBeenCalledWith({ ...STUB_SUGGEST_RESULT, knowledgeCaptured: 0 });
   });
 
   it('calls suggestBlueprintSection with the correct parameters', async () => {
@@ -233,13 +238,18 @@ describe('suggestSection()', () => {
       request:        'Make this more measurable.',
     });
     await suggestSection(req, res);
-    expect(mockSuggestBlueprintSection).toHaveBeenCalledWith({
+    // The service also receives the user, the conversation so far, the
+    // company memory, the industry reference and the other capabilities'
+    // sections; those come from the store, so only the body's fields are
+    // pinned here.
+    expect(mockSuggestBlueprintSection).toHaveBeenCalledWith(expect.objectContaining({
       capabilityId:   'ai-initiative-leadership',
       blueprint:      STUB_BLUEPRINT,
       sectionTitle:   'Vision',
       currentContent: 'OEMs are facing pressure.',
       request:        'Make this more measurable.',
-    });
+      userId:         'user-id-123',
+    }));
   });
 
   it('trims leading and trailing whitespace from the request', async () => {

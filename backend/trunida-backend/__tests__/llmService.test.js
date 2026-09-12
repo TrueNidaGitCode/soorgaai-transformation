@@ -129,10 +129,13 @@ describe('gemini provider (explicit)', () => {
     expect(contents[0].parts[0].text).toBe(CALL_OPTS.userMessage);
   });
 
-  it('uses gemini-2.5-flash-lite as the default model', async () => {
+  // The default tracks what Google still serves to new keys; 2.0-flash and
+  // the 2.5 family answer 404 now. The service comment carries the date it
+  // was last verified.
+  it('uses gemini-3.8-flash as the default model', async () => {
     await generate({ ...CALL_OPTS, provider: 'gemini' });
     const call = MockGoogleGenerativeAI.mock.results[0].value.getGenerativeModel.mock.calls[0][0];
-    expect(call.model).toBe('gemini-2.5-flash-lite');
+    expect(call.model).toBe('gemini-3.8-flash');
   });
 
   it('passes systemPrompt as systemInstruction', async () => {

@@ -18,6 +18,7 @@
  */
 
 import { findAiUseCasesPrioritizationSection } from './blueprintSections.js';
+import { press } from './autopilot.js';
 
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
@@ -662,15 +663,22 @@ async function load() {
   }
 }
 
-/** The primary action: push if it has not been pushed, otherwise go live. */
 /**
- * Yusu runs itself: build, push, then the checks, without being asked. The
- * only thing left for a person is Go Live, which is the one decision that
- * should never happen by itself.
+ * Yusu runs itself: build, push, the checks, and then Go Live.
  *
- * Runs once per visit. If it fails, the failure stays on screen and a Retry
- * appears — automatic on the happy path, manual only when something breaks.
+ * Go Live used to be the one decision kept for a person. It is pressed here
+ * now, at the customer's request that the whole journey run without being
+ * clicked through -- but only on the button's own terms: every check has to
+ * pass and an environment has to be prepared, or the button is disabled and
+ * the press does nothing. A failed check leaves the customer here with the
+ * reason, exactly as before.
+ *
+ * Runs once per visit. If the push fails, the failure stays on screen and a
+ * Retry appears — automatic on the happy path, manual only when something
+ * breaks.
  */
+let _wentLiveFor = null;
+
 async function autoRun() {
   if (_running) return;
 
@@ -702,9 +710,17 @@ async function autoRun() {
     _running = false;
     render(_bp, _dep);
   }
+
+  // Once per visit, and only if the checks ran clean. render() has just
+  // decided whether Go Live is open; press() defers to that.
+  if (_checksRun && !_failed && _wentLiveFor !== _blueprintId) {
+    _wentLiveFor = _blueprintId;
+    press('yusu-golive-btn');
+  }
 }
 
-/** The single human decision. */
+/** Go Live. Pressed by autoRun once the checks pass; still a button, so a
+ *  customer whose checks failed and were fixed can press it themselves. */
 async function act() {
   const btn = document.getElementById('yusu-golive-btn');
   btn.disabled = true;

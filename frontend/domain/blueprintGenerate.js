@@ -20,7 +20,7 @@
  *   'blueprint:ready' — { blueprint } — tells workspace module to take over
  */
 
-import { findAiUseCasesPrioritizationSection } from './blueprintSections.js';
+import { press } from './autopilot.js';
 
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
@@ -864,13 +864,15 @@ function wireOpportunitiesButtons(guestId) {
         const { error } = await resp.json().catch(() => ({}));
         throw new Error(error || 'Failed to approve. Please try again.');
       }
-      // Approving no longer navigates. It records the decision and opens the
-      // stage-navigation button, so advancing is the user's separate, explicit
-      // act — and so Approve can stay visibly spent rather than vanishing
-      // behind a screen change.
+      // Approving records the decision and opens the stage-navigation
+      // button -- and then presses it. The journey runs itself from here:
+      // approval happened in this visit, so the customer is on their way,
+      // not reading. A blueprint opened later, already approved, never
+      // reaches this line and stays on Cob (see autopilot.js).
       bp.opportunityApproval = { ...(bp.opportunityApproval || {}), approved: true, approvedAt: new Date().toISOString() };
       _currentBlueprint = bp;
       updateOpportunitiesGate(bp);
+      press('cob-nav-btn');
     } catch (err) {
       if (errEl) { errEl.textContent = err.message; errEl.style.display = 'block'; }
       approveBtn.disabled = false;

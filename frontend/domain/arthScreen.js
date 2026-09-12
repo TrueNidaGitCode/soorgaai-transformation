@@ -18,6 +18,7 @@
  */
 
 import { findAiUseCasesPrioritizationSection } from './blueprintSections.js';
+import { press } from './autopilot.js';
 
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
@@ -846,6 +847,9 @@ document.addEventListener('arth:show', (e) => {
   // Re-entering the screen should show the decision already on record, down
   // to which model — not just which class it belonged to.
   const prev = bp.arthSelection || {};
+  // Fresh: nothing chosen yet, so this visit is the run that chooses. The
+  // confirm below is pressed once the recommendation has landed.
+  const fresh = !prev.preference;
   _model = null;
   _models = [];
   _recommendation = null;
@@ -893,5 +897,13 @@ document.addEventListener('arth:show', (e) => {
   // Settled, not all -- a catalog that fails still leaves an honest screen.
   Promise.allSettled([loadEnvironment(), _modelsLoading]).then(() => {
     document.dispatchEvent(new CustomEvent('stage:ready', { detail: { stage: 'arth' } }));
+
+    // The journey runs itself: with nothing on record, Aria's choice IS the
+    // decision, and Confirm & Continue -- which saves it, prepares the
+    // environment and moves to Arth -- is pressed for the customer. A visit
+    // with a selection already on record is someone coming back to look, and
+    // is left where they are; a frozen screen (environment prepared) has a
+    // Confirm that is plain navigation and is not pressed either.
+    if (fresh && _model && !_frozen) press('arth-confirm-btn');
   });
 });

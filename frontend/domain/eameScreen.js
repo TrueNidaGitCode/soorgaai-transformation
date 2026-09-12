@@ -12,6 +12,7 @@
  */
 
 import { findAiUseCasesPrioritizationSection } from './blueprintSections.js';
+import { press } from './autopilot.js';
 
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
@@ -414,6 +415,16 @@ function renderBuildState(build) {
  */
 let _autoStartedFor = null;
 
+/**
+ * Which blueprint this visit started a build for, by any route -- on
+ * arrival, or from Try again. A build that passes having been started here
+ * is this visit's work, and the journey moves on to Yusu by itself. A build
+ * found already passed on arrival is not: that visit is someone coming back
+ * to look, and stays.
+ */
+let _startedHereFor = null;
+let _movedOnFor = null;
+
 async function pollBuild() {
   if (!_bp?._id) return;
   try {
@@ -438,7 +449,13 @@ async function pollBuild() {
       return;
     }
 
-    if (build.status === 'passed') renderFiles(build);
+    if (build.status === 'passed') {
+      renderFiles(build);
+      if (_startedHereFor === _bp._id && _movedOnFor !== _bp._id) {
+        _movedOnFor = _bp._id;
+        press('eame-nav-btn');
+      }
+    }
     else updateEameGate(false);
   } catch (err) {
     showError(err.message);
@@ -451,6 +468,7 @@ async function startBuild() {
   document.getElementById('eame-error').style.display = 'none';
   try {
     await api(`/strategy-canvas/transformation-blueprint/${_bp._id}/eame-build`, { method: 'POST', body: '{}' });
+    _startedHereFor = _bp._id;
     pollBuild();
   } catch (err) {
     // Entitlement, a build already running, a server fault: each comes with

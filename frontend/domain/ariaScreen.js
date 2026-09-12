@@ -23,6 +23,7 @@
  */
 
 import { findAiUseCasesPrioritizationSection } from './blueprintSections.js';
+import { press } from './autopilot.js';
 
 const API_BASE = window.CONFIG?.API_BASE
   || (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
@@ -388,6 +389,7 @@ async function runProcess(blueprintId) {
   proc.style.display = 'none';
   proc.innerHTML = '';
 
+  const readyBefore = hasPreparedData();
   const results = [];
 
   try {
@@ -496,6 +498,7 @@ async function runProcess(blueprintId) {
       hint.textContent = '';
       hideProgress();
     });
+    if (ok) moveOnIfReadyNow(readyBefore);
   } catch (err) {
     hideProgress();
     btn.textContent = 'Process Connected Data';
@@ -718,6 +721,23 @@ function hasPreparedData() {
   if (_uploads.size || _samples.size || _codeMatches.size) return true;
   const { connected } = tally(_cachedDatasets || [], _sources.confluence.length, _sources.jira.length);
   return connected > 0;
+}
+
+/**
+ * The journey runs itself from here.
+ *
+ * This is the one stage where the customer decides -- their own data or
+ * generated samples -- and the moment that decision has produced ready data
+ * is the moment the stage is finished. Called at the end of each action that
+ * can produce it (the sample batch, processing connected sources, a folder
+ * upload) with what hasPreparedData() said BEFORE the action: the move
+ * happens only when this action is what made the data ready. A customer who
+ * arrived with data already prepared and generated one more sample is
+ * refining, not finishing, and stays.
+ */
+function moveOnIfReadyNow(readyBefore) {
+  if (readyBefore || !hasPreparedData()) return;
+  press('aria-nav-btn');
 }
 
 function renderPostRun() {
@@ -1611,6 +1631,7 @@ async function runSampleBatch() {
   if (errEl) errEl.style.display = 'none';
   if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
 
+  const readyBefore = hasPreparedData();
   let done = 0;
   const failures = [];
 
@@ -1654,6 +1675,10 @@ async function runSampleBatch() {
       + failures.join(' · ') + ' — the rest were saved; try these again.';
     errEl.style.display = 'block';
   }
+
+  // A batch with failures leaves the customer here to try the rest again;
+  // the ones that worked are saved and the screen says which failed.
+  if (!failures.length) moveOnIfReadyNow(readyBefore);
 }
 
 function wireSampleData() {
@@ -1778,6 +1803,7 @@ async function handleFolderPick(fileList) {
   if (btn) { btn.disabled = true; btn.textContent = 'Working…'; }
   setHint('');
 
+  const readyBefore = hasPreparedData();
   let clock = null;
   try {
     uploadProgress('Reading files from your folder…', { pct: 4, count: `0 of ${files.length}` });
@@ -1834,6 +1860,7 @@ async function handleFolderPick(fileList) {
     setHint(`${sent} file${sent === 1 ? '' : 's'} uploaded — ${classified} matched to a dataset, ${unclassified} kept as context`
       + (skipped ? `. ${skipped} skipped as unsupported types.` : '.'));
     setTimeout(() => uploadProgress(null), 2500);
+    moveOnIfReadyNow(readyBefore);
   } catch (err) {
     showUploadError(err.message);
     uploadProgress(null);

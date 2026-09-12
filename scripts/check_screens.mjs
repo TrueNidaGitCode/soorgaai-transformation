@@ -184,6 +184,26 @@ const ARIA_STATE = ${JSON.stringify(process.env.ARIA_STATE || '')};
 // filled from the Sample data tab. The in-code match is dropped too, or the
 // count never reaches zero and the sentence under test is never rendered.
 if (ARIA_STATE === 'all-samples') { BP.codebaseProfile = { checked: false }; }
+
+// CHECK_AUTOPILOT=1 puts the screen in the state a FRESH run reaches it in --
+// nothing decided yet -- and asserts the journey carries itself one stage on
+// without a click. One hop per screen, because the fixture for the next
+// screen is the "already done" state, which is exactly where the journey
+// must NOT move by itself:
+//   cob   not approved      -> approves, moves to arth (selection on record: stays)
+//   arth  no model chosen   -> chooses, prepares, moves to aria (data ready: stays)
+//   aria  no data at all    -> the probe makes the one decision (samples),
+//                              then it moves to eame (build passed: stays)
+//   eame  nothing built     -> builds, moves to yusu (a check fails: stays)
+//   yusu  checks can pass   -> goes live
+const AUTO = ${JSON.stringify(!!process.env.CHECK_AUTOPILOT)};
+const SCREEN = ${JSON.stringify(screen)};
+if (AUTO && SCREEN === 'cob')  BP.opportunityApproval = { approved: false };
+if (AUTO && SCREEN === 'arth') delete BP.arthSelection;
+if (AUTO && SCREEN === 'aria') BP.codebaseProfile = { checked: false };
+window.__approved = 0;
+window.__buildStarted = 0;
+window.__deployed = 0;
 const MANIFEST = ${JSON.stringify({ fileCount: MANIFEST_FILES.length, totalBytes: MANIFEST_FILES.reduce((n, f) => n + f.bytes, 0), files: MANIFEST_FILES })};
 const RECOMMENDED = ${JSON.stringify([
   { modelId: 'gemini-3-8-flash', displayName: 'Gemini 3.8 Flash', vendor: 'Google',    type: 'frontier', providerId: 'gemini', apiModel: 'gemini-3.8-flash', focusScore: 48, cost: 0.56, inBand: true, confidenceLabel: 'Medium Confidence' },
@@ -253,7 +273,19 @@ window.fetch = function (url, opts) {
     });
   }
   if (u.includes('/arth-recommend'))    return J({ ...CATALOG.frontier[1], why: 'Best balance for this use case.', priority: 'quality' }, 200);
+  if (u.includes('/approve-opportunity')) { window.__approved++; return J({ ok: true }); }
   if (u.includes('/eame-build')) {
+    // Under autopilot the build is a real sequence: nothing, then a start
+    // request, then building, then passed -- so the screen can be seen to
+    // move on when it passes and not before.
+    if (AUTO && SCREEN === 'eame') {
+      if ((opts || {}).method === 'POST') { window.__buildStarted++; window.__buildPolls = 0; return J({ started: true }); }
+      if (!window.__buildStarted) return J({ status: 'none' });
+      window.__buildPolls = (window.__buildPolls || 0) + 1;
+      if (window.__buildPolls < 2) return J({ status: 'building', progress: { attempt: 1, phase: 'generating', detail: '', startedAt: new Date().toISOString() },
+        verifiedTo: '', skipped: [], reason: '', useCase: '', provider: 'gemini', warnings: [], failures: [], attempts: 0, generatedPaths: [], files: [], fileCount: 0, totalBytes: 0 });
+      // Falls through to the passed build below.
+    } else {
     // A blueprint nobody has built yet is a real state and the FIRST one every
     // customer sees, so it has to be renderable here too.
     //   EAME_BUILD_STATE=none node scripts/check_screens.mjs eame
@@ -285,6 +317,7 @@ window.fetch = function (url, opts) {
       warnings: [], failures: [], attempts: 0,
       generatedPaths: [], files: [], fileCount: 0, totalBytes: 0,
     });
+    }
     return J({
       status: 'passed', verifiedTo: 'smoke', skipped: [], reason: '',
       useCase: 'Predictive Analytics for Student Churn', provider: 'gemini',
@@ -314,22 +347,39 @@ window.fetch = function (url, opts) {
     window.__preparedDep = Object.assign({}, DEP, { status: 'prepared', preparedAt: new Date().toISOString(), hosting: 'svarg' });
     return J({ deployment: window.__preparedDep }, 201);
   }
-  if (u.includes('/deployment'))        return J({ deployment: window.__preparedDep || DEP });
-  if (u.includes('/deploy'))            return J({ deployment: { ...DEP, status: 'live', url: 'https://svarg-tenant-000001.up.railway.app', appAttached: true, liveAt: new Date().toISOString() }, gatewayToken: 'svd_' + '0'.repeat(48) }, 200);
+  if (u.includes('/deployment'))        return J({ deployment: window.__deployedDep || window.__preparedDep || DEP });
+  if (u.includes('/deploy')) {
+    window.__deployed++;
+    // Remembered, so the poll that follows going live reads live back rather
+    // than the prepared record it started from.
+    window.__deployedDep = { ...DEP, status: 'live', url: 'https://svarg-tenant-000001.up.railway.app', appAttached: true, liveAt: new Date().toISOString() };
+    return J({ deployment: window.__deployedDep, gatewayToken: 'svd_' + '0'.repeat(48) }, 200);
+  }
+  // The delivered project, which the security check reads. Served only under
+  // autopilot on Yusu: everywhere else it is absent, the check fails honestly
+  // ("manifest could not be read"), and Go Live stays closed -- which is the
+  // not-live state the ordinary yusu check asserts.
+  if (u.includes('/delivery/manifest') && AUTO && SCREEN === 'yusu') return J({ files: MANIFEST.files, source: 'generated', facts: {} });
+  if (u.includes('/delivery/publish')) return J({ upToDate: true, repoName: 'svarg-defect-matching', fileCount: 32 });
   if (u.includes('/transformation-blueprint')) return J(BP);
   if (u.includes('/project-manifest'))  return J(MANIFEST);
   if (u.includes('/github/personal/status')) return J({ connected: true, githubLogin: 'acme' });
+  // A fresh data stage has no connector either: a connected Confluence
+  // counts its datasets as reachable, which is data of a kind, and the point
+  // of the autopilot fixture is a stage with none.
+  if (u.includes('/confluence/personal/status') && AUTO && SCREEN === 'aria') return J({ connected: false });
   if (u.includes('/confluence/personal/status')) return J({ connected: true, siteName: 'acme.atlassian.net', jiraScopeGranted: true });
-  if (u.includes('/confluence/personal/linked/') && ARIA_STATE === 'all-samples') return J({ documents: [] });
+  if (u.includes('/confluence/personal/linked/') && (ARIA_STATE === 'all-samples' || (AUTO && SCREEN === 'aria'))) return J({ documents: [] });
   if (u.includes('/confluence/personal/linked/')) return J({ documents: [
     { sourceId: 'p1', title: 'Roadmap', sourceType: 'confluence', spaceKey: 'PM', redactionApplied: true, redactionCount: 2, extractionStatus: 'extracted', keywords: ['a'] },
     { sourceId: 'KAN-1', title: 'Flash abort', sourceType: 'jira', projectKey: 'KAN', redactionApplied: true, redactionCount: 1, extractionStatus: 'extracted', keywords: ['b'] },
   ] });
-  if (u.includes('/confluence/personal/spaces')) return J({ spaces: [{ key: 'PM', name: 'Product', type: 'global', itemCount: 12 }] });
-  if (u.includes('/jira/personal/projects'))     return J({ projects: [{ key: 'KAN', name: 'Kanban', itemCount: 6 }] });
+  if (u.includes('/confluence/personal/spaces')) return J({ spaces: AUTO && SCREEN === 'aria' ? [] : [{ key: 'PM', name: 'Product', type: 'global', itemCount: 12 }] });
+  if (u.includes('/jira/personal/projects'))     return J({ projects: AUTO && SCREEN === 'aria' ? [] : [{ key: 'KAN', name: 'Kanban', itemCount: 6 }] });
   // POST has no trailing slash; the GET below does. Matched separately or
   // the generate call falls through to the catch-all and "succeeds" with an
   // undefined row count, which is a pass that proves nothing.
+  if (u.endsWith('/uploads/synthetic-dataset')) { window.__sampled = (window.__sampled || 0) + 1; }
   if (u.endsWith('/uploads/synthetic-dataset')) return J({
     datasetName: 'Field Telemetry Feed', rowCount: 18,
     columns: ['vehicle_id', 'fault_code'], generatedAt: new Date().toISOString(),
@@ -345,6 +395,14 @@ window.fetch = function (url, opts) {
     generatedAt: new Date().toISOString(),
   });
   if (u.includes('/uploads/dataset-files/')) {
+    // Under autopilot the batch that the probe runs is what makes the data
+    // ready, so the list is empty until it has run and full afterwards.
+    if (AUTO && SCREEN === 'aria') {
+      if (!window.__sampled) return J({ uploads: [], samples: [] });
+      const names = BP.domains.find(d => d.domainId === 'data-readiness')
+        .capabilities[0].sections[0].brief.datasets.map(d => d.name);
+      return J({ uploads: [], samples: names.map(n => ({ datasetName: n, rowCount: 20, generatedAt: new Date().toISOString() })) });
+    }
     if (ARIA_STATE === 'all-samples') {
       const names = BP.domains.find(d => d.domainId === 'data-readiness')
         .capabilities[0].sections[0].brief.datasets.map(d => d.name);
@@ -387,7 +445,112 @@ const SCREENS = {
   yusu: { id: 'screen-yusu',  launcher: 'Chat with Yusu',  must: ['.rp-journey', '.eg-usecase__name', '#yusu-golive-btn', '#yusu-checks'] },
 };
 
+/**
+ * Under CHECK_AUTOPILOT the probe is a different one. The ordinary probe
+ * reads a settled screen; this one watches a screen leave. It records the
+ * stage:show events, waits for the next stage to be asked for, and asserts
+ * that the hop happened for the right reason -- one approval, one prepare,
+ * one build start, one deploy -- and that the stage it left is the one it
+ * should have. On Arth it first makes the one decision the customer makes.
+ */
+function autopilotProbeScript(screen) {
+  const NEXT = { cob: 'arth', arth: 'aria', aria: 'eame', eame: 'yusu', yusu: null }[screen];
+  return `<script>
+(function () {
+  var start = performance.now();
+  window.__shows = [];
+  ['aria', 'arth', 'eame', 'yusu'].forEach(function (st) {
+    document.addEventListener(st + ':show', function () { window.__shows.push(st + '@' + Math.round(performance.now() - start) + 'ms'); });
+  });
+})();
+setTimeout(async function () {
+  var out = { screen: ${JSON.stringify(screen)}, fail: [], autopilot: true };
+  function bad(m) { out.fail.push(m); }
+  var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  var visible = function (id) { var el = document.getElementById(id); return !!el && el.offsetParent !== null; };
+  var NEXT = ${JSON.stringify(NEXT)};
+  var hops = function () { return (window.__shows || []).map(function (x) { return x.split('@')[0]; }); };
+  try {
+    // The screen under test must appear first.
+    var here = ${JSON.stringify(SCREENS[screen].id)};
+    for (var w = 0; w < 80 && !visible(here); w++) await wait(100);
+    if (!visible(here)) bad('the stage never appeared');
+
+    if (${JSON.stringify(screen)} === 'aria') {
+      // The one decision: generated samples for everything.
+      var before = hops().length;
+      if (document.getElementById('aria-postrun') && !document.getElementById('aria-postrun').hidden) bad('the report is shown before any data exists');
+      var tab = document.querySelector('#aria-tabs .aria-tab[data-tab="sample"]');
+      if (!tab) bad('no Sample data tab'); else tab.click();
+      await wait(250);
+      var run = document.getElementById('aria-sample-run');
+      out.sampleTargets = document.querySelectorAll('#aria-tab-sample .aria-sample__target').length;
+      if (!run || run.disabled) bad('the Generate button is not offered on an empty data stage');
+      else run.click();
+      // Five generations, then the report, then the beat, then the hop.
+      for (var a = 0; a < 120 && hops().length === before; a++) await wait(100);
+      out.sampled = window.__sampled || 0;
+      if (!window.__sampled) bad('the batch generated nothing');
+      // One generation per dataset the tab offered. The tab offers the
+      // datasets with no connector route in -- the ones whose typical source
+      // is Confluence or Jira are reached by connecting, not by generating.
+      if (out.sampled !== out.sampleTargets) bad('the batch generated ' + out.sampled + ' datasets for ' + out.sampleTargets + ' targets');
+    }
+
+    // Wait for the hop.
+    var t0 = performance.now();
+    for (var h = 0; NEXT && h < 120 && hops().indexOf(NEXT) === -1; h++) await wait(100);
+    out.hops = hops().join(',') || 'none';
+    out.hopAfter = Math.round(performance.now() - t0) + 'ms';
+    if (NEXT && hops().indexOf(NEXT) === -1) bad('the journey did not move on to ' + NEXT + ' by itself (shows: ' + out.hops + ')');
+
+    // And for the right reason.
+    out.approved = window.__approved || 0;
+    out.prepared = window.__prepared || 0;
+    out.buildStarted = window.__buildStarted || 0;
+    out.deployed = window.__deployed || 0;
+    if (${JSON.stringify(screen)} === 'cob'  && out.approved !== 1)     bad('Cob approved ' + out.approved + ' times, expected 1');
+    if (${JSON.stringify(screen)} === 'arth' && out.prepared !== 1)     bad('Aria prepared ' + out.prepared + ' environments, expected 1');
+    if (${JSON.stringify(screen)} === 'eame' && out.buildStarted !== 1) bad('Eame started ' + out.buildStarted + ' builds, expected 1');
+    if (${JSON.stringify(screen)} === 'yusu') {
+      // Go Live is pressed once the checks pass, and the poll afterwards reads
+      // live back.
+      for (var d = 0; d < 60 && !(window.__deployed); d++) await wait(100);
+      if (out.deployed = window.__deployed || 0, out.deployed !== 1) bad('Yusu went live ' + out.deployed + ' times, expected 1');
+      for (var p = 0; p < 60 && !/application live/i.test((document.getElementById('yusu-hero-pill') || {}).textContent || ''); p++) await wait(100);
+      out.yusuPill = ((document.getElementById('yusu-hero-pill') || {}).textContent || '').trim();
+      if (!/application live/i.test(out.yusuPill)) bad('after going live the hero says "' + out.yusuPill + '"');
+      var checks = [].map.call(document.querySelectorAll('#yusu-checks .tr-card__verdict'), function (v) { return v.textContent.trim(); });
+      out.checks = checks.join(',');
+      if (checks.some(function (c) { return /fail/i.test(c); })) bad('a check failed and it still went live: ' + out.checks);
+    }
+
+    // The stage it moved to is the next one and it settles there: the fixture
+    // for that stage is the already-done state, where the journey must stop.
+    if (NEXT) {
+      var nextId = ${JSON.stringify(SCREENS)}[NEXT].id;
+      for (var v = 0; v < 60 && !visible(nextId); v++) await wait(100);
+      if (!visible(nextId)) bad('moved on to ' + NEXT + ' but its screen never appeared');
+      await wait(2500);
+      var after = hops();
+      out.settled = after[after.length - 1];
+      if (after.indexOf(NEXT) !== after.length - 1) bad('did not stop at ' + NEXT + ': ' + after.join(','));
+      if (!visible(nextId)) bad('the ' + NEXT + ' screen did not stay on screen');
+    }
+    // Nothing else was approved, prepared, built or deployed along the way.
+    var acts = { approved: out.approved, prepared: out.prepared, buildStarted: out.buildStarted, deployed: window.__deployed || 0 };
+    var expected = { cob: 'approved', arth: 'prepared', eame: 'buildStarted', yusu: 'deployed', aria: '' }[${JSON.stringify(screen)}];
+    Object.keys(acts).forEach(function (k) { if (k !== expected && acts[k]) bad('the hop also ' + k + ' ' + acts[k] + 'x, which it had no reason to'); });
+  } catch (e) { bad('probe threw: ' + e.message); }
+  out.errs = window.__errs || [];
+  if (out.errs.length) out.fail.push('console: ' + out.errs.join(' | '));
+  document.title = 'CHECK ' + JSON.stringify(out);
+}, 800);
+<\/script>`;
+}
+
 function probeScript(screen) {
+  if (process.env.CHECK_AUTOPILOT) return autopilotProbeScript(screen);
   const cfg = SCREENS[screen];
   return `<script>
 // ── What the screen says before its data arrives ─────────────────────────
@@ -1457,7 +1620,7 @@ async function checkScreen(screen) {
     // CHECK_WINDOW lets a run capture something that sits below the fold at
     // the default height — a panel further down a long screen, say.
     const win = process.env.CHECK_WINDOW || '1440,1000';
-    const common = ['--headless', '--disable-gpu', `--window-size=${win}`, `--virtual-time-budget=${9000 + Number(process.env.CHECK_LATENCY || 0) * 8}`];
+    const common = ['--headless', '--disable-gpu', `--window-size=${win}`, `--virtual-time-budget=${(process.env.CHECK_AUTOPILOT ? 20000 : 9000) + Number(process.env.CHECK_LATENCY || 0) * 8}`];
     await chrome([...common, `--screenshot=${path.join(SHOTS, screen + '.png')}`, url]);
     const dom = await chrome([...common, '--dump-dom', url]);
     const m = dom.match(/<title>CHECK ([\s\S]*?)<\/title>/);
@@ -1485,6 +1648,14 @@ for (const screen of list) {
   const r = await checkScreen(screen);
   const ok = !r.fail?.length;
   if (!ok) failed++;
+  if (r.autopilot) {
+    console.log(`${ok ? 'PASS' : 'FAIL'}  ${screen.padEnd(6)}autopilot · shows ${r.hops} · hop after ${r.hopAfter} · settled on ${r.settled ?? '-'}`
+      + ` · approved ${r.approved}x · prepared ${r.prepared}x · builds ${r.buildStarted}x · deployed ${r.deployed}x`
+      + (r.sampled !== undefined ? ` · sampled ${r.sampled}` : '')
+      + (r.yusuPill !== undefined ? ` · pill "${r.yusuPill}" · checks ${r.checks}` : ''));
+    (r.fail || []).forEach(f => console.log(`        ↳ ${f}`));
+    continue;
+  }
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${screen.padEnd(6)}`
     + `css ${String(r.cssRules ?? '?').padStart(4)} rules · `
     + `rail [${r.rail ?? '?'}] · ${r.steps ?? '?'} steps (on ${r.activeStep ?? '?'}, bar ${r.journeyRight ?? '?'}) · ready ${r.readyEvents ?? '-'} · shows ${r.showEvents ?? '-'} · hero ${r.pills ?? '-'} art ${r.art ?? '-'} · lane ${r.laneTop ?? '?'} · chat ${r.chatW ?? '?'}px · `

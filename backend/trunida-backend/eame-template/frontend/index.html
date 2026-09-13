@@ -185,10 +185,7 @@
 
     <div class="ch-main" id="ch-main">
       <header class="ch-head">
-        <div class="ch-head__text">
-          <h1 class="ch-head__title ch-head__title--bar">__APP_NAME__</h1>
-          <p class="ch-head__sub">__APP_TAGLINE__</p>
-        </div>
+        <h1 class="ch-head__title ch-head__title--bar" id="ch-view-title">__APP_NAME__</h1>
         <span class="ch-head__state" id="ch-state"><span class="ch-head__dot"></span>Connecting…</span>
         <a href="#" class="ch-head__link ch-head__link--home" id="ch-home-link-2">Home</a>
         <!-- The owner's way in to their data. Everyone can see the link; the
@@ -204,6 +201,17 @@
       <div class="ch-glow" aria-hidden="true">
         <svg viewBox="0 0 1200 420" preserveAspectRatio="none"><path d="M0 250 C 200 180, 320 330, 520 250 S 900 170, 1200 260" /><path d="M0 300 C 240 240, 380 360, 600 290 S 960 220, 1200 310" opacity=".5"/><path d="M0 200 C 260 150, 400 280, 640 210 S 980 130, 1200 220" opacity=".35"/></svg>
       </div>
+
+      <!-- A tab's data: the dataset the area stands for, as a table. Shown
+           in place of the conversation; Home brings the conversation back. -->
+      <section class="ch-view" id="ch-view" hidden aria-live="polite">
+        <div class="ch-view__head">
+          <div><h2 class="ch-view__title" id="ch-view-name"></h2><p class="ch-view__sub" id="ch-view-sub"></p></div>
+          <input type="search" class="ch-view__search" id="ch-view-search" placeholder="Search…" aria-label="Search these rows">
+        </div>
+        <div class="ch-view__tablewrap"><table class="ch-view__table" id="ch-view-table"></table></div>
+        <p class="ch-view__note" id="ch-view-note" hidden></p>
+      </section>
 
       <div class="ch-log" id="ch-log" role="log" aria-live="polite">
         <!-- Opening turn. Not a fake message from the assistant — it is the
@@ -321,12 +329,13 @@
     var note = document.getElementById('ch-login-note');
 
     var data = document.getElementById('ch-data');
+    var refreshAreas = null;
     function show(which) {
       home.hidden = which !== 'home';
       greet.hidden = which !== 'greet';
       app.hidden = which !== 'app';
       if (data) data.hidden = true;
-      if (which === 'app') { var input = document.getElementById('ch-input'); if (input) input.focus(); }
+      if (which === 'app') { var input = document.getElementById('ch-input'); if (input) input.focus(); if (typeof refreshAreas === 'function') refreshAreas(); }
     }
 
     function say(text) { note.textContent = text; note.hidden = !text; }
@@ -606,20 +615,121 @@
       }
       function svg(name) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>'; }
 
-      // The areas, from the front door's preview data.
+      // The areas, from the front door's preview data. Each is matched to
+      // the dataset it stands for once the application says what it holds;
+      // a tab with data opens it, a tab without seeds a question.
       var areas = [];
       try { var d = JSON.parse((document.getElementById('ld-preview-data') || {}).textContent || '{}'); areas = Array.isArray(d.nav) ? d.nav : []; } catch (e) { areas = []; }
       var items = ['Home'].concat(areas.filter(function (a) { return !/^(home|overview|dashboard|settings?)$/i.test(String(a).trim()); }).slice(0, 8));
-      nav.innerHTML = items.map(function (a, i) {
-        return '<button type="button" class="ch-side__item' + (i === 0 ? ' ch-side__item--on' : '') + '" data-area="' + a.replace(/"/g, '&quot;') + '">' + svg(iconFor(a)) + '<span>' + a.replace(/</g, '&lt;') + '</span></button>';
-      }).join('');
+      var datasetsByArea = {};
+      var activeArea = 'Home';
+      function drawNav() {
+        nav.innerHTML = items.map(function (a) {
+          return '<button type="button" class="ch-side__item' + (a === activeArea ? ' ch-side__item--on' : '') + '" data-area="' + a.replace(/"/g, '&quot;') + '">' + svg(iconFor(a)) + '<span>' + a.replace(/</g, '&lt;') + '</span>' + (datasetsByArea[a] ? '<i class="ch-side__count">' + datasetsByArea[a].rows + '</i>' : '') + '</button>';
+        }).join('');
+      }
+      drawNav();
+
+      // Words that mean the same area in a tab's name and a dataset's.
+      var SAME = [/student|learner|player|member|roster|enrol|athlete|trainee|kid|child/, /session|schedule|timetable|practice|class|batch|slot/, /attend|roll|presence/, /message|communication|whatsapp|chat|notice/, /invoice|fee|payment|billing|subscription|ledger|finance/, /coach|staff|employee|team/, /report|insight/, /issue|ticket|defect|bug/, /lead|enquiry|inquiry|prospect/];
+      // How well a tab fits a dataset: its head noun (the last word) beats a
+      // word anywhere, which beats a synonym -- so 'Session attendance' goes
+      // to Attendance, not Sessions.
+      function fitScore(a, b) {
+        var x = String(a).toLowerCase().replace(/s/g, ''), y = String(b).toLowerCase();
+        var words = y.split(/[^a-z]+/).filter(Boolean);
+        var head = (words[words.length - 1] || '').replace(/s$/, '');
+        if (head && (head === x || x.indexOf(head) === 0 || head.indexOf(x) === 0)) return 3;
+        if (y.indexOf(x) !== -1) return 2;
+        if (SAME.some(function (re) { return re.test(x) && re.test(y); })) return 1;
+        return 0;
+      }
+      function matchAreas(list) {
+        var pairs = [];
+        items.slice(1).forEach(function (a) { list.forEach(function (ds) { var sc = fitScore(a, ds.name); if (sc) pairs.push({ a: a, ds: ds, sc: sc }); }); });
+        pairs.sort(function (p, q) { return q.sc - p.sc; });
+        var used = {}, taken = {};
+        pairs.forEach(function (pr) { if (used[pr.ds.name] || taken[pr.a]) return; datasetsByArea[pr.a] = pr.ds; used[pr.ds.name] = true; taken[pr.a] = true; });
+        // Data with no tab of its own gets one, so nothing is out of reach.
+        list.forEach(function (ds) { if (!used[ds.name] && items.length < 10) { var label = ds.name.replace(/\b(records?|log|data|table|list)\b/gi, '').trim() || ds.name; items.push(label); datasetsByArea[label] = ds; } });
+        drawNav();
+      }
+      // Asked when the application opens (show('app')), not at page load,
+      // because that is when a session exists.
+      refreshAreas = function () {
+        var t = ''; try { t = localStorage.getItem('token') || ''; } catch (e) { /* fine */ }
+        if (!t) return;
+        fetch(API + '/api/data/areas', { headers: { Authorization: 'Bearer ' + t } })
+          .then(function (r) { return r.ok ? r.json() : { areas: [] }; })
+          .then(function (d) { if (d.areas && d.areas.length) matchAreas(d.areas); })
+          .catch(function () {});
+      };
+      if (!app.hidden) refreshAreas();
+
+      // The view: a dataset as a table, searched.
+      var sync = null;
+      var view = document.getElementById('ch-view');
+      var viewName = document.getElementById('ch-view-name');
+      var viewSub = document.getElementById('ch-view-sub');
+      var viewSearch = document.getElementById('ch-view-search');
+      var viewTable = document.getElementById('ch-view-table');
+      var viewNote = document.getElementById('ch-view-note');
+      var viewTitle = document.getElementById('ch-view-title');
+      var appName = viewTitle ? viewTitle.textContent : '';
+      var current = null;
+      function escT(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+      var SRC = { sample: 'sample', own: 'file', folder: 'folder', chat: 'chat', whatsapp: 'WhatsApp', jira: 'Jira', confluence: 'Confluence', github: 'GitHub' };
+      async function loadRows() {
+        if (!current) return;
+        var t = ''; try { t = localStorage.getItem('token') || ''; } catch (e) { /* fine */ }
+        var q = viewSearch.value.trim();
+        viewNote.hidden = true;
+        try {
+          var r = await fetch(API + '/api/data/rows?dataset=' + encodeURIComponent(current.name) + '&q=' + encodeURIComponent(q) + '&limit=200', { headers: { Authorization: 'Bearer ' + t } });
+          var d = r.ok ? await r.json() : null;
+          if (!d) throw new Error('The rows could not be read (' + r.status + ').');
+          var cols = d.columns.slice(0, 9);
+          viewSub.textContent = (d.total === d.rows.length ? d.total : d.rows.length + ' of ' + d.total) + (d.total === 1 ? ' row' : ' rows') + (d.key ? ' · told apart by ' + d.key : '') + (d.sample ? ' · sample data until yours is brought in' : '');
+          viewTable.innerHTML = '<thead><tr>' + cols.map(function (c) { return '<th>' + escT(c) + '</th>'; }).join('') + '<th>From</th></tr></thead><tbody>'
+            + d.rows.map(function (row) { return '<tr>' + cols.map(function (c, i) { return '<td>' + escT(row.cells[i]) + '</td>'; }).join('') + '<td><span class="ch-view__src ch-view__src--' + escT(row.source) + '">' + escT(SRC[row.source] || row.source) + '</span></td></tr>'; }).join('')
+            + '</tbody>';
+          if (!d.rows.length) { viewNote.textContent = q ? 'Nothing matches "' + q + '".' : 'Nothing here yet. Bring it in on the Data page, or tell the chat.'; viewNote.hidden = false; }
+          else if (d.columns.length > cols.length) { viewNote.textContent = 'Showing the first ' + cols.length + ' of ' + d.columns.length + ' columns. Ask the chat for the rest.'; viewNote.hidden = false; }
+        } catch (err) { viewTable.innerHTML = ''; viewNote.textContent = err.message; viewNote.hidden = false; }
+      }
+      function openView(ds) {
+        current = ds;
+        viewName.textContent = ds.name;
+        viewSub.textContent = 'Loading…';
+        viewSearch.value = '';
+        viewTable.innerHTML = '';
+        view.hidden = false; log.hidden = true; if (tryask) tryask.hidden = true;
+        main.classList.remove('ch-main--welcome'); main.classList.add('ch-main--view');
+        if (viewTitle) viewTitle.textContent = ds.name;
+        loadRows();
+      }
+      function closeView() {
+        current = null;
+        view.hidden = true; log.hidden = false;
+        main.classList.remove('ch-main--view');
+        if (viewTitle) viewTitle.textContent = appName;
+        if (typeof sync === 'function') sync();
+      }
+      var searchTimer = null;
+      viewSearch.addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(loadRows, 250); });
+
       nav.addEventListener('click', function (e) {
         var b = e.target.closest('[data-area]'); if (!b) return;
         nav.querySelectorAll('.ch-side__item').forEach(function (x) { x.classList.toggle('ch-side__item--on', x === b); });
-        if (b.dataset.area === 'Home') { log.scrollTop = 0; if (input) input.focus(); return; }
+        var area = b.dataset.area;
+        activeArea = area;
+        if (area === 'Home') { closeView(); log.scrollTop = 0; if (input) input.focus(); return; }
+        var ds = datasetsByArea[area];
+        if (ds) { openView(ds); return; }
+        closeView();
         if (input) {
-          // A question to start from, in the area's own words; theirs to change.
-          input.value = 'What should I know about ' + b.dataset.area.toLowerCase() + ' right now?';
+          // No data behind this tab: a question to start from, theirs to change.
+          input.value = 'What should I know about ' + area.toLowerCase() + ' right now?';
           input.focus(); input.setSelectionRange(input.value.length, input.value.length);
           input.dispatchEvent(new Event('input', { bubbles: true }));
         }
@@ -628,8 +738,8 @@
       // "Try asking" under the composer, until the conversation begins.
       if (examples && tryask) {
         tryask.appendChild(examples);
-        var sync = function () {
-          var welcome = !!log.querySelector('.ch-welcome');
+        sync = function () {
+          var welcome = !!log.querySelector('.ch-welcome') && view.hidden;
           main.classList.toggle('ch-main--welcome', welcome);
           tryask.hidden = !welcome || !examples.children.length;
         };

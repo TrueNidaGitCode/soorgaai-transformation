@@ -7,12 +7,16 @@
  */
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { ownerStatus, ownerSession, requireOwner, requireWriter, listDatasets, listSources, importDataset, recordIntent, addRecord } from '../controllers/dataController.js';
+import { ownerStatus, ownerSession, requireOwner, requireWriter, listDatasets, listSources, importDataset, recordIntent, addRecord, listAreas, datasetRows } from '../controllers/dataController.js';
 
 const router = express.Router();
 
 router.get('/owner-status', ownerStatus);
 router.post('/owner-session', express.json(), ownerSession);
+
+// Looking at the data: anyone signed in. Bringing it in and changing it: below.
+router.get('/areas', protect, listAreas);
+router.get('/rows', protect, datasetRows);
 
 router.get('/datasets', protect, requireOwner, listDatasets);
 router.get('/sources', protect, requireOwner, listSources);

@@ -364,6 +364,27 @@ export async function landRows({ dataset, rows, source, by = 'owner', detail = '
   return { rows: incoming.length, added: result.added, updated: result.updated, unchanged: result.unchanged, missing: complete ? result.missing.length : 0, moved, key, seeded, file: entry.file };
 }
 
+/**
+ * Everything the application holds for a dataset, with where each row came
+ * from: the owner's rows from every source file, or the sample rows when
+ * nothing of theirs has arrived yet. What the tabs show; the seed loaded
+ * the same files, so this is the application's data as the chat sees it.
+ */
+export function readAllRows(dataset) {
+  const columns = (dataset.columns || []).filter(c => c !== '_source');
+  const out = [];
+  for (const src of otherSources(dataset, '')) {
+    for (const r of readSourceRows(dataset, src)) out.push({ cells: r, source: src });
+  }
+  if (out.length) return { columns, rows: out, sample: false };
+  try {
+    const [header, ...body] = parseCsv(fs.readFileSync(path.join(ROOT, dataset.file), 'utf8'));
+    const at = columns.map(c => header.indexOf(c));
+    for (const r of body) out.push({ cells: at.map(i => (i >= 0 ? String(r[i] ?? '') : '')), source: 'sample' });
+  } catch { /* no sample file either */ }
+  return { columns, rows: out, sample: true };
+}
+
 /** The other _source files this dataset has on disk. */
 function otherSources(dataset, src) {
   if (!fs.existsSync(OWN_DIR)) return [];

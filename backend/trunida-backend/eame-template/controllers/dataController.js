@@ -43,7 +43,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import { readIndex, findDataset, importsCollection, landRows, MAX_ROWS, datasetKey, keyColumns, provenanceSummary } from '../services/connectorService.js';
+import { readIndex, findDataset, importsCollection, landRows, MAX_ROWS, datasetKey, keyColumns, provenanceSummary, readAllRows } from '../services/connectorService.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -186,6 +186,39 @@ export async function importDataset(req, res) {
       complete: complete !== false,
     });
     res.json({ ok: true, datasetName: dataset.name, ...landed });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+// ── The tabs: looking at the data ───────────────────────────────────────────
+//
+// The sidebar's areas open the dataset each stands for, as a table anyone
+// signed in can read and search. Read from what the application holds --
+// the same files the seed loaded -- so it is the data the chat answers from.
+
+/** GET /api/data/areas -> the datasets, their columns and keys, and how much each holds. */
+export function listAreas(req, res) {
+  try {
+    res.json({ areas: readIndex().map(d => {
+      const all = readAllRows(d);
+      return { name: d.name, columns: (d.columns || []).filter(c => c !== '_source'), key: datasetKey(d), rows: all.rows.length, sample: all.sample };
+    }) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+/** GET /api/data/rows?dataset=&q=&limit= -> the rows, searched, newest landings last. */
+export function datasetRows(req, res) {
+  try {
+    const dataset = findDataset(String(req.query.dataset || ''));
+    if (!dataset) return res.status(404).json({ error: 'That dataset is not one this application was built on.' });
+    const q = String(req.query.q || '').trim().toLowerCase();
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 200, 1), 1000);
+    const all = readAllRows(dataset);
+    const rows = q ? all.rows.filter(r => r.cells.some(c => String(c).toLowerCase().includes(q))) : all.rows;
+    res.json({ dataset: dataset.name, columns: all.columns, key: datasetKey(dataset), sample: all.sample, total: rows.length, rows: rows.slice(0, limit) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -370,19 +370,28 @@ export async function landRows({ dataset, rows, source, by = 'owner', detail = '
  * nothing of theirs has arrived yet. What the tabs show; the seed loaded
  * the same files, so this is the application's data as the chat sees it.
  */
-export function readAllRows(dataset) {
+export function readAllRows(dataset, kind = 'own') {
   const columns = (dataset.columns || []).filter(c => c !== '_source');
   const out = [];
+  if (kind === 'sample') {
+    // What the application was built with: generated to show the shape,
+    // never anyone's records. Kept apart so it is never mistaken for theirs.
+    try {
+      const [header, ...body] = parseCsv(fs.readFileSync(path.join(ROOT, dataset.file), 'utf8'));
+      const at = columns.map(c => header.indexOf(c));
+      for (const r of body) out.push({ cells: at.map(i => (i >= 0 ? String(r[i] ?? '') : '')), source: 'sample' });
+    } catch { /* no sample file */ }
+    return { columns, rows: out, sample: true };
+  }
   for (const src of otherSources(dataset, '')) {
     for (const r of readSourceRows(dataset, src)) out.push({ cells: r, source: src });
   }
-  if (out.length) return { columns, rows: out, sample: false };
-  try {
-    const [header, ...body] = parseCsv(fs.readFileSync(path.join(ROOT, dataset.file), 'utf8'));
-    const at = columns.map(c => header.indexOf(c));
-    for (const r of body) out.push({ cells: at.map(i => (i >= 0 ? String(r[i] ?? '') : '')), source: 'sample' });
-  } catch { /* no sample file either */ }
-  return { columns, rows: out, sample: true };
+  return { columns, rows: out, sample: false };
+}
+
+/** How much of each a dataset holds: the owner's rows, and the sample's. */
+export function countRows(dataset) {
+  return { own: readAllRows(dataset, 'own').rows.length, sample: readAllRows(dataset, 'sample').rows.length };
 }
 
 /** The other _source files this dataset has on disk. */

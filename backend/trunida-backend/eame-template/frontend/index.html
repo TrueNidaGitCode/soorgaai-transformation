@@ -159,54 +159,90 @@
   </section>
 
   <!-- ── The chat ───────────────────────────────────────────────────────── -->
+  <!-- The application: a sidebar of the areas it covers, a bar with who is
+       here, and the conversation. The ids app.js drives (#ch-log, #ch-form,
+       #ch-input, #ch-send, #ch-examples, #ch-state) are unchanged; the shell
+       around them is the runtime's and the same in every application. -->
   <div class="ch-app" id="ch-app" hidden>
 
-    <header class="ch-head">
-      <a href="#" class="ch-head__home" id="ch-home-link" title="Back to the front page">
-      <div class="ch-head__mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.9 8.4 8.4 0 0 1 8.4-8.4h.6A8.4 8.4 0 0 1 21 11v.5z"/>
-        </svg>
-      </div>
-      <div class="ch-head__text">
-        <h1 class="ch-head__title">__APP_NAME__</h1>
-        <p class="ch-head__sub">__APP_TAGLINE__</p>
-      </div>
+    <aside class="ch-side" aria-label="Areas">
+      <a href="#" class="ch-side__brand ch-head__home" id="ch-home-link" title="Back to the front page">
+        <span class="ch-side__emblem" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none"><path d="M6 30c4-14 20-24 34-22" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M42 18c-4 14-20 24-34 22" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".55"/></svg>
+          <b>__APP_INITIAL__</b>
+        </span>
+        <span class="ch-side__brandtext"><strong class="ch-head__title">__APP_NAME__</strong><em>__APP_EYEBROW__</em></span>
       </a>
-      <span class="ch-head__who" id="ch-head-who" hidden></span>
-      <a href="#" class="ch-head__link" id="ch-home-link-2">Home</a>
-      <!-- The owner's way in to their data. Everyone can see the link; the
-           room behind it opens only to the owner key. -->
-      <a href="#data" class="ch-head__link" id="ch-data-link">Data</a>
-      <span class="ch-head__state" id="ch-state"><span class="ch-head__dot"></span>Connecting…</span>
-    </header>
-
-    <div class="ch-log" id="ch-log" role="log" aria-live="polite">
-      <!-- Opening turn. Not a fake message from the assistant — it is the
-           app introducing itself.
-
-           The copy is filled from the blueprint rather than written here.
-           This file ships to every customer, and it used to ask all of them
-           about ECU flash failures whatever their application actually did.
-           #ch-examples is left empty for the generated app.js to fill, since
-           only it knows what a useful question looks like for this use case. -->
-      <div class="ch-welcome">
-        <h2 class="ch-welcome__title">__APP_WELCOME_TITLE__</h2>
-        <p class="ch-welcome__body">__APP_WELCOME_BODY__</p>
-        <div class="ch-examples" id="ch-examples"></div>
+      <!-- The areas this application covers, from the same list the front
+           door previews. Each seeds the conversation with a question about
+           that area: they are ways to ask, not pages that do not exist. -->
+      <nav class="ch-side__nav" id="ch-side-nav"></nav>
+      <div class="ch-side__foot">
+        <span class="ch-side__star" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg></span>
+        <span><strong>Powered by Svarg</strong><em>Your AI partner</em></span>
       </div>
+    </aside>
+
+    <div class="ch-main" id="ch-main">
+      <header class="ch-head">
+        <div class="ch-head__text">
+          <h1 class="ch-head__title ch-head__title--bar">__APP_NAME__</h1>
+          <p class="ch-head__sub">__APP_TAGLINE__</p>
+        </div>
+        <span class="ch-head__state" id="ch-state"><span class="ch-head__dot"></span>Connecting…</span>
+        <a href="#" class="ch-head__link ch-head__link--home" id="ch-home-link-2">Home</a>
+        <!-- The owner's way in to their data. Everyone can see the link; the
+             room behind it opens only to the owner key. -->
+        <a href="#data" class="ch-head__link" id="ch-data-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Data</a>
+        <div class="ch-who" id="ch-head-who-chip" hidden>
+          <span class="ch-who__avatar" id="ch-head-avatar" aria-hidden="true"></span>
+          <span class="ch-head__who" id="ch-head-who"></span>
+          <button type="button" class="ch-who__out" id="ch-logout-2" title="Log out">Log out</button>
+        </div>
+      </header>
+
+      <div class="ch-glow" aria-hidden="true">
+        <svg viewBox="0 0 1200 420" preserveAspectRatio="none"><path d="M0 250 C 200 180, 320 330, 520 250 S 900 170, 1200 260" /><path d="M0 300 C 240 240, 380 360, 600 290 S 960 220, 1200 310" opacity=".5"/><path d="M0 200 C 260 150, 400 280, 640 210 S 980 130, 1200 220" opacity=".35"/></svg>
+      </div>
+
+      <div class="ch-log" id="ch-log" role="log" aria-live="polite">
+        <!-- Opening turn. Not a fake message from the assistant — it is the
+             app introducing itself.
+
+             The copy is filled from the blueprint rather than written here.
+             This file ships to every customer, and it used to ask all of them
+             about ECU flash failures whatever their application actually did.
+             #ch-examples is left empty for the generated app.js to fill, since
+             only it knows what a useful question looks like for this use case;
+             the shell moves it under the composer and hides it once a
+             conversation has begun. -->
+        <div class="ch-welcome">
+          <span class="ch-welcome__mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg></span>
+          <p class="ch-welcome__eyebrow">Welcome</p>
+          <h2 class="ch-welcome__title">__APP_WELCOME_TITLE__</h2>
+          <p class="ch-welcome__body">__APP_WELCOME_BODY__</p>
+          <div class="ch-examples" id="ch-examples"></div>
+        </div>
+      </div>
+
+      <form class="ch-compose" id="ch-form">
+        <span class="ch-compose__star" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg></span>
+        <textarea id="ch-input" class="ch-compose__input" rows="1"
+                  placeholder="__APP_PROMPT__" aria-label="__APP_PROMPT__"></textarea>
+        <div class="ch-compose__bar">
+          <button type="button" class="ch-compose__tool" id="ch-attach" hidden title="Bring a file into your data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Attach</button>
+          <span class="ch-compose__space"></span>
+          <button type="button" class="ch-compose__tool" id="ch-speak" hidden title="Say it instead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Speak</button>
+          <button type="submit" class="ch-compose__send" id="ch-send" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          </button>
+        </div>
+      </form>
+      <p class="ch-compose__hint">Enter to send · Shift+Enter for a new line</p>
+      <div class="ch-tryask" id="ch-tryask" hidden><p class="ch-tryask__label">Try asking</p></div>
+
+      <p class="ch-foot">Built with Svarg</p>
     </div>
-
-    <form class="ch-compose" id="ch-form">
-      <textarea id="ch-input" class="ch-compose__input" rows="1"
-                placeholder="__APP_PROMPT__" aria-label="__APP_PROMPT__"></textarea>
-      <button type="submit" class="ch-compose__send" id="ch-send" aria-label="Send">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-      </button>
-    </form>
-    <p class="ch-compose__hint">Enter to send · Shift+Enter for a new line</p>
-
-    <p class="ch-foot">Built with Svarg</p>
 
   </div>
 
@@ -398,15 +434,20 @@
       var name = who && (who.name || who.email) || '';
       topLogin.hidden = !!name;
       whoBox.hidden = !name;
+      var chip = document.getElementById('ch-head-who-chip');
       if (name) {
         var first = name.split(/[ @]/)[0];
         document.getElementById('ch-who-name').textContent = first;
-        var av = document.getElementById('ch-who-avatar');
-        av.style.backgroundImage = who.picture ? "url('" + who.picture.replace(/'/g, '%27') + "')" : 'none';
-        av.textContent = who.picture ? '' : first.charAt(0).toUpperCase();
+        var pic = who.picture ? "url('" + who.picture.replace(/'/g, '%27') + "')" : 'none';
+        [document.getElementById('ch-who-avatar'), document.getElementById('ch-head-avatar')].forEach(function (av) {
+          if (!av) return;
+          av.style.backgroundImage = pic;
+          av.textContent = who.picture ? '' : first.charAt(0).toUpperCase();
+        });
         headWho.textContent = first;
       }
       headWho.hidden = !name;
+      if (chip) chip.hidden = !name;
     }
 
     /** What the deployment offers; the open session when it cannot say. */
@@ -517,6 +558,113 @@
       else proceed();
     });
     document.getElementById('ch-logout').addEventListener('click', function () { forget(); paintWho(); goHome(); });
+    document.getElementById('ch-logout-2').addEventListener('click', function () { forget(); paintWho(); goHome(); });
+
+    /*
+     * The application's shell around the conversation.
+     *
+     * The sidebar lists the areas this application covers -- the same list
+     * the front door previews -- and each seeds the composer with a question
+     * about that area, because that is what this application does: it
+     * answers. "Try asking" is what the generated app.js puts in #ch-examples,
+     * moved under the composer and hidden once the conversation has begun
+     * (app.js removes .ch-welcome on the first turn; the observer follows).
+     * Attach is the owner's way to their Data page; Speak is the browser's
+     * own speech recognition, offered only where it exists.
+     */
+    (function shell() {
+      var main = document.getElementById('ch-main');
+      var log = document.getElementById('ch-log');
+      var nav = document.getElementById('ch-side-nav');
+      var tryask = document.getElementById('ch-tryask');
+      var examples = document.getElementById('ch-examples');
+      var input = document.getElementById('ch-input');
+      if (!main || !log || !nav) return;
+
+      var ICONS = {
+        home: '<path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/>',
+        person: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+        calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+        check: '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
+        chat: '<path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-4.5A8 8 0 1 1 21 12z"/>',
+        doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+        bars: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+        gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+        dot: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/>',
+      };
+      function iconFor(label) {
+        var l = String(label).toLowerCase();
+        if (/home|overview|dashboard/.test(l)) return 'home';
+        if (/student|player|member|people|customer|learner|athlete|coach|staff|employee|user|team/.test(l)) return 'person';
+        if (/session|schedule|calendar|timetable|batch|class|booking|shift/.test(l)) return 'calendar';
+        if (/attend|roll|check|presence/.test(l)) return 'check';
+        if (/message|communication|whatsapp|chat|notice|announce/.test(l)) return 'chat';
+        if (/invoice|fee|payment|billing|finance|ledger|order/.test(l)) return 'doc';
+        if (/report|insight|analytic|trend|stat/.test(l)) return 'bars';
+        if (/setting|config|admin/.test(l)) return 'gear';
+        return 'dot';
+      }
+      function svg(name) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>'; }
+
+      // The areas, from the front door's preview data.
+      var areas = [];
+      try { var d = JSON.parse((document.getElementById('ld-preview-data') || {}).textContent || '{}'); areas = Array.isArray(d.nav) ? d.nav : []; } catch (e) { areas = []; }
+      var items = ['Home'].concat(areas.filter(function (a) { return !/^(home|overview|dashboard|settings?)$/i.test(String(a).trim()); }).slice(0, 8));
+      nav.innerHTML = items.map(function (a, i) {
+        return '<button type="button" class="ch-side__item' + (i === 0 ? ' ch-side__item--on' : '') + '" data-area="' + a.replace(/"/g, '&quot;') + '">' + svg(iconFor(a)) + '<span>' + a.replace(/</g, '&lt;') + '</span></button>';
+      }).join('');
+      nav.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-area]'); if (!b) return;
+        nav.querySelectorAll('.ch-side__item').forEach(function (x) { x.classList.toggle('ch-side__item--on', x === b); });
+        if (b.dataset.area === 'Home') { log.scrollTop = 0; if (input) input.focus(); return; }
+        if (input) {
+          // A question to start from, in the area's own words; theirs to change.
+          input.value = 'What should I know about ' + b.dataset.area.toLowerCase() + ' right now?';
+          input.focus(); input.setSelectionRange(input.value.length, input.value.length);
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+
+      // "Try asking" under the composer, until the conversation begins.
+      if (examples && tryask) {
+        tryask.appendChild(examples);
+        var sync = function () {
+          var welcome = !!log.querySelector('.ch-welcome');
+          main.classList.toggle('ch-main--welcome', welcome);
+          tryask.hidden = !welcome || !examples.children.length;
+        };
+        new MutationObserver(sync).observe(log, { childList: true, subtree: true });
+        new MutationObserver(sync).observe(examples, { childList: true });
+        sync();
+      }
+
+      // Attach: the owner's Data page. Shown when this browser holds the owner session.
+      var attach = document.getElementById('ch-attach');
+      if (attach) {
+        var isOwner = false; try { isOwner = !!localStorage.getItem('ownerToken'); } catch (e) { /* fine */ }
+        attach.hidden = !isOwner;
+        attach.addEventListener('click', function () { var l = document.getElementById('ch-data-link'); if (l) l.click(); });
+      }
+
+      // Speak: the browser's speech recognition, where it exists.
+      var speak = document.getElementById('ch-speak');
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (speak && SR && input) {
+        speak.hidden = false;
+        var rec = null;
+        speak.addEventListener('click', function () {
+          if (rec) { rec.stop(); return; }
+          try {
+            rec = new SR(); rec.lang = navigator.language || 'en-IN'; rec.interimResults = false; rec.maxAlternatives = 1;
+            speak.classList.add('ch-compose__tool--live'); speak.lastChild.textContent = 'Listening…';
+            rec.onresult = function (ev) { var t = ev.results[0][0].transcript; input.value = (input.value ? input.value + ' ' : '') + t; input.focus(); input.dispatchEvent(new Event('input', { bubbles: true })); };
+            rec.onend = function () { rec = null; speak.classList.remove('ch-compose__tool--live'); speak.lastChild.textContent = 'Speak'; };
+            rec.onerror = rec.onend;
+            rec.start();
+          } catch (e) { rec = null; speak.hidden = true; }
+        });
+      }
+    })();
     document.getElementById('ch-google').addEventListener('click', function () {
       window.location.href = API + '/api/auth/google';
     });

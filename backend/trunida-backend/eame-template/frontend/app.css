@@ -907,3 +907,96 @@ body {
 .dt__log li span:first-child { color: var(--ch-faint); }
 .dt__log li span:nth-child(2) { color: var(--ch-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 640px) { .dt__log li { grid-template-columns: 1fr 1fr; } }
+
+/* ── The application: sidebar, bar, conversation ────────────────────────────
+   Overrides the chat layout above: the conversation sits beside a sidebar of
+   the application's areas, on a deep ground with a teal glow, and the
+   composer is the centre of the welcome. */
+.ch-app { display: grid; grid-template-columns: 250px minmax(0, 1fr); height: 100vh; max-width: none; margin: 0; padding: 0; background: #070B12; }
+.ch-side { display: flex; flex-direction: column; gap: 6px; padding: 18px 16px; border-right: 1px solid rgba(255,255,255,0.06); background: linear-gradient(180deg, #0A1019, #070B12); }
+.ch-side__brand { display: flex; align-items: center; gap: 12px; padding: 6px 8px 18px; text-decoration: none; color: inherit; flex: 0 0 auto; }
+.ch-side__emblem { position: relative; width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; color: var(--ch-accent); }
+.ch-side__emblem svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ch-side__emblem b { font-size: 18px; font-weight: 900; color: #fff; }
+.ch-side__brandtext { display: flex; flex-direction: column; min-width: 0; }
+.ch-side__brandtext strong { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch-side__brandtext em { font-style: normal; font-size: 12px; color: var(--ch-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch-side__nav { display: flex; flex-direction: column; gap: 4px; }
+.ch-side__item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: var(--ch-dim); font: inherit; font-size: 15px; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.ch-side__item svg { width: 20px; height: 20px; flex-shrink: 0; }
+.ch-side__item:hover { color: var(--ch-text); background: rgba(255,255,255,0.04); }
+.ch-side__item--on { color: var(--ch-accent); background: rgba(92,197,167,0.1); border-color: rgba(92,197,167,0.18); }
+.ch-side__item:focus-visible { outline: 2px solid var(--ch-accent); outline-offset: 2px; }
+.ch-side__foot { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 14px; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; background: rgba(255,255,255,0.03); }
+.ch-side__star { width: 30px; height: 30px; display: grid; place-items: center; color: var(--ch-accent); }
+.ch-side__star svg { width: 20px; height: 20px; }
+.ch-side__foot strong { display: block; font-size: 13px; font-weight: 700; }
+.ch-side__foot em { font-style: normal; font-size: 12px; color: var(--ch-faint); }
+
+.ch-main { position: relative; display: flex; flex-direction: column; min-width: 0; height: 100vh; padding: 0 clamp(20px, 4vw, 56px); overflow: hidden; }
+.ch-main .ch-head { gap: 12px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.ch-head__title--bar { font-size: 17px; }
+.ch-main .ch-head__state { order: 0; margin-left: auto; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); font-size: 12.5px; }
+.ch-head__link--home { display: none; }
+.ch-main .ch-head__link { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: 1px solid transparent; background: transparent; font-size: 14px; }
+.ch-main .ch-head__link svg { width: 18px; height: 18px; }
+.ch-main .ch-head__link:hover { background: rgba(255,255,255,0.05); border-color: transparent; }
+.ch-who { display: inline-flex; align-items: center; gap: 10px; padding: 4px 6px 4px 4px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); }
+.ch-who__avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--ch-accent) center/cover no-repeat; color: #06110D; font-size: 13px; font-weight: 800; }
+.ch-main .ch-head__who { max-width: 14ch; color: var(--ch-text); }
+.ch-who__out { border: 0; background: transparent; color: var(--ch-faint); font: inherit; font-size: 12px; cursor: pointer; padding: 4px 8px; border-radius: 999px; }
+.ch-who__out:hover { color: var(--ch-text); background: rgba(255,255,255,0.06); }
+
+/* The glow behind the welcome: a soft light and three lines, like the front door's world. */
+.ch-glow { position: absolute; left: 0; right: 0; top: 70px; height: 420px; pointer-events: none; opacity: 0; transition: opacity .6s ease; }
+.ch-main--welcome .ch-glow { opacity: 1; }
+.ch-glow::before { content: ""; position: absolute; left: 50%; top: 40%; width: 520px; height: 260px; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(92,197,167,0.18), transparent 70%); filter: blur(10px); }
+.ch-glow svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ch-glow path { fill: none; stroke: rgba(92,197,167,0.35); stroke-width: 1.2; }
+
+.ch-main .ch-log { position: relative; z-index: 1; padding: 22px 0; }
+.ch-main--welcome .ch-log { flex: 0 0 auto; margin-top: auto; overflow: visible; padding-bottom: 8px; }
+.ch-main--welcome .ch-welcome { margin: 0 auto; padding: 0 0 6px; text-align: center; max-width: 720px; }
+.ch-welcome__mark { display: grid; place-items: center; width: 84px; height: 84px; margin: 0 auto 16px; border-radius: 50%; color: var(--ch-accent); background: radial-gradient(circle at 50% 40%, rgba(92,197,167,0.35), rgba(92,197,167,0.06) 70%); box-shadow: 0 0 0 8px rgba(92,197,167,0.06), 0 0 60px rgba(92,197,167,0.25); }
+.ch-welcome__mark svg { width: 34px; height: 34px; }
+.ch-welcome__eyebrow { margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.34em; text-transform: uppercase; color: var(--ch-accent); }
+.ch-main--welcome .ch-welcome__title { font-size: clamp(30px, 3.6vw, 44px); margin-bottom: 10px; }
+.ch-main--welcome .ch-welcome__body { margin: 0 auto 18px; max-width: 52ch; font-size: 17px; }
+.ch-welcome .ch-examples:not(:empty)::before { content: none; }
+
+/* The composer: a lit box with a star, and a bar of tools beneath the text. */
+.ch-main .ch-compose { position: relative; z-index: 1; display: grid; grid-template-columns: 28px minmax(0, 1fr); grid-template-rows: auto auto; gap: 6px 10px; align-items: start; width: 100%; max-width: 900px; margin: 0 auto; padding: 16px 16px 12px 18px; border-radius: 22px; border: 1px solid rgba(92,197,167,0.35); background: rgba(10,16,25,0.85); box-shadow: 0 0 0 1px rgba(92,197,167,0.06), 0 30px 80px -40px rgba(92,197,167,0.35); }
+.ch-main .ch-compose:focus-within { border-color: rgba(92,197,167,0.7); box-shadow: 0 0 0 4px rgba(92,197,167,0.1), 0 30px 80px -40px rgba(92,197,167,0.45); }
+.ch-compose__star { display: grid; place-items: center; width: 24px; height: 24px; margin-top: 4px; color: var(--ch-accent); }
+.ch-compose__star svg { width: 20px; height: 20px; }
+.ch-main .ch-compose__input { grid-column: 2; width: 100%; padding: 4px 0 6px; font-size: 17px; background: transparent; border: 0; }
+.ch-compose__bar { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding-top: 6px; }
+.ch-compose__space { flex: 1; }
+.ch-compose__tool { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; border: 1px solid rgba(92,197,167,0.28); background: rgba(92,197,167,0.06); color: var(--ch-text); font: inherit; font-size: 14px; cursor: pointer; }
+.ch-compose__tool svg { width: 17px; height: 17px; }
+.ch-compose__tool:hover { background: rgba(92,197,167,0.12); }
+.ch-compose__tool--live { border-color: var(--ch-accent); color: var(--ch-accent); }
+.ch-main .ch-compose__send { width: 44px; height: 44px; margin: 0; }
+.ch-main .ch-compose__hint { position: relative; z-index: 1; text-align: center; }
+.ch-main--welcome .ch-compose__hint { display: none; }
+
+/* Try asking, under the composer, as cards with a way in. */
+.ch-tryask { position: relative; z-index: 1; width: 100%; max-width: 900px; margin: 22px auto 0; }
+.ch-main--welcome .ch-tryask { margin-bottom: auto; }
+.ch-tryask__label { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--ch-dim); }
+.ch-tryask .ch-examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.ch-tryask .ch-example { position: relative; display: block; padding: 16px 44px 16px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); font-size: 14px; line-height: 1.45; }
+.ch-tryask .ch-example::after { content: "\2192"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--ch-dim); }
+.ch-tryask .ch-example:hover { border-color: rgba(92,197,167,0.45); background: rgba(92,197,167,0.06); }
+.ch-main .ch-foot { position: relative; z-index: 1; }
+
+@media (max-width: 900px) {
+  .ch-app { grid-template-columns: 1fr; }
+  .ch-side { display: none; }
+  .ch-main .ch-head__state { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .ch-glow { transition: none; } }
+.ch-tryask .ch-examples::before { content: none; }
+.ch-main .ch-head__link--home { display: none; }
+.ch-side__brandtext strong { white-space: normal; font-size: 18px; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+@media (max-width: 900px) { .ch-main .ch-head__link--home { display: inline-flex; } }

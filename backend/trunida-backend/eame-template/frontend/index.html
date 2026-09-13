@@ -199,21 +199,6 @@
         <svg viewBox="0 0 1200 420" preserveAspectRatio="none"><path d="M0 250 C 200 180, 320 330, 520 250 S 900 170, 1200 260" /><path d="M0 300 C 240 240, 380 360, 600 290 S 960 220, 1200 310" opacity=".5"/><path d="M0 200 C 260 150, 400 280, 640 210 S 980 130, 1200 220" opacity=".35"/></svg>
       </div>
 
-      <!-- A tab's data: the dataset the area stands for, as a table. Shown
-           in place of the conversation; Home brings the conversation back. -->
-      <section class="ch-view" id="ch-view" hidden aria-live="polite">
-        <div class="ch-view__head">
-          <div><h2 class="ch-view__title" id="ch-view-name"></h2><p class="ch-view__sub" id="ch-view-sub"></p></div>
-          <div class="ch-view__tools">
-            <!-- Theirs, or the simulated rows the application was built with. -->
-            <div class="ch-switch" id="ch-view-switch" role="group" aria-label="Which rows"></div>
-            <input type="search" class="ch-view__search" id="ch-view-search" placeholder="Search…" aria-label="Search these rows">
-          </div>
-        </div>
-        <div class="ch-view__tablewrap"><table class="ch-view__table" id="ch-view-table"></table></div>
-        <p class="ch-view__note" id="ch-view-note" hidden></p>
-      </section>
-
       <div class="ch-log" id="ch-log" role="log" aria-live="polite">
         <!-- Opening turn. Not a fake message from the assistant — it is the
              app introducing itself.
@@ -264,9 +249,15 @@
     <header class="dt__head">
       <a href="#" class="dt__back" id="dt-back">&larr; Back to the chat</a>
       <h1 class="dt__title">Your data</h1>
-      <p class="dt__sub">Connect the places your records already live and the application reads them; keep adding to your sheets, or say it in the chat, and it holds one record either way. Files are read here in your browser, and rows and credentials stay in this application — nothing goes to Svarg.</p>
+      <p class="dt__sub">Where your records come from, and what the application holds. Connect the places they already live and the application reads them; keep adding to your sheets, or say it in the chat, and it holds one record either way. Files are read here in your browser, and rows and credentials stay in this application — nothing goes to Svarg.</p>
     </header>
 
+    <div class="dt__layout">
+      <!-- Connections first, then one entry per dataset; drawn by the
+           application's shell once it knows what the application holds. -->
+      <nav class="dt__side" id="dt-side" aria-label="Your data"></nav>
+      <div class="dt__body">
+      <div id="dt-connections">
     <div class="dt__gate" id="dt-gate">
       <form class="dt__keyform" id="dt-key-form">
         <label class="dt__label" for="dt-key">Owner key</label>
@@ -311,6 +302,23 @@
         <ul class="dt__siglist" id="dt-signals-list"></ul>
       </section>
       <p class="dt__lockrow"><button type="button" class="dt-btn dt-btn--quiet" id="dt-lock">Lock the Data page</button></p>
+    </div>
+      </div>
+      <!-- A tab's data: the dataset the area stands for, as a table. Shown
+           in place of the conversation; Home brings the conversation back. -->
+      <section class="ch-view" id="ch-view" hidden aria-live="polite">
+        <div class="ch-view__head">
+          <div><h2 class="ch-view__title" id="ch-view-name"></h2><p class="ch-view__sub" id="ch-view-sub"></p></div>
+          <div class="ch-view__tools">
+            <!-- Theirs, or the simulated rows the application was built with. -->
+            <div class="ch-switch" id="ch-view-switch" role="group" aria-label="Which rows"></div>
+            <input type="search" class="ch-view__search" id="ch-view-search" placeholder="Search…" aria-label="Search these rows">
+          </div>
+        </div>
+        <div class="ch-view__tablewrap"><table class="ch-view__table" id="ch-view-table"></table></div>
+        <p class="ch-view__note" id="ch-view-note" hidden></p>
+      </section>
+      </div>
     </div>
   </section>
 
@@ -586,6 +594,9 @@
       var main = document.getElementById('ch-main');
       var log = document.getElementById('ch-log');
       var nav = document.getElementById('ch-side-nav');
+      var page = document.getElementById('ch-data');
+      var dside = document.getElementById('dt-side');
+      var connections = document.getElementById('dt-connections');
       var tryask = document.getElementById('ch-tryask');
       var examples = document.getElementById('ch-examples');
       var input = document.getElementById('ch-input');
@@ -625,11 +636,23 @@
        * the rows that are theirs and the simulated rows the application was
        * built with -- kept apart, so nobody mistakes one for the other.
        */
+      nav.innerHTML = '<button type="button" class="ch-side__item ch-side__item--on" data-side="home">' + svg('home') + '<span>Home</span></button>'
+        + '<a href="#data" class="ch-side__item" id="ch-data-link" data-side="data">' + svg('data') + '<span>Data</span></a>';
       nav.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-side], [data-tab]'); if (!b) return;
-        if (b.dataset.side === 'home') { e.preventDefault(); goHomeTab(); return; }
-        if (b.dataset.tab) { var ds = datasets.find(function (d) { return d.name === b.dataset.tab; }); if (ds) openView(ds); }
-        // Connections: data.js takes the link from here.
+        var b = e.target.closest('[data-side]'); if (!b) return;
+        if (b.dataset.side === 'home') { e.preventDefault(); goHomeTab(); }
+        // Data: data.js opens the page from this link; the page opens on Connections.
+      });
+      // Any way onto the Data page lands on Connections first.
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('#ch-data-link')) return;
+        showConnections();
+      });
+      if (dside) dside.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-tab], [data-connections]'); if (!b) return;
+        e.preventDefault();
+        if (b.dataset.connections !== undefined) { var l = document.getElementById('ch-data-link'); if (l) l.click(); return; }
+        var ds = datasets.find(function (d) { return d.name === b.dataset.tab; }); if (ds) openView(ds);
       });
       var areas = [];
       try { var pd = JSON.parse((document.getElementById('ld-preview-data') || {}).textContent || '{}'); areas = Array.isArray(pd.nav) ? pd.nav : []; } catch (e) { areas = []; }
@@ -659,15 +682,21 @@
       var datasets = [];
       var activeTab = '';
       function drawTabs() {
-        nav.innerHTML = '<button type="button" class="ch-side__item' + (!activeTab ? ' ch-side__item--on' : '') + '" data-side="home">' + svg('home') + '<span>Home</span></button>'
-          + '<p class="ch-side__group">' + svg('data') + '<span>Data</span></p>'
-          + '<a href="#data" class="ch-side__item ch-side__item--sub" id="ch-data-link" data-side="data">' + svg('link') + '<span>Connections</span></a>'
+        if (!dside) return;
+        dside.innerHTML = '<a href="#data" class="dt-side__item' + (!activeTab ? ' dt-side__item--on' : '') + '" data-connections>' + svg('link') + '<span>Connections</span></a>'
+          + (datasets.length ? '<p class="dt-side__group">What it holds</p>' : '')
           + datasets.map(function (ds) {
             var n = ds.own || 0;
-            return '<button type="button" class="ch-side__item ch-side__item--sub' + (ds.name === activeTab ? ' ch-side__item--on' : '') + '" data-tab="' + escT(ds.name) + '">' + svg(iconFor(ds.label + ' ' + ds.name)) + '<span>' + escT(ds.label) + '</span><i class="ch-side__count' + (n ? '' : ' ch-side__count--none') + '" title="' + (n ? 'Your rows' : 'Nothing of yours yet; ' + (ds.sample || 0) + ' simulated') + '">' + (n || ds.sample || 0) + '</i></button>';
+            return '<button type="button" class="dt-side__item' + (ds.name === activeTab ? ' dt-side__item--on' : '') + '" data-tab="' + escT(ds.name) + '">' + svg(iconFor(ds.label + ' ' + ds.name)) + '<span>' + escT(ds.label) + '</span><i class="dt-side__count' + (n ? '' : ' dt-side__count--none') + '" title="' + (n ? 'Your rows' : 'Nothing of yours yet; ' + (ds.sample || 0) + ' simulated') + '">' + (n || ds.sample || 0) + '</i></button>';
           }).join('');
       }
       drawTabs();
+      function showConnections() {
+        activeTab = ''; current = null;
+        drawTabs();
+        if (connections) connections.hidden = false;
+        view.hidden = true;
+      }
 
       // Asked when the application opens (show('app')), not at page load,
       // because that is when a session exists.
@@ -736,16 +765,18 @@
         viewSub.textContent = 'Loading…';
         viewSearch.value = '';
         viewTable.innerHTML = '';
-        view.hidden = false; log.hidden = true; if (tryask) tryask.hidden = true;
-        main.classList.remove('ch-main--welcome'); main.classList.add('ch-main--view');
+        // On the Data page, in place of Connections.
+        if (page) page.hidden = false;
+        app.hidden = true;
+        if (connections) connections.hidden = true;
+        view.hidden = false;
         loadRows();
       }
       function goHomeTab() {
-        current = null; activeTab = '';
-        drawTabs();
-        view.hidden = true; log.hidden = false;
-        main.classList.remove('ch-main--view');
-        if (viewTitle) viewTitle.textContent = appName;
+        showConnections();
+        if (page) page.hidden = true;
+        app.hidden = false;
+        nav.querySelectorAll('.ch-side__item').forEach(function (x) { x.classList.toggle('ch-side__item--on', x.dataset.side === 'home'); });
         if (typeof sync === 'function') sync();
         log.scrollTop = 0; if (input) input.focus();
       }
@@ -757,7 +788,7 @@
       if (examples && tryask) {
         tryask.appendChild(examples);
         sync = function () {
-          var welcome = !!log.querySelector('.ch-welcome') && view.hidden;
+          var welcome = !!log.querySelector('.ch-welcome');
           main.classList.toggle('ch-main--welcome', welcome);
           tryask.hidden = !welcome || !examples.children.length;
         };

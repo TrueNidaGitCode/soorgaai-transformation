@@ -747,7 +747,10 @@
 
   // ── Getting here and back ─────────────────────────────────────────────────
 
-  els.open.addEventListener('click', function (e) { e.preventDefault(); show('data'); });
+  // Delegated: the shell redraws the sidebar the link sits in once it
+  // knows what the application holds, and a listener on the old element
+  // would go with it.
+  document.addEventListener('click', function (e) { var l = e.target.closest('#ch-data-link'); if (!l) return; e.preventDefault(); show('data'); });
   els.back.addEventListener('click', function (e) { e.preventDefault(); show('app'); });
   if (window.location.hash === '#data') {
     // A link from the Svarg go-live screen: straight to the room, through

@@ -173,8 +173,9 @@
         </span>
         <span class="ch-side__brandtext"><strong class="ch-head__title">__APP_NAME__</strong><em>__APP_EYEBROW__</em></span>
       </a>
-      <!-- Home, and the owner's Data page (the link data.js drives lives
-           here). The data itself is in the tabs across the top. -->
+      <!-- Home; then Data: Connections (the owner's page, the link data.js
+           drives) and one entry per dataset the application holds, drawn by
+           the shell once the application says what it has. -->
       <nav class="ch-side__nav" id="ch-side-nav"></nav>
       <div class="ch-side__foot">
         <span class="ch-side__star" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg></span>
@@ -193,10 +194,6 @@
           <button type="button" class="ch-who__out" id="ch-logout-2" title="Log out">Log out</button>
         </div>
       </header>
-
-      <!-- One tab per dataset the application holds, drawn by the shell
-           once the application says what it has. -->
-      <nav class="ch-tabs" id="ch-tabs" hidden aria-label="Your data"></nav>
 
       <div class="ch-glow" aria-hidden="true">
         <svg viewBox="0 0 1200 420" preserveAspectRatio="none"><path d="M0 250 C 200 180, 320 330, 520 250 S 900 170, 1200 260" /><path d="M0 300 C 240 240, 380 360, 600 290 S 960 220, 1200 310" opacity=".5"/><path d="M0 200 C 260 150, 400 280, 640 210 S 980 130, 1200 220" opacity=".35"/></svg>
@@ -589,15 +586,15 @@
       var main = document.getElementById('ch-main');
       var log = document.getElementById('ch-log');
       var nav = document.getElementById('ch-side-nav');
-      var tabs = document.getElementById('ch-tabs');
       var tryask = document.getElementById('ch-tryask');
       var examples = document.getElementById('ch-examples');
       var input = document.getElementById('ch-input');
-      if (!main || !log || !nav || !tabs) return;
+      if (!main || !log || !nav) return;
 
       var ICONS = {
         home: '<path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/>',
         data: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+        link: '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
         person: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
         calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
         check: '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
@@ -619,23 +616,21 @@
       function svg(name) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>'; }
       function escT(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-      // The sidebar: Home, and the owner's Data page. Nothing else.
-      nav.innerHTML = '<button type="button" class="ch-side__item ch-side__item--on" data-side="home">' + svg('home') + '<span>Home</span></button>'
-        + '<a href="#data" class="ch-side__item" id="ch-data-link" data-side="data">' + svg('data') + '<span>Data</span></a>';
-      nav.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-side]'); if (!b) return;
-        if (b.dataset.side === 'home') { e.preventDefault(); goHomeTab(); }
-        // Data: data.js takes the link from here.
-      });
-
       /*
-       * The tabs across the top: one per dataset the application holds,
-       * labelled with the area's name from the front door where one fits
-       * ('Session attendance' is the Attendance tab), the dataset's own name
-       * otherwise. Each opens the dataset as a table, with a switch between
+       * The sidebar: Home; then Data, with Connections first (the owner's
+       * page: where the data comes from) and one entry per dataset the
+       * application holds, labelled with the area's name from the front door
+       * where one fits ('Session attendance' is Attendance), the dataset's
+       * own name otherwise. A dataset opens as a table, with a switch between
        * the rows that are theirs and the simulated rows the application was
        * built with -- kept apart, so nobody mistakes one for the other.
        */
+      nav.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-side], [data-tab]'); if (!b) return;
+        if (b.dataset.side === 'home') { e.preventDefault(); goHomeTab(); return; }
+        if (b.dataset.tab) { var ds = datasets.find(function (d) { return d.name === b.dataset.tab; }); if (ds) openView(ds); }
+        // Connections: data.js takes the link from here.
+      });
       var areas = [];
       try { var pd = JSON.parse((document.getElementById('ld-preview-data') || {}).textContent || '{}'); areas = Array.isArray(pd.nav) ? pd.nav : []; } catch (e) { areas = []; }
       areas = areas.filter(function (a) { return !/^(home|overview|dashboard|settings?|data)$/i.test(String(a).trim()); });
@@ -664,18 +659,15 @@
       var datasets = [];
       var activeTab = '';
       function drawTabs() {
-        if (!datasets.length) { tabs.hidden = true; return; }
-        tabs.hidden = false;
-        tabs.innerHTML = datasets.map(function (ds) {
-          var n = ds.own || 0;
-          return '<button type="button" class="ch-tab' + (ds.name === activeTab ? ' ch-tab--on' : '') + '" data-tab="' + escT(ds.name) + '">' + svg(iconFor(ds.label + ' ' + ds.name)) + '<span>' + escT(ds.label) + '</span><i class="ch-tab__count' + (n ? '' : ' ch-tab__count--none') + '" title="' + (n ? 'Your rows' : 'Nothing of yours yet; ' + (ds.sample || 0) + ' simulated') + '">' + (n || ds.sample || 0) + '</i></button>';
-        }).join('');
+        nav.innerHTML = '<button type="button" class="ch-side__item' + (!activeTab ? ' ch-side__item--on' : '') + '" data-side="home">' + svg('home') + '<span>Home</span></button>'
+          + '<p class="ch-side__group">' + svg('data') + '<span>Data</span></p>'
+          + '<a href="#data" class="ch-side__item ch-side__item--sub" id="ch-data-link" data-side="data">' + svg('link') + '<span>Connections</span></a>'
+          + datasets.map(function (ds) {
+            var n = ds.own || 0;
+            return '<button type="button" class="ch-side__item ch-side__item--sub' + (ds.name === activeTab ? ' ch-side__item--on' : '') + '" data-tab="' + escT(ds.name) + '">' + svg(iconFor(ds.label + ' ' + ds.name)) + '<span>' + escT(ds.label) + '</span><i class="ch-side__count' + (n ? '' : ' ch-side__count--none') + '" title="' + (n ? 'Your rows' : 'Nothing of yours yet; ' + (ds.sample || 0) + ' simulated') + '">' + (n || ds.sample || 0) + '</i></button>';
+          }).join('');
       }
-      tabs.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-tab]'); if (!b) return;
-        var ds = datasets.find(function (d) { return d.name === b.dataset.tab; });
-        if (ds) openView(ds);
-      });
+      drawTabs();
 
       // Asked when the application opens (show('app')), not at page load,
       // because that is when a session exists.
@@ -746,7 +738,6 @@
         viewTable.innerHTML = '';
         view.hidden = false; log.hidden = true; if (tryask) tryask.hidden = true;
         main.classList.remove('ch-main--welcome'); main.classList.add('ch-main--view');
-        nav.querySelectorAll('.ch-side__item').forEach(function (x) { x.classList.remove('ch-side__item--on'); });
         loadRows();
       }
       function goHomeTab() {
@@ -754,7 +745,6 @@
         drawTabs();
         view.hidden = true; log.hidden = false;
         main.classList.remove('ch-main--view');
-        nav.querySelectorAll('.ch-side__item').forEach(function (x) { x.classList.toggle('ch-side__item--on', x.dataset.side === 'home'); });
         if (viewTitle) viewTitle.textContent = appName;
         if (typeof sync === 'function') sync();
         log.scrollTop = 0; if (input) input.focus();

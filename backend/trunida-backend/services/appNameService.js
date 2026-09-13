@@ -7,11 +7,13 @@
  * like this one: the defect history is already in Jira, so nothing has to be
  * collected first." as a product name.
  *
- * A product has a name of one or two words. This asks the model for one from
- * the objective, the use case and the company, keeps it once it has it, and
- * falls back to something short and honest when the model is unavailable.
+ * The application carries the ORGANISATION'S name: it is their product, on
+ * their front door, for their people -- "Six Cricket Academy", not a name a
+ * model invented. Only when no organisation is on record does the model
+ * suggest one or two words from the objective, with a plain fallback when
+ * the model is unavailable. A name the customer typed themselves is kept.
  * Called where the name first matters -- when a build starts -- and again at
- * publish for blueprints built before this existed.
+ * publish and on the live-update sweep for blueprints named before this.
  */
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import UserProfile from '../models/UserProfile.js';
@@ -69,28 +71,48 @@ export async function suggestName({ objective = '', useCaseName = '', companyNam
   }
 }
 
+/** The organisation on record for this blueprint, or ''. */
+export async function organisationName(bp, userId = null) {
+  let name = String(bp?.companyName || '').trim();
+  if (!name && (userId || bp?.userId)) {
+    const profile = await UserProfile.findOne({ userId: userId || bp.userId }).select('orgName').lean().catch(() => null);
+    name = String(profile?.orgName || '').trim();
+  }
+  return /^your organisation$/i.test(name) ? '' : name.slice(0, 48);
+}
+
 /**
- * Make sure the blueprint has a short name, and return it. Keeps a name the
- * customer typed; replaces one that is a sentence; writes what it chose.
+ * Make sure the blueprint carries its name, and return it.
+ *
+ * In order: a name the customer typed (appNameSource 'customer') is theirs;
+ * the organisation's name, when one is on record; otherwise the model's one
+ * or two words, or the fallback. A name this service chose earlier
+ * (appNameSource 'model' or 'fallback') is replaced by the organisation's
+ * as soon as one is known, which is how applications named before this
+ * rule get their right name on the next sweep.
  */
 export async function ensureAppName(bp, { userId = null } = {}) {
   const current = String(bp?.appName || '').trim();
+  const source = String(bp?.appNameSource || '');
+  if (current && source === 'customer') return current;
+
+  const org = await organisationName(bp, userId);
+  if (org) return write(bp, org, 'organisation');
   if (isGoodName(current)) return current;
 
   const uc = resolveUseCase(bp);
   const useCaseName = uc?.source === 'approved-use-case' ? String(uc.name || '') : '';
-  let companyName = String(bp?.companyName || '').trim();
-  if (!companyName && (userId || bp?.userId)) {
-    const profile = await UserProfile.findOne({ userId: userId || bp.userId }).select('orgName').lean().catch(() => null);
-    companyName = String(profile?.orgName || '').trim();
-  }
+  const suggested = await suggestName({ objective: bp?.businessObjective, useCaseName, companyName: '' });
+  return suggested
+    ? write(bp, suggested, 'model')
+    : write(bp, fallbackName({ useCaseName, companyName: '', objective: bp?.businessObjective }), 'fallback');
+}
 
-  const name = (await suggestName({ objective: bp?.businessObjective, useCaseName, companyName }))
-    || fallbackName({ useCaseName, companyName, objective: bp?.businessObjective });
-
+async function write(bp, name, source) {
+  if (bp?.appName === name && bp?.appNameSource === source) return name;
   if (bp?._id) {
-    await TransformationBlueprint.updateOne({ _id: bp._id }, { $set: { appName: name } }).catch(() => {});
-    bp.appName = name;
+    await TransformationBlueprint.updateOne({ _id: bp._id }, { $set: { appName: name, appNameSource: source } }).catch(() => {});
   }
+  if (bp) { bp.appName = name; bp.appNameSource = source; }
   return name;
 }

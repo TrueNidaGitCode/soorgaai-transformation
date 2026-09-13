@@ -943,7 +943,7 @@ export async function setAppName(req, res) {
 
     const result = await TransformationBlueprint.updateOne(
       { _id: blueprintId, userId: req.user._id },
-      { $set: { appName } }
+      { $set: { appName, appNameSource: appName ? 'customer' : '' } }
     );
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: 'Blueprint not found.' });

@@ -58,7 +58,8 @@ function shortName(text) {
 }
 function appName(bp) {
   const given = (bp?.appName || '').trim();
-  if (given && given.split(/\s+/).length <= 3) return given;
+  // The organisation's name, or one the customer typed, is shown whole.
+  if (given && (['organisation', 'customer'].includes(bp?.appNameSource) || given.split(/\s+/).length <= 3)) return given;
   return shortName(given || useCaseLabel(bp)) || 'Your application';
 }
 

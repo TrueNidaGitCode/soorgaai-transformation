@@ -595,6 +595,8 @@ const transformationBlueprintSchema = new mongoose.Schema({
   // build, so it reaches the repository name, the running application's
   // title and its chat header rather than being a label added afterwards.
   appName: { type: String, default: '', trim: true, maxlength: 48 },
+  /** Who chose appName: 'customer' (typed), 'organisation', 'model' or 'fallback'. See appNameService. */
+  appNameSource: { type: String, enum: ['', 'customer', 'organisation', 'model', 'fallback'], default: '' },
   /** The application's front door -- headline, photo, preview -- written once by frontDoorService. */
   frontDoor: { type: mongoose.Schema.Types.Mixed, default: null },
 

@@ -10,7 +10,7 @@ const M = vi.hoisted(() => ({
   projectFor: vi.fn(), ensureRepo: vi.fn(), publish: vi.fn(), redeploy: vi.fn(), configured: vi.fn(() => true),
 }));
 vi.mock('../models/TransformationBlueprint.js', () => ({ default: { findById: (id) => ({ lean: () => M.findById(id) }), updateOne: M.bpUpdate } }));
-vi.mock('../models/HostedDeployment.js', () => ({ default: { updateOne: M.depUpdate, find: vi.fn() } }));
+vi.mock('../models/HostedDeployment.js', () => ({ default: { updateOne: M.depUpdate, find: vi.fn().mockResolvedValue([]) } }));
 vi.mock('../controllers/deliveryController.js', async () => {
   const real = await vi.importActual('../controllers/deliveryController.js');
   return { manifestHash: real.manifestHash, projectFor: M.projectFor };

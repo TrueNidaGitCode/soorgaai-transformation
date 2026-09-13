@@ -68,6 +68,27 @@ export async function updateOne(dep, { reason = 'sweep' } = {}) {
 }
 
 /**
+ * Deployments left 'attaching' -- by an update here, or by a Go Live nobody
+ * came back to look at -- are promoted the way the Yusu screen promotes
+ * them: by asking Railway. Otherwise an application updated by one sweep
+ * would never be seen by the next.
+ */
+export async function refreshAttaching() {
+  const deps = await HostedDeployment.find({ status: 'attaching', hosting: 'svarg', 'railway.serviceId': { $nin: ['', null] } });
+  for (const dep of deps) {
+    try {
+      const st = await getDeployTarget().status({ deployment: dep });
+      if (st.url && st.url !== dep.railway.url) dep.railway.url = st.url;
+      if (st.status && st.status !== dep.status) { dep.status = st.status; if (st.status === 'live' && !dep.liveAt) dep.liveAt = new Date(); }
+      if (st.detail) dep.statusMessage = st.detail;
+      await dep.save();
+    } catch (err) {
+      console.warn(`[live-update] status of ${dep.blueprintId} —`, err.message);
+    }
+  }
+}
+
+/**
  * Every live, Svarg-hosted application. Returns what happened to each so the
  * log can say so; never throws.
  */
@@ -79,6 +100,7 @@ export async function updateLiveApplications({ reason = 'sweep', limit = 50 } = 
   running = true;
   const report = { reason, updated: [], current: 0, failed: [] };
   try {
+    await refreshAttaching();
     const deps = await HostedDeployment.find({ status: 'live', hosting: 'svarg', 'railway.serviceId': { $nin: ['', null] } })
       .sort({ updatedAt: 1 }).limit(limit);
     for (const dep of deps) {

@@ -622,4 +622,4 @@ const transformationBlueprintSchema = new mongoose.Schema({
   domains: { type: [domainSchema], default: [] },
 }, { timestamps: true });
 
-export default mongoose.model('TransformationBlueprint', transformationBlueprintSchema);
+export default mongoose.models.TransformationBlueprint || mongoose.model('TransformationBlueprint', transformationBlueprintSchema);

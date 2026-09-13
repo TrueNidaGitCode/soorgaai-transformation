@@ -29,5 +29,6 @@ const EmailOtpSchema = new mongoose.Schema(
 // TTL — Mongo removes the doc once expiresAt passes
 EmailOtpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-const EmailOtp = mongoose.model('EmailOtp', EmailOtpSchema);
+// Guarded: a test that resets the module registry imports this twice.
+const EmailOtp = mongoose.models.EmailOtp || mongoose.model('EmailOtp', EmailOtpSchema);
 export default EmailOtp;

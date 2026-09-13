@@ -92,17 +92,18 @@ const transporter = smtpConfigured
     })
   : null;
 
-function otpSubject(code) { return `${code} is your Svarg sign-in code`; }
+function otpSubject(code, brand) { return `${code} is your ${brand} sign-in code`; }
 
-function otpText(code) {
-  return `Your Svarg sign-in code is: ${code}
+function otpText(code, brand) {
+  return `Your ${brand} sign-in code is: ${code}
 
 It expires in 10 minutes. If you didn't request this, you can ignore this email.`;
 }
 
-function otpHtml(code) {
+function otpHtml(code, brand) {
+  const safe = String(brand).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:420px;margin:0 auto;padding:24px">
-  <h2 style="margin:0 0 4px;color:#111">Svarg</h2>
+  <h2 style="margin:0 0 4px;color:#111">${safe}</h2>
   <p style="color:#444;font-size:14px">Use this code to sign in:</p>
   <p style="font-size:32px;font-weight:700;letter-spacing:6px;color:#111;margin:16px 0">${code}</p>
   <p style="color:#888;font-size:12.5px">The code expires in 10 minutes. If you didn't request it, you can safely ignore this email.</p>
@@ -179,16 +180,16 @@ async function sendMail({ to, replyTo, subject, text, html, headers, logLabel })
  * what to tell someone staring at an empty inbox, and it cannot do that if
  * "delivered" and "written to a log file" are the same return value.
  */
-export async function sendOtpEmail(to, code) {
+export async function sendOtpEmail(to, code, { brand = 'Svarg' } = {}) {
   if (!mailConfigured) {
     console.warn(`[mail] NOT CONFIGURED — OTP for ${to} was not emailed. The code is: ${code}`);
     return 'console';
   }
   await sendMail({
     to,
-    subject: otpSubject(code),
-    text:    otpText(code),
-    html:    otpHtml(code),
+    subject: otpSubject(code, brand),
+    text:    otpText(code, brand),
+    html:    otpHtml(code, brand),
     logLabel: 'OTP send',
   });
   return 'sent';

@@ -3,7 +3,7 @@ import jwt  from 'jsonwebtoken';
 import crypto from 'crypto';
 import { User } from '../models/user.js';
 import HostedDeployment from '../models/HostedDeployment.js';
-import { returnOrigin, signAssertion } from '../services/tenantAuthService.js';
+import { returnOrigin, signAssertion, isTenantCall, requestTenantOtp, verifyTenantOtp } from '../services/tenantAuthService.js';
 
 const JWT_SECRET    = process.env.JWT_SECRET;
 const FRONTEND_URL  = process.env.FRONTEND_URL || 'http://localhost:5500';
@@ -119,6 +119,49 @@ async function findOrCreateOAuthUser({ provider, providerUserId, email, name, pr
   await user.save();
   return user;
 }
+
+/**
+ * A code by email for a delivered application's person, requested and
+ * checked by the application's server with its tenant secret (never from a
+ * browser: the secret stays on the server, and so does the tenant id).
+ * The answer is the same assertion the Google path ends with.
+ */
+async function tenantCaller(req, res) {
+  const tenant = String(req.body?.tenant || '').trim();
+  const dep = /^[a-f0-9]{24}$/i.test(tenant) ? await HostedDeployment.findById(tenant).lean() : null;
+  const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!dep || !isTenantCall(dep, bearer)) {
+    res.status(401).json({ error: 'This application is not known to Svarg.' });
+    return null;
+  }
+  return dep;
+}
+
+export const tenantOtpRequest = async (req, res) => {
+  try {
+    const dep = await tenantCaller(req, res);
+    if (!dep) return;
+    const r = await requestTenantOtp({ deployment: dep, email: req.body?.email });
+    if (r.error) return res.status(r.status).json({ error: r.error });
+    return res.json({ ok: true, delivery: r.delivery });
+  } catch (err) {
+    console.error('[OAuth] tenant code request failed:', err.message);
+    return res.status(500).json({ error: 'The code could not be sent. Please try again.' });
+  }
+};
+
+export const tenantOtpVerify = async (req, res) => {
+  try {
+    const dep = await tenantCaller(req, res);
+    if (!dep) return;
+    const r = await verifyTenantOtp({ deployment: dep, email: req.body?.email, code: req.body?.code });
+    if (r.error) return res.status(r.status).json({ error: r.error });
+    return res.json({ assertion: r.assertion });
+  } catch (err) {
+    console.error('[OAuth] tenant code check failed:', err.message);
+    return res.status(500).json({ error: 'The code could not be checked. Please try again.' });
+  }
+};
 
 // ════════════════════════════════════════════════════════════════════════════
 // GOOGLE

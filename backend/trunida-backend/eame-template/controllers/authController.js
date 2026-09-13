@@ -1,17 +1,21 @@
 /**
  * Sign-in: who is using this application.
  *
- * People sign in with Google, through Svarg. This application runs at an
- * address Google was never told about, so it cannot do the exchange itself;
- * instead the door sends the person to Svarg's Google sign-in with this
- * application's tenant id (SVARG_AUTH_URL), Svarg does the exchange on the
- * callback it registered, and comes back here with an ASSERTION: the
- * person's Google identity, signed with a secret only this application and
- * Svarg know (SVARG_AUTH_SECRET). The assertion is good for minutes and for
- * this application only; from it, the application writes its own record of
- * the person (svarg_users, in its own database) and mints its own session,
- * which is what every request from then on carries. Svarg keeps nothing:
- * the person is this application's.
+ * People sign in with Google, or with a code sent to their email, through
+ * Svarg. This application runs at an address Google was never told about,
+ * so it cannot do the exchange itself; instead the door sends the person
+ * to Svarg's Google sign-in with this application's tenant id
+ * (SVARG_AUTH_URL), Svarg does the exchange on the callback it registered,
+ * and comes back here with an ASSERTION: the person's identity, signed with
+ * a secret only this application and Svarg know (SVARG_AUTH_SECRET). An
+ * address that is not a Google one gets a code instead: this server asks
+ * Svarg to send it (Svarg has the mail transport; this application does
+ * not) and to check it, with the same secret, and the answer is the same
+ * assertion. Either way it is good for minutes and for this application
+ * only; from it, the application writes its own record of the person
+ * (svarg_users, in its own database) and mints its own session, which is
+ * what every request from then on carries. Svarg keeps nothing: the person
+ * is this application's.
  *
  * Without SVARG_AUTH_URL -- an install someone runs themselves, a local
  * check -- there is no Google to offer, and the door falls back to the open
@@ -51,6 +55,7 @@ function backToDoor(res, req, params) {
 export function providers(req, res) {
   res.json({
     google: configured(),
+    email: configured(),
     public: process.env.APP_PUBLIC_ACCESS === 'true' && !configured(),
   });
 }
@@ -60,7 +65,57 @@ export function google(req, res) {
   if (!configured()) return backToDoor(res, req, { 'signin-error': 'Sign-in with Google is not set up on this application.' });
   const url = new URL(process.env.SVARG_AUTH_URL);
   url.searchParams.set('return_to', ownOrigin(req));
+  // The address already typed on the door, so Google opens on that account.
+  const hint = String(req.query.hint || '').trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(hint)) url.searchParams.set('login_hint', hint);
   res.redirect(url.toString());
+}
+
+// ── A code by email ─────────────────────────────────────────────────────────
+
+function tenantId() {
+  try { return new URL(process.env.SVARG_AUTH_URL).searchParams.get('tenant') || ''; } catch { return ''; }
+}
+
+/** Svarg's tenant sign-in endpoints, beside the Google one. */
+async function askSvarg(path, body) {
+  const base = new URL(process.env.SVARG_AUTH_URL);
+  const url = `${base.origin}/api/auth/oauth/tenant/${path}`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.SVARG_AUTH_SECRET}` },
+    body: JSON.stringify({ tenant: tenantId(), ...body }),
+  });
+  const data = await r.json().catch(() => ({}));
+  return { status: r.status, data };
+}
+
+/** POST { email }: Svarg sends the code. */
+export async function otpRequest(req, res) {
+  if (!configured()) return res.status(503).json({ error: 'Email sign-in is not set up on this application.' });
+  try {
+    const { status, data } = await askSvarg('otp/request', { email: String(req.body?.email || '') });
+    if (status !== 200) return res.status(status).json({ error: data.error || 'The code could not be sent.' });
+    return res.json({ ok: true, delivery: data.delivery || 'sent' });
+  } catch (err) {
+    console.error('[auth] code request failed —', err.message);
+    return res.status(502).json({ error: 'Svarg could not be reached to send the code. Please try again.' });
+  }
+}
+
+/** POST { email, code }: Svarg checks it, and a session comes back as JSON. */
+export async function otpVerify(req, res) {
+  if (!configured()) return res.status(503).json({ error: 'Email sign-in is not set up on this application.' });
+  try {
+    const { status, data } = await askSvarg('otp/verify', { email: String(req.body?.email || ''), code: String(req.body?.code || '') });
+    if (status !== 200 || !data.assertion) return res.status(status === 200 ? 502 : status).json({ error: data.error || 'The code could not be checked.' });
+    const session = await sessionFromAssertion(data.assertion);
+    if (session.error) return res.status(401).json({ error: session.error });
+    return res.json({ token: session.token });
+  } catch (err) {
+    console.error('[auth] code check failed —', err.message);
+    return res.status(502).json({ error: 'Svarg could not be reached to check the code. Please try again.' });
+  }
 }
 
 /**
@@ -74,26 +129,39 @@ export async function callback(req, res) {
 
   const assertion = String(req.query.assertion || '');
   if (!assertion || !configured()) return backToDoor(res, req, { 'signin-error': 'Sign-in did not complete. Please try again.' });
+  const session = await sessionFromAssertion(assertion);
+  if (session.error) return backToDoor(res, req, { 'signin-error': session.error });
+  return backToDoor(res, req, { token: session.token });
+}
 
+/**
+ * From Svarg's word on who this is to this application's own session:
+ * checked against the shared secret, this application's id as audience and
+ * Svarg as issuer; then the person recorded, and a session minted. What
+ * came back from Google and what came back from a code end here the same.
+ */
+async function sessionFromAssertion(assertion) {
   let who;
   try {
-    const tenant = new URL(process.env.SVARG_AUTH_URL).searchParams.get('tenant') || '';
-    who = jwt.verify(assertion, process.env.SVARG_AUTH_SECRET, { issuer: 'svarg', audience: tenant });
+    who = jwt.verify(assertion, process.env.SVARG_AUTH_SECRET, { issuer: 'svarg', audience: tenantId() });
   } catch (err) {
-    return backToDoor(res, req, { 'signin-error': 'That sign-in has expired or is not for this application. Please try again.' });
+    return { error: 'That sign-in has expired or is not for this application. Please try again.' };
   }
-
   const email = String(who.email || '').toLowerCase();
-  if (!email) return backToDoor(res, req, { 'signin-error': 'Google did not say who you are. Please try again.' });
+  if (!email) return { error: 'Svarg did not say who you are. Please try again.' };
 
   try {
     const now = new Date();
+    const provider = String(who.provider || 'google');
+    // A name Google gave is kept; a code has no name to give, and must not
+    // blank one already on record.
+    const set = { provider, lastSeenAt: now };
+    if (who.name) set.name = String(who.name);
+    if (who.picture) set.picture = String(who.picture);
+    if (who.sub) set.providerId = String(who.sub);
     const r = await usersCollection().findOneAndUpdate(
       { email },
-      {
-        $set: { name: String(who.name || ''), picture: String(who.picture || ''), provider: 'google', providerId: String(who.sub || ''), lastSeenAt: now },
-        $setOnInsert: { email, role: 'user', firstSeenAt: now },
-      },
+      { $set: set, $setOnInsert: { email, role: 'user', firstSeenAt: now, ...(who.name ? {} : { name: '' }) } },
       { upsert: true, returnDocument: 'after' },
     );
     const user = r?.value || r;
@@ -102,10 +170,10 @@ export async function callback(req, res) {
       process.env.JWT_SECRET || 'your_secret_key',
       { expiresIn: SESSION_TTL },
     );
-    return backToDoor(res, req, { token });
+    return { token };
   } catch (err) {
     console.error('[auth] could not record the sign-in —', err.message);
-    return backToDoor(res, req, { 'signin-error': 'The application could not record your sign-in. Please try again.' });
+    return { error: 'The application could not record your sign-in. Please try again.' };
   }
 }
 

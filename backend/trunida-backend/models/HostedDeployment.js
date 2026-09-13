@@ -112,4 +112,4 @@ const hostedDeploymentSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-export default mongoose.model('HostedDeployment', hostedDeploymentSchema);
+export default mongoose.models.HostedDeployment || mongoose.model('HostedDeployment', hostedDeploymentSchema);

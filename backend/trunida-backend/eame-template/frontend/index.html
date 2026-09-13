@@ -72,7 +72,20 @@
         <button type="button" class="si__close" id="ch-signin-close" aria-label="Close">&times;</button>
         <p class="si__eyebrow">__APP_NAME__</p>
         <h2 class="si__title" id="si-title">Log in or sign up</h2>
-        <p class="si__sub">Use the Google account you work with. There is nothing to set up: signing in the first time is signing up.</p>
+        <p class="si__sub" id="si-sub">Use the email address you work with. There is nothing to set up: signing in the first time is signing up.</p>
+        <form class="si__form" id="ch-email-form">
+          <label class="si__label" for="ch-email">Email address</label>
+          <input class="si__input" id="ch-email" type="email" autocomplete="email" placeholder="you@example.com" required>
+          <button type="submit" class="si__go" id="ch-email-go">Continue <span aria-hidden="true">&rarr;</span></button>
+        </form>
+        <form class="si__form" id="ch-code-form" hidden>
+          <p class="si__sent" id="ch-code-sent"></p>
+          <label class="si__label" for="ch-code">6-digit code</label>
+          <input class="si__input si__input--code" id="ch-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required>
+          <button type="submit" class="si__go" id="ch-code-go">Log in <span aria-hidden="true">&rarr;</span></button>
+          <p class="si__again"><a href="#" id="ch-code-back">Use a different address</a> &middot; <a href="#" id="ch-code-again">Send the code again</a></p>
+        </form>
+        <p class="si__or" id="si-or"><span>or</span></p>
         <button type="button" class="si__google" id="ch-google">
           <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.7 24c0-1.6.3-3.1.8-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.4-4.9 2.3-8.2 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
           Continue with Google
@@ -245,7 +258,10 @@
        the generated module does or when. -->
   <script>
   (function () {
-    var API = (window.CONFIG && window.CONFIG.API_BASE) || '';
+    // The server's origin. CONFIG.API_BASE ends in /api, and the paths
+    // below spell /api themselves -- a redirect built from the base went to
+    // /api/api/auth/google, which nothing answers.
+    var API = String((window.CONFIG && window.CONFIG.API_BASE) || window.location.origin).replace(/\/api\/?$/, '');
     var home = document.getElementById('ch-home');
     var greet = document.getElementById('ch-greet');
     var app = document.getElementById('ch-app');
@@ -286,15 +302,80 @@
       try { localStorage.removeItem('token'); localStorage.removeItem('ch-user'); sessionStorage.removeItem('ch-entered'); } catch (e) { /* fine */ }
       who = null;
     }
+    var emailForm = document.getElementById('ch-email-form');
+    var codeForm = document.getElementById('ch-code-form');
+    var emailInput = document.getElementById('ch-email');
+    var codeInput = document.getElementById('ch-code');
+    function panelSay(text) { panelNote.textContent = text || ''; panelNote.hidden = !text; }
     function openPanel(message) {
-      panelNote.textContent = message || '';
-      panelNote.hidden = !message;
+      panelSay(message);
       panel.hidden = false;
-      var g = document.getElementById('ch-google');
-      g.hidden = !(offer && offer.google);
-      if (!g.hidden) g.focus();
+      var google = !!(offer && offer.google), email = !!(offer && offer.email);
+      emailForm.hidden = !email;
+      codeForm.hidden = true;
+      document.getElementById('si-or').hidden = !(google && email);
+      document.getElementById('ch-google').hidden = !google;
+      document.getElementById('si-sub').textContent = email
+        ? 'Use the email address you work with. There is nothing to set up: signing in the first time is signing up.'
+        : 'Use the Google account you work with. There is nothing to set up: signing in the first time is signing up.';
+      if (email) emailInput.focus(); else if (google) document.getElementById('ch-google').focus();
     }
     function closePanel() { panel.hidden = true; }
+
+    /*
+     * An address first. A Google one goes to Google with the account
+     * preselected; any other gets a six-digit code by email, sent and
+     * checked by Svarg on this application's behalf, and the session comes
+     * back the same way Google's does.
+     */
+    function isGoogleAddress(email) { return /@(gmail|googlemail)\.com$/i.test(email); }
+    async function post(path, body) {
+      var r = await fetch(API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      var d = {}; try { d = await r.json(); } catch (e) { /* no body */ }
+      return { ok: r.ok, status: r.status, data: d };
+    }
+    async function sendCode(again) {
+      var email = emailInput.value.trim();
+      var go = document.getElementById('ch-email-go');
+      go.disabled = true; panelSay('');
+      try {
+        var r = await post('/api/auth/otp/request', { email: email });
+        if (!r.ok) { panelSay(r.data.error || 'The code could not be sent (' + r.status + ').'); return; }
+        document.getElementById('ch-code-sent').textContent = r.data.delivery === 'console'
+          ? 'The server is not set up to send email; the code is in its log.'
+          : 'A code is on its way to ' + email + '. It is good for ten minutes.';
+        emailForm.hidden = true; codeForm.hidden = false; document.getElementById('si-or').hidden = true; document.getElementById('ch-google').hidden = true;
+        if (!again) codeInput.value = '';
+        codeInput.focus();
+      } catch (e) { panelSay('Could not reach the server.'); }
+      finally { go.disabled = false; }
+    }
+    emailForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = emailInput.value.trim();
+      if (!email) return;
+      if (offer && offer.google && isGoogleAddress(email)) {
+        window.location.href = API + '/api/auth/google?hint=' + encodeURIComponent(email);
+        return;
+      }
+      sendCode(false);
+    });
+    codeForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var go = document.getElementById('ch-code-go');
+      go.disabled = true; panelSay('');
+      try {
+        var r = await post('/api/auth/otp/verify', { email: emailInput.value.trim(), code: codeInput.value.trim() });
+        if (!r.ok || !r.data.token) { panelSay(r.data.error || 'That did not work (' + r.status + ').'); return; }
+        try { localStorage.setItem('token', r.data.token); sessionStorage.removeItem('ch-entered'); } catch (err) { /* fine */ }
+        closePanel();
+        show('greet');
+        confirmWho();
+      } catch (err) { panelSay('Could not reach the server.'); }
+      finally { go.disabled = false; }
+    });
+    document.getElementById('ch-code-back').addEventListener('click', function (e) { e.preventDefault(); openPanel(''); });
+    document.getElementById('ch-code-again').addEventListener('click', function (e) { e.preventDefault(); sendCode(true); });
 
     /** Top right and the chat header: a name, or Log in. */
     function paintWho() {
@@ -316,8 +397,8 @@
     async function loadOffer() {
       try {
         var r = await fetch(API + '/api/auth/providers');
-        offer = r.ok ? await r.json() : { google: false, public: true };
-      } catch (e) { offer = { google: false, public: true }; }
+        offer = r.ok ? await r.json() : { google: false, email: false, public: true };
+      } catch (e) { offer = { google: false, email: false, public: true }; }
       return offer;
     }
 
@@ -372,7 +453,7 @@
       say('');
       if (token()) { show('greet'); return; }
       if (!offer) await loadOffer();
-      if (offer.google) { openPanel(''); return; }
+      if (offer.google || offer.email) { openPanel(''); return; }
       login.disabled = true;
       login.textContent = 'One moment…';
       if (await openSession()) show('greet');
@@ -416,7 +497,7 @@
     // comes back to the door.
     topLogin.addEventListener('click', async function () {
       if (!offer) await loadOffer();
-      if (offer.google) openPanel('');
+      if (offer.google || offer.email) openPanel('');
       else proceed();
     });
     document.getElementById('ch-logout').addEventListener('click', function () { forget(); paintWho(); goHome(); });

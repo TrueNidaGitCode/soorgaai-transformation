@@ -33,13 +33,17 @@ npm start
 
 Open the address the server prints. The page opens on a front door with
 Log in and Continue, then a welcome, then the chat. People sign in with
-Google, through Svarg: the door sends them to Svarg's Google sign-in with
+Google, or with a six-digit code sent to any other email address, through
+Svarg. For Google, the door sends them to Svarg's Google sign-in with
 this application's tenant id (`SVARG_AUTH_URL`), Svarg does the exchange on
 the callback it registered with Google, and comes back with a signed
 assertion of who they are (checked with `SVARG_AUTH_SECRET`; both were set
 by Svarg at go-live). From it the application writes its own record of the
 person in its own database (`svarg_users`) and mints its own 30-day
-session. Svarg keeps nothing about the person. Continue opens the welcome
+session. For a code, this server asks Svarg to send and check it with the
+same secret (Svarg has the mail transport; this application does not),
+and the answer is the same assertion. Svarg keeps nothing about the
+person. Continue opens the welcome
 when someone is signed in and the sign-in when nobody is.
 
 Without those two variables there is no Google to offer, and the door falls

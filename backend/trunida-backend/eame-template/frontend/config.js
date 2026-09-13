@@ -87,7 +87,8 @@
       && url.pathname.startsWith('/api/')
       && url.pathname !== '/api/session'
       // Asked before anyone is signed in; must not start a session to ask.
-      && url.pathname !== '/api/auth/providers';
+      && url.pathname !== '/api/auth/providers'
+      && url.pathname.indexOf('/api/auth/otp/') !== 0;
 
     if (!ours) return nativeFetch(input, init);
 

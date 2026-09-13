@@ -102,6 +102,19 @@ body {
 .si__google svg { width: 22px; height: 22px; }
 .si__google:hover { transform: translateY(-1px); box-shadow: 0 12px 30px -14px rgba(255,255,255,0.6); }
 .si__google:focus-visible { outline: 2px solid var(--ld-accent); outline-offset: 3px; }
+.si__form { display: grid; gap: 10px; text-align: left; }
+.si__label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+.si__input { width: 100%; box-sizing: border-box; padding: 13px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); color: #fff; font: inherit; font-size: 16px; }
+.si__input:focus { outline: 2px solid var(--ld-accent); outline-offset: 1px; border-color: transparent; }
+.si__input--code { font-size: 24px; letter-spacing: 0.4em; text-align: center; font-variant-numeric: tabular-nums; }
+.si__go { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px 20px; border: 0; border-radius: 12px; background: var(--ld-accent); color: #0B1220; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
+.si__go:disabled { opacity: 0.7; cursor: wait; }
+.si__go:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.si__sent { margin: 0 0 6px; font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.78); }
+.si__again { margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.55); text-align: center; }
+.si__again a { color: rgba(255,255,255,0.8); }
+.si__or { display: flex; align-items: center; gap: 12px; margin: 18px 0; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+.si__or::before, .si__or::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.14); }
 .si__note { margin: 18px 0 0; font-size: 14px; line-height: 1.5; color: #FFB4A8; }
 @media (prefers-reduced-motion: reduce) { .si__google { transition: none; } }
 .ld__content {

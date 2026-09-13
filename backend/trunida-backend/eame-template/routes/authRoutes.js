@@ -7,13 +7,15 @@
  */
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { providers, google, callback, me } from '../controllers/authController.js';
+import { providers, google, callback, me, otpRequest, otpVerify } from '../controllers/authController.js';
 
 const router = express.Router();
 
 router.get('/providers', providers);
 router.get('/google', google);
 router.get('/callback', callback);
+router.post('/otp/request', express.json(), otpRequest);
+router.post('/otp/verify', express.json(), otpVerify);
 router.get('/me', protect, me);
 
 export default router;

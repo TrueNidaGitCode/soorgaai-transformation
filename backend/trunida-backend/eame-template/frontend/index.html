@@ -250,9 +250,20 @@
        database that is theirs. Nothing goes to Svarg. data.js drives it. -->
   <section class="dt" id="ch-data" hidden aria-label="Your data">
     <header class="dt__head">
-      <a href="#" class="dt__back" id="dt-back">&larr; Back to the chat</a>
-      <h1 class="dt__title">Your data</h1>
-      <p class="dt__sub">Where your records come from, and what the application holds. Connect the places they already live and the application reads them; keep adding to your sheets, or say it in the chat, and it holds one record either way. Files are read here in your browser, and rows and credentials stay in this application — nothing goes to Svarg.</p>
+      <div class="dt__headrow">
+        <div class="dt__headtext">
+          <p class="dt__topline"><a href="#" class="dt__back" id="dt-back">&larr; Back to the chat</a><button type="button" class="dt__lock" id="dt-lock" hidden>Lock the Data page</button></p>
+          <p class="dt__eyebrow">Data sources</p>
+          <h1 class="dt__title">Connect your <em>data sources</em></h1>
+          <p class="dt__sub">Bring the places your records live together. The application reads them, so its answers are about your own records. Files are read here in your browser; rows and credentials stay in this application — nothing goes to Svarg.</p>
+        </div>
+        <!-- The sources, as two lit tiles and a spark between them. -->
+        <div class="dt__art" aria-hidden="true">
+          <span class="dt__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span>
+          <span class="dt__spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg></span>
+          <span class="dt__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"/><path d="M9 10a1 1 0 0 1 1-1h.5l1 2-.8.8a5 5 0 0 0 2.5 2.5l.8-.8 2 1v.5a1 1 0 0 1-1 1A6 6 0 0 1 9 10z"/></svg></span>
+        </div>
+      </div>
     </header>
 
     <div class="dt__layout">
@@ -274,37 +285,15 @@
     </div>
 
     <div class="dt__room" id="dt-room" hidden>
-      <!-- Sources first: where this industry keeps its data, from
-           data/sources.json, each with what it has brought in. -->
-      <section class="dt__section">
-        <h2 class="dt__h2">Where your data lives</h2>
-        <div class="dt-cards" id="dt-sources"></div>
-        <div class="dt-also" id="dt-also" hidden></div>
-        <!-- One panel for whichever way in is open: the folder's matching,
-             a file's columns, a WhatsApp export, a connector's form. -->
-        <div class="dt-panel" id="dt-panel" hidden></div>
-        <p class="dt-note" id="dt-note" hidden></p>
-      </section>
-      <!-- Then the record of what arrived: one row per dataset. -->
-      <section class="dt__section">
-        <h2 class="dt__h2">What the application holds</h2>
-        <div class="dt-tablewrap"><table class="dt-table" id="dt-datasets"></table></div>
-        <p class="dt__hint">A dataset's <em>key</em> is what tells its rows apart. A row that arrives with a key already held updates that row, wherever it came from — the sheet or the chat — so there is one record per key. A row a sheet no longer has is kept and counted, never deleted.</p>
-      </section>
-      <section class="dt__logwrap">
-        <h2 class="dt__h2">Imports</h2>
-        <ul class="dt__log" id="dt-log"></ul>
-      </section>
-      <section class="dt__next">
-        <h2 class="dt__h2">Where things are kept</h2>
-        <p class="dt__hint">Connected sources keep their credentials encrypted in this application's own database, and every row they bring says where it came from. Removing a source forgets its credentials and leaves the rows. Every conversation in this application is kept here too, and never sent anywhere.</p>
-      </section>
-      <section class="dt__signals" id="dt-signals">
-        <h2 class="dt__h2">What Svarg is told</h2>
-        <p class="dt__hint" id="dt-signals-note">The whole list. Nothing else leaves this application.</p>
-        <ul class="dt__siglist" id="dt-signals-list"></ul>
-      </section>
-      <p class="dt__lockrow"><button type="button" class="dt-btn dt-btn--quiet" id="dt-lock">Lock the Data page</button></p>
+      <!-- The sources, one card each, from data/sources.json in the
+           industry's order: documents (a folder) and WhatsApp for an
+           academy; Jira and Confluence for a software team. Whatever a
+           card does -- the upload, its progress, the matching, the
+           connection form, and what it holds afterwards -- happens inside
+           the card. What the datasets hold is on the tabs to the left. -->
+      <div class="dt-cards" id="dt-sources"></div>
+      <p class="dt-note" id="dt-note" hidden></p>
+      <p class="dt__foot">Rows stay in this application's own database, and every row says where it came from. A source's credentials are kept encrypted here and forgotten when it is removed; its rows stay.</p>
     </div>
       </div>
       <!-- A tab's data: the dataset the area stands for, as a table. Shown

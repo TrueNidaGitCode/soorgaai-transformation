@@ -99,7 +99,8 @@ live in its own Railway project with its own database. It is built as
   every application and listed in `services/eameSpec.js` `FIXED_PATHS`, so the
   model that writes the application cannot replace it: `server.js` (route
   discovery, seed-on-boot, the open session), the front door / welcome / chat
-  shell (`frontend/index.html`, `app.css`, `config.js`), the Data page and
+  shell (`frontend/index.html`, `app.css`, `config.js`), the Data page (one
+  card per industry source, the whole flow inside the card) and
   connectors, the feedback and signals plumbing, and sign-in.
 - **Generated code** -- models, services, controllers, routes, the seed script
   and `frontend/app.js`, written by Eame from the blueprint for that one use

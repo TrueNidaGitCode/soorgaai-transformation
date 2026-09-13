@@ -169,7 +169,7 @@ guessing; the prose above is why.
     "label": "Your folder of spreadsheets",
     "providers": ["upload"],
     "holds": ["enrolment", "attendance", "fees", "coaches", "schedule"],
-    "note": "Most academies run on one Excel sheet or Google Sheet per concern -- students, fees, the roster -- kept in a Drive folder or on one laptop. Upload the whole folder; each sheet is matched to what the application expects."
+    "note": "Most academies run on one Excel sheet or Google Sheet per concern -- students, fees, the roster -- kept in a Drive folder or on one laptop. A student's record begins on a paper or Google form, and its responses sheet is one more document in that folder. Upload the whole folder; each sheet is matched to what the application expects."
   },
   {
     "kind": "whatsapp",
@@ -177,13 +177,6 @@ guessing; the prose above is why.
     "providers": ["export", "business-account"],
     "holds": ["attendance", "communication", "leads"],
     "note": "Attendance is asked and answered in one group per batch. A group can only be read as an export (Export chat, without media). A WhatsApp Business number lets replies arrive live, but the Business API does not read groups: the academy asks each parent individually from the business number, which is a change in how the coach works and better data when it lands."
-  },
-  {
-    "kind": "form",
-    "label": "Enrolment form",
-    "providers": ["upload"],
-    "holds": ["enrolment"],
-    "note": "A student's record begins on a paper or Google form; its responses sheet belongs in the folder above."
   }
 ]
 ```

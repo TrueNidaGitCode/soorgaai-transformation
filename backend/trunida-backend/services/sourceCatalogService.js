@@ -93,7 +93,7 @@ export function sourcesFromDatasets(datasets = []) {
     if (/excel|xlsx|spreadsheet|google sheet|sheets|drive|onedrive|csv|folder/.test(t)) add('folder', 'Your folder of spreadsheets', 'Upload the folder; each sheet is matched to what the application expects.');
     if (/jira/.test(t)) add('jira', 'Jira', '');
     if (/confluence/.test(t)) add('confluence', 'Confluence', '');
-    if (/github|gitlab|bitbucket|repository|repo\b/.test(t)) add('github', 'GitHub', '');
+    if (/github|gitlab|bitbucket/.test(t)) add('github', 'GitHub', '');
     if (/form/.test(t)) add('form', 'A form', 'Its responses sheet belongs in your folder.');
   }
   return found;
@@ -105,17 +105,15 @@ const DEFAULT_SOURCES = [
 
 /**
  * The sources for one blueprint: the industry's, else the datasets', else
- * the default. Jira, Confluence and GitHub named by the datasets are kept
- * even when the industry has a block, because a dataset that says "Jira"
- * needs the Jira connector whatever the industry usually does.
+ * the default. When the industry has a block, the block is the list: it is
+ * knowledge of how the industry works, and a dataset whose typicalSource
+ * happens to say "repository" does not put a GitHub card in front of a
+ * cricket academy.
  */
 export function sourcesForBlueprint(bp) {
   const industry = bp?.industryFit?.industry || '';
-  const datasets = readDatasets(bp);
   const fromIndustry = industrySources(industry);
-  const fromDatasets = sourcesFromDatasets(datasets);
-  const list = fromIndustry.length ? [...fromIndustry] : [...fromDatasets];
-  for (const s of fromDatasets) if (CONNECTOR_MODULES[s.kind] && !list.some(l => l.kind === s.kind)) list.push(s);
+  const list = fromIndustry.length ? [...fromIndustry] : sourcesFromDatasets(readDatasets(bp));
   return list.length ? list : DEFAULT_SOURCES.map(s => ({ ...s }));
 }
 

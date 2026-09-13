@@ -1,33 +1,34 @@
 /**
  * The Data page -- the owner's, for connecting where their records live.
  *
- * The page opens on SOURCES, in the order this industry works (from
- * data/sources.json, which Eame wrote from the industry's knowledge): a
- * folder of spreadsheets, WhatsApp, a form, or Jira, Confluence and GitHub
- * for a team that runs on those. Each is one card with one way in:
+ * One card per source, in the order this industry works (from
+ * data/sources.json, which Eame wrote from the industry's knowledge): for
+ * an academy, DOCUMENTS and WHATSAPP BUSINESS; for a software team, Jira
+ * and Confluence. Everything a source does happens inside its card:
  *
- *   - a FOLDER: the whole folder at once. Every spreadsheet in it is read
- *     here, in the browser, matched to the dataset it fits by its columns,
- *     and the owner confirms the matching on one screen. Uploading the same
- *     folder again is a sync: rows are matched by the dataset's key, new
- *     ones added, changed ones updated, and a row a sheet no longer has is
- *     kept and counted, never deleted.
- *   - a FILE, onto one dataset, column by column -- for the odd file that
- *     belongs nowhere else.
- *   - a WHATSAPP chat export, parsed here into messages or attendance
- *     replies.
- *   - a LIVE SOURCE (Jira, Confluence, GitHub) connected to this application
- *     directly, credentials kept encrypted in its own database, rows pulled
- *     on demand or on a schedule.
+ *   - DOCUMENTS: the whole folder at once. Every spreadsheet in it is read
+ *     here, in the browser, with the progress shown as it goes; each sheet
+ *     is matched to the dataset it fits by its columns, the owner confirms
+ *     the matching, and the rows land. Uploading the same folder again is a
+ *     sync: rows are matched by the dataset's key, new ones added, changed
+ *     ones updated, and a row a sheet no longer has is kept and counted,
+ *     never deleted. A form's responses sheet is one more document. The
+ *     card then shows what it brought in.
+ *   - WHATSAPP BUSINESS: the owner's own Meta app, connected once; replies
+ *     and messages arrive as they are sent, and the card shows the number,
+ *     the last message and the sync controls. A group cannot be read by the
+ *     Business API, so an exported chat can be imported from the same card.
+ *   - A LIVE SOURCE (Jira, Confluence): connected to this application
+ *     directly, credentials kept encrypted in its own database.
  *
- * Under the sources, the record of what arrived: one row per dataset, its
- * key, what it holds and from where. Nothing goes to Svarg. Reached from the
- * chat header once the front door has been passed, and unlocked with the
- * owner key from the Svarg go-live screen.
+ * What each dataset holds is on the tabs to the left, drawn by the shell.
+ * Nothing goes to Svarg. Reached from the sidebar once the front door has
+ * been passed, and unlocked with the owner key from the Svarg go-live
+ * screen.
  *
  * Fixed runtime, like index.html: the same for every application, so it is
  * tested once. It drives only ids of its own (#dt-*) and one link in the
- * chat header.
+ * sidebar.
  */
 (function () {
   var API = (window.CONFIG && window.CONFIG.API_BASE) || '';
@@ -42,12 +43,7 @@
     keyInput: document.getElementById('dt-key'),
     keyNote: document.getElementById('dt-key-note'),
     sources: document.getElementById('dt-sources'),
-    also: document.getElementById('dt-also'),
-    panel: document.getElementById('dt-panel'),
     note: document.getElementById('dt-note'),
-    table: document.getElementById('dt-datasets'),
-    log: document.getElementById('dt-log'),
-    open: document.getElementById('ch-data-link'),
     back: document.getElementById('dt-back'),
     lock: document.getElementById('dt-lock'),
   };
@@ -59,7 +55,6 @@
     return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
   function say(el, text, bad) { if (!el) return; el.textContent = text || ''; el.hidden = !text; el.classList.toggle('dt-note--bad', !!bad); }
-  function when(d) { try { return new Date(d).toLocaleString(); } catch (e) { return ''; } }
   function ago(d) {
     if (!d) return '';
     var ms = Date.now() - new Date(d).getTime();
@@ -80,6 +75,7 @@
   function gate() {
     els.gate.hidden = false;
     els.room.hidden = true;
+    if (els.lock) els.lock.hidden = true;
     fetch(API + '/api/data/owner-status').then(function (r) { return r.ok ? r.json() : { configured: false }; })
       .then(function (d) {
         say(els.keyNote, d.configured ? '' : 'No owner key is set on this application, so nothing can be imported yet. If it runs on Svarg, the key is on the go-live screen; if you host it yourself, set APP_OWNER_KEY.', !d.configured);
@@ -89,6 +85,7 @@
   async function enter() {
     els.gate.hidden = true;
     els.room.hidden = false;
+    if (els.lock) els.lock.hidden = false;
     await refresh();
   }
 
@@ -138,7 +135,7 @@
     }
   });
 
-  els.lock.addEventListener('click', function () {
+  if (els.lock) els.lock.addEventListener('click', function () {
     ownerToken = '';
     try { localStorage.removeItem('ownerToken'); } catch (e) { /* fine */ }
     gate();
@@ -151,8 +148,9 @@
   var kinds = [];        // connector kinds this application shipped with
   var connectors = [];   // what is connected, across datasets
   var imports = [];
+  var open = {};         // kind -> the flow open inside that card, if any
 
-  var SOURCE_LABEL = { own: 'a file', folder: 'your folder', whatsapp: 'WhatsApp export', 'whatsapp-business': 'WhatsApp Business', chat: 'the chat', jira: 'Jira', confluence: 'Confluence', github: 'GitHub', sample: 'sample' };
+  var SOURCE_LABEL = { own: 'a file', folder: 'your documents', whatsapp: 'WhatsApp export', 'whatsapp-business': 'WhatsApp Business', chat: 'the chat', jira: 'Jira', confluence: 'Confluence', github: 'GitHub', sample: 'sample' };
   function sourceLabel(s) { return SOURCE_LABEL[s] || s || 'a file'; }
 
   async function refresh() {
@@ -169,105 +167,119 @@
         connectors = c.connectors || [];
       } catch (err) { kinds = []; connectors = []; }
       renderSources();
-      renderTable();
-      renderLog();
-      renderSignals();
     } catch (err) { /* the gate said why */ }
   }
 
-  // ── What Svarg is told ────────────────────────────────────────────────────
-
-  async function renderSignals() {
-    var list = document.getElementById('dt-signals-list');
-    var note = document.getElementById('dt-signals-note');
-    if (!list) return;
-    try {
-      var s = await ownerJson('/api/signals');
-      var names = Object.keys(s.sends || {});
-      list.innerHTML = names.map(function (k) { return '<li><code>' + esc(k) + '</code><span>' + esc(s.sends[k]) + '</span></li>'; }).join('');
-      var kept = s.kept || {};
-      note.textContent = (s.configured ? 'The whole list; nothing else leaves this application.' : 'Reporting to Svarg is off on this application: nothing leaves it.')
-        + ' Kept here: ' + (kept.conversations || 0) + ' conversations and ' + (kept.feedback || 0) + ' votes.';
-    } catch (err) { list.innerHTML = ''; }
-  }
-
-  // ── Where your data lives ─────────────────────────────────────────────────
+  // ── The cards ─────────────────────────────────────────────────────────────
 
   var ICON = {
-    folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+    folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
     whatsapp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"/><path d="M9 10a1 1 0 0 1 1-1h.5l1 2-.8.8a5 5 0 0 0 2.5 2.5l.8-.8 2 1v.5a1 1 0 0 1-1 1A6 6 0 0 1 9 10z"/></svg>',
-    form: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
-    file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
     live: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>',
+    upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>',
+    tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>',
   };
 
-  function lastImport(source) {
-    return imports.find(function (e) { return e.source === source; }) || null;
-  }
-  function importsOf(source) {
-    return imports.filter(function (e) { return e.source === source; });
+  var DEFAULT_FOLDER = { kind: 'folder', label: 'Documents', providers: ['upload'], note: 'Upload the folder your records are kept in; each sheet is matched to what the application expects.' };
+
+  function importsOf(source) { return imports.filter(function (e) { return e.source === source; }); }
+
+  /**
+   * The cards to draw: the industry's sources, with a form and the odd
+   * file folded into Documents -- a form's responses sheet is one more
+   * document in the folder. A connector that shipped without being named
+   * (the WhatsApp Business module behind the WhatsApp card) is not a card
+   * of its own.
+   */
+  function cards() {
+    var list = sources.length ? sources.slice() : [DEFAULT_FOLDER];
+    var folded = list.some(function (s) { return s.kind === 'form' || s.kind === 'file'; });
+    list = list.filter(function (s) { return s.kind !== 'form' && s.kind !== 'file'; });
+    if (folded && !list.some(function (s) { return s.kind === 'folder'; })) list.unshift(DEFAULT_FOLDER);
+    return list;
   }
 
   function renderSources() {
-    var list = sources.length ? sources.slice() : [{ kind: 'folder', label: 'Your folder of spreadsheets', providers: ['upload'], note: 'Upload the folder your records are kept in; each sheet is matched to what the application expects.' }];
-    // A connector this application shipped with is a source too, even if the
-    // industry did not list it first.
-    kinds.forEach(function (k) { if (!list.some(function (s) { return s.kind === k.kind || (s.kind === 'whatsapp' && k.kind === 'whatsapp-business'); })) list.push({ kind: k.kind, label: k.label, providers: ['live'], note: k.help, also: true }); });
-    var main = list.filter(function (s) { return !s.also; });
-    var also = list.filter(function (s) { return s.also; });
-    els.sources.innerHTML = main.map(renderSource).join('');
-    els.also.hidden = !also.length;
-    els.also.innerHTML = also.length ? '<span class="dt-also__label">Also</span>' + also.map(function (s) { return '<button type="button" class="dt-chip" data-open="' + esc(s.kind) + '">' + esc(s.label) + '</button>'; }).join('') : '';
+    els.sources.innerHTML = cards().map(renderCard).join('');
     if (!datasets.length) say(els.note, 'This application lists no datasets to bring records onto. It was built without sample data, so its seed script says what file it expects.', true);
   }
 
-  function renderSource(s) {
-    var status = '', action = '', tone = '';
-    var mine = connectors.filter(function (c) { return c.kind === s.kind; });
-    // A card's kind and a connection's kind differ for WhatsApp: the card is
-    // the source, the connection is the business account.
+  /** Everything one card shows, in one place: title, status, the list, the button, and what it holds. */
+  function describe(s) {
+    var d = { kind: s.kind, icon: ICON.live, title: s.label, note: s.note || '', on: false, status: 'Not connected', canLabel: 'You can upload', can: [], go: '', goAction: '', alt: '', held: '' };
     if (s.kind === 'folder') {
       var f = importsOf('folder');
+      d.icon = ICON.folder; d.title = 'Documents';
+      d.note = 'Upload the folder your records are kept in — every spreadsheet in it is read here and matched to what the application expects.';
+      d.can = ['A whole folder at once', 'Excel workbooks, every tab', 'CSV and text exports', 'Form responses sheets'];
       if (f.length) {
         var files = {}; f.forEach(function (e) { (e.origin || '').split(', ').forEach(function (n) { if (n) files[n] = 1; }); });
-        status = plural(Object.keys(files).length, 'file') + ' read · last ' + ago(f[0].at); tone = 'on';
-      } else status = 'Not read yet';
-      action = '<label class="dt-btn dt-btn--file">Upload the folder<input type="file" webkitdirectory directory multiple data-folder="1"></label>'
-        + '<label class="dt-btn dt-btn--quiet dt-btn--file">Add a file<input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" data-onefile="1"></label>';
+        d.on = true; d.status = plural(Object.keys(files).length, 'sheet') + ' read · ' + ago(f[0].at);
+        d.held = heldFromFolder(f);
+      }
+      d.go = f.length ? 'Upload the folder again' : 'Connect documents'; d.goAction = 'folder';
+      d.alt = '<label>Add one file<input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" data-onefile="1"></label>';
     } else if (s.kind === 'whatsapp') {
-      var w = lastImport('whatsapp');
       var biz = kinds.find(function (x) { return x.kind === 'whatsapp-business'; });
-      mine = connectors.filter(function (c) { return c.kind === 'whatsapp-business'; });
-      if (mine.length) { status = 'Business number connected' + (mine[0].lastSyncAt ? ' · last message landed ' + ago(mine[0].lastSyncAt) : ' · waiting for the first message'); tone = 'on'; }
-      else { status = w ? plural(w.rows, 'row') + ' from an export · last ' + ago(w.at) : 'Not connected'; tone = w ? 'on' : ''; }
+      var mine = connectors.filter(function (c) { return c.kind === 'whatsapp-business'; });
+      var w = importsOf('whatsapp');
       var providers = s.providers || ['export'];
-      action = (biz && providers.indexOf('business-account') !== -1 ? '<button type="button" class="dt-btn" data-open="whatsapp-business">' + (mine.length ? 'Connect another number' : 'Connect a business account') + '</button>' : '')
-        + (providers.indexOf('export') !== -1 ? '<button type="button" class="dt-btn' + (biz ? ' dt-btn--quiet' : '') + '" data-open="whatsapp">Import an exported chat</button>' : '')
-        + (!biz && providers.indexOf('business-account') !== -1 ? '<span class="dt-card__soon" title="A WhatsApp Business number, so replies arrive here as they are sent. Not shipped with this application.">Business account · not on this application</span>' : '');
-    } else if (s.kind === 'form') {
-      status = 'Its responses sheet goes in your folder';
-      action = '<label class="dt-btn dt-btn--quiet dt-btn--file">Upload the responses sheet<input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" data-onefile="1"></label>';
-    } else if (s.kind === 'file') {
-      var o = lastImport('own');
-      status = o ? plural(o.rows, 'row') + ' · last ' + ago(o.at) : 'Nothing yet';
-      action = '<label class="dt-btn dt-btn--quiet dt-btn--file">Add a file<input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" data-onefile="1"></label>';
+      d.icon = ICON.whatsapp; d.title = biz ? 'WhatsApp Business' : 'WhatsApp'; d.canLabel = 'You can get';
+      d.note = biz ? 'Connect your WhatsApp Business account, so replies and messages arrive here as they are sent.' : 'Export a chat from WhatsApp and import it here; the replies are read as attendance or as messages.';
+      d.can = biz ? ['Incoming and outgoing messages', 'Attendance replies, per person, per day', 'Contact names and numbers', 'A group, through its exported chat'] : ['Attendance replies, per person, per day', 'Every message in a chat', 'Who sent what, and when'];
+      if (mine.length) { d.on = true; d.status = 'Connected' + (mine[0].lastSyncAt ? ' · last message ' + ago(mine[0].lastSyncAt) : ' · waiting for the first message'); d.held = '<ul class="dt-src__list">' + mine.map(renderConnector).join('') + '</ul>'; }
+      else if (w.length) { d.on = true; d.status = plural(w[0].rows, 'row') + ' from an export · ' + ago(w[0].at); }
+      if (biz && providers.indexOf('business-account') !== -1) {
+        d.go = mine.length ? 'Connect another number' : 'Connect WhatsApp Business'; d.goAction = 'whatsapp-business';
+        if (providers.indexOf('export') !== -1) d.alt = '<button type="button" data-open="whatsapp">Import an exported chat</button>';
+      } else {
+        d.go = w.length ? 'Import another export' : 'Import an exported chat'; d.goAction = 'whatsapp';
+      }
     } else {
       // A live source: connected once per dataset it feeds.
       var k = kinds.find(function (x) { return x.kind === s.kind; });
-      if (!k) { status = 'Not available on this application'; }
-      else if (mine.length) { status = plural(mine.length, 'connection') + (mine[0].lastSyncAt ? ' · last synced ' + ago(mine[0].lastSyncAt) : ' · not synced yet'); tone = 'on'; }
-      else status = 'Not connected';
-      action = k ? '<button type="button" class="dt-btn" data-open="' + esc(s.kind) + '">' + (mine.length ? 'Connect another' : 'Connect') + '</button>' : '';
+      var conns = connectors.filter(function (c) { return c.kind === s.kind; });
+      d.canLabel = 'You can get';
+      d.can = (k && k.provides && k.provides.length) ? k.provides.slice(0, 4) : ['Its records, pulled on demand or on a schedule', 'Every row marked with where it came from'];
+      if (k) d.note = k.help || d.note;
+      if (!k) d.status = 'Not available on this application';
+      else if (conns.length) { d.on = true; d.status = plural(conns.length, 'connection') + (conns[0].lastSyncAt ? ' · last synced ' + ago(conns[0].lastSyncAt) : ' · not synced yet'); d.held = '<ul class="dt-src__list">' + conns.map(renderConnector).join('') + '</ul>'; }
+      if (k) { d.go = conns.length ? 'Connect another' : 'Connect ' + s.label; d.goAction = s.kind; }
     }
-    var icon = ICON[s.kind] || ICON.live;
-    return '<article class="dt-card dt-card--' + esc(s.kind) + '" data-card="' + esc(s.kind) + '">'
-      + '<div class="dt-card__head"><span class="dt-card__icon" aria-hidden="true">' + icon + '</span><div><h3 class="dt-card__title">' + esc(s.label) + '</h3>'
-      + '<p class="dt-card__status' + (tone ? ' dt-card__status--on' : '') + '">' + esc(status) + '</p></div></div>'
-      + (s.note ? '<p class="dt-card__note">' + esc(s.note) + '</p>' : '')
-      + (s.holds && s.holds.length ? '<p class="dt-card__holds">Usually holds: ' + esc(s.holds.join(', ')) + '</p>' : '')
-      + (mine.length ? '<ul class="dt-src__list">' + mine.map(renderConnector).join('') + '</ul>' : '')
-      + '<div class="dt-card__actions">' + action + '</div>'
-      + '</article>';
+    return d;
+  }
+
+  /** What the last upload of the folder brought in, sheet by sheet. */
+  function heldFromFolder(f) {
+    var latest = new Date(f[0].at).getTime();
+    var batch = f.filter(function (e) { return latest - new Date(e.at).getTime() < 5 * 60e3; });
+    return '<div class="dt-done"><p class="dt-done__line">' + ICON.tick + ' ' + plural(batch.length, 'dataset') + ' updated ' + esc(ago(f[0].at)) + '</p>'
+      + '<ul class="dt-done__list">' + batch.map(function (e) {
+        var what = [];
+        if (e.added) what.push('+' + e.added);
+        if (e.updated) what.push(e.updated + ' changed');
+        if (e.missing) what.push('<em>' + e.missing + ' gone from the sheet, kept</em>');
+        return '<li><span><b>' + esc(e.origin || sourceLabel(e.source)) + '</b> &rarr; ' + esc(e.datasetName) + '</span><span>' + (what.length ? what.join(', ') : plural(e.rows, 'row')) + '</span></li>';
+      }).join('') + '</ul></div>';
+  }
+
+  function renderCard(s) {
+    var d = describe(s);
+    var isOpen = !!open[s.kind];
+    var body = isOpen ? open[s.kind].html
+      : d.held ? d.held
+      : '<p class="dt-card__label">' + esc(d.canLabel) + '</p><ul class="dt-card__can">' + d.can.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>';
+    var foot = isOpen ? '' : '<div class="dt-card__foot">'
+      + (d.goAction ? '<button type="button" class="dt-card__go' + (d.on ? ' dt-card__go--quiet' : '') + '" data-open="' + esc(d.goAction) + '">' + esc(d.go) + ' <span aria-hidden="true">&rarr;</span></button>' : '')
+      + (d.alt ? '<p class="dt-card__alt">' + d.alt + '</p>' : '')
+      + '</div>';
+    return '<article class="dt-card' + (d.on ? ' dt-card--on' : '') + (isOpen ? ' dt-card--open' : '') + '" data-card="' + esc(s.kind) + '">'
+      + '<div class="dt-card__head"><span class="dt-card__icon" aria-hidden="true">' + d.icon + '</span>'
+      + '<div><h3 class="dt-card__title">' + esc(d.title) + '</h3><p class="dt-card__note">' + esc(d.note) + '</p></div>'
+      + '<span class="dt-card__dot' + (d.on ? ' dt-card__dot--on' : '') + '">' + esc(d.on ? 'Connected' : 'Not connected') + '</span></div>'
+      + (d.on && !isOpen ? '<p class="dt-card__label">' + esc(d.status) + '</p>' : '')
+      + '<div class="dt-card__body" data-body>' + body + '</div>'
+      + foot + '</article>';
   }
 
   function renderConnector(c) {
@@ -275,7 +287,7 @@
     if (c.status === 'error') meta = '<span class="dt-conn__meta dt-conn__meta--bad">' + esc(c.lastError || 'The last sync failed.') + '</span>';
     else if (c.status === 'syncing') meta = '<span class="dt-conn__meta">Syncing…</span>';
     else if (c.lastSyncAt) meta = '<span class="dt-conn__meta"><b>' + c.lastRows + ' rows</b> into ' + esc(c.datasetName) + ' · ' + esc(ago(c.lastSyncAt)) + '</span>';
-    else meta = '<span class="dt-conn__meta">Into ' + esc(c.datasetName) + ' · not synced yet</span>';
+    else meta = '<span class="dt-conn__meta">Into ' + esc(c.datasetName) + ' · nothing has arrived yet</span>';
     var sched = ['manual', 'hourly', 'daily'].map(function (s) {
       return '<option value="' + s + '"' + (c.schedule === s ? ' selected' : '') + '>' + (s === 'manual' ? 'On demand' : s === 'hourly' ? 'Every hour' : 'Every day') + '</option>';
     }).join('');
@@ -288,36 +300,34 @@
       + '</span></li>';
   }
 
-  // ── What the application holds ────────────────────────────────────────────
+  // ── A flow inside a card ──────────────────────────────────────────────────
 
-  function renderTable() {
-    if (!datasets.length) { els.table.innerHTML = ''; return; }
-    els.table.innerHTML = '<thead><tr><th>Dataset</th><th>Key</th><th>Holds</th><th>From</th><th>Last change</th><th></th></tr></thead><tbody>'
-      + datasets.map(function (d, i) {
-        var own = d.held > 0 || !!d.own;
-        var from = own ? Object.keys(d.bySource || {}).map(function (s) { return sourceLabel(s) + ' ' + d.bySource[s]; }).join(' · ') : 'sample data';
-        var holds = own ? plural(d.held || (d.own ? d.own.rows : 0), 'row') + (d.missing ? ' <em class="dt-table__missing" title="Rows a sheet no longer has: kept, never deleted">' + d.missing + ' gone from the sheet</em>' : '') : plural(d.sampleRows || 0, 'sample row');
-        return '<tr>'
-          + '<td><strong>' + esc(d.name) + '</strong><span class="dt-table__cols" title="' + esc(d.columns.join(', ')) + '">' + plural(d.columns.length, 'column') + '</span></td>'
-          + '<td><code>' + esc(d.key || '—') + '</code></td>'
-          + '<td>' + holds + '</td>'
-          + '<td>' + esc(from) + '</td>'
-          + '<td>' + (d.lastChange ? esc(ago(d.lastChange)) : '—') + '</td>'
-          + '<td class="dt-table__act"><span class="dt-pill' + (own ? ' dt-pill--on' : '') + '">' + (own ? 'your data' : 'sample') + '</span>'
-          + '<label class="dt-mini dt-btn--file">Import a file<input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" data-import="' + i + '"></label></td>'
-          + '</tr>';
-      }).join('') + '</tbody>';
+  /** The card a flow belongs to: WhatsApp's two ways in share one card. */
+  function cardKind(kindName) { return kindName === 'whatsapp-business' ? 'whatsapp' : kindName; }
+  function bodyOf(kind) { return page.querySelector('[data-card="' + kind + '"] [data-body]'); }
+
+  function openFlow(kind, html, state) {
+    open[kind] = Object.assign({ html: html }, state || {});
+    var card = page.querySelector('[data-card="' + kind + '"]');
+    if (!card) { renderSources(); card = page.querySelector('[data-card="' + kind + '"]'); }
+    if (!card) { delete open[kind]; return; }
+    card.classList.add('dt-card--open');
+    var foot = card.querySelector('.dt-card__foot'); if (foot) foot.remove();
+    var status = card.querySelector(':scope > .dt-card__label'); if (status) status.remove();
+    bodyOf(kind).innerHTML = html;
+    say(els.note, '');
   }
-
-  function renderLog() {
-    if (!imports.length) { els.log.innerHTML = '<p class="dt-empty">Nothing brought in yet.</p>'; return; }
-    els.log.innerHTML = imports.slice(0, 30).map(function (e) {
-      var what = [];
-      if (e.added) what.push('+' + e.added);
-      if (e.updated) what.push(e.updated + ' changed');
-      if (e.missing) what.push(e.missing + ' gone');
-      return '<li><span>' + esc(when(e.at)) + '</span><span>' + esc(sourceLabel(e.source)) + (e.origin ? ' · ' + esc(e.origin) : '') + '</span><span>&rarr; ' + esc(e.datasetName) + '</span><span>' + esc(what.length ? what.join(', ') : plural(e.rows, 'row')) + '</span></li>';
-    }).join('');
+  function closeFlow(kind) { delete open[kind]; renderSources(); }
+  function flowErr(kind, text) {
+    var b = bodyOf(kind); if (!b) { say(els.note, text, true); return; }
+    var p = b.querySelector('.dt-card__err');
+    if (!p) { p = document.createElement('p'); p.className = 'dt-card__err'; b.appendChild(p); }
+    p.textContent = text;
+  }
+  function progress(kind, done, total, what) {
+    var b = bodyOf(kind); if (!b) return;
+    var pct = total ? Math.round(100 * done / total) : 0;
+    b.innerHTML = '<div class="dt-prog"><div class="dt-prog__row"><b>' + esc(what) + '</b><span>' + done + ' of ' + total + '</span></div><div class="dt-prog__bar"><div class="dt-prog__fill" style="width:' + pct + '%"></div></div></div>';
   }
 
   // ── Reading files ─────────────────────────────────────────────────────────
@@ -463,16 +473,17 @@
     return best;
   }
 
-  function openPanel(html) { els.panel.hidden = false; els.panel.innerHTML = html; say(els.note, ''); els.panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
-  function closePanel() { els.panel.hidden = true; els.panel.innerHTML = ''; els.panel._grid = null; els.panel._sheets = null; }
+  function datasetOptions(selected) {
+    return datasets.map(function (d, i) { return '<option value="' + i + '"' + (i === selected ? ' selected' : '') + '>' + esc(d.name) + '</option>'; }).join('');
+  }
 
   // ── A file onto one dataset ───────────────────────────────────────────────
 
-  function showMapping(i, grid, source, lead, origin, complete) {
+  function showMapping(kind, i, grid, source, lead, origin, complete) {
     var d = datasets[i];
     var header = grid.header, body = grid.body;
     var guess = guessMapping(d.columns, header);
-    openPanel('<p class="dt-panel__head">' + esc(lead || '') + ' Match your columns to the ones <strong>' + esc(d.name) + '</strong> expects.</p>'
+    openFlow(kind, '<p class="dt-panel__head">' + esc(lead || '') + ' Match your columns to the ones <strong>' + esc(d.name) + '</strong> expects.</p>'
       + '<table class="dt-map__table"><thead><tr><th>Expected</th><th>Your column</th><th>First value</th></tr></thead><tbody>'
       + d.columns.map(function (c, ti) {
         return '<tr><td><code>' + esc(c) + '</code>' + (d.key && d.key.split(' + ').indexOf(c) !== -1 ? ' <span class="dt-key">key</span>' : '') + '</td><td><select data-target="' + ti + '">'
@@ -482,19 +493,15 @@
       }).join('')
       + '</tbody></table>'
       + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-go="' + i + '">Bring in ' + body.length + ' rows</button>'
-      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
-    els.panel._grid = { header: header, body: body, source: source || 'own', origin: origin || '', complete: complete !== false };
-    els.panel.querySelectorAll('select[data-target]').forEach(function (sel) {
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>',
+      { grid: { header: header, body: body, source: source || 'own', origin: origin || '', complete: complete !== false } });
+    bodyOf(kind).querySelectorAll('select[data-target]').forEach(function (sel) {
       sel.addEventListener('change', function () {
         var si = Number(sel.value);
-        var cell = els.panel.querySelector('[data-sample="' + sel.dataset.target + '"]');
+        var cell = bodyOf(kind).querySelector('[data-sample="' + sel.dataset.target + '"]');
         if (cell) cell.textContent = si >= 0 ? (body[0][si] || '') : '';
       });
     });
-  }
-
-  function datasetOptions(selected) {
-    return datasets.map(function (d, i) { return '<option value="' + i + '"' + (i === selected ? ' selected' : '') + '>' + esc(d.name) + '</option>'; }).join('');
   }
 
   /** One file with no dataset named yet: ask which, then match. */
@@ -503,50 +510,63 @@
       var grid = await readFile(file);
       var header = grid[0].map(function (h) { return String(h).trim(); });
       var best = bestDataset(header);
-      openPanel('<p class="dt-panel__head"><strong>' + esc(file.name) + '</strong>: ' + (grid.length - 1) + ' rows. Which dataset is it?</p>'
+      openFlow('folder', '<p class="dt-panel__head"><strong>' + esc(file.name) + '</strong>: ' + (grid.length - 1) + ' rows. Which dataset is it?</p>'
         + '<div class="dt-map__actions"><select class="dt-select" data-pick-dataset="1">' + datasetOptions(best >= 0 ? best : 0) + '</select>'
-        + '<button type="button" class="dt-btn" data-pick-go="1">Match the columns</button><button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
-      els.panel._pending = { grid: grid, header: header, origin: file.name };
-    } catch (err) { say(els.note, err.message, true); }
+        + '<button type="button" class="dt-btn" data-pick-go="1">Match the columns</button><button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>',
+        { pending: { grid: grid, header: header, origin: file.name } });
+    } catch (err) { flowErr('folder', err.message); }
   }
 
   // ── The folder ────────────────────────────────────────────────────────────
 
+  /** The way in: choose the folder. */
+  function openFolder() {
+    openFlow('folder', '<div class="dt-drop"><span class="dt-drop__icon" aria-hidden="true">' + ICON.upload + '</span>'
+      + '<p class="dt-drop__text">Choose the folder your records are kept in</p>'
+      + '<p class="dt-drop__hint">Every spreadsheet in it is read here, in your browser. You check where each one goes before anything lands.</p>'
+      + '<label class="dt-card__go">Choose the folder<input type="file" webkitdirectory directory multiple data-folder="1"></label></div>'
+      + '<p class="dt-card__alt"><label>Add one file instead<input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" data-onefile="1"></label> · <button type="button" data-cancel="1">Cancel</button></p>');
+  }
+
   /**
-   * Every spreadsheet in the folder, read here and matched to a dataset by
-   * its columns; the owner confirms on one screen. Two sheets that fit the
-   * same dataset (a fee sheet per year) land together as one; a sheet that
-   * fits nothing is listed as not used, and a file that is not a
-   * spreadsheet is named so the owner knows it was seen.
+   * Every spreadsheet in the folder, read here with the progress shown and
+   * matched to a dataset by its columns; the owner confirms in the card.
+   * Two sheets that fit the same dataset (a fee sheet per year) land
+   * together as one; a sheet that fits nothing is listed as not used, and
+   * a file that is not a spreadsheet is named so the owner knows it was
+   * seen.
    */
   async function folder(files) {
-    var all = Array.prototype.slice.call(files);
+    var all = Array.prototype.slice.call(files).filter(function (f) { return !/(^|\/)[.~$]/.test(f.webkitRelativePath || f.name); }); // hidden and lock files
     var sheets = [], others = [], failed = [];
+    open.folder = open.folder || { html: '' };
     for (var i = 0; i < all.length; i++) {
       var f = all[i];
-      if (/(^|\/)[.~$]/.test(f.webkitRelativePath || f.name)) continue; // hidden and lock files
+      progress('folder', i, all.length, 'Reading ' + f.name);
       if (!SHEET.test(f.name)) { others.push(f.name); continue; }
       try { (await readSheets(f)).forEach(function (s) { sheets.push(s); }); }
       catch (err) { failed.push(f.name + ' (' + err.message + ')'); }
+      await new Promise(function (r) { setTimeout(r, 0); }); // let the bar move
     }
-    if (!sheets.length) { say(els.note, all.length ? 'No spreadsheet with rows was found in that folder (' + all.length + ' files looked at).' : 'That folder is empty.', true); return; }
+    progress('folder', all.length, all.length, 'Read');
+    if (!sheets.length) { openFolder(); flowErr('folder', all.length ? 'No spreadsheet with rows was found in that folder (' + all.length + ' files looked at).' : 'That folder is empty.'); return; }
     var rows = sheets.map(function (s) {
       var header = s.grid[0].map(function (h) { return String(h).trim(); });
       return { name: s.name, header: header, body: s.grid.slice(1), dataset: bestDataset(header) };
     });
-    openPanel('<p class="dt-panel__head"><strong>' + plural(sheets.length, 'sheet') + '</strong> read from the folder' + (others.length ? ', ' + plural(others.length, 'other file') + ' not used' : '') + '. Check where each one goes.</p>'
-      + '<table class="dt-map__table dt-folder"><thead><tr><th>Sheet</th><th>Rows</th><th>Goes to</th><th>Columns matched</th></tr></thead><tbody>'
+    openFlow('folder', '<p class="dt-panel__head"><strong>' + plural(sheets.length, 'sheet') + '</strong> read' + (others.length ? ', ' + plural(others.length, 'other file') + ' not used' : '') + '. Check where each one goes.</p>'
+      + '<div class="dt-tablewrap"><table class="dt-map__table dt-folder"><thead><tr><th>Sheet</th><th>Rows</th><th>Goes to</th><th>Columns matched</th></tr></thead><tbody>'
       + rows.map(function (r, ri) {
         return '<tr data-sheet="' + ri + '"><td class="dt-folder__name" title="' + esc(r.header.join(', ')) + '">' + esc(r.name) + '</td><td>' + r.body.length + '</td>'
           + '<td><select class="dt-select" data-sheet-dataset="' + ri + '"><option value="-1"' + (r.dataset < 0 ? ' selected' : '') + '>— not used —</option>' + datasetOptions(r.dataset) + '</select></td>'
           + '<td class="dt-folder__fit" data-fit="' + ri + '">' + fitText(r) + '</td></tr>';
       }).join('')
-      + '</tbody></table>'
+      + '</tbody></table></div>'
       + (others.length ? '<p class="dt-panel__aside">Not spreadsheets, so not used: ' + esc(others.slice(0, 8).join(', ')) + (others.length > 8 ? ' and ' + (others.length - 8) + ' more' : '') + '.</p>' : '')
       + (failed.length ? '<p class="dt-panel__aside dt-note--bad">Could not read: ' + esc(failed.join('; ')) + '</p>' : '')
       + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-folder-go="1">Bring in ' + plural(rows.filter(function (r) { return r.dataset >= 0; }).length, 'sheet') + '</button>'
-      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
-    els.panel._sheets = rows;
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>',
+      { sheets: rows });
   }
 
   function fitText(r) {
@@ -559,7 +579,7 @@
   }
 
   async function folderGo(btn) {
-    var rows = els.panel._sheets || [];
+    var rows = (open.folder && open.folder.sheets) || [];
     var groups = {};
     rows.forEach(function (r) {
       if (r.dataset < 0) return;
@@ -570,19 +590,22 @@
       g.origin.push(r.name);
     });
     var keys = Object.keys(groups);
-    if (!keys.length) { say(els.note, 'Nothing is marked to go anywhere.', true); return; }
-    btn.disabled = true; btn.textContent = 'Bringing in…';
+    if (!keys.length) { flowErr('folder', 'Nothing is marked to go anywhere.'); return; }
+    btn.disabled = true;
     var lines = [], bad = [];
     for (var i = 0; i < keys.length; i++) {
       var g = groups[keys[i]];
+      progress('folder', i, keys.length, 'Bringing in ' + g.dataset.name);
       try {
         var res = await ownerJson('/api/data/import', 'POST', { datasetName: g.dataset.name, rows: g.rows, source: 'folder', origin: g.origin.join(', '), mode: 'merge', complete: true });
         lines.push(g.dataset.name + ': ' + summary(res));
       } catch (err) { bad.push(g.dataset.name + ': ' + err.message); }
     }
-    closePanel();
+    progress('folder', keys.length, keys.length, 'Done');
+    delete open.folder;
     await refresh();
-    say(els.note, lines.join(' · ') + (bad.length ? ' — ' + bad.join('; ') : '') + (lines.length ? '. Upload the folder again whenever the sheets change; only what changed moves.' : ''), !lines.length);
+    if (bad.length) say(els.note, bad.join('; '), true);
+    else say(els.note, lines.join(' · ') + '. Upload the folder again whenever the sheets change; only what changed moves.');
   }
 
   function summary(res) {
@@ -599,64 +622,57 @@
 
   page.addEventListener('change', async function (e) {
     var t = e.target;
-    if (t.matches('[data-folder]') && t.files && t.files.length) { await folder(t.files); t.value = ''; return; }
-    if (t.matches('[data-onefile]') && t.files && t.files[0]) { await oneFile(t.files[0]); t.value = ''; return; }
-
-    var input = t.closest('[data-import]');
-    if (input && input.files && input.files[0]) {
-      var i = Number(input.dataset.import);
-      try {
-        var grid = await readFile(input.files[0]);
-        var header = grid[0].map(function (h) { return String(h).trim(); });
-        showMapping(i, { header: header, body: grid.slice(1) }, 'own', (grid.length - 1) + ' rows read from ' + input.files[0].name + '.', input.files[0].name, true);
-      } catch (err) { say(els.note, err.message, true); }
-      finally { input.value = ''; }
-      return;
-    }
+    if (t.matches('[data-folder]') && t.files && t.files.length) { var fl = Array.prototype.slice.call(t.files); t.value = ''; await folder(fl); return; }
+    if (t.matches('[data-onefile]') && t.files && t.files[0]) { var one = t.files[0]; t.value = ''; await oneFile(one); return; }
 
     var wa = t.closest('[data-wa-file]');
     if (wa && wa.files && wa.files[0]) {
-      var mode = (els.panel.querySelector('input[name="wa-mode"]:checked') || {}).value || 'messages';
-      var wi = Number((els.panel.querySelector('[data-wa-dataset]') || {}).value || 0);
+      var b = bodyOf('whatsapp');
+      var mode = (b.querySelector('input[name="wa-mode"]:checked') || {}).value || 'messages';
+      var wi = Number((b.querySelector('[data-wa-dataset]') || {}).value || 0);
+      var wf = wa.files[0]; wa.value = '';
       try {
-        var wgrid = whatsAppGrid(await wa.files[0].text(), mode);
+        var wgrid = whatsAppGrid(await wf.text(), mode);
         // An export is a slice of the group at one moment, never the whole of
         // what WhatsApp holds: nothing is marked missing because of it.
-        showMapping(wi, wgrid, 'whatsapp', wgrid.note, wa.files[0].name, false);
-      } catch (err) { say(els.note, err.message, true); }
-      finally { wa.value = ''; }
+        showMapping('whatsapp', wi, wgrid, 'whatsapp', wgrid.note, wf.name, false);
+      } catch (err) { flowErr('whatsapp', err.message); }
       return;
     }
 
     var sd = t.closest('[data-sheet-dataset]');
     if (sd) {
       var ri = Number(sd.dataset.sheetDataset);
-      var r = els.panel._sheets[ri]; r.dataset = Number(sd.value);
-      els.panel.querySelector('[data-fit="' + ri + '"]').innerHTML = fitText(r);
-      var goBtn = els.panel.querySelector('[data-folder-go]');
-      if (goBtn) goBtn.textContent = 'Bring in ' + plural(els.panel._sheets.filter(function (x) { return x.dataset >= 0; }).length, 'sheet');
+      var r = open.folder.sheets[ri]; r.dataset = Number(sd.value);
+      var fb = bodyOf('folder');
+      fb.querySelector('[data-fit="' + ri + '"]').innerHTML = fitText(r);
+      var goBtn = fb.querySelector('[data-folder-go]');
+      if (goBtn) goBtn.textContent = 'Bring in ' + plural(open.folder.sheets.filter(function (x) { return x.dataset >= 0; }).length, 'sheet');
       return;
     }
 
     var sched = t.closest('[data-schedule]');
     if (sched) {
       try { await ownerJson('/api/connectors/' + sched.dataset.schedule, 'PATCH', { schedule: sched.value }); }
-      catch (err) { alert(err.message); }
+      catch (err) { say(els.note, err.message, true); }
     }
   });
 
   page.addEventListener('click', async function (e) {
     var t = e.target;
-    if (t.closest('[data-cancel]')) { closePanel(); return; }
+    var card = t.closest('[data-card]');
+    var kind = card ? card.dataset.card : '';
 
-    var open = t.closest('[data-open]');
-    if (open) { openSource(open.dataset.open); return; }
+    if (t.closest('[data-cancel]')) { closeFlow(kind); return; }
+
+    var openBtn = t.closest('[data-open]');
+    if (openBtn) { openSource(openBtn.dataset.open); return; }
 
     var pick = t.closest('[data-pick-go]');
     if (pick) {
-      var p = els.panel._pending; if (!p) return;
-      var di = Number((els.panel.querySelector('[data-pick-dataset]') || {}).value || 0);
-      showMapping(di, { header: p.header, body: p.grid.slice(1) }, 'own', (p.grid.length - 1) + ' rows read from ' + p.origin + '.', p.origin, true);
+      var p = open.folder && open.folder.pending; if (!p) return;
+      var di = Number((bodyOf('folder').querySelector('[data-pick-dataset]') || {}).value || 0);
+      showMapping('folder', di, { header: p.header, body: p.grid.slice(1) }, 'own', (p.grid.length - 1) + ' rows read from ' + p.origin + '.', p.origin, true);
       return;
     }
 
@@ -664,7 +680,7 @@
     if (fg) { await folderGo(fg); return; }
 
     var connect = t.closest('[data-connect]');
-    if (connect) { await submitConnector(connect); return; }
+    if (connect) { await submitConnector(connect, kind); return; }
 
     var sync = t.closest('[data-sync]');
     if (sync) {
@@ -674,7 +690,7 @@
         var row = connectors.find(function (c) { return c.id === sync.dataset.sync; });
         await refresh();
         say(els.note, r.rows ? r.rows + ' rows synced into ' + (row ? row.datasetName : 'the dataset') + '. The answers use them from now on.' : (r.message || 'Nothing to sync.'));
-      } catch (err) { await refresh(); alert(err.message); }
+      } catch (err) { await refresh(); say(els.note, err.message, true); }
       return;
     }
 
@@ -682,27 +698,27 @@
     if (remove) {
       if (!confirm('Remove this source? Its credentials are forgotten; the rows it brought stay.')) return;
       try { await ownerJson('/api/connectors/' + remove.dataset.remove, 'DELETE'); await refresh(); }
-      catch (err) { alert(err.message); }
+      catch (err) { say(els.note, err.message, true); }
       return;
     }
 
     var go = t.closest('[data-go]');
-    if (!go) return;
+    if (!go || !kind) return;
     var i = Number(go.dataset.go);
     var d = datasets[i];
-    var grid = els.panel._grid;
+    var grid = open[kind] && open[kind].grid;
     if (!grid) return;
-    var mapping = Array.prototype.map.call(els.panel.querySelectorAll('select[data-target]'), function (s) { return Number(s.value); });
-    if (mapping.every(function (si) { return si < 0; })) { say(els.note, 'Match at least one column.', true); return; }
+    var mapping = Array.prototype.map.call(bodyOf(kind).querySelectorAll('select[data-target]'), function (s) { return Number(s.value); });
+    if (mapping.every(function (si) { return si < 0; })) { flowErr(kind, 'Match at least one column.'); return; }
     var rows = grid.body.map(function (r) { return mapping.map(function (si) { return si >= 0 ? String(r[si] == null ? '' : r[si]) : ''; }); });
     go.disabled = true; go.textContent = 'Bringing in…';
     try {
       var res = await ownerJson('/api/data/import', 'POST', { datasetName: d.name, rows: rows, source: grid.source, origin: grid.origin, mode: 'merge', complete: grid.complete });
-      closePanel();
+      delete open[kind];
       await refresh();
       say(els.note, d.name + ': ' + summary(res) + '. The answers use your data from now on.');
     } catch (err) {
-      say(els.note, err.message, true);
+      flowErr(kind, err.message);
       go.disabled = false; go.textContent = 'Bring in ' + rows.length + ' rows';
     }
   });
@@ -710,9 +726,10 @@
   // ── Opening a source ──────────────────────────────────────────────────────
 
   function openSource(kindName) {
+    if (kindName === 'folder') { openFolder(); return; }
     if (kindName === 'whatsapp') {
       var guess = datasets.findIndex(function (d) { return /attend/i.test(d.name); });
-      openPanel('<p class="dt-panel__head">WhatsApp chat export</p>'
+      openFlow('whatsapp', '<p class="dt-panel__head">An exported chat</p>'
         + '<p class="dt-form__help">In WhatsApp, open the group → its name → Export chat → Without media, and choose the .txt file here. It is read in your browser; only the rows you map are sent to this application.</p>'
         + '<div class="dt-wa__mode">'
         + '<label><input type="radio" name="wa-mode" value="attendance"' + (guess >= 0 ? ' checked' : '') + '> Attendance replies (yes / no, per person, per day)</label>'
@@ -725,6 +742,7 @@
     }
     var k = kinds.find(function (x) { return x.kind === kindName; });
     if (!k) return;
+    var kind = cardKind(kindName);
     var guessDs = datasets.findIndex(function (d) { return new RegExp(kindName.split('-')[0], 'i').test(d.name) || /attend/i.test(d.name) && kindName === 'whatsapp-business' || (k.provides || []).some(function (p) { return new RegExp(p, 'i').test(d.name); }); });
     var setupHtml = kindName === 'whatsapp-business'
       ? '<div class="dt-setup" id="dt-wa-setup"><p class="dt-setup__head">In the Meta app, WhatsApp → Configuration → Webhook:</p><dl class="dt-setup__lines"><dt>Callback URL</dt><dd><code id="dt-wa-url">…</code></dd><dt>Verify token</dt><dd><code id="dt-wa-verify">…</code></dd><dt>Subscribe to</dt><dd><code>messages</code></dd></dl></div>'
@@ -735,7 +753,7 @@
         if (u) u.textContent = st.webhookUrl; if (v) v.textContent = st.verifyToken;
       }).catch(function () {});
     }
-    openPanel('<p class="dt-panel__head">Connect ' + esc(k.label) + '</p>'
+    openFlow(kind, '<p class="dt-panel__head">Connect ' + esc(k.label) + '</p>'
       + '<p class="dt-form__help">' + esc(k.help) + ' The credentials are kept encrypted in this application’s own database and never sent to Svarg.</p>'
       + setupHtml
       + '<div class="dt-form__grid">'
@@ -747,23 +765,22 @@
         return '<label class="dt-form__field">' + esc(f.label) + input + '</label>';
       }).join('') + '</div>'
       + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-connect="1" data-kind="' + esc(k.kind) + '">Test and connect</button>'
-      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>'
-      + '<p class="dt-note" data-form-note="1" hidden></p>');
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
   }
 
-  async function submitConnector(btn) {
-    var fnote = els.panel.querySelector('[data-form-note]');
+  async function submitConnector(btn, kind) {
+    var b = bodyOf(kind);
     var config = {}; var di = 0;
-    els.panel.querySelectorAll('[name]').forEach(function (el) { if (el.name === '__dataset') di = Number(el.value); else config[el.name] = el.value; });
+    b.querySelectorAll('[name]').forEach(function (el) { if (el.name === '__dataset') di = Number(el.value); else config[el.name] = el.value; });
     btn.disabled = true; btn.textContent = 'Testing…';
-    say(fnote, '');
+    var old = b.querySelector('.dt-card__err'); if (old) old.remove();
     try {
       var r = await ownerJson('/api/connectors', 'POST', { kind: btn.dataset.kind, datasetName: datasets[di].name, config: config });
-      closePanel();
+      delete open[kind];
       await refresh();
-      say(els.note, r.connector.label + ' connected to ' + datasets[di].name + '. Press Sync now to bring its rows in, or set a schedule.');
+      say(els.note, r.connector.label + ' connected to ' + datasets[di].name + (kind === 'whatsapp' ? '. Messages land here as they are sent.' : '. Press Sync now to bring its rows in, or set a schedule.'));
     } catch (err) {
-      say(fnote, err.message, true);
+      flowErr(kind, err.message);
       btn.disabled = false; btn.textContent = 'Test and connect';
     }
   }

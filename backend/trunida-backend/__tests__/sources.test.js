@@ -13,7 +13,7 @@ describe('where an industry keeps its data', () => {
   it('reads the sports academies block from the overlay, in its order', async () => {
     const { industrySources } = await import('../services/sourceCatalogService.js');
     const s = industrySources('Sports Academies');
-    expect(s.map(x => x.kind)).toEqual(['folder', 'whatsapp', 'form']);
+    expect(s.map(x => x.kind)).toEqual(['folder', 'whatsapp']);
     expect(s[1].providers).toEqual(['export', 'business-account']);
     expect(s[0].holds).toContain('attendance');
     expect(industrySources('Automotive')).toEqual([]);
@@ -27,11 +27,13 @@ describe('where an industry keeps its data', () => {
     expect(sourcesForBlueprint({}).map(s => s.kind)).toEqual(['folder']);
   });
 
-  it('keeps a connector a dataset names even when the industry block does not list it', async () => {
-    const { sourcesForBlueprint, connectorKindsFor } = await import('../services/sourceCatalogService.js');
-    const s = sourcesForBlueprint({ industryFit: { industry: 'Sports Academies' }, ...DR([{ name: 'Attendance', typicalSource: 'WhatsApp' }, { name: 'Tickets', typicalSource: 'GitHub issues' }]) });
-    expect(s.map(x => x.kind)).toEqual(['folder', 'whatsapp', 'form', 'github']);
-    expect(connectorKindsFor(s)).toEqual(['whatsapp', 'github']);
+  it('the industry block is the list: a dataset naming GitHub does not add a card the industry does not use', async () => {
+    const { sourcesForBlueprint, connectorKindsFor, sourcesFromDatasets } = await import('../services/sourceCatalogService.js');
+    const s = sourcesForBlueprint({ industryFit: { industry: 'Sports Academies' }, ...DR([{ name: 'Attendance', typicalSource: 'WhatsApp' }, { name: 'Scripts', typicalSource: 'Script repository on GitHub' }]) });
+    expect(s.map(x => x.kind)).toEqual(['folder', 'whatsapp']);
+    expect(connectorKindsFor(s)).toEqual(['whatsapp']);
+    // And "repository" alone never means GitHub.
+    expect(sourcesFromDatasets([{ typicalSource: 'a document repository' }]).map(x => x.kind)).toEqual([]);
   });
 
   it('ships only the connector modules the sources call for', async () => {

@@ -17,8 +17,28 @@ cannot do stays true: it does not read groups; the export remains the way
 to read those. Svarg brokering Meta's Embedded Signup (no Meta app per
 customer) remains the later step.
 
+**The Data page, 13 September 2026 (after the customer's first look).**
+One card per source and nothing else: for the academy, *Documents* and
+*WhatsApp Business*, side by side in the design of the front door -- a lit
+icon tile, what the source is, a "You can upload / You can get" list, one
+button. Everything a source does happens inside its card: pressing Connect
+documents opens the folder chooser in the card, the read shows a progress
+bar file by file, the matching table (sheet → dataset, columns matched, key
+found) is confirmed there, the landing shows its progress, and afterwards
+the card carries the status -- *4 sheets read · just now*, then each sheet,
+the dataset it went to, and what moved (+17, 3 changed, 3 gone from the
+sheet and kept). WhatsApp Business likewise: the Meta setup lines and the
+form in the card, then *Connected · last message 3 min ago* with the sync
+controls. The dataset table, the imports log, "What Svarg is told" and the
+rest of the page below the cards are gone; what each dataset holds is on
+the tabs to the left. A form's responses sheet is one more document, so the
+overlay's `form` entry was folded into the folder card (and dropped from
+the Sports Academies block), and the industry block is now the whole list:
+a dataset whose typicalSource says "script repository" no longer puts a
+GitHub card in front of a cricket academy (`sourcesForBlueprint`).
+
 **What Phase 1 delivered, in one paragraph.** The industry overlay carries
-a `json sources` block (Sports Academies: folder, WhatsApp, form), read by
+a `json sources` block (Sports Academies: folder, WhatsApp), read by
 Cob into the dataset guidance and by Eame into `data/sources.json`; Eame
 ships only the connector modules those sources call for
 (`services/sourceCatalogService.js`, `buildRuntime({ connectors })`), and the
@@ -109,11 +129,10 @@ sources:
     providers: [business-account, export]
     holds: [attendance, communication, leads]
     note: Attendance is asked and answered in per-batch groups. Groups cannot be read by the Business API; a business number changes how the academy messages parents.
-  - kind: form
-    label: Enrolment form
-    providers: [google-forms, upload]
-    holds: [enrolment]
 ```
+
+(A form's responses sheet is a document: it goes in the folder, not on a
+card of its own.)
 
 Cob's *DATA SOURCE GUIDANCE* reads this block so `typicalSource` on each
 dataset names one of these kinds; the blueprint carries a `sources` list;
@@ -121,42 +140,29 @@ Eame writes it into the application (`data/sources.json`, beside the
 dataset index). The Data page draws from it. An industry with no block
 falls back to what the blueprint's `typicalSource` strings say, as today.
 
-### 2. The Data page, reorganised
+### 2. The Data page: one card per source
 
 ```
-┌ Your data ──────────────────────────────────────────────────────────────┐
-│                                                                          │
-│  WHERE YOUR DATA LIVES                                                   │
-│  ┌──────────────────────────┐ ┌──────────────────────────┐              │
-│  │ 📁 Your folder            │ │ 💬 WhatsApp              │              │
-│  │ Google Drive · connected  │ │ Not connected            │              │
-│  │ 7 files · read 12 min ago │ │ Connect a business       │              │
-│  │ 5 matched · 2 not used    │ │ account, or import an    │              │
-│  │ [Open] [Read again]       │ │ exported chat            │              │
-│  └──────────────────────────┘ └──────────────────────────┘              │
-│  Also: Jira · Confluence · GitHub · a file                               │
-│                                                                          │
-│  WHAT THE APPLICATION HOLDS                                              │
-│  Dataset        Rows   From                 Last change       Status     │
-│  Enrolment      212    folder/Students.xlsx  today 09:12       ● live    │
-│  Attendance     4,810  WhatsApp export       3 Sep             ● own     │
-│  Fees           640    folder/Fees 2026.xlsx today 09:12       ● live    │
-│  Coaches        14     chat                  yesterday         ● own     │
-│  Schedule       36     sample                —                 ○ sample  │
-│                                                                          │
-│  IMPORTS                                                                 │
-│  today 09:12  folder  Students.xlsx → Enrolment  +3 rows, 1 changed     │
-│  ...                                                                     │
+┌ Connect your data sources ──────────────────────────────────────────────┐
+│  Connections │ ┌ 📄 Documents        ● Connected ┐ ┌ 💬 WhatsApp Business ○ ┐ │
+│  Students 17 │ │ 4 SHEETS READ · JUST NOW        │ │ YOU CAN GET             │ │
+│  Batches  16 │ │ ✓ 3 datasets updated just now   │ │ ✓ Incoming messages     │ │
+│  Roll calls  │ │   Students.xlsx → Students  +17 │ │ ✓ Attendance replies    │ │
+│              │ │   Fees.xlsx → Fees  +12, 3 chg  │ │ ✓ Contact names         │ │
+│              │ │ [ Upload the folder again → ]   │ │ [ Connect WhatsApp → ]  │ │
+│              │ │   Add one file                  │ │   Import an exported chat│ │
+│              │ └─────────────────────────────────┘ └─────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-- The **source cards** come from `data/sources.json`, in the industry's
-  order. Each has one primary action (Connect) and shows what it yielded.
-- The **dataset table** replaces the per-dataset import rows. "Import a
-  file" moves into the table as a small action on each row, for the random
-  file that belongs nowhere else.
-- The existing chips (Jira, Confluence, GitHub) stay, under "Also", for
-  industries where they are the sources.
+- The **cards** come from `data/sources.json`, in the industry's order;
+  `form` and `file` fold into Documents. Each has one button, and its
+  whole flow -- chooser, progress, matching, landing, status -- runs inside
+  the card (`frontend/data.js`: `openFlow`, `progress`, `describe`).
+- What each dataset holds is on the **tabs to the left**, drawn by the
+  shell from `GET /api/data/areas`; the page carries no table of its own.
+- A live source the industry names (Jira, Confluence) gets a card in the
+  same design; nothing is offered that the industry did not name.
 
 ### 3. The folder source
 

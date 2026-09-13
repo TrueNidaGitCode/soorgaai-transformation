@@ -26,10 +26,9 @@
        photo come from the blueprint through the __APP_*__ tokens, written
        once by Svarg's frontDoorService. The preview card is drawn by the
        shell script from the JSON at the foot of this section. -->
-  <!-- One palette for every screen: the application's accent colour, from
-       its front door, is the accent of the welcome, the chat and the Data
-       page too; the ground and the text scale are app.css's tokens. -->
-  <style>:root { --app-accent: __APP_ACCENT_COLOR__; }</style>
+  <!-- One palette for every application: the ground, the text and the accent
+       are app.css's tokens and the same everywhere, so a person moving between
+       the door, the welcome, the chat and the Data page never changes world. -->
   <section class="ld" id="ch-home" aria-label="Welcome" style="--ld-hero: __APP_HERO_IMAGE__">
     <div class="ld__hero">
       <div class="ld__scene" aria-hidden="true"></div>

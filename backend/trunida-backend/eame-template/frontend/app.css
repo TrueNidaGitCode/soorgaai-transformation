@@ -13,12 +13,11 @@
  */
 
 /*
- * One palette, every screen. The ground is one deep navy; panels sit a
- * step above it; text is one scale of white; and the ACCENT is the
- * application's own -- the colour its front door was given -- set once in
- * index.html as --app-accent and read here by the door, the welcome, the
- * chat and the Data page alike. Every tint of it is mixed from it, so a
- * different accent recolours the whole application consistently.
+ * One palette, every screen, every application. The ground is one deep
+ * navy; panels sit a step above it; text is one scale of white; and the
+ * accent is one teal, read by the door, the welcome, the chat and the Data
+ * page alike, every tint mixed from it. Deliberately not a colour per
+ * application: a person moving between screens should never change world.
  */
 :root {
   --app-accent:   #5CC5A7;
@@ -66,8 +65,8 @@ body {
 .ld__scene {
   position: absolute; inset: 0; z-index: -3;
   background:
-    radial-gradient(60vw 40vw at 82% 62%, rgba(255,166,64,0.55), rgba(255,120,40,0.18) 40%, transparent 70%),
-    radial-gradient(90vw 60vw at 30% 10%, rgba(60,110,190,0.35), transparent 65%),
+    radial-gradient(60vw 40vw at 82% 62%, color-mix(in srgb, var(--ch-accent) 45%, transparent), color-mix(in srgb, var(--ch-accent) 14%, transparent) 40%, transparent 70%),
+    radial-gradient(90vw 60vw at 30% 10%, color-mix(in srgb, var(--ch-accent-2) 28%, transparent), transparent 65%),
     linear-gradient(180deg, color-mix(in srgb, var(--ch-accent) 14%, var(--ch-bg)) 0%, color-mix(in srgb, var(--ch-accent) 22%, var(--ch-bg)) 48%, color-mix(in srgb, var(--ch-accent) 10%, var(--ch-bg)) 72%, var(--ch-bg) 100%);
 }
 .ld__scene::after {

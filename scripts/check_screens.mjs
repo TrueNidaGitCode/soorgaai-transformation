@@ -126,7 +126,16 @@ const BLUEPRINT = {
 // it the fixture is 'prepared', so the strongest sentence on the screen —
 // "is live", with an address and a closing line — had never been drawn by
 // the check, only asserted absent.
+// Under autopilot the stage AFTER the one being checked is its already-done
+// fixture, where the journey must stop. After Eame that is Yusu, and Yusu's
+// done state is live: with the checks no longer gating Go Live, a prepared
+// fixture would go live during Eame's hop and be counted as a deploy the hop
+// had no reason to make.
 const YUSU_LIVE = process.env.YUSU_STATE === 'live';
+// How long the attach stays "attaching" under autopilot before the poll reads
+// live back, as Railway's build does. YUSU_ATTACH_MS=999999 holds it there for
+// a screenshot of the run stage on its Deployment act.
+const YUSU_ATTACH_MS = Number(process.env.YUSU_ATTACH_MS || 2500);
 const DEPLOYMENT = {
   status: YUSU_LIVE ? 'live' : 'prepared', hosting: 'svarg', environmentName: 'svarg-tenant-000001',
   region: 'us-west', dbName: 'tenant_000001', appAttached: YUSU_LIVE,
@@ -180,7 +189,15 @@ const DEP = ${JSON.stringify(
   // `disabled`, and a disabled button dispatches no click at all, so a check that
   // clicks one cannot tell a working lock from a broken one. Arth therefore gets
   // an unprepared environment, which is the state the choice is actually made in.
-  screen === 'arth' ? { ...DEPLOYMENT, status: 'none', preparedAt: '' } : DEPLOYMENT
+  screen === 'arth' ? { ...DEPLOYMENT, status: 'none', preparedAt: '' }
+  // Under autopilot the stage AFTER the one being checked is its already-done
+  // fixture, where the journey must stop. After Eame that is Yusu, whose done
+  // state is live: with the checks no longer gating Go Live, a prepared
+  // fixture would go live during Eame's hop and count as a deploy the hop had
+  // no reason to make.
+  : process.env.CHECK_AUTOPILOT && screen === 'eame'
+    ? { ...DEPLOYMENT, status: 'live', appAttached: true, url: 'https://svarg-tenant-000001.up.railway.app' }
+    : DEPLOYMENT
 )};
 const BUILD_STATE = ${JSON.stringify(process.env.EAME_BUILD_STATE || "passed")};
 // ARIA_STATE=all-samples reproduces the state a company before launch reaches
@@ -400,18 +417,26 @@ window.fetch = function (url, opts) {
   }
   if (u.includes('/deployment'))        return J({ deployment: window.__deployedDep || window.__preparedDep || window.__preparingDep || DEP });
   if (u.includes('/deploy')) {
+    // The checks no longer gate Go Live, so the ordinary fixture would go live
+    // by itself. Outside autopilot the server declines the way it really can
+    // -- no hosting configured -- which leaves the page after the run in its
+    // not-live state, the one the ordinary yusu check asserts.
+    if (!AUTO) return J({ error: 'Svarg hosting is not configured on this server: RAILWAY_API_TOKEN is not set. Choose "Your own environment" to continue without it.' }, 503);
     window.__deployed++;
-    // Remembered, so the poll that follows going live reads live back rather
-    // than the prepared record it started from.
-    window.__deployedDep = { ...DEP, status: 'live', url: 'https://svarg-tenant-000001.up.railway.app', appAttached: true, liveAt: new Date().toISOString() };
-    return J({ deployment: window.__deployedDep, gatewayToken: 'svd_' + '0'.repeat(48), ownerKey: 'sok_' + '1'.repeat(48) }, 200);
+    // As the server does: attach answers "attaching" and the poll that follows
+    // reads live back once Railway has built it. Remembered so re-reads agree.
+    window.__deployedDep = { ...DEP, status: 'attaching', statusMessage: 'Railway is building the application.', appAttached: true };
+    setTimeout(function () {
+      window.__deployedDep = { ...DEP, status: 'live', url: 'https://svarg-tenant-000001.up.railway.app', appAttached: true, liveAt: new Date().toISOString() };
+    }, ${YUSU_ATTACH_MS});
+    return J({ deployment: window.__deployedDep, gatewayToken: 'svd_' + '0'.repeat(48), ownerKey: 'sok_' + '1'.repeat(48) }, 201);
   }
   // The delivered project, which the security check reads. Served only under
   // autopilot on Yusu: everywhere else it is absent, the check fails honestly
   // ("manifest could not be read"), and Go Live stays closed -- which is the
   // not-live state the ordinary yusu check asserts.
   if (u.includes('/delivery/manifest') && AUTO && SCREEN === 'yusu') return J({ files: MANIFEST.files, source: 'generated', facts: {} });
-  if (u.includes('/delivery/publish')) return J({ upToDate: true, repoName: 'svarg-defect-matching', fileCount: 32 });
+  if (u.includes('/delivery/publish')) return J({ upToDate: true, owner: 'svarg', name: 'svarg-defect-matching', fileCount: 32, appName: 'Defect Lens' });
   if (u.includes('/transformation-blueprint')) return J(BP);
   if (u.includes('/project-manifest'))  return J(MANIFEST);
   if (u.includes('/github/personal/status')) return J({ connected: true, githubLogin: 'acme' });
@@ -570,7 +595,21 @@ setTimeout(async function () {
       // live back.
       for (var d = 0; d < 60 && !(window.__deployed); d++) await wait(100);
       if (out.deployed = window.__deployed || 0, out.deployed !== 1) bad('Yusu went live ' + out.deployed + ' times, expected 1');
-      for (var p = 0; p < 60 && !/application live/i.test((document.getElementById('yusu-hero-pill') || {}).textContent || ''); p++) await wait(100);
+      // While it attaches the run strip is the page: four acts, the last one
+      // running. The poll reads live back a few seconds later.
+      var acts = [];
+      for (var s0 = 0; s0 < 60; s0++) {
+        acts = [].map.call(document.querySelectorAll('#yusu-run .yr-step'), function (li) { return li.className.replace('yr-step yr-step--', ''); });
+        if (acts[3] === 'active') break;
+        await wait(100);
+      }
+      out.acts = acts.join(',');
+      if (acts.join(',') !== 'done,done,done,active') bad('during the deploy the run strip reads ' + out.acts + ', expected done,done,done,active');
+      var runShown = (document.getElementById('yusu-run') || {}).style.display !== 'none';
+      var cardShown = (document.getElementById('yusu-breadcrumb') || {}).style.display !== 'none';
+      if (!runShown || cardShown) bad('during the run the strip should be the page (strip ' + (runShown ? 'shown' : 'hidden') + ', app card ' + (cardShown ? 'shown' : 'hidden') + ')');
+      for (var p = 0; p < 150 && !/application live/i.test((document.getElementById('yusu-hero-pill') || {}).textContent || ''); p++) await wait(100);
+      if ((document.getElementById('yusu-run') || {}).style.display !== 'none') bad('the run strip is still shown after going live');
       out.yusuPill = ((document.getElementById('yusu-hero-pill') || {}).textContent || '').trim();
       if (!/application live/i.test(out.yusuPill)) bad('after going live the hero says "' + out.yusuPill + '"');
       var checks = [].map.call(document.querySelectorAll('#yusu-checks .tr-card__verdict'), function (v) { return v.textContent.trim(); });
@@ -1291,6 +1330,10 @@ setTimeout(async function () {
     // address, not the closing line. The strongest claim the product makes
     // is the one that must be checked hardest.
     if (out.screen === 'yusu') {
+      // The run stage comes first -- prepare, push, test, then Go Live, which
+      // the ordinary fixture's server declines. Wait for the page after the
+      // run before reading it; under latency the run takes a few seconds.
+      for (var yr = 0; yr < 200 && (document.getElementById('yusu-run') || {}).style.display !== 'none'; yr++) await new Promise(function (r) { setTimeout(r, 100); });
       var pill = (document.getElementById('yusu-hero-pill') || {}).textContent || '';
       var title = (document.getElementById('yusu-ready-title') || {}).textContent || '';
       out.yusuPill = pill.trim();

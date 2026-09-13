@@ -19,6 +19,7 @@ import GeneratedApplication from '../models/GeneratedApplication.js';
 import crypto from 'crypto';
 import { generatedManifest } from './eameBuildController.js';
 import { resolveAppName } from '../services/eameSpec.js';
+import { ensureAppName } from '../services/appNameService.js';
 import { integrateIntoProduct } from '../services/productIntegrationService.js';
 import { buildZip } from '../services/zipService.js';
 import {
@@ -167,6 +168,9 @@ export async function publishProject(req, res) {
 
     // The name the customer chose on Eame drives both the repository and what
     // the running application calls itself.
+    // Blueprints built before the build named them arrive here with no name
+    // and would be published under their use case sentence. Name them now.
+    await ensureAppName(bp, { userId: req.user._id }).catch(() => {});
     const name = svargRepoName(safeSlug(bp.appName || slug || bp.businessObjective), bp._id);
     const files = candidate;
     const source = candidateSource;
@@ -198,6 +202,7 @@ export async function publishProject(req, res) {
     return res.json({
       owner: repo.owner, name: repo.name, repoUrl: repo.htmlUrl,
       fileCount: files.length, created: repo.created,
+      appName: bp.appName || '',
     });
   } catch (err) {
     const data = err.response?.data;

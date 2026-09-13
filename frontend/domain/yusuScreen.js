@@ -42,9 +42,33 @@ function esc(t) {
   return String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-/** What the customer called it on Eame, falling back to the use case. */
+/**
+ * What the application is called: one or two words.
+ *
+ * The server names it when the build starts (appNameService) and the publish
+ * confirms it. Until that has happened -- a blueprint built before naming
+ * existed, seen before its publish -- the use case is a sentence, and a
+ * sentence is not a name: two of its words that carry meaning stand in.
+ */
+const NAME_STOP = new Set(['a', 'an', 'the', 'for', 'of', 'and', 'or', 'with', 'using', 'based', 'via', 'to', 'in', 'on', 'by', 'from', 'into', 'our', 'your', 'their', 'this', 'that', 'ai', 'like', 'one', 'first', 'so', 'is', 'are', 'start', 'past', 'already']);
+function shortName(text) {
+  return String(text || '').replace(/[^A-Za-z0-9\s'-]/g, ' ').split(/\s+/)
+    .filter(w => w.length > 2 && !NAME_STOP.has(w.toLowerCase())).slice(0, 2)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
 function appName(bp) {
-  return (bp?.appName || '').trim() || renderBreadcrumb(bp) || 'Your application';
+  const given = (bp?.appName || '').trim();
+  if (given && given.split(/\s+/).length <= 3) return given;
+  return shortName(given || useCaseLabel(bp)) || 'Your application';
+}
+
+/** The approved use case's name, or the recommendation text; '' when there is none. */
+function useCaseLabel(bp) {
+  const section = findAiUseCasesPrioritizationSection(bp);
+  const brief = section?.brief || {};
+  const all = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
+  const rec = brief.recommendedStartingPoint || '';
+  return all.find(n => n && rec.includes(n)) || rec;
 }
 
 let _bp = null;
@@ -65,20 +89,17 @@ function showError(msg) {
 
 function renderBreadcrumb(bp) {
   const crumb = document.getElementById('yusu-breadcrumb');
-  const section = findAiUseCasesPrioritizationSection(bp);
-  const brief = section?.brief || {};
-  const all = (brief.priorityQuadrants || []).flatMap(q => q.initiatives || []);
-  const rec = brief.recommendedStartingPoint || '';
-  const label = all.find(n => n && rec.includes(n)) || rec;
+  const label = useCaseLabel(bp);
 
   // Never hidden. This element is the application card now, and the Go Live
   // button lives in it — a blueprint with no recommended starting point used
   // to lose a breadcrumb here, and would now lose the way to go live. The
   // name falls back to what the customer called the application, then to
   // what they asked for.
+  // The card carries the application's NAME -- one or two words -- not the
+  // use case sentence, which is Cob's to show.
   crumb.style.display = '';
-  document.getElementById('yusu-recap-name').textContent =
-    label || appName(bp) || String(bp?.businessObjective || '').trim() || 'Your application';
+  document.getElementById('yusu-recap-name').textContent = appName(bp);
 
   // The justification line under the name was removed at the customer's
   // request -- Cob's screen already carries it.
@@ -103,8 +124,20 @@ function runChecks(bp, manifestPaths) {
   const hasArea = re => titles.some(t => re.test(t));
   const hasFile = re => manifestPaths.some(p => re.test(p));
 
+  // A blueprint whose Governance & Ethics capability errored has no sections
+  // to check. That is a fact about the document, not the application, and
+  // the check says so rather than reading as a fault in what was built.
+  const govError = (() => {
+    const domain = (bp.domains || []).find(d => d.domainId === 'governance-security');
+    const cap = (domain?.capabilities || []).find(c => c.status === 'error');
+    return cap ? (cap.errorMessage || 'the section could not be generated') : '';
+  })();
+  const missingWhy = govError
+    ? `The blueprint's Governance & Ethics section could not be generated (${govError.length > 80 ? 'the model\'s answer could not be read' : govError}). This is about the blueprint document, not the application; regenerate it from the blueprint when convenient.`
+    : 'No Governance & Ethics content was generated for this blueprint.';
+
   const governance = (() => {
-    if (!gov.length) return { pass: false, why: 'No Governance & Ethics content was generated for this blueprint.' };
+    if (!gov.length) return { pass: false, why: missingWhy };
     const missing = [
       [/privacy|security/, 'data handling'],
       [/regulatory|compliance/, 'regulatory compliance'],
@@ -115,7 +148,7 @@ function runChecks(bp, manifestPaths) {
   })();
 
   const ethics = (() => {
-    if (!gov.length) return { pass: false, why: 'No Governance & Ethics content was generated for this blueprint.' };
+    if (!gov.length) return { pass: false, why: missingWhy };
     const area = gov.find(s => /ethic/i.test(s.title || ''));
     if (!area) return { pass: false, why: 'No Ethical AI Guidelines section was produced.' };
     if (!(area.brief?.strategicPosition || '').trim()) {
@@ -186,15 +219,15 @@ function renderChecks(bp) {
       <span class="tr-card__icon">${r.icon}</span>
       <p class="tr-card__title">${esc(r.title)}</p>
       <p class="tr-card__why">${esc(r.why)}</p>
-      <p class="tr-card__verdict">${r.pass ? '&#10003; Passed' : '&#10007; Failed'}</p>
+      <p class="tr-card__verdict">${r.pass ? '&#10003; Passed' : '&#9888; Needs attention'}</p>
     </div>
   `).join('');
 
-  setStatus(allPass ? 'Completed' : 'Failed', allPass ? '' : 'bad');
+  setStatus(allPass ? 'Completed' : 'Needs attention', allPass ? '' : 'bad');
   if (sub) {
     sub.textContent = allPass
       ? 'Your application has passed all required checks.'
-      : 'One or more checks did not pass. Go Live stays closed until they do.';
+      : 'One or more checks need attention. They do not hold the application back; the details are below.';
   }
 
   // The verdict is the shield beside the tiles. It says "All checks passed"
@@ -208,10 +241,10 @@ function renderChecks(bp) {
         ${allPass ? '<polyline points="9 12 11 14 15 10"/>' : '<line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>'}
       </svg>
     </span>
-    <strong class="yu-gov__verdict-title">${allPass ? 'All checks passed' : 'Some checks did not pass'}</strong>
+    <strong class="yu-gov__verdict-title">${allPass ? 'All checks passed' : 'Some checks need attention'}</strong>
     <span class="yu-gov__verdict-sub">${allPass
       ? 'Ready for deployment to your environment.'
-      : 'Go Live stays closed until these are resolved.'}</span>`;
+      : 'Worth resolving; the application goes live regardless.'}</span>`;
 
   return results;
 }
@@ -253,6 +286,75 @@ function renderPipeline(bp, dep) {
     </li>
   `).join('');
   return steps;
+}
+
+// ── The run stage ───────────────────────────────────────────────────────────
+//
+// Four acts, the way the screenshot has them: Preparation, Push to Git,
+// Tests, Deployment. Each is read from real state, with the time it finished
+// under it. While any act is in flight the strip is the page; once the run is
+// over -- live, failed, or waiting on a person -- the page after the run is
+// shown, unchanged.
+
+const YUSU_ACTS = [
+  { title: 'Preparation', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' },
+  { title: 'Push to Git', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/><path d="M6 9v3a3 3 0 0 0 3 3h3"/></svg>' },
+  { title: 'Tests',       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v6.5L4.5 19a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 9.5V3"/><path d="M7.5 15h9"/></svg>' },
+  { title: 'Deployment',  icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>' },
+];
+
+// When each act finished this visit; shown under it. Not persisted: a
+// re-entered screen shows what is known (done or not), not a made-up clock.
+const _actTime = { prep: null, push: null, tests: null, deploy: null };
+let _autoLive = false;   // the run intends to press Go Live once the checks are in
+
+function clock(t) {
+  return t ? new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+}
+
+/** The acts, from state. */
+function yusuActs(bp, dep) {
+  const pushed = !!bp.eameDelivery?.repoName;
+  const live = dep && ['live', 'suspended'].includes(dep.status);
+  const building = dep?.status === 'attaching';
+  const deployFailed = dep?.status === 'failed' || !!_failed;
+  const prepDone = !!_actTime.prep || pushed || _manifestPaths.length > 0;
+  const results = _checksRun ? runChecks(bp, _manifestPaths) : [];
+  const testsWord = !_checksRun ? '' : results.every(r => r.pass) ? 'Passed' : 'Needs attention';
+  return [
+    { state: prepDone ? 'done' : _running ? 'active' : 'waiting', word: prepDone ? 'Completed' : _running ? 'Running' : 'Pending', time: _actTime.prep },
+    { state: pushed ? 'done' : _failed ? 'failed' : _running && prepDone ? 'active' : 'waiting', word: pushed ? 'Completed' : _failed ? 'Failed' : _running && prepDone ? 'Running' : 'Pending', time: _actTime.push },
+    { state: _checksRun ? 'done' : _running && pushed ? 'active' : 'waiting', word: _checksRun ? testsWord : _running && pushed ? 'Running' : 'Pending', time: _actTime.tests },
+    { state: live ? 'done' : building ? 'active' : deployFailed && pushed ? 'failed' : 'waiting', word: live ? 'Completed' : building ? 'Running' : deployFailed && pushed ? 'Failed' : 'Pending', time: live ? (_actTime.deploy || dep?.updatedAt) : null },
+  ];
+}
+
+function renderYusuRun(bp, dep) {
+  const ol = document.getElementById('yusu-run-steps');
+  if (!ol) return;
+  ol.innerHTML = yusuActs(bp, dep).map((a, i) => `
+    <li class="yr-step yr-step--${a.state}">
+      <span class="yr-step__icon" aria-hidden="true">${YUSU_ACTS[i].icon}</span>
+      <span class="yr-step__text">
+        <span class="yr-step__title">${i + 1}. ${esc(YUSU_ACTS[i].title)}</span>
+        <span class="yr-step__state">${esc(a.word)}</span>
+        <span class="yr-step__time">${esc(clock(a.time))}</span>
+      </span>
+    </li>`).join('');
+}
+
+/** The strip is the page while the run is in flight; the rest waits. */
+function setYusuMode(running) {
+  const run = document.getElementById('yusu-run');
+  if (run) run.style.display = running ? '' : 'none';
+  ['yusu-breadcrumb', 'yusu-integrate', 'yusu-foot'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (running) { el.dataset.wasHidden = el.style.display === 'none' ? '1' : ''; el.style.display = 'none'; }
+    else if (el.dataset.wasHidden !== undefined) { el.style.display = el.dataset.wasHidden ? 'none' : ''; delete el.dataset.wasHidden; }
+  });
+  const gov = document.querySelector('#screen-yusu .yu-gov');
+  if (gov) gov.style.display = running ? 'none' : '';
 }
 
 function slugify(text) {
@@ -340,6 +442,7 @@ async function buildAndPush() {
     body: JSON.stringify({ slug, blueprintId: _blueprintId }),
   });
   const repoName = r.name;
+  if (r.appName) _bp.appName = r.appName;
 
   // No link to the repository: it is private to Svarg, so a link would 404
   // for the person reading this. Their copy is the download below.
@@ -446,6 +549,13 @@ function render(bp, dep) {
   const building = dep?.status === 'attaching';
   const pushed = !!bp.eameDelivery?.repoName;
   const checksPass = results.length > 0 && results.every(r => r.pass);
+  if (live && !_actTime.deploy) _actTime.deploy = dep.updatedAt || Date.now();
+
+  // The run stage: preparing, pushing, testing, or deploying -- or about to
+  // press Go Live itself, which is the same run from the reader's side.
+  const inRun = !live && !_failed && (_running || building || (_autoLive && _checksRun && dep?.status === 'prepared'));
+  setYusuMode(inRun);
+  if (inRun) renderYusuRun(bp, dep);
 
   // Tied to a build existing, not to a push having succeeded. Keyed off
   // `pushed`, a customer whose publish failed could not get their code at all
@@ -470,6 +580,7 @@ function render(bp, dep) {
   const foot      = document.getElementById('yusu-foot');
 
   const stateWord = live ? (dep.status === 'suspended' ? 'Suspended' : 'Live')
+    : inRun ? 'Running'
     : building ? 'Deploying'
     : _running ? 'Preparing'
     : _failed ? 'Stopped'
@@ -521,14 +632,13 @@ function render(bp, dep) {
     btn.style.display = '';
     btn.disabled = true;
     btn.textContent = 'Deploying…';
-    title.textContent = 'Building your application';
+    title.textContent = 'Running your application';
     const stalled = stallDiagnosis(dep);
     sub.textContent = stalled
       ? stalled
-      : (dep.statusMessage ? dep.statusMessage + ' ' : '')
-        + 'Building and starting the application. This usually takes a couple of minutes.';
+      : 'Your application is being built, tested and deployed. This may take a few minutes.';
     sub.classList.toggle('eg-done__sub--stalled', !!stalled);
-    if (stalled) title.textContent = 'The application is not coming up';
+    if (stalled) { title.textContent = 'The application is not coming up'; setYusuMode(false); }
     return;
   }
 
@@ -547,12 +657,12 @@ function render(bp, dep) {
   btn.style.display = '';
   btn.textContent = 'Go Live';
 
-  if (_running) {
-    btn.disabled = true;
-    title.textContent = 'Preparing the release';
-    sub.textContent = pushed
-      ? 'Running the governance, ethics and security checks…'
-      : 'Building the application and pushing it to your repository…';
+  if (inRun) {
+    // Open only in the gap between the checks and the press the run makes
+    // itself; press() defers to this.
+    btn.disabled = _running || building;
+    title.textContent = 'Running your application';
+    sub.textContent = 'Your application is being built, tested and deployed. This may take a few minutes.';
     return;
   }
 
@@ -563,12 +673,16 @@ function render(bp, dep) {
     return;
   }
 
-  btn.disabled = !checksPass || dep?.status !== 'prepared';
+  // The checks inform; they do not gate. A Governance & Ethics section that
+  // failed to generate is a fact about the blueprint document, and holding
+  // the application back for it helped nobody. Only a missing environment
+  // closes the button.
+  btn.disabled = dep?.status !== 'prepared';
   title.textContent = 'Ready to Go Live';
-  sub.textContent = !checksPass
-    ? 'Go Live stays closed until the failing checks are resolved.'
-    : dep?.status !== 'prepared'
-      ? 'No environment is prepared yet — that happens on Aria.'
+  sub.textContent = dep?.status !== 'prepared'
+    ? 'No environment is prepared yet — that happens on Aria.'
+    : !checksPass
+      ? 'Some checks need attention (below); they do not hold the application back.'
       : 'Deploy your application to your target environment and make it available to your users.';
 }
 
@@ -627,7 +741,10 @@ function pollWhileBuilding() {
  * than handing them a task they have no access to perform.
  */
 function stallDiagnosis(dep) {
-  if (Date.now() - _buildingSince < 90000) return '';
+  // No clock yet means the build has only just been started -- the first
+  // render after Go Live lands before pollWhileBuilding sets it, and an
+  // unset start read as "started at the epoch", ninety seconds ago and more.
+  if (!_buildingSince || Date.now() - _buildingSince < 90000) return '';
   return [
     'Still nothing answering after a few minutes, so the build is not simply slow.',
     'This is on our side, and it is one of:',
@@ -695,13 +812,18 @@ async function autoRun() {
 
   _running = true;
   _failed = '';
+  _autoLive = _wentLiveFor !== _blueprintId;
   render(_bp, _dep);
 
   try {
-    await buildAndPush();
+    _actTime.prep = Date.now();
     render(_bp, _dep);
-    await new Promise(r => setTimeout(r, 500));   // let the strip land on Push
+    await buildAndPush();
+    _actTime.push = Date.now();
+    render(_bp, _dep);
+    await new Promise(r => setTimeout(r, 500));   // let the strip land on Tests
     _checksRun = true;
+    _actTime.tests = Date.now();
   } catch (err) {
     // Publishing failures are Svarg's to fix, not the customer's — the
     // message says what broke without asking them to do anything about it.
@@ -712,11 +834,15 @@ async function autoRun() {
     render(_bp, _dep);
   }
 
-  // Once per visit, and only if the checks ran clean. render() has just
-  // decided whether Go Live is open; press() defers to that.
+  // Once per visit, whatever the checks said: they inform, they do not gate.
+  // render() has just decided whether Go Live is open (an environment has to
+  // be prepared); press() defers to that.
   if (_checksRun && !_failed && _wentLiveFor !== _blueprintId) {
     _wentLiveFor = _blueprintId;
     press('yusu-golive-btn');
+  } else {
+    _autoLive = false;
+    render(_bp, _dep);
   }
 }
 
@@ -837,6 +963,8 @@ async function act() {
     // The owner key: the one time it can be read. Svarg keeps only its hash.
     if (r.ownerKey) showOwnerKey(r.ownerKey, r.deployment?.url || '');
   } catch (err) {
+    // The run is over: the page after it, with the reason.
+    _autoLive = false;
     showError(err.message);
     render(_bp, _dep);
   }

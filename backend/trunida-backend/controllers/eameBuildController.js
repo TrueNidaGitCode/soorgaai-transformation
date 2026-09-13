@@ -20,6 +20,7 @@ import { resolveAppName } from '../services/eameSpec.js';
 import { sampleDataFiles } from '../services/deliveredSampleData.js';
 import { tenantMongoUri } from '../services/deployTargetService.js';
 import { requireEntitlement } from '../services/entitlements.js';
+import { ensureAppName } from '../services/appNameService.js';
 
 /**
  * How long a build may sit in "building" before it is assumed dead.
@@ -122,6 +123,11 @@ export async function startBuild(req, res) {
       },
       { upsert: true, new: true }
     );
+
+    // Named before it is written: the name reaches the generated chat header,
+    // the repository and the Yusu hero. One or two words, not the use case.
+    // A failure to name it is not a failure to build it.
+    await ensureAppName(bp, { userId: req.user._id }).catch(() => {});
 
     // Deliberately not awaited: the response goes back now and the screen polls.
     runBuild(bp, doc._id).catch(err => {

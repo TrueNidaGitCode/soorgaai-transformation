@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=75">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=37">
+  <link rel="stylesheet" href="workspace.css?v=38">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=1">
   <script src="../login/config.js"></script>
@@ -1441,6 +1441,15 @@
 
       <div id="yusu-error" class="gen-error" style="display:none"></div>
 
+      <!-- ── The run ──────────────────────────────────────────────────────
+           While Yusu prepares, pushes, tests and deploys, this strip is the
+           page: four acts, each with its state and the time it finished.
+           Written by renderYusuRun; everything below it is hidden until the
+           run is over, and the page after the run is unchanged. -->
+      <div class="yr-run" id="yusu-run" style="display:none" role="status" aria-live="polite">
+        <ol class="yr-steps" id="yusu-run-steps"></ol>
+      </div>
+
       <!-- ── The application ───────────────────────────────────────────────
            What was built, where it runs, and the one thing to do about it.
            The actions moved up from the foot of the page: Go Live before it
@@ -1682,7 +1691,7 @@
   <script type="module" src="ariaScreen.js?v=54"></script>
   <script type="module" src="arthScreen.js?v=24"></script>
   <script type="module" src="eameScreen.js?v=27"></script>
-  <script type="module" src="yusuScreen.js?v=35"></script>
+  <script type="module" src="yusuScreen.js?v=36"></script>
   <script type="module" src="../shared/rail.js?v=1"></script>
   <script type="module" src="workspaceShell.js?v=3"></script>
   <script type="module" src="screenChat.js?v=7"></script>

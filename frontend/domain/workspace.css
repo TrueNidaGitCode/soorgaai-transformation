@@ -603,6 +603,48 @@ body.domain-page .cr-wait__note svg { width: 16px; height: 16px; flex: 0 0 auto;
 }
 #screen-yusu .yu-owner__note { margin: 10px 0 12px; font-size: 0.82rem; line-height: 1.55; color: var(--ws-muted); }
 #screen-yusu .yu-owner__go { display: inline-flex; text-decoration: none; }
+
+/* ── Yusu's run stage: four acts across ─────────────────────────────────── */
+#screen-yusu .yr-run {
+  margin: 0 0 20px;
+  padding: 22px 26px;
+  border: 1px solid var(--ws-line);
+  border-radius: 18px;
+  background: rgba(12, 22, 30, 0.55);
+}
+#screen-yusu .yr-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
+#screen-yusu .yr-step { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 0 10px 0 0; }
+#screen-yusu .yr-step + .yr-step { padding-left: 16px; }
+#screen-yusu .yr-step + .yr-step::before {
+  content: ''; position: absolute; left: -14px; top: 50%; width: 30px; height: 2px;
+  background: rgba(93, 143, 155, 0.35);
+}
+#screen-yusu .yr-step--done + .yr-step::before, #screen-yusu .yr-step--done + .yr-step--done::before { background: var(--ws-accent); }
+#screen-yusu .yr-step__icon {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: grid; place-items: center; box-sizing: border-box;
+  border: 2px solid rgba(93, 143, 155, 0.35);
+  background: rgba(12, 22, 30, 0.9);
+  color: var(--ws-muted);
+  position: relative; z-index: 1;
+}
+#screen-yusu .yr-step__icon svg { width: 26px; height: 26px; }
+#screen-yusu .yr-step--done .yr-step__icon { border-color: var(--ws-accent); background: var(--ws-accent); color: #032027; }
+#screen-yusu .yr-step--active .yr-step__icon { border-color: var(--ws-accent); color: var(--ws-accent); box-shadow: 0 0 0 5px rgba(34, 217, 232, 0.14), 0 0 26px rgba(34, 217, 232, 0.3); animation: ws-step-loading 1.4s ease-in-out infinite; }
+#screen-yusu .yr-step--failed .yr-step__icon { border-color: #E38C7A; color: #E38C7A; }
+#screen-yusu .yr-step__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+#screen-yusu .yr-step__title { font-size: 0.92rem; font-weight: 700; color: var(--ws-text); white-space: nowrap; }
+#screen-yusu .yr-step--waiting .yr-step__title { color: var(--ws-muted); }
+#screen-yusu .yr-step__state { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--ws-faint); }
+#screen-yusu .yr-step__state::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+#screen-yusu .yr-step--done .yr-step__state { color: #5CC5A7; }
+#screen-yusu .yr-step--active .yr-step__state { color: var(--ws-accent); }
+#screen-yusu .yr-step--failed .yr-step__state { color: #E38C7A; }
+#screen-yusu .yr-step__time { font-size: 0.78rem; color: var(--ws-faint); font-variant-numeric: tabular-nums; }
+@media (max-width: 1000px) {
+  #screen-yusu .yr-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 22px; }
+  #screen-yusu .yr-step + .yr-step::before { display: none; }
+}
 #screen-yusu .yu-owner__planwrap { margin: 0 0 12px; }
 #screen-yusu .yu-owner__planhead { margin: 0 0 6px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ws-muted); }
 #screen-yusu .yu-owner__plan { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 4px 18px; }

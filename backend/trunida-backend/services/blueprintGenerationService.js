@@ -31,6 +31,7 @@ import {
 } from './strategyCanvasService.js';
 import { BLUEPRINT_CONFIG }       from '../config/blueprintConfig.js';
 import { enabledDomains, getDomain } from '../config/domainRegistry.js';
+import { parseLooseJson } from '../utils/looseJson.js';
 import { getCapabilityEnterpriseContext, preloadEnterpriseContextMap } from './enterpriseBlueprintService.js';
 import { getConnectedKnowledgeContext, preloadConnectedKnowledgeMap, getLinkedProjectContext } from './connectedKnowledgeService.js';
 import { resolveIndustryGrounding } from './industryFitService.js';
@@ -2672,9 +2673,18 @@ function parseBriefOutput(rawSections, validTitles) {
 
 // ── LLM call helper ───────────────────────────────────────────────────────────
 
-async function callLLM(systemPrompt, userMessage, timeoutMs, capName) {
+// A section is a JSON object the model writes in one go. It used to be
+// parsed strictly, once: a trailing comma or an answer cut off by the output
+// budget threw "Expected ',' or ']' after array element", the capability was
+// marked error with no sections, and -- two stages later -- Yusu failed its
+// Governance & Ethics check for a document that simply had not parsed. Now:
+// a bigger budget, a tolerant parse, and one more attempt when the first
+// answer could not be read or had to be trimmed to be read.
+const SECTION_MAX_TOKENS = 6000;
+
+async function askOnce(systemPrompt, userMessage, timeoutMs, capName) {
   const { text } = await Promise.race([
-    generate({ systemPrompt, userMessage, maxTokens: 4000, label: 'cob:section' }),
+    generate({ systemPrompt, userMessage, maxTokens: SECTION_MAX_TOKENS, label: 'cob:section' }),
     new Promise((_, reject) =>
       setTimeout(
         () => reject(new Error(`LLM timeout after ${timeoutMs / 1000}s for: ${capName}`)),
@@ -2682,9 +2692,30 @@ async function callLLM(systemPrompt, userMessage, timeoutMs, capName) {
       )
     ),
   ]);
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error(`No JSON in LLM response for: ${capName}`);
-  return JSON.parse(match[0]);
+  return text;
+}
+
+async function callLLM(systemPrompt, userMessage, timeoutMs, capName) {
+  let first = null;
+  try {
+    first = parseLooseJson(await askOnce(systemPrompt, userMessage, timeoutMs, capName));
+    if (!first.repaired) return first.value;
+    console.warn(`[blueprintGen] ${capName}: the answer had to be repaired to parse; asking once more`);
+  } catch (err) {
+    console.warn(`[blueprintGen] ${capName}: could not read the answer (${err.message}); asking once more`);
+  }
+  try {
+    const again = parseLooseJson(await askOnce(
+      systemPrompt,
+      userMessage + '\n\nReturn ONLY the JSON object, complete and valid, with no trailing commas and nothing before or after it. Keep every text value concise so the whole object fits.',
+      timeoutMs, capName,
+    ));
+    if (!again.repaired || !first) return again.value;
+  } catch (err) {
+    if (!first) throw new Error(`No readable JSON in LLM response for: ${capName} — ${err.message}`);
+  }
+  // Both answers needed trimming: the first, salvaged, is what there is.
+  return first.value;
 }
 
 // ── Output format helpers ─────────────────────────────────────────────────────

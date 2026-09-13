@@ -44,7 +44,7 @@ async function ownedBlueprint(blueprintId, userId) {
  * caller is told which they got so the screen cannot describe a defect matcher
  * as their application.
  */
-async function projectFor(bp) {
+export async function projectFor(bp) {
   const generated = await generatedManifest(bp._id, { appName: resolveAppName(bp) });
   if (generated) return { files: generated, source: 'generated' };
   return { files: buildManifest({ includeJira: true, appName: resolveAppName(bp) }), source: 'template' };
@@ -63,7 +63,7 @@ async function projectFor(bp) {
  * like a change, pushing a new commit and rebuilding the customer's
  * application to deliver nothing.
  */
-function manifestHash(files) {
+export function manifestHash(files) {
   const h = crypto.createHash('sha256');
   for (const f of [...files].sort((a, b) => a.path.localeCompare(b.path))) {
     const content = String(f.content || '').split('\r\n').join('\n');

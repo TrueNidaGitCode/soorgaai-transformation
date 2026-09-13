@@ -23,6 +23,7 @@ import industryCapabilityKnowledgeRoutes from "./routes/industryCapabilityKnowle
 import salesSignalsRoutes from "./routes/salesSignalsRoutes.js";
 import outreachPublicRoutes from "./routes/outreachPublicRoutes.js";
 import { runOutreachSweep } from "./services/outreachService.js";
+import { startLiveUpdates } from "./services/liveUpdateService.js";
 import feedbackRoutes               from "./routes/feedbackRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import guestRoutes                  from "./routes/guestRoutes.js";
@@ -489,6 +490,10 @@ connectDB()
         console.log("🚀 Starting SoorgaAI Server...");
         app.listen(PORT, () => console.log(`🚀 SoorgaAI Server running on port ${PORT}`));
         startOutreachScheduler();
+        // Live applications pick up runtime changes by themselves: after this
+        // boot (a deploy of Svarg is the usual reason one changed), then every
+        // few hours. See services/liveUpdateService.js.
+        startLiveUpdates();
     })
     .catch(error => {
         console.error("❌ Server startup failed:", error.message);

@@ -88,6 +88,10 @@ which questions were asked, what was corrected -- never rows.
 
 ## Security properties this gives
 
+The same principle applied to identity -- who is using the application,
+and how Svarg brokers Google and emailed codes without holding a record of
+the person -- is in [sign-in-in-the-application.md](sign-in-in-the-application.md).
+
 - Records at rest only in the tenant database; nothing in Svarg's platform
   database.
 - Connector credentials encrypted in the tenant; Svarg holds none.

@@ -88,6 +88,53 @@ Three previously-separate, inconsistent relevance mechanisms are being consolida
 
 Note: `services/strategyCanvasService.js` also has a narrower `LIBRARY_GROUNDED_DOMAINS` constant (`AI_Strategy` + `AI_Use_Cases` only) — this is intentionally a *different, smaller* list, used only by the Company/Enterprise/Vertical library services. Don't confuse the two or try to merge them.
 
+## The delivered application (Eame → Yusu)
+
+Everything above is Svarg's platform. What a customer ends up with is a
+separate Node/Express/Mongo application that Eame composes and Yusu puts
+live in its own Railway project with its own database. It is built as
+**fixed runtime + generated code**:
+
+- **Fixed runtime** -- `backend/trunida-backend/eame-template/`, the same in
+  every application and listed in `services/eameSpec.js` `FIXED_PATHS`, so the
+  model that writes the application cannot replace it: `server.js` (route
+  discovery, seed-on-boot, the open session), the front door / welcome / chat
+  shell (`frontend/index.html`, `app.css`, `config.js`), the Data page and
+  connectors, the feedback and signals plumbing, and sign-in.
+- **Generated code** -- models, services, controllers, routes, the seed script
+  and `frontend/app.js`, written by Eame from the blueprint for that one use
+  case. The generator's brief is `services/eameCodeGenerator.js`; the verifier
+  (`services/generatedProjectVerifier.js`) boots the composed project before
+  it is delivered.
+- **Naming and front door** -- `services/appNameService.js` (the organisation's
+  name first, then a model suggestion, then a fallback; a name the customer
+  typed always wins) and `services/frontDoorService.js` (headline, accent,
+  hero photo, preview), both run at the start of every build.
+- **Live update** -- `services/liveUpdateService.js` recomposes every live
+  application 45 s after Svarg boots and every 6 h, compares by manifest hash,
+  pushes a differing runtime to the application's own repository and asks
+  Railway to rebuild, carrying any new environment variables with it. That is
+  how a change to the fixed runtime reaches applications already live without
+  anyone pressing Go Live.
+
+The tenant's environment (`services/deployTargetService.js` `buildTenantEnv`)
+is the whole seam between platform and application: its own `MONGO_URI` and
+`JWT_SECRET`; the gateway token and base URL for model calls and signals;
+`APP_OWNER_KEY` for the Data page; `CONNECTOR_ENCRYPTION_KEY` for source
+credentials; `SVARG_AUTH_URL` / `SVARG_AUTH_SECRET` for sign-in.
+
+Three decisions shape what crosses that seam, each with its own document:
+
+| Decision | Document | One line |
+|---|---|---|
+| Where the customer's records live | [docs/connectors-in-the-application.md](docs/connectors-in-the-application.md) | Svarg sees the shape of the data (columns, invented sample rows); the records, the files, the WhatsApp exports and the Jira/Confluence/GitHub credentials go into the application's own database, never to Svarg. |
+| What the application tells Svarg | [docs/self-learning.md](docs/self-learning.md) and the *signals* section of the connectors document | A fixed list of four signals (`question_asked`, `feedback`, `correction`, `import`), never a question, answer or row; conversations stay in the tenant. The Learner reads those signals and extends the blueprint. |
+| Who is using the application | [docs/sign-in-in-the-application.md](docs/sign-in-in-the-application.md) | Google or an emailed code, both brokered by Svarg (one registered Google client, one mail sender, for every application) with a per-tenant derived secret; the application keeps its own users and sessions and Svarg keeps no record of the person. |
+
+The common shape: Svarg does the thing a fresh application cannot do for
+itself (talk to Google, send mail, reach a model, notice patterns across
+customers) and holds nothing of the customer's it does not need to do it.
+
 ## Known architectural debt (worth knowing, not urgent)
 
 - A separate, older Python RAG pipeline exists under `knowledge_base/` (loader → embedding → Chroma vector store → hybrid retrieval → citation-enforced response, documented in `knowledge_base/ARCHITECTURE.md`) — built first (June 2026), abandoned after ~2 days in favor of the Node backend, never wired to it, no shared code. It predates 5 of the current 6 domains (scoped only to AI Strategy) and isn't a dependency of the Hybrid retrieval section above, which is a fresh Node-native build, not a revival of this pipeline.

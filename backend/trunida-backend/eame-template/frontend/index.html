@@ -72,18 +72,54 @@
     <script type="application/json" id="ld-preview-data">__APP_PREVIEW_JSON__</script>
   </section>
 
-  <!-- ── The welcome, after signing in ──────────────────────────────────── -->
-  <section class="ch-door ch-door--greet" id="ch-greet" aria-label="Welcome" hidden>
-    <div class="ch-door__glow" aria-hidden="true"></div>
-    <div class="ch-greet">
-      <p class="ch-greet__eyebrow">Welcome to __APP_NAME__</p>
-      <h1 class="ch-greet__title">Welcome to the future of running your business.</h1>
-      <p class="ch-greet__body">It is totally different. There is nothing to learn and nothing to set up:
-        you ask, in your own words, and it answers from your data — with the records behind every answer,
-        so you can see for yourself.</p>
-      <p class="ch-greet__body ch-greet__body--dim">__APP_WELCOME_BODY__</p>
-      <button type="button" class="ch-door__cta" id="ch-continue">Continue</button>
+  <!-- ── The welcome, after signing in ────────────────────────────────────
+       The same in every application Svarg builds: the one moment that is
+       about the way of working rather than the business. A scene the page
+       animates itself -- the things a business runs on drifting in, their
+       lines flowing into one glowing core -- and one line about what that
+       core does. Nothing here comes from the build. -->
+  <section class="wl" id="ch-greet" aria-label="Welcome" hidden>
+    <div class="wl__bg" aria-hidden="true"></div>
+    <div class="wl__wave wl__wave--a" aria-hidden="true"></div>
+    <div class="wl__wave wl__wave--b" aria-hidden="true"></div>
+
+    <div class="wl__copy">
+      <p class="wl__eyebrow"><span></span>Welcome<span></span></p>
+      <h1 class="wl__title">A new way to get <em>work done.</em></h1>
+      <p class="wl__sub">AI that understands your work, learns as you use it, and helps you get things done.</p>
     </div>
+
+    <div class="wl__scene" aria-hidden="true">
+      <svg class="wl__lines" viewBox="0 0 900 340" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="wl-line" x1="0" x2="1"><stop offset="0" stop-color="#22D9E8" stop-opacity="0"/><stop offset=".5" stop-color="#22D9E8" stop-opacity=".9"/><stop offset="1" stop-color="#5CF2B0" stop-opacity="0"/></linearGradient>
+        </defs>
+        <path d="M150 120 C 300 120, 320 170, 450 170"/>
+        <path d="M120 230 C 280 230, 300 180, 450 175"/>
+        <path d="M200 60 C 330 60, 340 160, 450 168"/>
+        <path d="M750 120 C 600 120, 580 170, 450 170"/>
+        <path d="M790 230 C 620 230, 600 180, 450 175"/>
+        <path d="M700 60 C 570 60, 560 160, 450 168"/>
+      </svg>
+
+      <div class="wl__card wl__card--lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="wl__card wl__card--folder" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+      <div class="wl__card wl__card--image" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-8 8"/></svg></div>
+      <div class="wl__card wl__card--chat" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><circle cx="8" cy="10.5" r="1.3" fill="#0B1F2A"/><circle cx="12" cy="10.5" r="1.3" fill="#0B1F2A"/><circle cx="16" cy="10.5" r="1.3" fill="#0B1F2A"/></svg></div>
+      <div class="wl__card wl__card--chart" aria-hidden="true"><b style="height:30%"></b><b style="height:50%"></b><b style="height:70%"></b><b style="height:95%"></b></div>
+      <div class="wl__card wl__card--tasks" aria-hidden="true"><u></u><u></u></div>
+      <div class="wl__card wl__card--calendar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h2M12 14h2M16 14h2M8 18h2M12 18h2" stroke-width="2.4"/></svg></div>
+
+      <div class="wl__core">
+        <div class="wl__tile">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2 6.5L20.5 10l-6.5 1.5L12 18l-2-6.5L3.5 10 10 8.5z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/><path d="M5 15l.6 1.6L7.2 17.2l-1.6.6L5 19.4l-.6-1.6L2.8 17.2l1.6-.6z"/></svg>
+        </div>
+        <div class="wl__beam"></div>
+        <div class="wl__podium"><i></i><i></i><i></i></div>
+      </div>
+    </div>
+
+    <button type="button" class="wl__cta" id="ch-continue">Continue <span aria-hidden="true">&rarr;</span></button>
   </section>
 
   <!-- ── The chat ───────────────────────────────────────────────────────── -->

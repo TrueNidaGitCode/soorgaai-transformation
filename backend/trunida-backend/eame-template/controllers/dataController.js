@@ -198,26 +198,28 @@ export async function importDataset(req, res) {
 // the same files the seed loaded -- so it is the data the chat answers from.
 
 /** GET /api/data/areas -> the datasets, their columns and keys, and how much of theirs and of the sample each holds. */
-export function listAreas(req, res) {
+export async function listAreas(req, res) {
   try {
-    res.json({ areas: readIndex().map(d => {
-      const n = countRows(d);
-      return { name: d.name, columns: (d.columns || []).filter(c => c !== '_source'), key: datasetKey(d), own: n.own, sample: n.sample };
-    }) });
+    const areas = [];
+    for (const d of readIndex()) {
+      const n = await countRows(d);
+      areas.push({ name: d.name, columns: (d.columns || []).filter(c => c !== '_source'), key: datasetKey(d), own: n.own, sample: n.sample });
+    }
+    res.json({ areas });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
 /** GET /api/data/rows?dataset=&kind=own|sample&q=&limit= -> the rows of that kind, searched. */
-export function datasetRows(req, res) {
+export async function datasetRows(req, res) {
   try {
     const dataset = findDataset(String(req.query.dataset || ''));
     if (!dataset) return res.status(404).json({ error: 'That dataset is not one this application was built on.' });
     const kind = req.query.kind === 'sample' ? 'sample' : 'own';
     const q = String(req.query.q || '').trim().toLowerCase();
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 200, 1), 1000);
-    const all = readAllRows(dataset, kind);
+    const all = await readAllRows(dataset, kind);
     const rows = q ? all.rows.filter(r => r.cells.some(c => String(c).toLowerCase().includes(q))) : all.rows;
     res.json({ dataset: dataset.name, kind, columns: all.columns, key: datasetKey(dataset), sample: all.sample, total: rows.length, rows: rows.slice(0, limit) });
   } catch (err) {

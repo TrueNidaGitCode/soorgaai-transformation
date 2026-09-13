@@ -156,6 +156,8 @@
   function sourceLabel(s) { return SOURCE_LABEL[s] || s || 'a file'; }
 
   async function refresh() {
+    // The application's shell keeps the counts beside the datasets; tell it.
+    try { document.dispatchEvent(new CustomEvent('ch-data-changed')); } catch (e) { /* fine */ }
     try {
       var d = await ownerJson('/api/data/datasets');
       datasets = d.datasets || [];

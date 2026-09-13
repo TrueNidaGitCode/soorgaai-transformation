@@ -171,6 +171,17 @@ export function provenanceCollection() {
   return mongoose.connection.collection('svarg_provenance');
 }
 
+/**
+ * The owner's rows themselves, per dataset and source: THE record. The
+ * CSV files under data/own are written from this for the seed script to
+ * read, and rebuilt from it at boot -- on a host whose disk does not
+ * survive a restart or a rebuild (Railway's does not), the files are gone
+ * and the rows are not.
+ */
+export function rowsCollection() {
+  return mongoose.connection.collection('svarg_rows');
+}
+
 export function connectorsCollection() {
   return mongoose.connection.collection('svarg_connectors');
 }
@@ -203,8 +214,19 @@ function sourceFile(dataset, src) {
   return path.join(OWN_DIR, src === 'own' ? `${dataset.slug}.csv` : `${dataset.slug}.${src}.csv`);
 }
 
-/** The rows an earlier landing of this source wrote, in column order, without _source. */
-function readSourceRows(dataset, src) {
+/** The file as the seed reads it, from rows in column order. */
+function writeSourceFile(dataset, src, rows) {
+  const columns = (dataset.columns || []).filter(c => c !== '_source');
+  const header = [...columns, '_source'].map(csvCell).join(',');
+  const lines = rows.map(r => [...columns.map((_, i) => csvCell(Array.isArray(r) ? r[i] : '')), src].join(','));
+  fs.mkdirSync(OWN_DIR, { recursive: true });
+  const file = sourceFile(dataset, src);
+  fs.writeFileSync(file, header + '\n' + lines.join('\n') + '\n', 'utf8');
+  return file;
+}
+
+/** A file an earlier version wrote before the database was the record, if it is still there. */
+function readSourceFile(dataset, src) {
   const file = sourceFile(dataset, src);
   if (!fs.existsSync(file)) return [];
   const columns = (dataset.columns || []).filter(c => c !== '_source');
@@ -214,14 +236,41 @@ function readSourceRows(dataset, src) {
   return body.map(r => at.map(i => (i >= 0 ? String(r[i] ?? '') : '')));
 }
 
-function writeSourceRows(dataset, src, rows) {
-  const columns = (dataset.columns || []).filter(c => c !== '_source');
-  const header = [...columns, '_source'].map(csvCell).join(',');
-  const lines = rows.map(r => [...columns.map((_, i) => csvCell(Array.isArray(r) ? r[i] : '')), src].join(','));
-  fs.mkdirSync(OWN_DIR, { recursive: true });
-  const file = sourceFile(dataset, src);
-  fs.writeFileSync(file, header + '\n' + lines.join('\n') + '\n', 'utf8');
-  return file;
+/** The rows this source has landed on this dataset, in column order, from the record. */
+async function readSourceRows(dataset, src) {
+  const docs = await rowsCollection().find({ datasetName: dataset.name, source: src }, { projection: { cells: 1, n: 1 } }).sort({ n: 1 }).toArray().catch(() => []);
+  if (docs.length) return docs.map(d => d.cells);
+  return readSourceFile(dataset, src);
+}
+
+/** Replace what this source holds on this dataset: the record, then the file the seed reads. */
+async function writeSourceRows(dataset, src, rows) {
+  const col = rowsCollection();
+  await col.deleteMany({ datasetName: dataset.name, source: src });
+  if (rows.length) await col.insertMany(rows.map((cells, n) => ({ datasetName: dataset.name, source: src, n, cells })), { ordered: true });
+  return writeSourceFile(dataset, src, rows);
+}
+
+/**
+ * At boot: the files under data/own, rebuilt from the record. A host that
+ * lost its disk comes back with every owner file in place, so a later
+ * landing merges against what was there and the seed can be re-run.
+ */
+export async function restoreOwnFiles() {
+  let restored = 0;
+  try {
+    const pairs = await rowsCollection().aggregate([{ $group: { _id: { d: '$datasetName', s: '$source' } } }]).toArray();
+    for (const p of pairs) {
+      const dataset = findDataset(p._id.d);
+      if (!dataset) continue;
+      const rows = await readSourceRows(dataset, p._id.s);
+      writeSourceFile(dataset, p._id.s, rows);
+      restored++;
+    }
+  } catch (err) {
+    console.warn('[data] own files not restored —', err.message);
+  }
+  return restored;
 }
 
 /** A row's key: its key cells, normalised and joined; '' when they are all empty. */
@@ -330,20 +379,20 @@ export async function landRows({ dataset, rows, source, by = 'owner', detail = '
   if (mode === 'replace') {
     result = { rows: incoming, added: incoming.length, updated: 0, unchanged: 0, missing: [], seen: keyIndexes.length ? incoming.map(r => keyOf(r, keyIndexes)).filter(Boolean) : [] };
   } else {
-    result = mergeRows(readSourceRows(dataset, src), incoming, keyIndexes);
+    result = mergeRows(await readSourceRows(dataset, src), incoming, keyIndexes);
   }
-  const file = writeSourceRows(dataset, src, result.rows);
+  const file = await writeSourceRows(dataset, src, result.rows);
   const seeded = await reseed(dataset.name, file);
 
   // One row per key across sources: the other files let go of these keys.
   const moved = [];
   if (keyIndexes.length && result.seen.length) {
     const seen = new Set(result.seen);
-    for (const other of otherSources(dataset, src)) {
-      const before = readSourceRows(dataset, other);
+    for (const other of await otherSources(dataset, src)) {
+      const before = await readSourceRows(dataset, other);
       const after = before.filter(r => !seen.has(keyOf(r, keyIndexes)));
       if (after.length === before.length) continue;
-      writeSourceRows(dataset, other, after);
+      await writeSourceRows(dataset, other, after);
       await reseed(dataset.name, sourceFile(dataset, other));
       moved.push({ from: other, rows: before.length - after.length });
     }
@@ -370,7 +419,7 @@ export async function landRows({ dataset, rows, source, by = 'owner', detail = '
  * nothing of theirs has arrived yet. What the tabs show; the seed loaded
  * the same files, so this is the application's data as the chat sees it.
  */
-export function readAllRows(dataset, kind = 'own') {
+export async function readAllRows(dataset, kind = 'own') {
   const columns = (dataset.columns || []).filter(c => c !== '_source');
   const out = [];
   if (kind === 'sample') {
@@ -383,26 +432,27 @@ export function readAllRows(dataset, kind = 'own') {
     } catch { /* no sample file */ }
     return { columns, rows: out, sample: true };
   }
-  for (const src of otherSources(dataset, '')) {
-    for (const r of readSourceRows(dataset, src)) out.push({ cells: r, source: src });
+  for (const src of await otherSources(dataset, '')) {
+    for (const r of await readSourceRows(dataset, src)) out.push({ cells: r, source: src });
   }
   return { columns, rows: out, sample: false };
 }
 
 /** How much of each a dataset holds: the owner's rows, and the sample's. */
-export function countRows(dataset) {
-  return { own: readAllRows(dataset, 'own').rows.length, sample: readAllRows(dataset, 'sample').rows.length };
+export async function countRows(dataset) {
+  const own = await rowsCollection().countDocuments({ datasetName: dataset.name }).catch(() => 0);
+  return { own: own || (await readAllRows(dataset, 'own')).rows.length, sample: (await readAllRows(dataset, 'sample')).rows.length };
 }
 
-/** The other _source files this dataset has on disk. */
-function otherSources(dataset, src) {
-  if (!fs.existsSync(OWN_DIR)) return [];
-  const escaped = dataset.slug.replace(/[.*+?^${}()|[\]\\]/g, (m) => '\\' + m);
-  const re = new RegExp('^' + escaped + '(?:\\.([a-z0-9_-]+))?\\.csv$', 'i');
-  return fs.readdirSync(OWN_DIR)
-    .map(f => f.match(re)).filter(Boolean)
-    .map(m => m[1] || 'own')
-    .filter(s => s !== src);
+/** The other sources this dataset holds rows from: the record's, plus any file an earlier version left. */
+async function otherSources(dataset, src) {
+  const found = new Set(await rowsCollection().distinct('source', { datasetName: dataset.name }).catch(() => []));
+  if (fs.existsSync(OWN_DIR)) {
+    const escaped = dataset.slug.replace(/[.*+?^${}()|[\]\\]/g, (m) => '\\' + m);
+    const re = new RegExp('^' + escaped + '(?:\\.([a-z0-9_-]+))?\\.csv$', 'i');
+    for (const f of fs.readdirSync(OWN_DIR)) { const m = f.match(re); if (m) found.add(m[1] || 'own'); }
+  }
+  return [...found].filter(s => s !== src);
 }
 
 async function recordProvenance({ dataset, key, keyed, result, src, by, origin, complete }) {

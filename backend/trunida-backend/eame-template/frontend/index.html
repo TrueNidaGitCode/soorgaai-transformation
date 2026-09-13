@@ -773,6 +773,7 @@
         app.hidden = true;
         if (connections) connections.hidden = true;
         view.hidden = false;
+        refreshAreas();
         loadRows();
       }
       function goHomeTab() {
@@ -800,6 +801,8 @@
         sync();
       }
       if (!app.hidden) refreshAreas();
+      // After anything lands on the Data page, and whenever a view opens.
+      document.addEventListener('ch-data-changed', function () { refreshAreas(); });
 
       // Attach: the owner's Data page. Shown when this browser holds the owner session.
       var attach = document.getElementById('ch-attach');

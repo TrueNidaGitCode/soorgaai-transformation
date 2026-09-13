@@ -25,7 +25,7 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { startScheduler } from './services/connectorService.js';
+import { startScheduler, restoreOwnFiles } from './services/connectorService.js';
 import { turnMiddleware } from './services/turnLog.js';
 
 dotenv.config();
@@ -182,6 +182,11 @@ async function start() {
 
   await mountRoutes();
   console.log(mounted.length ? `Mounted: ${mounted.join(', ')}` : 'No routes found in routes/');
+
+  // The owner's files under data/own, back from the database: a host that
+  // lost its disk on this restart still has every row the owner brought in.
+  const restored = await restoreOwnFiles();
+  if (restored) console.log(`[data] ${restored} owner file(s) restored from the database`);
 
   await seedIfEmpty();
 

@@ -31,13 +31,13 @@ describe('where an industry keeps its data', () => {
     const { sourcesForBlueprint, connectorKindsFor } = await import('../services/sourceCatalogService.js');
     const s = sourcesForBlueprint({ industryFit: { industry: 'Sports Academies' }, ...DR([{ name: 'Attendance', typicalSource: 'WhatsApp' }, { name: 'Tickets', typicalSource: 'GitHub issues' }]) });
     expect(s.map(x => x.kind)).toEqual(['folder', 'whatsapp', 'form', 'github']);
-    expect(connectorKindsFor(s)).toEqual(['github']);
+    expect(connectorKindsFor(s)).toEqual(['whatsapp', 'github']);
   });
 
   it('ships only the connector modules the sources call for', async () => {
     const { buildRuntime } = await import('../services/eameProjectBuilder.js');
     const paths = (o) => buildRuntime({ appName: 'x', ...o }).map(f => f.path).filter(p => p.startsWith('services/connectors/'));
-    expect(paths({}).length).toBe(3);
+    expect(paths({}).length).toBe(4);
     expect(paths({ connectors: ['jira'] })).toEqual(['services/connectors/jira.js']);
     expect(paths({ connectors: [] })).toEqual([]);
     // Everything else still ships.

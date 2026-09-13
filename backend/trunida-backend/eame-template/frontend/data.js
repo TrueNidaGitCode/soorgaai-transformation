@@ -152,7 +152,7 @@
   var connectors = [];   // what is connected, across datasets
   var imports = [];
 
-  var SOURCE_LABEL = { own: 'a file', folder: 'your folder', whatsapp: 'WhatsApp export', chat: 'the chat', jira: 'Jira', confluence: 'Confluence', github: 'GitHub', sample: 'sample' };
+  var SOURCE_LABEL = { own: 'a file', folder: 'your folder', whatsapp: 'WhatsApp export', 'whatsapp-business': 'WhatsApp Business', chat: 'the chat', jira: 'Jira', confluence: 'Confluence', github: 'GitHub', sample: 'sample' };
   function sourceLabel(s) { return SOURCE_LABEL[s] || s || 'a file'; }
 
   async function refresh() {
@@ -210,7 +210,7 @@
     var list = sources.length ? sources.slice() : [{ kind: 'folder', label: 'Your folder of spreadsheets', providers: ['upload'], note: 'Upload the folder your records are kept in; each sheet is matched to what the application expects.' }];
     // A connector this application shipped with is a source too, even if the
     // industry did not list it first.
-    kinds.forEach(function (k) { if (!list.some(function (s) { return s.kind === k.kind; })) list.push({ kind: k.kind, label: k.label, providers: ['live'], note: k.help, also: true }); });
+    kinds.forEach(function (k) { if (!list.some(function (s) { return s.kind === k.kind || (s.kind === 'whatsapp' && k.kind === 'whatsapp-business'); })) list.push({ kind: k.kind, label: k.label, providers: ['live'], note: k.help, also: true }); });
     var main = list.filter(function (s) { return !s.also; });
     var also = list.filter(function (s) { return s.also; });
     els.sources.innerHTML = main.map(renderSource).join('');
@@ -222,6 +222,8 @@
   function renderSource(s) {
     var status = '', action = '', tone = '';
     var mine = connectors.filter(function (c) { return c.kind === s.kind; });
+    // A card's kind and a connection's kind differ for WhatsApp: the card is
+    // the source, the connection is the business account.
     if (s.kind === 'folder') {
       var f = importsOf('folder');
       if (f.length) {
@@ -232,10 +234,14 @@
         + '<label class="dt-btn dt-btn--quiet dt-btn--file">Add a file<input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" data-onefile="1"></label>';
     } else if (s.kind === 'whatsapp') {
       var w = lastImport('whatsapp');
-      status = w ? plural(w.rows, 'row') + ' from an export · last ' + ago(w.at) : 'Not connected'; tone = w ? 'on' : '';
+      var biz = kinds.find(function (x) { return x.kind === 'whatsapp-business'; });
+      mine = connectors.filter(function (c) { return c.kind === 'whatsapp-business'; });
+      if (mine.length) { status = 'Business number connected' + (mine[0].lastSyncAt ? ' · last message landed ' + ago(mine[0].lastSyncAt) : ' · waiting for the first message'); tone = 'on'; }
+      else { status = w ? plural(w.rows, 'row') + ' from an export · last ' + ago(w.at) : 'Not connected'; tone = w ? 'on' : ''; }
       var providers = s.providers || ['export'];
-      action = (providers.indexOf('export') !== -1 ? '<button type="button" class="dt-btn" data-open="whatsapp">Import an exported chat</button>' : '')
-        + (providers.indexOf('business-account') !== -1 ? '<span class="dt-card__soon" title="A WhatsApp Business number, so replies arrive here as they are sent. Being set up.">Business account · coming</span>' : '');
+      action = (biz && providers.indexOf('business-account') !== -1 ? '<button type="button" class="dt-btn" data-open="whatsapp-business">' + (mine.length ? 'Connect another number' : 'Connect a business account') + '</button>' : '')
+        + (providers.indexOf('export') !== -1 ? '<button type="button" class="dt-btn' + (biz ? ' dt-btn--quiet' : '') + '" data-open="whatsapp">Import an exported chat</button>' : '')
+        + (!biz && providers.indexOf('business-account') !== -1 ? '<span class="dt-card__soon" title="A WhatsApp Business number, so replies arrive here as they are sent. Not shipped with this application.">Business account · not on this application</span>' : '');
     } else if (s.kind === 'form') {
       status = 'Its responses sheet goes in your folder';
       action = '<label class="dt-btn dt-btn--quiet dt-btn--file">Upload the responses sheet<input type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" data-onefile="1"></label>';
@@ -712,9 +718,19 @@
     }
     var k = kinds.find(function (x) { return x.kind === kindName; });
     if (!k) return;
-    var guessDs = datasets.findIndex(function (d) { return new RegExp(kindName, 'i').test(d.name) || (k.provides || []).some(function (p) { return new RegExp(p, 'i').test(d.name); }); });
+    var guessDs = datasets.findIndex(function (d) { return new RegExp(kindName.split('-')[0], 'i').test(d.name) || /attend/i.test(d.name) && kindName === 'whatsapp-business' || (k.provides || []).some(function (p) { return new RegExp(p, 'i').test(d.name); }); });
+    var setupHtml = kindName === 'whatsapp-business'
+      ? '<div class="dt-setup" id="dt-wa-setup"><p class="dt-setup__head">In the Meta app, WhatsApp → Configuration → Webhook:</p><dl class="dt-setup__lines"><dt>Callback URL</dt><dd><code id="dt-wa-url">…</code></dd><dt>Verify token</dt><dd><code id="dt-wa-verify">…</code></dd><dt>Subscribe to</dt><dd><code>messages</code></dd></dl></div>'
+      : '';
+    if (kindName === 'whatsapp-business') {
+      ownerJson('/api/whatsapp/setup').then(function (st) {
+        var u = document.getElementById('dt-wa-url'), v = document.getElementById('dt-wa-verify');
+        if (u) u.textContent = st.webhookUrl; if (v) v.textContent = st.verifyToken;
+      }).catch(function () {});
+    }
     openPanel('<p class="dt-panel__head">Connect ' + esc(k.label) + '</p>'
       + '<p class="dt-form__help">' + esc(k.help) + ' The credentials are kept encrypted in this application’s own database and never sent to Svarg.</p>'
+      + setupHtml
       + '<div class="dt-form__grid">'
       + '<label class="dt-form__field">Into which dataset<select class="dt-select" name="__dataset">' + datasetOptions(guessDs >= 0 ? guessDs : 0) + '</select></label>'
       + k.fields.map(function (f) {

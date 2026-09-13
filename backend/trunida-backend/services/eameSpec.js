@@ -58,6 +58,9 @@ export const FIXED_PATHS = [
   'services/connectors/jira.js',
   'services/connectors/confluence.js',
   'services/connectors/github.js',
+  'services/connectors/whatsapp.js',
+  'controllers/whatsappController.js',
+  'routes/whatsappRoutes.js',
   'controllers/connectorController.js',
   'routes/connectorsRoutes.js',
   // The conversation stays in the tenant; only a short list of signals

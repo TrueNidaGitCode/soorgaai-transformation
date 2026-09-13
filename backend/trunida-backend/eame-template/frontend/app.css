@@ -891,6 +891,13 @@ body {
 .dt-folder__name { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dt-folder__fit { color: var(--ch-dim); white-space: nowrap; }
 .dt-faint { color: var(--ch-faint); }
+.dt-setup { margin: 0 0 12px; padding: 12px 14px; border: 1px dashed rgba(92,197,167,0.35); border-radius: 12px; background: rgba(92,197,167,0.05); }
+.dt-setup__head { margin: 0 0 8px; font-size: 12.5px; font-weight: 700; color: var(--ch-text); }
+.dt-setup__lines { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; font-size: 12.5px; }
+.dt-setup__lines dt { color: var(--ch-faint); }
+.dt-setup__lines dd { margin: 0; overflow-wrap: anywhere; }
+.dt-setup__lines code { color: var(--ch-accent); user-select: all; }
+.ch-view__src--whatsapp-business { color: var(--ch-accent); border-color: rgba(92,197,167,0.35); }
 .dt-key { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: rgba(92,197,167,0.14); color: var(--ch-accent); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .dt-tablewrap { overflow-x: auto; border: 1px solid var(--ch-line); border-radius: var(--ch-radius); background: var(--ch-panel); margin-bottom: 10px; }
 .dt-table { width: 100%; border-collapse: collapse; font-size: 13px; }

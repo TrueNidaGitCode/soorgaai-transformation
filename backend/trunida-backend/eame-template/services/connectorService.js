@@ -590,6 +590,14 @@ export async function deleteConnector(id) {
 
 const running = new Set();
 
+/** The connections of one kind with their credentials opened -- for a webhook that has to know whom a message is for. */
+export async function openConnectorsOfKind(kindName) {
+  const kind = KINDS[String(kindName || '').toLowerCase()];
+  if (!kind) return [];
+  const docs = await connectorsCollection().find({ kind: kind.kind }).toArray();
+  return docs.map(d => ({ ...d, config: openConfig(kind, d.config) }));
+}
+
 export async function syncConnector(id, { by = 'owner' } = {}) {
   const doc = await findDoc(id);
   if (!doc) throw new Error('No such connection.');

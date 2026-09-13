@@ -85,7 +85,7 @@ describe('what each connector reads', () => {
       expect(k.fields.some(f => f.secret)).toBe(true);
       expect(k.provides.length).toBeGreaterThan(3);
     }
-    expect(catalog().map(c => c.kind).sort()).toEqual(['confluence', 'github', 'jira']);
+    expect(catalog().map(c => c.kind).sort()).toEqual(['confluence', 'github', 'jira', 'whatsapp-business']);
     // The catalog never carries a function or a secret.
     expect(JSON.stringify(catalog())).not.toMatch(/function|apiToken":"[^"]+"/);
   });

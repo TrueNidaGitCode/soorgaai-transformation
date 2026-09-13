@@ -4,8 +4,18 @@ Decision, 13 September 2026: **a customer connects the places their work
 already lives, in the way their industry does it, and the application
 carries the old way of working and the new one at the same time.** Phase 1
 below is built and live; a watched Google Drive folder was deferred (folder
-upload is the sync for now); the WhatsApp Business account is next, once
-the Meta setup the customer side needs is under way.
+upload is the sync for now). The WhatsApp Business account is built in the
+form that needs nothing from Svarg's side: the owner's own Meta app
+(`eame-template/services/connectors/whatsapp.js`, the webhook in
+`controllers/whatsappController.js`). The owner pastes the phone number id
+and a permanent access token; the application shows the callback URL and
+verify token to put into the Meta app; every message to the business number
+arrives at the webhook, signed with the app secret when given, is kept once
+in `svarg_whatsapp_inbox`, and is landed on the dataset the connection
+feeds -- read as attendance replies or as messages. What the Cloud API
+cannot do stays true: it does not read groups; the export remains the way
+to read those. Svarg brokering Meta's Embedded Signup (no Meta app per
+customer) remains the later step.
 
 **What Phase 1 delivered, in one paragraph.** The industry overlay carries
 a `json sources` block (Sports Academies: folder, WhatsApp, form), read by

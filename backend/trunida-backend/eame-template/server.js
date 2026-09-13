@@ -41,7 +41,12 @@ const APP_NAME = process.env.APP_NAME || '__APP_NAME__';
 // Large enough for the Data page's imports -- an owner's spreadsheet, sent as
 // rows -- and nothing else comes close. The default of 100kb rejected a file
 // of a few hundred rows before any route saw it.
-app.use(express.json({ limit: '25mb' }));
+app.use(express.json({
+  limit: '25mb',
+  // The bytes as they came, kept for the one caller that signs them: Meta,
+  // at the WhatsApp webhook (controllers/whatsappController.js).
+  verify: (req, res, buf) => { req.rawBody = buf; },
+}));
 app.use(cors({
   origin: [
     'http://localhost:5500',

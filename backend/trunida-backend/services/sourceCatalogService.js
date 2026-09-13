@@ -37,6 +37,9 @@ export const CONNECTOR_MODULES = {
   jira:       'services/connectors/jira.js',
   confluence: 'services/connectors/confluence.js',
   github:     'services/connectors/github.js',
+  // The Business account, through the owner's own Meta app; the export is
+  // parsed on the Data page and needs no module.
+  whatsapp:   'services/connectors/whatsapp.js',
 };
 
 function normalise(list) {

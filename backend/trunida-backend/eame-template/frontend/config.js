@@ -28,8 +28,16 @@
 
   let tokenPromise = null;
 
-  /** Mint once per page load; every caller awaits the same request. */
+  /**
+   * The session in hand, or one minted once per page load with every caller
+   * awaiting the same request. A token already stored is the one to use: it
+   * is the person's sign-in (index.html), and minting over it would turn a
+   * named session back into an open one.
+   */
   function session() {
+    var stored = '';
+    try { stored = localStorage.getItem('token') || ''; } catch (e) { /* fine */ }
+    if (stored) return Promise.resolve(stored);
     if (!tokenPromise) {
       tokenPromise = fetch(API_BASE + '/session', { method: 'POST' })
         .then(r => (r.ok ? r.json() : Promise.reject(new Error('session ' + r.status))))
@@ -77,7 +85,9 @@
     }
     const ours = url.origin === window.location.origin
       && url.pathname.startsWith('/api/')
-      && url.pathname !== '/api/session';
+      && url.pathname !== '/api/session'
+      // Asked before anyone is signed in; must not start a session to ask.
+      && url.pathname !== '/api/auth/providers';
 
     if (!ours) return nativeFetch(input, init);
 

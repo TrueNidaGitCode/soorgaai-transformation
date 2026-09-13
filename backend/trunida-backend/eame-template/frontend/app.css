@@ -83,6 +83,27 @@ body {
 }
 .ld__toplogin svg { width: 20px; height: 20px; }
 .ld__toplogin:hover { background: rgba(255,255,255,0.22); }
+/* Who is signed in, where Log in was. */
+.ld__who { display: inline-flex; align-items: center; gap: 10px; padding: 6px 8px 6px 6px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.14); backdrop-filter: blur(8px); }
+.ld__avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--ld-accent) center/cover no-repeat; color: #0B1220; display: grid; place-items: center; font-size: 15px; font-weight: 800; }
+.ld__whoname { font-size: 15px; font-weight: 700; max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ld__logout { border: 0; background: transparent; color: rgba(255,255,255,0.7); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; padding: 6px 10px; border-radius: 999px; }
+.ld__logout:hover { color: #fff; background: rgba(255,255,255,0.14); }
+
+/* The sign-in, over the door. */
+.si { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(4,8,16,0.72); backdrop-filter: blur(6px); }
+.si__card { position: relative; width: min(440px, 100%); padding: 40px 36px 34px; border-radius: 22px; background: #0E1626; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 40px 80px -30px rgba(0,0,0,0.8); color: #fff; text-align: center; }
+.si__close { position: absolute; top: 12px; right: 14px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: rgba(255,255,255,0.6); font-size: 26px; line-height: 1; cursor: pointer; }
+.si__close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.si__eyebrow { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ld-accent); }
+.si__title { margin: 0 0 12px; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.si__sub { margin: 0 auto 26px; max-width: 34ch; font-size: 15px; line-height: 1.55; color: rgba(255,255,255,0.72); }
+.si__google { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 14px 20px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; background: #fff; color: #1f1f1f; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+.si__google svg { width: 22px; height: 22px; }
+.si__google:hover { transform: translateY(-1px); box-shadow: 0 12px 30px -14px rgba(255,255,255,0.6); }
+.si__google:focus-visible { outline: 2px solid var(--ld-accent); outline-offset: 3px; }
+.si__note { margin: 18px 0 0; font-size: 14px; line-height: 1.5; color: #FFB4A8; }
+@media (prefers-reduced-motion: reduce) { .si__google { transition: none; } }
 .ld__content {
   flex: 1; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
   align-items: end; gap: 40px;
@@ -459,6 +480,7 @@ body {
   font-size: 12.5px;
   color: var(--ch-dim);
 }
+.ch-head__who { font-size: 13px; font-weight: 600; color: var(--ch-dim); max-width: 12ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ch-head__link {
   flex-shrink: 0;
   padding: 5px 11px;

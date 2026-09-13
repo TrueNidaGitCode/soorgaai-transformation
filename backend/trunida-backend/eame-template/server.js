@@ -32,6 +32,9 @@ dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+// Behind the host's proxy (Railway terminates TLS), so the address the
+// application gives Svarg to come back to is its https one, not http.
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const APP_NAME = process.env.APP_NAME || '__APP_NAME__';
 
@@ -69,14 +72,18 @@ app.get('/api', (req, res) => {
 });
 
 /**
- * A browser session for the chat UI.
+ * An open browser session for the chat UI.
  *
- * Off unless APP_PUBLIC_ACCESS is set. Hosted deployments turn it on so the
- * application simply works when its address is opened; a customer running
- * this themselves leaves it off and puts their own sign-in in front, which
- * is why it is opt-in rather than the default.
+ * Only when there is no sign-in: with SVARG_AUTH_URL set, people sign in
+ * with Google through Svarg (routes/authRoutes.js) and an open session would
+ * be a way around it. Otherwise off unless APP_PUBLIC_ACCESS is set: a
+ * customer running this themselves leaves it off and puts their own sign-in
+ * in front, which is why it is opt-in rather than the default.
  */
 app.post('/api/session', (req, res) => {
+  if (process.env.SVARG_AUTH_URL && process.env.SVARG_AUTH_SECRET) {
+    return res.status(403).json({ error: 'Sign in with Google to use this application.' });
+  }
   if (process.env.APP_PUBLIC_ACCESS !== 'true') {
     return res.status(403).json({ error: 'Public access is disabled for this deployment.' });
   }

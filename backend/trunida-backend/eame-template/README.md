@@ -31,12 +31,22 @@ cp .env.example .env    # fill in MONGO_URI, JWT_SECRET, and how the model is re
 npm start
 ```
 
-Open the address the server prints. The page opens on a front door with a
-Log in button, then a welcome, then the chat. Signing in mints a browser
-session from `POST /api/session`, which is on when `APP_PUBLIC_ACCESS=true`
-(hosted deployments set it). With it off, put your own sign-in in front and
-set `token` in local storage -- `npm run mint-token` prints one -- and the
-door will let you through.
+Open the address the server prints. The page opens on a front door with
+Log in and Continue, then a welcome, then the chat. People sign in with
+Google, through Svarg: the door sends them to Svarg's Google sign-in with
+this application's tenant id (`SVARG_AUTH_URL`), Svarg does the exchange on
+the callback it registered with Google, and comes back with a signed
+assertion of who they are (checked with `SVARG_AUTH_SECRET`; both were set
+by Svarg at go-live). From it the application writes its own record of the
+person in its own database (`svarg_users`) and mints its own 30-day
+session. Svarg keeps nothing about the person. Continue opens the welcome
+when someone is signed in and the sign-in when nobody is.
+
+Without those two variables there is no Google to offer, and the door falls
+back to an open browser session from `POST /api/session`, which is on when
+`APP_PUBLIC_ACCESS=true`. With that off too, put your own sign-in in front
+and set `token` in local storage -- `npm run mint-token` prints one -- and
+the door will let you through.
 
 On first start the seed script loads the sample data in `data/`, so the
 application answers straight away. It says on screen that the answers come

@@ -44,6 +44,12 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
           Log in
         </button>
+        <!-- Shown instead of Log in once someone has signed in. -->
+        <div class="ld__who" id="ch-who" hidden>
+          <span class="ld__avatar" id="ch-who-avatar" aria-hidden="true"></span>
+          <span class="ld__whoname" id="ch-who-name"></span>
+          <button type="button" class="ld__logout" id="ch-logout">Log out</button>
+        </div>
       </header>
 
       <div class="ld__content">
@@ -51,12 +57,28 @@
           <p class="ld__eyebrow">__APP_EYEBROW__</p>
           <h1 class="ld__headline">__APP_HEADLINE__ <span class="ld__accent">__APP_ACCENT__</span></h1>
           <p class="ld__sub">__APP_TAGLINE__</p>
-          <button type="button" class="ld__cta" id="ch-login">Log in <span aria-hidden="true">&rarr;</span></button>
+          <button type="button" class="ld__cta" id="ch-login">Continue <span aria-hidden="true">&rarr;</span></button>
           <p class="ch-door__note ld__note" id="ch-login-note" hidden></p>
         </div>
         <div class="ld__preview" id="ld-preview" aria-hidden="true"></div>
       </div>
       <a class="ld__credit" id="ld-credit" href="__APP_HERO_CREDIT_URL__" target="_blank" rel="noopener">__APP_HERO_CREDIT__</a>
+    </div>
+
+    <!-- Sign-in. One way in: Google, through Svarg, the same as Svarg's own
+         door. Opened by Log in, and by Continue when nobody is signed in. -->
+    <div class="si" id="ch-signin" hidden>
+      <div class="si__card" role="dialog" aria-modal="true" aria-labelledby="si-title">
+        <button type="button" class="si__close" id="ch-signin-close" aria-label="Close">&times;</button>
+        <p class="si__eyebrow">__APP_NAME__</p>
+        <h2 class="si__title" id="si-title">Log in or sign up</h2>
+        <p class="si__sub">Use the Google account you work with. There is nothing to set up: signing in the first time is signing up.</p>
+        <button type="button" class="si__google" id="ch-google">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.7 24c0-1.6.3-3.1.8-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.4-4.9 2.3-8.2 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+          Continue with Google
+        </button>
+        <p class="si__note" id="ch-signin-note" hidden></p>
+      </div>
     </div>
 
     <section class="ld__built" aria-label="About this application">
@@ -138,6 +160,7 @@
         <p class="ch-head__sub">__APP_TAGLINE__</p>
       </div>
       </a>
+      <span class="ch-head__who" id="ch-head-who" hidden></span>
       <a href="#" class="ch-head__link" id="ch-home-link-2">Home</a>
       <!-- The owner's way in to their data. Everyone can see the link; the
            room behind it opens only to the owner key. -->
@@ -240,15 +263,92 @@
 
     function say(text) { note.textContent = text; note.hidden = !text; }
 
-    /**
-     * Signing in. The application has one kind of session: a token the
-     * deployment mints when public access is on (hosted deployments turn it
-     * on, so the door simply opens). When it is off, the customer has put
-     * their own sign-in in front, and the door says so rather than failing
-     * on every message later with an unexplained 401.
+    /*
+     * Signing in.
+     *
+     * People sign in with Google, through Svarg (controllers/authController.js
+     * does the exchange and comes back to this page with the session in the
+     * fragment). Continue goes to the welcome when someone is signed in and
+     * to the sign-in when nobody is; Log in always opens the sign-in. Where
+     * Google is not offered -- an install run by hand, a local check -- the
+     * open session server.js mints is used instead, so the door still opens.
      */
-    async function signIn() {
-      if (localStorage.getItem('token')) return true;
+    var who = null;   // { name, email, picture } once a sign-in is confirmed
+    var offer = null; // { google, public } -- what this deployment can do
+    var panel = document.getElementById('ch-signin');
+    var panelNote = document.getElementById('ch-signin-note');
+    var topLogin = document.getElementById('ch-login-top');
+    var whoBox = document.getElementById('ch-who');
+    var headWho = document.getElementById('ch-head-who');
+
+    function token() { try { return localStorage.getItem('token') || ''; } catch (e) { return ''; } }
+    function forget() {
+      try { localStorage.removeItem('token'); localStorage.removeItem('ch-user'); sessionStorage.removeItem('ch-entered'); } catch (e) { /* fine */ }
+      who = null;
+    }
+    function openPanel(message) {
+      panelNote.textContent = message || '';
+      panelNote.hidden = !message;
+      panel.hidden = false;
+      var g = document.getElementById('ch-google');
+      g.hidden = !(offer && offer.google);
+      if (!g.hidden) g.focus();
+    }
+    function closePanel() { panel.hidden = true; }
+
+    /** Top right and the chat header: a name, or Log in. */
+    function paintWho() {
+      var name = who && (who.name || who.email) || '';
+      topLogin.hidden = !!name;
+      whoBox.hidden = !name;
+      if (name) {
+        var first = name.split(/[ @]/)[0];
+        document.getElementById('ch-who-name').textContent = first;
+        var av = document.getElementById('ch-who-avatar');
+        av.style.backgroundImage = who.picture ? "url('" + who.picture.replace(/'/g, '%27') + "')" : 'none';
+        av.textContent = who.picture ? '' : first.charAt(0).toUpperCase();
+        headWho.textContent = first;
+      }
+      headWho.hidden = !name;
+    }
+
+    /** What the deployment offers; the open session when it cannot say. */
+    async function loadOffer() {
+      try {
+        var r = await fetch(API + '/api/auth/providers');
+        offer = r.ok ? await r.json() : { google: false, public: true };
+      } catch (e) { offer = { google: false, public: true }; }
+      return offer;
+    }
+
+    /**
+     * Is the stored token someone? Asked once per load, and again after a
+     * sign-in. A token nobody answers for -- expired, or an open session
+     * from before sign-in existed -- is dropped, so the door says Log in
+     * rather than opening onto a chat that answers every message with 401.
+     */
+    async function confirmWho() {
+      var t = token();
+      if (!t) { who = null; paintWho(); return false; }
+      try {
+        var r = await fetch(API + '/api/auth/me', { headers: { Authorization: 'Bearer ' + t } });
+        if (r.status === 401) { forget(); paintWho(); return false; }
+        if (r.ok) {
+          var d = await r.json();
+          who = { name: d.name || '', email: d.email || '', picture: d.picture || '' };
+          try { localStorage.setItem('ch-user', JSON.stringify(who)); } catch (e) { /* fine */ }
+        }
+      } catch (e) {
+        // Offline: keep what is remembered rather than logging someone out.
+        try { who = JSON.parse(localStorage.getItem('ch-user') || 'null'); } catch (err) { who = null; }
+      }
+      paintWho();
+      return true;
+    }
+
+    /** The open session, for a deployment with no Google. */
+    async function openSession() {
+      if (token()) return true;
       try {
         var res = await fetch(API + '/api/session', { method: 'POST' });
         if (res.ok) {
@@ -257,7 +357,7 @@
           return true;
         }
         if (res.status === 403) {
-          say('This deployment requires a sign-in token. Paste one into local storage as "token", or enable public access on the server.');
+          say('This application needs a sign-in, and none is set up on it yet.');
           return false;
         }
         say('Could not sign in (' + res.status + ').');
@@ -267,7 +367,34 @@
       return false;
     }
 
-    login.textContent = localStorage.getItem('token') ? 'Continue →' : 'Log in →';
+    /** Continue: in, when signed in; the sign-in, when not. */
+    async function proceed() {
+      say('');
+      if (token()) { show('greet'); return; }
+      if (!offer) await loadOffer();
+      if (offer.google) { openPanel(''); return; }
+      login.disabled = true;
+      login.textContent = 'One moment…';
+      if (await openSession()) show('greet');
+      login.textContent = 'Continue →';
+      login.disabled = false;
+    }
+
+    // Back from Svarg: the session, or the reason there is none. Read from
+    // the fragment and cleared, so a reload does not sign in twice and the
+    // token is never in the address bar for long.
+    (function fromCallback() {
+      var h = window.location.hash || '';
+      if (h.indexOf('#token=') !== 0 && h.indexOf('#signin-error=') !== 0) return;
+      var q = new URLSearchParams(h.slice(1));
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+      if (q.get('token')) {
+        try { localStorage.setItem('token', q.get('token')); sessionStorage.removeItem('ch-entered'); } catch (e) { /* fine */ }
+        window.__chSignedIn = true;
+      } else {
+        window.__chSignInError = q.get('signin-error') || 'Sign-in did not complete.';
+      }
+    })();
 
     // Back to the front page, from the welcome or the chat: the name in the
     // header, a Home link beside Data, and a link on the welcome. Forgets
@@ -277,7 +404,6 @@
       if (e) e.preventDefault();
       try { sessionStorage.removeItem('ch-entered'); } catch (err) { /* fine */ }
       if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search);
-      login.textContent = localStorage.getItem('token') ? 'Continue →' : 'Log in →';
       show('home');
       window.scrollTo(0, 0);
     }
@@ -286,9 +412,20 @@
       if (el) el.addEventListener('click', goHome);
     });
 
-    // The top-right Log in is the same door as the one in the hero.
-    var topLogin = document.getElementById('ch-login-top');
-    if (topLogin) topLogin.addEventListener('click', function () { login.click(); });
+    // Log in always opens the sign-in; Log out forgets the session and
+    // comes back to the door.
+    topLogin.addEventListener('click', async function () {
+      if (!offer) await loadOffer();
+      if (offer.google) openPanel('');
+      else proceed();
+    });
+    document.getElementById('ch-logout').addEventListener('click', function () { forget(); paintWho(); goHome(); });
+    document.getElementById('ch-google').addEventListener('click', function () {
+      window.location.href = API + '/api/auth/google';
+    });
+    document.getElementById('ch-signin-close').addEventListener('click', closePanel);
+    panel.addEventListener('click', function (e) { if (e.target === panel) closePanel(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) closePanel(); });
 
     // The glimpse of the application: a sidebar, four tiles and a short
     // list, from the JSON the build wrote. Decorative -- the real thing is
@@ -316,14 +453,7 @@
         + '</div></div>';
     })();
 
-    login.addEventListener('click', async function () {
-      login.disabled = true;
-      login.textContent = 'Signing in…';
-      say('');
-      if (await signIn()) { show('greet'); }
-      else { login.textContent = 'Log in →'; }
-      login.disabled = false;
-    });
+    login.addEventListener('click', proceed);
 
     document.getElementById('ch-continue').addEventListener('click', function () {
       sessionStorage.setItem('ch-entered', '1');
@@ -333,9 +463,22 @@
     // A reload mid-conversation must not send someone back through the
     // front door: within one tab session, the chat is where they were. And
     // #data is the owner arriving from the Svarg go-live screen: data.js
-    // takes them straight to the Data page.
-    if (sessionStorage.getItem('ch-entered') || window.location.hash === '#data') show('app');
+    // takes them straight to the Data page. Straight from Svarg's sign-in:
+    // the welcome.
+    if (window.__chSignedIn) show('greet');
+    else if (sessionStorage.getItem('ch-entered') || window.location.hash === '#data') show('app');
     else show('home');
+
+    // Then, without holding the page: what is offered, and who this is.
+    loadOffer();
+    try { who = JSON.parse(localStorage.getItem('ch-user') || 'null'); } catch (e) { who = null; }
+    paintWho();
+    confirmWho().then(function (ok) {
+      // A dead session mid-conversation goes back to the door, not on into
+      // a chat that cannot answer.
+      if (!ok && !app.hidden && window.location.hash !== '#data') show('home');
+    });
+    if (window.__chSignInError) openPanel(window.__chSignInError);
   })();
   </script>
 

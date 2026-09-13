@@ -186,6 +186,8 @@ export function buildRuntime({ appName = '', copy = {} } = {}) {
     'controllers/signalController.js':  { template: 'controllers/signalController.js' },
     'routes/signalsRoutes.js':          { template: 'routes/signalsRoutes.js' },
     'frontend/feedback.js':             { template: 'frontend/feedback.js' },
+    'controllers/authController.js':    { template: 'controllers/authController.js' },
+    'routes/authRoutes.js':             { template: 'routes/authRoutes.js' },
     'middleware/authMiddleware.js':     { repo: 'middleware/authMiddleware.js' },
     'services/llmService.js':           { repo: 'services/llmService.js' },
     'services/modelSelectionService.js':{ repo: 'services/modelSelectionService.js' },

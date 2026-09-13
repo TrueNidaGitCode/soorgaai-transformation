@@ -26,11 +26,25 @@ import { projectFor, manifestHash } from '../controllers/deliveryController.js';
 import { isSvargGithubConfigured, ensureSvargRepo, publishToSvarg, repoDescription } from './svargGithubService.js';
 import { getDeployTarget } from './deployTargetService.js';
 import { ensureAppName } from './appNameService.js';
+import { tenantAuthEnv } from './tenantAuthService.js';
 
 export const SWEEP_MS = 6 * 60 * 60 * 1000;
 export const BOOT_DELAY_MS = 45 * 1000;
 
 let running = false;
+
+/**
+ * The gateway address as Go Live records it. When it is not set outright,
+ * the origin Google calls back on is the one the API is public at, which is
+ * the origin the sign-in must be reached on too.
+ */
+function gatewayBaseUrl() {
+  if (process.env.GATEWAY_BASE_URL) return process.env.GATEWAY_BASE_URL;
+  for (const u of [process.env.GOOGLE_OAUTH_CALLBACK_URL, process.env.FRONTEND_URL]) {
+    try { if (u) return new URL(u).origin + '/api/gateway'; } catch { /* next */ }
+  }
+  return '';
+}
 
 /** One live application: compose, compare, and if it differs, push and rebuild. */
 export async function updateOne(dep, { reason = 'sweep' } = {}) {
@@ -58,10 +72,15 @@ export async function updateOne(dep, { reason = 'sweep' } = {}) {
     commitSha: pushed?.commitSha || '', manifestHash: hash,
   } } });
 
+  // The variables a newer runtime needs, added to an environment created
+  // before they existed: the sign-in through Svarg is the current one.
   await getDeployTarget().redeploy({
     deployment: dep,
     commitSha: pushed?.commitSha || '',
-    env: { APP_NAME: bp.appName || 'AI Assistant', APP_PUBLIC_ACCESS: 'true' },
+    env: {
+      APP_NAME: bp.appName || 'AI Assistant', APP_PUBLIC_ACCESS: 'true',
+      ...tenantAuthEnv({ deployment: dep, gatewayBaseUrl: gatewayBaseUrl() }),
+    },
   });
   await HostedDeployment.updateOne({ _id: dep._id }, { $set: { status: 'attaching', statusMessage: 'Updating the application to the latest Svarg runtime.' } });
   return { updated: true, source, commitSha: pushed?.commitSha || '', fileCount: files.length };

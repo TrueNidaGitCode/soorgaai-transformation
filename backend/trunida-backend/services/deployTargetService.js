@@ -17,6 +17,7 @@
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { ADVISORY_CATALOG } from '../config/modelCatalog.js';
+import { tenantAuthEnv } from './tenantAuthService.js';
 
 /** Mongo database names are limited; derive a legal, collision-free one. */
 export function tenantDbName(blueprintId) {
@@ -120,6 +121,9 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
     // page. Generated here, kept only in the tenant's environment: Svarg
     // holds neither the credentials nor the key that opens them.
     CONNECTOR_ENCRYPTION_KEY: crypto.randomBytes(32).toString('base64'),
+    // Sign-in with Google, brokered by Svarg: where the door sends a person
+    // and the secret that checks who comes back (services/tenantAuthService).
+    ...tenantAuthEnv({ deployment, gatewayBaseUrl }),
 
     // Generation: the app's 'selfhosted' provider is a plain OpenAI client
     // against an arbitrary base URL, so pointing it at the gateway is enough.

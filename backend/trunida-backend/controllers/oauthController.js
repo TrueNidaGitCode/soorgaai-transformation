@@ -2,6 +2,8 @@ import axios from 'axios';
 import jwt  from 'jsonwebtoken';
 import crypto from 'crypto';
 import { User } from '../models/user.js';
+import HostedDeployment from '../models/HostedDeployment.js';
+import { returnOrigin, signAssertion } from '../services/tenantAuthService.js';
 
 const JWT_SECRET    = process.env.JWT_SECRET;
 const FRONTEND_URL  = process.env.FRONTEND_URL || 'http://localhost:5500';
@@ -18,18 +20,22 @@ const MICROSOFT_TENANT        = process.env.MICROSOFT_OAUTH_TENANT || 'common';
 
 // ── CSRF state: signed JWT (stateless — no session or cookie needed) ─────────
 // Only our server can produce a valid signature, so attackers cannot forge state.
-function generateState() {
+// The state may also carry WHO asked: a delivered application signing its
+// people in through Svarg (see tenantAuthService) puts its tenant id and
+// checked return address here, and the callback reads them back. Signed,
+// so neither can be swapped on the way through Google.
+function generateState(extra = {}) {
   const nonce = crypto.randomBytes(16).toString('hex');
-  return jwt.sign({ nonce }, JWT_SECRET, { expiresIn: '10m' });
+  return jwt.sign({ nonce, ...extra }, JWT_SECRET, { expiresIn: '10m' });
 }
 
+/** The state's payload when it is ours and current, else null. */
 function verifyState(state) {
-  if (!state) return false;
+  if (!state) return null;
   try {
-    jwt.verify(state, JWT_SECRET);
-    return true;
+    return jwt.verify(state, JWT_SECRET);
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -56,6 +62,31 @@ function successRedirect(res, token, user) {
 function errorRedirect(res, msg) {
   const params = new URLSearchParams({ error: msg });
   return res.redirect(`${FRONTEND_URL}/login/oauth-callback.html?${params}`);
+}
+
+// ── A delivered application's sign-in ────────────────────────────────────────
+// The application's own callback (eame-template/controllers/authController.js)
+// takes either an assertion or an error, and finishes the sign-in itself.
+function tenantRedirect(res, origin, params) {
+  return res.redirect(`${origin}/api/auth/callback?${new URLSearchParams(params)}`);
+}
+
+/**
+ * ?tenant=<deployment id>&return_to=<the application's address>. Both are
+ * checked here, before Google is involved: the deployment must exist and the
+ * address must be the one it is recorded at. Returns what the state should
+ * carry, or an error message for the application, or null when this is an
+ * ordinary Svarg sign-in.
+ */
+async function tenantContext(req) {
+  const tenant = String(req.query.tenant || '').trim();
+  if (!tenant) return null;
+  const returnTo = String(req.query.return_to || '');
+  const dep = /^[a-f0-9]{24}$/i.test(tenant) ? await HostedDeployment.findById(tenant).lean() : null;
+  if (!dep) return { error: 'This application is not known to Svarg.' };
+  const origin = returnOrigin(dep, returnTo);
+  if (!origin) return { error: 'This application is not at the address Svarg has for it.' };
+  return { tenant, returnTo: origin };
 }
 
 // ── Find existing user or create new OAuth user ───────────────────────────────
@@ -93,8 +124,27 @@ async function findOrCreateOAuthUser({ provider, providerUserId, email, name, pr
 // GOOGLE
 // ════════════════════════════════════════════════════════════════════════════
 
-export const initiateGoogle = (req, res) => {
+export const initiateGoogle = async (req, res) => {
+  // A delivered application's person, or one of Svarg's own?
+  let ctx = null;
+  try {
+    ctx = await tenantContext(req);
+  } catch (err) {
+    console.error('[OAuth] tenant lookup failed:', err.message);
+    ctx = { error: 'Svarg could not look this application up. Please try again.' };
+  }
+  if (ctx?.error) {
+    // With no checked address there is nowhere to send the error but back to
+    // where the person came from, when that is an address at all.
+    const back = String(req.query.return_to || '');
+    if (/^https?:\/\//i.test(back)) {
+      try { return tenantRedirect(res, new URL(back).origin, { error: ctx.error }); } catch { /* fall through */ }
+    }
+    return res.status(400).send(ctx.error);
+  }
+
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CALLBACK_URL) {
+    if (ctx) return tenantRedirect(res, ctx.returnTo, { error: 'Google sign-in is not configured on Svarg.' });
     return errorRedirect(res, 'Google sign-in is not configured on this server.');
   }
 
@@ -105,7 +155,7 @@ export const initiateGoogle = (req, res) => {
     scope:         'openid email profile',
     access_type:   'online',
     prompt:        'select_account',
-    state:         generateState(),
+    state:         generateState(ctx || {}),
   });
 
   // Preselect the account when the user already typed their Gmail address
@@ -118,16 +168,22 @@ export const initiateGoogle = (req, res) => {
 export const googleCallback = async (req, res) => {
   const { code, state, error } = req.query;
 
+  // Read before anything else: an error for a tenant's person goes back to
+  // the tenant, not to Svarg's own callback page.
+  const st = verifyState(state);
+  const tenant = st?.tenant ? { id: st.tenant, origin: st.returnTo } : null;
+  const fail = (msg) => (tenant ? tenantRedirect(res, tenant.origin, { error: msg }) : errorRedirect(res, msg));
+
   if (error) {
     const msg = error === 'access_denied'
       ? 'Google sign-in was cancelled.'
       : 'Google authentication failed. Please try again.';
-    return errorRedirect(res, msg);
+    return fail(msg);
   }
 
-  if (!code) return errorRedirect(res, 'Google authentication failed — no code received.');
+  if (!code) return fail('Google authentication failed — no code received.');
 
-  if (!verifyState(state)) {
+  if (!st) {
     return errorRedirect(res, 'Invalid security state. Please try signing in again.');
   }
 
@@ -147,7 +203,16 @@ export const googleCallback = async (req, res) => {
     });
 
     const { sub, email, name, picture } = profile;
-    if (!email) return errorRedirect(res, 'Unable to retrieve your email from Google.');
+    if (!email) return fail('Unable to retrieve your email from Google.');
+
+    // A delivered application's person: no Svarg user, no record. The
+    // profile goes to the application, signed, and the application keeps it.
+    if (tenant) {
+      const dep = await HostedDeployment.findById(tenant.id).lean();
+      if (!dep) return fail('This application is not known to Svarg.');
+      const assertion = signAssertion({ deployment: dep, profile: { sub, email, name, picture } });
+      return tenantRedirect(res, tenant.origin, { assertion });
+    }
 
     const user  = await findOrCreateOAuthUser({ provider: 'google', providerUserId: sub, email, name, profileImage: picture });
     const token = issueAppJWT(user);
@@ -155,7 +220,7 @@ export const googleCallback = async (req, res) => {
 
   } catch (err) {
     console.error('[OAuth] Google callback error:', err.response?.data || err.message);
-    return errorRedirect(res, 'Google authentication failed. Please try again.');
+    return fail('Google authentication failed. Please try again.');
   }
 };
 

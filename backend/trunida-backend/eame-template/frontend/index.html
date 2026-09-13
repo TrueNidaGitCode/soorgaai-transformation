@@ -83,6 +83,7 @@
     <div class="wl__wave wl__wave--a" aria-hidden="true"></div>
     <div class="wl__wave wl__wave--b" aria-hidden="true"></div>
 
+    <a href="#" class="wl__home" id="ch-greet-home">&larr; Home</a>
     <div class="wl__copy">
       <p class="wl__eyebrow"><span></span>Welcome<span></span></p>
       <h1 class="wl__title">A new way to get <em>work done.</em></h1>
@@ -126,6 +127,7 @@
   <div class="ch-app" id="ch-app" hidden>
 
     <header class="ch-head">
+      <a href="#" class="ch-head__home" id="ch-home-link" title="Back to the front page">
       <div class="ch-head__mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.9 8.4 8.4 0 0 1 8.4-8.4h.6A8.4 8.4 0 0 1 21 11v.5z"/>
@@ -135,6 +137,8 @@
         <h1 class="ch-head__title">__APP_NAME__</h1>
         <p class="ch-head__sub">__APP_TAGLINE__</p>
       </div>
+      </a>
+      <a href="#" class="ch-head__link" id="ch-home-link-2">Home</a>
       <!-- The owner's way in to their data. Everyone can see the link; the
            room behind it opens only to the owner key. -->
       <a href="#data" class="ch-head__link" id="ch-data-link">Data</a>
@@ -263,14 +267,24 @@
       return false;
     }
 
-    // A reload mid-conversation must not send someone back through the
-    // front door: within one tab session, the chat is where they were. And
-    // #data is the owner arriving from the Svarg go-live screen: data.js
-    // takes them straight to the Data page.
-    if (sessionStorage.getItem('ch-entered') || window.location.hash === '#data') { show('app'); return; }
-
     login.textContent = localStorage.getItem('token') ? 'Continue →' : 'Log in →';
-    show('home');
+
+    // Back to the front page, from the welcome or the chat: the name in the
+    // header, a Home link beside Data, and a link on the welcome. Forgets
+    // that the chat was entered, so a reload from the front page stays
+    // there; the sign-in token is kept, so the door says Continue.
+    function goHome(e) {
+      if (e) e.preventDefault();
+      try { sessionStorage.removeItem('ch-entered'); } catch (err) { /* fine */ }
+      if (window.location.hash) history.replaceState(null, '', window.location.pathname + window.location.search);
+      login.textContent = localStorage.getItem('token') ? 'Continue →' : 'Log in →';
+      show('home');
+      window.scrollTo(0, 0);
+    }
+    ['ch-home-link', 'ch-home-link-2', 'ch-greet-home'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', goHome);
+    });
 
     // The top-right Log in is the same door as the one in the hero.
     var topLogin = document.getElementById('ch-login-top');
@@ -315,6 +329,13 @@
       sessionStorage.setItem('ch-entered', '1');
       show('app');
     });
+
+    // A reload mid-conversation must not send someone back through the
+    // front door: within one tab session, the chat is where they were. And
+    // #data is the owner arriving from the Svarg go-live screen: data.js
+    // takes them straight to the Data page.
+    if (sessionStorage.getItem('ch-entered') || window.location.hash === '#data') show('app');
+    else show('home');
   })();
   </script>
 

@@ -440,7 +440,10 @@
   function fit(d, header) {
     var g = guessMapping(d.columns, header);
     var matched = g.filter(function (i) { return i >= 0; }).length;
-    return { mapping: g, matched: matched, share: d.columns.length ? matched / d.columns.length : 0 };
+    // Same name, not merely one inside the other: 'Phone' inside
+    // 'sender_phone_masked' is a coincidence, 'Trainee ID' is a match.
+    var exact = g.filter(function (i, ti) { return i >= 0 && norm(header[i]) === norm(d.columns[ti]); }).length;
+    return { mapping: g, matched: matched, exact: exact, share: d.columns.length ? matched / d.columns.length : 0 };
   }
 
   /** The dataset a sheet fits best, or -1 when none fits well enough to be a guess. */
@@ -448,8 +451,10 @@
     var best = -1, bestScore = 0;
     datasets.forEach(function (d, i) {
       var f = fit(d, header);
-      // Two matched columns or half the dataset: enough to propose, never enough to skip the owner's look.
-      var ok = f.matched >= 2 || (f.matched >= 1 && f.share >= 0.5);
+      // Two columns with the same name, or half the dataset's columns matched
+      // somehow: enough to propose, never enough to skip the owner's look. A
+      // sheet that merely shares a word or two ('Phone', 'Name') is not used.
+      var ok = f.exact >= 2 || f.share >= 0.5;
       var score = f.share + f.matched / 100;
       if (ok && score > bestScore) { best = i; bestScore = score; }
     });

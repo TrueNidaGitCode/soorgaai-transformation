@@ -11,14 +11,24 @@
  * their _source). What differs per kind lives in services/connectors/<kind>.js
  * and is only: which fields it needs, how to test, and how to pull.
  *
- * ── Where rows land ────────────────────────────────────────────────────────
+ * ── Where rows land, and the one rule ──────────────────────────────────────
  *
- * The same way an imported file does. The pulled rows are written to
- * data/own/<slug>.<kind>.csv with _source=<kind>, and the seed script for the
- * dataset is called with { datasetName, filePath }. The seed replaces the
- * sample rows and the rows that already carry that _source, so running a
- * sync twice leaves one copy, and a file the owner imported by hand
- * (_source=own) is never touched by a connector.
+ * Every way in -- a file, a folder, a WhatsApp export, a connector, the chat
+ * -- ends in landRows. Rows are written to data/own/<slug>.<source>.csv with
+ * _source=<source>, and the seed script for the dataset is called with
+ * { datasetName, filePath }; the seed replaces the sample rows and the rows
+ * that already carry that _source.
+ *
+ * The rule that lets the old way of working and the new one coexist: a
+ * dataset has a KEY column (declared in data/datasets.json, or guessed:
+ * see datasetKey). A landed row whose key already exists is an UPDATE of
+ * that row, wherever it came from; a row without one is an ADD; a row the
+ * source no longer has is KEPT and marked missing in the provenance, never
+ * deleted by a landing. So the coach adds a student in the chat on Monday
+ * and the admin adds the same student to the sheet on Wednesday, and there
+ * is one row: the sheet's, with the chat's provenance replaced. One key,
+ * one row, across sources. The provenance (svarg_provenance) says for each
+ * key which source and file it last came from, who brought it and when.
  *
  * ── Credentials ────────────────────────────────────────────────────────────
  *
@@ -34,9 +44,6 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
-import * as jira from './connectors/jira.js';
-import * as confluence from './connectors/confluence.js';
-import * as github from './connectors/github.js';
 import { sendSignal } from './tenantSignals.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -47,8 +54,30 @@ const OWN_DIR = path.join(ROOT, 'data', 'own');
 export const MAX_ROWS = 50000;
 export const MAX_CELL = 2000;
 
-/** Live connectors. WhatsApp is a file export, parsed on the Data page, so it is not here. */
-export const KINDS = { jira, confluence, github };
+/**
+ * Live connectors: whatever is in services/connectors/. Eame ships only the
+ * kinds this application's industry calls for (Svarg keeps the catalog;
+ * see sourceCatalogService there), so the set is read from the directory
+ * rather than written here. WhatsApp exports are parsed on the Data page and
+ * a folder is uploaded there, so neither is a module.
+ */
+export const KINDS = await loadKinds();
+
+async function loadKinds() {
+  const dir = path.join(__dirname, 'connectors');
+  const out = {};
+  if (!fs.existsSync(dir)) return out;
+  for (const f of fs.readdirSync(dir).sort()) {
+    if (!/^[a-z0-9-]+\.js$/.test(f)) continue;
+    try {
+      const mod = await import(new URL('./connectors/' + f, import.meta.url).href);
+      if (mod.kind && typeof mod.pull === 'function') out[mod.kind] = mod;
+    } catch (err) {
+      console.warn(`[connectors] ${f} did not load — ${err.message}`);
+    }
+  }
+  return out;
+}
 
 /** How often a scheduled sync runs, and how often the scheduler looks. */
 const SCHEDULES = { hourly: 60 * 60 * 1000, daily: 24 * 60 * 60 * 1000 };
@@ -98,8 +127,48 @@ export function findDataset(datasetName) {
   return readIndex().find(d => d.name === datasetName) || null;
 }
 
+/**
+ * The columns that say which row is which. Declared in the index (`key`, a
+ * column name or a list), else guessed:
+ *   - a column that looks like an identifier (Student ID, invoice_no, code);
+ *   - else, for event-shaped data, the date AND the person: an attendance
+ *     reply is one row per person per day, and keying on either alone would
+ *     fold a day's replies into one;
+ *   - else the person, or an email or phone;
+ *   - else nothing, and every landing is an add (an exact duplicate row is
+ *     left alone).
+ * The Data page shows the guess so the owner can see when it is wrong.
+ */
+export function keyColumns(dataset) {
+  const columns = (dataset?.columns || []).filter(c => c !== '_source');
+  if (!columns.length) return [];
+  const declared = Array.isArray(dataset.key) ? dataset.key : (dataset.key ? [dataset.key] : []);
+  if (declared.length && declared.every(k => columns.includes(k))) return declared;
+  const words = c => String(c).replace(/[_\s-]+/g, ' ').trim();
+  const idLike = columns.find(c => /(^|[^a-z])(id|key|code|number|no|ref|uid)$/i.test(words(c)))
+    || columns.find(c => /^(student|player|member|customer|employee|user|coach|invoice|order|ticket|issue|roll)[ _-]?(id|no|number|code)$/i.test(c));
+  if (idLike) return [idLike];
+  const date = columns.find(c => /(^|[^a-z])(date|day|on|session date|when)([^a-z]|$)/i.test(words(c)) && !/time/i.test(c));
+  const person = columns.find(c => /(^|[^a-z])(name|student|player|member|person|sender|guardian|parent|coach|customer|employee|child|learner|trainee|athlete|kid)([^a-z]|$)/i.test(words(c)) && !/phone|mobile|email|e mail|whatsapp|contact|address/i.test(words(c)));
+  if (date && person) return [date, person];
+  if (person) return [person];
+  const contact = columns.find(c => /(^|[^a-z])(email|e mail|phone|mobile|whatsapp)([^a-z]|$)/i.test(words(c)));
+  if (contact) return [contact];
+  return [];
+}
+
+/** The key as the page shows it: "Student ID", "date + name", or ''. */
+export function datasetKey(dataset) {
+  return keyColumns(dataset).join(' + ');
+}
+
 export function importsCollection() {
   return mongoose.connection.collection('svarg_imports');
+}
+
+/** For each dataset key: which source and file it last came from, who, when; missing since. */
+export function provenanceCollection() {
+  return mongoose.connection.collection('svarg_provenance');
 }
 
 export function connectorsCollection() {
@@ -109,6 +178,95 @@ export function connectorsCollection() {
 function csvCell(v) {
   const s = String(v ?? '').slice(0, MAX_CELL).replace(/\r?\n/g, ' ');
   return /[",]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+/** A CSV this module wrote, back into rows (header first). */
+export function parseCsv(text) {
+  const rows = []; let row = []; let cur = ''; let q = false;
+  const s = String(text || '').replace(/\r\n?/g, '\n');
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (q) {
+      if (ch === '"' && s[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') q = false;
+      else cur += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(cur); cur = ''; }
+    else if (ch === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += ch;
+  }
+  if (cur.length || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(c => String(c).trim()));
+}
+
+function sourceFile(dataset, src) {
+  return path.join(OWN_DIR, src === 'own' ? `${dataset.slug}.csv` : `${dataset.slug}.${src}.csv`);
+}
+
+/** The rows an earlier landing of this source wrote, in column order, without _source. */
+function readSourceRows(dataset, src) {
+  const file = sourceFile(dataset, src);
+  if (!fs.existsSync(file)) return [];
+  const columns = (dataset.columns || []).filter(c => c !== '_source');
+  const [header, ...body] = parseCsv(fs.readFileSync(file, 'utf8'));
+  if (!header) return [];
+  const at = columns.map(c => header.indexOf(c));
+  return body.map(r => at.map(i => (i >= 0 ? String(r[i] ?? '') : '')));
+}
+
+function writeSourceRows(dataset, src, rows) {
+  const columns = (dataset.columns || []).filter(c => c !== '_source');
+  const header = [...columns, '_source'].map(csvCell).join(',');
+  const lines = rows.map(r => [...columns.map((_, i) => csvCell(Array.isArray(r) ? r[i] : '')), src].join(','));
+  fs.mkdirSync(OWN_DIR, { recursive: true });
+  const file = sourceFile(dataset, src);
+  fs.writeFileSync(file, header + '\n' + lines.join('\n') + '\n', 'utf8');
+  return file;
+}
+
+/** A row's key: its key cells, normalised and joined; '' when they are all empty. */
+export function keyOf(row, keyIndexes) {
+  const parts = keyIndexes.map(i => String(row[i] ?? '').trim().toLowerCase().replace(/\s+/g, ' '));
+  return parts.some(Boolean) ? parts.join('|') : '';
+}
+
+/**
+ * The rule, on rows alone so it can be tested alone. `existing` and
+ * `incoming` are arrays in column order; `keyIndexes` says which columns
+ * make the key (none: every row is an add, unless it is an exact duplicate
+ * of a row already there). Returns the merged rows plus what happened.
+ */
+export function mergeRows(existing, incoming, keyIndexes) {
+  const merged = existing.map(r => [...r]);
+  const where = new Map();
+  const whole = new Set();
+  if (keyIndexes.length) merged.forEach((r, i) => { const k = keyOf(r, keyIndexes); if (k && !where.has(k)) where.set(k, i); });
+  else merged.forEach(r => whole.add(r.join('\u0001')));
+  const seen = new Set();
+  let added = 0, updated = 0, unchanged = 0;
+  for (const row of incoming) {
+    if (!keyIndexes.length) {
+      const w = row.join('\u0001');
+      if (whole.has(w)) { unchanged++; continue; }
+      whole.add(w); merged.push([...row]); added++;
+      continue;
+    }
+    const k = keyOf(row, keyIndexes);
+    if (!k || !where.has(k)) {
+      merged.push([...row]); added++;
+      if (k) { where.set(k, merged.length - 1); seen.add(k); }
+      continue;
+    }
+    seen.add(k);
+    const i = where.get(k);
+    // Last writer wins per field; an empty incoming cell does not blank a
+    // value a sheet already had.
+    let changed = false;
+    row.forEach((v, c) => { const nv = String(v ?? ''); if (nv !== '' && nv !== merged[i][c]) { merged[i][c] = nv; changed = true; } });
+    if (changed) updated++; else unchanged++;
+  }
+  const missing = [...where.keys()].filter(k => !seen.has(k));
+  return { rows: merged, added, updated, unchanged, missing, seen: [...seen] };
 }
 
 /**
@@ -143,30 +301,120 @@ export async function reseed(datasetName, filePath) {
  * connector mapped them); `source` is the _source value every row carries.
  * The header is always written here -- nothing trusts a client's.
  */
-export async function landRows({ dataset, rows, source, by = 'owner', detail = '' }) {
+/**
+ * Land rows on a dataset, by the rule above.
+ *
+ * `rows` are arrays already in the dataset's column order (the page or the
+ * connector mapped them); `source` is the _source they carry; `origin` is
+ * the file or thing they came from, for the record. `mode` is 'merge' (the
+ * default: by key, into what this source already landed) or 'replace'
+ * (what a connector's full pull means: this source's rows are exactly
+ * these now). `complete` says the batch is the whole of what the source
+ * holds, so a key it does not carry is marked missing; a chat add is not
+ * complete and marks nothing.
+ *
+ * Whatever the mode, a key that lands here is removed from any OTHER
+ * source's file for this dataset and that file reseeded, so there is one
+ * row per key in the application.
+ */
+export async function landRows({ dataset, rows, source, by = 'owner', detail = '', origin = '', mode = 'merge', complete = false }) {
   if (!Array.isArray(rows) || !rows.length) throw new Error('No rows to land.');
   if (rows.length > MAX_ROWS) throw new Error(`That is more than ${MAX_ROWS.toLocaleString()} rows. Import it in parts.`);
   const src = String(source || 'own').replace(/[^a-z0-9_-]/gi, '').toLowerCase() || 'own';
   const columns = (dataset.columns || []).filter(c => c !== '_source');
-  const header = [...columns, '_source'].map(csvCell).join(',');
-  const lines = rows.map(r => [...columns.map((_, i) => csvCell(Array.isArray(r) ? r[i] : '')), src].join(','));
-  const csv = header + '\n' + lines.join('\n') + '\n';
+  const key = datasetKey(dataset);
+  const keyIndexes = keyColumns(dataset).map(k => columns.indexOf(k)).filter(i => i >= 0);
+  const incoming = rows.map(r => columns.map((_, i) => String((Array.isArray(r) ? r[i] : '') ?? '')));
 
-  fs.mkdirSync(OWN_DIR, { recursive: true });
-  const file = path.join(OWN_DIR, src === 'own' ? `${dataset.slug}.csv` : `${dataset.slug}.${src}.csv`);
-  fs.writeFileSync(file, csv, 'utf8');
-
+  let result;
+  if (mode === 'replace') {
+    result = { rows: incoming, added: incoming.length, updated: 0, unchanged: 0, missing: [], seen: keyIndexes.length ? incoming.map(r => keyOf(r, keyIndexes)).filter(Boolean) : [] };
+  } else {
+    result = mergeRows(readSourceRows(dataset, src), incoming, keyIndexes);
+  }
+  const file = writeSourceRows(dataset, src, result.rows);
   const seeded = await reseed(dataset.name, file);
+
+  // One row per key across sources: the other files let go of these keys.
+  const moved = [];
+  if (keyIndexes.length && result.seen.length) {
+    const seen = new Set(result.seen);
+    for (const other of otherSources(dataset, src)) {
+      const before = readSourceRows(dataset, other);
+      const after = before.filter(r => !seen.has(keyOf(r, keyIndexes)));
+      if (after.length === before.length) continue;
+      writeSourceRows(dataset, other, after);
+      await reseed(dataset.name, sourceFile(dataset, other));
+      moved.push({ from: other, rows: before.length - after.length });
+    }
+  }
+
+  await recordProvenance({ dataset, key, keyed: keyIndexes.length > 0, result, src, by, origin, complete });
+
   const entry = {
-    datasetName: dataset.name, rows: rows.length, source: src,
+    datasetName: dataset.name, rows: incoming.length, source: src, origin,
+    added: result.added, updated: result.updated, unchanged: result.unchanged, missing: complete ? result.missing.length : 0,
     file: path.relative(ROOT, file).split(path.sep).join('/'),
     seeded: seeded.join(' | '), detail, at: new Date(), by,
   };
   await importsCollection().insertOne(entry).catch(() => {});
   // Svarg hears that rows arrived -- the dataset, the kind of source and the
   // count -- and nothing of the rows.
-  sendSignal('import', { datasetName: dataset.name, source: src, rows: rows.length });
-  return { rows: rows.length, seeded, file: entry.file };
+  sendSignal('import', { datasetName: dataset.name, source: src, rows: incoming.length });
+  return { rows: incoming.length, added: result.added, updated: result.updated, unchanged: result.unchanged, missing: complete ? result.missing.length : 0, moved, key, seeded, file: entry.file };
+}
+
+/** The other _source files this dataset has on disk. */
+function otherSources(dataset, src) {
+  if (!fs.existsSync(OWN_DIR)) return [];
+  const escaped = dataset.slug.replace(/[.*+?^${}()|[\]\\]/g, (m) => '\\' + m);
+  const re = new RegExp('^' + escaped + '(?:\\.([a-z0-9_-]+))?\\.csv$', 'i');
+  return fs.readdirSync(OWN_DIR)
+    .map(f => f.match(re)).filter(Boolean)
+    .map(m => m[1] || 'own')
+    .filter(s => s !== src);
+}
+
+async function recordProvenance({ dataset, key, keyed, result, src, by, origin, complete }) {
+  if (!keyed) return;
+  const col = provenanceCollection();
+  const now = new Date();
+  try {
+    if (result.seen.length) {
+      await col.bulkWrite(result.seen.map(k => ({
+        updateOne: {
+          filter: { datasetName: dataset.name, key: k },
+          update: { $set: { source: src, origin, by, at: now, missingSince: null }, $setOnInsert: { datasetName: dataset.name, key: k, keyColumn: key } },
+          upsert: true,
+        },
+      })), { ordered: false });
+    }
+    if (complete && result.missing.length) {
+      await col.updateMany(
+        { datasetName: dataset.name, source: src, key: { $in: result.missing }, missingSince: null },
+        { $set: { missingSince: now } },
+      );
+    }
+  } catch (err) {
+    console.warn('[data] provenance not recorded —', err.message);
+  }
+}
+
+/** What the Data page shows per dataset: rows by source, the last change, how many the source no longer has. */
+export async function provenanceSummary() {
+  const out = {};
+  try {
+    const rows = await provenanceCollection().aggregate([
+      { $group: { _id: { d: '$datasetName', s: '$source' }, n: { $sum: 1 }, last: { $max: '$at' }, missing: { $sum: { $cond: [{ $ifNull: ['$missingSince', false] }, 1, 0] } } } },
+    ]).toArray();
+    for (const r of rows) {
+      const d = out[r._id.d] || (out[r._id.d] = { bySource: {}, lastChange: null, missing: 0 });
+      d.bySource[r._id.s] = r.n;
+      d.missing += r.missing;
+      if (!d.lastChange || r.last > d.lastChange) d.lastChange = r.last;
+    }
+  } catch { /* an application without provenance yet */ }
+  return out;
 }
 
 /** Objects from a connector, onto the dataset's columns, by the connector's mapping. */
@@ -329,7 +577,8 @@ export async function syncConnector(id, { by = 'owner' } = {}) {
       return { rows: 0, message: 'The source returned nothing to import.' };
     }
     const rows = mapOntoColumns(dataset, objects, doc.mapping || {});
-    const landed = await landRows({ dataset, rows, source: doc.kind, by, detail: kind.describe ? kind.describe(openConfig(kind, doc.config)) : '' });
+    // A pull is the whole source: this source's rows are exactly these now.
+    const landed = await landRows({ dataset, rows, source: doc.kind, by, detail: kind.describe ? kind.describe(openConfig(kind, doc.config)) : '', origin: kind.label, mode: 'replace', complete: true });
     await connectorsCollection().updateOne({ _id: doc._id }, { $set: { status: 'connected', lastSyncAt: new Date(), lastRows: landed.rows } });
     return landed;
   } catch (err) {

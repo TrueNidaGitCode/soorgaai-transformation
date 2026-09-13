@@ -151,3 +151,39 @@ on them.
 Of the datasets this initiative needs, which two already share a student
 identifier — and which one exists today only as a WhatsApp thread that
 someone would have to export before the end of the month?
+
+---
+
+# Sources
+
+Where an academy's data actually lives, in the order it should be connected.
+Read by Cob when it names each dataset's `typicalSource`, and by Eame, which
+ships the application's Data page with these sources first and only the
+connectors they call for. The block is JSON so that both can read it without
+guessing; the prose above is why.
+
+```json sources
+[
+  {
+    "kind": "folder",
+    "label": "Your folder of spreadsheets",
+    "providers": ["upload"],
+    "holds": ["enrolment", "attendance", "fees", "coaches", "schedule"],
+    "note": "Most academies run on one Excel sheet or Google Sheet per concern -- students, fees, the roster -- kept in a Drive folder or on one laptop. Upload the whole folder; each sheet is matched to what the application expects."
+  },
+  {
+    "kind": "whatsapp",
+    "label": "WhatsApp",
+    "providers": ["export", "business-account"],
+    "holds": ["attendance", "communication", "leads"],
+    "note": "Attendance is asked and answered in one group per batch. A group can only be read as an export (Export chat, without media). A WhatsApp Business number lets replies arrive live, but the Business API does not read groups: the academy asks each parent individually from the business number, which is a change in how the coach works and better data when it lands."
+  },
+  {
+    "kind": "form",
+    "label": "Enrolment form",
+    "providers": ["upload"],
+    "holds": ["enrolment"],
+    "note": "A student's record begins on a paper or Google form; its responses sheet belongs in the folder above."
+  }
+]
+```

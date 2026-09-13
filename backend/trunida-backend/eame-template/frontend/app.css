@@ -812,6 +812,23 @@ body {
 .dt-wa__mode { display: flex; gap: 14px; margin: 6px 0 10px; font-size: 13px; color: var(--ch-dim); }
 .dt-wa__mode label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
 
+/* A record the chat is about to write, and wrote. */
+.ch-bubble--card { max-width: 520px; }
+.ch-card__wait { color: var(--ch-faint); font-size: 13px; }
+.ch-card__head { margin: 0 0 6px; font-size: 14px; }
+.ch-card__sum { margin: 0 0 8px; font-size: 13px; color: var(--ch-dim); }
+.ch-card__row { margin: 0 0 8px; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; font-size: 13px; }
+.ch-card__row dt { color: var(--ch-faint); }
+.ch-card__row dd { margin: 0; color: var(--ch-text); word-break: break-word; }
+.ch-card__key { margin: 0 0 8px; font-size: 12px; color: var(--ch-faint); }
+.ch-card__key code { color: var(--ch-dim); }
+.ch-card__bad { margin: 0 0 8px; font-size: 12.5px; color: #FCA5A5; }
+.ch-card__acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.ch-card__go { padding: 7px 14px; border: 0; border-radius: 999px; background: var(--ch-accent); color: #081310; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.ch-card__go:disabled { opacity: 0.6; cursor: wait; }
+.ch-card__no, .ch-card__cancel { padding: 7px 12px; border: 1px solid var(--ch-line-hi); border-radius: 999px; background: transparent; color: var(--ch-dim); font: inherit; font-size: 12.5px; cursor: pointer; }
+.ch-card__no:hover, .ch-card__cancel:hover { color: var(--ch-text); }
+
 /* Feedback under an answer. */
 .ch-fb { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
 .ch-fb__btn { padding: 2px 7px; border: 1px solid var(--ch-line); border-radius: 999px; background: transparent; font-size: 13px; line-height: 1.4; cursor: pointer; opacity: 0.55; }
@@ -846,3 +863,47 @@ body {
   .ch-bubble { animation: none; }
   .ch-door__cta, .ch-example, .ch-compose__send { transition: none; }
 }
+
+/* ── The Data page, sources first ─────────────────────────────────────────── */
+.dt__section { margin-bottom: 30px; }
+.dt-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.dt-card { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border: 1px solid var(--ch-line); border-radius: var(--ch-radius); background: var(--ch-panel); }
+.dt-card__head { display: flex; gap: 12px; align-items: flex-start; }
+.dt-card__icon { width: 38px; height: 38px; flex-shrink: 0; display: grid; place-items: center; border-radius: 10px; background: rgba(255,255,255,0.05); color: var(--ch-accent); }
+.dt-card__icon svg { width: 20px; height: 20px; }
+.dt-card__title { margin: 0 0 3px; font-size: 15px; font-weight: 700; }
+.dt-card__status { margin: 0; font-size: 12.5px; color: var(--ch-faint); }
+.dt-card__status--on { color: var(--ch-accent); }
+.dt-card__note { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ch-dim); }
+.dt-card__holds { margin: 0; font-size: 12px; color: var(--ch-faint); }
+.dt-card__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: auto; padding-top: 4px; }
+.dt-card__soon { font-size: 12px; color: var(--ch-faint); padding: 6px 10px; border: 1px dashed var(--ch-line-hi); border-radius: 999px; }
+.dt-card .dt-src__list { margin-top: 2px; }
+.dt-btn--file { cursor: pointer; }
+.dt-btn--file input { display: none; }
+.dt-also { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.dt-also__label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ch-faint); }
+.dt-panel { margin-top: 14px; padding: 16px; border: 1px solid var(--ch-line-hi); border-radius: var(--ch-radius); background: var(--ch-panel); }
+.dt-panel__head { margin: 0 0 12px; font-size: 14px; line-height: 1.5; color: var(--ch-text); }
+.dt-panel__aside { margin: 10px 0 0; font-size: 12.5px; color: var(--ch-faint); }
+.dt-select { padding: 7px 9px; border: 1px solid var(--ch-line-hi); border-radius: 8px; background: var(--ch-bg); color: var(--ch-text); font: inherit; font-size: 13px; }
+.dt-form__field--inline { flex-direction: row; align-items: center; gap: 8px; }
+.dt-folder__name { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dt-folder__fit { color: var(--ch-dim); white-space: nowrap; }
+.dt-faint { color: var(--ch-faint); }
+.dt-key { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: rgba(92,197,167,0.14); color: var(--ch-accent); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.dt-tablewrap { overflow-x: auto; border: 1px solid var(--ch-line); border-radius: var(--ch-radius); background: var(--ch-panel); margin-bottom: 10px; }
+.dt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dt-table th { text-align: left; padding: 10px 14px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ch-faint); border-bottom: 1px solid var(--ch-line); }
+.dt-table td { padding: 11px 14px; border-top: 1px solid var(--ch-line); vertical-align: middle; color: var(--ch-dim); }
+.dt-table td strong { color: var(--ch-text); font-weight: 600; }
+.dt-table__cols { display: block; font-size: 11.5px; color: var(--ch-faint); }
+.dt-table__missing { font-style: normal; color: #FCD34D; font-size: 12px; margin-left: 6px; }
+.dt-table__act { white-space: nowrap; text-align: right; }
+.dt-table__act .dt-mini { margin-left: 8px; }
+.dt-pill { display: inline-block; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--ch-line-hi); font-size: 11px; color: var(--ch-faint); }
+.dt-pill--on { color: var(--ch-accent); border-color: rgba(92,197,167,0.4); background: rgba(92,197,167,0.08); }
+.dt__log li { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+.dt__log li span:first-child { color: var(--ch-faint); }
+.dt__log li span:nth-child(2) { color: var(--ch-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 640px) { .dt__log li { grid-template-columns: 1fr 1fr; } }

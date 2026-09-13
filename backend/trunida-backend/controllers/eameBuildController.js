@@ -18,6 +18,7 @@ import { buildApplication } from '../services/eameBuildService.js';
 import { buildRuntime } from '../services/eameProjectBuilder.js';
 import { resolveAppName } from '../services/eameSpec.js';
 import { sampleDataFiles } from '../services/deliveredSampleData.js';
+import { sourcesForBlueprint, connectorKindsFor, sourcesFile } from '../services/sourceCatalogService.js';
 import { tenantMongoUri } from '../services/deployTargetService.js';
 import { requireEntitlement } from '../services/entitlements.js';
 import { ensureAppName } from '../services/appNameService.js';
@@ -195,10 +196,13 @@ export async function generatedManifest(blueprintId, { appName = '' } = {}) {
   // written here, on its way out.
   const bp = await TransformationBlueprint.findById(blueprintId).lean().catch(() => null);
   if (bp) await ensureFrontDoor(bp).catch(() => {});
+  const sources = bp ? sourcesForBlueprint(bp) : null;
   const runtime = buildRuntime({
     appName,
     copy: bp ? frontDoorCopy(bp) : (app.useCase ? { __APP_TAGLINE__: app.useCase } : {}),
+    connectors: sources ? connectorKindsFor(sources) : null,
   });
+  if (sources) runtime.push(sourcesFile(sources));
   // The sample data ships with the project, so the delivered seed script has
   // something to read and the customer sees the application work rather than
   // an empty database answering as though emptiness were a finding.

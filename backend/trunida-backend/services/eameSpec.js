@@ -84,7 +84,7 @@ export const ALLOWED_DEPENDENCIES = [
 ];
 
 /** Aria's required datasets, from the data-readiness domain. */
-function readDatasets(bp) {
+export function readDatasets(bp) {
   const domain = (bp?.domains || []).find(d => d.domainId === 'data-readiness');
   if (!domain) return [];
   for (const cap of domain.capabilities || []) {

@@ -45,12 +45,12 @@ describe('the owner session', () => {
   it('exchanges the right key for an owner session and refuses a wrong one', async () => {
     const { ownerSession, requireOwner } = await import('../eame-template/controllers/dataController.js');
     const ok = res();
-    ownerSession({ body: { key: 'sok_right' } }, ok);
+    await ownerSession({ body: { key: 'sok_right' }, header: () => '' }, ok);
     expect(ok.code).toBe(200);
     expect(jwt.verify(ok.body.token, 'test-secret').role).toBe('owner');
 
     const bad = res();
-    ownerSession({ body: { key: 'sok_wrong' } }, bad);
+    await ownerSession({ body: { key: 'sok_wrong' }, header: () => '' }, bad);
     expect(bad.code).toBe(401);
 
     // The public chat session is not the owner.

@@ -25,6 +25,7 @@ import { generateApplication } from './eameCodeGenerator.js';
 import { buildRuntime } from './eameProjectBuilder.js';
 import { ensureFrontDoor, frontDoorCopy } from './frontDoorService.js';
 import { sampleDataFiles } from './deliveredSampleData.js';
+import { sourcesForBlueprint, connectorKindsFor, sourcesFile } from './sourceCatalogService.js';
 import { verifyProject } from './generatedProjectVerifier.js';
 
 /** Attempts before a build is called failed. Each one costs a full generation. */
@@ -101,15 +102,19 @@ export async function buildApplication(bp, {
   // The front door: written once per blueprint, in the business's own words,
   // with a photo of its world. Never a reason for a build to fail.
   await ensureFrontDoor(bp).catch(() => {});
+  // Where this customer's data lives, in their industry's order: the Data
+  // page opens on it, and only the connectors it calls for are shipped.
+  const sources = sourcesForBlueprint(bp);
   const runtimeFiles = buildRuntime({
     appName: spec.appName,
     copy: {
       ...(spec.useCase?.justification ? { __APP_WELCOME_BODY__: spec.useCase.justification } : {}),
       ...frontDoorCopy(bp),
     },
+    connectors: connectorKindsFor(sources),
   });
 
-  runtimeFiles.push(...samples);
+  runtimeFiles.push(...samples, sourcesFile(sources));
 
   const history = [];
   let repair = null;

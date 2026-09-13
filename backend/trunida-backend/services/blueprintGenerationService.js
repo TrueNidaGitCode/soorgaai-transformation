@@ -40,6 +40,7 @@ import { normalizeCompanyName, getApprovedCapabilityMap } from './companyResearc
 import { getVerticalContextForCapability, preloadVerticalContextMap } from './industryVerticalKnowledgeService.js';
 import { saveActionItems } from './actionItemService.js';
 import { reportRun } from './usageContext.js';
+import { sourceGuidanceFor } from './sourceCatalogService.js';
 
 // Merges Enterprise Blueprint context with Connected Knowledge (Confluence)
 // context into the single string the existing prompt builders already accept —
@@ -108,9 +109,13 @@ export async function loadCompanyProfile(userId, blueprintId = null) {
  * Returns '' when the engagement is undecided, so generation is not steered by
  * a guess. See services/engagementClassifierService.js.
  */
-function datasetSourceGuidance(engagement) {
+function datasetSourceGuidance(engagement, industry = '') {
   const category = engagement?.category;
-  if (!category) return '';
+  // The industry's own list of where its data lives comes first, when the
+  // overlay has one: an academy's datasets live in a folder of sheets and in
+  // WhatsApp whatever kind of engagement this is.
+  const industryLines = sourceGuidanceFor(industry);
+  if (!category) return industryLines;
 
   const maturityNote = engagement.maturity === 'startup'
     // Not a deficiency to work around: it is the normal shape of a young
@@ -122,7 +127,7 @@ function datasetSourceGuidance(engagement) {
       : '';
 
   if (category === 'product-ai') {
-    return `
+    return industryLines + `
 DATA SOURCE GUIDANCE (this engagement builds AI INTO THE PRODUCT THIS COMPANY SELLS):
 - typicalSource must name THIS COMPANY'S OWN systems — its application database and the tables in it, its source repository, its own analytics and billing systems.
 - Do NOT name third-party engineering process tools (Jira, Confluence, DOORS, Polarion, TestRail, Teamcenter) unless the objective itself is about that process. They are where a company's ENGINEERING PROCESS lives, not where its PRODUCT'S data lives.
@@ -131,7 +136,7 @@ DATA SOURCE GUIDANCE (this engagement builds AI INTO THE PRODUCT THIS COMPANY SE
   }
 
   const area = engagement.subArea ? ` in the "${engagement.subArea}" area of work` : '';
-  return `
+  return industryLines + `
 DATA SOURCE GUIDANCE (this engagement automates work this company's own staff do${area}):
 - typicalSource must name the tools that team actually works in${area ? ' for that area' : ''} — issue trackers, documentation systems, test management, CI, or service desks as appropriate.
 - Name tools realistic for this company's industry and size; do not assume a heavyweight toolchain a small team would not run.${maturityNote}
@@ -2800,7 +2805,7 @@ function buildBriefPrompt({ companyName, industry, role, businessObjective, cont
   // Guidance first: the dataset spec inside the templates refers back to it as
   // "the DATA SOURCE GUIDANCE above". Empty string when engagement is
   // undecided, which leaves the prompt exactly as it was.
-  const templateInstructions = datasetSourceGuidance(engagement) + (BLUEPRINT_CONFIG.generate.ctoExtras
+  const templateInstructions = datasetSourceGuidance(engagement, industry) + (BLUEPRINT_CONFIG.generate.ctoExtras
     ? parsedSections
         .filter(s => SECTION_TEMPLATES[s.title])
         .map(s => SECTION_TEMPLATES[s.title].promptInstruction)
@@ -3114,7 +3119,7 @@ function buildBriefExtractionPrompt({ capabilityName, parsedSections, essays }) 
     .join('\n\n---\n\n');
 
   // Same ordering rule as the brief pipeline — see buildBriefPrompt.
-  const templateInstructions = datasetSourceGuidance(engagement) + (BLUEPRINT_CONFIG.generate.ctoExtras
+  const templateInstructions = datasetSourceGuidance(engagement, industry) + (BLUEPRINT_CONFIG.generate.ctoExtras
     ? parsedSections
         .filter(s => SECTION_TEMPLATES[s.title])
         .map(s => SECTION_TEMPLATES[s.title].promptInstruction)

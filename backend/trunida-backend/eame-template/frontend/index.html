@@ -219,13 +219,13 @@
     <header class="dt__head">
       <a href="#" class="dt__back" id="dt-back">&larr; Back to the chat</a>
       <h1 class="dt__title">Your data</h1>
-      <p class="dt__sub">The application was built on the shape of these datasets. Replace the sample rows with your own — a file read here in your browser, or a source connected to this application directly. Either way the rows and the credentials stay in this application and never go to Svarg.</p>
+      <p class="dt__sub">Connect the places your records already live and the application reads them; keep adding to your sheets, or say it in the chat, and it holds one record either way. Files are read here in your browser, and rows and credentials stay in this application — nothing goes to Svarg.</p>
     </header>
 
     <div class="dt__gate" id="dt-gate">
       <form class="dt__keyform" id="dt-key-form">
         <label class="dt__label" for="dt-key">Owner key</label>
-        <p class="dt__hint">The key from your Svarg go-live screen. It was shown once; if you did not keep it, redeploying from Svarg issues a new one.</p>
+        <p class="dt__hint">The key from your Svarg go-live screen. It was shown once; if you did not keep it, the Yusu page on Svarg issues a new one. Unlock while signed in and your account becomes the owner, so the chat can add records for you.</p>
         <div class="dt__keyrow">
           <input type="password" id="dt-key" class="dt__input" autocomplete="off" placeholder="sok_…">
           <button type="submit" class="dt-btn">Unlock</button>
@@ -235,7 +235,23 @@
     </div>
 
     <div class="dt__room" id="dt-room" hidden>
-      <div class="dt__datasets" id="dt-datasets"></div>
+      <!-- Sources first: where this industry keeps its data, from
+           data/sources.json, each with what it has brought in. -->
+      <section class="dt__section">
+        <h2 class="dt__h2">Where your data lives</h2>
+        <div class="dt-cards" id="dt-sources"></div>
+        <div class="dt-also" id="dt-also" hidden></div>
+        <!-- One panel for whichever way in is open: the folder's matching,
+             a file's columns, a WhatsApp export, a connector's form. -->
+        <div class="dt-panel" id="dt-panel" hidden></div>
+        <p class="dt-note" id="dt-note" hidden></p>
+      </section>
+      <!-- Then the record of what arrived: one row per dataset. -->
+      <section class="dt__section">
+        <h2 class="dt__h2">What the application holds</h2>
+        <div class="dt-tablewrap"><table class="dt-table" id="dt-datasets"></table></div>
+        <p class="dt__hint">A dataset's <em>key</em> is what tells its rows apart. A row that arrives with a key already held updates that row, wherever it came from — the sheet or the chat — so there is one record per key. A row a sheet no longer has is kept and counted, never deleted.</p>
+      </section>
       <section class="dt__logwrap">
         <h2 class="dt__h2">Imports</h2>
         <ul class="dt__log" id="dt-log"></ul>
@@ -540,6 +556,83 @@
       sessionStorage.setItem('ch-entered', '1');
       show('app');
     });
+
+    /*
+     * The chat writes.
+     *
+     * "Add Priya Nair to the U14 Tuesday batch" is a record, said instead of
+     * typed into the sheet. Before the generated chat answers, a message
+     * that starts like one is put to the server (POST /api/data/intent),
+     * which asks the model for the row and nothing else; the row is shown on
+     * a card and only a press on it lands it, as a row from the chat, by the
+     * rule every row follows. Anyone who may not write (not the owner, not an
+     * admin) gets the ordinary answer instead, and so does a message that
+     * turns out to be a question. Runtime, not generated: the same in every
+     * application, and in front of whatever chat Eame wrote.
+     */
+    var RECORDISH = /^\s*(add|register|enrol|enroll|new|create|record|update|change|set|mark|move|rename|remove|delete)\b/i;
+    var chatForm = document.getElementById('ch-form');
+    var chatLog = document.getElementById('ch-log');
+    var chatInput = document.getElementById('ch-input');
+    var passThrough = false;
+    function writerToken() {
+      try { return localStorage.getItem('ownerToken') || localStorage.getItem('token') || ''; } catch (e) { return ''; }
+    }
+    function escText(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function letThrough() { passThrough = true; if (chatForm.requestSubmit) chatForm.requestSubmit(); else chatForm.dispatchEvent(new Event('submit', { cancelable: true })); }
+    function card(html) {
+      // The opening prompt gives way to the conversation, as it does for an answer.
+      var w = chatLog.querySelector('.ch-welcome'); if (w) w.remove();
+      var el = document.createElement('div');
+      el.className = 'ch-turn ch-turn--bot';
+      el.innerHTML = '<div class="ch-bubble ch-bubble--card">' + html + '</div>';
+      chatLog.appendChild(el);
+      chatLog.scrollTop = chatLog.scrollHeight;
+      return el;
+    }
+    document.addEventListener('submit', async function (e) {
+      if (e.target !== chatForm) return;
+      if (passThrough) { passThrough = false; return; }
+      var text = (chatInput && chatInput.value || '').trim();
+      var t = writerToken();
+      if (!text || !t || !RECORDISH.test(text)) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      var thinking = card('<span class="ch-card__wait">Reading that as a record…</span>');
+      var r, d = null;
+      try {
+        r = await fetch(API + '/api/data/intent', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, body: JSON.stringify({ message: text }) });
+        d = r.ok ? await r.json() : null;
+      } catch (err) { d = null; }
+      thinking.remove();
+      // Not a record, or not someone who may write one: the ordinary answer.
+      if (!d || d.none) { letThrough(); return; }
+      var me = null; try { me = JSON.parse(localStorage.getItem('ch-user') || 'null'); } catch (err) { me = null; }
+      var el = card('<p class="ch-card__head">' + (d.action === 'update' ? 'Change this record in ' : 'Add this to ') + '<strong>' + escText(d.dataset) + '</strong>?</p>'
+        + (d.summary ? '<p class="ch-card__sum">' + escText(d.summary) + '</p>' : '')
+        + '<dl class="ch-card__row">' + Object.keys(d.row).map(function (k) { return '<dt>' + escText(k) + '</dt><dd>' + escText(d.row[k]) + '</dd>'; }).join('') + '</dl>'
+        + (d.key ? '<p class="ch-card__key">Told apart by <code>' + escText(d.key) + '</code>' + (d.action === 'update' ? '; the row with this key is updated' : '; a row with this key already held is updated') + '.</p>' : '')
+        + '<div class="ch-card__acts"><button type="button" class="ch-card__go">' + (d.action === 'update' ? 'Change it' : 'Add it') + '</button><button type="button" class="ch-card__no">Not a record — just answer</button><button type="button" class="ch-card__cancel">Cancel</button></div>');
+      var goBtn = el.querySelector('.ch-card__go');
+      el.querySelector('.ch-card__cancel').addEventListener('click', function () { el.remove(); });
+      el.querySelector('.ch-card__no').addEventListener('click', function () { el.remove(); letThrough(); });
+      goBtn.addEventListener('click', async function () {
+        goBtn.disabled = true; goBtn.textContent = 'Recording…';
+        try {
+          var res = await fetch(API + '/api/data/records', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, body: JSON.stringify({ dataset: d.dataset, row: d.row }) });
+          var out = await res.json().catch(function () { return {}; });
+          if (!res.ok) throw new Error(out.error || 'That did not work (' + res.status + ').');
+          var what = out.updated ? 'Updated' : 'Added';
+          el.querySelector('.ch-bubble').innerHTML = '<p class="ch-card__head">' + what + ' in <strong>' + escText(d.dataset) + '</strong>' + (me && (me.name || me.email) ? ', by ' + escText(me.name || me.email) : '') + '.</p>'
+            + '<dl class="ch-card__row">' + Object.keys(d.row).map(function (k) { return '<dt>' + escText(k) + '</dt><dd>' + escText(d.row[k]) + '</dd>'; }).join('') + '</dl>'
+            + (out.moved && out.moved.length ? '<p class="ch-card__key">It replaces the copy that came from ' + escText(out.moved.map(function (m) { return m.from; }).join(', ')) + '.</p>' : '')
+            + '<p class="ch-card__key">The answers use it from now on. If it also goes into your sheet later, the sheet will update this row rather than add another.</p>';
+          if (chatInput) chatInput.value = '';
+        } catch (err) {
+          el.querySelector('.ch-card__acts').insertAdjacentHTML('beforebegin', '<p class="ch-card__bad">' + escText(err.message) + '</p>');
+          goBtn.disabled = false; goBtn.textContent = d.action === 'update' ? 'Change it' : 'Add it';
+        }
+      });
+    }, true);
 
     // A reload mid-conversation must not send someone back through the
     // front door: within one tab session, the chat is where they were. And

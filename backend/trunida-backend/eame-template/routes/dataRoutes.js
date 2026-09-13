@@ -7,7 +7,7 @@
  */
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { ownerStatus, ownerSession, requireOwner, listDatasets, importDataset } from '../controllers/dataController.js';
+import { ownerStatus, ownerSession, requireOwner, requireWriter, listDatasets, listSources, importDataset, recordIntent, addRecord } from '../controllers/dataController.js';
 
 const router = express.Router();
 
@@ -15,6 +15,11 @@ router.get('/owner-status', ownerStatus);
 router.post('/owner-session', express.json(), ownerSession);
 
 router.get('/datasets', protect, requireOwner, listDatasets);
+router.get('/sources', protect, requireOwner, listSources);
+
+// The chat writing a record: the owner, or a signed-in owner or admin.
+router.post('/intent', protect, requireWriter, express.json(), recordIntent);
+router.post('/records', protect, requireWriter, express.json(), addRecord);
 // Fifty thousand rows of text is well under this; the limit is the ceiling
 // on what one request may hold in memory, not a target.
 router.post('/import', protect, requireOwner, express.json({ limit: '25mb' }), importDataset);

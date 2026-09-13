@@ -15,6 +15,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { FIXED_PATHS } from './eameSpec.js';
+import { CONNECTOR_MODULES } from './sourceCatalogService.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');           // backend/trunida-backend/
@@ -155,7 +156,14 @@ export function buildManifest({ appName = '', copy = {} } = {}) {
  * Paths come from FIXED_PATHS in eameSpec.js so the generator, the verifier and
  * this cannot disagree about which files are the generator's to write.
  */
-export function buildRuntime({ appName = '', copy = {} } = {}) {
+export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}) {
+  // Which connector modules this application gets: the ones its sources
+  // call for (sourceCatalogService), or all of them when nobody said.
+  // The runtime discovers what is in services/connectors/ at boot, so a
+  // module left out is simply not offered on the Data page.
+  const wanted = Array.isArray(connectors) ? new Set(connectors.map(k => CONNECTOR_MODULES[k]).filter(Boolean)) : null;
+  const connectorPaths = new Set(Object.values(CONNECTOR_MODULES));
+  const shipped = FIXED_PATHS.filter(p => !connectorPaths.has(p) || !wanted || wanted.has(p));
   // Where each fixed file is copied from. A path in FIXED_PATHS with no entry
   // here would silently vanish from the delivered project, so the lookup below
   // throws instead.
@@ -194,7 +202,7 @@ export function buildRuntime({ appName = '', copy = {} } = {}) {
     'config/modelCatalog.js':           { repo: 'config/modelCatalog.js' },
   };
 
-  return FIXED_PATHS.map((dest) => {
+  return shipped.map((dest) => {
     const source = SOURCE[dest];
     if (!source) throw new Error(`No source is configured for the fixed file ${dest}`);
     const content = source.template

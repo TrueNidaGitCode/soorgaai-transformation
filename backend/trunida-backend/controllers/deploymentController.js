@@ -390,6 +390,48 @@ export async function acknowledgeGovernance(req, res) {
 }
 
 /**
+ * POST .../owner-key — a new owner key for a live application.
+ *
+ * The key is shown once at Go Live and Svarg keeps only its hash, so a key
+ * that was not written down is gone. This mints another, records the hash,
+ * writes it into the application's environment and restarts the service
+ * with it; the old key stops working the moment the new build is up. The
+ * screen shows it the same once.
+ */
+export async function issueOwnerKey(req, res) {
+  try {
+    const bp = await ownedBlueprint(req);
+    if (!bp) return res.status(404).json({ error: 'Blueprint not found or you do not have access to it.' });
+
+    const dep = await HostedDeployment.findOne({ blueprintId: bp._id });
+    if (!dep?.railway?.serviceId) {
+      return res.status(400).json({ error: 'The application is not running on Svarg, so there is no environment to put a key into.' });
+    }
+
+    const ownerKey = 'sok_' + crypto.randomBytes(24).toString('hex');
+    try {
+      await getDeployTarget().redeploy({
+        deployment: dep,
+        commitSha: bp.eameDelivery?.commitSha || '',
+        env: { APP_OWNER_KEY: ownerKey },
+      });
+    } catch (err) {
+      console.error('[deployment] owner key redeploy failed:', err.message);
+      return res.status(502).json({ error: `The new key could not be applied: ${err.message}` });
+    }
+
+    dep.ownerKeyHash = crypto.createHash('sha256').update(ownerKey).digest('hex');
+    dep.status = 'attaching';
+    dep.statusMessage = 'Restarting the application with the new owner key.';
+    await dep.save();
+    return res.json({ ownerKey, deployment: publicView(dep) });
+  } catch (err) {
+    console.error('[deployment] owner key error:', err.message);
+    return res.status(500).json({ error: 'Failed to issue a new owner key.' });
+  }
+}
+
+/**
  * POST .../redeploy — ask the platform to build and start the service again.
  *
  * A deployment that is recorded as live but is not serving has no other way

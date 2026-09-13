@@ -1366,6 +1366,14 @@ setTimeout(async function () {
         if (!openBtn || openBtn.style.display === 'none') bad('"Open Application" is missing on a live deployment');
         var goLive = document.getElementById('yusu-golive-btn');
         if (goLive && goLive.style.display !== 'none') bad('"Go Live" is still offered on a deployment that is already live');
+        // Live, with no key on the page (it was shown once at go-live): the
+        // way to a new one must be offered, and the once-only box must not
+        // be shown empty.
+        var lostBox = document.getElementById('yusu-owner-lost');
+        var keyBox = document.getElementById('yusu-owner');
+        out.ownerLost = lostBox && lostBox.offsetParent !== null ? 'offered' : 'missing';
+        if (out.ownerLost !== 'offered') bad('"Issue a new owner key" is not offered on a live deployment with no key shown');
+        if (keyBox && keyBox.offsetParent !== null) bad('the once-only owner key box is shown with nothing in it');
       }
       // The pieces that were removed must stay removed.
       if (scr.querySelector('#yusu-pipeline, .dp__step')) bad('the deployment journey strip is back');

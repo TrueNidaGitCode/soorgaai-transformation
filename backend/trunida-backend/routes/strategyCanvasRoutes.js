@@ -3,7 +3,7 @@ import { protect } from '../middleware/authMiddleware.js';
 import { recommendForBlueprint } from '../controllers/modelCatalogController.js';
 import { startBuild, getBuild } from '../controllers/eameBuildController.js';
 import { screenChat, saveArthSelection, saveDataIntent, listArthModels, recommendArthModel } from '../controllers/screenChatController.js';
-import { getDeployment, prepareInfrastructure, attachApplication, destroyDeployment, acknowledgeGovernance, redeployApplication } from '../controllers/deploymentController.js';
+import { getDeployment, prepareInfrastructure, attachApplication, destroyDeployment, acknowledgeGovernance, redeployApplication, issueOwnerKey } from '../controllers/deploymentController.js';
 import {
   listCapabilities,
   fetchCapabilityBlueprint,
@@ -54,6 +54,7 @@ router.get   ('/transformation-blueprint/:blueprintId/deployment',     protect, 
 router.post  ('/transformation-blueprint/:blueprintId/infrastructure', protect, prepareInfrastructure);
 router.post  ('/transformation-blueprint/:blueprintId/deploy',         protect, attachApplication);
 router.post  ('/transformation-blueprint/:blueprintId/redeploy',       protect, redeployApplication);
+router.post  ('/transformation-blueprint/:blueprintId/owner-key',      protect, issueOwnerKey);
  router.delete('/transformation-blueprint/:blueprintId/deployment',     protect, destroyDeployment);
  router.patch ('/transformation-blueprint/:blueprintId/governance-review', protect, acknowledgeGovernance);
 

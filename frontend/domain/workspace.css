@@ -603,6 +603,8 @@ body.domain-page .cr-wait__note svg { width: 16px; height: 16px; flex: 0 0 auto;
 }
 #screen-yusu .yu-owner__note { margin: 10px 0 12px; font-size: 0.82rem; line-height: 1.55; color: var(--ws-muted); }
 #screen-yusu .yu-owner__go { display: inline-flex; text-decoration: none; }
+#screen-yusu .yu-owner--lost { border-style: dashed; }
+#screen-yusu .yu-owner__issue { display: inline-flex; }
 
 /* ── Yusu's run stage: four acts across ─────────────────────────────────── */
 #screen-yusu .yr-run {

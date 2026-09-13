@@ -549,6 +549,7 @@ function render(bp, dep) {
   const live = dep && ['live', 'suspended'].includes(dep.status);
   const building = dep?.status === 'attaching';
   const pushed = !!bp.eameDelivery?.repoName;
+  renderOwnerLost(dep);
   const checksPass = results.length > 0 && results.every(r => r.pass);
   if (live && !_actTime.deploy) _actTime.deploy = dep.updatedAt || Date.now();
 
@@ -865,6 +866,8 @@ function showOwnerKey(key, url) {
   if (!box || !el) return;
   el.textContent = key;
   box.style.display = '';
+  const lost = document.getElementById('yusu-owner-lost');
+  if (lost) lost.style.display = 'none';
   renderConnectPlan(_bp);
   if (copy && !copy.dataset.wired) {
     copy.dataset.wired = '1';
@@ -876,6 +879,39 @@ function showOwnerKey(key, url) {
   }
   _ownerDataLink = go;
   setOwnerDataLink(url);
+}
+
+/**
+ * A live application and no key on the page: offer a new one. The key box
+ * itself is only ever shown with a key in it, so a reload after go-live
+ * lands here, which is the case this exists for.
+ */
+function renderOwnerLost(dep) {
+  const lost = document.getElementById('yusu-owner-lost');
+  const box = document.getElementById('yusu-owner');
+  if (!lost || !box) return;
+  const live = dep && ['live', 'suspended', 'attaching'].includes(dep.status) && dep.appAttached;
+  const keyShown = box.style.display !== 'none';
+  lost.style.display = live && !keyShown ? '' : 'none';
+  const btn = document.getElementById('yusu-owner-issue');
+  if (btn && !btn.dataset.wired) {
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', async () => {
+      btn.disabled = true; btn.textContent = 'Issuing…';
+      document.getElementById('yusu-error').style.display = 'none';
+      try {
+        const r = await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/owner-key`, { method: 'POST' });
+        showOwnerKey(r.ownerKey, r.deployment?.url || _dep?.url || '');
+        _buildingSince = 0;
+        _dep = r.deployment || _dep;
+        pollWhileBuilding();
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Issue a new owner key';
+      }
+    });
+  }
 }
 
 let _ownerDataLink = null;

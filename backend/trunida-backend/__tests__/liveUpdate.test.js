@@ -19,6 +19,7 @@ vi.mock('../services/svargGithubService.js', () => ({
   isSvargGithubConfigured: () => true, ensureSvargRepo: M.ensureRepo, publishToSvarg: M.publish,
   repoDescription: (t) => String(t).replace(/\s+/g, ' ').trim(),
 }));
+vi.mock('../services/appNameService.js', () => ({ ensureAppName: vi.fn().mockResolvedValue('Six Cricket') }));
 vi.mock('../services/deployTargetService.js', () => ({ getDeployTarget: () => ({ configured: M.configured, redeploy: M.redeploy }) }));
 
 const { updateOne } = await import('../services/liveUpdateService.js');

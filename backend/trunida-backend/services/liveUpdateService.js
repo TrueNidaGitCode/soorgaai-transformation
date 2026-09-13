@@ -25,6 +25,7 @@ import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { projectFor, manifestHash } from '../controllers/deliveryController.js';
 import { isSvargGithubConfigured, ensureSvargRepo, publishToSvarg, repoDescription } from './svargGithubService.js';
 import { getDeployTarget } from './deployTargetService.js';
+import { ensureAppName } from './appNameService.js';
 
 export const SWEEP_MS = 6 * 60 * 60 * 1000;
 export const BOOT_DELAY_MS = 45 * 1000;
@@ -37,6 +38,9 @@ export async function updateOne(dep, { reason = 'sweep' } = {}) {
   if (!bp) return { skipped: 'no blueprint' };
   if (!bp.eameDelivery?.repoName) return { skipped: 'never published' };
 
+  // Named the way a fresh build is named: an application built before
+  // naming existed still carries its use case sentence as a title.
+  await ensureAppName(bp).catch(() => {});
   const { files, source } = await projectFor(bp);
   const hash = manifestHash(files);
   if (hash === bp.eameDelivery.manifestHash) return { skipped: 'current' };

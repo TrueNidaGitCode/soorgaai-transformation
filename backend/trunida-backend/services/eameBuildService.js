@@ -23,6 +23,7 @@ import { buildSpec } from './eameSpec.js';
 import LinkedProjectDocument from '../models/LinkedProjectDocument.js';
 import { generateApplication } from './eameCodeGenerator.js';
 import { buildRuntime } from './eameProjectBuilder.js';
+import { ensureFrontDoor, frontDoorCopy } from './frontDoorService.js';
 import { sampleDataFiles } from './deliveredSampleData.js';
 import { verifyProject } from './generatedProjectVerifier.js';
 
@@ -97,11 +98,14 @@ export async function buildApplication(bp, {
   // page. Only what the blueprint actually says is passed; the rest falls back
   // to copy that is true of any application, because a confident sentence about
   // the wrong domain is worse than a plain one.
+  // The front door: written once per blueprint, in the business's own words,
+  // with a photo of its world. Never a reason for a build to fail.
+  await ensureFrontDoor(bp).catch(() => {});
   const runtimeFiles = buildRuntime({
     appName: spec.appName,
     copy: {
-      ...(spec.useCase?.name ? { __APP_TAGLINE__: spec.useCase.name } : {}),
       ...(spec.useCase?.justification ? { __APP_WELCOME_BODY__: spec.useCase.justification } : {}),
+      ...frontDoorCopy(bp),
     },
   });
 

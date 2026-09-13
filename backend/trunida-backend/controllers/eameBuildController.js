@@ -21,6 +21,7 @@ import { sampleDataFiles } from '../services/deliveredSampleData.js';
 import { tenantMongoUri } from '../services/deployTargetService.js';
 import { requireEntitlement } from '../services/entitlements.js';
 import { ensureAppName } from '../services/appNameService.js';
+import { ensureFrontDoor, frontDoorCopy } from '../services/frontDoorService.js';
 
 /**
  * How long a build may sit in "building" before it is assumed dead.
@@ -189,10 +190,14 @@ export async function generatedManifest(blueprintId, { appName = '' } = {}) {
   // The chat shell's wording comes from the build, not from the template.
   // buildApplication already passes this when it composes a project to
   // verify; delivery composes its own, and without it the shipped page fell
-  // back to generic copy while the verified one carried the use case.
+  // back to generic copy while the verified one carried the use case. The
+  // front door is the blueprint's; a build from before it existed gets one
+  // written here, on its way out.
+  const bp = await TransformationBlueprint.findById(blueprintId).lean().catch(() => null);
+  if (bp) await ensureFrontDoor(bp).catch(() => {});
   const runtime = buildRuntime({
     appName,
-    copy: app.useCase ? { __APP_TAGLINE__: app.useCase } : {},
+    copy: bp ? frontDoorCopy(bp) : (app.useCase ? { __APP_TAGLINE__: app.useCase } : {}),
   });
   // The sample data ships with the project, so the delivered seed script has
   // something to read and the customer sees the application work rather than

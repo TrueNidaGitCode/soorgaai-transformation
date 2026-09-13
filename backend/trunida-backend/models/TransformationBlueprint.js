@@ -595,6 +595,8 @@ const transformationBlueprintSchema = new mongoose.Schema({
   // build, so it reaches the repository name, the running application's
   // title and its chat header rather than being a label added afterwards.
   appName: { type: String, default: '', trim: true, maxlength: 48 },
+  /** The application's front door -- headline, photo, preview -- written once by frontDoorService. */
+  frontDoor: { type: mongoose.Schema.Types.Mixed, default: null },
 
   // Eame (stage 4): what was actually delivered. Hosting deploys from this
   // repository, so it has to outlive the browser session that pushed it.

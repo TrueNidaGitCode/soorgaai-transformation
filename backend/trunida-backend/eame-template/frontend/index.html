@@ -19,28 +19,57 @@
        #ch-input, #ch-send, #ch-state, #ch-examples, .ch-welcome) are exactly
        as they were; everything new is outside the chat. -->
 
-  <!-- ── The front door ─────────────────────────────────────────────────── -->
-  <section class="ch-door" id="ch-home" aria-label="Welcome">
-    <div class="ch-door__glow" aria-hidden="true"></div>
-    <div class="ch-door__body">
-      <div class="ch-door__mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.9 8.4 8.4 0 0 1 8.4-8.4h.6A8.4 8.4 0 0 1 21 11v.5z"/>
-        </svg>
+  <!-- ── The front door ───────────────────────────────────────────────────
+       The customer's page, not Svarg's: their name and mark, a line in their
+       people's words, a photo of their world (or a scene drawn in CSS when
+       none was found), and a glimpse of the application. Every word and the
+       photo come from the blueprint through the __APP_*__ tokens, written
+       once by Svarg's frontDoorService. The preview card is drawn by the
+       shell script from the JSON at the foot of this section. -->
+  <section class="ld" id="ch-home" aria-label="Welcome" style="--ld-accent: __APP_ACCENT_COLOR__; --ld-hero: __APP_HERO_IMAGE__">
+    <div class="ld__hero">
+      <div class="ld__scene" aria-hidden="true"></div>
+      <div class="ld__photo" aria-hidden="true"></div>
+      <div class="ld__shade" aria-hidden="true"></div>
+
+      <header class="ld__top">
+        <div class="ld__brand">
+          <span class="ld__emblem" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none"><path d="M6 30c4-14 20-24 34-22" stroke="var(--ld-accent)" stroke-width="3" stroke-linecap="round"/><path d="M42 18c-4 14-20 24-34 22" stroke="var(--ld-accent)" stroke-width="3" stroke-linecap="round" opacity=".55"/></svg>
+            <span class="ld__initial">__APP_INITIAL__</span>
+          </span>
+          <span class="ld__brandname">__APP_NAME__</span>
+        </div>
+        <button type="button" class="ld__toplogin" id="ch-login-top">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Log in
+        </button>
+      </header>
+
+      <div class="ld__content">
+        <div class="ld__copy">
+          <p class="ld__eyebrow">__APP_EYEBROW__</p>
+          <h1 class="ld__headline">__APP_HEADLINE__ <span class="ld__accent">__APP_ACCENT__</span></h1>
+          <p class="ld__sub">__APP_TAGLINE__</p>
+          <button type="button" class="ld__cta" id="ch-login">Log in <span aria-hidden="true">&rarr;</span></button>
+          <p class="ch-door__note ld__note" id="ch-login-note" hidden></p>
+        </div>
+        <div class="ld__preview" id="ld-preview" aria-hidden="true"></div>
       </div>
-      <h1 class="ch-door__title">__APP_NAME__</h1>
-      <p class="ch-door__tagline">__APP_TAGLINE__</p>
-
-      <ul class="ch-door__points">
-        <li><strong>Ask in plain language.</strong> No menus, no reports to find — just the question.</li>
-        <li><strong>Answers from your own data.</strong> Built on what this business actually runs on.</li>
-        <li><strong>The evidence underneath.</strong> Every answer shows the records it came from.</li>
-      </ul>
-
-      <button type="button" class="ch-door__cta" id="ch-login">Log in</button>
-      <p class="ch-door__note" id="ch-login-note" hidden></p>
+      <a class="ld__credit" id="ld-credit" href="__APP_HERO_CREDIT_URL__" target="_blank" rel="noopener">__APP_HERO_CREDIT__</a>
     </div>
-    <p class="ch-foot ch-foot--door">Built with Svarg</p>
+
+    <section class="ld__built" aria-label="About this application">
+      <h2 class="ld__built-title">Built around your business</h2>
+      <p class="ld__built-sub">This application was created with Svarg and continuously evolves as your business changes.</p>
+      <ul class="ld__feats">
+        <li><span class="ld__feat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><span><strong>Built for you</strong><em>Created around the way you work.</em></span></li>
+        <li><span class="ld__feat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span><strong>Ready to use</strong><em>Your application is already configured.</em></span></li>
+        <li><span class="ld__feat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span><span><strong>Keeps evolving</strong><em>Learns from how you work.</em></span></li>
+      </ul>
+      <p class="ld__foot">Built with Svarg</p>
+    </section>
+    <script type="application/json" id="ld-preview-data">__APP_PREVIEW_JSON__</script>
   </section>
 
   <!-- ── The welcome, after signing in ──────────────────────────────────── -->
@@ -204,15 +233,45 @@
     // takes them straight to the Data page.
     if (sessionStorage.getItem('ch-entered') || window.location.hash === '#data') { show('app'); return; }
 
-    login.textContent = localStorage.getItem('token') ? 'Continue' : 'Log in';
+    login.textContent = localStorage.getItem('token') ? 'Continue →' : 'Log in →';
     show('home');
+
+    // The top-right Log in is the same door as the one in the hero.
+    var topLogin = document.getElementById('ch-login-top');
+    if (topLogin) topLogin.addEventListener('click', function () { login.click(); });
+
+    // The glimpse of the application: a sidebar, four tiles and a short
+    // list, from the JSON the build wrote. Decorative -- the real thing is
+    // one Log in away -- so it draws nothing it was not given.
+    (function drawPreview() {
+      var host = document.getElementById('ld-preview');
+      var raw = document.getElementById('ld-preview-data');
+      if (!host || !raw) return;
+      var d; try { d = JSON.parse(raw.textContent || '{}'); } catch (e) { return; }
+      if (!d || !Array.isArray(d.nav) || !d.nav.length) { host.hidden = true; return; }
+      var esc = function (t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+      var name = document.querySelector('.ld__brandname');
+      host.innerHTML = '<div class="lp">'
+        + '<aside class="lp__side"><div class="lp__brand">' + esc(name ? name.textContent : '') + '</div><ul class="lp__nav">'
+        + d.nav.map(function (n, i) { return '<li class="lp__navitem' + (i === 0 ? ' lp__navitem--on' : '') + '"><span class="lp__navdot"></span>' + esc(n) + '</li>'; }).join('')
+        + '</ul></aside>'
+        + '<div class="lp__main">'
+        + '<div class="lp__head"><div><p class="lp__hi">' + esc(d.greeting || 'Welcome back!') + '</p><p class="lp__hisub">Here is what is happening today.</p></div><span class="lp__who">' + esc(d.role || 'You') + '</span></div>'
+        + '<div class="lp__tiles">' + (d.stats || []).map(function (s) { return '<div class="lp__tile"><span class="lp__tlabel">' + esc(s.label) + '</span><strong class="lp__tvalue">' + esc(s.value) + '</strong><span class="lp__tnote">' + esc(s.note) + '</span></div>'; }).join('') + '</div>'
+        + (d.list && d.list.rows && d.list.rows.length
+          ? '<div class="lp__list"><p class="lp__ltitle">' + esc(d.list.title) + '</p>'
+            + d.list.rows.map(function (r) { return '<div class="lp__row"><span class="lp__rtime">' + esc(r.time) + '</span><span class="lp__rtitle">' + esc(r.title) + '</span><span class="lp__rmeta">' + esc(r.meta) + '</span>' + (r.tag ? '<span class="lp__rtag">' + esc(r.tag) + '</span>' : '') + '</div>'; }).join('')
+            + '</div>'
+          : '')
+        + '</div></div>';
+    })();
 
     login.addEventListener('click', async function () {
       login.disabled = true;
       login.textContent = 'Signing in…';
       say('');
       if (await signIn()) { show('greet'); }
-      else { login.textContent = 'Log in'; }
+      else { login.textContent = 'Log in →'; }
       login.disabled = false;
     });
 

@@ -42,7 +42,129 @@ body {
   line-height: 1.6;
 }
 
-/* ── The door and the welcome ───────────────────────────────────────────── */
+/* ── The front door ─────────────────────────────────────────────────────── */
+
+.ld { --ld-accent: #F2C94C; --ld-hero: none; position: relative; min-height: 100vh; background: #060B14; color: #fff; }
+.ld__hero { position: relative; min-height: 80vh; display: flex; flex-direction: column; overflow: hidden; isolation: isolate; }
+/* A scene the page draws itself, always under the photo: a dusk sky, a warm
+   sun low on the right, and a ground plane, so the door reads as a place
+   even when no photo was found. */
+.ld__scene {
+  position: absolute; inset: 0; z-index: -3;
+  background:
+    radial-gradient(60vw 40vw at 82% 62%, rgba(255,166,64,0.55), rgba(255,120,40,0.18) 40%, transparent 70%),
+    radial-gradient(90vw 60vw at 30% 10%, rgba(60,110,190,0.35), transparent 65%),
+    linear-gradient(180deg, #0B1B33 0%, #142A4A 48%, #17321F 72%, #0F2416 100%);
+}
+.ld__scene::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 34%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 2px, transparent 2px 120px),
+    linear-gradient(180deg, transparent, rgba(0,0,0,0.35));
+}
+.ld__photo { position: absolute; inset: 0; z-index: -2; background: var(--ld-hero) center / cover no-repeat; }
+.ld__shade {
+  position: absolute; inset: 0; z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(4,9,18,0.86) 0%, rgba(4,9,18,0.62) 42%, rgba(4,9,18,0.18) 100%),
+    linear-gradient(180deg, rgba(4,9,18,0.55) 0%, transparent 30%, transparent 60%, rgba(4,9,18,0.92) 100%);
+}
+.ld__top { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 26px clamp(20px, 5vw, 72px); }
+.ld__brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.ld__emblem { position: relative; width: 58px; height: 58px; flex-shrink: 0; display: grid; place-items: center; }
+.ld__emblem svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ld__initial { font-size: 24px; font-weight: 900; letter-spacing: -0.02em; color: #fff; }
+.ld__brandname { font-size: clamp(22px, 2.6vw, 34px); font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ld__toplogin {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 12px 22px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.14); color: #fff;
+  font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; backdrop-filter: blur(8px);
+}
+.ld__toplogin svg { width: 20px; height: 20px; }
+.ld__toplogin:hover { background: rgba(255,255,255,0.22); }
+.ld__content {
+  flex: 1; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: end; gap: 40px;
+  padding: 3vh clamp(20px, 5vw, 72px) 44px;
+}
+.ld__copy { align-self: center; max-width: 620px; }
+.ld__eyebrow { margin: 0 0 18px; font-size: 15px; font-weight: 600; letter-spacing: 0.32em; text-transform: uppercase; color: rgba(255,255,255,0.72); }
+.ld__headline { margin: 0 0 22px; font-size: clamp(40px, 5.6vw, 72px); font-weight: 900; letter-spacing: -0.03em; line-height: 1.02; text-wrap: balance; }
+.ld__accent { color: var(--ld-accent); }
+.ld__sub { margin: 0 0 30px; max-width: 46ch; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.5; color: rgba(255,255,255,0.86); }
+.ld__cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 16px 34px; border: 0; border-radius: 999px;
+  background: var(--ld-accent); color: #0B1220;
+  font: inherit; font-size: 19px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 18px 40px -18px var(--ld-accent);
+  transition: transform .15s ease, filter .15s ease;
+}
+.ld__cta:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+.ld__cta:disabled { opacity: 0.7; cursor: wait; }
+.ld__cta:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.ld__note { text-align: left; }
+.ld__credit { position: absolute; right: 14px; bottom: 10px; font-size: 11px; color: rgba(255,255,255,0.45); text-decoration: none; }
+.ld__credit:empty { display: none; }
+.ld__credit:hover { color: rgba(255,255,255,0.8); }
+
+/* The glimpse of the application. */
+.ld__preview { justify-self: end; width: 100%; max-width: 760px; }
+.lp {
+  display: grid; grid-template-columns: 180px minmax(0, 1fr);
+  border: 1px solid rgba(255,255,255,0.14); border-radius: 18px; overflow: hidden;
+  background: rgba(8, 20, 38, 0.72); backdrop-filter: blur(14px);
+  box-shadow: 0 40px 80px -30px rgba(0,0,0,0.8), 0 0 0 1px rgba(80,160,255,0.08);
+  font-size: 12px; color: rgba(255,255,255,0.86);
+}
+.lp__side { padding: 18px 12px; border-right: 1px solid rgba(255,255,255,0.1); background: rgba(6, 14, 28, 0.6); }
+.lp__brand { padding: 0 8px 14px; font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lp__nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.lp__navitem { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 9px; color: rgba(255,255,255,0.72); }
+.lp__navitem--on { background: rgba(255,255,255,0.1); color: #fff; font-weight: 700; }
+.lp__navdot { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid currentColor; opacity: 0.7; }
+.lp__main { padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.lp__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.lp__hi { margin: 0; font-size: 15px; font-weight: 800; }
+.lp__hisub { margin: 2px 0 0; font-size: 11px; color: rgba(255,255,255,0.55); }
+.lp__who { padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.1); font-size: 11px; }
+.lp__tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.lp__tile { display: flex; flex-direction: column; gap: 3px; padding: 10px 11px; border-radius: 11px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); min-width: 0; }
+.lp__tlabel { font-size: 10.5px; color: rgba(255,255,255,0.62); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lp__tvalue { font-size: 20px; font-weight: 800; color: var(--ld-accent); line-height: 1.1; }
+.lp__tnote { font-size: 10px; color: rgba(255,255,255,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lp__list { border: 1px solid rgba(255,255,255,0.1); border-radius: 11px; overflow: hidden; }
+.lp__ltitle { margin: 0; padding: 9px 12px; font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.05); }
+.lp__row { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 12px; border-top: 1px solid rgba(255,255,255,0.07); }
+.lp__rtime { color: rgba(255,255,255,0.6); font-variant-numeric: tabular-nums; }
+.lp__rtitle { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lp__rmeta { color: rgba(255,255,255,0.5); white-space: nowrap; }
+.lp__rtag { padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(92,197,167,0.5); color: #7FE0BF; font-size: 10px; }
+
+/* Under the hero: what this application is. */
+.ld__built { padding: 34px clamp(20px, 5vw, 72px) 26px; text-align: center; background: #060B14; }
+.ld__built-title { margin: 0 0 6px; font-size: clamp(22px, 2.4vw, 28px); font-weight: 800; letter-spacing: -0.02em; }
+.ld__built-sub { margin: 0 auto 30px; max-width: 70ch; font-size: 15px; color: rgba(255,255,255,0.62); }
+.ld__feats { list-style: none; margin: 0 auto; padding: 0; max-width: 1100px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; text-align: left; }
+.ld__feats li { display: flex; align-items: center; gap: 16px; }
+.ld__feat-icon { width: 54px; height: 54px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.2); color: var(--ld-accent); }
+.ld__feat-icon svg { width: 24px; height: 24px; }
+.ld__feats strong { display: block; font-size: 16px; font-weight: 700; }
+.ld__feats em { display: block; font-style: normal; font-size: 13px; color: rgba(255,255,255,0.58); }
+.ld__foot { margin: 34px 0 0; font-size: 12px; color: rgba(255,255,255,0.35); }
+
+@media (max-width: 960px) {
+  .ld__content { grid-template-columns: 1fr; align-items: start; padding-top: 3vh; }
+  .ld__preview { justify-self: stretch; max-width: none; }
+  .lp { grid-template-columns: 1fr; }
+  .lp__side { display: none; }
+  .lp__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ld__feats { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .ld__cta { transition: none; } }
+
+/* ── The welcome ────────────────────────────────────────────────────────── */
 
 .ch-door {
   position: relative;

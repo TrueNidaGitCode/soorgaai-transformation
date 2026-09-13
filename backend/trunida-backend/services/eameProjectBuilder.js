@@ -88,15 +88,36 @@ const COPY_TOKENS = {
   __APP_WELCOME_TITLE__: 'What would you like to know?',
   __APP_WELCOME_BODY__:  'Ask in your own words. This answers from the data this application was built on.',
   __APP_PROMPT__:        'Ask a question…',
+  // The front door (services/frontDoorService.js writes these per blueprint).
+  __APP_EYEBROW__:       'Ask • Know • Act',
+  __APP_HEADLINE__:      'Your business,',
+  __APP_ACCENT__:        'answered.',
+  __APP_ACCENT_COLOR__:  '#F2C94C',
+  __APP_INITIAL__:       'A',
+  __APP_HERO_IMAGE__:    'none',
+  __APP_HERO_CREDIT__:   '',
+  __APP_HERO_CREDIT_URL__: '',
+};
+
+// Tokens that land inside a <script type="application/json"> and must not be
+// HTML-escaped: JSON with &quot; in it is not JSON. Made safe for a script
+// element the one way that matters -- no "<" survives, so no "</script>".
+const RAW_TOKENS = {
+  __APP_PREVIEW_JSON__: '{}',
 };
 
 function applyName(content, appName, copy = {}) {
   let out = content.replace(NAME_TOKEN, appName || 'AI Assistant');
+  for (const [token, fallback] of Object.entries(RAW_TOKENS)) {
+    const value = String(copy[token] || fallback).replace(/</g, '\\u003c');
+    out = out.split(token).join(value);
+  }
   for (const [token, fallback] of Object.entries(COPY_TOKENS)) {
     // Escaped for the attribute and text positions these land in. An
     // apostrophe in a use-case name would otherwise close the placeholder's
     // own quote and break the page it is meant to describe.
-    const value = String(copy[token] || fallback)
+    const chosen = copy[token] || (token === '__APP_INITIAL__' && appName ? appName.trim().charAt(0).toUpperCase() : fallback);
+    const value = String(chosen)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     out = out.split(token).join(value);
   }

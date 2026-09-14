@@ -17,6 +17,9 @@ import { autoCapture }      from '../services/knowledgeSuggestionService.js';
 import { backfillActionItemsForClaimedBlueprint } from '../services/actionItemService.js';
 import { enabledDomains }   from '../config/domainRegistry.js';
 import { blueprintsOverview as buildBlueprintsOverview } from '../services/blueprintOverviewService.js';
+import CapabilityRequest from '../models/CapabilityRequest.js';
+import { runCapabilityBuild, generationInFlight } from '../services/capabilityBuildService.js';
+import { checkEntitlement } from '../services/entitlements.js';
 import { MAX_OBJECTIVE_LENGTH } from '../config/objectiveLimits.js';
 import { checkObjective } from '../services/objectiveGuardService.js';
 import { resolveEngagement, CATEGORIES, WORKFLOW_AREAS } from '../services/engagementClassifierService.js';
@@ -983,6 +986,56 @@ export async function listTransformationBlueprints(req, res) {
  * since, the opportunities still to build, and the plan that decides whether
  * they can be. The Blueprints page is drawn entirely from this.
  */
+/**
+ * POST /strategy-canvas/capability/:requestId/build
+ *
+ * The customer asking for something their team kept asking for to be built.
+ *
+ * The loop plans and stops; this is the press that spends the money. Three
+ * things are checked before anything runs, in the order that costs least:
+ * that the capability is theirs, that their plan covers it, and that no other
+ * build is already rewriting the same application.
+ *
+ * The build takes minutes, so it is started and the request returns. The
+ * Blueprints page shows the capability moving along its rail, which is what a
+ * customer wants to watch anyway.
+ */
+export async function buildCapability(req, res) {
+  try {
+    const request = await CapabilityRequest.findById(req.params.requestId).lean().catch(() => null);
+    if (!request) return res.status(404).json({ error: 'That capability no longer exists.' });
+    // Theirs, or nobody's business.
+    if (String(request.userId) !== String(req.user._id)) {
+      return res.status(404).json({ error: 'That capability no longer exists.' });
+    }
+    if (request.status !== 'planned' && request.status !== 'failed') {
+      return res.status(409).json({ error: `This is already ${request.status}.` });
+    }
+
+    const gate = await checkEntitlement(req.user._id, 'capability');
+    if (!gate.allowed) {
+      return res.status(402).json({ error: gate.reason, upgradeTo: gate.upgradeTo || null });
+    }
+
+    // One build at a time for an application: two generations racing to
+    // rewrite the same authored tree is a corrupted application, not two
+    // features.
+    if (await generationInFlight(String(request.blueprintId))) {
+      return res.status(409).json({ error: 'Something is already being built into this application. It will be ready shortly.' });
+    }
+
+    // Started, not awaited: a build takes minutes and the page watches the
+    // rail rather than a spinning request.
+    runCapabilityBuild({ requestId: String(request._id) })
+      .catch(err => console.error('[capability] build failed —', err.message));
+
+    return res.json({ started: true, title: request.plan?.title || request.need || '' });
+  } catch (err) {
+    console.error('buildCapability error:', err);
+    return res.status(500).json({ error: 'Could not start that build.' });
+  }
+}
+
 export async function getBlueprintsOverview(req, res) {
   try {
     return res.json(await buildBlueprintsOverview(req.user._id));

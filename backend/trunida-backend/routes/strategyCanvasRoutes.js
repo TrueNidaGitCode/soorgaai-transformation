@@ -21,6 +21,7 @@ import {
   getTransformationBlueprint,
   listTransformationBlueprints,
   getBlueprintsOverview,
+  buildCapability,
   approveOpportunity,
   setAppName,
   setEngagement,
@@ -76,6 +77,9 @@ router.get('/transformation-blueprints',                               protect, 
 // Everything the Blueprints page shows: opportunities, the running
 // application's address, the capabilities added since, and the plan.
 router.get('/blueprints-overview',                                     protect, getBlueprintsOverview);
+// The customer pressing Build on something the Learner planned. Gated by plan:
+// the loop notices and plans for everyone, building is what a paid plan buys.
+router.post('/capability/:requestId/build',                            protect, buildCapability);
 router.post('/claim-guest-blueprint',                                  protect, claimGuestBlueprint);
 router.patch('/transformation-blueprint/:blueprintId/approve-opportunity', protect, approveOpportunity);
 router.patch('/transformation-blueprint/:blueprintId/app-name',            protect, setAppName);

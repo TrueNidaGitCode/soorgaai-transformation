@@ -118,7 +118,31 @@ const STAGES = [
  * and what it waits on. A customer reading this should be able to say why
  * their application changed without asking anybody.
  */
-function evolutionItem(f) {
+/**
+ * What the customer can do about a capability that is planned and waiting.
+ *
+ * The loop decides; a person presses Build. On a plan that does not include
+ * building, the same row says so and points at the one that does, rather than
+ * showing a button that refuses.
+ */
+function buildAction(f, plan) {
+  if (f.status !== 'planned' && f.status !== 'failed') return '';
+  if (!plan.canBuildCapabilities) {
+    return `<p class="bp-eva__gate">
+      <span class="bp-lock" aria-hidden="true">&#128274;</span>
+      Your ${esc(plan.label)} plan notices what your team asks for; building it is part of
+      <a href="/pricing/pricing.html">${esc(plan.upgradeLabel || 'a paid plan')}</a>.
+    </p>`;
+  }
+  return `<div class="bp-eva__act">
+    <button type="button" class="bp-btn bp-btn--open" data-build="${esc(f.id)}">
+      ${f.status === 'failed' ? 'Try building it again' : 'Build this'} <span aria-hidden="true">&rarr;</span>
+    </button>
+    <span class="bp-eva__actnote">Takes a few minutes. Nothing changes in your application until it passes verification.</span>
+  </div>`;
+}
+
+function evolutionItem(f, plan) {
   const at = STAGES.findIndex(s => s.key === f.status);
   const rail = STAGES.map((s, i) => {
     const cls = at >= 0 && i < at ? ' bp-rail__step--done' : (at === i ? ' bp-rail__step--here' : '');
@@ -139,6 +163,7 @@ function evolutionItem(f) {
         : `<ol class="bp-rail">${rail}</ol>`}
       ${f.steps && f.steps.length
         ? `<ul class="bp-eva__steps">${f.steps.slice(0, 4).map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
+      ${buildAction(f, plan)}
       <p class="bp-eva__foot">${f.noticedAt ? 'Noticed ' + esc(when(f.noticedAt)) : ''}${f.at && f.at !== f.noticedAt ? ' &middot; last moved ' + esc(when(f.at)) : ''}${f.connectorsNeeded && f.connectorsNeeded.length ? ' &middot; <span class="bp-eva__needs">needs ' + esc(f.connectorsNeeded.join(', ')) + ' connected</span>' : ''}</p>
     </article>`;
 }
@@ -149,7 +174,7 @@ function evolutionItem(f) {
  * Deliberately not a table: a table of statuses is a report, and this is meant
  * to read as work being done on their behalf.
  */
-function evolution(features) {
+function evolution(features, plan) {
   if (!features.length) {
     return `<section class="bp-block">
       <h3 class="bp-block__title">How your application is evolving</h3>
@@ -168,7 +193,7 @@ function evolution(features) {
           <span class="bp-stage__hint">${esc(c.hint)}</span>
         </div>`).join('')}
       </div>
-      <div class="bp-evas">${features.map(evolutionItem).join('')}</div>
+      <div class="bp-evas">${features.map(f => evolutionItem(f, plan)).join('')}</div>
     </section>`;
 }
 
@@ -305,7 +330,7 @@ function renderObjective() {
   // What the continuous builder has done and is doing, above the opportunities
   // nobody has taken: one is the application changing under them, the other is
   // a list of things that have not started.
-  el('bp-evolution').innerHTML = evolution(bp.features || []);
+  el('bp-evolution').innerHTML = evolution(bp.features || [], plan);
 
   // The plan's limit, said once under the pipeline rather than on every
   // locked row. Only when something is actually held back by it.
@@ -341,6 +366,42 @@ function renderObjectivePicker() {
     picked = Number(b.dataset.obj);
     renderObjective();
   });
+}
+
+/**
+ * Starting a build, and saying so honestly.
+ *
+ * The request returns as soon as the build starts — it takes minutes — so the
+ * button reports that it began and the page is reloaded to pick the capability
+ * up on its rail, which is where the customer watches it from now on.
+ */
+async function startBuild(btn) {
+  const id = btn.dataset.build;
+  const was = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  try {
+    const token = localStorage.getItem('token');
+    const r = await fetch(`${API_BASE()}/strategy-canvas/capability/${encodeURIComponent(id)}/build`, {
+      method: 'POST', headers: { Authorization: 'Bearer ' + token },
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      btn.disabled = false;
+      btn.textContent = was;
+      const note = document.createElement('p');
+      note.className = 'bp-eva__failed';
+      note.textContent = d.error || 'That could not be started.';
+      btn.closest('.bp-eva').appendChild(note);
+      return;
+    }
+    btn.textContent = 'Building…';
+    // The rail is the truth from here; reload so it shows the new stage.
+    setTimeout(() => window.location.reload(), 1500);
+  } catch {
+    btn.disabled = false;
+    btn.textContent = was;
+  }
 }
 
 function wireTabs() {
@@ -408,6 +469,10 @@ async function load() {
   renderObjectivePicker();
   wireTabs();
   wireOpenBlueprint();
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-build]');
+    if (b) startBuild(b);
+  });
   renderObjective();
 }
 

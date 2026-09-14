@@ -198,6 +198,10 @@ export async function blueprintsOverview(userId) {
       // Ultra and Enterprise build every opportunity, so nothing is locked and
       // the page says so rather than showing a lock with no way past it.
       opportunitiesLocked: plan.effective === 'hobby' || plan.effective === 'pro',
+      // Whether this account may build what the Learner planned. The page draws
+      // a Build button or an upgrade line from this rather than guessing from
+      // the tier name, so one rule decides it and the gate enforces the same.
+      canBuildCapabilities: PLANS[plan.effective]?.capabilityBuilds !== 0,
     },
     blueprints: blueprints.map(bp => {
       const id  = String(bp._id);

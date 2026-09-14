@@ -48,6 +48,7 @@ import { User } from '../models/user.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
 import HostedDeployment from '../models/HostedDeployment.js';
+import CapabilityRequest from '../models/CapabilityRequest.js';
 
 /** Same window as the gateway meter, for the same reason. */
 export const PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
@@ -72,6 +73,10 @@ export const PLANS = {
     applications:          1,
     launches:              1,
     deploymentCostUsd:     2,
+    // Hobby sees what its team asked for and cannot build it. The demonstration
+    // is the blueprint and one working application; a build that rewrites a
+    // running application every time somebody complains is what Pro buys.
+    capabilityBuilds:      0,
   },
   pro: {
     label: 'Pro',
@@ -84,6 +89,7 @@ export const PLANS = {
     // is worse than a smaller one it can.
     launches:              1,
     deploymentCostUsd:     5,
+    capabilityBuilds:      3,
   },
   ultra: {
     label: 'Ultra',
@@ -92,6 +98,7 @@ export const PLANS = {
     applications:          UNLIMITED,
     launches:              10,
     deploymentCostUsd:     5,
+    capabilityBuilds:      10,
   },
   enterprise: {
     label: 'Enterprise',
@@ -100,6 +107,7 @@ export const PLANS = {
     applications:          UNLIMITED,
     launches:              UNLIMITED,
     deploymentCostUsd:     5,
+    capabilityBuilds:      UNLIMITED,
   },
 };
 
@@ -176,7 +184,7 @@ export async function usageSummary(userId, now = new Date()) {
   const { plan, status, effective, lapsed, limits, currentPeriodEnd, viaAdmin } = await resolvePlan(userId);
   const since = windowStart(now);
 
-  const [newBlueprints, activeBlueprints, applications, launches, oldest] = await Promise.all([
+  const [newBlueprints, activeBlueprints, applications, launches, capabilityBuilds, oldest] = await Promise.all([
     TransformationBlueprint.countDocuments({ userId, createdAt: { $gte: since } }),
     TransformationBlueprint.countDocuments({ userId, archived: { $ne: true } }),
     // A build that failed verification does not consume a slot. It cost Svarg
@@ -184,6 +192,9 @@ export async function usageSummary(userId, now = new Date()) {
     // run is the kind of billing nobody forgives.
     GeneratedApplication.countDocuments({ userId, status: { $ne: 'failed' } }),
     HostedDeployment.countDocuments({ userId, status: { $nin: ['destroyed', 'failed'] } }),
+    // Capabilities this account has asked to have built inside the window. A
+    // request that was only planned has cost nothing, so it does not count.
+    CapabilityRequest.countDocuments({ userId, status: { $in: ['building', 'ready', 'live', 'failed'] }, updatedAt: { $gte: since } }),
     // When the window frees up: the oldest blueprint still inside it.
     TransformationBlueprint.findOne({ userId, createdAt: { $gte: since } })
       .sort({ createdAt: 1 }).select('createdAt').lean(),
@@ -191,7 +202,7 @@ export async function usageSummary(userId, now = new Date()) {
 
   return {
     plan, status, effective, lapsed, limits, currentPeriodEnd, viaAdmin,
-    used: { newBlueprints, activeBlueprints, applications, launches },
+    used: { newBlueprints, activeBlueprints, applications, launches, capabilityBuilds },
     // Null when nothing is in the window — there is nothing to wait for.
     windowResetsAt: oldest ? new Date(new Date(oldest.createdAt).getTime() + PERIOD_MS) : null,
   };
@@ -235,6 +246,28 @@ export async function checkEntitlement(userId, action) {
   const lapsedNote = s.lapsed
     ? ` Your ${PLANS[planKey(s.plan)].label} subscription is ${s.status.replace('_', ' ')}, so ${PLANS.hobby.label} limits apply until it is renewed.`
     : '';
+
+  /*
+   * Building a capability the Learner noticed.
+   *
+   * Always asked for by a person now, from the Blueprints page — the loop
+   * decides and plans, and stops. An unattended build rewrites an application
+   * somebody is relying on and spends real money, and neither should happen
+   * because a coach complained twice.
+   */
+  if (action === 'capability') {
+    if (limits.capabilityBuilds === 0) {
+      return refusal(effective, 0, used.capabilityBuilds,
+        `${PLANS[effective].label} shows you what your team keeps asking for, and building it is part of `
+        + `${PLANS[UPGRADE_PATH[effective]] ? PLANS[UPGRADE_PATH[effective]].label : 'a paid plan'}.${lapsedNote}`);
+    }
+    if (limits.capabilityBuilds !== null && used.capabilityBuilds >= limits.capabilityBuilds) {
+      return refusal(effective, limits.capabilityBuilds, used.capabilityBuilds,
+        `${PLANS[effective].label} builds ${limits.capabilityBuilds} of these a month, and you have used `
+        + `${used.capabilityBuilds}.${whenText(s.windowResetsAt)}${lapsedNote}`);
+    }
+    return { allowed: true, plan: effective };
+  }
 
   if (action === 'blueprint') {
     if (limits.newBlueprintsPerMonth !== null && used.newBlueprints >= limits.newBlueprintsPerMonth) {

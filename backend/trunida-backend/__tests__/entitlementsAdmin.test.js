@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const state = { role: 'user', plan: null, counts: { newBp: 0, activeBp: 0, apps: 0, launches: 0 } };
+const state = { role: 'user', plan: null, counts: { newBp: 0, activeBp: 0, apps: 0, launches: 0, capabilityBuilds: 0 } };
 
 const q = (v) => ({ lean: async () => v, select: () => q(v), sort: () => q(v) });
 
@@ -19,6 +19,7 @@ vi.mock('../models/TransformationBlueprint.js', () => ({ default: {
 } }));
 vi.mock('../models/GeneratedApplication.js', () => ({ default: { countDocuments: async () => state.counts.apps } }));
 vi.mock('../models/HostedDeployment.js', () => ({ default: { countDocuments: async () => state.counts.launches } }));
+vi.mock('../models/CapabilityRequest.js', () => ({ default: { countDocuments: async () => state.counts.capabilityBuilds } }));
 
 const { checkEntitlement, usageSummary, deploymentCeilingUsd, PLANS } = await import('../services/entitlements.js');
 
@@ -26,14 +27,14 @@ const USER = '000000000000000000000abc';
 
 beforeEach(() => {
   state.role = 'user'; state.plan = null;
-  state.counts = { newBp: 0, activeBp: 0, apps: 0, launches: 0 };
+  state.counts = { newBp: 0, activeBp: 0, apps: 0, launches: 0, capabilityBuilds: 0 };
 });
 
 describe('the admin account', () => {
   beforeEach(() => {
     state.role = 'admin';
     // Well past every Hobby limit, and no AccountPlan row at all.
-    state.counts = { newBp: 40, activeBp: 40, apps: 40, launches: 40 };
+    state.counts = { newBp: 40, activeBp: 40, apps: 40, launches: 40, capabilityBuilds: 40 };
   });
 
   it('is never refused a blueprint, an application or a launch', async () => {
@@ -80,5 +81,44 @@ describe('everyone else', () => {
     state.counts.launches = 1;
     const v = await checkEntitlement(USER, 'launch');
     expect(v.allowed).toBe(false);
+  });
+});
+
+/**
+ * Building what the Learner planned.
+ *
+ * The loop notices and plans for every account; building rewrites a running
+ * application and spends real money, so it is a press by a person and a paid
+ * plan. Hobby sees the capability and the reason it cannot build it.
+ */
+describe('who may build a capability', () => {
+  it('refuses Hobby, and names the plan that would', async () => {
+    const v = await checkEntitlement(USER, 'capability');
+    expect(v.allowed).toBe(false);
+    expect(v.reason).toMatch(/Pro/);
+    expect(PLANS.hobby.capabilityBuilds).toBe(0);
+  });
+
+  it('allows Pro until its monthly number is used', async () => {
+    state.plan = { plan: 'pro', status: 'active' };
+    expect((await checkEntitlement(USER, 'capability')).allowed).toBe(true);
+    state.counts.capabilityBuilds = PLANS.pro.capabilityBuilds;
+    const spent = await checkEntitlement(USER, 'capability');
+    expect(spent.allowed).toBe(false);
+    expect(spent.reason).toMatch(/builds \d+ of these a month/);
+  });
+
+  it('never refuses the admin account', async () => {
+    state.role = 'admin';
+    state.counts.capabilityBuilds = 999;
+    expect((await checkEntitlement(USER, 'capability')).allowed).toBe(true);
+  });
+
+  it('counts a build that was asked for, not one merely planned', async () => {
+    // A planned request has cost nothing; charging a slot for it would refuse
+    // the customer a build they never had.
+    const src = await import('fs').then(fs => fs.readFileSync(
+      new URL('../services/entitlements.js', import.meta.url), 'utf8'));
+    expect(src).toMatch(/status: \{ \$in: \['building', 'ready', 'live', 'failed'\] \}/);
   });
 });

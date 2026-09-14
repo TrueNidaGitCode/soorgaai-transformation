@@ -22,8 +22,6 @@ import { embedBatchWithUsage } from '../services/embeddingService.js';
 import { acceptSignals } from '../services/tenantSignalService.js';
 import { learnFromConversation } from '../services/customerUnderstandingService.js';
 import { considerCapabilities } from '../services/capabilityDecisionService.js';
-import { runNextPlannedBuild } from '../services/capabilityBuildService.js';
-import { announcePending } from '../services/notificationService.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 
 const MAX_MESSAGES = 50;
@@ -150,10 +148,15 @@ async function continueLearning(deployment) {
   const blueprint = await TransformationBlueprint.findById(blueprintId).lean().catch(() => null);
   const decided = await considerCapabilities({ userId, blueprintId, blueprint });
   if (!decided?.decided) return;
-  console.log(`[gateway] ${blueprintId}: decided to build "${decided.request?.plan?.title || decided.request?.need || ''}"`);
-
-  await runNextPlannedBuild({ blueprintId });
-  await announcePending({ userId, blueprintId }).catch(() => {});
+  /*
+   * Planned, and left there on purpose.
+   *
+   * This used to build straight through, unattended. A build rewrites an
+   * application somebody is relying on and spends real money, and neither
+   * should happen because a coach complained twice — so the loop now stops at
+   * a decision and the customer presses Build on the Blueprints page.
+   */
+  console.log(`[gateway] ${blueprintId}: planned "${decided.plan?.title || decided.need || ''}" — waiting to be built`);
 }
 
 export async function signals(req, res) {

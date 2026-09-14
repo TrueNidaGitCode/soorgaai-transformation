@@ -20,11 +20,17 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const gateway = fs.readFileSync(path.join(HERE, '../controllers/gatewayController.js'), 'utf8');
 
 describe('a signal from a live application reaches a build', () => {
-  it('the signals endpoint continues past learning into deciding and building', () => {
+  it('the signals endpoint continues past learning into deciding', () => {
     // The bug: learnFromConversation was called and nothing followed it.
     expect(gateway).toContain('considerCapabilities');
-    expect(gateway).toContain('runNextPlannedBuild');
-    expect(gateway).toContain('announcePending');
+  });
+
+  it('plans, and stops there — a build is a person pressing a button', () => {
+    // It used to build straight through, unattended. A build rewrites an
+    // application somebody is relying on and spends real money, and neither
+    // should happen because a coach complained twice.
+    expect(gateway).not.toContain('runNextPlannedBuild');
+    expect(gateway).toMatch(/waiting to be built/);
   });
 
   it('runs the chain only when the stage before it produced something', () => {

@@ -431,6 +431,21 @@
   color: rgba(255, 255, 255, 0.5);
 }
 .bp-eva__failed { margin: 10px 0 0; font-size: 0.84rem; line-height: 1.55; color: var(--bp-bad); }
+.bp-eva__act { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+.bp-eva__actnote { font-size: 0.76rem; color: rgba(255, 255, 255, 0.38); }
+/* The same row on a plan that does not build: what it would take, not a
+   button that refuses. */
+.bp-eva__gate {
+  margin: 14px 0 0;
+  padding: 11px 13px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 11px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+}
+.bp-eva__gate a { color: var(--bp-accent); font-weight: 600; text-decoration: none; }
+.bp-eva__gate a:hover { text-decoration: underline; }
 .bp-eva__foot { margin: 11px 0 0; font-size: 0.76rem; color: rgba(255, 255, 255, 0.35); }
 .bp-eva__needs { color: var(--bp-work); }
 

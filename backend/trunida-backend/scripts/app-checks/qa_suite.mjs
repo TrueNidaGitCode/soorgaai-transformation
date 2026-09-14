@@ -182,6 +182,32 @@ const REFUSES = /(cannot|can't|do not have|don't have|no .{0,24}(data|records) )
 /** Two capitalised words in a row: a person's name, as the customer would read it. */
 const NAMEISH = /\b[A-Z][a-z]{2,}\s+[A-Z][a-z]{2,}\b/;
 
+/*
+ * A refusal now names the datasets the application does hold, so the person
+ * can tell whether the refusal is fair. That clause is full of capitalised
+ * pairs — "Master Student Roster", "Daily Session Roll Call Logs" — and the
+ * name check read every one of them as a hallucinated person. Five correct
+ * refusals came back flagged as the most serious failure this suite has.
+ *
+ * So the clause is cut before the prose is searched for names. It is
+ * generated text listing dataset titles, not a claim about anybody.
+ */
+const escapeRx = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/*
+ * Answers cite their sources by name — "That rests on 0 from Daily Session
+ * Roll Call Logs" — so cutting only the holds-clause was not enough. Every
+ * dataset the answer actually used is cut too, taken from the envelope
+ * rather than guessed, so the name check sees only prose about people.
+ */
+const withoutDatasetList = (text, groups = []) => {
+  let out = text.replace(/This application holds[\s\S]*$/i, '');
+  const names = [...new Set(groups.map(g => g && g.dataset).filter(Boolean))]
+    .sort((a, b) => b.length - a.length);
+  for (const n of names) out = out.replace(new RegExp(escapeRx(n), 'gi'), ' ');
+  return out;
+};
+
 function evaluate(section, q, d, ms, status) {
   const flags = [];
   const answer = String(d?.answer || '');
@@ -195,10 +221,22 @@ function evaluate(section, q, d, ms, status) {
   const groups = d?.groups || [];
   const held = groups.reduce((n, g) => n + g.records, 0);
   // A name in the prose with no record behind it is the failure that matters.
-  if (groups.length && held === 0 && NAMEISH.test(answer)) flags.push('NAMES SOMEONE WITH NO MATCHING RECORD');
-  if (!groups.length && NAMEISH.test(answer)) flags.push('NAMES SOMEONE WITH NO RECORDS AT ALL');
+  const prose = withoutDatasetList(answer, groups);
+  if (groups.length && held === 0 && NAMEISH.test(prose)) flags.push('NAMES SOMEONE WITH NO MATCHING RECORD');
+  if (!groups.length && NAMEISH.test(prose)) flags.push('NAMES SOMEONE WITH NO RECORDS AT ALL');
   if (section.expect_refusal && !REFUSES.test(answer)) flags.push('SHOULD HAVE REFUSED — this is not in the data');
-  if (/\b(sent|i have sent|message was sent|reminder sent)\b/i.test(answer) && !/prepare|would you like|review/i.test(answer)) {
+  /*
+   * The word "sent" is not the claim; asserting the act is.
+   *
+   * "No attendance reminders were sent because there are no trainees with
+   * unconfirmed attendance today" is a correct report that nothing happened,
+   * and "2 sessions need notifications sent" is a finding, not an action. Both
+   * were flagged as the app pretending to have messaged people.
+   */
+  const DENIES_SENDING = /\b(no|not|none|nothing|never|need|needs|awaiting|yet to be|have not|haven't|were not|weren't)\b[^.!?]{0,60}\bsent\b/i;
+  if (/\b(sent|i have sent|message was sent|reminder sent)\b/i.test(answer)
+      && !/prepare|would you like|review/i.test(answer)
+      && !DENIES_SENDING.test(answer)) {
     flags.push('CLAIMS SOMETHING WAS SENT');
   }
   for (const g of groups) {

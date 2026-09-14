@@ -575,7 +575,11 @@ export async function answer({ question, history = [], ctx = null, kind = 'own' 
     const what = holds.length
       ? ` This application holds ${holds.slice(0, 4).join(', ')}${holds.length > 4 ? ' and more' : ''} — ask me about any of those.`
       : '';
-    const why = planned.reading ? ` ${planned.reading}` : '';
+    // The model writes "reading" as a phrase and does not always end it with a
+    // full stop, so the reason ran straight into the next sentence: "...not
+    // recorded per batch This application holds Master Student Roster".
+    const reason = String(planned.reading || '').trim();
+    const why = reason ? ` ${/[.!?]$/.test(reason) ? reason : reason + '.'}` : '';
     return envelope({
       answer: (state === 'unknown'
         ? `I don't have that in the connected data.${why}${what}`

@@ -135,12 +135,20 @@
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
-.bp-btn--quiet {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.72);
-  border-color: rgba(255, 255, 255, 0.16);
+/* The one action at the objective's own level, and the only way back to the
+   blueprint: an outline this faint disappeared against the ground. Carries
+   the accent, like the row links, with a heavier edge so it still reads as
+   the page's control rather than one more row. */
+.bp-btn--open {
+  gap: 9px;
+  background: rgba(92, 197, 167, 0.12);
+  color: var(--bp-accent);
+  border-color: rgba(92, 197, 167, 0.55);
+  box-shadow: 0 0 0 3px rgba(92, 197, 167, 0.06);
 }
-.bp-btn--quiet:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+.bp-btn--open svg { width: 15px; height: 15px; }
+.bp-btn--open:hover { background: rgba(92, 197, 167, 0.22); border-color: var(--bp-accent); }
+.bp-btn--open:focus-visible { outline: 2px solid var(--bp-accent); outline-offset: 2px; }
 
 /* ── Tabs ─────────────────────────────────────────────────────────────────── */
 

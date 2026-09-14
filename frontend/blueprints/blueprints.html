@@ -6,7 +6,7 @@
   <title>Svarg — Your AI Roadmap</title>
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../workspace/workspace.css">
-  <link rel="stylesheet" href="blueprints.css?v=2">
+  <link rel="stylesheet" href="blueprints.css?v=3">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=2">
   <script src="../login/config.js"></script>
@@ -68,7 +68,10 @@
           <h2 class="bp-obj__name" id="bp-obj-name"></h2>
           <p class="bp-obj__meta" id="bp-obj-meta"></p>
         </div>
-        <button type="button" class="bp-btn bp-btn--quiet" id="bp-open-bp">Open blueprint &rarr;</button>
+        <button type="button" class="bp-btn bp-btn--open" id="bp-open-bp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h4"/></svg>
+          Open blueprint <span aria-hidden="true">&rarr;</span>
+        </button>
       </div>
 
       <div class="bp-tabs" role="tablist" aria-label="Roadmap">

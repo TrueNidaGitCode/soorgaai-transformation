@@ -37,7 +37,8 @@ export const fields = [
 /** What each received message carries, for the mapping onto the dataset. */
 export const provides = ['date', 'time', 'name', 'phone', 'message', 'status', 'received_at', 'message_id'];
 
-const GRAPH = () => `https://graph.facebook.com/${process.env.WHATSAPP_GRAPH_VERSION || 'v21.0'}`;
+// WHATSAPP_GRAPH_URL points the calls at a stand-in for Meta in a test; unset, it is Meta.
+const GRAPH = () => process.env.WHATSAPP_GRAPH_URL || `https://graph.facebook.com/${process.env.WHATSAPP_GRAPH_VERSION || 'v21.0'}`;
 
 /** Where messages received at the webhook are kept: this application's database. */
 export function inboxCollection() {

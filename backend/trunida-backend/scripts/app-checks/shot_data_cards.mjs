@@ -75,6 +75,15 @@ setTimeout(async function () { try {
     out.setup = (document.getElementById('dt-wa-url') || {}).textContent;
     out.fields = Array.from(document.querySelectorAll('[data-card="whatsapp"] [name]')).map(function (f) { return f.name; });
   }
+  if (window.__state === 'wasubmit') {
+    document.querySelector('[data-open="whatsapp-business"]').click(); await wait(200);
+    var f = document.querySelector('[data-card="whatsapp"]');
+    f.querySelector('[name=phoneNumberId]').value = '123456789012345'; f.querySelector('[name=accessToken]').value = 'EAAB.x'; f.querySelector('[name=appSecret]').value = 'sec';
+    window.__conn = null; f.querySelector('[data-connect]').click();
+    for (var cw = 0; cw < 40 && !window.__conn; cw++) await wait(100);
+    await wait(400);
+    out.posted = window.__conn; out.err = (document.querySelector('[data-card="whatsapp"] .dt-card__err') || {}).textContent; out.btn = (document.querySelector('[data-connect]') || {}).textContent; out.note = document.getElementById('dt-note').textContent; out.cards = cardText();
+  }
   if (window.__state === 'connected') {
     out.conn = (document.querySelector('[data-card="whatsapp"] .dt-conn__meta') || {}).textContent;
     out.status = (document.querySelector('[data-card="whatsapp"] > .dt-card__label') || {}).textContent;
@@ -96,13 +105,14 @@ const server = http.createServer((req, res) => {
   if (p === '/api/data/datasets') return json(qs.get('full') === '1' || state === 'full' || state === 'connected' ? FULL : EMPTY);
   if (p === '/api/data/sources') return json(SOURCES);
   if (p === '/api/connectors') return json(state === 'connected' ? CONN : NOCONN);
+  if (p === '/api/connectors' && req.method === 'POST') return body().then(b => json({ ok: true, connector: { id: 'c9', kind: b.kind, label: 'WhatsApp Business', datasetName: b.datasetName }, __echo: b }));
   if (p === '/api/whatsapp/setup') return json({ webhookUrl: 'https://six-cricket.up.railway.app/api/whatsapp/webhook', verifyToken: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6' });
   if (p === '/api/data/areas') return json({ areas: DS.map(d => ({ name: d.name, columns: d.columns, key: d.key, own: 0, sample: d.sampleRows })) });
   if (p === '/api/data/import') return body().then(b => json({ ok: true, datasetName: b.datasetName, rows: b.rows.length, added: b.rows.length, updated: 0, unchanged: 0, missing: 0, moved: [], key: 'student_id', __echo: { source: b.source, origin: b.origin, complete: b.complete, mode: b.mode, first: b.rows[0] } }));
   const file = path.join(TPL, p === '/' ? 'index.html' : p);
   if (!fs.existsSync(file)) { res.writeHead(404); return res.end('nf'); }
   let text = fs.readFileSync(file, 'utf8');
-  if (file.endsWith('.html')) text = fill(text).replace('<script src="config.js"></script>', '<script src="config.js"></script>' + PROBE(state) + `<script>(function(){var f=window.fetch;window.fetch=async function(u,i){var s=String(u);if(window.__full&&s.indexOf('/api/data/datasets')!==-1)s+=(s.indexOf('?')===-1?'?':'&')+'full=1';var r=await f(s,i);if(s.indexOf("/api/data/import")!==-1){var c=r.clone();c.json().then(function(d){window.__posted=(window.__posted||[]).concat([d.__echo]);});}return r;};})();</script>`);
+  if (file.endsWith('.html')) text = fill(text).replace('<script src="config.js"></script>', '<script src="config.js"></script>' + PROBE(state) + `<script>(function(){var f=window.fetch;window.fetch=async function(u,i){var s=String(u);if(window.__full&&s.indexOf('/api/data/datasets')!==-1)s+=(s.indexOf('?')===-1?'?':'&')+'full=1';var r=await f(s,i);if(s.indexOf("/api/connectors")!==-1&&i&&i.method==="POST"){window.__conn=JSON.parse(i.body);}if(s.indexOf("/api/data/import")!==-1){var c=r.clone();c.json().then(function(d){window.__posted=(window.__posted||[]).concat([d.__echo]);});}return r;};})();</script>`);
   else if (file.endsWith('.js') || file.endsWith('.css')) text = fill(text);
   const ext = path.extname(file);
   res.writeHead(200, { 'Content-Type': ext === '.css' ? 'text/css' : ext === '.js' ? 'text/javascript' : 'text/html' });

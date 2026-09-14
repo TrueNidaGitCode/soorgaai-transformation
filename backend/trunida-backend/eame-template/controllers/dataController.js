@@ -63,7 +63,9 @@ export async function ownerSession(req, res) {
   const a = crypto.createHash('sha256').update(given).digest();
   const b = crypto.createHash('sha256').update(expected).digest();
   if (!crypto.timingSafeEqual(a, b)) return res.status(401).json({ error: 'That is not the owner key.' });
-  const token = jwt.sign({ userId: 'owner', role: 'owner' }, process.env.JWT_SECRET || 'your_secret_key', { expiresIn: '12h' });
+  // Thirty days, like the sign-in: the owner key is entered once per device, not
+  // every shift -- a session that ended mid-connect looked like a click that did nothing.
+  const token = jwt.sign({ userId: 'owner', role: 'owner' }, process.env.JWT_SECRET || 'your_secret_key', { expiresIn: '30d' });
 
   // Where the key and the person meet: someone who is signed in and holds
   // the key IS the owner, and their account says so from now on -- the chat

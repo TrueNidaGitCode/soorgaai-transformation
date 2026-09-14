@@ -60,6 +60,11 @@ const authSecret = tenantAuthSecret(DEP._id);
 const APP_SECRET = 'e2e-app-secret';
 // A clean scratch database: the owner's rows from an earlier run would be restored at boot and merged against.
 { const pre = await (await import('mongoose')).default.createConnection(tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch')).asPromise(); for (const c of ['svarg_rows', 'svarg_imports', 'svarg_provenance', 'e2erows']) await pre.collection(c).deleteMany({}); await pre.close(); }
+// A stand-in for Meta's Graph API: the number lookup the connect makes.
+const metaHits = [];
+const meta = (await import('http')).createServer((req, res) => { metaHits.push(req.url); res.setHeader('Content-Type', 'application/json'); if (req.url.startsWith("/111222333444555?") && /Bearer EAAB[.]test/.test(req.headers.authorization || '')) res.end(JSON.stringify({ display_phone_number: '+91 98000 00000', verified_name: 'E2E Academy', quality_rating: 'GREEN' })); else { res.statusCode = 400; res.end(JSON.stringify({ error: { message: 'Invalid OAuth access token' } })); } });
+await new Promise(r => meta.listen(0, r));
+const META_URL = 'http://127.0.0.1:' + meta.address().port;
 const child = spawn(process.execPath, ['server.js'], {
   cwd: dir,
   env: {
@@ -67,7 +72,7 @@ const child = spawn(process.execPath, ['server.js'], {
     MONGO_URI: tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch'),
     JWT_SECRET: APP_SECRET, APP_OWNER_KEY: 'sok_e2e', APP_PUBLIC_ACCESS: 'true',
     SVARG_AUTH_URL: 'https://svarg.example/api/auth/oauth/google?tenant=' + DEP._id, SVARG_AUTH_SECRET: authSecret,
-    CONNECTOR_ENCRYPTION_KEY: Buffer.alloc(32, 3).toString('base64'), APP_PUBLIC_URL: 'http://localhost:' + port,
+    CONNECTOR_ENCRYPTION_KEY: Buffer.alloc(32, 3).toString('base64'), WHATSAPP_GRAPH_URL: META_URL, APP_PUBLIC_URL: 'http://localhost:' + port,
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
@@ -144,9 +149,13 @@ try {
   // Connect a business number without reaching Meta: the connector's test would; here the sealed config is what matters, so create through the service's shape by faking the test with an unreachable id is not possible -- instead land through the webhook with no connection and expect a polite no-op.
   const noconn = await j('/api/whatsapp/webhook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entry: [] }) });
   check('webhook with no connection answers 200 and does nothing', noconn.status === 200 && noconn.body === 'no connection');
-  // Create the connection directly in the application's database, sealed the way the service seals it, so the webhook path can be walked without Meta.
-  const conn = await j('/api/connectors', { method: 'POST', headers: O, body: JSON.stringify({ kind: 'whatsapp-business', datasetName: 'Attendance', config: { phoneNumberId: '111', accessToken: 'EAAB.test', appSecret: APP_SECRET, mode: 'attendance' } }) });
-  check('connecting a business number without Meta is refused with a reason', conn.status >= 400 && /Meta|reach|token|id/i.test(conn.body?.error || ''), conn.body?.error);
+  // Connect a business number the way the card does, against the stand-in Meta.
+  const bad = await j('/api/connectors', { method: 'POST', headers: O, body: JSON.stringify({ kind: 'whatsapp-business', datasetName: 'Attendance', config: { phoneNumberId: '111222333444555', accessToken: 'wrong', appSecret: APP_SECRET, mode: 'attendance' } }) });
+  check('a wrong token is refused with the reason Meta gives', bad.status === 400 && /Invalid OAuth/.test(bad.body?.error || ''), bad.body?.error);
+  const conn = await j('/api/connectors', { method: 'POST', headers: O, body: JSON.stringify({ kind: 'whatsapp-business', datasetName: 'Attendance', config: { phoneNumberId: '111222333444555', accessToken: 'EAAB.test', appSecret: APP_SECRET, mode: 'attendance' } }) });
+  check('Test and connect saves the connection (201, connected, Meta asked once for the number)', conn.status === 201 && conn.body?.connector?.status === 'connected' && conn.body.connector.datasetName === 'Attendance' && metaHits.filter(u => u.startsWith('/111222333444555')).length >= 1, JSON.stringify(conn.body) + ' hits=' + metaHits.join(','));
+  const listed = await j('/api/connectors', { headers: O });
+  check('the card then lists it, without the credentials', listed.body?.connectors?.length === 1 && !JSON.stringify(listed.body).includes('EAAB.test'), JSON.stringify(listed.body?.connectors));
 } catch (err) { check('probe ran to the end', false, err.stack); }
 
 // The webhook's delivery path, with a connection put in place the way the service stores it.
@@ -188,7 +197,7 @@ try {
   await conn.close();
 } catch (err) { check('webhook delivery path', false, err.stack); }
 
-child.kill();
+child.kill(); meta.close();
 await new Promise(r => setTimeout(r, 800));
 try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* handles */ }
 const failed = results.filter(r => !r.ok);

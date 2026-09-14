@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Svarg — Blueprints</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../workspace/workspace.css">
+  <link rel="stylesheet" href="blueprints.css?v=1">
+  <!-- The rail: the same four controls on every signed-in page. -->
+  <link rel="stylesheet" href="../shared/rail.css?v=2">
+  <script src="../login/config.js"></script>
+  <script src="../login/sessionGuard.js"></script>
+  <script type="module" src="../shared/rail.js?v=2"></script>
+  <script type="module" src="blueprints.js?v=1"></script>
+</head>
+<body class="workspace-page bp-page">
+
+  <!-- ── Navbar ──────────────────────────────────────────────────────────── -->
+  <nav class="workspace-nav" aria-label="Blueprints navigation">
+    <div class="workspace-nav__left">
+      <img src="/assets/logo-nav.png" alt="Svarg" class="workspace-nav__logo">
+    </div>
+    <div class="workspace-nav__right">
+      <span id="bp-username" class="workspace-nav__username"></span>
+      <button id="bp-logout" class="workspace-nav__logout">Logout</button>
+    </div>
+  </nav>
+
+  <main class="workspace-main bp-main" aria-label="Blueprints">
+
+    <header class="bp-head">
+      <div class="bp-head__text">
+        <h1 class="ws-page-title">Your blueprints</h1>
+        <p class="bp-sub">Every objective you have given Svarg, what it built, and where it is running. Open an application straight from here.</p>
+      </div>
+      <!-- What the account may build. Sits with the heading rather than beside
+           the locked list, so the reason is read before the lock is met. -->
+      <div class="bp-plan" id="bp-plan" hidden>
+        <span class="bp-plan__label">Plan</span>
+        <strong class="bp-plan__name" id="bp-plan-name"></strong>
+        <a class="bp-plan__upgrade" id="bp-plan-upgrade" href="/pricing/pricing.html" hidden></a>
+      </div>
+    </header>
+
+    <div id="bp-loading" class="ws-loading">
+      <div class="ws-spinner"></div>
+      <p>Loading your blueprints&hellip;</p>
+    </div>
+
+    <!-- A failure is not an absence: a dead backend reported as "nothing here"
+         reads as data loss. Same slot, deliberately different voice. -->
+    <p id="bp-error" class="bp-error" role="alert" hidden></p>
+
+    <div id="bp-empty" class="bp-empty" hidden>
+      <h2 class="bp-empty__title">No blueprints yet</h2>
+      <p class="bp-empty__body">Describe what you want to improve and Cob will work out where AI helps most.</p>
+      <a class="bp-empty__btn" href="/cob.html">Describe your objective &rarr;</a>
+    </div>
+
+    <!-- One card per objective, drawn by blueprints.js. -->
+    <div id="bp-list" class="bp-list" hidden></div>
+
+  </main>
+
+</body>
+</html>

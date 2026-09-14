@@ -16,6 +16,7 @@ import {
 import { autoCapture }      from '../services/knowledgeSuggestionService.js';
 import { backfillActionItemsForClaimedBlueprint } from '../services/actionItemService.js';
 import { enabledDomains }   from '../config/domainRegistry.js';
+import { blueprintsOverview as buildBlueprintsOverview } from '../services/blueprintOverviewService.js';
 import { MAX_OBJECTIVE_LENGTH } from '../config/objectiveLimits.js';
 import { checkObjective } from '../services/objectiveGuardService.js';
 import { resolveEngagement, CATEGORIES, WORKFLOW_AREAS } from '../services/engagementClassifierService.js';
@@ -971,6 +972,23 @@ export async function listTransformationBlueprints(req, res) {
   } catch (err) {
     console.error('listTransformationBlueprints error:', err);
     res.status(500).json({ error: 'Failed to list transformation blueprints.' });
+  }
+}
+
+/**
+ * GET /strategy-canvas/blueprints-overview
+ *
+ * Every objective with what became of it: the opportunity being built, the
+ * address the application runs at, the capabilities the Learner has added
+ * since, the opportunities still to build, and the plan that decides whether
+ * they can be. The Blueprints page is drawn entirely from this.
+ */
+export async function getBlueprintsOverview(req, res) {
+  try {
+    return res.json(await buildBlueprintsOverview(req.user._id));
+  } catch (err) {
+    console.error('getBlueprintsOverview error:', err);
+    res.status(500).json({ error: 'Failed to load your blueprints.' });
   }
 }
 

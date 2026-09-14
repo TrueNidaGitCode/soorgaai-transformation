@@ -1,0 +1,308 @@
+/* ── The Blueprints page ───────────────────────────────────────────────────
+   One card per objective: what it does, whether it is running, what was
+   built from how the team uses it, and what is not built yet.
+
+   The palette is the workspace's — the same deep ground, the same teal — so
+   moving here from Cob or the application does not feel like a different
+   product. Only the state colours are new, and they are the three a person
+   needs to tell apart at a glance: running, working, stopped. */
+
+.bp-page { --bp-accent: #5CC5A7; --bp-work: #F2C94C; --bp-bad: #FCA5A5; }
+
+/* The whole page starts after the rail -- the navbar included, which is why
+   this is on the body and not on the main. rail.css sets --rail to 0 when the
+   rail hides, so the same rule is right at every width. */
+.workspace-page { padding-left: var(--rail, 0px); box-sizing: border-box; }
+
+/* .ws-loading sets display:flex, which beats the hidden attribute: the
+   spinner stayed on the page under the cards it was meant to be replaced by.
+   Anything hidden here is hidden. */
+.bp-page [hidden] { display: none !important; }
+
+/* ── Heading ──────────────────────────────────────────────────────────────── */
+
+.bp-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.bp-head__text { min-width: 0; }
+.bp-sub {
+  margin: 6px 0 0;
+  max-width: 62ch;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.bp-plan {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  white-space: nowrap;
+}
+.bp-plan__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.bp-plan__name { font-size: 0.9rem; font-weight: 700; color: #fff; }
+.bp-plan__upgrade {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bp-accent);
+  text-decoration: none;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+.bp-plan__upgrade:hover { text-decoration: underline; }
+
+/* ── The cards ────────────────────────────────────────────────────────────── */
+
+.bp-list { display: flex; flex-direction: column; gap: 20px; }
+
+.bp-card {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 22px 24px;
+}
+
+.bp-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.bp-card__id { min-width: 0; }
+.bp-card__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.bp-card__obj {
+  margin: 5px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+}
+.bp-card__meta {
+  margin: 7px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+/* State: one word, and a dot that carries it without being read. */
+.bp-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.66);
+  white-space: nowrap;
+}
+.bp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.bp-state--on   { color: var(--bp-accent); border-color: rgba(92, 197, 167, 0.35); background: rgba(92, 197, 167, 0.08); }
+.bp-state--work { color: var(--bp-work);   border-color: rgba(242, 201, 76, 0.32);  background: rgba(242, 201, 76, 0.07); }
+.bp-state--bad  { color: var(--bp-bad);    border-color: rgba(252, 165, 165, 0.32); background: rgba(252, 165, 165, 0.07); }
+
+/* ── Blocks inside a card ─────────────────────────────────────────────────── */
+
+.bp-block { padding-top: 18px; }
+.bp-block + .bp-block { border-top: 1px solid rgba(255, 255, 255, 0.07); margin-top: 18px; }
+.bp-block__title {
+  margin: 0 0 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.bp-block__note {
+  margin: -4px 0 12px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.bp-built__name {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #fff;
+}
+/* The technique, for whoever builds it. The line above is the same
+   opportunity in the customer's words. */
+.bp-built__tech {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.42);
+}
+.bp-built__why {
+  margin: 9px 0 0;
+  max-width: 72ch;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.62);
+}
+.bp-none { margin: 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.45); }
+
+.bp-card__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
+.bp-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s, color 0.15s;
+}
+.bp-btn--go { background: var(--bp-accent); color: #06251c; }
+.bp-btn--go:hover { filter: brightness(1.08); }
+.bp-btn--quiet {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.bp-btn--quiet:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+/* Not a button: there is nothing to open. Says so rather than looking
+   pressable and doing nothing. */
+.bp-btn--off {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.34);
+  border-color: rgba(255, 255, 255, 0.1);
+  cursor: default;
+}
+
+/* ── Built from how your team uses it ─────────────────────────────────────── */
+
+.bp-feats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bp-feat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 11px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+.bp-feat .bp-dot { position: relative; top: -2px; }
+.bp-dot--on   { color: var(--bp-accent); }
+.bp-dot--work { color: var(--bp-work); }
+.bp-dot--wait { color: rgba(255, 255, 255, 0.35); }
+.bp-dot--bad  { color: var(--bp-bad); }
+.bp-feat__text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.bp-feat__text strong { font-size: 0.92rem; font-weight: 600; color: #fff; }
+.bp-feat__text em {
+  font-style: normal;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.55);
+}
+.bp-feat__needs { color: var(--bp-work) !important; }
+.bp-feat__state {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.42);
+  white-space: nowrap;
+}
+
+/* ── Not built yet ────────────────────────────────────────────────────────── */
+
+/* Greyed, not hidden: these are real opportunities Cob found, and the line
+   below says what would make them available. */
+.bp-locked { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.bp-locked__item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.015);
+}
+.bp-locked__name { font-size: 0.92rem; color: rgba(255, 255, 255, 0.5); }
+.bp-locked__tech { font-size: 0.76rem; color: rgba(255, 255, 255, 0.28); }
+.bp-locked__ask {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+}
+.bp-locked__ask a { color: var(--bp-accent); font-weight: 600; text-decoration: none; }
+.bp-locked__ask a:hover { text-decoration: underline; }
+.bp-lock { margin-right: 4px; }
+
+/* ── Empty and failed ─────────────────────────────────────────────────────── */
+
+.bp-empty {
+  padding: 44px 32px;
+  text-align: center;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+}
+.bp-empty__title { margin: 0 0 8px; font-size: 1.1rem; font-weight: 700; color: #fff; }
+.bp-empty__body { margin: 0 0 20px; font-size: 0.92rem; color: rgba(255, 255, 255, 0.55); }
+.bp-empty__btn {
+  display: inline-block;
+  padding: 11px 22px;
+  border-radius: 10px;
+  background: var(--bp-accent);
+  color: #06251c;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.bp-empty__btn:hover { filter: brightness(1.08); }
+
+.bp-error {
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid rgba(252, 165, 165, 0.3);
+  border-radius: 12px;
+  background: rgba(252, 165, 165, 0.07);
+  font-size: 0.9rem;
+  color: var(--bp-bad);
+}
+
+@media (max-width: 760px) {
+  .bp-main { padding-left: 1rem; padding-right: 1rem; }
+  .bp-card { padding: 18px 16px; }
+  .bp-card__head { flex-direction: column; gap: 12px; }
+  .bp-feat { grid-template-columns: auto minmax(0, 1fr); }
+  .bp-feat__state { grid-column: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-btn { transition: none; }
+}

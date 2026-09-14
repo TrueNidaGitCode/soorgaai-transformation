@@ -20,6 +20,7 @@ import {
   streamTransformationProgress,
   getTransformationBlueprint,
   listTransformationBlueprints,
+  getBlueprintsOverview,
   approveOpportunity,
   setAppName,
   setEngagement,
@@ -72,6 +73,9 @@ router.post('/generate-transformation',                                protect, 
 router.get('/generate-transformation/:transformationId/stream',        protect, streamTransformationProgress);
 router.get('/transformation-blueprint',                                protect, getTransformationBlueprint);
 router.get('/transformation-blueprints',                               protect, listTransformationBlueprints);
+// Everything the Blueprints page shows: opportunities, the running
+// application's address, the capabilities added since, and the plan.
+router.get('/blueprints-overview',                                     protect, getBlueprintsOverview);
 router.post('/claim-guest-blueprint',                                  protect, claimGuestBlueprint);
 router.patch('/transformation-blueprint/:blueprintId/approve-opportunity', protect, approveOpportunity);
 router.patch('/transformation-blueprint/:blueprintId/app-name',            protect, setAppName);

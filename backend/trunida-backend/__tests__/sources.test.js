@@ -40,8 +40,17 @@ describe('where an industry keeps its data', () => {
     const { buildRuntime } = await import('../services/eameProjectBuilder.js');
     const paths = (o) => buildRuntime({ appName: 'x', ...o }).map(f => f.path).filter(p => p.startsWith('services/connectors/'));
     expect(paths({}).length).toBe(4);
-    expect(paths({ connectors: ['jira'] })).toEqual(['services/connectors/jira.js']);
-    expect(paths({ connectors: [] })).toEqual([]);
+    /*
+     * WhatsApp is always among them, and that is not the filter leaking.
+     *
+     * whatsappController.js ships with every application and imports the
+     * module statically, so an application built without it died on boot with
+     * "Cannot find module" — which is what happened to Arthi's. Optional means
+     * optional only for the connectors connectorService discovers at boot.
+     */
+    expect(paths({ connectors: ['jira'] }).sort())
+      .toEqual(['services/connectors/jira.js', 'services/connectors/whatsapp.js']);
+    expect(paths({ connectors: [] })).toEqual(['services/connectors/whatsapp.js']);
     // Everything else still ships.
     expect(buildRuntime({ appName: 'x', connectors: [] }).map(f => f.path)).toContain('services/connectorService.js');
   });

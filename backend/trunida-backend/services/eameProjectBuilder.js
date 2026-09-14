@@ -156,6 +156,22 @@ export function buildManifest({ appName = '', copy = {} } = {}) {
  * Paths come from FIXED_PATHS in eameSpec.js so the generator, the verifier and
  * this cannot disagree about which files are the generator's to write.
  */
+/*
+ * Connector modules that ship whether or not the application asked for them.
+ *
+ * Leaving a connector out is normally harmless: connectorService discovers
+ * what is in services/connectors/ at boot, so an absent module is simply not
+ * offered on the Data page. WhatsApp broke that rule — whatsappController.js
+ * ships with every application and imports it STATICALLY, so an application
+ * that did not ask for WhatsApp got a controller importing a file that was
+ * not there and died on boot with "Cannot find module".
+ *
+ * It cost a customer's application a week of downtime. The assertion below
+ * now catches the general case; this set is the specific answer for the one
+ * connector that has a statically imported surface.
+ */
+const ALWAYS_SHIPPED = new Set(['services/connectors/whatsapp.js']);
+
 export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}) {
   // Which connector modules this application gets: the ones its sources
   // call for (sourceCatalogService), or all of them when nobody said.
@@ -163,7 +179,8 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
   // module left out is simply not offered on the Data page.
   const wanted = Array.isArray(connectors) ? new Set(connectors.map(k => CONNECTOR_MODULES[k]).filter(Boolean)) : null;
   const connectorPaths = new Set(Object.values(CONNECTOR_MODULES));
-  const shipped = FIXED_PATHS.filter(p => !connectorPaths.has(p) || !wanted || wanted.has(p));
+  const shipped = FIXED_PATHS.filter(p =>
+    !connectorPaths.has(p) || ALWAYS_SHIPPED.has(p) || !wanted || wanted.has(p));
   // Where each fixed file is copied from. A path in FIXED_PATHS with no entry
   // here would silently vanish from the delivered project, so the lookup below
   // throws instead.
@@ -214,7 +231,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'config/modelCatalog.js':           { repo: 'config/modelCatalog.js' },
   };
 
-  return shipped.map((dest) => {
+  const files = shipped.map((dest) => {
     const source = SOURCE[dest];
     if (!source) throw new Error(`No source is configured for the fixed file ${dest}`);
     const content = source.template
@@ -222,4 +239,37 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
       : readFile(source.repo);
     return { path: dest, content: applyName(content, appName, copy) };
   });
+
+  assertImportsResolve(files);
+  return files;
+}
+
+/*
+ * Every static import in a shipped file must point at another shipped file.
+ *
+ * This is the invariant that was broken, and it was broken silently: the
+ * build succeeded, the push succeeded, Railway reported SUCCESS, and the
+ * application then died on boot in a customer's account where nobody was
+ * watching the logs. Nothing between the mistake and the outage looked wrong.
+ *
+ * Checked here rather than in the verifier because the verifier reads the
+ * files the MODEL wrote, and both files involved in this failure were ours.
+ */
+function assertImportsResolve(files) {
+  const have = new Set(files.map(f => f.path));
+  const missing = [];
+
+  for (const f of files) {
+    if (!f.path.endsWith('.js')) continue;
+    // Static imports only. A dynamic import() of a directory's contents is how
+    // connectors are meant to be optional, and absence there is the design.
+    for (const m of f.content.matchAll(/^\s*import\s[^;]*?from\s*['"](\.[^'"]+)['"]/gm)) {
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(f.path), m[1]));
+      if (!have.has(target)) missing.push(`${f.path} imports ${target}, which is not shipped`);
+    }
+  }
+
+  if (missing.length) {
+    throw new Error('This application would not start:\n  ' + missing.join('\n  '));
+  }
 }

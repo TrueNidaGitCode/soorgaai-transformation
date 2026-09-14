@@ -66,8 +66,23 @@ describe('the webhook', () => {
     expect(paths).toContain('services/connectors/whatsapp.js');
     expect(paths).toContain('routes/whatsappRoutes.js');
     expect(paths).not.toContain('services/connectors/jira.js');
+    /*
+     * This assertion used to read `not.toContain` — and it was wrong, in the
+     * way that cost Arthi's application a week of downtime.
+     *
+     * Leaving a connector out is safe only for the ones connectorService
+     * discovers at boot. whatsappController.js ships with every application
+     * and imports this module STATICALLY, so an application that asked for no
+     * connectors shipped an import of a file that was not there and died on
+     * boot with "Cannot find module". The test agreed with the bug, so nothing
+     * caught it.
+     *
+     * The module ships; the Data page still only offers what was asked for,
+     * which is what "and not otherwise" above is really about.
+     */
     const none = buildRuntime({ appName: 'x', connectors: [] }).map(f => f.path);
-    expect(none).not.toContain('services/connectors/whatsapp.js');
+    expect(none).toContain('services/connectors/whatsapp.js');
+    expect(none).not.toContain('services/connectors/jira.js');
   });
 });
 

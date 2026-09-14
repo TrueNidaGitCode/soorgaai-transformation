@@ -101,7 +101,41 @@ live in its own Railway project with its own database. It is built as
   discovery, seed-on-boot, the open session), the front door / welcome / chat
   shell (`frontend/index.html`, `app.css`, `config.js`), the Data page (one
   card per industry source, the whole flow inside the card) and
-  connectors, the feedback and signals plumbing, and sign-in.
+  connectors, the feedback and signals plumbing, sign-in, and **how the
+  application speaks** (see below).
+### How the application speaks
+
+The application's *subject* is generated: which records matter, what a session
+or an invoice means here, which columns to read. Its *conduct* is not. A
+customer moving between two Svarg applications should meet the same colleague,
+so the conduct is fixed runtime and lives in
+`eame-template/services/assistant.js`: the answer first in one sentence, the
+supporting detail under it, the evidence named, a plain "I cannot tell that
+from the connected data" when that is the truth, nothing invented to fill a
+gap, plain text because the page has no Markdown renderer, and never a mention
+of Svarg's own stages — Cob, Aria, Arth, Eame and Yusu are how the application
+came to exist, not people the customer works with.
+
+It is applied at the one seam every application already passes through.
+`services/llmService.js` in a tenant is now a thin wrapper: it frames whatever
+system prompt the generated code wrote with the conduct and delegates to
+`services/llmCore.js`, which is Svarg's own provider module copied in
+unchanged. Generated code calls `generate({ systemPrompt, userMessage })`
+exactly as before and needs no knowledge of any of this — which is the point:
+**an application built before the conduct existed is held to it as soon as its
+runtime is updated, without its code being rewritten.** `generateRaw()` is the
+same call unframed, for a model call that is not an answer to a person.
+
+Eame is told not to write a persona line at all; a generated prompt that opens
+"You are Eame, the assistant for…" names Svarg's machinery to the customer and
+duplicates what the conduct already says.
+
+The first thing the chat says is fixed runtime too, in the shell: "I'm ready to
+help you get work done" on a first visit, and the hour plus "What would you
+like to get done?" for someone who has been here before. Not "How can I assist
+you today?", and not a list of everything the application can do — both make
+the person work out what to ask.
+
 - **Generated code** -- models, services, controllers, routes, the seed script
   and `frontend/app.js`, written by Eame from the blueprint for that one use
   case. The generator's brief is `services/eameCodeGenerator.js`; the verifier

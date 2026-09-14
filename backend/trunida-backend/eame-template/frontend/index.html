@@ -793,6 +793,44 @@
       // After anything lands on the Data page, and whenever a view opens.
       document.addEventListener('ch-data-changed', function () { refreshAreas(); });
 
+      /*
+       * The first thing said.
+       *
+       * Not "How can I assist you today?" and not a list of everything this
+       * application can do -- both make the person work out what to ask. It
+       * says it is ready and hands them one thing to try; the examples under
+       * the composer are the rest.
+       *
+       * Someone who has been here before is not welcomed again. They are
+       * greeted by the hour and asked what they want done, because they
+       * already know what this is.
+       */
+      (function greet() {
+        var title = document.querySelector('.ch-welcome__title');
+        var body = document.querySelector('.ch-welcome__body');
+        var eyebrow = document.querySelector('.ch-welcome__eyebrow');
+        if (!title || !body) return;
+
+        var who = null;
+        try { who = JSON.parse(localStorage.getItem('ch-user') || 'null'); } catch (e) { who = null; }
+        var first = String((who && who.name) || '').trim().split(/\s+/)[0] || '';
+
+        var back = false;
+        try { back = localStorage.getItem('ch-greeted') === '1'; localStorage.setItem('ch-greeted', '1'); } catch (e) { /* fine */ }
+
+        if (back) {
+          var h = new Date().getHours();
+          var part = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+          if (eyebrow) eyebrow.textContent = part + (first ? ', ' + first : '');
+          title.textContent = 'What would you like to get done?';
+          body.textContent = 'Ask a question, or tell me what you want to happen and I will do the work.';
+        } else {
+          if (eyebrow) eyebrow.textContent = first ? 'Hi, ' + first : 'Hi';
+          title.textContent = "I'm ready to help you get work done.";
+          body.textContent = 'Ask me anything about your application, or tell me what you would like to accomplish.';
+        }
+      })();
+
       // Attach: the owner's Data page. Shown when this browser holds the owner session.
       var attach = document.getElementById('ch-attach');
       if (attach) {

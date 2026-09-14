@@ -38,6 +38,13 @@ export const FIXED_PATHS = [
   '.gitignore',
   'README.md',
   'middleware/authMiddleware.js',
+  // How the application speaks, and the layer that applies it to every model
+  // call. llmCore is Svarg's provider module unchanged; llmService is the thin
+  // wrapper above it that frames the generated prompt with the conduct, so an
+  // application built before the conduct existed is held to it as soon as its
+  // runtime is updated.
+  'services/assistant.js',
+  'services/llmCore.js',
   'services/llmService.js',
   'services/modelSelectionService.js',
   'config/modelCatalog.js',

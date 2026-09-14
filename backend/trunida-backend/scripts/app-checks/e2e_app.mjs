@@ -136,6 +136,15 @@ try {
   const imp3 = await j('/api/data/import', { method: 'POST', headers: O, body: JSON.stringify({ datasetName: 'Students', source: 'folder', origin: 'Students.xlsx', mode: 'merge', complete: false, rows: [['S4', 'Dev Kumar', 'U14']] }) });
   check('the sheet then updates the chat\'s row: moved from chat, one row per key', imp3.body?.moved?.[0]?.from === 'chat' && imp3.body?.moved?.[0]?.rows === 1, JSON.stringify(imp3.body?.moved));
   const after = await j('/api/data/rows?dataset=Students&kind=own', { headers: U });
+  // The record itself, not the file: a host that loses its disk on the next
+  // restart must still have every row the owner brought in.
+  {
+    const mongoose = (await import('mongoose')).default;
+    const c = await mongoose.createConnection(tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, 'svarg_e2e_scratch')).asPromise();
+    const kept = await c.collection('svarg_rows').countDocuments({ datasetName: 'Students' });
+    check('the owner rows survive in the database, not only on disk (svarg_rows)', kept >= 3, 'svarg_rows=' + kept);
+    await c.close();
+  }
   check('S4 held once, from the folder', after.body.rows.filter(r => r.cells[0] === 'S4').length === 1 && after.body.rows.find(r => r.cells[0] === 'S4').source === 'folder');
   const areas2 = await j('/api/data/areas', { headers: U });
   check('areas count theirs and sample apart', areas2.body.areas[0].own === 4 && areas2.body.areas[0].sample === 2, JSON.stringify(areas2.body.areas[0]));

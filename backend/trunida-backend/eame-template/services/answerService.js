@@ -1,71 +1,68 @@
 /**
  * The answer, end to end.
  *
- * ── Why this is not one prompt ─────────────────────────────────────────────
+ * ── What went wrong with the version before this ──────────────────────────
  *
- * It used to be. The application's generated service read some records, put
- * them in a prompt, and whatever came back was the answer. That produces the
- * failure a customer notices in one glance: prose saying "4 players missed
- * practice" above six cards, one of them the same student twice. The sentence
- * was written by a model that was counting, and the cards were built by code
- * that was filtering — two different lists, and nothing checking they agreed.
+ * It could do exactly one thing: select rows where a column equals a value.
+ * Everything it could not express came back as "I cannot tell that from the
+ * connected data" — and that sentence was a lie about the data. The roll calls
+ * DO say who was absent this week. The roster DOES say who is overdue. What
+ * was missing was the reasoning between the question and the rows, so the
+ * refusal was about the pipeline while sounding like it was about the records.
  *
- * A model cannot be asked to count reliably, and it must not be the thing that
- * decides whether two rows are the same person. So the work is split:
+ * The words a customer uses are now work to be done, not filters to match.
+ * "This week" is a range computed here and matched against dates written five
+ * different ways. "Poor attendance" is a count per person and a threshold.
+ * "Both X and Y" is a join on the person. "Needs attention" is several of
+ * those, ranked. Each is a typed STEP; the model chooses which steps to run,
+ * and code runs them.
  *
- *   PLAN        the model reads the question and the dataset catalogue and
- *               says WHICH rows matter — dataset, filters, category, and what
- *               identifies a person. It chooses; it does not count.
- *   GATHER      code runs those filters over the real rows, groups them,
- *               resolves entities by key, and counts. Every number the
- *               customer sees is produced here.
- *   SAY         the model writes the sentence, and is given the numbers rather
- *               than asked for them.
- *   CHECK       every number in that sentence must be one code computed. A
- *               sentence that invents a figure is replaced by one built from
- *               the facts, because a wrong number is worse than a plain one.
+ *   UNDERSTAND   the question, the conversation before it, and what the
+ *                datasets hold -> a plan of steps, and a reading to say aloud
+ *   EXECUTE      retrieve -> join -> calculate -> deduplicate -> classify
+ *   VALIDATE     counts, entities, duplicates, contradictions, categories,
+ *                time windows, sources -> one of five states
+ *   ANSWER       the model writes the sentence from validated facts, and every
+ *                number in it must be one code computed
  *
- * ── What it reads ──────────────────────────────────────────────────────────
+ * The model never counts, never joins, and never decides whether two rows are
+ * the same person.
  *
- * The generic data layer (connectorService), which every application has: the
- * dataset index, its columns, its key, and its rows — the owner's and the
- * simulated ones, kept apart. Nothing here knows what a roll call is, which is
- * exactly why it works in every application without being written again.
+ * ── Before refusing ───────────────────────────────────────────────────────
+ *
+ * A plan that comes back empty is asked again, once, with the datasets spelled
+ * out and derivation demanded. Only if that is empty too does the answer say
+ * the data cannot support the question — and then it says what is missing.
  */
 
-import { readIndex, findDataset, readAllRows, datasetKey, keyColumns } from './connectorService.js';
+import { readIndex, findDataset, readAllRows, datasetKey } from './connectorService.js';
 import { generate, generateRaw } from './llmService.js';
+import {
+  parseDate, windowRange, inWindow, dateCoverage, deriveByEntity,
+  matchesAll, joinOnEntity, validate, OPS,
+} from './reasoning.js';
 
-/** Rows read per dataset for one question. Beyond this the model gets counts, not rows. */
-const SCAN_LIMIT = 4000;
-/** Rows shown as evidence, and rows handed to the model to write from. */
+const SCAN_LIMIT = 5000;
 const EVIDENCE_LIMIT = 40;
 const SAMPLE_FOR_MODEL = 25;
 
-/** The categories a group may carry. Kept apart so a count never merges two of them. */
+/** The categories a group may carry. Kept apart so a count never merges two. */
 export const CATEGORIES = {
-  absent:       { label: 'Absent',            tone: 'bad' },
-  excused:      { label: 'Excused',           tone: 'warn' },
-  unconfirmed:  { label: 'Not confirmed',     tone: 'warn' },
-  discrepancy:  { label: 'Needs review',      tone: 'warn' },
-  overdue:      { label: 'Overdue',           tone: 'bad' },
-  due:          { label: 'Due',               tone: 'warn' },
-  present:      { label: 'Present',           tone: 'ok' },
-  info:         { label: '',                  tone: 'ok' },
+  absent:       { label: 'Absent',        tone: 'bad' },
+  excused:      { label: 'Excused',       tone: 'warn' },
+  unconfirmed:  { label: 'Not confirmed', tone: 'warn' },
+  discrepancy:  { label: 'Needs review',  tone: 'warn' },
+  overdue:      { label: 'Overdue',       tone: 'bad' },
+  due:          { label: 'Due',           tone: 'warn' },
+  present:      { label: 'Present',       tone: 'ok' },
+  info:         { label: '',              tone: 'ok' },
 };
 const CATEGORY_KEYS = Object.keys(CATEGORIES);
-
 const norm = (s) => String(s ?? '').trim().toLowerCase();
+const DATEISH = /date|day|on$|when|session|due|paid/i;
 
-// ── What the application holds, as the model is told it ─────────────────────
+// ── What the application holds ──────────────────────────────────────────────
 
-/**
- * The catalogue: every dataset, its columns, its key, how many rows it holds,
- * and a few real values per column so the model can write a filter that
- * matches the data rather than one that matches its expectations. Values are
- * the customer's, so only a handful of distinct ones go, and only from short
- * columns — a free-text note is not a value to filter on.
- */
 export async function catalogue(kind = 'own') {
   const out = [];
   for (const d of readIndex()) {
@@ -80,7 +77,11 @@ export async function catalogue(kind = 'own') {
       }
       return [...seen];
     });
-    out.push({ name: d.name, columns, key: datasetKey(d), rows: all.rows.length, values });
+    // Which column carries a date, so a window can be applied without the
+    // model having to guess at it.
+    const dateColumn = columns.find((c, i) =>
+      DATEISH.test(c) && all.rows.slice(0, 20).some(r => parseDate(r.cells[i]))) || '';
+    out.push({ name: d.name, columns, key: datasetKey(d), rows: all.rows.length, values, dateColumn });
   }
   return out;
 }
@@ -92,101 +93,152 @@ function catalogueText(cat) {
       const v = d.values[i];
       return v && v.length ? `${c} (e.g. ${v.slice(0, 4).join(', ')})` : c;
     }).join('; ');
-    return `- "${d.name}" — ${d.rows} rows, identified by ${d.key || 'no key'}\n  columns: ${cols}`;
+    return `- "${d.name}" — ${d.rows} rows, identified by ${d.key || 'no key'}`
+      + (d.dateColumn ? `, dated by "${d.dateColumn}"` : ', undated')
+      + `\n  columns: ${cols}`;
   }).join('\n');
 }
 
-// ── 1. PLAN ─────────────────────────────────────────────────────────────────
+// ── UNDERSTAND ──────────────────────────────────────────────────────────────
 
 const PLAN_RULES = [
-  'You are choosing which records answer a question. You do not answer it and you do not count.',
+  'You turn a question into STEPS over the datasets below. You never count, never join and',
+  'never decide whether two rows are the same person — code does all three. You decide what',
+  'to look at and what rule to apply.',
   '',
-  'Return ONLY JSON, no prose and no code fence:',
-  '{"groups":[{"label":"...","dataset":"...","category":"absent|excused|unconfirmed|discrepancy|overdue|due|present|info",',
-  '  "where":[["column","is|is not|contains|is any of|empty|not empty|before|after",": value"]],"entity":"column or null"}],',
-  ' "intent":"question|action","act":"what the customer wants done, or null","reason":"one short line"}',
+  'Return ONLY JSON:',
+  '{"reading":"what you took the question to mean, one line",',
+  ' "intent":"lookup|summary|compare|action|revalidate",',
+  ' "act":"what the customer wants done, or null",',
+  ' "ambiguous":false,',
+  ' "steps":[',
+  '   {"id":"a","op":"select","dataset":"...","label":"Absent this week","category":"absent",',
+  '    "entity":"player_name","where":[["status","matches","absent|no show"]],"window":"this week"},',
+  '   {"id":"b","op":"derive","from":"a","entity":"player_name","where":[["status","matches","absent"]],',
+  '    "metric":"count","having":[">=","2"],"label":"Missed twice or more","category":"absent"},',
+  '   {"id":"c","op":"join","left":"a","right":"b","mode":"both","label":"Both","category":"discrepancy"}',
+  ' ]}',
+  '',
+  'THE OPERATIONS',
+  '- select: rows from one dataset. "where" is [column, operator, value]; operators are',
+  '  is, is not, contains, is any of, matches, empty, not empty, before, after. "is any of" and',
+  '  "matches" take several values separated by |. "window" is a phrase like today, this week,',
+  '  last week, this month, recently, last 30 days — the range is computed for you and applied',
+  '  to that dataset\'s date column, so NEVER write a date into "where".',
+  '- derive: a fact computed per person from another step — count the rows matching "where",',
+  '  then keep those whose count passes "having". This is how a phrase that is not a column',
+  '  becomes an answer: "poor attendance" is a count of absences with having [">=","2"];',
+  '  "consistently missing" is the same with a larger number.',
+  '- join: the people in both of two steps (mode "both"), or in the first and not the second',
+  '  (mode "leftOnly"). This is the ONLY way to answer "students with X and Y".',
   '',
   'RULES',
-  '- Use dataset and column names EXACTLY as given. A name you invent returns nothing.',
-  '- ONE GROUP PER CATEGORY. "Absent" and "attendance looks wrong" are two different things',
-  '  and must never share a group: the customer acts on them differently. If the question asks',
-  '  who missed practice, the confirmed absences are one group and anything ambiguous is a',
-  '  second group with category "discrepancy".',
-  '- "entity" is the column naming the PERSON or THING the question is about (a student name or',
-  '  id), so two rows for the same person count once. Null only when the rows are not about a',
-  '  person or thing that can repeat.',
-  '- Prefer few groups. Two or three is a good answer; eight is a data dump.',
-  '- If the question spans several datasets (attendance AND fees), give a group for each.',
-  '- NARROWING A PREVIOUS ANSWER: when the customer says "their", "them", "those" or names a',
-  '  subset of what you just listed, filter to exactly those with "is any of" and a list',
-  '  separated by | — for example ["player_name","is any of","Arjun Bose|Rohan Sharma"]. The',
-  '  names are in the conversation above. Do not start again from the whole dataset.',
-  '- DATES: today\'s date is given below. Work out the range the question asks for and express',
-  '  it with before/after against the date column, written in the SAME SHAPE as that column\'s',
-  '  example values — if they read 12/09/2026 do not write 2026-09-12. If the column\'s shape',
-  '  cannot express the range, leave the filter out rather than inventing one.',
-  '- If nothing in the catalogue can answer it, return {"groups":[],"intent":"question","act":null,',
-  '  "reason":"why not"}. Do not invent a dataset to be helpful.',
+  '- Use dataset and column names EXACTLY as given.',
+  '- ONE GROUP PER CATEGORY. Confirmed absence and "the record looks wrong" are different',
+  '  things the customer acts on differently, so they are different steps.',
+  '- "entity" names the column holding the PERSON, so two rows for one person count once.',
+  '- NARROWING: when the customer says "them", "those", "their" or names a subset of what you',
+  '  just listed, filter with ["<name column>","is any of","Arjun Bose|Rohan Sharma"] using the',
+  '  names from the conversation. Keep the previous window and filters unless they change one.',
+  '- BROAD QUESTIONS ("what needs my attention", "is everything running smoothly"): give one',
+  '  step per thing that could be wrong, across DIFFERENT datasets — unconfirmed attendance,',
+  '  absences, overdue fees, records that contradict — and order steps most urgent first.',
+  '- DO NOT REFUSE because the question\'s words are not column names. Work out what would have',
+  '  to be true and derive it. Return no steps only when nothing here is about the subject at',
+  '  all (a refund policy, opening hours) — then say so in "reading".',
+  '- Set "ambiguous" true only when two readings would give genuinely different answers, and',
+  '  put the one you took in "reading".',
 ].join('\n');
 
-/** What the planner needs to turn "today" or "this week" into a filter. */
-function today() {
-  const d = new Date();
-  const iso = d.toISOString().slice(0, 10);
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  const lastMonday = new Date(monday);
-  lastMonday.setDate(monday.getDate() - 7);
-  const fmt = (x) => x.toISOString().slice(0, 10);
-  return [
-    `TODAY is ${iso} (${d.toLocaleDateString('en-GB', { weekday: 'long' })}).`,
-    `This week began ${fmt(monday)}. Last week ran ${fmt(lastMonday)} to ${fmt(new Date(monday.getTime() - 86400000))}.`,
-    `This month began ${iso.slice(0, 8)}01.`,
-  ].join(' ');
+function timeText(now = new Date()) {
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const w = windowRange('this week', now);
+  return `TODAY is ${iso(now)} (${now.toLocaleDateString('en-GB', { weekday: 'long' })}). This week began ${iso(w.from)}.`;
 }
 
-const OPS = new Set(['is', 'is not', 'contains', 'is any of', 'empty', 'not empty', 'before', 'after']);
-/** "is any of" carries a list: Arjun Bose | Rohan Sharma | Tanvi Reddy. */
-const ANY_SEP = '|';
+function historyText(history) {
+  if (!history.length) return '';
+  return '\nTHE CONVERSATION SO FAR (resolve "them", "their", "those" against it):\n'
+    + history.map(h => `${h.role === 'user' ? 'Customer' : 'You'}: ${h.text}`).join('\n') + '\n';
+}
 
-/** The model's plan, made safe: unknown datasets, columns, categories and operators are dropped. */
+function contextText(ctx) {
+  if (!ctx || !Array.isArray(ctx.entities) || !ctx.entities.length) return '';
+  return `\nTHE PEOPLE IN YOUR LAST ANSWER (use these for "them"/"those"): ${ctx.entities.slice(0, 40).join(' | ')}`
+    + (ctx.window ? `\nTHE PERIOD IN YOUR LAST ANSWER: ${ctx.window}` : '') + '\n';
+}
+
+/** The model's plan, made safe: anything that does not exist is dropped. */
 export function sanitisePlan(raw, cat) {
   const byName = new Map(cat.map(d => [d.name, d]));
-  const groups = [];
-  for (const g of Array.isArray(raw?.groups) ? raw.groups : []) {
-    const d = byName.get(String(g?.dataset || ''));
-    if (!d) continue;
-    const cols = new Set(d.columns);
-    const where = (Array.isArray(g.where) ? g.where : [])
-      .filter(w => Array.isArray(w) && cols.has(String(w[0])) && OPS.has(String(w[1])))
-      .map(w => [String(w[0]), String(w[1]), String(w[2] ?? '').replace(/^:\s*/, '')]);
-    groups.push({
-      label: String(g.label || d.name).slice(0, 60),
-      dataset: d.name,
-      category: CATEGORY_KEYS.includes(String(g.category)) ? String(g.category) : 'info',
-      where,
-      entity: cols.has(String(g.entity)) ? String(g.entity) : null,
-    });
-    if (groups.length >= 6) break;
+  const steps = [];
+  const seen = new Set();
+  for (const s of Array.isArray(raw?.steps) ? raw.steps : []) {
+    const op = String(s?.op || 'select');
+    const id = String(s?.id || `s${steps.length}`);
+    if (seen.has(id)) continue;
+    const base = {
+      id,
+      label: String(s?.label || '').slice(0, 60),
+      category: CATEGORY_KEYS.includes(String(s?.category)) ? String(s.category) : 'info',
+    };
+    if (op === 'select') {
+      const d = byName.get(String(s?.dataset || ''));
+      if (!d) continue;
+      const cols = new Set(d.columns);
+      steps.push({
+        ...base, op: 'select', dataset: d.name,
+        label: base.label || d.name,
+        entity: cols.has(String(s?.entity)) ? String(s.entity) : null,
+        where: (Array.isArray(s?.where) ? s.where : [])
+          .filter(w => Array.isArray(w) && cols.has(String(w[0])) && OPS.has(String(w[1])))
+          .map(w => [String(w[0]), String(w[1]), String(w[2] ?? '').replace(/^:\s*/, '')]),
+        window: s?.window ? String(s.window).slice(0, 40) : null,
+      });
+    } else if (op === 'derive') {
+      const from = steps.find(x => x.id === String(s?.from));
+      if (!from) continue;
+      const d = byName.get(from.dataset);
+      const cols = new Set(d ? d.columns : []);
+      steps.push({
+        ...base, op: 'derive', from: from.id, dataset: from.dataset,
+        label: base.label || 'Derived',
+        entity: cols.has(String(s?.entity)) ? String(s.entity) : from.entity,
+        where: (Array.isArray(s?.where) ? s.where : [])
+          .filter(w => Array.isArray(w) && cols.has(String(w[0])) && OPS.has(String(w[1])))
+          .map(w => [String(w[0]), String(w[1]), String(w[2] ?? '')]),
+        metric: s?.metric === 'rate' ? 'rate' : 'count',
+        having: Array.isArray(s?.having) && ['>=', '>', '<=', '<', '=='].includes(String(s.having[0]))
+          ? [String(s.having[0]), Number(s.having[1]) || 0] : null,
+      });
+    } else if (op === 'join') {
+      const left = steps.find(x => x.id === String(s?.left));
+      const right = steps.find(x => x.id === String(s?.right));
+      if (!left || !right) continue;
+      steps.push({
+        ...base, op: 'join', left: left.id, right: right.id,
+        label: base.label || 'In both',
+        mode: s?.mode === 'leftOnly' ? 'leftOnly' : 'both',
+      });
+    } else continue;
+    seen.add(id);
+    if (steps.length >= 8) break;
   }
   return {
-    groups,
-    intent: raw?.intent === 'action' ? 'action' : 'question',
+    steps,
+    reading: String(raw?.reading || '').slice(0, 240),
+    intent: ['lookup', 'summary', 'compare', 'action', 'revalidate'].includes(String(raw?.intent)) ? String(raw.intent) : 'lookup',
     act: raw?.act ? String(raw.act).slice(0, 200) : null,
-    reason: String(raw?.reason || '').slice(0, 200),
+    ambiguous: raw?.ambiguous === true,
   };
 }
 
-async function plan({ question, history, cat }) {
-  const prior = history.length
-    ? `\nEARLIER IN THIS CONVERSATION (resolve "them", "their", "those" against it):\n${history.map(h => `${h.role === 'user' ? 'Customer' : 'You'}: ${h.text}`).join('\n')}\n`
-    : '';
-  // generateRaw: this is a classification, not an answer to a person, so the
-  // conduct written for a reader would only get in its way.
+async function askForPlan({ question, history, ctx, cat, insist }) {
   const res = await generateRaw({
-    systemPrompt: `${PLAN_RULES}\n\n${today()}\n\nTHE DATASETS\n${catalogueText(cat)}`,
-    userMessage: `${prior}\nQuestion: ${question}`,
-    maxTokens: 700,
+    systemPrompt: `${PLAN_RULES}\n\n${timeText()}\n\nTHE DATASETS\n${catalogueText(cat)}`
+      + (insist ? '\n\nYOUR LAST ATTEMPT RETURNED NO STEPS. The datasets above are all there is; work out what would have to be true and derive it with select/derive/join. Return no steps only if the subject genuinely does not appear above.' : ''),
+    userMessage: `${historyText(history)}${contextText(ctx)}\nQuestion: ${question}`,
+    maxTokens: 1100,
   });
   let parsed = null;
   try {
@@ -196,83 +248,106 @@ async function plan({ question, history, cat }) {
   return sanitisePlan(parsed, cat);
 }
 
-// ── 2. GATHER ───────────────────────────────────────────────────────────────
-
-function matches(cells, columns, where) {
-  return where.every(([col, op, val]) => {
-    const cell = norm(cells[columns.indexOf(col)]);
-    const v = norm(val);
-    switch (op) {
-      case 'is':         return cell === v;
-      case 'is not':     return cell !== v;
-      case 'contains':   return v ? cell.includes(v) : false;
-      // Narrowing to the people just named: the only way a follow-up like
-      // "what about their fees?" can become a filter over the same set.
-      case 'is any of':  return String(val).split(ANY_SEP).map(x => norm(x)).filter(Boolean).includes(cell);
-      case 'empty':      return cell === '';
-      case 'not empty':  return cell !== '';
-      case 'before':     return cell !== '' && cell < v;
-      case 'after':      return cell !== '' && cell > v;
-      default:           return false;
-    }
-  });
+/** Ask once; if nothing came back, insist before refusing. */
+async function plan(args) {
+  const first = await askForPlan({ ...args, insist: false });
+  if (first.steps.length) return first;
+  const second = await askForPlan({ ...args, insist: true });
+  return second.steps.length ? second : first;
 }
 
-/**
- * One group's rows, with entities resolved.
- *
- * `records` is how many rows matched. `entities` is how many distinct people
- * or things those rows are about. They differ whenever someone appears twice
- * — in two batches, on two days — and the difference is the whole point: a
- * sentence that says "6 students" over 6 rows covering 5 people is wrong, and
- * only code can tell.
- */
-export function resolveGroup(group, columns, rows) {
-  const idx = group.entity ? columns.indexOf(group.entity) : -1;
-  const items = [];
-  const byEntity = new Map();
-  for (const r of rows) {
-    const name = idx >= 0 ? String(r.cells[idx] ?? '').trim() : '';
-    const key = idx >= 0 ? norm(name) : null;
-    const record = { cells: r.cells, source: r.source };
-    if (key) {
-      if (!byEntity.has(key)) byEntity.set(key, { name, records: [] });
-      byEntity.get(key).records.push(record);
-    } else {
-      items.push({ name: '', records: [record] });
-    }
-  }
-  const entities = [...byEntity.values(), ...items];
+// ── EXECUTE ─────────────────────────────────────────────────────────────────
+
+function groupFrom({ step, columns, dataset, items, records, window, coverage }) {
   return {
-    ...group,
-    columns,
-    records: rows.length,
-    entities: entities.length,
-    // One entry per person, carrying every row they appear in: a student in
-    // two batches is one line with two notes, never two students.
-    items: entities.slice(0, EVIDENCE_LIMIT),
+    id: step.id, label: step.label, category: step.category, dataset, columns,
+    entity: step.entity || null, window: window || null, coverage: coverage || null,
+    records, entities: items.length,
+    items: items.slice(0, EVIDENCE_LIMIT),
   };
 }
 
-async function gather(planned, kind) {
-  const groups = [];
-  for (const g of planned.groups) {
-    const d = findDataset(g.dataset);
-    if (!d) continue;
-    const all = await readAllRows(d, kind);
-    const rows = all.rows.slice(0, SCAN_LIMIT).filter(r => matches(r.cells, all.columns, g.where));
-    groups.push(resolveGroup(g, all.columns, rows));
+function asItems(rows, columns, entity) {
+  const idx = entity ? columns.indexOf(entity) : -1;
+  if (idx < 0) return rows.map(r => ({ name: '', records: [r] }));
+  const by = new Map();
+  for (const r of rows) {
+    const name = String(r.cells[idx] ?? '').trim();
+    const k = norm(name) || `#${by.size}`;
+    if (!by.has(k)) by.set(k, { name, records: [] });
+    by.get(k).records.push(r);
   }
-  return groups;
+  return [...by.values()];
 }
 
-/**
- * The people who appear in more than one group.
- *
- * "6 haven't confirmed and 7 are overdue" is 13 issues, and it is NOT 13
- * students — some of them are the same person twice, and telling a customer to
- * chase 13 people when there are 9 is a bill they did not owe.
- */
+async function execute(planned, kind, now = new Date()) {
+  const groups = [];
+  const byId = new Map();
+
+  for (const step of planned.steps) {
+    if (step.op === 'select') {
+      const d = findDataset(step.dataset);
+      if (!d) continue;
+      const all = await readAllRows(d, kind);
+      const dateIdx = all.columns.findIndex(c => DATEISH.test(c));
+      const range = step.window ? windowRange(step.window, now) : null;
+      const scanned = all.rows.slice(0, SCAN_LIMIT);
+      const rows = scanned.filter(r =>
+        matchesAll(r.cells, all.columns, step.where) && (!range || inWindow(r.cells[dateIdx], range, now)));
+      const items = asItems(rows, all.columns, step.entity);
+      const g = groupFrom({
+        step, columns: all.columns, dataset: d.name, items, records: rows.length,
+        window: range ? range.label : null,
+        coverage: range ? dateCoverage(scanned, dateIdx, now) : null,
+      });
+      byId.set(step.id, { group: g, columns: all.columns, rows, dataset: d.name });
+      groups.push(g);
+    } else if (step.op === 'derive') {
+      const src = byId.get(step.from);
+      if (!src) continue;
+      const found = deriveByEntity(src.rows, src.columns, {
+        entity: step.entity || src.group.entity,
+        where: step.where, metric: step.metric, having: step.having,
+      });
+      const items = found.map(f => ({ name: f.name, records: f.records, value: f.value }));
+      const g = groupFrom({
+        step, columns: src.columns, dataset: src.dataset, items,
+        records: items.reduce((n, i) => n + i.records.length, 0),
+        window: src.group.window, coverage: src.group.coverage,
+      });
+      // A derivation is a rule, and the reader is owed it.
+      g.rule = step.having ? `${step.metric === 'rate' ? 'share' : 'count'} ${step.having[0]} ${step.having[1]}` : '';
+      byId.set(step.id, { group: g, columns: src.columns, rows: src.rows, dataset: src.dataset });
+      groups.push(g);
+    } else if (step.op === 'join') {
+      const l = byId.get(step.left);
+      const r = byId.get(step.right);
+      if (!l || !r) continue;
+      const items = joinOnEntity(l.group.items, r.group.items, step.mode);
+      const g = groupFrom({
+        step, columns: l.columns, dataset: `${l.dataset} + ${r.dataset}`, items,
+        records: items.reduce((n, i) => n + i.records.length, 0),
+        window: l.group.window || r.group.window,
+      });
+      byId.set(step.id, { group: g, columns: l.columns, rows: l.rows, dataset: g.dataset });
+      groups.push(g);
+    }
+  }
+
+  // A join's whole point is the people in both, and a derivation's is the ones
+  // that passed: their inputs are working, not the answer, so they stop being
+  // groups of their own.
+  const consumed = new Set();
+  for (const s of planned.steps) {
+    if (s.op === 'join') { consumed.add(s.left); consumed.add(s.right); }
+    if (s.op === 'derive') consumed.add(s.from);
+  }
+  const shown = groups.filter(g => !consumed.has(g.id));
+  return { groups: shown.length ? shown : groups, all: groups };
+}
+
+// ── The people across all of it ─────────────────────────────────────────────
+
 export function overlap(groups) {
   const seen = new Map();
   for (const g of groups) {
@@ -291,60 +366,66 @@ export function overlap(groups) {
   };
 }
 
-// ── 3. SAY ──────────────────────────────────────────────────────────────────
+// ── ANSWER ──────────────────────────────────────────────────────────────────
 
 function factsText(groups, cross) {
   if (!groups.length) return 'Nothing in the connected data matches this question.';
   const lines = groups.map(g =>
-    `- ${g.label} (${CATEGORIES[g.category].label || g.category}): ${g.records} records, ${g.entities} distinct ${g.entity ? g.entity : 'rows'}`
+    `- ${g.label}${g.window ? ` (${g.window})` : ''}: ${g.records} records, ${g.entities} distinct`
+    + (g.rule ? `, kept where ${g.rule}` : '')
     + (g.items.length ? `\n  ${g.items.slice(0, SAMPLE_FOR_MODEL).map(i => i.name || i.records[0].cells.slice(0, 3).join(' · ')).join('; ')}` : ''));
   if (cross.both.length) {
-    lines.push(`- ${cross.both.length} of them appear in more than one of the groups above: ${cross.both.slice(0, 10).map(p => p.name).join(', ')}`);
+    lines.push(`- in more than one of the above: ${cross.both.length} (${cross.both.slice(0, 10).map(p => p.name).join(', ')})`);
     lines.push(`- across all groups: ${cross.issues} records, ${cross.people} distinct people`);
   }
   return lines.join('\n');
 }
 
 const SAY_RULES = [
-  'Write the answer to the question. One sentence first, then at most two more if they add',
-  'something. The records themselves are listed under your sentence by the application, so do',
-  'not list them again.',
+  'Write the answer. One sentence first, then at most two more if they add something. The',
+  'records are listed under your sentence by the application, so do not list them again.',
   '',
-  'THE NUMBERS ARE GIVEN TO YOU. Use only figures that appear in the facts below. Do not add,',
-  'total or estimate — if you want a number that is not there, do not use one.',
+  'THE NUMBERS ARE GIVEN TO YOU. Use only figures from the facts. Never add, total or estimate.',
   '',
-  'Keep categories apart. If the facts have absences and things needing review, they are',
-  'different and the sentence must not merge them into one count.',
+  'If a figure was DERIVED rather than read — "kept where count >= 2" — say the rule in plain',
+  'words once ("missed two or more sessions"), because the customer cannot see it otherwise.',
   '',
-  'If the facts are empty, say plainly that the connected data does not answer this, name what',
-  'is missing, and stop.',
+  'Keep categories apart. Absences and records needing review are different and must not be',
+  'merged into one count.',
+  '',
+  'If the facts are empty, say plainly what the data does not carry, and what would answer it.',
 ].join('\n');
 
-async function say({ question, groups, cross, notes, appName }) {
+const SUMMARY_RULES = [
+  '',
+  'THIS IS A BROAD QUESTION: the customer wants what matters, not everything there is.',
+  'Open with one sentence saying how much needs attention and across how many people. Then name',
+  'each thing in order of urgency, one short line each with its number. Do not list people — the',
+  'application lists them under you. No sign-off, no offer of further help.',
+].join('\n');
+
+async function say({ question, groups, cross, planned, issues }) {
   const res = await generate({
-    systemPrompt: SAY_RULES,
-    userMessage: `Question: ${question}\n\nFACTS (the only numbers you may use)\n${factsText(groups, cross)}`
-      + (notes.length ? `\n\nLIMITS\n${notes.join('\n')}` : ''),
-    maxTokens: 320,
+    systemPrompt: SAY_RULES + (planned.intent === 'summary' ? SUMMARY_RULES : ''),
+    userMessage: `Question: ${question}\n`
+      + (planned.reading ? `You read this as: ${planned.reading}\n` : '')
+      + `\nFACTS (the only numbers you may use)\n${factsText(groups, cross)}`
+      + (issues.length ? `\n\nWORTH SAYING\n${issues.join('\n')}` : ''),
+    maxTokens: 400,
   });
   return String(res?.text || '').trim();
 }
 
-// ── 4. CHECK ────────────────────────────────────────────────────────────────
-
-/** Every integer a sentence may contain: the ones code computed. */
 export function allowedNumbers(groups, cross) {
   const ok = new Set([0, 1]);
-  for (const g of groups) { ok.add(g.records); ok.add(g.entities); }
+  for (const g of groups) {
+    ok.add(g.records); ok.add(g.entities);
+    if (g.rule) { const n = Number(String(g.rule).split(' ').pop()); if (!Number.isNaN(n)) ok.add(n); }
+  }
   ok.add(cross.issues); ok.add(cross.people); ok.add(cross.both.length);
   return ok;
 }
 
-/**
- * A number in the prose that code cannot explain is a number the model made
- * up, and the customer has no way to tell. Years and money are left alone —
- * they come from the records, not from counting.
- */
 export function unsupportedNumbers(text, allowed) {
   const bad = [];
   for (const m of String(text).matchAll(/(?<![\w₹$£€.,])(\d{1,4})(?![\w.,%])/g)) {
@@ -355,13 +436,9 @@ export function unsupportedNumbers(text, allowed) {
   return [...new Set(bad)];
 }
 
-/** What to say when the model's sentence cannot be trusted: the facts, plainly. */
 export function composeAnswer(groups, cross) {
   if (!groups.length) return 'I cannot answer that from the connected data.';
-  const parts = groups.map(g => {
-    const what = g.entity ? `${g.entities} ${g.entities === 1 ? 'record' : 'records'}` : `${g.records} rows`;
-    return `${g.label}: ${g.entity ? g.entities : g.records}`;
-  });
+  const parts = groups.map(g => `${g.label}: ${g.entity ? g.entities : g.records}`);
   const head = groups.length === 1
     ? `${groups[0].entity ? groups[0].entities : groups[0].records} in ${groups[0].label.toLowerCase()}.`
     : `${parts.join('; ')}.`;
@@ -372,22 +449,20 @@ export function composeAnswer(groups, cross) {
 
 // ── The envelope ────────────────────────────────────────────────────────────
 
-/** What the page draws. Nothing here is prose the renderer has to parse. */
-function envelope({ answer, groups, cross, notes, planned, kind, checked }) {
+function envelope({ answer, groups, cross, notes, planned, kind, checked, state, issues }) {
+  const people = [];
+  for (const g of groups) for (const it of g.items) if (it.name && !people.includes(it.name)) people.push(it.name);
   return {
     answer,
+    state,
+    reading: planned.reading || '',
     groups: groups.map(g => ({
-      label: g.label,
-      category: g.category,
-      categoryLabel: CATEGORIES[g.category].label,
-      tone: CATEGORIES[g.category].tone,
-      records: g.records,
-      entities: g.entities,
-      dataset: g.dataset,
-      columns: g.columns,
+      label: g.label, category: g.category,
+      categoryLabel: CATEGORIES[g.category].label, tone: CATEGORIES[g.category].tone,
+      records: g.records, entities: g.entities, dataset: g.dataset, columns: g.columns,
+      window: g.window || '', rule: g.rule || '', note: g.note || '',
       items: g.items.map(i => ({
         name: i.name,
-        // A person in two batches: one entry, one line per row they are in.
         lines: i.records.slice(0, 6).map(r => r.cells),
         records: i.records.length,
         source: i.records[0]?.source || '',
@@ -396,91 +471,97 @@ function envelope({ answer, groups, cross, notes, planned, kind, checked }) {
     overlap: cross.both.length ? { people: cross.people, issues: cross.issues, both: cross.both.slice(0, 12) } : null,
     sources: groups.map(g => ({ dataset: g.dataset, records: g.records })),
     simulated: kind === 'sample',
-    notes,
+    notes: [...notes, ...issues],
     intent: planned.intent,
     act: planned.act,
     checked,
+    // What a follow-up needs so "them" and "those" mean something.
+    context: { entities: people.slice(0, 60), window: groups.find(g => g.window)?.window || '', intent: planned.intent },
   };
 }
+
+const EMPTY_CROSS = { people: 0, both: [], issues: 0 };
+const BLANK_PLAN = { steps: [], reading: '', intent: 'lookup', act: null, ambiguous: false };
+
+/** "Are you sure?" — a challenge to the last answer, not a new question. */
+const CHALLENGE = /^\s*(are you sure|really\??|is that right|are you certain|you sure|how do you know)\b/i;
 
 /**
  * The answer to one question.
  *
- * `history` is the turns before this one, so "what about their fees?" resolves
- * against the students just named rather than asking the customer to say them
- * again.
+ * `history` is the turns before it and `ctx` what the last answer found, so a
+ * follow-up narrows rather than starting again.
  */
-export async function answer({ question, history = [], kind = 'own', appName = '' }) {
+export async function answer({ question, history = [], ctx = null, kind = 'own' } = {}) {
   const notes = [];
   const q = String(question || '').trim();
-  if (!q) return envelope({ answer: '', groups: [], cross: { people: 0, both: [], issues: 0 }, notes, planned: { intent: 'question', act: null }, kind, checked: true });
+  if (!q) {
+    return envelope({ answer: '', groups: [], cross: EMPTY_CROSS, notes, planned: BLANK_PLAN, kind, checked: true, state: 'unknown', issues: [] });
+  }
 
-  /*
-   * The customer's records if there are any, the simulated ones if not.
-   *
-   * An application goes live with the rows it was built on and no rows of its
-   * own, and in that state every question was being answered "there are no
-   * records connected to this application yet" — while the application sat on
-   * a full set of simulated ones and the Data page listed them. That reads as
-   * broken, not as careful. So it answers from what it has and says which it
-   * used; the page carries that as a standing mark rather than a sentence
-   * repeated on every reply.
-   */
+  // The customer's records if there are any, the simulated ones if not.
   let used = kind;
   let cat = await catalogue(used);
   const bare = (c) => !c.length || c.every(d => d.rows === 0);
   if (bare(cat) && kind === 'own') {
     const simulated = await catalogue('sample');
-    if (!bare(simulated)) {
-      used = 'sample';
-      cat = simulated;
-      // Deliberately NOT a note: notes are given to the model and come back
-      // restated in the answer. The envelope flag simulated carries this instead,
-      // and the page shows it once, standing, beside the application's name.
-    }
+    if (!bare(simulated)) { used = 'sample'; cat = simulated; }
   }
   if (bare(cat)) {
-    notes.push('No records have been connected yet.');
     return envelope({
       answer: 'There are no records connected to this application yet, so I cannot answer from data. Connect a source on the Data page and ask again.',
-      groups: [], cross: { people: 0, both: [], issues: 0 }, notes,
-      planned: { intent: 'question', act: null }, kind: used, checked: true,
+      groups: [], cross: EMPTY_CROSS, notes: ['No records have been connected yet.'],
+      planned: BLANK_PLAN, kind: used, checked: true, state: 'unknown', issues: [],
     });
   }
 
-  const planned = await plan({ question: q, history: history.slice(-6), cat });
-  const groups = await gather(planned, used);
+  /*
+   * Being challenged is not being asked again.
+   *
+   * "Are you sure?" about a list of absences is a request to re-examine THAT
+   * list, so the previous question is re-run and the answer says what it rests
+   * on. Read as a fresh question it produced "I cannot tell that from the
+   * connected data", which reads as the application caving.
+   */
+  const lastQuestion = [...history].reverse().find(h => h.role === 'user')?.text || '';
+  const challenged = CHALLENGE.test(q) && !!lastQuestion;
+  const asked = challenged ? lastQuestion : q;
+
+  const planned = await plan({ question: asked, history: history.slice(-8), ctx, cat });
+  const { groups } = await execute(planned, used);
   const cross = overlap(groups);
+  const { state, issues } = validate({ groups, plan: planned });
 
   if (!groups.length) {
-    notes.push(planned.reason || 'Nothing in the connected data matches this question.');
+    const why = planned.reading || 'Nothing in the connected data carries that.';
     return envelope({
-      answer: `I cannot tell that from the connected data. ${planned.reason || ''}`.trim(),
-      groups: [], cross, notes, planned, kind: used, checked: true,
+      answer: state === 'unknown'
+        ? `I don't have that in the connected data. ${why}`.trim()
+        : `I can't answer that from what is connected. ${why}`.trim(),
+      groups: [], cross, notes, planned, kind: used, checked: true, state, issues,
     });
   }
 
-  // A group the plan asked for that matched nothing is worth saying: it is the
-  // difference between "nobody is overdue" and "we hold nothing about fees".
   for (const g of groups) {
-    if (g.records === 0) notes.push(`No rows in ${g.dataset} matched ${g.label.toLowerCase()}.`);
+    if (g.records === 0) notes.push(`Nothing in ${g.dataset} matched ${g.label.toLowerCase()}${g.window ? ` for ${g.window}` : ''}.`);
   }
 
-  let text = await say({ question: q, groups, cross, notes, appName });
+  let text = await say({ question: asked, groups, cross, planned, issues });
+  if (challenged) {
+    const basis = groups.map(g => `${g.records} from ${g.dataset}`).join(' and ');
+    text = `Yes. That rests on ${basis}. ${text}`;
+  }
+
   const allowed = allowedNumbers(groups, cross);
   let checked = true;
-  const bad = unsupportedNumbers(text, allowed);
-  if (bad.length) {
-    // Once more, told exactly which figure was not ours. If it happens again
-    // the sentence is built from the facts instead: a plain answer beats a
-    // confident wrong one.
+  if (unsupportedNumbers(text, allowed).length) {
     const retry = await say({
-      question: `${q}\n\n(Your previous answer used ${bad.join(', ')}, which is not in the facts. Use only the numbers given.)`,
-      groups, cross, notes, appName,
+      question: `${asked}\n\n(Your previous answer used a number that is not in the facts. Use only the numbers given.)`,
+      groups, cross, planned, issues,
     });
     if (unsupportedNumbers(retry, allowed).length) { text = composeAnswer(groups, cross); checked = false; }
     else text = retry;
   }
 
-  return envelope({ answer: text, groups, cross, notes, planned, kind: used, checked });
+  return envelope({ answer: text, groups, cross, notes, planned, kind: used, checked, state, issues });
 }

@@ -27,6 +27,10 @@
   // against what was just said. It stays here; the server is told only what
   // it needs to read the next question.
   var history = [];
+  // What the last answer found: the people it named and the period it covered.
+  // Sent back with the next question so a follow-up narrows that set instead
+  // of starting again from the whole dataset.
+  var context = null;
   var busy = false;
 
   function esc(t) {
@@ -120,7 +124,10 @@
       // says it, one of them is noise.
       + (g.categoryLabel && g.categoryLabel.toLowerCase() !== String(g.label).toLowerCase()
           ? '<span class="ch-tag ch-tag--' + esc(g.tone) + '">' + esc(g.categoryLabel) + '</span>' : '')
+      + (g.window ? '<span class="ch-group__when">' + esc(g.window) + '</span>' : '')
       + '<span class="ch-group__count">' + esc(count) + '</span></p>'
+      // A derived group is not a column anyone can look up: say the rule.
+      + (g.rule ? '<p class="ch-group__rule">Worked out from the records: ' + esc(g.rule) + '</p>' : '')
       + '<ul class="ch-items">' + items + '</ul>'
       + '</section>';
   }
@@ -188,6 +195,10 @@
     // overlap as a fact and often uses it, and hearing it twice reads as a bug.
     var saidOverlap = d.overlap && String(d.answer || '').indexOf(String(d.overlap.people)) !== -1
       && String(d.answer || '').indexOf(String(d.overlap.issues)) !== -1;
+    // Only when it had to choose a reading: saying it every time is noise.
+    if (d.reading && (d.state === 'ambiguous' || d.state === 'derivable')) {
+      html += '<p class="ch-reading">Read as: ' + esc(d.reading) + '</p>';
+    }
     if (d.overlap && !saidOverlap) {
       html += '<p class="ch-overlap">' + (d.overlap.both.length === 1
         ? 'One of these is in more than one group'
@@ -266,7 +277,7 @@
       var r = await fetch(API + '/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ message: text, history: history.slice(-6), kind: kind }),
+        body: JSON.stringify({ message: text, history: history.slice(-8), context: context, kind: kind }),
       });
       d = r.ok ? await r.json() : null;
       if (!r.ok) {
@@ -282,6 +293,7 @@
     }
     work.stop();
     answerNode(d);
+    context = d.context || null;
     history.push({ role: 'assistant', text: d.answer || '' });
     if (history.length > 12) history = history.slice(-12);
   }

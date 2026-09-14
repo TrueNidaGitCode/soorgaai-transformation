@@ -201,6 +201,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'routes/authRoutes.js':             { template: 'routes/authRoutes.js' },
     'middleware/authMiddleware.js':     { repo: 'middleware/authMiddleware.js' },
     'services/assistant.js':            { template: 'services/assistant.js' },
+    'services/reasoning.js':            { template: 'services/reasoning.js' },
     'services/answerService.js':        { template: 'services/answerService.js' },
     'controllers/chatController.js':    { template: 'controllers/chatController.js' },
     'routes/chatRoutes.js':             { template: 'routes/chatRoutes.js' },

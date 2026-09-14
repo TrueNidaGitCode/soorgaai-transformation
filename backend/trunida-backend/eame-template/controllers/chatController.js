@@ -1,19 +1,22 @@
 /**
  * The chat, as the application answers it.
  *
- * Thin on purpose: services/answerService.js is the pipeline — which records
- * matter, how many there are, whether two rows are the same person, and
- * whether the sentence written about them is supported. This turns a request
- * into that call and an error into a sentence.
+ * Thin on purpose: services/answerService.js is the reasoning — which records
+ * matter, what has to be computed, whether two rows are one person, and
+ * whether the sentence written about them holds up.
  *
- * `history` is the turns before this one, sent by the page, so a follow-up
- * resolves against what was just said instead of asking the customer to
- * repeat themselves. It is capped here rather than trusted: the page is the
- * customer's and could send anything.
+ * ── A failure is still an answer ──────────────────────────────────────────
+ *
+ * This never returns 500. A model that times out, a provider out of credit, a
+ * dataset that cannot be read — none of that is the customer's problem to
+ * decode, and a red error in a conversation reads as the application being
+ * broken rather than one request being unlucky. Every path returns the same
+ * envelope with a state of its own, so the page draws it like any other turn
+ * and the person can simply ask again.
  */
 import { answer } from '../services/answerService.js';
 
-const MAX_TURNS = 6;
+const MAX_TURNS = 8;
 const MAX_TEXT = 2000;
 
 function cleanHistory(raw) {
@@ -24,27 +27,53 @@ function cleanHistory(raw) {
     .map(t => ({ role: t.role === 'assistant' ? 'assistant' : 'user', text: String(t.text).slice(0, MAX_TEXT) }));
 }
 
+/** What the last answer found, as the page hands it back. Trusted only in shape. */
+function cleanContext(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const entities = Array.isArray(raw.entities)
+    ? raw.entities.filter(e => typeof e === 'string' && e.trim()).slice(0, 60).map(e => e.slice(0, 120))
+    : [];
+  if (!entities.length && !raw.window) return null;
+  return { entities, window: String(raw.window || '').slice(0, 40), intent: String(raw.intent || '').slice(0, 20) };
+}
+
+/** The shape the page draws, whatever happened. */
+function fallback(answerText, state) {
+  return {
+    answer: answerText, state, reading: '', groups: [], overlap: null, sources: [],
+    simulated: false, notes: [], intent: 'lookup', act: null, checked: true,
+    context: { entities: [], window: '', intent: 'lookup' },
+  };
+}
+
 export async function ask(req, res) {
   const question = String(req.body?.message || '').slice(0, MAX_TEXT).trim();
-  if (!question) return res.status(400).json({ error: 'Ask a question.' });
+  if (!question) return res.json(fallback('Ask me something about your records and I will answer from them.', 'unknown'));
 
   // 'sample' answers from the simulated rows the application was built with,
-  // 'own' from the customer's. The page says which it is showing; the two are
-  // never mixed, because a number drawn from both is true of neither.
+  // 'own' from the customer's. The two are never mixed, because a number drawn
+  // from both is true of neither.
   const kind = req.body?.kind === 'sample' ? 'sample' : 'own';
 
   try {
     const out = await answer({
       question,
       history: cleanHistory(req.body?.history),
+      ctx: cleanContext(req.body?.context),
       kind,
-      appName: process.env.APP_NAME || '',
     });
-    // turnMiddleware in server.js records the turn from the response; the
+    // turnMiddleware in server.js records the turn from this response; the
     // conversation stays here and only the fact that one happened is a signal.
     return res.json(out);
   } catch (err) {
     console.error('[chat] failed —', err);
-    return res.status(500).json({ error: 'I could not put that answer together. Try again in a moment.' });
+    // Said the way a colleague would say it, and never as a 500.
+    const provider = /credit|quota|rate limit|429|balance/i.test(String(err?.message || ''));
+    return res.json(fallback(
+      provider
+        ? 'I could not reach the service that writes the answer — it has run out of capacity for now. Your records are untouched; try again shortly.'
+        : 'Something went wrong putting that answer together, so I would rather say so than guess. Try asking again.',
+      'unknown',
+    ));
   }
 }

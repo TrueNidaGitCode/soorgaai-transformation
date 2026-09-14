@@ -50,6 +50,7 @@ export const FIXED_PATHS = [
   // rows are the same person, and whether the sentence written about them is
   // supported by any of it. Fixed, because a count cannot be enforced in a
   // prompt and every application should answer to the same standard.
+  'services/reasoning.js',
   'services/answerService.js',
   'controllers/chatController.js',
   'routes/chatRoutes.js',

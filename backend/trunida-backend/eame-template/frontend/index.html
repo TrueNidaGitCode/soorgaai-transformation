@@ -920,7 +920,21 @@
       try { return localStorage.getItem('ownerToken') || localStorage.getItem('token') || ''; } catch (e) { return ''; }
     }
     function escText(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-    function letThrough() { passThrough = true; if (chatForm.requestSubmit) chatForm.requestSubmit(); else chatForm.dispatchEvent(new Event('submit', { cancelable: true })); }
+    /*
+     * Whether this sentence is this card's to handle, published for answer.js.
+     * Both listen for the same submit, and only one of them may act: a record
+     * being written is not a question being asked. Without this the answer
+     * layer, which listens first, would answer "add Priya to U14" instead of
+     * offering to write it down.
+     */
+    window.chIsRecord = function (text) { return !!(writerToken() && RECORDISH.test(String(text || ''))); };
+    function letThrough() {
+      passThrough = true;
+      // answer.js reads this: the sentence was looked at as a record, is not
+      // one, and the second submit is a question like any other.
+      chatForm.dataset.chPass = '1';
+      if (chatForm.requestSubmit) chatForm.requestSubmit(); else chatForm.dispatchEvent(new Event('submit', { cancelable: true }));
+    }
     function card(html) {
       // The opening prompt gives way to the conversation, as it does for an answer.
       var w = chatLog.querySelector('.ch-welcome'); if (w) w.remove();
@@ -1005,6 +1019,11 @@
        about the module's requests (which capability answered). Plain script,
        before app.js, so its fetch wrapper is in place when the module runs. -->
   <script src="feedback.js"></script>
+  <!-- The conversation: the shell answers through /api/chat, where the counting
+       and the grouping happen in code. Loaded BEFORE app.js so its capture-phase
+       submit listener runs first; the generated app.js keeps whatever else it
+       draws and never sees the question. -->
+  <script src="answer.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

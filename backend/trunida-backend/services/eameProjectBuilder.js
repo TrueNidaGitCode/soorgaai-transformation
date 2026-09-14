@@ -201,6 +201,10 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'routes/authRoutes.js':             { template: 'routes/authRoutes.js' },
     'middleware/authMiddleware.js':     { repo: 'middleware/authMiddleware.js' },
     'services/assistant.js':            { template: 'services/assistant.js' },
+    'services/answerService.js':        { template: 'services/answerService.js' },
+    'controllers/chatController.js':    { template: 'controllers/chatController.js' },
+    'routes/chatRoutes.js':             { template: 'routes/chatRoutes.js' },
+    'frontend/answer.js':               { template: 'frontend/answer.js' },
     // Svarg's provider module, copied in under its own name; the wrapper
     // above it is the template's.
     'services/llmCore.js':              { repo: 'services/llmService.js' },

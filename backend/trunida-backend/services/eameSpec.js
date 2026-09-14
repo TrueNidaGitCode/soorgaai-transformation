@@ -46,6 +46,14 @@ export const FIXED_PATHS = [
   'services/assistant.js',
   'services/llmCore.js',
   'services/llmService.js',
+  // The answer itself: which records matter, how many there are, whether two
+  // rows are the same person, and whether the sentence written about them is
+  // supported by any of it. Fixed, because a count cannot be enforced in a
+  // prompt and every application should answer to the same standard.
+  'services/answerService.js',
+  'controllers/chatController.js',
+  'routes/chatRoutes.js',
+  'frontend/answer.js',
   'services/modelSelectionService.js',
   'config/modelCatalog.js',
   'frontend/index.html',

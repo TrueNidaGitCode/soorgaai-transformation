@@ -301,11 +301,15 @@ async function plan(args) {
 
 // ── EXECUTE ─────────────────────────────────────────────────────────────────
 
-function groupFrom({ step, columns, dataset, items, records, window, coverage }) {
+function groupFrom({ step, columns, dataset, items, records, window, coverage, opaque }) {
   return {
     id: step.id, label: step.label, category: step.category, dataset, columns,
     entity: step.entity || null, window: window || null, coverage: coverage || null,
     records, entities: items.length,
+    // Whether these "names" are identifiers nothing could resolve to a person.
+    // Destructured explicitly like everything else here, which is why it was
+    // silently dropped the first time and SES-2609021 kept reaching the page.
+    opaque: !!opaque,
     items: items.slice(0, EVIDENCE_LIMIT),
   };
 }
@@ -401,17 +405,27 @@ async function identityMap(values, kind) {
   return new Map();
 }
 
-/** Show the person, keep the identifier. Counts never see this. */
+/**
+ * Show the person, keep the identifier. Counts never see this.
+ *
+ * Returns opaque when the values are identifiers that nothing in the
+ * application maps to a person — SES-2609021 is a session, not somebody, and
+ * listing three of them as though they were people makes an answer worse. The
+ * group still carries its rows and its count; it just stops pretending the
+ * identifiers are names.
+ */
 async function nameTheItems(items, kind) {
   const values = items.map(i => i.name).filter(Boolean);
-  if (!looksLikeIds(values)) return items;
+  if (!looksLikeIds(values)) return { items, opaque: false };
   const map = await identityMap(values, kind);
-  if (!map.size) return items;
+  if (!map.size) return { items, opaque: true };
+  let resolved = 0;
   for (const it of items) {
     const who = map.get(norm(it.name));
-    if (who) { it.id = it.name; it.name = who; }
+    if (who) { it.id = it.name; it.name = who; resolved++; }
   }
-  return items;
+  // A map that named almost none of them is not a map for these.
+  return { items, opaque: resolved < Math.ceil(items.length / 2) };
 }
 
 function asItems(rows, columns, entity) {
@@ -441,9 +455,10 @@ async function execute(planned, kind, now = new Date()) {
       const scanned = all.rows.slice(0, SCAN_LIMIT);
       const rows = scanned.filter(r =>
         matchesAll(r.cells, all.columns, step.where) && (!range || inWindow(r.cells[dateIdx], range, now)));
-      const items = await nameTheItems(asItems(rows, all.columns, step.entity), kind);
+      const named = await nameTheItems(asItems(rows, all.columns, step.entity), kind);
+      const items = named.items;
       const g = groupFrom({
-        step, columns: all.columns, dataset: d.name, items, records: rows.length,
+        step, columns: all.columns, dataset: d.name, items, opaque: named.opaque, records: rows.length,
         window: range ? range.label : null,
         coverage: range ? dateCoverage(scanned, dateIdx, now) : null,
       });
@@ -456,9 +471,10 @@ async function execute(planned, kind, now = new Date()) {
         entity: step.entity || src.group.entity,
         where: step.where, metric: step.metric, having: step.having,
       });
-      const items = await nameTheItems(found.map(f => ({ name: f.name, records: f.records, value: f.value })), kind);
+      const named = await nameTheItems(found.map(f => ({ name: f.name, records: f.records, value: f.value })), kind);
+      const items = named.items;
       const g = groupFrom({
-        step, columns: src.columns, dataset: src.dataset, items,
+        step, columns: src.columns, dataset: src.dataset, items, opaque: named.opaque,
         records: items.reduce((n, i) => n + i.records.length, 0),
         window: src.group.window, coverage: src.group.coverage,
       });
@@ -473,6 +489,9 @@ async function execute(planned, kind, now = new Date()) {
       const items = joinOnEntity(l.group.items, r.group.items, step.mode);
       const g = groupFrom({
         step, columns: l.columns, dataset: `${l.dataset} + ${r.dataset}`, items,
+        // The join carries whatever the sides carried: matching two lists of
+        // identifiers yields a list of identifiers.
+        opaque: l.group.opaque || r.group.opaque,
         records: items.reduce((n, i) => n + i.records.length, 0),
         window: l.group.window || r.group.window,
       });
@@ -520,7 +539,11 @@ function factsText(groups, cross) {
   const lines = groups.map(g =>
     `- ${g.label}${g.window ? ` (${g.window})` : ''}: ${g.records} records, ${g.entities} distinct`
     + (g.rule ? `, kept where ${g.rule}` : '')
-    + (g.items.length ? `\n  ${g.items.slice(0, SAMPLE_FOR_MODEL).map(i => i.name || i.records[0].cells.slice(0, 3).join(' · ')).join('; ')}` : ''));
+    // An opaque group's "names" are identifiers nothing could resolve. Giving
+    // them to the writer only invites it to print SES-2609021 at a coach.
+    + (g.items.length && !g.opaque
+      ? `\n  ${g.items.slice(0, SAMPLE_FOR_MODEL).map(i => i.name || i.records[0].cells.slice(0, 3).join(' · ')).join('; ')}`
+      : ''));
   if (cross.both.length) {
     lines.push(`- in more than one of the above: ${cross.both.length} (${cross.both.slice(0, 10).map(p => p.name).join(', ')})`);
     lines.push(`- across all groups: ${cross.issues} records, ${cross.people} distinct people`);
@@ -601,9 +624,23 @@ const SHAPE_RULES = {
   default: '',
 };
 
+/*
+ * How much room the answer needs, by what was asked.
+ *
+ * A lookup is a sentence. A broad question is a judgement, a line per thing
+ * that is wrong, and the people in each — and at 700 tokens it stopped
+ * mid-word: "...but 3 scheduled sessions need notifications sent and 6
+ * students have overdue fees.\n\n3 sessions are". A cut sentence reads as
+ * the application breaking, which is worse than the terse answer it replaced.
+ *
+ * Unused room costs nothing: output is billed as produced, not as budgeted.
+ */
+const ROOM = { assessment: 1400, names: 900, count: 500, default: 700 };
+
 async function say({ question, groups, cross, planned, issues }) {
+  const shape = answerShape(question, planned.intent);
   const res = await generate({
-    systemPrompt: SAY_RULES + (SHAPE_RULES[answerShape(question, planned.intent)] || ''),
+    systemPrompt: SAY_RULES + (SHAPE_RULES[shape] || ''),
     userMessage: `Question: ${question}\n`
       + (planned.reading ? `You read this as: ${planned.reading}\n` : '')
       + `\nFACTS (the only numbers you may use)\n${factsText(groups, cross)}`
@@ -618,7 +655,7 @@ async function say({ question, groups, cross, planned, issues }) {
      * terse answer it replaced. Thinking is off, so this budget buys only
      * visible text.
      */
-    maxTokens: 700,
+    maxTokens: ROOM[shape] || ROOM.default,
     // Sentences from facts already computed. No reasoning required, and it is
     // charged for whether it helps or not.
     thinking: false,
@@ -688,7 +725,7 @@ export function composeAnswer(groups, cross) {
   const one = (g) => {
     const n = count(g);
     if (n === 0) return `Nothing matched ${midSentence(g.label)}.`;
-    const who = nameList(g.items);
+    const who = g.opaque ? '' : nameList(g.items);
     const label = midSentence(g.label);
     // Names when there are names; the count carries it when there are not.
     return who
@@ -721,6 +758,7 @@ function envelope({ answer, groups, cross, notes, planned, kind, checked, state,
       label: g.label, category: g.category,
       categoryLabel: CATEGORIES[g.category].label, tone: CATEGORIES[g.category].tone,
       records: g.records, entities: g.entities, dataset: g.dataset, columns: g.columns,
+      opaque: !!g.opaque,
       window: g.window || '', rule: g.rule || '', note: g.note || '',
       items: g.items.map(i => ({
         name: i.name,
@@ -856,6 +894,19 @@ export async function answer({ question, history = [], ctx = null, kind = 'own',
   if (challenged) {
     const basis = groups.map(g => `${g.records} from ${g.dataset}`).join(' and ');
     text = `Yes. That rests on ${basis}. ${text}`;
+  }
+
+  /*
+   * A sentence that stops mid-word is not an answer.
+   *
+   * Running out of budget leaves the last sentence unfinished, and a customer
+   * reading "...and 6 students have overdue fees. 3 sessions are" sees the
+   * application break. The composed sentence is plainer and complete, and
+   * complete is the part that matters.
+   */
+  if (text && !/[.!?:]["')\]]?$/.test(text.trim())) {
+    notes.push('The written answer was cut short, so this is the summary built from the records.');
+    text = composeAnswer(groups, cross);
   }
 
   const allowed = allowedNumbers(groups, cross);

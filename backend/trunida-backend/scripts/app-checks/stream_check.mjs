@@ -168,13 +168,20 @@ while (true) {
     if (name === 'stage') console.log(`  ${at().padStart(6)}  stage: ${data.stage}`);
     if (name === 'evidence') {
       evidenceAt = Date.now() - t0;
-      const people = (data.groups || []).flatMap(g => (g.items || []).map(i => i.name)).filter(Boolean);
+      // Skip opaque groups: their "names" are identifiers nothing resolved to
+      // a person, and counting SES-2609021 as somebody named is the bug this
+      // probe exists to catch.
+      const people = (data.groups || [])
+        .filter(g => !g.opaque)
+        .flatMap(g => (g.items || []).map(i => i.name))
+        .filter(Boolean);
       console.log(`  ${at().padStart(6)}  EVIDENCE — ${(data.groups || []).length} group(s), ${people.length} named`);
       if (people.length) console.log(`            ${people.slice(0, 6).join(', ')}${people.length > 6 ? ` and ${people.length - 6} more` : ''}`);
     }
     if (name === 'done') {
       doneAt = Date.now() - t0;
-      console.log(`  ${at().padStart(6)}  DONE — "${String(data.answer || '').slice(0, 90)}"`);
+      console.log(`  ${at().padStart(6)}  DONE`);
+      for (const line of String(data.answer || '').split('\n')) console.log('            ' + line);
     }
   }
 }

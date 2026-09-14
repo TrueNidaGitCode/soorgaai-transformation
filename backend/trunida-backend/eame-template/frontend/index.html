@@ -747,9 +747,14 @@
           // cleared otherwise, so importing your own records takes the notice
           // away rather than leaving it contradicting the data beneath it.
           if (kind === 'sample' && d.rows.length) { viewNote.textContent = 'Simulated rows, generated to show the shape of this data. Not your records; the answers use your data as soon as it is brought in.'; viewNote.hidden = false; }
-          else { viewNote.textContent = ''; viewNote.hidden = true; }
           else if (!d.rows.length) { viewNote.textContent = q ? 'Nothing matches "' + q + '".' : (kind === 'own' ? 'Nothing of yours here yet. Bring it in on the Data page, or tell the chat.' : 'No simulated rows for this dataset.'); viewNote.hidden = false; }
           else if (d.columns.length > cols.length) { viewNote.textContent = 'Showing the first ' + cols.length + ' of ' + d.columns.length + ' columns. Ask the chat for the rest.'; viewNote.hidden = false; }
+          // Nothing to say about these rows: clear the notice rather than
+          // leaving the last one standing over data it is not about. This
+          // belongs LAST — put between the branches above it, it was an
+          // `else` followed by `else if`, which is a parse error that took
+          // the whole inline script down with it, sign-in included.
+          else { viewNote.textContent = ''; viewNote.hidden = true; }
         } catch (err) { viewTable.innerHTML = ''; viewNote.textContent = err.message; viewNote.hidden = false; }
       }
       function openView(ds) {

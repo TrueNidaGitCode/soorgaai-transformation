@@ -61,11 +61,46 @@ const { learnFromConversation } = await import(`file:///${BEU}/services/customer
 const { considerCapabilities } = await import(`file:///${BEU}/services/capabilityDecisionService.js`);
 const { runNextPlannedBuild } = await import(`file:///${BEU}/services/capabilityBuildService.js`);
 const { blueprintsOverview } = await import(`file:///${BEU}/services/blueprintOverviewService.js`);
+const GeneratedApplication = (await import(`file:///${BEU}/models/GeneratedApplication.js`)).default;
 
 // An account to hang it on: the admin, so entitlement gates never refuse and
 // the run is about the loop rather than about billing.
 const user = await User.findOne({ role: 'admin' }).lean() || await User.findOne({}).lean();
 if (!user) { console.error('No user to run as.'); process.exit(1); }
+
+/*
+ * Anything a previous run left behind, swept first.
+ *
+ * --keep leaves its objective alive on purpose, and a need attached to a LIVE
+ * objective is not an orphan — so the next run found it already planned and
+ * quietly stopped testing the decision. One QA objective at a time, always.
+ */
+{
+  const old = await TransformationBlueprint.find({ businessObjective: /^QA CYCLE CHECK/ }).select('_id').lean();
+  if (old.length) {
+    const ids = old.map(o => o._id);
+    await CapabilityRequest.deleteMany({ blueprintId: { $in: ids.map(String) } });
+    await GeneratedApplication.deleteMany({ blueprintId: { $in: ids } });
+    await TenantSignal.deleteMany({ blueprintId: { $in: ids } });
+    await HostedDeployment.deleteMany({ blueprintId: { $in: ids } });
+    await TransformationBlueprint.deleteMany({ _id: { $in: ids } });
+    console.log(`swept ${ids.length} objective(s) left by an earlier run`);
+  }
+  // Their needs are orphans now, and an orphan marked planned blocks the next
+  // decision, so they go with them.
+  const cu = await CustomerUnderstanding.findOne({ userId: user._id }).lean();
+  if (cu?.needs?.length) {
+    const keep = [];
+    for (const n of cu.needs) {
+      const alive = n.blueprintId ? await TransformationBlueprint.exists({ _id: n.blueprintId }).catch(() => null) : true;
+      if (alive) keep.push(n);
+    }
+    if (keep.length !== cu.needs.length) {
+      await CustomerUnderstanding.updateOne({ userId: user._id }, { $set: { needs: keep, signalsReadAt: null } });
+      console.log(`pruned ${cu.needs.length - keep.length} orphaned need(s)`);
+    }
+  }
+}
 
 /*
  * A throwaway objective, shaped like the academy's so the planner has
@@ -83,13 +118,48 @@ const dep = await HostedDeployment.create({
   userId: user._id, blueprintId: bp._id, hosting: 'svarg', status: 'live',
   railway: { url: 'https://qa-cycle.invalid' }, dbName: 'tenant_qa_cycle', liveAt: new Date(),
 });
+/*
+ * CustomerUnderstanding is ONE document per user, not one per objective, so
+ * deleting it would throw away what Svarg has learned about every real
+ * blueprint this account owns — and NOT deleting it leaves this run's needs
+ * behind, marked planned, so the next run finds no candidate and the check
+ * quietly stops testing anything. Snapshot it, and put it back exactly.
+ */
+const before = await CustomerUnderstanding.findOne({ userId: user._id }).lean();
+
 console.log(`throwaway objective ${bp._id} — deleted at the end${has('keep') ? ' (kept: --keep)' : ''}`);
 
 let exitCode = 0;
 const cleanup = async () => {
   if (has('keep')) return;
   await CapabilityRequest.deleteMany({ blueprintId: String(bp._id) });
-  await CustomerUnderstanding.deleteMany({ userId: user._id, blueprintId: bp._id });
+  // --build writes one of these; without it a throwaway objective leaves a
+  // generated application behind that nothing will ever deliver.
+  await GeneratedApplication.deleteMany({ blueprintId: bp._id });
+  if (before) {
+    await CustomerUnderstanding.updateOne({ userId: user._id }, { $set: {
+      needs: before.needs || [],
+      signalsReadAt: before.signalsReadAt || null,
+      lastLearnedAt: before.lastLearnedAt || null,
+      learnCount: before.learnCount || 0,
+    } });
+  } else {
+    await CustomerUnderstanding.deleteOne({ userId: user._id });
+  }
+  // A need whose objective no longer exists is this check's litter, and left
+  // behind it is marked planned — so the next run finds no candidate and
+  // silently stops testing the decision at all.
+  const left = await CustomerUnderstanding.findOne({ userId: user._id }).lean();
+  if (left?.needs?.length) {
+    const keep = [];
+    for (const n of left.needs) {
+      const alive = n.blueprintId ? await TransformationBlueprint.exists({ _id: n.blueprintId }).catch(() => null) : true;
+      if (alive) keep.push(n);
+    }
+    if (keep.length !== left.needs.length) {
+      await CustomerUnderstanding.updateOne({ userId: user._id }, { $set: { needs: keep, signalsReadAt: null } });
+    }
+  }
   await TenantSignal.deleteMany({ blueprintId: bp._id });
   await HostedDeployment.deleteOne({ _id: dep._id });
   await TransformationBlueprint.deleteOne({ _id: bp._id });
@@ -127,7 +197,7 @@ try {
     const cu = await CustomerUnderstanding.findOne({ userId: user._id }).lean();
     const needs = cu?.needs || [];
     ok(`understanding updated — ${needs.length} need(s) held`);
-    needs.slice(0, 5).forEach(n => note(`· "${String(n.need || n).slice(0, 90)}"${n.mentions ? ` (mentioned ${n.mentions})` : ''}`));
+    needs.slice(0, 5).forEach(n => note(`· "${String(n.text || '').slice(0, 90)}" — mentioned ${n.mentions || 1}, ${n.status}`));
   } else {
     no(`the Learner did not run: ${learned?.reason || 'no reason given'}`);
     note('with no model capacity the cycle stops here — the stages below are not reached');
@@ -137,11 +207,12 @@ try {
   say(4, 'The planner decides whether that is worth building');
   const decided = await considerCapabilities({ userId: user._id, blueprintId: bp._id, blueprint: bp.toObject() });
   if (decided?.decided) {
-    const r = decided.request;
-    ok(`decided: "${r?.plan?.title || r?.need}"`);
-    note(`mentioned ${r?.mentionsAtDecision} time(s) when the decision was taken`);
-    (r?.plan?.steps || []).slice(0, 4).forEach(s => note(`· ${s}`));
-    if (r?.plan?.connectorsNeeded?.length) note(`needs connected: ${r.plan.connectorsNeeded.join(', ')}`);
+    ok(`decided to build: "${decided.plan?.title || decided.need}"`);
+    note(`from the need: "${String(decided.need || '').slice(0, 90)}"`);
+    if (decided.plan?.summary) note(decided.plan.summary);
+    (decided.plan?.steps || []).slice(0, 4).forEach(x => note(`· ${x}`));
+    if (decided.plan?.dataNeeded?.length) note(`data it needs: ${decided.plan.dataNeeded.join(', ')}`);
+    if (decided.plan?.connectorsNeeded?.length) note(`needs connected: ${decided.plan.connectorsNeeded.join(', ')}`);
   } else {
     no(`nothing decided: ${decided?.reason || 'no reason given'}`);
     if (decided?.reason === 'nothing-learned') note('there is no understanding to act on, because stage 3 did not run');
@@ -153,8 +224,23 @@ try {
     note('skipped — a build spends real money and rewrites an application. Pass --build to run it.');
   } else {
     const built = await runNextPlannedBuild({ blueprintId: String(bp._id) });
-    if (built?.built) ok(`built and verified: ${built.request?.plan?.title || ''}`);
-    else no(`not built: ${built?.reason || 'no reason given'}`);
+    if (built?.built) ok(`built and verified: ${built.title || ''}`);
+    else {
+      no(`not built: ${built?.reason || 'no reason given'}`);
+      if (built?.error) note(String(built.error).slice(0, 700));
+      // The summary alone says a stage failed, not what the stage saw. The
+      // generated application row holds the verifier's own words.
+      const ga = await GeneratedApplication.findOne({ blueprintId: bp._id }).lean();
+      if (ga) {
+        if (ga.reason) note(`verifier: ${String(ga.reason).slice(0, 600)}`);
+        if (ga.progress?.detail) note(`last detail: ${String(ga.progress.detail).slice(0, 400)}`);
+        if (ga.skipped?.length) note(`skipped: ${ga.skipped.join(', ').slice(0, 300)}`);
+        note(`attempts: ${ga.progress?.attempt ?? '?'}, files kept: ${(ga.files || []).length}`);
+        for (const h of ga.history || []) {
+          note(`attempt ${h.attempt} — ${h.stage}: ${(h.failures || []).join(' | ').slice(0, 400) || '(no detail)'}`);
+        }
+      }
+    }
   }
 
   // ── 6. What the customer sees ────────────────────────────────────────────

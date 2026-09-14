@@ -96,3 +96,34 @@ describe('staticGates: the seed script must import per dataset', () => {
     expect(r.stage === 'completeness' && r.ok === false).toBe(false);
   });
 });
+
+/**
+ * A fixed runtime file documents the JSON a model must return, and that JSON
+ * has a "from" key. `"from":"a"` read as an import of ":" and refused a build
+ * for a package nobody had written, in a file nobody had generated — which
+ * broke every build, not only the one that found it.
+ */
+describe('prose in a file is not a dependency', () => {
+  it('ignores a JSON key that happens to be called from', async () => {
+    const { extractImports } = await import('../services/generatedProjectVerifier.js');
+    const src = `const RULES = ['  {"id":"b","op":"derive","from":"a","entity":"player_name"}'];
+import axios from 'axios';
+import { x } from './local.js';`;
+    const out = extractImports(src);
+    expect(out.bare).toEqual(['axios']);
+    expect(out.relative).toEqual(['./local.js']);
+  });
+
+  it('still finds every real specifier', async () => {
+    const { extractImports } = await import('../services/generatedProjectVerifier.js');
+    const out = extractImports(`
+      import a from 'axios';
+      export * from './re.js';
+      const m = await import('mongoose');
+      const r = require('express');
+      import '@scope/pkg/side-effect.js';
+    `);
+    expect(out.bare.sort()).toEqual(['@scope/pkg/side-effect.js', 'axios', 'express', 'mongoose']);
+    expect(out.relative).toEqual(['./re.js']);
+  });
+});

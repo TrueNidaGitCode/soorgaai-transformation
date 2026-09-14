@@ -153,6 +153,10 @@ export async function runCapabilityBuild({ requestId }) {
         verifiedTo: result.verifiedTo || '',
         skipped: result.skipped || [],
         reason: result.reason || '',
+        // Every attempt and what it tripped on. Without this a build that fails
+        // three times, unattended, records nothing anybody can diagnose — the
+        // customer is told 'failed' and so is everyone trying to fix it.
+        history: result.history || [],
         progress: {
           attempt: (result.history || []).length,
           phase: result.ok ? 'passed' : 'failed',

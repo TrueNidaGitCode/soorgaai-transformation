@@ -129,6 +129,14 @@ export function extractImports(rawSource) {
     // useless: it sent the repair loop after a package that never existed
     // while the actual mistake, a placeholder in a string, went unmentioned.
     if (s.includes('${')) continue;
+    // Nor anything that does not begin the way a module specifier begins. The
+    // case that forced this: a fixed runtime file documents the JSON a model
+    // must return, and that JSON has a "from" key — `"from":"a"`. The pattern
+    // above reads `from` followed by a quote and captures `:` as a package, so
+    // a build was refused for importing ":" from a file nobody had written.
+    // Prose and examples belong in these files; a specifier starts with a
+    // letter, a digit, @, . or /, and anything else is not one.
+    if (!/^[@a-z0-9./_-]/i.test(s)) continue;
     if (s.startsWith('.') || s.startsWith('/')) relative.push(s);
     else bare.push(s);
   }

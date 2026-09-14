@@ -70,3 +70,32 @@ describe('the webhook', () => {
     expect(none).not.toContain('services/connectors/whatsapp.js');
   });
 });
+
+/**
+ * The field said optional and the gate refused without it, so connecting
+ * failed with "App secret (optional, checks that messages really come from
+ * Meta) is needed" — a label written as an explanation, read back as an error.
+ */
+describe('a field that says optional is optional', () => {
+  it('lets a business number connect without an app secret', async () => {
+    const wa = await import('../eame-template/services/connectors/whatsapp.js');
+    const appSecret = wa.fields.find(f => f.name === 'appSecret');
+    expect(appSecret.required).toBe(false);
+    // Short enough that "<label> is needed" reads as a sentence.
+    expect(appSecret.label).toBe('App secret');
+    expect(appSecret.hint).toMatch(/webhook address/);
+  });
+
+  it('keeps the fields that genuinely are needed', async () => {
+    const wa = await import('../eame-template/services/connectors/whatsapp.js');
+    for (const name of ['phoneNumberId', 'accessToken']) {
+      expect(wa.fields.find(f => f.name === name).required).not.toBe(false);
+    }
+  });
+
+  it('never leaves an explanation stranded in a label', async () => {
+    // The label is what an error says; anything parenthetical belongs in hint.
+    const wa = await import('../eame-template/services/connectors/whatsapp.js');
+    for (const f of wa.fields) expect(f.label).not.toMatch(/\(optional/i);
+  });
+});

@@ -30,7 +30,13 @@ export const help = 'Messages sent to your WhatsApp Business number, arriving li
 export const fields = [
   { name: 'phoneNumberId', label: 'Phone number id', placeholder: '1234567890123456 (WhatsApp → API Setup)' },
   { name: 'accessToken', label: 'Access token', secret: true },
-  { name: 'appSecret', label: 'App secret (optional, checks that messages really come from Meta)', secret: true },
+  // Optional in fact as well as in name: a field is required unless it says
+  // otherwise, so this one was refused with "App secret (optional, checks that
+  // messages really come from Meta) is needed" — the label doing duty as an
+  // explanation, read back as an error. The explanation is a hint now, and the
+  // label is what an error can say.
+  { name: 'appSecret', label: 'App secret', required: false, secret: true,
+    hint: 'Optional, but worth setting: without it, anything that learns the webhook address could post messages into this application.' },
   { name: 'mode', label: 'Read replies as', options: ['attendance', 'messages'] },
 ];
 

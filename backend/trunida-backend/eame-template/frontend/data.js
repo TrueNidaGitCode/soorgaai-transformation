@@ -762,7 +762,11 @@
         var input = f.options
           ? '<select name="' + esc(f.name) + '">' + f.options.map(function (o) { return '<option value="' + esc(o) + '">' + esc(o) + '</option>'; }).join('') + '</select>'
           : '<input type="' + (f.secret ? 'password' : 'text') + '" name="' + esc(f.name) + '" placeholder="' + esc(f.placeholder || '') + '" autocomplete="off">';
-        return '<label class="dt-form__field">' + esc(f.label) + input + '</label>';
+        return '<label class="dt-form__field">' + esc(f.label)
+          + (f.required === false ? '<span class="dt-form__opt">optional</span>' : '')
+          + input
+          + (f.hint ? '<em class="dt-form__note">' + esc(f.hint) + '</em>' : '')
+          + '</label>';
       }).join('') + '</div>'
       + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-connect="1" data-kind="' + esc(k.kind) + '">Test and connect</button>'
       + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');

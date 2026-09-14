@@ -15,6 +15,7 @@
  * and the person can simply ask again.
  */
 import { answer } from '../services/answerService.js';
+import { recentTurns } from '../services/turnLog.js';
 
 const MAX_TURNS = 8;
 const MAX_TEXT = 2000;
@@ -75,5 +76,26 @@ export async function ask(req, res) {
         : 'Something went wrong putting that answer together, so I would rather say so than guess. Try asking again.',
       'unknown',
     ));
+  }
+}
+
+/**
+ * GET /api/chat/history — the conversation, so a reload does not erase it.
+ *
+ * Only the text is returned. The groups, the sources and the overlap that the
+ * page draws under a live answer were never stored, so a restored turn is the
+ * sentence and not the cards — which is honest about what was kept, and far
+ * better than an empty page after every refresh.
+ *
+ * Never an error: a conversation that cannot be read back is an empty
+ * conversation, which is exactly what the page showed before this existed.
+ */
+export async function history(req, res) {
+  try {
+    const turns = await recentTurns(req.user?.userId, 20);
+    return res.json({ turns });
+  } catch (err) {
+    console.warn('[chat] history not read —', err.message);
+    return res.json({ turns: [] });
   }
 }

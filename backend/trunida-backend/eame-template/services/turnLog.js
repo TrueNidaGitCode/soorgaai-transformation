@@ -80,6 +80,32 @@ export async function recordTurn({ question, answer, capability, sessionId = '' 
   }
 }
 
+/**
+ * The conversation this person had, oldest first.
+ *
+ * Every turn was already being written down — for the continuous builder, and
+ * so the owner can see what the application is being asked. Nothing ever read
+ * them back to the person who said them, so pressing reload emptied the
+ * conversation: the turns survived and the window onto them did not.
+ *
+ * Scoped to one sessionId, which is the signed-in user's id. A person gets
+ * their own conversation back and nobody else's.
+ */
+export async function recentTurns(sessionId, limit = 20) {
+  if (mongoose.connection.readyState !== 1) return [];
+  if (!sessionId) return [];
+  const rows = await turnsCollection()
+    .find({ sessionId: String(sessionId) })
+    .sort({ at: -1 })
+    .limit(Math.min(Math.max(1, limit), 50))
+    .toArray();
+  return rows.reverse().map(r => ({
+    question: r.question || '',
+    answer: r.answer || '',
+    at: r.at || null,
+  }));
+}
+
 export function turnMiddleware(req, res, next) {
   if (req.method !== 'POST' || SKIP.test(req.path) || !req.path.startsWith('/api/')) return next();
   const question = req.body && typeof req.body.message === 'string' ? req.body.message : '';

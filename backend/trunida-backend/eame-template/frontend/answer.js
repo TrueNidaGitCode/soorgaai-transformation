@@ -339,4 +339,44 @@
     busy = true;
     ask(text).finally(function () { busy = false; });
   }, true);
+
+  /*
+   * The conversation, back where it was.
+   *
+   * Pressing reload used to empty the chat: every turn was written down on the
+   * server, and nothing ever read them back, so the window onto the
+   * conversation closed while the conversation itself survived. Worse than
+   * looking empty — the model lost the thread too, so "what about their fees?"
+   * stopped resolving against what had just been said.
+   *
+   * Only the text comes back. The groups and sources drawn under a live answer
+   * were never stored, so a restored turn is the sentence alone; saying less
+   * than was on screen is honest, and far better than saying nothing.
+   */
+  async function restore() {
+    var token = ''; try { token = localStorage.getItem('token') || ''; } catch (e) { /* fine */ }
+    if (!token) return;
+    var turns = [];
+    try {
+      var r = await fetch(API + '/api/chat/history', { headers: { Authorization: 'Bearer ' + token } });
+      if (!r.ok) return;
+      turns = (await r.json()).turns || [];
+    } catch (e) { return; }           // an unreadable history is an empty one
+    if (!turns.length) return;
+
+    for (var i = 0; i < turns.length; i++) {
+      var t = turns[i];
+      if (!t || !t.question) continue;
+      said(t.question);
+      history.push({ role: 'user', text: t.question });
+      if (t.answer) {
+        add(el('<div class="ch-turn ch-turn--bot"><div class="ch-ans"><p>' + esc(t.answer) + '</p></div></div>'));
+        history.push({ role: 'assistant', text: t.answer });
+      }
+    }
+    if (history.length > 12) history = history.slice(-12);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  restore();
 })();

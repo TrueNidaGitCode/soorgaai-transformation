@@ -372,3 +372,67 @@ describe('turning thinking off survives the hop to the gateway', () => {
     expect(control).toContain('? false\n      : undefined;');
   });
 });
+
+/**
+ * Nothing stood between a test harness and the card.
+ *
+ * qa_suite boots the application with a real provider key and asks it
+ * eighty-eight questions. It does not go through the gateway, so the
+ * per-tenant cap protects nothing there — the only thing that ever stopped a
+ * run was the provider's own credits running out, which is the most
+ * expensive possible place to find the brake.
+ */
+describe('a spend ceiling, for anything that is not a person waiting', () => {
+  // The gemini stub bills 200 in / 80 out, which at the default rates is
+  // $0.00026 a call. A ceiling of $0.0005 must stop the third one.
+  const CEILING = 0.0005;
+
+  async function freshWithCeiling(value) {
+    vi.resetModules();
+    if (value === undefined) delete process.env.LLM_MAX_SPEND_USD;
+    else process.env.LLM_MAX_SPEND_USD = String(value);
+    return import('../services/llmService.js?ceiling=' + String(value));
+  }
+
+  afterEach(() => { delete process.env.LLM_MAX_SPEND_USD; });
+
+  it('stops the run once the ceiling is reached', async () => {
+    const mod = await freshWithCeiling(CEILING);
+    await mod.generate(CALL_OPTS);
+    await mod.generate(CALL_OPTS);
+    await expect(mod.generate(CALL_OPTS)).rejects.toThrow(/Spend ceiling reached/);
+  });
+
+  it('refuses BEFORE calling the provider, not after paying for it', async () => {
+    const mod = await freshWithCeiling(CEILING);
+    await mod.generate(CALL_OPTS);
+    await mod.generate(CALL_OPTS);
+    const before = mockGeminiGenerateContent.mock.calls.length;
+    await expect(mod.generate(CALL_OPTS)).rejects.toThrow();
+    expect(mockGeminiGenerateContent.mock.calls.length).toBe(before);
+  });
+
+  it('says what was spent and how to continue, not just that it stopped', async () => {
+    const mod = await freshWithCeiling(CEILING);
+    await mod.generate(CALL_OPTS);
+    await mod.generate(CALL_OPTS);
+    const err = await mod.generate(CALL_OPTS).catch(e => e);
+    expect(err.code).toBe('LLM_BUDGET_EXCEEDED');
+    expect(err.message).toMatch(/of \$0.0005/);
+    expect(err.message).toMatch(/2 calls/);
+    expect(err.message).toMatch(/LLM_MAX_SPEND_USD/);
+  });
+
+  it('is off unless asked for, so the server is unchanged', async () => {
+    const mod = await freshWithCeiling(undefined);
+    for (let i = 0; i < 12; i++) await mod.generate(CALL_OPTS);
+    await expect(mod.generate(CALL_OPTS)).resolves.toBeTruthy();
+  });
+
+  it('the QA harness sets one, and stops asking when it is hit', () => {
+    const qa = readFileSync(new URL('../scripts/app-checks/qa_suite.mjs', import.meta.url), 'utf8');
+    expect(qa).toContain('LLM_MAX_SPEND_USD: String(BUDGET)');
+    expect(qa).toContain("const BUDGET = Number(arg('budget', '1.00'));");
+    expect(qa).toContain('if (hitCeiling()) break;');
+  });
+});

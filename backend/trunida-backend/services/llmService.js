@@ -577,6 +577,8 @@ export async function generate({
   // Thinking is billed as output and most calls do not need any.
   thinking,
 }) {
+  refuseIfOverBudget();
+
   const started = Date.now();
   let result;
 
@@ -611,6 +613,52 @@ export async function generate({
  * `label` is optional and only groups the breakdown.
  */
 const usage = { calls: 0, inputTokens: 0, outputTokens: 0, ms: 0, byLabel: {} };
+
+/*
+ * A ceiling for anything that is not a person waiting for an answer.
+ *
+ * A test harness boots this application with a real provider key and asks it
+ * eighty-eight questions. Nothing stood between that loop and the card: the
+ * per-tenant cap lives in the gateway, and a harness that runs the app
+ * directly never goes through the gateway. So the only thing that ever
+ * stopped a runaway run was the provider's own credits running out, which is
+ * the most expensive possible place to find the brake.
+ *
+ * Unset means no ceiling, so the server behaves exactly as it did. A harness
+ * opts in with LLM_MAX_SPEND_USD and stops itself instead.
+ *
+ * The rates are Gemini Flash list pricing and are overridable, because a
+ * ceiling priced at the wrong rate is a ceiling in the wrong place. They are
+ * here rather than imported from the catalog on purpose: gatewayService
+ * imports generate() from this file, and reaching back for a price would make
+ * that a cycle.
+ */
+const MAX_SPEND_USD = Number(process.env.LLM_MAX_SPEND_USD || 0);
+const PRICE_IN_PER_M  = Number(process.env.LLM_PRICE_IN_PER_M  || 0.30);
+const PRICE_OUT_PER_M = Number(process.env.LLM_PRICE_OUT_PER_M || 2.50);
+
+/** What this process has spent so far, at the rates above. */
+export function spentUsd() {
+  return (usage.inputTokens / 1e6) * PRICE_IN_PER_M
+       + (usage.outputTokens / 1e6) * PRICE_OUT_PER_M;
+}
+
+/**
+ * Checked before a call, never after: the point is not to report the overspend
+ * but to not make it. The last call may carry the total slightly past the
+ * ceiling; no call starts once it is reached.
+ */
+function refuseIfOverBudget() {
+  if (MAX_SPEND_USD <= 0) return;
+  const spent = spentUsd();
+  if (spent < MAX_SPEND_USD) return;
+  const err = new Error(
+    `Spend ceiling reached: $${spent.toFixed(4)} of $${MAX_SPEND_USD} after ` +
+    `${usage.calls} calls (${usage.inputTokens} in / ${usage.outputTokens} out). ` +
+    `Raise LLM_MAX_SPEND_USD to continue.`);
+  err.code = 'LLM_BUDGET_EXCEEDED';
+  throw err;
+}
 
 function recordCall({ label, result, ms }) {
   const inTok  = result?.inputTokens  || 0;

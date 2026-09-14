@@ -47,6 +47,8 @@ const APP = arg('app', 'app-production-94d4');
 const ONLY = arg('only', '').split(',').map(s => s.trim()).filter(Boolean);
 const OUT = arg('out', path.join(BE, 'scripts', 'app-checks', 'qa-report.md'));
 const SCRATCH = 'svarg_qa_scratch';
+// Dollars this run may spend before it stops itself. Raise it deliberately.
+const BUDGET = Number(arg('budget', '1.00'));
 
 const { projectFor } = await import(`file:///${BEU}/controllers/deliveryController.js`);
 const { tenantMongoUri } = await import(`file:///${BEU}/services/deployTargetService.js`);
@@ -282,6 +284,16 @@ const child = spawn(process.execPath, ['server.js'], {
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
     OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
     GEMINI_MODEL: process.env.GEMINI_MODEL || '',
+    /*
+     * The brake.
+     *
+     * This harness boots the application with a real provider key and asks
+     * it eighty-eight questions. It does NOT go through Svarg's gateway, so
+     * the per-tenant cap that protects a customer protects nothing here —
+     * the only thing that ever stopped a run was the provider's credits
+     * running out, which is the most expensive place to discover a brake.
+     */
+    LLM_MAX_SPEND_USD: String(BUDGET),
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
@@ -305,6 +317,9 @@ if (!token) { console.error('could not get a session'); child.kill(); process.ex
 // ── Ask ─────────────────────────────────────────────────────────────────────
 
 const PACE = Number(arg('pace', 1200));
+
+/** The application's own reason for stopping: it reached the spend ceiling. */
+const hitCeiling = () => serverLog.join('').includes('Spend ceiling reached');
 /** The application's own reason for a 500, from its log. */
 const lastChatError = () => {
   const hits = serverLog.join('').split('\n').filter(l => l.includes('[chat] failed'));
@@ -338,6 +353,7 @@ for (const s of sections) {
   const history = [];
   const rows = [];
   for (const q of list) {
+    if (hitCeiling()) break;
     const { status, body, ms, why } = await askOne(q, s.turns ? history.slice(-6) : []);
     if (s.turns) { history.push({ role: 'user', text: q }, { role: 'assistant', text: String(body?.answer || '') }); }
     await sleep(PACE);

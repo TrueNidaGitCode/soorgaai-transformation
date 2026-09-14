@@ -18,7 +18,11 @@ describe('the conduct', () => {
     const { conduct } = await import(T + 'assistant.js');
     const c = conduct({ appName: 'Six Cricket', purpose: 'take the roll call from WhatsApp' });
     expect(c).toMatch(/Answer the question first/i);
-    expect(c).toMatch(/Say where it came from/i);
+    // Citing is still required — but on the answers that need it, not on every
+    // one. A provenance line under every sentence read as a machine justifying
+    // itself, and buried the answer it was attached to.
+    expect(c).toMatch(/CITE WHEN IT EARNS IT/i);
+    expect(c).toMatch(/Say where a figure came from/i);
     expect(c).toMatch(/cannot tell that from the connected data/i);
     expect(c).toMatch(/Never invent a record/i);
     expect(c).toContain('Six Cricket');

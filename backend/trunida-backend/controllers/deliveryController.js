@@ -13,7 +13,7 @@
  */
 
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
-import { buildManifest } from '../services/eameProjectBuilder.js';
+import { buildManifest, assertProjectResolves } from '../services/eameProjectBuilder.js';
 import { FIXED_PATHS } from '../services/eameSpec.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
 import crypto from 'crypto';
@@ -46,8 +46,14 @@ async function ownedBlueprint(blueprintId, userId) {
  */
 export async function projectFor(bp) {
   const generated = await generatedManifest(bp._id, { appName: resolveAppName(bp) });
-  if (generated) return { files: generated, source: 'generated' };
-  return { files: buildManifest({ includeJira: true, appName: resolveAppName(bp) }), source: 'template' };
+  // Checked here because this is the first point at which the whole project
+  // exists: a page's <script src> may name a fixed file or a generated one,
+  // and only together do they say whether it is there.
+  if (generated) return { files: assertProjectResolves(generated), source: 'generated' };
+  return {
+    files: assertProjectResolves(buildManifest({ includeJira: true, appName: resolveAppName(bp) })),
+    source: 'template',
+  };
 }
 
 /**

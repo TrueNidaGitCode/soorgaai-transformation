@@ -145,20 +145,25 @@ describe('the sentence built from the facts reads like a sentence', () => {
   const none = { both: [], issues: 0, people: 0 };
 
   it('names the group and its count', () => {
+    // Was 'U-16 trainees: 4.' — a label, a colon and a number, which is what the
+    // application said when asked WHICH students are in U16. With no names in
+    // the facts the count still carries it, but as a sentence.
     expect(composeAnswer([g('U-16 trainees', 4)], { ...none, issues: 4, people: 4 }))
-      .toBe('U-16 trainees: 4.');
+      .toBe('4 people are U-16 trainees.');
   });
 
   it('says nothing matched rather than reporting a zero as a finding', () => {
     expect(composeAnswer([g('U-16 students with unconfirmed attendance', 0)], none))
-      .toBe('Nothing matched u-16 students with unconfirmed attendance.');
+      // U-16 keeps its capitals: it is the name of the batch, not a description
+      // of it, and "u-16" reads as the application not knowing that.
+      .toBe('Nothing matched U-16 students with unconfirmed attendance.');
   });
 
   it('agrees with itself about one person versus several', () => {
     const two = composeAnswer([g('Absent', 3, 2), g('Overdue', 2)], { both: [{ name: 'X' }], issues: 5, people: 4 });
-    expect(two).toContain('One of them is in more than one');
+    expect(two).toContain('One person appears in more than one');
     const three = composeAnswer([g('Absent', 3, 2), g('Overdue', 2)], { both: [{ name: 'X' }, { name: 'Y' }], issues: 5, people: 3 });
-    expect(three).toContain('2 of them are in more than one');
+    expect(three).toContain('2 people appear in more than one');
   });
 });
 

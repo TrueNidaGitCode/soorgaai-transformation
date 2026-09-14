@@ -743,7 +743,11 @@
           viewTable.innerHTML = '<thead><tr>' + cols.map(function (c) { return '<th>' + escT(c) + '</th>'; }).join('') + '<th>From</th></tr></thead><tbody>'
             + d.rows.map(function (row) { return '<tr>' + cols.map(function (c, i) { return '<td>' + escT(row.cells[i]) + '</td>'; }).join('') + '<td><span class="ch-view__src ch-view__src--' + escT(row.source) + '">' + escT(SRC[row.source] || row.source) + '</span></td></tr>'; }).join('')
             + '</tbody>';
+          // Shown only while the rows on screen really are the simulated ones;
+          // cleared otherwise, so importing your own records takes the notice
+          // away rather than leaving it contradicting the data beneath it.
           if (kind === 'sample' && d.rows.length) { viewNote.textContent = 'Simulated rows, generated to show the shape of this data. Not your records; the answers use your data as soon as it is brought in.'; viewNote.hidden = false; }
+          else { viewNote.textContent = ''; viewNote.hidden = true; }
           else if (!d.rows.length) { viewNote.textContent = q ? 'Nothing matches "' + q + '".' : (kind === 'own' ? 'Nothing of yours here yet. Bring it in on the Data page, or tell the chat.' : 'No simulated rows for this dataset.'); viewNote.hidden = false; }
           else if (d.columns.length > cols.length) { viewNote.textContent = 'Showing the first ' + cols.length + ' of ' + d.columns.length + ' columns. Ask the chat for the rest.'; viewNote.hidden = false; }
         } catch (err) { viewTable.innerHTML = ''; viewNote.textContent = err.message; viewNote.hidden = false; }
@@ -1018,7 +1022,6 @@
   <!-- Thumbs up / down under every answer, and the one thing it needs to know
        about the module's requests (which capability answered). Plain script,
        before app.js, so its fetch wrapper is in place when the module runs. -->
-  <script src="feedback.js"></script>
   <!-- The conversation: the shell answers through /api/chat, where the counting
        and the grouping happen in code. Loaded BEFORE app.js so its capture-phase
        submit listener runs first; the generated app.js keeps whatever else it

@@ -400,8 +400,17 @@ function factsText(groups, cross) {
 }
 
 const SAY_RULES = [
-  'Write the answer. One sentence first, then at most two more if they add something. The',
-  'records are listed under your sentence by the application, so do not list them again.',
+  'Write the answer. One sentence first, then at most two more if they add something.',
+  '',
+  'NAME PEOPLE. The names are in the facts and the customer asked about people, not about',
+  'rows. "Arjun Bose, Rohan Sharma and Tanvi Reddy" is an answer; "3 distinct trainees" is a',
+  'receipt. Name up to six and say "and N others" for the rest. The application also lists',
+  'them under your sentence, and that is fine — a sentence that can only be understood by',
+  'reading a table underneath it has not answered anything.',
+  '',
+  'WRITE LIKE A COLLEAGUE, NOT LIKE A DATABASE. Never say "records", "rows", "distinct",',
+  '"entries" or "data points" — say students, sessions, payments, people. "Ten students need',
+  'attention", never "20 records across 10 distinct students".',
   '',
   'THE NUMBERS ARE GIVEN TO YOU. Use only figures from the facts. Never add, total or estimate.',
   '',
@@ -412,26 +421,77 @@ const SAY_RULES = [
   'merged into one count.',
   '',
   'If the facts are empty, say plainly what the data does not carry, and what would answer it.',
+  '',
+  'OFFER THE OBVIOUS NEXT STEP when there plainly is one — a message to send, a list to',
+  'prepare — as a short question at the end: "Want me to draft a reminder to those six?"',
+  'One, only when it follows from the answer, and never as a menu of what you can do. Never',
+  'say or imply anything was sent, prepared or changed: you are offering, not reporting.',
 ].join('\n');
 
-const SUMMARY_RULES = [
-  '',
-  'THIS IS A BROAD QUESTION: the customer wants what matters, not everything there is.',
-  'Open with one sentence saying how much needs attention and across how many people. Then name',
-  'each thing in order of urgency, one short line each with its number. Do not list people — the',
-  'application lists them under you. No sign-off, no offer of further help.',
-].join('\n');
+/*
+ * What SHAPE of answer the question is asking for.
+ *
+ * "Which students are enrolled in U16?" was answered "U-16 Students: 9." — the
+ * question said which and the answer said how many, as a fragment. Nothing in
+ * the pipeline had ever asked what the person wanted BACK; the planner decides
+ * what to retrieve and nothing decided what to say.
+ *
+ * Decided in code rather than by the model: it is a property of the words the
+ * customer used, it costs nothing, and a wrong guess here is visible and
+ * cheap to correct, unlike another field for the planner to get wrong.
+ */
+function answerShape(question, intent) {
+  const q = String(question || '').trim().toLowerCase();
+  if (intent === 'summary')  return 'assessment';
+  if (/^(how many|how much|what (is|was) the (number|count|total))/.test(q)) return 'count';
+  if (/^(who|which|name |list |show me (which|who)|tell me who)/.test(q) || /\bwho\b/.test(q)) return 'names';
+  return 'default';
+}
+
+const SHAPE_RULES = {
+  names: [
+    '',
+    'THEY ASKED WHO. Lead with the names, not with a total. If there are more than six, name',
+    'the six that matter most and say how many others there are.',
+  ].join('\n'),
+
+  count: [
+    '',
+    'THEY ASKED HOW MANY. Lead with the number, in a sentence. Names are optional here and',
+    'belong after the number, not instead of it.',
+  ].join('\n'),
+
+  assessment: [
+    '',
+    'THIS IS A BROAD QUESTION: the customer wants what matters, not everything there is. They',
+    'are asking you to judge, so judge — open with what you would tell them if you had one',
+    'sentence, not with a tally. Then each thing in order of urgency, one short line with its',
+    'number and the people it concerns. End with the one action worth offering, if there is one.',
+  ].join('\n'),
+
+  default: '',
+};
 
 async function say({ question, groups, cross, planned, issues }) {
   const res = await generate({
-    systemPrompt: SAY_RULES + (planned.intent === 'summary' ? SUMMARY_RULES : ''),
+    systemPrompt: SAY_RULES + (SHAPE_RULES[answerShape(question, planned.intent)] || ''),
     userMessage: `Question: ${question}\n`
       + (planned.reading ? `You read this as: ${planned.reading}\n` : '')
       + `\nFACTS (the only numbers you may use)\n${factsText(groups, cross)}`
       + (issues.length ? `\n\nWORTH SAYING\n${issues.join('\n')}` : ''),
-    maxTokens: 400,
-    // Three sentences from facts already computed. No thinking required, and
-    // it is charged for whether it helps or not.
+    /*
+     * 700, not 400.
+     *
+     * Naming people costs words that a count did not, and at 400 the answer
+     * to "Which batches are performing better than others?" stopped mid-word:
+     * "I cannot tell that from the connected data, as there". A truncated
+     * sentence reads as the application breaking, which is worse than the
+     * terse answer it replaced. Thinking is off, so this budget buys only
+     * visible text.
+     */
+    maxTokens: 700,
+    // Sentences from facts already computed. No reasoning required, and it is
+    // charged for whether it helps or not.
     thinking: false,
   });
   return String(res?.text || '').trim();
@@ -457,23 +517,66 @@ export function unsupportedNumbers(text, allowed) {
   return [...new Set(bad)];
 }
 
+/*
+ * A label mid-sentence is lowercased, unless lowercasing would damage it.
+ *
+ * "U-16 trainees" became "u-16 trainees" — the batch is called U-16 and the
+ * sentence should say so. Anything carrying a digit or a run of capitals is a
+ * name of something, not a description of it.
+ */
+const midSentence = (label) => (/[A-Z]{2,}|[0-9]/.test(label) ? label : label.toLowerCase());
+
+/** "Arjun Bose, Rohan Sharma and Tanvi Reddy", and "and 20 others" past the cap. */
+function nameList(items, cap = 6) {
+  const names = [...new Set(items.map(i => i && i.name).filter(Boolean))];
+  if (!names.length) return '';
+  const shown = names.slice(0, cap);
+  const rest = names.length - shown.length;
+  const joined = shown.length === 1
+    ? shown[0]
+    : `${shown.slice(0, -1).join(', ')} and ${shown[shown.length - 1]}`;
+  return rest > 0 ? `${joined}, and ${rest} ${rest === 1 ? 'other' : 'others'}` : joined;
+}
+
+/**
+ * The sentence when the model's own could not be trusted.
+ *
+ * This is a safety net, and a safety net that lands badly is still a fall:
+ * the first version printed "4 in u-16 trainees." and the second, asked
+ * "Which students are enrolled in U16?", answered "U-16 Students: 9." — a
+ * label, a colon and a number, where the question had asked WHICH. A customer
+ * reading that sees the application break, not the application being careful.
+ *
+ * So it names people, like the model is now asked to, and it reads as English
+ * whether or not anyone ever looks at the table underneath.
+ */
 export function composeAnswer(groups, cross) {
   if (!groups.length) return 'I cannot answer that from the connected data.';
-  // A customer reads this, so it has to be a sentence. The first version said
-  // "4 in u-16 trainees." — the safety net catching a bad number and printing
-  // worse English, which reads as the application breaking rather than as it
-  // being careful.
+
   const count = (g) => (g.entity ? g.entities : g.records);
-  const one = (g) => (count(g) === 0
-    ? `Nothing matched ${g.label.toLowerCase()}.`
-    : `${g.label}: ${count(g)}.`);
+  const noun = (g, n) => (g.entity ? (n === 1 ? 'person' : 'people') : (n === 1 ? 'record' : 'records'));
+
+  const one = (g) => {
+    const n = count(g);
+    if (n === 0) return `Nothing matched ${midSentence(g.label)}.`;
+    const who = nameList(g.items);
+    const label = midSentence(g.label);
+    // Names when there are names; the count carries it when there are not.
+    return who
+      ? `${who} ${n === 1 ? 'is' : 'are'} ${label}${g.rule ? ` (${g.rule})` : ''}.`
+      : `${n} ${noun(g, n)} ${n === 1 ? 'is' : 'are'} ${label}.`;
+  };
+
+  if (groups.length === 1 && !cross.both.length) return one(groups[0]);
+
   const head = groups.length === 1
     ? one(groups[0])
-    : groups.map(g => `${g.label}: ${count(g)}`).join('; ') + '.';
+    : groups.map(g => `${count(g)} ${midSentence(g.label)}`).join(', ') + '.';
   if (!cross.both.length) return head;
   const n = cross.both.length;
-  return `${head} ${n === 1 ? 'One of them is' : `${n} of them are`} in more than one of these,`
-    + ` so this is ${cross.issues} items across ${cross.people} people.`;
+  const who = nameList(cross.both, 4);
+  return `${head} ${n === 1 ? 'One person appears' : `${n} people appear`} in more than one of these`
+    + `${who ? ` (${who})` : ''}, so this is ${cross.issues} in total across ${cross.people} people.`;
 }
 
 // ── The envelope ────────────────────────────────────────────────────────────

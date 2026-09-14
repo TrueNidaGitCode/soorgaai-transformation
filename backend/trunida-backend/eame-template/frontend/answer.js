@@ -83,15 +83,29 @@
    * That the answer came from the simulated records is true of the
    * application, not of this reply, so it is said once where the application
    * says what it is — and never again under every answer.
+   *
+   * It also has to be able to STOP being true. The first version latched: it
+   * set a flag, returned early ever after, and never restored the label — so
+   * a customer who imported their own records went on being told the answers
+   * were simulated, by an application that had already switched to their data.
+   * The badge now follows each answer, both ways.
    */
+  var simLabel = '';
   function markSimulated(on) {
     var state = document.getElementById('ch-state');
-    if (!state || !on || state.dataset.chSim === '1') return;
-    state.dataset.chSim = '1';
+    if (!state) return;
     var label = state.querySelector('span:last-child') || state;
-    label.textContent = 'Using simulated data';
-    state.title = 'This application is answering from the records it was built with. Connect your own on the Data page.';
-    state.classList.add('ch-head__state--sim');
+    if (!simLabel) simLabel = label.textContent;
+
+    if (on) {
+      label.textContent = 'Using simulated data';
+      state.title = 'This application is answering from the records it was built with. Connect your own on the Data page.';
+      state.classList.add('ch-head__state--sim');
+    } else if (state.classList.contains('ch-head__state--sim')) {
+      label.textContent = simLabel;
+      state.removeAttribute('title');
+      state.classList.remove('ch-head__state--sim');
+    }
   }
 
   function notice(text) {

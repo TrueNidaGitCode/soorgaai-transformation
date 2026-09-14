@@ -85,7 +85,6 @@ export const FIXED_PATHS = [
   'services/turnLog.js',
   'controllers/signalController.js',
   'routes/signalsRoutes.js',
-  'frontend/feedback.js',
   // Sign-in with Google through Svarg, and the application's own record of
   // who signed in. Fixed: the door is the same on every application.
   'controllers/authController.js',

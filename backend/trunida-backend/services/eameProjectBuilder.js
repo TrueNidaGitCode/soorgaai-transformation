@@ -213,7 +213,6 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/turnLog.js':              { template: 'services/turnLog.js' },
     'controllers/signalController.js':  { template: 'controllers/signalController.js' },
     'routes/signalsRoutes.js':          { template: 'routes/signalsRoutes.js' },
-    'frontend/feedback.js':             { template: 'frontend/feedback.js' },
     'controllers/authController.js':    { template: 'controllers/authController.js' },
     'routes/authRoutes.js':             { template: 'routes/authRoutes.js' },
     'middleware/authMiddleware.js':     { repo: 'middleware/authMiddleware.js' },
@@ -255,11 +254,41 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
  * Checked here rather than in the verifier because the verifier reads the
  * files the MODEL wrote, and both files involved in this failure were ours.
  */
+/**
+ * Every script a shipped page loads must be a file the project actually has.
+ *
+ * Separate from assertImportsResolve because it needs the complete project —
+ * fixed files AND the ones the generator wrote. Removing a fixed file while
+ * a page still asks for it is the same mistake as the WhatsApp connector, in
+ * the other language: the build succeeds, the page loads, and one script 404s
+ * silently in a browser nobody is watching.
+ */
+export function assertProjectResolves(files) {
+  const have = new Set(files.map(f => f.path));
+  const missing = [];
+
+  for (const f of files) {
+    if (!f.path.endsWith('.html')) continue;
+    for (const m of String(f.content).matchAll(/<script[^>]+src\s*=\s*["']([^"']+)["']/g)) {
+      const src = m[1].replace(/^\.\//, '');
+      if (/^(https?:)?\/\//.test(src) || src.startsWith('data:')) continue;
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(f.path), src));
+      if (!have.has(target)) missing.push(`${f.path} loads ${target}, which this project does not contain`);
+    }
+  }
+
+  if (missing.length) throw new Error('This application would not load:\n  ' + missing.join('\n  '));
+  return files;
+}
+
 function assertImportsResolve(files) {
   const have = new Set(files.map(f => f.path));
   const missing = [];
 
   for (const f of files) {
+    // HTML is checked in assertProjectResolves, against the COMPLETE project:
+    // a <script src> may point at a file the generator writes, which this
+    // function never sees.
     if (!f.path.endsWith('.js')) continue;
     // Static imports only. A dynamic import() of a directory's contents is how
     // connectors are meant to be optional, and absence there is the design.

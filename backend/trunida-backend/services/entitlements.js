@@ -78,7 +78,11 @@ export const PLANS = {
     newBlueprintsPerMonth: UNLIMITED,
     activeBlueprints:      1,
     applications:          UNLIMITED,
-    launches:              3,
+    // One running application, like Hobby: what Pro buys is building every
+    // opportunity inside the objective, not keeping several of them alive at
+    // once. Hosting is the constraint, and a promise the platform cannot keep
+    // is worse than a smaller one it can.
+    launches:              1,
     deploymentCostUsd:     5,
   },
   ultra: {

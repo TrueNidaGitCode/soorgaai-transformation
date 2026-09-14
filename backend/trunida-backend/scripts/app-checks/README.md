@@ -43,3 +43,30 @@ compute, a person counted twice, a name with no record behind it, a question
 that should have been refused, Svarg's machinery named, Markdown on a page
 that cannot render it, a claim that something was sent. Whether an answer is
 *useful* is what the report is for you to read.
+
+## The continuous-builder cycle
+
+`node scripts/app-checks/cycle_check.mjs` drives the loop Svarg sells — somebody
+uses their application, and the application changes because of it — one stage at
+a time, printing what each one did:
+
+1. a question asked inside the application
+2. a correction reported back, the way a live application reports one
+3. the Learner reads the signals and updates what it understands
+4. the planner decides whether that is worth building, and plans it
+5. the build runs *(only with `--build`)*
+6. it appears on the Blueprints page as a journey
+
+**It never touches a real objective.** Stages 3 to 5 write to Svarg's own
+database — CustomerUnderstanding, CapabilityRequest, and a build that pushes to
+GitHub and redeploys a running application — so the check invents a throwaway
+blueprint and deployment, runs against those, and deletes them afterwards.
+Stage 5 is opt-in for the same reason: a build spends real money and takes
+minutes.
+
+    --build            also run the build
+    --keep             leave the throwaway rows behind, to inspect them
+    --provider=openai  when the default chain has no capacity
+
+A stage that cannot run says so and the ones after it report the knock-on, so a
+halted cycle reads as a halted cycle rather than as an empty result.

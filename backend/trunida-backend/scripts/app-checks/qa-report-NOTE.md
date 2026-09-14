@@ -2,8 +2,11 @@
 
 The run of 2026-09-14 asked all 88 questions but only **51 were answered**.
 Sections 8 to 16 failed with HTTP 500 — not in the application, at the model:
-Gemini's daily quota ran out at question 52, and the two fallbacks are also
-unavailable (Anthropic: credit balance too low; OpenAI: no credits remaining).
+The provider ran out at question 52. Checked again 2026-09-14 with
+cycle_check.mjs, which prints the provider's own words: Gemini is refusing with
+"your project has exceeded its MONTHLY SPENDING CAP" (a setting, at
+https://ai.studio/spend — not a wait), Anthropic with "credit balance is too
+low", OpenAI with "no credits remaining". All three need money, not time.
 
 Sections 1 to 7 in the report are real answers and worth reading.
 Sections 8 to 16 are empty and prove nothing either way.

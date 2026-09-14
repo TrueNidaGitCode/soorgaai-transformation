@@ -9,6 +9,7 @@
  * The arithmetic those steps perform is in reasoning.test.js.
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
 import {
   sanitisePlan, overlap, allowedNumbers, unsupportedNumbers, composeAnswer, CATEGORIES,
 } from '../eame-template/services/answerService.js';
@@ -158,5 +159,34 @@ describe('the sentence built from the facts reads like a sentence', () => {
     expect(two).toContain('One of them is in more than one');
     const three = composeAnswer([g('Absent', 3, 2), g('Overdue', 2)], { both: [{ name: 'X' }, { name: 'Y' }], issues: 5, people: 3 });
     expect(three).toContain('2 of them are in more than one');
+  });
+});
+
+/**
+ * "Who is attending practice today?" was refused while "how many students are
+ * attending today's sessions?" was answered, on the same data — the planner
+ * returning no steps for a question it could obviously have planned, and the
+ * refusal then claiming the application does not hold something it plainly
+ * holds.
+ */
+describe('a refusal has to be earned, and has to leave the customer somewhere', () => {
+  const src = readFileSync(new URL('../eame-template/services/answerService.js', import.meta.url), 'utf8');
+
+  it('tells the planner that no rows is an answer, not a reason to refuse', () => {
+    expect(src).toMatch(/Finding no rows is NOT a reason to return no steps/);
+    // Named examples, because the abstract rule was not enough on its own.
+    expect(src).toMatch(/Who is attending practice today/);
+    expect(src).toMatch(/does not have to use the customer..?s words/);
+  });
+
+  it('reserves no-steps for a subject nothing is about', () => {
+    expect(src).toMatch(/an opening/);
+    expect(src).toMatch(/a refund policy/);
+  });
+
+  it('names what the application does hold when it refuses', () => {
+    // So the person can see whether the refusal is fair, and rephrase.
+    expect(src).toMatch(/This application holds \$\{holds/);
+    expect(src).toMatch(/ask me about any of those/);
   });
 });

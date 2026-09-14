@@ -236,7 +236,22 @@ export function sanitisePlan(raw, cat) {
 async function askForPlan({ question, history, ctx, cat, insist }) {
   const res = await generateRaw({
     systemPrompt: `${PLAN_RULES}\n\n${timeText()}\n\nTHE DATASETS\n${catalogueText(cat)}`
-      + (insist ? '\n\nYOUR LAST ATTEMPT RETURNED NO STEPS. The datasets above are all there is; work out what would have to be true and derive it with select/derive/join. Return no steps only if the subject genuinely does not appear above.' : ''),
+      + (insist ? [
+        '',
+        '',
+        'YOUR LAST ATTEMPT RETURNED NO STEPS, AND THAT IS ALMOST CERTAINLY WRONG.',
+        'A dataset does not have to use the customer\'s words to be about their question.',
+        '"Who is attending practice today?" is the roll call logs, filtered to today —',
+        'even though no column says "attending" and none says "practice". "Who has not',
+        'confirmed attendance?" is the same rows where the reply is empty.',
+        '',
+        'Finding no rows is NOT a reason to return no steps: a count of zero is an answer,',
+        'and refusing instead tells the customer the application does not hold something it',
+        'plainly holds.',
+        '',
+        'Return no steps ONLY for a subject no dataset above is about at all — an opening',
+        'time, a refund policy, a person who is not in any of these rows.',
+      ].join('\n') : ''),
     userMessage: `${historyText(history)}${contextText(ctx)}\nQuestion: ${question}`,
     maxTokens: 1100,
   });
@@ -541,11 +556,24 @@ export async function answer({ question, history = [], ctx = null, kind = 'own' 
   const { state, issues } = validate({ groups, plan: planned });
 
   if (!groups.length) {
-    const why = planned.reading || 'Nothing in the connected data carries that.';
+    /*
+     * A refusal has to leave the customer somewhere.
+     *
+     * "I don't have that in the connected data" full stop is the worst version
+     * of being right: it is sometimes wrong, and even when it is correct the
+     * person cannot tell what to ask instead. Naming what the application does
+     * hold fixes both — they can see immediately whether the refusal is fair,
+     * and rephrase against a real dataset if it is not.
+     */
+    const holds = cat.filter(d => d.rows > 0).map(d => d.name);
+    const what = holds.length
+      ? ` This application holds ${holds.slice(0, 4).join(', ')}${holds.length > 4 ? ' and more' : ''} — ask me about any of those.`
+      : '';
+    const why = planned.reading ? ` ${planned.reading}` : '';
     return envelope({
-      answer: state === 'unknown'
-        ? `I don't have that in the connected data. ${why}`.trim()
-        : `I can't answer that from what is connected. ${why}`.trim(),
+      answer: (state === 'unknown'
+        ? `I don't have that in the connected data.${why}${what}`
+        : `I can't answer that from what is connected.${why}${what}`).trim(),
       groups: [], cross, notes, planned, kind: used, checked: true, state, issues,
     });
   }

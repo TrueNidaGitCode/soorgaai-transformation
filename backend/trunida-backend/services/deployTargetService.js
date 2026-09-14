@@ -438,6 +438,16 @@ export const railwayTarget = {
       if (res.status === 404) {
         return { status: 'attaching', url, detail: 'Nothing is answering at the address yet.' };
       }
+      /*
+       * A bad gateway is the platform answering ABOUT an application that is
+       * not. Railway serves 502 "Application failed to respond" when the
+       * container is crashed or not listening, and reading that as "something
+       * is listening" is how a dead application gets reported live — the exact
+       * failure the comment above says was already fixed once.
+       */
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        return { status: 'attaching', url, detail: `The application is not responding (HTTP ${res.status}).` };
+      }
       // Anything else means something is listening. 401/403 counts: the app
       // requires a token, which is a running app refusing an anonymous caller.
       return { status: 'live', url, detail: `Responding with HTTP ${res.status}.` };

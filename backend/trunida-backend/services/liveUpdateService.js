@@ -120,8 +120,23 @@ export async function updateLiveApplications({ reason = 'sweep', limit = 50 } = 
   const report = { reason, updated: [], current: 0, failed: [] };
   try {
     await refreshAttaching();
-    const deps = await HostedDeployment.find({ status: 'live', hosting: 'svarg', 'railway.serviceId': { $nin: ['', null] } })
-      .sort({ updatedAt: 1 }).limit(limit);
+    /*
+     * 'attaching' is included, and that is the whole point.
+     *
+     * An application that crashes on boot never answers, so refreshAttaching
+     * never promotes it back to 'live' — and a sweep that only looked at
+     * 'live' could never push it the runtime that would fix it. Arthi's
+     * application sat broken for a week inside that gap: every fix shipped,
+     * and none of them reached the one deployment that needed them.
+     *
+     * Sweeping it costs nothing when there is nothing to do: updateOne
+     * compares the manifest hash first and skips when it is current.
+     */
+    const deps = await HostedDeployment.find({
+      status: { $in: ['live', 'attaching'] },
+      hosting: 'svarg',
+      'railway.serviceId': { $nin: ['', null] },
+    }).sort({ updatedAt: 1 }).limit(limit);
     for (const dep of deps) {
       try {
         const r = await updateOne(dep, { reason });

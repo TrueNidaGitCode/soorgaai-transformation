@@ -15,7 +15,7 @@
  * and the person can simply ask again.
  */
 import { answer } from '../services/answerService.js';
-import { recentTurns } from '../services/turnLog.js';
+import { recentTurns, recordTurn } from '../services/turnLog.js';
 
 const MAX_TURNS = 8;
 const MAX_TEXT = 2000;
@@ -47,6 +47,52 @@ function fallback(answerText, state) {
   };
 }
 
+/*
+ * The same answer, delivered as it is made.
+ *
+ * A question takes about eight seconds, and almost all of it is the model
+ * writing prose about facts that were settled seconds earlier. Streaming does
+ * not make it faster; it stops the customer watching nothing happen.
+ *
+ * Three kinds of event:
+ *   stage     what is being done now, so the progress shown is the real work
+ *             rather than a timer guessing at it
+ *   evidence  the records, counts, names and sources — computed and validated
+ *             by code, final, and never revised by anything that follows
+ *   done      the sentence, and the whole envelope again so a client can
+ *             simply use this one and ignore the rest
+ *
+ * The evidence is never rewritten. That is the point of sending it early: the
+ * answer is finished long before the sentence about it is, and a customer who
+ * sees six names at two seconds has been answered, whatever arrives at seven.
+ */
+function sse(res) {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    // Nginx and friends will otherwise hold the whole response to buffer it,
+    // which turns a stream back into the thing it replaced.
+    'X-Accel-Buffering': 'no',
+  });
+  res.flushHeaders?.();
+  let open = true;
+  res.on('close', () => { open = false; });
+  return {
+    send(event, data) {
+      if (!open) return;
+      try { res.write(`event: ${event}\ndata: ${JSON.stringify(data ?? {})}\n\n`); } catch { open = false; }
+    },
+    end() { if (open) { try { res.end(); } catch { /* already gone */ } } open = false; },
+    get open() { return open; },
+  };
+}
+
+/** Does this caller want the answer as it is made, or all at once? */
+function wantsStream(req) {
+  return req.body?.stream === true || /text\/event-stream/i.test(String(req.headers.accept || ''));
+}
+
 export async function ask(req, res) {
   const question = String(req.body?.message || '').slice(0, MAX_TEXT).trim();
   if (!question) return res.json(fallback('Ask me something about your records and I will answer from them.', 'unknown'));
@@ -55,28 +101,62 @@ export async function ask(req, res) {
   // 'own' from the customer's. The two are never mixed, because a number drawn
   // from both is true of neither.
   const kind = req.body?.kind === 'sample' ? 'sample' : 'own';
+  const ctx = cleanContext(req.body?.context);
+  const history = cleanHistory(req.body?.history);
 
-  try {
-    const out = await answer({
-      question,
-      history: cleanHistory(req.body?.history),
-      ctx: cleanContext(req.body?.context),
-      kind,
-    });
-    // turnMiddleware in server.js records the turn from this response; the
-    // conversation stays here and only the fact that one happened is a signal.
-    return res.json(out);
-  } catch (err) {
+  /** The same words for a failure, whichever way the answer is being sent. */
+  const failed = (err) => {
     console.error('[chat] failed —', err);
-    // Said the way a colleague would say it, and never as a 500.
     const provider = /credit|quota|rate limit|429|balance/i.test(String(err?.message || ''));
-    return res.json(fallback(
+    return fallback(
       provider
         ? 'I could not reach the service that writes the answer — it has run out of capacity for now. Your records are untouched; try again shortly.'
         : 'Something went wrong putting that answer together, so I would rather say so than guess. Try asking again.',
       'unknown',
-    ));
+    );
+  };
+
+  if (!wantsStream(req)) {
+    try {
+      const out = await answer({ question, history, ctx, kind });
+      // turnMiddleware in server.js records the turn from this response; the
+      // conversation stays here and only the fact that one happened is a signal.
+      return res.json(out);
+    } catch (err) {
+      return res.json(failed(err));
+    }
   }
+
+  const stream = sse(res);
+  let out = null;
+  try {
+    out = await answer({
+      question, history, ctx, kind,
+      onStage: (name, payload) => {
+        if (name === 'evidence') stream.send('evidence', payload);
+        else stream.send('stage', { stage: name, ...(payload || {}) });
+      },
+    });
+  } catch (err) {
+    out = failed(err);
+  }
+
+  stream.send('done', out);
+  stream.end();
+
+  /*
+   * turnMiddleware cannot see this one: it wraps res.json, and a stream never
+   * calls it. Recorded here instead, or the conversation a customer gets back
+   * after a reload would be missing every streamed turn — which is every turn.
+   */
+  try {
+    await recordTurn({
+      question,
+      answer: String(out?.answer || ''),
+      capability: 'chat',
+      sessionId: req.user?.userId || '',
+    });
+  } catch { /* a turn that cannot be written down is not an answer that failed */ }
 }
 
 /**

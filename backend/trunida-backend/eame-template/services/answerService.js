@@ -649,7 +649,25 @@ const CHALLENGE = /^\s*(are you sure|really\??|is that right|are you certain|you
  * `history` is the turns before it and `ctx` what the last answer found, so a
  * follow-up narrows rather than starting again.
  */
-export async function answer({ question, history = [], ctx = null, kind = 'own' } = {}) {
+/*
+ * `onStage` — what is happening, and the evidence as soon as it is certain.
+ *
+ * A question takes about eight seconds: roughly two to plan, a moment to read
+ * and check the records, and five for the model to write the sentence. All of
+ * it used to arrive at once, so the customer watched nothing happen for eight
+ * seconds and then got everything.
+ *
+ * But the ANSWER is finished long before the sentence is. Who was absent, how
+ * many, from which dataset — that is computed by code and validated by code,
+ * and by the time the writing starts none of it can change. Holding it back
+ * to arrive with the prose is a choice, and it was the wrong one.
+ *
+ * So the evidence goes out at 'evidence', final and never rewritten, and the
+ * sentence follows when it is ready. Callers that pass no onStage get exactly
+ * what they got before.
+ */
+export async function answer({ question, history = [], ctx = null, kind = 'own', onStage = null } = {}) {
+  const stage = (name, payload) => { try { if (onStage) onStage(name, payload); } catch { /* a watcher must not break the answer */ } };
   const notes = [];
   const q = String(question || '').trim();
   if (!q) {
@@ -684,8 +702,11 @@ export async function answer({ question, history = [], ctx = null, kind = 'own' 
   const challenged = CHALLENGE.test(q) && !!lastQuestion;
   const asked = challenged ? lastQuestion : q;
 
+  stage('planning');
   const planned = await plan({ question: asked, history: history.slice(-8), ctx, cat });
+  stage('reading', { reading: planned.reading || '' });
   const { groups } = await execute(planned, used);
+  stage('checking');
   const cross = overlap(groups);
   const { state, issues } = validate({ groups, plan: planned });
 
@@ -720,6 +741,12 @@ export async function answer({ question, history = [], ctx = null, kind = 'own' 
     if (g.records === 0) notes.push(`Nothing in ${g.dataset} matched ${g.label.toLowerCase()}${g.window ? ` for ${g.window}` : ''}.`);
   }
 
+  // Everything except the sentence, and none of it can change from here.
+  stage('evidence', envelope({
+    answer: '', groups, cross, notes, planned, kind: used, checked: true, state, issues,
+  }));
+
+  stage('writing');
   let text = await say({ question: asked, groups, cross, planned, issues });
   if (challenged) {
     const basis = groups.map(g => `${g.records} from ${g.dataset}`).join(' and ');

@@ -131,16 +131,36 @@ function applyName(content, appName, copy = {}) {
  * @returns {{path:string, content:string}[]}
  */
 export function buildManifest({ appName = '', copy = {} } = {}) {
-  const manifest = [];
+  const byPath = new Map();
+  const put = (dest, content) => byPath.set(dest, { path: dest, content });
 
   for (const [source, dest] of CORE_FILES) {
-    manifest.push({ path: dest, content: applyName(readFile(source), appName, copy) });
+    put(dest, applyName(readFile(source), appName, copy));
   }
 
   for (const [fullPath, dest] of walkTemplateFiles(TEMPLATE_ROOT)) {
-    manifest.push({ path: dest, content: applyName(readFile(fullPath, true), appName, copy) });
+    put(dest, applyName(readFile(fullPath, true), appName, copy));
   }
 
+  /*
+   * llmCore.js is Svarg's provider module, not the template's stand-in.
+   *
+   * The copy in eame-template/services/llmCore.js exists so the template can
+   * be run and tested where it lives: it re-exports ../../services/llmService.js,
+   * a path that exists in THIS repository and in no delivered project. Walking
+   * the template shipped that stand-in verbatim, so any application delivered
+   * this way died on boot with "Cannot find module" — the same failure, from
+   * the same cause, as the WhatsApp connector that took Arthi's application
+   * down for a week.
+   *
+   * buildRuntime got this right through its SOURCE map. buildManifest walks
+   * the directory instead, so it has to be told. It matters because projectFor
+   * falls back to this whenever a blueprint has no verified build.
+   */
+  put('services/llmCore.js', applyName(readFile('services/llmService.js'), appName, copy));
+
+  const manifest = [...byPath.values()];
+  assertImportsResolve(manifest);
   return manifest;
 }
 

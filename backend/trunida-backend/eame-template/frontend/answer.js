@@ -61,11 +61,20 @@
 
   /*
    * What the application is doing, in the customer's terms. Not "calling the
-   * model" or "querying" — those are true and useless. The steps are the work
-   * as a person would describe it, and they advance on a timer because the
-   * pipeline is one request: the point is that something is happening, not a
-   * false claim about which stage it is on.
+   * model" or "querying" — those are true and useless.
+   *
+   * These used to advance on a timer, because the whole answer was one request
+   * and the page had no way of knowing which stage it was on. It does now: the
+   * server says. The timer remains only as a fallback for a client talking to
+   * an older application, where a guess is still better than a frozen line.
    */
+  var STAGE_WORDS = {
+    planning: 'Working out what to look at…',
+    reading:  'Reading the records…',
+    checking: 'Checking the numbers…',
+    writing:  'Writing the answer…',
+  };
+
   function working() {
     var steps = ['Reading the question…', 'Checking the records…', 'Putting the answer together…'];
     var node = add(el('<div class="ch-turn ch-turn--bot"><div class="ch-ans"><p class="ch-work"><span class="ch-work__dot"></span><span class="ch-work__text">' + steps[0] + '</span></p></div></div>'));
@@ -76,7 +85,15 @@
       var s = node.querySelector('.ch-work__text');
       if (s) s.textContent = steps[i];
     }, 1400);
-    return { node: node, stop: function () { clearInterval(t); node.remove(); } };
+    return {
+      node: node,
+      say: function (stage) {
+        clearInterval(t);                       // the server is talking; stop guessing
+        var s = node.querySelector('.ch-work__text');
+        if (s && STAGE_WORDS[stage]) s.textContent = STAGE_WORDS[stage];
+      },
+      stop: function () { clearInterval(t); node.remove(); },
+    };
   }
 
   /*
@@ -277,6 +294,74 @@
     log.scrollTop = log.scrollHeight;
   }
 
+  /*
+   * The answer as it is made.
+   *
+   * 'evidence' carries the records, counts and names — computed and validated
+   * by code before the model is asked for a word, and never revised by what
+   * follows. It is drawn the moment it lands, which is where the wait
+   * disappears: the customer is answered at about two seconds instead of at
+   * eight, and what arrives later is the sentence about it, not a correction
+   * to it.
+   *
+   * Returns the final envelope, with ch_drawn set when the evidence has
+   * already been put on screen so the caller does not draw it twice.
+   */
+  async function readStream(r, work) {
+    var reader = r.body && r.body.getReader ? r.body.getReader() : null;
+    if (!reader) return null;                     // no streams here: caller falls back
+    var dec = new TextDecoder();
+    var buf = '';
+    var early = null;
+    var final = null;
+
+    function handle(event, data) {
+      if (event === 'stage') { work.say(data.stage); return; }
+      if (event === 'evidence') {
+        work.stop();
+        early = answerNode(data);                 // the answer, minus its prose
+        return;
+      }
+      if (event === 'done') final = data;
+    }
+
+    while (true) {
+      var step = await reader.read();
+      if (step.done) break;
+      buf += dec.decode(step.value, { stream: true });
+      var blocks = buf.split('\n\n');
+      buf = blocks.pop();                         // keep the partial one
+      for (var i = 0; i < blocks.length; i++) {
+        var name = '';
+        var payload = '';
+        blocks[i].split('\n').forEach(function (line) {
+          if (line.indexOf('event:') === 0) name = line.slice(6).trim();
+          else if (line.indexOf('data:') === 0) payload += line.slice(5).trim();
+        });
+        if (!name) continue;
+        var data = null;
+        try { data = payload ? JSON.parse(payload) : {}; } catch (e) { continue; }
+        handle(name, data);
+      }
+    }
+
+    if (final && early) {
+      // The sentence, written into the node the evidence already made. The
+      // cards below it do not move, because they were right the first time.
+      var ans = early.querySelector('.ch-ans');
+      var first = ans && ans.firstElementChild;
+      var html = '';
+      String(final.answer || '').split(/\n+/).filter(Boolean).forEach(function (para) {
+        html += '<p class="ch-answer">' + esc(para) + '</p>';
+      });
+      if (ans && html) ans.insertAdjacentHTML('afterbegin', html);
+      else if (ans && !html && first) { /* nothing written: the evidence stands alone */ }
+      log.scrollTop = log.scrollHeight;
+      final.ch_drawn = true;
+    }
+    return final;
+  }
+
   // ── Asking ────────────────────────────────────────────────────────────────
 
   async function ask(text) {
@@ -290,23 +375,33 @@
       try { kind = sessionStorage.getItem('ch-answer-kind') === 'sample' ? 'sample' : 'own'; } catch (e) { /* fine */ }
       var r = await fetch(API + '/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ message: text, history: history.slice(-8), context: context, kind: kind }),
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+          Authorization: 'Bearer ' + token,
+        },
+        body: JSON.stringify({ message: text, history: history.slice(-8), context: context, kind: kind, stream: true }),
       });
-      d = r.ok ? await r.json() : null;
       if (!r.ok) {
         var err = await r.json().catch(function () { return {}; });
         work.stop();
         notice(err.error || 'That did not work. Try again in a moment.');
         return;
       }
+      // An application built before streaming existed answers with plain JSON.
+      // Reading the content type rather than assuming keeps this page working
+      // against both, which matters because the page and the server it talks
+      // to are updated by separate rebuilds.
+      var streamed = /text\/event-stream/i.test(r.headers.get('content-type') || '');
+      d = streamed ? await readStream(r, work) : await r.json();
     } catch (e) {
       work.stop();
       notice('I could not reach the application. Check your connection and try again.');
       return;
     }
     work.stop();
-    answerNode(d);
+    if (!d) { notice('That did not work. Try again in a moment.'); return; }
+    if (!d.ch_drawn) answerNode(d);
     context = d.context || null;
     history.push({ role: 'assistant', text: d.answer || '' });
     if (history.length > 12) history = history.slice(-12);

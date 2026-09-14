@@ -168,7 +168,7 @@ const PROVIDERS = {
   // Env var: GOOGLE_API_KEY (matches Python pipeline); GEMINI_API_KEY also accepted.
 
   gemini: {
-    async generate({ systemPrompt, userMessage, model, maxTokens }) {
+    async generate({ systemPrompt, userMessage, model, maxTokens, thinking }) {
       const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
       if (!apiKey) throw new Error('GOOGLE_API_KEY is not configured.');
 
@@ -197,11 +197,26 @@ const PROVIDERS = {
       // models existed, so the headroom is added here rather than asking
       // ~30 call sites to know which models think.
       const asked = maxTokens || DEFAULT_MAX_TOKENS;
-      const budget = asked + THINKING_HEADROOM;
+      /*
+       * Thinking is billed as output, and most calls do not need any.
+       *
+       * Extracting JSON from a catalogue, or writing three sentences from
+       * facts already computed, is not reasoning work — but a thinking model
+       * will reason anyway, at up to THINKING_HEADROOM tokens a call, and
+       * charge for every one. That is invisible unless you look for it,
+       * because thoughts are counted separately from the answer.
+       *
+       * thinking: false turns it off and drops the headroom with it, so the
+       * budget is what the caller actually asked for.
+       */
+      const wantsThinking = thinking !== false;
+      const budget = wantsThinking ? asked + THINKING_HEADROOM : asked;
 
       const result   = await mdl.generateContent({
         contents:         [{ role: 'user', parts: [{ text: userMessage }] }],
-        generationConfig: { maxOutputTokens: budget },
+        generationConfig: wantsThinking
+          ? { maxOutputTokens: budget }
+          : { maxOutputTokens: budget, thinkingConfig: { thinkingBudget: 0 } },
         safetySettings,
       });
 
@@ -233,10 +248,19 @@ const PROVIDERS = {
         );
       }
 
+      /*
+       * thoughtsTokenCount was not counted, so every cost this system reported
+       * — the usage ledger, the spend cap, every estimate anyone made from
+       * them — was blind to the part of the bill that is usually largest.
+       * Thoughts are output for billing, so they are output here.
+       */
+      const thoughts = meta?.thoughtsTokenCount || 0;
       return {
         text,
-        inputTokens:  meta?.promptTokenCount     || 0,
-        outputTokens: meta?.candidatesTokenCount || 0,
+        inputTokens:   meta?.promptTokenCount     || 0,
+        outputTokens: (meta?.candidatesTokenCount || 0) + thoughts,
+        visibleTokens: meta?.candidatesTokenCount || 0,
+        thinkingTokens: thoughts,
       };
     },
   },
@@ -430,7 +454,7 @@ const PROVIDERS = {
 
 // ── Failover chain executor ────────────────────────────────────────────────────
 
-async function runChain({ systemPrompt, userMessage, model, maxTokens }) {
+async function runChain({ systemPrompt, userMessage, model, maxTokens, thinking }) {
   const chain  = getProviderChain();
   const errors = [];
 
@@ -450,7 +474,7 @@ async function runChain({ systemPrompt, userMessage, model, maxTokens }) {
       : `[llm] Failover → ${name}`);
 
     try {
-      const result = await impl.generate({ systemPrompt, userMessage, model, maxTokens });
+      const result = await impl.generate({ systemPrompt, userMessage, model, maxTokens, thinking });
       if (i > 0) console.log(`[llm] Failover succeeded via ${name}`);
       // Which model actually answered. Providers do not report it back, and
       // the ledger cannot price a call it cannot name — an unknown model is
@@ -531,6 +555,9 @@ export async function generate({
   maxTokens,
   provider,
   label,
+  // false for a call that is extraction or wording rather than reasoning.
+  // Thinking is billed as output and most calls do not need any.
+  thinking,
 }) {
   const started = Date.now();
   let result;
@@ -544,10 +571,10 @@ export async function generate({
       );
     }
     console.log(`[llm] Provider: ${provider} (explicit)`);
-    result = await impl.generate({ systemPrompt, userMessage, model, maxTokens });
+    result = await impl.generate({ systemPrompt, userMessage, model, maxTokens, thinking });
     result = { ...result, provider, model: model || DEFAULT_MODELS[provider] || '' };
   } else {
-    result = await runChain({ systemPrompt, userMessage, model, maxTokens });
+    result = await runChain({ systemPrompt, userMessage, model, maxTokens, thinking });
   }
 
   recordCall({ label, result, ms: Date.now() - started });

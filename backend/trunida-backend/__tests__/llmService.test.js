@@ -12,6 +12,7 @@
  */
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'fs';
 
 // ── Hoisted stable mock references ───────────────────────────────────────────
 // Constructor mocks MUST use `function` syntax (not arrows) so `new X()` works.
@@ -287,5 +288,41 @@ describe('unknown provider', () => {
   it('error lists the supported providers', async () => {
     await expect(generate({ ...CALL_OPTS, provider: 'mistral' }))
       .rejects.toThrow(/gemini.*claude.*openai|gemini|claude|openai/i);
+  });
+});
+
+/**
+ * Thinking tokens are billed as output and were never counted, so every cost
+ * this system reported — the usage ledger, the spend cap, every estimate made
+ * from them — was blind to the part of the bill that is usually largest. The
+ * codebase had already measured a 59-token prompt spending 769 thinking
+ * tokens; nothing was adding them up.
+ */
+describe('thinking is billed, so it is counted and can be turned off', () => {
+  const src = readFileSync(new URL('../services/llmService.js', import.meta.url), 'utf8');
+
+  it('counts thoughts as output, because that is how they are charged', () => {
+    expect(src).toMatch(/thoughtsTokenCount/);
+    expect(src).toMatch(/outputTokens: \(meta\?\.candidatesTokenCount \|\| 0\) \+ thoughts/);
+    // And keeps the visible answer separately, so the split is readable.
+    expect(src).toMatch(/visibleTokens/);
+    expect(src).toMatch(/thinkingTokens/);
+  });
+
+  it('lets a caller refuse to pay for reasoning it does not need', () => {
+    expect(src).toMatch(/thinkingConfig: \{ thinkingBudget: 0 \}/);
+    // And drops the headroom with it, so the budget is what was asked for.
+    expect(src).toMatch(/wantsThinking \? asked \+ THINKING_HEADROOM : asked/);
+  });
+
+  it('threads the option from generate through the failover chain', () => {
+    // Four places: generate, runChain, the explicit-provider call, the chain
+    // call. A miss anywhere leaves thinking on and the saving unrealised.
+    expect((src.match(/maxTokens, thinking/g) || []).length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('the answer pipeline turns it off for both of its calls', () => {
+    const answer = readFileSync(new URL('../eame-template/services/answerService.js', import.meta.url), 'utf8');
+    expect((answer.match(/thinking: false/g) || []).length).toBe(2);
   });
 });

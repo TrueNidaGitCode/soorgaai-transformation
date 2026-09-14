@@ -254,6 +254,9 @@ async function askForPlan({ question, history, ctx, cat, insist }) {
       ].join('\n') : ''),
     userMessage: `${historyText(history)}${contextText(ctx)}\nQuestion: ${question}`,
     maxTokens: 1100,
+    // Extraction, not reasoning: thinking is billed as output and this call
+    // does not need any.
+    thinking: false,
   });
   let parsed = null;
   try {
@@ -427,6 +430,9 @@ async function say({ question, groups, cross, planned, issues }) {
       + `\nFACTS (the only numbers you may use)\n${factsText(groups, cross)}`
       + (issues.length ? `\n\nWORTH SAYING\n${issues.join('\n')}` : ''),
     maxTokens: 400,
+    // Three sentences from facts already computed. No thinking required, and
+    // it is charged for whether it helps or not.
+    thinking: false,
   });
   return String(res?.text || '').trim();
 }

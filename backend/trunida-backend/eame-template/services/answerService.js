@@ -35,7 +35,7 @@
  * the data cannot support the question — and then it says what is missing.
  */
 
-import { readIndex, findDataset, readAllRows, datasetKey } from './connectorService.js';
+import { readIndex, findDataset, readAllRows, datasetKey, dataVersion } from './connectorService.js';
 import { generate, generateRaw } from './llmService.js';
 import {
   parseDate, windowRange, inWindow, dateCoverage, deriveByEntity,
@@ -63,7 +63,32 @@ const DATEISH = /date|day|on$|when|session|due|paid/i;
 
 // ── What the application holds ──────────────────────────────────────────────
 
+/*
+ * The catalogue is what the datasets ARE, not what this question needs.
+ *
+ * Building it reads every row of every dataset out of the database — to count
+ * them, and to collect six example values per column for the prompt. That was
+ * being done again from scratch on every single question, and the answer was
+ * identical every time until somebody imported something. Measured on the
+ * academy's data it was most of the 0.8 seconds this application spent around
+ * the two model calls.
+ *
+ * Keyed on dataVersion(), so an import is visible on the very next question
+ * rather than after a timeout: there is no staleness window to reason about,
+ * because the key changes at the moment the rows do.
+ */
+const _catalogue = new Map();
+
 export async function catalogue(kind = 'own') {
+  const version = dataVersion();
+  const hit = _catalogue.get(kind);
+  if (hit && hit.version === version) return hit.value;
+  const value = await buildCatalogue(kind);
+  _catalogue.set(kind, { version, value });
+  return value;
+}
+
+async function buildCatalogue(kind) {
   const out = [];
   for (const d of readIndex()) {
     const all = await readAllRows(d, kind);

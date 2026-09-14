@@ -243,9 +243,22 @@ async function readSourceRows(dataset, src) {
   return readSourceFile(dataset, src);
 }
 
+/*
+ * When the data last changed.
+ *
+ * Read by anything that would otherwise re-derive the same thing from the same
+ * rows on every request. It is a counter, not a clock: two changes in the same
+ * millisecond still produce two different values, and a cache keyed on it
+ * cannot miss one.
+ */
+let _dataVersion = 0;
+export function dataVersion() { return _dataVersion; }
+export function bumpDataVersion() { _dataVersion++; }
+
 /** Replace what this source holds on this dataset: the record, then the file the seed reads. */
 async function writeSourceRows(dataset, src, rows) {
   const col = rowsCollection();
+  bumpDataVersion();
   await col.deleteMany({ datasetName: dataset.name, source: src });
   if (rows.length) await col.insertMany(rows.map((cells, n) => ({ datasetName: dataset.name, source: src, n, cells })), { ordered: true });
   return writeSourceFile(dataset, src, rows);
@@ -596,6 +609,7 @@ export async function createConnector({ kind: kindName, datasetName, config = {}
     schedule: SCHEDULES[schedule] ? schedule : 'manual',
     status: 'connected', lastSyncAt: null, lastRows: 0, lastError: '', createdAt: new Date(),
   };
+  bumpDataVersion();
   const r = await connectorsCollection().insertOne(doc);
   return publicView({ ...doc, _id: r.insertedId });
 }
@@ -619,7 +633,7 @@ export async function updateConnector(id, { config, mapping, schedule } = {}) {
   }
   if (mapping && typeof mapping === 'object') $set.mapping = mapping;
   if (schedule != null) $set.schedule = SCHEDULES[schedule] ? schedule : 'manual';
-  if (Object.keys($set).length) await connectorsCollection().updateOne({ _id: doc._id }, { $set });
+  if (Object.keys($set).length) { bumpDataVersion(); await connectorsCollection().updateOne({ _id: doc._id }, { $set }); }
   return publicView(await findDoc(id));
 }
 

@@ -347,11 +347,12 @@ let serverLog = [];
  * the whole log in memory, which means it cannot be the meter — the totals
  * are accumulated here as the lines arrive instead.
  */
-const meter = { calls: 0, in: 0, out: 0 };
-const USAGE_LINE = /\[llm usage\] [^:]*: (\d+) in \/ (\d+) out/g;
+const meter = { calls: 0, in: 0, out: 0, ms: 0 };
+const USAGE_LINE = /\[llm usage\] [^:]*: (\d+) in \/ (\d+) out \(([\d.]+)s\)/g;
 const tally = (chunk) => {
   for (const m of String(chunk).matchAll(USAGE_LINE)) {
     meter.calls++; meter.in += Number(m[1]); meter.out += Number(m[2]);
+    meter.ms += Math.round(Number(m[3]) * 1000);
   }
 };
 // Gemini Flash list pricing, as in cost_probe.mjs. Thinking is billed as
@@ -414,15 +415,22 @@ for (const s of sections) {
   const rows = [];
   for (const q of list) {
     if (hitCeiling()) break;
-    const was = { calls: meter.calls, in: meter.in, out: meter.out, usd: meterUsd() };
+    const was = { calls: meter.calls, in: meter.in, out: meter.out, ms: meter.ms, usd: meterUsd() };
     const { status, body, ms, why } = await askOne(q, s.turns ? history.slice(-6) : []);
     const cost = meterUsd() - was.usd;
     console.log('    ' + (meter.calls - was.calls) + ' calls, ' + (meter.in - was.in) + ' in / ' +
       (meter.out - was.out) + ' out — Rs ' + (cost * USD_INR).toFixed(3).padStart(6) +
+      '   ' + (ms / 1000).toFixed(1) + 's (model ' + ((meter.ms - was.ms) / 1000).toFixed(1) + 's)' +
       '   run so far: Rs ' + (meterUsd() * USD_INR).toFixed(2) + ' of ' + (BUDGET * USD_INR).toFixed(0));
     if (s.turns) { history.push({ role: 'user', text: q }, { role: 'assistant', text: String(body?.answer || '') }); }
     await sleep(PACE);
     const ev = evaluate(s, q, body, ms, status);
+    // Where the wait went: the model, and everything else this application did
+    // around it — reading the datasets, running the steps, validating.
+    ev.ms = ms;
+    ev.modelMs = meter.ms - was.ms;
+    ev.appMs = Math.max(0, ms - ev.modelMs);
+    ev.calls = meter.calls - was.calls;
     if (why) ev.flags.push(why.slice(0, 160));
     rows.push({ q, answer: String(body?.answer || body?.error || ''), ev, body });
     asked++;

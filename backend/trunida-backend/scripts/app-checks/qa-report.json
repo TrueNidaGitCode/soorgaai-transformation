@@ -1,0 +1,5890 @@
+[
+ {
+  "section": "1",
+  "title": "First response and basic understanding",
+  "rows": [
+   {
+    "question": "What would you recommend I look at today?",
+    "answer": "I cannot tell that from the connected data. No date or specific operational area was provided to identify relevant records.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. No date or specific operational area was provided to identify relevant records.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "No date or specific operational area was provided to identify relevant records."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Show me what needs my attention today.",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "What happened in the academy today?",
+    "answer": "I cannot tell that from the connected data. No date provided to determine which records correspond to today",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. No date provided to determine which records correspond to today",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "No date provided to determine which records correspond to today"
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Give me a quick summary of today.",
+    "answer": "I cannot tell that from the connected data. Current date is not specified to identify records for today",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. Current date is not specified to identify records for today",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Current date is not specified to identify records for today"
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "What should I be aware of right now?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "What are the most important things happening today?",
+    "answer": "I cannot tell that from the connected data. Current date is not specified to determine what is happening today",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. Current date is not specified to determine what is happening today",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Current date is not specified to determine what is happening today"
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   }
+  ]
+ },
+ {
+  "section": "2",
+  "title": "Data retrieval",
+  "rows": [
+   {
+    "question": "Who is attending practice today?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Who hasn't confirmed attendance?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Who is absent today?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "How many students are attending today's sessions?",
+    "answer": "I cannot tell that from the connected data. Today's date is not specified in the catalogue to identify today's sessions.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. Today's date is not specified in the catalogue to identify today's sessions.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Today's date is not specified in the catalogue to identify today's sessions."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which batches have the lowest attendance?",
+    "answer": "I cannot tell that from the connected data — attendance counts or rates per batch are missing.\n\nFrom 20 batch attendance records.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data — attendance counts or rates per batch are missing.\n\nFrom 20 batch attendance records.",
+     "groups": [
+      {
+       "label": "Batch attendance records",
+       "category": "info",
+       "categoryLabel": "",
+       "tone": "ok",
+       "records": 20,
+       "entities": 7,
+       "dataset": "Batch Training Schedule",
+       "columns": [
+        "schedule_id",
+        "batch_id",
+        "session_date",
+        "day_of_week",
+        "start_time",
+        "end_time",
+        "facility_pitch_assigned",
+        "primary_coach_id",
+        "primary_coach_name",
+        "assistant_coach_id",
+        "session_focus",
+        "max_capacity",
+        "confirmed_attendance",
+        "session_status",
+        "whatsapp_notification_status",
+        "remarks"
+       ],
+       "items": [
+        {
+         "name": "BAT-U14-MORN",
+         "lines": [
+          [
+           "SCH-2024-1041",
+           "BAT-U14-MORN",
+           "2024-10-14",
+           "Monday",
+           "06:30",
+           "08:30",
+           "Turf Net 2",
+           "COACH-004",
+           "Coach Ramesh K.",
+           "COACH-019",
+           "Front-foot defensive technique & pace drills",
+           "20",
+           "18",
+           "Completed",
+           "Sent",
+           "Full squad on time"
+          ],
+          [
+           "SCH-2024-1046",
+           "BAT-U14-MORN",
+           "2024-10-16",
+           "Wednesday",
+           "06:30",
+           "08:30",
+           "Turf Net 2",
+           "COACH-004",
+           "Coach Ramesh K.",
+           "COACH-019",
+           "Running between wickets and boundary fielding",
+           "20",
+           "17",
+           "Completed",
+           "Sent",
+           ""
+          ],
+          [
+           "SCH-2024-1051",
+           "BAT-U14-MORN",
+           "2024-10-18",
+           "Friday",
+           "06:30",
+           "08:30",
+           "Turf Net 2",
+           "COACH-014",
+           "Coach Vikram D.",
+           "COACH-019",
+           "Back-foot punch against short-of-length",
+           "20",
+           "15",
+           "Completed",
+           "Sent",
+           "Coach Vikram substituting for Coach Ramesh"
+          ],
+          [
+           "SCH-2024-1057",
+           "BAT-U14-MORN",
+           "2024-10-21",
+           "Monday",
+           "06:30",
+           "08:30",
+           "Turf Net 2",
+           "COACH-004",
+           "Coach Ramesh K.",
+           "COACH-019",
+           "Short-pitch defensive mastery",
+           "20",
+           "8",
+           "Rescheduled_Academy",
+           "Sent",
+           "Rescheduled due to school mid-term exams"
+          ]
+         ],
+         "records": 4,
+         "source": "sample"
+        },
+        {
+         "name": "BAT-ADV-MORN",
+         "lines": [
+          [
+           "SCH-2024-1042",
+           "BAT-ADV-MORN",
+           "2024-10-14",
+           "Monday",
+           "06:00",
+           "08:30",
+           "Center Pitch 1",
+           "COACH-001",
+           "Coach Anand S.",
+           "COACH-012",
+           "Match simulation: death overs bowling",
+           "16",
+           "15",
+           "Completed",
+           "Sent",
+           ""
+          ],
+          [
+           "SCH-2024-1047",
+           "BAT-ADV-MORN",
+           "2024-10-16",
+           "Wednesday",
+           "06:00",
+           "08:30",
+           "Center Pitch 2",
+           "COACH-001",
+           "Coach Anand S.",
+           "COACH-012",
+           "Red ball match scenario vs left-arm seam",
+           "16",
+           "16",
+           "Completed",
+           "Sent",
+           ""
+          ],
+          [
+           "SCH-2024-1052",
+           "BAT-ADV-MORN",
+           "2024-10-18",
+           "Friday",
+           "06:00",
+           "08:30",
+           "Main Ground",
+           "COACH-001",
+           "Coach Anand S.",
+           "COACH-012",
+           "Open wicket intra-academy trial match",
+           "16",
+           "14",
+           "Completed",
+           "Sent",
+           "3 trainees playing district tournament"
+          ],
+          [
+           "SCH-2024-1058",
+           "BAT-ADV-MORN",
+           "2024-10-21",
+           "Monday",
+           "06:00",
+           "08:30",
+           "Center Pitch 1",
+           "COACH-001",
+           "Coach Anand S.",
+           "COACH-012",
+           "Yorker execution and boundary clearing",
+           "16",
+           "15",
+           "Completed",
+           "Sent",
+           ""
+          ]
+         ],
+         "records": 4,
+         "source": "sample"
+        },
+        {
+         "name": "BAT-U16-EVNG",
+         "lines": [
+          [
+           "SCH-2024-1043",
+           "BAT-U16-EVNG",
+           "2024-10-14",
+           "Monday",
+           "16:30",
+           "18:30",
+           "Astro Net 3",
+           "COACH-007",
+           "Coach Pradeep M.",
+           "",
+           "Slip catching and short-pitch batting",
+           "22",
+           "19",
+           "Completed",
+           "Sent",
+           "Assistant coach on personal leave"
+          ],
+          [
+           "SCH-2024-1048",
+           "BAT-U16-EVNG",
+           "2024-10-16",
+           "Wednesday",
+           "16:30",
+           "18:30",
+           "Turf Net 3",
+           "COACH-007",
+           "Coach Pradeep M.",
+           "COACH-015",
+           "T20 power-hitting angles",
+           "22",
+           "0",
+           "Cancelled_Weather",
+           "Sent",
+           "Unseasonal heavy rain; turf flooded"
+          ],
+          [
+           "SCH-2024-1059",
+           "BAT-U16-EVNG",
+           "2024-10-21",
+           "Monday",
+           "16:30",
+           "18:30",
+           "Turf Net 4",
+           "COACH-007",
+           "Coach Pradeep M.",
+           "COACH-015",
+           "Bowling speed gun assessment",
+           "22",
+           "",
+           "Scheduled",
+           "Pending",
+           "WhatsApp broadcast pending admin trigger"
+          ]
+         ],
+         "records": 3,
+         "source": "sample"
+        },
+        {
+         "name": "BAT-U12-MORN",
+         "lines": [
+          [
+           "SCH-2024-1044",
+           "BAT-U12-MORN",
+           "2024-10-15",
+           "Tuesday",
+           "06:30",
+           "08:00",
+           "Indoor Net B",
+           "COACH-011",
+           "Coach Sunil T.",
+           "COACH-022",
+           "Grip alignment and basic run-up mechanics",
+           "18",
+           "14",
+           "Completed",
+           "Sent",
+           ""
+          ],
+          [
+           "SCH-2024-1049",
+           "BAT-U12-MORN",
+           "2024-10-17",
+           "Thursday",
+           "06:30",
+           "08:00",
+           "Indoor Net B",
+           "COACH-011",
+           "Coach Sunil T.",
+           "COACH-022",
+           "High catching and boundary relay throws",
+           "18",
+           "16",
+           "Completed",
+           "Sent",
+           ""
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "BAT-U14-GRLS",
+         "lines": [
+          [
+           "SCH-2024-1045",
+           "BAT-U14-GRLS",
+           "2024-10-15",
+           "Tuesday",
+           "16:30",
+           "18:30",
+           "Turf Net 1",
+           "COACH-009",
+           "Coach Deepa R.",
+           "COACH-028",
+           "Spin bowling variations & sweep shots",
+           "15",
+           "13",
+           "Completed",
+           "Sent",
+           ""
+          ],
+          [
+           "SCH-2024-1050",
+           "BAT-U14-GRLS",
+           "2024-10-17",
+           "Thursday",
+           "16:30",
+           "18:30",
+           "Astro Net 1",
+           "COACH-009",
+           "Coach Deepa R.",
+           "",
+           "Target bowling & Yorker length consistency",
+           "15",
+           "11",
+           "Completed",
+           "Sent",
+           ""
+          ],
+          [
+           "SCH-2024-1060",
+           "BAT-U14-GRLS",
+           "2024-10-22",
+           "Tuesday",
+           "16:30",
+           "18:30",
+           "Astro Net 1",
+           "COACH-009",
+           "Coach Deepa R.",
+           "COACH-028",
+           "Powerplay field placement & batting options",
+           "15",
+           "",
+           "Scheduled",
+           "Pending",
+           ""
+          ]
+         ],
+         "records": 3,
+         "source": "sample"
+        },
+        {
+         "name": "BAT-U10-WKND",
+         "lines": [
+          [
+           "SCH-2024-1053",
+           "BAT-U10-WKND",
+           "2024-10-19",
+           "Saturday",
+           "07:00",
+           "09:00",
+           "Junior Ground",
+           "COACH-006",
+           "Coach Nitin B.",
+           "COACH-025",
+           "Hand-eye coordination and foam ball batting",
+           "25",
+           "24",
+           "Completed",
+           "Sent",
+           "Parents observation session"
+          ],
+          [
+           "SCH-2024-1055",
+           "BAT-U10-WKND",
+           "2024-10-20",
+           "Sunday",
+           "07:00",
+           "09:00",
+           "Junior Ground",
+           "COACH-006",
+           "Coach Nitin B.",
+           "COACH-025",
+           "Mini game: Pairs cricket rules and running",
+           "25",
+           "22",
+           "Completed",
+           "Sent",
+           ""
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "BAT-U12-WKND",
+         "lines": [
+          [
+           "SCH-2024-1054",
+           "BAT-U12-WKND",
+           "2024-10-19",
+           "Saturday",
+           "09:15",
+           "11:15",
+           "Astro Net 2",
+           "COACH-008",
+           "Coach Farooq H.",
+           "COACH-021",
+           "Wicket-keeping stance and collection drills",
+           "20",
+           "18",
+           "Completed",
+           "Sent",
+           ""
+          ],
+          [
+           "SCH-2024-1056",
+           "BAT-U12-WKND",
+           "2024-10-20",
+           "Sunday",
+           "09:15",
+           "11:15",
+           "Astro Net 2",
+           "COACH-008",
+           "Coach Farooq H.",
+           "COACH-021",
+           "Bowling action review with video feedback",
+           "20",
+           "19",
+           "Completed",
+           "Sent",
+           ""
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Batch Training Schedule",
+       "records": 20
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Show me today's practice schedule.",
+    "answer": "I cannot tell that from the connected data — no batch training schedule records were found for today.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data — no batch training schedule records were found for today.",
+     "groups": [
+      {
+       "label": "Today's practice schedule",
+       "category": "info",
+       "categoryLabel": "",
+       "tone": "ok",
+       "records": 0,
+       "entities": 0,
+       "dataset": "Batch Training Schedule",
+       "columns": [
+        "schedule_id",
+        "batch_id",
+        "session_date",
+        "day_of_week",
+        "start_time",
+        "end_time",
+        "facility_pitch_assigned",
+        "primary_coach_id",
+        "primary_coach_name",
+        "assistant_coach_id",
+        "session_focus",
+        "max_capacity",
+        "confirmed_attendance",
+        "session_status",
+        "whatsapp_notification_status",
+        "remarks"
+       ],
+       "items": []
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Batch Training Schedule",
+       "records": 0
+      }
+     ],
+     "simulated": true,
+     "notes": [
+      "No rows in Batch Training Schedule matched today's practice schedule."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which coaches are assigned today?",
+    "answer": "No coaches are assigned today.\n\n0 records from the batch training schedule.",
+    "flags": [],
+    "envelope": {
+     "answer": "No coaches are assigned today.\n\n0 records from the batch training schedule.",
+     "groups": [
+      {
+       "label": "Assigned coaches today",
+       "category": "info",
+       "categoryLabel": "",
+       "tone": "ok",
+       "records": 0,
+       "entities": 0,
+       "dataset": "Batch Training Schedule",
+       "columns": [
+        "schedule_id",
+        "batch_id",
+        "session_date",
+        "day_of_week",
+        "start_time",
+        "end_time",
+        "facility_pitch_assigned",
+        "primary_coach_id",
+        "primary_coach_name",
+        "assistant_coach_id",
+        "session_focus",
+        "max_capacity",
+        "confirmed_attendance",
+        "session_status",
+        "whatsapp_notification_status",
+        "remarks"
+       ],
+       "items": []
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Batch Training Schedule",
+       "records": 0
+      }
+     ],
+     "simulated": true,
+     "notes": [
+      "No rows in Batch Training Schedule matched assigned coaches today."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which students are enrolled in U16?",
+    "answer": "4 students are enrolled in U16.\n\nFrom 4 records.",
+    "flags": [],
+    "envelope": {
+     "answer": "4 students are enrolled in U16.\n\nFrom 4 records.",
+     "groups": [
+      {
+       "label": "U-16 Students",
+       "category": "info",
+       "categoryLabel": "",
+       "tone": "ok",
+       "records": 4,
+       "entities": 4,
+       "dataset": "Master Student Roster",
+       "columns": [
+        "trainee_id",
+        "first_name",
+        "last_name",
+        "age_group",
+        "primary_guardian",
+        "guardian_phone",
+        "enrollment_date",
+        "plan_type",
+        "subscription_status",
+        "subscription_valid_until",
+        "batch_id",
+        "batch_schedule",
+        "assigned_coach_name",
+        "whatsapp_group_status",
+        "monthly_fee_inr",
+        "fee_status",
+        "last_attendance_date"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "SC-2023-0118",
+           "Rohan",
+           "Sharma",
+           "U-16",
+           "Sunita Sharma",
+           "+91-98765-00102",
+           "2023-05-15",
+           "Yearly",
+           "Active",
+           "2025-05-14",
+           "BAT-U16-EVNG",
+           "Mon-Wed-Fri 16:30-18:30",
+           "Coach Arvind Swamy",
+           "Joined",
+           "32000",
+           "Paid",
+           "2024-05-27"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0044",
+         "lines": [
+          [
+           "SC-2024-0044",
+           "Sai",
+           "Chowdary",
+           "U-16",
+           "Venkat Chowdary",
+           "+91-98765-00107",
+           "2024-02-10",
+           "Monthly",
+           "Active",
+           "2024-06-10",
+           "BAT-U16-EVNG",
+           "Mon-Wed-Fri 16:30-18:30",
+           "Coach Arvind Swamy",
+           "Joined",
+           "3500",
+           "Pending Verification",
+           "2024-05-27"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0220",
+         "lines": [
+          [
+           "SC-2024-0220",
+           "Pranav",
+           "Kulkarni",
+           "U-16",
+           "Sanjay Kulkarni",
+           "+91-98765-00113",
+           "2024-05-10",
+           "Monthly",
+           "Active",
+           "2024-06-10",
+           "BAT-U16-EVNG",
+           "Mon-Wed-Fri 16:30-18:30",
+           "Coach Arvind Swamy",
+           "Joined",
+           "3500",
+           "Paid",
+           "2024-05-24"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0244",
+         "lines": [
+          [
+           "SC-2024-0244",
+           "Dev",
+           "Gill",
+           "U-16",
+           "Harpreet Gill",
+           "+91-98765-00116",
+           "2024-05-27",
+           "Monthly",
+           "Pending Payment",
+           "2024-05-27",
+           "BAT-U16-EVNG",
+           "Mon-Wed-Fri 16:30-18:30",
+           "Coach Arvind Swamy",
+           "Pending Invite",
+           "3500",
+           "Unpaid",
+           ""
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Master Student Roster",
+       "records": 4
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "How many active students do we have?",
+    "answer": "You have 12 active students.\n\nFrom 12 records.",
+    "flags": [],
+    "envelope": {
+     "answer": "You have 12 active students.\n\nFrom 12 records.",
+     "groups": [
+      {
+       "label": "Active students",
+       "category": "info",
+       "categoryLabel": "",
+       "tone": "ok",
+       "records": 12,
+       "entities": 12,
+       "dataset": "Master Student Roster",
+       "columns": [
+        "trainee_id",
+        "first_name",
+        "last_name",
+        "age_group",
+        "primary_guardian",
+        "guardian_phone",
+        "enrollment_date",
+        "plan_type",
+        "subscription_status",
+        "subscription_valid_until",
+        "batch_id",
+        "batch_schedule",
+        "assigned_coach_name",
+        "whatsapp_group_status",
+        "monthly_fee_inr",
+        "fee_status",
+        "last_attendance_date"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0104",
+         "lines": [
+          [
+           "SC-2023-0104",
+           "Aarav",
+           "Patel",
+           "U-14",
+           "Ramesh Patel",
+           "+91-98765-00101",
+           "2023-04-10",
+           "Monthly",
+           "Active",
+           "2024-06-30",
+           "BAT-U14-MORN",
+           "Tue-Thu-Sat 06:30-08:30",
+           "Coach Vikram Rao",
+           "Joined",
+           "3500",
+           "Paid",
+           "2024-05-28"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "SC-2023-0118",
+           "Rohan",
+           "Sharma",
+           "U-16",
+           "Sunita Sharma",
+           "+91-98765-00102",
+           "2023-05-15",
+           "Yearly",
+           "Active",
+           "2025-05-14",
+           "BAT-U16-EVNG",
+           "Mon-Wed-Fri 16:30-18:30",
+           "Coach Arvind Swamy",
+           "Joined",
+           "32000",
+           "Paid",
+           "2024-05-27"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0245",
+         "lines": [
+          [
+           "SC-2023-0245",
+           "Vihaan",
+           "Iyer",
+           "U-10",
+           "Karthik Iyer",
+           "+91-98765-00105",
+           "2023-11-01",
+           "Yearly",
+           "Active",
+           "2024-10-31",
+           "BAT-U10-WKND",
+           "Sat-Sun 16:00-18:00",
+           "Coach Vikram Rao",
+           "Joined",
+           "28000",
+           "Paid",
+           "2024-05-26"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0012",
+         "lines": [
+          [
+           "SC-2024-0012",
+           "Ananya",
+           "Deshmukh",
+           "U-14",
+           "Priya Deshmukh",
+           "+91-98765-00106",
+           "2024-01-05",
+           "Monthly",
+           "Active",
+           "2024-06-05",
+           "BAT-U14-GRLS",
+           "Tue-Thu-Sat 16:30-18:30",
+           "Coach Neha Joshi",
+           "Joined",
+           "3500",
+           "Paid",
+           "2024-05-28"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0044",
+         "lines": [
+          [
+           "SC-2024-0044",
+           "Sai",
+           "Chowdary",
+           "U-16",
+           "Venkat Chowdary",
+           "+91-98765-00107",
+           "2024-02-10",
+           "Monthly",
+           "Active",
+           "2024-06-10",
+           "BAT-U16-EVNG",
+           "Mon-Wed-Fri 16:30-18:30",
+           "Coach Arvind Swamy",
+           "Joined",
+           "3500",
+           "Pending Verification",
+           "2024-05-27"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0112",
+         "lines": [
+          [
+           "SC-2024-0112",
+           "Reyansh",
+           "Nair",
+           "U-14",
+           "Suresh Nair",
+           "+91-98765-00109",
+           "2024-03-15",
+           "Monthly",
+           "Active",
+           "2024-06-15",
+           "BAT-U14-MORN",
+           "Tue-Thu-Sat 06:30-08:30",
+           "Coach Vikram Rao",
+           "Joined",
+           "3500",
+           "Paid",
+           "2024-05-25"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "SC-2024-0150",
+           "Tanvi",
+           "Reddy",
+           "U-14",
+           "Kavitha Reddy",
+           "+91-98765-00110",
+           "2024-04-01",
+           "Yearly",
+           "Active",
+           "2025-03-31",
+           "BAT-U14-GRLS",
+           "Tue-Thu-Sat 16:30-18:30",
+           "Coach Neha Joshi",
+           "Joined",
+           "35000",
+           "Paid",
+           "2024-05-28"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0188",
+         "lines": [
+          [
+           "SC-2024-0188",
+           "Arjun",
+           "Bose",
+           "U-19",
+           "Amit Bose",
+           "+91-98765-00111",
+           "2024-04-20",
+           "Monthly",
+           "Active",
+           "2024-06-20",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Joined",
+           "4500",
+           "Paid",
+           "2024-05-28"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0205",
+         "lines": [
+          [
+           "SC-2024-0205",
+           "Ishaan",
+           "Gupta",
+           "U-10",
+           "Manish Gupta",
+           "+91-98765-00112",
+           "2024-05-02",
+           "Monthly",
+           "Active",
+           "2024-06-02",
+           "BAT-U10-WKND",
+           "Sat-Sun 16:00-18:00",
+           "Coach Vikram Rao",
+           "Joined",
+           "3000",
+           "Paid",
+           "2024-05-26"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0220",
+         "lines": [
+          [
+           "SC-2024-0220",
+           "Pranav",
+           "Kulkarni",
+           "U-16",
+           "Sanjay Kulkarni",
+           "+91-98765-00113",
+           "2024-05-10",
+           "Monthly",
+           "Active",
+           "2024-06-10",
+           "BAT-U16-EVNG",
+           "Mon-Wed-Fri 16:30-18:30",
+           "Coach Arvind Swamy",
+           "Joined",
+           "3500",
+           "Paid",
+           "2024-05-24"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0240",
+         "lines": [
+          [
+           "SC-2024-0240",
+           "Zayd",
+           "Siddiqui",
+           "U-12",
+           "Tariq Siddiqui",
+           "+91-98765-00115",
+           "2024-05-25",
+           "Monthly",
+           "Active",
+           "2024-06-25",
+           "BAT-U12-MORN",
+           "Tue-Thu-Sat 06:30-08:30",
+           "Coach Rajesh Pillai",
+           "Pending Invite",
+           "3000",
+           "Paid",
+           ""
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0249",
+         "lines": [
+          [
+           "SC-2024-0249",
+           "Samar",
+           "Joshi",
+           "U-10",
+           "Nitin Joshi",
+           "+91-98765-00117",
+           "2024-05-28",
+           "Yearly",
+           "Active",
+           "2025-05-27",
+           "BAT-U10-WKND",
+           "Sat-Sun 16:00-18:00",
+           "Coach Vikram Rao",
+           "Pending Invite",
+           "28000",
+           "Paid",
+           ""
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Master Student Roster",
+       "records": 12
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   }
+  ]
+ },
+ {
+  "section": "3",
+  "title": "Reasoning and analysis",
+  "rows": [
+   {
+    "question": "Which students have attendance problems?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Who has consistently missed practice recently?",
+    "answer": "2 trainees have confirmed absences and 3 trainees have unexcused no-shows needing review.\n\nFrom 2 confirmed absence records and 3 unexcused no-show records.",
+    "flags": [],
+    "envelope": {
+     "answer": "2 trainees have confirmed absences and 3 trainees have unexcused no-shows needing review.\n\nFrom 2 confirmed absence records and 3 unexcused no-show records.",
+     "groups": [
+      {
+       "label": "Confirmed absences",
+       "category": "absent",
+       "categoryLabel": "Absent",
+       "tone": "bad",
+       "records": 2,
+       "entities": 2,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "RC-20241014-004",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0211",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Excused Absence",
+           "2024-10-13 18:12:33",
+           "WAM-9021449",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "School exam preparation"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0188",
+         "lines": [
+          [
+           "RC-20241015-003",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0188",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "No Response",
+           "",
+           "",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "Persistent no-reply for 2 consecutive sessions"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      },
+      {
+       "label": "Unexcused no-shows",
+       "category": "discrepancy",
+       "categoryLabel": "Needs review",
+       "tone": "warn",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241014-002",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0118",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 20:05:14",
+           "WAM-9021445",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Parent responded in chat but player absent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "RC-20241015-002",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0150",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 19:10:52",
+           "WAM-9021510",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Did not report to pitch"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241017-002",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0089",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:14:18",
+           "",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Kit bag left in locker room yesterday"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 2
+      },
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 3
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which batches need attention?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "What attendance patterns do you see this month?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which students might need follow-up?",
+    "answer": "Follow-up is needed for 3 trainees with overdue fees and 3 trainees with unexcused attendance discrepancies.\n\nFrom 3 fee records and 3 attendance discrepancy records.",
+    "flags": [],
+    "envelope": {
+     "answer": "Follow-up is needed for 3 trainees with overdue fees and 3 trainees with unexcused attendance discrepancies.\n\nFrom 3 fee records and 3 attendance discrepancy records.",
+     "groups": [
+      {
+       "label": "Trainees with overdue fees",
+       "category": "overdue",
+       "categoryLabel": "Overdue",
+       "tone": "bad",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Master Student Roster",
+       "columns": [
+        "trainee_id",
+        "first_name",
+        "last_name",
+        "age_group",
+        "primary_guardian",
+        "guardian_phone",
+        "enrollment_date",
+        "plan_type",
+        "subscription_status",
+        "subscription_valid_until",
+        "batch_id",
+        "batch_schedule",
+        "assigned_coach_name",
+        "whatsapp_group_status",
+        "monthly_fee_inr",
+        "fee_status",
+        "last_attendance_date"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "SC-2023-0195",
+           "Kabir",
+           "Khan",
+           "U-12",
+           "Farhan Khan",
+           "+91-98765-00103",
+           "2023-08-01",
+           "Monthly",
+           "Grace Period",
+           "2024-05-31",
+           "BAT-U12-WKND",
+           "Sat-Sun 07:00-09:30",
+           "Coach Pradeep Kumar",
+           "Joined",
+           "3000",
+           "Overdue",
+           "2024-05-26"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "SC-2023-0211",
+           "Aditya",
+           "Verma",
+           "U-19",
+           "Deepak Verma",
+           "+91-98765-00104",
+           "2023-09-12",
+           "Monthly",
+           "Suspended",
+           "2024-04-30",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Pending Admin Action",
+           "4500",
+           "Overdue",
+           "2024-04-29"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0056",
+         "lines": [
+          [
+           "SC-2023-0056",
+           "Mohammed",
+           "Faiz",
+           "U-19",
+           "Saleem Faiz",
+           "+91-98765-00118",
+           "2023-02-14",
+           "Monthly",
+           "Suspended",
+           "2024-03-31",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Removed",
+           "4500",
+           "Overdue",
+           "2024-03-18"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      },
+      {
+       "label": "Trainees with unexcused attendance discrepancies",
+       "category": "discrepancy",
+       "categoryLabel": "Needs review",
+       "tone": "warn",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241014-002",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0118",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 20:05:14",
+           "WAM-9021445",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Parent responded in chat but player absent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "RC-20241015-002",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0150",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 19:10:52",
+           "WAM-9021510",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Did not report to pitch"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241017-002",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0089",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:14:18",
+           "",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Kit bag left in locker room yesterday"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Master Student Roster",
+       "records": 3
+      },
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 3
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Are there any unusual attendance patterns this week?",
+    "answer": "There are 10 attendance discrepancies needing review across 8 trainees this week.\n\nBased on 10 records.",
+    "flags": [],
+    "envelope": {
+     "answer": "There are 10 attendance discrepancies needing review across 8 trainees this week.\n\nBased on 10 records.",
+     "groups": [
+      {
+       "label": "Attendance discrepancies",
+       "category": "discrepancy",
+       "categoryLabel": "Needs review",
+       "tone": "warn",
+       "records": 10,
+       "entities": 8,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241014-002",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0118",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 20:05:14",
+           "WAM-9021445",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Parent responded in chat but player absent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "RC-20241014-003",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0195",
+           "COACH-001",
+           "Morning Nets U-16",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "06:35",
+           "Unannounced Attendance",
+           "Walk-in without WhatsApp confirmation"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0012",
+         "lines": [
+          [
+           "RC-20241014-006",
+           "2024-10-14",
+           "SCH-2024-1042",
+           "SC-2024-0012",
+           "COACH-004",
+           "Junior Academy Batting",
+           "Late Expected",
+           "2024-10-14 14:20:18",
+           "WAM-9021460",
+           "Present",
+           "16:32",
+           "Confirmed Late",
+           "Arrived 30 mins late as flagged in chat"
+          ],
+          [
+           "RC-20241016-004",
+           "2024-10-16",
+           "SCH-2024-1046",
+           "SC-2024-0012",
+           "COACH-014",
+           "High Performance Fielding",
+           "Attending",
+           "2024-10-16 08:30:19",
+           "",
+           "Cancelled Session",
+           "",
+           "Weather Cancellation",
+           "Session washed out due to rain"
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241014-008",
+           "2024-10-14",
+           "SCH-2024-1042",
+           "SC-2024-0089",
+           "COACH-004",
+           "Junior Academy Batting",
+           "Excused Absence",
+           "2024-10-14 09:15:00",
+           "WAM-9021477",
+           "Present",
+           "16:10",
+           "Surprise Attendance",
+           "Recovered from fever early and joined"
+          ],
+          [
+           "RC-20241017-002",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0089",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:14:18",
+           "",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Kit bag left in locker room yesterday"
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "RC-20241015-002",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0150",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 19:10:52",
+           "WAM-9021510",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Did not report to pitch"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0104",
+         "lines": [
+          [
+           "RC-20241015-005",
+           "2024-10-15",
+           "SCH-2024-1044",
+           "SC-2023-0104",
+           "COACH-009",
+           "Spin Clinic Evening",
+           "Attending",
+           "2024-10-15 12:01:22",
+           "WAM-9021522",
+           "Injured Off-Pitch",
+           "17:15",
+           "Medical Drop",
+           "Ankle twinge during fielding warm-up"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "RC-20241016-002",
+           "2024-10-16",
+           "SCH-2024-1045",
+           "SC-2023-0211",
+           "COACH-011",
+           "Weekend Development U-12",
+           "Unclear Response",
+           "2024-10-15 22:50:11",
+           "",
+           "Absent",
+           "",
+           "Unconfirmed Absent",
+           "Parent sent ambiguous thumbs-up emoji only"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0245",
+         "lines": [
+          [
+           "RC-20241016-003",
+           "2024-10-16",
+           "SCH-2024-1046",
+           "SC-2023-0245",
+           "COACH-014",
+           "High Performance Fielding",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "18:00",
+           "Unannounced Attendance",
+           "Player added to drill manually"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 10
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "What changed compared with last week?",
+    "answer": "I cannot tell that from the connected data. No prior week or historical comparison data is available in the catalogue",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. No prior week or historical comparison data is available in the catalogue",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "No prior week or historical comparison data is available in the catalogue"
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which coach has the highest number of attendance issues?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which batches are performing better than others?",
+    "answer": "I cannot tell that from the connected data. No batch performance, skill, or competitive evaluation metrics exist in the catalogue.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. No batch performance, skill, or competitive evaluation metrics exist in the catalogue.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "No batch performance, skill, or competitive evaluation metrics exist in the catalogue."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   }
+  ]
+ },
+ {
+  "section": "4",
+  "title": "Ambiguous questions",
+  "rows": [
+   {
+    "question": "Who needs attention?",
+    "answer": "3 trainees have overdue fees, and 3 trainees have unexcused attendance discrepancies needing review.\n\nFrom 3 overdue fee records and 3 attendance discrepancy records.",
+    "flags": [],
+    "envelope": {
+     "answer": "3 trainees have overdue fees, and 3 trainees have unexcused attendance discrepancies needing review.\n\nFrom 3 overdue fee records and 3 attendance discrepancy records.",
+     "groups": [
+      {
+       "label": "Trainees with overdue fees",
+       "category": "overdue",
+       "categoryLabel": "Overdue",
+       "tone": "bad",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Master Student Roster",
+       "columns": [
+        "trainee_id",
+        "first_name",
+        "last_name",
+        "age_group",
+        "primary_guardian",
+        "guardian_phone",
+        "enrollment_date",
+        "plan_type",
+        "subscription_status",
+        "subscription_valid_until",
+        "batch_id",
+        "batch_schedule",
+        "assigned_coach_name",
+        "whatsapp_group_status",
+        "monthly_fee_inr",
+        "fee_status",
+        "last_attendance_date"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "SC-2023-0195",
+           "Kabir",
+           "Khan",
+           "U-12",
+           "Farhan Khan",
+           "+91-98765-00103",
+           "2023-08-01",
+           "Monthly",
+           "Grace Period",
+           "2024-05-31",
+           "BAT-U12-WKND",
+           "Sat-Sun 07:00-09:30",
+           "Coach Pradeep Kumar",
+           "Joined",
+           "3000",
+           "Overdue",
+           "2024-05-26"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "SC-2023-0211",
+           "Aditya",
+           "Verma",
+           "U-19",
+           "Deepak Verma",
+           "+91-98765-00104",
+           "2023-09-12",
+           "Monthly",
+           "Suspended",
+           "2024-04-30",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Pending Admin Action",
+           "4500",
+           "Overdue",
+           "2024-04-29"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0056",
+         "lines": [
+          [
+           "SC-2023-0056",
+           "Mohammed",
+           "Faiz",
+           "U-19",
+           "Saleem Faiz",
+           "+91-98765-00118",
+           "2023-02-14",
+           "Monthly",
+           "Suspended",
+           "2024-03-31",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Removed",
+           "4500",
+           "Overdue",
+           "2024-03-18"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      },
+      {
+       "label": "Trainees with unexcused attendance discrepancies",
+       "category": "discrepancy",
+       "categoryLabel": "Needs review",
+       "tone": "warn",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241014-002",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0118",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 20:05:14",
+           "WAM-9021445",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Parent responded in chat but player absent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "RC-20241015-002",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0150",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 19:10:52",
+           "WAM-9021510",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Did not report to pitch"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241017-002",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0089",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:14:18",
+           "",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Kit bag left in locker room yesterday"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Master Student Roster",
+       "records": 3
+      },
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 3
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Who should I follow up with?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Who is having problems?",
+    "answer": "I cannot tell that from the connected data. The term 'problems' is undefined; specify fee, attendance, or technical issues.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. The term 'problems' is undefined; specify fee, attendance, or technical issues.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "The term 'problems' is undefined; specify fee, attendance, or technical issues."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Show me the students I should be concerned about.",
+    "answer": "3 students have overdue fees, and 3 students have unexcused session no-shows needing review.",
+    "flags": [],
+    "envelope": {
+     "answer": "3 students have overdue fees, and 3 students have unexcused session no-shows needing review.",
+     "groups": [
+      {
+       "label": "Students with overdue fees",
+       "category": "overdue",
+       "categoryLabel": "Overdue",
+       "tone": "bad",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Master Student Roster",
+       "columns": [
+        "trainee_id",
+        "first_name",
+        "last_name",
+        "age_group",
+        "primary_guardian",
+        "guardian_phone",
+        "enrollment_date",
+        "plan_type",
+        "subscription_status",
+        "subscription_valid_until",
+        "batch_id",
+        "batch_schedule",
+        "assigned_coach_name",
+        "whatsapp_group_status",
+        "monthly_fee_inr",
+        "fee_status",
+        "last_attendance_date"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "SC-2023-0195",
+           "Kabir",
+           "Khan",
+           "U-12",
+           "Farhan Khan",
+           "+91-98765-00103",
+           "2023-08-01",
+           "Monthly",
+           "Grace Period",
+           "2024-05-31",
+           "BAT-U12-WKND",
+           "Sat-Sun 07:00-09:30",
+           "Coach Pradeep Kumar",
+           "Joined",
+           "3000",
+           "Overdue",
+           "2024-05-26"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "SC-2023-0211",
+           "Aditya",
+           "Verma",
+           "U-19",
+           "Deepak Verma",
+           "+91-98765-00104",
+           "2023-09-12",
+           "Monthly",
+           "Suspended",
+           "2024-04-30",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Pending Admin Action",
+           "4500",
+           "Overdue",
+           "2024-04-29"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0056",
+         "lines": [
+          [
+           "SC-2023-0056",
+           "Mohammed",
+           "Faiz",
+           "U-19",
+           "Saleem Faiz",
+           "+91-98765-00118",
+           "2023-02-14",
+           "Monthly",
+           "Suspended",
+           "2024-03-31",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Removed",
+           "4500",
+           "Overdue",
+           "2024-03-18"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      },
+      {
+       "label": "Unexcused session no-shows",
+       "category": "discrepancy",
+       "categoryLabel": "Needs review",
+       "tone": "warn",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241014-002",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0118",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 20:05:14",
+           "WAM-9021445",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Parent responded in chat but player absent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "RC-20241015-002",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0150",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 19:10:52",
+           "WAM-9021510",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Did not report to pitch"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241017-002",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0089",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:14:18",
+           "",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Kit bag left in locker room yesterday"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Master Student Roster",
+       "records": 3
+      },
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 3
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "What's going wrong this week?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Anything unusual I should know about?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   }
+  ]
+ },
+ {
+  "section": "5A",
+  "title": "Conversation memory — A",
+  "rows": [
+   {
+    "question": "Who missed practice this week?",
+    "answer": "2 trainees have confirmed absences and 3 trainees have unexcused no-shows needing review this week.\n\nFrom 5 records.",
+    "flags": [],
+    "envelope": {
+     "answer": "2 trainees have confirmed absences and 3 trainees have unexcused no-shows needing review this week.\n\nFrom 5 records.",
+     "groups": [
+      {
+       "label": "Confirmed absences",
+       "category": "absent",
+       "categoryLabel": "Absent",
+       "tone": "bad",
+       "records": 2,
+       "entities": 2,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "RC-20241014-004",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0211",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Excused Absence",
+           "2024-10-13 18:12:33",
+           "WAM-9021449",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "School exam preparation"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0188",
+         "lines": [
+          [
+           "RC-20241015-003",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0188",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "No Response",
+           "",
+           "",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "Persistent no-reply for 2 consecutive sessions"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      },
+      {
+       "label": "Unexcused no-shows",
+       "category": "discrepancy",
+       "categoryLabel": "Needs review",
+       "tone": "warn",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241014-002",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0118",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 20:05:14",
+           "WAM-9021445",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Parent responded in chat but player absent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "RC-20241015-002",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0150",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 19:10:52",
+           "WAM-9021510",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Did not report to pitch"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241017-002",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0089",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:14:18",
+           "",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Kit bag left in locker room yesterday"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 2
+      },
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 3
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "What about their fees?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which of them should I contact first?",
+    "answer": "I cannot tell that from the connected data. The available data does not track contact priority or urgency rankings",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. The available data does not track contact priority or urgency rankings",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "The available data does not track contact priority or urgency rankings"
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Why?",
+    "answer": "I cannot tell that from the connected data. No dataset tracks contact priority rules, escalation criteria, or urgency rankings",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. No dataset tracks contact priority rules, escalation criteria, or urgency rankings",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "No dataset tracks contact priority rules, escalation criteria, or urgency rankings"
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   }
+  ]
+ },
+ {
+  "section": "5B",
+  "title": "Conversation memory — B (progressive narrowing)",
+  "rows": [
+   {
+    "question": "Show me students who haven't confirmed attendance.",
+    "answer": "3 students have not confirmed attendance.\n\nFrom 3 records.",
+    "flags": [],
+    "envelope": {
+     "answer": "3 students have not confirmed attendance.\n\nFrom 3 records.",
+     "groups": [
+      {
+       "label": "Students with no attendance response",
+       "category": "unconfirmed",
+       "categoryLabel": "Not confirmed",
+       "tone": "warn",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "RC-20241014-003",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0195",
+           "COACH-001",
+           "Morning Nets U-16",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "06:35",
+           "Unannounced Attendance",
+           "Walk-in without WhatsApp confirmation"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0188",
+         "lines": [
+          [
+           "RC-20241015-003",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0188",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "No Response",
+           "",
+           "",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "Persistent no-reply for 2 consecutive sessions"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0245",
+         "lines": [
+          [
+           "RC-20241016-003",
+           "2024-10-16",
+           "SCH-2024-1046",
+           "SC-2023-0245",
+           "COACH-014",
+           "High Performance Fielding",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "18:00",
+           "Unannounced Attendance",
+           "Player added to drill manually"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 3
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Only U16.",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which of those have overdue fees?",
+    "answer": "1 of those students has overdue fees.\n\nFrom 6 records across attendance and fee tracking.",
+    "flags": [],
+    "envelope": {
+     "answer": "1 of those students has overdue fees.\n\nFrom 6 records across attendance and fee tracking.",
+     "groups": [
+      {
+       "label": "Students with unconfirmed attendance",
+       "category": "unconfirmed",
+       "categoryLabel": "Not confirmed",
+       "tone": "warn",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "RC-20241014-003",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0195",
+           "COACH-001",
+           "Morning Nets U-16",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "06:35",
+           "Unannounced Attendance",
+           "Walk-in without WhatsApp confirmation"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0188",
+         "lines": [
+          [
+           "RC-20241015-003",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0188",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "No Response",
+           "",
+           "",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "Persistent no-reply for 2 consecutive sessions"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0245",
+         "lines": [
+          [
+           "RC-20241016-003",
+           "2024-10-16",
+           "SCH-2024-1046",
+           "SC-2023-0245",
+           "COACH-014",
+           "High Performance Fielding",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "18:00",
+           "Unannounced Attendance",
+           "Player added to drill manually"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      },
+      {
+       "label": "Students with overdue fees",
+       "category": "overdue",
+       "categoryLabel": "Overdue",
+       "tone": "bad",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Master Student Roster",
+       "columns": [
+        "trainee_id",
+        "first_name",
+        "last_name",
+        "age_group",
+        "primary_guardian",
+        "guardian_phone",
+        "enrollment_date",
+        "plan_type",
+        "subscription_status",
+        "subscription_valid_until",
+        "batch_id",
+        "batch_schedule",
+        "assigned_coach_name",
+        "whatsapp_group_status",
+        "monthly_fee_inr",
+        "fee_status",
+        "last_attendance_date"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "SC-2023-0195",
+           "Kabir",
+           "Khan",
+           "U-12",
+           "Farhan Khan",
+           "+91-98765-00103",
+           "2023-08-01",
+           "Monthly",
+           "Grace Period",
+           "2024-05-31",
+           "BAT-U12-WKND",
+           "Sat-Sun 07:00-09:30",
+           "Coach Pradeep Kumar",
+           "Joined",
+           "3000",
+           "Overdue",
+           "2024-05-26"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "SC-2023-0211",
+           "Aditya",
+           "Verma",
+           "U-19",
+           "Deepak Verma",
+           "+91-98765-00104",
+           "2023-09-12",
+           "Monthly",
+           "Suspended",
+           "2024-04-30",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Pending Admin Action",
+           "4500",
+           "Overdue",
+           "2024-04-29"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0056",
+         "lines": [
+          [
+           "SC-2023-0056",
+           "Mohammed",
+           "Faiz",
+           "U-19",
+           "Saleem Faiz",
+           "+91-98765-00118",
+           "2023-02-14",
+           "Monthly",
+           "Suspended",
+           "2024-03-31",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Removed",
+           "4500",
+           "Overdue",
+           "2024-03-18"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": {
+      "people": 5,
+      "issues": 6,
+      "both": [
+       {
+        "name": "SC-2023-0195",
+        "groups": [
+         "Students with unconfirmed attendance",
+         "Students with overdue fees"
+        ]
+       }
+      ]
+     },
+     "sources": [
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 3
+      },
+      {
+       "dataset": "Master Student Roster",
+       "records": 3
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Prepare a message for them.",
+    "answer": "Here are draft reminder messages for the 3 students with unconfirmed attendance and the 3 students with overdue fees.\n\nAttendance notice: Please confirm whether you will be attending your upcoming cricket session.\n\nFee notice: This is a reminder to settle your overdue academy fees as soon as possible.\n\n6 records across 5 distinct people.",
+    "flags": [],
+    "envelope": {
+     "answer": "Here are draft reminder messages for the 3 students with unconfirmed attendance and the 3 students with overdue fees.\n\nAttendance notice: Please confirm whether you will be attending your upcoming cricket session.\n\nFee notice: This is a reminder to settle your overdue academy fees as soon as possible.\n\n6 records across 5 distinct people.",
+     "groups": [
+      {
+       "label": "Students with unconfirmed attendance",
+       "category": "unconfirmed",
+       "categoryLabel": "Not confirmed",
+       "tone": "warn",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "RC-20241014-003",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0195",
+           "COACH-001",
+           "Morning Nets U-16",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "06:35",
+           "Unannounced Attendance",
+           "Walk-in without WhatsApp confirmation"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0188",
+         "lines": [
+          [
+           "RC-20241015-003",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0188",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "No Response",
+           "",
+           "",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "Persistent no-reply for 2 consecutive sessions"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0245",
+         "lines": [
+          [
+           "RC-20241016-003",
+           "2024-10-16",
+           "SCH-2024-1046",
+           "SC-2023-0245",
+           "COACH-014",
+           "High Performance Fielding",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "18:00",
+           "Unannounced Attendance",
+           "Player added to drill manually"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      },
+      {
+       "label": "Students with overdue fees",
+       "category": "overdue",
+       "categoryLabel": "Overdue",
+       "tone": "bad",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Master Student Roster",
+       "columns": [
+        "trainee_id",
+        "first_name",
+        "last_name",
+        "age_group",
+        "primary_guardian",
+        "guardian_phone",
+        "enrollment_date",
+        "plan_type",
+        "subscription_status",
+        "subscription_valid_until",
+        "batch_id",
+        "batch_schedule",
+        "assigned_coach_name",
+        "whatsapp_group_status",
+        "monthly_fee_inr",
+        "fee_status",
+        "last_attendance_date"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "SC-2023-0195",
+           "Kabir",
+           "Khan",
+           "U-12",
+           "Farhan Khan",
+           "+91-98765-00103",
+           "2023-08-01",
+           "Monthly",
+           "Grace Period",
+           "2024-05-31",
+           "BAT-U12-WKND",
+           "Sat-Sun 07:00-09:30",
+           "Coach Pradeep Kumar",
+           "Joined",
+           "3000",
+           "Overdue",
+           "2024-05-26"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "SC-2023-0211",
+           "Aditya",
+           "Verma",
+           "U-19",
+           "Deepak Verma",
+           "+91-98765-00104",
+           "2023-09-12",
+           "Monthly",
+           "Suspended",
+           "2024-04-30",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Pending Admin Action",
+           "4500",
+           "Overdue",
+           "2024-04-29"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0056",
+         "lines": [
+          [
+           "SC-2023-0056",
+           "Mohammed",
+           "Faiz",
+           "U-19",
+           "Saleem Faiz",
+           "+91-98765-00118",
+           "2023-02-14",
+           "Monthly",
+           "Suspended",
+           "2024-03-31",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Removed",
+           "4500",
+           "Overdue",
+           "2024-03-18"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": {
+      "people": 5,
+      "issues": 6,
+      "both": [
+       {
+        "name": "SC-2023-0195",
+        "groups": [
+         "Students with unconfirmed attendance",
+         "Students with overdue fees"
+        ]
+       }
+      ]
+     },
+     "sources": [
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 3
+      },
+      {
+       "dataset": "Master Student Roster",
+       "records": 3
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "action",
+     "act": "prepare a message for students with unconfirmed attendance and overdue fees",
+     "checked": true
+    }
+   }
+  ]
+ },
+ {
+  "section": "6",
+  "title": "Cross-data reasoning",
+  "rows": [
+   {
+    "question": "Which students have both poor attendance and overdue fees?",
+    "answer": "1 student, SC-2023-0211, has both recorded absences and overdue fees.\n\nFrom 9 records across 7 distinct people.",
+    "flags": [],
+    "envelope": {
+     "answer": "1 student, SC-2023-0211, has both recorded absences and overdue fees.\n\nFrom 9 records across 7 distinct people.",
+     "groups": [
+      {
+       "label": "Students with overdue fees",
+       "category": "overdue",
+       "categoryLabel": "Overdue",
+       "tone": "bad",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Master Student Roster",
+       "columns": [
+        "trainee_id",
+        "first_name",
+        "last_name",
+        "age_group",
+        "primary_guardian",
+        "guardian_phone",
+        "enrollment_date",
+        "plan_type",
+        "subscription_status",
+        "subscription_valid_until",
+        "batch_id",
+        "batch_schedule",
+        "assigned_coach_name",
+        "whatsapp_group_status",
+        "monthly_fee_inr",
+        "fee_status",
+        "last_attendance_date"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "SC-2023-0195",
+           "Kabir",
+           "Khan",
+           "U-12",
+           "Farhan Khan",
+           "+91-98765-00103",
+           "2023-08-01",
+           "Monthly",
+           "Grace Period",
+           "2024-05-31",
+           "BAT-U12-WKND",
+           "Sat-Sun 07:00-09:30",
+           "Coach Pradeep Kumar",
+           "Joined",
+           "3000",
+           "Overdue",
+           "2024-05-26"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "SC-2023-0211",
+           "Aditya",
+           "Verma",
+           "U-19",
+           "Deepak Verma",
+           "+91-98765-00104",
+           "2023-09-12",
+           "Monthly",
+           "Suspended",
+           "2024-04-30",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Pending Admin Action",
+           "4500",
+           "Overdue",
+           "2024-04-29"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0056",
+         "lines": [
+          [
+           "SC-2023-0056",
+           "Mohammed",
+           "Faiz",
+           "U-19",
+           "Saleem Faiz",
+           "+91-98765-00118",
+           "2023-02-14",
+           "Monthly",
+           "Suspended",
+           "2024-03-31",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Removed",
+           "4500",
+           "Overdue",
+           "2024-03-18"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      },
+      {
+       "label": "Students with recorded absences",
+       "category": "absent",
+       "categoryLabel": "Absent",
+       "tone": "bad",
+       "records": 6,
+       "entities": 5,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241014-002",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0118",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 20:05:14",
+           "WAM-9021445",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Parent responded in chat but player absent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "RC-20241014-004",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0211",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Excused Absence",
+           "2024-10-13 18:12:33",
+           "WAM-9021449",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "School exam preparation"
+          ],
+          [
+           "RC-20241016-002",
+           "2024-10-16",
+           "SCH-2024-1045",
+           "SC-2023-0211",
+           "COACH-011",
+           "Weekend Development U-12",
+           "Unclear Response",
+           "2024-10-15 22:50:11",
+           "",
+           "Absent",
+           "",
+           "Unconfirmed Absent",
+           "Parent sent ambiguous thumbs-up emoji only"
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "RC-20241015-002",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0150",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 19:10:52",
+           "WAM-9021510",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Did not report to pitch"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0188",
+         "lines": [
+          [
+           "RC-20241015-003",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0188",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "No Response",
+           "",
+           "",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "Persistent no-reply for 2 consecutive sessions"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241017-002",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0089",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:14:18",
+           "",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Kit bag left in locker room yesterday"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": {
+      "people": 7,
+      "issues": 9,
+      "both": [
+       {
+        "name": "SC-2023-0211",
+        "groups": [
+         "Students with overdue fees",
+         "Students with recorded absences"
+        ]
+       }
+      ]
+     },
+     "sources": [
+      {
+       "dataset": "Master Student Roster",
+       "records": 3
+      },
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 6
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Show me students who missed practice and haven't paid this month.",
+    "answer": "2 students have missed practice and have overdue fees this month.\n\nFrom 13 records across 10 distinct people.",
+    "flags": [],
+    "envelope": {
+     "answer": "2 students have missed practice and have overdue fees this month.\n\nFrom 13 records across 10 distinct people.",
+     "groups": [
+      {
+       "label": "Students absent from practice",
+       "category": "absent",
+       "categoryLabel": "Absent",
+       "tone": "bad",
+       "records": 6,
+       "entities": 5,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241014-002",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0118",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 20:05:14",
+           "WAM-9021445",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Parent responded in chat but player absent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "RC-20241014-004",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0211",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Excused Absence",
+           "2024-10-13 18:12:33",
+           "WAM-9021449",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "School exam preparation"
+          ],
+          [
+           "RC-20241016-002",
+           "2024-10-16",
+           "SCH-2024-1045",
+           "SC-2023-0211",
+           "COACH-011",
+           "Weekend Development U-12",
+           "Unclear Response",
+           "2024-10-15 22:50:11",
+           "",
+           "Absent",
+           "",
+           "Unconfirmed Absent",
+           "Parent sent ambiguous thumbs-up emoji only"
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "RC-20241015-002",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0150",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 19:10:52",
+           "WAM-9021510",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Did not report to pitch"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0188",
+         "lines": [
+          [
+           "RC-20241015-003",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0188",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "No Response",
+           "",
+           "",
+           "Absent",
+           "",
+           "Confirmed Absent",
+           "Persistent no-reply for 2 consecutive sessions"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241017-002",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0089",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:14:18",
+           "",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Kit bag left in locker room yesterday"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      },
+      {
+       "label": "Students with unpaid fees",
+       "category": "overdue",
+       "categoryLabel": "Overdue",
+       "tone": "bad",
+       "records": 7,
+       "entities": 7,
+       "dataset": "Master Student Roster",
+       "columns": [
+        "trainee_id",
+        "first_name",
+        "last_name",
+        "age_group",
+        "primary_guardian",
+        "guardian_phone",
+        "enrollment_date",
+        "plan_type",
+        "subscription_status",
+        "subscription_valid_until",
+        "batch_id",
+        "batch_schedule",
+        "assigned_coach_name",
+        "whatsapp_group_status",
+        "monthly_fee_inr",
+        "fee_status",
+        "last_attendance_date"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "SC-2023-0195",
+           "Kabir",
+           "Khan",
+           "U-12",
+           "Farhan Khan",
+           "+91-98765-00103",
+           "2023-08-01",
+           "Monthly",
+           "Grace Period",
+           "2024-05-31",
+           "BAT-U12-WKND",
+           "Sat-Sun 07:00-09:30",
+           "Coach Pradeep Kumar",
+           "Joined",
+           "3000",
+           "Overdue",
+           "2024-05-26"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "SC-2023-0211",
+           "Aditya",
+           "Verma",
+           "U-19",
+           "Deepak Verma",
+           "+91-98765-00104",
+           "2023-09-12",
+           "Monthly",
+           "Suspended",
+           "2024-04-30",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Pending Admin Action",
+           "4500",
+           "Overdue",
+           "2024-04-29"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0044",
+         "lines": [
+          [
+           "SC-2024-0044",
+           "Sai",
+           "Chowdary",
+           "U-16",
+           "Venkat Chowdary",
+           "+91-98765-00107",
+           "2024-02-10",
+           "Monthly",
+           "Active",
+           "2024-06-10",
+           "BAT-U16-EVNG",
+           "Mon-Wed-Fri 16:30-18:30",
+           "Coach Arvind Swamy",
+           "Joined",
+           "3500",
+           "Pending Verification",
+           "2024-05-27"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "SC-2024-0089",
+           "Dhruv",
+           "Mehta",
+           "U-12",
+           "Bhavin Mehta",
+           "+91-98765-00108",
+           "2024-03-01",
+           "Monthly",
+           "Inactive",
+           "2024-04-01",
+           "BAT-U12-WKND",
+           "Sat-Sun 07:00-09:30",
+           "Coach Pradeep Kumar",
+           "Removed",
+           "3000",
+           "Unpaid",
+           "2024-03-24"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0231",
+         "lines": [
+          [
+           "SC-2024-0231",
+           "Vivaan",
+           "Pandey",
+           "U-12",
+           "Anurag Pandey",
+           "+91-98765-00114",
+           "2024-05-18",
+           "Monthly",
+           "Grace Period",
+           "2024-05-31",
+           "BAT-U12-MORN",
+           "Tue-Thu-Sat 06:30-08:30",
+           "Coach Rajesh Pillai",
+           "Joined",
+           "3000",
+           "Pending Verification",
+           "2024-05-25"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0244",
+         "lines": [
+          [
+           "SC-2024-0244",
+           "Dev",
+           "Gill",
+           "U-16",
+           "Harpreet Gill",
+           "+91-98765-00116",
+           "2024-05-27",
+           "Monthly",
+           "Pending Payment",
+           "2024-05-27",
+           "BAT-U16-EVNG",
+           "Mon-Wed-Fri 16:30-18:30",
+           "Coach Arvind Swamy",
+           "Pending Invite",
+           "3500",
+           "Unpaid",
+           ""
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0056",
+         "lines": [
+          [
+           "SC-2023-0056",
+           "Mohammed",
+           "Faiz",
+           "U-19",
+           "Saleem Faiz",
+           "+91-98765-00118",
+           "2023-02-14",
+           "Monthly",
+           "Suspended",
+           "2024-03-31",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Removed",
+           "4500",
+           "Overdue",
+           "2024-03-18"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": {
+      "people": 10,
+      "issues": 13,
+      "both": [
+       {
+        "name": "SC-2023-0211",
+        "groups": [
+         "Students absent from practice",
+         "Students with unpaid fees"
+        ]
+       },
+       {
+        "name": "SC-2024-0089",
+        "groups": [
+         "Students absent from practice",
+         "Students with unpaid fees"
+        ]
+       }
+      ]
+     },
+     "sources": [
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 6
+      },
+      {
+       "dataset": "Master Student Roster",
+       "records": 7
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which students have good attendance but overdue subscriptions?",
+    "answer": "1 student, SC-2023-0195, has recorded session attendance alongside an overdue subscription.\n\nOf the 3 students with overdue fees, only this student is among the 9 distinct trainees recorded as present.\n\nFrom 14 records across 11 distinct people.",
+    "flags": [],
+    "envelope": {
+     "answer": "1 student, SC-2023-0195, has recorded session attendance alongside an overdue subscription.\n\nOf the 3 students with overdue fees, only this student is among the 9 distinct trainees recorded as present.\n\nFrom 14 records across 11 distinct people.",
+     "groups": [
+      {
+       "label": "Students with overdue subscription fees",
+       "category": "overdue",
+       "categoryLabel": "Overdue",
+       "tone": "bad",
+       "records": 3,
+       "entities": 3,
+       "dataset": "Master Student Roster",
+       "columns": [
+        "trainee_id",
+        "first_name",
+        "last_name",
+        "age_group",
+        "primary_guardian",
+        "guardian_phone",
+        "enrollment_date",
+        "plan_type",
+        "subscription_status",
+        "subscription_valid_until",
+        "batch_id",
+        "batch_schedule",
+        "assigned_coach_name",
+        "whatsapp_group_status",
+        "monthly_fee_inr",
+        "fee_status",
+        "last_attendance_date"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "SC-2023-0195",
+           "Kabir",
+           "Khan",
+           "U-12",
+           "Farhan Khan",
+           "+91-98765-00103",
+           "2023-08-01",
+           "Monthly",
+           "Grace Period",
+           "2024-05-31",
+           "BAT-U12-WKND",
+           "Sat-Sun 07:00-09:30",
+           "Coach Pradeep Kumar",
+           "Joined",
+           "3000",
+           "Overdue",
+           "2024-05-26"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "SC-2023-0211",
+           "Aditya",
+           "Verma",
+           "U-19",
+           "Deepak Verma",
+           "+91-98765-00104",
+           "2023-09-12",
+           "Monthly",
+           "Suspended",
+           "2024-04-30",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Pending Admin Action",
+           "4500",
+           "Overdue",
+           "2024-04-29"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0056",
+         "lines": [
+          [
+           "SC-2023-0056",
+           "Mohammed",
+           "Faiz",
+           "U-19",
+           "Saleem Faiz",
+           "+91-98765-00118",
+           "2023-02-14",
+           "Monthly",
+           "Suspended",
+           "2024-03-31",
+           "BAT-ADV-MORN",
+           "Mon-Sat 06:00-08:30",
+           "Coach Devraj Singh",
+           "Removed",
+           "4500",
+           "Overdue",
+           "2024-03-18"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      },
+      {
+       "label": "Students recorded as present in sessions",
+       "category": "present",
+       "categoryLabel": "Present",
+       "tone": "ok",
+       "records": 11,
+       "entities": 9,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0104",
+         "lines": [
+          [
+           "RC-20241014-001",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0104",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 19:42:10",
+           "WAM-9021441",
+           "Present",
+           "06:28",
+           "Confirmed Present",
+           "Completed full bowling drills"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "RC-20241014-003",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0195",
+           "COACH-001",
+           "Morning Nets U-16",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "06:35",
+           "Unannounced Attendance",
+           "Walk-in without WhatsApp confirmation"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0245",
+         "lines": [
+          [
+           "RC-20241014-005",
+           "2024-10-14",
+           "SCH-2024-1042",
+           "SC-2023-0245",
+           "COACH-004",
+           "Junior Academy Batting",
+           "Attending",
+           "2024-10-13 21:11:05",
+           "WAM-9021453",
+           "Present",
+           "16:02",
+           "Confirmed Present",
+           "On time with full kit"
+          ],
+          [
+           "RC-20241016-003",
+           "2024-10-16",
+           "SCH-2024-1046",
+           "SC-2023-0245",
+           "COACH-014",
+           "High Performance Fielding",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "18:00",
+           "Unannounced Attendance",
+           "Player added to drill manually"
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0012",
+         "lines": [
+          [
+           "RC-20241014-006",
+           "2024-10-14",
+           "SCH-2024-1042",
+           "SC-2024-0012",
+           "COACH-004",
+           "Junior Academy Batting",
+           "Late Expected",
+           "2024-10-14 14:20:18",
+           "WAM-9021460",
+           "Present",
+           "16:32",
+           "Confirmed Late",
+           "Arrived 30 mins late as flagged in chat"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0044",
+         "lines": [
+          [
+           "RC-20241014-007",
+           "2024-10-14",
+           "SCH-2024-1042",
+           "SC-2024-0044",
+           "COACH-004",
+           "Junior Academy Batting",
+           "Attending",
+           "2024-10-13 22:04:45",
+           "WAM-9021468",
+           "Present",
+           "15:55",
+           "Confirmed Present",
+           "Warm-up completed"
+          ],
+          [
+           "RC-20241017-001",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0044",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:05:00",
+           "",
+           "Present",
+           "16:45",
+           "Confirmed Present",
+           "Glove drills completed"
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241014-008",
+           "2024-10-14",
+           "SCH-2024-1042",
+           "SC-2024-0089",
+           "COACH-004",
+           "Junior Academy Batting",
+           "Excused Absence",
+           "2024-10-14 09:15:00",
+           "WAM-9021477",
+           "Present",
+           "16:10",
+           "Surprise Attendance",
+           "Recovered from fever early and joined"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0112",
+         "lines": [
+          [
+           "RC-20241015-001",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0112",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 20:30:11",
+           "WAM-9021485",
+           "Present",
+           "06:00",
+           "Confirmed Present",
+           "Pitched 6 overs in center wicket"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0205",
+         "lines": [
+          [
+           "RC-20241015-004",
+           "2024-10-15",
+           "SCH-2024-1044",
+           "SC-2024-0205",
+           "COACH-009",
+           "Spin Clinic Evening",
+           "Attending",
+           "2024-10-15 11:45:00",
+           "WAM-9021518",
+           "Present",
+           "17:05",
+           "Confirmed Present",
+           "Finger tape applied before nets"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241016-001",
+           "2024-10-16",
+           "SCH-2024-1045",
+           "SC-2023-0118",
+           "COACH-011",
+           "Weekend Development U-12",
+           "Attending",
+           "2024-10-15 18:22:40",
+           "WAM-9021530",
+           "Present",
+           "07:02",
+           "Confirmed Present",
+           "Checked in by parent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": {
+      "people": 11,
+      "issues": 14,
+      "both": [
+       {
+        "name": "SC-2023-0195",
+        "groups": [
+         "Students with overdue subscription fees",
+         "Students recorded as present in sessions"
+        ]
+       }
+      ]
+     },
+     "sources": [
+      {
+       "dataset": "Master Student Roster",
+       "records": 3
+      },
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 11
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Which students have attendance discrepancies in WhatsApp?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Compare attendance records with WhatsApp responses.",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Are there any differences between what parents reported on WhatsApp and the attendance records?",
+    "answer": "Yes, there are 10 discrepancies across 8 trainees between parent WhatsApp reports and roll call attendance records that need review.\n\nFrom 10 discrepancy records.",
+    "flags": [],
+    "envelope": {
+     "answer": "Yes, there are 10 discrepancies across 8 trainees between parent WhatsApp reports and roll call attendance records that need review.\n\nFrom 10 discrepancy records.",
+     "groups": [
+      {
+       "label": "Attendance Discrepancies Between WhatsApp and Roll Call",
+       "category": "discrepancy",
+       "categoryLabel": "Needs review",
+       "tone": "warn",
+       "records": 10,
+       "entities": 8,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241014-002",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0118",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 20:05:14",
+           "WAM-9021445",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Parent responded in chat but player absent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "RC-20241014-003",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0195",
+           "COACH-001",
+           "Morning Nets U-16",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "06:35",
+           "Unannounced Attendance",
+           "Walk-in without WhatsApp confirmation"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0012",
+         "lines": [
+          [
+           "RC-20241014-006",
+           "2024-10-14",
+           "SCH-2024-1042",
+           "SC-2024-0012",
+           "COACH-004",
+           "Junior Academy Batting",
+           "Late Expected",
+           "2024-10-14 14:20:18",
+           "WAM-9021460",
+           "Present",
+           "16:32",
+           "Confirmed Late",
+           "Arrived 30 mins late as flagged in chat"
+          ],
+          [
+           "RC-20241016-004",
+           "2024-10-16",
+           "SCH-2024-1046",
+           "SC-2024-0012",
+           "COACH-014",
+           "High Performance Fielding",
+           "Attending",
+           "2024-10-16 08:30:19",
+           "",
+           "Cancelled Session",
+           "",
+           "Weather Cancellation",
+           "Session washed out due to rain"
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241014-008",
+           "2024-10-14",
+           "SCH-2024-1042",
+           "SC-2024-0089",
+           "COACH-004",
+           "Junior Academy Batting",
+           "Excused Absence",
+           "2024-10-14 09:15:00",
+           "WAM-9021477",
+           "Present",
+           "16:10",
+           "Surprise Attendance",
+           "Recovered from fever early and joined"
+          ],
+          [
+           "RC-20241017-002",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0089",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:14:18",
+           "",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Kit bag left in locker room yesterday"
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "RC-20241015-002",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0150",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 19:10:52",
+           "WAM-9021510",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Did not report to pitch"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0104",
+         "lines": [
+          [
+           "RC-20241015-005",
+           "2024-10-15",
+           "SCH-2024-1044",
+           "SC-2023-0104",
+           "COACH-009",
+           "Spin Clinic Evening",
+           "Attending",
+           "2024-10-15 12:01:22",
+           "WAM-9021522",
+           "Injured Off-Pitch",
+           "17:15",
+           "Medical Drop",
+           "Ankle twinge during fielding warm-up"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "RC-20241016-002",
+           "2024-10-16",
+           "SCH-2024-1045",
+           "SC-2023-0211",
+           "COACH-011",
+           "Weekend Development U-12",
+           "Unclear Response",
+           "2024-10-15 22:50:11",
+           "",
+           "Absent",
+           "",
+           "Unconfirmed Absent",
+           "Parent sent ambiguous thumbs-up emoji only"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0245",
+         "lines": [
+          [
+           "RC-20241016-003",
+           "2024-10-16",
+           "SCH-2024-1046",
+           "SC-2023-0245",
+           "COACH-014",
+           "High Performance Fielding",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "18:00",
+           "Unannounced Attendance",
+           "Player added to drill manually"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 10
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   }
+  ]
+ },
+ {
+  "section": "7",
+  "title": "Data quality and contradictions",
+  "rows": [
+   {
+    "question": "How many students missed practice this week?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Are there any duplicate student records?",
+    "answer": "I cannot tell that from the connected data. Catalogue lacks duplicate detection flags or cross-record comparison capability",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data. Catalogue lacks duplicate detection flags or cross-record comparison capability",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Catalogue lacks duplicate detection flags or cross-record comparison capability"
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Are there any conflicting attendance records?",
+    "answer": "Yes, there are 10 attendance discrepancy records requiring review across 8 trainees.",
+    "flags": [],
+    "envelope": {
+     "answer": "Yes, there are 10 attendance discrepancy records requiring review across 8 trainees.",
+     "groups": [
+      {
+       "label": "Attendance discrepancies requiring review",
+       "category": "discrepancy",
+       "categoryLabel": "Needs review",
+       "tone": "warn",
+       "records": 10,
+       "entities": 8,
+       "dataset": "Daily Session Roll Call Logs",
+       "columns": [
+        "roll_call_id",
+        "session_date",
+        "schedule_id",
+        "trainee_id",
+        "primary_coach_id",
+        "batch_name",
+        "declared_chat_intent",
+        "chat_response_timestamp",
+        "message_id",
+        "verified_physical_status",
+        "actual_check_in_time",
+        "attendance_discrepancy_flag",
+        "coach_notes"
+       ],
+       "items": [
+        {
+         "name": "SC-2023-0118",
+         "lines": [
+          [
+           "RC-20241014-002",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0118",
+           "COACH-001",
+           "Morning Nets U-16",
+           "Attending",
+           "2024-10-13 20:05:14",
+           "WAM-9021445",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Parent responded in chat but player absent"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0195",
+         "lines": [
+          [
+           "RC-20241014-003",
+           "2024-10-14",
+           "SCH-2024-1041",
+           "SC-2023-0195",
+           "COACH-001",
+           "Morning Nets U-16",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "06:35",
+           "Unannounced Attendance",
+           "Walk-in without WhatsApp confirmation"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0012",
+         "lines": [
+          [
+           "RC-20241014-006",
+           "2024-10-14",
+           "SCH-2024-1042",
+           "SC-2024-0012",
+           "COACH-004",
+           "Junior Academy Batting",
+           "Late Expected",
+           "2024-10-14 14:20:18",
+           "WAM-9021460",
+           "Present",
+           "16:32",
+           "Confirmed Late",
+           "Arrived 30 mins late as flagged in chat"
+          ],
+          [
+           "RC-20241016-004",
+           "2024-10-16",
+           "SCH-2024-1046",
+           "SC-2024-0012",
+           "COACH-014",
+           "High Performance Fielding",
+           "Attending",
+           "2024-10-16 08:30:19",
+           "",
+           "Cancelled Session",
+           "",
+           "Weather Cancellation",
+           "Session washed out due to rain"
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0089",
+         "lines": [
+          [
+           "RC-20241014-008",
+           "2024-10-14",
+           "SCH-2024-1042",
+           "SC-2024-0089",
+           "COACH-004",
+           "Junior Academy Batting",
+           "Excused Absence",
+           "2024-10-14 09:15:00",
+           "WAM-9021477",
+           "Present",
+           "16:10",
+           "Surprise Attendance",
+           "Recovered from fever early and joined"
+          ],
+          [
+           "RC-20241017-002",
+           "2024-10-17",
+           "SCH-2024-1047",
+           "SC-2024-0089",
+           "COACH-006",
+           "Wicketkeeping Special",
+           "Attending",
+           "2024-10-16 21:14:18",
+           "",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Kit bag left in locker room yesterday"
+          ]
+         ],
+         "records": 2,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2024-0150",
+         "lines": [
+          [
+           "RC-20241015-002",
+           "2024-10-15",
+           "SCH-2024-1043",
+           "SC-2024-0150",
+           "COACH-007",
+           "Advanced Pace Attack",
+           "Attending",
+           "2024-10-14 19:10:52",
+           "WAM-9021510",
+           "Absent",
+           "",
+           "No-Show Unexcused",
+           "Did not report to pitch"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0104",
+         "lines": [
+          [
+           "RC-20241015-005",
+           "2024-10-15",
+           "SCH-2024-1044",
+           "SC-2023-0104",
+           "COACH-009",
+           "Spin Clinic Evening",
+           "Attending",
+           "2024-10-15 12:01:22",
+           "WAM-9021522",
+           "Injured Off-Pitch",
+           "17:15",
+           "Medical Drop",
+           "Ankle twinge during fielding warm-up"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0211",
+         "lines": [
+          [
+           "RC-20241016-002",
+           "2024-10-16",
+           "SCH-2024-1045",
+           "SC-2023-0211",
+           "COACH-011",
+           "Weekend Development U-12",
+           "Unclear Response",
+           "2024-10-15 22:50:11",
+           "",
+           "Absent",
+           "",
+           "Unconfirmed Absent",
+           "Parent sent ambiguous thumbs-up emoji only"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "SC-2023-0245",
+         "lines": [
+          [
+           "RC-20241016-003",
+           "2024-10-16",
+           "SCH-2024-1046",
+           "SC-2023-0245",
+           "COACH-014",
+           "High Performance Fielding",
+           "No Response",
+           "",
+           "",
+           "Present",
+           "18:00",
+           "Unannounced Attendance",
+           "Player added to drill manually"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "Daily Session Roll Call Logs",
+       "records": 10
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Find attendance discrepancies between WhatsApp and roll calls.",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Are there students whose WhatsApp response doesn't match their attendance?",
+    "answer": "I cannot tell that from the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "I cannot tell that from the connected data.",
+     "groups": [],
+     "overlap": null,
+     "sources": [],
+     "simulated": true,
+     "notes": [
+      "Nothing in the connected data matches this question."
+     ],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Are there any records you are uncertain about?",
+    "answer": "3 WhatsApp messages are pending review and not confirmed.",
+    "flags": [],
+    "envelope": {
+     "answer": "3 WhatsApp messages are pending review and not confirmed.",
+     "groups": [
+      {
+       "label": "WhatsApp messages pending review",
+       "category": "unconfirmed",
+       "categoryLabel": "Not confirmed",
+       "tone": "warn",
+       "records": 3,
+       "entities": 3,
+       "dataset": "WhatsApp Message Streams",
+       "columns": [
+        "message_id",
+        "webhook_received_at",
+        "batch_id",
+        "schedule_id",
+        "sender_phone_masked",
+        "sender_role",
+        "trainee_id",
+        "primary_coach_id",
+        "raw_message_text",
+        "parsed_intent",
+        "extracted_status",
+        "nlp_confidence_score",
+        "processing_status"
+       ],
+       "items": [
+        {
+         "name": "WAM-9021477",
+         "lines": [
+          [
+           "WAM-9021477",
+           "2024-10-14T19:02:11Z",
+           "BAT-U14-MORN",
+           "SCH-2024-1041",
+           "+91-98765-XXXX7",
+           "Parent",
+           "",
+           "COACH-004",
+           "Hi coach, my son Vihaan is joining next week. Can we come observe tomorrow?",
+           "GENERAL_INQUIRY",
+           "",
+           "0.76",
+           "PENDING_REVIEW"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "WAM-9021530",
+         "lines": [
+          [
+           "WAM-9021530",
+           "2024-10-14T20:05:40Z",
+           "BAT-U16-EVNG",
+           "SCH-2024-1042",
+           "+91-98765-XXX12",
+           "Parent",
+           "SC-2024-0112",
+           "COACH-001",
+           "Monthly fee receipt needed for reimbursement please",
+           "ADMIN_REQUEST",
+           "",
+           "0.84",
+           "PENDING_REVIEW"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "WAM-9021591",
+         "lines": [
+          [
+           "WAM-9021591",
+           "2024-10-14T21:40:05Z",
+           "BAT-U10-WKND",
+           "SCH-2024-1047",
+           "+91-98765-XXX20",
+           "Parent",
+           "",
+           "COACH-006",
+           "Transfer done Rs 18000 for annual package GPay",
+           "PAYMENT_SUBMISSION",
+           "PAID",
+           "0.91",
+           "PENDING_REVIEW"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "WhatsApp Message Streams",
+       "records": 3
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   },
+   {
+    "question": "Is there anything in the data that you cannot confidently determine?",
+    "answer": "Yes, 3 messages cannot be confidently determined and remain pending review.\n\nFrom 3 records in the connected data.",
+    "flags": [],
+    "envelope": {
+     "answer": "Yes, 3 messages cannot be confidently determined and remain pending review.\n\nFrom 3 records in the connected data.",
+     "groups": [
+      {
+       "label": "Messages pending review due to low confidence",
+       "category": "unconfirmed",
+       "categoryLabel": "Not confirmed",
+       "tone": "warn",
+       "records": 3,
+       "entities": 3,
+       "dataset": "WhatsApp Message Streams",
+       "columns": [
+        "message_id",
+        "webhook_received_at",
+        "batch_id",
+        "schedule_id",
+        "sender_phone_masked",
+        "sender_role",
+        "trainee_id",
+        "primary_coach_id",
+        "raw_message_text",
+        "parsed_intent",
+        "extracted_status",
+        "nlp_confidence_score",
+        "processing_status"
+       ],
+       "items": [
+        {
+         "name": "WAM-9021477",
+         "lines": [
+          [
+           "WAM-9021477",
+           "2024-10-14T19:02:11Z",
+           "BAT-U14-MORN",
+           "SCH-2024-1041",
+           "+91-98765-XXXX7",
+           "Parent",
+           "",
+           "COACH-004",
+           "Hi coach, my son Vihaan is joining next week. Can we come observe tomorrow?",
+           "GENERAL_INQUIRY",
+           "",
+           "0.76",
+           "PENDING_REVIEW"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "WAM-9021530",
+         "lines": [
+          [
+           "WAM-9021530",
+           "2024-10-14T20:05:40Z",
+           "BAT-U16-EVNG",
+           "SCH-2024-1042",
+           "+91-98765-XXX12",
+           "Parent",
+           "SC-2024-0112",
+           "COACH-001",
+           "Monthly fee receipt needed for reimbursement please",
+           "ADMIN_REQUEST",
+           "",
+           "0.84",
+           "PENDING_REVIEW"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        },
+        {
+         "name": "WAM-9021591",
+         "lines": [
+          [
+           "WAM-9021591",
+           "2024-10-14T21:40:05Z",
+           "BAT-U10-WKND",
+           "SCH-2024-1047",
+           "+91-98765-XXX20",
+           "Parent",
+           "",
+           "COACH-006",
+           "Transfer done Rs 18000 for annual package GPay",
+           "PAYMENT_SUBMISSION",
+           "PAID",
+           "0.91",
+           "PENDING_REVIEW"
+          ]
+         ],
+         "records": 1,
+         "source": "sample"
+        }
+       ]
+      }
+     ],
+     "overlap": null,
+     "sources": [
+      {
+       "dataset": "WhatsApp Message Streams",
+       "records": 3
+      }
+     ],
+     "simulated": true,
+     "notes": [],
+     "intent": "question",
+     "act": null,
+     "checked": true
+    }
+   }
+  ]
+ },
+ {
+  "section": "8",
+  "title": "Missing data",
+  "rows": [
+   {
+    "question": "Which subscriptions are overdue?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Who hasn't paid this month?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "How much does each student owe?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Which students have the highest outstanding balance?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ },
+ {
+  "section": "9",
+  "title": "Time-based questions",
+  "rows": [
+   {
+    "question": "Who missed practice this week?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Who missed practice last week?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Compare this week's attendance with last week.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Who has missed the most sessions this month?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Has attendance improved this month?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Which batch has improved the most?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Which students have become less consistent recently?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ },
+ {
+  "section": "10",
+  "title": "Natural language",
+  "rows": [
+   {
+    "question": "Who isn't showing up?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Who keeps skipping practice?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Who hasn't replied yet?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Who should I chase up?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "What's happening with the U16s?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Any parents I need to hear from?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Who is falling behind?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Can you check what's going on with the morning batch?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ },
+ {
+  "section": "11",
+  "title": "Actions",
+  "rows": [
+   {
+    "question": "Prepare a reminder for everyone who hasn't confirmed attendance.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Draft a WhatsApp message for students who missed practice.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Prepare payment reminders for students with overdue subscriptions.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Create a summary I can send to the coaches.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Prepare a weekly attendance report.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Send today's schedule to the students.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ },
+ {
+  "section": "12",
+  "title": "Authorization",
+  "rows": [
+   {
+    "question": "Send the attendance reminder to everyone who hasn't confirmed.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Send it.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ },
+ {
+  "section": "13A",
+  "title": "Multi-step — retrieve, correlate, filter, prepare",
+  "rows": [
+   {
+    "question": "Find students who missed practice this week, check whether they have overdue fees, and prepare a follow-up message for the ones who have both.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ },
+ {
+  "section": "13B",
+  "title": "Multi-step — prioritise without being told what matters",
+  "rows": [
+   {
+    "question": "Review today's attendance and tell me what needs my attention.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ },
+ {
+  "section": "13C",
+  "title": "Multi-step — reason, synthesise, write",
+  "rows": [
+   {
+    "question": "Find the biggest attendance issues this month and prepare a summary for the coaches.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ },
+ {
+  "section": "14",
+  "title": "Do you actually know?",
+  "rows": [
+   {
+    "question": "What is the academy's cancellation policy?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer",
+     "SHOULD HAVE REFUSED — this is not in the data"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "What time does the academy open tomorrow?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer",
+     "SHOULD HAVE REFUSED — this is not in the data"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Who is the head coach?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer",
+     "SHOULD HAVE REFUSED — this is not in the data"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "What is our refund policy?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer",
+     "SHOULD HAVE REFUSED — this is not in the data"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ },
+ {
+  "section": "15",
+  "title": "Being challenged",
+  "rows": [
+   {
+    "question": "Who missed practice this week?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   },
+   {
+    "question": "Are you sure?",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ },
+ {
+  "section": "16",
+  "title": "The benchmark",
+  "rows": [
+   {
+    "question": "I have 10 minutes. Help me make sure the academy is running smoothly today.",
+    "answer": "I could not put that answer together. Try again in a moment.",
+    "flags": [
+     "HTTP 500",
+     "no answer"
+    ],
+    "envelope": {
+     "error": "I could not put that answer together. Try again in a moment."
+    }
+   }
+  ]
+ }
+]

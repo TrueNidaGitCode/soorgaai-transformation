@@ -103,7 +103,7 @@ const PLAN_RULES = [
   '',
   'Return ONLY JSON, no prose and no code fence:',
   '{"groups":[{"label":"...","dataset":"...","category":"absent|excused|unconfirmed|discrepancy|overdue|due|present|info",',
-  '  "where":[["column","is|is not|contains|empty|not empty|before|after",": value"]],"entity":"column or null"}],',
+  '  "where":[["column","is|is not|contains|is any of|empty|not empty|before|after",": value"]],"entity":"column or null"}],',
   ' "intent":"question|action","act":"what the customer wants done, or null","reason":"one short line"}',
   '',
   'RULES',
@@ -117,11 +117,37 @@ const PLAN_RULES = [
   '  person or thing that can repeat.',
   '- Prefer few groups. Two or three is a good answer; eight is a data dump.',
   '- If the question spans several datasets (attendance AND fees), give a group for each.',
+  '- NARROWING A PREVIOUS ANSWER: when the customer says "their", "them", "those" or names a',
+  '  subset of what you just listed, filter to exactly those with "is any of" and a list',
+  '  separated by | — for example ["player_name","is any of","Arjun Bose|Rohan Sharma"]. The',
+  '  names are in the conversation above. Do not start again from the whole dataset.',
+  '- DATES: today\'s date is given below. Work out the range the question asks for and express',
+  '  it with before/after against the date column, written in the SAME SHAPE as that column\'s',
+  '  example values — if they read 12/09/2026 do not write 2026-09-12. If the column\'s shape',
+  '  cannot express the range, leave the filter out rather than inventing one.',
   '- If nothing in the catalogue can answer it, return {"groups":[],"intent":"question","act":null,',
   '  "reason":"why not"}. Do not invent a dataset to be helpful.',
 ].join('\n');
 
-const OPS = new Set(['is', 'is not', 'contains', 'empty', 'not empty', 'before', 'after']);
+/** What the planner needs to turn "today" or "this week" into a filter. */
+function today() {
+  const d = new Date();
+  const iso = d.toISOString().slice(0, 10);
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  const lastMonday = new Date(monday);
+  lastMonday.setDate(monday.getDate() - 7);
+  const fmt = (x) => x.toISOString().slice(0, 10);
+  return [
+    `TODAY is ${iso} (${d.toLocaleDateString('en-GB', { weekday: 'long' })}).`,
+    `This week began ${fmt(monday)}. Last week ran ${fmt(lastMonday)} to ${fmt(new Date(monday.getTime() - 86400000))}.`,
+    `This month began ${iso.slice(0, 8)}01.`,
+  ].join(' ');
+}
+
+const OPS = new Set(['is', 'is not', 'contains', 'is any of', 'empty', 'not empty', 'before', 'after']);
+/** "is any of" carries a list: Arjun Bose | Rohan Sharma | Tanvi Reddy. */
+const ANY_SEP = '|';
 
 /** The model's plan, made safe: unknown datasets, columns, categories and operators are dropped. */
 export function sanitisePlan(raw, cat) {
@@ -158,7 +184,7 @@ async function plan({ question, history, cat }) {
   // generateRaw: this is a classification, not an answer to a person, so the
   // conduct written for a reader would only get in its way.
   const res = await generateRaw({
-    systemPrompt: `${PLAN_RULES}\n\nTHE DATASETS\n${catalogueText(cat)}`,
+    systemPrompt: `${PLAN_RULES}\n\n${today()}\n\nTHE DATASETS\n${catalogueText(cat)}`,
     userMessage: `${prior}\nQuestion: ${question}`,
     maxTokens: 700,
   });
@@ -180,6 +206,9 @@ function matches(cells, columns, where) {
       case 'is':         return cell === v;
       case 'is not':     return cell !== v;
       case 'contains':   return v ? cell.includes(v) : false;
+      // Narrowing to the people just named: the only way a follow-up like
+      // "what about their fees?" can become a filter over the same set.
+      case 'is any of':  return String(val).split(ANY_SEP).map(x => norm(x)).filter(Boolean).includes(cell);
       case 'empty':      return cell === '';
       case 'not empty':  return cell !== '';
       case 'before':     return cell !== '' && cell < v;

@@ -261,7 +261,11 @@ const SECRET = 'qa-suite-secret';
 // Svarg's own provider chain, not the tenant's gateway: the pipeline, the
 // prompts and the data are identical, the model behind them may not be. The
 // report says which, so a judgement about wording is read in that light.
-const chain = process.env.PROVIDER_CHAIN || 'gemini';
+// --provider=claude when the default chain's quota is spent: a run that dies
+// half way through tells you nothing about the answers, and the first full run
+// of this suite did exactly that when Gemini's daily limit ran out at
+// question 52. The report names whichever answered.
+const chain = arg('provider', process.env.PROVIDER_CHAIN || 'gemini');
 const child = spawn(process.execPath, ['server.js'], {
   cwd: dir,
   env: {
@@ -282,8 +286,10 @@ const child = spawn(process.execPath, ['server.js'], {
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 let boot = '';
-child.stdout.on('data', d => boot += d);
-child.stderr.on('data', d => boot += d);
+let serverLog = [];
+const keep = (d) => { boot += d; serverLog.push(String(d)); if (serverLog.length > 60) serverLog.shift(); };
+child.stdout.on('data', keep);
+child.stderr.on('data', keep);
 const started = Date.now();
 while (Date.now() - started < 90000 && !/listening on port/.test(boot)) await new Promise(r => setTimeout(r, 500));
 if (!/listening on port/.test(boot)) { console.error('the application did not start\n' + boot.slice(-1500)); child.kill(); process.exit(1); }
@@ -298,7 +304,15 @@ if (!token) { console.error('could not get a session'); child.kill(); process.ex
 
 // ── Ask ─────────────────────────────────────────────────────────────────────
 
-async function askOne(message, history) {
+const PACE = Number(arg('pace', 1200));
+/** The application's own reason for a 500, from its log. */
+const lastChatError = () => {
+  const hits = serverLog.join('').split('\n').filter(l => l.includes('[chat] failed'));
+  return hits.length ? hits[hits.length - 1].trim() : '';
+};
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function askOne(message, history, attempt = 0) {
   const t0 = Date.now();
   try {
     const r = await fetch(`${base}/api/chat`, {
@@ -307,7 +321,9 @@ async function askOne(message, history) {
       body: JSON.stringify({ message, history, kind: 'own' }),
     });
     const body = await r.json().catch(() => ({}));
-    return { status: r.status, body, ms: Date.now() - t0 };
+    if (r.status >= 500 && attempt < 2) { await sleep(4000 * (attempt + 1)); return askOne(message, history, attempt + 1); }
+    const why = r.status >= 500 ? lastChatError() : '';
+    return { status: r.status, body, ms: Date.now() - t0, why };
   } catch (err) {
     return { status: 0, body: { error: err.message }, ms: Date.now() - t0 };
   }
@@ -322,9 +338,11 @@ for (const s of sections) {
   const history = [];
   const rows = [];
   for (const q of list) {
-    const { status, body, ms } = await askOne(q, s.turns ? history.slice(-6) : []);
+    const { status, body, ms, why } = await askOne(q, s.turns ? history.slice(-6) : []);
     if (s.turns) { history.push({ role: 'user', text: q }, { role: 'assistant', text: String(body?.answer || '') }); }
+    await sleep(PACE);
     const ev = evaluate(s, q, body, ms, status);
+    if (why) ev.flags.push(why.slice(0, 160));
     rows.push({ q, answer: String(body?.answer || body?.error || ''), ev, body });
     asked++;
     process.stdout.write(ev.flags.length ? ` ! ` : ` . `);

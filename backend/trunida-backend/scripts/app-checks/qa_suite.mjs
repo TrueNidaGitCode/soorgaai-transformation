@@ -294,12 +294,34 @@ const child = spawn(process.execPath, ['server.js'], {
      * running out, which is the most expensive place to discover a brake.
      */
     LLM_MAX_SPEND_USD: String(BUDGET),
+    // Makes the application print a line per model call, which is the only
+    // way from out here to know what a question actually cost.
+    LLM_LOG_USAGE: '1',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 let boot = '';
 let serverLog = [];
-const keep = (d) => { boot += d; serverLog.push(String(d)); if (serverLog.length > 60) serverLog.shift(); };
+/*
+ * What the run has spent, read off the application's own usage lines.
+ *
+ * serverLog keeps only the last sixty chunks so a long run does not hold
+ * the whole log in memory, which means it cannot be the meter — the totals
+ * are accumulated here as the lines arrive instead.
+ */
+const meter = { calls: 0, in: 0, out: 0 };
+const USAGE_LINE = /\[llm usage\] [^:]*: (\d+) in \/ (\d+) out/g;
+const tally = (chunk) => {
+  for (const m of String(chunk).matchAll(USAGE_LINE)) {
+    meter.calls++; meter.in += Number(m[1]); meter.out += Number(m[2]);
+  }
+};
+// Gemini Flash list pricing, as in cost_probe.mjs. Thinking is billed as
+// output, and the application now counts it there, so this is the real bill.
+const IN_PER_M = 0.30, OUT_PER_M = 2.50, USD_INR = 84;
+const meterUsd = () => (meter.in / 1e6) * IN_PER_M + (meter.out / 1e6) * OUT_PER_M;
+
+const keep = (d) => { boot += d; tally(d); serverLog.push(String(d)); if (serverLog.length > 60) serverLog.shift(); };
 child.stdout.on('data', keep);
 child.stderr.on('data', keep);
 const started = Date.now();
@@ -354,7 +376,12 @@ for (const s of sections) {
   const rows = [];
   for (const q of list) {
     if (hitCeiling()) break;
+    const was = { calls: meter.calls, in: meter.in, out: meter.out, usd: meterUsd() };
     const { status, body, ms, why } = await askOne(q, s.turns ? history.slice(-6) : []);
+    const cost = meterUsd() - was.usd;
+    console.log('    ' + (meter.calls - was.calls) + ' calls, ' + (meter.in - was.in) + ' in / ' +
+      (meter.out - was.out) + ' out — Rs ' + (cost * USD_INR).toFixed(3).padStart(6) +
+      '   run so far: Rs ' + (meterUsd() * USD_INR).toFixed(2) + ' of ' + (BUDGET * USD_INR).toFixed(0));
     if (s.turns) { history.push({ role: 'user', text: q }, { role: 'assistant', text: String(body?.answer || '') }); }
     await sleep(PACE);
     const ev = evaluate(s, q, body, ms, status);

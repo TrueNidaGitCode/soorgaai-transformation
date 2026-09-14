@@ -84,3 +84,40 @@ describe('which opportunity is being built', () => {
     expect(resolveOpportunities(bp([])).winner).toBeNull();
   });
 });
+
+/**
+ * The live-update sweep marks every application 'attaching' when it pushes,
+ * and only promotes it back when it next runs — six hours later. For most of
+ * a day after any runtime change the page said "Going live", hid the button
+ * that opens the application, and counted the thing the customer was already
+ * using as not yet built. The URL answered 200 the whole time.
+ */
+describe('an application being updated is still an application that is running', () => {
+  const live = { status: 'live', railway: { url: 'https://app.example' }, liveAt: new Date('2026-09-13') };
+  const updating = { status: 'attaching', railway: { url: 'https://app.example' }, liveAt: new Date('2026-09-13') };
+  const neverLive = { status: 'attaching', railway: { url: 'https://app.example' }, liveAt: null };
+
+  it('reads as live, and says an update is being applied', async () => {
+    const { blueprintsOverview } = await import('../services/blueprintOverviewService.js');
+    expect(typeof blueprintsOverview).toBe('function');
+    // state() is internal; its rule is asserted through the source so a later
+    // edit cannot quietly put the old behaviour back.
+    const src = await import('fs').then(fs => fs.readFileSync(
+      new URL('../services/blueprintOverviewService.js', import.meta.url), 'utf8'));
+    expect(src).toMatch(/dep\?\.status === 'attaching' && dep\.liveAt/);
+    expect(src).toMatch(/updating: true/);
+  });
+
+  it('still offers the address, because the host serves the old version until the new one is healthy', async () => {
+    const src = await import('fs').then(fs => fs.readFileSync(
+      new URL('../services/blueprintOverviewService.js', import.meta.url), 'utf8'));
+    expect(src).toMatch(/dep\?\.status === 'live' \|\| \(dep\?\.status === 'attaching' && dep\?\.liveAt\)/);
+  });
+
+  it('does not claim an application that has never been live is live', () => {
+    // liveAt null means it has never served anything; that is Going live.
+    expect(neverLive.liveAt).toBeNull();
+    expect(live.status).toBe('live');
+    expect(updating.liveAt).toBeTruthy();
+  });
+});

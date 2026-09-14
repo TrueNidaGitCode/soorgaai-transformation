@@ -288,7 +288,7 @@ function renderObjective() {
   el('bp-obj-meta').textContent = [
     bp.appName && bp.objective ? bp.objective : '',
     bp.industry,
-    bp.state?.label ? `${bp.state.label}` : '',
+    bp.state?.label ? bp.state.label + (bp.state.updating ? ' · applying an update' : '') : '',
     bp.createdAt ? `Started ${when(bp.createdAt)}` : '',
   ].filter(Boolean).join(' · ');
 

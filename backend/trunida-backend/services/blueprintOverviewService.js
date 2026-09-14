@@ -92,6 +92,19 @@ export function resolveOpportunities(bp) {
  */
 function state(bp, dep) {
   if (dep?.status === 'live')                        return { key: 'live',      label: 'Live' };
+  /*
+   * An application that has been live before and is 'attaching' is STILL
+   * SERVING. The live-update sweep sets that word on every push and only
+   * promotes it back when it next runs, six hours later, so for most of a day
+   * after any runtime change every customer's page said "Going live", hid the
+   * button that opens their application, and counted the thing they are
+   * already using as not yet built. Meanwhile the URL answered 200 throughout,
+   * because the host keeps the old version up until the new one is healthy.
+   *
+   * So: live, with a word about the update. Not live is for something that has
+   * never been live.
+   */
+  if (dep?.status === 'attaching' && dep.liveAt)     return { key: 'live',      label: 'Live', updating: true };
   if (dep && ['queued', 'preparing', 'prepared', 'attaching'].includes(dep.status))
     return { key: 'launching', label: 'Going live' };
   if (dep?.status === 'failed')                      return { key: 'failed',    label: 'Launch failed' };
@@ -202,10 +215,11 @@ export async function blueprintsOverview(userId) {
         built:     opp.winner,
         why:       opp.why,
         others:    opp.others,
-        // Only a live application has an address worth offering. A queued or
-        // failed one would hand out a link that answers with an error page.
-        app: dep?.status === 'live' && dep?.railway?.url
-          ? { url: dep.railway.url, liveAt: dep.liveAt || null }
+        // An address worth offering: one that answers. A queued or failed
+        // application would hand out a link to an error page, but one being
+        // updated is serving its previous version and opens fine.
+        app: (dep?.status === 'live' || (dep?.status === 'attaching' && dep?.liveAt)) && dep?.railway?.url
+          ? { url: dep.railway.url, liveAt: dep.liveAt || null, updating: dep.status === 'attaching' }
           : null,
         deployment: dep ? { status: dep.status, message: dep.statusMessage || '' } : null,
         features: featuresOf.get(id) || [],

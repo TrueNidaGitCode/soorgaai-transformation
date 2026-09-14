@@ -438,13 +438,21 @@ export function unsupportedNumbers(text, allowed) {
 
 export function composeAnswer(groups, cross) {
   if (!groups.length) return 'I cannot answer that from the connected data.';
-  const parts = groups.map(g => `${g.label}: ${g.entity ? g.entities : g.records}`);
+  // A customer reads this, so it has to be a sentence. The first version said
+  // "4 in u-16 trainees." — the safety net catching a bad number and printing
+  // worse English, which reads as the application breaking rather than as it
+  // being careful.
+  const count = (g) => (g.entity ? g.entities : g.records);
+  const one = (g) => (count(g) === 0
+    ? `Nothing matched ${g.label.toLowerCase()}.`
+    : `${g.label}: ${count(g)}.`);
   const head = groups.length === 1
-    ? `${groups[0].entity ? groups[0].entities : groups[0].records} in ${groups[0].label.toLowerCase()}.`
-    : `${parts.join('; ')}.`;
-  return cross.both.length
-    ? `${head} ${cross.both.length} appear in more than one of these, so this is ${cross.issues} items across ${cross.people} people.`
-    : head;
+    ? one(groups[0])
+    : groups.map(g => `${g.label}: ${count(g)}`).join('; ') + '.';
+  if (!cross.both.length) return head;
+  const n = cross.both.length;
+  return `${head} ${n === 1 ? 'One of them is' : `${n} of them are`} in more than one of these,`
+    + ` so this is ${cross.issues} items across ${cross.people} people.`;
 }
 
 // ── The envelope ────────────────────────────────────────────────────────────

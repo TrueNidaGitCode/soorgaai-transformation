@@ -133,3 +133,30 @@ describe('a number the code cannot explain never reaches the customer', () => {
       .toBe('I cannot answer that from the connected data.');
   });
 });
+
+/**
+ * The fallback is what the customer reads when the model produced a number
+ * code could not explain. It caught the bad number and then printed "4 in
+ * u-16 trainees." — careful, and unreadable. It has to be a sentence.
+ */
+describe('the sentence built from the facts reads like a sentence', () => {
+  const g = (label, n, e) => ({ label, records: n, entities: e === undefined ? n : e, entity: 'name', items: [] });
+  const none = { both: [], issues: 0, people: 0 };
+
+  it('names the group and its count', () => {
+    expect(composeAnswer([g('U-16 trainees', 4)], { ...none, issues: 4, people: 4 }))
+      .toBe('U-16 trainees: 4.');
+  });
+
+  it('says nothing matched rather than reporting a zero as a finding', () => {
+    expect(composeAnswer([g('U-16 students with unconfirmed attendance', 0)], none))
+      .toBe('Nothing matched u-16 students with unconfirmed attendance.');
+  });
+
+  it('agrees with itself about one person versus several', () => {
+    const two = composeAnswer([g('Absent', 3, 2), g('Overdue', 2)], { both: [{ name: 'X' }], issues: 5, people: 4 });
+    expect(two).toContain('One of them is in more than one');
+    const three = composeAnswer([g('Absent', 3, 2), g('Overdue', 2)], { both: [{ name: 'X' }, { name: 'Y' }], issues: 5, people: 3 });
+    expect(three).toContain('2 of them are in more than one');
+  });
+});

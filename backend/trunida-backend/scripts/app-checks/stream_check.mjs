@@ -31,21 +31,34 @@ const arg = (n, d) => {
 };
 const QUESTION = arg('q', 'Who has not confirmed attendance?');
 const PORT = Number(arg('port', 4411));
+const APP = arg('app', 'app-production-94d4');
 
 console.log(`question: ${QUESTION}\n`);
 console.log('This measures WHEN each part of the answer reaches the page.');
 console.log('The evidence is code-computed and final; the sentence is the model.\n');
 
 /*
- * Composed, not run in place.
+ * The application as this customer actually has it, not the bare template.
  *
- * The template imports middleware/authMiddleware.js and services/llmCore.js
- * from paths that only exist once a project has been assembled — they are
- * copied in from Svarg's own checkout by the builder. Booting eame-template
- * directly fails on the first of them.
+ * The template ships an empty dataset index, so booting it answers "there are
+ * no records connected" however good the data underneath is — which is what
+ * this probe did until it was pointed at the real build. projectFor returns
+ * the generated project when the blueprint has a verified one, exactly as the
+ * live-update sweep does.
  */
-const { buildManifest } = await import(`file:///${BEU}/services/eameProjectBuilder.js`);
-const files = buildManifest({ includeJira: true, appName: 'Stream Check' });
+await mongoose.connect(process.env.MONGO_URI);
+const { default: HostedDeployment } = await import(`file:///${BEU}/models/HostedDeployment.js`);
+const { default: TransformationBlueprint } = await import(`file:///${BEU}/models/TransformationBlueprint.js`);
+const { projectFor } = await import(`file:///${BEU}/controllers/deliveryController.js`);
+const { tenantMongoUri } = await import(`file:///${BEU}/services/deployTargetService.js`);
+
+const dep = await HostedDeployment.findOne({ 'railway.url': new RegExp(APP) }).lean();
+if (!dep) { console.error('No deployment matching', APP); process.exit(1); }
+const bp = await TransformationBlueprint.findById(dep.blueprintId).lean();
+const composed = await projectFor(bp);
+const files = composed.files;
+if (composed.source !== 'generated') console.warn('! no verified build — running the fixed template, which holds no data\n');
+console.log(`application: ${dep.railway?.url}  (${composed.source})`);
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'svarg-stream-'));
 for (const f of files) {
   const full = path.join(dir, f.path);
@@ -66,9 +79,10 @@ const child = spawn(process.execPath, ['server.js'], {
     //   --mongo="mongodb+srv://…/tenant_132d1925744c779d"
     // Without it the application has no records and says so, which exercises
     // the stream but measures nothing.
-    MONGO_URI: arg('mongo', process.env.MONGO_URI),
+    // The customer's own database, read-only for the length of one question.
+    MONGO_URI: arg('mongo', tenantMongoUri(process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI, dep.dbName)),
     JWT_SECRET: 'stream-check-secret',
-    APP_PUBLIC_ACCESS: 'true', APP_NAME: 'Stream Check', APP_OWNER_KEY: 'sok_stream',
+    APP_PUBLIC_ACCESS: 'true', APP_NAME: bp?.appName || 'Stream Check', APP_OWNER_KEY: 'sok_stream',
     PROVIDER_CHAIN: process.env.PROVIDER_CHAIN || 'gemini',
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || '',
     // A boot seed embeds its records and exits the process without these,

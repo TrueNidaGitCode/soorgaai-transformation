@@ -310,6 +310,110 @@ function groupFrom({ step, columns, dataset, items, records, window, coverage })
   };
 }
 
+/*
+ * Who SCA-26-001 actually is.
+ *
+ * The roll call keys every line by a student id, because that is how the
+ * academy's system writes it. Nothing looked the id up, so the answer came
+ * back "SCA-26-001, SCA-26-008 and 17 others are absent" — which is not an
+ * answer, it is a lookup task handed back to the coach. It only became
+ * visible once answers started naming people instead of counting them; the
+ * count was hiding it.
+ *
+ * The roster maps the id to Tejas Hegde, so this reads that map. Not by
+ * knowing about rosters — a tenant's datasets are whatever they imported —
+ * but by looking for a dataset whose key column holds these same values, and
+ * taking the human-readable columns beside it.
+ *
+ * Presentational only. Grouping, counting and validation stay keyed on the
+ * id, so a resolved name can never change a number; it only changes what the
+ * customer reads.
+ */
+const IDENTIFIER = /^[A-Z]{2,5}[-_/]?\d{2,}([-_/]\d+)*$/i;
+const NAMEISH_COLUMN = /(^|_)(name|first|last|given|surname|full)(_|$)/i;
+const NOT_A_NAME = /(id|code|ref|number|phone|mobile|email|date|amount|status|batch)/i;
+/*
+ * Somebody else's name in the same row.
+ *
+ * A roster carries the coach and the guardian beside the student, and every
+ * one of those columns is called something_name. Taking them all produced
+ * "Tejas Hegde Coach Balaji R" — two people presented as one, which is worse
+ * than the identifier it replaced because it reads as though it is true.
+ */
+const SOMEONE_ELSE = /(coach|guardian|parent|instructor|teacher|staff|manager|owner|emergency|contact|referr|next_of_kin|trainer|admin)/i;
+
+/** Do these values look like identifiers rather than like people? */
+function looksLikeIds(values) {
+  const seen = values.filter(Boolean).slice(0, 40);
+  if (seen.length < 2) return false;
+  const hits = seen.filter(v => IDENTIFIER.test(String(v).trim())).length;
+  return hits / seen.length >= 0.8;
+}
+
+/**
+ * id -> "Tejas Hegde", built from whichever dataset carries both.
+ *
+ * Returns an empty map when nothing matches, and the caller then shows the id,
+ * which is what it did before and is better than showing nothing.
+ */
+async function identityMap(values, kind) {
+  const want = new Set(values.map(v => norm(v)).filter(Boolean));
+  if (!want.size) return new Map();
+
+  for (const d of readIndex()) {
+    let all;
+    try { all = await readAllRows(d, kind); } catch { continue; }
+    if (!all.rows.length) continue;
+
+    // The column that holds these identifiers, if this dataset has one.
+    let idIdx = -1;
+    for (let i = 0; i < all.columns.length; i++) {
+      let hit = 0;
+      for (const r of all.rows) if (want.has(norm(r.cells[i]))) { hit++; if (hit >= 2) break; }
+      if (hit >= 2) { idIdx = i; break; }
+    }
+    if (idIdx < 0) continue;
+
+    // The columns beside it that name THIS person — not the coach standing
+    // next to them in the same row.
+    const candidates = all.columns
+      .map((c, i) => [c, i])
+      .filter(([c, i]) => i !== idIdx && NAMEISH_COLUMN.test(c) && !NOT_A_NAME.test(c) && !SOMEONE_ELSE.test(c));
+
+    // A first/last pair is one person's name split in two, and is preferred
+    // over anything else. Otherwise a single column, never a handful joined.
+    const first = candidates.find(([c]) => /(^|_)(first|given)(_|$)/i.test(c));
+    const last  = candidates.find(([c]) => /(^|_)(last|surname)(_|$)/i.test(c));
+    const nameIdx = (first && last)
+      ? [first[1], last[1]]
+      : candidates.slice(0, 1).map(([, i]) => i);
+    if (!nameIdx.length) continue;
+
+    const map = new Map();
+    for (const r of all.rows) {
+      const key = norm(r.cells[idIdx]);
+      if (!key || map.has(key)) continue;
+      const parts = nameIdx.map(i => String(r.cells[i] ?? '').trim()).filter(Boolean);
+      if (parts.length) map.set(key, parts.join(' '));
+    }
+    if (map.size) return map;
+  }
+  return new Map();
+}
+
+/** Show the person, keep the identifier. Counts never see this. */
+async function nameTheItems(items, kind) {
+  const values = items.map(i => i.name).filter(Boolean);
+  if (!looksLikeIds(values)) return items;
+  const map = await identityMap(values, kind);
+  if (!map.size) return items;
+  for (const it of items) {
+    const who = map.get(norm(it.name));
+    if (who) { it.id = it.name; it.name = who; }
+  }
+  return items;
+}
+
 function asItems(rows, columns, entity) {
   const idx = entity ? columns.indexOf(entity) : -1;
   if (idx < 0) return rows.map(r => ({ name: '', records: [r] }));
@@ -337,7 +441,7 @@ async function execute(planned, kind, now = new Date()) {
       const scanned = all.rows.slice(0, SCAN_LIMIT);
       const rows = scanned.filter(r =>
         matchesAll(r.cells, all.columns, step.where) && (!range || inWindow(r.cells[dateIdx], range, now)));
-      const items = asItems(rows, all.columns, step.entity);
+      const items = await nameTheItems(asItems(rows, all.columns, step.entity), kind);
       const g = groupFrom({
         step, columns: all.columns, dataset: d.name, items, records: rows.length,
         window: range ? range.label : null,
@@ -352,7 +456,7 @@ async function execute(planned, kind, now = new Date()) {
         entity: step.entity || src.group.entity,
         where: step.where, metric: step.metric, having: step.having,
       });
-      const items = found.map(f => ({ name: f.name, records: f.records, value: f.value }));
+      const items = await nameTheItems(found.map(f => ({ name: f.name, records: f.records, value: f.value })), kind);
       const g = groupFrom({
         step, columns: src.columns, dataset: src.dataset, items,
         records: items.reduce((n, i) => n + i.records.length, 0),
@@ -620,6 +724,7 @@ function envelope({ answer, groups, cross, notes, planned, kind, checked, state,
       window: g.window || '', rule: g.rule || '', note: g.note || '',
       items: g.items.map(i => ({
         name: i.name,
+        id: i.id || '',
         lines: i.records.slice(0, 6).map(r => r.cells),
         records: i.records.length,
         source: i.records[0]?.source || '',

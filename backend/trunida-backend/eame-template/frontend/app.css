@@ -1218,6 +1218,10 @@ body {
 .ch-ev td { padding: 7px 10px; color: var(--ch-dim); border-top: 1px solid rgba(255,255,255,0.04); }
 .ch-ev__more { margin: 6px 0 0; font-size: 11.5px; color: var(--ch-faint); }
 
+/* The standing mark: this application is answering from what it was built
+   with. Once, beside its name -- not a sentence under every answer. */
+.ch-head__state--sim { color: var(--ch-warn); border-color: color-mix(in srgb, var(--ch-warn) 40%, transparent); }
+
 /* Work in progress, in the customer's terms. */
 .ch-work { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 13.5px; color: var(--ch-dim); }
 .ch-work__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ch-accent); animation: ch-work 1.1s ease-in-out infinite; }

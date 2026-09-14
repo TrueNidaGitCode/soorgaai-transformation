@@ -386,25 +386,48 @@ export async function answer({ question, history = [], kind = 'own', appName = '
   const q = String(question || '').trim();
   if (!q) return envelope({ answer: '', groups: [], cross: { people: 0, both: [], issues: 0 }, notes, planned: { intent: 'question', act: null }, kind, checked: true });
 
-  const cat = await catalogue(kind);
-  if (!cat.length || cat.every(d => d.rows === 0)) {
+  /*
+   * The customer's records if there are any, the simulated ones if not.
+   *
+   * An application goes live with the rows it was built on and no rows of its
+   * own, and in that state every question was being answered "there are no
+   * records connected to this application yet" — while the application sat on
+   * a full set of simulated ones and the Data page listed them. That reads as
+   * broken, not as careful. So it answers from what it has and says which it
+   * used; the page carries that as a standing mark rather than a sentence
+   * repeated on every reply.
+   */
+  let used = kind;
+  let cat = await catalogue(used);
+  const bare = (c) => !c.length || c.every(d => d.rows === 0);
+  if (bare(cat) && kind === 'own') {
+    const simulated = await catalogue('sample');
+    if (!bare(simulated)) {
+      used = 'sample';
+      cat = simulated;
+      // Deliberately NOT a note: notes are given to the model and come back
+      // restated in the answer. The envelope flag simulated carries this instead,
+      // and the page shows it once, standing, beside the application's name.
+    }
+  }
+  if (bare(cat)) {
     notes.push('No records have been connected yet.');
     return envelope({
       answer: 'There are no records connected to this application yet, so I cannot answer from data. Connect a source on the Data page and ask again.',
       groups: [], cross: { people: 0, both: [], issues: 0 }, notes,
-      planned: { intent: 'question', act: null }, kind, checked: true,
+      planned: { intent: 'question', act: null }, kind: used, checked: true,
     });
   }
 
   const planned = await plan({ question: q, history: history.slice(-6), cat });
-  const groups = await gather(planned, kind);
+  const groups = await gather(planned, used);
   const cross = overlap(groups);
 
   if (!groups.length) {
     notes.push(planned.reason || 'Nothing in the connected data matches this question.');
     return envelope({
       answer: `I cannot tell that from the connected data. ${planned.reason || ''}`.trim(),
-      groups: [], cross, notes, planned, kind, checked: true,
+      groups: [], cross, notes, planned, kind: used, checked: true,
     });
   }
 
@@ -430,5 +453,5 @@ export async function answer({ question, history = [], kind = 'own', appName = '
     else text = retry;
   }
 
-  return envelope({ answer: text, groups, cross, notes, planned, kind, checked });
+  return envelope({ answer: text, groups, cross, notes, planned, kind: used, checked });
 }

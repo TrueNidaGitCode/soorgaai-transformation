@@ -75,6 +75,21 @@
     return { node: node, stop: function () { clearInterval(t); node.remove(); } };
   }
 
+  /*
+   * That the answer came from the simulated records is true of the
+   * application, not of this reply, so it is said once where the application
+   * says what it is — and never again under every answer.
+   */
+  function markSimulated(on) {
+    var state = document.getElementById('ch-state');
+    if (!state || !on || state.dataset.chSim === '1') return;
+    state.dataset.chSim = '1';
+    var label = state.querySelector('span:last-child') || state;
+    label.textContent = 'Using simulated data';
+    state.title = 'This application is answering from the records it was built with. Connect your own on the Data page.';
+    state.classList.add('ch-head__state--sim');
+  }
+
   function notice(text) {
     return add(el('<div class="ch-turn ch-turn--bot"><div class="ch-ans"><p class="ch-notice">' + esc(text) + '</p></div></div>'));
   }
@@ -184,6 +199,7 @@
     html += actionsHtml(d);
     html += sourcesHtml(d);
     body.innerHTML = html;
+    markSimulated(d.simulated);
 
     // Evidence opens where it is, not in a dialogue somewhere else.
     var btn = node.querySelector('.ch-src__btn');

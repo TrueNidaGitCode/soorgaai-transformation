@@ -19,3 +19,27 @@ from `backend/trunida-backend`:
   to upload through the Documents card.
 
 Unit tests for the same code are in `__tests__/` (`npx vitest run`).
+
+## The QA suite
+
+`node scripts/app-checks/qa_suite.mjs` asks a live application's chat the whole
+QA suite — around ninety questions across sixteen sections, with the
+follow-up sections run as real conversations — and writes `qa-report.md` (and
+`qa-report.json` for the raw envelopes) beside this file.
+
+It composes the application exactly as the live one is composed, copies the
+tenant's collections into `svarg_qa_scratch`, and points the application at
+the copy: **nothing here writes to what the customer is using.** It answers
+through Svarg's own provider keys rather than the tenant's gateway, so the
+pipeline, prompts and data are identical and only the model may differ; the
+report says which.
+
+    --only=5A,13B   just those sections
+    --app=app-xyz   another deployment (matched against its Railway URL)
+    --out=path.md   somewhere else
+
+The report flags what a machine can check: a number the pipeline did not
+compute, a person counted twice, a name with no record behind it, a question
+that should have been refused, Svarg's machinery named, Markdown on a page
+that cannot render it, a claim that something was sent. Whether an answer is
+*useful* is what the report is for you to read.

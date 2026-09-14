@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Svarg — Blueprints</title>
+  <title>Svarg — Your AI Roadmap</title>
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../workspace/workspace.css">
-  <link rel="stylesheet" href="blueprints.css?v=1">
+  <link rel="stylesheet" href="blueprints.css?v=2">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=2">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
   <script type="module" src="../shared/rail.js?v=2"></script>
-  <script type="module" src="blueprints.js?v=1"></script>
+  <script type="module" src="blueprints.js?v=2"></script>
 </head>
 <body class="workspace-page bp-page">
 
   <!-- ── Navbar ──────────────────────────────────────────────────────────── -->
-  <nav class="workspace-nav" aria-label="Blueprints navigation">
+  <nav class="workspace-nav" aria-label="Roadmap navigation">
     <div class="workspace-nav__left">
       <img src="/assets/logo-nav.png" alt="Svarg" class="workspace-nav__logo">
     </div>
@@ -27,15 +27,15 @@
     </div>
   </nav>
 
-  <main class="workspace-main bp-main" aria-label="Blueprints">
+  <main class="workspace-main bp-main" aria-label="Your AI Roadmap">
 
     <header class="bp-head">
       <div class="bp-head__text">
-        <h1 class="ws-page-title">Your blueprints</h1>
-        <p class="bp-sub">Every objective you have given Svarg, what it built, and where it is running. Open an application straight from here.</p>
+        <h1 class="bp-title">Your AI Roadmap</h1>
+        <p class="bp-sub">Here's what we're working on to help you get more value from your data and improve your agent.</p>
       </div>
       <!-- What the account may build. Sits with the heading rather than beside
-           the locked list, so the reason is read before the lock is met. -->
+           the locked rows, so the reason is read before the lock is met. -->
       <div class="bp-plan" id="bp-plan" hidden>
         <span class="bp-plan__label">Plan</span>
         <strong class="bp-plan__name" id="bp-plan-name"></strong>
@@ -45,7 +45,7 @@
 
     <div id="bp-loading" class="ws-loading">
       <div class="ws-spinner"></div>
-      <p>Loading your blueprints&hellip;</p>
+      <p>Loading your roadmap&hellip;</p>
     </div>
 
     <!-- A failure is not an absence: a dead backend reported as "nothing here"
@@ -53,13 +53,62 @@
     <p id="bp-error" class="bp-error" role="alert" hidden></p>
 
     <div id="bp-empty" class="bp-empty" hidden>
-      <h2 class="bp-empty__title">No blueprints yet</h2>
+      <h2 class="bp-empty__title">Nothing on the roadmap yet</h2>
       <p class="bp-empty__body">Describe what you want to improve and Cob will work out where AI helps most.</p>
       <a class="bp-empty__btn" href="/cob.html">Describe your objective &rarr;</a>
     </div>
 
-    <!-- One card per objective, drawn by blueprints.js. -->
-    <div id="bp-list" class="bp-list" hidden></div>
+    <div id="bp-body" hidden>
+      <!-- One objective at a time. The picker only appears when there is more
+           than one to pick between; a single-objective account never meets it. -->
+      <div class="bp-objs" id="bp-objs" role="tablist" aria-label="Your objectives" hidden></div>
+
+      <div class="bp-obj" id="bp-obj">
+        <div class="bp-obj__text">
+          <h2 class="bp-obj__name" id="bp-obj-name"></h2>
+          <p class="bp-obj__meta" id="bp-obj-meta"></p>
+        </div>
+        <button type="button" class="bp-btn bp-btn--quiet" id="bp-open-bp">Open blueprint &rarr;</button>
+      </div>
+
+      <div class="bp-tabs" role="tablist" aria-label="Roadmap">
+        <button type="button" class="bp-tab bp-tab--on" id="bp-tab-built" role="tab"
+                aria-selected="true" aria-controls="bp-panel-built">
+          Feature Built <span class="bp-tab__count" id="bp-count-built">0</span>
+        </button>
+        <button type="button" class="bp-tab" id="bp-tab-pipe" role="tab"
+                aria-selected="false" aria-controls="bp-panel-pipe">
+          Features in Pipeline <span class="bp-tab__count" id="bp-count-pipe">0</span>
+        </button>
+      </div>
+
+      <section class="bp-panel" id="bp-panel-built" role="tabpanel" aria-labelledby="bp-tab-built">
+        <header class="bp-panel__head">
+          <span class="bp-panel__icon bp-panel__icon--on" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>
+          </span>
+          <div>
+            <h3 class="bp-panel__title">Feature Built</h3>
+            <p class="bp-panel__sub">These features are live and ready to use in your application.</p>
+          </div>
+        </header>
+        <div class="bp-tablewrap"><table class="bp-table" id="bp-table-built"></table></div>
+      </section>
+
+      <section class="bp-panel" id="bp-panel-pipe" role="tabpanel" aria-labelledby="bp-tab-pipe" hidden>
+        <header class="bp-panel__head">
+          <span class="bp-panel__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+          <div>
+            <h3 class="bp-panel__title">Features in Pipeline</h3>
+            <p class="bp-panel__sub">These features are in development and will be available soon.</p>
+          </div>
+        </header>
+        <div class="bp-tablewrap"><table class="bp-table" id="bp-table-pipe"></table></div>
+        <p class="bp-upgrade" id="bp-upgrade" hidden></p>
+      </section>
+    </div>
 
   </main>
 

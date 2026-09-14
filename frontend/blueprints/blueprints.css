@@ -1,13 +1,21 @@
-/* ── The Blueprints page ───────────────────────────────────────────────────
-   One card per objective: what it does, whether it is running, what was
-   built from how the team uses it, and what is not built yet.
+/* ── Your AI Roadmap ───────────────────────────────────────────────────────
+   Two tabs over one numbered list: what is built and running, and what is in
+   the pipeline. A roadmap is scanned, not read, so the table does the work —
+   a mark per row, the status as a pill, and the way into the application on
+   the same line as the thing it belongs to.
 
    The palette is the workspace's — the same deep ground, the same teal — so
-   moving here from Cob or the application does not feel like a different
-   product. Only the state colours are new, and they are the three a person
-   needs to tell apart at a glance: running, working, stopped. */
+   moving here from Cob or from the application does not feel like a
+   different product. Only the three state colours are new, and they are the
+   ones a person needs to tell apart at a glance. */
 
-.bp-page { --bp-accent: #5CC5A7; --bp-work: #F2C94C; --bp-bad: #FCA5A5; }
+.bp-page {
+  --bp-accent: #5CC5A7;
+  --bp-work: #4DA3FF;
+  --bp-bad: #FCA5A5;
+  --bp-line: rgba(255, 255, 255, 0.08);
+  --bp-panel: rgba(255, 255, 255, 0.022);
+}
 
 /* The whole page starts after the rail -- the navbar included, which is why
    this is on the body and not on the main. rail.css sets --rail to 0 when the
@@ -15,7 +23,7 @@
 .workspace-page { padding-left: var(--rail, 0px); box-sizing: border-box; }
 
 /* .ws-loading sets display:flex, which beats the hidden attribute: the
-   spinner stayed on the page under the cards it was meant to be replaced by.
+   spinner stayed on the page under the rows it was meant to be replaced by.
    Anything hidden here is hidden. */
 .bp-page [hidden] { display: none !important; }
 
@@ -27,37 +35,44 @@
   justify-content: space-between;
   gap: 24px;
   flex-wrap: wrap;
-  margin-bottom: 28px;
+  margin-bottom: 26px;
 }
 .bp-head__text { min-width: 0; }
+.bp-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.6vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
 .bp-sub {
-  margin: 6px 0 0;
-  max-width: 62ch;
-  font-size: 0.95rem;
+  margin: 8px 0 0;
+  max-width: 70ch;
+  font-size: 0.92rem;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(255, 255, 255, 0.58);
 }
 
 .bp-plan {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 9px 14px;
+  border: 1px solid var(--bp-line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.03);
   white-space: nowrap;
 }
 .bp-plan__label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.38);
 }
-.bp-plan__name { font-size: 0.9rem; font-weight: 700; color: #fff; }
+.bp-plan__name { font-size: 0.88rem; font-weight: 700; color: #fff; }
 .bp-plan__upgrade {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--bp-accent);
   text-decoration: none;
@@ -66,202 +81,243 @@
 }
 .bp-plan__upgrade:hover { text-decoration: underline; }
 
-/* ── The cards ────────────────────────────────────────────────────────────── */
+/* ── Which objective ──────────────────────────────────────────────────────── */
 
-.bp-list { display: flex; flex-direction: column; gap: 20px; }
-
-.bp-card {
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.025);
-  padding: 22px 24px;
+.bp-objs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.bp-obj__chip {
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 8px 15px;
+  border: 1px solid var(--bp-line);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+.bp-obj__chip:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+.bp-obj__chip--on {
+  color: var(--bp-accent);
+  border-color: rgba(92, 197, 167, 0.4);
+  background: rgba(92, 197, 167, 0.1);
 }
 
-.bp-card__head {
+.bp-obj {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-wrap: wrap;
+  margin-bottom: 20px;
 }
-.bp-card__id { min-width: 0; }
-.bp-card__title {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: #fff;
-}
-.bp-card__obj {
+.bp-obj__text { min-width: 0; }
+.bp-obj__name { margin: 0; font-size: 1.12rem; font-weight: 700; color: #fff; }
+.bp-obj__meta {
   margin: 5px 0 0;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.6);
-}
-.bp-card__meta {
-  margin: 7px 0 0;
-  font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.38);
-}
-
-/* State: one word, and a dot that carries it without being read. */
-.bp-state {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  padding: 6px 13px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.66);
-  white-space: nowrap;
-}
-.bp-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
-.bp-state--on   { color: var(--bp-accent); border-color: rgba(92, 197, 167, 0.35); background: rgba(92, 197, 167, 0.08); }
-.bp-state--work { color: var(--bp-work);   border-color: rgba(242, 201, 76, 0.32);  background: rgba(242, 201, 76, 0.07); }
-.bp-state--bad  { color: var(--bp-bad);    border-color: rgba(252, 165, 165, 0.32); background: rgba(252, 165, 165, 0.07); }
-
-/* ── Blocks inside a card ─────────────────────────────────────────────────── */
-
-.bp-block { padding-top: 18px; }
-.bp-block + .bp-block { border-top: 1px solid rgba(255, 255, 255, 0.07); margin-top: 18px; }
-.bp-block__title {
-  margin: 0 0 10px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
-}
-.bp-block__note {
-  margin: -4px 0 12px;
   font-size: 0.82rem;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.bp-built__name {
-  margin: 0;
-  font-size: 1.02rem;
-  font-weight: 600;
-  line-height: 1.45;
-  color: #fff;
-}
-/* The technique, for whoever builds it. The line above is the same
-   opportunity in the customer's words. */
-.bp-built__tech {
-  margin: 4px 0 0;
-  font-size: 0.8rem;
+  line-height: 1.5;
   color: rgba(255, 255, 255, 0.42);
 }
-.bp-built__why {
-  margin: 9px 0 0;
-  max-width: 72ch;
-  font-size: 0.88rem;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.62);
-}
-.bp-none { margin: 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.45); }
-
-.bp-card__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 
 .bp-btn {
   display: inline-flex;
   align-items: center;
-  padding: 10px 18px;
+  padding: 9px 16px;
   border-radius: 10px;
   border: 1px solid transparent;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 700;
   font-family: inherit;
   text-decoration: none;
   cursor: pointer;
-  transition: filter 0.15s, background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
-.bp-btn--go { background: var(--bp-accent); color: #06251c; }
-.bp-btn--go:hover { filter: brightness(1.08); }
 .bp-btn--quiet {
   background: transparent;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.72);
   border-color: rgba(255, 255, 255, 0.16);
 }
 .bp-btn--quiet:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
-/* Not a button: there is nothing to open. Says so rather than looking
-   pressable and doing nothing. */
-.bp-btn--off {
+
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+
+.bp-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--bp-line);
+}
+.bp-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 18px;
+  border: none;
+  border-bottom: 2px solid transparent;
   background: transparent;
-  color: rgba(255, 255, 255, 0.34);
-  border-color: rgba(255, 255, 255, 0.1);
-  cursor: default;
+  color: rgba(255, 255, 255, 0.5);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
 }
+.bp-tab:hover { color: rgba(255, 255, 255, 0.85); }
+.bp-tab--on { color: var(--bp-accent); border-bottom-color: var(--bp-accent); }
+.bp-tab__count {
+  min-width: 21px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+}
+.bp-tab--on .bp-tab__count { background: rgba(92, 197, 167, 0.18); color: var(--bp-accent); }
+.bp-tab:focus-visible { outline: 2px solid var(--bp-accent); outline-offset: -4px; }
 
-/* ── Built from how your team uses it ─────────────────────────────────────── */
+/* ── Panels ───────────────────────────────────────────────────────────────── */
 
-.bp-feats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.bp-feat {
+.bp-panel {
+  border: 1px solid var(--bp-line);
+  border-radius: 16px;
+  background: var(--bp-panel);
+  padding: 20px 22px 12px;
+}
+.bp-panel__head { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 16px; }
+.bp-panel__icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: baseline;
-  padding: 11px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.45);
 }
-.bp-feat .bp-dot { position: relative; top: -2px; }
-.bp-dot--on   { color: var(--bp-accent); }
-.bp-dot--work { color: var(--bp-work); }
-.bp-dot--wait { color: rgba(255, 255, 255, 0.35); }
-.bp-dot--bad  { color: var(--bp-bad); }
-.bp-feat__text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.bp-feat__text strong { font-size: 0.92rem; font-weight: 600; color: #fff; }
-.bp-feat__text em {
-  font-style: normal;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.55);
-}
-.bp-feat__needs { color: var(--bp-work) !important; }
-.bp-feat__state {
-  font-size: 0.78rem;
+.bp-panel__icon svg { width: 22px; height: 22px; }
+.bp-panel__icon--on { color: var(--bp-accent); }
+.bp-panel__title { margin: 0; font-size: 1.02rem; font-weight: 700; color: #fff; }
+.bp-panel__sub { margin: 3px 0 0; font-size: 0.83rem; color: rgba(255, 255, 255, 0.45); }
+
+/* ── The table ────────────────────────────────────────────────────────────── */
+
+.bp-tablewrap { overflow-x: auto; }
+.bp-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+.bp-table th {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--bp-line);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.42);
   white-space: nowrap;
 }
-
-/* ── Not built yet ────────────────────────────────────────────────────────── */
-
-/* Greyed, not hidden: these are real opportunities Cob found, and the line
-   below says what would make them available. */
-.bp-locked { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
-.bp-locked__item {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 10px 14px;
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.015);
+.bp-table td {
+  padding: 15px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+  color: rgba(255, 255, 255, 0.6);
 }
-.bp-locked__name { font-size: 0.92rem; color: rgba(255, 255, 255, 0.5); }
-.bp-locked__tech { font-size: 0.76rem; color: rgba(255, 255, 255, 0.28); }
-.bp-locked__ask {
-  margin: 12px 0 0;
-  font-size: 0.85rem;
+.bp-table tbody tr:last-child td { border-bottom: none; }
+.bp-table tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+.bp-th-n, .bp-td-n { width: 34px; text-align: left; }
+.bp-td-n { color: rgba(255, 255, 255, 0.32); font-variant-numeric: tabular-nums; }
+
+.bp-td-name { display: flex; align-items: center; gap: 12px; min-width: 210px; }
+.bp-ico {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(92, 197, 167, 0.1);
+  color: var(--bp-accent);
+}
+.bp-ico svg { width: 18px; height: 18px; }
+.bp-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bp-name strong { font-size: 0.9rem; font-weight: 600; color: #fff; }
+/* The technique, for whoever builds it. The line above is the same thing in
+   the customer's words. */
+.bp-name em {
+  font-style: normal;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+.bp-name__needs { color: var(--bp-work) !important; }
+
+.bp-td-desc { max-width: 330px; line-height: 1.55; }
+
+.bp-td-status { white-space: nowrap; }
+.bp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.77rem;
+  font-weight: 600;
+}
+.bp-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.bp-pill--on   { color: var(--bp-accent); border-color: rgba(92, 197, 167, 0.32); background: rgba(92, 197, 167, 0.1); }
+.bp-pill--work { color: var(--bp-work);   border-color: rgba(77, 163, 255, 0.32); background: rgba(77, 163, 255, 0.1); }
+.bp-pill--wait { color: rgba(255, 255, 255, 0.5); border-color: rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.04); }
+.bp-pill--bad  { color: var(--bp-bad);    border-color: rgba(252, 165, 165, 0.3);  background: rgba(252, 165, 165, 0.08); }
+.bp-when { display: block; margin-top: 5px; font-size: 0.72rem; color: rgba(255, 255, 255, 0.3); }
+
+.bp-th-open, .bp-td-open { text-align: right; white-space: nowrap; }
+.bp-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border: 1px solid rgba(92, 197, 167, 0.32);
+  border-radius: 9px;
+  background: rgba(92, 197, 167, 0.09);
+  color: var(--bp-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.bp-open svg { width: 14px; height: 14px; }
+.bp-open:hover { background: rgba(92, 197, 167, 0.17); }
+.bp-open--up { border-color: rgba(255, 255, 255, 0.16); background: transparent; color: rgba(255, 255, 255, 0.72); }
+.bp-open--up:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+/* Not a link: there is nothing to open. Says so rather than looking
+   pressable and doing nothing. */
+.bp-open--off {
+  border-color: rgba(255, 255, 255, 0.09);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: default;
+}
+
+/* Greyed, not hidden: a real opportunity nobody has taken. */
+.bp-row--locked .bp-ico { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.35); }
+.bp-row--locked .bp-name strong { color: rgba(255, 255, 255, 0.55); }
+.bp-row--locked .bp-td-desc { color: rgba(255, 255, 255, 0.38); }
+
+.bp-empty-row { padding: 26px 14px !important; color: rgba(255, 255, 255, 0.38); text-align: center; }
+
+.bp-upgrade {
+  margin: 4px 0 10px;
+  padding: 13px 15px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 11px;
+  font-size: 0.84rem;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.55);
 }
-.bp-locked__ask a { color: var(--bp-accent); font-weight: 600; text-decoration: none; }
-.bp-locked__ask a:hover { text-decoration: underline; }
-.bp-lock { margin-right: 4px; }
+.bp-upgrade a { color: var(--bp-accent); font-weight: 600; text-decoration: none; }
+.bp-upgrade a:hover { text-decoration: underline; }
+.bp-lock { margin-right: 5px; }
 
 /* ── Empty and failed ─────────────────────────────────────────────────────── */
 
@@ -269,7 +325,7 @@
   padding: 44px 32px;
   text-align: center;
   border: 1px dashed rgba(255, 255, 255, 0.14);
-  border-radius: 18px;
+  border-radius: 16px;
 }
 .bp-empty__title { margin: 0 0 8px; font-size: 1.1rem; font-weight: 700; color: #fff; }
 .bp-empty__body { margin: 0 0 20px; font-size: 0.92rem; color: rgba(255, 255, 255, 0.55); }
@@ -295,14 +351,13 @@
   color: var(--bp-bad);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 860px) {
   .bp-main { padding-left: 1rem; padding-right: 1rem; }
-  .bp-card { padding: 18px 16px; }
-  .bp-card__head { flex-direction: column; gap: 12px; }
-  .bp-feat { grid-template-columns: auto minmax(0, 1fr); }
-  .bp-feat__state { grid-column: 2; }
+  .bp-panel { padding: 18px 14px 10px; }
+  .bp-table { font-size: 0.84rem; }
+  .bp-td-desc { max-width: 260px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bp-btn { transition: none; }
+  .bp-btn, .bp-tab, .bp-open { transition: none; }
 }

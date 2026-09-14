@@ -137,6 +137,13 @@ const DEFAULT_MAX_TOKENS = 1500;
  */
 const THINKING_HEADROOM = parseInt(process.env.LLM_THINKING_HEADROOM || '2048', 10);
 
+/*
+ * How a caller on the far side of the gateway says it is not asking for
+ * reasoning. Both ends read this constant: the selfhosted provider sends it,
+ * gatewayController reads it back off the request.
+ */
+export const THINKING_HEADER = 'x-svarg-thinking';
+
 // ── Provider chain ─────────────────────────────────────────────────────────────
 
 function getProviderChain() {
@@ -421,7 +428,7 @@ const PROVIDERS = {
   // server is actually running. See SELFHOSTED_MODEL_SETUP.md for setup.
 
   selfhosted: {
-    async generate({ systemPrompt, userMessage, model, maxTokens }) {
+    async generate({ systemPrompt, userMessage, model, maxTokens, thinking }) {
       const baseURL = process.env.SELFHOSTED_BASE_URL;
       if (!baseURL) throw new Error('SELFHOSTED_BASE_URL is not configured.');
 
@@ -433,15 +440,26 @@ const PROVIDERS = {
       // answer. The short classification calls in this codebase ask for 200
       // to 400, so without this they come back empty, and empty is not an
       // error anyone notices.
+      /*
+       * A delivered application reaches Svarg's gateway through here, so this
+       * is where thinking: false has to survive the hop or it means nothing
+       * where it costs the most. It travels as a header, not a body field:
+       * every endpoint this provider can point at ignores a header it does
+       * not know, while an unexpected body field is rejected outright by a
+       * strict OpenAI-compatible server.
+       */
+      const wantsThinking = thinking !== false;
       const client = new OpenAI({ apiKey: process.env.SELFHOSTED_API_KEY || 'not-needed', baseURL });
       const resp   = await client.chat.completions.create({
         model:      model || DEFAULT_MODELS.selfhosted,
-        max_tokens: (maxTokens || DEFAULT_MAX_TOKENS) + THINKING_HEADROOM,
+        max_tokens: wantsThinking
+          ? (maxTokens || DEFAULT_MAX_TOKENS) + THINKING_HEADROOM
+          : (maxTokens || DEFAULT_MAX_TOKENS),
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: userMessage  },
         ],
-      });
+      }, wantsThinking ? undefined : { headers: { [THINKING_HEADER]: 'off' } });
 
       return {
         text:         resp.choices[0]?.message?.content || '',

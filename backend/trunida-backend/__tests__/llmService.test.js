@@ -326,3 +326,49 @@ describe('thinking is billed, so it is counted and can be turned off', () => {
     expect((answer.match(/thinking: false/g) || []).length).toBe(2);
   });
 });
+
+/**
+ * The saving only counts where the money is spent.
+ *
+ * A delivered application does not hold a model key. It calls Svarg's gateway
+ * over HTTP, and an option that exists only as a JavaScript argument does not
+ * survive that hop — so the first version of this fix turned thinking off in
+ * a process that was not the one being billed. These assertions are about the
+ * whole road: tenant -> selfhosted provider -> gateway route -> provider.
+ */
+describe('turning thinking off survives the hop to the gateway', () => {
+  const llm     = readFileSync(new URL('../services/llmService.js', import.meta.url), 'utf8');
+  const gateway = readFileSync(new URL('../services/gatewayService.js', import.meta.url), 'utf8');
+  const control = readFileSync(new URL('../controllers/gatewayController.js', import.meta.url), 'utf8');
+
+  it('sends it as a header, which an endpoint that does not know it ignores', () => {
+    // A body field would be rejected outright by a strict OpenAI-compatible
+    // server; a header is simply not read.
+    expect(llm).toMatch(/export const THINKING_HEADER = 'x-svarg-thinking'/);
+    expect(llm).toContain("headers: { [THINKING_HEADER]: 'off' }");
+  });
+
+  it('drops the headroom on the tenant side too, so the ask is the ask', () => {
+    expect(llm).toContain('async generate({ systemPrompt, userMessage, model, maxTokens, thinking }) {\n      const baseURL = process.env.SELFHOSTED_BASE_URL;');
+    expect(llm).toMatch(/max_tokens: wantsThinking/);
+  });
+
+  it('reads it back off the request rather than inventing a second name', () => {
+    expect(control).toContain("import { THINKING_HEADER } from '../services/llmService.js'");
+    expect(control).toContain('req.headers[THINKING_HEADER]');
+  });
+
+  it('carries it the last two steps, to forwardChat and into the provider', () => {
+    expect(control).toContain('forwardChat(deployment, { messages, max_tokens, thinking })');
+    expect(gateway).toContain('forwardChat(deployment, { messages, max_tokens, thinking })');
+    // And on into the provider call, which is the step that spends the money.
+    expect(gateway).toContain('provider: provider || undefined,');
+    expect(gateway.split('provider: provider || undefined,')[1].slice(0, 400)).toContain('thinking,');
+  });
+
+  it('leaves thinking on for any caller that does not ask, as before', () => {
+    // undefined, not false: silence must not quietly disable reasoning for
+    // the blueprint, the planner or the build.
+    expect(control).toContain('? false\n      : undefined;');
+  });
+});

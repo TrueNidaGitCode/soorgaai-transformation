@@ -221,7 +221,7 @@ export function classifyUpstreamError(message = '') {
   return 'The upstream model provider could not be reached.';
 }
 
-export async function forwardChat(deployment, { messages, max_tokens }) {
+export async function forwardChat(deployment, { messages, max_tokens, thinking }) {
   // Both catalogs, because a tenant can now be deployed on either: the original
   // ten, or a benchmark row that has since been given an endpoint. Reading only
   // the first meant every model Arth recommends came back as 501 "not
@@ -258,6 +258,9 @@ export async function forwardChat(deployment, { messages, max_tokens }) {
     model: catalog?.apiModel,
     maxTokens: max_tokens,
     provider: provider || undefined,
+    // Forwarded, because the tenant is the only one who knows whether its
+    // call is reasoning work. Undefined leaves thinking on, as before.
+    thinking,
   });
 
   return { ...result, apiModel: catalog?.apiModel || provider || 'unknown' };

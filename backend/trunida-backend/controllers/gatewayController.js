@@ -18,6 +18,7 @@ import {
   authenticate, checkAllowance, recordUsage, forwardChat,
   estimateCostUsd, estimateEmbeddingCostUsd, toChatCompletion, classifyUpstreamError,
 } from '../services/gatewayService.js';
+import { THINKING_HEADER } from '../services/llmService.js';
 import { embedBatchWithUsage } from '../services/embeddingService.js';
 import { acceptSignals } from '../services/tenantSignalService.js';
 import { learnFromConversation } from '../services/customerUnderstandingService.js';
@@ -67,6 +68,19 @@ export async function chatCompletions(req, res) {
     if (!deployment) return;
 
     const { messages, max_tokens } = req.body || {};
+    /*
+     * A tenant can decline thinking, and pays less for it.
+     *
+     * Thinking is billed as output at the output rate, and a great many calls
+     * an application makes are not reasoning — pulling JSON out of a
+     * catalogue, wording a sentence from facts already computed. Only the
+     * caller knows which of its calls those are, so it says so, here.
+     * Anything that does not say so keeps thinking, as every caller did
+     * before this existed.
+     */
+    const thinking = String(req.headers[THINKING_HEADER] || '').toLowerCase() === 'off'
+      ? false
+      : undefined;
     if (!Array.isArray(messages) || !messages.length) {
       return fail(res, 400, 'messages must be a non-empty array.');
     }
@@ -75,7 +89,7 @@ export async function chatCompletions(req, res) {
     }
 
     const { text, inputTokens, outputTokens, apiModel } =
-      await forwardChat(deployment, { messages, max_tokens });
+      await forwardChat(deployment, { messages, max_tokens, thinking });
 
     const costUsd = estimateCostUsd(deployment.model?.modelId, inputTokens, outputTokens);
     // Recorded before responding: a tenant that disconnects mid-response has

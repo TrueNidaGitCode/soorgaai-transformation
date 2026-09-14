@@ -369,3 +369,117 @@
 @media (prefers-reduced-motion: reduce) {
   .bp-btn, .bp-tab, .bp-open { transition: none; }
 }
+
+/* ── How your application is evolving ──────────────────────────────────────
+   The continuous builder's own work, and the one part of this page that is
+   not a list of things that exist. It has to read as work being done for
+   them: what their team asked for, where it has got to, what it waits on. */
+
+.bp-stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.bp-stage {
+  padding: 12px 14px;
+  border: 1px solid var(--bp-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.015);
+}
+/* A stage with nothing on it is context, not news. */
+.bp-stage--on { border-color: rgba(92, 197, 167, 0.3); background: rgba(92, 197, 167, 0.06); }
+.bp-stage__n {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: rgba(255, 255, 255, 0.32);
+  font-variant-numeric: tabular-nums;
+}
+.bp-stage--on .bp-stage__n { color: var(--bp-accent); }
+.bp-stage__label { display: block; margin-top: 2px; font-size: 0.85rem; font-weight: 700; color: #fff; }
+.bp-stage__hint { display: block; margin-top: 3px; font-size: 0.74rem; line-height: 1.4; color: rgba(255, 255, 255, 0.4); }
+
+.bp-evas { display: flex; flex-direction: column; gap: 12px; }
+.bp-eva {
+  padding: 16px 18px;
+  border: 1px solid var(--bp-line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.bp-eva--failed { border-color: rgba(252, 165, 165, 0.28); }
+.bp-eva__head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.bp-eva__title { margin: 0; font-size: 0.98rem; font-weight: 700; color: #fff; }
+/* The evidence for having acted at all — the answer to "why this?". */
+.bp-eva__why { font-size: 0.76rem; color: var(--bp-accent); white-space: nowrap; }
+/* Their own words, which is what makes it theirs rather than ours. */
+.bp-eva__need {
+  margin: 8px 0 0;
+  padding-left: 11px;
+  border-left: 2px solid rgba(92, 197, 167, 0.35);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.62);
+}
+.bp-eva__sum { margin: 9px 0 0; font-size: 0.86rem; line-height: 1.55; color: rgba(255, 255, 255, 0.55); }
+.bp-eva__steps {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.5);
+}
+.bp-eva__failed { margin: 10px 0 0; font-size: 0.84rem; line-height: 1.55; color: var(--bp-bad); }
+.bp-eva__foot { margin: 11px 0 0; font-size: 0.76rem; color: rgba(255, 255, 255, 0.35); }
+.bp-eva__needs { color: var(--bp-work); }
+
+/* The rail: where this one has got to, and how far is left. */
+.bp-rail {
+  list-style: none;
+  display: flex;
+  margin: 14px 0 0;
+  padding: 0;
+}
+.bp-rail__step {
+  position: relative;
+  flex: 1;
+  padding-top: 16px;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+/* The line between the dots, drawn behind them and stopping at the last. */
+.bp-rail__step::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.09);
+}
+.bp-rail__step:last-child::before { display: none; }
+.bp-rail__dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+}
+.bp-rail__step--done { color: rgba(255, 255, 255, 0.45); }
+.bp-rail__step--done .bp-rail__dot { background: var(--bp-accent); }
+.bp-rail__step--done::before { background: rgba(92, 197, 167, 0.4); }
+.bp-rail__step--here { color: var(--bp-accent); font-weight: 700; }
+.bp-rail__step--here .bp-rail__dot {
+  background: var(--bp-accent);
+  box-shadow: 0 0 0 4px rgba(92, 197, 167, 0.18);
+}
+.bp-rail__name { display: block; }
+
+@media (max-width: 620px) {
+  .bp-rail { flex-wrap: wrap; gap: 8px; }
+  .bp-rail__step { flex: 0 0 auto; padding-right: 12px; }
+  .bp-rail__step::before { display: none; }
+}

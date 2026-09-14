@@ -21,6 +21,10 @@ import {
 import { embedBatchWithUsage } from '../services/embeddingService.js';
 import { acceptSignals } from '../services/tenantSignalService.js';
 import { learnFromConversation } from '../services/customerUnderstandingService.js';
+import { considerCapabilities } from '../services/capabilityDecisionService.js';
+import { runNextPlannedBuild } from '../services/capabilityBuildService.js';
+import { announcePending } from '../services/notificationService.js';
+import TransformationBlueprint from '../models/TransformationBlueprint.js';
 
 const MAX_MESSAGES = 50;
 const MAX_EMBEDDING_INPUTS = 256;
@@ -131,15 +135,45 @@ export async function embeddings(req, res) {
  * A batch that carries a correction or a down-vote is a moment worth
  * learning from, so the Learner is nudged -- unawaited, as everywhere else.
  */
+/**
+ * Learn from what the application reported, decide whether it is worth
+ * building, build it, and tell the customer when it is theirs.
+ *
+ * Each stage runs only if the one before it produced something, so a quiet day
+ * costs a single query and a busy one cannot start two builds.
+ */
+async function continueLearning(deployment) {
+  const { userId, blueprintId } = deployment;
+  const learned = await learnFromConversation({ userId, blueprintId, force: true });
+  if (!learned?.learned) return;
+
+  const blueprint = await TransformationBlueprint.findById(blueprintId).lean().catch(() => null);
+  const decided = await considerCapabilities({ userId, blueprintId, blueprint });
+  if (!decided?.decided) return;
+  console.log(`[gateway] ${blueprintId}: decided to build "${decided.request?.plan?.title || decided.request?.need || ''}"`);
+
+  await runNextPlannedBuild({ blueprintId });
+  await announcePending({ userId, blueprintId }).catch(() => {});
+}
+
 export async function signals(req, res) {
   try {
     const deployment = await authenticate(bearer(req));
     if (!deployment) return fail(res, 401, 'Invalid or missing deployment token.', 'authentication_error');
 
     const result = await acceptSignals(deployment, req.body?.signals);
+    // The loop that makes this a product rather than a delivery: what the
+    // customer's own people do inside their application is what decides what
+    // gets built into it next. It ran from Svarg's screen chat and stopped
+    // here at learning, so a live application could report a correction every
+    // day and nothing was ever built from it.
+    //
+    // Fired, never awaited: the application is waiting on this response, and a
+    // build takes minutes. Every guard that makes an unattended build safe is
+    // inside considerCapabilities — one request per requirement, one build at
+    // a time, a monthly budget, and a planner that may refuse.
     if (result.corrections || result.downvotes) {
-      learnFromConversation({ userId: deployment.userId, blueprintId: deployment.blueprintId, force: true })
-        .catch(err => console.error('[gateway] learner nudge failed:', err.message));
+      continueLearning(deployment).catch(err => console.error('[gateway] learner nudge failed:', err.message));
     }
     return res.json({ ok: true, kept: result.kept, refused: result.refused });
   } catch (err) {

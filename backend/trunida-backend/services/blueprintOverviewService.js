@@ -103,16 +103,36 @@ function state(bp, dep) {
   return { key: 'planned', label: 'Planned' };
 }
 
-/** A capability the Learner acted on, as the page shows it. */
+/**
+ * A capability the Learner acted on, as the page shows it.
+ *
+ * The status word on its own says nothing a customer can act on. What makes
+ * this legible is the JOURNEY: what someone actually said, how many times it
+ * came up before anything was decided, when it was decided, what it will do,
+ * and what it is still waiting on. That is the difference between "Building"
+ * and "your coaches asked for this four times, so it is being built now".
+ */
 function feature(req) {
   return {
     id:      String(req._id),
     title:   req.plan?.title || req.need || '',
     summary: req.plan?.summary || '',
     status:  req.status,
+    // The requirement in the customer's own words — the thing that started it.
+    need:    req.need || '',
+    // How many times it had come up when the decision was taken. This is the
+    // evidence for having acted at all, and the answer to "why this?".
+    mentions: req.mentionsAtDecision || 1,
+    // What the application will do, as steps a person would recognise.
+    steps:   req.plan?.steps || [],
+    dataNeeded: req.plan?.dataNeeded || [],
     // What the customer still has to do themselves before it works.
     connectorsNeeded: req.plan?.connectorsNeeded || [],
-    at: req.updatedAt || req.createdAt || null,
+    // Why a build did not survive, in the words the build gave.
+    error:   req.error || '',
+    noticedAt: req.createdAt || null,
+    at:      req.updatedAt || req.createdAt || null,
+    toldAt:  req.notifiedAt || null,
   };
 }
 
@@ -137,6 +157,8 @@ export async function blueprintsOverview(userId) {
       { blueprintId: 1, status: 1, statusMessage: 1, railway: 1, hosting: 1, liveAt: 1 }).lean(),
     // dismissed is the Learner's own veto — a wish it decided not to build.
     // Showing it would read as a refusal by us of something they asked for.
+    // Dismissed is the Learner's own veto — a wish it decided not to build.
+    // Kept out: showing it reads as Svarg refusing something they asked for.
     CapabilityRequest.find({ userId, status: { $ne: 'dismissed' } })
       .sort({ updatedAt: -1 }).lean(),
     resolvePlan(userId),

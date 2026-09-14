@@ -6,13 +6,13 @@
   <title>Svarg — Your AI Roadmap</title>
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="../workspace/workspace.css">
-  <link rel="stylesheet" href="blueprints.css?v=3">
+  <link rel="stylesheet" href="blueprints.css?v=4">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=2">
   <script src="../login/config.js"></script>
   <script src="../login/sessionGuard.js"></script>
   <script type="module" src="../shared/rail.js?v=2"></script>
-  <script type="module" src="blueprints.js?v=2"></script>
+  <script type="module" src="blueprints.js?v=3"></script>
 </head>
 <body class="workspace-page bp-page">
 
@@ -108,6 +108,9 @@
             <p class="bp-panel__sub">These features are in development and will be available soon.</p>
           </div>
         </header>
+        <!-- The continuous builder's own work: what their team asked for,
+             where each thing has got to, and what it is waiting on. -->
+        <div id="bp-evolution"></div>
         <div class="bp-tablewrap"><table class="bp-table" id="bp-table-pipe"></table></div>
         <p class="bp-upgrade" id="bp-upgrade" hidden></p>
       </section>

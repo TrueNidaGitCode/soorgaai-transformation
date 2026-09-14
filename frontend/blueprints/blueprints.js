@@ -97,6 +97,82 @@ const FEATURE_STATUS = {
 };
 
 /**
+ * The stages a capability moves through, in order.
+ *
+ * This is the pipeline the customer watches: something their team kept asking
+ * for was noticed, decided on, built, and handed over. Naming the stages and
+ * showing where each thing sits on them is what turns a status word into the
+ * sense that the application is being worked on for them.
+ */
+const STAGES = [
+  { key: 'planned',  label: 'Decided',  hint: 'Noticed in how your team works' },
+  { key: 'building', label: 'Building', hint: 'Being written in now' },
+  { key: 'ready',    label: 'Ready',    hint: 'Built — may need connecting' },
+  { key: 'live',     label: 'Live',     hint: 'In your application and working' },
+];
+
+/**
+ * One capability, as a journey rather than a row.
+ *
+ * What started it, how often it came up, what it will do, where it has got to
+ * and what it waits on. A customer reading this should be able to say why
+ * their application changed without asking anybody.
+ */
+function evolutionItem(f) {
+  const at = STAGES.findIndex(s => s.key === f.status);
+  const rail = STAGES.map((s, i) => {
+    const cls = at >= 0 && i < at ? ' bp-rail__step--done' : (at === i ? ' bp-rail__step--here' : '');
+    return `<li class="bp-rail__step${cls}"><span class="bp-rail__dot" aria-hidden="true"></span>`
+      + `<span class="bp-rail__name">${esc(s.label)}</span></li>`;
+  }).join('');
+  const failed = f.status === 'failed';
+  return `
+    <article class="bp-eva${failed ? ' bp-eva--failed' : ''}">
+      <header class="bp-eva__head">
+        <h4 class="bp-eva__title">${esc(f.title)}</h4>
+        <span class="bp-eva__why">${f.mentions > 1 ? 'asked for ' + f.mentions + ' times' : 'asked for once'}</span>
+      </header>
+      ${f.need ? `<p class="bp-eva__need">&ldquo;${esc(f.need)}&rdquo;</p>` : ''}
+      ${f.summary ? `<p class="bp-eva__sum">${esc(f.summary)}</p>` : ''}
+      ${failed
+        ? `<p class="bp-eva__failed">This build did not survive verification, so nothing in your application was changed.${f.error ? ' ' + esc(f.error) : ''}</p>`
+        : `<ol class="bp-rail">${rail}</ol>`}
+      ${f.steps && f.steps.length
+        ? `<ul class="bp-eva__steps">${f.steps.slice(0, 4).map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
+      <p class="bp-eva__foot">${f.noticedAt ? 'Noticed ' + esc(when(f.noticedAt)) : ''}${f.at && f.at !== f.noticedAt ? ' &middot; last moved ' + esc(when(f.at)) : ''}${f.connectorsNeeded && f.connectorsNeeded.length ? ' &middot; <span class="bp-eva__needs">needs ' + esc(f.connectorsNeeded.join(', ')) + ' connected</span>' : ''}</p>
+    </article>`;
+}
+
+/**
+ * How this application is evolving, as one block.
+ *
+ * Deliberately not a table: a table of statuses is a report, and this is meant
+ * to read as work being done on their behalf.
+ */
+function evolution(features) {
+  if (!features.length) {
+    return `<section class="bp-block">
+      <h3 class="bp-block__title">How your application is evolving</h3>
+      <p class="bp-block__note">Nothing yet. Svarg watches what people ask for inside your application and builds what keeps coming up — the first change appears here once your team has been using it.</p>
+    </section>`;
+  }
+  const counts = STAGES.map(s => ({ ...s, n: features.filter(f => f.status === s.key).length }));
+  return `
+    <section class="bp-block">
+      <h3 class="bp-block__title">How your application is evolving</h3>
+      <p class="bp-block__note">Svarg watches what people ask for inside your application and builds what keeps coming up. Nothing here was requested through a form.</p>
+      <div class="bp-stages">
+        ${counts.map(c => `<div class="bp-stage${c.n ? ' bp-stage--on' : ''}">
+          <span class="bp-stage__n">${c.n}</span>
+          <span class="bp-stage__label">${esc(c.label)}</span>
+          <span class="bp-stage__hint">${esc(c.hint)}</span>
+        </div>`).join('')}
+      </div>
+      <div class="bp-evas">${features.map(evolutionItem).join('')}</div>
+    </section>`;
+}
+
+/**
  * The two lists, from one objective.
  *
  * Built is what exists: the opportunity the application was built for, and
@@ -225,6 +301,11 @@ function renderObjective() {
       : 'Nothing is running yet. The first feature appears here once your application goes live.');
   el('bp-table-pipe').innerHTML = table(pipeRows, bp, plan,
     'Nothing waiting. Svarg adds to this as your team uses the application.');
+
+  // What the continuous builder has done and is doing, above the opportunities
+  // nobody has taken: one is the application changing under them, the other is
+  // a list of things that have not started.
+  el('bp-evolution').innerHTML = evolution(bp.features || []);
 
   // The plan's limit, said once under the pipeline rather than on every
   // locked row. Only when something is actually held back by it.

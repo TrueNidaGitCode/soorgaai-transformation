@@ -77,7 +77,7 @@ export function tenantMongoUri(clusterUri, dbName) {
  * this context; it is the delivered app's generic OpenAI-compatible client
  * pointed at the gateway, which is why hosting needs no code change.
  */
-export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName, ownerKey }) {
+export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName, ownerKey, seats, planLabel }) {
   // Arth ranks and the picker shows the benchmark catalog, not the advisory
   // ten (see services/selectableModelService.js), so a perfectly legitimate
   // selection arrives carrying an id the advisory list has never heard of —
@@ -114,6 +114,22 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
     // own sign-in in front (see server.js).
     APP_NAME: appName || 'AI Assistant',
     APP_PUBLIC_ACCESS: 'true',
+
+    /*
+     * How many people may hold an account in this application.
+     *
+     * A delivered application had no seat limit at all: anyone Svarg could
+     * sign in was upserted into its users on first arrival, so an academy on
+     * a one-person plan could put thirty coaches in it and nothing anywhere
+     * noticed. The limit lives on the plan and travels here, because the
+     * accounts are in the tenant and only the tenant can count them.
+     *
+     * Absent means unlimited, which is what every application delivered
+     * before this already assumed.
+     */
+    ...(seats ? { APP_SEATS: String(seats) } : {}),
+    // Named, so the refusal can say which plan it is rather than 'a plan'.
+    ...(planLabel ? { APP_PLAN_LABEL: String(planLabel) } : {}),
     // The key that unlocks the application's Data page. Records never come to
     // Svarg: they are imported inside the application, by whoever holds this.
     ...(ownerKey ? { APP_OWNER_KEY: ownerKey } : {}),

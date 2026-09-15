@@ -33,6 +33,42 @@ export function configured() {
   return !!(process.env.SVARG_AUTH_URL && process.env.SVARG_AUTH_SECRET);
 }
 
+/** Absent means unlimited — every application delivered before seats existed. */
+function seatLimit() {
+  const n = parseInt(process.env.APP_SEATS || '', 10);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/**
+ * May this person have an account?
+ *
+ * Yes if they already have one, always. Yes if there is room. Otherwise the
+ * refusal says what plan this is and that a person will follow up, because
+ * there is no self-serve upgrade to send them to and pretending otherwise
+ * would be worse than saying so.
+ */
+async function seatFor(email) {
+  const limit = seatLimit();
+  if (!limit) return { refused: false };
+  try {
+    const existing = await usersCollection().findOne({ email }, { projection: { _id: 1 } });
+    if (existing) return { refused: false };
+    const held = await usersCollection().countDocuments({});
+    if (held < limit) return { refused: false };
+    const plan = process.env.APP_PLAN_LABEL || '';
+    return {
+      refused: true,
+      error: `${process.env.APP_NAME || 'This application'} is on ${plan ? 'the ' + plan + ' plan' : 'a plan'}, `
+        + `which covers ${limit === 1 ? 'one account' : limit + ' accounts'}, and ${limit === 1 ? 'it is' : 'they are'} already in use. `
+        + 'The SvargAI team will get back to you about adding more people.',
+    };
+  } catch (err) {
+    // A seat check that cannot run must not become a locked door.
+    console.warn('[auth] seat check failed, letting them in —', err.message);
+    return { refused: false };
+  }
+}
+
 function usersCollection() {
   return mongoose.connection.collection('svarg_users');
 }
@@ -149,6 +185,21 @@ async function sessionFromAssertion(assertion) {
   }
   const email = String(who.email || '').toLowerCase();
   if (!email) return { error: 'Svarg did not say who you are. Please try again.' };
+
+  /*
+   * How many people may hold an account here.
+   *
+   * Nothing used to ask. Anyone Svarg could sign in was upserted on arrival,
+   * so an academy on a one-person plan could put thirty coaches into its
+   * application and no part of Svarg noticed — the plan said one account and
+   * the application had never been told.
+   *
+   * Someone who already signed in is never turned away. Locking a coach out
+   * mid-season over billing is a support incident, not a nudge; the limit
+   * stops the NEXT person, and the owner can see the list and decide.
+   */
+  const seatCheck = await seatFor(email);
+  if (seatCheck.refused) return { error: seatCheck.error };
 
   try {
     const now = new Date();

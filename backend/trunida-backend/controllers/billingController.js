@@ -187,3 +187,128 @@ export async function adminGetUsage(req, res) {
     return res.status(500).json({ error: 'Could not read usage.' });
   }
 }
+
+// ── POST /api/billing/upgrade-request ───────────────────────────────────────
+
+/**
+ * "We need the team in here."
+ *
+ * There is no checkout, so this cannot take money and must not pretend to. It
+ * records who asked and for what, and says a person will follow up — which is
+ * true, and is better than a button that appears to upgrade an account and
+ * silently does nothing.
+ *
+ * Recorded on the account rather than emailed, because an email nobody has
+ * wired up is a request that quietly disappears.
+ */
+export async function requestUpgrade(req, res) {
+  try {
+    const wanted = planKey(req.body?.plan);
+    const reason = String(req.body?.reason || '').slice(0, 500);
+    const seats = Math.min(Math.max(parseInt(req.body?.seats, 10) || 0, 0), 500);
+
+    const doc = await AccountPlan.findOneAndUpdate(
+      { userId: req.user._id },
+      {
+        $set: {
+          upgradeRequest: {
+            plan: wanted, seats, reason,
+            askedAt: new Date(),
+            status: 'open',
+          },
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+
+    auditLog('upgrade_requested', req.user._id, { plan: wanted, seats });
+
+    return res.json({
+      requested: true,
+      plan: wanted,
+      planLabel: PLANS[wanted].label,
+      seats: PLANS[wanted].seats,
+      message: `Thank you — the SvargAI team will get back to you about enabling ${PLANS[wanted].label}.`,
+      askedAt: doc?.upgradeRequest?.askedAt || new Date(),
+    });
+  } catch (err) {
+    console.error('[billing] upgrade request failed —', err.message);
+    return res.status(500).json({ error: 'The request could not be recorded. Please try again.' });
+  }
+}
+
+// ── POST /api/billing/cancel ────────────────────────────────────────────────
+
+/**
+ * Cancelling, honestly.
+ *
+ * Nothing here takes money, so nothing here can stop a payment either. What it
+ * can do is record the decision, stop the account renewing, and say plainly
+ * what happens next — including that the applications keep running until the
+ * period ends, because a customer who cancels and finds their academy's
+ * application dark the same afternoon has been treated badly.
+ *
+ * Reversible on purpose: cancelling is a decision people change, and making
+ * them ask a human to undo it is a way of punishing them for it.
+ */
+export async function cancelSubscription(req, res) {
+  try {
+    const s = await usageSummary(req.user._id);
+    const current = planKey(s.plan);
+
+    if (current === 'hobby') {
+      return res.json({
+        cancelled: false,
+        plan: 'hobby',
+        message: 'This account is on Hobby, which is free — there is no subscription to cancel.',
+      });
+    }
+
+    const doc = await AccountPlan.findOneAndUpdate(
+      { userId: req.user._id },
+      { $set: { status: 'cancelling', cancelledAt: new Date(), cancelRequestedBy: String(req.user._id) } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+
+    auditLog('subscription_cancelled', req.user._id, { plan: current });
+
+    const until = doc?.currentPeriodEnd || null;
+    return res.json({
+      cancelled: true,
+      plan: current,
+      planLabel: PLANS[current].label,
+      endsAt: until,
+      message: until
+        ? `${PLANS[current].label} will not renew. Everything keeps working until ${new Date(until).toDateString()}, and the account moves to Hobby after that.`
+        : `${PLANS[current].label} will not renew. Nothing stops today — the SvargAI team will confirm the date and what moves to Hobby.`,
+      reversible: true,
+    });
+  } catch (err) {
+    console.error('[billing] cancel failed —', err.message);
+    return res.status(500).json({ error: 'The cancellation could not be recorded. Please try again.' });
+  }
+}
+
+// ── POST /api/billing/resume ────────────────────────────────────────────────
+
+/** Changed their mind, which is allowed and should not need a support ticket. */
+export async function resumeSubscription(req, res) {
+  try {
+    const doc = await AccountPlan.findOne({ userId: req.user._id });
+    if (!doc || doc.status !== 'cancelling') {
+      return res.json({ resumed: false, message: 'There is no cancellation to undo on this account.' });
+    }
+    doc.status = 'active';
+    doc.cancelledAt = null;
+    await doc.save();
+    auditLog('subscription_resumed', req.user._id, { plan: doc.plan });
+    return res.json({
+      resumed: true,
+      plan: doc.plan,
+      message: `${PLANS[planKey(doc.plan)].label} will renew as before.`,
+    });
+  } catch (err) {
+    console.error('[billing] resume failed —', err.message);
+    return res.status(500).json({ error: 'That could not be undone. Please try again.' });
+  }
+}

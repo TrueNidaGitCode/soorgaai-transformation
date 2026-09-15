@@ -47,6 +47,25 @@ const accountPlanSchema = new mongoose.Schema({
   /** When the paid period ends. Null on Hobby, which never expires. */
   currentPeriodEnd: { type: Date, default: null },
 
+  /** Set when the customer cancels; cleared if they change their mind. */
+  cancelledAt: { type: Date, default: null },
+  cancelRequestedBy: { type: String, default: null },
+
+  /*
+   * What they asked for, when there is no checkout to send them to.
+   *
+   * Kept on the account rather than emailed: an email nobody has wired up is
+   * a request that quietly disappears, and the person who asked is left
+   * believing somebody has it.
+   */
+  upgradeRequest: {
+    plan:    { type: String, default: '' },
+    seats:   { type: Number, default: 0 },
+    reason:  { type: String, default: '' },
+    askedAt: { type: Date,   default: null },
+    status:  { type: String, default: '' },
+  },
+
   razorpay: {
     customerId:     { type: String, default: '' },
     subscriptionId: { type: String, default: '', index: true },

@@ -77,6 +77,7 @@ export const PLANS = {
     // is the blueprint and one working application; a build that rewrites a
     // running application every time somebody complains is what Pro buys.
     capabilityBuilds:      0,
+    seats:                 1,
   },
   pro: {
     label: 'Pro',
@@ -90,6 +91,16 @@ export const PLANS = {
     launches:              1,
     deploymentCostUsd:     5,
     capabilityBuilds:      3,
+    /*
+     * One account, deliberately.
+     *
+     * Pro is one person running one objective. The moment an academy wants
+     * its coaches in the application it is a team, and a team is Ultra — a
+     * delivered application had no seat limit at all before this, so thirty
+     * coaches could sign in to a one-person plan and nothing anywhere
+     * noticed.
+     */
+    seats:                 1,
   },
   ultra: {
     label: 'Ultra',
@@ -99,6 +110,8 @@ export const PLANS = {
     launches:              10,
     deploymentCostUsd:     5,
     capabilityBuilds:      10,
+    // Where "we need the team in here" is answered.
+    seats:                 5,
   },
   enterprise: {
     label: 'Enterprise',
@@ -108,6 +121,8 @@ export const PLANS = {
     launches:              UNLIMITED,
     deploymentCostUsd:     5,
     capabilityBuilds:      UNLIMITED,
+    // Thirty coaches and four admins.
+    seats:                 UNLIMITED,
   },
 };
 
@@ -153,7 +168,23 @@ export async function resolvePlan(userId) {
 
   const plan = planKey(doc?.plan);
   const status = doc?.status || 'active';
-  const lapsed = plan !== 'hobby' && status !== 'active';
+  /*
+   * Cancelling is not lapsed.
+   *
+   * A cancelled subscription keeps everything it paid for until the period
+   * ends — somebody who cancels on a Tuesday must not find their academy's
+   * application dark that afternoon. Every status that was not 'active' used
+   * to mean an immediate drop to Hobby, so recording a cancellation would
+   * have taken the plan away at the moment it was recorded, which is the
+   * opposite of what the cancellation message promises.
+   *
+   * Once the paid period is genuinely over it lapses like anything else.
+   */
+  const periodOver = doc?.currentPeriodEnd
+    ? new Date(doc.currentPeriodEnd).getTime() <= Date.now()
+    : false;
+  const cancelling = status === 'cancelling' && !periodOver;
+  const lapsed = plan !== 'hobby' && status !== 'active' && !cancelling;
   const effective = lapsed ? 'hobby' : plan;
 
   // Overrides are applied on top of the EFFECTIVE tier, so a granted exception

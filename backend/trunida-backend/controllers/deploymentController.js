@@ -312,6 +312,18 @@ export async function attachApplication(req, res) {
       const { resolveSelectableModel } = await import('../services/selectableModelService.js');
       const model = await resolveSelectableModel(dep.model?.modelId);
 
+      /*
+       * How many people may hold an account in the delivered application.
+       *
+       * The accounts live in the tenant, so only the tenant can count them —
+       * which is why the limit has to travel with the environment rather than
+       * being checked here. Before this it was never sent, and a delivered
+       * application let anyone Svarg could sign in have an account whatever
+       * the plan said.
+       */
+      const { resolvePlan } = await import('../services/entitlements.js');
+      const plan = await resolvePlan(dep.userId).catch(() => null);
+
       const env = buildTenantEnv({
         deployment: dep,
         model,
@@ -320,6 +332,8 @@ export async function attachApplication(req, res) {
         clusterUri: process.env.TENANT_CLUSTER_URI || process.env.MONGO_URI,
         appName: bp.appName,
         ownerKey,
+        seats: plan?.limits?.seats ?? null,
+        planLabel: plan?.limits?.label || '',
       });
 
       // The commit delivery pushed, not "whatever main is" — Railway only

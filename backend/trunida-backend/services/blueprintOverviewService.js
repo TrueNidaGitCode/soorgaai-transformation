@@ -193,6 +193,14 @@ export async function blueprintsOverview(userId) {
       label:     PLANS[plan.effective]?.label || 'Hobby',
       viaAdmin:  !!plan.viaAdmin,
       lapsed:    !!plan.lapsed,
+      // The tier as billed, which differs from key only while a subscription
+      // is unpaid or cancelling. The page needs it to decide whether there is
+      // a subscription to cancel at all.
+      plan:      plan.plan,
+      status:    plan.status,
+      // How many people may hold an account in the delivered application.
+      // Null means unlimited.
+      seats:     plan.limits?.seats ?? null,
       upgradeTo,
       upgradeLabel: upgradeTo ? PLANS[upgradeTo].label : '',
       // Ultra and Enterprise build every opportunity, so nothing is locked and

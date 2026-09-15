@@ -40,7 +40,15 @@
         <span class="bp-plan__label">Plan</span>
         <strong class="bp-plan__name" id="bp-plan-name"></strong>
         <a class="bp-plan__upgrade" id="bp-plan-upgrade" href="/pricing/pricing.html" hidden></a>
+        <!-- How many people the plan covers, and the two things an account can
+             decide for itself: ask for more, or stop. Neither takes money -
+             there is no checkout - so both record a decision and say what
+             happens next. -->
+        <span class="bp-plan__seats" id="bp-plan-seats" hidden></span>
+        <button type="button" class="bp-plan__ask" id="bp-plan-ask" hidden>Need more people?</button>
+        <button type="button" class="bp-plan__cancel" id="bp-plan-cancel" hidden>Cancel subscription</button>
       </div>
+      <p class="bp-plan__said" id="bp-plan-said" hidden role="status"></p>
     </header>
 
     <div id="bp-loading" class="ws-loading">

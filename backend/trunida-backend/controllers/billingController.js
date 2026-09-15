@@ -49,6 +49,9 @@ export async function getMyPlan(req, res) {
       lapsed: s.lapsed,
       currentPeriodEnd: s.currentPeriodEnd,
       limits: s.limits,
+      // Named separately because the page reads it directly; it is the one
+      // limit a customer feels the moment a colleague is turned away.
+      seats: s.limits?.seats ?? null,
       used: s.used,
       windowResetsAt: s.windowResetsAt,
     });

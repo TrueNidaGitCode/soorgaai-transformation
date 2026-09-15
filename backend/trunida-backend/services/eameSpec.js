@@ -55,6 +55,7 @@ export const FIXED_PATHS = [
   'controllers/chatController.js',
   'routes/chatRoutes.js',
   'frontend/answer.js',
+  'frontend/access.js',
   'services/modelSelectionService.js',
   'config/modelCatalog.js',
   'frontend/index.html',
@@ -88,7 +89,9 @@ export const FIXED_PATHS = [
   // Sign-in with Google through Svarg, and the application's own record of
   // who signed in. Fixed: the door is the same on every application.
   'controllers/authController.js',
+  'controllers/accessController.js',
   'routes/authRoutes.js',
+  'routes/accessRoutes.js',
 ];
 
 /**

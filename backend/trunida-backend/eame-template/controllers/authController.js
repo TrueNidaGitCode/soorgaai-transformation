@@ -26,47 +26,12 @@
  */
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
+import { maySignIn, markOwner, ownerEmail } from './accessController.js';
 
 const SESSION_TTL = '30d';
 
 export function configured() {
   return !!(process.env.SVARG_AUTH_URL && process.env.SVARG_AUTH_SECRET);
-}
-
-/** Absent means unlimited — every application delivered before seats existed. */
-function seatLimit() {
-  const n = parseInt(process.env.APP_SEATS || '', 10);
-  return Number.isFinite(n) && n > 0 ? n : 0;
-}
-
-/**
- * May this person have an account?
- *
- * Yes if they already have one, always. Yes if there is room. Otherwise the
- * refusal says what plan this is and that a person will follow up, because
- * there is no self-serve upgrade to send them to and pretending otherwise
- * would be worse than saying so.
- */
-async function seatFor(email) {
-  const limit = seatLimit();
-  if (!limit) return { refused: false };
-  try {
-    const existing = await usersCollection().findOne({ email }, { projection: { _id: 1 } });
-    if (existing) return { refused: false };
-    const held = await usersCollection().countDocuments({});
-    if (held < limit) return { refused: false };
-    const plan = process.env.APP_PLAN_LABEL || '';
-    return {
-      refused: true,
-      error: `${process.env.APP_NAME || 'This application'} is on ${plan ? 'the ' + plan + ' plan' : 'a plan'}, `
-        + `which covers ${limit === 1 ? 'one account' : limit + ' accounts'}, and ${limit === 1 ? 'it is' : 'they are'} already in use. `
-        + 'The SvargAI team will get back to you about adding more people.',
-    };
-  } catch (err) {
-    // A seat check that cannot run must not become a locked door.
-    console.warn('[auth] seat check failed, letting them in —', err.message);
-    return { refused: false };
-  }
 }
 
 function usersCollection() {
@@ -198,8 +163,16 @@ async function sessionFromAssertion(assertion) {
    * mid-season over billing is a support incident, not a nudge; the limit
    * stops the NEXT person, and the owner can see the list and decide.
    */
-  const seatCheck = await seatFor(email);
-  if (seatCheck.refused) return { error: seatCheck.error };
+  /*
+   * May this person be here at all?
+   *
+   * accessController owns the answer — the owner named at go-live, anybody
+   * who already has an account, anybody the owner invited, and the seat limit
+   * behind all three. It is asked BEFORE the upsert, because the upsert is
+   * what grants access, and a check after it has already let them in.
+   */
+  const may = await maySignIn(email);
+  if (!may.allowed) return { error: may.error };
 
   try {
     const now = new Date();
@@ -216,8 +189,12 @@ async function sessionFromAssertion(assertion) {
       { upsert: true, returnDocument: 'after' },
     );
     const user = r?.value || r;
+    // The email that asked for this application runs it, without a key to
+    // copy from a screen they saw once.
+    await markOwner(email);
+    const isOwner = email === ownerEmail() || user.role === 'owner';
     const token = jwt.sign(
-      { userId: String(user._id), role: user.role || 'user', email, name: user.name || '' },
+      { userId: String(user._id), role: isOwner ? 'owner' : (user.role || 'user'), email, name: user.name || '' },
       process.env.JWT_SECRET || 'your_secret_key',
       { expiresIn: SESSION_TTL },
     );

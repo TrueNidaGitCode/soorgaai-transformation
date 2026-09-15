@@ -77,7 +77,7 @@ export function tenantMongoUri(clusterUri, dbName) {
  * this context; it is the delivered app's generic OpenAI-compatible client
  * pointed at the gateway, which is why hosting needs no code change.
  */
-export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName, ownerKey, seats, planLabel }) {
+export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName, ownerKey, seats, planLabel, ownerEmail }) {
   // Arth ranks and the picker shows the benchmark catalog, not the advisory
   // ten (see services/selectableModelService.js), so a perfectly legitimate
   // selection arrives carrying an id the advisory list has never heard of —
@@ -130,6 +130,10 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
     ...(seats ? { APP_SEATS: String(seats) } : {}),
     // Named, so the refusal can say which plan it is rather than 'a plan'.
     ...(planLabel ? { APP_PLAN_LABEL: String(planLabel) } : {}),
+    // The email that asked for this application runs it. Named here so the
+    // owner is whoever created it, rather than whoever kept the key they were
+    // shown once on a screen at go-live.
+    ...(ownerEmail ? { APP_OWNER_EMAIL: String(ownerEmail).toLowerCase() } : {}),
     // The key that unlocks the application's Data page. Records never come to
     // Svarg: they are imported inside the application, by whoever holds this.
     ...(ownerKey ? { APP_OWNER_KEY: ownerKey } : {}),

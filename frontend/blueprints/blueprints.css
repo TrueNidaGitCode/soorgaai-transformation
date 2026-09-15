@@ -498,3 +498,24 @@
   .bp-rail__step { flex: 0 0 auto; padding-right: 12px; }
   .bp-rail__step::before { display: none; }
 }
+
+/* ── Plan strip: seats, and the two decisions an account can make ──────────
+   Asking for more and stopping sit beside the plan name because that is where
+   somebody looks when they are thinking about either. Neither takes money. */
+.bp-plan__seats { color: var(--ws-muted, #5b6b7a); font-size: 13px; }
+.bp-plan__seats::before { content: "·"; margin: 0 8px; opacity: .5; }
+.bp-plan__ask,
+.bp-plan__cancel { padding: 5px 11px; font: inherit; font-size: 12.5px; cursor: pointer;
+                   border: 1px solid var(--ws-line, #dfe6ec); border-radius: 999px;
+                   background: transparent; color: var(--ws-muted, #5b6b7a); }
+.bp-plan__ask:hover { border-color: var(--ws-accent, #0f766e); color: var(--ws-accent, #0f766e); }
+.bp-plan__cancel:hover { border-color: #e0b4b4; color: #9b2c2c; }
+.bp-plan__ask:disabled,
+.bp-plan__cancel:disabled { opacity: .5; cursor: not-allowed; }
+.bp-plan__said { margin: 10px 0 0; padding: 9px 12px; border-radius: 8px; font-size: 13.5px; line-height: 1.5;
+                 background: var(--ws-soft, #f4f7f9); color: var(--ws-muted, #5b6b7a); max-width: 62ch; }
+.bp-plan__said--bad { background: #fdecec; color: #9b2c2c; }
+@media (max-width: 560px) {
+  .bp-plan__seats::before { content: ""; margin: 0; }
+  .bp-plan { flex-wrap: wrap; row-gap: 8px; }
+}

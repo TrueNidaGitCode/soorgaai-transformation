@@ -234,7 +234,9 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'controllers/signalController.js':  { template: 'controllers/signalController.js' },
     'routes/signalsRoutes.js':          { template: 'routes/signalsRoutes.js' },
     'controllers/authController.js':    { template: 'controllers/authController.js' },
+    'controllers/accessController.js':  { template: 'controllers/accessController.js' },
     'routes/authRoutes.js':             { template: 'routes/authRoutes.js' },
+    'routes/accessRoutes.js':           { template: 'routes/accessRoutes.js' },
     'middleware/authMiddleware.js':     { repo: 'middleware/authMiddleware.js' },
     'services/assistant.js':            { template: 'services/assistant.js' },
     'services/reasoning.js':            { template: 'services/reasoning.js' },
@@ -242,6 +244,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'controllers/chatController.js':    { template: 'controllers/chatController.js' },
     'routes/chatRoutes.js':             { template: 'routes/chatRoutes.js' },
     'frontend/answer.js':               { template: 'frontend/answer.js' },
+    'frontend/access.js':               { template: 'frontend/access.js' },
     // Svarg's provider module, copied in under its own name; the wrapper
     // above it is the template's.
     'services/llmCore.js':              { repo: 'services/llmService.js' },

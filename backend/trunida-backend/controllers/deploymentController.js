@@ -323,6 +323,10 @@ export async function attachApplication(req, res) {
        */
       const { resolvePlan } = await import('../services/entitlements.js');
       const plan = await resolvePlan(dep.userId).catch(() => null);
+      // Who to make the owner of the delivered application: the person whose
+      // account created it.
+      const { User } = await import('../models/user.js');
+      const owner = await User.findById(dep.userId).select('email').lean().catch(() => null);
 
       const env = buildTenantEnv({
         deployment: dep,
@@ -333,6 +337,7 @@ export async function attachApplication(req, res) {
         appName: bp.appName,
         ownerKey,
         seats: plan?.limits?.seats ?? null,
+        ownerEmail: owner?.email || '',
         planLabel: plan?.limits?.label || '',
       });
 

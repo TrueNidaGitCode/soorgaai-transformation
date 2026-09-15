@@ -427,6 +427,27 @@ function wireOpenBlueprint() {
   });
 }
 
+/** A line under the plan strip, for whatever the account just decided. */
+function planSaid(text, bad) {
+  const n = el('bp-plan-said');
+  if (!n) return;
+  n.textContent = text || '';
+  n.hidden = !text;
+  n.className = 'bp-plan__said' + (bad ? ' bp-plan__said--bad' : '');
+}
+
+async function planPost(path, body) {
+  const r = await fetch(`${API_BASE()}/billing/${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+    },
+    body: JSON.stringify(body || {}),
+  });
+  return { ok: r.ok, data: await r.json().catch(() => ({})) };
+}
+
 function renderPlan(plan) {
   el('bp-plan-name').textContent = plan.viaAdmin ? 'Enterprise (admin)' : (plan.label || '');
   const up = el('bp-plan-upgrade');
@@ -434,6 +455,70 @@ function renderPlan(plan) {
     up.textContent = `Upgrade to ${plan.upgradeLabel}`;
     up.hidden = false;
   }
+
+  /*
+   * How many people the plan covers.
+   *
+   * Worth saying outright rather than leaving somebody to discover it when a
+   * colleague is turned away from their own application — which is what
+   * happened before seats existed at all, except nobody was turned away and
+   * thirty people used a one-person plan.
+   */
+  const seats = el('bp-plan-seats');
+  if (seats && !plan.viaAdmin && plan.seats) {
+    seats.textContent = plan.seats === 1 ? '1 account' : `${plan.seats} accounts`;
+    seats.hidden = false;
+  }
+
+  // Asking for more. There is no checkout, so this records the request and
+  // says a person will follow up, which is true.
+  const ask = el('bp-plan-ask');
+  if (ask && !plan.viaAdmin) {
+    ask.hidden = false;
+    ask.addEventListener('click', async () => {
+      ask.disabled = true;
+      planSaid('');
+      const { ok, data } = await planPost('upgrade-request', {
+        plan: plan.upgradeTo || 'ultra',
+        reason: 'More people need accounts in the application.',
+      });
+      ask.disabled = false;
+      if (!ok) { planSaid(data.error || 'That could not be recorded. Please try again.', true); return; }
+      planSaid(data.message || 'Thank you — the SvargAI team will get back to you.');
+      ask.hidden = true;
+    });
+  }
+
+  // Stopping. Reversible without asking anybody, because changing your mind
+  // is allowed.
+  const cancel = el('bp-plan-cancel');
+  if (cancel && !plan.viaAdmin && plan.plan && plan.plan !== 'hobby') {
+    cancel.hidden = false;
+    cancel.addEventListener('click', async () => {
+      if (cancel.dataset.state === 'cancelling') {
+        cancel.disabled = true;
+        const { ok, data } = await planPost('resume');
+        cancel.disabled = false;
+        if (!ok) { planSaid(data.error || 'That could not be undone.', true); return; }
+        planSaid(data.message || '');
+        cancel.textContent = 'Cancel subscription';
+        delete cancel.dataset.state;
+        return;
+      }
+      if (!window.confirm('Cancel this subscription? Everything keeps working until the paid period ends, and you can undo this afterwards.')) return;
+      cancel.disabled = true;
+      planSaid('');
+      const { ok, data } = await planPost('cancel');
+      cancel.disabled = false;
+      if (!ok) { planSaid(data.error || 'That could not be recorded. Please try again.', true); return; }
+      planSaid(data.message || '');
+      if (data.cancelled) {
+        cancel.textContent = 'Undo cancellation';
+        cancel.dataset.state = 'cancelling';
+      }
+    });
+  }
+
   el('bp-plan').hidden = false;
 }
 

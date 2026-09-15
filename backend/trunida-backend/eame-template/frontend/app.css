@@ -1245,3 +1245,47 @@ body {
 .ch-prep__note { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--ch-warn); }
 
 @media (prefers-reduced-motion: reduce) { .ch-work__dot { animation: none; opacity: 0.7; } }
+
+/* ── People: who can use this application ──────────────────────────────────
+   The owner's panel. Its own section rather than a dialog, because it is a
+   place you go to and come back from, like the Data page. */
+.ac { position: fixed; inset: 0; z-index: 40; overflow-y: auto;
+      background: var(--ch-bg); padding: 28px 22px 48px; }
+.ac__head { max-width: 720px; margin: 0 auto 22px; }
+.ac__topline { margin: 0 0 18px; }
+.ac__back { color: var(--ch-dim); text-decoration: none; font-size: 14px; }
+.ac__back:hover { text-decoration: underline; }
+.ac__eyebrow { margin: 0 0 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+               color: var(--ch-accent); }
+.ac__title { margin: 0 0 8px; font-size: 26px; line-height: 1.2; font-weight: 600; }
+.ac__title em { font-style: normal; color: var(--ch-accent); }
+.ac__sub { margin: 0; color: var(--ch-dim); font-size: 14px; }
+.ac__body { max-width: 720px; margin: 0 auto; }
+.ac__add { display: flex; gap: 8px; margin: 0 0 12px; }
+.ac__input { flex: 1 1 auto; min-width: 0; padding: 10px 12px; font: inherit; font-size: 14px;
+             border: 1px solid var(--ch-line); border-radius: 8px; background: var(--ch-bg-2); }
+.ac__input:disabled { background: var(--ch-bg-2); color: var(--ch-dim); }
+.ac__btn { flex: 0 0 auto; padding: 10px 16px; font: inherit; font-size: 14px; font-weight: 600;
+           border: 0; border-radius: 8px; cursor: pointer;
+           background: var(--ch-accent); color: #fff; }
+.ac__btn:disabled { opacity: .5; cursor: not-allowed; }
+.ac__note { margin: 0 0 16px; padding: 10px 12px; border-radius: 8px; font-size: 13.5px; line-height: 1.5;
+            background: var(--ch-bg-2); color: var(--ch-dim); }
+.ac__note--bad { background: rgba(252,165,165,.12); color: var(--ch-bad); }
+.ac__list { list-style: none; margin: 0; padding: 0; }
+.ac__person { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+              padding: 12px 2px; border-bottom: 1px solid var(--ch-line); }
+.ac__who { min-width: 0; font-size: 14px; }
+.ac__email { color: var(--ch-dim); }
+.ac__tag { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px;
+           font-size: 11.5px; background: var(--ch-bg-2); color: var(--ch-dim); }
+.ac__tag--owner { background: var(--ch-accent-soft); color: var(--ch-accent); }
+.ac__remove { flex: 0 0 auto; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer;
+              border: 1px solid var(--ch-line); border-radius: 7px;
+              background: transparent; color: var(--ch-dim); }
+.ac__remove:hover { border-color: var(--ch-bad); color: var(--ch-bad); }
+@media (max-width: 520px) {
+  .ac__add { flex-direction: column; }
+  .ac__btn { width: 100%; }
+  .ac__person { flex-direction: column; align-items: flex-start; }
+}

@@ -44,39 +44,26 @@ describe('seats are part of the plan', () => {
 });
 
 describe('the gate in the delivered application', () => {
+  /*
+   * The rule itself moved to accessController, where the owner and the
+   * invitations live. Two copies of "who may sign in" is how they come to
+   * disagree, so there is one, and accessControl.test.js exercises it
+   * directly. What matters here is that the sign-in path still asks.
+   */
   const auth = read('../eame-template/controllers/authController.js');
 
-  it('checks before creating the account, not after', () => {
+  it('asks before creating the account, not after', () => {
     // The upsert is what grants access; a check after it has already granted.
-    const gateAt = auth.indexOf('const seatCheck = await seatFor(email)');
+    const gateAt = auth.indexOf('const may = await maySignIn(email)');
     const upsertAt = auth.indexOf('findOneAndUpdate');
     expect(gateAt).toBeGreaterThan(-1);
     expect(gateAt).toBeLessThan(upsertAt);
   });
 
-  it('never turns away somebody who already has an account', () => {
-    // Locking a coach out mid-season over billing is a support incident, not
-    // a nudge. The limit stops the NEXT person.
-    expect(auth).toMatch(/const existing = await usersCollection\(\)\.findOne\(\{ email \}/);
-    expect(auth).toMatch(/if \(existing\) return \{ refused: false \}/);
-  });
-
-  it('says which plan it is and that a person will follow up', () => {
-    expect(auth).toContain('The SvargAI team will get back to you about adding more people.');
-    expect(auth).toContain('APP_PLAN_LABEL');
-  });
-
-  it('treats no limit as unlimited, so older applications are unchanged', () => {
-    expect(auth).toMatch(/Absent means unlimited/);
-    expect(auth).toMatch(/if \(!limit\) return \{ refused: false \}/);
-  });
-
-  it('lets people in when the check itself breaks', () => {
-    // A seat check that cannot run must not become a locked door.
-    expect(auth).toContain('seat check failed, letting them in');
+  it('keeps the rule in one place', () => {
+    expect(auth).toContain("from './accessController.js'");
   });
 });
-
 describe('cancelling', () => {
   const billing = read('../controllers/billingController.js');
   const routes = read('../routes/billingRoutes.js');

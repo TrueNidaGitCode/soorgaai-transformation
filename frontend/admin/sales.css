@@ -1462,3 +1462,99 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 }
 
 .sg-group__head--spaced { margin-top: 1.9rem; }
+
+/* ── Pitches ────────────────────────────────────────────────────────────────
+   What to say in the room, per prospect. Read, not worked: no buttons, no
+   rows to action. Set wider and quieter than the funnel because it is carried
+   into a meeting rather than clicked through. */
+
+.sg-flow {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--accent-green, #5CC5A7);
+  border-radius: 12px;
+  padding: 20px 22px 22px;
+  margin-bottom: 26px;
+  background: rgba(92, 197, 167, 0.04);
+}
+.sg-flow__title { margin: 0 0 4px; font-size: 17px; color: var(--text-primary, #FFFFFF); }
+.sg-flow__sub   { margin: 0 0 16px; font-size: 13.5px; color: var(--text-secondary, #CCCCCC); }
+.sg-flow__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px;
+                  grid-template-columns: repeat(5, 1fr); background: rgba(255,255,255,0.08);
+                  border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; }
+.sg-flow__step  { display: flex; gap: 10px; padding: 13px 13px 15px; background: #0f1519; }
+.sg-flow__n     { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 999px;
+                  background: var(--accent-green, #5CC5A7); color: #04140f;
+                  font-size: 11.5px; font-weight: 700; line-height: 20px; text-align: center; }
+.sg-flow__name  { margin: 0 0 3px; font-size: 13px; font-weight: 600; letter-spacing: .04em;
+                  text-transform: uppercase; color: var(--text-primary, #FFFFFF); }
+.sg-flow__say   { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-secondary, #CCCCCC); }
+
+.sg-pitches { display: grid; gap: 22px; }
+
+.sg-pitch {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 22px 24px 24px;
+  background: #0f1519;
+  max-width: 760px;
+}
+.sg-pitch__head { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: baseline;
+                  justify-content: space-between; padding-bottom: 14px; margin-bottom: 18px;
+                  border-bottom: 1px solid rgba(255,255,255,0.08); }
+.sg-pitch__thesis { margin: 0 0 3px; font-size: 12px; font-weight: 600; letter-spacing: .1em;
+                    text-transform: uppercase; color: var(--accent-green, #5CC5A7); }
+.sg-pitch__co   { margin: 0; font-size: 22px; line-height: 1.2; color: var(--text-primary, #FFFFFF); }
+.sg-pitch__inc  { margin: 0; font-size: 13px; color: var(--text-secondary, #CCCCCC); text-align: right; }
+.sg-pitch__inc span { display: block; font-size: 11px; letter-spacing: .09em; text-transform: uppercase;
+                      color: rgba(255,255,255,0.4); margin-bottom: 2px; }
+.sg-pitch__lead { margin: 0 0 18px; padding: 11px 14px; border-radius: 8px; font-size: 14px;
+                  line-height: 1.55; background: rgba(255,255,255,0.04);
+                  color: var(--text-secondary, #CCCCCC); }
+
+.sg-pitch__sec { margin-bottom: 22px; }
+.sg-pitch__sec:last-child { margin-bottom: 0; }
+.sg-pitch__lab { margin: 0 0 10px; font-size: 11.5px; font-weight: 600; letter-spacing: .12em;
+                 text-transform: uppercase; color: rgba(255,255,255,0.45); }
+
+.sg-pitch__lift { margin: 0; padding: 0 0 0 16px; border-left: 2px solid var(--accent-green, #5CC5A7); }
+.sg-pitch__lift p { margin: 0 0 11px; font-size: 15.5px; line-height: 1.6;
+                    color: var(--text-primary, #FFFFFF); max-width: 62ch; }
+.sg-pitch__lift p:last-child { margin-bottom: 0; }
+
+.sg-psteps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.sg-pstep  { display: grid; grid-template-columns: 30px 1fr; gap: 0 12px; }
+.sg-pstep__n { width: 24px; height: 24px; border-radius: 999px; text-align: center;
+               line-height: 23px; font-size: 12px; font-weight: 700;
+               border: 1px solid rgba(92,197,167,0.5); color: var(--accent-green, #5CC5A7); }
+.sg-pstep__body { min-width: 0; }
+.sg-pstep__title { margin: 2px 0 7px; font-size: 15px; color: var(--text-primary, #FFFFFF); }
+.sg-pstep__say  { margin: 0 0 8px; font-size: 14.5px; line-height: 1.5; font-style: italic;
+                  color: var(--text-secondary, #CCCCCC); max-width: 60ch; }
+.sg-pstep__ask  { margin: 0 0 9px; padding: 9px 12px; border-radius: 8px; font-size: 15px;
+                  line-height: 1.45; background: rgba(92,197,167,0.09);
+                  color: var(--text-primary, #FFFFFF); }
+.sg-pstep__ask span { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .12em;
+                      text-transform: uppercase; color: var(--accent-green, #5CC5A7); margin-bottom: 3px; }
+.sg-pstep__showlab { margin: 0 0 5px; font-size: 11px; font-weight: 600; letter-spacing: .1em;
+                     text-transform: uppercase; color: rgba(255,255,255,0.4); }
+.sg-pstep__show { margin: 0 0 9px; padding: 0; list-style: none; display: grid; gap: 4px; }
+.sg-pstep__show li { position: relative; padding-left: 15px; font-size: 14.5px; line-height: 1.45;
+                     color: var(--text-secondary, #CCCCCC); }
+.sg-pstep__show li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 2px;
+                             background: var(--accent-green, #5CC5A7); }
+.sg-pstep__note { margin: 0; font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.62);
+                  max-width: 62ch; }
+
+.sg-pitch__close { margin: 0; padding: 13px 16px; border-radius: 8px; font-size: 15.5px; line-height: 1.55;
+                   background: rgba(92,197,167,0.07); border: 1px solid rgba(92,197,167,0.22);
+                   color: var(--text-primary, #FFFFFF); max-width: 64ch; }
+
+@media (max-width: 900px) {
+  .sg-flow__steps { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .sg-flow__steps { grid-template-columns: 1fr; }
+  .sg-pitch { padding: 18px 16px 20px; }
+  .sg-pitch__inc { text-align: left; }
+  .sg-pstep { grid-template-columns: 1fr; gap: 6px; }
+}

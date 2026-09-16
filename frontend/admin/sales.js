@@ -1731,25 +1731,31 @@ function renderConverted(converted) {
  */
 function setView(view) {
   state.view = view;
-  const funnel = view === 'funnel';
+  const funnel  = view === 'funnel';
+  const reports = view === 'reports';
+  const pitches = view === 'pitches';
 
   document.getElementById('sg-kinds').hidden = !funnel;
   document.getElementById('sg-tabs').hidden = !funnel;
   document.getElementById('sg-stage').hidden = !funnel;
   document.getElementById('nl-panel').hidden = !funnel;
-  document.getElementById('sg-reports').hidden = funnel;
+  document.getElementById('sg-reports').hidden = !reports;
+  document.getElementById('sg-pitches').hidden = !pitches;
 
   document.getElementById('sg-subtitle').textContent = funnel
     ? 'Five stages, in the order a customer moves through them. Only Outreach is typed in — the rest are records the product already writes. Each account appears once, at the furthest stage it has reached, so the counts add up.'
-    : 'Read-only. Which organisations have someone using this, and which cold emails turned into accounts.';
+    : reports
+      ? 'Read-only. Which organisations have someone using this, and which cold emails turned into accounts.'
+      : 'What to say in the room. Every pitch concedes the incumbent first — all three prospects already run software, and a pitch that ignores it is heard as an attack.';
 
-  for (const [id, on] of [['sg-view-funnel', funnel], ['sg-view-reports', !funnel]]) {
+  for (const [id, on] of [['sg-view-funnel', funnel], ['sg-view-reports', reports], ['sg-view-pitches', pitches]]) {
     const b = document.getElementById(id);
     b.classList.toggle('sg-view--on', on);
     b.setAttribute('aria-selected', String(on));
   }
 
-  if (!funnel) renderReports();
+  if (reports) renderReports();
+  if (pitches) renderPitches();
 }
 
 function renderReports() {
@@ -1772,6 +1778,7 @@ function wireAccountControls() {
 
   document.getElementById('sg-view-funnel').addEventListener('click', () => setView('funnel'));
   document.getElementById('sg-view-reports').addEventListener('click', () => setView('reports'));
+  document.getElementById('sg-view-pitches').addEventListener('click', () => setView('pitches'));
 
   document.getElementById('sg-logout').addEventListener('click', () => {
     ['token', 'role', 'username', 'redirectAfterLogin'].forEach(k => {
@@ -1779,4 +1786,237 @@ function wireAccountControls() {
     });
     window.location.href = '/admin/login.html';
   });
+}
+
+/* ── Persona pitches ────────────────────────────────────────────────────────
+ *
+ * What to say in the room, per prospect. Kept as data rather than markup so a
+ * sentence can be changed without touching a renderer, and so the three read
+ * as variations on one structure instead of three separate documents.
+ *
+ * Every one of them opens by conceding the incumbent. That is deliberate: all
+ * three prospects already run software, and a pitch that ignores it is heard
+ * as an attack on a decision they already defended.
+ */
+
+/** The shape every meeting follows, whatever the prospect. */
+const PITCH_FLOW = [
+  { step: 'Question',  say: 'What is something your team needs to know regularly?' },
+  { step: 'Answer',    say: 'SvargAI finds the relevant people and information.' },
+  { step: 'Drill down', say: 'Why do these people need attention? SvargAI explains.' },
+  { step: 'Action',    say: 'Draft a message, report or task. Human reviews, approves, executes.' },
+  { step: 'Learning',  say: 'What other questions would your team want to ask?' },
+];
+
+const PITCHES = [
+  {
+    id: 'six',
+    company: 'SIX Cricket Academy',
+    thesis: 'Make existing information actionable',
+    incumbent: 'Existing academy application',
+    elevator: [
+      'You already have an application for the academy, and we\'re not asking you to replace it.',
+      'The problem we\'re looking at is the work that still happens around it — coaches sending attendance on WhatsApp, admins checking different information, and people spending time finding out what needs attention.',
+      'SvargAI lets your team simply ask questions like, “Who hasn\'t confirmed attendance?” or “What needs my attention today?”',
+      'It finds the people and actions that matter, so your team spends less time looking for information and more time acting on it.',
+    ],
+    steps: [
+      {
+        title: 'Start with a familiar problem',
+        say: 'Let me show you something your admins or coaches could ask every morning.',
+        ask: 'Who hasn\'t confirmed attendance?',
+        showLabel: 'Show',
+        show: ['Student names', 'Batch', 'Session', 'Last attendance / confirmation'],
+      },
+      {
+        title: 'Move from a question to prioritisation',
+        ask: 'What needs my attention today?',
+        showLabel: 'Show something like',
+        show: [
+          '6 students haven\'t confirmed attendance',
+          '6 students have overdue fees',
+          '6 onboarding items are pending',
+          '3 sessions need attention',
+        ],
+        note: 'The important thing is not the dashboard. It\'s: “Tell me what I need to do.”',
+      },
+      {
+        title: 'Take action',
+        ask: 'Draft a WhatsApp message to the students who haven\'t confirmed attendance.',
+        note: 'SvargAI drafts it. Then: Review → Approve → Send.',
+      },
+      {
+        title: 'Introduce the learning loop',
+        say: 'And this is where we\'d like to learn with you. If your coaches or admins keep asking SvargAI questions it can\'t answer today, those questions become the next capabilities we build.',
+      },
+    ],
+    close: 'We\'d like to run this with your team for two weeks, using the questions they actually ask every day, and see how much useful work SvargAI can take off their plate.',
+  },
+
+  {
+    id: 'vesoma',
+    company: 'Vesoma',
+    thesis: 'Connect information across services',
+    incumbent: 'GymShim',
+    elevator: [
+      'You already have GymShim, and it does a good job managing your gym operations.',
+      'But Vesoma is more than a gym — you have fitness, physiotherapy, nutrition, hydro and recovery. So information about the same person can be spread across different services.',
+      'SvargAI helps your team ask questions that bring that information together — for example, “Which rehab patients haven\'t returned to training?”',
+      'Instead of someone checking different records and putting the answer together manually, SvargAI finds the people who need attention and helps your team take the next step.',
+    ],
+    steps: [
+      {
+        title: 'Start with the cross-service problem',
+        say: 'Imagine I\'m managing the centre and I want to know who needs attention.',
+        ask: 'Show me the rehab patients who haven\'t returned to training.',
+        showLabel: 'Show',
+        show: ['Name', 'Rehab programme', 'Last session', 'Training status', 'Coach / physio', 'Reason for attention'],
+      },
+      {
+        title: 'Narrow the result',
+        ask: 'Show me the patients who completed rehab but haven\'t returned to training.',
+        note: 'Now you\'re demonstrating that SvargAI can reason across the information, rather than simply retrieve a list.',
+      },
+      {
+        title: 'Take action',
+        ask: 'Draft a WhatsApp message asking these patients how their recovery is going and inviting them for a training assessment.',
+        note: 'Review → Approve → Send.',
+      },
+      {
+        title: 'Expand the idea',
+        say: 'What other questions could we answer?',
+        showLabel: 'Examples',
+        show: [
+          'Which members use recovery services but aren\'t training regularly?',
+          'Who finished physiotherapy but hasn\'t returned?',
+          'Which members haven\'t been contacted recently?',
+          'Who might need follow-up this week?',
+        ],
+      },
+    ],
+    close: 'This is the kind of workflow we\'d like to test with Vesoma — one question your team currently has to answer manually, and we\'ll see whether SvargAI can take that work off their plate.',
+  },
+
+  {
+    id: 'rbta',
+    company: 'Rohan Bopanna Tennis Academy',
+    thesis: 'Turn history into decisions',
+    incumbent: 'Sportzy',
+    elevator: [
+      'You already use Sportzy, and it does a good job running the academy. We\'re not looking to replace it.',
+      'We\'re interested in the questions that require more than today\'s attendance or payment report — things like, “Are our athletes actually progressing?” or “What happened to the children supported through our scholarship programme?”',
+      'Those answers can involve attendance, coaches, programmes and history.',
+      'SvargAI helps you ask those questions in plain English, find the athletes who need attention, and then take the next action.',
+    ],
+    lead: 'Make scholarship reporting the primary demo. Sportzy already handles operational management — the wedge is the information that sits above routine administration.',
+    steps: [
+      {
+        title: 'Start with the responsibility',
+        say: 'You have 60 sponsored children. Imagine you\'re preparing the next scholarship review.',
+        ask: 'Which scholarship students may need attention?',
+        showLabel: 'Show',
+        show: ['Student', 'Attendance', 'Recent participation', 'Programme', 'Coach', 'Reason for attention'],
+      },
+      {
+        title: 'Show the positive side',
+        say: 'Don\'t only show problems.',
+        ask: 'Which scholarship students have shown the most progress this term?',
+        note: 'Now you\'re demonstrating that the system isn\'t merely a problem detector. It can help answer: “What is happening with our athletes?”',
+      },
+      {
+        title: 'Turn it into a deliverable',
+        ask: 'Prepare a term update for the scholarship sponsors.',
+        note: 'SvargAI prepares the report. Academy reviews → approves → sends.',
+      },
+      {
+        title: 'Expand beyond scholarships',
+        say: 'Then show where this could go.',
+        showLabel: 'Examples',
+        show: [
+          'Which athletes are falling behind?',
+          'Which athletes have improved the most over the last year?',
+          'Which students may be ready for the next programme?',
+          'Which athletes haven\'t had a coach review recently?',
+        ],
+      },
+    ],
+    close: 'We don\'t want to change Sportzy or your existing process. We\'d like to test one question with one group of students and see whether SvargAI can make that work significantly easier.',
+  },
+];
+
+function renderPitchStep(s, i) {
+  return `
+    <li class="sg-pstep">
+      <div class="sg-pstep__n">${i + 1}</div>
+      <div class="sg-pstep__body">
+        <h4 class="sg-pstep__title">${esc(s.title)}</h4>
+        ${s.say ? `<p class="sg-pstep__say">“${esc(s.say)}”</p>` : ''}
+        ${s.ask ? `<p class="sg-pstep__ask"><span>Ask</span>${esc(s.ask)}</p>` : ''}
+        ${s.show ? `
+          <p class="sg-pstep__showlab">${esc(s.showLabel || 'Show')}</p>
+          <ul class="sg-pstep__show">${s.show.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+        ${s.note ? `<p class="sg-pstep__note">${esc(s.note)}</p>` : ''}
+      </div>
+    </li>`;
+}
+
+function renderPitch(p) {
+  return `
+    <article class="sg-pitch" id="pitch-${esc(p.id)}">
+      <header class="sg-pitch__head">
+        <div>
+          <p class="sg-pitch__thesis">${esc(p.thesis)}</p>
+          <h3 class="sg-pitch__co">${esc(p.company)}</h3>
+        </div>
+        <p class="sg-pitch__inc"><span>Already running</span>${esc(p.incumbent)}</p>
+      </header>
+
+      ${p.lead ? `<p class="sg-pitch__lead">${esc(p.lead)}</p>` : ''}
+
+      <section class="sg-pitch__sec">
+        <h4 class="sg-pitch__lab">Elevator pitch</h4>
+        <blockquote class="sg-pitch__lift">
+          ${p.elevator.map(x => `<p>${esc(x)}</p>`).join('')}
+        </blockquote>
+      </section>
+
+      <section class="sg-pitch__sec">
+        <h4 class="sg-pitch__lab">Demonstration path</h4>
+        <ol class="sg-psteps">${p.steps.map(renderPitchStep).join('')}</ol>
+      </section>
+
+      <section class="sg-pitch__sec">
+        <h4 class="sg-pitch__lab">Close</h4>
+        <p class="sg-pitch__close">“${esc(p.close)}”</p>
+      </section>
+    </article>`;
+}
+
+/**
+ * The structure first, then the three variations on it.
+ *
+ * Put the flow at the top because it is the thing to remember: a twenty-minute
+ * product tour is what these meetings default to, and the flow is what stops
+ * that happening.
+ */
+function renderPitches() {
+  const el = document.getElementById('sg-pitches');
+  if (!el) return;
+  el.innerHTML = `
+    <section class="sg-flow">
+      <h3 class="sg-flow__title">The demonstration structure</h3>
+      <p class="sg-flow__sub">Use this in every meeting. Not a product tour — five moves, in order.</p>
+      <ol class="sg-flow__steps">
+        ${PITCH_FLOW.map((f, i) => `
+          <li class="sg-flow__step">
+            <span class="sg-flow__n">${i + 1}</span>
+            <div>
+              <p class="sg-flow__name">${esc(f.step)}</p>
+              <p class="sg-flow__say">${esc(f.say)}</p>
+            </div>
+          </li>`).join('')}
+      </ol>
+    </section>
+
+    <div class="sg-pitches">${PITCHES.map(renderPitch).join('')}</div>`;
 }

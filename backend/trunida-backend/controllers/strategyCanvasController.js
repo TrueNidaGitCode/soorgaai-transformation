@@ -848,7 +848,40 @@ export async function claimGuestBlueprint(req, res) {
     backfillActionItemsForClaimedBlueprint(claimed)
       .catch(err => console.error('[actionItems] Claim backfill failed (non-fatal):', err.message));
 
-    return res.json({ claimed: true, transformationId: claimed._id });
+    /*
+     * Finish the blueprint they only saw a preview of.
+     *
+     * The guest preview generates AI Opportunities and seeds the other five
+     * domains as pending, to keep an anonymous visitor cheap. Claiming used to
+     * transfer ownership and nothing else, and the only place offering to
+     * generate the rest was a button in the workspace sidebar — which the
+     * journey skips entirely once the opportunity is approved.
+     *
+     * So a customer could walk Cob -> Aria -> Arth -> Eame on one sixth of a
+     * blueprint and never be told. That is what a live demonstration showed.
+     *
+     * Signing in is the moment they stop being anonymous, so it is the moment
+     * to spend real generation on them. Fire-and-forget: the page is already
+     * polling progress, and making login wait minutes for six domains would
+     * trade one bad experience for another.
+     */
+    const wanted = new Set(enabledDomains().map(d => d.id));
+    const missing = (claimed.domains || [])
+      .filter(d => wanted.has(d.domainId))
+      .filter(d => !(d.capabilities || []).some(c => (c.sections || []).length > 0))
+      .map(d => d.domainId);
+
+    if (missing.length) {
+      await TransformationBlueprint.updateOne(
+        { _id: claimed._id },
+        { $set: { status: 'generating', updatedAt: new Date() } },
+      );
+      console.log(`[claim] ${claimed._id}: generating ${missing.length} remaining domain(s) — ${missing.join(', ')}`);
+      generateSpecificDomainsAsync(claimed._id, userId, claimed.businessObjective, missing)
+        .catch(err => console.error('[claim] remaining-domain generation failed:', err.message));
+    }
+
+    return res.json({ claimed: true, transformationId: claimed._id, generating: missing });
 
   } catch (err) {
     console.error('claimGuestBlueprint error:', err);

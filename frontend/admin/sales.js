@@ -1846,15 +1846,33 @@ const PITCH_FLOW = [
   { step: 'Learning',  say: 'What other questions would your team want to ask?' },
 ];
 
+/*
+ * By industry, not by prospect.
+ *
+ * These began as three pitches for three named companies, which meant a fourth
+ * conversation had nothing to read. The pattern was never the company: it is
+ * what that kind of business already runs, and where that system stops. SIX
+ * Cricket and the Bopanna academy are the same pitch; Vesoma is a different one
+ * because the seam is between services rather than inside one.
+ *
+ * Every one of them opens by conceding the incumbent. That is deliberate: these
+ * businesses already bought software once and defended the decision, and a
+ * pitch that ignores it is heard as an attack on that decision.
+ *
+ * "Seen here" names the real prospects each pattern came from, so a generic
+ * pitch can still be checked against a real conversation.
+ */
 const PITCHES = [
   {
-    id: 'six',
-    company: 'SIX Cricket Academy',
+    id: 'sports-academy',
+    industry: 'Sports academies & clubs',
     thesis: 'Make existing information actionable',
-    incumbent: 'Existing academy application',
+    whoYouMeet: 'The academy director, the head coach, or the admin who runs the day',
+    alreadyRun: 'Sportzy, AcadWare, a part-built custom system — or spreadsheets and WhatsApp',
+    seen: 'SIX Cricket Academy · Rohan Bopanna Tennis Academy',
     elevator: [
-      'You already have an application for the academy, and we\'re not asking you to replace it.',
-      'The problem we\'re looking at is the work that still happens around it — coaches sending attendance on WhatsApp, admins checking different information, and people spending time finding out what needs attention.',
+      'You already have a system for the academy, and we\'re not asking you to replace it.',
+      'The problem we\'re looking at is the work that still happens around it — coaches sending attendance on WhatsApp, admins checking different places, and people spending time finding out what needs attention.',
       'SvargAI lets your team simply ask questions like, “Who hasn\'t confirmed attendance?” or “What needs my attention today?”',
       'It finds the people and actions that matter, so your team spends less time looking for information and more time acting on it.',
     ],
@@ -1871,10 +1889,10 @@ const PITCHES = [
         ask: 'What needs my attention today?',
         showLabel: 'Show something like',
         show: [
-          '6 students haven\'t confirmed attendance',
-          '6 students have overdue fees',
-          '6 onboarding items are pending',
-          '3 sessions need attention',
+          'Students who haven\'t confirmed attendance',
+          'Students with overdue fees',
+          'Onboarding items still pending',
+          'Sessions that need attention',
         ],
         note: 'The important thing is not the dashboard. It\'s: “Tell me what I need to do.”',
       },
@@ -1892,13 +1910,15 @@ const PITCHES = [
   },
 
   {
-    id: 'vesoma',
-    company: 'Vesoma',
+    id: 'multi-service-wellness',
+    industry: 'Fitness, physiotherapy & sports medicine',
     thesis: 'Connect information across services',
-    incumbent: 'GymShim',
+    whoYouMeet: 'The centre manager or owner — whoever is answerable for members leaving',
+    alreadyRun: 'GymShim, Zenoti, a gym CRM — built to run one service, not five',
+    seen: 'Vesoma Sports Medicine',
     elevator: [
-      'You already have GymShim, and it does a good job managing your gym operations.',
-      'But Vesoma is more than a gym — you have fitness, physiotherapy, nutrition, hydro and recovery. So information about the same person can be spread across different services.',
+      'You already have a system, and it does a good job managing your gym operations.',
+      'But you are more than a gym — you have fitness, physiotherapy, nutrition, hydro and recovery. So information about the same person can be spread across different services.',
       'SvargAI helps your team ask questions that bring that information together — for example, “Which rehab patients haven\'t returned to training?”',
       'Instead of someone checking different records and putting the answer together manually, SvargAI finds the people who need attention and helps your team take the next step.',
     ],
@@ -1932,25 +1952,27 @@ const PITCHES = [
         ],
       },
     ],
-    close: 'This is the kind of workflow we\'d like to test with Vesoma — one question your team currently has to answer manually, and we\'ll see whether SvargAI can take that work off their plate.',
+    close: 'This is the kind of workflow we\'d like to test with you — one question your team currently has to answer manually, and we\'ll see whether SvargAI can take that work off their plate.',
   },
 
   {
-    id: 'rbta',
-    company: 'Rohan Bopanna Tennis Academy',
+    id: 'mature-operator',
+    industry: 'Where the admin software is already good',
     thesis: 'Turn history into decisions',
-    incumbent: 'Sportzy',
+    whoYouMeet: 'The person answerable for outcomes, not for operations',
+    alreadyRun: 'A mature vertical platform, well adopted, genuinely doing its job',
+    seen: 'Rohan Bopanna Tennis Academy (Sportzy)',
+    lead: 'Use this wherever the incumbent is mature and well liked. Do not argue about admin — it is solved, and saying otherwise ends the meeting. The wedge is the information that sits above routine administration: development over years, and reporting to whoever funds it.',
     elevator: [
-      'You already use Sportzy, and it does a good job running the academy. We\'re not looking to replace it.',
+      'You already use a system to run the academy, and it does a good job. We\'re not looking to replace it.',
       'We\'re interested in the questions that require more than today\'s attendance or payment report — things like, “Are our athletes actually progressing?” or “What happened to the children supported through our scholarship programme?”',
       'Those answers can involve attendance, coaches, programmes and history.',
-      'SvargAI helps you ask those questions in plain English, find the athletes who need attention, and then take the next action.',
+      'SvargAI helps you ask those questions in plain English, find the people who need attention, and then take the next action.',
     ],
-    lead: 'Make scholarship reporting the primary demo. Sportzy already handles operational management — the wedge is the information that sits above routine administration.',
     steps: [
       {
         title: 'Start with the responsibility',
-        say: 'You have 60 sponsored children. Imagine you\'re preparing the next scholarship review.',
+        say: 'You have sixty sponsored children. Imagine you\'re preparing the next scholarship review.',
         ask: 'Which scholarship students may need attention?',
         showLabel: 'Show',
         show: ['Student', 'Attendance', 'Recent participation', 'Programme', 'Coach', 'Reason for attention'],
@@ -1959,26 +1981,111 @@ const PITCHES = [
         title: 'Show the positive side',
         say: 'Don\'t only show problems.',
         ask: 'Which scholarship students have shown the most progress this term?',
-        note: 'Now you\'re demonstrating that the system isn\'t merely a problem detector. It can help answer: “What is happening with our athletes?”',
+        note: 'Now you\'re demonstrating that the system isn\'t merely a problem detector. It can help answer: “What is happening with our people?”',
       },
       {
         title: 'Turn it into a deliverable',
         ask: 'Prepare a term update for the scholarship sponsors.',
-        note: 'SvargAI prepares the report. Academy reviews → approves → sends.',
+        note: 'SvargAI prepares the report. They review → approve → send.',
       },
       {
-        title: 'Expand beyond scholarships',
+        title: 'Expand beyond the first question',
         say: 'Then show where this could go.',
         showLabel: 'Examples',
         show: [
           'Which athletes are falling behind?',
-          'Which athletes have improved the most over the last year?',
-          'Which students may be ready for the next programme?',
-          'Which athletes haven\'t had a coach review recently?',
+          'Which have improved the most over the last year?',
+          'Who may be ready for the next programme?',
+          'Who hasn\'t had a coach review recently?',
         ],
       },
     ],
-    close: 'We don\'t want to change Sportzy or your existing process. We\'d like to test one question with one group of students and see whether SvargAI can make that work significantly easier.',
+    close: 'We don\'t want to change your existing process. We\'d like to test one question with one group and see whether SvargAI can make that work significantly easier.',
+  },
+
+  {
+    id: 'coaching-centre',
+    industry: 'Coaching, test-prep & activity centres',
+    thesis: 'Find the ones about to leave, before they do',
+    whoYouMeet: 'The owner — one person, decides alone, pays monthly',
+    alreadyRun: 'Classplus, Teachmint, a batch-management tool, or a register and WhatsApp',
+    seen: 'Not yet pitched — the segment with school-shaped pain and no school procurement',
+    lead: 'The best first conversation of the four: the same administrative load as a school, on an owner who can say yes in the room. No committee, no trustee, no academic-year window.',
+    elevator: [
+      'You already have something for batches and fees, and we\'re not asking you to replace it.',
+      'What it can\'t tell you is which students are quietly on their way out — the ones whose attendance slipped three weeks ago, who stopped replying on WhatsApp, and whose fee is now late. That answer sits across three places and nobody has time to join it up.',
+      'SvargAI reads them together and tells you who to call today, and why.',
+    ],
+    steps: [
+      {
+        title: 'Start where the money leaks',
+        say: 'Most centres find out somebody has left when the fee does not arrive.',
+        ask: 'Which students are at risk of dropping out?',
+        showLabel: 'Show',
+        show: ['Student and batch', 'Attendance trend', 'Last reply', 'Fee status', 'Why they are on the list'],
+      },
+      {
+        title: 'Make it about one batch',
+        ask: 'What\'s going on with the Saturday batch?',
+        note: 'Narrowing to something they recognise is what turns a demo into their data.',
+      },
+      {
+        title: 'Take action',
+        ask: 'Draft a message to the parents of the students who have missed two or more classes.',
+        note: 'Review → Approve → Send.',
+      },
+      {
+        title: 'Introduce the learning loop',
+        say: 'Whatever your staff keep asking it that it cannot do yet becomes the next thing we build for you.',
+      },
+    ],
+    close: 'Give us two weeks and one question — the students you are worried about — and we\'ll see whether it finds them earlier than you do today.',
+  },
+
+  {
+    id: 'school',
+    industry: 'Schools — single campus, owner-run',
+    thesis: 'The question the ERP has no module for',
+    whoYouMeet: 'The principal or the owner. If it is a trust or a chain, this is a longer sale',
+    alreadyRun: 'Entab, Teachmint, Campus 365, LEAD — an ERP that already claims to reduce admin',
+    seen: 'Not yet pitched — see the caution before booking one',
+    lead: 'Do not lead with administrative burden: that is precisely what every school ERP sells, and you will spend the meeting comparing features with an incumbent of three years. Qualify hard first — can one person in this building say yes? A committee makes this a two-quarter conversation, and child data raises the cost of a wrong number.',
+    elevator: [
+      'You already have a school management system, and we\'re not here to replace it.',
+      'The question we\'re interested in is the one it has no module for: which children are quietly slipping — attendance drifting, fees behind, and a class teacher who has noticed something.',
+      'That answer sits across four parts of your system and nobody joins them up, because nobody owns all four.',
+      'SvargAI reads them together and gives you the children to look at this week, with the reason for each.',
+    ],
+    steps: [
+      {
+        title: 'Start with the child, not the admin',
+        say: 'Your ERP is good at recording. This is about noticing.',
+        ask: 'Which children may need attention this week?',
+        showLabel: 'Show',
+        show: ['Child and class', 'Attendance trend', 'Fee status', 'What the teacher recorded', 'Why they are on the list'],
+      },
+      {
+        title: 'Show that it can explain itself',
+        ask: 'Why is this child on the list?',
+        note: 'Every figure is computed from their records and traceable to the rows it came from. In a school this matters more than anywhere: a wrong number about a child, sent to a parent, ends the relationship.',
+      },
+      {
+        title: 'Turn it into the conversation they already have',
+        ask: 'Prepare a note for the class teacher for each of these children.',
+        note: 'Review → Approve → Send. The teacher gets a starting point, not an instruction.',
+      },
+      {
+        title: 'Expand carefully',
+        say: 'What else would you want to ask?',
+        showLabel: 'Examples',
+        show: [
+          'Which classes have attendance falling this term?',
+          'Which families are behind on fees and also disengaged?',
+          'Who has improved the most since the last assessment?',
+        ],
+      },
+    ],
+    close: 'One class, one term, one question. If it does not find children earlier than your current process, we stop.',
   },
 ];
 
@@ -2004,9 +2111,13 @@ function renderPitch(p) {
       <header class="sg-pitch__head">
         <div>
           <p class="sg-pitch__thesis">${esc(p.thesis)}</p>
-          <h3 class="sg-pitch__co">${esc(p.company)}</h3>
+          <h3 class="sg-pitch__co">${esc(p.industry)}</h3>
+          ${p.seen ? `<p class="sg-pitch__seen"><span>Seen here</span>${esc(p.seen)}</p>` : ''}
         </div>
-        <p class="sg-pitch__inc"><span>Already running</span>${esc(p.incumbent)}</p>
+        <div class="sg-pitch__meta">
+          <p class="sg-pitch__inc"><span>Already running</span>${esc(p.alreadyRun)}</p>
+          ${p.whoYouMeet ? `<p class="sg-pitch__inc"><span>Who you meet</span>${esc(p.whoYouMeet)}</p>` : ''}
+        </div>
       </header>
 
       ${p.lead ? `<p class="sg-pitch__lead">${esc(p.lead)}</p>` : ''}

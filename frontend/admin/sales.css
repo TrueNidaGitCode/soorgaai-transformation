@@ -1504,7 +1504,7 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 .sg-pitch__thesis { margin: 0 0 3px; font-size: 12px; font-weight: 600; letter-spacing: .1em;
                     text-transform: uppercase; color: var(--accent-green, #5CC5A7); }
 .sg-pitch__co   { margin: 0; font-size: 22px; line-height: 1.2; color: var(--text-primary, #FFFFFF); }
-.sg-pitch__inc  { margin: 0; font-size: 13px; color: var(--text-secondary, #CCCCCC); text-align: right; }
+.sg-pitch__inc  { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-secondary, #CCCCCC); }
 .sg-pitch__inc span { display: block; font-size: 11px; letter-spacing: .09em; text-transform: uppercase;
                       color: rgba(255,255,255,0.4); margin-bottom: 2px; }
 .sg-pitch__lead { margin: 0 0 18px; padding: 11px 14px; border-radius: 8px; font-size: 14px;
@@ -1594,4 +1594,17 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   font-size: 12.5px;
   font-style: italic;
   cursor: help;
+}
+
+/* The pitch header carries three facts now, not one: the industry, the real
+   prospects the pattern came from, and who is sitting opposite you. */
+/* Two facts side by side under the title, left-aligned. Right-aligning them
+   against a long industry name left a ragged stack that read as a caption. */
+.sg-pitch__meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 22px; margin-top: 14px;
+                  padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+.sg-pitch__seen { margin: 6px 0 0; font-size: 12.5px; color: var(--text-secondary, #CCCCCC); }
+.sg-pitch__seen span { display: inline-block; font-size: 11px; letter-spacing: .09em;
+                       text-transform: uppercase; color: rgba(255,255,255,0.4); margin-right: 7px; }
+@media (max-width: 640px) {
+  .sg-pitch__meta { grid-template-columns: 1fr; }
 }

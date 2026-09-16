@@ -180,6 +180,24 @@ export async function startBlueprintGeneration(req, res) {
       return res.status(400).json({ error: `Objective is too long (max ${MAX_OBJECTIVE_LENGTH} characters).` });
     }
 
+    /*
+     * The same check startTransformationGeneration has made since August.
+     *
+     * There are three doors into generation and only one of them was guarded,
+     * so "surprise me" and "Porn videos" walked through the other two — 51
+     * and 55 model calls respectively, for accounts at throwaway email
+     * domains that never came back. A guard on one door is not a guard.
+     */
+    const verdict = await checkObjective(businessObjective.trim());
+    if (!verdict.ok) {
+      console.log(`[objective-guard] refused ${req.user?.email || req.user?._id}: ${businessObjective.trim().slice(0, 80)}`);
+      return res.status(400).json({
+        error: verdict.reason,
+        suggestion: verdict.suggestion,
+        code: 'not_a_business_objective',
+      });
+    }
+
     const userId     = req.user._id;
     const [industry, companyName] = await Promise.all([
       detectIndustry(userId),

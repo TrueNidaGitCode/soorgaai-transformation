@@ -41,6 +41,20 @@ const PRODUCT_QUESTIONS = [
   /^hi\b|^hello\b|^hey\b/i,
 ];
 
+/*
+ * Work this platform will not write a strategy for.
+ *
+ * "Porn videos" was refused only because it was eleven characters long. The
+ * same request written as a paragraph would have read to the classifier as a
+ * legitimate business with a real process, and produced fifty-five calls of
+ * strategy document.
+ *
+ * Deliberately narrow, and checked before the classifier rather than left to
+ * its judgement. This is a refusal of last resort, not a morality filter: a
+ * bar, a betting shop and a defence supplier are all legitimate customers.
+ */
+const WILL_NOT_BUILD = /\b(porn|pornograph\w*|sex\s*(cam|work|worker|video)s?|escort\s*(service|agency)|child\s*(porn|abuse|exploitation)|csam|hitman|assassinat\w*|meth(amphetamine)?\s*(lab|cook)|counterfeit\s*(money|currency|passport|document)|carding|stolen\s*(card|credit\s*card|identit\w*)|ransomware|ddos[\s-]*for[\s-]*hire)\b/i;
+
 /**
  * @typedef {{ ok: boolean, reason: string, suggestion: string }} GuardResult
  */
@@ -48,6 +62,14 @@ const PRODUCT_QUESTIONS = [
 /** @returns {GuardResult} */
 function heuristicVerdict(objective) {
   const text = objective.trim();
+
+  if (WILL_NOT_BUILD.test(text)) {
+    return {
+      ok: false,
+      reason: 'This is not something Svarg will build a strategy for.',
+      suggestion: 'If that was a mistake, describe the business problem you want to solve and we will start again.',
+    };
+  }
 
   if (text.length < MIN_MEANINGFUL_LENGTH) {
     return {

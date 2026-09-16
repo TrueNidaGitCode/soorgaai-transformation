@@ -15,6 +15,7 @@
  */
 
 import crypto from 'crypto';
+import { checkObjective } from '../services/objectiveGuardService.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { resolveCountryInBackground, truncateIp } from '../services/geoService.js';
 import SiteVisit from '../models/SiteVisit.js';
@@ -60,6 +61,22 @@ export async function startGuestGeneration(req, res) {
     }
     if (isRateLimited(req.ip)) {
       return res.status(429).json({ error: 'Preview limit reached for today. Sign in to keep generating.' });
+    }
+
+    /*
+     * The cheapest door, and therefore the busiest one: no account, no card,
+     * nothing to lose by typing "hi". It was also the only one with no check
+     * at all. Run before the rate limit is spent, so a nonsense objective
+     * does not consume somebody's preview for the day either.
+     */
+    const verdict = await checkObjective(objective);
+    if (!verdict.ok) {
+      console.log(`[objective-guard] refused a guest: ${objective.slice(0, 80)}`);
+      return res.status(400).json({
+        error: verdict.reason,
+        suggestion: verdict.suggestion,
+        code: 'not_a_business_objective',
+      });
     }
 
     const guestId = crypto.randomUUID();

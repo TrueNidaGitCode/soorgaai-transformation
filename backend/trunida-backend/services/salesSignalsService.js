@@ -46,8 +46,8 @@ import ColdLead from '../models/ColdLead.js';
 import SiteVisit from '../models/SiteVisit.js';
 import UserProfile from '../models/UserProfile.js';
 import { classify } from './accountKindService.js';
-import { isMotion, laneOf, motionEmails, motionSharesLink, fieldsFor, DEFAULT_MOTION } from './gtmMotions.js';
-import { qualitySignals } from './leadQualitySignals.js';
+import { isMotion, laneOf, motionEmails, motionSharesLink, fieldsFor, motionOf, DEFAULT_MOTION } from './gtmMotions.js';
+import { qualitySignals, leadSignals } from './leadQualitySignals.js';
 import { trackedLink } from './outreachService.js';
 import crypto from 'crypto';
 import { generate } from './llmService.js';
@@ -236,6 +236,9 @@ export async function collectSignals() {
       // email — which is what they were.
       motion: l.motion || DEFAULT_MOTION,
       lane: laneOf(l.motion || DEFAULT_MOTION),
+      // A walk-in has no contact until the visit happens, which is allowed and
+      // has to be visible — see leadQualitySignals.
+      signals: leadSignals(l),
       via: l.via || '',
       nextStep: l.nextStep || '',
       nextStepAt: l.nextStepAt || null,
@@ -908,7 +911,17 @@ export async function addLead({
    * reach the person at all — that is a name in a list, and it will sit at the
    * top of the funnel for ever.
    */
-  if (!clean && !tel) {
+  /*
+   * Unless the motion is one that legitimately starts before there is anybody
+   * to reach.
+   *
+   * A walk-in begins with a building: you know the institute, you intend to
+   * visit it, and you will not have a name until you have stood at the desk.
+   * The objection above still stands for every other motion, and the danger it
+   * names is real here too — so the row carries a signal saying it has no
+   * contact yet, rather than being allowed to disappear quietly into the list.
+   */
+  if (!clean && !tel && !motionOf(key)?.startsWithoutContact) {
     throw new Error('An email address or a mobile number is required — otherwise there is no way to reach them.');
   }
 
@@ -917,7 +930,34 @@ export async function addLead({
   //
   // Matched on the address when there is one and the number otherwise, so the
   // same person added twice is one row either way.
-  const filter = clean ? { email: clean } : { phone: tel };
+  /*
+   * With no contact at all there is nothing to match a person on.
+   *
+   * This read { phone: tel }, and with neither an address nor a number that
+   * is { phone: '' } — which matches the first lead that happens to have no
+   * number stored. It overwrote a real cold-email lead with an unrelated
+   * walk-in and returned it as though it were the same person. Nothing caught
+   * it because the contact backstop above made the case unreachable, until a
+   * motion that legitimately starts without a contact made it reachable again.
+   *
+   * So a contactless lead is matched on the organisation instead — adding the
+   * same institute twice should still be one row — and inserted outright when
+   * there is not even that.
+   *
+   * The filter carries no empty strings: findOneAndUpdate copies its equality
+   * conditions into the document it inserts, and an email of '' is a value as
+   * far as the partial unique index is concerned — so the second contactless
+   * lead would collide with the first.
+   */
+  const org = String(company || '').trim();
+  const filter = clean ? { email: clean }
+    : tel ? { phone: tel }
+    : org ? { company: org, motion: key }
+    : null;
+
+  if (!filter) {
+    throw new Error('A lead needs an email address, a mobile number, or an organisation.');
+  }
 
   return ColdLead.findOneAndUpdate(
     filter,

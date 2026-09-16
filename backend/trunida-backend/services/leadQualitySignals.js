@@ -101,6 +101,23 @@ export function neverReturned(user, now = Date.now()) {
 }
 
 /**
+ * A lead with nobody to contact yet.
+ *
+ * A walk-in is added before anybody there is a contact — the institute is all
+ * you have until you have visited. That is legitimate, and it is also exactly
+ * what the contact backstop warns about: a name in a list that sits at the top
+ * of the funnel for ever.
+ *
+ * So it is allowed, and it is labelled. The row says what is missing, which is
+ * the difference between a plan and a graveyard.
+ */
+export function awaitingContact(lead) {
+  if (!lead) return false;
+  const has = (v) => !!String(v ?? '').trim();
+  return !has(lead.email) && !has(lead.phone) && has(lead.company);
+}
+
+/**
  * What to say about this row, if anything.
  *
  * Returns an array so the screen can render nothing at all for the ordinary
@@ -113,6 +130,18 @@ export function qualitySignals(user, now = Date.now()) {
   }
   if (neverReturned(user, now)) {
     out.push({ key: 'never-returned', label: 'Never came back', tone: 'warn' });
+  }
+  return out;
+}
+
+/** The same, for a lead row rather than an account. */
+export function leadSignals(lead) {
+  const out = [];
+  if (isDisposableEmail(lead?.email)) {
+    out.push({ key: 'throwaway', label: 'Throwaway address', tone: 'bad' });
+  }
+  if (awaitingContact(lead)) {
+    out.push({ key: 'awaiting-contact', label: 'No contact yet', tone: 'warn' });
   }
   return out;
 }

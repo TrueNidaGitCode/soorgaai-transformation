@@ -308,6 +308,33 @@ export const MOTIONS = [
       + 'One good conversation is worth more than 500 scanned badges — do not buy a booth for '
       + 'the first customer.',
   },
+  /*
+   * A list of places to walk into, before anybody there is a contact.
+   *
+   * Every other motion begins with a person — a name, a number, an address.
+   * This one begins with a building. You know the institutes in your area, you
+   * intend to visit them, and you will not have a name until you have stood at
+   * the desk and asked for one.
+   *
+   * The contact fields are here and empty on purpose: they are filled in after
+   * the visit, on the same row, so the walk-in becomes the conversation rather
+   * than being retyped as a second lead.
+   */
+  {
+    key: 'walk-in',
+    lane: 'broadcast',
+    label: 'Walk-in visit',
+    emails: false,
+    startsWithoutContact: true,
+    viaLabel: 'Where / how found',
+    summary: 'Build the list of institutes worth visiting, then go. The organisation is all '
+      + 'you need to add one — the person, the number and the address are filled in after '
+      + 'you have met them.',
+    ask: 'Who here decides how the academy is run day to day, and what takes the most time?',
+    note: 'A row with no contact is a plan, not a lead, and it is only worth anything if the '
+      + 'visit happens. Put the visit in Next step when you add the institute, and fill the '
+      + 'contact in on the same row afterwards rather than adding a second one.',
+  },
 ];
 
 const BY_KEY = new Map(MOTIONS.map(m => [m.key, m]));
@@ -402,6 +429,15 @@ export const FIELDS = {
   linkedinUrl: { key: 'linkedinUrl', label: 'LinkedIn profile URL', type: 'url' },
   companyUrl:  { key: 'companyUrl',  label: 'Company website',      type: 'url' },
   companyOnly: { key: 'company',     label: 'Organisation',         type: 'text' },
+  /*
+   * The only thing a walk-in starts with. Required here where the person is
+   * not, which is the whole difference between this motion and every other.
+   */
+  institute:   { key: 'company',     label: 'Institute / organisation', type: 'text', required: true },
+  area:        { key: 'location',    label: 'Area (optional)',      type: 'text' },
+  nameLater:   { key: 'name',        label: 'Contact name (after the visit)', type: 'text' },
+  phoneLater:  { key: 'phone',       label: 'Mobile number (after the visit)', type: 'tel' },
+  emailLater:  { key: 'email',       label: 'Email (after the visit)', type: 'email' },
   note:        { key: 'note',        label: 'Private note — never sent', type: 'text' },
 };
 
@@ -420,6 +456,7 @@ const MOTION_FIELDS = {
   // firm is the point — which is why it is required and `via` is gone: "which
   // firm" and the company name were the same question asked twice.
   partner: ['name', 'companyTraining', 'phoneOpt', 'emailAddr', 'note'],
+  'walk-in': ['institute', 'area', 'nameLater', 'role', 'phoneLater', 'emailLater', 'note'],
 };
 
 const DEFAULT_FIELDS =

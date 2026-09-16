@@ -51,7 +51,7 @@
 
     <main class="sv-main">
       <h1 class="sv-ask">What are you <em>working on?</em></h1>
-      <p class="sv-sub">Describe the outcome you want to achieve.</p>
+      <p class="sv-sub">What does your business do, and what goes wrong today? Two or three sentences.</p>
 
       <div class="sv-modes" role="tablist" aria-label="How to answer">
         <button type="button" id="sv-mode-chat" class="sv-mode sv-mode--on" role="tab" aria-selected="true">
@@ -69,12 +69,16 @@
 
       <form id="hero-prompt-form" class="sv-card" aria-label="Describe what you want to improve">
         <div class="sv-chat" id="sv-panel-chat">
+          <!-- rows="3", and the placeholder is a real objective.
+               A one-row box with "tell us what you'd like to improve" asks for
+               a few words and gets them: "hi", "surprise me". The shape of the
+               box and the example inside it teach more than any error can. -->
           <textarea
             id="hero-objective"
             class="sv-input"
-            rows="1"
-            placeholder="Tell us what you'd like to improve…"
-            aria-label="What you want to improve"
+            rows="3"
+            placeholder="We run a cricket academy with 30 coaches. Attendance comes in over WhatsApp and we copy it into a spreadsheet, so nobody notices when a student stops turning up."
+            aria-label="What your business does and what goes wrong today"
           ></textarea>
           <button type="submit" class="sv-send" aria-label="Continue" title="Continue">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>

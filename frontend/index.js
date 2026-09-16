@@ -536,6 +536,27 @@ export function wireHeroPrompt() {
             input.focus();
             return;
         }
+
+        /*
+         * Too thin to generate from — asked about, not refused.
+         *
+         * The server guard exists and will refuse this anyway, but being told
+         * "that is not a business objective" after pressing the button is a
+         * wall, and people who hit it leave. Asked here, with their words
+         * still in the box and the cursor at the end, most of them simply
+         * carry on writing. The guard stays as the backstop for what gets
+         * past this.
+         */
+        if (objective.length < ENOUGH_CHARS) {
+            if (errEl) {
+                errEl.textContent = 'Almost — tell me a little more. What does your business do, '
+                    + 'and what happens today that you would like to be different?';
+                errEl.style.display = '';
+            }
+            input.focus();
+            input.setSelectionRange(input.value.length, input.value.length);
+            return;
+        }
         if (errEl) errEl.style.display = 'none';
 
         const sendBtn = form.querySelector('.prompt__send');
@@ -711,9 +732,26 @@ function autogrow(el) {
 
 // Soft guidance only — never blocks typing/pasting. Stays hidden until the
 // user is actually approaching the limit, so it doesn't nag short objectives.
+/*
+ * The counter only ever warned about writing too MUCH.
+ *
+ * Nothing on the page said a few words was too little, so "hi" looked like a
+ * complete answer right up until it was refused. This says so while there is
+ * still an empty box to fill, and says it as encouragement rather than as an
+ * error — nobody has done anything wrong yet.
+ */
+const ENOUGH_CHARS = 60;
+
 function updateObjectiveCounter(input, counterEl) {
     if (!counterEl) return;
     const len = input.value.length;
+
+    if (len > 0 && len < ENOUGH_CHARS) {
+        counterEl.style.display = '';
+        counterEl.classList.remove('prompt__counter--over');
+        counterEl.textContent = 'Keep going — say what the work is today and what goes wrong.';
+        return;
+    }
     if (len < MAX_OBJECTIVE_LENGTH * OBJECTIVE_COUNTER_THRESHOLD) {
         counterEl.style.display = 'none';
         return;

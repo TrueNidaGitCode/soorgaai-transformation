@@ -1558,3 +1558,30 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   .sg-pitch__inc { text-align: left; }
   .sg-pstep { grid-template-columns: 1fr; gap: 6px; }
 }
+
+/* ── Lead-quality signals ───────────────────────────────────────────────────
+   Why a row may not deserve the attention it is asking for. Sits beside the
+   classification, quieter than a stage pill: it qualifies the row rather than
+   describing what happened on it. Nothing is ever hidden by these. */
+.sg-signal {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  cursor: help;
+  border: 1px solid transparent;
+}
+.sg-signal--bad {
+  background: rgba(252, 165, 165, 0.12);
+  border-color: rgba(252, 165, 165, 0.35);
+  color: #FCA5A5;
+}
+.sg-signal--warn {
+  background: rgba(251, 191, 36, 0.10);
+  border-color: rgba(251, 191, 36, 0.30);
+  color: #FCD34D;
+}

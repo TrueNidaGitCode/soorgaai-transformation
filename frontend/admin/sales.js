@@ -1552,8 +1552,32 @@ function kindTag(r) {
       <option value="" ${r.inferred ? '' : 'selected'}>— infer —</option>
     </select>
     ${r.inferred ? '<span class="sg-guessed" title="' + title + '">guessed</span>' : ''}
+    ${signalTags(r)}
   </div>`;
 }
+
+/**
+ * Why this row may not deserve the attention it is asking for.
+ *
+ * The board reports what the records contain — "approved an opportunity",
+ * "application built" — and both were true of two throwaway accounts that
+ * signed up, did exactly one thing, and never came back. True, and
+ * misleading, because nothing said who they were.
+ *
+ * Nothing is hidden or filtered. The row still appears and still says what
+ * happened; it just also says what is known about the person.
+ */
+function signalTags(r) {
+  if (!r.signals || !r.signals.length) return '';
+  return r.signals.map(sig =>
+    `<span class="sg-signal sg-signal--${esc(sig.tone)}" title="${esc(SIGNAL_WHY[sig.key] || '')}">${esc(sig.label)}</span>`
+  ).join('');
+}
+
+const SIGNAL_WHY = {
+  'throwaway': 'The address is at a temporary mail service. Nobody reads it after the visit.',
+  'never-returned': 'Last seen in the same minute they signed up. They have not been back.',
+};
 
 /** Wired after every stage render, since the rows are rebuilt each time. */
 function wireKindSelects() {

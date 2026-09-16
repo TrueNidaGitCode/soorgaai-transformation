@@ -47,6 +47,7 @@ import SiteVisit from '../models/SiteVisit.js';
 import UserProfile from '../models/UserProfile.js';
 import { classify } from './accountKindService.js';
 import { isMotion, laneOf, motionEmails, motionSharesLink, fieldsFor, DEFAULT_MOTION } from './gtmMotions.js';
+import { qualitySignals } from './leadQualitySignals.js';
 import { trackedLink } from './outreachService.js';
 import crypto from 'crypto';
 import { generate } from './llmService.js';
@@ -539,6 +540,18 @@ export async function collectSignals() {
       // Carried on every row rather than filtered here: the screen decides
       // what to show, and it has to be able to say what it is leaving out.
       ...classify(u.email, u),
+      /*
+       * Why this row may not be worth the attention it is asking for.
+       *
+       * The funnel reports what the records contain — 'approved an
+       * opportunity', 'application built' — and both of those were true of
+       * two throwaway accounts that never came back. True, and misleading,
+       * because nothing on the row said who they were.
+       *
+       * A signal, never a filter: the row still appears and still says what
+       * happened.
+       */
+      signals: qualitySignals(u),
       signedUpAt: u.createdAt,
       blueprints: bps.length,
       spendUsd: ledger?.costUsd || 0,

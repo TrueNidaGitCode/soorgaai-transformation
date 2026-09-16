@@ -32,6 +32,15 @@ const UserSchema = new mongoose.Schema({
     providerUserId: { type: String },
     profileImage:   { type: String },
     emailVerified:  { type: Boolean, default: false },
+    /**
+     * When this account was last actually here.
+     *
+     * Written by the auth middleware, throttled to an hour. Absent means
+     * either a brand-new account or one that predates this field, and the
+     * two cannot be told apart — which is why nothing treats absence as
+     * evidence that somebody never returned.
+     */
+    lastSeenAt: { type: Date, default: null, index: true },
 }, { timestamps: true });
 
 export const User = mongoose.model("User", UserSchema); // ✅ Named Export

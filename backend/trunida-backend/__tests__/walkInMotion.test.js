@@ -116,3 +116,42 @@ describe('a row with nobody to contact says so', () => {
     expect(awaitingContact({ name: 'Somebody' })).toBe(false);
   });
 });
+
+describe('a walk-in is a real row, and carries no link', () => {
+  it('is not a test row for having no contact', async () => {
+    /*
+     * The board filters to kind "real" by default, and a lead with no email
+     * and no phone classified as "test" — a rule written when the contact
+     * backstop made that state impossible. Both institutes on the visit list
+     * were hidden behind it and the tab read 0.
+     */
+    const { classify } = await import('../services/accountKindService.js');
+    expect(classify('', { phone: '', startsWithoutContact: true }).kind).toBe('real');
+  });
+
+  it('still calls a genuinely empty form a test row', async () => {
+    const { classify } = await import('../services/accountKindService.js');
+    expect(classify('', { phone: '' }).kind).toBe('test');
+  });
+
+  it('carries the flag all the way to the classifier', async () => {
+    // classify() dropped it on the floor the first time, so the fix changed
+    // nothing until the parameter was threaded through inferKind as well.
+    const src = readFileSync(new URL('../services/accountKindService.js', import.meta.url), 'utf8');
+    expect(src).toMatch(/inferKind\(email, \{ role = '', phone = '', startsWithoutContact = false \} = \{\}\)/);
+    expect(src).toContain('startsWithoutContact: !!account.startsWithoutContact');
+  });
+
+  it('mints no tracked link, because nothing is sent', async () => {
+    const { motionSharesLink } = await import('../services/gtmMotions.js');
+    expect(motionSharesLink('walk-in')).toBe(false);
+    // And the rule is the motion's own, not "does it email" — a warm
+    // introduction does not email either, and its link is the deliverable.
+    expect(motionSharesLink('warm-intro')).toBe(true);
+  });
+
+  it('does not mint a refCode for a motion that shares nothing', () => {
+    const src = readFileSync(new URL('../services/salesSignalsService.js', import.meta.url), 'utf8');
+    expect(src).toContain('...(motionSharesLink(key) || motionEmails(key)');
+  });
+});

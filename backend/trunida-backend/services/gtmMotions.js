@@ -332,6 +332,8 @@ export const MOTIONS = [
     lane: 'visit',
     label: 'Walk-in visit',
     emails: false,
+    // Nothing is sent, so there is nothing to track and no link to mint.
+    sharesLink: false,
     startsWithoutContact: true,
     viaLabel: 'Where / how found',
     summary: 'Build the list of institutes worth visiting, then go. The organisation is all '
@@ -492,6 +494,17 @@ export function fieldsFor(motionKey) {
  * link has to be something you can copy. Same ref either way — what changes is
  * who does the sending.
  */
+/**
+ * Whether there is a link to hand somebody on this motion.
+ *
+ * Not simply "does it not email". On every other non-emailing motion YOU send
+ * the link by hand — a WhatsApp message, a note after a call — so the link is
+ * the deliverable. A walk-in sends nothing: you are standing in the building,
+ * and a tracked URL minted for a visit is an artefact nobody asked for
+ * attached to a row nobody has met yet.
+ */
 export function motionSharesLink(key) {
+  const m = motionOf(key);
+  if (m && m.sharesLink === false) return false;
   return !motionEmails(key);
 }

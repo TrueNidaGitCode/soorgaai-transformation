@@ -61,7 +61,7 @@ function parts(email) {
  *
  * @returns {{kind: 'real'|'internal'|'test', why: string}}
  */
-export function inferKind(email, { role = '', phone = '' } = {}) {
+export function inferKind(email, { role = '', phone = '', startsWithoutContact = false } = {}) {
   const { local, domain, valid } = parts(email);
 
   /**
@@ -80,9 +80,20 @@ export function inferKind(email, { role = '', phone = '' } = {}) {
    */
   const hasPhone = /[0-9]{6,}/.test(String(phone || '').replace(/[^0-9]/g, ''));
   if (!String(email || '').trim()) {
-    return hasPhone
-      ? { kind: 'real', why: 'no email — reached on a phone number' }
-      : { kind: 'test', why: 'no email address and no phone number' };
+    if (hasPhone) return { kind: 'real', why: 'no email — reached on a phone number' };
+    /*
+     * A walk-in has neither, and is real.
+     *
+     * This rule was written when a lead with no way to reach it could not
+     * exist — the contact backstop guaranteed it — so "neither" could only
+     * mean somebody testing the form. A motion that begins with a building
+     * makes it a legitimate state, and calling it a test row hid every
+     * institute on the visit list behind a filter that defaults to real.
+     */
+    if (startsWithoutContact) {
+      return { kind: 'real', why: 'a place to visit — the contact comes after' };
+    }
+    return { kind: 'test', why: 'no email address and no phone number' };
   }
 
   if (!valid) return { kind: 'test', why: 'not a deliverable address' };
@@ -117,6 +128,12 @@ export function classify(email, account = {}) {
   if (KINDS.includes(explicit)) {
     return { kind: explicit, why: 'set by hand', inferred: false };
   }
-  const guess = inferKind(email, { role: account.role || '', phone: account.phone || '' });
+  const guess = inferKind(email, {
+    role: account.role || '',
+    phone: account.phone || '',
+    // Carried through rather than dropped here: without it a walk-in reaches
+    // inferKind looking exactly like somebody testing the form.
+    startsWithoutContact: !!account.startsWithoutContact,
+  });
   return { ...guess, inferred: true };
 }

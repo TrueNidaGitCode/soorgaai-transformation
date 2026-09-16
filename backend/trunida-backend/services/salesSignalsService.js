@@ -261,7 +261,12 @@ export async function collectSignals() {
       // motion that never uses email. Without it every warm introduction was
       // classified test and hidden by the filter, which defaults to real — the
       // lead saved, the invite link appeared, and the row silently did not.
-      ...classify(l.email, { phone: l.phone }),
+      ...classify(l.email, {
+        phone: l.phone,
+        // A motion that begins with a building has no contact yet by design,
+        // which is not the same thing as somebody testing the form.
+        startsWithoutContact: !!motionOf(l.motion || DEFAULT_MOTION)?.startsWithoutContact,
+      }),
       // Did the email actually do anything? A ref that shows up on a guest
       // blueprint is the only proof available, and it is the single most
       // useful fact about a cold lead.
@@ -976,7 +981,12 @@ export async function addLead({
          * by hand, the moment the lead is added — so it has to exist by then or
          * the screen has nothing to give you to paste.
          */
-        refCode: crypto.randomBytes(6).toString('base64url'),
+        // Only where there is something to hand somebody. A walk-in sends
+        // nothing, so a tracked code would be an artefact attached to a row
+        // nobody has met.
+        ...(motionSharesLink(key) || motionEmails(key)
+          ? { refCode: crypto.randomBytes(6).toString('base64url') }
+          : {}),
         // On insert only. Re-adding an address must not silently move an
         // existing lead into a different lane — that would make a row vanish
         // from the tab someone was working it on.

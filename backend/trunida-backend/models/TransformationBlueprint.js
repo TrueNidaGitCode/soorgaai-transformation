@@ -383,9 +383,19 @@ const transformationBlueprintSchema = new mongoose.Schema({
   // blueprints as active.
   archived:   { type: Boolean, default: false, index: true },
   archivedAt: { type: Date,    default: null },
+  /*
+   * 'partial' exists because generation often stops with some of the blueprint
+   * missing, and there was no honest way to say so.
+   *
+   * Every generation path used to end by asserting completed — one of them
+   * explicitly because the SSE stream watched this field to know when to stop
+   * polling — so a blueprint with one domain of six generated reported itself
+   * done. It is settled from the domains now, in settleBlueprintStatus, rather
+   * than asserted by whichever run happened to finish last.
+   */
   status: {
     type:    String,
-    enum:    ['generating', 'completed', 'error'],
+    enum:    ['generating', 'completed', 'partial', 'error'],
     default: 'generating',
   },
   // Classified once, lazily, by the first generation run (see

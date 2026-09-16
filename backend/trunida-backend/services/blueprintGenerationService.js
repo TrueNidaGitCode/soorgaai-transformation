@@ -3685,10 +3685,7 @@ export async function generateBlueprintAsync(blueprintId, userId, businessObject
     }
   }
 
-  await CompanyBlueprint.updateOne(
-    { _id: blueprintId },
-    { $set: { status: 'completed', updatedAt: new Date() } }
-  );
+  await settleCompanyBlueprintStatus(blueprintId);
 
   console.log(`[blueprintGen] Blueprint ${blueprintId} generation complete`);
 }
@@ -3952,6 +3949,90 @@ function buildJourneyContextForRegen(blueprint, currentDomainId, currentCapabili
 
 // Generates all enabled domains → capabilities in the TransformationBlueprint.
 // Called fire-and-forget. Domains without KB documents are skipped gracefully.
+/**
+ * Write the status the blueprint actually has.
+ *
+ * `status` was doing two jobs: describing the blueprint, and telling the SSE
+ * stream when to stop polling. The second job won. Every generation path
+ * ended with an unconditional completion — one of them carrying the comment
+ * "Always mark blueprint completed so the SSE stream terminates" — and
+ * generateSpecificDomainsAsync regenerates ONE domain and then declared the
+ * whole blueprint finished.
+ *
+ * So a demonstration showed "done" over a blueprint with one domain of six
+ * generated and five empty. The customer was told the thing was ready while
+ * five sixths of it did not exist.
+ *
+ * Read from the domains rather than asserted:
+ *
+ *   completed  every enabled domain has content
+ *   partial    generation has stopped, and some of it is not there
+ *   error      nothing was produced at all
+ *
+ * Partial is not a failure and must not read as one. Half a blueprint is a
+ * real thing to look at; claiming it is whole is what broke trust.
+ */
+/**
+ * The same, for the capability-shaped blueprint.
+ *
+ * CompanyBlueprint holds capabilities rather than domains, and had the
+ * identical flaw: the generation loop marked each capability 'error' when it
+ * failed and then declared the blueprint completed regardless, so a run where
+ * every capability failed still reported success.
+ */
+export async function settleCompanyBlueprintStatus(blueprintId) {
+  const bp = await CompanyBlueprint.findById(blueprintId)
+    .select('capabilities').lean().catch(() => null);
+  if (!bp) return null;
+
+  const caps = bp.capabilities || [];
+  if (!caps.length) return null;
+
+  const filled = caps.filter(c => (c.sections || []).length > 0).length;
+  const status = filled === 0 ? 'error'
+    : filled === caps.length ? 'completed'
+    : 'partial';
+
+  await CompanyBlueprint.updateOne(
+    { _id: blueprintId },
+    { $set: { status, updatedAt: new Date() } },
+  );
+  if (status !== 'completed') {
+    console.log('[blueprint] ' + blueprintId + ' settled as ' + status
+      + ' — ' + filled + ' of ' + caps.length + ' capabilities have content');
+  }
+  return status;
+}
+
+export async function settleBlueprintStatus(blueprintId) {
+  const bp = await TransformationBlueprint.findById(blueprintId)
+    .select('domains').lean().catch(() => null);
+  if (!bp) return null;
+
+  const wanted = new Set(enabledDomains().map(d => d.id));
+  const mine = (bp.domains || []).filter(d => wanted.has(d.domainId));
+  if (!mine.length) return null;
+
+  // Content, not a flag. A domain marked completed with nothing in it is the
+  // same lie one level down.
+  const hasContent = (d) => (d.capabilities || []).some(c => (c.sections || []).length > 0);
+  const filled = mine.filter(hasContent).length;
+
+  const status = filled === 0 ? 'error'
+    : filled === mine.length ? 'completed'
+    : 'partial';
+
+  await TransformationBlueprint.updateOne(
+    { _id: blueprintId },
+    { $set: { status, updatedAt: new Date() } },
+  );
+  if (status !== 'completed') {
+    console.log('[blueprint] ' + blueprintId + ' settled as ' + status
+      + ' — ' + filled + ' of ' + mine.length + ' domains have content');
+  }
+  return status;
+}
+
 export async function generateTransformationAsync(blueprintId, userId, businessObjective) {
   const companyProfile    = await loadCompanyProfile(userId, blueprintId);
   const industryFit       = await resolveIndustryFit(blueprintId, businessObjective);
@@ -4105,10 +4186,7 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
     );
   }
 
-  await TransformationBlueprint.updateOne(
-    { _id: blueprintId },
-    { $set: { status: 'completed', updatedAt: new Date() } }
-  );
+  await settleBlueprintStatus(blueprintId);
 
   console.log(`[transformationGen] Transformation ${blueprintId} complete`);
   reportRun('full blueprint');
@@ -4274,11 +4352,10 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
     );
   }
 
-  // Always mark blueprint completed so the SSE stream terminates
-  await TransformationBlueprint.updateOne(
-    { _id: blueprintId },
-    { $set: { status: 'completed', updatedAt: new Date() } }
-  );
+  // Settled from what is actually there. This ran one domain; saying the
+  // blueprint is complete because this run finished is how a half-generated
+  // blueprint came to show "done" in front of a customer.
+  await settleBlueprintStatus(blueprintId);
   console.log(`[domainRegen] Done — domains: ${domainIds.join(', ')}`);
   reportRun(domainIds.join(', '));
 

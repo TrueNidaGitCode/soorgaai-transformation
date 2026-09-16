@@ -244,7 +244,7 @@ const companyBlueprintSchema = new mongoose.Schema({
   companyName:       { type: String, default: '' },
   status: {
     type:    String,
-    enum:    ['generating', 'completed', 'error'],
+    enum:    ['generating', 'completed', 'partial', 'error'],
     default: 'generating',
   },
   version:      { type: String, default: '1.0' },

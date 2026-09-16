@@ -274,7 +274,15 @@ export async function streamBlueprintProgress(req, res) {
 
       send({ capabilities: capStatuses, overallStatus: bp.status });
 
-      if (bp.status === 'completed' || bp.status === 'error') {
+      /*
+       * Anything that is not still running ends the stream.
+       *
+       * It waited for 'completed' or 'error' specifically, which is why every
+       * generation path asserted 'completed' whether or not it had produced
+       * anything — otherwise the page hung waiting. 'partial' is a real and
+       * common outcome and has to close the stream too.
+       */
+      if (bp.status !== 'generating' && bp.status !== 'in-progress') {
         send({ done: true });
         clearInterval(poll);
         clearInterval(heartbeat);
@@ -782,7 +790,15 @@ export async function streamTransformationProgress(req, res) {
 
       send({ domains: domainStatuses, overallStatus: bp.status });
 
-      if (bp.status === 'completed' || bp.status === 'error') {
+      /*
+       * Anything that is not still running ends the stream.
+       *
+       * It waited for 'completed' or 'error' specifically, which is why every
+       * generation path asserted 'completed' whether or not it had produced
+       * anything — otherwise the page hung waiting. 'partial' is a real and
+       * common outcome and has to close the stream too.
+       */
+      if (bp.status !== 'generating' && bp.status !== 'in-progress') {
         send({ done: true });
         clearInterval(poll); clearInterval(heartbeat); res.end();
       }

@@ -215,7 +215,9 @@ export async function streamGuestProgress(req, res) {
 
       send({ domains: domainStatuses, overallStatus: bp.status });
 
-      if (bp.status === 'completed' || bp.status === 'error') {
+      // Not still running is the condition, not 'completed' — see the same
+      // poll in strategyCanvasController.
+      if (bp.status !== 'generating' && bp.status !== 'in-progress') {
         send({ done: true });
         clearInterval(poll); clearInterval(heartbeat); res.end();
       }

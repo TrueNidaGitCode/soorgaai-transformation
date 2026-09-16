@@ -31,16 +31,34 @@ export const DOMAINS = [
     enabled: true,
     kbPath:  'Technology_Infrastructure',
   },
+  /*
+   * Off for now. Enterprise-shaped domains, sold to owner-operators.
+   *
+   * A coaching centre with four staff has no workforce strategy and no
+   * governance function, and both domains generate polite, general content
+   * that gets skimmed once. Measured across 36 blueprints, Skills & Workforce
+   * produced the least of anything — 1.9 sections per blueprint from two
+   * capabilities, against 10.6 for AI Strategy.
+   *
+   * Both sit LAST in the chain, so nothing downstream loses their insights:
+   * each capability is grounded on the ones before it, and there is nothing
+   * after these two. Existing blueprints keep everything they already have —
+   * enabledDomains() governs new generation and what the workspace lists.
+   *
+   * Turn them back on for enterprise, where a CIO does have both functions and
+   * a board asking about the second. That wants the list to become per-plan or
+   * per-industry rather than global, which is the work this defers.
+   */
   {
     id:      'skills-workforce',
     name:    'Skills & Workforce',
-    enabled: true,
+    enabled: false,
     kbPath:  'Skills_Workforce',
   },
   {
     id:      'governance-security',
     name:    'Governance & Ethics',
-    enabled: true,
+    enabled: false,
     kbPath:  'Governance_Security',
   },
 ];

@@ -1585,3 +1585,13 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   border-color: rgba(251, 191, 36, 0.30);
   color: #FCD34D;
 }
+
+/* A walk-in has no contact until the visit happens. That is the plan working,
+   not a record somebody left half-finished, so it does not render as an
+   absence the way "no name" does. */
+.sg-await {
+  color: var(--accent-green, #5CC5A7);
+  font-size: 12.5px;
+  font-style: italic;
+  cursor: help;
+}

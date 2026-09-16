@@ -32,7 +32,10 @@ describe('the motion exists and asks only for the institute', () => {
     // "broadcast" is a lane. Filing under it was never possible.
     expect(isMotion('walk-in')).toBe(true);
     expect(isMotion('broadcast')).toBe(false);
-    expect(motionOf('walk-in').lane).toBe('broadcast');
+    // Its own lane now: walking into a building is not the same work as
+    // sending mail, and sharing a tab with cold email made a visit list read
+    // as a batch of unsent emails.
+    expect(motionOf('walk-in').lane).toBe('visit');
   });
 
   it('requires the organisation and nothing else', () => {

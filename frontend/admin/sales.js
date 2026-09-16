@@ -299,6 +299,20 @@ function motionChip(r) {
   return `<span class="sg-motion" title="${esc(m.summary)}">${esc(m.label)}</span>`;
 }
 
+/**
+ * An empty contact is not always missing information.
+ *
+ * On a walk-in it is the expected state: the institute earns a row before
+ * anybody there is a contact, and the name arrives after the visit.
+ * Rendering that as "no name" reads as a broken record rather than a plan,
+ * and a list of places to visit then looks like data somebody abandoned.
+ */
+function noContactYet(r) {
+  const m = motionByKey(r.motion);
+  if (!m?.startsWithoutContact) return '<span class="sg-unknown">no name</span>';
+  return '<span class="sg-await" title="Added as a place to visit. The name and number are filled in on this row after you have been.">to visit</span>';
+}
+
 /** Which renderer a row gets — decided per row, because a lane holds both kinds. */
 function outreachRow(r) {
   return motionByKey(r.motion)?.emails ? leadRow(r) : motionRow(r);
@@ -354,7 +368,7 @@ function motionRow(r) {
       </div>
     </td>
     <td>
-      <div class="sg-contact__name">${esc(r.name) || '<span class="sg-unknown">no name</span>'}
+      <div class="sg-contact__name">${esc(r.name) || noContactYet(r)}
         ${r.role ? `<span class="sg-fn">${esc(r.role)}</span>` : ''}</div>
       <div class="sg-who">${emailCell(r)}</div>
       ${motionChip(r)}

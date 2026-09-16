@@ -58,6 +58,13 @@ export const LANES = [
       + 'whether to take it into a real pilot.',
   },
   {
+    key: 'visit',
+    label: 'Walk-ins',
+    blurb: 'You go to them. The list is of places, not people — an institute earns a row '
+      + 'before anybody there is a contact, and the name arrives after the visit. Slowest '
+      + 'per prospect and the only lane where the first conversation is face to face.',
+  },
+  {
     key: 'broadcast',
     label: 'Broadcast',
     blurb: 'You reach out to people who have never heard of you. Lowest conversion per '
@@ -322,7 +329,7 @@ export const MOTIONS = [
    */
   {
     key: 'walk-in',
-    lane: 'broadcast',
+    lane: 'visit',
     label: 'Walk-in visit',
     emails: false,
     startsWithoutContact: true,

@@ -214,6 +214,28 @@ export function assertDestroyable(deployment) {
   return true;
 }
 
+/**
+ * What the application says about itself.
+ *
+ * Never throws and never blocks for long: this runs inside a status poll over
+ * every live deployment, and a slow or missing health endpoint must not stall
+ * the sweep or be mistaken for a sick application. Returns null when there is
+ * no opinion to be had.
+ */
+async function askHealth(url) {
+  try {
+    const res = await fetch(`${url.replace(/\/+$/, '')}/api`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(5000),
+    });
+    const body = await res.json().catch(() => null);
+    if (!body || typeof body.ok !== 'boolean') return null;   // an older application
+    return body;
+  } catch {
+    return null;
+  }
+}
+
 async function gql(query, variables) {
   const token = process.env.RAILWAY_API_TOKEN;
   if (!token) throw new Error('The Railway deploy target is not configured. Set RAILWAY_API_TOKEN.');
@@ -468,9 +490,33 @@ export const railwayTarget = {
       if (res.status === 502 || res.status === 503 || res.status === 504) {
         return { status: 'attaching', url, detail: `The application is not responding (HTTP ${res.status}).` };
       }
-      // Anything else means something is listening. 401/403 counts: the app
-      // requires a token, which is a running app refusing an anonymous caller.
-      return { status: 'live', url, detail: `Responding with HTTP ${res.status}.` };
+      /*
+       * Something is listening. Now ask it whether it is well.
+       *
+       * "The address answered" is the question that let a delivered
+       * application sit crashed for a week while this reported it live. The
+       * application knows the difference — whether its database is connected,
+       * its datasets readable, its model configured — and /api says so, with
+       * a 503 when it is not.
+       *
+       * Older applications have no such endpoint and answer the old banner.
+       * Their absence of an opinion is not evidence of illness, so a response
+       * without an ok field is taken at face value, exactly as before.
+       */
+      const health = await askHealth(url);
+      if (health && health.ok === false) {
+        return {
+          status: 'degraded',
+          url,
+          detail: health.summary || 'The application reports that it is not well.',
+        };
+      }
+
+      return {
+        status: 'live',
+        url,
+        detail: health?.summary || `Responding with HTTP ${res.status}.`,
+      };
     } catch (err) {
       return { status: 'attaching', url, detail: `The address is not responding yet (${err.name}).` };
     }

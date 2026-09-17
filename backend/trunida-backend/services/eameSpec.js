@@ -84,6 +84,7 @@ export const FIXED_PATHS = [
   // reaches Svarg. Fixed so the list cannot be widened by a build.
   'services/tenantSignals.js',
   'services/turnLog.js',
+  'services/selfCheck.js',
   'controllers/signalController.js',
   'routes/signalsRoutes.js',
   // Sign-in with Google through Svarg, and the application's own record of

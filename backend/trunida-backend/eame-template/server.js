@@ -71,9 +71,30 @@ app.use(express.static(path.join(__dirname, 'frontend')));
  */
 app.use(turnMiddleware);
 
-/** Health/version, where a machine looks for it rather than at the front door. */
-app.get('/api', (req, res) => {
-  res.json({ name: APP_NAME, status: 'running', version: '1.0.0', routes: mounted });
+/**
+ * Health, and it is allowed to say no.
+ *
+ * This answered status: 'running' — a string literal, identical whether the
+ * database was reachable or the application was seconds from falling over. A
+ * delivered application sat crashed for a week while Svarg read it as live,
+ * because the only question asked was whether the address answered, and
+ * Railway's edge answers even when nothing is behind it.
+ *
+ * 503 when something a customer depends on is missing, so a machine that
+ * only reads the status code still learns the truth. Never throws: a health
+ * endpoint that can fail is one more thing to diagnose at the worst moment.
+ */
+app.get('/api', async (req, res) => {
+  let health = { ok: false, checks: [], summary: 'the health check could not run' };
+  try {
+    const { selfCheck } = await import('./services/selfCheck.js');
+    health = await selfCheck();
+  } catch (err) {
+    health.summary = `the health check could not run: ${err.message}`.slice(0, 200);
+  }
+  res
+    .status(health.ok ? 200 : 503)
+    .json({ name: APP_NAME, status: health.ok ? 'running' : 'degraded', version: '1.0.0', routes: mounted, ...health });
 });
 
 /**

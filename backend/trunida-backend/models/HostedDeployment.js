@@ -40,7 +40,16 @@ const hostedDeploymentSchema = new mongoose.Schema({
   // reached before Eame has written anything.
   status: {
     type: String,
-    enum: ['queued', 'preparing', 'prepared', 'attaching', 'live', 'failed', 'suspended', 'destroyed'],
+    /*
+     * 'degraded' is serving but says it is not well — the application's own
+     * /api reports a missing database, unreadable datasets or no model. It is
+     * distinct from 'failed', which never started, and from 'live', which is
+     * what a crashed application used to be called for a week.
+     *
+     * updateOne skips validators, so an out-of-enum status writes cleanly and
+     * then fails on the next save() of the document.
+     */
+    enum: ['queued', 'preparing', 'prepared', 'attaching', 'live', 'degraded', 'failed', 'suspended', 'destroyed'],
     default: 'queued',
     index: true,
   },

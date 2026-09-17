@@ -93,7 +93,7 @@ export async function updateOne(dep, { reason = 'sweep' } = {}) {
  * would never be seen by the next.
  */
 export async function refreshAttaching() {
-  const deps = await HostedDeployment.find({ status: 'attaching', hosting: 'svarg', 'railway.serviceId': { $nin: ['', null] } });
+  const deps = await HostedDeployment.find({ status: { $in: ['attaching', 'degraded'] }, hosting: 'svarg', 'railway.serviceId': { $nin: ['', null] } });
   for (const dep of deps) {
     try {
       const st = await getDeployTarget().status({ deployment: dep });
@@ -133,7 +133,10 @@ export async function updateLiveApplications({ reason = 'sweep', limit = 50 } = 
      * compares the manifest hash first and skips when it is current.
      */
     const deps = await HostedDeployment.find({
-      status: { $in: ['live', 'attaching'] },
+      // 'degraded' included deliberately: an application reporting that it is
+      // unwell is the one that most needs the next runtime, and excluding it is
+      // how a broken deployment gets locked out of its own repair.
+      status: { $in: ['live', 'attaching', 'degraded'] },
       hosting: 'svarg',
       'railway.serviceId': { $nin: ['', null] },
     }).sort({ updatedAt: 1 }).limit(limit);

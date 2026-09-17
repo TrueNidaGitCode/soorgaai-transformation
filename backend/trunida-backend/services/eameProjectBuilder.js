@@ -231,6 +231,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'routes/connectorsRoutes.js':       { template: 'routes/connectorsRoutes.js' },
     'services/tenantSignals.js':        { template: 'services/tenantSignals.js' },
     'services/turnLog.js':              { template: 'services/turnLog.js' },
+    'services/selfCheck.js':            { template: 'services/selfCheck.js' },
     'controllers/signalController.js':  { template: 'controllers/signalController.js' },
     'routes/signalsRoutes.js':          { template: 'routes/signalsRoutes.js' },
     'controllers/authController.js':    { template: 'controllers/authController.js' },

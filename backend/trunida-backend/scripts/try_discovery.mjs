@@ -10,32 +10,41 @@
  * the instruction, which is the point: the alternative is a whole blueprint
  * run, and nobody iterates on a prompt at that price.
  *
- * Reads the instruction out of the source rather than importing it, because
- * SECTION_TEMPLATES is module-private — the same bytes the generator sends.
+ * Sends the same system prompt the generator sends, by calling the same
+ * function it calls. An earlier version rebuilt an approximation of the prompt
+ * from the source file, which meant the probe could only tell you about the
+ * approximation — and it was silent on the largest fact about the real one,
+ * that the knowledge base was missing from it entirely.
  *
  *   node scripts/try_discovery.mjs
+ *   node scripts/try_discovery.mjs --no-kb          # without the KB method, to diff
  *   node scripts/try_discovery.mjs "We run a gym in Bengaluru and members quietly stop coming."
  */
 import 'dotenv/config';
-import fs from 'fs';
 import { generate } from '../services/llmService.js';
+import { opportunityDiscoverySystemPrompt } from '../services/blueprintGenerationService.js';
+import { getDomainCapabilityBlueprint } from '../services/strategyCanvasService.js';
 
 const DEFAULT_OBJECTIVE =
   'In SIX Cricket Academy, where we coach close to 400 to 500 students, we have 30-plus coaches '
   + 'and four to five admins who spend hours on attendance, fee follow-ups, batch scheduling and '
   + 'parent communication. We only find out a student has stopped coming weeks later.';
 
-const objective = process.argv.slice(2).join(' ').trim() || DEFAULT_OBJECTIVE;
+const args = process.argv.slice(2);
+const withoutKb = args.includes('--no-kb');
+const objective = args.filter(a => !a.startsWith('--')).join(' ').trim() || DEFAULT_OBJECTIVE;
 
-const src = fs.readFileSync(new URL('../services/blueprintGenerationService.js', import.meta.url), 'utf8');
-const start = src.indexOf("  'AI Opportunity Discovery': {");
-const block = src.slice(start, src.indexOf('\n  },', start));
-const body = block.slice(block.indexOf('promptInstruction:'));
-const instruction = body.slice(body.indexOf('`') + 1, body.lastIndexOf('`'));
+// The same read the generator does, so the method under test is the real one.
+const capBlueprint = getDomainCapabilityBlueprint('ai-opportunity-discovery', 'AI_Use_Cases', 'Sports Academies');
+const consultantGuide = withoutKb ? '' : (capBlueprint.sections[0]?.consultantGuide || '');
+
+console.log(consultantGuide
+  ? `knowledge base: ${consultantGuide.split(/\s+/).length} words of method in the prompt`
+  : 'knowledge base: NOT in the prompt');
 
 const t0 = Date.now();
 const { text, model } = await generate({
-  systemPrompt: `You are an AI transformation strategist.\n\n${instruction}\n\nRespond ONLY with valid JSON.`,
+  systemPrompt: opportunityDiscoverySystemPrompt({ consultantGuide }),
   userMessage: `BUSINESS OBJECTIVE: ${objective}\nGenerate the section as specified.`,
   maxTokens: 6000,
   label: 'cob:section',

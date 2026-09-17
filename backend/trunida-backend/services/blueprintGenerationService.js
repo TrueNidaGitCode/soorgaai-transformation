@@ -2846,6 +2846,39 @@ Generate 2-4 actionItems for this capability as a whole (not per section) — co
 // Generates section.brief in a single LLM call per capability.
 // CTO extras (strategicPillars etc.) are injected into this call when enabled.
 
+/**
+ * The industry knowledge base text, labelled and framed.
+ *
+ * Two things were wrong with the bare block this replaces.
+ *
+ * It was headed AUTOMOTIVE INDUSTRY REFERENCE whatever the industry actually
+ * was, so a cricket academy and a dental group were both generated against a
+ * heading announcing they were automotive. The rest of the pipeline had
+ * already been taught not to say that; this one line had not.
+ *
+ * And it was the only context block in the prompt with no framing sentence and
+ * no precedence rule. The company block, the sub-vertical block and the
+ * Confluence block each say what they are and which wins on a conflict. This
+ * said nothing, so a model meeting industry guidance that contradicted the
+ * customer's own words had nothing to decide with.
+ */
+function industryReferenceBlock(industry, text) {
+  if (!text) return "";
+  const trade = String(industry || "").trim();
+  const named = trade && trade !== "General"
+    ? trade.toUpperCase() + " INDUSTRY REFERENCE"
+    : "INDUSTRY REFERENCE";
+  return [
+    named + ":",
+    "[How this industry works, from Svarg's knowledge base. Use it for the shape",
+    "of the work: the systems, the roles, the way things actually run here. Where",
+    "it disagrees with anything this company has said about itself, the company's",
+    "own words win.]",
+    text,
+    "",
+  ].join(String.fromCharCode(10));
+}
+
 function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null, engagement = null }) {
   const sectionList   = parsedSections.map((s, i) => {
     let entry = `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`;
@@ -2949,7 +2982,7 @@ ${buildOutputFormat(parsedSections)}`;
 
 ${sectionList}
 
-${automotiveBlueprint ? `AUTOMOTIVE INDUSTRY REFERENCE:\n${automotiveBlueprint}\n` : ''}
+${industryReferenceBlock(industry, automotiveBlueprint)}
 BUSINESS OBJECTIVE: ${businessObjective}
 
 Generate the Strategy Brief JSON for all ${parsedSections.length} sections: ${sectionTitles}.`;
@@ -3045,26 +3078,7 @@ Extract the intent and identify the industry problems.`;
         : 'No website or profile is connected for this company; nothing is known beyond the objective.\n')
     : '';
 
-  const stage2System = `You are an AI transformation strategist. Given the industry problems already identified, generate the specific AI opportunities that address them — grounded in this company's actual products where a mapping is provided, and consistent with any project constraints given below.
-
-${SECTION_TEMPLATES['AI Opportunity Discovery'].promptInstruction}
-
-ADDITIONAL RULES FOR THIS STAGE:
-- The industry problems (businessProblems) were already identified in a prior step and are given to you below — do NOT regenerate or restate them.
-- When a COMPANY CAPABILITY MAP is provided below, prefer AI opportunities that strengthen one of the company's existing mapped capabilities, and name that capability explicitly in "why" (e.g. "This strengthens the Odin retrofit platform's fleet coordination by..."). If a project-context block below states a constraint (data handling, security, existing systems, architecture), the opportunities must respect it — do not propose something incompatible with a stated constraint.
-- When THE COMPANY block below carries the company's own words, ground the opportunities in them: the products, services, batches, teams, tools and customers they actually name, in the words they use. "why" should point at something true of THIS company, not of the industry. Never invent a product, a customer or a number the words do not support.
-- THE BUSINESS OBJECTIVE IS AUTHORITATIVE about which business this is for. If the company on the account is plainly a different business from the one the objective describes -- an agency, a consultant, a software vendor or a platform writing on a client's behalf -- follow the objective and set the company's own words aside; do not pull the opportunities toward the account holder's products.
-
-OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation, and NO fields other than these four:
-{
-  "workflowSteps": ["<step 1>", "<step 2>", "..."],
-  "highEffortActivities": ["<activity 1>", "<activity 2>", "..."],
-  "aiOpportunities": [{ "name": "<AI technique>", "plain": "<what happens for the business, 4-9 words, no AI vocabulary>", "why": "<1-2 sentences, plain voice>" }, ...],
-  "actionItems": [
-    { "title": "<specific, action-oriented next step — one sentence>", "description": "<what completing it actually involves — one sentence>", "assignee": "<suggested owner role>", "reviewer": "<suggested sign-off role — empty string if no review is naturally implied>" }
-  ]
-}
-Generate 2-4 actionItems — concrete things a real project team would need to do, review, or agree on to act on these opportunities (e.g. "Review top 2 opportunities and align on Q1 priority" reviewed by Product Owner/Technical Architect). Infer assignee/reviewer roles from what each action actually is.`;
+  const stage2System = opportunityDiscoverySystemPrompt({ consultantGuide: section.consultantGuide });
 
   // What became of the same advice at businesses like this one. Fetched here
   // rather than passed in, so every caller of discovery gets it without having
@@ -3091,6 +3105,60 @@ Generate workflowSteps, highEffortActivities, and aiOpportunities as specified.`
     sections:    parseBriefOutput([{ title: section.title, brief }], validTitles),
     actionItems: normalizeActionItems(stage2?.actionItems),
   };
+}
+
+/**
+ * What AI Opportunity Discovery is told to do — the method, then the contract.
+ *
+ * Exported so scripts/try_discovery.mjs sends the same bytes the generator does.
+ * A probe that approximates the prompt tells you about the approximation.
+ *
+ * ── Why the knowledge base is in here now ──────────────────────────────────
+ *
+ * This is the capability the product is differentiated on, and it read the
+ * least of the knowledge base of any capability in the system. The Core
+ * document carries the consultant method — the reasoning sequence, the
+ * discovery framework, the technique archetypes, how to handle a stated
+ * privacy or security constraint, the quality checklist. All of it was parsed
+ * into `consultantGuide` by strategyCanvasService and then dropped on the
+ * floor here, while a summary of the same material sat duplicated in
+ * SECTION_TEMPLATES as hardcoded JavaScript.
+ *
+ * The template's own instruction told the model to "draw from the AI Approach
+ * Options in the reference material below" — and there was no reference
+ * material below. That sentence is true now.
+ *
+ * The summary in the template stays as the fallback: the KB read fails closed
+ * on a missing file, and a capability with no method at all is worse than one
+ * with a compact version of it.
+ */
+export function opportunityDiscoverySystemPrompt({ consultantGuide = '' } = {}) {
+  return `You are an AI transformation strategist. Given the industry problems already identified, generate the specific AI opportunities that address them — grounded in this company's actual products where a mapping is provided, and consistent with any project constraints given below.
+
+${SECTION_TEMPLATES['AI Opportunity Discovery'].promptInstruction}
+${consultantGuide ? `
+CONSULTANT METHODOLOGY — how Svarg reasons about this, from its knowledge base.
+This is the reference material the instruction above points to. Where it
+describes an output shape, the OUTPUT FORMAT at the end of this message wins.
+
+${consultantGuide}
+` : ''}
+ADDITIONAL RULES FOR THIS STAGE:
+- The industry problems (businessProblems) were already identified in a prior step and are given to you below — do NOT regenerate or restate them.
+- When a COMPANY CAPABILITY MAP is provided below, prefer AI opportunities that strengthen one of the company's existing mapped capabilities, and name that capability explicitly in "why" (e.g. "This strengthens the Odin retrofit platform's fleet coordination by..."). If a project-context block below states a constraint (data handling, security, existing systems, architecture), the opportunities must respect it — do not propose something incompatible with a stated constraint.
+- When THE COMPANY block below carries the company's own words, ground the opportunities in them: the products, services, batches, teams, tools and customers they actually name, in the words they use. "why" should point at something true of THIS company, not of the industry. Never invent a product, a customer or a number the words do not support.
+- THE BUSINESS OBJECTIVE IS AUTHORITATIVE about which business this is for. If the company on the account is plainly a different business from the one the objective describes -- an agency, a consultant, a software vendor or a platform writing on a client's behalf -- follow the objective and set the company's own words aside; do not pull the opportunities toward the account holder's products.
+
+OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanation, and NO fields other than these four:
+{
+  "workflowSteps": ["<step 1>", "<step 2>", "..."],
+  "highEffortActivities": ["<activity 1>", "<activity 2>", "..."],
+  "aiOpportunities": [{ "name": "<AI technique>", "plain": "<what happens for the business, 4-9 words, no AI vocabulary>", "why": "<1-2 sentences, plain voice>" }, ...],
+  "actionItems": [
+    { "title": "<specific, action-oriented next step — one sentence>", "description": "<what completing it actually involves — one sentence>", "assignee": "<suggested owner role>", "reviewer": "<suggested sign-off role — empty string if no review is naturally implied>" }
+  ]
+}
+Generate 2-4 actionItems — concrete things a real project team would need to do, review, or agree on to act on these opportunities (e.g. "Review top 2 opportunities and align on Q1 priority" reviewed by Product Owner/Technical Architect). Infer assignee/reviewer roles from what each action actually is.`;
 }
 
 export async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null, blueprintId = '') {
@@ -3193,7 +3261,7 @@ SECTIONS TO ANALYSE (${parsedSections.length}): ${sectionTitles}
 
 ${sectionList}
 
-${automotiveBlueprint ? `AUTOMOTIVE INDUSTRY REFERENCE:\n${automotiveBlueprint}\n` : ''}
+${industryReferenceBlock(industry, automotiveBlueprint)}
 Generate a 500–700 word strategic analysis for each section.`;
 
   return { systemPrompt, userMessage };

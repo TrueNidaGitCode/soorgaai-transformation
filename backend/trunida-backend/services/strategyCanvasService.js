@@ -211,7 +211,32 @@ function extractParagraphText(markdown, maxWords = 200) {
     const t = line.trim();
     if (!t || t === '---') continue;
     if (t.startsWith('> ')) continue;
-    if (t.startsWith('|')) continue;
+
+    /*
+     * A table row is content, not formatting.
+     *
+     * These were dropped outright. In the Automotive overlays that silently
+     * deleted the densest material in the file — Business Value Definition
+     * alone carries 27 rows mapping a business challenge to the AI
+     * opportunity that addresses it, which is exactly what this capability
+     * exists to produce. The hand-written Sports Academies overlays use no
+     * tables, so nothing was lost there; the loss was invisible because the
+     * industry it affected was the one nobody was checking.
+     *
+     * Flattened to a sentence rather than kept as a table: everything this
+     * function emits is joined into prose, and a half-formatted table reads
+     * worse to a model than the same facts as text.
+     */
+    if (t.startsWith('|')) {
+      const cells = t.split('|').map(c => c.trim()).filter(Boolean);
+      // The ---|--- separator under a header row carries nothing.
+      if (!cells.length || cells.every(c => /^:?-{2,}:?$/.test(c))) continue;
+      const row = cells.join(' — ');
+      paras.push(row);
+      count += row.split(/s+/).filter(Boolean).length;
+      if (count >= maxWords) break;
+      continue;
+    }
     // Skip only the document's own front-matter fields (e.g. **Layer:**
     // Automotive) — NOT any bold-prefixed line. A broader match here used to
     // also swallow real sentences that happen to open with a bold label

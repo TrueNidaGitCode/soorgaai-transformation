@@ -1,12 +1,17 @@
 /**
  * Unit tests — backend/data/domainDefinitions.js
  *
- * Pure data module — no mocks required.
- * Verifies the structure, constraints, and helper functions.
+ * Presentation for each transformation domain, reconciled against the registry
+ * that generation reads. Both files once claimed to be the single source of
+ * truth for the enabled flag, and this file's tests asserted all six domains
+ * were on — which is exactly what stopped being true, and what the tests would
+ * have caught had they compared the two lists rather than one of them.
  */
 
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
 import DOMAINS, { getDomain, getFocusAreaIds } from '../data/domainDefinitions.js';
+import { DOMAINS as REGISTRY, enabledDomains } from '../config/domainRegistry.js';
 
 // ── DOMAINS array structure ───────────────────────────────────────────────────
 
@@ -35,15 +40,37 @@ describe('DOMAINS — array structure', () => {
 
 // ── Enabled / disabled split ──────────────────────────────────────────────────
 
-describe('DOMAINS — enabled flag', () => {
-  it('all 6 domains are enabled', () => {
-    const enabled = DOMAINS.filter(d => d.enabled);
-    expect(enabled).toHaveLength(6);
+describe('DOMAINS — one authority on what is on', () => {
+  it('lists exactly the domains the registry knows about', () => {
+    expect(DOMAINS.map(d => d.domainId).sort()).toEqual(REGISTRY.map(d => d.id).sort());
   });
 
-  it('no domains are disabled', () => {
-    const disabled = DOMAINS.filter(d => !d.enabled);
-    expect(disabled).toHaveLength(0);
+  it('agrees with the registry about every enabled flag', () => {
+    // The workspace must never offer a domain generation would refuse.
+    for (const d of DOMAINS) {
+      const inRegistry = REGISTRY.find(r => r.id === d.domainId);
+      expect(d.enabled).toBe(inRegistry.enabled);
+    }
+  });
+
+  it('agrees with the registry about every name', () => {
+    // These two disagreed: Governance & Ethics here, Governance & Security there.
+    for (const d of DOMAINS) {
+      expect(d.title).toBe(REGISTRY.find(r => r.id === d.domainId).name);
+    }
+  });
+
+  it('offers exactly what enabledDomains() would generate', () => {
+    const shown = DOMAINS.filter(d => d.enabled).map(d => d.domainId).sort();
+    expect(shown).toEqual(enabledDomains().map(d => d.id).sort());
+  });
+
+  it('does not carry its own copy of the two fields the registry owns', () => {
+    // A second copy is how the two drifted in the first place.
+    const src = readFileSync(new URL('../data/domainDefinitions.js', import.meta.url), 'utf8');
+    const literal = src.slice(src.indexOf('const PRESENTATION'), src.indexOf('// ── Reconciliation'));
+    expect(literal).not.toMatch(/^ {4}enabled:/m);
+    expect(literal).not.toMatch(/^ {4}title:/m);
   });
 });
 
@@ -126,10 +153,12 @@ describe('getDomain()', () => {
     expect(domain.enabled).toBe(true);
   });
 
-  it('returns a domain by ID', () => {
+  it('returns a domain that is switched off, rather than hiding it', () => {
+    // Off is a fact about the domain, not a reason to pretend it is unknown:
+    // existing blueprints still hold content for it and still need looking up.
     const domain = getDomain('governance-security');
     expect(domain).toBeDefined();
-    expect(domain.enabled).toBe(true);
+    expect(domain.enabled).toBe(false);
   });
 
   it('returns undefined for an unknown domainId', () => {

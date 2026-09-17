@@ -1,18 +1,30 @@
 /**
- * SoorgaAI — Workspace Domain Definitions
+ * How each transformation domain is presented in the workspace.
  *
- * Single source of truth for:
- *   - All 6 workspace domains (IDs, titles, enabled flag)
- *   - AI Strategy focus areas (titles + default descriptions)
- *   - Suggested prompts per enabled domain
+ * This file used to call itself the single source of truth for the domains and
+ * their enabled flag — and so does config/domainRegistry.js, which is the one
+ * generation actually reads. They drifted, as two sources of truth do: after
+ * Skills & Workforce and Governance were turned off for an owner-operator
+ * audience, this file still said all six were on, so the workspace offered two
+ * domains that nothing would ever generate. The two also disagreed about the
+ * name of one of them — Governance & Ethics here, Governance & Security there.
+ *
+ * So the registry now decides which domains exist, what each is called, and
+ * whether it is on. This file decides only how they read on screen: the
+ * description, the icon, the focus areas, the suggested prompts, and the order
+ * they are listed in — which is a reading order, deliberately not the registry's
+ * order, which is the sequence each domain is generated in.
+ *
+ * Adding a domain to one file and not the other throws at import rather than
+ * silently producing the mismatch this replaced.
  */
 
-export const DOMAINS = [
+import { DOMAINS as REGISTRY } from '../config/domainRegistry.js';
+
+const PRESENTATION = [
   {
     domainId:    'ai-strategy',
-    title:       'AI Strategy',
     description: 'Define your AI vision, align investments, and build an execution roadmap.',
-    enabled:     true,
     icon:        `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#5CC5A7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
 
     focusAreas: [
@@ -58,9 +70,7 @@ export const DOMAINS = [
 
   {
     domainId:    'ai-use-cases',
-    title:       'AI Use Cases',
     description: 'Identify, prioritize, and govern AI use cases across the enterprise.',
-    enabled:     true,
     icon:        `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>`,
     focusAreas:  [],
     suggestedPrompts: [],
@@ -68,9 +78,7 @@ export const DOMAINS = [
 
   {
     domainId:    'skills-workforce',
-    title:       'Skills & Workforce',
     description: 'Upskill your teams and build the AI capabilities needed to deliver.',
-    enabled:     true,
     icon:        `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
     focusAreas:  [],
     suggestedPrompts: [],
@@ -78,9 +86,7 @@ export const DOMAINS = [
 
   {
     domainId:    'data-readiness',
-    title:       'Data Readiness',
     description: 'Assess and strengthen your data foundation for AI.',
-    enabled:     true,
     icon:        `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>`,
     focusAreas:  [],
     suggestedPrompts: [],
@@ -88,9 +94,7 @@ export const DOMAINS = [
 
   {
     domainId:    'technology-infrastructure',
-    title:       'Technology Infrastructure',
     description: 'Build the platforms and tooling required to deploy AI at scale.',
-    enabled:     true,
     icon:        `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M9 2v2M9 20v2M2 15h2M2 9h2M20 15h2M20 9h2"/></svg>`,
     focusAreas:  [],
     suggestedPrompts: [],
@@ -98,14 +102,34 @@ export const DOMAINS = [
 
   {
     domainId:    'governance-security',
-    title:       'Governance & Security',
     description: 'Establish responsible AI policies, ethics, and risk controls.',
-    enabled:     true,
     icon:        `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`,
     focusAreas:  [],
     suggestedPrompts: [],
   },
 ];
+
+// ── Reconciliation ───────────────────────────────────────────────────────────
+
+const registryById = new Map(REGISTRY.map(d => [d.id, d]));
+
+const missing = PRESENTATION.filter(d => !registryById.has(d.domainId)).map(d => d.domainId);
+const unpresented = REGISTRY.filter(d => !PRESENTATION.some(p => p.domainId === d.id)).map(d => d.id);
+if (missing.length || unpresented.length) {
+  throw new Error(
+    'domainDefinitions.js and config/domainRegistry.js disagree about which domains exist' +
+    (missing.length ? ` — not in the registry: ${missing.join(', ')}` : '') +
+    (unpresented.length ? ` — no presentation here: ${unpresented.join(', ')}` : '')
+  );
+}
+
+export const DOMAINS = PRESENTATION.map(d => ({
+  ...d,
+  // The registry's word on both, so the workspace can never offer a domain
+  // generation will refuse, or call it by a name the blueprint does not use.
+  title:   registryById.get(d.domainId).name,
+  enabled: registryById.get(d.domainId).enabled,
+}));
 
 /** Lookup a domain by ID. Returns undefined if not found. */
 export function getDomain(domainId) {

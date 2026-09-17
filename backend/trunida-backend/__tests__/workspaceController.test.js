@@ -20,6 +20,7 @@ vi.mock('../models/DomainCanvas.js', () => ({ default: { find:    mockCanvasFind
 vi.mock('../models/Conversation.js', () => ({ default: { find:    mockConvFind    } }));
 
 import { getWorkspaceState, getDomainCatalog } from '../controllers/workspaceController.js';
+import { DOMAINS as REGISTRY } from '../config/domainRegistry.js';
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
 
@@ -59,12 +60,18 @@ describe('getWorkspaceState()', () => {
     expect(domains).toHaveLength(6);
   });
 
-  it('all 6 domains are enabled', async () => {
+  it('marks each domain on or off exactly as the registry does', async () => {
+    // This asserted all six were enabled, which stopped being true when two
+    // were switched off for an owner-operator audience — and the workspace
+    // kept offering them for a while, because two files each believed they
+    // owned the flag. There is one authority now, so compare against it.
     const { req, res } = makeReqRes();
     await getWorkspaceState(req, res);
     const { domains } = res.status.mock.results[0].value.json.mock.calls[0][0];
-    const enabled = domains.filter(d => d.enabled);
-    expect(enabled).toHaveLength(6);
+    for (const d of domains) {
+      expect(d.enabled).toBe(REGISTRY.find(r => r.id === d.domainId).enabled);
+    }
+    expect(domains.filter(d => d.enabled).length).toBeGreaterThan(0);
   });
 
   it('attaches canvas focus areas to the ai-strategy domain', async () => {

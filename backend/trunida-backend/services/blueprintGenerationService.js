@@ -2879,7 +2879,19 @@ function industryReferenceBlock(industry, text) {
   ].join(String.fromCharCode(10));
 }
 
-function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null, engagement = null }) {
+/**
+ * Which capabilities are told what happened at other businesses.
+ *
+ * Discovery writes the opportunity list; these two reason about it. Every
+ * other capability reasons about data, platforms or people, where a block of
+ * opportunity outcomes is noise dressed as evidence.
+ */
+const OUTCOME_AWARE_CAPABILITIES = new Set([
+  'AI Implementation Prioritization',
+  'Business Value Definition',
+]);
+
+function buildBriefPrompt({ companyName, industry, role, businessObjective, contextDoc, capabilityName, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null, engagement = null, priorOutcomes = '' }) {
   const sectionList   = parsedSections.map((s, i) => {
     let entry = `${i + 1}. ${s.title}\n   Definition: ${s.definition}\n   Key Principles: ${s.keyPrinciples.join('; ')}`;
     if (s.consultantGuide) entry += `\n\n   CONSULTANT METHODOLOGY:\n${s.consultantGuide}`;
@@ -2982,7 +2994,7 @@ ${buildOutputFormat(parsedSections)}`;
 
 ${sectionList}
 
-${industryReferenceBlock(industry, automotiveBlueprint)}
+${industryReferenceBlock(industry, automotiveBlueprint)}${priorOutcomes}
 BUSINESS OBJECTIVE: ${businessObjective}
 
 Generate the Strategy Brief JSON for all ${parsedSections.length} sections: ${sectionTitles}.`;
@@ -3171,7 +3183,22 @@ export async function runBriefGeneration(cap, companyProfile, businessObjective,
     });
   }
 
+  /*
+   * The capabilities that reason about the opportunity LIST get the history
+   * too, not just the one that writes it.
+   *
+   * Prioritisation ranks the opportunities and Business Value argues for them,
+   * and "four academies were told this was a Quick Win and none of them built
+   * it" is a ranking fact of exactly the kind those two are missing. The rest
+   * of the capabilities reason about data, platforms and people; the same
+   * block there is noise dressed as evidence.
+   */
+  const priorOutcomes = OUTCOME_AWARE_CAPABILITIES.has(cap.name)
+    ? await historyBlock({ industry, blueprintId })
+    : '';
+
   const { systemPrompt, userMessage } = buildBriefPrompt({
+    priorOutcomes,
     engagement: companyProfile.engagement,
     companyName:         companyProfile.companyName,
     industry,

@@ -173,3 +173,87 @@ describe('who counts as a similar business', () => {
     expect(graph).toMatch(/defaults to 'Automotive' in the schema and is never written/);
   });
 });
+
+// ── Cob's misses: the only signal that scores the thinking ───────────────────
+
+describe('what customers asked for that Cob never identified', () => {
+  const graph = readFileSync(new URL('../services/opportunityGraph.js', import.meta.url), 'utf8');
+
+  it('is read from needs that matched no opportunity', () => {
+    /*
+     * Every other number in this file says what became of an opportunity Cob
+     * NAMED. This is the only one that says what it missed — a need that
+     * arrived months after go-live, that the planner judged worth building,
+     * and that matched nothing on the roadmap Cob wrote for that business.
+     */
+    expect(graph).toContain('export async function opportunityMisses');
+    expect(graph).toContain("opportunityName: ''");
+  });
+
+  it('does not count a need the planner refused', () => {
+    // Cob was right not to name it. Counting those turns good judgement into
+    // evidence against it.
+    expect(graph).toContain("status: { $ne: 'dismissed' }");
+    expect(graph).toMatch(/Empty opportunityName alone is not a miss/);
+  });
+
+  it('reaches Cob as its own section, last, where a reader stops', () => {
+    const rows = [{ name: 'Fee Reminders', named: 4, built: 3, askedForLater: 1 }];
+    rows.misses = [{ title: 'Waitlist management', need: '' }];
+    const text = historyText(rows);
+    expect(text).toContain('ASKED FOR AFTERWARDS, AND NEVER ON THE ROADMAP');
+    expect(text.indexOf('ASKED FOR AFTERWARDS')).toBeGreaterThan(text.indexOf('Fee Reminders'));
+    expect(text).toContain('- Waitlist management');
+  });
+
+  it('says the same thing once however many businesses asked for it', () => {
+    const rows = [{ name: 'X', named: 3, built: 1, askedForLater: 0 }];
+    rows.misses = [
+      { title: 'Waitlist management', need: '' },
+      { title: 'Waitlist management', need: '' },
+      { title: 'Waitlist management', need: '' },
+    ];
+    expect(historyText(rows).match(/Waitlist management/g)).toHaveLength(1);
+  });
+
+  it('falls back to what the customer actually said when the plan had no title', () => {
+    const rows = [{ name: 'X', named: 3, built: 1, askedForLater: 0 }];
+    rows.misses = [{ title: '', need: 'can it tell me which coaches are overbooked' }];
+    expect(historyText(rows)).toContain('which coaches are overbooked');
+  });
+
+  it('adds nothing when there are no misses', () => {
+    const rows = [{ name: 'X', named: 3, built: 1, askedForLater: 0 }];
+    expect(historyText(rows)).not.toContain('ASKED FOR AFTERWARDS');
+  });
+});
+
+describe('a refusal is a judgement worth keeping', () => {
+  const graph = readFileSync(new URL('../services/opportunityGraph.js', import.meta.url), 'utf8');
+
+  it('records why the planner declined, in its own words', () => {
+    expect(graph).toContain("refusedBecause: refused ? String(refused.plan?.reason || '') : '',");
+  });
+});
+
+describe('reading the history costs one query per run, not one per capability', () => {
+  const graph = readFileSync(new URL('../services/opportunityGraph.js', import.meta.url), 'utf8');
+  const gen = readFileSync(new URL('../services/blueprintGenerationService.js', import.meta.url), 'utf8');
+
+  it('memoises for the length of a generation', () => {
+    // Thirteen capabilities, several of which want this, over an answer that
+    // cannot change during a run that takes minutes.
+    expect(graph).toContain('const HISTORY_TTL_MS = 5 * 60 * 1000;');
+    expect(graph).toContain('export function forgetHistory()');
+  });
+
+  it('gives it only to the capabilities that reason about the opportunity list', () => {
+    expect(gen).toContain("'AI Implementation Prioritization',");
+    expect(gen).toContain("'Business Value Definition',");
+    expect(gen).toContain('OUTCOME_AWARE_CAPABILITIES.has(cap.name)');
+  });
+
+  it('gives it to nothing else, where it would be noise dressed as evidence', () => {
+    expect(gen).toMatch(/noise dressed as evidence/);
+  });
+});

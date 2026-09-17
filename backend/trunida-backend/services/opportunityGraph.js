@@ -146,12 +146,50 @@ export async function opportunityLedger(blueprintId) {
       built: !!built || (o.recommended && live),
       buildState: built ? built.status : planned ? planned.status : refused ? 'dismissed' : '',
       askedForLater: mine.length > 0,
+      // Why the planner declined it, in its own words. A refusal is a
+      // judgement worth reading back — "they have this already" and "this is
+      // a wish, not a capability" are different facts about the same list.
+      refusedBecause: refused ? String(refused.plan?.reason || '') : '',
       // What the customer said, in their words, when they asked for it again.
       askedAs: mine.map(r => r.need).filter(Boolean).slice(0, 3),
       used: queries > 0,
       queries,
     };
   });
+}
+
+/**
+ * What this customer asked for that Cob never identified.
+ *
+ * The most valuable signal in the system, and the only one that scores Cob's
+ * thinking rather than its execution. Every other number here says what
+ * happened to an opportunity Cob named. This says what it MISSED: a need that
+ * arrived in conversation months after go-live, that the planner judged worth
+ * building, and that matched nothing on the roadmap Cob wrote for that exact
+ * business.
+ *
+ * A short list of these across an industry is the sharpest possible brief for
+ * the next blueprint in it.
+ *
+ * Empty opportunityName alone is not a miss. A need the planner refused was
+ * not something to build, so Cob was right not to name it; counting those
+ * would turn Cob's good judgement into evidence against it.
+ */
+export async function opportunityMisses(blueprintId) {
+  try {
+    const rows = await CapabilityRequest
+      .find({ blueprintId: String(blueprintId), opportunityName: '', status: { $ne: 'dismissed' } })
+      .select('need plan status createdAt').lean();
+    return (rows || []).map(r => ({
+      need: String(r.need || ''),
+      title: String(r.plan?.title || ''),
+      status: r.status,
+      at: r.createdAt || null,
+    })).filter(m => m.need);
+  } catch (err) {
+    console.warn('[opportunityGraph] misses unavailable:', err.message);
+    return [];
+  }
 }
 
 /**
@@ -181,7 +219,35 @@ export async function opportunityLedger(blueprintId) {
  *
  * Never throws and returns [] when there is nothing to say.
  */
+/*
+ * One read per generation run, not one per capability.
+ *
+ * A blueprint generates thirteen capabilities and several of them want this
+ * history. Computing it each time means re-reading up to eight peer blueprints
+ * and their capability requests thirteen times over, for an answer that cannot
+ * change during a run that takes minutes.
+ *
+ * Short and in-process on purpose: it exists to survive one generation, not to
+ * be a cache anybody has to reason about. A stale answer here costs a blueprint
+ * grounded on history from a few minutes ago, which is what it would have been
+ * grounded on anyway.
+ */
+const HISTORY_TTL_MS = 5 * 60 * 1000;
+const _history = new Map();
+
 export async function opportunityHistory({ industry, exceptBlueprintId = '', limit = 8 } = {}) {
+  const key = `${industry}|${exceptBlueprintId}|${limit}`;
+  const hit = _history.get(key);
+  if (hit && Date.now() - hit.at < HISTORY_TTL_MS) return hit.rows;
+  const rows = await readHistory({ industry, exceptBlueprintId, limit });
+  _history.set(key, { at: Date.now(), rows });
+  return rows;
+}
+
+/** Drops every memoised answer. For tests, and for a script that has just written outcomes. */
+export function forgetHistory() { _history.clear(); }
+
+async function readHistory({ industry, exceptBlueprintId = '', limit = 8 } = {}) {
   const trade = String(industry || '').trim();
   // 'General' is the sentinel for "industryFit found no match" — a bucket, not
   // a peer group, and the one most likely to be large and meaningless.
@@ -202,6 +268,8 @@ export async function opportunityHistory({ industry, exceptBlueprintId = '', lim
       .lean();
 
     const ledgers = await Promise.all(peers.map(p => opportunityLedger(p._id).catch(() => [])));
+    // What those businesses asked for that Cob never put on their roadmap.
+    const missed = (await Promise.all(peers.map(p => opportunityMisses(p._id).catch(() => [])))).flat();
 
     // One row per distinct opportunity, counting how many businesses named it
     // and how many of those actually built it.
@@ -217,7 +285,12 @@ export async function opportunityHistory({ industry, exceptBlueprintId = '', lim
       }
     }
 
-    return [...byName.values()].sort((a, b) => (b.built - a.built) || (b.named - a.named));
+    const opportunities = [...byName.values()]
+      .sort((a, b) => (b.built - a.built) || (b.named - a.named));
+    // Carried alongside rather than merged in: a miss is not an opportunity
+    // with a count of zero, it is a thing that was never on the list.
+    opportunities.misses = missed;
+    return opportunities;
   } catch (err) {
     console.warn('[opportunityGraph] history unavailable:', err.message);
     return [];
@@ -246,11 +319,31 @@ export function historyText(rows) {
          + (r.askedForLater ? `, and asked for again after go-live at ${r.askedForLater}` : '');
   });
 
+  /*
+   * What those businesses asked for that we never identified.
+   *
+   * Kept separate and put last, where a reader stops. Every line above is a
+   * judgement Cob made and can defend; these are the ones it did not make at
+   * all, and they are the only evidence here about the quality of the
+   * thinking rather than the appetite of the customer.
+   */
+  const missed = (rows.misses || [])
+    .map(m => (m.title || m.need || '').trim())
+    .filter(Boolean);
+  const missBlock = missed.length
+    ? ['', 'ASKED FOR AFTERWARDS, AND NEVER ON THE ROADMAP',
+       'Businesses like this one asked for these once the application was running,',
+       'and no opportunity identified for them covered it. Consider whether this',
+       'business needs them too.',
+       ...[...new Set(missed)].slice(0, 8).map(m => `- ${m}`)]
+    : [];
+
   return [
     'WHAT HAPPENED AT SIMILAR BUSINESSES',
     'Opportunities Svarg identified for businesses like this one, and what they did with them.',
     'Evidence, not instruction: name what fits THIS business. An opportunity many named and',
     'none built is a warning; one asked for again after go-live was under-rated the first time.',
     ...lines,
+    ...missBlock,
   ].join('\n');
 }

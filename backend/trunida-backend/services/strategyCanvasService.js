@@ -192,15 +192,59 @@ function parseIndustrySections(markdown) {
 }
 
 // Match a Core pillar to an Automotive section by title containment
-function findIndustryMatch(pillarTitle, industrySections) {
+/**
+ * Which part of an industry overlay belongs to this pillar.
+ *
+ * By title: an industry section whose heading contains the Core pillar's name.
+ * That rule is invisible to whoever writes the file, and it has failed
+ * silently and widely — the Automotive overlay, the most iterated in the base,
+ * matched none of its pillars after someone restructured its headings into
+ * audience segments, and every machine-generated overlay fails it too because
+ * the generator writes its own fixed section titles.
+ *
+ * So: when the capability has exactly ONE pillar, there is nothing to choose
+ * between. The whole industry document is about that pillar, whatever its
+ * headings say, and requiring a particular heading only invents a way to get
+ * it wrong. Twelve of the sixteen capabilities are single-pillar.
+ *
+ * Where a capability has several pillars the ambiguity is real, a wrong guess
+ * would attach the wrong industry text to the wrong pillar, and the title rule
+ * stands. scripts/kb_doctor.mjs reports those, so an author is told rather
+ * than left to find out from a blueprint that reads oddly.
+ */
+function findIndustryMatch(pillarTitle, industrySections, { soleRecipient = false, wholeDocument = '' } = {}) {
   const lower = pillarTitle.toLowerCase();
-  return industrySections.find(s => s.title.toLowerCase().includes(lower)) || null;
+  const byTitle = industrySections.find(s => s.title.toLowerCase().includes(lower));
+  if (byTitle) return byTitle;
+  if (soleRecipient && wholeDocument.trim()) {
+    return { title: pillarTitle, content: wholeDocument, wholeDocument: true };
+  }
+  return null;
 }
 
 // ── Automotive Blueprint extractor ────────────────────────────────────────────
 // Extracts up to maxWords of paragraph prose from a markdown document,
 // skipping headings, bullet lists, tables, blockquotes, and metadata lines.
 // Used to generate the non-editable AUTOMOTIVE BLUEPRINT card per capability.
+
+/**
+ * How much of an industry overlay reaches a prompt.
+ *
+ * This was 1200, and the knowledge base is about to be written by people
+ * interviewing business owners for a living. The best file in the base — the
+ * hand-written Sports Academies discovery — is 2090 words, so 43% of a day's
+ * research was being dropped on the floor with nothing said about it.
+ *
+ * Still a cap, not a removal: the industry block sits in the same message as
+ * the customer's own objective and their own words, and an unbounded one would
+ * eventually crowd out the thing actually being asked about. 3000 words is
+ * roughly four thousand tokens — a few tenths of a paisa, and more than any
+ * single interview has produced.
+ *
+ * kb_doctor.mjs reports any file that exceeds it, so a researcher finds out
+ * from a command rather than from a blueprint that reads oddly.
+ */
+export const INDUSTRY_WORD_CAP = 3000;
 
 function extractParagraphText(markdown, maxWords = 200) {
   if (!markdown) return '';
@@ -345,7 +389,11 @@ export function getDomainCapabilityBlueprint(capabilityId, kbPath, industry = 'A
   const STANDARD_SUBSECTIONS = new Set(['Definition', 'Key Principles', 'Leadership Question']);
 
   const sections = pillars.map(pillar => {
-    const match        = findIndustryMatch(pillar.title, industrySections);
+    const match = findIndustryMatch(pillar.title, industrySections, {
+      // Nothing to choose between when there is only one pillar.
+      soleRecipient: pillars.length === 1,
+      wholeDocument: industryContent,
+    });
     const automotiveText = match ? extractParagraphText(match.content, 150) : '';
 
     // Collect non-standard subsections (Consultant Reasoning Process, Output Structure, etc.)
@@ -367,7 +415,7 @@ export function getDomainCapabilityBlueprint(capabilityId, kbPath, industry = 'A
     };
   });
 
-  let automotiveBlueprint = extractParagraphText(industryContent, 1200);
+  let automotiveBlueprint = extractParagraphText(industryContent, INDUSTRY_WORD_CAP);
   if (automotiveBlueprint.split(/\s+/).filter(Boolean).length < 60) {
     const coreProse = extractParagraphText(coreContent, 150);
     automotiveBlueprint = [automotiveBlueprint, coreProse].filter(Boolean).join(' ').trim();
@@ -446,7 +494,10 @@ export function getCapabilityBlueprint(capabilityId, industry = 'Automotive') {
   const industrySections = industryContent ? parseIndustrySections(industryContent) : [];
 
   const sections = pillars.map(pillar => {
-    const match = findIndustryMatch(pillar.title, industrySections);
+    const match = findIndustryMatch(pillar.title, industrySections, {
+      soleRecipient: pillars.length === 1,
+      wholeDocument: industryContent,
+    });
     // automotiveText: clean prose for the per-section Automotive Blueprint UI card.
     // Extracted from the matching industry section content (same source as industryContext)
     // using the shared extractParagraphText helper.
@@ -464,7 +515,7 @@ export function getCapabilityBlueprint(capabilityId, industry = 'Automotive') {
 
   // Automotive Blueprint: capability-level industry prose (100-200 words).
   // Primary source is the industry doc; fall back to core doc if sparse.
-  let automotiveBlueprint = extractParagraphText(industryContent, 1200);
+  let automotiveBlueprint = extractParagraphText(industryContent, INDUSTRY_WORD_CAP);
   if (automotiveBlueprint.split(/\s+/).filter(Boolean).length < 60) {
     const coreProse = extractParagraphText(coreContent, 150);
     automotiveBlueprint = [automotiveBlueprint, coreProse].filter(Boolean).join(' ').trim();

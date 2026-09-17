@@ -17,8 +17,22 @@ const conn = { readyState: 1, collection: () => ({ countDocuments: async () => 3
 vi.mock('mongoose', () => ({ default: { connection: conn } }));
 
 let index = [{ name: 'Roster' }, { name: 'Roll Call' }];
+/*
+ * What readIndex does, chosen per test by variable rather than by re-mocking.
+ *
+ * vi.doMock only affects imports made after it, and whether it has taken
+ * effect before the module under test is imported is not guaranteed under
+ * load. When it had not, readIndex returned the index variable, which the same
+ * test had set to undefined — and the check reported "the dataset index could not be read"
+ * instead of the thrown message. A rare, load-dependent failure that survived
+ * several clean runs before it was caught.
+ */
+let readIndexThrows = '';
 vi.mock('../eame-template/services/connectorService.js', () => ({
-  readIndex: () => index,
+  readIndex: () => {
+    if (readIndexThrows) throw new Error(readIndexThrows);
+    return index;
+  },
 }));
 
 const T = '../eame-template/services/selfCheck.js';
@@ -27,15 +41,11 @@ const by = (h, name) => h.checks.find(c => c.name === name);
 
 let saved;
 beforeEach(() => {
-  // doMock survives resetModules, so a test that mocks a module inline would
-  // otherwise leak that mock into every test that runs after it. Re-register
-  // the ordinary one each time rather than unmocking, which would also cancel
-  // the hoisted vi.mock above.
-  vi.doMock('../eame-template/services/connectorService.js', () => ({ readIndex: () => index }));
   vi.resetModules();
   saved = { ...process.env };
   conn.readyState = 1;
   index = [{ name: 'Roster' }, { name: 'Roll Call' }];
+  readIndexThrows = '';
   process.env.PROVIDER_CHAIN = 'gemini';
   process.env.GOOGLE_API_KEY = 'k';
   process.env.APP_PUBLIC_ACCESS = 'true';
@@ -118,12 +128,8 @@ describe('what it must never do', () => {
   });
 
   it('survives a check that throws, rather than failing the endpoint', async () => {
-    index = undefined;
-    vi.doMock('../eame-template/services/connectorService.js', () => ({
-      readIndex: () => { throw new Error('the connector layer is broken'); },
-    }));
-    vi.resetModules();
-    const h = await (await import(T)).selfCheck();
+    readIndexThrows = 'the connector layer is broken';
+    const h = await check();
     expect(by(h, 'datasets').ok).toBe(false);
     expect(by(h, 'datasets').detail).toMatch(/broken/);
     // And the rest still ran.

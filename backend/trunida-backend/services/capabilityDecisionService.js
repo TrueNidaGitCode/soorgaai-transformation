@@ -32,6 +32,7 @@
  */
 
 import CapabilityRequest from '../models/CapabilityRequest.js';
+import { opportunitiesOf, sameOpportunity } from './opportunityGraph.js';
 import CustomerUnderstanding from '../models/CustomerUnderstanding.js';
 import { normalise } from './customerUnderstandingService.js';
 import { generate } from './llmService.js';
@@ -93,10 +94,10 @@ export function monthWindow(when = new Date()) {
  * unattended building, "I could not read the plan" must not be able to become
  * "build whatever this empty object describes".
  */
-export function parsePlan(text) {
+export function parsePlan(text, opportunities = []) {
   const refuse = (reason) => ({
     actionable: false, reason, title: '', summary: '',
-    steps: [], dataNeeded: [], connectorsNeeded: [],
+    steps: [], dataNeeded: [], connectorsNeeded: [], opportunityName: '',
   });
   if (!text) return refuse('the planner returned nothing');
 
@@ -132,6 +133,19 @@ export function parsePlan(text) {
     return refuse('the plan had no title or no steps');
   }
 
+  /*
+   * Matched against the list we gave it, never taken as typed.
+   *
+   * An opportunity name is a join key — the ranking, the value section and the
+   * delivery phases are all keyed on that exact string. A name the model
+   * paraphrased or invented would be stored and then match nothing, which
+   * reads as the link not working rather than as the model being loose.
+   */
+  const claimed = String(obj.opportunity || '').trim();
+  const matched = claimed
+    ? (opportunities.find(o => sameOpportunity(o.name, claimed))?.name || '')
+    : '';
+
   return {
     actionable: true,
     reason: '',
@@ -140,6 +154,7 @@ export function parsePlan(text) {
     steps,
     dataNeeded: list(obj.dataNeeded),
     connectorsNeeded: list(obj.connectorsNeeded),
+    opportunityName: matched,
   };
 }
 
@@ -159,8 +174,23 @@ Return ONLY a JSON object:
   "summary": "one or two sentences on what it will do for them",
   "steps": ["what the application will do, in order, as a person would describe it"],
   "dataNeeded": ["information this needs that the application may not hold yet"],
-  "connectorsNeeded": ["outside services the customer must connect, e.g. WhatsApp Business"]
+  "connectorsNeeded": ["outside services the customer must connect, e.g. WhatsApp Business"],
+  "opportunity": "the exact name from THEIR ROADMAP below that this is, or \"\" if it is none of them"
 }
+
+THEIR ROADMAP IS THE FIRST THING TO CHECK.
+Svarg already studied this business and identified the AI opportunities worth
+pursuing. Most of what a customer asks for months later is one of them — the
+second or third item, arriving because they are ready for it now.
+
+So before planning anything, look down that list. If what they are asking for
+IS one of those opportunities, say which in "opportunity" and plan THAT: the
+technique was already chosen, the value case already made, the data already
+identified. Planning it afresh throws all of that away and produces a smaller,
+vaguer version of something already thought through.
+
+Use "" only when it is genuinely none of them. That is a real answer — a
+business changes, and a need nobody foresaw is worth building too.
 
 Set actionable to false when:
 - it is a wish or a complaint rather than something software can do
@@ -172,7 +202,7 @@ Set actionable to false when:
 Be concrete and small. One capability, not a roadmap. Name a connector only
 when the capability genuinely cannot work without it.`;
 
-function planPrompt({ need, understanding, blueprint }) {
+function planPrompt({ need, understanding, blueprint, opportunities = [] }) {
   const lines = [];
 
   if (understanding?.business) {
@@ -202,6 +232,27 @@ function planPrompt({ need, understanding, blueprint }) {
     lines.push('');
   }
 
+  /*
+   * The thinking the application came from.
+   *
+   * This block is the whole of the Think phase re-entering the loop. Without
+   * it the planner had the objective and nothing else, so every need arriving
+   * after go-live was planned from scratch — against a business Cob had
+   * already analysed, whose ranked roadmap sat unread in the blueprint.
+   */
+  if (opportunities.length) {
+    lines.push('THEIR ROADMAP — what Svarg identified for this business');
+    for (const o of opportunities) {
+      const marks = [
+        o.recommended ? 'the one already built' : '',
+        o.built && !o.recommended ? 'built since' : '',
+        o.quadrant,
+      ].filter(Boolean).join(', ');
+      lines.push(`- ${o.name}: ${o.plain}${marks ? ` (${marks})` : ''}`);
+    }
+    lines.push('');
+  }
+
   lines.push('WHAT THEY HAVE ASKED FOR');
   lines.push(need);
   return lines.join('\n');
@@ -209,19 +260,22 @@ function planPrompt({ need, understanding, blueprint }) {
 
 /** Plan one capability. Never throws: a planning failure is a refusal. */
 export async function planCapability({ need, understanding, blueprint }) {
+  // What Cob worked out for this business, so a need can be recognised as
+  // something already on their roadmap rather than planned from nothing.
+  const opportunities = blueprint ? opportunitiesOf(blueprint) : [];
   try {
     const { text } = await generate({
       systemPrompt: PLANNER_PROMPT,
-      userMessage:  planPrompt({ need, understanding, blueprint }),
+      userMessage:  planPrompt({ need, understanding, blueprint, opportunities }),
       maxTokens:    800,
       label:        'learn:plan-capability',
     });
-    return parsePlan(text);
+    return parsePlan(text, opportunities);
   } catch (err) {
     console.error('[capability] planning failed:', err.message);
     return {
       actionable: false, reason: `planning failed: ${err.message}`,
-      title: '', summary: '', steps: [], dataNeeded: [], connectorsNeeded: [],
+      title: '', summary: '', steps: [], dataNeeded: [], connectorsNeeded: [], opportunityName: '',
     };
   }
 }
@@ -287,6 +341,9 @@ export async function considerCapabilities({ userId, blueprintId, blueprint = nu
         needKey: needKeyOf(candidate.text),
         status,
         plan,
+        // The edge. Without it, what gets built after go-live is disconnected
+        // from everything Cob thought, and the prediction is never scored.
+        opportunityName: plan.opportunityName || '',
         mentionsAtDecision: candidate.mentions || 1,
       });
     } catch (err) {

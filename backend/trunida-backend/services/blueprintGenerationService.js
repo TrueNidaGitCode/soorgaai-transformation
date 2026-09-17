@@ -2972,7 +2972,33 @@ Generate the Strategy Brief JSON for all ${parsedSections.length} sections: ${se
 // workflowSteps/highEffortActivities/aiOpportunities — so this is purely an
 // internal generation-mechanism change. Nothing downstream (parseBriefOutput,
 // journeyContext extraction, frontend rendering) needs to know which path ran.
-async function runOpportunityDiscoveryStaged({ cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext }) {
+/**
+ * What happened at businesses like this one, for Cob to read.
+ *
+ * The only place Cob's predictions are ever scored. Every other input to
+ * discovery describes the business in front of it; this one says what became
+ * of the same advice elsewhere — which opportunities were built, which were
+ * named by six businesses and built by none, which were dismissed at first and
+ * asked for again three months later.
+ *
+ * Never blocks and never throws: the first customer in an industry has no
+ * history, and every customer before this existed has none either. Cob must
+ * generate for them exactly as it did before.
+ */
+async function historyBlock({ industry, blueprintId }) {
+  try {
+    const { opportunityHistory, historyText } = await import('./opportunityGraph.js');
+    const rows = await opportunityHistory({ industry, exceptBlueprintId: blueprintId });
+    const text = historyText(rows);
+    if (text) console.log(`[blueprintGen] discovery grounded on ${rows.length} prior opportunities in ${industry}`);
+    return text ? `\n${text}\n` : '';
+  } catch (err) {
+    console.warn('[blueprintGen] prior outcomes unavailable (non-fatal):', err.message);
+    return '';
+  }
+}
+
+async function runOpportunityDiscoveryStaged({ cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, blueprintId = '' }) {
   const section = parsedSections[0]; // self-titled capability — exactly one section
 
   // ── Stage 1: extract intent + identify industry problems (industry context only) ──
@@ -3040,10 +3066,15 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanati
 }
 Generate 2-4 actionItems — concrete things a real project team would need to do, review, or agree on to act on these opportunities (e.g. "Review top 2 opportunities and align on Q1 priority" reviewed by Product Owner/Technical Architect). Infer assignee/reviewer roles from what each action actually is.`;
 
+  // What became of the same advice at businesses like this one. Fetched here
+  // rather than passed in, so every caller of discovery gets it without having
+  // to know it exists.
+  const priorOutcomes = await historyBlock({ industry, blueprintId });
+
   const stage2User = `BUSINESS OBJECTIVE: ${businessObjective}
 INTENT: ${intent}
 INDUSTRY PROBLEMS IDENTIFIED: ${businessProblemsFromStage1.join(', ')}
-${companyBlock}${capabilityMapBlock}${enterpriseContext ? `\n${enterpriseContext}\n` : ''}
+${companyBlock}${capabilityMapBlock}${enterpriseContext ? `\n${enterpriseContext}\n` : ''}${priorOutcomes}
 Generate workflowSteps, highEffortActivities, and aiOpportunities as specified.`;
 
   const stage2 = await callLLM(stage2System, stage2User, 120_000, `${cap.name} (Stage 2 — opportunities)`);
@@ -3062,9 +3093,14 @@ Generate workflowSteps, highEffortActivities, and aiOpportunities as specified.`
   };
 }
 
-export async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null) {
+export async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null, blueprintId = '') {
   if (cap.name === 'AI Opportunity Discovery' && BLUEPRINT_CONFIG.generate.ctoExtras) {
-    return runOpportunityDiscoveryStaged({ cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext });
+    return runOpportunityDiscoveryStaged({
+      cap, companyProfile, businessObjective, industry, parsedSections,
+      automotiveBlueprint, enterpriseContext,
+      // Excluded from its own history: a blueprint must not be evidence for itself.
+      blueprintId,
+    });
   }
 
   const { systemPrompt, userMessage } = buildBriefPrompt({
@@ -3594,7 +3630,8 @@ export async function regenerateTransformationCapabilityAsync(blueprintId, domai
 
     const { sections, actionItems } = await runBriefGeneration(
       cap, companyProfile, businessObjective, groundingIndustry,
-      capBlueprint.sections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx
+      capBlueprint.sections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx,
+      blueprintId
     );
 
     // DEBUG: log extra fields so we can confirm LLM is generating them
@@ -4186,7 +4223,10 @@ export async function generateTransformationAsync(blueprintId, userId, businessO
         } else {
           ({ sections, actionItems } = await runBriefGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
-            parsedSections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx
+            parsedSections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx,
+            // So discovery can read what happened at similar businesses, and
+            // exclude this blueprint from its own evidence.
+            blueprintId
           ));
         }
 
@@ -4351,7 +4391,10 @@ export async function generateSpecificDomainsAsync(blueprintId, userId, business
         } else {
           ({ sections, actionItems } = await runBriefGeneration(
             capObj, companyProfile, businessObjective, groundingIndustry,
-            parsedSections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx
+            parsedSections, capBlueprint.automotiveBlueprint, combinedContext, journeyContext, transformationCtx,
+            // So discovery can read what happened at similar businesses, and
+            // exclude this blueprint from its own evidence.
+            blueprintId
           ));
         }
 

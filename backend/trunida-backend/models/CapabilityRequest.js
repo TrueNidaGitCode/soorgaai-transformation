@@ -44,6 +44,11 @@ const planSchema = new mongoose.Schema({
   /** Outside services required — WhatsApp Business, a payment provider. The
    *  customer has to connect these; the build cannot invent them. */
   connectorsNeeded: { type: [String], default: [] },
+  /** Which of Cob's opportunities the planner matched this to, if any.
+   *  Declared here as well as on the request: a subdocument is strict, so a
+   *  field the plan carries and the schema does not is dropped on write with
+   *  nothing said — and the copy stored beside it would then disagree. */
+  opportunityName: { type: String, default: '' },
 }, { _id: false });
 
 const capabilityRequestSchema = new mongoose.Schema({
@@ -54,6 +59,20 @@ const capabilityRequestSchema = new mongoose.Schema({
   need:    { type: String, required: true },
   /** Normalised form. Uniqueness is enforced on this, not on `need`. */
   needKey: { type: String, required: true },
+
+  /*
+   * Which of Cob's opportunities this is, if it is one of them.
+   *
+   * The join between Think and Execute. Cob names six to twelve opportunities
+   * per business and ranks them; most of what a customer asks for months later
+   * is the second or third item, arriving because they are ready for it now.
+   * Nothing recorded that, so a dozen predictions per customer were made and
+   * never once scored.
+   *
+   * Empty is a real answer, not a missing one: a business changes, and a need
+   * nobody foresaw is worth building too.
+   */
+  opportunityName: { type: String, default: '', index: true },
 
   // planned    — decided and planned, nothing built
   // building   — a build is running

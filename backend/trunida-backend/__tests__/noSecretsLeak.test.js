@@ -166,8 +166,21 @@ describe('the audit itself', () => {
   });
 
   it('does not treat a placeholder as a credential', () => {
-    expect(audit).toContain('const PLACEHOLDER');
-    expect(audit).toMatch(/a scanner that cries wolf/i);
+    expect(audit).toContain('PLACEHOLDER.test(l)');
+    const shapes = read('../eame-template/services/securityControls.js');
+    expect(shapes).toContain('export const PLACEHOLDER');
+    expect(shapes).toMatch(/a scanner that cries wolf/i);
+  });
+
+  it('shares one definition of a credential with the delivered application', () => {
+    /*
+     * The application runs the same check on itself as part of its own
+     * security controls. Two copies of "what counts as a secret" is two things
+     * to keep in step, and when one is tightened and the other is not, the
+     * looser one is the one that misses.
+     */
+    expect(audit).toContain("import { CREDENTIAL_SHAPES as PATTERNS, PLACEHOLDER } from '../eame-template/services/securityControls.js'");
+    expect(audit).not.toMatch(/^const PATTERNS = \[/m);
   });
 
   it('can fail a release, when asked', () => {

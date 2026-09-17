@@ -250,3 +250,95 @@ describe('the build-time half, on the Yusu screen', () => {
     expect(yusu).toMatch(/an auditor decides conformity/);
   });
 });
+
+// ── The question every customer is asking ────────────────────────────────────
+
+describe('no credential is exposed by the application itself', () => {
+  /*
+   * Svarg can audit its own repository, but a customer asking "are my keys
+   * safe" is asking about the application running in front of them. So the
+   * application answers it, in its own conformance report, against its own
+   * files — and the delivered project is the thing that gets handed over.
+   */
+  it('reports whether its own code carries a credential', async () => {
+    const c = by(await securityChecks({}), 'no-credential-in-the-code');
+    expect(c.control.id).toBe('ISO/IEC 27001 A.8.28');
+    expect(c.skipped || typeof c.passed === 'boolean').toBeTruthy();
+  });
+
+  it('reports whether anything a browser downloads carries one', async () => {
+    const c = by(await securityChecks({}), 'no-credential-served-to-a-browser');
+    expect(c.control.id).toBe('ISO/IEC 27001 A.8.12');
+  });
+
+  it('never writes a value it finds into the report', async () => {
+    /*
+     * The report is stored, shown on a screen and may be emailed. A check that
+     * puts the secret in it has leaked it a second time and more durably than
+     * the code did.
+     */
+    const src = readFileSync(new URL(S, import.meta.url), 'utf8');
+    expect(src).toContain('Returns fingerprints, never values');
+    const fn = src.slice(src.indexOf('export function credentialsIn'), src.indexOf('const PASS ='));
+    expect(fn).toContain('fp: fingerprint(m[0])');
+    // The matched text itself must not travel with the finding.
+    expect(fn).not.toMatch(/value:\s*m\[0\]/);
+  });
+
+  it('does not search somebody else\'s code', async () => {
+    // node_modules would drown a real finding in thousands of test fixtures.
+    const src = readFileSync(new URL(S, import.meta.url), 'utf8');
+    expect(src).toMatch(/SKIP_DIR = new Set\(\['node_modules'/);
+  });
+
+  it('resolves every path from the application root, not the working directory', () => {
+    /*
+     * A process started from somewhere else would read nothing and report a
+     * finding about the wrong thing — or, worse, a clean result about files it
+     * never opened.
+     */
+    const src = readFileSync(new URL(S, import.meta.url), 'utf8');
+    expect(src).not.toContain('process.cwd()');
+    expect(src).toContain('const ROOT =');
+  });
+});
+
+describe('A.5.17 — what credential this application holds', () => {
+  const providerKeys = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'GEMINI_API_KEY'];
+  const clear = () => providerKeys.forEach(k => delete process.env[k]);
+
+  it('says plainly that a Svarg-hosted application holds none', async () => {
+    /*
+     * The strongest sentence in the whole report, and the reason the gateway
+     * exists: a customer asking what happens if Svarg is breached can be
+     * answered with a fact about their deployment rather than with a policy.
+     */
+    clear();
+    process.env.SELFHOSTED_BASE_URL = 'https://svarg.example/api/gateway/v1';
+    const c = by(await securityChecks({}), 'holds-no-provider-key');
+    expect(c.passed).toBe(true);
+    expect(c.detail).toMatch(/No provider credential is present/);
+    expect(c.detail).toMatch(/token scoped to this deployment/);
+    delete process.env.SELFHOSTED_BASE_URL;
+  });
+
+  it('reports a self-hosted customer\'s own key rather than failing them for it', async () => {
+    // Their key, their choice, their rotation. The check exists to say which
+    // arrangement is in force, not to disapprove of one of them.
+    clear();
+    process.env.OPENAI_API_KEY = 'sk-something-they-supplied';
+    const c = by(await securityChecks({}), 'holds-no-provider-key');
+    expect(c.passed).toBe(true);
+    expect(c.detail).toMatch(/holds its own credential for openai/);
+    expect(c.detail).toMatch(/theirs to manage/);
+    clear();
+  });
+
+  it('never puts the key itself in the report', async () => {
+    clear();
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-do-not-print-me-anywhere';
+    const c = by(await securityChecks({}), 'holds-no-provider-key');
+    expect(JSON.stringify(c)).not.toContain('do-not-print-me');
+    clear();
+  });
+});

@@ -41,34 +41,16 @@ const liveAt = args.includes('--live') ? args[args.indexOf('--live') + 1] : '';
 
 const REPO = path.resolve(new URL('../../..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 
-/**
- * What a real credential looks like.
+/*
+ * What a real credential looks like — imported, not restated.
  *
- * Shapes only. A rule like "any long random-looking string" flags a hash, a
- * base64 image and a git sha, and a scanner that cries wolf is one people stop
- * reading — which is how the real finding gets missed.
+ * The delivered application runs the same check on itself as part of its own
+ * security controls, and two copies of "what counts as a secret" is two things
+ * to keep in step. When one is tightened and the other is not, the looser one
+ * is the one that misses.
  */
-const PATTERNS = [
-  ['OpenAI key',        /\bsk-[A-Za-z0-9]{32,}\b/],
-  ['Anthropic key',     /\bsk-ant-[A-Za-z0-9_-]{32,}\b/],
-  ['Google API key',    /\bAIza[A-Za-z0-9_-]{35}\b/],
-  ['GitHub token',      /\b(ghp|gho|ghs|ghr)_[A-Za-z0-9]{36}\b/],
-  ['GitHub fine-grained', /\bgithub_pat_[A-Za-z0-9_]{60,}\b/],
-  ['Slack token',       /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/],
-  ['AWS access key',    /\bAKIA[0-9A-Z]{16}\b/],
-  ['Private key block', /-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/],
-  /*
-   * The password has to be long enough to be one. `mongodb://u:p@host` is a
-   * test fixture, and flagging it four times from a single file is how a
-   * scanner teaches people to skim past its output — which is how the real
-   * finding gets missed. Eight characters is below any credential worth
-   * protecting and above every placeholder in this repository.
-   */
-  ['Credentialed URI',  /\b(mongodb(\+srv)?|postgres(ql)?|redis|amqp):\/\/[^\s:/@'"]+:[^\s@'"]{8,}@/],
-];
+import { CREDENTIAL_SHAPES as PATTERNS, PLACEHOLDER } from '../eame-template/services/securityControls.js';
 
-/** Placeholders. A template that shows the SHAPE of a secret is documentation. */
-const PLACEHOLDER = /(example|placeholder|replace|your[-_]?|<[^>]+>|xxx+|\.\.\.|user:password|USERNAME|PASSWORD|changeme|dummy|sample)/i;
 
 /** Enough to locate a value, never enough to use it. */
 const fingerprint = (v) => crypto.createHash('sha256').update(String(v)).digest('hex').slice(0, 8);

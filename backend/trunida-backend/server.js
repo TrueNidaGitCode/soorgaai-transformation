@@ -51,6 +51,7 @@ import CompanyBlueprint from "./models/CompanyBlueprint.js";
 import TransformationBlueprint from "./models/TransformationBlueprint.js";
 import GeneratedApplication from "./models/GeneratedApplication.js";
 import { recoverStuckConfluenceSyncs } from "./services/confluenceExtractionService.js";
+import { restorePublishedKnowledge } from "./services/industryCapabilityKnowledgeService.js";
 
 dotenv.config();
 
@@ -484,6 +485,14 @@ connectDB()
     .then(async () => {
         await recoverStuckBlueprints();
         warmCache(); // Pre-load KB files into memory
+        /*
+         * Published industry knowledge lives in .md files under
+         * knowledge_base/, and this filesystem does not survive a deploy.
+         * Restore anything an admin approved before the generator reads it,
+         * or blueprints written after a deploy are quietly less grounded than
+         * the ones written before it. Only restores files that are missing.
+         */
+        await restorePublishedKnowledge();
         await reportEmbeddingConfig();
         await reportLlmConfig();
         await reportMailConfig();

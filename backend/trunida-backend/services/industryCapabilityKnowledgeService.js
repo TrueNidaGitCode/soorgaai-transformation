@@ -371,3 +371,57 @@ export async function resolveIndustry(rawIndustry) {
   }
   return raw;
 }
+
+/**
+ * Put published knowledge-base files back on disk after a deploy.
+ *
+ * approveCapability writes an approved capability to a real .md file under
+ * KB_ENTERPRISE_ROOT, because that is the only place the generator reads from.
+ * On Railway that path is inside the container, so every deploy threw the file
+ * away. The content survived in Mongo and nothing ever put it back — so an
+ * admin curating industry knowledge was doing work with a silent expiry date,
+ * and the blueprints generated after a deploy were quietly less grounded than
+ * the ones before it.
+ *
+ * Restores only what is MISSING. A file present on disk wins: the hand-written
+ * overlays ship in the repository and a deploy is how they are updated, so
+ * overwriting them from a database copy would undo an intentional edit with no
+ * way to tell it had happened.
+ *
+ * Never throws. This runs at boot, and a knowledge base that cannot be
+ * restored is a degraded product, not a reason to refuse to start.
+ */
+export async function restorePublishedKnowledge() {
+  const report = { checked: 0, restored: 0, present: 0, failed: 0 };
+  try {
+    const docs = await IndustryCapabilityKnowledge
+      .find({ 'capabilities.status': 'published' })
+      .select('industry capabilities').lean();
+
+    for (const doc of docs) {
+      for (const cap of doc.capabilities || []) {
+        if (cap.status !== 'published' || !cap.content) continue;
+        report.checked += 1;
+
+        const target = publishedPathFor(cap.domainKbPath, doc.industry, cap.capabilityName);
+        try {
+          if (fs.existsSync(target)) { report.present += 1; continue; }
+          fs.mkdirSync(path.dirname(target), { recursive: true });
+          fs.writeFileSync(target, cap.content, 'utf-8');
+          report.restored += 1;
+          console.log(`[IndustryCapabilityKnowledge] restored ${target}`);
+        } catch (err) {
+          report.failed += 1;
+          console.warn(`[IndustryCapabilityKnowledge] could not restore ${target}: ${err.message}`);
+        }
+      }
+    }
+
+    if (report.restored || report.failed) {
+      console.log(`[IndustryCapabilityKnowledge] restore: ${JSON.stringify(report)}`);
+    }
+  } catch (err) {
+    console.warn('[IndustryCapabilityKnowledge] restore skipped:', err.message);
+  }
+  return report;
+}

@@ -85,14 +85,17 @@ export const FIXED_PATHS = [
   'services/tenantSignals.js',
   'services/turnLog.js',
   'services/selfCheck.js',
+  'services/conformance.js',
   'controllers/signalController.js',
   'routes/signalsRoutes.js',
   // Sign-in with Google through Svarg, and the application's own record of
   // who signed in. Fixed: the door is the same on every application.
   'controllers/authController.js',
   'controllers/accessController.js',
+  'controllers/conformanceController.js',
   'routes/authRoutes.js',
   'routes/accessRoutes.js',
+  'routes/conformanceRoutes.js',
 ];
 
 /**

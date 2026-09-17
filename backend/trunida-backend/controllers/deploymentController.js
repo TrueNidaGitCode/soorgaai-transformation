@@ -50,6 +50,8 @@ function publicView(d) {
       periodStart: d.usage?.periodStart || null,
     },
     limits: d.limits || {},
+    // Null means never run, which the screen says rather than reading as a pass.
+    conformance: d.conformance || null,
     createdAt: d.createdAt,
   };
 }
@@ -83,6 +85,23 @@ export async function getDeployment(req, res) {
         if (s.detail && s.detail !== dep.statusMessage) changed = true;
         if (s.detail) dep.statusMessage = s.detail;
         if (changed) await dep.save();
+
+        /*
+         * The first time it answers, ask it to check itself.
+         *
+         * Fire-and-forget: the suite asks the application three real questions
+         * and takes the better part of a minute, and this endpoint is polled by
+         * a screen watching a build. The report lands on the deployment and the
+         * next poll shows it.
+         *
+         * Once, not on every poll. Each run costs the tenant three model calls,
+         * and a screen left open would otherwise spend their cap watching.
+         */
+        if (isRunning(dep.status) && !dep.conformance) {
+          import('../services/conformanceService.js')
+            .then(({ runConformanceFor }) => runConformanceFor(String(dep._id)))
+            .catch(err => console.warn('[conformance] first run failed —', err.message));
+        }
       } catch (err) {
         console.warn('[deployment] status refresh failed —', err.message);
       }
@@ -532,5 +551,33 @@ export async function destroyDeployment(req, res) {
   } catch (err) {
     console.error('[deployment] destroy error:', err.message);
     return res.status(500).json({ error: 'Failed to remove the deployment.' });
+  }
+}
+
+/**
+ * POST .../deployment/conformance — run the AI conformance checks again.
+ *
+ * On the customer's own request, because the answer changes: connecting real
+ * data, or fixing whatever a finding named, should be checkable without
+ * waiting for anything. It costs three model calls against their own cap,
+ * which is why it is a button rather than a sweep.
+ */
+export async function runConformanceCheck(req, res) {
+  try {
+    const bp = await ownedBlueprint(req);
+    if (!bp) return res.status(404).json({ error: 'Blueprint not found or you do not have access to it.' });
+
+    const dep = await HostedDeployment.findOne({ blueprintId: bp._id });
+    if (!dep) return res.status(404).json({ error: 'There is no application to check yet.' });
+
+    const { runConformanceFor } = await import('../services/conformanceService.js');
+    const report = await runConformanceFor(String(dep._id));
+    // A report with findings is a successful request. 200 either way, and the
+    // report says which — a status code cannot tell "three findings" apart
+    // from "the check could not run", and those need different answers.
+    return res.json({ conformance: report });
+  } catch (err) {
+    console.error('[conformance] run error:', err.message);
+    return res.status(500).json({ error: 'The conformance check could not be started.' });
   }
 }

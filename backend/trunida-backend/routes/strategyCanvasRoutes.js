@@ -3,7 +3,7 @@ import { protect } from '../middleware/authMiddleware.js';
 import { recommendForBlueprint } from '../controllers/modelCatalogController.js';
 import { startBuild, getBuild } from '../controllers/eameBuildController.js';
 import { screenChat, saveArthSelection, saveDataIntent, listArthModels, recommendArthModel } from '../controllers/screenChatController.js';
-import { getDeployment, prepareInfrastructure, attachApplication, destroyDeployment, acknowledgeGovernance, redeployApplication, issueOwnerKey } from '../controllers/deploymentController.js';
+import { getDeployment, prepareInfrastructure, attachApplication, destroyDeployment, acknowledgeGovernance, redeployApplication, issueOwnerKey, runConformanceCheck } from '../controllers/deploymentController.js';
 import {
   listCapabilities,
   fetchCapabilityBlueprint,
@@ -59,6 +59,8 @@ router.post  ('/transformation-blueprint/:blueprintId/redeploy',       protect, 
 router.post  ('/transformation-blueprint/:blueprintId/owner-key',      protect, issueOwnerKey);
  router.delete('/transformation-blueprint/:blueprintId/deployment',     protect, destroyDeployment);
  router.patch ('/transformation-blueprint/:blueprintId/governance-review', protect, acknowledgeGovernance);
+ // Governance as a check on the delivered application, not a chapter about it.
+ router.post  ('/transformation-blueprint/:blueprintId/deployment/conformance', protect, runConformanceCheck);
 
 // ── Legacy: single-domain AI Strategy blueprint (kept for backwards compat) ───
 router.post('/generate-blueprint',                                                              protect, startBlueprintGeneration);

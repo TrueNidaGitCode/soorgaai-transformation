@@ -114,6 +114,22 @@ const hostedDeploymentSchema = new mongoose.Schema({
     maxRequests:  { type: Number, default: 20000 },
   },
 
+  /*
+   * What the AI conformance checks last found in this application.
+   *
+   * Governance & Ethics as a check rather than a chapter: the suite runs real
+   * questions through the delivered application's own pipeline against the
+   * customer's own data, and this is where the verdict is kept so a screen can
+   * show it without paying to re-run it.
+   *
+   * Absent means never run, which a screen must say rather than read as a
+   * pass. Strict: false so the shape can grow a check without a migration.
+   */
+  conformance: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
+
   preparedAt:      { type: Date,   default: null },
   liveAt:          { type: Date,   default: null },
   suspendedAt:     { type: Date,   default: null },

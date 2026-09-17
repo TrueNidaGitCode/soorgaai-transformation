@@ -793,7 +793,25 @@ SECTION-SPECIFIC EXTRAS — "AI Opportunity Discovery" sections only:
    Each item is a plain string, 1–3 words.
    Example: ["Validate", "Assign", "Document"]
 
-8. aiOpportunities (3 to 4 items)
+8. aiOpportunities (as many as the work genuinely supports — usually 6 to 12)
+   THE WHOLE LANDSCAPE, NOT A SHORTLIST. This is the section the customer is paying for: they
+   want to see everything AI could do for this business, and then be told where to start. A list
+   of three reads as three ideas somebody had. Prioritization (the next capability) is what
+   narrows it; discovery must not narrow it first.
+   Work through workflowSteps and highEffortActivities in turn and name every AI technique that
+   genuinely applies to each. Then add the techniques that span several steps at once, and the
+   ones that act on the business problems rather than on a single step.
+
+   COVERAGE, NOT VOLUME. Every item must be something a team could actually be funded to build:
+   - Two items that would be built as the SAME system are one item. Do not split a system into
+     its parts to lengthen the list.
+   - Never restate one opportunity in different words. "Predict fee default" and "Flag families
+     likely to miss a payment" are one opportunity, not two.
+   - A step with nothing worth doing to it is left out, not padded with something generic. Ten
+     specific opportunities are the goal; ten generic ones are worse than three specific.
+   - Every item must be grounded in something this company actually does. If the evidence does
+     not support it, it does not go in.
+
    Each item is an OBJECT with three fields: { "name": "...", "plain": "...", "why": "..." } — not a plain string.
 
    "name": the specific AI TECHNIQUE matched to one of the company's high-effort activities — not
@@ -1807,7 +1825,17 @@ function parseBriefOutput(rawSections, validTitles) {
               ? { name: String(o.name || '').trim(), plain: String(o.plain || '').trim(), why: String(o.why || '').trim() }
               : { name: String(o || '').trim(), plain: '', why: '' })
             .filter(o => o.name)
-            .slice(0, 6)
+            // Two names for one system. The instruction forbids it; this is
+            // the backstop, because asking for coverage makes a near-duplicate
+            // more likely than asking for three did.
+            .filter((o, i, all) => all.findIndex(x => sameOpportunity(x.name, o.name)) === i)
+            // Discovery is meant to show the whole landscape, so this is a
+            // backstop against a runaway answer rather than an editorial
+            // limit. It was 6, which quietly threw away the difference
+            // between "here are three ideas" and "here is everything AI could
+            // do for you" — the second being the thing customers say is worth
+            // paying for.
+            .slice(0, MAX_OPPORTUNITIES)
         : [];
 
       const opportunityClassifications = Array.isArray(b.opportunityClassifications)
@@ -1818,7 +1846,9 @@ function parseBriefOutput(rawSections, validTitles) {
               classification: String(o.classification || '').trim(),
               rationale:      String(o.rationale       || '').trim(),
             }))
-            .slice(0, 8)
+            // One per opportunity: the same ceiling, or the last few lose
+            // their classification and the section reads as half-finished.
+            .slice(0, MAX_OPPORTUNITIES)
         : [];
 
       const opportunityValues = Array.isArray(b.opportunityValues)
@@ -1830,7 +1860,8 @@ function parseBriefOutput(rawSections, validTitles) {
               focus:       String(o.focus       || '').trim(),
               outcomes:    Array.isArray(o.outcomes) ? o.outcomes.map(String).filter(Boolean).slice(0, 4) : [],
             }))
-            .slice(0, 8)
+            // One per opportunity — see opportunityClassifications above.
+            .slice(0, MAX_OPPORTUNITIES)
         : [];
 
       const rawModelLifecycleStages = Array.isArray(b.modelLifecycleStages) ? b.modelLifecycleStages : [];
@@ -2686,6 +2717,27 @@ function parseBriefOutput(rawSections, validTitles) {
 // a bigger budget, a tolerant parse, and one more attempt when the first
 // answer could not be read or had to be trimmed to be read.
 const SECTION_MAX_TOKENS = 6000;
+
+/**
+ * The most opportunities one discovery section may carry.
+ *
+ * A backstop, not an editorial choice: the instruction asks for the whole
+ * landscape and the prioritisation capability is what narrows it. This only
+ * stops a malformed answer from writing an unbounded document.
+ */
+const MAX_OPPORTUNITIES = 24;
+
+/**
+ * Whether two opportunity names are the same opportunity.
+ *
+ * Compared on their words rather than their spelling: "Predictive Fee Default
+ * Scoring" and "Predictive fee-default scoring" are one system with two
+ * labels, and showing both makes a thorough list look padded.
+ */
+function sameOpportunity(a, b) {
+  const key = (t) => String(t).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return key(a) === key(b);
+}
 
 async function askOnce(systemPrompt, userMessage, timeoutMs, capName) {
   const { text } = await Promise.race([

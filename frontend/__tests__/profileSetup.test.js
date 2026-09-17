@@ -46,6 +46,15 @@ async function loadProfileModule() {
   spy.mockRestore();
 
   return {
+    /*
+     * Returns the handler's promise, and every caller awaits it.
+     *
+     * The handler is async — it asks /profile/me before attaching the submit
+     * listener. A test that only flushed one tick could end before that,
+     * leaving the attach to happen DURING THE NEXT TEST, onto the next test's
+     * form. Two listeners, one submit, two POSTs, and a failure that only
+     * appeared when the whole suite ran.
+     */
     triggerDOMContentLoaded: () => dclHandler?.(),
   };
 }
@@ -57,8 +66,7 @@ describe('profile.js — auth guard', () => {
     // No token set — localStorage cleared by setup.js
     const { triggerDOMContentLoaded } = await loadProfileModule();
     buildProfileDOM();
-    triggerDOMContentLoaded();
-    await flushPromises();
+    await triggerDOMContentLoaded();
 
     expect(window.location.href).toContain('/login/login.html');
   });
@@ -76,8 +84,7 @@ describe('profile.js — profile already exists', () => {
     });
     const { triggerDOMContentLoaded } = await loadProfileModule();
     buildProfileDOM();
-    triggerDOMContentLoaded();
-    await flushPromises();
+    await triggerDOMContentLoaded();
 
     expect(window.location.href).toContain('/cob.html');
   });
@@ -101,8 +108,7 @@ describe('profile.js — client-side validation', () => {
 
     const { triggerDOMContentLoaded } = await loadProfileModule();
     buildProfileDOM();
-    triggerDOMContentLoaded();
-    await flushPromises();
+    await triggerDOMContentLoaded();
 
     document.getElementById('orgName').value        = '';
 
@@ -133,12 +139,15 @@ describe('profile.js — client-side validation', () => {
 
     const { triggerDOMContentLoaded } = await loadProfileModule();
     buildProfileDOM();
-    triggerDOMContentLoaded();
-    await flushPromises();
+    await triggerDOMContentLoaded();
 
     document.getElementById('orgName').value    = 'Acme';
     document.getElementById('websiteUrl').value = '';
 
+    // Cleared after the page has settled, so the count below is this test's
+    // own submit. Without it an earlier test whose async chain finishes late
+    // lands a call on this spy, and the suite fails only under load.
+    fetchSpy.mockClear();
     document.getElementById('profile-form').dispatchEvent(new Event('submit', { cancelable: true }));
     await flushPromises();
 
@@ -156,8 +165,7 @@ describe('profile.js — client-side validation', () => {
 
     const { triggerDOMContentLoaded } = await loadProfileModule();
     buildProfileDOM();
-    triggerDOMContentLoaded();
-    await flushPromises();
+    await triggerDOMContentLoaded();
 
     document.getElementById('orgName').value = '   ';
 
@@ -187,7 +195,7 @@ describe('profile.js — successful profile creation', () => {
 
     const { triggerDOMContentLoaded } = await loadProfileModule();
     buildProfileDOM();
-    triggerDOMContentLoaded();
+    await triggerDOMContentLoaded();
     // Flush: GET /profile/me + json response
     await Promise.resolve(); await Promise.resolve();
 
@@ -219,8 +227,7 @@ describe('profile.js — API error on form submit', () => {
 
     const { triggerDOMContentLoaded } = await loadProfileModule();
     buildProfileDOM();
-    triggerDOMContentLoaded();
-    await flushPromises();
+    await triggerDOMContentLoaded();
 
     document.getElementById('orgName').value         = 'Acme';
 
@@ -247,8 +254,7 @@ describe('profile.js — API error on form submit', () => {
 
     const { triggerDOMContentLoaded } = await loadProfileModule();
     buildProfileDOM();
-    triggerDOMContentLoaded();
-    await flushPromises();
+    await triggerDOMContentLoaded();
 
     document.getElementById('orgName').value         = 'Acme';
 

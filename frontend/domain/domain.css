@@ -13107,6 +13107,11 @@ a.aria-status--link:hover .aria-status-dot { background: var(--aria-accent); }
 .tr-card__title { margin: 0; font-size: 13.5px; font-weight: 700; color: #fff; }
 .tr-card__verdict { margin: 0; font-size: 12px; font-weight: 700; color: var(--aria-accent); }
 .tr-card--fail .tr-card__verdict { color: #E0766A; }
+/* Not yet run is neither a pass nor a failure: the application checks itself
+   once it is live, and drawing that as red teaches people to ignore red. */
+.tr-card--waiting { border-color: rgba(255,255,255,0.14); background: rgba(255,255,255,0.03); }
+.tr-card--waiting .tr-card__verdict { color: rgba(255,255,255,0.45); }
+.tr-card--waiting .tr-card__icon { opacity: 0.45; }
 .tr-card__why { margin: 3px 0 0; font-size: 12px; line-height: 1.45; color: rgba(255,255,255,0.55); }
 
 .tr-idle {

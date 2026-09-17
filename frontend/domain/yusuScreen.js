@@ -107,57 +107,56 @@ function renderBreadcrumb(bp) {
   return label || null;
 }
 
-/** The Governance & Ethics sections this blueprint actually produced. */
-function governanceAreas(bp) {
-  const domain = (bp.domains || []).find(d => d.domainId === 'governance-security');
-  return (domain?.capabilities || []).flatMap(c => c.sections || []).filter(s => s.title);
-}
-
 /**
- * The automated checks. Every one is evaluated against real state — the
- * governance sections the blueprint produced, and the files the project
- * builder actually emits — so a check can genuinely fail and say why. A
- * summary that always reads "Passed" would be worse than none at all.
+ * The automated checks, each read from real state so a check can genuinely
+ * fail and say why. A summary that always reads "Passed" is worse than none.
+ *
+ * Two of the three now come from the running application's own report; the
+ * third reads the files the project builder actually emits, which is a fact
+ * about the delivery rather than about behaviour and belongs here.
  */
-function runChecks(bp, manifestPaths) {
-  const gov = governanceAreas(bp);
-  const titles = gov.map(s => (s.title || '').toLowerCase());
-  const hasArea = re => titles.some(t => re.test(t));
+function runChecks(bp, manifestPaths, dep) {
   const hasFile = re => manifestPaths.some(p => re.test(p));
 
-  // A blueprint whose Governance & Ethics capability errored has no sections
-  // to check. That is a fact about the document, not the application, and
-  // the check says so rather than reading as a fault in what was built.
-  const govError = (() => {
-    const domain = (bp.domains || []).find(d => d.domainId === 'governance-security');
-    const cap = (domain?.capabilities || []).find(c => c.status === 'error');
-    return cap ? (cap.errorMessage || 'the section could not be generated') : '';
-  })();
-  const missingWhy = govError
-    ? `The blueprint's Governance & Ethics section could not be generated (${govError.length > 80 ? 'the model\'s answer could not be read' : govError}). This is about the blueprint document, not the application; regenerate it from the blueprint when convenient.`
-    : 'No Governance & Ethics content was generated for this blueprint.';
+  /*
+   * What the running application actually did when asked.
+   *
+   * These two used to read the blueprint's Governance & Ethics sections and
+   * check that the right headings existed. That measured whether a document
+   * had been written, not whether the application behaves — and when the
+   * domain was switched off for owner-operators, both went permanently red on
+   * every new blueprint, which teaches people that a red check is normal.
+   *
+   * The deployed application checks itself instead: real questions through the
+   * real pipeline against the customer's own data, grouped here by what each
+   * one claims. A check that could not be run honestly is not a pass and not a
+   * failure — it is still waiting.
+   */
+  const report = dep?.conformance || null;
 
-  const governance = (() => {
-    if (!gov.length) return { pass: false, why: missingWhy };
-    const missing = [
-      [/privacy|security/, 'data handling'],
-      [/regulatory|compliance/, 'regulatory compliance'],
-    ].filter(([re]) => !hasArea(re)).map(([, name]) => name);
-    return missing.length
-      ? { pass: false, why: `Missing coverage for ${missing.join(' and ')}.` }
-      : { pass: true, why: 'Policy compliance, data handling, access control, audit readiness' };
-  })();
-
-  const ethics = (() => {
-    if (!gov.length) return { pass: false, why: missingWhy };
-    const area = gov.find(s => /ethic/i.test(s.title || ''));
-    if (!area) return { pass: false, why: 'No Ethical AI Guidelines section was produced.' };
-    if (!(area.brief?.strategicPosition || '').trim()) {
-      return { pass: false, why: 'The Ethical AI Guidelines section has no stated commitment.' };
+  const fromReport = (standards, whenPassed) => {
+    if (!report || !report.ran) {
+      return { pass: null, why: report?.reason || 'Runs once the application is live.' };
     }
-    return { pass: true, why: 'Fairness, safety, bias assessment, transparency and responsible AI' };
-  })();
+    const mine = (report.checks || []).filter(c => standards.includes(c.standard));
+    if (!mine.length) return { pass: null, why: 'This application has not reported on these yet.' };
+    const failed = mine.filter(c => c.outcome === 'failed');
+    if (failed.length) return { pass: false, why: failed[0].detail || failed[0].name };
+    const skipped = mine.filter(c => c.outcome === 'skipped');
+    if (skipped.length === mine.length) return { pass: null, why: skipped[0].detail };
+    return {
+      pass: true,
+      why: skipped.length ? `${whenPassed} (${skipped.length} could not be checked)` : whenPassed,
+    };
+  };
 
+  const governance = fromReport(
+    ['Answer validity', 'Traceability'],
+    'Figures match the records, unanswerable questions are refused, every answer names its sources');
+
+  const ethics = fromReport(
+    ['Data privacy & security', 'Trust'],
+    'Hidden instructions ignored, contact details not repeated, generated samples labelled');
   const security = (() => {
     if (!manifestPaths.length) return { pass: false, why: 'The project manifest could not be read.' };
     const gaps = [
@@ -189,7 +188,7 @@ function runChecks(bp, manifestPaths) {
   ];
 }
 
-function renderChecks(bp) {
+function renderChecks(bp, dep) {
   const wrap = document.getElementById('yusu-checks');
   const status = document.getElementById('yusu-run-status');
   const verdict = document.getElementById('yusu-verdict');
@@ -212,40 +211,61 @@ function renderChecks(bp) {
     return [];
   }
 
-  const results = runChecks(bp, _manifestPaths);
-  const allPass = results.every(r => r.pass);
+  const results = runChecks(bp, _manifestPaths, dep);
+  /*
+   * Three states, not two. A check on the running application cannot report
+   * until the application is running, and drawing "not yet" as a failure is
+   * how a screen teaches people that red is normal and worth ignoring.
+   */
+  const failed  = results.filter(r => r.pass === false);
+  const waiting = results.filter(r => r.pass !== true && r.pass !== false);
+  const allPass = !failed.length && !waiting.length;
+
+  const verdictWord = (r) => {
+    if (r.pass === true) return '&#10003; Passed';
+    if (r.pass === false) return '&#9888; Needs attention';
+    return '&#8943; Waiting';
+  };
 
   wrap.innerHTML = results.map(r => `
-    <div class="tr-card${r.pass ? '' : ' tr-card--fail'}">
+    <div class="tr-card${r.pass === false ? ' tr-card--fail' : ''}${r.pass === true || r.pass === false ? '' : ' tr-card--waiting'}">
       <span class="tr-card__icon">${r.icon}</span>
       <p class="tr-card__title">${esc(r.title)}</p>
       <p class="tr-card__why">${esc(r.why)}</p>
-      <p class="tr-card__verdict">${r.pass ? '&#10003; Passed' : '&#9888; Needs attention'}</p>
+      <p class="tr-card__verdict">${verdictWord(r)}</p>
     </div>
   `).join('');
 
-  setStatus(allPass ? 'Completed' : 'Needs attention', allPass ? '' : 'bad');
+  setStatus(
+    allPass ? 'Completed' : failed.length ? 'Needs attention' : 'Waiting on the application',
+    allPass ? '' : failed.length ? 'bad' : 'pending');
   if (sub) {
     sub.textContent = allPass
       ? 'Your application has passed all required checks.'
-      : 'One or more checks need attention. They do not hold the application back; the details are below.';
+      : failed.length
+        ? 'One or more checks need attention. They do not hold the application back; the details are below.'
+        : 'The application checks itself once it is live. Nothing here is holding it back.';
   }
 
   // The verdict is the shield beside the tiles. It says "All checks passed"
   // only when they all did; a failure is drawn as one, not softened.
   verdict.style.display = '';
-  verdict.className = 'tr-verdict yu-gov__verdict' + (allPass ? '' : ' tr-verdict--fail');
+  verdict.className = 'tr-verdict yu-gov__verdict' + (failed.length ? ' tr-verdict--fail' : '');
   verdict.innerHTML = `
-    <span class="yu-shield${allPass ? '' : ' yu-shield--fail'}" aria-hidden="true">
+    <span class="yu-shield${failed.length ? ' yu-shield--fail' : ''}" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        ${allPass ? '<polyline points="9 12 11 14 15 10"/>' : '<line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>'}
+        ${failed.length ? '<line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>' : '<polyline points="9 12 11 14 15 10"/>'}
       </svg>
     </span>
-    <strong class="yu-gov__verdict-title">${allPass ? 'All checks passed' : 'Some checks need attention'}</strong>
-    <span class="yu-gov__verdict-sub">${allPass
-      ? 'Ready for deployment to your environment.'
-      : 'Worth resolving; the application goes live regardless.'}</span>`;
+    <strong class="yu-gov__verdict-title">${
+      allPass ? 'All checks passed'
+      : failed.length ? 'Some checks need attention'
+      : 'Checks run once it is live'}</strong>
+    <span class="yu-gov__verdict-sub">${
+      allPass ? 'Ready for deployment to your environment.'
+      : failed.length ? 'Worth resolving; the application goes live regardless.'
+      : 'The application asks itself three real questions and reports what it found.'}</span>`;
 
   return results;
 }
@@ -257,7 +277,7 @@ function renderChecks(bp) {
 function renderPipeline(bp, dep) {
   const pushed = !!bp.eameDelivery?.repoName;
   const live = dep && ['live', 'suspended'].includes(dep.status);
-  const checksPass = _checksRun && runChecks(bp, _manifestPaths).every(r => r.pass);
+  const checksPass = _checksRun && runChecks(bp, _manifestPaths, dep).every(r => r.pass);
 
   // A repository that exists is proof the build happened, whether or not the
   // manifest has been fetched yet this visit. Keying Build purely off an
@@ -320,7 +340,7 @@ function yusuActs(bp, dep) {
   const building = dep?.status === 'attaching';
   const deployFailed = dep?.status === 'failed' || !!_failed;
   const prepDone = !!_actTime.prep || pushed || _manifestPaths.length > 0;
-  const results = _checksRun ? runChecks(bp, _manifestPaths) : [];
+  const results = _checksRun ? runChecks(bp, _manifestPaths, dep) : [];
   const testsWord = !_checksRun ? '' : results.every(r => r.pass) ? 'Passed' : 'Needs attention';
   return [
     { state: prepDone ? 'done' : _running ? 'active' : 'waiting', word: prepDone ? 'Completed' : _running ? 'Running' : 'Pending', time: _actTime.prep },
@@ -535,7 +555,7 @@ function renderHandover(bp, dep) {
 function render(bp, dep) {
   _dep = dep;
   renderBreadcrumb(bp);
-  const results = renderChecks(bp);
+  const results = renderChecks(bp, dep);
   renderPipeline(bp, dep);
   renderHandover(bp, dep);
 

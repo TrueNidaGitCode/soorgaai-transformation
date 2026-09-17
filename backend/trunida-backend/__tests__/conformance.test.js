@@ -34,6 +34,17 @@ const answer = vi.fn();
 const catalogue = vi.fn();
 vi.mock('../eame-template/services/answerService.js', () => ({ answer, catalogue }));
 
+/*
+ * The security controls are a separate family with their own tests. Stubbed
+ * here so these tests keep counting the behavioural checks they were written
+ * about — and because the real ones read the working directory, which in this
+ * process is Svarg itself rather than a delivered application.
+ */
+vi.mock('../eame-template/services/securityControls.js', () => ({
+  securityChecks: async () => [],
+  CONTROLS: new Proxy({}, { get: (_, k) => ({ id: String(k), name: String(k) }) }),
+}));
+
 const T = '../eame-template/services/conformance.js';
 let run;
 

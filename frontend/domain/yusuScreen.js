@@ -176,9 +176,25 @@ function runChecks(bp, manifestPaths, dep) {
     if (manifestPaths.some(p => /(^|\/)\.env$/.test(p))) {
       return { pass: false, why: 'The project contains a real .env file — secrets must not be committed.' };
     }
-    return gaps.length
-      ? { pass: false, why: `The project is missing ${gaps.join(', ')}.` }
-      : { pass: true, why: 'Vulnerability scan, dependency check, configuration validation' };
+    /*
+     * What this check is allowed to say it did.
+     *
+     * It used to pass with "Vulnerability scan, dependency check,
+     * configuration validation" — three activities none of which it performs.
+     * It reads filenames in the delivered project. That is a real and useful
+     * control, and it is not a vulnerability scan; a customer shown that line
+     * in a security conversation would be being told something untrue.
+     *
+     * The running application's own security controls are in the conformance
+     * report and carry the ISO control each one evidences. This check is the
+     * build-time half: what shipped, before anything ran.
+     */
+    if (gaps.length) return { pass: false, why: `The project is missing ${gaps.join(', ')}.` };
+    return {
+      pass: true,
+      why: 'No secrets committed, sign-in enforced, configuration supplied by the environment '
+         + '(ISO/IEC 27001 A.8.9, A.8.5). Behaviour is checked against the running application.',
+    };
   })();
 
   return [
@@ -263,7 +279,7 @@ function renderChecks(bp, dep) {
       : failed.length ? 'Some checks need attention'
       : 'Checks run once it is live'}</strong>
     <span class="yu-gov__verdict-sub">${
-      allPass ? 'Ready for deployment to your environment.'
+      allPass ? 'Evidence for named ISO/IEC 42001 and 27001 controls. Those standards certify a management system, not an application — an auditor decides conformity.'
       : failed.length ? 'Worth resolving; the application goes live regardless.'
       : 'The application asks itself three real questions and reports what it found.'}</span>`;
 

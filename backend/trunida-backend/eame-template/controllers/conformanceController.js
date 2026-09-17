@@ -84,7 +84,13 @@ export function svargOrOwner(protect, ownerOnly) {
 /** POST /api/conformance — run the checks now and return what they found. */
 export async function runReport(req, res) {
   try {
-    const report = await runConformance();
+    /*
+     * The express app, so the security controls can knock on the real routes
+     * with no credentials. req.app is the running application itself — the
+     * one with whatever middleware was actually mounted, which is the only
+     * version worth testing.
+     */
+    const report = await runConformance({ app: req.app });
     return res.json(report);
   } catch (err) {
     // Never a 500 with a stack. The caller is a machine that has to record

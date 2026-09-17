@@ -86,6 +86,7 @@ export const FIXED_PATHS = [
   'services/turnLog.js',
   'services/selfCheck.js',
   'services/conformance.js',
+  'services/securityControls.js',
   'controllers/signalController.js',
   'routes/signalsRoutes.js',
   // Sign-in with Google through Svarg, and the application's own record of

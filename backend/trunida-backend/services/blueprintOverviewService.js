@@ -26,7 +26,7 @@
  */
 
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
-import HostedDeployment from '../models/HostedDeployment.js';
+import HostedDeployment, { isRunning } from '../models/HostedDeployment.js';
 import CapabilityRequest from '../models/CapabilityRequest.js';
 import { resolvePlan, PLANS, UPGRADE_PATH } from './entitlements.js';
 
@@ -92,6 +92,17 @@ export function resolveOpportunities(bp) {
  */
 function state(bp, dep) {
   if (dep?.status === 'live')                        return { key: 'live',      label: 'Live' };
+  /*
+   * Degraded is SERVING. Its own health check reports something missing — a
+   * database it cannot reach, a dataset it cannot read — and the customer can
+   * still open it and use whatever does work.
+   *
+   * Without this it fell past every branch below to 'Built', which is the same
+   * mistake as the 'attaching' one described next: the page would stop
+   * offering the link to an application the customer is using right now.
+   * Telling them it is unwell is right; telling them it does not exist is not.
+   */
+  if (dep?.status === 'degraded')                    return { key: 'live',      label: 'Live', unwell: true };
   /*
    * An application that has been live before and is 'attaching' is STILL
    * SERVING. The live-update sweep sets that word on every push and only
@@ -230,8 +241,14 @@ export async function blueprintsOverview(userId) {
         // An address worth offering: one that answers. A queued or failed
         // application would hand out a link to an error page, but one being
         // updated is serving its previous version and opens fine.
-        app: (dep?.status === 'live' || (dep?.status === 'attaching' && dep?.liveAt)) && dep?.railway?.url
-          ? { url: dep.railway.url, liveAt: dep.liveAt || null, updating: dep.status === 'attaching' }
+        app: (isRunning(dep?.status) || (dep?.status === 'attaching' && dep?.liveAt)) && dep?.railway?.url
+          ? {
+              url: dep.railway.url,
+              liveAt: dep.liveAt || null,
+              updating: dep.status === 'attaching',
+              // Serving, and saying it has a problem. The link still opens.
+              unwell: dep.status === 'degraded',
+            }
           : null,
         deployment: dep ? { status: dep.status, message: dep.statusMessage || '' } : null,
         features: featuresOf.get(id) || [],

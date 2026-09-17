@@ -18,7 +18,7 @@
  */
 
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
-import HostedDeployment from '../models/HostedDeployment.js';
+import HostedDeployment, { isRunning } from '../models/HostedDeployment.js';
 import { issueToken } from '../services/gatewayService.js';
 import crypto from 'crypto';
 import { requireEntitlement, deploymentCeilingUsd } from '../services/entitlements.js';
@@ -70,7 +70,7 @@ export async function getDeployment(req, res) {
 
     // A service that exists is not a service that serves — Railway still has
     // to build it. Ask, so the screen never claims live before it is.
-    if (['attaching', 'live'].includes(dep.status) && dep.railway?.serviceId) {
+    if (['attaching', 'live', 'degraded'].includes(dep.status) && dep.railway?.serviceId) {
       try {
         const s = await getDeployTarget().status({ deployment: dep });
         let changed = false;
@@ -116,7 +116,7 @@ export async function prepareInfrastructure(req, res) {
     }
 
     const existing = await HostedDeployment.findOne({ blueprintId: bp._id });
-    if (existing && ['prepared', 'attaching', 'live', 'suspended'].includes(existing.status)) {
+    if (existing && ['prepared', 'attaching', 'live', 'degraded', 'suspended'].includes(existing.status)) {
       return res.status(409).json({
         error: 'An environment is already prepared for this blueprint.',
         deployment: publicView(existing),
@@ -252,7 +252,7 @@ export async function attachApplication(req, res) {
       } catch (err) {
         console.warn('[deployment] pre-attach status check failed —', err.message);
       }
-      if (dep.status === 'live') {
+      if (isRunning(dep.status)) {
         return res.json({ deployment: publicView(dep), alreadyLive: true });
       }
     }
@@ -264,6 +264,7 @@ export async function attachApplication(req, res) {
       const reason = !dep
         ? 'Prepare the environment on the Aria screen before deploying.'
         : dep.status === 'live'      ? 'This application is already running.'
+        : dep.status === 'degraded'  ? 'This application is already running, though it reports a problem — open it to see what its health check says.'
         : dep.status === 'attaching' ? 'A deployment is already in progress — it is still building.'
         : dep.status === 'preparing' ? 'The environment is still being prepared.'
         : dep.status === 'suspended' ? 'This deployment is suspended.'

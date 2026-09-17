@@ -983,7 +983,7 @@ function renderOnboarding(s) {
       <td>${countryCell(r.country)}</td>
       <td>${esc(clip(r.objective, 60))}</td>
       <td>${r.liveCount}</td>
-      <td class="sg-note ${r.quiet ? 'sg-blocked' : ''}">${esc(r.note)}</td>
+      <td class="sg-note ${r.degraded || r.quiet ? 'sg-blocked' : ''}">${esc(r.note)}</td>
     </tr>`);
 }
 

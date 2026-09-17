@@ -121,4 +121,25 @@ const hostedDeploymentSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+/**
+ * Is there an application answering at this address right now?
+ *
+ * 'degraded' was added the day the health check learned to say no, and it
+ * means SERVING BUT UNWELL — the address answers, the customer can open it,
+ * and its own /api reports something missing. It is not 'failed', which never
+ * started, and not 'attaching', which is not answering yet.
+ *
+ * Every existing reader asked `status === 'live'` and so read a degraded
+ * application as no application at all. That is a different lie from the one
+ * degraded was introduced to stop, and a worse one for the reader who is
+ * looking at a customer actively using the thing: the sales board showed
+ * nobody onboarding, and the customer's own screen would have stopped offering
+ * them the link to an application that works.
+ *
+ * So: one predicate, imported. A seventh reader added later gets the answer
+ * right by asking the same question, which is the part that kept going wrong.
+ */
+export const RUNNING = ['live', 'degraded'];
+export const isRunning = (status) => RUNNING.includes(status);
+
 export default mongoose.models.HostedDeployment || mongoose.model('HostedDeployment', hostedDeploymentSchema);

@@ -157,7 +157,7 @@ export async function screenChat(req, res) {
       context.model            = dep?.model?.displayName || bp.arthSelection?.displayName || '';
 
     } else if (screen === 'yusu') {
-      const { default: HostedDeployment } = await import('../models/HostedDeployment.js');
+      const { default: HostedDeployment, isRunning } = await import('../models/HostedDeployment.js');
       const dep = await HostedDeployment.findOne({ blueprintId }).lean();
       const govDomain = (bp.domains || []).find(d => d.domainId === 'governance-security');
       const govAreas = (govDomain?.capabilities || [])
@@ -170,7 +170,9 @@ export async function screenChat(req, res) {
       context.checks = [
         { title: 'A model is chosen', ok: !!bp.arthSelection?.modelId, fix: 'choose one on Aria' },
         { title: 'An environment is ready',
-          ok: ['prepared', 'live'].includes(dep?.status) || dep?.hosting === 'self',
+          // An environment that is running is certainly ready, whether or not
+          // the application inside it is currently well.
+          ok: ['prepared', 'live', 'degraded'].includes(dep?.status) || dep?.hosting === 'self',
           fix: 'prepare it on Aria' },
         { title: 'The application is built', ok: !!bp.eameDelivery?.repoName, fix: 'build and push it on Eame' },
         { title: 'Governance is accepted',
@@ -180,7 +182,10 @@ export async function screenChat(req, res) {
       context.governanceAreas = govAreas;
       context.governanceAccepted = !!bp.governanceReview?.acknowledged;
       context.hosting  = dep?.hosting || '';
-      context.live     = dep?.status === 'live';
+      // Yusu must not tell somebody their application is not running while
+      // they are looking at it. Unwell is a separate fact, carried separately.
+      context.live     = isRunning(dep?.status);
+      context.unwell   = dep?.status === 'degraded';
       context.url      = dep?.railway?.url || '';
       context.model    = dep?.model?.displayName || bp.arthSelection?.displayName || '';
       context.costUsd  = dep?.usage?.costUsd || 0;

@@ -111,7 +111,37 @@ describe('an application being updated is still an application that is running',
   it('still offers the address, because the host serves the old version until the new one is healthy', async () => {
     const src = await import('fs').then(fs => fs.readFileSync(
       new URL('../services/blueprintOverviewService.js', import.meta.url), 'utf8'));
-    expect(src).toMatch(/dep\?\.status === 'live' \|\| \(dep\?\.status === 'attaching' && dep\?\.liveAt\)/);
+    // Asserted through the predicate rather than through the exact expression
+    // it used to be written as: the set of statuses that count as running grew
+    // by one ('degraded'), and a test pinned to the old literal failed on a
+    // change that was correct. What must hold is that the address is offered
+    // whenever something is serving — running, or updating over a version that
+    // already served.
+    expect(src).toMatch(/app: \(isRunning\(dep\?\.status\) \|\| \(dep\?\.status === 'attaching' && dep\?\.liveAt\)\)/);
+  });
+
+  it('offers the address of an application that is running but unwell', async () => {
+    /*
+     * Degraded is serving. Its health check reports a missing database or an
+     * unreadable dataset, and the customer can still open it and use what
+     * works — so the link stays, with the fact attached.
+     *
+     * Before this, degraded fell past every branch in state() to 'Built', and
+     * the page would have stopped offering the link to an application somebody
+     * was using at that moment. That is the same mistake as the 'attaching'
+     * one above, in a new status.
+     */
+    const { isRunning } = await import('../models/HostedDeployment.js');
+    expect(isRunning('degraded')).toBe(true);
+    expect(isRunning('live')).toBe(true);
+    for (const s of ['queued', 'preparing', 'prepared', 'attaching', 'failed', 'suspended', 'destroyed']) {
+      expect(isRunning(s), s).toBe(false);
+    }
+
+    const src = await import('fs').then(fs => fs.readFileSync(
+      new URL('../services/blueprintOverviewService.js', import.meta.url), 'utf8'));
+    expect(src).toMatch(/dep\?\.status === 'degraded'\)\s+return \{ key: 'live'/);
+    expect(src).toMatch(/unwell: dep\.status === 'degraded'/);
   });
 
   it('does not claim an application that has never been live is live', () => {

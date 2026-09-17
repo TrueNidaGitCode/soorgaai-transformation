@@ -39,7 +39,7 @@
 import { User } from '../models/user.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
-import HostedDeployment from '../models/HostedDeployment.js';
+import HostedDeployment, { isRunning } from '../models/HostedDeployment.js';
 import UsageLedger from '../models/UsageLedger.js';
 import AccountPlan from '../models/AccountPlan.js';
 import ColdLead from '../models/ColdLead.js';
@@ -156,7 +156,10 @@ export async function collectSignals() {
 
   const liveByUser = new Map();
   for (const d of deployments) {
-    if (d.status !== 'live') continue;
+    // Degraded counts. The application is serving and the customer is using
+    // it; that it reports a missing dataset is a note on the row, not a reason
+    // to tell the board nobody has launched anything.
+    if (!isRunning(d.status)) continue;
     const k = String(d.userId);
     if (!liveByUser.has(k)) liveByUser.set(k, []);
     liveByUser.get(k).push(d);
@@ -585,17 +588,24 @@ export async function collectSignals() {
       const requests = live.reduce((n, d) => n + (d.usage?.requests || 0), 0);
       const last = live.map(d => d.usage?.lastRequestAt).filter(Boolean).sort().pop();
       const quiet = requests === 0 || (daysAgo(last) ?? 99) > QUIET_DAYS;
+      // Serving, but its own health check says something is missing. This
+      // outranks every other note on the row: a customer using an application
+      // that cannot reach its database is the call to make today.
+      const unwell = live.find(d => d.status === 'degraded');
       onboarding.push({
         ...base,
         at: last || live[0].liveAt,
         liveCount: live.length,
         requests,
         quiet,
+        degraded: !!unwell,
         url: live[0].railway?.url || '',
         objective: bpById.get(String(live[0].blueprintId))?.businessObjective || '',
-        note: requests === 0
-          ? `live ${age(live[0].liveAt)}, never queried — nobody is using it`
-          : `${requests} queries, last ${age(last)} ago${quiet ? ' — going quiet' : ''}`,
+        note: unwell
+          ? `running but unwell — ${unwell.statusMessage || 'its health check is failing'}`
+          : requests === 0
+            ? `live ${age(live[0].liveAt)}, never queried — nobody is using it`
+            : `${requests} queries, last ${age(last)} ago${quiet ? ' — going quiet' : ''}`,
       });
       continue;
     }
@@ -604,7 +614,7 @@ export async function collectSignals() {
     const approvedNotBuilt = bps.filter(b => b.opportunityApproval?.approved && !appsByBp.has(String(b._id)));
     const builtNotLive = bps.filter(b => {
       const app = appsByBp.get(String(b._id));
-      return app?.status === 'passed' && depByBp.get(String(b._id))?.status !== 'live';
+      return app?.status === 'passed' && !isRunning(depByBp.get(String(b._id))?.status);
     });
 
     let note;

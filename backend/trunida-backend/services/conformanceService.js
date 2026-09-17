@@ -122,6 +122,9 @@ export async function runConformanceFor(deploymentId) {
     passed: report.passed || 0,
     failed: report.failed || 0,
     skipped: report.skipped || 0,
+    // Nothing could be asked, and it was not this application's doing — a
+    // provider with no credit is Svarg's to fix, not a customer's finding.
+    blocked: String(report.blocked || '').slice(0, 300),
     dataset: report.dataset || null,
     checks: report.checks.slice(0, 40).map(c => ({
       id: String(c.id || '').slice(0, 60),
@@ -147,7 +150,10 @@ export async function runConformanceFor(deploymentId) {
  */
 export function conformanceSummary(report) {
   if (!report || !report.ran) return report?.reason || 'These checks have not been run yet.';
+  // Before any tally: nothing was checked, so no tally would mean anything.
+  if (report.blocked) return `Nothing could be checked — ${report.blocked}`;
   if (report.ok && !report.skipped) return `All ${report.passed} checks passed.`;
   if (report.ok) return `${report.passed} passed, ${report.skipped} could not be checked.`;
+  if (!report.failed) return `Nothing could be checked — all ${report.skipped} were skipped.`;
   return `${report.failed} of ${report.passed + report.failed} checks failed.`;
 }

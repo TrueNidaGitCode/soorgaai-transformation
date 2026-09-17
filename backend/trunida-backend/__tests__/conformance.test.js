@@ -346,3 +346,85 @@ describe('the domain it replaces', () => {
     }
   });
 });
+
+// ── Whose fault was it ───────────────────────────────────────────────────────
+//
+// Found by the first live run, which is why it was worth spending the money on.
+// The provider was out of credit, and the report read "a number it states is
+// the number in the records: FAILED" — a finding about the customer's
+// application for something that was Svarg's to fix. That is the false red that
+// teaches people to ignore red, and it is the same mistake the Yusu screen had
+// been making with two permanently failing checks.
+
+describe('a failure that is Svarg\'s, not the application\'s', () => {
+  const outOfCredit = 'The model provider rejected the request for lack of credit. This is on Svarg to resolve, not your application.';
+
+  it('does not record a provider with no credit as the application failing', async () => {
+    answer.mockRejectedValue(new Error(outOfCredit));
+    const r = await run();
+    const c = by(r, 'counts-are-correct');
+    expect(c.passed).toBeUndefined();
+    expect(c.skipped).toBe(true);
+    expect(c.detail).toMatch(/lack of credit/);
+  });
+
+  it('records nothing as failed when nothing could be asked', async () => {
+    answer.mockRejectedValue(new Error(outOfCredit));
+    const r = await run();
+    expect(r.failed).toBe(0);
+    expect(r.skipped).toBe(r.checks.length);
+    // Not ok: "we could not check" must never read like "we checked and it
+    // was fine". failed === 0 alone used to make this true, which is the same
+    // confident emptiness the suite exists to catch, one level up.
+    expect(r.ok).toBe(false);
+    expect(r.blocked).toMatch(/lack of credit/);
+  });
+
+  it('says once at the top why nothing could be asked', async () => {
+    // Rather than leaving it to be inferred from eight identical skips.
+    answer.mockRejectedValue(new Error('The model provider is rate limiting requests. Retry shortly.'));
+    expect((await run()).blocked).toMatch(/rate limiting/);
+  });
+
+  it('still fails the application for a failure that is genuinely its own', async () => {
+    answer.mockRejectedValue(new Error('Cannot read properties of undefined (reading \'rows\')'));
+    const r = await run();
+    expect(by(r, 'counts-are-correct').passed).toBe(false);
+    expect(r.blocked).toBe('');
+  });
+
+  it('says every check could not be run, rather than "no answer to inspect"', async () => {
+    answer.mockRejectedValue(new Error(outOfCredit));
+    for (const c of (await run()).checks) {
+      expect(c.detail, c.id).toMatch(/lack of credit/);
+    }
+  });
+});
+
+describe('ok means something was actually checked', () => {
+  it('is not ok when every check was skipped, however few failed', async () => {
+    catalogue.mockResolvedValue([{ name: 'Empty', rows: 0, columns: [] }]);
+    answer.mockRejectedValue(new Error('The model provider could not be reached.'));
+    const r = await run();
+    expect(r.failed).toBe(0);
+    expect(r.passed).toBe(0);
+    expect(r.ok).toBe(false);
+  });
+
+  it('is ok when something passed and nothing failed', async () => {
+    const r = await run();
+    expect(r.passed).toBeGreaterThan(0);
+    expect(r.ok).toBe(true);
+  });
+
+  it('leads the summary with why nothing could be checked, before any tally', async () => {
+    const { conformanceSummary } = await import('../services/conformanceService.js');
+    expect(conformanceSummary({ ran: true, blocked: 'no credit', passed: 0, failed: 0, skipped: 8 }))
+      .toBe('Nothing could be checked — no credit');
+    expect(conformanceSummary({ ran: true, blocked: '', passed: 0, failed: 0, skipped: 8 }))
+      .toMatch(/Nothing could be checked/);
+    expect(conformanceSummary(null)).toMatch(/have not been run yet/);
+    expect(conformanceSummary({ ran: true, ok: true, passed: 8, failed: 0, skipped: 0 }))
+      .toBe('All 8 checks passed.');
+  });
+});

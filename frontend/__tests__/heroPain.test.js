@@ -14,9 +14,11 @@
  * the integration each have a different owner, and nobody owns the path
  * between them.
  *
- * Then the part that does the recognising — four problems in plain operational
- * language, each carrying a full sentence into the objective box, because the
- * blank field is where a first-time visitor leaves.
+ * Four recognisable problems were tried in the hero alongside this and taken
+ * out again: they pushed the primary action below the fold on a laptop, which
+ * costs more than the recognition was buying. The objective box still accepts
+ * one in ?objective=, so a link sent to a named prospect can open with their
+ * own problem already in it — which is where that idea actually belongs.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -69,39 +71,22 @@ describe('the hero speaks to the reader who is actually arriving', () => {
   });
 });
 
-describe('four problems somebody recognises', () => {
-  const items = [...hero.matchAll(/class="mkt-pain__item" href="([^"]+)">([^<]+)</g)];
-
-  it('offers several, in the reader\u2019s own operational language', () => {
-    expect(items.length).toBeGreaterThanOrEqual(4);
-    for (const [, , label] of items) {
-      // A sentence about their work, not a category name. "Quality
-      // inspection" is a heading; "every board is inspected by eye" is
-      // somebody's Tuesday.
-      expect(label.length).toBeGreaterThan(40);
-      // A full sentence, which is the test that separates a situation somebody
-      // recognises from a category nobody does.
-      expect(label.trim().endsWith('.'), label).toBe(true);
-      expect(label.trim().split(' ').length).toBeGreaterThan(7);
-    }
+describe('the hero stays one idea and one action', () => {
+  it('does not stack a second thing to read above the button', () => {
+    /*
+     * The pain cards lived here briefly. On a 900px laptop they pushed
+     * "Describe your problem" to the bottom edge of the viewport, and a
+     * primary action below the fold is worth less than any copy above it.
+     */
+    expect(hero).not.toContain('mkt-pain');
+    const beforeCta = hero.slice(0, hero.indexOf('mkt-cta-hero'));
+    // Eyebrow, heading, subheading. Nothing else between the reader and the
+    // thing they are meant to press.
+    expect((beforeCta.match(/<p |<h1 /g) || []).length).toBeLessThanOrEqual(3);
   });
 
-  it('carries a fuller sentence into the objective box', () => {
-    for (const [, href] of items) {
-      expect(href.startsWith('/cob.html?objective=')).toBe(true);
-      const obj = decodeURIComponent(href.split('objective=')[1]);
-      // Long enough to be worth generating on. The short line is what fits on
-      // a card; the box needs the paragraph that makes a blueprint possible.
-      expect(obj.length).toBeGreaterThan(120);
-      // First person: the objective has to read as the customer describing
-      // their own business, which is what makes it worth generating on.
-      expect(obj).toMatch(/\b(we|our)\b/i);
-    }
-  });
-
-  it('gives each one a distinct problem', () => {
-    const labels = items.map(([, , l]) => l);
-    expect(new Set(labels).size).toBe(labels.length);
+  it('leaves no stylesheet rules behind for markup that is gone', () => {
+    expect(read('marketing.css')).not.toContain('mkt-pain');
   });
 });
 
@@ -140,12 +125,13 @@ describe('the box on the other side is not empty', () => {
 });
 
 describe('the stylesheet reaches the browser', () => {
-  it('is cache-busted past the version that had no pain block', () => {
+  it('is cache-busted on every edit', () => {
     // Five files on domain.html taught this lesson once already: a stylesheet
-    // edit behind a stale ?v= is a UI bug nobody can reproduce.
-    const v = Number(html.match(/marketing\.css\?v=(\d+)/)[1]);
-    expect(v).toBeGreaterThanOrEqual(3);
-    expect(read('marketing.css')).toContain('.mkt-pain__item');
+    // edit behind a stale ?v= is a UI bug nobody can reproduce. A deletion is
+    // an edit too — rules whose markup is gone are harmless, but the habit of
+    // bumping on every change is what catches the one that is not.
+    const v = Number(html.match(/marketing[.]css[?]v=([0-9]+)/)[1]);
+    expect(v).toBeGreaterThanOrEqual(4);
   });
 
   it('bumps cob.html past the version with no prefill', () => {

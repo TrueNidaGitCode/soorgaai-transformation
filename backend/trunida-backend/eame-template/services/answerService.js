@@ -670,6 +670,27 @@ export function allowedNumbers(groups, cross) {
     if (g.rule) { const n = Number(String(g.rule).split(' ').pop()); if (!Number.isNaN(n)) ok.add(n); }
   }
   ok.add(cross.issues); ok.add(cross.people); ok.add(cross.both.length);
+
+  /*
+   * Every number the writer was actually shown.
+   *
+   * This used to allow only the COUNTS — records, distinct, the threshold in a
+   * rule — while the facts handed to the writer also carry sample rows, cells
+   * and all: "SES-4412 · 2024-03-13 · U16". So the writer was given a session
+   * date and then forbidden to repeat it. It wrote "sessions on 13 and 15
+   * March", 13 and 15 were not counts, the answer was rejected, asked again,
+   * rejected again, and replaced by a composed fallback.
+   *
+   * That is what a live customer application did when asked how many sessions
+   * it held: it answered with a list of dates, because the only path left was
+   * the safety net, and the net does not know what was asked.
+   *
+   * The prompt calls the facts "the only numbers you may use". Checking against
+   * exactly that removes a contradiction rather than loosening a guard: a
+   * figure in the facts came out of the records. One invented anywhere else is
+   * still caught.
+   */
+  for (const m of String(factsText(groups, cross)).matchAll(/\d+/g)) ok.add(Number(m[0]));
   return ok;
 }
 
@@ -716,7 +737,31 @@ function nameList(items, cap = 6) {
  * So it names people, like the model is now asked to, and it reads as English
  * whether or not anyone ever looks at the table underneath.
  */
-export function composeAnswer(groups, cross) {
+/**
+ * A label put beside the number 1.
+ *
+ * Labels are written plural because they usually describe several things —
+ * "Scheduled sessions" — and "There is 1 scheduled sessions" reads as a bug
+ * in the sentence rather than an answer.
+ *
+ * Only the head noun changes. That is the last word in "Scheduled sessions"
+ * and the first in "Payments in progress", so a preposition marks where it
+ * ends. A label with no plural head — "Absent this week" — is left alone.
+ */
+const PREPOSITION = /^(in|on|at|for|with|of|from|to|by|under|over|without)$/i;
+function singular(label) {
+  const words = String(label).split(" ");
+  const prep = words.findIndex(w => PREPOSITION.test(w));
+  const head = prep > 0 ? prep - 1 : words.length - 1;
+  const last = words[head];
+  if (/(ss|us|is)$/i.test(last)) return label;
+  if (/(ches|shes|xes|sses)$/i.test(last)) words[head] = last.slice(0, -2);
+  else if (/[^s]s$/i.test(last)) words[head] = last.slice(0, -1);
+  else return label;
+  return words.join(" ");
+}
+
+export function composeAnswer(groups, cross, shape = 'default') {
   if (!groups.length) return 'I cannot answer that from the connected data.';
 
   const count = (g) => (g.entity ? g.entities : g.records);
@@ -732,6 +777,25 @@ export function composeAnswer(groups, cross) {
       ? `${who} ${n === 1 ? 'is' : 'are'} ${label}${g.rule ? ` (${g.rule})` : ''}.`
       : `${n} ${noun(g, n)} ${n === 1 ? 'is' : 'are'} ${label}.`;
   };
+
+  /*
+   * They asked how many, so the fallback answers how many.
+   *
+   * one() leads with names whenever it has them, which is right for "which
+   * students…" and wrong for "how many sessions…" — and when the names are
+   * dates, as they are for a schedule, it produces a list of dates in answer
+   * to a counting question. The writer is already told to lead with the number
+   * for this shape; the net contradicted it at exactly the moment it took over.
+   */
+  if (shape === 'count' && groups.length === 1 && !cross.both.length) {
+    const g = groups[0];
+    const n = count(g);
+    if (n === 0) return `Nothing matched ${midSentence(g.label)}.`;
+    // The label, not "records" — the writing rules forbid the model that word
+    // and a customer should not meet it from the fallback either.
+    const what = midSentence(n === 1 ? singular(g.label) : g.label);
+    return `There ${n === 1 ? 'is' : 'are'} ${n} ${what}${g.rule ? ` (${g.rule})` : ''}.`;
+  }
 
   if (groups.length === 1 && !cross.both.length) return one(groups[0]);
 
@@ -904,9 +968,13 @@ export async function answer({ question, history = [], ctx = null, kind = 'own',
    * application break. The composed sentence is plainer and complete, and
    * complete is the part that matters.
    */
+  // What the customer asked FOR, so the fallback below answers the question
+  // rather than describing the rows.
+  const shape = answerShape(asked, planned.intent);
+
   if (text && !/[.!?:]["')\]]?$/.test(text.trim())) {
     notes.push('The written answer was cut short, so this is the summary built from the records.');
-    text = composeAnswer(groups, cross);
+    text = composeAnswer(groups, cross, shape);
   }
 
   const allowed = allowedNumbers(groups, cross);
@@ -916,7 +984,7 @@ export async function answer({ question, history = [], ctx = null, kind = 'own',
       question: `${asked}\n\n(Your previous answer used a number that is not in the facts. Use only the numbers given.)`,
       groups, cross, planned, issues,
     });
-    if (unsupportedNumbers(retry, allowed).length) { text = composeAnswer(groups, cross); checked = false; }
+    if (unsupportedNumbers(retry, allowed).length) { text = composeAnswer(groups, cross, shape); checked = false; }
     else text = retry;
   }
 

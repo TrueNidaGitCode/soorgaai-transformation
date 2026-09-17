@@ -428,3 +428,34 @@ describe('ok means something was actually checked', () => {
       .toBe('All 8 checks passed.');
   });
 });
+
+describe('a spending cap is not an empty account', () => {
+  // The real message from the first live run. A cap and an empty account need
+  // different actions — raise a limit, or add funds — and both used to arrive
+  // as the same sentence, because the provider says "billing" either way.
+  const REAL = 'Your project has exceeded its monthly spending cap. '
+    + 'Please go to AI Studio at https://ai.studio/spend to manage your project spend cap. '
+    + 'Learn more at https://ai.google.dev/gemini-api/docs/billing#project-spend-caps.';
+
+  it('is told apart at the gateway', async () => {
+    const { classifyUpstreamError } = await import('../services/gatewayService.js');
+    expect(classifyUpstreamError(REAL)).toMatch(/spending cap/);
+    expect(classifyUpstreamError('Your credit balance is too low')).toMatch(/lack of credit/);
+  });
+
+  it('still says nothing about which provider or account is behind the gateway', async () => {
+    const { classifyUpstreamError } = await import('../services/gatewayService.js');
+    const said = classifyUpstreamError(REAL);
+    for (const leak of ['Google', 'AI Studio', 'gemini', 'ai.studio']) {
+      expect(said.toLowerCase()).not.toContain(leak.toLowerCase());
+    }
+  });
+
+  it('is treated by the suite as Svarg\'s to fix, not the application\'s', async () => {
+    const { classifyUpstreamError } = await import('../services/gatewayService.js');
+    answer.mockRejectedValue(new Error(classifyUpstreamError(REAL)));
+    const r = await run();
+    expect(r.failed).toBe(0);
+    expect(r.blocked).toMatch(/spending cap/);
+  });
+});

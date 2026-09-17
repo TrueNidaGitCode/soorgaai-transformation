@@ -209,6 +209,15 @@ export function toChatCompletion({ text, model, inputTokens, outputTokens }) {
  */
 export function classifyUpstreamError(message = '') {
   const m = String(message);
+  /*
+   * A spend cap and an empty account need different actions — raise a limit,
+   * or add funds — and both used to arrive as the same sentence. Checked
+   * before the others because the provider says billing in the same breath,
+   * which would otherwise read as a lack of credit when the money is there.
+   */
+  if (/spend(ing)? cap|spending limit/i.test(m)) {
+    return 'The model provider has hit a spending cap on Svarg\'s account. This is on Svarg to resolve, not your application.';
+  }
   if (/no credits remaining|credit balance|billing|quota/i.test(m)) {
     return 'The model provider rejected the request for lack of credit. This is on Svarg to resolve, not your application.';
   }

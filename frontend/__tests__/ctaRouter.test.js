@@ -4,9 +4,18 @@
  * CTARouter is assigned to window at module load time.
  * Mocks: localStorage and window.location (stubbed by setup.js beforeEach).
  * No network calls; CTARouter does a synchronous token check only.
+ *
+ * ANONYMOUS is the one fact these tests keep asserting, and it has moved: the
+ * anonymous destination was the site root, then became /cob.html, where the
+ * prompt box that starts generation actually lives. These asserted the old
+ * literal for long enough to stop meaning anything — read it from the router's
+ * own contract so a deliberate move updates one line, not seven.
  */
 
 import '../shared/ctaRouter.js';
+
+const ANONYMOUS = '/cob.html';       // the prompt box, where generation starts
+const SIGNED_IN = '/domain/domain.html';
 
 // ── Global exposure ───────────────────────────────────────────────────────────
 
@@ -28,27 +37,27 @@ describe('CTARouter.routeToWorkspace() — anonymous user (null token)', () => {
 
     window.CTARouter.routeToWorkspace();
 
-    expect(window.location.href).toBe('/');
+    expect(window.location.href).toBe(ANONYMOUS);
   });
 
   it('does not navigate directly to the platform page when no token is present', () => {
     // Anonymous users go to the landing prompt box, never the blueprint view.
     window.CTARouter.routeToWorkspace();
 
-    expect(window.location.href).not.toBe('/domain/domain.html');
-    expect(window.location.href).toBe('/');
+    expect(window.location.href).not.toBe(SIGNED_IN);
+    expect(window.location.href).toBe(ANONYMOUS);
   });
 });
 
 // ── Anonymous user — empty-string token ──────────────────────────────────────
 
 describe('CTARouter.routeToWorkspace() — empty string token', () => {
-  it('treats an empty-string token as unauthenticated and routes to login', () => {
+  it('treats an empty-string token as unauthenticated and sends them to the prompt box', () => {
     localStorage.setItem('token', '');
 
     window.CTARouter.routeToWorkspace();
 
-    expect(window.location.href).toBe('/');
+    expect(window.location.href).toBe(ANONYMOUS);
   });
 });
 
@@ -98,16 +107,16 @@ describe('CTARouter.routeToWorkspace() — authenticated user', () => {
 // ── Isolation: reads localStorage fresh on every call ────────────────────────
 
 describe('CTARouter.routeToWorkspace() — reads localStorage on every invocation', () => {
-  it('switches from platform to login route when token is removed between calls', () => {
+  it('switches back to the anonymous route when the token is removed between calls', () => {
     localStorage.setItem('token', 'jwt');
     window.CTARouter.routeToWorkspace();
-    expect(window.location.href).toBe('/domain/domain.html');
+    expect(window.location.href).toBe(SIGNED_IN);
 
     // Simulate token expiry / manual removal
     window.location.href = '';
     localStorage.removeItem('token');
 
     window.CTARouter.routeToWorkspace();
-    expect(window.location.href).toBe('/');
+    expect(window.location.href).toBe(ANONYMOUS);
   });
 });

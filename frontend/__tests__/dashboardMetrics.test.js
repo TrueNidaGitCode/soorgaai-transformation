@@ -30,8 +30,17 @@ const SECTION = {
 };
 
 const LEADERSHIP_ID = 'ai-initiative-leadership';
-const ALIGNMENT_ID  = 'business-strategy-alignment';
 const COE_ID        = 'ai-center-of-excellence';
+
+/*
+ * These tests were written against five capabilities, the second of which was
+ * AI AI Center of Excellence. It was retired from the AI Strategy domain
+ * in July — deliberately, and thoroughly enough that the PDF service still
+ * carries a RETIRED_CAPABILITY_IDS set to keep it out of old blueprints. The
+ * source dropped it; these tests did not, and had failed on every run since.
+ *
+ * The second capability is now AI Center of Excellence, and the count is four.
+ */
 
 function overviewWith(stored) {
   return buildCapabilityOverview(stored);
@@ -40,7 +49,7 @@ function overviewWith(stored) {
 // ── buildCapabilityOverview ───────────────────────────────────────────────────
 
 describe('buildCapabilityOverview', () => {
-  it('returns all five canonical capabilities in order even with empty storage', () => {
+  it('returns every canonical capability in order even with empty storage', () => {
     const overview = buildCapabilityOverview({});
     expect(overview.map(c => c.id)).toEqual(CAPABILITIES.map(c => c.id));
   });
@@ -106,16 +115,40 @@ describe('buildCapabilityOverview', () => {
   });
 });
 
+// ── The capability that was retired ──────────────────────────────────────────
+
+describe('the retired capability', () => {
+  it('is not in the canonical list', () => {
+    expect(CAPABILITIES.map(c => c.id)).not.toContain('business-strategy-alignment');
+  });
+
+  it('is ignored rather than displayed when an old blueprint still carries it', () => {
+    // Blueprints generated before July still hold sections under this id. They
+    // must not reappear on the dashboard, and must not be counted into anyone's
+    // progress — a retired capability that still counts makes every blueprint
+    // written before it look permanently unfinished.
+    const overview = buildCapabilityOverview({
+      'business-strategy-alignment': capState({ Fit: SECTION.approved }),
+      [LEADERSHIP_ID]: capState({ Vision: SECTION.approved }),
+    });
+    expect(overview.map(c => c.id)).not.toContain('business-strategy-alignment');
+
+    const totals = buildCompanyTotals(overview);
+    expect(totals.totalCapabilities).toBe(CAPABILITIES.length);
+    expect(totals.approvedSections).toBe(1);
+  });
+});
+
 // ── buildCompanyTotals ────────────────────────────────────────────────────────
 
 describe('buildCompanyTotals', () => {
   it('returns zeros for an empty blueprint', () => {
     const totals = buildCompanyTotals(buildCapabilityOverview({}));
     expect(totals).toEqual({
-      totalCapabilities: 5,
+      totalCapabilities: 4,
       capabilitiesInProgress: 0,
       capabilitiesCompleted: 0,
-      capabilitiesNotStarted: 5,
+      capabilitiesNotStarted: 4,
       approvedSections: 0,
       draftSections: 0,
       totalSections: 0,
@@ -126,11 +159,11 @@ describe('buildCompanyTotals', () => {
   it('aggregates approved and draft sections across capabilities', () => {
     const totals = buildCompanyTotals(overviewWith({
       [LEADERSHIP_ID]: capState({ Vision: SECTION.approved, Alignment: SECTION.approved }),
-      [ALIGNMENT_ID]:  capState({ Fit: SECTION.draft, Priorities: SECTION.template }),
+      [COE_ID]:  capState({ Fit: SECTION.draft, Priorities: SECTION.template }),
     }));
     expect(totals.capabilitiesCompleted).toBe(1);
     expect(totals.capabilitiesInProgress).toBe(1);
-    expect(totals.capabilitiesNotStarted).toBe(3);
+    expect(totals.capabilitiesNotStarted).toBe(2);
     expect(totals.approvedSections).toBe(2);
     expect(totals.draftSections).toBe(1);
     expect(totals.overallPct).toBe(50); // 2 approved of 4 known sections
@@ -148,9 +181,9 @@ describe('recommendNextFocus', () => {
   it('recommends completing the in-progress capability closest to completion', () => {
     const next = recommendNextFocus(overviewWith({
       [LEADERSHIP_ID]: capState({ Vision: SECTION.draft, Alignment: SECTION.template }),          // 0%
-      [ALIGNMENT_ID]:  capState({ Fit: SECTION.approved, Priorities: SECTION.template }),          // 50%
+      [COE_ID]:  capState({ Fit: SECTION.approved, Priorities: SECTION.template }),          // 50%
     }));
-    expect(next.id).toBe(ALIGNMENT_ID);
+    expect(next.id).toBe(COE_ID);
     expect(next.action).toBe('complete');
   });
 
@@ -158,7 +191,7 @@ describe('recommendNextFocus', () => {
     const next = recommendNextFocus(overviewWith({
       [LEADERSHIP_ID]: capState({ Vision: SECTION.approved }),
     }));
-    expect(next).toEqual({ id: ALIGNMENT_ID, name: 'Business Strategy Alignment', action: 'start' });
+    expect(next).toEqual({ id: COE_ID, name: 'AI Center of Excellence', action: 'start' });
   });
 
   it('returns null when every capability is completed', () => {
@@ -186,23 +219,23 @@ describe('buildExecutiveSummary', () => {
 
   it('mentions partially complete capabilities', () => {
     const lines = buildExecutiveSummary(overviewWith({
-      [ALIGNMENT_ID]: capState({ Fit: SECTION.approved, Priorities: SECTION.template }),
+      [COE_ID]: capState({ Fit: SECTION.approved, Priorities: SECTION.template }),
     }));
-    expect(lines.join(' ')).toContain('Business Strategy Alignment is partially complete.');
+    expect(lines.join(' ')).toContain('AI Center of Excellence is partially complete.');
   });
 
   it('names the biggest remaining gap (first not-started capability)', () => {
     const lines = buildExecutiveSummary(overviewWith({
       [LEADERSHIP_ID]: capState({ Vision: SECTION.approved }),
     }));
-    expect(lines.join(' ')).toContain('Business Strategy Alignment has not yet started');
+    expect(lines.join(' ')).toContain('AI Center of Excellence has not yet started');
   });
 
   it('ends with a deterministic recommended next step', () => {
     const lines = buildExecutiveSummary(overviewWith({
       [LEADERSHIP_ID]: capState({ Vision: SECTION.approved }),
     }));
-    expect(lines[lines.length - 1]).toBe('Recommended next step: develop Business Strategy Alignment.');
+    expect(lines[lines.length - 1]).toBe('Recommended next step: develop AI Center of Excellence.');
   });
 
   it('declares the blueprint fully approved when everything is complete', () => {
@@ -217,8 +250,8 @@ describe('buildExecutiveSummary', () => {
 
 describe('buildCurrentFocus', () => {
   const STORED = {
-    [ALIGNMENT_ID]: {
-      capabilityName: 'Business Strategy Alignment',
+    [COE_ID]: {
+      capabilityName: 'AI Center of Excellence',
       industry: 'Automotive',
       sections: { Fit: SECTION.approved, 'Investment Prioritization': SECTION.draft },
     },
@@ -229,37 +262,37 @@ describe('buildCurrentFocus', () => {
   });
 
   it('uses the stored current capability pointer', () => {
-    const focus = buildCurrentFocus(overviewWith(STORED), ALIGNMENT_ID, []);
-    expect(focus.capabilityName).toBe('Business Strategy Alignment');
+    const focus = buildCurrentFocus(overviewWith(STORED), COE_ID, []);
+    expect(focus.capabilityName).toBe('AI Center of Excellence');
   });
 
   it('falls back to the in-progress capability when no pointer is stored', () => {
     const focus = buildCurrentFocus(overviewWith(STORED), null, []);
-    expect(focus.capabilityName).toBe('Business Strategy Alignment');
+    expect(focus.capabilityName).toBe('AI Center of Excellence');
   });
 
   it('takes the current section and last-updated from the latest matching activity', () => {
-    const focus = buildCurrentFocus(overviewWith(STORED), ALIGNMENT_ID, [
-      { action: 'Accepted', capabilityName: 'Business Strategy Alignment', sectionTitle: 'Investment Prioritization', at: '2026-06-12T08:00:00.000Z' },
+    const focus = buildCurrentFocus(overviewWith(STORED), COE_ID, [
+      { action: 'Accepted', capabilityName: 'AI Center of Excellence', sectionTitle: 'Investment Prioritization', at: '2026-06-12T08:00:00.000Z' },
     ]);
     expect(focus.sectionTitle).toBe('Investment Prioritization');
     expect(focus.lastUpdated).toBe('2026-06-12T08:00:00.000Z');
   });
 
   it('falls back to the first unapproved section when there is no activity', () => {
-    const focus = buildCurrentFocus(overviewWith(STORED), ALIGNMENT_ID, []);
+    const focus = buildCurrentFocus(overviewWith(STORED), COE_ID, []);
     expect(focus.sectionTitle).toBe('Investment Prioritization');
   });
 
   it('recommends approving outstanding drafts first', () => {
-    const focus = buildCurrentFocus(overviewWith(STORED), ALIGNMENT_ID, []);
-    expect(focus.recommendation).toBe('Approve the 1 working draft in Business Strategy Alignment to lock in progress.');
+    const focus = buildCurrentFocus(overviewWith(STORED), COE_ID, []);
+    expect(focus.recommendation).toBe('Approve the 1 working draft in AI Center of Excellence to lock in progress.');
   });
 
   it('recommends moving on when the focused capability is complete', () => {
     const stored = { [LEADERSHIP_ID]: capState({ Vision: SECTION.approved }) };
     const focus = buildCurrentFocus(overviewWith(stored), LEADERSHIP_ID, []);
-    expect(focus.recommendation).toContain('move on to Business Strategy Alignment');
+    expect(focus.recommendation).toContain('move on to AI Center of Excellence');
   });
 });
 

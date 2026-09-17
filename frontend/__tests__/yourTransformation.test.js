@@ -80,7 +80,7 @@ describe('buildTransformationSummary', () => {
     });
 
     const summary = buildTransformationSummary(overview, LEADERSHIP_ID, []);
-    expect(summary.nextAction).toBe('Start Business Strategy Alignment');
+    expect(summary.nextAction).toBe('Start AI Center of Excellence');
   });
 
   it('takes last activity from the newest matching event', () => {

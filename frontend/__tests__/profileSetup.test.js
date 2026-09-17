@@ -13,17 +13,8 @@
 function buildProfileDOM() {
   document.body.innerHTML = `
     <form id="profile-form">
-      <input id="orgName"         type="text"   value="" />
-      <select id="role">
-        <option value="">Select</option>
-        <option value="CTO">CTO</option>
-        <option value="Engineering Manager">Engineering Manager</option>
-      </select>
-      <select id="industryDomain">
-        <option value="">Select</option>
-        <option value="ADAS">ADAS</option>
-        <option value="General">General</option>
-      </select>
+      <input id="orgName"    type="text" value="" />
+      <input id="websiteUrl" type="url"  value="" />
       <div id="profile-error" style="display:none"></div>
       <button id="profile-submit" type="submit">
         <span class="button-text">Submit</span>
@@ -113,8 +104,6 @@ describe('profile.js — client-side validation', () => {
     triggerDOMContentLoaded();
     await flushPromises();
 
-    document.getElementById('role').value          = 'CTO';
-    document.getElementById('industryDomain').value = 'ADAS';
     document.getElementById('orgName').value        = '';
 
     document.getElementById('profile-form').dispatchEvent(new Event('submit', { cancelable: true }));
@@ -126,21 +115,57 @@ describe('profile.js — client-side validation', () => {
     expect(postCalls).toHaveLength(0);
   });
 
-  it('shows error when role is not selected', async () => {
-    vi.spyOn(global, 'fetch').mockResolvedValue({ ok: false, status: 404, json: async () => ({}) });
+  /*
+   * There was a test here asserting an error when no role was selected, and
+   * one for the industry domain. Setup asks for neither any more — it asks for
+   * the organisation name and, optionally, the website. It had been failing
+   * since the form was simplified, asserting a rule that no longer exists
+   * against two fields that are no longer on the page.
+   *
+   * What matters now is the opposite claim: the website is genuinely optional,
+   * and leaving it blank must not stop anybody getting through setup.
+   */
+  it('accepts a profile with only the organisation name', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation((url) => {
+      if (url.includes('/profile/me')) return Promise.resolve({ ok: false, status: 404, json: async () => ({}) });
+      return Promise.resolve({ ok: true, status: 201, json: async () => ({ profile: { orgName: 'Acme' }, created: true }) });
+    });
 
     const { triggerDOMContentLoaded } = await loadProfileModule();
     buildProfileDOM();
     triggerDOMContentLoaded();
     await flushPromises();
 
-    document.getElementById('orgName').value         = 'Acme';
-    document.getElementById('role').value            = '';
-    document.getElementById('industryDomain').value  = 'ADAS';
+    document.getElementById('orgName').value    = 'Acme';
+    document.getElementById('websiteUrl').value = '';
 
     document.getElementById('profile-form').dispatchEvent(new Event('submit', { cancelable: true }));
+    await flushPromises();
+
+    expect(document.getElementById('profile-error').style.display).toBe('none');
+    const posts = fetchSpy.mock.calls.filter(([, opts]) => opts?.method === 'POST');
+    expect(posts).toHaveLength(1);
+    expect(JSON.parse(posts[0][1].body)).toEqual({ orgName: 'Acme' });
+  });
+
+  it('rejects a name that is only whitespace, not just an empty one', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation((url) => {
+      if (url.includes('/profile/me')) return Promise.resolve({ ok: false, status: 404, json: async () => ({}) });
+      return Promise.resolve({ ok: true, status: 201, json: async () => ({}) });
+    });
+
+    const { triggerDOMContentLoaded } = await loadProfileModule();
+    buildProfileDOM();
+    triggerDOMContentLoaded();
+    await flushPromises();
+
+    document.getElementById('orgName').value = '   ';
+
+    document.getElementById('profile-form').dispatchEvent(new Event('submit', { cancelable: true }));
+    await flushPromises();
 
     expect(document.getElementById('profile-error').style.display).toBe('block');
+    expect(fetchSpy.mock.calls.filter(([, opts]) => opts?.method === 'POST')).toHaveLength(0);
   });
 });
 
@@ -167,8 +192,6 @@ describe('profile.js — successful profile creation', () => {
     await Promise.resolve(); await Promise.resolve();
 
     document.getElementById('orgName').value         = 'Acme Motors GmbH';
-    document.getElementById('role').value            = 'CTO';
-    document.getElementById('industryDomain').value  = 'ADAS';
 
     document.getElementById('profile-form').dispatchEvent(new Event('submit', { cancelable: true }));
     // Flush: POST fetch + json response + redirect assignment
@@ -200,8 +223,6 @@ describe('profile.js — API error on form submit', () => {
     await flushPromises();
 
     document.getElementById('orgName').value         = 'Acme';
-    document.getElementById('role').value            = 'CTO';
-    document.getElementById('industryDomain').value  = 'ADAS';
 
     document.getElementById('profile-form').dispatchEvent(new Event('submit', { cancelable: true }));
     await flushPromises();
@@ -230,8 +251,6 @@ describe('profile.js — API error on form submit', () => {
     await flushPromises();
 
     document.getElementById('orgName').value         = 'Acme';
-    document.getElementById('role').value            = 'CTO';
-    document.getElementById('industryDomain').value  = 'ADAS';
 
     document.getElementById('profile-form').dispatchEvent(new Event('submit', { cancelable: true }));
     await flushPromises();

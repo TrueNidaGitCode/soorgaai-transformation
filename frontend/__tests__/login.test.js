@@ -18,6 +18,12 @@
  * Mocks: global.fetch (vi.spyOn), window.location, localStorage.
  */
 
+// Where login sends someone with nothing else to go on. This was the signal
+// dashboard, written as a literal in six assertions, and it became Cob's home
+// when Cob became the product people log in for — so six tests failed at once
+// over one deliberate change. One name now.
+const DEFAULT_DESTINATION = '/cob.html';
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function buildLoginDOM() {
@@ -93,20 +99,20 @@ describe('getValidRedirect() — valid relative paths are accepted', () => {
     expect(window.location.href).toBe('/platform/sub/page');
   });
 
-  it('falls back to dashboard when the redirect param is absent', async () => {
+  it('falls back to the default destination when the redirect param is absent', async () => {
     localStorage.setItem('token', 'jwt');
     const { triggerDOMContentLoaded } = await loadLoginModule('');
     triggerDOMContentLoaded();
 
-    expect(window.location.href).toBe('/dashboard/signaldashboard.html');
+    expect(window.location.href).toBe(DEFAULT_DESTINATION);
   });
 
-  it('falls back to dashboard when ?redirect= is an empty string', async () => {
+  it('falls back to the default destination when ?redirect= is an empty string', async () => {
     localStorage.setItem('token', 'jwt');
     const { triggerDOMContentLoaded } = await loadLoginModule('?redirect=');
     triggerDOMContentLoaded();
 
-    expect(window.location.href).toBe('/dashboard/signaldashboard.html');
+    expect(window.location.href).toBe(DEFAULT_DESTINATION);
   });
 });
 
@@ -121,8 +127,8 @@ describe('getValidRedirect() — security: open-redirect attacks are rejected', 
     localStorage.setItem('token', 'jwt');
     const { triggerDOMContentLoaded } = await loadLoginModule(search);
     triggerDOMContentLoaded();
-    // pendingRedirect is null → falls back to the safe dashboard URL
-    expect(window.location.href).toBe('/dashboard/signaldashboard.html');
+    // pendingRedirect is null → falls back to the safe default
+    expect(window.location.href).toBe(DEFAULT_DESTINATION);
   }
 
   it('rejects a protocol-relative URL: //evil.com', async () => {
@@ -180,12 +186,12 @@ describe('checkExistingAuth() — token already in localStorage on page load', (
     expect(localStorage.getItem('redirectAfterLogin')).toBeNull();
   });
 
-  it('redirects to /dashboard/signaldashboard.html when no redirect source is available', async () => {
+  it('redirects to the default destination when no redirect source is available', async () => {
     localStorage.setItem('token', 'jwt');
     const { triggerDOMContentLoaded } = await loadLoginModule('');
     triggerDOMContentLoaded();
 
-    expect(window.location.href).toBe('/dashboard/signaldashboard.html');
+    expect(window.location.href).toBe(DEFAULT_DESTINATION);
   });
 });
 
@@ -286,7 +292,7 @@ describe('handleLogin() — successful login (200 OK)', () => {
     expect(window.location.href).toBe('/platform/platform.html');
   });
 
-  it('redirects to dashboard when no redirect param is set', async () => {
+  it('redirects to the default destination when no redirect param is set', async () => {
     buildLoginDOM();
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
@@ -304,7 +310,7 @@ describe('handleLogin() — successful login (200 OK)', () => {
     );
     await flushHandleLogin();
 
-    expect(window.location.href).toBe('/dashboard/signaldashboard.html');
+    expect(window.location.href).toBe(DEFAULT_DESTINATION);
   });
 
   it('does not redirect to a rejected (malicious) redirect URL after successful login', async () => {
@@ -326,7 +332,85 @@ describe('handleLogin() — successful login (200 OK)', () => {
     await flushHandleLogin();
 
     expect(window.location.href).not.toContain('evil.com');
-    expect(window.location.href).toBe('/dashboard/signaldashboard.html');
+    expect(window.location.href).toBe(DEFAULT_DESTINATION);
+  });
+});
+
+// ── The first login of a new account ─────────────────────────────────────────
+//
+// Signing in is not the last step for somebody who has never been here: they
+// have no profile yet, and redirectAfterLogin sends them through setup once
+// before wherever they were going. None of this was covered — the profile
+// check read window.CONFIG, which no test ever defined, so every run threw and
+// landed in the catch block. The fail-open path was the only path being tested,
+// and it passed, which is why nobody noticed.
+
+describe('the first login of a new account', () => {
+  /** Answer the login POST, then answer the profile check with `profileStatus`. */
+  function mockLoginThenProfile(profileStatus) {
+    let call = 0;
+    vi.spyOn(global, 'fetch').mockImplementation(async () => {
+      call += 1;
+      if (call === 1) return { ok: true, status: 200, json: async () => ({ token: 'new-jwt' }) };
+      return { ok: profileStatus === 200, status: profileStatus, json: async () => ({}) };
+    });
+  }
+
+  async function signIn(search = '') {
+    buildLoginDOM();
+    mockSetTimeoutSync();
+    const { triggerDOMContentLoaded } = await loadLoginModule(search);
+    triggerDOMContentLoaded();
+    document.getElementById('email').value    = 'new@test.com';
+    document.getElementById('password').value = 'password123';
+    document.getElementById('login-form').dispatchEvent(new Event('submit', { cancelable: true }));
+    await flushHandleLogin();
+    await flushHandleLogin();
+  }
+
+  it('sends somebody with no profile through setup first', async () => {
+    mockLoginThenProfile(404);
+    await signIn('');
+
+    expect(window.location.href).toContain('/profile-setup/profile.html');
+  });
+
+  it('remembers where they were going, so setup is a detour and not a dead end', async () => {
+    mockLoginThenProfile(404);
+    await signIn('?redirect=/platform/platform.html');
+
+    expect(window.location.href)
+      .toBe(`/profile-setup/profile.html?redirect=${encodeURIComponent('/platform/platform.html')}`);
+  });
+
+  it('does not interrupt somebody who already has a profile', async () => {
+    mockLoginThenProfile(200);
+    await signIn('');
+
+    expect(window.location.href).toBe(DEFAULT_DESTINATION);
+  });
+
+  it('lets them through when the profile check itself fails', async () => {
+    // Fails open on purpose: a profile lookup that is down must never be the
+    // reason somebody cannot sign in.
+    let call = 0;
+    vi.spyOn(global, 'fetch').mockImplementation(async () => {
+      call += 1;
+      if (call === 1) return { ok: true, status: 200, json: async () => ({ token: 'new-jwt' }) };
+      throw new Error('profile service unreachable');
+    });
+    await signIn('');
+
+    expect(window.location.href).toBe(DEFAULT_DESTINATION);
+  });
+
+  it('asks the profile service with the token it was just given', async () => {
+    mockLoginThenProfile(200);
+    await signIn('');
+
+    const [url, opts] = global.fetch.mock.calls[1];
+    expect(url).toContain('/profile/me');
+    expect(opts.headers.Authorization).toBe('Bearer new-jwt');
   });
 });
 

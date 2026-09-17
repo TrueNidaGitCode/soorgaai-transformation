@@ -186,3 +186,32 @@ describe('the endpoint and the sweep that reads it', () => {
     expect(model).toContain("'live', 'degraded', 'failed'");
   });
 });
+
+describe('which build is answering', () => {
+  const server = readFileSync(new URL('../eame-template/server.js', import.meta.url), 'utf8');
+
+  /*
+   * There was no way to tell. A fix was pushed, the platform rebuilt, and the
+   * only way to know whether the container in front of you was the new one was
+   * to guess from the clock. A verification ran against the old build, handed
+   * back the old failure, and looked exactly like the fix not working.
+   *
+   * Svarg reports its own commit on its root endpoint for precisely this
+   * reason, and every deploy check in this repository relies on it.
+   */
+  it('reports the commit it was built from', () => {
+    expect(server).toContain("commit: (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7)");
+  });
+
+  it('reports when this container came up, so a restart is visible too', () => {
+    expect(server).toContain('const STARTED_AT = new Date().toISOString();');
+    expect(server).toContain('startedAt: STARTED_AT,');
+  });
+
+  it('takes the timestamp once at boot, not per request', () => {
+    // Per request it would only ever say "now", which answers nothing.
+    const at = server.indexOf('const STARTED_AT');
+    expect(server.slice(at, server.indexOf('\n', at))).not.toContain('()  =>');
+    expect(server).not.toContain('startedAt: new Date()');
+  });
+});

@@ -32,6 +32,9 @@ dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+/** When this container came up — the other half of knowing which build answers. */
+const STARTED_AT = new Date().toISOString();
 // Behind the host's proxy (Railway terminates TLS), so the address the
 // application gives Svarg to come back to is its https one, not http.
 app.set('trust proxy', 1);
@@ -94,7 +97,25 @@ app.get('/api', async (req, res) => {
   }
   res
     .status(health.ok ? 200 : 503)
-    .json({ name: APP_NAME, status: health.ok ? 'running' : 'degraded', version: '1.0.0', routes: mounted, ...health });
+    .json({
+      name: APP_NAME,
+      status: health.ok ? 'running' : 'degraded',
+      version: '1.0.0',
+      /*
+       * Which build is actually answering.
+       *
+       * There was no way to tell. A fix would be pushed, the platform would
+       * rebuild, and the only way to know whether the container in front of
+       * you was the new one was to guess from the clock — so a verification
+       * ran against the old build, passed the old failure back, and looked
+       * exactly like the fix not working. Svarg reports its own commit on its
+       * root endpoint for this reason; a delivered application should too.
+       */
+      commit: (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7),
+      startedAt: STARTED_AT,
+      routes: mounted,
+      ...health,
+    });
 });
 
 /**

@@ -503,6 +503,33 @@ export function wireHeroPrompt() {
     // it was a second button under a box that already has one, and read as
     // a second thing to decide. The placeholder carries the example now.
 
+    /*
+     * A problem chosen on the landing page arrives here as a sentence to edit.
+     *
+     * The landing page offers four problems a visitor might recognise, and the
+     * one they pick travels in ?objective=. Without this, clicking the thing
+     * that described your business lands you on an empty box — which is the
+     * moment most first-time visitors leave, because a blank field asks them to
+     * do the work of translating their business into whatever this thing wants.
+     *
+     * It is a starting point, not a claim about them: the text is theirs to
+     * change, the box is focused with the cursor at the end so changing it is
+     * the obvious next move, and nothing is submitted on their behalf.
+     */
+    try {
+        const wanted = new URLSearchParams(window.location.search).get('objective');
+        if (wanted && !input.value) {
+            // Bounded: a query string is attacker-controlled, and an
+            // unbounded one would push the counter and the request past
+            // whatever the server accepts.
+            input.value = wanted.slice(0, 2000);
+            autogrow(input);
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.focus();
+            input.setSelectionRange(input.value.length, input.value.length);
+        }
+    } catch { /* no URL API, or a blocked history — the box still works */ }
+
     wireAnswerModes({ form, input, counter, errEl });
 
     // ChatGPT-style input: grow with content, Enter submits, Shift+Enter = newline

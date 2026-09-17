@@ -61,7 +61,18 @@ const SKIP = (detail) => ({ skipped: true, detail });
  * out of credit. That is the false red that teaches people to ignore red.
  */
 function upstream(error) {
-  return /on Svarg to resolve|model provider|rate limit|upstream|50[234]/i.test(String(error || ''));
+  return /on Svarg to resolve|model provider|rate limit|upstream|50[234]/i.test(String(error || ''))
+    /*
+     * A deployment's own spend ceiling belongs here too.
+     *
+     * Found on a live customer application: it had reached its monthly cap, so
+     * six checks skipped with the reason and the seventh FAILED — reporting
+     * "the question could not be answered" as a finding about the customer's
+     * application, when the cause was a billing limit Svarg sets and Svarg
+     * raises. The same false red as the provider outage, wearing a different
+     * hat, and it took a real run at a real cap to find it.
+     */
+    || /spend(ing)? limit|spend(ing)? cap|monthly limit|\b429\b|quota/i.test(String(error || ''));
 }
 
 /** A question that never got answered: whose fault, and what to say about it. */

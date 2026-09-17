@@ -517,3 +517,43 @@ describe('a spending cap is not an empty account', () => {
     expect(r.blocked).toMatch(/spending cap/);
   });
 });
+
+describe('a deployment that has reached its spend cap', () => {
+  /*
+   * Found on a live customer application. It had reached its monthly cap, so
+   * six checks skipped with the reason and the seventh FAILED — reporting "the
+   * question could not be answered" as a finding about the customer's
+   * application, when the cause was a billing limit Svarg sets and Svarg
+   * raises. The same false red as a provider outage, wearing a different hat.
+   */
+  const CAP = '429 Monthly spend limit of $2 reached for this deployment.';
+
+  it('is not the application failing a check', async () => {
+    answer.mockRejectedValue(new Error(CAP));
+    const r = await run();
+    expect(r.failed).toBe(0);
+    expect(by(r, 'counts-are-correct').skipped).toBe(true);
+  });
+
+  it('says once, at the top, why nothing could be asked', async () => {
+    answer.mockRejectedValue(new Error(CAP));
+    expect((await run()).blocked).toMatch(/spend limit/i);
+  });
+
+  it('is not ok, because nothing about the behaviour was checked', async () => {
+    answer.mockRejectedValue(new Error(CAP));
+    expect((await run()).ok).toBe(false);
+  });
+
+  it('recognises the other ways a ceiling is worded', async () => {
+    for (const wording of [
+      'Monthly spend limit reached',
+      'HTTP 429 Too Many Requests',
+      'quota exceeded for this project',
+      'Your project has exceeded its monthly spending cap.',
+    ]) {
+      answer.mockRejectedValue(new Error(wording));
+      expect((await run()).failed, wording).toBe(0);
+    }
+  });
+});

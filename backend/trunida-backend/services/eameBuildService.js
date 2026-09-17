@@ -19,7 +19,7 @@
  * apply, and a half-applied patch is a worse state than the original error.
  */
 
-import { buildSpec } from './eameSpec.js';
+import { buildSpec, readDatasets } from './eameSpec.js';
 import LinkedProjectDocument from '../models/LinkedProjectDocument.js';
 import { generateApplication } from './eameCodeGenerator.js';
 import { buildRuntime } from './eameProjectBuilder.js';
@@ -44,6 +44,25 @@ export function composeProject(runtimeFiles, generatedFiles) {
 }
 
 /**
+ * Why this blueprint cannot be built into anything useful yet, or '' if it can.
+ *
+ * Kept beside the build rather than inside buildSpec, which is deliberately
+ * synchronous and pure and should not be the thing deciding whether to ship.
+ */
+export function whyNoDatasets(bp) {
+  if (readDatasets(bp).length) return '';
+
+  const domain = (bp?.domains || []).find(d => d.domainId === 'data-readiness');
+  if (!domain || domain.status !== 'completed') {
+    const state = !domain ? 'is not on this blueprint' : `is still ${domain.status}`;
+    return 'This blueprint has no datasets yet, so the application would have nothing to answer from. '
+         + `Data Readiness ${state} — generate it from the blueprint, then build.`;
+  }
+  return 'Data Readiness completed without naming a single dataset, so the application would have '
+       + 'nothing to answer from. Regenerate that domain before building.';
+}
+
+/**
  * @param {object} bp   the blueprint
  * @param {object} opts
  * @param {number}  [opts.attempts]
@@ -65,6 +84,26 @@ export async function buildApplication(bp, {
   onProgress = () => {},
   addedCapabilities = [],
 } = {}) {
+  /*
+   * An application with no datasets is not a weaker application. It is one
+   * that cannot answer a single question about the business it was built for.
+   *
+   * This was a warning on the spec — "Arth identified no datasets, so the
+   * generated model has no shape to follow" — recorded, and nothing more. A
+   * customer's application was built from a blueprint whose data-readiness
+   * domain had never run, went live, reported itself healthy for a day, and
+   * was never opened. Nobody was told, because nothing was watching the
+   * warning, and the customer cannot be asked to sit through the flow again.
+   *
+   * So it refuses, and says which of the two things happened — the domain has
+   * not run, or it ran and found nothing — because those have different fixes
+   * and only one of them is the customer's to make.
+   */
+  const refusal = whyNoDatasets(bp);
+  if (refusal) {
+    return { ok: false, spec: null, files: [], history: [], reason: refusal, noDatasets: true };
+  }
+
   // Which datasets are backed only by generated rows. Queried here rather than
   // inside buildSpec so that stays synchronous and pure.
   const sampleBacked = await LinkedProjectDocument

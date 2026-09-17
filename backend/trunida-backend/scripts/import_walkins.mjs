@@ -18,21 +18,28 @@
  * The file is an array of objects. `name` is the only required key:
  *
  *   [{ "name": "Acme Pvt Ltd", "booth": "H2.D35", "trueHall": "Hall 2",
- *      "segment": "rabbit" }]
+ *      "segment": "rabbit", "industry": "Power Electronics",
+ *      "confidence": "from-name" }]
  *
- * `--event "electronica India 2026"` puts the occasion in each row's private
- * note, which is the difference between "why is this company on my list" being
- * answerable in March and not.
+ * `--event "electronica India 2026"` puts the occasion in the route-in field,
+ * which is the difference between "why is this company on my list" being
+ * answerable in March and not. `--area "Bengaluru"` says where they are.
+ *
+ * An industry of "from-name" confidence is one nobody has confirmed — it was
+ * read off the company name — and the row says so, because an unverified guess
+ * that looks identical to a checked fact is worse than no guess at all.
  */
 import 'dotenv/config';
 import fs from 'fs';
 import mongoose from 'mongoose';
 import { addLead } from '../services/salesSignalsService.js';
+import { listGroundedIndustries } from '../services/strategyCanvasService.js';
 
 const args = process.argv.slice(2);
 const file = args.find((a) => !a.startsWith('--'));
 const write = args.includes('--write');
 const event = args.includes('--event') ? args[args.indexOf('--event') + 1] : '';
+const area = args.includes('--area') ? args[args.indexOf('--area') + 1] : '';
 
 if (!file) {
   console.log('Usage: node scripts/import_walkins.mjs <file.json> [--write] [--event "name"]');
@@ -57,12 +64,27 @@ const plan = rows.map((r) => {
   const shared = r.booth && perBooth.get(r.booth) > 1
     ? ` Shared stand — ${perBooth.get(r.booth)} companies at ${r.booth}, one stop.`
     : '';
+  /*
+   * The stand goes in the route-in field, not in location.
+   *
+   * Location is where they ARE — somewhere you could visit again next quarter.
+   * A stand number is where they are for three days, which is the route in:
+   * "Where / how found" is what this motion already calls that field, and it is
+   * the column the screen renders it in. Writing a stand number into location
+   * also walked into a second fault — the log form offered India and US, so a
+   * value that was neither was silently blanked the first time anybody opened
+   * that row.
+   */
+  const unconfirmed = r.industry && r.confidence === 'from-name';
   return {
     name,
     company: name,
-    // 40 characters, so the hall and the stand and nothing else.
-    location: stand.slice(0, 40),
-    note: [SEGMENT[r.segment] || '', event, stand].filter(Boolean).join(' · ') + shared,
+    industry: r.industry || '',
+    location: area,
+    via: [event, stand].filter(Boolean).join(' · ').slice(0, 300),
+    note: [SEGMENT[r.segment] || '', stand].filter(Boolean).join(' · ')
+      + shared
+      + (unconfirmed ? ' Industry read off the company name — confirm at the stand.' : ''),
     // No date. The visit is on a day the show sets, and a next step carrying a
     // date somebody guessed is worse than one carrying none.
     nextStep: r.booth ? `Walk stand ${r.booth}` : 'Visit',
@@ -80,9 +102,11 @@ console.log(write ? 'Writing.\n' : 'Dry run — pass --write to commit.\n');
 
 for (const p of plan.slice(0, 5)) {
   console.log(`  ${p.company}`);
-  console.log(`    where  ${p.location}`);
-  console.log(`    next   ${p.nextStep}`);
-  console.log(`    note   ${p.note}`);
+  console.log(`    industry  ${p.industry || '(none)'}`);
+  console.log(`    where     ${p.location || '(not recorded)'}`);
+  console.log(`    route in  ${p.via}`);
+  console.log(`    next      ${p.nextStep}`);
+  console.log(`    note      ${p.note}`);
 }
 if (plan.length > 5) console.log(`  … and ${plan.length - 5} more`);
 
@@ -109,6 +133,24 @@ for (const p of plan) {
 }
 
 console.log(`\n${added} added, ${existing} already on the list, ${failed.length} refused.`);
+
+/*
+ * Which of these industries the knowledge base can actually ground.
+ *
+ * The most useful thing a run of this can tell you. Sixty companies in
+ * industries the KB has never heard of is not a problem with the list — it is
+ * the brief for what to write next.
+ */
+const grounded = new Set(listGroundedIndustries().map((i) => i.toLowerCase()));
+const bySector = new Map();
+for (const q of plan) if (q.industry) bySector.set(q.industry, (bySector.get(q.industry) || 0) + 1);
+if (bySector.size) {
+  const covered = [...bySector.keys()].filter((i) => grounded.has(i.toLowerCase())).length;
+  console.log(`\n${bySector.size} industries across the list, ${covered} with KB coverage.`);
+  for (const [i, c] of [...bySector.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))) {
+    console.log(`  ${String(c).padStart(2)}  ${i}${grounded.has(i.toLowerCase()) ? '' : '   — no overlay'}`);
+  }
+}
 for (const f of failed) console.log(`  ${f.company}: ${f.why}`);
 
 const total = await mongoose.connection.collection('coldleads').countDocuments({ motion: 'walk-in' });

@@ -125,6 +125,23 @@ const coldLeadSchema = new mongoose.Schema({
   company: { type: String, default: '', trim: true },
 
   /**
+   * What business they are in.
+   *
+   * Not decoration on the row. The industry is what decides which knowledge
+   * base overlay grounds a conversation with them and which AI opportunities
+   * are worth leading with — the same label the KB folders and
+   * detectCompanyIndustry use, so a lead and a blueprint mean the same thing
+   * by "Automotive".
+   *
+   * Free text, suggested from the industries that actually have KB coverage
+   * rather than restricted to them. You meet companies in industries you have
+   * no overlay for, and that is worth knowing rather than worth refusing: a
+   * lane full of an industry the KB has never heard of is the clearest signal
+   * there is about what to write next.
+   */
+  industry: { type: String, default: '', trim: true, index: true },
+
+  /**
    * Where to read about them before writing.
    *
    * companyUrl is fetched at generation time so the email can name something

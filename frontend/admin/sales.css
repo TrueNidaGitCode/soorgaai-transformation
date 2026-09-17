@@ -1608,3 +1608,34 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 @media (max-width: 640px) {
   .sg-pitch__meta { grid-template-columns: 1fr; }
 }
+
+/* ── Industry ──────────────────────────────────────────────────────────────────
+   Under the organisation, because it is a fact about the organisation and the
+   thing you scan a lane for.
+
+   Two states, deliberately different to look at. A grounded industry is quiet:
+   there is a knowledge base overlay, nothing to do. An ungrounded one is marked,
+   because a lane full of an industry the KB has never heard of is the clearest
+   signal there is about what to write next — and a blank that looks like every
+   other blank is how that signal gets lost. */
+.sg-industry {
+  margin-top: 0.15rem;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.01em;
+}
+
+.sg-industry--ungrounded {
+  color: rgba(255, 196, 120, 0.82);
+}
+
+/* A dotted underline rather than a badge: it is a note about coverage, not a
+   warning about the lead. The lead is fine; the knowledge base is what is thin. */
+.sg-industry--ungrounded::after {
+  content: " · no KB";
+  color: rgba(255, 196, 120, 0.55);
+}
+
+.sg-l-industry {
+  min-width: 12rem;
+}

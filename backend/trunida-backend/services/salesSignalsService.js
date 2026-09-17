@@ -880,7 +880,7 @@ export async function askBoard(board, question, history = []) {
 const LEAD_STATUSES = ['to-contact', 'contacted', 'replied', 'dead'];
 
 export async function addLead({
-  email, name, company, role, companyUrl, linkedinUrl, note, orgContext,
+  email, name, company, industry, role, companyUrl, linkedinUrl, note, orgContext,
   motion, via, nextStep, nextStepAt, phone, relationship, location,
   subject, body, addedByUserId,
 }) {
@@ -903,7 +903,7 @@ export async function addLead({
    * these first. But the form is one of two ways in and the API is the other,
    * and a rule that lives only in the browser is a rule that is not enforced.
    */
-  const supplied = { name, phone: tel, company, relationship, location, email: clean, role, via, note };
+  const supplied = { name, phone: tel, company, industry, relationship, location, email: clean, role, via, note };
   for (const f of fieldsFor(key)) {
     if (f.required && !String(supplied[f.key] ?? '').trim()) {
       throw new Error(`${f.label} is required for this motion.`);
@@ -1006,6 +1006,9 @@ export async function addLead({
         ...(name    !== undefined ? { name:    String(name).trim() }    : {}),
         ...(company !== undefined ? { company: String(company).trim() } : {}),
         ...(role    !== undefined ? { role:    String(role).trim().slice(0, 80) } : {}),
+        // The label the knowledge base and the blueprints use, so a lead and a
+        // blueprint mean the same thing by it.
+        ...(industry !== undefined ? { industry: String(industry).trim().slice(0, 80) } : {}),
         ...(companyUrl  !== undefined ? { companyUrl:  String(companyUrl).trim().slice(0, 300) }  : {}),
         ...(linkedinUrl !== undefined ? { linkedinUrl: String(linkedinUrl).trim().slice(0, 300) } : {}),
         ...(note    !== undefined ? { note:    String(note).trim() }    : {}),
@@ -1036,7 +1039,7 @@ export async function addLead({
 }
 
 export async function updateLead(id, {
-  status, note, name, company, markContacted, motion, via, nextStep, nextStepAt,
+  status, note, name, company, industry, markContacted, motion, via, nextStep, nextStepAt,
   phone, relationship, location,
 }) {
   const set = {};
@@ -1063,6 +1066,7 @@ export async function updateLead(id, {
   if (note    !== undefined) set.note    = String(note).trim();
   if (name    !== undefined) set.name    = String(name).trim();
   if (company !== undefined) set.company = String(company).trim();
+  if (industry !== undefined) set.industry = String(industry).trim().slice(0, 80);
   if (markContacted) set.lastContactedAt = new Date();
 
   if (!Object.keys(set).length) throw new Error('Nothing to update.');

@@ -287,6 +287,41 @@ function routeInCell(r) {
  * It is settable on any lead from Log, because a cold lead has a location too;
  * it was simply never asked for at the point of adding one.
  */
+/**
+ * What business they are in, and whether we can ground a conversation in it.
+ *
+ * A lane full of an industry the knowledge base has never heard of is not a
+ * blank to be tidied away — it is the clearest signal there is about what to
+ * write next, so the cell says which of the two it is rather than looking the
+ * same either way.
+ */
+function industryCell(r) {
+  if (!r.industry) return '';
+  const known = groundedIndustries().some(i => i.toLowerCase() === r.industry.toLowerCase());
+  return `<div class="sg-industry${known ? '' : ' sg-industry--ungrounded'}"
+    title="${known ? 'The knowledge base covers this industry' : 'No knowledge base overlay for this industry yet'}"
+    >${esc(r.industry)}</div>`;
+}
+
+/**
+ * The options for the location select, including whatever this row already has.
+ *
+ * The list is India and US. A row whose location is neither — an area typed on
+ * a walk-in, a city entered by an import — matched no option, so the browser
+ * fell back to the first one ("not recorded") and pressing Save wrote an empty
+ * string over it. Opening the log to read a row deleted a field on it.
+ *
+ * So the current value is an option whenever it is not already one. The select
+ * still offers the two it is opinionated about; it simply no longer destroys
+ * what it does not recognise.
+ */
+function locationOptions(current) {
+  const known = ['India', 'US'];
+  const all = current && !known.includes(current) ? [...known, current] : known;
+  return `<option value="">not recorded</option>`
+    + all.map(o => `<option value="${esc(o)}" ${current === o ? 'selected' : ''}>${esc(o)}</option>`).join('');
+}
+
 function locationCell(r) {
   if (r.location) return `<span class="sg-loc">${esc(r.location)}</span>`;
   return '<span class="sg-unknown" title="Not recorded — press Log to set it">—</span>';
@@ -362,6 +397,7 @@ function motionRow(r) {
     </td>
     <td>
       <div class="sg-org">${esc(r.company) || orgBlank()}</div>
+      ${industryCell(r)}
       <div class="sg-links">
         ${r.linkedinUrl ? `<a href="${esc(r.linkedinUrl)}" target="_blank" rel="noopener">in</a>` : ''}
         ${r.companyUrl ? `<a href="${esc(r.companyUrl)}" target="_blank" rel="noopener">web</a>` : ''}
@@ -389,12 +425,12 @@ function motionRow(r) {
   <tr class="sg-composer" id="log-${esc(r.id)}" hidden><td colspan="7">
     <input type="text" class="sg-l-via" placeholder="${esc(motionByKey(r.motion)?.viaLabel || 'Route in')}" value="${esc(r.via || '')}">
     <input type="text" class="sg-l-next" placeholder="What has to happen next" value="${esc(r.nextStep || '')}">
+    <input type="text" class="sg-l-industry" list="sg-industries" placeholder="Industry"
+           value="${esc(r.industry || '')}">
     <div class="sg-c-controls">
       <label>Location
         <select class="sg-l-loc">
-          <option value="">not recorded</option>
-          ${['India', 'US'].map(o =>
-            `<option value="${o}" ${r.location === o ? 'selected' : ''}>${o}</option>`).join('')}
+          ${locationOptions(r.location)}
         </select>
       </label>
       <label>By <input type="date" class="sg-l-when" value="${r.nextStepAt ? new Date(r.nextStepAt).toISOString().slice(0, 10) : ''}"></label>
@@ -416,6 +452,7 @@ function leadRow(r) {
     </td>
     <td>
       <div class="sg-org">${esc(r.company) || orgBlank()}</div>
+      ${industryCell(r)}
       <div class="sg-links">
         ${r.linkedinUrl ? `<a href="${esc(r.linkedinUrl)}" target="_blank" rel="noopener">in</a>` : ''}
         ${r.companyUrl ? `<a href="${esc(r.companyUrl)}" target="_blank" rel="noopener">web</a>` : ''}
@@ -462,9 +499,7 @@ function leadRow(r) {
       <label>Stop after <input type="number" class="sg-c-max" min="1" max="6" value="${q.maxSends}"> emails</label>
       <label>Location
         <select class="sg-c-loc">
-          <option value="">not recorded</option>
-          ${['India', 'US'].map(o =>
-            `<option value="${o}" ${r.location === o ? 'selected' : ''}>${o}</option>`).join('')}
+          ${locationOptions(r.location)}
         </select>
       </label>
       <label class="sg-c-toggle"><input type="checkbox" class="sg-c-enabled" ${q.enabled ? 'checked' : ''}> Auto follow-up</label>
@@ -506,6 +541,33 @@ function lanes() { return state.motions?.lanes || []; }
 
 function motionsInLane(laneKey) {
   return (state.motions?.motions || []).filter(m => m.lane === laneKey);
+}
+
+/**
+ * The industries the knowledge base actually covers.
+ *
+ * They already travel with the registry, as the industry field's suggestions —
+ * so they are read from there rather than kept a second time in state, where
+ * the copy and the form could disagree about what is grounded.
+ */
+function groundedIndustries() {
+  for (const m of state.motions?.motions || []) {
+    const f = (m.fields || []).find(x => x.key === 'industry');
+    if (f?.suggestions?.length) return f.suggestions;
+  }
+  return [];
+}
+
+/** One datalist for the whole screen, not one per row. */
+function renderIndustryDatalist() {
+  const list = groundedIndustries();
+  let el = document.getElementById('sg-industries');
+  if (!el) {
+    el = document.createElement('datalist');
+    el.id = 'sg-industries';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = list.map(i => `<option value="${esc(i)}"></option>`).join('');
 }
 
 function motionByKey(key) {
@@ -1165,6 +1227,7 @@ function wireOutreach() {
             // An empty date clears the deadline rather than leaving a stale one.
             nextStepAt: box.querySelector('.sg-l-when').value || null,
             location: box.querySelector('.sg-l-loc').value,
+            industry: box.querySelector('.sg-l-industry').value.trim(),
             note:     box.querySelector('.sg-l-note').value.trim(),
           }),
         });
@@ -1485,6 +1548,7 @@ async function load(keepTab) {
     state.mail = mail?.mail || null;
     state.template = tpl?.template || state.template;
     if (motions) state.motions = motions;
+    renderIndustryDatalist();
     if (keepTab) state.tab = keepTab;
     renderKindFilter();
     renderTabs();

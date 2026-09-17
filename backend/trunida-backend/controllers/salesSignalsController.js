@@ -20,6 +20,7 @@ import {
   collectSignals, renderBoard, askBoard,
   addLead, updateLead, deleteLead,
 } from '../services/salesSignalsService.js';
+import { listGroundedIndustries } from '../services/strategyCanvasService.js';
 import {
   sendNext, setSequence, unsubscribeByToken,
   getTemplate, setTemplate, previewFor, generateOutreach, trackedLink,
@@ -82,7 +83,7 @@ export async function ask(req, res) {
 export async function createLead(req, res) {
   try {
     const {
-      email, name, company, role, companyUrl, linkedinUrl, note, subject, body, orgContext,
+      email, name, company, industry, role, companyUrl, linkedinUrl, note, subject, body, orgContext,
       motion, via, nextStep, nextStepAt, phone, relationship, location,
     } = req.body || {};
     // A new lead with nothing written starts from the shared template, so the
@@ -92,7 +93,7 @@ export async function createLead(req, res) {
     const wantsMail = motionEmails(motion || DEFAULT_MOTION);
     const tpl = wantsMail ? await getTemplate() : { subject: '', body: '' };
     const lead = await addLead({
-      email, name, company, role, companyUrl, linkedinUrl, note, orgContext,
+      email, name, company, industry, role, companyUrl, linkedinUrl, note, orgContext,
       motion, via, nextStep, nextStepAt, phone, relationship, location,
       subject: subject || tpl.subject,
       body:    body    || tpl.body,
@@ -119,7 +120,17 @@ export async function createLead(req, res) {
  */
 export async function getMotions(req, res) {
   try {
-    return res.json(motionRegistry());
+    /*
+     * The industry field suggests what the knowledge base actually covers.
+     *
+     * Read here rather than in the registry, which is a registry and has no
+     * business touching the filesystem. Failing soft matters: a missing KB
+     * directory should cost the form its suggestions, never the whole screen
+     * its motions.
+     */
+    let industries = [];
+    try { industries = listGroundedIndustries(); } catch { industries = []; }
+    return res.json(motionRegistry({ industries }));
   } catch (err) {
     return fail(res, err, 'Could not read the motions.');
   }
@@ -155,11 +166,11 @@ export async function previewLead(req, res) {
 export async function patchLead(req, res) {
   try {
     const {
-      status, note, name, company, markContacted, motion, via, nextStep, nextStepAt,
+      status, note, name, company, industry, markContacted, motion, via, nextStep, nextStepAt,
       phone, relationship, location,
     } = req.body || {};
     const lead = await updateLead(req.params.id, {
-      status, note, name, company, markContacted, motion, via, nextStep, nextStepAt,
+      status, note, name, company, industry, markContacted, motion, via, nextStep, nextStepAt,
       phone, relationship, location,
     });
     return res.json({ lead });

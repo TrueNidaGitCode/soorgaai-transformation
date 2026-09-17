@@ -375,13 +375,17 @@ export function motionEmails(key) {
  * Served rather than duplicated in sales.js: the plays are the reasoning behind
  * the strategy, and two copies of reasoning drift into two different strategies.
  */
-export function motionRegistry() {
+/**
+ * @param {{ industries?: string[] }} [ctx] industries the KB covers, for the
+ *   industry field’s suggestions.
+ */
+export function motionRegistry(ctx = {}) {
   return {
     lanes: LANES,
     defaultMotion: DEFAULT_MOTION,
     // Fields travel with the motion so the form is rendered from the same
     // definition the API validates against.
-    motions: MOTIONS.map((m) => ({ ...m, fields: fieldsFor(m.key), sharesLink: motionSharesLink(m.key) })),
+    motions: MOTIONS.map((m) => ({ ...m, fields: fieldsFor(m.key, ctx), sharesLink: motionSharesLink(m.key) })),
   };
 }
 
@@ -439,6 +443,15 @@ export const FIELDS = {
   companyUrl:  { key: 'companyUrl',  label: 'Company website',      type: 'url' },
   companyOnly: { key: 'company',     label: 'Organisation',         type: 'text' },
   /*
+   * Suggested, never restricted.
+   *
+   * The options are the industries the knowledge base actually covers, so
+   * picking one means the conversation can be grounded. Typing one that is
+   * not on the list is allowed and is the more useful answer of the two — it
+   * says the KB has a gap where the pipeline has a company.
+   */
+  industry:    { key: 'industry',    label: 'Industry',             type: 'text' },
+  /*
    * The only thing a walk-in starts with. Required here where the person is
    * not, which is the whole difference between this motion and every other.
    */
@@ -459,19 +472,25 @@ export const FIELDS = {
 const MOTION_FIELDS = {
   // You already know this person. The whole exchange is a WhatsApp message
   // with a link in it, so the number matters and the job title does not.
-  'warm-intro': ['name', 'phone', 'company', 'relationship', 'location', 'email', 'note'],
+  'warm-intro': ['name', 'phone', 'company', 'industry', 'relationship', 'location', 'email', 'note'],
 
   // A training company, approached as a business rather than as a favour. The
   // firm is the point — which is why it is required and `via` is gone: "which
   // firm" and the company name were the same question asked twice.
-  partner: ['name', 'companyTraining', 'phoneOpt', 'emailAddr', 'note'],
-  'walk-in': ['institute', 'area', 'nameLater', 'role', 'phoneLater', 'emailLater', 'note'],
+  partner: ['name', 'companyTraining', 'industry', 'phoneOpt', 'emailAddr', 'note'],
+  'walk-in': ['institute', 'industry', 'area', 'nameLater', 'role', 'phoneLater', 'emailLater', 'note'],
 };
 
 const DEFAULT_FIELDS =
-  ['companyOnly', 'name', 'role', 'emailReq', 'linkedinUrl', 'companyUrl', 'via', 'note'];
+  ['companyOnly', 'industry', 'name', 'role', 'emailReq', 'linkedinUrl', 'companyUrl', 'via', 'note'];
 
-export function fieldsFor(motionKey) {
+/**
+ * @param {string} motionKey
+ * @param {{ industries?: string[] }} [ctx] industries with real KB coverage,
+ *   passed in rather than read here so this registry stays a registry and does
+ *   not reach into the filesystem to answer a question about a form.
+ */
+export function fieldsFor(motionKey, ctx = {}) {
   const names = MOTION_FIELDS[motionKey] || DEFAULT_FIELDS;
   const m = motionOf(motionKey);
   return names.map((n) => {
@@ -481,6 +500,11 @@ export function fieldsFor(motionKey) {
       return m.viaLabel
         ? { key: 'via', label: m.viaLabel, type: 'text', required: !m.emails }
         : null;
+    }
+    // The one field whose suggestions are not a fixed list: they are whatever
+    // the knowledge base covers today, which changes as the KB is written.
+    if (n === 'industry' && ctx.industries?.length) {
+      return { ...FIELDS.industry, suggestions: ctx.industries };
     }
     return FIELDS[n] || null;
   }).filter(Boolean);

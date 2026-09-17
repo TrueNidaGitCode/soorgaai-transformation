@@ -121,9 +121,29 @@ describe('answers that would be invented', () => {
     expect(by(await run(), 'says-when-it-does-not-know').passed).toBe(false);
   });
 
-  it('fails when the figures were never recomputed from the records', async () => {
+  it('passes when the safety net catches an invented figure, because nothing invented got out', async () => {
+    /*
+     * checked:false does NOT mean the answer went out unverified. It means the
+     * model stated a number that was not in the facts, was asked again, did it
+     * a second time, and its prose was DISCARDED for a sentence composed in
+     * code from the records.
+     *
+     * The first version of this check read that as a failure and reported a
+     * live customer application as failing validation, when what had happened
+     * was the net doing its job. The guarantee is that no invented figure
+     * reaches the reader; it held either way.
+     */
     answers({ counting: good({ checked: false }) });
-    expect(by(await run(), 'evidence-was-checked').passed).toBe(false);
+    const c = by(await run(), 'no-unsupported-figure-reaches-the-reader');
+    expect(c.passed).toBe(true);
+    expect(c.detail).toMatch(/discarded and the answer rebuilt from the records/);
+    expect(c.evidence.fellBack).toBe(true);
+  });
+
+  it('says so plainly when the model needed no correcting', async () => {
+    const c = by(await run(), 'no-unsupported-figure-reaches-the-reader');
+    expect(c.passed).toBe(true);
+    expect(c.detail).toMatch(/every figure in it was found in the records/);
   });
 });
 
@@ -172,17 +192,44 @@ describe('what the answer stands on', () => {
 });
 
 describe('sample data is never passed off as theirs', () => {
-  it('fails when an answer from generated samples does not say so', async () => {
+  /*
+   * The label is the `simulated` flag. The application says it once in its
+   * header — "Using simulated data" — rather than under every answer, because
+   * it is true of the application and not of the reply.
+   *
+   * The first version of this check looked for those words in the answer's own
+   * notes, and reported a live customer application as serving generated data
+   * unlabelled when the label had been on screen the whole time. What has to be
+   * certified is that the flag agrees with reality, in both directions — and
+   * the suite knows which reality, because it is the thing that fell back to
+   * the sample catalogue.
+   */
+  it('fails when an application with no records of its own does not mark its answers', async () => {
     // The one failure the whole product is arranged against: somebody reading
     // a generated figure as their own number.
-    answers({ counting: good({ simulated: true, notes: [] }) });
+    catalogue.mockImplementation(async (kind) => (kind === 'own' ? [{ name: 'Roll Call', rows: 0, columns: [] }] : CAT));
+    answers({ counting: good({ simulated: false }) });
     const c = by(await run(), 'sample-data-is-labelled');
     expect(c.passed).toBe(false);
+    expect(c.detail).toMatch(/not marked as simulated/);
   });
 
-  it('passes when it does say so', async () => {
-    answers({ counting: good({ simulated: true, notes: ['Answered from sample data, not your records.'] }) });
+  it('passes when it does mark them', async () => {
+    catalogue.mockImplementation(async (kind) => (kind === 'own' ? [{ name: 'Roll Call', rows: 0, columns: [] }] : CAT));
+    answers({ counting: good({ simulated: true }) });
     expect(by(await run(), 'sample-data-is-labelled').passed).toBe(true);
+  });
+
+  it('fails when an application marks the customer\'s OWN records as simulated', () => {
+    // Not harmless. An application that keeps calling their data invented after
+    // they have imported it teaches them to ignore the label, which is how the
+    // first failure eventually lands.
+    return (async () => {
+      answers({ counting: good({ simulated: true }) });   // real data in the catalogue
+      const c = by(await run(), 'sample-data-is-labelled');
+      expect(c.passed).toBe(false);
+      expect(c.detail).toMatch(/presented to them as invented/);
+    })();
   });
 
   it('examines the samples when no real data has been connected yet', async () => {
@@ -208,7 +255,7 @@ describe('the suite itself', () => {
   });
 
   it('is not ok when anything failed', async () => {
-    answers({ counting: good({ checked: false }) });
+    answers({ counting: good({ answer: 'Roll Call holds 130 sessions.' }) });
     const r = await run();
     expect(r.ok).toBe(false);
     expect(r.failed).toBeGreaterThan(0);

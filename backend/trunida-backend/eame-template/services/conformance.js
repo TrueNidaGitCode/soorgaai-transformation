@@ -133,16 +133,29 @@ const CHECKS = [
     },
   },
   {
-    id: 'evidence-was-checked',
+    id: 'no-unsupported-figure-reaches-the-reader',
     standard: 'Answer validity',
-    name: 'The figures were validated against the records before the answer was written',
+    name: 'A figure that is not in the records never reaches the reader',
+    /*
+     * `checked: false` does NOT mean the answer went out unverified. It means
+     * the opposite: the model stated a number that was not in the facts, was
+     * asked again, did it a second time, and its prose was DISCARDED in favour
+     * of a sentence composed in code from the records.
+     *
+     * The first version of this check read false as a failure and reported a
+     * live customer application as failing validation, when what had actually
+     * happened was the safety net doing its job. The guarantee being certified
+     * here is that no invented figure reaches the reader, and it held either
+     * way — so this passes either way, and says which path it took, because a
+     * model that needs the net twice on one question is worth knowing about.
+     */
     run({ counting }) {
       if (!counting.ok) return SKIP(counting.error ? `Not checked — ${counting.error}` : 'No answer to inspect.');
-      // `checked` is set by the validate step, which recomputes every figure
-      // the model was given. False means the sentence went out unverified.
       return counting.result.checked
-        ? PASS('The validation step ran and the figures in the answer were recomputed from the records.')
-        : FAIL('The answer was returned without its figures being recomputed from the records.');
+        ? PASS('The model wrote the answer and every figure in it was found in the records.')
+        : PASS('The model stated a figure that was not in the records, twice. Its wording was '
+             + 'discarded and the answer rebuilt from the records, so nothing invented reached the reader.',
+               { fellBack: true });
     },
   },
   {
@@ -226,16 +239,39 @@ const CHECKS = [
      * has to say so — and one drawn from real records must NOT, or the label
      * stops meaning anything.
      */
-    run({ counting }) {
+    /*
+     * The label is the `simulated` flag, and the application says it once in
+     * its header — "Using simulated data" — rather than under every answer,
+     * because it is true of the application, not of the reply.
+     *
+     * The first version of this check looked for the words in the answer's own
+     * notes and reported a live customer application as presenting generated
+     * data unlabelled, when the label was on screen the whole time. What must
+     * be certified is that the flag is SET whenever samples are in use, since
+     * that is what every surface keys off.
+     */
+    run({ counting, usingSamples }) {
       if (!counting.ok) return SKIP(counting.error ? `Not checked — ${counting.error}` : 'No answer to inspect.');
-      const { simulated, notes = [] } = counting.result;
-      const labelled = simulated && notes.some(n => /sample|example|generated|not .*real/i.test(String(n)));
-      if (simulated) {
-        return labelled
-          ? PASS('This application is answering from generated sample data, and says so on the answer.', { notes })
-          : FAIL('This application is answering from generated sample data and the answer does not say so.', { notes });
+      const { simulated } = counting.result;
+
+      // Serving invented rows without saying so. The one failure the whole
+      // product is arranged against: a generated figure read as their own.
+      if (usingSamples && !simulated) {
+        return FAIL('This application has no records of its own, so it is answering from generated '
+                  + 'sample rows — and the answer is not marked as simulated, so nothing on screen '
+                  + 'can say so.');
       }
-      return PASS('This application is answering from the customer\'s own records, not from samples.');
+      // The opposite, and it is not harmless: an application that keeps calling
+      // their own data simulated after they have imported it teaches them to
+      // ignore the label, which is how the first failure eventually lands.
+      if (!usingSamples && simulated) {
+        return FAIL('This application has the customer\'s own records, but the answer is marked as '
+                  + 'simulated — so their own data is being presented to them as invented.');
+      }
+      return usingSamples
+        ? PASS('Answering from generated sample rows, and marked as simulated so every surface '
+             + 'showing it says so.')
+        : PASS('Answering from the customer\'s own records, and not marked as simulated.');
     },
   },
   {
@@ -265,11 +301,20 @@ export async function runConformance({ onProgress = null } = {}) {
   const say = (s) => { try { onProgress?.(s); } catch { /* a listener is not the suite's problem */ } };
 
   let cat = [];
+  /*
+   * Whether this application has any records of its own.
+   *
+   * Established here, independently of what any answer claims, so the check on
+   * labelling has something to compare the answer's own flag against. Without
+   * it that check can only agree with whatever the application says, which
+   * certifies nothing.
+   */
+  let usingSamples = false;
   try {
     cat = await catalogue('own');
     // Nothing of the customer's yet: the application answers from the samples
     // it was built with, and that is what should be examined.
-    if (!cat.some(d => d.rows > 0)) cat = await catalogue('sample');
+    if (!cat.some(d => d.rows > 0)) { cat = await catalogue('sample'); usingSamples = true; }
   } catch (err) {
     say('the datasets could not be read');
     return {
@@ -302,7 +347,7 @@ export async function runConformance({ onProgress = null } = {}) {
   const checks = CHECKS.map(c => {
     let outcome;
     try {
-      outcome = c.run({ counting, unknown, injected, data });
+      outcome = c.run({ counting, unknown, injected, data, usingSamples });
     } catch (err) {
       // A check that throws is a failed check, never a failed suite.
       outcome = FAIL(`The check could not be completed: ${err.message}`);

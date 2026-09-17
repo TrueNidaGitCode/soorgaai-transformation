@@ -412,7 +412,11 @@ function resolveOpportunities(bp) {
   const discovery = sections.find(s => s.title === 'AI Opportunity Discovery');
   const found = (discovery?.brief?.aiOpportunities || []).filter(o => o && o.name);
   const plainOf = new Map(found.map(o => [o.name, o.plain || '']));
-  const say = (name) => ({ name, plain: plainOf.get(name) || name });
+  // What each opportunity rests on. The delivered application is already held
+  // to naming the records behind an answer; this is the same standard applied
+  // to the thinking, and it is what a buyer reading this page is owed.
+  const groundsOf = new Map(found.map(o => [o.name, Array.isArray(o.grounds) ? o.grounds : []]));
+  const say = (name) => ({ name, plain: plainOf.get(name) || name, grounds: groundsOf.get(name) || [] });
 
   const ranked = sections.find(s =>
     s.title === 'AI Implementation Prioritization' || s.title === 'AI Use Case Prioritization');
@@ -456,6 +460,27 @@ function renderOpportunitiesContent(view) {
     winnerTechEl.style.display = show ? '' : 'none';
   }
   if (winnerWhyEl)  winnerWhyEl.textContent  = view.why;
+
+  /*
+   * What this rests on, said plainly.
+   *
+   * "Grounded in the method" is an honest answer for a customer who has
+   * connected nothing, and a far better one than an unmarked assertion — it is
+   * also the clearest possible prompt to connect a source. So the line is
+   * shown either way, and only the wording changes.
+   */
+  const groundsEl = document.getElementById('opp-winner-grounds');
+  if (groundsEl) {
+    const g = view.winner.grounds || [];
+    const only = g.length === 1 && g[0] === 'the method';
+    groundsEl.textContent = g.length
+      ? (only
+        ? 'Grounded in how businesses like this one work — connect your data to ground it in yours'
+        : 'Grounded in ' + g.join(', '))
+      : '';
+    groundsEl.style.display = g.length ? '' : 'none';
+    groundsEl.className = 'rp-grounds' + (only ? ' rp-grounds--thin' : '');
+  }
 
   // Ranked and unranked are different claims, and saying "Recommended" over a
   // list nothing ranked would be the screen inventing a judgement.

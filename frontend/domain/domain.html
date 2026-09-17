@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../pipeline-demo/pipeline-demo.css?v=2">
   <link rel="stylesheet" href="domain.css?v=76">
   <!-- The redesigned shell, layered over domain.css rather than replacing it. -->
-  <link rel="stylesheet" href="workspace.css?v=39">
+  <link rel="stylesheet" href="workspace.css?v=40">
   <!-- The rail: the same four controls on every signed-in page. -->
   <link rel="stylesheet" href="../shared/rail.css?v=2">
   <script src="../login/config.js"></script>
@@ -317,6 +317,12 @@
                    the same opportunity in the customer's words. -->
               <p class="pd-winner__tech" id="opp-winner-tech" style="display:none"></p>
               <p class="pd-winner__why" id="opp-winner-why"></p>
+              <!-- What this recommendation rests on: their own words, their
+                   connected data, what happened at similar businesses, or the
+                   method alone. The delivered application is already held to
+                   naming the records behind an answer; this is the same
+                   standard applied to the thinking. -->
+              <p class="rp-grounds" id="opp-winner-grounds" style="display:none"></p>
               <div class="rp-winner-card__actions">
                 <button type="button" class="pw-back-btn" id="opp-view-blueprint-btn" disabled>Open Blueprint</button>
                 <button type="button" class="pw-next-btn" id="opp-approve-btn" disabled>Approve</button>
@@ -1694,7 +1700,7 @@
     </div>
   </div>
 
-  <script type="module" src="blueprintGenerate.js?v=23"></script>
+  <script type="module" src="blueprintGenerate.js?v=24"></script>
   <script type="module" src="blueprintWorkspace.js?v=4"></script>
   <script type="module" src="ariaScreen.js?v=54"></script>
   <script type="module" src="arthScreen.js?v=24"></script>

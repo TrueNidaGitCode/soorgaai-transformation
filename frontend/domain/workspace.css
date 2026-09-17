@@ -733,6 +733,27 @@ body.domain-page .pd-winner__why {
   color: var(--ws-muted);
 }
 
+/* What the recommendation rests on.
+   Quiet by design: it is a footnote to the claim above it, not a claim of its
+   own. But it is always shown when there is anything to say, because a reader
+   who cannot tell whether an opportunity came from their own data or from
+   nothing in particular has no way to weigh it. */
+body.domain-page .rp-grounds {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--ws-muted);
+  opacity: 0.78;
+}
+
+/* Grounded in the method alone: still said plainly, and carrying the one
+   action that would change it. */
+body.domain-page .rp-grounds--thin {
+  opacity: 0.66;
+  font-style: italic;
+}
+
 /* A rule above the actions, as in the design — it separates what this IS from
    what you can do about it. */
 body.domain-page .rp-winner-card__actions {

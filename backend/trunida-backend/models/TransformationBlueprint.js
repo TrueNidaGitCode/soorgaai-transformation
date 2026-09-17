@@ -41,7 +41,14 @@ const sdlcStageSchema           = new mongoose.Schema({ stage: String, aiTool: S
 // name is the technique (the anchor every later capability is keyed on);
 // plain is the same opportunity in the customer's words, which is what the
 // Cob screen leads with. Older blueprints have no plain and show the name.
-const aiOpportunitySchema           = new mongoose.Schema({ name: String, plain: String, why: String }, { _id: false });
+/*
+ * `grounds` is what this opportunity rests on — the customer's own words,
+ * their connected data, prior deployments, the industry, or the method alone.
+ * Declared here or a strict subdocument drops it on write with nothing said,
+ * and the blueprint would carry opportunities whose provenance silently
+ * vanished between generating them and storing them.
+ */
+const aiOpportunitySchema           = new mongoose.Schema({ name: String, plain: String, why: String, grounds: [String] }, { _id: false });
 const opportunityClassificationSchema = new mongoose.Schema({ opportunity: String, classification: String, rationale: String }, { _id: false });
 const opportunityValueSchema    = new mongoose.Schema({ opportunity: String, valueArea: String, focus: String, outcomes: [String] }, { _id: false });
 const valueCategorySchema       = new mongoose.Schema({ title: String, focus: String, outcomes: [String] }, { _id: false });

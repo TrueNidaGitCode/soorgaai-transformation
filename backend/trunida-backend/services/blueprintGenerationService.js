@@ -1822,8 +1822,16 @@ function parseBriefOutput(rawSections, validTitles) {
       const aiOpportunities      = Array.isArray(b.aiOpportunities)
         ? b.aiOpportunities
             .map(o => (o && typeof o === 'object')
-              ? { name: String(o.name || '').trim(), plain: String(o.plain || '').trim(), why: String(o.why || '').trim() }
-              : { name: String(o || '').trim(), plain: '', why: '' })
+              ? {
+                  name: String(o.name || '').trim(),
+                  plain: String(o.plain || '').trim(),
+                  why: String(o.why || '').trim(),
+                  // Checked against what the prompt actually carried by the
+                  // caller — the parser cannot know, and an unchecked claim
+                  // here is worse than no claim at all.
+                  grounds: Array.isArray(o.grounds) ? o.grounds.map(String) : [],
+                }
+              : { name: String(o || '').trim(), plain: '', why: '', grounds: [] })
             .filter(o => o.name)
             // Two names for one system. The instruction forbids it; this is
             // the backstop, because asking for coverage makes a near-duplicate
@@ -2886,6 +2894,41 @@ function industryReferenceBlock(industry, text) {
  * other capability reasons about data, platforms or people, where a block of
  * opportunity outcomes is noise dressed as evidence.
  */
+/**
+ * What an opportunity can honestly be said to rest on.
+ *
+ * The delivered application is held to this already: the conformance suite
+ * fails it if an answer does not name the records it stands on. The layer
+ * doing the thinking was held to nothing — every claim in a blueprint was an
+ * assertion, with no way for a reader to tell what was behind it.
+ *
+ * Five grounds, listed in the order of their weight. "The method" is the
+ * weakest, and it is the honest label for a good opportunity reasoned out of
+ * experience rather than out of anything this customer supplied. Saying so is
+ * worth more than an unmarked assertion, and it is the most useful prompt to
+ * connect a data source there could be.
+ */
+export const GROUNDS = ['their website or profile', 'their connected data', 'prior deployments', 'the industry', 'the method'];
+
+/**
+ * Strip any ground the prompt did not actually carry.
+ *
+ * The model says what it used; this decides whether it could have. A claim of
+ * "their connected data" when no connector block was in the prompt is not a
+ * small inaccuracy — it is the exact failure this field exists to prevent,
+ * committed by the field itself.
+ *
+ * "The method" needs no evidence: it is always present, and it is what is left
+ * when nothing else was.
+ */
+export function validateGrounds(claimed, available = {}) {
+  const allowed = new Set(['the method', ...GROUNDS.filter(g => available[g])]);
+  const kept = (Array.isArray(claimed) ? claimed : [])
+    .map(g => String(g || '').trim().toLowerCase())
+    .filter(g => allowed.has(g));
+  return kept.length ? [...new Set(kept)] : ['the method'];
+}
+
 const OUTCOME_AWARE_CAPABILITIES = new Set([
   'AI Implementation Prioritization',
   'Business Value Definition',
@@ -3105,11 +3148,31 @@ Generate workflowSteps, highEffortActivities, and aiOpportunities as specified.`
 
   const stage2 = await callLLM(stage2System, stage2User, 120_000, `${cap.name} (Stage 2 — opportunities)`);
 
+  /*
+   * What this run could honestly claim to have read.
+   *
+   * Decided here from the blocks that were actually assembled above, not from
+   * what the model says it used. The industry layer reached stage 1 rather
+   * than stage 2, and it did shape the problems stage 2 is reasoning from, so
+   * it counts.
+   */
+  const available = {
+    'their website or profile': !!companyProfile.contextDoc,
+    'their connected data': !!enterpriseContext,
+    'prior deployments':    !!priorOutcomes,
+    'the industry':         !!automotiveBlueprint,
+    'the method':           true,
+  };
+
   const brief = {
     businessProblems:     businessProblemsFromStage1,
     workflowSteps:        stage2?.workflowSteps,
     highEffortActivities: stage2?.highEffortActivities,
-    aiOpportunities:      stage2?.aiOpportunities,
+    aiOpportunities:      Array.isArray(stage2?.aiOpportunities)
+      ? stage2.aiOpportunities.map(o => (o && typeof o === 'object')
+          ? { ...o, grounds: validateGrounds(o.grounds, available) }
+          : o)
+      : stage2?.aiOpportunities,
   };
 
   const validTitles = new Set(parsedSections.map(s => s.title.toLowerCase()));
@@ -3165,12 +3228,27 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no markdown fences, no explanati
 {
   "workflowSteps": ["<step 1>", "<step 2>", "..."],
   "highEffortActivities": ["<activity 1>", "<activity 2>", "..."],
-  "aiOpportunities": [{ "name": "<AI technique>", "plain": "<what happens for the business, 4-9 words, no AI vocabulary>", "why": "<1-2 sentences, plain voice>" }, ...],
+  "aiOpportunities": [{ "name": "<AI technique>", "plain": "<what happens for the business, 4-9 words, no AI vocabulary>", "why": "<1-2 sentences, plain voice>", "grounds": ["<what this rests on>", ...] }, ...],
   "actionItems": [
     { "title": "<specific, action-oriented next step — one sentence>", "description": "<what completing it actually involves — one sentence>", "assignee": "<suggested owner role>", "reviewer": "<suggested sign-off role — empty string if no review is naturally implied>" }
   ]
 }
-Generate 2-4 actionItems — concrete things a real project team would need to do, review, or agree on to act on these opportunities (e.g. "Review top 2 opportunities and align on Q1 priority" reviewed by Product Owner/Technical Architect). Infer assignee/reviewer roles from what each action actually is.`;
+Generate 2-4 actionItems — concrete things a real project team would need to do, review, or agree on to act on these opportunities (e.g. "Review top 2 opportunities and align on Q1 priority" reviewed by Product Owner/Technical Architect). Infer assignee/reviewer roles from what each action actually is.
+
+"grounds" — WHAT THIS OPPORTUNITY RESTS ON. Pick every one that is true, from
+exactly this list and using exactly these words:
+
+  "their website or profile"  what they publish about themselves, quoted above
+  "their connected data"   a document, system or export they connected
+  "prior deployments"      what happened at similar businesses, above
+  "the industry"           how this kind of business is known to work
+  "the method"             reasoning from experience, with nothing specific to
+                           this company behind it
+
+Be accurate rather than generous. "the method" alone is a perfectly good answer
+and an honest one — a customer who has connected nothing should be told that is
+what their blueprint rests on, not given a claim that cannot be true. Naming a
+source that is not in this message is the one thing you must never do.`;
 }
 
 export async function runBriefGeneration(cap, companyProfile, businessObjective, industry, parsedSections, automotiveBlueprint, enterpriseContext, journeyContext = null, transformationCtx = null, blueprintId = '') {

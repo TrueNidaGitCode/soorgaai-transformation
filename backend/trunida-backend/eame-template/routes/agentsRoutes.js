@@ -12,12 +12,14 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { ownerOnly } from '../controllers/accessController.js';
-import { listAgentsHandler, createAgentHandler, patchAgentHandler, deleteAgentHandler } from '../controllers/agentsController.js';
+import { listAgentsHandler, createAgentHandler, patchAgentHandler, deleteAgentHandler, startFromCatalogueHandler } from '../controllers/agentsController.js';
 
 const router = express.Router();
 
 router.get   ('/',    protect, ownerOnly, listAgentsHandler);
 router.post  ('/',    protect, ownerOnly, express.json({ limit: '16kb' }), createAgentHandler);
+// One tap on a catalogue card.
+router.post  ('/start/:id', protect, ownerOnly, express.json({ limit: '4kb' }), startFromCatalogueHandler);
 router.patch ('/:id', protect, ownerOnly, express.json({ limit: '8kb' }), patchAgentHandler);
 router.delete('/:id', protect, ownerOnly, deleteAgentHandler);
 

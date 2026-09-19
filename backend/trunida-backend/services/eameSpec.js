@@ -89,6 +89,7 @@ export const FIXED_PATHS = [
   // unconditionally — and an import in a file every application ships must
   // resolve in every application.
   'services/agentService.js',
+  'services/agentCatalogue.js',
   'services/notifyService.js',
   'controllers/agentsController.js',
   'routes/agentsRoutes.js',

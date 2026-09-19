@@ -10,6 +10,27 @@ import {
   findingsCollection, SCHEDULES,
 } from '../services/agentService.js';
 import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { catalogueFor, entryFor, fillQuestion, matchDataset } from '../services/agentCatalogue.js';
+import { readIndex } from '../services/connectorService.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, '..');
+
+/**
+ * Cob's reading of which watchers matter here, written by Eame.
+ *
+ * The same shape as data/sources.json, and it degrades the same way: no file
+ * means the default order, and the application works. Cob's judgement is an
+ * improvement, never a dependency — and it can promote an entry but never
+ * remove one.
+ */
+function plan() {
+  try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'agents.json'), 'utf8')) || {}; }
+  catch { return {}; }
+}
 
 const bad = (res, err) => res.status(400).json({ error: err.message || String(err) });
 
@@ -40,7 +61,24 @@ export async function listAgentsHandler(req, res) {
       });
     }
 
-    return res.json({ agents: withFindings, schedules: Object.keys(SCHEDULES) });
+    /*
+      * What this application could be watching, alongside what it is.
+      *
+      * The whole catalogue, every time. An entry the data cannot support is
+      * shown greyed with the records it would need, because that line is what
+      * makes somebody connect a source — and an entry withheld would be
+      * undiscoverable.
+      */
+    const running = new Set(withFindings.map((a) => a.name));
+    const catalogue = catalogueFor(readIndex(), plan())
+      .map((c) => ({ ...c, running: running.has(c.name) }));
+
+    return res.json({
+      agents: withFindings,
+      catalogue,
+      areas: [...new Set(catalogue.map((c) => c.area))],
+      schedules: Object.keys(SCHEDULES),
+    });
   } catch (err) {
     console.error('[agents] list failed:', err.message);
     return res.status(500).json({ error: 'Could not read the agents.' });
@@ -75,5 +113,37 @@ export async function deleteAgentHandler(req, res) {
     return res.json({ ok: true });
   } catch (err) {
     return res.status(404).json({ error: err.message });
+  }
+}
+
+/**
+ * Start watching one of the catalogue entries.
+ *
+ * The question is built from the columns that actually matched, not from
+ * the words in the catalogue — so the agent asks about this application’s
+ * own column names and the answer pipeline has something it can plan.
+ */
+export async function startFromCatalogueHandler(req, res) {
+  try {
+    const entry = entryFor(req.params.id);
+    if (!entry) return res.status(404).json({ error: 'No such watcher.' });
+
+    let match = null;
+    for (const d of readIndex()) { match = matchDataset(entry, d); if (match) break; }
+    if (!match) {
+      return res.status(400).json({ error: `Nothing here holds the records this needs yet.` });
+    }
+
+    const agent = await createAgent({
+      name: entry.name,
+      question: fillQuestion(entry, match),
+      schedule: req.body?.schedule || 'weekdays',
+      atHour: Number.isInteger(req.body?.atHour) ? req.body.atHour : 7,
+      tz: req.body?.tz || 'UTC',
+      condition: entry.condition || null,
+    });
+    return res.status(201).json({ agent });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
   }
 }

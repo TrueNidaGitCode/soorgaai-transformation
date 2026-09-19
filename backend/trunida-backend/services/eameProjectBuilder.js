@@ -250,6 +250,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     // unconditionally — the lesson of the WhatsApp outage is that an import in a
     // file every application gets must resolve in every application.
     'services/agentService.js':          { template: 'services/agentService.js' },
+    'services/agentCatalogue.js':        { template: 'services/agentCatalogue.js' },
     'services/notifyService.js':         { template: 'services/notifyService.js' },
     'controllers/agentsController.js':   { template: 'controllers/agentsController.js' },
     'routes/agentsRoutes.js':            { template: 'routes/agentsRoutes.js' },

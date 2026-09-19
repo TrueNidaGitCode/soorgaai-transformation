@@ -1460,3 +1460,107 @@ body {
   .ag-field--wide { grid-column: span 1; }
   .ag-list { grid-template-columns: 1fr; }
 }
+
+/* ── The catalogue ─────────────────────────────────────────────────────────
+   What this application could watch, whether or not it is watching it yet.
+
+   Three states. A watcher the data supports is offered; one already running
+   says so; one the data cannot support is greyed with the records it would
+   need — and that last line is what makes somebody connect a source, which is
+   why it is printed rather than hidden. */
+
+.ag-sub {
+  margin: 34px 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ch-faint);
+}
+
+.ag-offers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.ag-offer {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 15px 16px;
+  background: var(--ch-panel);
+  border: 1px solid var(--ch-line);
+  border-radius: 12px;
+  min-width: 0;
+}
+
+/* Greyed, not hidden. It still reads as a real thing you could have. */
+.ag-offer--cold { background: none; border-style: dashed; }
+.ag-offer--cold h4 { color: var(--ch-dim); }
+
+.ag-offer__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ag-offer__head h4 { margin: 0; font-size: 14.5px; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+
+.ag-offer__area {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ch-faint);
+  white-space: nowrap;
+}
+
+/* What the owner said they wanted, in their own words, from the objective. */
+.ag-star {
+  order: -1;
+  width: 100%;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ch-accent);
+}
+
+.ag-offer__says { margin: 0; font-size: 13.5px; color: var(--ch-dim); line-height: 1.45; }
+
+.ag-offer__q {
+  margin: 0;
+  padding: 7px 9px;
+  background: var(--ch-panel-hi);
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--ch-faint);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ag-offer footer { margin-top: auto; padding-top: 4px; }
+
+.ag-offer__on { font-size: 12.5px; color: var(--ch-accent); font-weight: 600; }
+.ag-offer__need { font-size: 12px; color: var(--ch-faint); line-height: 1.4; }
+
+.ag-btn--go {
+  background: var(--ch-accent-soft);
+  border-color: transparent;
+  color: var(--ch-accent);
+  font-weight: 600;
+}
+.ag-btn--go:hover { background: var(--ch-accent); color: var(--ch-on-accent); }
+
+.ag-showall {
+  margin-top: 14px;
+  padding: 8px 0;
+  background: none;
+  border: 0;
+  color: var(--ch-dim);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.ag-showall:hover { color: var(--ch-text); }
+
+/* The escape hatch, not the front door: a note under the heading that says so
+   without making the form look like a lesser thing. */
+.ag-orlede { margin: -6px 0 12px; font-size: 13px; color: var(--ch-faint); }

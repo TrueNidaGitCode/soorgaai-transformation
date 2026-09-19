@@ -34,6 +34,9 @@
     question: document.getElementById('ag-question'),
     schedule: document.getElementById('ag-schedule'),
     hour: document.getElementById('ag-hour'),
+    offers: document.getElementById('ag-offers'),
+    offersEmpty: document.getElementById('ag-offers-empty'),
+    more: document.getElementById('ag-more'),
     back: document.getElementById('ag-back'),
   };
 
@@ -130,15 +133,62 @@
       + '</article>';
   }
 
+  /*
+   * A catalogue card.
+   *
+   * Three states, and the third is the one worth keeping. A watcher the data
+   * cannot support is shown greyed with the records it would need, because
+   * that line is what makes somebody connect a source — and a watcher hidden
+   * would be undiscoverable, with nothing on any screen to ask about.
+   */
+  function offer(c) {
+    var cls = 'ag-offer' + (c.running ? ' ag-offer--on' : c.ready ? '' : ' ag-offer--cold');
+    var act = c.running
+      ? '<span class="ag-offer__on">Watching</span>'
+      : c.ready
+        ? '<button type="button" class="ag-btn ag-btn--go" data-start="' + esc(c.id) + '">Start watching</button>'
+        : '<span class="ag-offer__need">' + esc(c.missing) + '</span>';
+    return '<article class="' + cls + '">'
+      + '<header class="ag-offer__head">'
+      + (c.startHere ? '<span class="ag-star" title="From what you described">start here</span>' : '')
+      + '<h4>' + esc(c.name) + '</h4>'
+      + '<span class="ag-offer__area">' + esc(c.area) + '</span>'
+      + '</header>'
+      + '<p class="ag-offer__says">' + esc(c.says) + '</p>'
+      + (c.ready && !c.running ? '<p class="ag-offer__q">' + esc(c.question) + '</p>' : '')
+      + '<footer>' + act + '</footer>'
+      + '</article>';
+  }
+
+  var showAll = false;
+
   function load() {
     return api('').then(function (body) {
       var agents = body.agents || [];
+      var cat = body.catalogue || [];
+
       els.list.innerHTML = agents.map(card).join('');
       els.empty.hidden = agents.length > 0;
       els.list.hidden = agents.length === 0;
+
+      /*
+       * Ready ones first, and the rest behind a link.
+       *
+       * Twenty-eight cards on first open is a wall. Four the owner could
+       * start today, and a way to see everything else, is a product.
+       */
+      var live = cat.filter(function (c) { return !c.running && c.ready; });
+      var cold = cat.filter(function (c) { return !c.running && !c.ready; });
+      var shown = showAll ? live.concat(cold) : live;
+
+      els.offers.innerHTML = shown.map(offer).join('');
+      els.offers.hidden = shown.length === 0;
+      els.more.hidden = cold.length === 0;
+      els.more.textContent = showAll
+        ? 'Show only what this application can watch now'
+        : 'Show ' + cold.length + ' more that need other records';
+      els.offersEmpty.hidden = shown.length > 0 || showAll;
     }).catch(function (err) {
-      // The refusal an ordinary colleague gets is not an error to apologise
-      // for — it is the rule, said plainly.
       els.list.innerHTML = '';
       els.empty.hidden = false;
       say(err.message, true);
@@ -170,6 +220,25 @@
         .catch(function (err) { say(err.message, true); });
     });
   }
+
+  els.offers.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-start]');
+    if (!b) return;
+    b.disabled = true;
+    b.textContent = 'Starting…';
+    api('/start/' + b.dataset.start, {
+      method: 'POST',
+      body: JSON.stringify({ tz: (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'UTC' }),
+    })
+      .then(function () { say('Watching. It will tell you when something changes.'); return load(); })
+      .catch(function (err) { say(err.message, true); b.disabled = false; b.textContent = 'Start watching'; });
+  });
+
+  els.more.addEventListener('click', function (e) {
+    e.preventDefault();
+    showAll = !showAll;
+    load();
+  });
 
   els.list.addEventListener('click', function (e) {
     var t = e.target.closest('[data-toggle]');

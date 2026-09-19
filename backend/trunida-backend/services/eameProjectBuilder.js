@@ -238,6 +238,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/notifyService.js':         { template: 'services/notifyService.js' },
     'controllers/agentsController.js':   { template: 'controllers/agentsController.js' },
     'routes/agentsRoutes.js':            { template: 'routes/agentsRoutes.js' },
+    'frontend/agents.js':                { template: 'frontend/agents.js' },
     'services/turnLog.js':              { template: 'services/turnLog.js' },
     'services/selfCheck.js':            { template: 'services/selfCheck.js' },
     'services/conformance.js':          { template: 'services/conformance.js' },

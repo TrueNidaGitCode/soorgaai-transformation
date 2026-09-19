@@ -248,6 +248,56 @@
        to replace each one's sample with their own file. Parsed in the
        browser, sent to this application's own server, written to the
        database that is theirs. Nothing goes to Svarg. data.js drives it. -->
+  <!-- What this application is watching. One card per agent, in the shape the
+       Data page uses for a source. The findings here are the durable copy: an
+       owner who missed the message still sees everything that was noticed,
+       because a finding is recorded before anything is sent. agents.js drives
+       it. -->
+  <section class="ag" id="ch-agents" hidden aria-label="Agents">
+    <header class="ag__head">
+      <p class="ag__topline"><a href="#" class="ag__back" id="ag-back">&larr; Back to the chat</a></p>
+      <p class="ag__eyebrow">Running on their own</p>
+      <h1 class="ag__title">What this application is <em>watching</em></h1>
+      <p class="ag__lede">An agent asks a question of your own data on a schedule, and tells you
+        only when something changes. It stays quiet the rest of the time.</p>
+    </header>
+
+    <form class="ag-form" id="ag-form">
+      <label class="ag-field">
+        <span>Call it</span>
+        <input type="text" id="ag-name" maxlength="80" placeholder="Dropout Watch" autocomplete="off">
+      </label>
+      <label class="ag-field ag-field--wide">
+        <span>Tell me when&hellip;</span>
+        <input type="text" id="ag-question" maxlength="600"
+               placeholder="a student has not attended for 14 days" autocomplete="off">
+      </label>
+      <label class="ag-field">
+        <span>How often</span>
+        <select id="ag-schedule">
+          <option value="weekdays">Every weekday</option>
+          <option value="daily">Every day</option>
+          <option value="hourly">Every hour</option>
+        </select>
+      </label>
+      <label class="ag-field">
+        <span>At</span>
+        <select id="ag-hour">
+          <option value="6">6am</option>
+          <option value="7" selected>7am</option>
+          <option value="8">8am</option>
+          <option value="9">9am</option>
+          <option value="17">5pm</option>
+        </select>
+      </label>
+      <button type="submit" class="ag-go">Start watching</button>
+    </form>
+    <p class="ag-note" id="ag-note" hidden></p>
+
+    <div class="ag-list" id="ag-list"></div>
+    <p class="ag-empty" id="ag-empty">Nothing is being watched yet.</p>
+  </section>
+
   <section class="dt" id="ch-data" hidden aria-label="Your data">
     <header class="dt__head">
       <div class="dt__headrow">
@@ -605,6 +655,7 @@
         doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
         bars: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
         dot: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/>',
+        watch: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
       };
       function iconFor(label) {
         var l = String(label).toLowerCase();
@@ -629,7 +680,10 @@
        * built with -- kept apart, so nobody mistakes one for the other.
        */
       nav.innerHTML = '<button type="button" class="ch-side__item ch-side__item--on" data-side="home">' + svg('home') + '<span>Home</span></button>'
-        + '<a href="#data" class="ch-side__item" id="ch-data-link" data-side="data">' + svg('data') + '<span>Data</span></a>';
+        + '<a href="#data" class="ch-side__item" id="ch-data-link" data-side="data">' + svg('data') + '<span>Data</span></a>'
+        // What the application is watching while nobody is looking. Owner
+        // only, and the page says so plainly when somebody else opens it.
+        + '<a href="#agents" class="ch-side__item" id="ch-agents-link" data-side="agents">' + svg('watch') + '<span>Agents</span></a>';
       nav.addEventListener('click', function (e) {
         var b = e.target.closest('[data-side]'); if (!b) return;
         if (b.dataset.side === 'home') { e.preventDefault(); goHomeTab(); }
@@ -1033,6 +1087,7 @@
        draws and never sees the question. -->
   <script src="access.js"></script>
   <script src="answer.js"></script>
+  <script src="agents.js" defer></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

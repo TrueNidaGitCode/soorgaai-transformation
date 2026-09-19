@@ -193,3 +193,61 @@ describe('the agents are wired into the application', () => {
     }
   });
 });
+
+describe('the board, which is the durable copy', () => {
+  const read2 = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
+
+  it('ships with every application', async () => {
+    const { buildRuntime } = await import('../services/eameProjectBuilder.js');
+    const have = new Set(buildRuntime({ appName: 'Probe', connectors: [] }).map(f => f.path));
+    expect(have.has('frontend/agents.js')).toBe(true);
+  });
+
+  it('is reachable from the sidebar and loaded by the page', async () => {
+    const { buildRuntime } = await import('../services/eameProjectBuilder.js');
+    const html = buildRuntime({ appName: 'Probe', connectors: [] })
+      .find(f => f.path === 'frontend/index.html').content;
+    expect(html).toContain('id="ch-agents"');
+    expect(html).toContain('ch-agents-link');
+    expect(html).toContain('agents.js');
+  });
+
+  it('shows what each agent is holding open, read from the tenant not from a message', () => {
+    /*
+     * An owner who missed the email, or whose application cannot reach Svarg
+     * at all, still sees everything the agents noticed — because a finding is
+     * recorded before anything is sent, and this reads the record.
+     */
+    const ctrl = read2('../eame-template/controllers/agentsController.js');
+    expect(ctrl).toContain("state: 'open'");
+    expect(ctrl).toContain('openCount');
+  });
+
+  it('asks the owner for a sentence, not for a query', () => {
+    // The whole ICP is somebody who cannot write one. A screen that looks like
+    // a query builder loses them on sight.
+    const html = read2('../eame-template/frontend/index.html');
+    expect(html).toContain('Tell me when&hellip;');
+    expect(html).toContain('a student has not attended for 14 days');
+  });
+
+  it('creates the agent in the owner\u2019s own timezone', () => {
+    // A morning briefing has to arrive in their morning, not the container's.
+    const ui = read2('../eame-template/frontend/agents.js');
+    expect(ui).toContain('Intl.DateTimeFormat().resolvedOptions().timeZone');
+  });
+
+  it('says plainly when an agent has stopped itself', () => {
+    /*
+     * An agent that silently stopped watching is worse than one that never
+     * existed, because the owner believes they are covered.
+     */
+    const ui = read2('../eame-template/frontend/agents.js');
+    expect(ui).toContain('stopped after 3 failures');
+  });
+
+  it('asks before forgetting what an agent found', () => {
+    const ui = read2('../eame-template/frontend/agents.js');
+    expect(ui).toContain('window.confirm(');
+  });
+});

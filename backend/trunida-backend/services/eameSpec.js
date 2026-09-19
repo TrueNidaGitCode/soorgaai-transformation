@@ -91,6 +91,7 @@ export const FIXED_PATHS = [
   'services/notifyService.js',
   'controllers/agentsController.js',
   'routes/agentsRoutes.js',
+  'frontend/agents.js',
   'services/turnLog.js',
   'services/selfCheck.js',
   'services/conformance.js',

@@ -558,25 +558,19 @@ export async function previewFor(leadId) {
  */
 export const ICP = [
   {
-    match: /engineering|cto|vp eng|head of eng|platform|technology/i,
-    label: 'VP of Engineering',
-    brief: 'Holds budget for engineering productivity tools. Approach directly: '
-         + 'crisp, concrete, no marketing language, and offer the self-serve route '
-         + 'rather than a meeting. They will judge it on whether the thing works.',
+    match: /operations|ops|admin|administrat|office manager|back.?office|coordinator|executive assistant/i,
+    label: 'Operations or administration manager',
+    brief: 'The person the product is for. Their week is recurring coordination across tools that do not talk to each other: chasing what has not come back, noticing what has stopped, catching what was missed. Lead with that load in their own words. Never lead with AI.',
   },
   {
-    match: /marketing|growth|demand/i,
-    label: 'VP of Marketing',
-    brief: 'Approach with a proposition matched to their team size, company scale '
-         + 'and how they actually operate. Lead with the operational load their '
-         + 'team carries, not with the technology.',
+    match: /owner|founder|proprietor|managing director|^director$|partner/i,
+    label: 'Owner',
+    brief: 'At a small firm the owner IS the operations manager, and the administrative work lands on them after hours. Same load, but they also hold the budget, so a single concrete example of something slipping unnoticed is worth more than any capability list.',
   },
   {
-    match: /sales|revenue|cro|business development/i,
-    label: 'VP of Sales',
-    brief: 'Approach with a proposition matched to their team size, company scale '
-         + 'and how they actually operate. Lead with what slows the revenue motion '
-         + 'down, not with the technology.',
+    match: /practice|centre manager|center manager|branch|facility|clinic|academy|institute|school|studio/i,
+    label: 'Centre or practice manager',
+    brief: 'Runs one site and everything in it — people, schedule, money, compliance — usually with one assistant and a spreadsheet. High volume, low tolerance for another system to learn. Lead with what stops being missed, not with what they would have to adopt.',
   },
 ];
 

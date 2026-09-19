@@ -646,16 +646,21 @@ function renderIcp() {
     <summary class="sg-icp__head">Who we sell to, and how each one is approached</summary>
     <div class="sg-icp__grid">
       <div>
-        <span class="sg-icp__fn">VP of Engineering</span>
-        <p>Primary decision-maker — holds budget for engineering productivity tools.
-           Approach directly: crisp, concrete, and offer the self-serve route rather
-           than a meeting.</p>
+        <span class="sg-icp__fn">Operations or administration manager</span>
+        <p>The person the product is for. Their week is recurring coordination across
+           tools that do not talk to each other. Lead with that load in their own
+           words &mdash; never with AI.</p>
       </div>
       <div>
-        <span class="sg-icp__fn">VP of Marketing / VP of Sales</span>
-        <p>Approach with a proposition matched to their team size, company scale and
-           how they actually operate. Lead with the operational load, not the
-           technology.</p>
+        <span class="sg-icp__fn">Owner</span>
+        <p>At a small firm the owner is the operations manager, and the admin lands on
+           them after hours. Same load, and they hold the budget.</p>
+      </div>
+      <div>
+        <span class="sg-icp__fn">Centre or practice manager</span>
+        <p>Runs one site and everything in it, usually with one assistant and a
+           spreadsheet. Lead with what stops being missed, not with what they would
+           have to adopt.</p>
       </div>
     </div>
     <p class="field-hint sg-icp__foot">Generate reads this. Set the designation and the
@@ -1836,6 +1841,7 @@ function setView(view) {
   const funnel  = view === 'funnel';
   const reports = view === 'reports';
   const pitches = view === 'pitches';
+  const icp     = view === 'icp';
 
   document.getElementById('sg-kinds').hidden = !funnel;
   document.getElementById('sg-tabs').hidden = !funnel;
@@ -1843,14 +1849,17 @@ function setView(view) {
   document.getElementById('nl-panel').hidden = !funnel;
   document.getElementById('sg-reports').hidden = !reports;
   document.getElementById('sg-pitches').hidden = !pitches;
+  document.getElementById('sg-icp').hidden = !icp;
 
-  document.getElementById('sg-subtitle').textContent = funnel
+  document.getElementById('sg-subtitle').textContent = icp
+    ? 'Who this is for, and who it is not. Every hour spent outside this is an hour that teaches nothing about the product.'
+    : funnel
     ? 'Five stages, in the order a customer moves through them. Only Outreach is typed in — the rest are records the product already writes. Each account appears once, at the furthest stage it has reached, so the counts add up.'
     : reports
       ? 'Read-only. Which organisations have someone using this, and which cold emails turned into accounts.'
       : 'What to say in the room. Every pitch concedes the incumbent first — all three prospects already run software, and a pitch that ignores it is heard as an attack.';
 
-  for (const [id, on] of [['sg-view-funnel', funnel], ['sg-view-reports', reports], ['sg-view-pitches', pitches]]) {
+  for (const [id, on] of [['sg-view-icp', icp], ['sg-view-funnel', funnel], ['sg-view-reports', reports], ['sg-view-pitches', pitches]]) {
     const b = document.getElementById(id);
     b.classList.toggle('sg-view--on', on);
     b.setAttribute('aria-selected', String(on));
@@ -1858,6 +1867,7 @@ function setView(view) {
 
   if (reports) renderReports();
   if (pitches) renderPitches();
+  if (icp) renderIcpView();
 }
 
 function renderReports() {
@@ -1878,6 +1888,7 @@ function wireAccountControls() {
   document.getElementById('sg-username').textContent =
     localStorage.getItem('username') || 'admin';
 
+  document.getElementById('sg-view-icp').addEventListener('click', () => setView('icp'));
   document.getElementById('sg-view-funnel').addEventListener('click', () => setView('funnel'));
   document.getElementById('sg-view-reports').addEventListener('click', () => setView('reports'));
   document.getElementById('sg-view-pitches').addEventListener('click', () => setView('pitches'));
@@ -2212,6 +2223,60 @@ function renderPitch(p) {
  * product tour is what these meetings default to, and the flow is what stops
  * that happening.
  */
+/**
+ * Who this is for, on the screen where prospects are added.
+ *
+ * A definition kept in a document is one remembered differently on every call.
+ * A horizontal product ends up selling to everybody and learning from nobody,
+ * so this sits one tab away from the lane where a lead gets typed in — the only
+ * moment it changes a decision.
+ *
+ * Separate from renderIcp, which is guidance shown while an email is being
+ * written. This one is the definition itself.
+ */
+function renderIcpView() {
+  const el = document.getElementById('sg-icp');
+  if (!el) return;
+  el.innerHTML = `
+    <section class="sg-who">
+      <p class="sg-who__label">Who we sell to</p>
+      <p class="sg-who__statement">SMB and mid-sized organisations where
+        <b>administration and customer or operations coordination are core to daily
+        business</b>, and where a small team manages a <b>high volume of recurring
+        workflows</b> across the software and communication tools they already use.</p>
+
+      <div class="sg-who__grid">
+        <div class="sg-who__card">
+          <h3>The person</h3>
+          <p>Whoever runs operations and administration. At a small firm that is often the
+            owner; at a mid-sized one it is the office, operations or centre manager.</p>
+          <p class="sg-who__note">Not a VP, not IT, and not whoever is standing on a
+            trade-show stand &mdash; that is sales, and this is not their problem.</p>
+        </div>
+        <div class="sg-who__card">
+          <h3>The work</h3>
+          <p>Recurring coordination that spans tools: chasing what has not come back,
+            noticing what has stopped, catching what was missed.</p>
+          <p class="sg-who__note">The shape is always the same &mdash; <b>something should
+            have happened and did not, and nobody noticed.</b></p>
+        </div>
+        <div class="sg-who__card sg-who__card--no">
+          <h3>Not this</h3>
+          <p>Sales workflows. Engineering workflows. Marketing workflows.</p>
+          <p class="sg-who__note">Each is a different buyer, a different vocabulary and a
+            different product. Taking one is how six months disappear.</p>
+        </div>
+        <div class="sg-who__card">
+          <h3>The qualifying question</h3>
+          <p class="sg-who__ask">&ldquo;Where does that live today?&rdquo;</p>
+          <p class="sg-who__note">A system, a sheet or a WhatsApp group is a customer.
+            Somebody&rsquo;s head is not &mdash; there is nothing to watch, and no amount
+            of product changes that this quarter.</p>
+        </div>
+      </div>
+    </section>`;
+}
+
 function renderPitches() {
   const el = document.getElementById('sg-pitches');
   if (!el) return;

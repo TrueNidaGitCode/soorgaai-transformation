@@ -1639,3 +1639,69 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 .sg-l-industry {
   min-width: 12rem;
 }
+
+/* ── Who we sell to ────────────────────────────────────────────────────────
+   One tab away from the lane where a lead gets typed in, because that is the
+   only moment the definition changes a decision. Short on purpose: one nobody
+   can hold in their head gets quietly widened back out on the next call. */
+.sg-who { max-width: 860px; padding-block: 8px 40px; }
+
+.sg-who__label {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sg-who__statement {
+  margin: 0 0 26px;
+  font-size: 1.15rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.8);
+}
+.sg-who__statement b { color: #fff; font-weight: 600; }
+
+.sg-who__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.sg-who__card {
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  min-width: 0;
+}
+
+/* The only card that is a refusal. It earns the different edge: the whole
+   point of narrowing is that this one is easy to read in a hurry. */
+.sg-who__card--no {
+  border-color: rgba(255, 196, 120, 0.28);
+  background: rgba(255, 196, 120, 0.04);
+}
+
+.sg-who__card h3 {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.sg-who__card--no h3 { color: rgba(255, 196, 120, 0.85); }
+
+.sg-who__card p { margin: 0 0 9px; font-size: 0.92rem; line-height: 1.5; color: rgba(255, 255, 255, 0.78); }
+.sg-who__card p:last-child { margin-bottom: 0; }
+
+.sg-who__note { color: rgba(255, 255, 255, 0.5) !important; font-size: 0.86rem !important; }
+.sg-who__note b { color: rgba(255, 255, 255, 0.85); }
+
+.sg-who__ask {
+  font-size: 1.02rem !important;
+  color: #fff !important;
+  font-weight: 600;
+}

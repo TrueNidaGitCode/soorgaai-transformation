@@ -27,6 +27,7 @@
 
             <div class="sg-account">
                 <div class="sg-views" role="tablist" aria-label="View">
+                    <button type="button" id="sg-view-icp" class="sg-view" aria-selected="false">ICP</button>
                     <button type="button" id="sg-view-funnel" class="sg-view sg-view--on" aria-selected="true">Funnel</button>
                     <button type="button" id="sg-view-reports" class="sg-view" aria-selected="false">Reports</button>
                     <button type="button" id="sg-view-pitches" class="sg-view" aria-selected="false">Pitches</button>
@@ -57,6 +58,11 @@
              not belong in the funnel the operator works down. -->
         <!-- Persona pitches — what to say in the room, per prospect. Read-only
              and self-contained: nothing here is actioned, it is carried in. -->
+        <!-- Who this is for. Read-only and deliberately short: a definition
+             nobody can hold in their head is one that gets quietly widened
+             back out on the next call. -->
+        <div id="sg-icp" hidden></div>
+
         <div id="sg-pitches" hidden></div>
 
         <div id="sg-reports" hidden>

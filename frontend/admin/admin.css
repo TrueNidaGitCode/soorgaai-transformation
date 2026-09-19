@@ -701,3 +701,14 @@
     color: #5cc5a7 !important;
     border-color: rgba(92, 197, 167, 0.4) !important;
 }
+
+/* ── hidden means hidden ───────────────────────────────────────────────────
+   [hidden] is display:none in the user-agent stylesheet, which ANY class
+   setting display beats. Half the panels on these pages set display:flex, so
+   el.hidden = true did nothing to them: the funnel tabs stayed on screen
+   while another tab was open, and the loading spinner never went away — which
+   read as the page failing to generate anything.
+
+   One rule rather than remembering to add display:none beside every future
+   panel, because the one that gets forgotten is the one nobody notices. */
+[hidden] { display: none !important; }

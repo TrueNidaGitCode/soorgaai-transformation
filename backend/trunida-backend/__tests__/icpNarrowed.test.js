@@ -204,3 +204,33 @@ describe('a tab shows only its own view', () => {
     expect(banner).toContain("el.style.display = 'block';");
   });
 });
+
+describe('hidden means hidden', () => {
+  it('has one rule that makes the attribute authoritative', () => {
+    /*
+     * [hidden] is display:none in the user-agent stylesheet, which ANY class
+     * setting display beats. Half the panels on this page set display:flex —
+     * .sg-tabs, .sg-kinds, .nl-panel, .loading-state — so `el.hidden = true`
+     * did nothing to them.
+     *
+     * The visible result: the funnel's tabs stayed on screen while the ICP tab
+     * was open, and the loading spinner never went away, which read as the page
+     * failing to generate anything.
+     *
+     * One rule rather than a display:none beside every future panel, because
+     * the one that gets forgotten is the one nobody notices.
+     */
+    const css = readFileSync(new URL('../../../frontend/admin/admin.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/);
+  });
+
+  it('is needed, because these classes really do set display', () => {
+    // If this ever stops being true the rule above is still correct, but the
+    // comment explaining it would be a lie.
+    const css = readFileSync(new URL('../../../frontend/admin/sales.css', import.meta.url), 'utf8');
+    for (const cls of ['.sg-tabs', '.sg-kinds', '.nl-panel']) {
+      const block = css.slice(css.indexOf(cls + ' {'), css.indexOf(cls + ' {') + 120);
+      expect(block, cls).toContain('display:');
+    }
+  });
+});

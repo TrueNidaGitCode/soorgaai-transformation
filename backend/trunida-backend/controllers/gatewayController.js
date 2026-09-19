@@ -4,6 +4,7 @@
  * POST /api/gateway/v1/chat/completions
  * POST /api/gateway/v1/embeddings
  * POST /api/gateway/v1/signals        what a live application reports about itself
+ * POST /api/gateway/v1/notify         an application telling its own owner something
  *
  * These are the ONLY routes in this codebase authenticated by a deployment
  * token rather than a user JWT — the caller is a machine (a hosted customer
@@ -21,6 +22,7 @@ import {
 import { THINKING_HEADER } from '../services/llmService.js';
 import { embedBatchWithUsage } from '../services/embeddingService.js';
 import { acceptSignals } from '../services/tenantSignalService.js';
+import { notifyOwner } from '../services/tenantNotifyService.js';
 import { learnFromConversation } from '../services/customerUnderstandingService.js';
 import { considerCapabilities } from '../services/capabilityDecisionService.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
@@ -196,5 +198,33 @@ export async function signals(req, res) {
   } catch (err) {
     console.error('[gateway] signals error:', err.message);
     return fail(res, 500, 'Could not record the signals.', 'api_error');
+  }
+}
+
+/**
+ * An application telling its owner what an agent found.
+ *
+ * The caller does not say who to write to, and cannot. Svarg resolves the
+ * owner from the deployment behind the token and sends only there — see
+ * tenantNotifyService for why that is the whole abuse story rather than a
+ * convenience.
+ */
+export async function notify(req, res) {
+  try {
+    const deployment = await authenticate(bearer(req));
+    if (!deployment) return fail(res, 401, 'Invalid or missing deployment token.', 'authentication_error');
+
+    const r = await notifyOwner(deployment, {
+      subject: req.body?.subject,
+      lines: req.body?.lines,
+    });
+
+    // A refusal is a 200 with a reason, not an error: the application must
+    // record that it could not tell anybody and carry on, never retry-loop
+    // against a daily cap.
+    return res.json(r);
+  } catch (err) {
+    console.error('[gateway] notify error:', err.message);
+    return fail(res, 500, 'Could not send the message.', 'api_error');
   }
 }

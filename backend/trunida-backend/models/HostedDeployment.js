@@ -125,6 +125,18 @@ const hostedDeploymentSchema = new mongoose.Schema({
    * Absent means never run, which a screen must say rather than read as a
    * pass. Strict: false so the shape can grow a check without a migration.
    */
+  /**
+   * How many messages this application has had Svarg send its owner today.
+   *
+   * On the deployment rather than in memory: a restart must not hand somebody
+   * a fresh allowance, and a loop inside a tenant must not become a mailing.
+   */
+  notify: {
+    day:    { type: String, default: '' },
+    count:  { type: Number, default: 0 },
+    lastAt: { type: Date,   default: null },
+  },
+
   conformance: {
     type: mongoose.Schema.Types.Mixed,
     default: null,

@@ -16,13 +16,13 @@
  * the reply and never delays it: the record is written after the response
  * has gone.
  *
- * The runtime's own routes (session, data, connectors, signals) are not
- * conversations and are skipped by path.
+ * The runtime's own routes (session, data, connectors, signals, agents) are
+ * not conversations and are skipped by path.
  */
 import mongoose from 'mongoose';
 import { sendSignal } from './tenantSignals.js';
 
-const SKIP = /^\/api\/(session|data|connectors|signals)(\/|$)/;
+const SKIP = /^\/api\/(session|data|connectors|signals|agents)(\/|$)/;
 const MAX_TEXT = 4000;
 
 export function turnsCollection() {

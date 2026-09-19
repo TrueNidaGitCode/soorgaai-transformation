@@ -154,6 +154,9 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
     // with the same token. The list of what it may send is fixed on its side
     // (services/tenantSignals.js) and refused here if it strays.
     SVARG_SIGNALS_URL: `${gatewayBaseUrl}/v1/signals`,
+    // Where an agent inside the application asks Svarg to tell the owner what
+    // it found. Same token; the recipient is resolved here, never sent.
+    SVARG_NOTIFY_URL: `${gatewayBaseUrl}/v1/notify`,
     SELFHOSTED_MODEL: catalog.apiModel,
 
     // Embeddings through the same gateway. The dimension MUST be pinned:

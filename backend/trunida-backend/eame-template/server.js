@@ -26,6 +26,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startScheduler, restoreOwnFiles } from './services/connectorService.js';
+import { startAgentScheduler } from './services/agentService.js';
+import { answer } from './services/answerService.js';
 import { turnMiddleware } from './services/turnLog.js';
 
 dotenv.config();
@@ -237,6 +239,19 @@ async function start() {
   // here calls back into Svarg; the source, the credentials and the rows all
   // stay in this application.
   startScheduler();
+
+  /*
+   * Agents run from this process too, beside the connector syncs.
+   *
+   * The answer pipeline is handed in rather than imported inside the service,
+   * so the one place an agent spends money is visible here — and so every
+   * decision in agentService stays testable without a model.
+   *
+   * `kind: 'own'` matters: an agent must watch the owner's real data. Firing a
+   * morning briefing built on the simulated rows a new application ships with
+   * would be worse than sending nothing.
+   */
+  startAgentScheduler(({ question }) => answer({ question, kind: 'own' }));
 
   // Registered after the routes, or it would swallow every API path below it.
   app.get('*', (req, res, next) => {

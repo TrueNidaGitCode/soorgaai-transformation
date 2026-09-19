@@ -34,6 +34,7 @@
  * about it, are deliberately separate steps.
  */
 import mongoose from 'mongoose';
+import { sendDigest } from './notifyService.js';
 
 /** How often an agent may run, and how often the scheduler looks. */
 export const SCHEDULES = {
@@ -364,11 +365,21 @@ export function startAgentScheduler(ask) {
     try {
       if (mongoose.connection.readyState !== 1) return;
       const due = dueAgents(await agentsCollection().find({}).toArray());
+      if (!due.length) return;
+
+      // Collected, not sent one by one. Six agents firing on a Monday must
+      // reach the owner as one message; that is the difference between a
+      // product somebody keeps and one they filter to a folder.
+      const results = [];
       for (const a of due) {
         const r = await runAgent(a, ask);
+        results.push({ ...r, name: a.name });
         if (r.ran) console.log(`[agents] ${a.name}: ${r.fired ? `${r.new.length} new, ${r.resolved.length} resolved` : 'nothing'}`);
         else console.error(`[agents] ${a.name} failed — ${r.error}`);
       }
+
+      const out = await sendDigest(results);
+      if (out.sent) console.log('[agents] digest sent to the owner');
     } catch (err) {
       console.error('[agents] tick failed —', err.message);
     }

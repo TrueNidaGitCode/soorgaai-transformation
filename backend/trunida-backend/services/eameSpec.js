@@ -83,6 +83,14 @@ export const FIXED_PATHS = [
   // The conversation stays in the tenant; only a short list of signals
   // reaches Svarg. Fixed so the list cannot be widened by a build.
   'services/tenantSignals.js',
+  // Agents: the application noticing something without being asked. Every
+  // application gets them, because server.js imports the scheduler
+  // unconditionally — and an import in a file every application ships must
+  // resolve in every application.
+  'services/agentService.js',
+  'services/notifyService.js',
+  'controllers/agentsController.js',
+  'routes/agentsRoutes.js',
   'services/turnLog.js',
   'services/selfCheck.js',
   'services/conformance.js',

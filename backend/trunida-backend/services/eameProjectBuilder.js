@@ -230,6 +230,14 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'controllers/connectorController.js': { template: 'controllers/connectorController.js' },
     'routes/connectorsRoutes.js':       { template: 'routes/connectorsRoutes.js' },
     'services/tenantSignals.js':        { template: 'services/tenantSignals.js' },
+    // Agents: the application noticing something without being asked. Shipped
+    // with every application because server.js imports the scheduler
+    // unconditionally — the lesson of the WhatsApp outage is that an import in a
+    // file every application gets must resolve in every application.
+    'services/agentService.js':          { template: 'services/agentService.js' },
+    'services/notifyService.js':         { template: 'services/notifyService.js' },
+    'controllers/agentsController.js':   { template: 'controllers/agentsController.js' },
+    'routes/agentsRoutes.js':            { template: 'routes/agentsRoutes.js' },
     'services/turnLog.js':              { template: 'services/turnLog.js' },
     'services/selfCheck.js':            { template: 'services/selfCheck.js' },
     'services/conformance.js':          { template: 'services/conformance.js' },

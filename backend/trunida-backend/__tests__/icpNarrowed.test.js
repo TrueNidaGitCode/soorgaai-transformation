@@ -108,3 +108,47 @@ describe('the screen says the same thing as the writer', () => {
     expect(html).toContain('id="sg-icp"');
   });
 });
+
+describe('a tab shows only its own view', () => {
+  const ui = read('../../../frontend/admin/sales.js');
+  const html = read('../../../frontend/admin/sales.html');
+
+  it('has one mechanism for visibility, not two', () => {
+    /*
+     * The bug. renderStage ended with an inline display:block, and an inline
+     * display beats [hidden] — so setView's `sg-stage.hidden = !funnel` had no
+     * effect and the funnel's stage tabs stayed on screen while the ICP tab
+     * was open. Two ways of hiding the same element is one way too many.
+     */
+    expect(html).toContain('<div id="sg-stage" hidden></div>');
+    expect(html).not.toContain('id="sg-stage" style="display:none"');
+
+    const render = ui.slice(ui.indexOf('function renderStage()'));
+    const body = render.slice(0, render.indexOf('\n}'));
+    expect(body).not.toContain('style.display');
+  });
+
+  it('hides every funnel panel when the view is not the funnel', () => {
+    const view = ui.slice(ui.indexOf('function setView(view)'), ui.indexOf('function renderReports'));
+    for (const id of ['sg-kinds', 'sg-tabs', 'sg-stage', 'nl-panel']) {
+      expect(view, id).toContain(`document.getElementById('${id}').hidden = !funnel;`);
+    }
+  });
+
+  it('re-applies the view after a load, so a refresh does not reveal the funnel', () => {
+    /*
+     * load() rebuilds the funnel's panels on every refresh. Rendering only for
+     * the open tab would leave a stale funnel behind when somebody switched
+     * back to it, so the content is always rebuilt and setView decides what is
+     * on screen.
+     */
+    expect(ui).toContain('setView(state.view);');
+  });
+
+  it('keeps the banner working, which the first attempt at this broke', () => {
+    // The fix was applied to the wrong occurrence of an identical line: the
+    // banner's, near the top of the file, rather than renderStage's.
+    const banner = ui.slice(ui.indexOf('function banner(message'), ui.indexOf('function banner(message') + 700);
+    expect(banner).toContain("el.style.display = 'block';");
+  });
+});

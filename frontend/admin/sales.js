@@ -1084,7 +1084,9 @@ function renderStage() {
     ${hidden ? `<p class="sg-hidden-note">${hidden} row${hidden === 1 ? '' : 's'} hidden by the filter above.</p>` : ''}
     ${RENDERERS[state.tab](state.signals)}
   </div>`;
-  el.style.display = 'block';
+  // Visibility is not decided here. Setting an inline display on every
+  // render overrode setView's [hidden], which is why the funnel stayed on
+  // screen whichever tab was open.
 
   if (state.tab === 'outreach') wireOutreach();
   wireKindSelects();
@@ -1536,8 +1538,8 @@ async function handleAsk(e) {
 // ── Loading ──────────────────────────────────────────────────────────────────
 
 async function load(keepTab) {
-  document.getElementById('sg-loading').style.display = 'block';
-  document.getElementById('sg-stage').style.display = 'none';
+  document.getElementById('sg-loading').hidden = state.view !== 'funnel';
+  document.getElementById('sg-stage').hidden = true;
 
   try {
     const [{ signals }, mail, tpl, motions] = await Promise.all([
@@ -1558,13 +1560,15 @@ async function load(keepTab) {
     renderKindFilter();
     renderTabs();
     renderStage();
-    if (state.view === 'reports') renderReports();
+    // Re-applied after every load: the renderers above rebuild the funnel
+    // panels, and only setView knows whether this tab is showing them.
+    setView(state.view);
     document.getElementById('sg-generated').textContent =
       `Read at ${new Date(signals.generatedAt).toLocaleTimeString()}`;
   } catch (err) {
     banner(`Could not load the funnel: ${err.message}`);
   } finally {
-    document.getElementById('sg-loading').style.display = 'none';
+    document.getElementById('sg-loading').hidden = true;
   }
 }
 

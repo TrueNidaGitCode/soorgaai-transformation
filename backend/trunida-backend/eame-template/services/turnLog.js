@@ -61,7 +61,7 @@ export function answerText(body) {
   return best;
 }
 
-export async function recordTurn({ question, answer, capability, sessionId = '' }) {
+export async function recordTurn({ question, answer, capability, sessionId = '', planHash = '' }) {
   try {
     if (mongoose.connection.readyState !== 1) return null;
     const doc = {
@@ -69,6 +69,9 @@ export async function recordTurn({ question, answer, capability, sessionId = '' 
       answer: String(answer || '').slice(0, MAX_TEXT),
       capability: String(capability || ''),
       sessionId: String(sessionId || ''),
+      // How the question was answered, not how it was worded. Empty when the
+      // route did not produce a plan — which is most of them, and correct.
+      planHash: String(planHash || ''),
       at: new Date(),
     };
     const r = await turnsCollection().insertOne(doc);
@@ -114,7 +117,15 @@ export function turnMiddleware(req, res, next) {
   res.json = (body) => {
     const out = original(body);
     if (res.statusCode < 400) {
-      recordTurn({ question, answer: answerText(body), capability: capabilityOf(req.originalUrl || req.path), sessionId: req.user?.userId || '' });
+      recordTurn({
+        question,
+        answer: answerText(body),
+        capability: capabilityOf(req.originalUrl || req.path),
+        sessionId: req.user?.userId || '',
+        // Read off the reply rather than passed in, so a generated route that
+        // answers some other way simply records no shape instead of breaking.
+        planHash: (body && typeof body.planHash === 'string') ? body.planHash : '',
+      });
     }
     return out;
   };

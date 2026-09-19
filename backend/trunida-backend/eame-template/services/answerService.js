@@ -35,6 +35,7 @@
  * the data cannot support the question — and then it says what is missing.
  */
 
+import { createHash } from 'crypto';
 import { readIndex, findDataset, readAllRows, datasetKey, dataVersion } from './connectorService.js';
 import { generate, generateRaw } from './llmService.js';
 import {
@@ -191,6 +192,54 @@ function contextText(ctx) {
   if (!ctx || !Array.isArray(ctx.entities) || !ctx.entities.length) return '';
   return `\nTHE PEOPLE IN YOUR LAST ANSWER (use these for "them"/"those"): ${ctx.entities.slice(0, 40).join(' | ')}`
     + (ctx.window ? `\nTHE PERIOD IN YOUR LAST ANSWER: ${ctx.window}` : '') + '\n';
+}
+
+/**
+ * Two questions are the same question when they produce the same PLAN.
+ *
+ * Not when their words match. "who hasn't come this week", "which students
+ * missed this week" and "show me absentees" are one question asked three ways,
+ * and the only thing they have in common is the plan the first stage builds
+ * from them. So the fingerprint is taken there, and a repeat becomes a
+ * group-by rather than an embedding.
+ *
+ * What is deliberately left out is as important as what is kept:
+ *
+ *   label, category   the model's prose. It varies between two askings of the
+ *                     same question, and including it would split them.
+ *   id                positional, so it carries nothing the order does not.
+ *
+ * What is kept is the shape the data actually gets: the operation, the dataset,
+ * the entity, the window, and the filters — with the filters sorted, because
+ * two plans that apply the same conditions in a different order are the same
+ * plan.
+ *
+ * An empty plan gets no fingerprint at all. Hashing BLANK_PLAN would give every
+ * failed or unanswerable turn one identical value, and the first thing the
+ * proposal engine would "notice" is that the application is regularly asked a
+ * question it cannot answer — reported as a repeat worth automating.
+ *
+ * @returns {string} 12 hex characters, or '' when there is no plan to describe.
+ */
+export function planFingerprint(planned) {
+  const steps = Array.isArray(planned?.steps) ? planned.steps : [];
+  if (!steps.length) return '';
+
+  const shape = steps.map((s) => {
+    const where = (Array.isArray(s.where) ? s.where : [])
+      .map((w) => `${w[0]}${w[1]}${String(w[2] ?? '').trim().toLowerCase()}`)
+      .sort()
+      .join(',');
+    const parts = [s.op, s.dataset || '', s.entity || '', s.window || '', where];
+    if (s.op === 'derive') parts.push(s.metric || '', s.having ? s.having.join('') : '');
+    if (s.op === 'join') parts.push(s.mode || '');
+    return parts.join('|');
+  });
+
+  return createHash('sha1')
+    .update(`${planned.intent || ''}::${shape.join('>>')}`)
+    .digest('hex')
+    .slice(0, 12);
 }
 
 /** The model's plan, made safe: anything that does not exist is dropped. */
@@ -838,6 +887,9 @@ function envelope({ answer, groups, cross, notes, planned, kind, checked, state,
     notes: [...notes, ...issues],
     intent: planned.intent,
     act: planned.act,
+    // The shape of the plan, so a repeated question can be recognised later
+    // without keeping the plan itself or asking a model about it.
+    planHash: planFingerprint(planned),
     checked,
     // What a follow-up needs so "them" and "those" mean something.
     context: { entities: people.slice(0, 60), window: groups.find(g => g.window)?.window || '', intent: planned.intent },

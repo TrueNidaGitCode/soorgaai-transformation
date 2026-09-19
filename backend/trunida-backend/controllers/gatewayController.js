@@ -5,6 +5,7 @@
  * POST /api/gateway/v1/embeddings
  * POST /api/gateway/v1/signals        what a live application reports about itself
  * POST /api/gateway/v1/notify         an application telling its own owner something
+ * GET  /api/gateway/v1/ops/:dataset   Svarg's own operations, for the tenant Svarg runs itself on
  *
  * These are the ONLY routes in this codebase authenticated by a deployment
  * token rather than a user JWT — the caller is a machine (a hosted customer
@@ -23,6 +24,7 @@ import { THINKING_HEADER } from '../services/llmService.js';
 import { embedBatchWithUsage } from '../services/embeddingService.js';
 import { acceptSignals } from '../services/tenantSignalService.js';
 import { notifyOwner } from '../services/tenantNotifyService.js';
+import { opsRows, DATASETS } from '../services/opsDatasetService.js';
 import { learnFromConversation } from '../services/customerUnderstandingService.js';
 import { considerCapabilities } from '../services/capabilityDecisionService.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
@@ -227,4 +229,32 @@ export async function notify(req, res) {
     console.error('[gateway] notify error:', err.message);
     return fail(res, 500, 'Could not send the message.', 'api_error');
   }
+}
+
+/**
+ * Svarg's own operations, as rows.
+ *
+ * Refused unless the deployment carries the internal flag, which no API can
+ * set. See opsDatasetService for why that single flag is the whole gate.
+ */
+export async function ops(req, res) {
+  try {
+    const deployment = await authenticate(bearer(req));
+    if (!deployment) return fail(res, 401, 'Invalid or missing deployment token.', 'authentication_error');
+
+    const rows = await opsRows(deployment, req.params.dataset);
+    return res.json({ dataset: req.params.dataset, rows });
+  } catch (err) {
+    if (err.status) return fail(res, err.status, err.message, 'invalid_request_error');
+    console.error('[gateway] ops error:', err.message);
+    return fail(res, 500, 'Could not read the operations data.', 'api_error');
+  }
+}
+
+/** Which datasets there are, so a connector can offer them without guessing. */
+export async function opsCatalogue(req, res) {
+  const deployment = await authenticate(bearer(req));
+  if (!deployment) return fail(res, 401, 'Invalid or missing deployment token.', 'authentication_error');
+  if (!deployment.internal) return fail(res, 403, 'This deployment may not read Svarg operations data.');
+  return res.json({ datasets: DATASETS });
 }

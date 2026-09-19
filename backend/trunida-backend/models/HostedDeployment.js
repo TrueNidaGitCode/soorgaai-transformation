@@ -126,6 +126,18 @@ const hostedDeploymentSchema = new mongoose.Schema({
    * pass. Strict: false so the shape can grow a check without a migration.
    */
   /**
+   * May this application read Svarg's own operations data?
+   *
+   * For the one tenant Svarg runs itself on. The gateway token that reaches
+   * the ops endpoint is the same kind every customer application holds, so
+   * without this flag a compromised tenant could read every other customer's
+   * deployment and the whole pipeline. It is set by a script run by hand and
+   * by nothing else — no API writes it, which is what makes it a gate rather
+   * than a field.
+   */
+  internal: { type: Boolean, default: false },
+
+  /**
    * How many messages this application has had Svarg send its owner today.
    *
    * On the deployment rather than in memory: a restart must not hand somebody

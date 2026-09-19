@@ -82,10 +82,18 @@ describe('what each connector reads', () => {
     for (const k of Object.values(KINDS)) {
       expect(typeof k.test).toBe('function');
       expect(typeof k.pull).toBe('function');
-      expect(k.fields.some(f => f.secret)).toBe(true);
+      if (k.usesDeploymentToken) {
+        // Svarg's own operations: answered on the deployment token the
+        // container already holds, so there is no credential to type and
+        // none to mark. The module declares it rather than this test
+        // carrying a list of exceptions.
+        expect(k.fields.some(f => f.secret)).toBe(false);
+      } else {
+        expect(k.fields.some(f => f.secret)).toBe(true);
+      }
       expect(k.provides.length).toBeGreaterThan(3);
     }
-    expect(catalog().map(c => c.kind).sort()).toEqual(['confluence', 'github', 'jira', 'whatsapp-business']);
+    expect(catalog().map(c => c.kind).sort()).toEqual(['confluence', 'github', 'jira', 'svarg', 'whatsapp-business']);
     // The catalog never carries a function or a secret.
     expect(JSON.stringify(catalog())).not.toMatch(/function|apiToken":"[^"]+"/);
   });

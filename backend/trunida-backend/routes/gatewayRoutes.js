@@ -7,7 +7,7 @@
  */
 
 import express from 'express';
-import { chatCompletions, embeddings, signals, notify } from '../controllers/gatewayController.js';
+import { chatCompletions, embeddings, signals, notify, ops, opsCatalogue } from '../controllers/gatewayController.js';
 
 const router = express.Router();
 
@@ -19,5 +19,9 @@ router.post('/signals',          express.json({ limit: '256kb' }), signals);
 // An application telling its own owner something. The recipient is resolved
 // from the token, never sent by the caller.
 router.post('/notify',           express.json({ limit: '64kb' }), notify);
+// Svarg's own operations, for the one tenant Svarg runs itself on. Refused for
+// every other deployment by a flag no API can set.
+router.get ('/ops',              opsCatalogue);
+router.get ('/ops/:dataset',     ops);
 
 export default router;

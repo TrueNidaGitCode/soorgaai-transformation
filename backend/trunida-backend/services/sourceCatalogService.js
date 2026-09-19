@@ -40,6 +40,10 @@ export const CONNECTOR_MODULES = {
   // The Business account, through the owner's own Meta app; the export is
   // parsed on the Data page and needs no module.
   whatsapp:   'services/connectors/whatsapp.js',
+  // Svarg's own operations, for the one tenant Svarg runs itself on. Named
+  // here so it can be asked for; not in ALWAYS_SHIPPED, so no customer's
+  // application is offered a source it will only ever be refused.
+  svarg:      'services/connectors/svarg.js',
 };
 
 function normalise(list) {

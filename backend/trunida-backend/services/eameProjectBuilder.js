@@ -192,6 +192,17 @@ export function buildManifest({ appName = '', copy = {} } = {}) {
  */
 const ALWAYS_SHIPPED = new Set(['services/connectors/whatsapp.js']);
 
+/**
+ * Asked for by name, or not shipped at all.
+ *
+ * "No connector list" means "give it everything", which is right for the
+ * ordinary sources: a module left out is simply not offered. It is wrong for
+ * Svarg's own operations, which every application but one is refused — an
+ * application that shipped it would show a source on its Data page that can
+ * only ever say no.
+ */
+const OPT_IN_ONLY = new Set(['services/connectors/svarg.js']);
+
 export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}) {
   // Which connector modules this application gets: the ones its sources
   // call for (sourceCatalogService), or all of them when nobody said.
@@ -199,8 +210,11 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
   // module left out is simply not offered on the Data page.
   const wanted = Array.isArray(connectors) ? new Set(connectors.map(k => CONNECTOR_MODULES[k]).filter(Boolean)) : null;
   const connectorPaths = new Set(Object.values(CONNECTOR_MODULES));
-  const shipped = FIXED_PATHS.filter(p =>
-    !connectorPaths.has(p) || ALWAYS_SHIPPED.has(p) || !wanted || wanted.has(p));
+  const shipped = FIXED_PATHS.filter((p) => {
+    if (!connectorPaths.has(p)) return true;
+    if (OPT_IN_ONLY.has(p)) return !!wanted && wanted.has(p);
+    return ALWAYS_SHIPPED.has(p) || !wanted || wanted.has(p);
+  });
   // Where each fixed file is copied from. A path in FIXED_PATHS with no entry
   // here would silently vanish from the delivered project, so the lookup below
   // throws instead.
@@ -225,6 +239,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/connectors/confluence.js':{ template: 'services/connectors/confluence.js' },
     'services/connectors/github.js':    { template: 'services/connectors/github.js' },
     'services/connectors/whatsapp.js':  { template: 'services/connectors/whatsapp.js' },
+    'services/connectors/svarg.js':     { template: 'services/connectors/svarg.js' },
     'controllers/whatsappController.js': { template: 'controllers/whatsappController.js' },
     'routes/whatsappRoutes.js':         { template: 'routes/whatsappRoutes.js' },
     'controllers/connectorController.js': { template: 'controllers/connectorController.js' },

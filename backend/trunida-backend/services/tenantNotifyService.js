@@ -25,7 +25,7 @@
  * it does not exist yet.
  */
 import HostedDeployment from '../models/HostedDeployment.js';
-import User from '../models/User.js';
+import { User } from '../models/user.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { sendOutreachEmail } from './mailService.js';
 

@@ -2228,56 +2228,194 @@ function renderPitch(p) {
  * that happening.
  */
 /**
- * Who this is for, on the screen where prospects are added.
+ * Who we sell to, as three separate things.
  *
- * A definition kept in a document is one remembered differently on every call.
- * A horizontal product ends up selling to everybody and learning from nobody,
- * so this sits one tab away from the lane where a lead gets typed in — the only
- * moment it changes a decision.
+ * TAM is the universe. ICP is the beachhead we are betting on inside it.
+ * Persona is the person in the room. Collapsing them is the standard way a
+ * young company ends up selling to everybody and learning from nobody — and
+ * the first version of this screen did exactly that, listing "the person" as
+ * though it were an attribute of the company.
  *
- * Separate from renderIcp, which is guidance shown while an email is being
- * written. This one is the definition itself.
+ * Everything here is written as a HYPOTHESIS, deliberately and visibly. Not
+ * "this is our ICP" but "this is what we believe, and here is what would
+ * change our mind". The same discipline the product holds itself to when it
+ * says what an answer rests on.
+ *
+ * The top of the page is what somebody can hold in their head walking into a
+ * call. The instruments — the matrix and the score — are one click down,
+ * because they are used during a conversation rather than remembered.
  */
 function renderIcpView() {
   const el = document.getElementById('sg-icp');
   if (!el) return;
+
+  /** The seven things the one-sentence ICP is actually claiming. */
+  const ATTRS = [
+    ['Company size', 'SMB / mid-market'],
+    ['Business model', 'Operational, service or coordination-heavy'],
+    ['Core activity', 'Administration + customer/operations coordination'],
+    ['Team structure', 'A relatively small operations or admin team'],
+    ['Workload', 'High volume'],
+    ['Workflow', 'Recurring'],
+    ['Technology', 'Existing software + communication tools'],
+  ];
+
+  const HYPOTHESES = [
+    ['ICP', 'our best early customers are SMB/mid-sized organisations where a small administrative or operations team manages a high volume of recurring customer and operational workflows across multiple software and communication tools.'],
+    ['Problem', 'these organisations already have software containing the information they need, but people still spend significant time finding it, interpreting it, coordinating with others and taking follow-up actions by hand.'],
+    ['Product', 'Svarg can sit across those existing systems and turn that information into useful work, without the organisation replacing anything it already runs.'],
+    ['Business value', 'customers will pay when Svarg reduces recurring administrative work, improves follow-up, or helps people act faster on information already available to them.'],
+  ];
+
+  /** Buyer, user and the person who signs are three different people. */
+  const PERSONAS = [
+    ['Primary — buyer', 'Operations / Administration Head',
+      'Workload · staff productivity · missed follow-ups · operational visibility · coordination · reporting · customer communication'],
+    ['Secondary — economic', 'Founder / Business Owner',
+      'Revenue leakage · operational efficiency · employee productivity · customer experience · visibility · scaling without adding people'],
+    ['User', 'Admin / Operations Executive',
+      'Does the work every day. Never the buyer, and the one who decides whether it survives week two.'],
+  ];
+
+  const MATRIX = [
+    ['Firmographic', 'Is this SMB or mid-market?', 'Employee or revenue range'],
+    ['Operational intensity', 'Is administration central to the business?', 'Share of team and time'],
+    ['Team structure', 'Is a small team handling a lot?', 'People involved'],
+    ['Workflow volume', 'How often does this happen?', 'Daily / weekly / monthly'],
+    ['Workflow repetition', 'Does the same process repeat?', 'They describe the process'],
+    ['System dependency', 'Is software already in use?', 'Which applications'],
+    ['Fragmentation', 'Does the work cross systems and channels?', 'ERP + Excel + WhatsApp'],
+    ['Manual effort', 'What still needs a person?', 'The actual steps'],
+    ['Data availability', 'Does the information exist digitally?', 'Yes / no'],
+    ['AI opportunity', 'Can Svarg reason over it?', 'A named use case'],
+    ['Actionability', 'Can Svarg help take the next action?', 'Yes / no'],
+    ['Business impact', 'What happens if it is solved?', 'Rupees, hours, response time'],
+    ['Buying access', 'Can we reach who approves a pilot?', 'Yes / no'],
+    ['Deployment friction', 'Can we pilot quickly?', 'Days / weeks / months'],
+  ];
+
+  const SCORE = [
+    ['A', 'Operational intensity', 'How much of the day is coordination and admin?'],
+    ['B', 'Workflow volume', 'How many repetitive cases occur?'],
+    ['C', 'Fragmentation', 'How many systems and channels are involved?'],
+    ['D', 'Manual effort', 'How much human effort remains?'],
+    ['E', 'Data availability', 'Does the information already exist digitally?'],
+    ['F', 'Business value', 'Can the impact be measured?'],
+    ['G', 'Accessibility', 'Can we reach whoever approves a pilot?'],
+    ['H', 'Deployment complexity', 'How hard is the integration and security?'],
+  ];
+
+  const CLUSTERS = [
+    ['A', 'Sports &amp; coaching', 'Sports academies · coaching centres · training businesses', 'The original hypothesis'],
+    ['B', 'Distribution', 'Electronic component distributors · industrial distributors · B2B trading', 'The new discovery'],
+    ['C', 'Operational services', 'Clinics &amp; wellness · service centres · specialty services', 'The bridge between the two'],
+  ];
+
   el.innerHTML = `
     <section class="sg-who">
-      <p class="sg-who__label">Who we sell to</p>
-      <p class="sg-who__statement">SMB and mid-sized organisations where
-        <b>administration and customer or operations coordination are core to daily
-        business</b>, and where a small team manages a <b>high volume of recurring
-        workflows</b> across the software and communication tools they already use.</p>
 
-      <div class="sg-who__grid">
-        <div class="sg-who__card">
-          <h3>The person</h3>
-          <p>Whoever runs operations and administration. At a small firm that is often the
-            owner; at a mid-sized one it is the office, operations or centre manager.</p>
-          <p class="sg-who__note">Not a VP, not IT, and not whoever is standing on a
-            trade-show stand &mdash; that is sales, and this is not their problem.</p>
-        </div>
-        <div class="sg-who__card">
-          <h3>The work</h3>
-          <p>Recurring coordination that spans tools: chasing what has not come back,
-            noticing what has stopped, catching what was missed.</p>
-          <p class="sg-who__note">The shape is always the same &mdash; <b>something should
-            have happened and did not, and nobody noticed.</b></p>
-        </div>
-        <div class="sg-who__card sg-who__card--no">
-          <h3>Not this</h3>
-          <p>Sales workflows. Engineering workflows. Marketing workflows.</p>
-          <p class="sg-who__note">Each is a different buyer, a different vocabulary and a
-            different product. Taking one is how six months disappear.</p>
-        </div>
-        <div class="sg-who__card">
-          <h3>The qualifying question</h3>
-          <p class="sg-who__ask">&ldquo;Where does that live today?&rdquo;</p>
-          <p class="sg-who__note">A system, a sheet or a WhatsApp group is a customer.
-            Somebody&rsquo;s head is not &mdash; there is nothing to watch, and no amount
-            of product changes that this quarter.</p>
-        </div>
+      <ol class="sg-who__ladder">
+        <li><span>TAM</span>the universe</li>
+        <li class="on"><span>ICP</span>the beachhead we are betting on</li>
+        <li><span>Persona</span>the person in the room</li>
+      </ol>
+
+      <div class="sg-who__block">
+        <p class="sg-who__label">TAM &mdash; the universe</p>
+        <p class="sg-who__statement">SMB and mid-sized organisations that rely on software and people
+          to manage <b>recurring business operations</b>.</p>
+        <p class="sg-who__chips">Sports academies · Coaching centres · Clinics &amp; wellness ·
+          Distributors · Service businesses · Manufacturing &amp; engineering · Professional services</p>
+        <p class="sg-who__note">This is the universe, not the target list. Keeping it wide is what makes
+          it possible to notice that the beachhead was wrong.</p>
       </div>
+
+      <div class="sg-who__block sg-who__block--lead">
+        <p class="sg-who__label">ICP &mdash; the beachhead <em>hypothesis</em></p>
+        <p class="sg-who__statement">SMB and mid-sized organisations where <b>administration and
+          customer/operations coordination are core to daily business</b>, and where a relatively small
+          team manages a <b>high volume of recurring workflows</b> across existing software and
+          communication tools.</p>
+
+        <table class="sg-who__attrs">
+          <tbody>${ATTRS.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody>
+        </table>
+
+        <p class="sg-who__note"><b>It is a hypothesis until evidence says otherwise.</b> Saying
+          &ldquo;this is our ICP&rdquo; ends the enquiry; saying &ldquo;this is what we believe&rdquo;
+          keeps it open long enough to be corrected.</p>
+      </div>
+
+      <p class="sg-who__label">What we believe, and would test</p>
+      <div class="sg-who__grid">
+        ${HYPOTHESES.map(([name, body]) => `
+          <div class="sg-who__card">
+            <h3>${name} hypothesis</h3>
+            <p><span class="sg-who__we">We believe</span> ${body}</p>
+          </div>`).join('')}
+      </div>
+
+      <p class="sg-who__label">Persona &mdash; buyer, user and owner are three people</p>
+      <div class="sg-who__grid">
+        ${PERSONAS.map(([role, who, cares]) => `
+          <div class="sg-who__card">
+            <h3>${role}</h3>
+            <p class="sg-who__persona">${who}</p>
+            <p class="sg-who__note">${cares}</p>
+          </div>`).join('')}
+      </div>
+
+      <div class="sg-who__card sg-who__card--no">
+        <h3>Not this</h3>
+        <p>Sales workflows. Engineering workflows. Marketing workflows.</p>
+        <p class="sg-who__note">Each is a different buyer, a different vocabulary and a different
+          product. Taking one is how six months disappear.</p>
+      </div>
+
+      <details class="sg-who__more">
+        <summary>The validation instrument &mdash; what to ask in every conversation</summary>
+        <table class="sg-who__matrix">
+          <thead><tr><th>Dimension</th><th>Question</th><th>Evidence</th></tr></thead>
+          <tbody>${MATRIX.map(([d, q, e]) =>
+            `<tr><th>${d}</th><td>${q}</td><td class="sg-who__ev">${e}</td></tr>`).join('')}</tbody>
+        </table>
+      </details>
+
+      <details class="sg-who__more">
+        <summary>Scoring a prospect &mdash; 1 to 5 on each</summary>
+        <table class="sg-who__matrix">
+          <tbody>${SCORE.map(([k, name, q]) =>
+            `<tr><th><span class="sg-who__k">${k}</span> ${name}</th><td>${q}</td></tr>`).join('')}</tbody>
+        </table>
+        <p class="sg-who__formula">Fit = A + B + C + D + E + F + G &minus; H</p>
+        <p class="sg-who__note">Not a scientific formula and not pretending to be one. It is a
+          learning tool: its value is that two people score the same prospect differently and then
+          have to say why.</p>
+      </details>
+
+      <details class="sg-who__more">
+        <summary>The first experiment &mdash; three clusters, not twenty industries</summary>
+        <div class="sg-who__clusters">
+          ${CLUSTERS.map(([k, name, list, why]) => `
+            <div class="sg-who__cluster">
+              <h4><span class="sg-who__k">${k}</span> ${name}</h4>
+              <p>${list}</p>
+              <p class="sg-who__note">${why}</p>
+            </div>`).join('')}
+        </div>
+        <p class="sg-who__note">Ten to fifteen conversations per cluster. The point is a repeated
+          pattern, not a collection of interesting companies.</p>
+
+        <p class="sg-who__label">What would actually count as validation</p>
+        <ul class="sg-who__bar">
+          <li class="weak">&ldquo;Ten companies said AI is interesting.&rdquo; &mdash; evidence of nothing</li>
+          <li>8 of 12 academies had the same operational problem</li>
+          <li>9 of 12 had it, 6 called it painful, 4 agreed to a pilot, 2 paid</li>
+          <li class="best">7 of 10 distributors had essentially the same problem, in a different
+            industry &mdash; which would mean the pattern is broader than the beachhead</li>
+        </ul>
+      </details>
+
     </section>`;
 }
 

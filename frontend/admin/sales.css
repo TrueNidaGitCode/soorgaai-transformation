@@ -1640,33 +1640,115 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   min-width: 12rem;
 }
 
+
 /* ── Who we sell to ────────────────────────────────────────────────────────
-   One tab away from the lane where a lead gets typed in, because that is the
-   only moment the definition changes a decision. Short on purpose: one nobody
-   can hold in their head gets quietly widened back out on the next call. */
-.sg-who { max-width: 860px; padding-block: 8px 40px; }
+   Three separate things, kept separate: TAM is the universe, ICP is the
+   beachhead inside it, persona is the person in the room. Collapsing them is
+   how a young company sells to everybody and learns from nobody.
+
+   The top is what somebody carries into a call. The instruments — the matrix
+   and the score — sit behind a disclosure, because they are used during a
+   conversation rather than remembered before one. */
+.sg-who { max-width: 900px; padding-block: 8px 48px; }
+
+/* ── The ladder ──────────────────────────────────────────────────────────── */
+
+.sg-who__ladder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 26px;
+  padding: 0;
+  list-style: none;
+}
+
+.sg-who__ladder li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.sg-who__ladder li span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Only one of the three is a bet. It gets the emphasis. */
+.sg-who__ladder li.on {
+  border-color: rgba(92, 197, 167, 0.4);
+  background: rgba(92, 197, 167, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+}
+.sg-who__ladder li.on span { color: #5CC5A7; }
+
+/* ── Blocks ──────────────────────────────────────────────────────────────── */
+
+.sg-who__block { margin-bottom: 26px; }
+
+.sg-who__block--lead {
+  padding: 22px 24px;
+  background: rgba(92, 197, 167, 0.04);
+  border: 1px solid rgba(92, 197, 167, 0.22);
+  border-radius: 12px;
+}
 
 .sg-who__label {
-  margin: 0 0 10px;
+  margin: 30px 0 10px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.4);
 }
+.sg-who__block .sg-who__label { margin-top: 0; }
+.sg-who__label em { font-style: italic; color: #5CC5A7; text-transform: none; letter-spacing: 0; }
 
 .sg-who__statement {
-  margin: 0 0 26px;
-  font-size: 1.15rem;
+  margin: 0 0 14px;
+  font-size: 1.1rem;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.82);
 }
 .sg-who__statement b { color: #fff; font-weight: 600; }
+
+.sg-who__chips { margin: 0 0 10px; font-size: 0.88rem; color: rgba(255, 255, 255, 0.55); line-height: 1.7; }
+
+.sg-who__note { margin: 0; font-size: 0.86rem; line-height: 1.5; color: rgba(255, 255, 255, 0.5); }
+.sg-who__note b { color: rgba(255, 255, 255, 0.85); }
+
+/* ── The seven attributes ────────────────────────────────────────────────── */
+
+.sg-who__attrs { width: 100%; border-collapse: collapse; margin: 0 0 14px; }
+.sg-who__attrs th,
+.sg-who__attrs td { padding: 7px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); vertical-align: top; }
+.sg-who__attrs th {
+  width: 10.5rem;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.45);
+  padding-right: 14px;
+}
+.sg-who__attrs td { font-size: 0.9rem; color: rgba(255, 255, 255, 0.82); }
+.sg-who__attrs tr:last-child th,
+.sg-who__attrs tr:last-child td { border-bottom: 0; }
+
+/* ── Cards ───────────────────────────────────────────────────────────────── */
 
 .sg-who__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 14px;
+  margin-bottom: 14px;
 }
 
 .sg-who__card {
@@ -1677,31 +1759,131 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   min-width: 0;
 }
 
-/* The only card that is a refusal. It earns the different edge: the whole
-   point of narrowing is that this one is easy to read in a hurry. */
+/* The only card that is a refusal. It earns a different edge, because on a
+   busy day it is the half that keeps the narrowing alive. */
 .sg-who__card--no {
+  margin-top: 6px;
   border-color: rgba(255, 196, 120, 0.28);
   background: rgba(255, 196, 120, 0.04);
 }
 
 .sg-who__card h3 {
   margin: 0 0 8px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.5);
 }
 .sg-who__card--no h3 { color: rgba(255, 196, 120, 0.85); }
 
-.sg-who__card p { margin: 0 0 9px; font-size: 0.92rem; line-height: 1.5; color: rgba(255, 255, 255, 0.78); }
+.sg-who__card p { margin: 0 0 8px; font-size: 0.9rem; line-height: 1.5; color: rgba(255, 255, 255, 0.78); }
 .sg-who__card p:last-child { margin-bottom: 0; }
 
-.sg-who__note { color: rgba(255, 255, 255, 0.5) !important; font-size: 0.86rem !important; }
-.sg-who__note b { color: rgba(255, 255, 255, 0.85); }
+/* "We believe" is the whole point of these four, so it is what catches the
+   eye rather than the label above it. */
+.sg-who__we { color: #5CC5A7; font-weight: 600; }
+.sg-who__persona { color: #fff !important; font-weight: 600; font-size: 0.96rem !important; }
 
-.sg-who__ask {
-  font-size: 1.02rem !important;
-  color: #fff !important;
+/* ── The instruments ─────────────────────────────────────────────────────── */
+
+.sg-who__more {
+  margin-top: 14px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+}
+
+.sg-who__more > summary {
+  cursor: pointer;
+  font-size: 0.88rem;
   font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+.sg-who__more > summary:hover { color: #fff; }
+.sg-who__more[open] > summary { margin-bottom: 14px; }
+
+.sg-who__matrix { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.sg-who__matrix thead th {
+  padding: 0 12px 7px 0;
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sg-who__matrix tbody th {
+  width: 11rem;
+  padding: 8px 14px 8px 0;
+  text-align: left;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: top;
+}
+.sg-who__matrix td {
+  padding: 8px 12px 8px 0;
+  color: rgba(255, 255, 255, 0.68);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: top;
+}
+.sg-who__ev { color: rgba(255, 255, 255, 0.45) !important; }
+
+.sg-who__k {
+  display: inline-block;
+  width: 1.3rem;
+  color: #5CC5A7;
+  font-weight: 700;
+}
+
+.sg-who__formula {
+  margin: 16px 0 8px;
+  padding: 10px 14px;
+  background: rgba(92, 197, 167, 0.07);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Clusters and the evidence bar ───────────────────────────────────────── */
+
+.sg-who__clusters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sg-who__cluster {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 9px;
+  min-width: 0;
+}
+.sg-who__cluster h4 { margin: 0 0 7px; font-size: 0.92rem; font-weight: 700; color: #fff; }
+.sg-who__cluster p { margin: 0 0 6px; font-size: 0.85rem; line-height: 1.5; color: rgba(255, 255, 255, 0.7); }
+.sg-who__cluster p:last-child { margin-bottom: 0; }
+
+/* Ordered, and the order is the point: each rung is stronger evidence than
+   the one above it. */
+.sg-who__bar { margin: 0; padding-left: 20px; }
+.sg-who__bar li {
+  margin-bottom: 8px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+.sg-who__bar li.weak { color: rgba(255, 255, 255, 0.38); text-decoration: line-through; text-decoration-thickness: 1px; }
+.sg-who__bar li.best { color: #5CC5A7; }
+
+@media (max-width: 620px) {
+  .sg-who__attrs th { width: auto; display: block; padding-bottom: 2px; border-bottom: 0; }
+  .sg-who__attrs td { display: block; padding-top: 0; }
+  .sg-who__matrix tbody th { width: auto; }
 }

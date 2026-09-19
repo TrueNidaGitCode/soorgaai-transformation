@@ -83,18 +83,70 @@ describe('what each brief tells the writer', () => {
   });
 });
 
-describe('the screen says the same thing as the writer', () => {
+describe('the screen keeps TAM, ICP and persona apart', () => {
   const ui = read('../../../frontend/admin/sales.js');
+  const view = ui.slice(ui.indexOf('function renderIcpView()'), ui.indexOf('function renderPitches'));
 
-  it('shows the definition where leads are added', () => {
-    expect(ui).toContain('function renderIcpView()');
-    expect(ui).toContain('Who we sell to');
-    expect(ui).toContain('high volume of recurring');
+  it('shows all three levels, and marks which one is the bet', () => {
+    /*
+     * The error the first version made: it listed "the person" as though it
+     * were an attribute of the company. TAM is the universe, ICP is the
+     * beachhead inside it, persona is the person in the room — and collapsing
+     * them is how a young company sells to everybody and learns from nobody.
+     */
+    expect(view).toContain('TAM');
+    expect(view).toContain('the universe');
+    expect(view).toContain('the beachhead we are betting on');
+    expect(view).toContain('the person in the room');
   });
 
-  it('says plainly what is out of scope', () => {
-    // The refusal is the half that keeps the narrowing alive on a busy day.
-    expect(ui).toContain('Sales workflows. Engineering workflows. Marketing workflows.');
+  it('says out loud that it is a hypothesis, not a finding', () => {
+    // "This is our ICP" ends the enquiry. "This is what we believe" keeps it
+    // open long enough to be corrected.
+    expect(view).toContain('hypothesis');
+    expect(view).toContain('It is a hypothesis until evidence says otherwise');
+    expect((view.match(/We believe/g) || []).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('carries the four hypotheses', () => {
+    for (const h of ['ICP', 'Problem', 'Product', 'Business value']) {
+      expect(view, h).toContain(`'${h}'`);
+    }
+  });
+
+  it('breaks the one sentence into the seven things it claims', () => {
+    for (const a of ['Company size', 'Business model', 'Core activity', 'Team structure',
+      'Workload', 'Workflow', 'Technology']) {
+      expect(view, a).toContain(a);
+    }
+  });
+
+  it('separates buyer, economic buyer and user', () => {
+    expect(view).toContain('Operations / Administration Head');
+    expect(view).toContain('Founder / Business Owner');
+    expect(view).toContain('Admin / Operations Executive');
+    expect(view).toContain('Never the buyer');
+  });
+
+  it('carries the instruments used during a conversation', () => {
+    expect(view).toContain('Fragmentation');
+    expect(view).toContain('Deployment friction');
+    expect(view).toContain('A + B + C + D + E + F + G');
+  });
+
+  it('is honest that the score is a learning tool, not a measurement', () => {
+    expect(view).toContain('Not a scientific formula');
+  });
+
+  it('sets a bar for what counts as evidence', () => {
+    // "Ten companies said AI is interesting" is evidence of nothing, and the
+    // page says so rather than leaving it to be inferred.
+    expect(view).toContain('evidence of nothing');
+    expect(view).toContain('2 paid');
+  });
+
+  it('still says plainly what is out of scope', () => {
+    expect(view).toContain('Sales workflows. Engineering workflows. Marketing workflows.');
   });
 
   it('no longer advises the operator to sell to a VP of Engineering', () => {

@@ -23,6 +23,7 @@ import industryCapabilityKnowledgeRoutes from "./routes/industryCapabilityKnowle
 import salesSignalsRoutes from "./routes/salesSignalsRoutes.js";
 import outreachPublicRoutes from "./routes/outreachPublicRoutes.js";
 import { runOutreachSweep } from "./services/outreachService.js";
+import { startEnrichmentScheduler } from "./services/leadEnrichmentService.js";
 import { startLiveUpdates } from "./services/liveUpdateService.js";
 import feedbackRoutes               from "./routes/feedbackRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
@@ -466,6 +467,19 @@ async function reportLlmConfig() {
  */
 const OUTREACH_SWEEP_MS = 15 * 60 * 1000;
 
+/*
+ * A company name becomes an industry, on a timer.
+ *
+ * The manual loop it replaces is: meet a prospect, open a laptop, work out
+ * the industry, check whether there is a knowledge base for it. Detection is
+ * a web-search-grounded call, so it runs a few at a time under a daily budget
+ * rather than once per lead added — a bulk import of sixty-three companies
+ * must not spend sixty-three of them on one click.
+ */
+function startLeadEnrichment() {
+  startEnrichmentScheduler();
+}
+
 function startOutreachScheduler() {
     if (process.env.OUTREACH_SWEEP_DISABLED === 'true') {
         console.log('[outreach] scheduler disabled by OUTREACH_SWEEP_DISABLED');
@@ -499,6 +513,7 @@ connectDB()
         console.log("🚀 Starting SoorgaAI Server...");
         app.listen(PORT, () => console.log(`🚀 SoorgaAI Server running on port ${PORT}`));
         startOutreachScheduler();
+        startLeadEnrichment();
         // Live applications pick up runtime changes by themselves: after this
         // boot (a deploy of Svarg is the usual reason one changed), then every
         // few hours. See services/liveUpdateService.js.

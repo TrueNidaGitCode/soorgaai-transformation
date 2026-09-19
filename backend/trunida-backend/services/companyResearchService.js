@@ -391,8 +391,23 @@ export async function detectCompanyIndustry({ companyName, knownIndustries }) {
     return { industry, confidence: parsed.confidence === 'high' ? 'high' : 'low' };
   } catch (err) {
     console.error(`[CompanyResearch] Industry detection failed for "${companyName}" (non-fatal):`, err.message);
-    return null;
+    /*
+     * "The provider would not answer" and "the model could not place this
+     * company" are not the same fact, and a caller that cannot tell them apart
+     * will record a billing problem as a conclusion about a business.
+     *
+     * Both are falsy on .industry, so every existing caller is unaffected;
+     * one that cares can read .error and decide not to write anything down.
+     */
+    return { error: isUpstream(err) ? 'upstream' : 'failed', message: err.message };
   }
+}
+
+/** A refusal by the provider rather than by the model: no credits, a rate limit, an outage. */
+export function isUpstream(err) {
+  const status = err?.status || err?.response?.status || 0;
+  if (status === 429 || status === 402 || status >= 500) return true;
+  return /no credits|quota|rate.?limit|insufficient|billing|timeout|ECONNRESET|ETIMEDOUT/i.test(String(err?.message || ''));
 }
 
 // ── Industry capability KB generation ───────────────────────────────────────

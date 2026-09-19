@@ -142,6 +142,16 @@ const coldLeadSchema = new mongoose.Schema({
   industry: { type: String, default: '', trim: true, index: true },
 
   /**
+   * When the industry was last looked up for this lead.
+   *
+   * Stamped whether or not an answer came back, because asking again costs the
+   * same as asking — and a company the model cannot place would otherwise be
+   * looked up on every sweep for ever. It is also how the daily budget is
+   * counted, so a restart cannot hand the sweep a fresh allowance.
+   */
+  industryCheckedAt: { type: Date, default: null },
+
+  /**
    * Where to read about them before writing.
    *
    * companyUrl is fetched at generation time so the email can name something

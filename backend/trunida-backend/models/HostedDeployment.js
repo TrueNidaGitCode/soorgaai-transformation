@@ -182,4 +182,26 @@ const hostedDeploymentSchema = new mongoose.Schema({
 export const RUNNING = ['live', 'degraded'];
 export const isRunning = (status) => RUNNING.includes(status);
 
+/**
+ * Is the customer's application answering requests right now?
+ *
+ * Not the same question as isRunning, and the difference is a status that
+ * lasts minutes and happens to every application whenever Svarg restarts.
+ *
+ * A redeploy sets the status to 'attaching' while the new container comes up —
+ * and the old one goes on serving the whole time. An application that has been
+ * live before and is now attaching is, from the customer's side, simply up.
+ *
+ * Reading only the status made the funnel say nobody had launched anything
+ * every time the update sweep ran. An application that has NEVER been live is
+ * a different case: attaching there is a first launch, and nothing is serving
+ * yet, which is why this asks for liveAt rather than trusting the status alone.
+ *
+ * Use this for "is this customer live". Use isRunning for "is it safe to run
+ * something against it", where mid-deploy is exactly when it is not.
+ */
+export const isServing = (deployment) =>
+  isRunning(deployment?.status)
+  || (deployment?.status === 'attaching' && !!deployment?.liveAt);
+
 export default mongoose.models.HostedDeployment || mongoose.model('HostedDeployment', hostedDeploymentSchema);

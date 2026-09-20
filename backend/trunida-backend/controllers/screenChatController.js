@@ -157,7 +157,7 @@ export async function screenChat(req, res) {
       context.model            = dep?.model?.displayName || bp.arthSelection?.displayName || '';
 
     } else if (screen === 'yusu') {
-      const { default: HostedDeployment, isRunning } = await import('../models/HostedDeployment.js');
+      const { default: HostedDeployment, isServing } = await import('../models/HostedDeployment.js');
       const dep = await HostedDeployment.findOne({ blueprintId }).lean();
       const govDomain = (bp.domains || []).find(d => d.domainId === 'governance-security');
       const govAreas = (govDomain?.capabilities || [])
@@ -183,8 +183,9 @@ export async function screenChat(req, res) {
       context.governanceAccepted = !!bp.governanceReview?.acknowledged;
       context.hosting  = dep?.hosting || '';
       // Yusu must not tell somebody their application is not running while
-      // they are looking at it. Unwell is a separate fact, carried separately.
-      context.live     = isRunning(dep?.status);
+      // they are looking at it — which is exactly what the status alone says
+      // during a redeploy, while the old container is still answering.
+      context.live     = isServing(dep);
       context.unwell   = dep?.status === 'degraded';
       context.url      = dep?.railway?.url || '';
       context.model    = dep?.model?.displayName || bp.arthSelection?.displayName || '';

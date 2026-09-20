@@ -26,7 +26,7 @@
  */
 
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
-import HostedDeployment, { isRunning } from '../models/HostedDeployment.js';
+import HostedDeployment, { isRunning, isServing } from '../models/HostedDeployment.js';
 import CapabilityRequest from '../models/CapabilityRequest.js';
 import { resolvePlan, PLANS, UPGRADE_PATH } from './entitlements.js';
 
@@ -241,7 +241,7 @@ export async function blueprintsOverview(userId) {
         // An address worth offering: one that answers. A queued or failed
         // application would hand out a link to an error page, but one being
         // updated is serving its previous version and opens fine.
-        app: (isRunning(dep?.status) || (dep?.status === 'attaching' && dep?.liveAt)) && dep?.railway?.url
+        app: isServing(dep) && dep?.railway?.url
           ? {
               url: dep.railway.url,
               liveAt: dep.liveAt || null,

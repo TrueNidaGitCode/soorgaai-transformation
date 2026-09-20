@@ -117,7 +117,9 @@ describe('an application being updated is still an application that is running',
     // change that was correct. What must hold is that the address is offered
     // whenever something is serving — running, or updating over a version that
     // already served.
-    expect(src).toMatch(/app: \(isRunning\(dep\?\.status\) \|\| \(dep\?\.status === 'attaching' && dep\?\.liveAt\)\)/);
+    // The rule this test was written for now has a name, and lives beside
+    // isRunning rather than written out here and nowhere else.
+    expect(src).toContain('app: isServing(dep)');
   });
 
   it('offers the address of an application that is running but unwell', async () => {

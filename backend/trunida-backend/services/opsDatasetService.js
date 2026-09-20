@@ -25,7 +25,7 @@ import HostedDeployment from '../models/HostedDeployment.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import ColdLead from '../models/ColdLead.js';
 import { User } from '../models/user.js';
-import { isRunning } from '../models/HostedDeployment.js';
+import { isServing } from '../models/HostedDeployment.js';
 
 export const DATASETS = ['deployments', 'leads', 'blueprints'];
 
@@ -60,7 +60,7 @@ async function deployments() {
       company: bp?.companyName || '',
       owner: owner?.email || '',
       status: d.status || '',
-      running: isRunning(d.status) ? 'yes' : 'no',
+      running: isServing(d) ? 'yes' : 'no',
       url: d.railway?.url || '',
       requests: d.usage?.requests ?? 0,
       lastUsed: iso(d.usage?.lastRequestAt),

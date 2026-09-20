@@ -59,7 +59,7 @@ describe('the sales board — the reader that reported this', () => {
 
   it('counts a degraded deployment towards Onboarding', () => {
     // Onboarding read 0 while a customer was using their application.
-    expect(src).toContain('if (!isRunning(d.status)) continue;');
+    expect(src).toContain('if (!isServing(d)) continue;');
     expect(src).not.toContain("if (d.status !== 'live') continue;");
   });
 
@@ -71,7 +71,7 @@ describe('the sales board — the reader that reported this', () => {
   });
 
   it('does not call a running application "built and never launched"', () => {
-    expect(src).toContain("!isRunning(depByBp.get(String(b._id))?.status)");
+    expect(src).toContain("!isServing(depByBp.get(String(b._id)))");
   });
 });
 
@@ -83,7 +83,7 @@ describe('the customer\'s own screen', () => {
   });
 
   it('still hands them the link', () => {
-    expect(src).toContain('app: (isRunning(dep?.status)');
+    expect(src).toContain('app: isServing(dep)');
     expect(src).toContain("unwell: dep.status === 'degraded'");
   });
 });
@@ -115,7 +115,7 @@ describe('what Yusu is told', () => {
   const src = read('controllers/screenChatController.js');
 
   it('does not tell somebody their application is not running while they look at it', () => {
-    expect(src).toContain('context.live     = isRunning(dep?.status);');
+    expect(src).toContain('context.live     = isServing(dep);');
     expect(src).toContain("context.unwell   = dep?.status === 'degraded';");
   });
 
@@ -151,5 +151,7 @@ describe('every reader asks the same question', () => {
   it('keeps the predicate in the model, where the status is defined', () => {
     // Not in a helper beside one caller: it belongs with the enum it reads.
     expect(read('models/HostedDeployment.js')).toContain('export const isRunning');
+    // And the one beside it, for the question the funnel actually asks.
+    expect(read('models/HostedDeployment.js')).toContain('export const isServing');
   });
 });

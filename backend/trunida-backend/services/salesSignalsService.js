@@ -39,7 +39,7 @@
 import { User } from '../models/user.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import GeneratedApplication from '../models/GeneratedApplication.js';
-import HostedDeployment, { isRunning } from '../models/HostedDeployment.js';
+import HostedDeployment, { isRunning, isServing } from '../models/HostedDeployment.js';
 import UsageLedger from '../models/UsageLedger.js';
 import AccountPlan from '../models/AccountPlan.js';
 import ColdLead from '../models/ColdLead.js';
@@ -156,10 +156,11 @@ export async function collectSignals() {
 
   const liveByUser = new Map();
   for (const d of deployments) {
-    // Degraded counts. The application is serving and the customer is using
-    // it; that it reports a missing dataset is a note on the row, not a reason
-    // to tell the board nobody has launched anything.
-    if (!isRunning(d.status)) continue;
+    // Degraded counts, and so does a redeploy in progress. The application
+    // is serving and the customer is using it; that it reports a missing
+    // dataset, or that Svarg happens to be pushing it a new runtime this
+    // minute, is not a reason to tell the board nobody has launched anything.
+    if (!isServing(d)) continue;
     const k = String(d.userId);
     if (!liveByUser.has(k)) liveByUser.set(k, []);
     liveByUser.get(k).push(d);
@@ -614,7 +615,7 @@ export async function collectSignals() {
     const approvedNotBuilt = bps.filter(b => b.opportunityApproval?.approved && !appsByBp.has(String(b._id)));
     const builtNotLive = bps.filter(b => {
       const app = appsByBp.get(String(b._id));
-      return app?.status === 'passed' && !isRunning(depByBp.get(String(b._id))?.status);
+      return app?.status === 'passed' && !isServing(depByBp.get(String(b._id)));
     });
 
     let note;

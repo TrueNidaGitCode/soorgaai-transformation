@@ -251,3 +251,27 @@ describe('the board, which is the durable copy', () => {
     expect(ui).toContain('window.confirm(');
   });
 });
+
+describe('the agents page uses the session the application already has', () => {
+  it('reads the same token key as every other screen', () => {
+    /*
+     * It read 'ch-token', which nothing writes. Every request went out with an
+     * empty bearer and the application answered "Access denied. No token
+     * provided." — a key invented to match the ch- prefix on the page's own
+     * element ids, which have nothing to do with where the session is kept.
+     */
+    const dir = new URL('../eame-template/frontend/', import.meta.url);
+    const keys = new Set();
+    for (const f of ['agents.js', 'access.js', 'answer.js']) {
+      const text = readFileSync(new URL(f, dir), 'utf8');
+      for (const m of text.matchAll(/localStorage\.getItem\('([^']*token[^']*)'\)/g)) keys.add(m[1]);
+    }
+    // One key across the whole application, whatever it is called.
+    expect([...keys]).toEqual(['token']);
+  });
+
+  it('takes its API base the same way too', () => {
+    const ui = readFileSync(new URL('../eame-template/frontend/agents.js', import.meta.url), 'utf8');
+    expect(ui).toContain('(window.CONFIG && window.CONFIG.API_BASE)');
+  });
+});

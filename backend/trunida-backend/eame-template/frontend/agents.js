@@ -47,7 +47,7 @@
   }
 
   function token() {
-    try { return localStorage.getItem('ch-token') || ''; } catch (e) { return ''; }
+    try { return localStorage.getItem('token') || ''; } catch (e) { return ''; }
   }
 
   function api(path, opts) {

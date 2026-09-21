@@ -2228,57 +2228,103 @@ function renderPitch(p) {
  * that happening.
  */
 /**
- * Who we sell to, as three separate things.
+ * Who we sell to, and why they buy — in three moves.
  *
- * TAM is the universe. ICP is the beachhead we are betting on inside it.
- * Persona is the person in the room. Collapsing them is the standard way a
- * young company ends up selling to everybody and learning from nobody — and
- * the first version of this screen did exactly that, listing "the person" as
- * though it were an attribute of the company.
+ * The problem we claim exists, the organisations where that problem is
+ * expensive, and how we get into the room. They are one argument: the ICP is
+ * only meaningful as "where the problem in the first block costs money", and
+ * the GTM is only meaningful as "lead with that problem, not with AI".
  *
- * Everything here is written as a HYPOTHESIS, deliberately and visibly. Not
+ * ── The rule this page enforces on itself ──────────────────────────────────
+ *
+ * It is read during a live conversation, so anything it overstates is
+ * overstated out loud to a customer. The four verbs we pitch — detect,
+ * understand, act, learn — therefore carry what is actually built next to
+ * them, and two of the four are not built today. A seller who knows that
+ * demonstrates the two that are and sells the rest as roadmap; a seller who
+ * does not promises software that does not exist and loses the second meeting.
+ *
+ * Everything else is written as a HYPOTHESIS, deliberately and visibly. Not
  * "this is our ICP" but "this is what we believe, and here is what would
- * change our mind". The same discipline the product holds itself to when it
+ * change our mind" — the same discipline the product holds itself to when it
  * says what an answer rests on.
  *
- * The top of the page is what somebody can hold in their head walking into a
- * call. The instruments — the matrix and the score — are one click down,
+ * The instruments — the validation matrix, the score — stay one click down,
  * because they are used during a conversation rather than remembered.
  */
 function renderIcpView() {
   const el = document.getElementById('sg-icp');
   if (!el) return;
 
-  /** The seven things the one-sentence ICP is actually claiming. */
-  const ATTRS = [
-    ['Company size', 'SMB / mid-market'],
-    ['Business model', 'Operational, service or coordination-heavy'],
-    ['Core activity', 'Administration + customer/operations coordination'],
-    ['Team structure', 'A relatively small operations or admin team'],
-    ['Workload', 'High volume'],
-    ['Workflow', 'Recurring'],
-    ['Technology', 'Existing software + communication tools'],
+  /**
+   * The pitch, with its build state attached.
+   *
+   * "not yet" is not a criticism of the roadmap. It is the difference between
+   * a demonstration and a promise, on a page somebody reads mid-call.
+   */
+  const SPINE = [
+    ['Detect', 'yes', 'Watchers run on a schedule and evaluate their condition in code.'],
+    ['Understand', 'part', 'A finding carries the records behind it, but not yet why it matters.'],
+    ['Act', 'no', 'Nothing a delivered application runs can send anything outward.'],
+    ['Learn', 'no', 'Findings are diffed into new, still true and resolved &mdash; but nothing changes its own behaviour from that yet.'],
+  ];
+
+  const TODAY   = ['Data', 'Reports', 'Someone notices', 'Investigates', 'Acts'];
+  const INSTEAD = ['Data', 'Signals', 'Svarg detects', 'Explains', 'Acts early'];
+
+  /** What must be true of a business for early detection to be worth money. */
+  const CRITERIA = [
+    'The problem recurs &mdash; it is not a one-off',
+    'The early signals already exist in their systems',
+    'Those signals sit in more than one source',
+    'A person connects the dots by hand today',
+    'It gets significantly more expensive when found late',
+    'There is a clear action once it is identified',
+    'The outcome can be measured',
+  ];
+
+  /** Two qualifiers that are about us rather than them — and are how deals die. */
+  const QUALIFIERS = [
+    ['Buying access', 'Can we reach whoever approves a pilot?'],
+    ['Deployment friction', 'Can we be running on their data in days, not quarters?'],
+  ];
+
+  /** The shape to listen for, as a sequence, so it is recognisable in a call. */
+  const IDEAL = [
+    'Multiple systems',
+    'Signals distributed across them',
+    'A human has to connect the dots',
+    'The problem is found late',
+    'Cost &middot; revenue &middot; customer &middot; operational impact',
   ];
 
   const HYPOTHESES = [
-    ['ICP', 'our best early customers are SMB/mid-sized organisations where a small administrative or operations team manages a high volume of recurring customer and operational workflows across multiple software and communication tools.'],
-    ['Problem', 'these organisations already have software containing the information they need, but people still spend significant time finding it, interpreting it, coordinating with others and taking follow-up actions by hand.'],
-    ['Product', 'Svarg can sit across those existing systems and turn that information into useful work, without the organisation replacing anything it already runs.'],
-    ['Business value', 'customers will pay when Svarg reduces recurring administrative work, improves follow-up, or helps people act faster on information already available to them.'],
+    ['Problem', 'businesses discover important problems too late, because nobody continuously connects the signals that are already sitting across the systems they run.'],
+    ['ICP', 'the organisations where this costs the most are mid-market, with high-volume recurring operational workflows, and a small team finding problems reactively.'],
+    ['Product', 'Svarg can watch those systems continuously and surface what is starting to go wrong, without the organisation replacing anything it already runs.'],
+    ['Business value', 'customers pay when a problem found early is measurably cheaper than the same problem found late &mdash; in rupees, hours or a customer who stayed.'],
   ];
 
   /** Buyer, user and the person who signs are three different people. */
   const PERSONAS = [
-    ['Primary — buyer', 'Operations / Administration Head',
-      'Workload · staff productivity · missed follow-ups · operational visibility · coordination · reporting · customer communication'],
-    ['Secondary — economic', 'Founder / Business Owner',
-      'Revenue leakage · operational efficiency · employee productivity · customer experience · visibility · scaling without adding people'],
+    ['Primary &mdash; buyer', 'Operations / Administration Head',
+      'Workload &middot; staff productivity &middot; missed follow-ups &middot; operational visibility &middot; coordination &middot; reporting &middot; customer communication'],
+    ['Secondary &mdash; economic', 'Founder / Business Owner',
+      'Revenue leakage &middot; operational efficiency &middot; employee productivity &middot; customer experience &middot; visibility &middot; scaling without adding people'],
     ['User', 'Admin / Operations Executive',
       'Does the work every day. Never the buyer, and the one who decides whether it survives week two.'],
   ];
 
+  const GTM = [
+    ['Identify', 'Find a recurring problem that companies currently discover too late.'],
+    ['Prove', 'Connect the systems they already run, and show Svarg finds it earlier than their current process does.'],
+    ['Execute', 'Move past detection &mdash; recommend the intervention, then carry it out.'],
+    ['Repeat', 'Deploy the same problem, solved the same way, at a similar company.'],
+    ['Expand', 'Once Svarg owns one problem inside an organisation, take the adjacent ones.'],
+  ];
+
   const MATRIX = [
-    ['Firmographic', 'Is this SMB or mid-market?', 'Employee or revenue range'],
+    ['Firmographic', 'Is this mid-market?', 'Employee or revenue range'],
     ['Operational intensity', 'Is administration central to the business?', 'Share of team and time'],
     ['Team structure', 'Is a small team handling a lot?', 'People involved'],
     ['Workflow volume', 'How often does this happen?', 'Daily / weekly / monthly'],
@@ -2287,64 +2333,99 @@ function renderIcpView() {
     ['Fragmentation', 'Does the work cross systems and channels?', 'ERP + Excel + WhatsApp'],
     ['Manual effort', 'What still needs a person?', 'The actual steps'],
     ['Data availability', 'Does the information exist digitally?', 'Yes / no'],
-    ['AI opportunity', 'Can Svarg reason over it?', 'A named use case'],
-    ['Actionability', 'Can Svarg help take the next action?', 'Yes / no'],
-    ['Business impact', 'What happens if it is solved?', 'Rupees, hours, response time'],
+    ['Lateness', 'How late is the problem found today?', 'Days, weeks, or never'],
+    ['Cost of lateness', 'What does the delay cost?', 'Rupees, hours, a lost customer'],
+    ['Actionability', 'Is there a clear action once it is known?', 'The named action'],
     ['Buying access', 'Can we reach who approves a pilot?', 'Yes / no'],
     ['Deployment friction', 'Can we pilot quickly?', 'Days / weeks / months'],
   ];
 
   const SCORE = [
-    ['A', 'Operational intensity', 'How much of the day is coordination and admin?'],
-    ['B', 'Workflow volume', 'How many repetitive cases occur?'],
-    ['C', 'Fragmentation', 'How many systems and channels are involved?'],
-    ['D', 'Manual effort', 'How much human effort remains?'],
-    ['E', 'Data availability', 'Does the information already exist digitally?'],
-    ['F', 'Business value', 'Can the impact be measured?'],
+    ['A', 'Recurrence', 'How often does this problem come back?'],
+    ['B', 'Signal availability', 'Do the early signals already exist digitally?'],
+    ['C', 'Fragmentation', 'How many systems and channels hold them?'],
+    ['D', 'Manual effort', 'How much human dot-joining remains?'],
+    ['E', 'Cost of lateness', 'How much worse is it when found late?'],
+    ['F', 'Measurability', 'Can the improvement be shown in a number?'],
     ['G', 'Accessibility', 'Can we reach whoever approves a pilot?'],
     ['H', 'Deployment complexity', 'How hard is the integration and security?'],
   ];
 
   const CLUSTERS = [
-    ['A', 'Sports &amp; coaching', 'Sports academies · coaching centres · training businesses', 'The original hypothesis'],
-    ['B', 'Distribution', 'Electronic component distributors · industrial distributors · B2B trading', 'The new discovery'],
-    ['C', 'Operational services', 'Clinics &amp; wellness · service centres · specialty services', 'The bridge between the two'],
+    ['A', 'Sports &amp; coaching', 'Sports academies &middot; coaching centres &middot; training businesses',
+      'One live application with real data. The recurring problem to test: a student drifts out and nobody notices in time.'],
+    ['B', 'Distribution', 'Electronic component distributors &middot; industrial distributors &middot; B2B trading',
+      'The largest list and the least evidence. The recurring problem to test: an enquiry or quotation goes cold between email, WhatsApp and the ERP.'],
+    ['C', 'Operational services', 'Clinics &amp; wellness &middot; service centres &middot; specialty services',
+      'Knowledge base written, first demonstration run. The recurring problem to test: a course of treatment is abandoned part-way and is only noticed at renewal.'],
   ];
+
+  const chain = (steps, mod) => `<ol class="sg-flow${mod ? ' sg-flow--' + mod : ''}">`
+    + steps.map((s) => `<li>${s}</li>`).join('') + '</ol>';
 
   el.innerHTML = `
     <section class="sg-who">
 
       <ol class="sg-who__ladder">
-        <li><span>TAM</span>the universe</li>
-        <li class="on"><span>ICP</span>the beachhead we are betting on</li>
-        <li><span>Persona</span>the person in the room</li>
+        <li class="on"><span>Problem</span>what we claim is true</li>
+        <li><span>ICP</span>where it is worth money</li>
+        <li><span>GTM</span>how we get in the room</li>
       </ol>
 
-      <div class="sg-who__block">
-        <p class="sg-who__label">TAM &mdash; the universe</p>
-        <p class="sg-who__statement">SMB and mid-sized organisations that rely on software and people
-          to manage <b>recurring business operations</b>.</p>
-        <p class="sg-who__chips">Sports academies · Coaching centres · Clinics &amp; wellness ·
-          Distributors · Service businesses · Manufacturing &amp; engineering · Professional services</p>
-        <p class="sg-who__note">This is the universe, not the target list. Keeping it wide is what makes
-          it possible to notice that the beachhead was wrong.</p>
+      <div class="sg-who__block sg-who__block--lead">
+        <p class="sg-who__label">The problem &mdash; <em>businesses are reactive by default</em></p>
+        <p class="sg-who__statement">Businesses already hold enormous amounts of data across CRM, ERP,
+          operational software, spreadsheets, email and chat. <b>The signals that a problem is starting
+          are scattered across those systems.</b> By the time somebody notices the pattern, the problem
+          has already happened.</p>
+
+        <p class="sg-who__label">What happens today</p>
+        ${chain(TODAY)}
+
+        <p class="sg-who__label">What should happen</p>
+        ${chain(INSTEAD, 'good')}
+
+        <p class="sg-who__statement sg-who__statement--quiet">Businesses discover important problems too
+          late because <b>nobody continuously connects the signals</b> across the systems they already
+          run.</p>
       </div>
+
+      <p class="sg-who__label">What Svarg sells &mdash; find problems before they become costly</p>
+      <ol class="sg-spine">
+        ${SPINE.map(([verb, state, note]) => `
+          <li class="sg-spine__step is-${state}">
+            <p class="sg-spine__verb">${verb}<span class="sg-spine__tag">${
+              state === 'yes' ? 'built' : state === 'part' ? 'partly' : 'not yet'}</span></p>
+            <p class="sg-who__note">${note}</p>
+          </li>`).join('')}
+      </ol>
+      <p class="sg-who__note"><b>Two of the four are not built.</b> This page is read during live
+        conversations, so it says so here rather than letting somebody find out in the room. Demonstrate
+        detect and understand; sell act and learn as what comes next, with a date.</p>
 
       <div class="sg-who__block sg-who__block--lead">
-        <p class="sg-who__label">ICP &mdash; the beachhead <em>hypothesis</em></p>
-        <p class="sg-who__statement">SMB and mid-sized organisations where <b>administration and
-          customer/operations coordination are core to daily business</b>, and where a relatively small
-          team manages a <b>high volume of recurring workflows</b> across existing software and
-          communication tools.</p>
-
-        <table class="sg-who__attrs">
-          <tbody>${ATTRS.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody>
-        </table>
-
-        <p class="sg-who__note"><b>It is a hypothesis until evidence says otherwise.</b> Saying
-          &ldquo;this is our ICP&rdquo; ends the enquiry; saying &ldquo;this is what we believe&rdquo;
-          keeps it open long enough to be corrected.</p>
+        <p class="sg-who__label">ICP &mdash; <em>start where early detection has measurable value</em></p>
+        <p class="sg-who__statement">Mid-market organisations with <b>high-volume, recurring operational
+          workflows</b>, where emerging problems are currently found reactively.</p>
+        <p class="sg-who__note">We are not targeting businesses because they hold data or run several
+          systems. Nearly everybody does. We target them because of what the list below makes true.</p>
       </div>
+
+      <p class="sg-who__label">What has to be true of them</p>
+      <ul class="sg-crit">${CRITERIA.map((c) => `<li>${c}</li>`).join('')}</ul>
+
+      <p class="sg-who__label">And two that are about us</p>
+      <table class="sg-who__attrs">
+        <tbody>${QUALIFIERS.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody>
+      </table>
+      <p class="sg-who__note">A perfect problem at a company we cannot reach, or cannot deploy into
+        before the quarter ends, is not an opportunity. These two are how otherwise-good deals die.</p>
+
+      <p class="sg-who__label">The shape to listen for</p>
+      ${chain(IDEAL, 'down')}
+      <p class="sg-who__note">Better than &ldquo;SMB&rdquo;, &ldquo;mid-market&rdquo; or
+        &ldquo;enterprise&rdquo; as a definition, because every line of it is observable in a first
+        conversation &mdash; a size band is not.</p>
 
       <p class="sg-who__label">What we believe, and would test</p>
       <div class="sg-who__grid">
@@ -2363,6 +2444,31 @@ function renderIcpView() {
             <p class="sg-who__persona">${who}</p>
             <p class="sg-who__note">${cares}</p>
           </div>`).join('')}
+      </div>
+
+      <div class="sg-who__block sg-who__block--lead">
+        <p class="sg-who__label">GTM &mdash; <em>win one problem, then expand</em></p>
+        <p class="sg-who__statement">Svarg does not enter the market as
+          &ldquo;AI for every business problem&rdquo;.</p>
+        <ol class="sg-gtm">
+          ${GTM.map(([name, body], i) => `
+            <li><span class="sg-who__k">${i + 1}</span>
+              <h4>${name}</h4><p>${body}</p></li>`).join('')}
+        </ol>
+      </div>
+
+      <p class="sg-who__label">The motion</p>
+      ${chain(['Industry', 'recurring problem', 'evidence', 'pilot', 'measurable outcome'], 'good')}
+      <p class="sg-who__label">Rather than</p>
+      ${chain(['Industry', 'generic AI pitch', 'demo', 'custom project'], 'bad')}
+
+      <div class="sg-who__block sg-who__block--lead">
+        <p class="sg-who__label">The opening question</p>
+        <p class="sg-who__statement sg-who__ask">&ldquo;What problems in your business do you usually
+          discover only after they have already happened?&rdquo;</p>
+        <p class="sg-who__note">It opens the conversation on business impact rather than on AI, and the
+          answer is the qualification &mdash; a prospect who cannot name one is not in the ICP, however
+          well the firmographics fit.</p>
       </div>
 
       <div class="sg-who__card sg-who__card--no">
@@ -2394,7 +2500,11 @@ function renderIcpView() {
       </details>
 
       <details class="sg-who__more">
-        <summary>The first experiment &mdash; three clusters, not twenty industries</summary>
+        <summary>Where to look first &mdash; three clusters, and the problem to test in each</summary>
+        <p class="sg-who__note"><b>Do not choose the industry first. Choose the recurring problem
+          first.</b> A cluster is only somewhere to go looking for one; it is not the target. Start
+          with two or three, find the recurring problem inside each, and see whether the same problem
+          appears at company after company.</p>
         <div class="sg-who__clusters">
           ${CLUSTERS.map(([k, name, list, why]) => `
             <div class="sg-who__cluster">
@@ -2403,16 +2513,14 @@ function renderIcpView() {
               <p class="sg-who__note">${why}</p>
             </div>`).join('')}
         </div>
-        <p class="sg-who__note">Ten to fifteen conversations per cluster. The point is a repeated
-          pattern, not a collection of interesting companies.</p>
 
         <p class="sg-who__label">What would actually count as validation</p>
         <ul class="sg-who__bar">
           <li class="weak">&ldquo;Ten companies said AI is interesting.&rdquo; &mdash; evidence of nothing</li>
-          <li>8 of 12 academies had the same operational problem</li>
+          <li>8 of 12 academies described the same problem, found late</li>
           <li>9 of 12 had it, 6 called it painful, 4 agreed to a pilot, 2 paid</li>
-          <li class="best">7 of 10 distributors had essentially the same problem, in a different
-            industry &mdash; which would mean the pattern is broader than the beachhead</li>
+          <li class="best">7 of 10 distributors had essentially the same problem in a different
+            industry &mdash; which would mean the problem travels, and the industry never mattered</li>
         </ul>
       </details>
 

@@ -56,3 +56,6 @@ backend/trunida-backend/.env.bak.*
 
 # Screen-check screenshots
 scripts/.screens/
+
+# Scratch probes written during live runs. Never shipped.
+backend/trunida-backend/_*.mjs

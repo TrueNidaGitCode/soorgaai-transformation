@@ -275,6 +275,61 @@ export function staticGates(files) {
 }
 
 /** Write a manifest into a directory, creating parents. */
+/**
+ * The checks a verification sandbox cannot possibly satisfy.
+ *
+ * The child is started from nothing — no model key, no sign-in secret — on
+ * purpose, so a build cannot accidentally depend on a variable that happens to
+ * be set on this machine. A delivered application asked about its own health
+ * in that environment answers, correctly, that it is degraded.
+ */
+const SANDBOX_BLIND = new Set(['model', 'sign-in']);
+
+/**
+ * Is a 5xx the application telling the truth, or the application being broken?
+ *
+ * ── The failure this untangles ─────────────────────────────────────────────
+ *
+ * `/api` on a delivered application is its health endpoint, and it answers 503
+ * when anything a customer depends on is missing. That was added so a crashed
+ * application could not be read as live — a real fix for a real week-long
+ * outage.
+ *
+ * It also broke every build. The boot gate polls that same path and accepted
+ * only a status under 500, so a sandbox with no model key produced an honest
+ * 503, and the gate reported "the server did not start" about an application
+ * that had started, seeded, listened and begun watching. Three attempts, three
+ * times, saying the one thing that was not true.
+ *
+ * So the two questions are separated. Did it start — answered by whether it
+ * responds at all. Is it well — answered here, and only the checks the sandbox
+ * itself makes impossible are forgiven. A database that will not connect or a
+ * dataset index that cannot be read still fails the build, because neither is
+ * the sandbox's fault.
+ */
+async function degradedOnlyByTheSandbox(res) {
+  if (res.status !== 503) return { ok: false, why: `${res.url || 'the smoke path'} answered ${res.status}` };
+
+  let body = null;
+  try { body = await res.clone().json(); } catch { /* not the health endpoint */ }
+  if (!body || !Array.isArray(body.checks)) {
+    return { ok: false, why: `answered 503 with no health report` };
+  }
+
+  const failed = body.checks.filter(c => c && c.ok === false).map(c => String(c.name));
+  if (!failed.length) return { ok: false, why: 'answered 503 but reported nothing wrong' };
+
+  const real = failed.filter(name => !SANDBOX_BLIND.has(name));
+  if (real.length) {
+    const detail = body.checks
+      .filter(c => real.includes(String(c.name)))
+      .map(c => `${c.name}: ${c.detail || 'failed'}`).join('; ');
+    return { ok: false, why: `the application reports ${detail}` };
+  }
+
+  return { ok: true, why: `degraded only by what the sandbox cannot supply (${failed.join(', ')})` };
+}
+
 function writeProject(files, dir) {
   for (const f of files) {
     const full = path.join(dir, norm(f.path));
@@ -392,8 +447,13 @@ export async function runtimeGates(files, { mongoUri = '', smokePath = '/api', t
       const deadline = setTimeout(() => resolve(false), Math.max(timeoutMs, 45000));
       const poll = setInterval(async () => {
         try {
+          /*
+           * Any answer proves it started. Whether the answer is acceptable is
+           * the smoke gate's question, one stage down — and conflating the two
+           * is what made an honest 503 read as "the server did not start".
+           */
           const res = await fetch(`http://127.0.0.1:${port}${smokePath}`);
-          if (res.status < 500) { clearInterval(poll); clearTimeout(deadline); resolve(res); }
+          clearInterval(poll); clearTimeout(deadline); resolve(res);
         } catch { /* not up yet */ }
       }, 500);
       child.on('exit', () => { clearInterval(poll); clearTimeout(deadline); resolve(false); });
@@ -416,8 +476,12 @@ export async function runtimeGates(files, { mongoUri = '', smokePath = '/api', t
     // ── 6. smoke ──────────────────────────────────────────────────────────
     stage('smoke');
     if (started.status >= 400) {
-      return { ok: false, stage: 'smoke',
-               failures: [`${smokePath} answered ${started.status}`] };
+      const verdict = await degradedOnlyByTheSandbox(started);
+      if (!verdict.ok) {
+        return { ok: false, stage: 'smoke', failures: [verdict.why] };
+      }
+      return { ok: true, stage: 'smoke', failures: [],
+               note: `answered ${started.status}: ${verdict.why}` };
     }
 
     return { ok: true, stage: 'smoke', failures: [] };

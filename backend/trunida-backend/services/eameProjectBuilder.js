@@ -33,7 +33,6 @@ const CORE_FILES = [
   ['services/defectMatchingService.js', 'services/defectMatchingService.js'],
   ['controllers/defectMatchingController.js', 'controllers/defectMatchingController.js'],
   ['routes/defectMatchingRoutes.js', 'routes/defectMatchingRoutes.js'],
-  ['scripts/seed_defect_records.mjs', 'scripts/seed_defect_records.mjs'],
   ['../../frontend/defect-matching/defect-matching.js', 'frontend/defect-matching.js'],
   ['../../frontend/defect-matching/defect-matching.css', 'frontend/defect-matching.css'],
 ];

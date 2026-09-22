@@ -2305,14 +2305,22 @@ function renderIcpView() {
     ['Business value', 'customers pay when a problem found early is measurably cheaper than the same problem found late &mdash; in rupees, hours or a customer who stayed.'],
   ];
 
-  /** Buyer, user and the person who signs are three different people. */
+  /*
+   * Buyer, user and the person who signs are three different people.
+   *
+   * What each of them CARES about is written in the vocabulary of the problem
+   * being sold — being surprised, finding out late, firefighting. It used to
+   * be written in the vocabulary of the administration ICP: workload, staff
+   * productivity, coordination. Those are real concerns and the wrong ones to
+   * open on, because none of them is what the product now claims to fix.
+   */
   const PERSONAS = [
-    ['Primary &mdash; buyer', 'Operations / Administration Head',
-      'Workload &middot; staff productivity &middot; missed follow-ups &middot; operational visibility &middot; coordination &middot; reporting &middot; customer communication'],
+    ['Primary &mdash; buyer', 'Operations Head',
+      'Being surprised &middot; escalations that arrive already late &middot; no view across systems &middot; the same fire twice &middot; explaining upwards what nobody caught'],
     ['Secondary &mdash; economic', 'Founder / Business Owner',
-      'Revenue leakage &middot; operational efficiency &middot; employee productivity &middot; customer experience &middot; visibility &middot; scaling without adding people'],
-    ['User', 'Admin / Operations Executive',
-      'Does the work every day. Never the buyer, and the one who decides whether it survives week two.'],
+      'Revenue that leaked before anyone noticed &middot; customers lost quietly &middot; how much of this is happening that we cannot see'],
+    ['User', 'Operations Executive',
+      'Reads it every morning. Never the buyer, and the one who decides whether it survives week two &mdash; a list that is wrong twice is a list nobody opens again.'],
   ];
 
   const GTM = [
@@ -2323,21 +2331,25 @@ function renderIcpView() {
     ['Expand', 'Once Svarg owns one problem inside an organisation, take the adjacent ones.'],
   ];
 
+  /*
+   * The matrix is the criteria list turned into questions, in the same order,
+   * one row per criterion. It used to be a second instrument with its own
+   * vocabulary — firmographics, operational intensity, team structure — left
+   * over from the administration ICP, which meant the page asked a prospect to
+   * be two different things on two different screens. One instrument, asked
+   * out loud, is worth more than two that half-agree.
+   */
   const MATRIX = [
-    ['Firmographic', 'Is this mid-market?', 'Employee or revenue range'],
-    ['Operational intensity', 'Is administration central to the business?', 'Share of team and time'],
-    ['Team structure', 'Is a small team handling a lot?', 'People involved'],
-    ['Workflow volume', 'How often does this happen?', 'Daily / weekly / monthly'],
-    ['Workflow repetition', 'Does the same process repeat?', 'They describe the process'],
-    ['System dependency', 'Is software already in use?', 'Which applications'],
-    ['Fragmentation', 'Does the work cross systems and channels?', 'ERP + Excel + WhatsApp'],
-    ['Manual effort', 'What still needs a person?', 'The actual steps'],
-    ['Data availability', 'Does the information exist digitally?', 'Yes / no'],
-    ['Lateness', 'How late is the problem found today?', 'Days, weeks, or never'],
-    ['Cost of lateness', 'What does the delay cost?', 'Rupees, hours, a lost customer'],
-    ['Actionability', 'Is there a clear action once it is known?', 'The named action'],
-    ['Buying access', 'Can we reach who approves a pilot?', 'Yes / no'],
-    ['Deployment friction', 'Can we pilot quickly?', 'Days / weeks / months'],
+    ['Recurrence', 'Does this problem come back, or was it a one-off?', 'How many times this year'],
+    ['Signal availability', 'Does the information that would have warned you already exist?', 'Which system holds it'],
+    ['Fragmentation', 'Is it spread across more than one system or channel?', 'ERP + Excel + WhatsApp'],
+    ['Manual effort', 'Who joins those up today, and how?', 'The person and the actual steps'],
+    ['Lateness', 'How late do you find out?', 'Days, weeks, or never'],
+    ['Cost of lateness', 'What does finding out late cost?', 'Rupees, hours, a lost customer'],
+    ['Actionability', 'Once you know, is the next action obvious?', 'The named action'],
+    ['Measurability', 'Could we show the improvement in a number?', 'The number, and who owns it'],
+    ['Buying access', 'Can we reach whoever approves a pilot?', 'Name and role'],
+    ['Deployment friction', 'Can we be running on your data in days?', 'Days / weeks / months'],
   ];
 
   const SCORE = [
@@ -2360,7 +2372,13 @@ function renderIcpView() {
       'Knowledge base written, first demonstration run. The recurring problem to test: a course of treatment is abandoned part-way and is only noticed at renewal.'],
   ];
 
-  const chain = (steps, mod) => `<ol class="sg-flow${mod ? ' sg-flow--' + mod : ''}">`
+  /*
+   * sg-chain, NOT sg-flow: the Pitches tab already owns .sg-flow as a section
+   * wrapper with its own __steps and __step children. Reusing the name here
+   * turned that section into a wrapping flex row and put a border on every one
+   * of its steps — a collision that only shows up on the other tab.
+   */
+  const chain = (steps, mod) => `<ol class="sg-chain${mod ? ' sg-chain--' + mod : ''}">`
     + steps.map((s) => `<li>${s}</li>`).join('') + '</ol>';
 
   el.innerHTML = `
@@ -2472,10 +2490,15 @@ function renderIcpView() {
       </div>
 
       <div class="sg-who__card sg-who__card--no">
-        <h3>Not this</h3>
-        <p>Sales workflows. Engineering workflows. Marketing workflows.</p>
-        <p class="sg-who__note">Each is a different buyer, a different vocabulary and a different
-          product. Taking one is how six months disappear.</p>
+        <h3>Not this &mdash; four problems to walk away from</h3>
+        <p>A problem that happened once. A problem whose warning signs were never written down
+          anywhere. A problem nobody can act on once they know. A problem whose improvement cannot
+          be shown in a number.</p>
+        <p class="sg-who__note">Each fails one of the seven, and each is a pilot that ends with
+          everyone agreeing it was interesting. The exclusion used to be written by function
+          &mdash; no sales, no engineering, no marketing &mdash; which this page can no longer say:
+          a quotation going cold between the inbox and the ERP is a sales workflow, and it is
+          cluster B&rsquo;s test problem.</p>
       </div>
 
       <details class="sg-who__more">

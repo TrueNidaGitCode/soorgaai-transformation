@@ -1894,7 +1894,7 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 
 /* A sequence read left to right, with the arrow drawn rather than typed, so
    the steps stay selectable text and wrap on a narrow screen. */
-.sg-flow {
+.sg-chain {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1903,7 +1903,7 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   padding: 0;
   list-style: none;
 }
-.sg-flow li {
+.sg-chain li {
   padding: 6px 11px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
@@ -1912,29 +1912,29 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   line-height: 1.35;
   color: rgba(255, 255, 255, 0.78);
 }
-.sg-flow li + li::before {
+.sg-chain li + li::before {
   content: "\2192";
   margin-right: 9px;
   margin-left: -1px;
   color: rgba(255, 255, 255, 0.3);
 }
-.sg-flow--good li:last-child {
+.sg-chain--good li:last-child {
   border-color: rgba(92, 197, 167, 0.45);
   background: rgba(92, 197, 167, 0.1);
   color: #5CC5A7;
 }
-.sg-flow--bad li {
+.sg-chain--bad li {
   border-style: dashed;
   color: rgba(255, 255, 255, 0.42);
 }
 /* The ICP shape is a descent, not a progression — each step is worse than the
    one before, and ends in what it costs. Stacking it says that; a row does not. */
-.sg-flow--down { flex-direction: column; align-items: stretch; gap: 0; }
-.sg-flow--down li { width: 100%; }
+.sg-chain--down { flex-direction: column; align-items: stretch; gap: 0; }
+.sg-chain--down li { width: 100%; }
 /* The arrow sits between the boxes rather than inside one, so every step keeps
    the same frame and the last line cannot run into the container edge. */
-.sg-flow--down li + li { margin-top: 20px; position: relative; }
-.sg-flow--down li + li::before {
+.sg-chain--down li + li { margin-top: 20px; position: relative; }
+.sg-chain--down li + li::before {
   content: "\2193";
   position: absolute;
   top: -17px;
@@ -1943,7 +1943,7 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   font-size: 0.8rem;
   line-height: 1;
 }
-.sg-flow--down li:last-child {
+.sg-chain--down li:last-child {
   border-color: rgba(255, 190, 120, 0.4);
   background: rgba(255, 190, 120, 0.08);
   color: rgba(255, 190, 120, 0.95);

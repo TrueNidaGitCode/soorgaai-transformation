@@ -275,53 +275,6 @@
     </div>
   </section>
 
-      <div class="ch-log" id="ch-log" role="log" aria-live="polite">
-        <!-- Opening turn. Not a fake message from the assistant — it is the
-             app introducing itself.
-
-             The copy is filled from the blueprint rather than written here.
-             This file ships to every customer, and it used to ask all of them
-             about ECU flash failures whatever their application actually did.
-             #ch-examples is left empty for the generated app.js to fill, since
-             only it knows what a useful question looks like for this use case;
-             the shell moves it under the composer and hides it once a
-             conversation has begun. -->
-        <div class="ch-welcome">
-          <span class="ch-welcome__mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg></span>
-          <p class="ch-welcome__eyebrow">Welcome</p>
-          <h2 class="ch-welcome__title">__APP_WELCOME_TITLE__</h2>
-          <p class="ch-welcome__body">__APP_WELCOME_BODY__</p>
-          <div class="ch-examples" id="ch-examples"></div>
-        </div>
-      </div>
-
-      <form class="ch-compose" id="ch-form">
-        <span class="ch-compose__star" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg></span>
-        <textarea id="ch-input" class="ch-compose__input" rows="1"
-                  placeholder="__APP_PROMPT__" aria-label="__APP_PROMPT__"></textarea>
-        <div class="ch-compose__bar">
-          <button type="button" class="ch-compose__tool" id="ch-attach" hidden title="Bring a file into your data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Attach</button>
-          <span class="ch-compose__space"></span>
-          <button type="button" class="ch-compose__tool" id="ch-speak" hidden title="Say it instead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Speak</button>
-          <button type="submit" class="ch-compose__send" id="ch-send" aria-label="Send">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-          </button>
-        </div>
-      </form>
-      <p class="ch-compose__hint">Enter to send · Shift+Enter for a new line</p>
-      <div class="ch-tryask" id="ch-tryask" hidden><p class="ch-tryask__label">Try asking</p></div>
-
-      <p class="ch-foot">Built with Svarg</p>
-    </div>
-
-  </div>
-
-  <!-- ── The Data page ──────────────────────────────────────────────────
-       The owner's: the datasets this application was built on, and the way
-       to replace each one's sample with their own file. Parsed in the
-       browser, sent to this application's own server, written to the
-       database that is theirs. Nothing goes to Svarg. data.js drives it. -->
-
   <!-- What this application is watching. One card per agent, in the shape the
        Data page uses for a source. The findings here are the durable copy: an
        owner who missed the message still sees everything that was noticed,
@@ -381,6 +334,11 @@
     <p class="ag-note" id="ag-note" hidden></p>
   </section>
 
+  <!-- ── The Data page ──────────────────────────────────────────────────
+       The owner's: the datasets this application was built on, and the way
+       to replace each one's sample with their own file. Parsed in the
+       browser, sent to this application's own server, written to the
+       database that is theirs. Nothing goes to Svarg. data.js drives it. -->
   <section class="dt" id="ch-data" hidden aria-label="Your data">
     <header class="dt__head">
       <div class="dt__headrow">
@@ -446,6 +404,50 @@
       </div>
     </div>
   </section>
+
+      <div class="ch-log" id="ch-log" role="log" aria-live="polite">
+        <!-- Opening turn. Not a fake message from the assistant — it is the
+             app introducing itself.
+
+             The copy is filled from the blueprint rather than written here.
+             This file ships to every customer, and it used to ask all of them
+             about ECU flash failures whatever their application actually did.
+             #ch-examples is left empty for the generated app.js to fill, since
+             only it knows what a useful question looks like for this use case;
+             the shell moves it under the composer and hides it once a
+             conversation has begun. -->
+        <div class="ch-welcome">
+          <span class="ch-welcome__mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg></span>
+          <p class="ch-welcome__eyebrow">Welcome</p>
+          <h2 class="ch-welcome__title">__APP_WELCOME_TITLE__</h2>
+          <p class="ch-welcome__body">__APP_WELCOME_BODY__</p>
+          <div class="ch-examples" id="ch-examples"></div>
+        </div>
+      </div>
+
+      <form class="ch-compose" id="ch-form">
+        <span class="ch-compose__star" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg></span>
+        <textarea id="ch-input" class="ch-compose__input" rows="1"
+                  placeholder="__APP_PROMPT__" aria-label="__APP_PROMPT__"></textarea>
+        <div class="ch-compose__bar">
+          <button type="button" class="ch-compose__tool" id="ch-attach" hidden title="Bring a file into your data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Attach</button>
+          <span class="ch-compose__space"></span>
+          <button type="button" class="ch-compose__tool" id="ch-speak" hidden title="Say it instead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Speak</button>
+          <button type="submit" class="ch-compose__send" id="ch-send" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          </button>
+        </div>
+      </form>
+      <p class="ch-compose__hint">Enter to send · Shift+Enter for a new line</p>
+      <div class="ch-tryask" id="ch-tryask" hidden><p class="ch-tryask__label">Try asking</p></div>
+
+      <p class="ch-foot">Built with Svarg</p>
+    </div>
+
+  </div>
+
+
+
 
   <!-- The shell: the front door, the sign-in, the welcome, and the hand-over
        to the chat. Plain script, before app.js, so it never depends on what
@@ -811,6 +813,8 @@
         var b = e.target.closest('[data-side]'); if (!b) return;
         if (b.dataset.side === 'home') { e.preventDefault(); goHomeTab(); }
         if (b.dataset.side === 'ask') { e.preventDefault(); goAskTab(); }
+        if (b.dataset.side === 'data') { e.preventDefault(); showConnections(); showPanel('data'); }
+        if (b.dataset.side === 'agents') { e.preventDefault(); showPanel('agents'); }
         // Data: data.js opens the page from this link; the page opens on Connections.
       });
       // Any way onto the Data page lands on Connections first.
@@ -961,31 +965,10 @@
        * who already suspects the answer. The question box is still here,
        * one place in, under Ask.
        */
-      function goHomeTab() {
-        showConnections();
-        if (page) page.hidden = true;
-        app.hidden = false;
-        hide('ch-finding');
-        window.svargChatParts(false);
-        var fn = document.getElementById('ch-findings');
-        if (fn) fn.hidden = false;
-        markSide('home');
-        // findings.js listens for this and reloads, so the board is never
-        // older than the moment somebody looked at it.
-        window.dispatchEvent(new CustomEvent('svarg:findings-open'));
-      }
+      function goHomeTab() { showConnections(); showPanel('home'); }
 
       /** The chat, deliberately reachable and deliberately not first. */
-      function goAskTab() {
-        showConnections();
-        if (page) page.hidden = true;
-        hide('ch-findings'); hide('ch-finding');
-        app.hidden = false;
-        window.svargChatParts(true);
-        markSide('ask');
-        if (typeof sync === 'function') sync();
-        log.scrollTop = 0; if (input) input.focus();
-      }
+      function goAskTab() { showConnections(); showPanel('ask'); }
 
       function hide(id) { var el = document.getElementById(id); if (el) el.hidden = true; }
       function markSide(which) {
@@ -993,8 +976,45 @@
           x.classList.toggle('ch-side__item--on', x.dataset.side === which);
         });
       }
-      // Exposed so findings.js can hand control back without reaching into
-      // this closure — the same contract the other panels already use.
+
+      /*
+       * ── One way to change screens ──────────────────────────────────────
+       *
+       * Home and Ask lived inside the shell; Data, Watchers and People were
+       * siblings of it and hid the whole thing to show themselves — so the
+       * sidebar vanished on three screens out of five and came back on two.
+       * Each panel also had its own copy of the hiding, in its own file, so
+       * "the sidebar disappears" was three separate bugs wearing one face.
+       *
+       * Every panel now sits inside the shell and goes through here: hide
+       * them all, show the one asked for, and light the matching sidebar
+       * item. A panel that arrives later gets consistent behaviour by being
+       * listed, not by remembering to copy anything.
+       */
+      var PANELS = ['ch-findings', 'ch-finding', 'ch-agents', 'ch-data', 'ch-access'];
+
+      function showPanel(which) {
+        if (page) page.hidden = true;     // the front door
+        app.hidden = false;               // the shell stays, always
+        PANELS.forEach(hide);
+        window.svargChatParts(which === 'ask');
+
+        if (which !== 'ask') {
+          var el = document.getElementById(PANEL_OF[which] || '');
+          if (el) el.hidden = false;
+        }
+        markSide(which);
+        if (which === 'home') window.dispatchEvent(new CustomEvent('svarg:findings-open'));
+        if (which === 'ask') { if (typeof sync === 'function') sync(); log.scrollTop = 0; if (input) input.focus(); }
+      }
+      var PANEL_OF = {
+        home: 'ch-findings', finding: 'ch-finding',
+        agents: 'ch-agents', data: 'ch-data', people: 'ch-access',
+      };
+
+      // Exposed so the panel scripts hand control back rather than reaching
+      // into this closure, and so none of them hides the shell again.
+      window.svargShowPanel = showPanel;
       window.svargGoHome = goHomeTab;
       window.svargGoAsk = goAskTab;
       var searchTimer = null;

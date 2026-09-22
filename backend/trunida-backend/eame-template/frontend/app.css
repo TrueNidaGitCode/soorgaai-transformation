@@ -348,11 +348,27 @@ body {
    One scene, animated by the page: the things a business runs on drift in
    from both sides, their lines flow into a glowing core on a podium, and
    the core breathes. The same in every application. */
+/*
+ * ── The welcome has to fit on the screen it is read on ─────────────────────
+ *
+ * This was built at a fixed rhythm: a large title, a 900x340 illustration
+ * under it, and the Continue button under that, inside min-height:100vh. On a
+ * laptop the three together are taller than the viewport, so the section grew
+ * past the fold and the button went with it — on a page with no visible
+ * scrollbar and nothing below to suggest one.
+ *
+ * People did not scroll. They read a welcome screen with no way forward.
+ *
+ * So the illustration is now capped against the viewport's HEIGHT rather than
+ * only its width, and the type scales with it. The button is what the screen
+ * is for; the artwork gives up its space first.
+ */
 .wl {
   --wl-teal: var(--ch-accent); --wl-mint: var(--ch-accent-light);
-  position: relative; min-height: 100vh; overflow: hidden; isolation: isolate;
+  /* dvh, so mobile browser chrome cannot push the button out of reach. */
+  position: relative; min-height: 100dvh; overflow: hidden; isolation: isolate;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 8px; padding: 48px 20px 40px;
+  gap: 8px; padding: 32px 20px 32px;
   background: var(--ch-bg); color: #fff; text-align: center;
 }
 .wl__bg {
@@ -376,16 +392,18 @@ body {
 .wl__home:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
 .wl__copy { position: relative; z-index: 1; max-width: 760px; animation: wl-rise .7s cubic-bezier(.16,1,.3,1) both; }
 .wl__eyebrow {
-  display: inline-flex; align-items: center; gap: 22px; margin: 0 0 18px;
+  display: inline-flex; align-items: center; gap: 22px; margin: 0 0 12px;
   font-size: 13px; font-weight: 700; letter-spacing: 0.34em; text-transform: uppercase; color: var(--wl-teal);
 }
 .wl__eyebrow span { width: 40px; height: 1px; background: color-mix(in srgb, var(--ch-accent) 55%, transparent); }
-.wl__title { margin: 0 0 18px; font-size: clamp(38px, 5.6vw, 66px); font-weight: 900; letter-spacing: -0.03em; line-height: 1.05; text-wrap: balance; }
+.wl__title { margin: 0 0 12px; font-size: clamp(30px, min(5.6vw, 6.4vh), 60px); font-weight: 900; letter-spacing: -0.03em; line-height: 1.05; text-wrap: balance; }
 .wl__title em { font-style: normal; background: linear-gradient(90deg, var(--ch-accent-2), var(--wl-mint)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .wl__sub { margin: 0 auto; max-width: 52ch; font-size: clamp(16px, 1.6vw, 19px); line-height: 1.55; color: rgba(255,255,255,0.86); }
 
 /* The scene: a 900x340 stage, scaled to the viewport. */
-.wl__scene { position: relative; z-index: 1; width: min(900px, 96vw); aspect-ratio: 900 / 340; margin: 10px 0 6px; animation: wl-rise .9s .15s cubic-bezier(.16,1,.3,1) both; }
+/* Width is capped by the height it would imply, so the illustration can never
+   take more than about a third of the screen however wide the window is. */
+.wl__scene { position: relative; z-index: 1; width: min(900px, 96vw, calc(30vh * 900 / 340)); aspect-ratio: 900 / 340; margin: 6px 0 2px; animation: wl-rise .9s .15s cubic-bezier(.16,1,.3,1) both; }
 .wl__lines { position: absolute; inset: 0; width: 100%; height: 100%; }
 .wl__lines path { fill: none; stroke: url(#wl-line); stroke-width: 1.6; stroke-dasharray: 14 22; animation: wl-flow 3.2s linear infinite; opacity: .9; }
 .wl__lines path:nth-child(2n) { animation-duration: 4s; }
@@ -438,7 +456,7 @@ body {
 .wl__cta {
   position: relative; z-index: 1;
   display: inline-flex; align-items: center; gap: 12px;
-  margin-top: 26px; padding: 16px 44px; border: 0; border-radius: 999px;
+  margin-top: 18px; padding: 15px 42px; border: 0; border-radius: 999px;
   background: linear-gradient(90deg, var(--ch-accent), var(--ch-accent-light)); color: var(--ch-on-accent);
   font: inherit; font-size: 19px; font-weight: 800; cursor: pointer;
   box-shadow: 0 0 0 1px rgba(255,255,255,0.15) inset, 0 18px 50px -12px color-mix(in srgb, var(--ch-accent-light) 60%, transparent);
@@ -1744,4 +1762,28 @@ body {
 
 @media (max-width: 620px) {
   .fd__facts > div { grid-template-columns: 1fr; gap: 3px; }
+}
+
+/* ── Every screen is a page of the same application ──────────────────────────
+   Findings, Watchers, Data and People used to replace the whole shell, so the
+   sidebar vanished on three screens out of five. They now sit inside the main
+   pane beside the chat, which means two things have to be said here that the
+   chat never needed:
+
+   they scroll on their own -- .ch-main is height:100vh with overflow:hidden,
+   which is right for a chat log that manages its own scrolling and would
+   otherwise CLIP a long page rather than let it move;
+
+   and they keep a readable measure while filling the pane, rather than being
+   squeezed into the column the composer sits in. */
+.ch-main > .fn,
+.ch-main > .fd,
+.ch-main > .ag,
+.ch-main > .dt,
+.ch-main > .ac {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  margin-inline: auto;
 }

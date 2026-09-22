@@ -308,3 +308,71 @@ describe('a delivered application runs no script of Svarg\'s', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('every screen is a page of the same application', () => {
+  /*
+   * ── What the customer saw ────────────────────────────────────────────────
+   *
+   * Home and Ask sat inside the shell and kept the sidebar. Data, Watchers and
+   * People were siblings of it and hid the whole thing to show themselves — so
+   * three screens out of five threw away the navigation and looked like a
+   * different product, with no way back except a "Back to the chat" link.
+   *
+   * Each of them also carried its own copy of the hiding, in its own file, so
+   * one symptom was three separate bugs. They now sit inside the main pane and
+   * go through one switcher.
+   */
+  const shell = readFileSync(
+    new URL('../eame-template/frontend/index.html', import.meta.url), 'utf8');
+
+  /** Everything between the shell opening and its matching close. */
+  const insideShell = (() => {
+    const start = shell.indexOf('<div class="ch-app" id="ch-app"');
+    const main = shell.indexOf('<div class="ch-main" id="ch-main">', start);
+    // ch-main closes before ch-app; take to the end of the shell either way.
+    const end = shell.indexOf('\n  </div>', main);
+    return shell.slice(start, end);
+  })();
+
+  it('keeps every panel inside the shell, so the sidebar never disappears', () => {
+    for (const id of ['ch-findings', 'ch-finding', 'ch-agents', 'ch-data']) {
+      expect(insideShell, `${id} must live inside the shell`).toContain(`id="${id}"`);
+    }
+  });
+
+  it('has one switcher rather than a copy per panel', () => {
+    expect(shell).toContain('window.svargShowPanel = showPanel;');
+    expect(shell).toMatch(/var PANELS = \[/);
+  });
+
+  it('never hides the shell to show a panel', () => {
+    /*
+     * The line that caused it, in three files. Each may still fall back to the
+     * old behaviour when the switcher is absent — an application built before
+     * this and updated in place — but must reach for the switcher first.
+     */
+    for (const f of ['data.js', 'agents.js', 'access.js']) {
+      const js = readFileSync(
+        new URL(`../eame-template/frontend/${f}`, import.meta.url), 'utf8');
+      expect(js, `${f} must ask the shell to switch`).toMatch(/window\.svarg(ShowPanel|GoHome)/);
+    }
+  });
+
+  it('puts the People panel in the shell rather than on the body', () => {
+    const js = readFileSync(
+      new URL('../eame-template/frontend/access.js', import.meta.url), 'utf8');
+    expect(js).toContain("document.querySelector('.ch-main') || document.body");
+  });
+
+  it('lets a panel scroll, because the pane it now lives in does not', () => {
+    /*
+     * .ch-main is height:100vh with overflow:hidden — right for a chat log
+     * that scrolls itself, and it would CLIP a long panel rather than let it
+     * move. Without this the bottom of Watchers is simply unreachable.
+     */
+    const css = readFileSync(
+      new URL('../eame-template/frontend/app.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/\.ch-main > \.ag,/);
+    expect(css).toMatch(/overflow-y: auto;/);
+  });
+});

@@ -262,9 +262,8 @@
   if (els.back) {
     els.back.addEventListener('click', function (e) {
       e.preventDefault();
-      page.hidden = true;
-      var app = document.getElementById('ch-app');
-      if (app) app.hidden = false;
+      if (typeof window.svargGoHome === 'function') window.svargGoHome();
+      else { page.hidden = true; var app = document.getElementById('ch-app'); if (app) app.hidden = false; }
     });
   }
 
@@ -275,13 +274,9 @@
 
   function maybeOpen() {
     if (window.location.hash !== '#agents') return;
-    var app = document.getElementById('ch-app');
-    var home = document.getElementById('ch-home');
-    var data = document.getElementById('ch-data');
-    if (app) app.hidden = true;
-    if (home) home.hidden = true;
-    if (data) data.hidden = true;
-    page.hidden = false;
+    // The shell decides what is on screen; this only reads what is there.
+    if (typeof window.svargShowPanel === 'function') window.svargShowPanel('agents');
+    else { var app = document.getElementById('ch-app'); if (app) app.hidden = true; page.hidden = false; }
     say('');
     load();
   }

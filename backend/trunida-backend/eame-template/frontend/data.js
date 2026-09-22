@@ -66,9 +66,18 @@
   }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
 
+  /*
+   * The shell owns which panel is on screen. This used to hide #ch-app to
+   * show itself, which took the sidebar with it -- so Data looked like a
+   * different application rather than a page of this one.
+   */
   function show(which) {
-    app.hidden = which === 'data';
-    page.hidden = which !== 'data';
+    if (typeof window.svargShowPanel === 'function') {
+      window.svargShowPanel(which === 'data' ? 'data' : 'ask');
+    } else {
+      app.hidden = which === 'data';   // an older shell without the switcher
+      page.hidden = which !== 'data';
+    }
     if (which === 'data') { if (ownerToken) enter(); else gate(); }
   }
 

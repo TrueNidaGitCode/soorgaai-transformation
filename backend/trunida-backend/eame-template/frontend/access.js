@@ -56,7 +56,9 @@
       +   '<ul class="ac__list" id="ac-list"></ul>'
       + '</div>'
       + '</section>');
-    document.body.appendChild(panel);
+    // Inside the shell, beside the other panels, so People keeps the
+    // sidebar like every other screen.
+    (document.querySelector('.ch-main') || document.body).appendChild(panel);
 
     panel.querySelector('#ac-back').addEventListener('click', function (e) {
       e.preventDefault();
@@ -149,15 +151,14 @@
   }
 
   function show() {
-    var app = document.getElementById('ch-app');
-    var data = document.getElementById('ch-data');
-    if (app) app.hidden = true;
-    if (data) data.hidden = true;
+    if (typeof window.svargShowPanel === 'function') window.svargShowPanel('people');
+    else { var app = document.getElementById('ch-app'); if (app) app.hidden = true; panel.hidden = false; }
     panel.hidden = false;
     load().then(function (s) { if (s) render(); });
   }
 
   function hide() {
+    if (typeof window.svargGoHome === 'function') return window.svargGoHome();
     panel.hidden = true;
     var app = document.getElementById('ch-app');
     if (app) app.hidden = false;
@@ -167,7 +168,7 @@
   function addNavItem() {
     var nav = document.querySelector('.ch-side__nav') || document.querySelector('.ch-side');
     if (!nav || document.getElementById('ch-access-link')) return;
-    var link = el('<a href="#people" class="ch-side__item" id="ch-access-link">'
+    var link = el('<a href="#people" class="ch-side__item" id="ch-access-link" data-side="people">'
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">'
       + '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>'
       + '<span>People</span></a>');

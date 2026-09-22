@@ -121,18 +121,24 @@ export function enforceMarker(csv) {
   if (lines.length < 2) throw new Error('The generated sample had no data rows.');
 
   const header = lines[0].split(',').map(c => c.trim());
+  const width = fieldCount(lines[0]);
   const rows = lines.slice(1);
 
   if (header[0] !== SAMPLE_COLUMN) {
     // Prepend rather than reject: the columns are the valuable part, and a
     // missing marker is repairable where a missing dataset is not.
+    //
+    // Arity is checked against the ORIGINAL width, because these rows have not
+    // been given the marker column yet.
+    const usable = rows.filter(r => wellFormed(r, width));
     return {
       csv: [
         [SAMPLE_COLUMN, ...header].join(','),
-        ...rows.map(r => `${SAMPLE_VALUE},${r}`),
+        ...usable.map(r => `${SAMPLE_VALUE},${r}`),
       ].join('\n'),
-      rowCount: rows.length,
+      rowCount: usable.length,
       columns: header,
+      dropped: rows.length - usable.length,
     };
   }
 
@@ -142,11 +148,59 @@ export function enforceMarker(csv) {
     return cells.join(',');
   });
 
+  const kept = fixed.filter(r => wellFormed(r, width));
   return {
-    csv: [lines[0], ...fixed].join('\n'),
-    rowCount: fixed.length,
+    csv: [lines[0], ...kept].join('\n'),
+    rowCount: kept.length,
     columns: header.slice(1),
+    dropped: fixed.length - kept.length,
   };
+}
+
+/**
+ * Does this row have exactly as many fields as the header?
+ *
+ * ── Why a short row is dropped rather than padded ──────────────────────────
+ *
+ * A physiotherapy centre's attendance log shipped with three rows carrying
+ * fourteen fields against a fifteen-column header. Nothing noticed. Every
+ * column after the gap shifted left, so `attendance_status` on those rows read
+ * `0` instead of `No-Show` — and the No Show watcher reported nothing while
+ * the file plainly contained no-shows. The data was wrong in a way that looked
+ * exactly like the data being fine.
+ *
+ * Padding is tempting and is the wrong repair. The missing field is not at the
+ * end: those rows were no-shows, so the gap sat among three consecutive blank
+ * timestamps, and appending an empty cell would leave every value between the
+ * gap and the end still in the wrong column. There is no way to know where the
+ * missing comma belonged, and a confidently wrong row is worse than an absent
+ * one — it is the sort that reaches a customer as a finding.
+ *
+ * So a row that does not fit its header is dropped, and `dropped` says how
+ * many, so a caller can tell a thin dataset from a clean one.
+ *
+ * Counted with quotes honoured, not by splitting on every comma. The generator
+ * is asked for realistic values and a quoted comma is the normal case, not the
+ * edge one — "Cabin B, Electrotherapy" is one field. A naive count would read
+ * it as two, call a perfectly good row malformed and drop it, which would trade
+ * one kind of silent data loss for another.
+ */
+function fieldCount(line) {
+  let n = 1;
+  let quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (quoted) {
+      if (ch === '"' && line[i + 1] === '"') i++;
+      else if (ch === '"') quoted = false;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ',') n++;
+  }
+  return n;
+}
+
+function wellFormed(row, columns) {
+  return fieldCount(row) === columns;
 }
 
 /**

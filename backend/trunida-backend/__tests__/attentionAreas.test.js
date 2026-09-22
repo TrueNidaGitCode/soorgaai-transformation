@@ -121,3 +121,65 @@ describe('the categories reach a delivered application', () => {
     }
   });
 });
+
+describe('a generated sample that does not fit its header', () => {
+  /*
+   * ── What this cost ───────────────────────────────────────────────────────
+   *
+   * A physiotherapy centre's attendance log shipped with rows carrying fourteen
+   * fields against a fifteen-column header. Nothing noticed. Every column after
+   * the gap shifted left, so attendance_status on those rows read "0" instead
+   * of "No-Show" — and asking the application for no-shows returned none while
+   * the file plainly contained them.
+   *
+   * Three of the six datasets that clinic was given were affected. The data was
+   * wrong in a way that looked exactly like the data being fine.
+   */
+  it('drops a short row rather than padding it', async () => {
+    /*
+     * Padding is the tempting repair and the wrong one. The missing field is
+     * not at the end — those rows were no-shows, so the gap sat among three
+     * consecutive blank timestamps. Appending an empty cell leaves everything
+     * between the gap and the end still in the wrong column, and a confidently
+     * wrong row is worse than an absent one: it is the sort that reaches a
+     * customer as a finding.
+     */
+    const { enforceMarker } = await import('../services/syntheticDatasetService.js');
+    const header = '_source,log_id,client_id,check_in,session_start,session_end,method,status';
+    const good = 'sample,LOG-1,CL-1,2026-09-20 09:00,2026-09-20 09:05,2026-09-20 09:50,QR,Completed';
+    const short = 'sample,LOG-3,CL-3,,,Front_Desk,No-Show';
+
+    const r = enforceMarker([header, good, short].join('\n'));
+    expect(r.rowCount).toBe(1);
+    expect(r.dropped).toBe(1);
+    expect(r.csv).not.toContain('LOG-3');
+  });
+
+  it('keeps a row whose comma is inside quotes', async () => {
+    /*
+     * The mistake the fix could easily have introduced. The generator is asked
+     * for realistic values and a quoted comma is the normal case, not the edge
+     * one — "Cabin B, Electrotherapy" is one field. Counting on a naive split
+     * would call a perfectly good row malformed and drop it, trading one kind
+     * of silent data loss for another.
+     */
+    const { enforceMarker } = await import('../services/syntheticDatasetService.js');
+    const header = '_source,log_id,cabin,status';
+    const quoted = 'sample,LOG-2,"Cabin B, Electrotherapy",No-Show';
+
+    const r = enforceMarker([header, quoted].join('\n'));
+    expect(r.rowCount).toBe(1);
+    expect(r.dropped).toBe(0);
+    expect(r.csv).toContain('Cabin B, Electrotherapy');
+  });
+
+  it('checks arity on the branch that adds the marker too', async () => {
+    // A generation that forgot the marker column takes a different path, and
+    // the first version of this fix only guarded one of the two.
+    const { enforceMarker } = await import('../services/syntheticDatasetService.js');
+    const r = enforceMarker(['log_id,client_id,status', 'LOG-1,CL-1,Completed', 'LOG-2,CL-2'].join('\n'));
+    expect(r.rowCount).toBe(1);
+    expect(r.dropped).toBe(1);
+    expect(r.csv).not.toContain('LOG-2');
+  });
+});

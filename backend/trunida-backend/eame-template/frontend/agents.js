@@ -23,10 +23,14 @@
  * whose application cannot reach Svarg at all, still sees everything the
  * agents noticed, because a finding is recorded before anything is sent.
  *
- * Owner only. A colleague with a session can use the application and read its
- * answers; an agent runs unattended and sends mail, so deciding what watches
- * belongs to the person whose application it is. The API enforces that — this
- * page only has to say so plainly when it is refused.
+ * Readable by anyone with a session; changeable only by the owner. A
+ * colleague can already read every finding, and a page that would not show
+ * them what produced one was answering the wrong question — it said "nothing
+ * here can be watched until some records arrive", which was neither true nor
+ * the real reason. An agent runs unattended and sends mail in the owner’s
+ * name, so starting, pausing and removing stay theirs. The response says
+ * which reader this is and the buttons are drawn from that, rather than from
+ * a refusal the page has to provoke to discover.
  *
  * Fixed runtime, like data.js: the same for every application, so it is tested
  * once. It drives only ids of its own (#ag-*).
@@ -253,7 +257,11 @@
      * read back off its label, which three labels would have broken.
      */
     var on = c.state === 'running';
-    var acts = c.state === 'blocked'
+    var acts = !view.canManage
+      ? '<span class="ag-offer__need">' + (c.state === 'blocked'
+          ? esc(c.missing || 'Needs records this application does not hold yet.')
+          : 'Only the person who created this application can change what it watches.') + '</span>'
+      : c.state === 'blocked'
       ? '<span class="ag-offer__need">' + esc(c.missing || 'Needs records this application does not hold yet.') + '</span>'
       : c.state === 'off'
         ? '<button type="button" class="ag-btn ag-btn--go" data-start="' + esc(c.id) + '">Start watching</button>'
@@ -284,7 +292,7 @@
 
   // What the map is drawn from, kept so a click can redraw without asking
   // the server again.
-  var view = { catalogue: [], categories: [], agents: [] };
+  var view = { catalogue: [], categories: [], agents: [], canManage: false };
   var picked = '';
 
   function drawDetail() {
@@ -303,6 +311,11 @@
       view.agents = body.agents || [];
       view.catalogue = body.catalogue || [];
       view.categories = body.categories || [];
+      view.canManage = !!body.canManage;
+      // The form below the map writes, so it belongs to the owner too.
+      if (els.form) els.form.hidden = !view.canManage;
+      var aside = document.getElementById('ag-own');
+      if (aside) aside.hidden = !view.canManage;
       if (picked && !view.catalogue.some(function (c) { return c.id === picked; })) picked = '';
       drawMap(view.catalogue, view.categories, picked);
       drawDetail();
@@ -310,7 +323,10 @@
       els.map.innerHTML = '';
       els.map.hidden = true;
       els.empty.hidden = false;
-      say(err.message, true);
+      els.empty.textContent = /(403|forbidden|only the person)/i.test(err.message)
+        ? 'Only the person who created this application can see and change what it watches.'
+        : 'What this application is watching could not be read. ' + err.message;
+      say('');
     });
   }
 

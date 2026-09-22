@@ -190,15 +190,48 @@ describe('the agents are wired into the application', () => {
     const lines = routes.split('\n').filter(l => /^router\./.test(l));
     expect(lines.length).toBeGreaterThan(4);
 
+    /*
+     * The line was once "findings, versus everything else". It is really
+     * "reading, versus changing", and the two stopped agreeing when the
+     * agents screen became a map: a colleague could read every finding and
+     * not see one thing that produced it, on a page that told them nothing
+     * could be watched until records arrived.
+     *
+     * Two writes are deliberately not the owner's. Marking a finding opened
+     * is telemetry about the reader themselves, and drafting a reply writes
+     * a message and sends nothing — the person who would chase the client is
+     * the person who should be able to draft to them.
+     */
+    const READERS_MAY_WRITE = ["'/findings/opened'", "'/findings/:id/draft'"];
+
     for (const line of lines) {
-      const readsFindings = /'\/findings/.test(line);
-      if (readsFindings) {
-        expect(line, line).toContain('protect');
-        expect(line, line).not.toContain('ownerOnly');
-      } else {
-        expect(line, line).toContain('ownerOnly');
-      }
+      expect(line, line).toContain('protect');
+      const method = (line.match(/^router\.(\w+)/) || [])[1];
+      const readOnly = method === 'get' || READERS_MAY_WRITE.some(p => line.includes(p));
+      if (readOnly) expect(line, line).not.toContain('ownerOnly');
+      else expect(line, line).toContain('ownerOnly');
     }
+
+    // And every GET really is a read: the ones that changed anything were
+    // what made "owner-only" look like the simpler rule in the first place.
+    expect(lines.filter(l => /^router\.get/.test(l)).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('tells the screen whether this reader may change anything', () => {
+    /*
+     * Otherwise the page has to provoke a 403 to find out, which is exactly
+     * what it used to do — and it rendered the refusal as "nothing here can
+     * be watched until some records arrive".
+     */
+    const ctl = read('../eame-template/controllers/agentsController.js');
+    expect(ctl).toContain('canManage: await isOwner(req),');
+    const ui = read('../eame-template/frontend/agents.js');
+    expect(ui).toContain('view.canManage = !!body.canManage;');
+    // The buttons are drawn from it, and the form that writes is hidden.
+    expect(ui).toContain('var acts = !view.canManage');
+    expect(ui).toContain('if (els.form) els.form.hidden = !view.canManage;');
+    // A refusal says it is one.
+    expect(ui).toMatch(/Only the person who created this application can see and change/);
   });
 
   it('declares /findings/opened before /findings/:id', () => {

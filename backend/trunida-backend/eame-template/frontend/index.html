@@ -316,6 +316,9 @@
          open, and the buttons that start, pause or remove it. -->
     <div class="ag-detail" id="ag-detail" hidden></div>
 
+    <!-- Writes, so it belongs to the owner. agents.js hides it for anyone
+         else rather than offering a form the API will refuse. -->
+    <div id="ag-own" hidden>
     <h2 class="ag-sub">Or describe your own</h2>
     <p class="ag-orlede">If none of those is quite it, say what you want to be told about.</p>
     <form class="ag-form" id="ag-form">
@@ -349,6 +352,7 @@
       <button type="submit" class="ag-go">Start watching</button>
     </form>
     <p class="ag-note" id="ag-note" hidden></p>
+    </div>
   </section>
 
   <!-- ── The Data page ──────────────────────────────────────────────────

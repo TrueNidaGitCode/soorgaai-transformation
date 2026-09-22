@@ -41,7 +41,20 @@ router.post  ('/findings/:id/draft', protect, express.json({ limit: '4kb' }), dr
 // The owner's clock, learned when they first open the application. Owner
 // only: a colleague abroad must not move the owner's morning briefing.
 router.post  ('/timezone', protect, ownerOnly, express.json({ limit: '1kb' }), timezoneHandler);
-router.get   ('/',    protect, ownerOnly, listAgentsHandler);
+/*
+ * Reading the map is not managing it.
+ *
+ * This was owner-only along with the writes, which meant a colleague could
+ * read every finding and not see a single thing that produced one -- the
+ * page answered "nothing here can be watched until some records arrive",
+ * which was not true and not even the real reason. Same argument as the two
+ * reads above: the people who chase the client who stopped coming should be
+ * able to see what is looking out for them.
+ *
+ * The response says whether this reader may change anything, and the screen
+ * draws the buttons from that. Every write below is still the owner's.
+ */
+router.get   ('/',    protect, listAgentsHandler);
 router.post  ('/',    protect, ownerOnly, express.json({ limit: '16kb' }), createAgentHandler);
 // One tap on a catalogue card.
 router.post  ('/start/:id', protect, ownerOnly, express.json({ limit: '4kb' }), startFromCatalogueHandler);

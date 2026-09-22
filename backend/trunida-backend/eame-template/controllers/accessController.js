@@ -45,18 +45,31 @@ export function seatLimit() {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/** Only the owner manages access. A signed-in colleague is not an administrator. */
-export async function ownerOnly(req, res, next) {
-  if (req.user?.role === 'owner') return next();
+/**
+ * Is this the person whose application it is?
+ *
+ * Split out of ownerOnly so a screen can ASK rather than be refused. A page
+ * that shows what is watching is not a page that changes it, and the two
+ * need different answers to the same question: one draws a button, the
+ * other guards a write.
+ */
+export async function isOwner(req) {
+  if (req.user?.role === 'owner') return true;
   const email = clean(req.user?.email);
-  if (email && email === ownerEmail()) return next();
+  if (email && email === ownerEmail()) return true;
   try {
     const id = req.user?.userId;
     if (id && mongoose.Types.ObjectId.isValid(id)) {
       const u = await usersCollection().findOne({ _id: new mongoose.Types.ObjectId(id) }, { projection: { role: 1 } });
-      if (u && u.role === 'owner') return next();
+      if (u && u.role === 'owner') return true;
     }
-  } catch { /* falls through to the refusal */ }
+  } catch { /* not the owner, as far as this can tell */ }
+  return false;
+}
+
+/** Only the owner manages access. A signed-in colleague is not an administrator. */
+export async function ownerOnly(req, res, next) {
+  if (await isOwner(req)) return next();
   return res.status(403).json({ error: 'Only the person who created this application can manage who uses it.' });
 }
 

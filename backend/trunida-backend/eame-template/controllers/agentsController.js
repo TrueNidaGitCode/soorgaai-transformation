@@ -15,6 +15,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { catalogueFor, entryFor, fillQuestion, matchDataset, severityFor } from '../services/agentCatalogue.js';
 import { readIndex } from '../services/connectorService.js';
+import { isOwner } from './accessController.js';
 import { draftFollowUp } from '../services/draftService.js';
 import { sendSignal } from '../services/tenantSignals.js';
 
@@ -319,6 +320,9 @@ export async function listAgentsHandler(req, res) {
       });
 
     return res.json({
+      // Whether this reader may change any of it. The screen draws its
+      // buttons from this rather than from a refusal it has to provoke.
+      canManage: await isOwner(req),
       agents: withFindings,
       catalogue,
       /*

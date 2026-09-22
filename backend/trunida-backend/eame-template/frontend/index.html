@@ -369,6 +369,9 @@
            application's shell once it knows what the application holds. -->
       <nav class="dt__side" id="dt-side" aria-label="Your data"></nav>
       <div class="dt__body">
+      <!-- Every dataset the application holds, reached by a link from the
+           connections page rather than by a permanent column of them. -->
+      <div id="dt-records" class="dt-records" hidden></div>
       <div id="dt-connections">
     <!-- Reached only when the application refuses the reader's own session.
          Almost nobody sees it: an owner who signed in normally goes straight
@@ -396,9 +399,12 @@
            academy; Jira and Confluence for a software team. Whatever a
            card does -- the upload, its progress, the matching, the
            connection form, and what it holds afterwards -- happens inside
-           the card. What the datasets hold is on the tabs to the left. -->
+           the card. What the datasets hold is one link below. -->
       <div class="dt-cards" id="dt-sources"></div>
       <p class="dt-note" id="dt-note" hidden></p>
+      <!-- The rarer errand, and so a link rather than a column of datasets
+           down the side of a page about connecting them. -->
+      <p class="dt__records-link"><a href="#data" id="dt-records-link">See everything this application holds <span aria-hidden="true">&rarr;</span></a></p>
       <p class="dt__foot">Rows stay in this application's own database, and every row says where it came from. A source's credentials are kept encrypted here and forgotten when it is removed; its rows stay.</p>
     </div>
       </div>
@@ -773,6 +779,7 @@
       var page = document.getElementById('ch-data');
       var dside = document.getElementById('dt-side');
       var connections = document.getElementById('dt-connections');
+      var records = document.getElementById('dt-records');
       var tryask = document.getElementById('ch-tryask');
       var examples = document.getElementById('ch-examples');
       var input = document.getElementById('ch-input');
@@ -837,6 +844,15 @@
         if (!e.target.closest('#ch-data-link')) return;
         showConnections();
       });
+      var recordsLink = document.getElementById('dt-records-link');
+      if (recordsLink) recordsLink.addEventListener('click', function (e) { e.preventDefault(); showRecords(); });
+
+      if (records) records.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-tab]'); if (!b) return;
+        var ds = datasets.find(function (d) { return d.name === b.dataset.tab; });
+        if (ds) { records.hidden = true; openView(ds); }
+      });
+
       if (dside) dside.addEventListener('click', function (e) {
         var b = e.target.closest('[data-tab], [data-connections]'); if (!b) return;
         e.preventDefault();
@@ -870,22 +886,70 @@
 
       var datasets = [];
       var activeTab = '';
+
+      /*
+       * ── Why there is no longer a dataset per sidebar entry ────────────────
+       *
+       * This panel listed Connections, then every dataset the application
+       * holds, each with a row count: Packages 19, Appointments 20,
+       * Attendance 14, and so on down the page. Six datasets today; a business
+       * with twenty would have had a scrolling column of them beside a page
+       * about connecting data, which is a different job.
+       *
+       * It also put the least-used thing in the most prominent place. Somebody
+       * opens Data to connect a source or to replace a file. Reading a table
+       * of their own records is the rarer errand, and it does not need a
+       * permanent seat.
+       *
+       * So the panel is gone and the errand is a link. Nothing is lost: every
+       * dataset is one click further away, behind a list that names them all.
+       */
       function drawTabs() {
         if (!dside) return;
-        dside.innerHTML = '<a href="#data" class="dt-side__item' + (!activeTab ? ' dt-side__item--on' : '') + '" data-connections>' + svg('link') + '<span>Connections</span></a>'
-          + (datasets.length ? '<p class="dt-side__group">What it holds</p>' : '')
-          + datasets.map(function (ds) {
-            var n = ds.own || 0;
-            return '<button type="button" class="dt-side__item' + (ds.name === activeTab ? ' dt-side__item--on' : '') + '" data-tab="' + escT(ds.name) + '">' + svg(iconFor(ds.label + ' ' + ds.name)) + '<span>' + escT(ds.label) + '</span><i class="dt-side__count' + (n ? '' : ' dt-side__count--none') + '" title="' + (n ? 'Your rows' : 'Nothing of yours yet; ' + (ds.sample || 0) + ' simulated') + '">' + (n || ds.sample || 0) + '</i></button>';
-          }).join('');
+        dside.hidden = true;
+        dside.innerHTML = '';
       }
       drawTabs();
+
+      /** The records index: every dataset, what it holds, and a way in. */
+      function drawRecords() {
+        if (!records) return;
+        if (!datasets.length) {
+          records.innerHTML = '<p class="dt-records__empty">This application holds no datasets yet.</p>';
+          return;
+        }
+        records.innerHTML = '<p class="dt-records__lede">Everything this application holds. '
+          + 'A count in your own colour is data you provided; the rest is the sample it shipped with.</p>'
+          + '<ul class="dt-records__list">'
+          + datasets.map(function (ds) {
+            var own = ds.own || 0;
+            var n = own || ds.sample || 0;
+            return '<li><button type="button" class="dt-records__item" data-tab="' + escT(ds.name) + '">'
+              + '<span class="dt-records__name">' + escT(ds.label) + '</span>'
+              + '<span class="dt-records__count' + (own ? ' is-own' : '') + '">'
+              + n + ' ' + (n === 1 ? 'row' : 'rows') + (own ? '' : ' &middot; sample') + '</span>'
+              + '<span class="dt-records__go" aria-hidden="true">&rsaquo;</span>'
+              + '</button></li>';
+          }).join('')
+          + '</ul>';
+      }
       function showConnections() {
         activeTab = ''; current = null;
         drawTabs();
         if (connections) connections.hidden = false;
+        if (records) records.hidden = true;
         view.hidden = true;
       }
+
+      /** The list of every dataset, one level in from Connections. */
+      function showRecords() {
+        activeTab = ''; current = null;
+        drawRecords();
+        if (connections) connections.hidden = true;
+        if (records) records.hidden = false;
+        view.hidden = true;
+      }
+      window.svargShowRecords = showRecords;
 
       // Asked when the application opens (show('app')), not at page load,
       // because that is when a session exists.

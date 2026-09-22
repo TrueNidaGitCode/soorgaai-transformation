@@ -242,12 +242,45 @@ export async function listAgentsHandler(req, res) {
       * undiscoverable.
       */
     const running = new Set(withFindings.map((a) => a.name));
+    /*
+     * The live agent behind each catalogue entry, matched on the watcher id
+     * it was started with rather than on its name -- a name the owner can
+     * edit, and did.
+     */
+    const byWatcher = new Map();
+    for (const a of withFindings) if (a.watcherId) byWatcher.set(a.watcherId, a);
     const catalogue = catalogueFor(readIndex(), plan())
-      .map((c) => ({ ...c, running: running.has(c.name) }));
+      .map((c) => {
+        const live = byWatcher.get(c.id) || null;
+        return {
+          ...c,
+          running: running.has(c.name) || !!live,
+          category: categoryOf(c.id),
+          // What the map draws a dot for. Every value here is read off the
+          // agent's own record: there is no state meaning "thinking about
+          // it", so none is reported.
+          state: !live ? (c.ready ? 'off' : 'blocked')
+            : live.status === 'degraded' ? 'stopped'
+            : (!live.enabled || live.status === 'paused') ? 'paused'
+            : 'running',
+          agentId: live ? live.id : '',
+          openCount: live ? live.openCount : 0,
+          lastRunAt: live ? live.lastRunAt || null : null,
+        };
+      });
 
     return res.json({
       agents: withFindings,
       catalogue,
+      /*
+       * The industry's categories, in the order its table names them, and
+       * every one of them -- including a category nothing is watching yet.
+       * A map that drew only the occupied columns would say "this is all
+       * there is to watch", which is the opposite of what it is for.
+       */
+      categories: (Array.isArray(plan().categories) ? plan().categories : []).map((c) => ({
+        name: c.name, asks: c.asks || '',
+      })),
       areas: [...new Set(catalogue.map((c) => c.area))],
       schedules: Object.keys(SCHEDULES),
     });

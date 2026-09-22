@@ -1394,48 +1394,206 @@ body {
 .ag-note { margin: 0 0 18px; font-size: 13.5px; color: var(--ch-dim); }
 .ag-note--bad { color: var(--ch-bad); }
 
-/* ── One agent ────────────────────────────────────────────────────────────── */
+/* ── The map ────────────────────────────────────────────────────────────────
+   The scheduler at the head, a stem, then one column per business category
+   the industry's knowledge base names. The columns are drawn from data, so
+   the count is whatever the industry turned out to have: the grid fits as
+   many as will fit and wraps the rest rather than squeezing five into four.
 
-.ag-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-top: 18px; }
+   Each column carries its own --ag-hue, set inline from its position, so a
+   board of five reads as five things rather than one thing five times. The
+   hue only ever tints a border, an icon and a glow — never text on a ground,
+   which is where a generated hue stops being legible. */
 
-.ag-card {
-  padding: 18px;
-  background: var(--ch-panel);
+.ag-map { margin-top: 26px; }
+
+.ag-chief {
+  position: relative;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 26px 24px 20px;
+  text-align: center;
   border: 1px solid var(--ch-line);
-  border-radius: var(--ch-radius);
+  border-radius: 18px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ch-panel) 92%, var(--ch-accent)), var(--ch-panel) 70%);
+}
+.ag-chief.is-on { border-color: color-mix(in srgb, var(--ch-accent) 40%, transparent); }
+.ag-chief.is-bad { border-color: color-mix(in srgb, var(--ch-bad) 45%, transparent); }
+
+.ag-chief__icon {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--ch-accent);
+  background: var(--ch-bg);
+  border: 1px solid color-mix(in srgb, var(--ch-accent) 40%, transparent);
+  box-shadow: 0 0 0 6px var(--ch-bg), 0 0 26px -6px color-mix(in srgb, var(--ch-accent) 60%, transparent);
+}
+.ag-chief__icon svg { width: 24px; height: 24px; }
+.ag-chief__name { margin: 8px 0 6px; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+.ag-chief__what { margin: 0 0 10px; font-size: 13px; line-height: 1.5; color: var(--ch-dim); }
+.ag-chief__state { display: inline-flex; align-items: center; gap: 7px; margin: 0; font-size: 13px; font-weight: 600; color: var(--ch-faint); }
+.ag-chief__state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.ag-chief.is-on .ag-chief__state { color: var(--ch-accent); }
+.ag-chief.is-bad .ag-chief__state { color: var(--ch-bad); }
+
+/* The one line from the scheduler down to the columns. Decorative, and
+   hidden once the columns stack, where a stem to nothing is just a mark. */
+.ag-map__stem { width: 1px; height: 26px; margin: 0 auto; background: var(--ch-line-hi); }
+
+.ag-map__cols {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+/* The bus, and a drop into each column: what makes this read as one thing
+   with parts rather than a row of panels. Its ends stop at the centre of
+   the first and last column, which needs the column count -- agents.js
+   sets --ag-cols from what the knowledge base turned out to name. Below
+   900px the columns stack and a bus across them would be a line to
+   nowhere, so the whole apparatus goes. */
+.ag-map__cols::before {
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: calc((100% - (var(--ag-cols, 1) - 1) * 14px) / var(--ag-cols, 1) / 2);
+  right: calc((100% - (var(--ag-cols, 1) - 1) * 14px) / var(--ag-cols, 1) / 2);
+  height: 1px;
+  background: var(--ch-line-hi);
+}
+.ag-col::before {
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 1px;
+  height: 14px;
+  background: var(--ch-line-hi);
+}
+
+.ag-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--ch-line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--ch-panel) 50%, transparent);
+  border-top: 2px solid hsl(var(--ag-hue, 160) 55% 55% / 0.55);
   min-width: 0;
 }
+
+.ag-col__head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.ag-col__icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: hsl(var(--ag-hue, 160) 60% 68%);
+  background: hsl(var(--ag-hue, 160) 60% 55% / 0.14);
+}
+.ag-col__icon svg { width: 18px; height: 18px; }
+.ag-col__text { min-width: 0; }
+.ag-col__name { display: block; font-size: 14.5px; font-weight: 800; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.ag-col__count { display: block; margin-top: 2px; font-size: 11.5px; color: var(--ch-faint); font-variant-numeric: tabular-nums; }
+.ag-col__body { display: flex; flex-direction: column; gap: 8px; }
+.ag-col__none { margin: 4px 0 2px; font-size: 12.5px; line-height: 1.45; color: var(--ch-faint); }
+
+.ag-node {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 11px;
+  text-align: left;
+  border: 1px solid var(--ch-line);
+  border-radius: 11px;
+  background: var(--ch-panel);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.ag-node:hover { border-color: var(--ch-line-hi); background: var(--ch-panel-hi); }
+.ag-node:focus-visible { outline: 2px solid var(--ch-accent); outline-offset: 2px; }
+.ag-node.is-picked { border-color: hsl(var(--ag-hue, 160) 60% 60% / 0.8); background: var(--ch-panel-hi); }
+
+.ag-node__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: hsl(var(--ag-hue, 160) 60% 70%);
+  background: hsl(var(--ag-hue, 160) 60% 55% / 0.12);
+}
+.ag-node__icon svg { width: 15px; height: 15px; }
+.ag-node__text { min-width: 0; }
+.ag-node__name { display: block; font-size: 13px; font-weight: 600; line-height: 1.35; overflow-wrap: break-word; hyphens: auto; }
+
+/* Semantic, and separate from the column's hue: green means running
+   wherever it appears, whatever colour the column happens to be. */
+.ag-node__state { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 11.5px; font-weight: 600; color: var(--ch-faint); }
+.ag-node__state::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.ag-node__state.is-running { color: var(--ch-accent); }
+.ag-node__state.is-paused { color: var(--ch-warn); }
+.ag-node__state.is-stopped { color: var(--ch-bad); }
+.ag-node__state.is-off { color: var(--ch-faint); }
+
+/* One watcher, opened under the map rather than inside a 210px column. */
+.ag-detail { margin-top: 18px; }
+.ag-detail__card {
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--ch-accent) 30%, var(--ch-line));
+  border-radius: var(--ch-radius);
+  background: var(--ch-panel);
+  min-width: 0;
+}
+.ag-detail__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px; align-items: center; margin-bottom: 12px; }
+.ag-detail__title { min-width: 0; }
+.ag-detail__title h3 { margin: 0; font-size: 16px; font-weight: 800; overflow-wrap: anywhere; }
+.ag-detail__where { display: block; margin-top: 2px; font-size: 11.5px; letter-spacing: 0.04em; color: var(--ch-faint); }
+.ag-detail__says { margin: 0 0 10px; font-size: 13.5px; line-height: 1.5; color: var(--ch-dim); }
+.ag-detail__shut {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ch-faint);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ag-detail__shut:hover { color: var(--ch-text); background: var(--ch-panel-hi); }
+
+@media (max-width: 900px) {
+  .ag-map__stem { display: none; }
+  .ag-map__cols::before, .ag-col::before { display: none; }
+}
+
+@media (max-width: 560px) {
+  .ag-map__cols { grid-template-columns: minmax(0, 1fr); }
+  .ag-detail__head { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .ag-detail__shut { grid-column: 3; grid-row: 1; }
+}
+
+/* ── One agent ────────────────────────────────────────────────────────────── */
+
 .ag-card--bad { border-color: color-mix(in srgb, var(--ch-bad) 45%, transparent); }
 
-.ag-card__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.ag-card__head h3 { margin: 0; font-size: 15.5px; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
-
-/* The count is the first thing read on the page, so it carries the colour —
-   and only when it is not zero. A quiet agent should look quiet. */
-.ag-count {
-  margin-left: auto;
-  min-width: 26px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--ch-panel-hi);
-  color: var(--ch-faint);
-  font-size: 13px;
-  font-weight: 700;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.ag-count--on { background: var(--ch-accent-soft); color: var(--ch-accent); }
-
-.ag-chip {
-  padding: 2px 8px;
-  border-radius: 5px;
-  background: var(--ch-panel-hi);
-  color: var(--ch-faint);
-  font-size: 11px;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-}
-.ag-chip--bad { background: color-mix(in srgb, var(--ch-bad) 16%, transparent); color: var(--ch-bad); }
 
 .ag-q { margin: 0 0 6px; font-size: 14px; color: var(--ch-text); line-height: 1.5; overflow-wrap: anywhere; }
 .ag-meta { margin: 0 0 12px; font-size: 12.5px; color: var(--ch-faint); }
@@ -1499,65 +1657,6 @@ body {
   color: var(--ch-faint);
 }
 
-.ag-offers {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-}
-
-.ag-offer {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding: 15px 16px;
-  background: var(--ch-panel);
-  border: 1px solid var(--ch-line);
-  border-radius: 12px;
-  min-width: 0;
-}
-
-/* Greyed, not hidden. It still reads as a real thing you could have. */
-.ag-offer--cold { background: none; border-style: dashed; }
-.ag-offer--cold h4 { color: var(--ch-dim); }
-
-.ag-offer__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ag-offer__head h4 { margin: 0; font-size: 14.5px; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
-
-.ag-offer__area {
-  margin-left: auto;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: var(--ch-faint);
-  white-space: nowrap;
-}
-
-/* What the owner said they wanted, in their own words, from the objective. */
-.ag-star {
-  order: -1;
-  width: 100%;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ch-accent);
-}
-
-.ag-offer__says { margin: 0; font-size: 13.5px; color: var(--ch-dim); line-height: 1.45; }
-
-.ag-offer__q {
-  margin: 0;
-  padding: 7px 9px;
-  background: var(--ch-panel-hi);
-  border-radius: 7px;
-  font-size: 12px;
-  color: var(--ch-faint);
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-.ag-offer footer { margin-top: auto; padding-top: 4px; }
-
-.ag-offer__on { font-size: 12.5px; color: var(--ch-accent); font-weight: 600; }
 .ag-offer__need { font-size: 12px; color: var(--ch-faint); line-height: 1.4; }
 
 .ag-btn--go {
@@ -1567,20 +1666,6 @@ body {
   font-weight: 600;
 }
 .ag-btn--go:hover { background: var(--ch-accent); color: var(--ch-on-accent); }
-
-.ag-showall {
-  margin-top: 14px;
-  padding: 8px 0;
-  background: none;
-  border: 0;
-  color: var(--ch-dim);
-  font: inherit;
-  font-size: 13px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-.ag-showall:hover { color: var(--ch-text); }
 
 /* The escape hatch, not the front door: a note under the heading that says so
    without making the form look like a lesser thing. */

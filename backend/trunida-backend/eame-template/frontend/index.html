@@ -291,20 +291,21 @@
     <header class="ag__head">
       <p class="ag__topline"><a href="#" class="ag__back" id="ag-back">&larr; Back to the chat</a></p>
       <p class="ag__eyebrow">Running on their own</p>
-      <h1 class="ag__title">What this application is <em>watching</em></h1>
-      <p class="ag__lede">An agent asks a question of your own data on a schedule, and tells you
-        only when something changes. It stays quiet the rest of the time.</p>
+      <h1 class="ag__title">How this application is <em>watching your business</em></h1>
+      <p class="ag__lede">A watcher asks one question of your own records on a schedule, and tells
+        you only when the answer changes. It stays quiet the rest of the time.</p>
     </header>
 
+    <!-- The map: the scheduler at the top, then one column per business
+         category the industry names, then every watcher that belongs to it.
+         Drawn by agents.js from what the application actually holds — the
+         columns come from data/agents.json, which the knowledge base wrote. -->
+    <div class="ag-map" id="ag-map"></div>
+    <p class="ag-empty" id="ag-empty">Nothing here can be watched until some records arrive.</p>
 
-    <h2 class="ag-sub">What it could watch</h2>
-    <div class="ag-offers" id="ag-offers"></div>
-    <p class="ag-empty" id="ag-offers-empty">Nothing here can be watched until some records arrive.</p>
-    <button type="button" class="ag-showall" id="ag-more" hidden></button>
-
-    <h2 class="ag-sub">Watching now</h2>
-    <div class="ag-list" id="ag-list"></div>
-    <p class="ag-empty" id="ag-empty">Nothing is being watched yet.</p>
+    <!-- One watcher, opened from the map: its question, what it is holding
+         open, and the buttons that start, pause or remove it. -->
+    <div class="ag-detail" id="ag-detail" hidden></div>
 
     <h2 class="ag-sub">Or describe your own</h2>
     <p class="ag-orlede">If none of those is quite it, say what you want to be told about.</p>

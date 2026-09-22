@@ -20,6 +20,7 @@
  * different one the next time, and nothing would report the drift.
  */
 
+import fs from 'fs';
 import { describe, it, expect } from 'vitest';
 import { attentionAreas, categoryOf, categoriesFor } from '../services/attentionAreasService.js';
 import { CATALOGUE } from '../eame-template/services/agentCatalogue.js';
@@ -118,6 +119,89 @@ describe('the categories reach a delivered application', () => {
   it('carry what the chips need and nothing else', () => {
     for (const c of categoriesFor('Automotive')) {
       expect(Object.keys(c).sort()).toEqual(['asks', 'name', 'watchers']);
+    }
+  });
+});
+
+/*
+ * The agent map draws one column per category the industry named, and hangs
+ * every watcher under the one that claims it. The point of the whole
+ * arrangement is that publishing a new industry changes the screen and no
+ * code changes with it — so what is tested here is that nothing on the path
+ * from the table to the columns is decided in code.
+ */
+describe('the map is drawn from the categories, not from the code', () => {
+  const src = (p) => fs.readFileSync(new URL(p, import.meta.url), 'utf8');
+
+  it('sends the industry’s categories to the screen, in its own order', () => {
+    const ctl = src('../eame-template/controllers/agentsController.js');
+    // The list the columns come from is plan().categories — the file the
+    // knowledge base wrote — and not the areas the catalogue carries.
+    expect(ctl).toMatch(/categories:\s*\(Array\.isArray\(plan\(\)\.categories\)/);
+    expect(ctl).toContain('category: categoryOf(c.id)');
+  });
+
+  it('keeps a category that nothing watches yet', () => {
+    /*
+     * A map that drew only the occupied columns would tell the owner "this
+     * is all there is to watch", which is the opposite of what it is for:
+     * an empty Compliance column is how somebody finds out that nothing is
+     * watching their compliance.
+     */
+    const ui = src('../eame-template/frontend/agents.js');
+    expect(ui).toContain("var items = cat.filter(function (x) { return x.category === c.name; });");
+    expect(ui).toContain('Nothing watches this yet.');
+  });
+
+  it('falls back to the generic areas when the industry named none', () => {
+    // An industry with no table still gets a map: every watcher carries an
+    // area, so the columns come from those instead of the screen going blank.
+    const ui = src('../eame-template/frontend/agents.js');
+    expect(ui).toMatch(/if \(cats && cats\.length\)/);
+    expect(ui).toContain("cat.filter(function (c) { return c.area === a; })");
+  });
+
+  it('reports only states an agent record can actually be in', () => {
+    /*
+     * The states are read off the agent: running, paused by the owner,
+     * stopped after three failures, never started, or missing the records it
+     * needs. There is deliberately no "checking" — nothing records that a
+     * run is in progress, so a dot saying so would be decoration on a screen
+     * whose whole job is to be believed.
+     */
+    const ui = src('../eame-template/frontend/agents.js');
+    const block = ui.match(/var STATE = \{([\s\S]*?)\n  \};/);
+    expect(block, 'the state map moved').toBeTruthy();
+    const declared = [...block[1].matchAll(/(\w+):\s*\{\s*label:/g)].map(m => m[1]);
+    expect(declared.sort()).toEqual(['blocked', 'off', 'paused', 'running', 'stopped']);
+
+    // And every state the controller can hand back is one the screen draws:
+    // a sixth added on the server would otherwise render as "Not running".
+    const ctl = src('../eame-template/controllers/agentsController.js');
+    const expr = ctl.match(/state: !live \?([\s\S]*?),\n\s+agentId:/);
+    expect(expr, 'the state expression moved').toBeTruthy();
+    // Result positions only: a literal after ? or : is a state being
+    // handed back, while one after === is a value being read off the
+    // agent ('degraded' is a status in the database, never a state here).
+    const produced = [...expr[1].matchAll(/[?:]\s*'(\w+)'/g)].map(m => m[1]);
+    expect(produced.sort()).toEqual(['blocked', 'off', 'paused', 'running', 'stopped']);
+    for (const s of produced) expect(declared).toContain(s);
+  });
+
+  it('places every catalogue watcher in exactly one column, for every industry', () => {
+    /*
+     * The map's completeness, stated as the map states it: for each covered
+     * industry, grouping the whole catalogue by categoryOf leaves nothing
+     * out and puts nothing in twice. This is what the columns' own counts
+     * add up to, so a watcher that fell through would make them lie.
+     */
+    for (const industry of COVERED) {
+      const areas = attentionAreas(industry);
+      const columns = new Map(areas.map(a => [a.name, []]));
+      for (const entry of CATALOGUE) columns.get(categoryOf(areas, entry.id)).push(entry.id);
+      const placed = [...columns.values()].flat();
+      expect(placed.length, `${industry} lost or duplicated a watcher`).toBe(CATALOGUE.length);
+      expect(new Set(placed).size).toBe(CATALOGUE.length);
     }
   });
 });

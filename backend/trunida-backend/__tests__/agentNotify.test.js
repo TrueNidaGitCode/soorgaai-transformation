@@ -266,13 +266,23 @@ describe('the board, which is the durable copy', () => {
     expect(ui).toContain('Intl.DateTimeFormat().resolvedOptions().timeZone');
   });
 
-  it('says plainly when an agent has stopped itself', () => {
+  it('says plainly when an agent has stopped itself, in both places', () => {
     /*
      * An agent that silently stopped watching is worse than one that never
      * existed, because the owner believes they are covered.
+     *
+     * So it is said twice: on the watcher's own node, and again at the head
+     * of the map, where somebody who is not reading every column still sees
+     * it. And the button offered to a stopped watcher restarts it —
+     * setAgentEnabled(id, true) clears the failure count, so enabling is
+     * the repair, and "Pause" would be the one action that cannot help.
      */
     const ui = read2('../eame-template/frontend/agents.js');
-    expect(ui).toContain('stopped after 3 failures');
+    expect(ui).toMatch(/stopped:\s*\{\s*label:\s*'Stopped'/);
+    expect(ui).toContain('stopped after three failures');
+    expect(ui).toContain("c.state === 'stopped' ? 'Start it again'");
+    // The intent rides on the element, so three labels cannot break it.
+    expect(ui).toContain("enabled: t.dataset.enable === '1'");
   });
 
   it('asks before forgetting what an agent found', () => {

@@ -158,7 +158,11 @@
       + '<button type="button" class="fn__chip' + (picked ? '' : ' is-on') + '" data-pick="">'
       + 'All <b>' + total + '</b></button>'
       + cats.map(function (c) {
-        return '<button type="button" class="fn__chip' + (picked === c.name ? ' is-on' : '') + '"'
+        // A category at zero is shown, and shown as quiet rather than as
+        // missing: the reader is being told it was checked, which is the
+        // whole claim the product makes.
+        return '<button type="button" class="fn__chip'
+          + (picked === c.name ? ' is-on' : '') + (c.count ? '' : ' is-clear') + '"'
           + ' data-pick="' + esc(c.name) + '"' + (c.asks ? ' title="' + esc(c.asks) + '"' : '') + '>'
           + esc(c.name) + ' <b>' + c.count + '</b></button>';
       }).join('');
@@ -181,35 +185,48 @@
 
     el.list.innerHTML = open.map(row).join('');
     el.list.hidden = open.length === 0;
-    el.empty.hidden = all.length > 0;
+
+    /*
+     * ── A quiet morning keeps the same screen ──────────────────────────────
+     *
+     * A board with nothing on it used to swap itself for a panel saying so.
+     * That made a good day look like a broken application: the structure the
+     * reader had learned — the count, the areas, the rows — disappeared, and
+     * what replaced it was indistinguishable from a page that had failed to
+     * load.
+     *
+     * So the shape never changes. The heading counts, the areas are all there
+     * reading zero, and the line beneath says what the zero means. Five
+     * categories at zero is a sentence: we watched all of these and they are
+     * clear.
+     */
+    el.empty.hidden = true;
+
+    var bits = [];
+    if (counts.high) bits.push(counts.high + ' high');
+    if (counts.medium) bits.push(counts.medium + ' medium');
+    if (counts.low) bits.push(counts.low + ' low');
+
+    el.title.textContent = all.length === 1
+      ? '1 thing needs your attention'
+      : all.length + ' things need your attention';
 
     if (all.length) {
-      var bits = [];
-      if (counts.high) bits.push(counts.high + ' high');
-      if (counts.medium) bits.push(counts.medium + ' medium');
-      if (counts.low) bits.push(counts.low + ' low');
-      el.title.textContent = all.length === 1
-        ? '1 thing needs your attention'
-        : all.length + ' things need your attention';
       el.sub.textContent = bits.join(' · ');
     } else {
-      el.title.textContent = 'What needs your attention';
-      el.sub.textContent = '';
       /*
-       * An empty board means one of three quite different things, and saying
-       * the wrong one is how a working product looks broken.
+       * Zero means one of three quite different things, and saying the wrong
+       * one is the difference between "all clear" and "nothing has run".
        */
       if (!body.watching) {
-        el.emptyTitle.textContent = 'Nothing is being watched yet.';
-        el.emptyNote.textContent = 'Open Watchers to choose what this application should keep an eye on.';
+        el.sub.textContent = 'Nothing is being watched yet — open Watchers to choose what this application should keep an eye on.';
       } else if (!body.everRan) {
-        el.emptyTitle.textContent = 'Svarg is watching.';
-        el.emptyNote.textContent = body.nextDueAt
+        el.sub.textContent = body.nextDueAt
           ? body.watching + (body.watching === 1 ? ' watcher is active. Its first check is at ' : ' watchers are active. The first check is at ') + clockTime(body.nextDueAt) + '.'
           : body.watching + ' watchers are active. The first check runs shortly.';
       } else {
-        el.emptyTitle.textContent = 'Nothing needs your attention.';
-        el.emptyNote.textContent = body.watching + (body.watching === 1 ? ' watcher has' : ' watchers have') + ' checked and found nothing wrong.';
+        el.sub.textContent = body.watching + (body.watching === 1 ? ' watcher has' : ' watchers have')
+          + ' checked and found nothing wrong.';
       }
     }
 

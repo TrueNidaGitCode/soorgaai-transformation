@@ -1889,3 +1889,11 @@ body {
   .fn__chev { display: none; }
   .fn__rowmeta { align-items: flex-start; flex-direction: row; }
 }
+
+/* A category with nothing in it. Shown, because the reader is being told it
+   was checked — that is the claim the product makes — but quieter than one
+   carrying findings, so the eye still goes to what needs doing first. */
+.fn__chip.is-clear { color: var(--ch-faint); border-color: var(--ch-line); }
+.fn__chip.is-clear b { color: var(--ch-faint); font-weight: 600; }
+.fn__chip.is-clear:hover { color: var(--ch-dim); border-color: var(--ch-line-hi); }
+.fn__chip.is-clear.is-on { color: var(--ch-accent); border-color: var(--ch-accent); }

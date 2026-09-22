@@ -111,20 +111,21 @@ export async function listFindingsHandler(req, res) {
      * The business categories, in the order the industry's table names them,
      * each with how many open findings sit under it.
      *
-     * A category with nothing in it is dropped rather than shown as a zero: the
-     * chips are a way of navigating what is there, and an empty chip invites a
-     * click that leads to an empty screen. What the application is WATCHING for
-     * belongs on the Watchers page, which shows all of it, including the
-     * categories nothing has been found in.
+     * Every category, including the ones at zero. A board that drops its empty
+     * headings changes shape depending on the morning, and a quiet day then
+     * looks like a broken application rather than a good one: the reader sees
+     * an empty panel where a structure used to be.
+     *
+     * Five categories reading zero is a sentence — we watched all of these and
+     * they are clear — and it is a better one than "nothing to show". The
+     * screen keeps its shape and the numbers do the talking.
      */
     const defined = Array.isArray(plan().categories) ? plan().categories : [];
-    const byCategory = defined
-      .map(c => ({
-        name: c.name,
-        asks: c.asks || '',
-        count: rows.filter(r => r.category === c.name).length,
-      }))
-      .filter(c => c.count > 0);
+    const byCategory = defined.map(c => ({
+      name: c.name,
+      asks: c.asks || '',
+      count: rows.filter(r => r.category === c.name).length,
+    }));
 
     const agents = await listAgents();
     return res.json({

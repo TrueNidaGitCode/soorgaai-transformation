@@ -36,6 +36,7 @@
     rhead: document.getElementById('fn-rhead'),
     rlist: document.getElementById('fn-rlist'),
     note: document.getElementById('fn-note'),
+    cats: document.getElementById('fn-cats'),
   };
 
   var d = {
@@ -99,39 +100,97 @@
 
   var LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
 
-  function card(f) {
+  var LABEL_LONG = { high: 'High priority', medium: 'Medium priority', low: 'Low priority' };
+
+  /** Which category chip is selected. Empty means all of them. */
+  var picked = '';
+
+  /**
+   * One finding as a row.
+   *
+   * A row rather than a card, because the point of this screen is to be read
+   * down in one pass: category on the left so the eye can group, what happened
+   * in the middle, how urgent and how long on the right. A wall of cards makes
+   * five findings look like five separate things to deal with rather than one
+   * morning's work.
+   */
+  function row(f) {
     var ev = f.evidence || {};
-    // The evidence line names the source, because "why should I believe this"
-    // starts with "where did it come from".
-    var from = ev.dataset ? '<p class="fn__from">Evidence <b>' + esc(ev.dataset) + '</b></p>' : '';
+    var cat = f.category || f.watcher || '';
+    var from = ev.dataset
+      ? '<p class="fn__from">Evidence <b>' + esc(ev.dataset) + '</b></p>' : '';
     var sample = ev.simulated
       ? '<p class="fn__sim">Built on the sample data this application shipped with, not your own records.</p>'
       : '';
-    return '<article class="fn__card fn__card--' + esc(f.severity) + '" data-finding="' + esc(f.id) + '">'
-      + '<p class="fn__sev">' + esc(LABEL[f.severity] || 'Medium') + '</p>'
-      + '<h3 class="fn__cardtitle">' + esc(f.title) + '</h3>'
-      + '<p class="fn__watcher">' + esc(f.watcher || 'A watcher') + ' &middot; first seen ' + esc(ago(f.since)) + '</p>'
-      + from + sample
-      + '<p class="fn__cta"><button type="button" class="fn__btn" data-open="' + esc(f.id) + '">View the evidence</button></p>'
-      + '</article>';
+    return '<button type="button" class="fn__row fn__row--' + esc(f.severity) + '"'
+      + ' data-open="' + esc(f.id) + '" data-cat="' + esc(cat) + '">'
+      + '<span class="fn__rowcat">'
+      +   '<span class="fn__dot" aria-hidden="true"></span>'
+      +   '<span class="fn__catname">' + esc(cat) + '</span>'
+      + '</span>'
+      + '<span class="fn__rowbody">'
+      +   '<span class="fn__rowtitle">' + esc(f.title) + '</span>'
+      +   '<span class="fn__rowsub">' + esc(f.watcher || 'A watcher') + '</span>'
+      +   from + sample
+      + '</span>'
+      + '<span class="fn__rowmeta">'
+      +   '<span class="fn__pri fn__pri--' + esc(f.severity) + '">' + esc(LABEL_LONG[f.severity] || 'Medium priority') + '</span>'
+      +   '<span class="fn__age">' + esc(ago(f.since)) + '</span>'
+      + '</span>'
+      + '<span class="fn__chev" aria-hidden="true">&rsaquo;</span>'
+      + '</button>';
   }
 
+  /**
+   * The category chips.
+   *
+   * The words are the industry's own, read from its knowledge base at delivery
+   * — Retention and Utilisation for a clinic, Schedule and Quality for an
+   * engineering organisation. Only categories with something in them appear:
+   * a chip leading to an empty screen is a wasted click, and what the
+   * application is watching FOR belongs on the Watchers page.
+   */
+  function chips(cats, total) {
+    if (!cats.length) { el.cats.hidden = true; return; }
+    el.cats.hidden = false;
+    el.cats.innerHTML =
+      '<span class="fn__catslabel">' + cats.length + ' areas we&rsquo;re watching</span>'
+      + '<button type="button" class="fn__chip' + (picked ? '' : ' is-on') + '" data-pick="">'
+      + 'All <b>' + total + '</b></button>'
+      + cats.map(function (c) {
+        return '<button type="button" class="fn__chip' + (picked === c.name ? ' is-on' : '') + '"'
+          + ' data-pick="' + esc(c.name) + '"' + (c.asks ? ' title="' + esc(c.asks) + '"' : '') + '>'
+          + esc(c.name) + ' <b>' + c.count + '</b></button>';
+      }).join('');
+  }
+
+  var _last = null;   // the last body, so a chip can re-filter without refetching
+
   function render(body) {
-    var open = body.open || [];
+    _last = body;
+    var all = body.open || [];
     var counts = body.counts || {};
+    var cats = body.categories || [];
 
-    el.list.innerHTML = open.map(card).join('');
+    // A chip that no longer has anything under it stops being selected, rather
+    // than leaving the reader on an empty screen after a finding resolves.
+    if (picked && !cats.some(function (c) { return c.name === picked; })) picked = '';
+    var open = picked ? all.filter(function (f) { return f.category === picked; }) : all;
+
+    chips(cats, all.length);
+
+    el.list.innerHTML = open.map(row).join('');
     el.list.hidden = open.length === 0;
-    el.empty.hidden = open.length > 0;
+    el.empty.hidden = all.length > 0;
 
-    if (open.length) {
+    if (all.length) {
       var bits = [];
       if (counts.high) bits.push(counts.high + ' high');
       if (counts.medium) bits.push(counts.medium + ' medium');
       if (counts.low) bits.push(counts.low + ' low');
-      el.title.textContent = open.length === 1
+      el.title.textContent = all.length === 1
         ? '1 thing needs your attention'
-        : open.length + ' things need your attention';
+        : all.length + ' things need your attention';
       el.sub.textContent = bits.join(' · ');
     } else {
       el.title.textContent = 'What needs your attention';
@@ -261,6 +320,15 @@
   }
 
   // ── Wiring ────────────────────────────────────────────────────────────────
+
+  el.cats.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pick]');
+    if (!b) return;
+    // Re-filter what is already loaded rather than asking the server again:
+    // the chips are a lens on one morning's findings, not a new question.
+    picked = b.dataset.pick || '';
+    if (_last) render(_last);
+  });
 
   el.list.addEventListener('click', function (e) {
     var b = e.target.closest('[data-open]');

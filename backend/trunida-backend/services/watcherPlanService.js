@@ -33,6 +33,7 @@
  */
 
 import { CATALOGUE } from '../eame-template/services/agentCatalogue.js';
+import { categoriesFor } from './attentionAreasService.js';
 
 /**
  * The words that mean a watcher, in the language a customer uses.
@@ -197,10 +198,25 @@ export function watcherPlan(bp, { max = MAX_START } = {}) {
   return { order: ranked, startHere: ranked.slice(0, Math.max(0, max)) };
 }
 
-/** The file itself, shaped like sourcesFile so delivery treats it the same. */
+/**
+ * The file itself, shaped like sourcesFile so delivery treats it the same.
+ *
+ * It carries the industry's attention areas alongside the plan. The headings a
+ * findings board groups under are a property of the industry, decided once in
+ * its knowledge base — and this file is the seam that already exists for
+ * getting that kind of judgement into a delivered application, so it does not
+ * need a second one.
+ *
+ * An industry with no table contributes none, and the application falls back to
+ * the generic areas every watcher already carries.
+ */
 export function watcherPlanFile(bp) {
+  const industry = String(bp?.industryFit?.industry || bp?.industry || '').trim();
   return {
     path: 'data/agents.json',
-    content: JSON.stringify(watcherPlan(bp), null, 2) + '\n',
+    content: JSON.stringify({
+      ...watcherPlan(bp),
+      categories: industry ? categoriesFor(industry) : [],
+    }, null, 2) + '\n',
   };
 }

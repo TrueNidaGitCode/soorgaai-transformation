@@ -36,6 +36,25 @@ export function plan() {
 
 const bad = (res, err) => res.status(400).json({ error: err.message || String(err) });
 
+/**
+ * Which business category a watcher belongs to, for this industry.
+ *
+ * The table comes from the industry knowledge base and is written into
+ * data/agents.json at delivery. An application whose industry has no table
+ * gets none, and the board falls back to the generic areas every watcher
+ * already carries.
+ *
+ * A watcher the table does not name lands in the last category rather than in
+ * one called Other -- a business does not have an Other, and an escape hatch
+ * is where findings quietly go to be ignored.
+ */
+function categoryOf(watcherId) {
+  const cats = plan().categories;
+  if (!Array.isArray(cats) || !cats.length) return '';
+  for (const c of cats) if ((c.watchers || []).includes(watcherId)) return c.name;
+  return cats[cats.length - 1].name;
+}
+
 /** The shape the board and the detail screen both read. */
 function findingView(f) {
   return {
@@ -44,6 +63,7 @@ function findingView(f) {
     title: f.title || f.key,
     watcher: f.agentName || '',
     watcherId: f.watcherId || '',
+    category: categoryOf(f.watcherId || ''),
     severity: f.severity || 'medium',
     state: f.state || 'open',
     since: f.firstSeenAt || null,
@@ -87,11 +107,31 @@ export async function listFindingsHandler(req, res) {
     const counts = { high: 0, medium: 0, low: 0 };
     for (const r of rows) counts[r.severity] = (counts[r.severity] || 0) + 1;
 
+    /*
+     * The business categories, in the order the industry's table names them,
+     * each with how many open findings sit under it.
+     *
+     * A category with nothing in it is dropped rather than shown as a zero: the
+     * chips are a way of navigating what is there, and an empty chip invites a
+     * click that leads to an empty screen. What the application is WATCHING for
+     * belongs on the Watchers page, which shows all of it, including the
+     * categories nothing has been found in.
+     */
+    const defined = Array.isArray(plan().categories) ? plan().categories : [];
+    const byCategory = defined
+      .map(c => ({
+        name: c.name,
+        asks: c.asks || '',
+        count: rows.filter(r => r.category === c.name).length,
+      }))
+      .filter(c => c.count > 0);
+
     const agents = await listAgents();
     return res.json({
       open: rows,
       resolved: resolved.map(findingView),
       counts,
+      categories: byCategory,
       watching: agents.filter(a => a.enabled && a.status !== 'degraded').length,
       degraded: agents.filter(a => a.status === 'degraded').length,
       // So the screen can say "your first check is at 09:30" instead of

@@ -103,10 +103,68 @@ describe('the waiting style exists, or the class does nothing', () => {
   });
 
   it('is cache-busted, or nobody sees any of this', () => {
-    // These files have no cache-busting of their own; a stale copy is how a
-    // UI fix appears not to have shipped.
+    /*
+     * These files have no cache-busting of their own; a stale copy is how a
+     * UI fix appears not to have shipped.
+     *
+     * A floor, not an exact match. Pinning the number meant every later fix
+     * to these files failed a test about a different fix, which teaches
+     * people to bump the assertion without reading it. What matters is that
+     * the version moved past the change this file is about.
+     */
     const html = read('domain/domain.html');
-    expect(html).toContain('domain.css?v=76');
-    expect(html).toContain('yusuScreen.js?v=39');
+    const css = /domain\.css\?v=(\d+)/.exec(html);
+    const js = /yusuScreen\.js\?v=(\d+)/.exec(html);
+    expect(css, 'domain.css must carry a ?v=').toBeTruthy();
+    expect(js, 'yusuScreen.js must carry a ?v=').toBeTruthy();
+    expect(Number(css[1])).toBeGreaterThanOrEqual(76);
+    expect(Number(js[1])).toBeGreaterThanOrEqual(39);
+  });
+});
+
+describe('the screen keeps asking until the checks report', () => {
+  /*
+   * ── What every customer saw ──────────────────────────────────────────────
+   *
+   * Governance Check and Ethics Check sat on "waiting" after a successful
+   * deployment, on every application, until somebody reloaded the page.
+   *
+   * The self-check is fired by the very request that first sees the
+   * deployment live, and takes the better part of a minute — three real
+   * questions through the real pipeline. The poll stopped the moment the
+   * status left 'attaching', which is that same request. So the screen gave
+   * up asking at exactly the point it began waiting for something, and the
+   * report landed eleven seconds after it stopped looking.
+   *
+   * Both checks had passed. The page just never asked again.
+   */
+  const js = read('domain/yusuScreen.js');
+  const poll = js.slice(js.indexOf('function pollWhileBuilding'),
+                        js.indexOf('function pollWhileBuilding') + 1600);
+
+  it('does not stop the moment the build finishes', () => {
+    expect(poll).not.toMatch(/if \(_dep\?\.status !== 'attaching'\) \{ _buildingSince = 0; return; \}/);
+  });
+
+  it('keeps polling while a live deployment has not reported', () => {
+    expect(poll).toMatch(/liveWithoutReport/);
+    expect(poll).toMatch(/!_dep\?\.conformance/);
+  });
+
+  it('stops once the report arrives', () => {
+    // Otherwise a finished screen polls the server for ever.
+    expect(poll).toMatch(/if \(!building && !liveWithoutReport\) \{ _buildingSince = 0; return; \}/);
+  });
+
+  it('gives up if the report never comes, rather than polling for ever', () => {
+    expect(poll).toMatch(/REPORT_WAIT_MS/);
+    expect(poll).toMatch(/Date\.now\(\) - _buildingSince > REPORT_WAIT_MS/);
+  });
+
+  it('is cache-busted, or nobody gets the fix', () => {
+    const html = read('domain/domain.html');
+    const m = /yusuScreen\.js\?v=(\d+)/.exec(html);
+    expect(m).toBeTruthy();
+    expect(Number(m[1])).toBeGreaterThanOrEqual(40);
   });
 });

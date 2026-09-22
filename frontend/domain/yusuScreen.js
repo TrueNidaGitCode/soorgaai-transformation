@@ -776,9 +776,34 @@ let _buildingSince = 0;
 
 function pollWhileBuilding() {
   clearTimeout(_pollTimer);
-  if (_dep?.status !== 'attaching') { _buildingSince = 0; return; }
+
+  const building = _dep?.status === 'attaching';
+
+  /*
+   * ── Why 'live' is not the end of the waiting ───────────────────────────
+   *
+   * The self-check is fired by the very request that first sees the
+   * deployment live, and it takes the better part of a minute: three real
+   * questions through the real pipeline. Stopping the moment the status left
+   * 'attaching' meant the screen gave up asking at exactly the point it
+   * started waiting for something — so Governance Check and Ethics Check sat
+   * on "waiting" until somebody reloaded the page, on every deployment, for
+   * every customer. The report had landed eleven seconds after they stopped
+   * looking.
+   *
+   * Bounded, because a report that never arrives must not become a page that
+   * polls for ever: after REPORT_WAIT_MS the screen stops and keeps saying
+   * what it honestly knows, which is that the checks have not reported.
+   */
+  const REPORT_WAIT_MS = 3 * 60 * 1000;
+  const liveWithoutReport = (_dep?.status === 'live' || _dep?.status === 'degraded')
+    && !_dep?.conformance;
+
+  if (!building && !liveWithoutReport) { _buildingSince = 0; return; }
   if (!_buildingSince) _buildingSince = Date.now();
+  if (liveWithoutReport && !building && Date.now() - _buildingSince > REPORT_WAIT_MS) return;
   if (_loadFailures >= 5) return;   // give up rather than hammer a dead link
+
   _pollTimer = setTimeout(async () => {
     await load();
     pollWhileBuilding();

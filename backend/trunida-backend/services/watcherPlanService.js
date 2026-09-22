@@ -45,8 +45,8 @@ import { CATALOGUE } from '../eame-template/services/agentCatalogue.js';
 const TERMS = {
   'stopped-coming':       ['stop', 'stopped', 'drop out', 'dropout', 'dropping out', 'drop-off', 'attrition', 'churn', 'disengage', 'abandon', 'retention', 'leaving', 'quit'],
   'missing-attendance':   ['attendance', 'register', 'roll call', 'mark present', 'absent'],
-  'timesheet-chaser':     ['timesheet', 'hours', 'logged time', 'utilisation', 'utilization'],
-  'leave-clash':          ['leave', 'holiday', 'time off', 'absence'],
+  'timesheet-chaser':     ['timesheet', 'time sheet', 'logged time', 'hours worked', 'billable hours', 'utilisation', 'utilization'],
+  'leave-clash':          ['on leave', 'annual leave', 'leave request', 'holiday', 'time off', 'absence'],
   'new-joiner':           ['onboard', 'onboarding', 'new joiner', 'new starter', 'induction'],
 
   'overdue-invoice':      ['overdue', 'unpaid', 'outstanding', 'receivable', 'debtor', 'payment', 'chasing money', 'dues', 'arrears'],
@@ -55,7 +55,7 @@ const TERMS = {
   'unusual-expense':      ['expense', 'spend', 'cost spike', 'overspend'],
   'renewal-due':          ['renewal', 'renew', 'subscription', 'membership', 'expiry', 'expiring'],
 
-  'unanswered-enquiry':   ['enquiry', 'inquiry', 'lead', 'unanswered', 'no reply', 'response time', 'respond', 'follow up', 'follow-up', 'followup', 'quotation', 'quote', 'proposal', 'going cold', 'cold'],
+  'unanswered-enquiry':   ['enquiry', 'inquiry', 'lead', 'unanswered', 'no reply', 'response time', 'respond', 'follow up', 'follow-up', 'followup', 'quotation', 'quote', 'proposal', 'going cold', 'gone cold', 'goes cold'],
   'gone-quiet':           ['gone quiet', 'inactive', 'lapsed', 'stopped buying', 'declining', 'disengaged', 'at risk'],
   'repeat-complaint':     ['complaint', 'escalation', 'dissatisfied', 'unhappy'],
   'promise-overdue':      ['promise', 'commitment', 'sla', 'deadline', 'we said', 'due date', 'overdue task'],
@@ -67,7 +67,7 @@ const TERMS = {
   'empty-slot':           ['empty', 'unused', 'idle', 'capacity', 'utilisation', 'vacant', 'unbooked'],
   'over-capacity':        ['overbooked', 'over capacity', 'too many', 'crowded'],
   'no-show':              ['no show', 'no-show', 'did not attend', 'missed appointment', 'missed session'],
-  'unstaffed-session':    ['unstaffed', 'no coach', 'no staff', 'cover', 'roster gap', 'unassigned'],
+  'unstaffed-session':    ['unstaffed', 'no coach', 'no staff', 'shift cover', 'cover for', 'roster gap', 'unassigned'],
 
   'missing-detail':       ['missing', 'incomplete', 'blank', 'data quality'],
   'nothing-new':          ['stale', 'not updated', 'stopped syncing'],
@@ -102,10 +102,34 @@ const norm = (s) => String(s || '').toLowerCase();
  */
 function withPlurals(terms) {
   const out = new Set(terms);
-  for (const t of terms) if (t.endsWith('y')) out.add(t.slice(0, -1) + 'ies');
+  for (const t of terms) if (t.endsWith("y")) out.add(t.slice(0, -1) + "ies");
   return [...out];
 }
 
+/**
+ * Does this term appear as a WORD, rather than as letters inside one?
+ *
+ * ── The bug that forced this ───────────────────────────────────────────────
+ *
+ * A plain substring test started the staff-leave watcher for a physiotherapy
+ * centre whose objective said "a cancelled session leaves a cabin unused".
+ * The phrase "sessi-ON LEAVE-s" contains "on leave". Nothing about that text
+ * is concerned with staff holidays, and the customer would have received mail
+ * about something they never mentioned.
+ *
+ * A false start is worse than a miss. A watcher that fails to start leaves the
+ * board emptier than it should be; one that starts wrongly sends a person a
+ * message about a problem they do not have, and that is how somebody decides
+ * the whole thing is noise.
+ *
+ * So a term must begin at a word boundary. It may still run on at the end —
+ * \w* — because that is what makes "stop" find "stops" and "stopped", which
+ * is the flexibility actually wanted. Beginnings are where the accidents are.
+ */
+function mentions(hay, term) {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\w*`, 'i').test(hay);
+}
 /**
  * Everything the customer said, as one lowercased haystack.
  *
@@ -142,7 +166,7 @@ export function scoreWatchers(text) {
     // "follow-up" twice does not need that watcher twice as much. A term and
     // its plural both hitting is one idea, so they count once.
     const seen = new Set();
-    for (const t of terms) if (hay.includes(t)) seen.add(t.replace(/ies$/, 'y'));
+    for (const t of terms) if (mentions(hay, t)) seen.add(t.replace(/ies$/, 'y'));
     if (seen.size > 0) scores.set(entry.id, seen.size);
   }
   return scores;

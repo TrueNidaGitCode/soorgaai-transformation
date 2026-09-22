@@ -249,3 +249,53 @@ describe('the owner\'s clock, not the container\'s', () => {
     expect(js).toMatch(/\.catch\(function \(\) \{ \/\* a colleague, not the owner/);
   });
 });
+
+describe('a term has to be a word, not letters inside one', () => {
+  /*
+   * ── The bug ────────────────────────────────────────────────────────────
+   *
+   * Rehearsing a real objective for a physiotherapy centre, the staff-leave
+   * watcher started. The text said "a cancelled session leaves a cabin
+   * unused", and "sessi-ON LEAVE-s" contains "on leave".
+   *
+   * A false start is worse than a miss. A watcher that fails to start leaves
+   * the board emptier than it should be, and somebody eventually notices. One
+   * that starts wrongly sends a person mail about a problem they do not have,
+   * and that is how somebody concludes the whole product is noise.
+   */
+  it('does not find "on leave" inside "session leaves"', () => {
+    expect(scoreWatchers('a cancelled session leaves a cabin unused').has('leave-clash')).toBe(false);
+  });
+
+  it('still finds it when somebody means it', () => {
+    expect(scoreWatchers('two staff on leave on the same day').has('leave-clash')).toBe(true);
+  });
+
+  it('still lets a word run on at the end, which is the flexibility wanted', () => {
+    // "stop" must find "stops" and "stopped". Beginnings are where the
+    // accidents are; endings are where the inflections are.
+    for (const s of ['a student stops coming', 'a student stopped coming', 'students stop coming']) {
+      expect(scoreWatchers(s).has('stopped-coming'), s).toBe(true);
+    }
+  });
+
+  it('does not start a timesheet watcher for opening hours', () => {
+    // "hours" was a term. Every business mentions hours.
+    expect(scoreWatchers('we are open twelve hours a day, seven days a week').size).toBe(0);
+  });
+
+  it('starts exactly three watchers for the rehearsed clinic objective', () => {
+    /*
+     * The whole matcher, on the real text it was tested with. Pinned because
+     * this is the objective a live demonstration was run from, and a change
+     * that silently alters it should have to be argued for.
+     */
+    const text = 'We believe a sports medicine and physiotherapy centre like Vesoma has important '
+      + 'operational signals spread across appointments, treatment sessions, package balances, '
+      + 'enquiries and cancellations. Today, some of these problems may only become visible after '
+      + 'they have already happened — for example, a client stops attending midway through '
+      + 'treatment, an enquiry is missed, or a cancelled session leaves a cabin unused.';
+    expect(watcherPlan({ businessObjective: text }).startHere.sort())
+      .toEqual(['empty-slot', 'stopped-coming', 'unanswered-enquiry']);
+  });
+});

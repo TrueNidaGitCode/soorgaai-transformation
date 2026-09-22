@@ -1897,3 +1897,7 @@ body {
 .fn__chip.is-clear b { color: var(--ch-faint); font-weight: 600; }
 .fn__chip.is-clear:hover { color: var(--ch-dim); border-color: var(--ch-line-hi); }
 .fn__chip.is-clear.is-on { color: var(--ch-accent); border-color: var(--ch-accent); }
+
+/* Said before the key box, because the reader arrived expecting their own
+   data and needs to know why they are being asked for anything at all. */
+.dt__gateline { margin: 0 0 18px; font-size: 15px; line-height: 1.5; color: var(--ch-text); }

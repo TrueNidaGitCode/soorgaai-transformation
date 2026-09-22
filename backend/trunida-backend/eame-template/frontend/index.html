@@ -370,10 +370,18 @@
       <nav class="dt__side" id="dt-side" aria-label="Your data"></nav>
       <div class="dt__body">
       <div id="dt-connections">
+    <!-- Reached only when the application refuses the reader's own session.
+         Almost nobody sees it: an owner who signed in normally goes straight
+         through, because requireWriter accepts that session already. It is
+         here for the case it was built for — somebody with no session, or an
+         owner whose email no longer reaches them. -->
     <div class="dt__gate" id="dt-gate">
       <form class="dt__keyform" id="dt-key-form">
+        <p class="dt__gateline">This is the owner's page. Your account cannot change this
+          application's data yet.</p>
         <label class="dt__label" for="dt-key">Owner key</label>
-        <p class="dt__hint">The key from your Svarg go-live screen. It was shown once; if you did not keep it, the Yusu page on Svarg issues a new one. Unlock while signed in and your account becomes the owner, so the chat can add records for you.</p>
+        <p class="dt__hint">From the Svarg go-live screen. Unlock while signed in and your
+          account becomes the owner, so you will not need the key again.</p>
         <div class="dt__keyrow">
           <input type="password" id="dt-key" class="dt__input" autocomplete="off" placeholder="sok_…">
           <button type="submit" class="dt-btn">Unlock</button>

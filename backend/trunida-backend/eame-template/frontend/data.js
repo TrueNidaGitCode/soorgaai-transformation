@@ -78,7 +78,43 @@
       app.hidden = which === 'data';   // an older shell without the switcher
       page.hidden = which !== 'data';
     }
-    if (which === 'data') { if (ownerToken) enter(); else gate(); }
+    // Try the door with whatever the reader already has; only ask for a
+    // key if the application actually refuses.
+    if (which === 'data') { if (ownerToken) enter(); else openOrAsk(); }
+  }
+
+  /*
+   * ── Ask the application, rather than demanding a key first ────────────────
+   *
+   * This page used to open on a password box. Everyone met it, including the
+   * person who had just signed in AS the owner — and the API never wanted the
+   * key from them: requireWriter passes anybody whose session already says
+   * owner. The gate asked for something the server did not require, so the
+   * usual route to your own data was to go and find a secret you were shown
+   * once, weeks ago.
+   *
+   * So the page tries the door. One ordinary request with the session already
+   * in hand: if the application lets it through, the room opens. The key stays
+   * for the case it was built for — somebody with no session, or an owner
+   * whose email no longer reaches them — reached by a link rather than a wall.
+   *
+   * Asking the server rather than reading `role` out of the token on this side
+   * keeps one authority for who may write. A second copy of that rule in the
+   * browser is a second thing to keep true.
+   */
+  async function openOrAsk() {
+    try {
+      const r = await fetch(API + '/api/data/datasets', {
+        headers: { Authorization: 'Bearer ' + sessionToken() },
+      });
+      if (r.ok) { await enter(); return; }
+    } catch (e) { /* offline or refused — fall through to the key */ }
+    gate();
+  }
+
+  /** The ordinary sign-in session, which is what most people arrive with. */
+  function sessionToken() {
+    try { return localStorage.getItem('token') || ''; } catch (e) { return ''; }
   }
 
   function gate() {
@@ -98,15 +134,29 @@
     await refresh();
   }
 
+  /*
+   * The owner key when one was used, otherwise the ordinary session.
+   *
+   * Both are accepted by the server — requireWriter passes a session that
+   * already says owner — so the page should use whichever the reader actually
+   * arrived with rather than insisting on the rarer one.
+   */
   async function ownerFetch(path, opts) {
     var o = opts || {};
-    o.headers = Object.assign({}, o.headers || {}, { Authorization: 'Bearer ' + ownerToken });
+    o.headers = Object.assign({}, o.headers || {},
+      { Authorization: 'Bearer ' + (ownerToken || sessionToken()) });
     var r = await fetch(API + path, o);
     if (r.status === 401 || r.status === 403) {
+      // Only a key can be forgotten here. Clearing a perfectly good sign-in
+      // because one request was refused would log somebody out of the whole
+      // application from the Data page.
+      var hadKey = !!ownerToken;
       ownerToken = '';
       try { localStorage.removeItem('ownerToken'); } catch (e) { /* fine */ }
       gate();
-      say(els.keyNote, 'Your owner session has ended. Enter the key again.', true);
+      say(els.keyNote, hadKey
+        ? 'Your owner session has ended. Enter the key again.'
+        : 'Only the owner can change this application’s data. Enter the owner key, or ask whoever set it up to add you.', true);
       throw new Error('owner session ended');
     }
     return r;

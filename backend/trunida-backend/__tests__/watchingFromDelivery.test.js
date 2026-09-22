@@ -192,15 +192,33 @@ describe('only what the data can support actually starts', () => {
     expect(wouldStart).not.toContain('late-delivery');
   });
 
-  it('only runs on an application that has never had a watcher', () => {
+  it('writes down what it offered, not what it managed to start', () => {
     /*
-     * The whole safety mechanism. Without this check, an owner who switched
-     * everything off would find it all switched back on after the next
-     * update — and updates happen without them asking.
+     * The safety mechanism is that nothing is offered twice; which watchers
+     * that leaves is asserted by running the decision, further down. What
+     * cannot be run without a database is the writing, so it is read here.
+     *
+     * Seeding what was OFFERED rather than what STARTED is the subtle half.
+     * A watcher that failed to create is not one to retry on every restart
+     * for the rest of the application's life — and an owner who has already
+     * seen it appear and go away must not meet it again on the next deploy.
      */
     const svc = read('../eame-template/services/agentService.js');
-    expect(svc).toContain('const existing = await agentsCollection().countDocuments({});');
-    expect(svc).toContain("if (existing > 0) return { started: [], skipped: 'already set up' };");
+    const fn = svc.slice(svc.indexOf('export async function autoStartWatchers'));
+    expect(fn).toContain('await rememberSeeds([');
+    expect(fn).toContain("...wanted.map((c) => ({ kind: 'watcher', key: c.id })),");
+    expect(fn).toContain("...filled.map((name) => ({ kind: 'category', key: name })),");
+    expect(fn).not.toMatch(/rememberSeeds\(\[\s*\.\.\.started/);
+    // Upserted, so a restart mid-write cannot lose or duplicate a seed.
+    expect(svc).toContain('upsert: true,');
+    // And it is its own collection, not a flag smuggled onto an agent that
+    // the owner can delete.
+    expect(svc).toContain("mongoose.connection.collection('svarg_agent_seeds')");
+  });
+
+  it('is given the categories the knowledge base wrote', () => {
+    // Not a second list kept here: the same plan the agents screen reads.
+    expect(read('../eame-template/server.js')).toContain('categories: agentPlan().categories || [],');
   });
 
   it('never fails the boot', () => {
@@ -297,5 +315,111 @@ describe('a term has to be a word, not letters inside one', () => {
       + 'treatment, an enquiry is missed, or a cancelled session leaves a cabin unused.';
     expect(watcherPlan({ businessObjective: text }).startHere.sort())
       .toEqual(['empty-slot', 'stopped-coming', 'unanswered-enquiry']);
+  });
+});
+
+/*
+ * Who starts, decided rather than described.
+ *
+ * The assertions above read the source; these run the decision. It is pure
+ * on purpose — everything interesting about auto-start is this choice, and
+ * the database part is just writing it down.
+ */
+describe('choosing what starts, on an application that already has some', () => {
+  const CATS = [
+    { name: 'Retention', watchers: ['stopped-coming', 'drop-off'] },
+    { name: 'Utilisation', watchers: ['empty-slot', 'equipment'] },
+    { name: 'Growth', watchers: ['enquiry', 'referral'] },
+    { name: 'Cash', watchers: ['unpaid', 'package-done'] },
+    { name: 'Compliance', watchers: ['doc-expiry'] },
+  ];
+  const C = (id, severity, extra = {}) => ({
+    id, name: id, severity, ready: true, question: 'rows in X', startHere: false,
+    schedule: 'daily', atHour: 7, ...extra,
+  });
+  const CATALOGUE = [
+    C('stopped-coming', 'high', { startHere: true }),
+    C('drop-off', 'low'),
+    C('empty-slot', 'medium', { startHere: true }),
+    C('equipment', 'low'),
+    C('enquiry', 'high'),
+    C('referral', 'medium'),
+    C('unpaid', 'medium'),
+    C('package-done', 'high'),
+    C('doc-expiry', 'low'),
+    // Its data is not here, so it is never a candidate for anything.
+    { ...C('late-delivery', 'high'), ready: false },
+  ];
+
+  it('fills every empty category, and leaves the ones already watched alone', async () => {
+    const { watchersToStart } = await import('../eame-template/services/agentService.js');
+    // Vesoma's shape: two started from the objective, three columns bare.
+    const live = [{ watcherId: 'stopped-coming', name: 'stopped-coming' },
+      { watcherId: 'empty-slot', name: 'empty-slot' }];
+    const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live, seeds: [] });
+
+    expect(filled).toEqual(['Growth', 'Cash', 'Compliance']);
+    // One each, and the worst of each category: enquiry over referral,
+    // package-done over unpaid.
+    expect(wanted.map(w => w.id)).toEqual(['enquiry', 'package-done', 'doc-expiry']);
+    // Never a second watcher beside one already running.
+    expect(wanted.map(w => w.id)).not.toContain('drop-off');
+    expect(wanted.map(w => w.id)).not.toContain('equipment');
+    // And never one whose data is absent, whatever its severity.
+    expect(wanted.map(w => w.id)).not.toContain('late-delivery');
+  });
+
+  it('starts the objective’s own picks on a fresh application, then fills the rest', async () => {
+    const { watchersToStart } = await import('../eame-template/services/agentService.js');
+    const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live: [], seeds: [] });
+    // Cob's two first, so the customer sees what they asked for at the top.
+    expect(wanted.slice(0, 2).map(w => w.id)).toEqual(['stopped-coming', 'empty-slot']);
+    // Then one per remaining category — five running, across five columns.
+    expect(wanted).toHaveLength(5);
+    expect(filled).toEqual(['Growth', 'Cash', 'Compliance']);
+  });
+
+  it('never offers the same watcher twice, so removing one keeps it removed', async () => {
+    const { watchersToStart } = await import('../eame-template/services/agentService.js');
+    /*
+     * The safety property, run rather than read. The owner was offered
+     * doc-expiry, removed it, and restarted the application: Compliance is
+     * empty again, and it must stay empty.
+     */
+    const seeds = [{ kind: 'watcher', key: 'doc-expiry' }, { kind: 'category', key: 'Compliance' }];
+    const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live: [], seeds });
+    expect(wanted.map(w => w.id)).not.toContain('doc-expiry');
+    expect(filled).not.toContain('Compliance');
+    // A seeded category is not refilled with a different watcher either —
+    // which would be the same resurrection wearing another name.
+    expect(wanted.map(w => w.id).filter(id => id === 'doc-expiry')).toEqual([]);
+  });
+
+  it('switches nothing back on for an owner who switched it all off', async () => {
+    const { watchersToStart } = await import('../eame-template/services/agentService.js');
+    const seeds = [
+      ...CATALOGUE.map(c => ({ kind: 'watcher', key: c.id })),
+      ...CATS.map(c => ({ kind: 'category', key: c.name })),
+    ];
+    const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live: [], seeds });
+    expect(wanted).toEqual([]);
+    expect(filled).toEqual([]);
+  });
+
+  it('does nothing at all for an industry that named no categories', async () => {
+    const { watchersToStart } = await import('../eame-template/services/agentService.js');
+    // No table, so no columns to fill — only Cob's picks start, as before.
+    const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: [], live: [], seeds: [] });
+    expect(wanted.map(w => w.id)).toEqual(['stopped-coming', 'empty-slot']);
+    expect(filled).toEqual([]);
+  });
+
+  it('counts a watcher the owner started by hand as covering its category', async () => {
+    const { watchersToStart } = await import('../eame-template/services/agentService.js');
+    // They started referral themselves; Growth must not gain a second one.
+    const live = [{ watcherId: 'referral', name: 'referral' }];
+    const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live, seeds: [] });
+    expect(filled).not.toContain('Growth');
+    expect(wanted.map(w => w.id)).not.toContain('enquiry');
   });
 });

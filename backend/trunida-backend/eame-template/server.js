@@ -261,14 +261,17 @@ async function start() {
    * And it starts watching without being asked.
    *
    * The watchers Cob named for this business, limited to the ones whose data
-   * is actually here. Only on an application that has never had a watcher, so
-   * an owner who switched everything off stays switched off across updates.
+   * is actually here, plus one for any business category the industry named
+   * that nothing is watching yet. Each is offered exactly once and recorded,
+   * so an owner who switched something off stays switched off across updates.
    *
    * Never blocks the boot and never fails it: an application that cannot start
    * its watchers must still serve, so the owner can go and start them by hand.
    */
-  autoStartWatchers(catalogueFor(readIndex(), agentPlan()), { tz: process.env.APP_TZ || 'UTC' })
-    .catch((err) => console.warn('[agents] auto-start skipped:', err.message));
+  autoStartWatchers(catalogueFor(readIndex(), agentPlan()), {
+    tz: process.env.APP_TZ || 'UTC',
+    categories: agentPlan().categories || [],
+  }).catch((err) => console.warn('[agents] auto-start skipped:', err.message));
 
   // Registered after the routes, or it would swallow every API path below it.
   app.get('*', (req, res, next) => {

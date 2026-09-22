@@ -58,6 +58,19 @@ export function findingsCollection() {
   return mongoose.connection.collection('svarg_findings');
 }
 
+/**
+ * What this application has already been offered, and so will never be
+ * offered again: one row per watcher auto-started, one per category filled.
+ *
+ * It is the reason auto-start can run on every boot instead of only on an
+ * empty application. Without it, the only way to avoid resurrecting what an
+ * owner switched off was to never look again -- which meant an application
+ * delivered before a rule changed never got the benefit of the change.
+ */
+export function seedsCollection() {
+  return mongoose.connection.collection('svarg_agent_seeds');
+}
+
 // ── When an agent is due ────────────────────────────────────────────────────
 
 /**
@@ -501,6 +514,66 @@ export async function runAgent(agent, ask) {
 // ── Starting without being asked ─────────────────────────────────────────────
 
 /**
+ * Who should start, given what is already here.
+ *
+ * Pure, and exported, because the interesting part of auto-start is this
+ * decision and not the writing. Reading it off the database and reasoning
+ * about it are separate jobs, and only one of them can be tested without a
+ * database.
+ *
+ * Returns the catalogue entries to create and the category names being
+ * filled, so the caller can record both.
+ */
+export function watchersToStart({ catalogue = [], categories = [], live = [], seeds = [] } = {}) {
+  const running = new Set(live.map((a) => a.watcherId).filter(Boolean));
+  const takenNames = new Set(live.map((a) => a.name));
+  const seededWatchers = new Set(seeds.filter((s) => s.kind === 'watcher').map((s) => s.key));
+  const seededCategories = new Set(seeds.filter((s) => s.kind === 'category').map((s) => s.key));
+
+  const ready = catalogue.filter((c) => c.ready && c.question);
+  const fresh = (c) => !!c && !running.has(c.id) && !takenNames.has(c.name) && !seededWatchers.has(c.id);
+
+  const wanted = [];
+  const add = (c) => {
+    if (!fresh(c) || wanted.some((w) => w.id === c.id)) return false;
+    wanted.push(c);
+    return true;
+  };
+
+  // What the customer's own words asked for, first.
+  for (const c of ready) if (c.startHere) add(c);
+
+  /*
+   * Then the gaps. A category counts as covered by anything already watching
+   * it -- including a watcher the owner started by hand -- so this only ever
+   * fills a column that is genuinely empty.
+   */
+  const covered = new Set();
+  for (const a of live) { const n = categoryNameOf(categories, a.watcherId); if (n) covered.add(n); }
+  for (const c of wanted) { const n = categoryNameOf(categories, c.id); if (n) covered.add(n); }
+
+  const filled = [];
+  for (const cat of categories) {
+    if (covered.has(cat.name) || seededCategories.has(cat.name)) continue;
+    // Worst-first, so a category represented by one watcher is represented by
+    // the one most worth hearing from. Ties keep catalogue order.
+    const pick = ready
+      .filter((c) => categoryNameOf(categories, c.id) === cat.name && fresh(c))
+      .sort((a, b) => (SEVERITY_RANK[a.severity] ?? 1) - (SEVERITY_RANK[b.severity] ?? 1))[0];
+    if (pick && add(pick)) { covered.add(cat.name); filled.push(cat.name); }
+  }
+
+  return { wanted, filled };
+}
+
+/** Which category claims a watcher, by the industry's own table. */
+export function categoryNameOf(categories, watcherId) {
+  if (!watcherId || !Array.isArray(categories)) return '';
+  for (const c of categories) if ((c.watchers || []).includes(watcherId)) return c.name;
+  return '';
+}
+
+/**
  * Start the watchers this application's data already supports.
  *
  * ── The problem this solves ────────────────────────────────────────────────
@@ -525,18 +598,38 @@ export async function runAgent(agent, ask) {
  * customer's first experience of the product would be a broken thing telling
  * them so. Wanting is not enough; possible is not enough either.
  *
- * Runs once, at boot, and only when nothing has been started before — so a
- * customer who deliberately switched everything off does not find it all
- * switched back on after the next update. That check is the whole safety
- * mechanism, and it is why this reads the collection before writing to it.
+ * ── And then one per business category ─────────────────────────────────────
+ *
+ * The objective is a paragraph. Vesoma's mentioned attendance and slots, so
+ * two watchers started and twenty-six did not -- meaning nothing at all was
+ * watching their cash or their compliance, and nothing on any screen said so
+ * until the map put an empty column in front of them.
+ *
+ * An unwatched category is the product failing quietly, which is the one way
+ * it is not allowed to fail. So after Cob's picks, every category the
+ * industry named that still has nothing under it gets the best watcher its
+ * data supports. Bounded by the number of categories, which is five or six:
+ * the same reasoning that caps startHere applies here, because a watcher that
+ * starts itself also sends mail, and five findings on the first morning is a
+ * product where twenty is an inbox problem.
+ *
+ * ── Why it is safe to run this on every boot ───────────────────────────────
+ *
+ * It used to bail whenever any watcher existed, so an application delivered
+ * before a rule changed never got the benefit of it. Now it seeds instead:
+ * every watcher it starts, and every category it fills, is written down and
+ * never considered again. An owner who removes a watcher, or switches the lot
+ * off, stays switched off -- not because nothing has run since, but because
+ * the seed says this application has already been offered that one.
  */
-export async function autoStartWatchers(catalogue, { tz = 'UTC' } = {}) {
+export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = [] } = {}) {
   if (mongoose.connection.readyState !== 1) return { started: [], skipped: 'no database' };
 
-  const existing = await agentsCollection().countDocuments({});
-  if (existing > 0) return { started: [], skipped: 'already set up' };
+  const live = await agentsCollection().find({}, { projection: { watcherId: 1, name: 1 } }).toArray();
+  const seeds = await seedsCollection().find({}).toArray().catch(() => []);
+  const { wanted, filled } = watchersToStart({ catalogue, categories, live, seeds });
+  if (!wanted.length) return { started: [], skipped: 'nothing new to start' };
 
-  const wanted = (catalogue || []).filter((c) => c.startHere && c.ready);
   const started = [];
   for (const c of wanted) {
     try {
@@ -558,8 +651,35 @@ export async function autoStartWatchers(catalogue, { tz = 'UTC' } = {}) {
       console.warn(`[agents] could not auto-start "${c.id}":`, err.message);
     }
   }
+
+  /*
+   * Seeded for everything OFFERED, not everything started, and that is
+   * deliberate: a watcher this application could not create is not one to
+   * try again on every restart for the rest of its life.
+   */
+  await rememberSeeds([
+    ...wanted.map((c) => ({ kind: 'watcher', key: c.id })),
+    ...filled.map((name) => ({ kind: 'category', key: name })),
+  ]);
+
   if (started.length) console.log(`[agents] watching from delivery: ${started.join(', ')}`);
-  return { started, skipped: '' };
+  return { started, skipped: started.length ? '' : 'nothing could be started' };
+}
+
+/** What this application has already been offered, so it is offered once. */
+async function rememberSeeds(entries) {
+  if (!entries.length) return;
+  try {
+    await seedsCollection().bulkWrite(entries.map((e) => ({
+      updateOne: {
+        filter: { kind: e.kind, key: e.key },
+        update: { $setOnInsert: { kind: e.kind, key: e.key, at: new Date() } },
+        upsert: true,
+      },
+    })), { ordered: false });
+  } catch (err) {
+    console.warn('[agents] could not record what was auto-started:', err.message);
+  }
 }
 
 /**

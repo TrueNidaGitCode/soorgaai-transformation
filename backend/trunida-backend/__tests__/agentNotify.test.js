@@ -234,6 +234,41 @@ describe('the agents are wired into the application', () => {
     expect(ui).toMatch(/Only the person who created this application can see and change/);
   });
 
+  it('is told when it is opened, because the hash cannot tell it', () => {
+    /*
+     * ── The defect this exists for ─────────────────────────────────────────
+     *
+     * The Watchers link is an <a href="#agents">, and the shell calls
+     * preventDefault on it so the page does not jump. That also means the
+     * hash never changes — so the hashchange listener this page used as its
+     * trigger never fired, load() never ran, and the panel was drawn from
+     * its own static markup: an empty map under a line saying nothing could
+     * be watched until records arrived.
+     *
+     * It said that with nine watchers running and seventeen findings open,
+     * to everybody, from the sidebar, which is the only way anyone reaches
+     * it. Twice I read that sentence as a fact about the data.
+     *
+     * So the shell announces the open, the way it already did for the
+     * findings board, and both ends of that are asserted here.
+     */
+    const shell = read('../eame-template/frontend/index.html');
+    expect(shell).toContain("if (which === 'agents') window.dispatchEvent(new CustomEvent('svarg:agents-open'));");
+    // And the sidebar really does suppress the hash, which is what makes the
+    // announcement load-bearing rather than belt-and-braces.
+    expect(shell).toContain("if (b.dataset.side === 'agents') { e.preventDefault(); showPanel('agents'); }");
+
+    const ui = read('../eame-template/frontend/agents.js');
+    expect(ui).toContain("window.addEventListener('svarg:agents-open', function () { say(''); load(); });");
+
+    /*
+     * And the message itself starts hidden. A panel that has not loaded must
+     * say nothing rather than assert something false about the application —
+     * which is the half of this bug that made it so hard to see.
+     */
+    expect(shell).toContain('<p class="ag-empty" id="ag-empty" hidden>');
+  });
+
   it('declares /findings/opened before /findings/:id', () => {
     // Otherwise ":id" matches the literal word "opened" and the telemetry
     // call becomes a lookup for a finding that cannot exist.

@@ -310,7 +310,7 @@
          Drawn by agents.js from what the application actually holds — the
          columns come from data/agents.json, which the knowledge base wrote. -->
     <div class="ag-map" id="ag-map"></div>
-    <p class="ag-empty" id="ag-empty">Nothing here can be watched until some records arrive.</p>
+    <p class="ag-empty" id="ag-empty" hidden>Nothing here can be watched until some records arrive.</p>
 
     <!-- One watcher, opened from the map: its question, what it is holding
          open, and the buttons that start, pause or remove it. -->
@@ -1114,6 +1114,7 @@
         }
         markSide(which);
         if (which === 'home') window.dispatchEvent(new CustomEvent('svarg:findings-open'));
+        if (which === 'agents') window.dispatchEvent(new CustomEvent('svarg:agents-open'));
         if (which === 'ask') { if (typeof sync === 'function') sync(); log.scrollTop = 0; if (input) input.focus(); }
       }
       var PANEL_OF = {

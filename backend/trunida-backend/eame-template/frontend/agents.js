@@ -413,8 +413,16 @@
     });
   }
 
-  // Opened from the sidebar. The shell hides the other panels; this only has
-  // to show itself and read what is there.
+  /*
+   * Opened from the sidebar.
+   *
+   * The link is an <a href="#agents">, but the shell calls preventDefault on
+   * it so the hash never changes -- which meant the hashchange below never
+   * fired and this page was drawn from its own markup, for ever: an empty
+   * map and a line saying nothing could be watched. The shell announces the
+   * open instead, the way it already did for the findings board.
+   */
+  window.addEventListener('svarg:agents-open', function () { say(''); load(); });
   window.addEventListener('hashchange', maybeOpen);
   maybeOpen();
 

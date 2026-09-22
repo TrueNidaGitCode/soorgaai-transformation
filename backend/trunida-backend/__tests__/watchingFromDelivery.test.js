@@ -349,77 +349,102 @@ describe('choosing what starts, on an application that already has some', () => 
     C('doc-expiry', 'low'),
     // Its data is not here, so it is never a candidate for anything.
     { ...C('late-delivery', 'high'), ready: false },
+    // Ready, but the matcher found no dataset to phrase a question against.
+    { ...C('no-question', 'high'), question: '' },
   ];
+  const ids = (list) => list.map((c) => c.id);
 
-  it('fills every empty category, and leaves the ones already watched alone', async () => {
+  it('starts everything the data supports, and nothing it does not', async () => {
     const { watchersToStart } = await import('../eame-template/services/agentService.js');
-    // Vesoma's shape: two started from the objective, three columns bare.
+    const { wanted } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live: [], seeds: [] });
+
+    // All nine ready entries, and neither of the two that cannot run.
+    expect(wanted).toHaveLength(9);
+    expect(ids(wanted)).not.toContain('late-delivery');
+    expect(ids(wanted)).not.toContain('no-question');
+
+    // Cob's picks lead, because they are what the customer described.
+    expect(ids(wanted).slice(0, 2)).toEqual(['stopped-coming', 'empty-slot']);
+    // Then worst first, so the first morning reads in the order that matters.
+    expect(ids(wanted).slice(2, 5)).toEqual(['enquiry', 'package-done', 'referral']);
+  });
+
+  it('adds only what is missing, on an application already watching some', async () => {
+    const { watchersToStart } = await import('../eame-template/services/agentService.js');
+    // Vesoma's shape: two started from the objective, everything else idle.
     const live = [{ watcherId: 'stopped-coming', name: 'stopped-coming' },
       { watcherId: 'empty-slot', name: 'empty-slot' }];
     const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live, seeds: [] });
 
-    expect(filled).toEqual(['Growth', 'Cash', 'Compliance']);
-    // One each, and the worst of each category: enquiry over referral,
-    // package-done over unpaid.
-    expect(wanted.map(w => w.id)).toEqual(['enquiry', 'package-done', 'doc-expiry']);
-    // Never a second watcher beside one already running.
-    expect(wanted.map(w => w.id)).not.toContain('drop-off');
-    expect(wanted.map(w => w.id)).not.toContain('equipment');
-    // And never one whose data is absent, whatever its severity.
-    expect(wanted.map(w => w.id)).not.toContain('late-delivery');
-  });
-
-  it('starts the objective’s own picks on a fresh application, then fills the rest', async () => {
-    const { watchersToStart } = await import('../eame-template/services/agentService.js');
-    const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live: [], seeds: [] });
-    // Cob's two first, so the customer sees what they asked for at the top.
-    expect(wanted.slice(0, 2).map(w => w.id)).toEqual(['stopped-coming', 'empty-slot']);
-    // Then one per remaining category — five running, across five columns.
-    expect(wanted).toHaveLength(5);
-    expect(filled).toEqual(['Growth', 'Cash', 'Compliance']);
+    expect(ids(wanted)).not.toContain('stopped-coming');
+    expect(ids(wanted)).not.toContain('empty-slot');
+    expect(wanted).toHaveLength(7);
+    // Every category ends up represented, which is the point of the change.
+    expect(filled.sort()).toEqual(['Cash', 'Compliance', 'Growth', 'Retention', 'Utilisation']);
   });
 
   it('never offers the same watcher twice, so removing one keeps it removed', async () => {
     const { watchersToStart } = await import('../eame-template/services/agentService.js');
     /*
      * The safety property, run rather than read. The owner was offered
-     * doc-expiry, removed it, and restarted the application: Compliance is
-     * empty again, and it must stay empty.
+     * doc-expiry and removed it; a restart must not bring it back.
      */
-    const seeds = [{ kind: 'watcher', key: 'doc-expiry' }, { kind: 'category', key: 'Compliance' }];
+    const seeds = [{ kind: 'watcher', key: 'doc-expiry' }];
+    const { wanted } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live: [], seeds });
+    expect(ids(wanted)).not.toContain('doc-expiry');
+    // Everything else it has not seen still starts.
+    expect(wanted).toHaveLength(8);
+  });
+
+  it('leaves a category the owner emptied empty', async () => {
+    const { watchersToStart } = await import('../eame-template/services/agentService.js');
+    /*
+     * Stronger than the per-watcher rule, and the reason categories are
+     * seeded at all. Once somebody has seen what a category offers and
+     * cleared it out, filling it with the next watcher along would be the
+     * same resurrection wearing another name.
+     */
+    const seeds = [{ kind: 'category', key: 'Growth' }];
     const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live: [], seeds });
-    expect(wanted.map(w => w.id)).not.toContain('doc-expiry');
-    expect(filled).not.toContain('Compliance');
-    // A seeded category is not refilled with a different watcher either —
-    // which would be the same resurrection wearing another name.
-    expect(wanted.map(w => w.id).filter(id => id === 'doc-expiry')).toEqual([]);
+    expect(ids(wanted)).not.toContain('enquiry');
+    expect(ids(wanted)).not.toContain('referral');
+    expect(filled).not.toContain('Growth');
+    // And only that category: the rest are untouched.
+    expect(wanted).toHaveLength(7);
   });
 
   it('switches nothing back on for an owner who switched it all off', async () => {
     const { watchersToStart } = await import('../eame-template/services/agentService.js');
     const seeds = [
-      ...CATALOGUE.map(c => ({ kind: 'watcher', key: c.id })),
-      ...CATS.map(c => ({ kind: 'category', key: c.name })),
+      ...CATALOGUE.map((c) => ({ kind: 'watcher', key: c.id })),
+      ...CATS.map((c) => ({ kind: 'category', key: c.name })),
     ];
     const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live: [], seeds });
     expect(wanted).toEqual([]);
     expect(filled).toEqual([]);
   });
 
-  it('does nothing at all for an industry that named no categories', async () => {
+  it('still starts everything for an industry that named no categories', async () => {
     const { watchersToStart } = await import('../eame-template/services/agentService.js');
-    // No table, so no columns to fill — only Cob's picks start, as before.
+    /*
+     * No knowledge-base table is not a reason to watch less. There is simply
+     * nothing to record as filled, and nothing a category seed can hold back.
+     */
     const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: [], live: [], seeds: [] });
-    expect(wanted.map(w => w.id)).toEqual(['stopped-coming', 'empty-slot']);
+    expect(wanted).toHaveLength(9);
     expect(filled).toEqual([]);
   });
 
-  it('counts a watcher the owner started by hand as covering its category', async () => {
+  it('never offers a watcher whose name is already taken', async () => {
     const { watchersToStart } = await import('../eame-template/services/agentService.js');
-    // They started referral themselves; Growth must not gain a second one.
-    const live = [{ watcherId: 'referral', name: 'referral' }];
-    const { wanted, filled } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live, seeds: [] });
-    expect(filled).not.toContain('Growth');
-    expect(wanted.map(w => w.id)).not.toContain('enquiry');
+    /*
+     * An application delivered before watchers carried ids has agents with
+     * names and no watcherId. Matching on name as well is what stops it
+     * being given a second copy of everything it already runs.
+     */
+    const live = [{ watcherId: '', name: 'enquiry' }];
+    const { wanted } = watchersToStart({ catalogue: CATALOGUE, categories: CATS, live, seeds: [] });
+    expect(ids(wanted)).not.toContain('enquiry');
+    expect(wanted).toHaveLength(8);
   });
 });

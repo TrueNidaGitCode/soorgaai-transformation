@@ -544,23 +544,25 @@ export function watchersToStart({ catalogue = [], categories = [], live = [], se
   for (const c of ready) if (c.startHere) add(c);
 
   /*
-   * Then the gaps. A category counts as covered by anything already watching
-   * it -- including a watcher the owner started by hand -- so this only ever
-   * fills a column that is genuinely empty.
+   * Then everything else the data supports, worst first so the order the
+   * owner reads on the first morning is the order that matters. A category
+   * is recorded as filled when something under it starts, so an industry
+   * with no table still works -- there is simply nothing to record.
    */
-  const covered = new Set();
-  for (const a of live) { const n = categoryNameOf(categories, a.watcherId); if (n) covered.add(n); }
-  for (const c of wanted) { const n = categoryNameOf(categories, c.id); if (n) covered.add(n); }
-
   const filled = [];
-  for (const cat of categories) {
-    if (covered.has(cat.name) || seededCategories.has(cat.name)) continue;
-    // Worst-first, so a category represented by one watcher is represented by
-    // the one most worth hearing from. Ties keep catalogue order.
-    const pick = ready
-      .filter((c) => categoryNameOf(categories, c.id) === cat.name && fresh(c))
-      .sort((a, b) => (SEVERITY_RANK[a.severity] ?? 1) - (SEVERITY_RANK[b.severity] ?? 1))[0];
-    if (pick && add(pick)) { covered.add(cat.name); filled.push(cat.name); }
+  const rest = ready
+    .filter((c) => !c.startHere)
+    .sort((a, b) => (SEVERITY_RANK[a.severity] ?? 1) - (SEVERITY_RANK[b.severity] ?? 1));
+  for (const c of rest) {
+    const name = categoryNameOf(categories, c.id);
+    // A category the owner has already emptied stays empty: they have seen
+    // everything under it once and said no.
+    if (name && seededCategories.has(name)) continue;
+    add(c);
+  }
+  for (const c of wanted) {
+    const name = categoryNameOf(categories, c.id);
+    if (name && !filled.includes(name) && !seededCategories.has(name)) filled.push(name);
   }
 
   return { wanted, filled };
@@ -598,20 +600,33 @@ export function categoryNameOf(categories, watcherId) {
  * customer's first experience of the product would be a broken thing telling
  * them so. Wanting is not enough; possible is not enough either.
  *
- * ── And then one per business category ─────────────────────────────────────
+ * ── And then everything else the data supports ─────────────────────────────
  *
  * The objective is a paragraph. Vesoma's mentioned attendance and slots, so
  * two watchers started and twenty-six did not -- meaning nothing at all was
  * watching their cash or their compliance, and nothing on any screen said so
  * until the map put an empty column in front of them.
  *
- * An unwatched category is the product failing quietly, which is the one way
- * it is not allowed to fail. So after Cob's picks, every category the
- * industry named that still has nothing under it gets the best watcher its
- * data supports. Bounded by the number of categories, which is five or six:
- * the same reasoning that caps startHere applies here, because a watcher that
- * starts itself also sends mail, and five findings on the first morning is a
- * product where twenty is an inbox problem.
+ * It was capped at one per category for a while, and the cap was measured
+ * afterwards rather than before: fifteen of the twenty-eight are ready on
+ * one of Vesoma's six datasets alone. Leaving thirteen of those idle was not
+ * caution, it was the product doing less than it could for no stated reason.
+ *
+ * So every watcher whose data is really here starts. `ready` is the only
+ * gate, and it is a real one -- a watcher whose columns are absent would
+ * fail three times and stop itself, and the customer's first experience of
+ * the product would be it reporting that it is broken.
+ *
+ * ── What changed to make that safe ─────────────────────────────────────────
+ *
+ * The old cap reasoned that watchers which start themselves also send mail,
+ * and that five findings on the first morning is a product where twenty is
+ * an inbox problem. That was right when the alternative was switching the
+ * whole thing off, because coverage was invisible and the only control was
+ * all-or-nothing. The map changed both: what is watching is now on a screen,
+ * and any one of them can be paused from it. And the digest only ever
+ * reports what CHANGED, so the noisy morning is the first one, not every
+ * one.
  *
  * ── Why it is safe to run this on every boot ───────────────────────────────
  *

@@ -80,3 +80,62 @@ describe('a delivered application can resolve every import it ships with', () =>
     expect(have.has('controllers/whatsappController.js')).toBe(true);
   });
 });
+
+describe('a delivered application carries nothing that is Svarg\'s', () => {
+  it('owns its auth middleware rather than borrowing the platform\'s', async () => {
+    /*
+     * ── The build this broke ───────────────────────────────────────────────
+     *
+     * Every application was shipped Svarg's own middleware/authMiddleware.js,
+     * copied out of the platform repository. It worked — both sides mint the
+     * same token — but it carried a `lastSeenAt` write against Svarg's User
+     * model, reached by a dynamic import of a models file that does not exist
+     * in a delivered application.
+     *
+     * At runtime that import failed and was swallowed, so nothing broke and
+     * nobody noticed for months. Verification reads imports rather than
+     * running them, and correctly refused a project referring to a file that
+     * is not in it: a physiotherapy clinic's build failed three times over a
+     * line that recorded analytics for a different product.
+     */
+    const { buildManifest } = await import('../services/eameProjectBuilder.js');
+    const mw = buildManifest({ appName: 'Probe' })
+      .find(f => f.path === 'middleware/authMiddleware.js');
+    expect(mw, 'authMiddleware must ship').toBeTruthy();
+
+    const { extractImports } = await import('../services/generatedProjectVerifier.js');
+    const specs = extractImports(mw.content);
+    expect(specs.relative, 'it must not reach outside the application').toEqual([]);
+    expect(specs.bare).toContain('jsonwebtoken');
+    expect(mw.content).toMatch(/export const protect/);
+  });
+
+  it('has no relative import anywhere that leaves the project', async () => {
+    /*
+     * The general rule, held over the whole runtime rather than the one file
+     * that happened to break it. This is the check the verifier runs against
+     * a customer's build; running it here means a bad path fails in CI rather
+     * than during somebody's demonstration.
+     */
+    const { buildManifest } = await import('../services/eameProjectBuilder.js');
+    const { extractImports } = await import('../services/generatedProjectVerifier.js');
+    const files = buildManifest({ appName: 'Probe' });
+    const paths = new Set(files.map(f => f.path));
+
+    const dangling = [];
+    for (const f of files) {
+      if (!/\.(js|mjs)$/.test(f.path)) continue;
+      const dir = f.path.split('/').slice(0, -1);
+      for (const spec of extractImports(f.content).relative) {
+        const parts = [...dir];
+        for (const seg of spec.split('/')) {
+          if (seg === '.') continue;
+          else if (seg === '..') parts.pop();
+          else parts.push(seg);
+        }
+        if (!paths.has(parts.join('/'))) dangling.push(`${f.path} -> ${spec}`);
+      }
+    }
+    expect(dangling).toEqual([]);
+  });
+});

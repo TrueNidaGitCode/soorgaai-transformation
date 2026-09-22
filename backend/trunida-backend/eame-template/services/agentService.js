@@ -562,6 +562,41 @@ export async function autoStartWatchers(catalogue, { tz = 'UTC' } = {}) {
   return { started, skipped: '' };
 }
 
+/**
+ * Move watchers that have never run onto the owner's own clock.
+ *
+ * ── The defect this repairs ────────────────────────────────────────────────
+ *
+ * A watcher somebody creates by hand takes the timezone from their browser,
+ * which is right. A watcher that starts itself at delivery has no browser to
+ * ask and falls back to UTC — so "every weekday at 7am" fired at 07:00 UTC,
+ * which reaches an Indian academy at half past twelve. For a feature whose
+ * entire value is being a morning briefing, that is not a small inaccuracy;
+ * it is the feature not working.
+ *
+ * The application cannot know the owner's timezone until somebody opens it.
+ * When they do, it learns it once and moves the watchers that are still on the
+ * default across.
+ *
+ * Deliberately narrow. Only watchers that are still UTC and have NEVER run:
+ * a watcher that has already reported is one the owner has seen arrive, and
+ * silently shifting when it fires would be changing something behind them.
+ * Anything they set by hand is theirs and is never touched.
+ */
+export async function adoptTimezone(tz) {
+  const clean = String(tz || '').trim();
+  if (!clean || clean === 'UTC') return { moved: 0 };
+  if (mongoose.connection.readyState !== 1) return { moved: 0 };
+
+  const r = await agentsCollection().updateMany(
+    { tz: 'UTC', lastRunAt: null },
+    { $set: { tz: clean.slice(0, 64) } },
+  );
+  const moved = r.modifiedCount || 0;
+  if (moved) console.log(`[agents] ${moved} watcher(s) moved to ${clean}`);
+  return { moved };
+}
+
 // ── The schedule ────────────────────────────────────────────────────────────
 
 let timer = null;

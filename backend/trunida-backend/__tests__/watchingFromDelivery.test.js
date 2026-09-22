@@ -186,3 +186,43 @@ describe('only what the data can support actually starts', () => {
     expect(read('../eame-template/server.js')).toMatch(/autoStartWatchers\([\s\S]*?\.catch\(/);
   });
 });
+
+describe('the owner\'s clock, not the container\'s', () => {
+  it('only moves watchers that have never run and are still on the default', () => {
+    /*
+     * A watcher created by hand takes the browser's timezone. One that starts
+     * itself at delivery has no browser and falls back to UTC — so a 7am
+     * briefing fires at half past twelve in India, which for a morning
+     * briefing is the feature not working.
+     *
+     * The filter is the whole safety of it. A watcher that has already
+     * reported is one the owner has seen arrive, and moving when it fires
+     * would be changing something behind their back; a timezone they set
+     * themselves is theirs.
+     */
+    const svc = read('../eame-template/services/agentService.js');
+    expect(svc).toContain("{ tz: 'UTC', lastRunAt: null },");
+  });
+
+  it('refuses to move anything to UTC or to nothing', () => {
+    const svc = read('../eame-template/services/agentService.js');
+    expect(svc).toContain("if (!clean || clean === 'UTC') return { moved: 0 };");
+  });
+
+  it('is owner-only, because it changes when a briefing arrives', () => {
+    // A colleague opening the application from another country must not move
+    // the owner's morning.
+    const routes = read('../eame-template/routes/agentsRoutes.js');
+    const line = routes.split('\n').find(l => l.includes("'/timezone'"));
+    expect(line).toBeTruthy();
+    expect(line).toContain('ownerOnly');
+  });
+
+  it('is sent once, and a failure is silent', () => {
+    // Everyone who is not the owner gets a refusal here. It must not surface
+    // as an error on the first screen they ever see.
+    const js = read('../eame-template/frontend/findings.js');
+    expect(js).toContain("sessionStorage.getItem('ch-tz-sent')");
+    expect(js).toMatch(/\.catch\(function \(\) \{ \/\* a colleague, not the owner/);
+  });
+});

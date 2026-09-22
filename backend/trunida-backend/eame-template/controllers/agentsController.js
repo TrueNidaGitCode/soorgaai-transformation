@@ -7,7 +7,7 @@
  */
 import {
   listAgents, createAgent, setAgentEnabled, deleteAgent,
-  findingsCollection, SCHEDULES,
+  findingsCollection, SCHEDULES, adoptTimezone,
 } from '../services/agentService.js';
 import mongoose from 'mongoose';
 import fs from 'fs';
@@ -144,6 +144,22 @@ export async function draftFindingHandler(req, res) {
  * cannot be inferred from anything else. Carries the catalogue id only: Svarg
  * learns that a watcher's finding was read, never which finding.
  */
+/**
+ * The owner opened the application; learn what time it is where they are.
+ *
+ * Owner-only because it changes when watchers fire, and a colleague in
+ * another country must not move the owner's briefing. Only watchers that
+ * have never run and are still on the UTC default are moved.
+ */
+export async function timezoneHandler(req, res) {
+  try {
+    const { moved } = await adoptTimezone(req.body?.tz);
+    return res.json({ moved });
+  } catch (err) {
+    return bad(res, err);
+  }
+}
+
 export async function findingOpenedHandler(req, res) {
   sendSignal('finding_opened', { watcherId: req.body?.watcherId || '' });
   return res.json({ ok: true });

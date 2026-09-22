@@ -314,9 +314,32 @@
     setTimeout(function () { d.copy.textContent = 'Copy'; }, 1500);
   });
 
+  /*
+   * Tell the application what time it is where the owner is.
+   *
+   * Watchers that start themselves at delivery have no browser to ask and
+   * default to UTC, so a 7am briefing fires at half past twelve in India. This
+   * is the first moment the application can learn the real answer. Sent once
+   * per session, ignored for anyone who is not the owner, and it only moves
+   * watchers that have never run.
+   */
+  function tellTime() {
+    try {
+      if (sessionStorage.getItem('ch-tz-sent') === '1') return;
+      sessionStorage.setItem('ch-tz-sent', '1');
+    } catch (e) { /* private window: send it, it is idempotent */ }
+    var tz = '';
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return; }
+    if (!tz || tz === 'UTC') return;
+    api('/timezone', { method: 'POST', body: JSON.stringify({ tz: tz }) })
+      .then(function (r) { if (r && r.moved) load(); })
+      .catch(function () { /* a colleague, not the owner. Nothing to say. */ });
+  }
+
   window.addEventListener('svarg:findings-open', function () {
     detail.hidden = true;
     page.hidden = false;
+    tellTime();
     load();
   });
 }());

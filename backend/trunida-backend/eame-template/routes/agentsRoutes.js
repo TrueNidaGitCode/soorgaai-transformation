@@ -24,7 +24,7 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { ownerOnly } from '../controllers/accessController.js';
-import { listAgentsHandler, createAgentHandler, patchAgentHandler, deleteAgentHandler, startFromCatalogueHandler, listFindingsHandler, getFindingHandler, draftFindingHandler, findingOpenedHandler } from '../controllers/agentsController.js';
+import { listAgentsHandler, createAgentHandler, patchAgentHandler, deleteAgentHandler, startFromCatalogueHandler, listFindingsHandler, getFindingHandler, draftFindingHandler, findingOpenedHandler, timezoneHandler } from '../controllers/agentsController.js';
 
 const router = express.Router();
 
@@ -38,6 +38,9 @@ router.get   ('/findings/:id', protect, getFindingHandler);
 // that customer already.
 router.post  ('/findings/:id/draft', protect, express.json({ limit: '4kb' }), draftFindingHandler);
 
+// The owner's clock, learned when they first open the application. Owner
+// only: a colleague abroad must not move the owner's morning briefing.
+router.post  ('/timezone', protect, ownerOnly, express.json({ limit: '1kb' }), timezoneHandler);
 router.get   ('/',    protect, ownerOnly, listAgentsHandler);
 router.post  ('/',    protect, ownerOnly, express.json({ limit: '16kb' }), createAgentHandler);
 // One tap on a catalogue card.

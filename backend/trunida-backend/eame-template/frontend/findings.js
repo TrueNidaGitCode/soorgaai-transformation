@@ -37,6 +37,8 @@
     rlist: document.getElementById('fn-rlist'),
     note: document.getElementById('fn-note'),
     cats: document.getElementById('fn-cats'),
+    eg: document.getElementById('fn-eg'),
+    eglist: document.getElementById('fn-eglist'),
   };
 
   var d = {
@@ -142,6 +144,38 @@
   }
 
   /**
+   * One example, in the same shape as a real row so the reader learns the
+   * shape -- and marked on its face so nobody can mistake it for one.
+   *
+   * It carries no person, no number and no date, because those are the parts
+   * that would make a screenshot of this indistinguishable from a screenshot
+   * of a real finding. What it does carry is true: a watcher this application
+   * has, the question it actually asks, and the dataset it actually reads.
+   * It is not a button, because there is nothing behind it to open.
+   */
+  function example(e) {
+    return '<div class="fn__row fn__row--eg fn__row--' + esc(e.severity || 'medium') + '">'
+      + '<span class="fn__rowcat">'
+      +   '<span class="fn__dot" aria-hidden="true"></span>'
+      +   '<span class="fn__catname">' + esc(e.category || '') + '</span>'
+      + '</span>'
+      + '<span class="fn__rowbody">'
+      +   '<span class="fn__rowtitle">' + esc(e.says || '') + '</span>'
+      +   '<span class="fn__rowsub">' + esc(e.watcher || '') + '</span>'
+      +   (e.question ? '<p class="fn__from">Asks <b>' + esc(e.question) + '</b></p>' : '')
+      + '</span>'
+      + '<span class="fn__rowmeta"><span class="fn__egtag">Example</span></span>'
+      + '</div>';
+  }
+
+  function drawExamples(list) {
+    if (!el.eg || !el.eglist) return;
+    var show = (list || []).length > 0;
+    el.eg.hidden = !show;
+    el.eglist.innerHTML = show ? list.map(example).join('') : '';
+  }
+
+  /**
    * The category chips.
    *
    * The words are the industry's own, read from its knowledge base at delivery
@@ -185,6 +219,10 @@
 
     el.list.innerHTML = open.map(row).join('');
     el.list.hidden = open.length === 0;
+
+    // Only ever on a board with nothing open, and never while a chip is
+    // filtering -- an example under "Cash" would look like a Cash finding.
+    drawExamples(all.length || picked ? [] : body.examples);
 
     /*
      * ── A quiet morning keeps the same screen ──────────────────────────────
@@ -262,6 +300,7 @@
       .then(render)
       .catch(function (err) {
         el.list.hidden = true;
+        drawExamples([]);
         el.empty.hidden = false;
         el.emptyTitle.textContent = 'The findings could not be read.';
         el.emptyNote.textContent = err.message;

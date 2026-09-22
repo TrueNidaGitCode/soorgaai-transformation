@@ -133,6 +133,7 @@ export async function listFindingsHandler(req, res) {
       resolved: resolved.map(findingView),
       counts,
       categories: byCategory,
+      examples: rows.length ? [] : examples(),
       watching: agents.filter(a => a.enabled && a.status !== 'degraded').length,
       degraded: agents.filter(a => a.status === 'degraded').length,
       // So the screen can say "your first check is at 09:30" instead of
@@ -144,6 +145,54 @@ export async function listFindingsHandler(req, res) {
     console.error('[findings] list failed:', err.message);
     return res.status(500).json({ error: 'Could not read the findings.' });
   }
+}
+
+/**
+ * What a finding will look like, for a board that has none.
+ *
+ * A first-time reader opens this screen, sees nothing, and cannot tell a
+ * working application from a broken one -- and a customer being shown the
+ * product sees a blank page where the whole promise was supposed to be.
+ *
+ * So when there is nothing open, the board shows one example per category.
+ * Every word of it is true and already in the application: the category is
+ * the industry's, the watcher is one this application actually has, and the
+ * question is the one it actually asks, with this customer's own dataset
+ * named in it. Nothing is invented -- no person, no number, no date -- because
+ * an example finding carrying a made-up client would be indistinguishable
+ * from a real one the moment somebody screenshots it.
+ *
+ * They are returned under their own key, never mixed into `open`, so no
+ * count, chip or digest can ever include one.
+ */
+function examples() {
+  const cats = Array.isArray(plan().categories) ? plan().categories : [];
+  const ready = catalogueFor(readIndex(), plan()).filter(c => c.ready && c.question);
+  if (!ready.length) return [];
+
+  // One per category, in the industry's order, so the examples line up with
+  // the chips above them. An application whose industry named no categories
+  // still gets a few, taken in the catalogue's own order.
+  const out = [];
+  if (cats.length) {
+    for (const c of cats) {
+      const pick = ready.find(e => categoryOf(e.id) === c.name);
+      if (pick) out.push({ ...pick, category: c.name });
+    }
+  }
+  for (const e of ready) {
+    if (out.length >= 5) break;
+    if (!out.some(o => o.id === e.id)) out.push({ ...e, category: categoryOf(e.id) });
+  }
+  return out.slice(0, 5).map(e => ({
+    id: e.id,
+    category: e.category || '',
+    watcher: e.name,
+    says: e.says,
+    question: e.question,
+    dataset: e.using || '',
+    severity: e.severity || 'medium',
+  }));
 }
 
 /** One finding, with the evidence behind it. The screen that earns trust. */

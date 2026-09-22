@@ -58,7 +58,9 @@
       + '</section>');
     // Inside the shell, beside the other panels, so People keeps the
     // sidebar like every other screen.
-    (document.querySelector('.ch-main') || document.body).appendChild(panel);
+    var main = document.querySelector('.ch-main') || document.body;
+    var foot = main.querySelector('.ch-foot');
+    if (foot) main.insertBefore(panel, foot); else main.appendChild(panel);
 
     panel.querySelector('#ac-back').addEventListener('click', function (e) {
       e.preventDefault();
@@ -86,9 +88,9 @@
   function render() {
     var sub = panel.querySelector('#ac-sub');
     var seats = state.seats;
-    var plan = state.plan ? state.plan + ' plan' : 'this plan';
+    var plan = state.plan ? 'the ' + state.plan + ' plan' : 'this plan';
     sub.textContent = seats
-      ? state.used + ' of ' + seats + (seats === 1 ? ' account' : ' accounts') + ' on the ' + plan + ' in use.'
+      ? state.used + ' of ' + seats + (seats === 1 ? ' account' : ' accounts') + ' on ' + plan + ' in use.'
       : state.used + (state.used === 1 ? ' person has' : ' people have') + ' access.';
 
     // When there is no room left, the door is the message rather than a

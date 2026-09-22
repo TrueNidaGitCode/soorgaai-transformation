@@ -285,6 +285,79 @@ describe('the board, which is the durable copy', () => {
     expect(ui).toContain("enabled: t.dataset.enable === '1'");
   });
 
+/*
+   * ── The examples on an empty board ───────────────────────────────────────
+   *
+   * A board with nothing on it is the common case on day one and the one a
+   * customer is shown in a demo, and a blank screen cannot be told apart
+   * from a broken one. So it shows what a finding will look like.
+   *
+   * The danger is obvious: an example that reads as a real finding is worse
+   * than no example at all, because somebody acts on it or screenshots it.
+   * Two rules keep that from happening, and both are tested here — they are
+   * never counted, and they invent nothing.
+   */
+  it('shows examples only when nothing at all is open', () => {
+    const ctl = read2('../eame-template/controllers/agentsController.js');
+    // One expression, so there is no path on which both exist.
+    expect(ctl).toContain('examples: rows.length ? [] : examples()');
+    const ui = read2('../eame-template/frontend/findings.js');
+    // And not while a chip is filtering: an example under "Cash" with Cash
+    // selected would read as a Cash finding.
+    expect(ui).toContain('drawExamples(all.length || picked ? [] : body.examples)');
+  });
+
+  it('never counts an example anywhere', () => {
+    /*
+     * counts, the category chips and the digest all read `open`/`rows`.
+     * Examples travel under their own key and are never merged in, so the
+     * heading can say "0 things need your attention" with five rows on the
+     * screen and still be telling the truth.
+     */
+    const ctl = read2('../eame-template/controllers/agentsController.js');
+    const body = ctl.slice(ctl.indexOf('const counts = { high: 0'), ctl.indexOf('everRan:'));
+    expect(body).toContain('for (const r of rows) counts[r.severity]');
+    expect(body).toMatch(/count: rows\.filter/);
+    // Nothing that feeds a number is allowed to mention them.
+    expect(body.replace(/examples: rows\.length \? \[\] : examples\(\),/, ''))
+      .not.toMatch(/example/i);
+
+    const ui = read2('../eame-template/frontend/findings.js');
+    // The board's own list is built from `open`, never from the examples.
+    expect(ui).toContain("el.list.innerHTML = open.map(row).join('');");
+  });
+
+  it('invents nothing: an example carries only what the catalogue already said', () => {
+    /*
+     * No person, no number, no date. Those are exactly the parts that would
+     * make a screenshot of an example indistinguishable from a screenshot of
+     * a real finding — and the one rule this product cannot bend is that it
+     * does not make up evidence.
+     */
+    const ctl = read2('../eame-template/controllers/agentsController.js');
+    const fn = ctl.slice(ctl.indexOf('function examples()'), ctl.indexOf('/** One finding, with the evidence'));
+    expect(fn).toBeTruthy();
+    // Every field is copied off a catalogue entry the application really has.
+    for (const field of ['id: e.id', 'watcher: e.name', 'says: e.says', 'question: e.question']) {
+      expect(fn).toContain(field);
+    }
+    // And none of the things a real finding carries because something happened.
+    for (const absent of ['firstSeenAt', 'lastSeenAt', 'rows:', 'evidence', 'Math.random', 'new Date']) {
+      expect(fn, `an example must not carry ${absent}`).not.toContain(absent);
+    }
+  });
+
+  it('marks every example on its face, and makes none of them openable', () => {
+    const ui = read2('../eame-template/frontend/findings.js');
+    const fn = ui.slice(ui.indexOf('function example(e)'), ui.indexOf('function drawExamples'));
+    expect(fn).toContain('fn__egtag');
+    expect(fn).toContain('Example');
+    // A real row is a <button data-open>; an example is a plain div, so the
+    // click handler that opens a finding can never match one.
+    expect(fn).toContain("'<div class=\"fn__row fn__row--eg");
+    expect(fn).not.toContain('data-open');
+  });
+
   it('asks before forgetting what an agent found', () => {
     const ui = read2('../eame-template/frontend/agents.js');
     expect(ui).toContain('window.confirm(');

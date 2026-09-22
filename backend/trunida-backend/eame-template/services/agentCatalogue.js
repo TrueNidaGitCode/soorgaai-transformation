@@ -225,14 +225,68 @@ const SLOW = new Set(['renewal-due', 'expiring-soon', 'deadline-approaching', 'p
 // ── Matching against what this application actually holds ────────────────────
 
 /**
+ * Within a role, some columns are better than others.
+ *
+ * ── The finding that forced this ───────────────────────────────────────────
+ *
+ * A physiotherapy centre's package sheet carried both `sale_date` and
+ * `last_session_date`. The Stopped Coming watcher took `sale_date`, because it
+ * appears first in the table and both satisfy the `when` role — producing
+ * "clients with no sale_date in the last 14 days", which is true of every
+ * package sold a fortnight ago and means nothing at all.
+ *
+ * A finding that is structurally valid and semantically empty is worse than no
+ * finding: it arrives with evidence attached, looks authoritative, and teaches
+ * somebody that the product does not understand their business.
+ *
+ * `good` columns are tried first, `bad` ones last, everything else in between.
+ * This only reorders the candidates — the search below is still exhaustive, so
+ * anything that matched before still matches. It just stops taking the first
+ * column that fits when a better one is sitting further along the row.
+ */
+const PREFER = {
+  // Recency beats origin. A watcher asking who has gone missing wants the
+  // last time something happened, not the day the record was created.
+  when: {
+    good: /last|latest|recent|seen|visit|attend|activity|check.?in/i,
+    bad:  /expir|valid|renew|birth|dob|sale|purchase|join|enrol|signup|sign.?up|start/i,
+  },
+  // A count is never the thing that was booked.
+  slot: {
+    good: /slot|cabin|room|booking|appointment|class|batch|shift/i,
+    bad:  /^total|count|num|_no$|qty|quantity|remaining|completed/i,
+  },
+  who: {
+    good: /name/i,
+    bad:  /^total|count|num|qty/i,
+  },
+  due: { good: /due|deadline/i, bad: /^total|count/i },
+  amount: { good: /amount|balance|outstanding|total/i, bad: /count|qty|sessions/i },
+};
+
 /**
- * Every column that could play this role.
+ * Every column that could play this role, best first.
  * Exported so a test can show which columns a watcher would consider.
  */
 export function columnsFor(role, columns) {
   const re = ROLES[role];
   if (!re) return [];
-  return (columns || []).filter((c) => re.test(String(c)));
+  const hits = (columns || []).filter((c) => re.test(String(c)));
+
+  const p = PREFER[role];
+  if (!p) return hits;
+  const rank = (c) => {
+    const s = String(c);
+    if (p.good && p.good.test(s)) return 0;
+    if (p.bad && p.bad.test(s)) return 2;
+    return 1;
+  };
+  // Stable within a rank, so a dataset's own column order still decides
+  // between two equally good candidates.
+  return hits
+    .map((c, i) => [c, rank(c), i])
+    .sort((a, b) => a[1] - b[1] || a[2] - b[2])
+    .map(([c]) => c);
 }
 
 /**
@@ -271,7 +325,44 @@ export function assignRoles(roles, columns) {
  */
 export function matchDataset(entry, dataset) {
   const using = assignRoles(entry.needs, dataset?.columns || []);
-  return using ? { dataset: dataset.name, using } : null;
+  return using ? { dataset: dataset.name, using, fit: fitOf(entry, dataset, using) } : null;
+}
+
+/**
+ * How WELL this dataset answers this watcher, not merely whether it can.
+ *
+ * ── Why a second number was needed ─────────────────────────────────────────
+ *
+ * A clinic's package sheet and its appointment diary both satisfy Empty Slot
+ * structurally — a package sheet has session columns and dates. Taking the
+ * first dataset that fit produced "last_session_date in Package Sales and
+ * Balances with nobody booked", when the Appointment Booking Diary was sitting
+ * right there with a cabin and a booking time.
+ *
+ * So: one point for every role filled by a column this role actually prefers,
+ * and a point for a dataset whose own NAME belongs to the watcher's area. Both
+ * are cheap signals, and the whole scale is small on purpose — this decides
+ * between two workable answers, not between right and wrong.
+ */
+function fitOf(entry, dataset, using) {
+  let score = 0;
+  for (const [role, col] of Object.entries(using || {})) {
+    const p = PREFER[role];
+    if (p?.good && p.good.test(String(col))) score += 1;
+    if (p?.bad && p.bad.test(String(col))) score -= 1;
+  }
+  // "Appointment Booking Diary" for a Schedule watcher; "Fee Ledger" for Money.
+  const areaWords = {
+    Schedule: /appointment|booking|diary|slot|schedule|session|calendar/i,
+    Money: /invoice|payment|fee|ledger|billing|package|sales|account/i,
+    People: /attendance|roll|register|staff|student|member|client|patient/i,
+    Customers: /enquir|inquir|lead|customer|complaint|ticket/i,
+    Suppliers: /supplier|vendor|purchase|order|delivery/i,
+    Records: /record|master|roster|list|catalog/i,
+    Compliance: /document|certificate|licence|license|compliance|consent/i,
+  }[entry.area];
+  if (areaWords && areaWords.test(String(dataset?.name || ''))) score += 2;
+  return score;
 }
 
 /** The question, with the real column and dataset names in it. */
@@ -295,10 +386,19 @@ export function catalogueFor(datasets, plan = {}) {
   const startHere = new Set(Array.isArray(plan.startHere) ? plan.startHere : []);
 
   const rows = CATALOGUE.map((entry) => {
+    /*
+     * The BEST dataset, not the first one that fits.
+     *
+     * Several datasets in the same business will satisfy a watcher's roles —
+     * a package sheet and an appointment diary both hold sessions and dates.
+     * Taking the first produced questions about the wrong body of records,
+     * which read as authoritative and meant nothing. Ties keep the earlier
+     * dataset, so an application with one obvious source is unchanged.
+     */
     let match = null;
     for (const d of datasets || []) {
-      match = matchDataset(entry, d);
-      if (match) break;
+      const m = matchDataset(entry, d);
+      if (m && (!match || m.fit > match.fit)) match = m;
     }
     return {
       id: entry.id,

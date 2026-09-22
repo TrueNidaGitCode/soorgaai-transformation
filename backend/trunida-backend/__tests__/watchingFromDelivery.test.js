@@ -62,6 +62,29 @@ describe('reading which watchers a business asked for', () => {
     expect(scoreWatchers(text).has('overdue-invoice')).toBe(true);
   });
 
+  it('matches the plural a business actually writes', () => {
+    /*
+     * Caught on a real objective. It said 'we do not track which enquiries we
+     * answered' and the enquiry watcher did not start, because terms are
+     * matched as substrings and 'enquiries' does not contain 'enquiry'. Most
+     * plurals are free -- 'appointments' contains 'appointment' -- but the
+     * ones that change the stem are exactly the words a clinic uses.
+     *
+     * A silent miss is the worst failure this matcher has: the board comes up
+     * emptier than it should and nothing anywhere says why.
+     */
+    const plural = scoreWatchers('we do not track which enquiries we answered');
+    const singular = scoreWatchers('we do not track which enquiry we answered');
+    expect(plural.has('unanswered-enquiry')).toBe(true);
+    expect(singular.has('unanswered-enquiry')).toBe(true);
+  });
+
+  it('counts a term and its plural once, not twice', () => {
+    // 'enquiry' and 'enquiries' are one idea. Scoring both would quietly
+    // promote a watcher above one the customer cared about more.
+    expect(scoreWatchers('enquiry enquiries').get('unanswered-enquiry')).toBe(1);
+  });
+
   it('says nothing when the objective matches nothing', () => {
     /*
      * The important refusal. An empty plan is a valid answer and the

@@ -85,6 +85,28 @@ export const MAX_START = 5;
 const norm = (s) => String(s || '').toLowerCase();
 
 /**
+ * Terms are matched as substrings, which handles most plurals for free —
+ * "appointments" contains "appointment". It does not handle the ones that
+ * change the stem, and those are exactly the words this industry uses:
+ * a clinic writes "enquiries", never "enquiry".
+ *
+ * Caught on a real objective. It said "we do not track which enquiries we
+ * answered" and the enquiry watcher did not start, because "enquiries" does
+ * not contain "enquiry". A silent miss like that is the worst failure this
+ * matcher can have: the board simply comes up emptier than it should and
+ * nothing says why.
+ *
+ * Expanded here rather than by stemming. Stemming would also fire on words
+ * nobody meant, and a watcher that starts on a false match sends mail about
+ * something the customer never asked to watch.
+ */
+function withPlurals(terms) {
+  const out = new Set(terms);
+  for (const t of terms) if (t.endsWith('y')) out.add(t.slice(0, -1) + 'ies');
+  return [...out];
+}
+
+/**
  * Everything the customer said, as one lowercased haystack.
  *
  * The objective is what they typed themselves and carries the most weight by
@@ -115,10 +137,13 @@ export function scoreWatchers(text) {
   if (!hay.trim()) return scores;
 
   for (const entry of CATALOGUE) {
-    const terms = TERMS[entry.id] || [];
-    let hits = 0;
-    for (const t of terms) if (hay.includes(t)) hits++;
-    if (hits > 0) scores.set(entry.id, hits);
+    const terms = withPlurals(TERMS[entry.id] || []);
+    // Distinct terms that appear, not occurrences: a business that says
+    // "follow-up" twice does not need that watcher twice as much. A term and
+    // its plural both hitting is one idea, so they count once.
+    const seen = new Set();
+    for (const t of terms) if (hay.includes(t)) seen.add(t.replace(/ies$/, 'y'));
+    if (seen.size > 0) scores.set(entry.id, seen.size);
   }
   return scores;
 }

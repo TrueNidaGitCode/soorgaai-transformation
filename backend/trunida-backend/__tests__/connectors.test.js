@@ -77,6 +77,50 @@ describe('what each connector reads', () => {
     expect(() => d({ repo: 'just-a-name' })).toThrow(/owner\/name/);
   });
 
+  /*
+   * The database connector is the only one pointed at a system Svarg did
+   * not build, with credentials that could change it. So what it will and
+   * will not send is tested directly, rather than trusted to the form.
+   */
+  it('Database: reads, and cannot be talked into anything else', async () => {
+    const db = await import(T + 'connectors/database.js');
+    expect(db.statement({ table: 'appointments' }, 10)).toBe('select * from "appointments" limit 10');
+    expect(db.statement({ engine: 'MySQL', table: 'clinic.visits' }, 5)).toBe('select * from `clinic`.`visits` limit 5');
+    expect(db.statement({ query: 'select a from t' }, 7)).toBe('select * from (select a from t) as svarg_source limit 7');
+    expect(db.statement({ query: 'with x as (select 1) select * from x' }, 3)).toMatch(/^select \* from \(with x/);
+
+    for (const bad of [
+      'delete from clients',
+      'update clients set fee = 0',
+      'drop table clients',
+      'truncate clients',
+      'insert into clients values (1)',
+      'grant all on clients to public',
+      'select 1; drop table clients',
+      'select * from t -- and something else',
+      'select * from t /* hidden */',
+      'select sleep(30)',
+      "select pg_read_file('/etc/passwd')",
+      '',
+    ]) {
+      expect(() => db.statement({ query: bad }, 10)).toThrow();
+    }
+    // A table name is one identifier, never a place to smuggle a statement.
+    expect(() => db.statement({ table: 'clients; drop table x' }, 10)).toThrow(/not a table name/);
+    expect(() => db.statement({}, 10)).toThrow(/Name the table/);
+    // The row cap is the caller's, and is applied whatever it asks for.
+    expect(db.statement({ table: 't' }, 0)).toMatch(/limit 50000$/);
+    expect(db.statement({ table: 't' }, 9e9)).toMatch(/limit 1000000$/);
+
+    // Whatever the driver hands back has to survive being a row.
+    expect(db.plain(new Date('2026-03-01T00:00:00Z'))).toBe('2026-03-01T00:00:00.000Z');
+    expect(db.plain(null)).toBe('');
+    expect(db.plain(10n)).toBe('10');
+    expect(db.plain({ a: 1 })).toBe('{"a":1}');
+    // The password never reaches anything a person or a log will read.
+    expect(db.describe({ engine: 'MySQL', host: 'h', database: 'd', user: 'u', password: 'hunter2', table: 't' })).not.toMatch(/hunter2/);
+  });
+
   it('every connector declares the same frame', async () => {
     const { KINDS, catalog } = await import(T + 'connectorService.js');
     for (const k of Object.values(KINDS)) {
@@ -91,9 +135,16 @@ describe('what each connector reads', () => {
       } else {
         expect(k.fields.some(f => f.secret)).toBe(true);
       }
-      expect(k.provides.length).toBeGreaterThan(3);
+      if (k.columnsAreTheirs) {
+        // A database reads the customer's own tables, so what it brings
+        // back cannot be named before it is connected. The module says so
+        // rather than inventing four column names to satisfy this.
+        expect(k.provides).toEqual([]);
+      } else {
+        expect(k.provides.length).toBeGreaterThan(3);
+      }
     }
-    expect(catalog().map(c => c.kind).sort()).toEqual(['confluence', 'github', 'jira', 'svarg', 'whatsapp-business']);
+    expect(catalog().map(c => c.kind).sort()).toEqual(['confluence', 'database', 'github', 'jira', 'svarg', 'whatsapp-business']);
     // The catalog never carries a function or a secret.
     expect(JSON.stringify(catalog())).not.toMatch(/function|apiToken":"[^"]+"/);
   });

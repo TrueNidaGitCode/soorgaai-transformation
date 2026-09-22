@@ -188,7 +188,7 @@ export function buildManifest({ appName = '', copy = {} } = {}) {
  * now catches the general case; this set is the specific answer for the one
  * connector that has a statically imported surface.
  */
-const ALWAYS_SHIPPED = new Set(['services/connectors/whatsapp.js']);
+const ALWAYS_SHIPPED = new Set(['services/connectors/whatsapp.js', 'services/connectors/database.js']);
 
 /**
  * Asked for by name, or not shipped at all.
@@ -238,6 +238,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/connectors/github.js':    { template: 'services/connectors/github.js' },
     'services/connectors/whatsapp.js':  { template: 'services/connectors/whatsapp.js' },
     'services/connectors/svarg.js':     { template: 'services/connectors/svarg.js' },
+    'services/connectors/database.js':  { template: 'services/connectors/database.js' },
     'controllers/whatsappController.js': { template: 'controllers/whatsappController.js' },
     'routes/whatsappRoutes.js':         { template: 'routes/whatsappRoutes.js' },
     'controllers/connectorController.js': { template: 'controllers/connectorController.js' },

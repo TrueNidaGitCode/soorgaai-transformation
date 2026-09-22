@@ -353,7 +353,7 @@
           <p class="dt__topline"><a href="#" class="dt__back" id="dt-back">&larr; Back to the chat</a><button type="button" class="dt__lock" id="dt-lock" hidden>Lock the Data page</button></p>
           <p class="dt__eyebrow">Data sources</p>
           <h1 class="dt__title">Connect your <em>data sources</em></h1>
-          <p class="dt__sub">Bring the places your records live together. The application reads them, so its answers are about your own records. Files are read here in your browser; rows and credentials stay in this application — nothing goes to Svarg.</p>
+          <p class="dt__sub">Bring the places your records live together, so the application answers about your own work rather than about the sample it shipped with.</p>
         </div>
         <!-- The sources, as two lit tiles and a spark between them. -->
         <div class="dt__art" aria-hidden="true">
@@ -361,6 +361,15 @@
           <span class="dt__spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg></span>
           <span class="dt__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"/><path d="M9 10a1 1 0 0 1 1-1h.5l1 2-.8.8a5 5 0 0 0 2.5 2.5l.8-.8 2 1v.5a1 1 0 0 1-1 1A6 6 0 0 1 9 10z"/></svg></span>
         </div>
+        <!-- Said once, at the top, rather than under every card: it is the
+             first question anybody asks about handing over their records. -->
+        <aside class="dt__safe">
+          <span class="dt__safe-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.3-2.9 8.2-7 9.5-4.1-1.3-7-5.2-7-9.5V6z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/></svg></span>
+          <div>
+            <h2 class="dt__safe-title">Your data is secure</h2>
+            <p class="dt__safe-line">Rows stay in this application&rsquo;s own database and never reach Svarg. Credentials are encrypted here, and forgotten when a source is removed.</p>
+          </div>
+        </aside>
       </div>
     </header>
 
@@ -369,9 +378,6 @@
            application's shell once it knows what the application holds. -->
       <nav class="dt__side" id="dt-side" aria-label="Your data"></nav>
       <div class="dt__body">
-      <!-- Every dataset the application holds, reached by a link from the
-           connections page rather than by a permanent column of them. -->
-      <div id="dt-records" class="dt-records" hidden></div>
       <div id="dt-connections">
     <!-- Reached only when the application refuses the reader's own session.
          Almost nobody sees it: an owner who signed in normally goes straight
@@ -399,13 +405,33 @@
            academy; Jira and Confluence for a software team. Whatever a
            card does -- the upload, its progress, the matching, the
            connection form, and what it holds afterwards -- happens inside
-           the card. What the datasets hold is one link below. -->
-      <div class="dt-cards" id="dt-sources"></div>
-      <p class="dt-note" id="dt-note" hidden></p>
-      <!-- The rarer errand, and so a link rather than a column of datasets
-           down the side of a page about connecting them. -->
-      <p class="dt__records-link"><a href="#data" id="dt-records-link">See everything this application holds <span aria-hidden="true">&rarr;</span></a></p>
-      <p class="dt__foot">Rows stay in this application's own database, and every row says where it came from. A source's credentials are kept encrypted here and forgotten when it is removed; its rows stay.</p>
+           the card. -->
+      <div class="dt-choose">
+        <div class="dt-choose__main">
+          <h2 class="dt-choose__head">Choose how you want to connect</h2>
+          <div class="dt-cards" id="dt-sources"></div>
+          <p class="dt-note" id="dt-note" hidden></p>
+        </div>
+        <!-- Numbered because it really is a sequence: nothing is matched
+             until the structure has been read, and nothing is watched
+             until it has been matched. -->
+        <aside class="dt-next">
+          <h2 class="dt-next__head">What happens next</h2>
+          <ol class="dt-next__list">
+            <li><span class="dt-next__n">1</span><div><b>We read the structure</b><span>Which columns are there, and how they relate.</span></div></li>
+            <li><span class="dt-next__n">2</span><div><b>We match it to your work</b><span>Each sheet or table becomes one of the datasets this application already expects.</span></div></li>
+            <li><span class="dt-next__n">3</span><div><b>The watchers start looking</b><span>From then on they read your own records, not the sample.</span></div></li>
+          </ol>
+        </aside>
+      </div>
+
+      <!-- Folded shut: the answer to "what is actually in here?" is worth
+           having, and is not worth a column down the side of a page about
+           connecting things. -->
+      <details class="dt-holds" id="dt-holds">
+        <summary class="dt-holds__summary"><span>What it holds</span><span class="dt-holds__count" id="dt-holds-count"></span></summary>
+        <div class="dt-holds__body" id="dt-records"></div>
+      </details>
     </div>
       </div>
       <!-- A tab's data: the dataset the area stands for, as a table. Shown
@@ -844,13 +870,10 @@
         if (!e.target.closest('#ch-data-link')) return;
         showConnections();
       });
-      var recordsLink = document.getElementById('dt-records-link');
-      if (recordsLink) recordsLink.addEventListener('click', function (e) { e.preventDefault(); showRecords(); });
-
       if (records) records.addEventListener('click', function (e) {
         var b = e.target.closest('[data-tab]'); if (!b) return;
         var ds = datasets.find(function (d) { return d.name === b.dataset.tab; });
-        if (ds) { records.hidden = true; openView(ds); }
+        if (ds) openView(ds);
       });
 
       if (dside) dside.addEventListener('click', function (e) {
@@ -914,6 +937,8 @@
       /** The records index: every dataset, what it holds, and a way in. */
       function drawRecords() {
         if (!records) return;
+        var count = document.getElementById('dt-holds-count');
+        if (count) count.textContent = datasets.length ? datasets.length + (datasets.length === 1 ? ' dataset' : ' datasets') : '';
         if (!datasets.length) {
           records.innerHTML = '<p class="dt-records__empty">This application holds no datasets yet.</p>';
           return;
@@ -936,20 +961,10 @@
       function showConnections() {
         activeTab = ''; current = null;
         drawTabs();
-        if (connections) connections.hidden = false;
-        if (records) records.hidden = true;
-        view.hidden = true;
-      }
-
-      /** The list of every dataset, one level in from Connections. */
-      function showRecords() {
-        activeTab = ''; current = null;
         drawRecords();
-        if (connections) connections.hidden = true;
-        if (records) records.hidden = false;
+        if (connections) connections.hidden = false;
         view.hidden = true;
       }
-      window.svargShowRecords = showRecords;
 
       // Asked when the application opens (show('app')), not at page load,
       // because that is when a session exists.
@@ -963,6 +978,7 @@
             var label = labelsFor(d.areas);
             datasets = d.areas.map(function (ds) { ds.label = label[ds.name]; return ds; });
             drawTabs();
+            drawRecords();
             if (current) { var again = datasets.find(function (x) { return x.name === current.name; }); if (again) { current = again; drawSwitch(); } }
           })
           .catch(function () {});

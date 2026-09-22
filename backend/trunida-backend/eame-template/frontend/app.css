@@ -902,13 +902,19 @@ body {
 .dt__tile svg { width: 26px; height: 26px; }
 .dt__spark { position: relative; width: 22px; height: 22px; color: var(--ch-accent-light); filter: drop-shadow(0 0 8px color-mix(in srgb, var(--ch-accent) 70%, transparent)); }
 .dt__spark svg { width: 100%; height: 100%; }
-@media (max-width: 800px) { .dt__art { display: none; } }
+@media (max-width: 1180px) { .dt__art { display: none; } }
+@media (max-width: 900px) {
+  .dt__headrow { flex-wrap: wrap; }
+  .dt__safe { max-width: none; padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--ch-line); }
+}
 
-.dt-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; align-items: start; }
-.dt-card { position: relative; display: flex; flex-direction: column; gap: 16px; padding: 22px; border: 1px solid var(--ch-line); border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--ch-panel) 94%, var(--ch-accent)), var(--ch-panel) 60%); box-shadow: 0 24px 60px -40px rgba(0,0,0,0.7); }
+.dt-cards { display: grid; gap: 14px; align-items: start; }
+.dt-card { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 18px 20px; border: 1px solid var(--ch-line); border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--ch-panel) 94%, var(--ch-accent)), var(--ch-panel) 60%); box-shadow: 0 24px 60px -40px rgba(0,0,0,0.7); }
 .dt-card--on { border-color: color-mix(in srgb, var(--ch-accent) 28%, transparent); }
 .dt-card--open { border-color: color-mix(in srgb, var(--ch-accent) 45%, transparent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ch-accent) 8%, transparent), 0 24px 60px -40px rgba(0,0,0,0.7); }
-.dt-card__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+.dt-card__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.dt-card__text { min-width: 0; }
+.dt-card__act { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
 .dt-card__icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 14px; color: var(--ch-on-accent); background: linear-gradient(135deg, var(--ch-accent-light), var(--ch-accent)); box-shadow: 0 10px 26px -10px color-mix(in srgb, var(--ch-accent) 70%, transparent), inset 0 1px 0 rgba(255,255,255,0.35); }
 .dt-card__icon svg { width: 24px; height: 24px; }
 .dt-card__title { margin: 0 0 4px; font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
@@ -918,17 +924,15 @@ body {
 .dt-card__dot--on { color: var(--ch-accent); }
 .dt-card__dot--on::before { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ch-accent) 20%, transparent); }
 .dt-card__body { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.dt-card__body[hidden] { display: none; }
+.dt-card__text .dt-card__label { margin-top: 8px; }
 .dt-card__label { margin: 0; font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ch-faint); }
-.dt-card__can { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; font-size: 13px; color: var(--ch-dim); }
-.dt-card__can li { display: flex; gap: 10px; align-items: center; }
-.dt-card__can li::before { content: ""; width: 17px; height: 17px; flex-shrink: 0; border-radius: 50%; background: color-mix(in srgb, var(--ch-accent) 16%, transparent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235CC5A7' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/10px no-repeat; }
-.dt-card__foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
-.dt-card__go { display: inline-flex; justify-content: center; align-items: center; gap: 8px; width: 100%; padding: 12px 18px; border: 0; border-radius: 12px; background: var(--ch-accent); color: var(--ch-on-accent); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; transition: filter .15s ease, transform .15s ease; }
+.dt-card__go { display: inline-flex; justify-content: center; align-items: center; gap: 8px; white-space: nowrap; padding: 11px 20px; border: 0; border-radius: 12px; background: var(--ch-accent); color: var(--ch-on-accent); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; transition: filter .15s ease, transform .15s ease; }
 .dt-card__go:hover { filter: brightness(1.06); transform: translateY(-1px); }
 .dt-card__go:disabled { opacity: 0.6; cursor: wait; transform: none; }
 .dt-card__go--quiet { background: transparent; color: var(--ch-text); border: 1px solid var(--ch-line-hi); }
 .dt-card__go input { display: none; }
-.dt-card__alt { margin: 0; text-align: center; font-size: 12.5px; color: var(--ch-faint); }
+.dt-card__alt { margin: 0; text-align: center; font-size: 12px; color: var(--ch-faint); }
 .dt-card__alt button, .dt-card__alt label { border: 0; background: transparent; color: var(--ch-dim); font: inherit; font-size: inherit; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; padding: 0; }
 .dt-card__alt button:hover, .dt-card__alt label:hover { color: var(--ch-text); }
 .dt-card__alt input { display: none; }
@@ -966,7 +970,6 @@ body {
 .dt-card .dt-conn__kind { display: none; }
 .dt-card .dt-conn__meta { white-space: normal; }
 .dt-card .dt-panel__head { margin-bottom: 8px; font-size: 13px; }
-.dt__foot { margin: 22px 0 0; max-width: 70ch; font-size: 12.5px; line-height: 1.55; color: var(--ch-faint); }
 .dt-btn--file { cursor: pointer; }
 .dt-btn--file input { display: none; }
 .dt-panel__head { margin: 0 0 12px; font-size: 14px; line-height: 1.5; color: var(--ch-text); }
@@ -1909,9 +1912,54 @@ body {
    people open Data to connect a source, not to read a table -- so it is a
    link now, and the list lives one click in. */
 
-.dt__records-link { margin: 22px 0 0; font-size: 14px; }
-.dt__records-link a { color: var(--ch-accent); text-decoration: none; }
-.dt__records-link a:hover { text-decoration: underline; }
+
+/* The connect card and the rail beside it: the choice on the left, what
+   happens after it on the right, dropping under at narrow widths. */
+.dt-choose { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 0; border: 1px solid var(--ch-line); border-radius: 22px; background: color-mix(in srgb, var(--ch-panel) 55%, transparent); overflow: hidden; }
+.dt-choose__main { padding: 22px; min-width: 0; }
+.dt-choose__head { margin: 0 0 16px; font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+.dt-next { padding: 22px; border-left: 1px solid var(--ch-line); background: color-mix(in srgb, var(--ch-accent) 4%, transparent); }
+.dt-next__head { margin: 0 0 16px; font-size: 14.5px; font-weight: 800; }
+.dt-next__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; counter-reset: none; }
+.dt-next__list li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; align-items: start; }
+.dt-next__n { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11.5px; font-weight: 800; color: var(--ch-accent); background: color-mix(in srgb, var(--ch-accent) 16%, transparent); font-variant-numeric: tabular-nums; }
+.dt-next__list b { display: block; font-size: 13.5px; font-weight: 700; }
+.dt-next__list span:not(.dt-next__n) { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.5; color: var(--ch-dim); }
+
+/* Said once in the header, beside the title. */
+.dt__safe { flex: 0 0 auto; max-width: 280px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; align-items: start; padding-left: 24px; border-left: 1px solid var(--ch-line); }
+.dt__safe-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--ch-accent); background: color-mix(in srgb, var(--ch-accent) 13%, transparent); }
+.dt__safe-icon svg { width: 17px; height: 17px; }
+.dt__safe-title { margin: 0 0 4px; font-size: 14px; font-weight: 800; }
+.dt__safe-line { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ch-dim); }
+
+/* Shut until somebody wants it. */
+.dt-holds { margin-top: 20px; border: 1px solid var(--ch-line); border-radius: 16px; background: color-mix(in srgb, var(--ch-panel) 45%, transparent); }
+.dt-holds__summary { display: flex; align-items: center; gap: 10px; padding: 14px 18px; font-size: 14px; font-weight: 700; color: var(--ch-dim); cursor: pointer; list-style: none; border-radius: 16px; }
+.dt-holds__summary::-webkit-details-marker { display: none; }
+.dt-holds__summary::before { content: "\203A"; display: inline-block; font-size: 19px; line-height: 1; color: var(--ch-faint); transition: transform .15s ease; }
+.dt-holds[open] > .dt-holds__summary::before { transform: rotate(90deg); }
+.dt-holds__summary:hover { color: var(--ch-text); }
+.dt-holds__summary:focus-visible { outline: 2px solid var(--ch-accent); outline-offset: 2px; }
+.dt-holds__count { margin-left: auto; font-size: 12.5px; font-weight: 600; color: var(--ch-faint); font-variant-numeric: tabular-nums; }
+.dt-holds__body { padding: 4px 18px 18px; }
+
+/* The rail is the second thing to read, so below the choice rather than
+   beside it once there is no room for both. */
+@media (max-width: 900px) {
+  .dt-choose { grid-template-columns: minmax(0, 1fr); }
+  .dt-next { border-left: 0; border-top: 1px solid var(--ch-line); }
+}
+/* A card is a row until the row will not hold: then icon and title, with
+   the button under them at full width. */
+@media (max-width: 560px) {
+  .dt-card__head { grid-template-columns: auto minmax(0, 1fr); }
+  .dt-card__act { grid-column: 1 / -1; }
+  .dt-card__go { width: 100%; }
+}
+
+.dt-form__brings { margin: 0 0 10px; font-size: 12.5px; line-height: 1.5; color: var(--ch-faint); }
+.dt-form__brings b { color: var(--ch-dim); font-weight: 700; }
 
 .dt-records { max-width: 720px; }
 .dt-records__lede { margin: 0 0 18px; font-size: 14px; line-height: 1.55; color: var(--ch-dim); }

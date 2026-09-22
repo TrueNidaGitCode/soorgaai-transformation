@@ -26,7 +26,7 @@ import { KB_ENTERPRISE_ROOT } from './strategyCanvasService.js';
 import { readDatasets } from './eameSpec.js';
 
 /** Kinds the Data page knows how to draw. Anything else in a block is dropped. */
-export const SOURCE_KINDS = ['folder', 'whatsapp', 'form', 'jira', 'confluence', 'github', 'file'];
+export const SOURCE_KINDS = ['folder', 'whatsapp', 'form', 'jira', 'confluence', 'github', 'file', 'database'];
 
 /**
  * The connector modules, by the source kind that needs them. A kind with no
@@ -44,6 +44,11 @@ export const CONNECTOR_MODULES = {
   // here so it can be asked for; not in ALWAYS_SHIPPED, so no customer's
   // application is offered a source it will only ever be refused.
   svarg:      'services/connectors/svarg.js',
+  // Every business keeps its records somewhere, and for most of them that
+  // somewhere is a database another vendor's software writes to. So this
+  // kind is not chosen per industry: it is in ALWAYS_SHIPPED, and the card
+  // is added to every application's list by sourcesForBlueprint.
+  database:   'services/connectors/database.js',
 };
 
 function normalise(list) {
@@ -103,6 +108,12 @@ export function sourcesFromDatasets(datasets = []) {
   return found;
 }
 
+/** Offered by every application, whatever its industry says. */
+const DATABASE_SOURCE = {
+  kind: 'database', label: 'Your database', providers: ['connect'], holds: [],
+  note: 'Read straight from the database your software already writes to.',
+};
+
 const DEFAULT_SOURCES = [
   { kind: 'folder', label: 'Your folder of spreadsheets', providers: ['upload'], holds: [], note: 'Upload the folder your records are kept in; each sheet is matched to what the application expects.' },
 ];
@@ -118,7 +129,12 @@ export function sourcesForBlueprint(bp) {
   const industry = bp?.industryFit?.industry || '';
   const fromIndustry = industrySources(industry);
   const list = fromIndustry.length ? [...fromIndustry] : sourcesFromDatasets(readDatasets(bp));
-  return list.length ? list : DEFAULT_SOURCES.map(s => ({ ...s }));
+  const out = list.length ? list : DEFAULT_SOURCES.map(s => ({ ...s }));
+  // The system of record, last: the industry's own sources are what a
+  // customer recognises first, and the database is the answer for the one
+  // who says "it is all in our practice software".
+  if (!out.some(s => s.kind === 'database')) out.push({ ...DATABASE_SOURCE });
+  return out;
 }
 
 /** Which connector modules an application with these sources ships. */

@@ -77,6 +77,7 @@ export const FIXED_PATHS = [
   'services/connectors/github.js',
   'services/connectors/whatsapp.js',
   'services/connectors/svarg.js',
+  'services/connectors/database.js',
   'controllers/whatsappController.js',
   'routes/whatsappRoutes.js',
   'controllers/connectorController.js',

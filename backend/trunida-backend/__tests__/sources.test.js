@@ -23,15 +23,28 @@ describe('where an industry keeps its data', () => {
   it('falls back to what the datasets name, and to a folder when nothing is named', async () => {
     const { sourcesForBlueprint, sourcesFromDatasets } = await import('../services/sourceCatalogService.js');
     expect(sourcesFromDatasets([{ typicalSource: 'Excel sheet in Google Drive' }, { typicalSource: 'WhatsApp groups' }, { typicalSource: 'Jira Service Management' }]).map(s => s.kind)).toEqual(['folder', 'whatsapp', 'jira']);
-    expect(sourcesForBlueprint({ industryFit: { industry: 'Automotive' }, ...DR([{ name: 'Defects', typicalSource: 'Jira' }, { name: 'Specs', typicalSource: 'Confluence pages' }]) }).map(s => s.kind)).toEqual(['jira', 'confluence']);
-    expect(sourcesForBlueprint({}).map(s => s.kind)).toEqual(['folder']);
+    expect(sourcesForBlueprint({ industryFit: { industry: 'Automotive' }, ...DR([{ name: 'Defects', typicalSource: 'Jira' }, { name: 'Specs', typicalSource: 'Confluence pages' }]) }).map(s => s.kind)).toEqual(['jira', 'confluence', 'database']);
+    expect(sourcesForBlueprint({}).map(s => s.kind)).toEqual(['folder', 'database']);
+  });
+
+  it('offers the database to every application, last, whatever the industry says', async () => {
+    const { sourcesForBlueprint } = await import('../services/sourceCatalogService.js');
+    // Not an industry judgement: wherever a business keeps its records, the
+    // answer is often a database another vendor's software writes to. It
+    // comes last because the industry's own sources are what a customer
+    // recognises first.
+    for (const bp of [{}, { industryFit: { industry: 'Sports Academies' } }, { industryFit: { industry: 'Automotive' }, ...DR([{ name: 'Defects', typicalSource: 'Jira' }]) }]) {
+      const kinds = sourcesForBlueprint(bp).map(s => s.kind);
+      expect(kinds.filter(k => k === 'database').length).toBe(1);
+      expect(kinds[kinds.length - 1]).toBe('database');
+    }
   });
 
   it('the industry block is the list: a dataset naming GitHub does not add a card the industry does not use', async () => {
     const { sourcesForBlueprint, connectorKindsFor, sourcesFromDatasets } = await import('../services/sourceCatalogService.js');
     const s = sourcesForBlueprint({ industryFit: { industry: 'Sports Academies' }, ...DR([{ name: 'Attendance', typicalSource: 'WhatsApp' }, { name: 'Scripts', typicalSource: 'Script repository on GitHub' }]) });
-    expect(s.map(x => x.kind)).toEqual(['folder', 'whatsapp']);
-    expect(connectorKindsFor(s)).toEqual(['whatsapp']);
+    expect(s.map(x => x.kind)).toEqual(['folder', 'whatsapp', 'database']);
+    expect(connectorKindsFor(s)).toEqual(['whatsapp', 'database']);
     // And "repository" alone never means GitHub.
     expect(sourcesFromDatasets([{ typicalSource: 'a document repository' }]).map(x => x.kind)).toEqual([]);
   });
@@ -39,7 +52,7 @@ describe('where an industry keeps its data', () => {
   it('ships only the connector modules the sources call for', async () => {
     const { buildRuntime } = await import('../services/eameProjectBuilder.js');
     const paths = (o) => buildRuntime({ appName: 'x', ...o }).map(f => f.path).filter(p => p.startsWith('services/connectors/'));
-    expect(paths({}).length).toBe(4);
+    expect(paths({}).length).toBe(5);
     /*
      * WhatsApp is always among them, and that is not the filter leaking.
      *
@@ -49,8 +62,10 @@ describe('where an industry keeps its data', () => {
      * optional only for the connectors connectorService discovers at boot.
      */
     expect(paths({ connectors: ['jira'] }).sort())
-      .toEqual(['services/connectors/jira.js', 'services/connectors/whatsapp.js']);
-    expect(paths({ connectors: [] })).toEqual(['services/connectors/whatsapp.js']);
+      .toEqual(['services/connectors/database.js', 'services/connectors/jira.js', 'services/connectors/whatsapp.js']);
+    // The database ships with every application too, for the same reason
+    // the card is on every Data page: it is offered to everybody.
+    expect(paths({ connectors: [] }).sort()).toEqual(['services/connectors/database.js', 'services/connectors/whatsapp.js']);
     // Everything else still ships.
     expect(buildRuntime({ appName: 'x', connectors: [] }).map(f => f.path)).toContain('services/connectorService.js');
   });

@@ -61,7 +61,7 @@ describe('the webhook', () => {
     const { sourcesForBlueprint, connectorKindsFor } = await import('../services/sourceCatalogService.js');
     const { buildRuntime } = await import('../services/eameProjectBuilder.js');
     const sports = sourcesForBlueprint({ industryFit: { industry: 'Sports Academies' } });
-    expect(connectorKindsFor(sports)).toEqual(['whatsapp']);
+    expect(connectorKindsFor(sports)).toEqual(['whatsapp', 'database']);
     const paths = buildRuntime({ appName: 'x', connectors: connectorKindsFor(sports) }).map(f => f.path);
     expect(paths).toContain('services/connectors/whatsapp.js');
     expect(paths).toContain('routes/whatsappRoutes.js');

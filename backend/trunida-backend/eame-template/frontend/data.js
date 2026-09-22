@@ -237,6 +237,7 @@
     live: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>',
     upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>',
     tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>',
+    database: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="3"/><path d="M4.5 5.5v13c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-13"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg>',
   };
 
   var DEFAULT_FOLDER = { kind: 'folder', label: 'Documents', providers: ['upload'], note: 'Upload the folder your records are kept in; each sheet is matched to what the application expects.' };
@@ -263,14 +264,13 @@
     if (!datasets.length) say(els.note, 'This application lists no datasets to bring records onto. It was built without sample data, so its seed script says what file it expects.', true);
   }
 
-  /** Everything one card shows, in one place: title, status, the list, the button, and what it holds. */
+  /** Everything one card shows: title, the line under it, status, the way in, and what it holds once connected. */
   function describe(s) {
-    var d = { kind: s.kind, icon: ICON.live, title: s.label, note: s.note || '', on: false, status: 'Not connected', canLabel: 'You can upload', can: [], go: '', goAction: '', alt: '', held: '' };
+    var d = { kind: s.kind, icon: ICON.live, title: s.label, note: s.note || '', on: false, status: 'Not connected', go: '', goAction: '', alt: '', held: '' };
     if (s.kind === 'folder') {
       var f = importsOf('folder');
       d.icon = ICON.folder; d.title = 'Documents';
-      d.note = 'Upload the folder your records are kept in — every spreadsheet in it is read here and matched to what the application expects.';
-      d.can = ['A whole folder at once', 'Excel workbooks, every tab', 'CSV and text exports', 'Form responses sheets'];
+      d.note = 'Upload the folder your records are kept in. Every spreadsheet in it is read here, in your browser.';
       if (f.length) {
         var files = {}; f.forEach(function (e) { (e.origin || '').split(', ').forEach(function (n) { if (n) files[n] = 1; }); });
         d.on = true; d.status = plural(Object.keys(files).length, 'sheet') + ' read · ' + ago(f[0].at);
@@ -283,9 +283,8 @@
       var mine = connectors.filter(function (c) { return c.kind === 'whatsapp-business'; });
       var w = importsOf('whatsapp');
       var providers = s.providers || ['export'];
-      d.icon = ICON.whatsapp; d.title = biz ? 'WhatsApp Business' : 'WhatsApp'; d.canLabel = 'You can get';
-      d.note = biz ? 'Connect your WhatsApp Business account, so replies and messages arrive here as they are sent.' : 'Export a chat from WhatsApp and import it here; the replies are read as attendance or as messages.';
-      d.can = biz ? ['Incoming and outgoing messages', 'Attendance replies, per person, per day', 'Contact names and numbers', 'A group, through its exported chat'] : ['Attendance replies, per person, per day', 'Every message in a chat', 'Who sent what, and when'];
+      d.icon = ICON.whatsapp; d.title = biz ? 'WhatsApp Business' : 'WhatsApp';
+      d.note = biz ? 'Connect your WhatsApp Business account. Replies arrive here as they are sent.' : 'Export a chat from WhatsApp and import it here.';
       if (mine.length) { d.on = true; d.status = 'Connected' + (mine[0].lastSyncAt ? ' · last message ' + ago(mine[0].lastSyncAt) : ' · waiting for the first message'); d.held = '<ul class="dt-src__list">' + mine.map(renderConnector).join('') + '</ul>'; }
       else if (w.length) { d.on = true; d.status = plural(w[0].rows, 'row') + ' from an export · ' + ago(w[0].at); }
       if (biz && providers.indexOf('business-account') !== -1) {
@@ -294,12 +293,18 @@
       } else {
         d.go = w.length ? 'Import another export' : 'Import an exported chat'; d.goAction = 'whatsapp';
       }
+    } else if (s.kind === 'database') {
+      var db = kinds.find(function (x) { return x.kind === 'database'; });
+      var dbc = connectors.filter(function (c) { return c.kind === 'database'; });
+      d.icon = ICON.database; d.title = 'Connect your database';
+      d.note = 'Read straight from the database your own software writes to. PostgreSQL and MySQL, read-only.';
+      if (!db) d.status = 'Not available on this application';
+      else if (dbc.length) { d.on = true; d.status = plural(dbc.length, 'connection') + (dbc[0].lastSyncAt ? ' · last synced ' + ago(dbc[0].lastSyncAt) : ' · not synced yet'); d.held = '<ul class="dt-src__list">' + dbc.map(renderConnector).join('') + '</ul>'; }
+      if (db) { d.go = dbc.length ? 'Connect another' : 'Connect'; d.goAction = 'database'; }
     } else {
       // A live source: connected once per dataset it feeds.
       var k = kinds.find(function (x) { return x.kind === s.kind; });
       var conns = connectors.filter(function (c) { return c.kind === s.kind; });
-      d.canLabel = 'You can get';
-      d.can = (k && k.provides && k.provides.length) ? k.provides.slice(0, 4) : ['Its records, pulled on demand or on a schedule', 'Every row marked with where it came from'];
       if (k) d.note = k.help || d.note;
       if (!k) d.status = 'Not available on this application';
       else if (conns.length) { d.on = true; d.status = plural(conns.length, 'connection') + (conns[0].lastSyncAt ? ' · last synced ' + ago(conns[0].lastSyncAt) : ' · not synced yet'); d.held = '<ul class="dt-src__list">' + conns.map(renderConnector).join('') + '</ul>'; }
@@ -322,23 +327,30 @@
       }).join('') + '</ul></div>';
   }
 
+  /**
+   * A card at rest is one row: what the source is, one line about it, and
+   * the way in. What it can bring is the answer to a question nobody has
+   * asked yet -- it waits inside the flow the button opens, along with the
+   * fields and the matching. Everything the card holds once it is
+   * connected still shows, because by then it is about the reader's own
+   * records rather than about a decision they have not made.
+   */
   function renderCard(s) {
     var d = describe(s);
     var isOpen = !!open[s.kind];
-    var body = isOpen ? open[s.kind].html
-      : d.held ? d.held
-      : '<p class="dt-card__label">' + esc(d.canLabel) + '</p><ul class="dt-card__can">' + d.can.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>';
-    var foot = isOpen ? '' : '<div class="dt-card__foot">'
-      + (d.goAction ? '<button type="button" class="dt-card__go' + (d.on ? ' dt-card__go--quiet' : '') + '" data-open="' + esc(d.goAction) + '">' + esc(d.go) + ' <span aria-hidden="true">&rarr;</span></button>' : '')
-      + (d.alt ? '<p class="dt-card__alt">' + d.alt + '</p>' : '')
-      + '</div>';
+    var body = isOpen ? open[s.kind].html : d.held;
+    var go = !isOpen && d.goAction
+      ? '<button type="button" class="dt-card__go' + (d.on ? ' dt-card__go--quiet' : '') + '" data-open="' + esc(d.goAction) + '">' + esc(d.go) + ' <span aria-hidden="true">&rarr;</span></button>'
+      : '';
+    var alt = !isOpen && d.alt ? '<p class="dt-card__alt">' + d.alt + '</p>' : '';
     return '<article class="dt-card' + (d.on ? ' dt-card--on' : '') + (isOpen ? ' dt-card--open' : '') + '" data-card="' + esc(s.kind) + '">'
       + '<div class="dt-card__head"><span class="dt-card__icon" aria-hidden="true">' + d.icon + '</span>'
-      + '<div><h3 class="dt-card__title">' + esc(d.title) + '</h3><p class="dt-card__note">' + esc(d.note) + '</p></div>'
-      + '<span class="dt-card__dot' + (d.on ? ' dt-card__dot--on' : '') + '">' + esc(d.on ? 'Connected' : 'Not connected') + '</span></div>'
+      + '<div class="dt-card__text"><h3 class="dt-card__title">' + esc(d.title) + '</h3><p class="dt-card__note">' + esc(d.note) + '</p>'
       + (d.on && !isOpen ? '<p class="dt-card__label">' + esc(d.status) + '</p>' : '')
-      + '<div class="dt-card__body" data-body>' + body + '</div>'
-      + foot + '</article>';
+      + (!d.goAction ? '<p class="dt-card__label">' + esc(d.status) + '</p>' : '') + '</div>'
+      + '<div class="dt-card__act">' + go + alt + '</div></div>'
+      + (body ? '<div class="dt-card__body" data-body>' + body + '</div>' : '<div class="dt-card__body" data-body hidden></div>')
+      + '</article>';
   }
 
   function renderConnector(c) {
@@ -371,9 +383,9 @@
     if (!card) { renderSources(); card = page.querySelector('[data-card="' + kind + '"]'); }
     if (!card) { delete open[kind]; return; }
     card.classList.add('dt-card--open');
-    var foot = card.querySelector('.dt-card__foot'); if (foot) foot.remove();
-    var status = card.querySelector(':scope > .dt-card__label'); if (status) status.remove();
-    bodyOf(kind).innerHTML = html;
+    var act = card.querySelector('.dt-card__act'); if (act) act.innerHTML = '';
+    var status = card.querySelector('.dt-card__label'); if (status) status.remove();
+    var b = bodyOf(kind); b.hidden = false; b.innerHTML = html;
     say(els.note, '');
   }
   function closeFlow(kind) { delete open[kind]; renderSources(); }
@@ -812,8 +824,12 @@
         if (u) u.textContent = st.webhookUrl; if (v) v.textContent = st.verifyToken;
       }).catch(function () {});
     }
+    var brings = (k.provides || []).length
+      ? '<p class="dt-form__brings"><b>It brings</b> ' + esc((k.provides || []).slice(0, 8).join(', ')) + '</p>'
+      : '';
     openFlow(kind, '<p class="dt-panel__head">Connect ' + esc(k.label) + '</p>'
       + '<p class="dt-form__help">' + esc(k.help) + ' The credentials are kept encrypted in this application’s own database and never sent to Svarg.</p>'
+      + brings
       + setupHtml
       + '<div class="dt-form__grid">'
       + '<label class="dt-form__field">Into which dataset<select class="dt-select" name="__dataset">' + datasetOptions(guessDs >= 0 ? guessDs : 0) + '</select></label>'

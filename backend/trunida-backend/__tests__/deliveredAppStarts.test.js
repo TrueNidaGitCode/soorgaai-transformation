@@ -20,6 +20,7 @@
 
 import { describe, it, expect } from 'vitest';
 import path from 'path';
+import { readFileSync } from 'fs';
 import { buildRuntime } from '../services/eameProjectBuilder.js';
 
 /** Every connector set a real application has been built with. */
@@ -137,5 +138,61 @@ describe('a delivered application carries nothing that is Svarg\'s', () => {
       }
     }
     expect(dangling).toEqual([]);
+  });
+});
+
+describe('the boot gate waits long enough for an application that seeds', () => {
+  /*
+   * ── The build this broke ─────────────────────────────────────────────────
+   *
+   * A physiotherapy clinic's build failed three times with "the server did not
+   * start", while the output quoted in that very failure said:
+   *
+   *   [seed] seedDropoutData.js: Seeded 19 unified client care records.
+   *   Verification build listening on port 4548
+   *   [agents] watching from delivery: empty-slot, stopped-coming
+   *
+   * It started, seeded, and began watching. A delivered application runs
+   * seedIfEmpty() BEFORE app.listen on purpose, so a first request never finds
+   * an empty database — and six datasets against a cold Atlas connection took
+   * longer than the gate's hard 45-second ceiling.
+   *
+   * The ceiling also overrode its caller: Math.min(timeoutMs, 45000) meant the
+   * 120 seconds the build asks for could never be granted.
+   *
+   * A verifier that calls a healthy application broken is worse than a slow
+   * one. The failure it invents cannot be told apart from a real one, and it
+   * sends somebody hunting a bug that does not exist.
+   */
+  const verifier = readFileSync(
+    new URL('../services/generatedProjectVerifier.js', import.meta.url), 'utf8');
+
+  it('honours the timeout it is given rather than clamping it down', () => {
+    expect(verifier).toContain('Math.max(timeoutMs, 45000)');
+    expect(verifier).not.toContain('Math.min(timeoutMs, 45000)');
+  });
+
+  it('still fails immediately when the process actually dies', () => {
+    // The clock is the last resort, not the mechanism. A crash is caught by
+    // the exit handler, so a genuinely broken build does not wait two minutes.
+    expect(verifier).toMatch(/child\.on\('exit', \(\) => \{[^}]*resolve\(false\)/);
+  });
+
+  it('answers as soon as the application does', () => {
+    // Nothing waits the full time unnecessarily — the poll resolves on the
+    // first response under 500.
+    expect(verifier).toContain('if (res.status < 500)');
+  });
+
+  it('seeding still happens before the application listens', () => {
+    /*
+     * The ordering this gate has to accommodate, asserted so a later change
+     * that moves listen above seed is a deliberate decision rather than an
+     * accident: a request arriving at an empty database looks like a product
+     * with no data, which is the thing the seed exists to prevent.
+     */
+    const server = readFileSync(
+      new URL('../eame-template/server.js', import.meta.url), 'utf8');
+    expect(server.indexOf('await seedIfEmpty()')).toBeLessThan(server.indexOf('app.listen(PORT'));
   });
 });

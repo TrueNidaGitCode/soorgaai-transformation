@@ -361,7 +361,35 @@ export async function runtimeGates(files, { mongoUri = '', smokePath = '/api', t
     child.stderr.on('data', d => { output += d; });
 
     const started = await new Promise((resolve) => {
-      const deadline = setTimeout(() => resolve(false), Math.min(timeoutMs, 45000));
+      /*
+       * ── Why this is no longer capped at 45 seconds ─────────────────────────
+       *
+       * A delivered application seeds its sample data before it listens —
+       * `await seedIfEmpty()` sits above `app.listen` deliberately, so the
+       * first request never arrives at an empty database. That was free when
+       * an application shipped with one small dataset.
+       *
+       * A physiotherapy clinic's build then failed three times here with "the
+       * server did not start", while its own log said:
+       *
+       *   [seed] seedDropoutData.js: Seeded 19 unified client care records.
+       *   Verification build listening on port 4548
+       *
+       * It started. Six datasets and a hundred rows against a cold Atlas
+       * connection simply took longer than the cap — and the cap took the
+       * smaller of itself and the caller's timeout, so the two minutes a build
+       * asks for could never be granted. It is now the larger of the two.
+       *
+       * A verifier that reports a healthy application as broken is worse than
+       * one that takes another minute to say so, because the failure it
+       * invents is indistinguishable from a real one and sends somebody
+       * looking for a bug that is not there.
+       *
+       * Nothing waits the full time unnecessarily: the poll resolves the
+       * instant the application answers, and a process that dies is caught by
+       * the exit handler below rather than by this clock.
+       */
+      const deadline = setTimeout(() => resolve(false), Math.max(timeoutMs, 45000));
       const poll = setInterval(async () => {
         try {
           const res = await fetch(`http://127.0.0.1:${port}${smokePath}`);

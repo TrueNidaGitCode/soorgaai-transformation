@@ -172,11 +172,40 @@ describe('the agents are wired into the application', () => {
     expect(server).toContain("kind: 'own'");
   });
 
-  it('is owner-only, because an agent sends mail', () => {
+  it('lets anyone signed in read a finding, and only the owner change a watcher', () => {
+    /*
+     * ── Why this rule changed ──────────────────────────────────────────────
+     *
+     * Every route here used to be owner-only, which was right while the
+     * screen was a control panel. It stopped being right when findings became
+     * the product: the people who would actually chase the parent who stopped
+     * coming are the front desk, and they could not see a single finding.
+     *
+     * The line now sits between deciding and reading. A watcher runs
+     * unattended and sends mail in the owner's name, so starting, pausing and
+     * deleting one stays theirs. Reading what it found, and drafting a reply
+     * to it — which sends nothing — does not.
+     */
     const routes = read('../eame-template/routes/agentsRoutes.js');
-    for (const line of routes.split('\n').filter(l => /^router\./.test(l))) {
-      expect(line, line).toContain('ownerOnly');
+    const lines = routes.split('\n').filter(l => /^router\./.test(l));
+    expect(lines.length).toBeGreaterThan(4);
+
+    for (const line of lines) {
+      const readsFindings = /'\/findings/.test(line);
+      if (readsFindings) {
+        expect(line, line).toContain('protect');
+        expect(line, line).not.toContain('ownerOnly');
+      } else {
+        expect(line, line).toContain('ownerOnly');
+      }
     }
+  });
+
+  it('declares /findings/opened before /findings/:id', () => {
+    // Otherwise ":id" matches the literal word "opened" and the telemetry
+    // call becomes a lookup for a finding that cannot exist.
+    const routes = read('../eame-template/routes/agentsRoutes.js');
+    expect(routes.indexOf("'/findings/opened'")).toBeLessThan(routes.indexOf("'/findings/:id'"));
   });
 
   it('is not mistaken for a conversation by the turn log', () => {

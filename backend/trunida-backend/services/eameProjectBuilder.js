@@ -251,10 +251,12 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     // file every application gets must resolve in every application.
     'services/agentService.js':          { template: 'services/agentService.js' },
     'services/agentCatalogue.js':        { template: 'services/agentCatalogue.js' },
+    'services/draftService.js':          { template: 'services/draftService.js' },
     'services/notifyService.js':         { template: 'services/notifyService.js' },
     'controllers/agentsController.js':   { template: 'controllers/agentsController.js' },
     'routes/agentsRoutes.js':            { template: 'routes/agentsRoutes.js' },
     'frontend/agents.js':                { template: 'frontend/agents.js' },
+    'frontend/findings.js':              { template: 'frontend/findings.js' },
     'services/turnLog.js':              { template: 'services/turnLog.js' },
     'services/selfCheck.js':            { template: 'services/selfCheck.js' },
     'services/conformance.js':          { template: 'services/conformance.js' },

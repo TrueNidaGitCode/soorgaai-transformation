@@ -42,9 +42,24 @@ describe('the box asks for what it needs', () => {
   });
 
   it('asks the two questions a real objective answers', () => {
-    // "Describe the outcome you want to achieve" is abstract and produced
-    // abstract answers. What the business does, and what goes wrong.
-    expect(html).toMatch(/what does your business do, and what goes wrong today/i);
+    /*
+     * "Describe the outcome you want to achieve" is abstract and produced
+     * abstract answers. What the business does, and what goes wrong.
+     *
+     * The second half now asks what goes wrong BEFORE ANYONE NOTICES, not
+     * what goes wrong today. That single qualifier is the difference between
+     * collecting a wish list and collecting the one kind of problem this
+     * product can act on — and the answer doubles as the qualification.
+     */
+    expect(html).toMatch(/what does your business do, and what goes wrong before anyone notices/i);
+  });
+
+  it('asks for the problem rather than the project', () => {
+    // "What are you working on?" invites a roadmap. The heading has to ask
+    // for the thing the customer already has and cannot see.
+    const h1 = html.match(/<h1 class="sv-ask">([\s\S]*?)<\/h1>/)[1];
+    expect(h1).toMatch(/too late/i);
+    expect(h1).not.toMatch(/working on/i);
   });
 });
 

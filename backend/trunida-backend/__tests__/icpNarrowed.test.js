@@ -94,17 +94,22 @@ describe('the screen keeps TAM, ICP and persona apart', () => {
      * beachhead inside it, persona is the person in the room — and collapsing
      * them is how a young company sells to everybody and learns from nobody.
      */
-    expect(view).toContain('TAM');
-    expect(view).toContain('the universe');
-    expect(view).toContain('the beachhead we are betting on');
-    expect(view).toContain('the person in the room');
+    /*
+     * Rebuilt around three moves when the hypothesis became "problems found
+     * too late": the problem we claim is true, where it costs money, and how
+     * we get in the room. The old TAM/ICP/Persona ladder answered a question
+     * nobody in a live call was asking first.
+     */
+    expect(view).toContain('what we claim is true');
+    expect(view).toContain('where it is worth money');
+    expect(view).toContain('how we get in the room');
   });
 
   it('says out loud that it is a hypothesis, not a finding', () => {
     // "This is our ICP" ends the enquiry. "This is what we believe" keeps it
     // open long enough to be corrected.
     expect(view).toContain('hypothesis');
-    expect(view).toContain('It is a hypothesis until evidence says otherwise');
+    expect(view).toContain('What we believe, and would test');
     expect((view.match(/We believe/g) || []).length).toBeGreaterThanOrEqual(1);
   });
 
@@ -114,18 +119,25 @@ describe('the screen keeps TAM, ICP and persona apart', () => {
     }
   });
 
-  it('breaks the one sentence into the seven things it claims', () => {
-    for (const a of ['Company size', 'Business model', 'Core activity', 'Team structure',
-      'Workload', 'Workflow', 'Technology']) {
+  it('breaks the claim into things observable in a first conversation', () => {
+    /*
+     * The seven attributes were firmographics — size, model, team structure —
+     * which the page itself now argues against: a size band cannot be
+     * observed in a conversation and a recurring, late-found problem can.
+     */
+    for (const a of ['The problem recurs', 'The early signals already exist',
+      'A person connects the dots by hand', 'The outcome can be measured']) {
       expect(view, a).toContain(a);
     }
   });
 
   it('separates buyer, economic buyer and user', () => {
-    expect(view).toContain('Operations / Administration Head');
+    expect(view).toContain('Operations Head');
     expect(view).toContain('Founder / Business Owner');
-    expect(view).toContain('Admin / Operations Executive');
+    expect(view).toContain('Operations Executive');
     expect(view).toContain('Never the buyer');
+    // Described by what they fear rather than by the work they administer.
+    expect(view).toContain('Being surprised');
   });
 
   it('carries the instruments used during a conversation', () => {
@@ -145,8 +157,16 @@ describe('the screen keeps TAM, ICP and persona apart', () => {
     expect(view).toContain('2 paid');
   });
 
-  it('still says plainly what is out of scope', () => {
-    expect(view).toContain('Sales workflows. Engineering workflows. Marketing workflows.');
+  it('says what is out of scope by problem shape, not by function', () => {
+    /*
+     * It used to exclude sales, engineering and marketing workflows. That
+     * contradicts the page: cluster B's test problem is a quotation going
+     * cold between the inbox and the ERP, which is a sales workflow. The
+     * exclusion is now about the SHAPE of a problem, and each excluded one
+     * fails one of the seven criteria above it.
+     */
+    expect(view).toContain('A problem that happened once');
+    expect(view).not.toContain('<p>Sales workflows.');
   });
 
   it('no longer advises the operator to sell to a VP of Engineering', () => {

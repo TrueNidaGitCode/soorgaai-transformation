@@ -19,13 +19,41 @@
  */
 import axios from 'axios';
 
-/** Every signal this application can send, and what each carries. Nothing else leaves. */
+/**
+ * Every signal this application can send, and what each carries. Nothing else leaves.
+ *
+ * ── The watcher half ───────────────────────────────────────────────────────
+ *
+ * The first four are all about somebody ASKING. That was the whole product
+ * once. Now the product watches, and none of these could say whether a watcher
+ * was ever started, whether it was kept, or whether anyone opened what it
+ * found — which is exactly the evidence needed to learn which kinds of
+ * problem customers actually care about, across industries.
+ *
+ * They carry a watcherId, which is Svarg's own vocabulary — `stopped-coming`,
+ * `overdue-invoice` — and never anything the customer typed or a row they
+ * hold. A finding's identity stays in the tenant: Svarg can learn that a
+ * finding was dismissed, never which one.
+ */
 export const SIGNALS = Object.freeze({
   question_asked: 'One question was answered: which capability answered it, and when. Not the question.',
   feedback: 'A thumbs up or down on an answer: the vote, the capability, and when. Not the answer.',
   correction: 'What the owner said the answer should have been, in their words, when they chose to say so.',
   import: 'Rows arrived on a dataset: the dataset name, the source kind and the count. Not a row.',
+
+  watcher_started:  'A watcher was started: which one from the catalogue, and when. Not what it watches.',
+  watcher_disabled: 'A watcher was switched off or removed: which one, and when.',
+  watcher_degraded: 'A watcher stopped itself after repeated failures: which one, and when.',
+  finding_opened:   'Somebody opened a finding to read its evidence: which watcher it came from, and when. Not the finding.',
+  finding_dismissed: 'Somebody dismissed a finding: which watcher it came from, and when. Not the finding.',
+  finding_resolved: 'A finding stopped being true: which watcher it came from, and when. Not the finding.',
 });
+
+/** The signals that carry a watcher id and nothing else. */
+const WATCHER_SIGNALS = new Set([
+  'watcher_started', 'watcher_disabled', 'watcher_degraded',
+  'finding_opened', 'finding_dismissed', 'finding_resolved',
+]);
 
 const FLUSH_MS = 30 * 1000;
 const FLUSH_AT = 40;
@@ -51,6 +79,10 @@ export function sendSignal(kind, payload = {}) {
   if (kind === 'feedback') entry.vote = payload.vote === 'down' ? 'down' : 'up';
   if (kind === 'correction') entry.correction = String(payload.correction || '').slice(0, MAX_CORRECTION);
   if (kind === 'import') { entry.datasetName = String(payload.datasetName || '').slice(0, 120); entry.source = String(payload.source || ''); entry.rows = Number(payload.rows) || 0; }
+  // A catalogue id and nothing else. A hand-written watcher has no catalogue
+  // entry, so it reports an empty id — which is itself worth knowing, and is
+  // still not customer data.
+  if (WATCHER_SIGNALS.has(kind)) entry.watcherId = String(payload.watcherId || '').slice(0, 64);
   queue.push(entry);
   if (queue.length >= FLUSH_AT) flush();
   else if (!timer) { timer = setTimeout(flush, FLUSH_MS); if (typeof timer.unref === 'function') timer.unref(); }

@@ -26,6 +26,7 @@ import { buildRuntime } from './eameProjectBuilder.js';
 import { ensureFrontDoor, frontDoorCopy } from './frontDoorService.js';
 import { sampleDataFiles } from './deliveredSampleData.js';
 import { sourcesForBlueprint, connectorKindsFor, sourcesFile } from './sourceCatalogService.js';
+import { watcherPlanFile } from './watcherPlanService.js';
 import { verifyProject } from './generatedProjectVerifier.js';
 
 /** Attempts before a build is called failed. Each one costs a full generation. */
@@ -153,7 +154,10 @@ export async function buildApplication(bp, {
     connectors: connectorKindsFor(sources),
   });
 
-  runtimeFiles.push(...samples, sourcesFile(sources));
+  // Cob's reading of which watchers this business asked for. The application
+  // has read data/agents.json since the agents screen was built; until now
+  // nothing wrote it, so every application shipped with nothing watching.
+  runtimeFiles.push(...samples, sourcesFile(sources), watcherPlanFile(bp));
 
   const history = [];
   let repair = null;

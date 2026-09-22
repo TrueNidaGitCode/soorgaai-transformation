@@ -37,8 +37,26 @@ export function normaliseSignal(raw, now = new Date()) {
     doc.source = String(raw.source || '').slice(0, 40);
     doc.rows = Math.max(0, Number(raw.rows) || 0);
   }
+  /*
+   * The watching signals carry one field: which catalogue watcher.
+   *
+   * Taken field by field like every other kind rather than by spreading the
+   * body, so an application that sends more than it should — a finding key, a
+   * name, a row — has that dropped here rather than stored. The allow-list is
+   * the boundary; the application's own SIGNALS list is a promise, and a
+   * promise is not a control.
+   */
+  if (WATCHER_KINDS.has(kind)) {
+    doc.watcherId = String(raw.watcherId || '').slice(0, 64);
+  }
   return doc;
 }
+
+/** The kinds that describe watching rather than asking. */
+const WATCHER_KINDS = new Set([
+  'watcher_started', 'watcher_disabled', 'watcher_degraded',
+  'finding_opened', 'finding_dismissed', 'finding_resolved',
+]);
 
 /**
  * Accept a batch from a deployment. Returns what was kept and what was

@@ -44,29 +44,46 @@ describe('the hero speaks to the reader who is actually arriving', () => {
     expect(h1.toLowerCase()).not.toContain('enterprise');
   });
 
-  it('names the gap rather than listing what we do', () => {
+  it('names the failure of timing, not a shortage of software', () => {
+    /*
+     * ── Why this replaced "the path between them" ──────────────────────────
+     *
+     * The path framing was right about the market and wrong about the product.
+     * It described what Svarg BUILDS — strategy, then data, then models, then
+     * an application — which is the setup, not the thing the customer keeps.
+     * What they keep is something that watches, and the pain it removes is
+     * finding out too late.
+     *
+     * So the headline is now about timing: the business is changing, the signs
+     * are already there, and nobody is joining them up.
+     */
     const h1 = hero.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1];
-    expect(h1).toMatch(/path between them/i);
+    expect(h1).toMatch(/late/i);
 
     const sub = hero.match(/class="mkt-hero__sub">([\s\S]*?)<\/p>/)[1];
-    // The mechanism, which is the half that made it land: it is not that the
-    // steps are hard, it is that each one has a different owner.
-    expect(sub).toMatch(/different owner/i);
-    expect(sub).toMatch(/nobody owns the whole path/i);
+    // The mechanism, and the half that makes it recognisable: the information
+    // exists, it is scattered, and no person is joining it up.
+    expect(sub).toMatch(/already in your systems/i);
+    expect(sub).toMatch(/nobody is joining them up/i);
   });
 
-  it('still makes the concrete promise, not just the diagnosis', () => {
-    // A hero that only names the pain is an essay. The reader has to learn
-    // what they get and roughly when.
+  it('promises watching and evidence, not a build', () => {
+    /*
+     * A hero that only names the pain is an essay. The reader has to learn
+     * what they get — and what they get is no longer "an application in a
+     * week". It is something that watches and can show its working, which is
+     * the claim the product can actually keep today.
+     */
     const sub = hero.match(/class="mkt-hero__sub">([\s\S]*?)<\/p>/)[1];
-    expect(sub).toMatch(/working\s+application/i);
-    expect(sub).toMatch(/your own data/i);
-    expect(sub).toMatch(/week/i);
+    expect(sub).toMatch(/watches/i);
+    expect(sub).toMatch(/needs attention/i);
+    // Evidence is the differentiator and belongs above the fold.
+    expect(sub).toMatch(/records it read/i);
   });
 
-  it('asks them to describe a problem, not to begin a journey', () => {
+  it('asks them to say what to watch, not to begin a journey', () => {
     const cta = hero.match(/id="mkt-cta-hero"[^>]*>([^<]+)</)[1];
-    expect(cta).toMatch(/describe/i);
+    expect(cta).toMatch(/watch/i);
     expect(cta).not.toMatch(/journey/i);
   });
 });

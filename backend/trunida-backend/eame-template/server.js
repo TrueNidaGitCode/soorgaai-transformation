@@ -25,8 +25,12 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { startScheduler, restoreOwnFiles } from './services/connectorService.js';
-import { startAgentScheduler } from './services/agentService.js';
+import { startScheduler, restoreOwnFiles, readIndex } from './services/connectorService.js';
+import { startAgentScheduler, autoStartWatchers } from './services/agentService.js';
+import { catalogueFor } from './services/agentCatalogue.js';
+// Cob's reading of which watchers matter here. Read from the same place the
+// agents screen reads it, rather than a second copy that could drift.
+import { plan as agentPlan } from './controllers/agentsController.js';
 import { answer } from './services/answerService.js';
 import { turnMiddleware } from './services/turnLog.js';
 
@@ -252,6 +256,19 @@ async function start() {
    * would be worse than sending nothing.
    */
   startAgentScheduler(({ question }) => answer({ question, kind: 'own' }));
+
+  /*
+   * And it starts watching without being asked.
+   *
+   * The watchers Cob named for this business, limited to the ones whose data
+   * is actually here. Only on an application that has never had a watcher, so
+   * an owner who switched everything off stays switched off across updates.
+   *
+   * Never blocks the boot and never fails it: an application that cannot start
+   * its watchers must still serve, so the owner can go and start them by hand.
+   */
+  autoStartWatchers(catalogueFor(readIndex(), agentPlan()), { tz: process.env.APP_TZ || 'UTC' })
+    .catch((err) => console.warn('[agents] auto-start skipped:', err.message));
 
   // Registered after the routes, or it would swallow every API path below it.
   app.get('*', (req, res, next) => {

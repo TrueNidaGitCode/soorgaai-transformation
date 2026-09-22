@@ -15,7 +15,25 @@
  */
 import mongoose from 'mongoose';
 
-export const SIGNAL_KINDS = ['question_asked', 'feedback', 'correction', 'import'];
+/**
+ * The first four are about somebody asking; the last six are about watching.
+ *
+ * The watcher signals exist to answer one question that nothing else can:
+ * which kinds of problem do customers actually start watching, and which do
+ * they keep. Started says what sounds valuable; still-enabled a fortnight
+ * later says what is. Read across customers in different industries, that is
+ * the evidence for which workflow to build the company around — and it is
+ * behaviour rather than opinion.
+ *
+ * They carry `watcherId`, a catalogue id from Svarg's own vocabulary. Never a
+ * finding, never a row, never anything the customer wrote. Svarg can learn
+ * that a finding was dismissed; it cannot learn which one.
+ */
+export const SIGNAL_KINDS = [
+  'question_asked', 'feedback', 'correction', 'import',
+  'watcher_started', 'watcher_disabled', 'watcher_degraded',
+  'finding_opened', 'finding_dismissed', 'finding_resolved',
+];
 
 const tenantSignalSchema = new mongoose.Schema({
   deploymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'HostedDeployment', required: true, index: true },
@@ -29,6 +47,8 @@ const tenantSignalSchema = new mongoose.Schema({
   datasetName: { type: String, default: '' },
   source:      { type: String, default: '' },
   rows:        { type: Number, default: 0 },
+  /** Which catalogue watcher, for the six watching signals. Svarg's own id. */
+  watcherId:   { type: String, default: '', index: true },
 
   /** When the application says it happened; receivedAt is when it got here. */
   at:         { type: Date, required: true },

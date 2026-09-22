@@ -1564,3 +1564,184 @@ body {
 /* The escape hatch, not the front door: a note under the heading that says so
    without making the form look like a lesser thing. */
 .ag-orlede { margin: -6px 0 12px; font-size: 13px; color: var(--ch-faint); }
+
+/* ── What needs attention, and why we believe it ─────────────────────────────
+   The findings board is the application's first screen and the evidence page
+   is the one that earns trust. Both use the same panel language as the Data
+   and Agents pages; the only new idea here is severity, which is a written-down
+   property of the watcher and never a judgement made at render time. */
+
+.fn {
+  padding: 34px clamp(16px, 4vw, 48px) 72px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.fn__head { margin-bottom: 26px; }
+.fn__eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ch-accent);
+}
+.fn__title { margin: 0 0 6px; font-size: clamp(22px, 3.4vw, 30px); line-height: 1.15; color: var(--ch-text); }
+.fn__sub { margin: 0; font-size: 14px; color: var(--ch-dim); }
+
+.fn__list { display: grid; gap: 14px; }
+
+/* The severity rail is the only colour on a card. A whole card tinted red
+   reads as an error in the software rather than a problem in the business. */
+.fn__card {
+  position: relative;
+  padding: 18px 20px 18px 22px;
+  border: 1px solid var(--ch-line);
+  border-left: 3px solid var(--ch-line-hi);
+  border-radius: 12px;
+  background: var(--ch-panel);
+}
+.fn__card--high   { border-left-color: #E4806B; }
+.fn__card--medium { border-left-color: var(--ch-accent); }
+.fn__card--low    { border-left-color: var(--ch-faint); }
+
+.fn__sev {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ch-faint);
+}
+.fn__card--high .fn__sev   { color: #E4806B; }
+.fn__card--medium .fn__sev { color: var(--ch-accent); }
+
+.fn__cardtitle { margin: 0 0 5px; font-size: 17px; line-height: 1.3; color: var(--ch-text); }
+.fn__watcher { margin: 0 0 10px; font-size: 13px; color: var(--ch-dim); }
+.fn__from { margin: 0 0 10px; font-size: 13px; color: var(--ch-dim); }
+.fn__from b { color: var(--ch-text); font-weight: 600; }
+.fn__sim {
+  margin: 0 0 10px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: var(--ch-accent-soft);
+  font-size: 12.5px;
+  color: var(--ch-dim);
+}
+.fn__cta { margin: 0; }
+
+.fn__btn, .fd__btn {
+  padding: 8px 14px;
+  border: 1px solid var(--ch-line-hi);
+  border-radius: 8px;
+  background: var(--ch-panel-hi);
+  color: var(--ch-text);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.fn__btn:hover, .fd__btn:hover { border-color: var(--ch-accent); color: var(--ch-accent); }
+.fd__btn--quiet { background: transparent; }
+
+.fn__empty {
+  padding: 34px 24px;
+  border: 1px solid var(--ch-line);
+  border-radius: 12px;
+  background: var(--ch-panel);
+  text-align: center;
+}
+.fn__empty-title { margin: 0 0 6px; font-size: 17px; color: var(--ch-text); }
+.fn__empty-note { margin: 0; font-size: 14px; color: var(--ch-dim); }
+
+.fn__resolved { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--ch-line); }
+.fn__rhead { margin: 0 0 10px; font-size: 14px; color: var(--ch-accent); }
+.fn__rlist { margin: 0; padding: 0; list-style: none; }
+.fn__rlist li { padding: 7px 0; font-size: 13.5px; color: var(--ch-dim); border-bottom: 1px solid var(--ch-line); }
+.fn__rlist li:last-child { border-bottom: 0; }
+.fn__rlist b { color: var(--ch-text); font-weight: 600; }
+.fn__rlist span { color: var(--ch-faint); }
+
+.fn__note {
+  margin: 22px 0 0;
+  padding: 11px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(228, 128, 107, 0.35);
+  background: rgba(228, 128, 107, 0.08);
+  font-size: 13.5px;
+  color: #E4806B;
+}
+
+/* ── One finding ──────────────────────────────────────────────────────────── */
+
+.fd {
+  padding: 34px clamp(16px, 4vw, 48px) 72px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.fd__topline { margin: 0 0 18px; font-size: 13px; }
+.fd__back { color: var(--ch-dim); text-decoration: none; }
+.fd__back:hover { color: var(--ch-text); }
+
+.fd__chip {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ch-line-hi);
+  font-size: 11.5px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ch-dim);
+}
+.fd__chip--high { border-color: #E4806B; color: #E4806B; }
+.fd__chip--medium { border-color: var(--ch-accent); color: var(--ch-accent); }
+
+.fd__title { margin: 0 0 6px; font-size: clamp(21px, 3.2vw, 28px); line-height: 1.2; color: var(--ch-text); }
+.fd__sub { margin: 0 0 26px; font-size: 14px; color: var(--ch-dim); }
+
+.fd__h { margin: 0 0 12px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ch-faint); }
+
+.fd__why, .fd__rows, .fd__act {
+  margin-bottom: 22px;
+  padding: 20px 22px;
+  border: 1px solid var(--ch-line);
+  border-radius: 12px;
+  background: var(--ch-panel);
+}
+.fd__rule { margin: 0 0 16px; font-size: 15px; line-height: 1.55; color: var(--ch-text); }
+
+.fd__facts { margin: 0; display: grid; gap: 1px; background: var(--ch-line); border-radius: 8px; overflow: hidden; }
+.fd__facts > div { display: grid; grid-template-columns: 190px 1fr; gap: 14px; padding: 10px 12px; background: var(--ch-panel); }
+.fd__facts dt { margin: 0; font-size: 13px; color: var(--ch-faint); }
+.fd__facts dd { margin: 0; font-size: 13.5px; color: var(--ch-text); word-break: break-word; }
+
+/* The customer's own rows. Wide tables scroll inside their own box rather
+   than pushing the page sideways. */
+.fd__tablewrap { overflow-x: auto; border: 1px solid var(--ch-line); border-radius: 8px; }
+.fd__table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fd__table th, .fd__table td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--ch-line); white-space: nowrap; }
+.fd__table th { color: var(--ch-faint); font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.fd__table td { color: var(--ch-text); }
+.fd__table tr:last-child td { border-bottom: 0; }
+.fd__rowsnote { margin: 10px 0 0; font-size: 12.5px; color: var(--ch-faint); }
+
+.fd__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.fd__draft { margin-top: 16px; }
+.fd__drafttext {
+  width: 100%;
+  padding: 13px 15px;
+  border: 1px solid var(--ch-line-hi);
+  border-radius: 10px;
+  background: var(--ch-bg-2);
+  color: var(--ch-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.fd__draftbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 10px; }
+.fd__draftnote { font-size: 12.5px; color: var(--ch-faint); }
+.fd__note { margin: 14px 0 0; font-size: 13.5px; color: #E4806B; }
+
+@media (max-width: 620px) {
+  .fd__facts > div { grid-template-columns: 1fr; gap: 3px; }
+}

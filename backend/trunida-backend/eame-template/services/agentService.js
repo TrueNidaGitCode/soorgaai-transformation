@@ -35,6 +35,8 @@
  */
 import mongoose from 'mongoose';
 import { sendDigest } from './notifyService.js';
+import { SEVERITY_RANK } from './agentCatalogue.js';
+import { sendSignal } from './tenantSignals.js';
 
 /** How often an agent may run, and how often the scheduler looks. */
 export const SCHEDULES = {
@@ -188,6 +190,50 @@ export function findingKey(item) {
 }
 
 /**
+ * The evidence behind one thing an agent found.
+ *
+ * ── Why this exists ────────────────────────────────────────────────────────
+ *
+ * A finding used to be stored as a single string: the key, and nothing else.
+ * Everything a person needs in order to believe it — which dataset, which
+ * columns, over what window, under what rule, and the actual rows — was
+ * computed by the answer pipeline on every single run and then dropped on the
+ * floor, because the only question being asked of the result was "how many".
+ *
+ * So this takes nothing new from anywhere. It reads what the envelope already
+ * carries and keeps the part that belongs to THIS item. Nothing is derived,
+ * nothing is summarised by a model, and no number is computed here: if a
+ * figure appears on the screen later it was counted by the pipeline, in code,
+ * before this function ever saw it.
+ *
+ * `lines` are real cells from the customer's own rows, capped by the pipeline
+ * at six. That cap is the reason this is safe to store: a finding carries a
+ * sample big enough to believe and too small to become a second copy of the
+ * data.
+ */
+export function evidenceFor(item, group, result) {
+  return {
+    dataset:  String(group?.dataset || ''),
+    columns:  Array.isArray(group?.columns) ? group.columns.slice(0, 12) : [],
+    window:   String(group?.window || ''),
+    rule:     String(group?.rule || ''),
+    label:    String(group?.label || ''),
+    // The two counts the pipeline computed for the group this item sits in.
+    records:  Number(group?.records || 0),
+    entities: Number(group?.entities || 0),
+    // This item's own rows, and how many of them there were in total.
+    source:   String(item?.source || ''),
+    lines:    Array.isArray(item?.lines) ? item.lines : [],
+    rows:     Number(item?.records || 0),
+    // Whether the pipeline stood behind the answer, and whether the rows were
+    // the customer's or the sample the application shipped with. Both travel
+    // with the finding so the screen can say so rather than imply otherwise.
+    checked:   result?.checked !== false,
+    simulated: !!result?.simulated,
+  };
+}
+
+/**
  * What changed since last time: what is new, what is still true, what has
  * resolved. Pure — given the keys found now and the findings held from before.
  *
@@ -210,6 +256,59 @@ export function diffFindings(previous, currentKeys) {
   return { new: fresh, stillTrue, resolved };
 }
 
+/**
+ * When this agent is expected to run next.
+ *
+ * ── Why a screen needs this ────────────────────────────────────────────────
+ *
+ * The scheduler is state-based, which makes it robust: it compares lastRunAt
+ * against the schedule, so a restart or a missed tick heals on the next one
+ * and nothing is lost. But robustness is invisible. When a container sleeps
+ * through a morning the customer sees no digest, and "no digest" looks exactly
+ * like "nothing was wrong" — the one confusion this product cannot afford.
+ *
+ * So the screen shows when the next check is due. Silence that carries a time
+ * beside it is legible; silence on its own is not.
+ *
+ * Computed, never stored: a stored copy would be one more thing to keep true.
+ */
+export function nextDueAt(a, now = Date.now()) {
+  const spec = SCHEDULES[a?.schedule];
+  if (!spec) return null;
+  if (a?.enabled === false || a?.status === 'degraded' || a?.status === 'paused') return null;
+
+  const last = a.lastRunAt ? new Date(a.lastRunAt).getTime() : 0;
+  if (!spec.atHour) return new Date(Math.max(now, last + spec.every));
+
+  // A daily agent is due at its hour, in its own timezone. Walk forward a day
+  // at a time from now rather than doing timezone arithmetic by hand — at most
+  // three steps, and it cannot drift the way an offset calculation can.
+  const wanted = Number.isInteger(a.atHour) ? a.atHour : 7;
+  const today = localParts(now, a.tz);
+  const ranToday = last && localParts(last, a.tz).day === today.day;
+
+  for (let ahead = 0; ahead <= 4; ahead++) {
+    const at = now + ahead * 24 * 60 * 60 * 1000;
+    const there = localParts(at, a.tz);
+    if (spec.weekdaysOnly && there.isWeekend) continue;
+    if (ahead === 0) {
+      if (ranToday) continue;          // already done, look at tomorrow
+      if (there.hour >= wanted) return new Date(now); // due right now
+    }
+    /*
+     * The wanted hour on that day, to the hour.
+     *
+     * localParts deliberately reports only the hour — it exists to answer "is
+     * it past 7am where they are", which never needed minutes. So this lands
+     * on the hour boundary, which is the right precision for a line that reads
+     * "next check 10:00". Claiming minutes would be claiming accuracy the
+     * five-minute tick does not have anyway.
+     */
+    return new Date(at + (wanted - there.hour) * 60 * 60 * 1000);
+  }
+  return null;
+}
+
 // ── Records ─────────────────────────────────────────────────────────────────
 
 export function publicView(a) {
@@ -221,8 +320,14 @@ export function publicView(a) {
     atHour: Number.isInteger(a.atHour) ? a.atHour : 7,
     tz: a.tz || 'UTC',
     condition: a.condition || null,
+    watcherId: a.watcherId || '',
+    severity: a.severity || 'medium',
     enabled: a.enabled !== false,
     status: a.status || 'active',
+    // What the health line on the watchers screen needs, so silence is
+    // legible: a container that slept produces no digest, and "next check"
+    // is what tells somebody that rather than leaving them guessing.
+    nextDueAt: nextDueAt(a),
     lastRunAt: a.lastRunAt || null,
     lastFoundAt: a.lastFoundAt || null,
     lastError: a.lastError || '',
@@ -237,7 +342,15 @@ export async function listAgents() {
   return docs.map(publicView);
 }
 
-export async function createAgent({ name, question, schedule = 'daily', atHour = 7, tz = 'UTC', condition = null }) {
+export async function createAgent({
+  name, question, schedule = 'daily', atHour = 7, tz = 'UTC', condition = null,
+  // Which catalogue entry this came from, and how much it matters. Both are
+  // Svarg's own vocabulary rather than anything the customer typed: watcherId
+  // is what telemetry reports and severity is what the board sorts by. A
+  // hand-written watcher has no catalogue entry and is medium, which is the
+  // honest answer for a question nobody has graded.
+  watcherId = '', severity = 'medium',
+}) {
   const clean = String(name || '').trim();
   if (!clean) throw new Error('An agent needs a name.');
   if (!String(question || '').trim()) throw new Error('An agent needs a question to ask.');
@@ -250,6 +363,8 @@ export async function createAgent({ name, question, schedule = 'daily', atHour =
     schedule,
     atHour: Number.isInteger(atHour) ? Math.min(Math.max(0, atHour), 23) : 7,
     tz: String(tz || 'UTC').slice(0, 64),
+    watcherId: String(watcherId || '').slice(0, 64),
+    severity: SEVERITY_RANK[severity] === undefined ? 'medium' : severity,
     // No condition means "tell me whenever there is anything at all", which is
     // the rule somebody means when they do not state one.
     condition: condition || { over: 'rows', op: 'gt', value: 0 },
@@ -300,11 +415,18 @@ export async function runAgent(agent, ask) {
     const fired = evaluateCondition(agent.condition, result);
 
     const keys = [];
+    // Keyed by finding key so the upsert below can write the evidence for the
+    // very item it is writing, rather than the last one seen.
+    const detail = new Map();
     if (fired) {
       for (const g of (result.groups || [])) {
         for (const it of (g.items || [])) {
           const k = findingKey(it);
-          if (k) keys.push(k);
+          if (!k) continue;
+          keys.push(k);
+          if (!detail.has(k)) {
+            detail.set(k, { title: String(it.name || k), evidence: evidenceFor(it, g, result) });
+          }
         }
       }
     }
@@ -313,18 +435,39 @@ export async function runAgent(agent, ask) {
     const change = diffFindings(previous, keys);
     const at = new Date();
 
+    /*
+     * Evidence is refreshed on every run, for new and still-true alike.
+     *
+     * A finding that has been open for a fortnight is about the same student,
+     * but the rows behind it have moved on — a day more overdue, another
+     * session missed. Writing the evidence only once, at first sight, would
+     * make the detail screen quietly older than the digest that points at it.
+     */
+    const carry = (k) => {
+      const d = detail.get(k);
+      if (!d) return { lastSeenAt: at };
+      return {
+        lastSeenAt: at, title: d.title, evidence: d.evidence,
+        severity: agent.severity || 'medium',
+        watcherId: agent.watcherId || '',
+        agentName: agent.name || '',
+      };
+    };
+
     for (const k of change.new) {
       await findingsCollection().updateOne(
         { agentId: _id, key: k },
-        { $set: { state: 'open', lastSeenAt: at }, $setOnInsert: { firstSeenAt: at } },
+        { $set: { state: 'open', ...carry(k) }, $setOnInsert: { firstSeenAt: at } },
         { upsert: true },
       );
     }
     for (const k of change.stillTrue) {
-      await findingsCollection().updateOne({ agentId: _id, key: k }, { $set: { lastSeenAt: at } });
+      await findingsCollection().updateOne({ agentId: _id, key: k }, { $set: carry(k) });
     }
     for (const k of change.resolved) {
       await findingsCollection().updateOne({ agentId: _id, key: k }, { $set: { state: 'resolved', resolvedAt: at } });
+      // Which watcher stopped being true, never which finding.
+      sendSignal('finding_resolved', { watcherId: agent.watcherId || '' });
     }
 
     await agentsCollection().updateOne({ _id }, {
@@ -347,8 +490,76 @@ export async function runAgent(agent, ask) {
         ...(failures >= MAX_FAILURES ? { status: 'degraded' } : {}),
       },
     }).catch(() => {});
+    // A watcher giving up is worth knowing centrally: one customer's broken
+    // watcher is a support ticket, the same watcher breaking everywhere is a
+    // defect in the catalogue.
+    if (failures >= MAX_FAILURES) sendSignal('watcher_degraded', { watcherId: agent.watcherId || '' });
     return { ran: false, error: String(err.message || err) };
   }
+}
+
+// ── Starting without being asked ─────────────────────────────────────────────
+
+/**
+ * Start the watchers this application's data already supports.
+ *
+ * ── The problem this solves ────────────────────────────────────────────────
+ *
+ * A delivered application used to arrive with zero watchers. Nothing was
+ * watching until somebody found the third item in the sidebar and pressed
+ * start — so a product whose entire promise is "we will tell you before you
+ * have to look" opened on an empty board, which is indistinguishable from a
+ * product that does nothing.
+ *
+ * ── The two conditions, and why both ───────────────────────────────────────
+ *
+ * `startHere` is Cob's judgement, written by Eame into data/agents.json from
+ * the customer's own objective: of the catalogue, these are the ones this
+ * business actually asked about.
+ *
+ * `ready` is the matcher's answer: the columns this watcher needs exist in a
+ * dataset that is really here.
+ *
+ * Only the intersection starts. Cob wanting something the data cannot support
+ * would produce a watcher that fails three times and stops itself, and the
+ * customer's first experience of the product would be a broken thing telling
+ * them so. Wanting is not enough; possible is not enough either.
+ *
+ * Runs once, at boot, and only when nothing has been started before — so a
+ * customer who deliberately switched everything off does not find it all
+ * switched back on after the next update. That check is the whole safety
+ * mechanism, and it is why this reads the collection before writing to it.
+ */
+export async function autoStartWatchers(catalogue, { tz = 'UTC' } = {}) {
+  if (mongoose.connection.readyState !== 1) return { started: [], skipped: 'no database' };
+
+  const existing = await agentsCollection().countDocuments({});
+  if (existing > 0) return { started: [], skipped: 'already set up' };
+
+  const wanted = (catalogue || []).filter((c) => c.startHere && c.ready);
+  const started = [];
+  for (const c of wanted) {
+    try {
+      await createAgent({
+        name: c.name,
+        question: c.question,
+        schedule: c.schedule,
+        atHour: c.atHour,
+        tz,
+        condition: c.condition || null,
+        watcherId: c.id,
+        severity: c.severity || 'medium',
+      });
+      started.push(c.id);
+      sendSignal('watcher_started', { watcherId: c.id });
+    } catch (err) {
+      // One bad entry must not stop the rest: an application with four of five
+      // watchers running is the product; an application with none is not.
+      console.warn(`[agents] could not auto-start "${c.id}":`, err.message);
+    }
+  }
+  if (started.length) console.log(`[agents] watching from delivery: ${started.join(', ')}`);
+  return { started, skipped: '' };
 }
 
 // ── The schedule ────────────────────────────────────────────────────────────

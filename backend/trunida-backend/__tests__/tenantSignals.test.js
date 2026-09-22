@@ -26,7 +26,43 @@ describe('tenantSignals (in the application)', () => {
     process.env.SVARG_SIGNALS_URL = 'http://127.0.0.1:1/signals';
     expect(sendSignal('message_body', { text: 'the whole question' })).toBe(false);
     expect(pending()).toEqual([]);
-    expect(Object.keys(SIGNALS)).toEqual(['question_asked', 'feedback', 'correction', 'import']);
+    /*
+     * The four about asking, then the six about watching.
+     *
+     * The watching half was added when the product stopped being a thing you
+     * question and became a thing that watches: nothing in the first four
+     * could say whether a watcher was ever started, whether it was kept, or
+     * whether anybody read what it found — which is the only evidence for
+     * which kinds of problem customers actually care about.
+     *
+     * Asserted as an exact list, in order, on purpose. This is the closed set
+     * of everything that may leave a customer's application, and a new entry
+     * arriving without a deliberate change here is exactly what this test
+     * exists to stop.
+     */
+    expect(Object.keys(SIGNALS)).toEqual([
+      'question_asked', 'feedback', 'correction', 'import',
+      'watcher_started', 'watcher_disabled', 'watcher_degraded',
+      'finding_opened', 'finding_dismissed', 'finding_resolved',
+    ]);
+  });
+
+  it('carries a catalogue id on a watching signal, and nothing else', async () => {
+    /*
+     * The privacy line that matters for the new half: Svarg learns that a
+     * watcher's finding was opened, never WHICH finding. A finding's title is
+     * a customer's student, patient or invoice.
+     */
+    process.env.SVARG_SIGNALS_URL = 'http://127.0.0.1:1/signals';
+    const { sendSignal, pending } = await import(T + 'tenantSignals.js?watcher');
+    sendSignal('finding_opened', {
+      watcherId: 'stopped-coming',
+      findingKey: 'STU-0182',            // must not survive
+      title: 'Aarav Sharma',             // must not survive
+    });
+    const [entry] = pending();
+    expect(entry.watcherId).toBe('stopped-coming');
+    expect(Object.keys(entry).sort()).toEqual(['at', 'kind', 'watcherId']);
   });
 
   it('delivers a batch with the gateway token and nothing but the listed fields', async () => {

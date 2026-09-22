@@ -170,6 +170,53 @@ export const CATALOGUE = [
     needs: ['who', 'doc'], question: '{who} in {dataset} with no {doc}' },
 ];
 
+/**
+ * How much it matters, per watcher.
+ *
+ * ── Why this is a fixed table and not a judgement ──────────────────────────
+ *
+ * The board has to put something at the top, and the obvious way to decide is
+ * to ask the model which finding matters most. That is exactly the thing the
+ * model is not allowed to do here: ranking findings is deciding, and deciding
+ * belongs to code. A watcher's severity is a property of the QUESTION — money
+ * already owed is worse than a form with a blank in it, whoever the customer
+ * is — so it can be written down once, by a person, and never inferred.
+ *
+ * Held apart from CATALOGUE rather than added to all 28 entries: this is an
+ * editorial judgement that will be argued about and revised, and keeping it in
+ * one readable block is what makes revising it a conversation rather than a
+ * diff across the whole file.
+ *
+ * `high`   money at risk, a customer walking, a legal date passing
+ * `medium` work not done, capacity wasted, somebody waiting
+ * `low`    tidiness — real, worth knowing, never worth an early morning
+ */
+const SEVERITY = {
+  high: [
+    'overdue-invoice', 'never-invoiced', 'part-payment',
+    'stopped-coming', 'gone-quiet', 'unanswered-enquiry',
+    'expiring-soon', 'deadline-approaching',
+    'unstaffed-session', 'late-delivery',
+  ],
+  low: [
+    'missing-detail', 'duplicate', 'nothing-new', 'stale-source',
+    'new-joiner', 'leave-clash', 'price-change',
+  ],
+};
+
+const SEVERITY_BY_ID = new Map([
+  ...SEVERITY.high.map((id) => [id, 'high']),
+  ...SEVERITY.low.map((id) => [id, 'low']),
+]);
+
+/** Everything not named above is medium — the honest default. */
+export function severityFor(id) {
+  return SEVERITY_BY_ID.get(id) || 'medium';
+}
+
+/** Highest first, for sorting a board. */
+export const SEVERITY_RANK = { high: 0, medium: 1, low: 2 };
+
 /** Default cadence. Overridden per entry where a different one is obvious. */
 const DEFAULT = { schedule: 'weekdays', atHour: 7, condition: C({}) };
 
@@ -259,6 +306,7 @@ export function catalogueFor(datasets, plan = {}) {
       name: entry.name,
       says: entry.says,
       ready: !!match,
+      severity: severityFor(entry.id),
       startHere: startHere.has(entry.id),
       using: match ? match.dataset : '',
       question: match ? fillQuestion(entry, match) : '',

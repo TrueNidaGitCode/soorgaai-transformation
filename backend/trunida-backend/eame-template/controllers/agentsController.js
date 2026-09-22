@@ -13,8 +13,10 @@ import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { catalogueFor, entryFor, fillQuestion, matchDataset } from '../services/agentCatalogue.js';
+import { catalogueFor, entryFor, fillQuestion, matchDataset, severityFor } from '../services/agentCatalogue.js';
 import { readIndex } from '../services/connectorService.js';
+import { draftFollowUp } from '../services/draftService.js';
+import { sendSignal } from '../services/tenantSignals.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -27,12 +29,125 @@ const ROOT = path.resolve(__dirname, '..');
  * improvement, never a dependency — and it can promote an entry but never
  * remove one.
  */
-function plan() {
+export function plan() {
   try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'agents.json'), 'utf8')) || {}; }
   catch { return {}; }
 }
 
 const bad = (res, err) => res.status(400).json({ error: err.message || String(err) });
+
+/** The shape the board and the detail screen both read. */
+function findingView(f) {
+  return {
+    id: String(f._id),
+    key: f.key,
+    title: f.title || f.key,
+    watcher: f.agentName || '',
+    watcherId: f.watcherId || '',
+    severity: f.severity || 'medium',
+    state: f.state || 'open',
+    since: f.firstSeenAt || null,
+    lastSeenAt: f.lastSeenAt || null,
+    resolvedAt: f.resolvedAt || null,
+    evidence: f.evidence || null,
+  };
+}
+
+/**
+ * Everything open, worst first — the first screen of the application.
+ *
+ * ── Why this is not owner-only ─────────────────────────────────────────────
+ *
+ * Deciding WHAT is watched is the owner's: a watcher runs unattended and sends
+ * mail in their name. Reading what it found is not. The person who chases the
+ * parent who stopped coming is the front desk, and a product whose whole
+ * promise is "nothing important gets missed" cannot hide the findings from the
+ * person who would act on them.
+ *
+ * Severity first, then longest-open — a thing that has been true for three
+ * weeks is worse than one noticed this morning, and neither of those is a
+ * judgement the model makes.
+ */
+export async function listFindingsHandler(req, res) {
+  try {
+    if (mongoose.connection.readyState !== 1) return res.json({ open: [], resolved: [], counts: {} });
+
+    const open = await findingsCollection()
+      .find({ state: 'open' }).sort({ firstSeenAt: 1 }).limit(200).toArray();
+
+    // Resolved is a reassurance, not a to-do list: the most recent handful.
+    const resolved = await findingsCollection()
+      .find({ state: 'resolved' }).sort({ resolvedAt: -1 }).limit(20).toArray();
+
+    const RANK = { high: 0, medium: 1, low: 2 };
+    const rows = open.map(findingView).sort((a, b) =>
+      (RANK[a.severity] ?? 1) - (RANK[b.severity] ?? 1)
+      || new Date(a.since || 0) - new Date(b.since || 0));
+
+    const counts = { high: 0, medium: 0, low: 0 };
+    for (const r of rows) counts[r.severity] = (counts[r.severity] || 0) + 1;
+
+    const agents = await listAgents();
+    return res.json({
+      open: rows,
+      resolved: resolved.map(findingView),
+      counts,
+      watching: agents.filter(a => a.enabled && a.status !== 'degraded').length,
+      degraded: agents.filter(a => a.status === 'degraded').length,
+      // So the screen can say "your first check is at 09:30" instead of
+      // showing an empty board that looks like a broken product.
+      nextDueAt: agents.map(a => a.nextDueAt).filter(Boolean).sort()[0] || null,
+      everRan: agents.some(a => a.lastRunAt),
+    });
+  } catch (err) {
+    console.error('[findings] list failed:', err.message);
+    return res.status(500).json({ error: 'Could not read the findings.' });
+  }
+}
+
+/** One finding, with the evidence behind it. The screen that earns trust. */
+export async function getFindingHandler(req, res) {
+  try {
+    const _id = new mongoose.Types.ObjectId(String(req.params.id));
+    const f = await findingsCollection().findOne({ _id });
+    if (!f) return res.status(404).json({ error: 'No such finding.' });
+    return res.json({ finding: findingView(f) });
+  } catch {
+    return res.status(404).json({ error: 'No such finding.' });
+  }
+}
+
+/**
+ * Write the follow-up. Do not send it.
+ *
+ * The facts come from the finding's stored evidence — computed in code and
+ * validated before it was written down. The model supplies the sentence and
+ * nothing else. See draftService for why the line is drawn exactly there.
+ */
+export async function draftFindingHandler(req, res) {
+  try {
+    const _id = new mongoose.Types.ObjectId(String(req.params.id));
+    const f = await findingsCollection().findOne({ _id });
+    if (!f) return res.status(404).json({ error: 'No such finding.' });
+    const draft = await draftFollowUp(f);
+    return res.json({ draft });
+  } catch (err) {
+    return bad(res, err);
+  }
+}
+
+/**
+ * Somebody read a finding.
+ *
+ * Reported because "which findings get opened, and which get ignored" is the
+ * evidence for which kinds of problem a customer actually cares about — and it
+ * cannot be inferred from anything else. Carries the catalogue id only: Svarg
+ * learns that a watcher's finding was read, never which finding.
+ */
+export async function findingOpenedHandler(req, res) {
+  sendSignal('finding_opened', { watcherId: req.body?.watcherId || '' });
+  return res.json({ ok: true });
+}
 
 export async function listAgentsHandler(req, res) {
   try {
@@ -101,6 +216,9 @@ export async function patchAgentHandler(req, res) {
       return bad(res, new Error('Say whether it should be enabled.'));
     }
     const agent = await setAgentEnabled(req.params.id, req.body.enabled);
+    // Kept or dropped is the signal that matters: started says what sounded
+    // useful, still-enabled a fortnight later says what actually was.
+    if (!req.body.enabled) sendSignal('watcher_disabled', { watcherId: agent.watcherId || '' });
     return res.json({ agent });
   } catch (err) {
     return bad(res, err);
@@ -141,7 +259,13 @@ export async function startFromCatalogueHandler(req, res) {
       atHour: Number.isInteger(req.body?.atHour) ? req.body.atHour : 7,
       tz: req.body?.tz || 'UTC',
       condition: entry.condition || null,
+      // Carried so a finding knows how much it matters and telemetry knows
+      // which watcher it came from, without either asking a model.
+      watcherId: entry.id,
+      severity: severityFor(entry.id),
     });
+    // Which watcher, never what it watches.
+    sendSignal('watcher_started', { watcherId: entry.id });
     return res.status(201).json({ agent });
   } catch (err) {
     return res.status(400).json({ error: err.message });

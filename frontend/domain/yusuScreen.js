@@ -652,8 +652,23 @@ function render(bp, dep) {
     // it are intact, and the self-learning pipeline is what redeploys from
     // here on. Guarded so this is a no-op without the button.
     if (redeploy) redeploy.style.display = '';
-    title.textContent = `${appName(bp)} is live`;
-    sub.textContent = dep.statusMessage || 'Your application is running and available to your users.';
+    /*
+     * The handoff, and the only line that marks it.
+     *
+     * This used to read "<app> is live", which described a deployment rather
+     * than a product: true, and the wrong expectation to set. Everything up to
+     * this point was configuration — describing the problem, connecting the
+     * data, building, deploying. What starts here is the thing the customer
+     * actually bought, and it starts without them doing anything.
+     *
+     * So the sentence names the behaviour, not the infrastructure. What the
+     * watchers found, and when the first check runs, belongs to the
+     * application itself — it is the one that knows, and it says so on its own
+     * first screen.
+     */
+    title.textContent = `${appName(bp)} is now watching`;
+    sub.textContent = dep.statusMessage
+      || 'It checks your data on a schedule and tells you what needs attention. Open it to see what it has found.';
     if (dep.url) { view.href = dep.url; view.style.display = ''; }
     return;
   }

@@ -202,6 +202,79 @@
         <svg viewBox="0 0 1200 420" preserveAspectRatio="none"><path d="M0 250 C 200 180, 320 330, 520 250 S 900 170, 1200 260" /><path d="M0 300 C 240 240, 380 360, 600 290 S 960 220, 1200 310" opacity=".5"/><path d="M0 200 C 260 150, 400 280, 640 210 S 980 130, 1200 220" opacity=".35"/></svg>
       </div>
 
+  <!-- ── What needs attention ───────────────────────────────────────────
+       The first screen of the application, and the whole of Product B in one
+       place. It replaces the compose box as the landing view: a product that
+       promises to tell you before you have to look cannot open by asking you
+       what you want to know.
+
+       Every finding here was recorded by a watcher before anything was sent,
+       so this is the durable copy — an owner who missed the digest, or whose
+       application cannot reach Svarg at all, still sees everything noticed.
+       findings.js drives it. -->
+  <section class="fn" id="ch-findings" hidden aria-label="What needs attention">
+    <header class="fn__head">
+      <p class="fn__eyebrow" id="fn-eyebrow">Svarg is watching</p>
+      <h2 class="fn__title" id="fn-title">What needs your attention</h2>
+      <p class="fn__sub" id="fn-sub"></p>
+    </header>
+
+    <div class="fn__list" id="fn-list"></div>
+
+    <div class="fn__empty" id="fn-empty" hidden>
+      <p class="fn__empty-title" id="fn-empty-title">Nothing needs your attention.</p>
+      <p class="fn__empty-note" id="fn-empty-note"></p>
+    </div>
+
+    <div class="fn__resolved" id="fn-resolved" hidden>
+      <h3 class="fn__rhead" id="fn-rhead"></h3>
+      <ul class="fn__rlist" id="fn-rlist"></ul>
+    </div>
+
+    <p class="fn__note" id="fn-note" hidden></p>
+  </section>
+
+  <!-- One finding, and why we believe it. The trust screen: source, columns,
+       window, the rule that fired, and the customer's own rows. Nothing on
+       this page is written by a model — every value was computed in code and
+       stored with the finding at the moment it was found. -->
+  <section class="fd" id="ch-finding" hidden aria-label="Finding">
+    <header class="fd__head">
+      <p class="fd__topline"><a href="#" class="fd__back" id="fd-back">&larr; Back to what needs attention</a></p>
+      <p class="fd__chip" id="fd-chip"></p>
+      <h2 class="fd__title" id="fd-title"></h2>
+      <p class="fd__sub" id="fd-sub"></p>
+    </header>
+
+    <div class="fd__why" id="fd-why">
+      <h3 class="fd__h">Why this was flagged</h3>
+      <p class="fd__rule" id="fd-rule"></p>
+      <dl class="fd__facts" id="fd-facts"></dl>
+    </div>
+
+    <div class="fd__rows" id="fd-rows" hidden>
+      <h3 class="fd__h">The records behind it</h3>
+      <div class="fd__tablewrap"><table class="fd__table" id="fd-table"></table></div>
+      <p class="fd__rowsnote" id="fd-rowsnote"></p>
+    </div>
+
+    <div class="fd__act" id="fd-act">
+      <h3 class="fd__h">What to do about it</h3>
+      <div class="fd__actions">
+        <button type="button" class="fd__btn" id="fd-draft">Draft a follow-up</button>
+        <button type="button" class="fd__btn fd__btn--quiet" id="fd-ask">Ask about this</button>
+      </div>
+      <div class="fd__draft" id="fd-draftbox" hidden>
+        <textarea class="fd__drafttext" id="fd-drafttext" rows="7" aria-label="Drafted follow-up"></textarea>
+        <div class="fd__draftbar">
+          <button type="button" class="fd__btn" id="fd-copy">Copy</button>
+          <span class="fd__draftnote">Svarg never sends this. You decide who receives it.</span>
+        </div>
+      </div>
+      <p class="fd__note" id="fd-note" hidden></p>
+    </div>
+  </section>
+
       <div class="ch-log" id="ch-log" role="log" aria-live="polite">
         <!-- Opening turn. Not a fake message from the assistant — it is the
              app introducing itself.
@@ -248,6 +321,7 @@
        to replace each one's sample with their own file. Parsed in the
        browser, sent to this application's own server, written to the
        database that is theirs. Nothing goes to Svarg. data.js drives it. -->
+
   <!-- What this application is watching. One card per agent, in the shape the
        Data page uses for a source. The findings here are the durable copy: an
        owner who missed the message still sees everything that was noticed,
@@ -393,10 +467,44 @@
     function show(which) {
       home.hidden = which !== 'home';
       greet.hidden = which !== 'greet';
-      app.hidden = which !== 'app';
       if (data) data.hidden = true;
-      if (which === 'app') { var input = document.getElementById('ch-input'); if (input) input.focus(); if (typeof refreshAreas === 'function') refreshAreas(); }
+      /*
+       * Coming in from the door lands on what was found, not on the chat.
+       *
+       * The application used to open on the compose box, which asked the
+       * customer to already know what to ask about. The first thing anyone
+       * sees now is the board — and if the watchers have not run yet it says
+       * when the first check is, rather than showing an empty page that reads
+       * as a product that does nothing.
+       */
+      app.hidden = which !== 'app';
+      if (which === 'app') {
+        chatParts(false);
+        var findings = document.getElementById('ch-findings');
+        if (findings) findings.hidden = false;
+        window.dispatchEvent(new CustomEvent('svarg:findings-open'));
+        if (typeof refreshAreas === 'function') refreshAreas();
+      }
     }
+
+    /**
+     * The chat, as a set of elements rather than one container.
+     *
+     * ch-main was written as a chat pane: the log, the composer, its hint and
+     * the try-asking strip are siblings, not children of a wrapper. Rather
+     * than restructure markup that every generated application inherits —
+     * and risk every one of them — the findings board sits beside them and
+     * this shows or hides the set.
+     */
+    function chatParts(visible) {
+      ['ch-log', 'ch-form', 'ch-tryask'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.hidden = !visible;
+      });
+      var hint = document.querySelector('.ch-compose__hint');
+      if (hint) hint.hidden = !visible;
+    }
+    window.svargChatParts = chatParts;
 
     function say(text) { note.textContent = text; note.hidden = !text; }
 
@@ -689,13 +797,20 @@
        * built with -- kept apart, so nobody mistakes one for the other.
        */
       nav.innerHTML = '<button type="button" class="ch-side__item ch-side__item--on" data-side="home">' + svg('home') + '<span>Home</span></button>'
+        // Ask, not Chat, and second rather than first. The question box used
+        // to BE the home screen, which made a product that watches look like
+        // a product that waits: you only got an answer if you already
+        // suspected the question. It is still here, one place in, for when
+        // somebody wants to go deeper than a finding.
+        + '<a href="#ask" class="ch-side__item" id="ch-ask-link" data-side="ask">' + svg('chat') + '<span>Ask</span></a>'
         + '<a href="#data" class="ch-side__item" id="ch-data-link" data-side="data">' + svg('data') + '<span>Data</span></a>'
-        // What the application is watching while nobody is looking. Owner
-        // only, and the page says so plainly when somebody else opens it.
-        + '<a href="#agents" class="ch-side__item" id="ch-agents-link" data-side="agents">' + svg('watch') + '<span>Agents</span></a>';
+        // What the application is watching while nobody is looking. Changing
+        // what is watched is owner-only; reading what it found is not.
+        + '<a href="#agents" class="ch-side__item" id="ch-agents-link" data-side="agents">' + svg('watch') + '<span>Watchers</span></a>';
       nav.addEventListener('click', function (e) {
         var b = e.target.closest('[data-side]'); if (!b) return;
         if (b.dataset.side === 'home') { e.preventDefault(); goHomeTab(); }
+        if (b.dataset.side === 'ask') { e.preventDefault(); goAskTab(); }
         // Data: data.js opens the page from this link; the page opens on Connections.
       });
       // Any way onto the Data page lands on Connections first.
@@ -837,14 +952,51 @@
         refreshAreas();
         loadRows();
       }
+      /*
+       * Home is what was found, not a box to type in.
+       *
+       * This used to open the chat. That made a product whose promise is
+       * "we will tell you before you have to look" open by asking the
+       * customer what they wanted to know — which only works for somebody
+       * who already suspects the answer. The question box is still here,
+       * one place in, under Ask.
+       */
       function goHomeTab() {
         showConnections();
         if (page) page.hidden = true;
         app.hidden = false;
-        nav.querySelectorAll('.ch-side__item').forEach(function (x) { x.classList.toggle('ch-side__item--on', x.dataset.side === 'home'); });
+        hide('ch-finding');
+        window.svargChatParts(false);
+        var fn = document.getElementById('ch-findings');
+        if (fn) fn.hidden = false;
+        markSide('home');
+        // findings.js listens for this and reloads, so the board is never
+        // older than the moment somebody looked at it.
+        window.dispatchEvent(new CustomEvent('svarg:findings-open'));
+      }
+
+      /** The chat, deliberately reachable and deliberately not first. */
+      function goAskTab() {
+        showConnections();
+        if (page) page.hidden = true;
+        hide('ch-findings'); hide('ch-finding');
+        app.hidden = false;
+        window.svargChatParts(true);
+        markSide('ask');
         if (typeof sync === 'function') sync();
         log.scrollTop = 0; if (input) input.focus();
       }
+
+      function hide(id) { var el = document.getElementById(id); if (el) el.hidden = true; }
+      function markSide(which) {
+        nav.querySelectorAll('.ch-side__item').forEach(function (x) {
+          x.classList.toggle('ch-side__item--on', x.dataset.side === which);
+        });
+      }
+      // Exposed so findings.js can hand control back without reaching into
+      // this closure — the same contract the other panels already use.
+      window.svargGoHome = goHomeTab;
+      window.svargGoAsk = goAskTab;
       var searchTimer = null;
       viewSearch.addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(loadRows, 250); });
 
@@ -1097,6 +1249,11 @@
   <script src="access.js"></script>
   <script src="answer.js"></script>
   <script src="agents.js" defer></script>
+  <!-- The findings board and the evidence screen: the first thing anyone sees
+       once they are through the door. Deferred like the rest, and it returns
+       immediately if its sections are not on the page, so an older generated
+       application that predates them is unaffected. -->
+  <script src="findings.js" defer></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

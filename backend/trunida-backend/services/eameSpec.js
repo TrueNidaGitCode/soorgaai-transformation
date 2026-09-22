@@ -90,10 +90,12 @@ export const FIXED_PATHS = [
   // resolve in every application.
   'services/agentService.js',
   'services/agentCatalogue.js',
+  'services/draftService.js',
   'services/notifyService.js',
   'controllers/agentsController.js',
   'routes/agentsRoutes.js',
   'frontend/agents.js',
+  'frontend/findings.js',
   'services/turnLog.js',
   'services/selfCheck.js',
   'services/conformance.js',

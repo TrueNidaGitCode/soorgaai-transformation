@@ -19,6 +19,7 @@ import { buildRuntime } from '../services/eameProjectBuilder.js';
 import { resolveAppName } from '../services/eameSpec.js';
 import { sampleDataFiles } from '../services/deliveredSampleData.js';
 import { sourcesForBlueprint, connectorKindsFor, sourcesFile } from '../services/sourceCatalogService.js';
+import { watcherPlanFile } from '../services/watcherPlanService.js';
 import { tenantMongoUri } from '../services/deployTargetService.js';
 import { requireEntitlement } from '../services/entitlements.js';
 import { ensureAppName } from '../services/appNameService.js';
@@ -203,6 +204,12 @@ export async function generatedManifest(blueprintId, { appName = '' } = {}) {
     connectors: sources ? connectorKindsFor(sources) : null,
   });
   if (sources) runtime.push(sourcesFile(sources));
+  // Which watchers this business asked for, so the delivered application
+  // starts the ones its data supports instead of arriving with nothing
+  // watching. Composed here as well as in the build, because this is the
+  // path that actually ships AND the one the live-update sweep recomposes:
+  // a file added only to the build would never reach an existing customer.
+  if (bp) runtime.push(watcherPlanFile(bp));
   // The sample data ships with the project, so the delivered seed script has
   // something to read and the customer sees the application work rather than
   // an empty database answering as though emptiness were a finding.

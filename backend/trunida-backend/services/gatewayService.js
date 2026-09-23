@@ -64,18 +64,65 @@ const EMBEDDING_PRICE_PER_M = Number(process.env.GATEWAY_EMBEDDING_PRICE || 0.02
  */
 export function findCatalogModel(modelId) {
   if (!modelId) return null;
-  return ADVISORY_CATALOG.find(m => m.id === modelId)
-      || ADVISORY_CATALOG.find(m => m.apiModel === modelId)
+  const exact = ADVISORY_CATALOG.find(m => m.id === modelId)
+    || ADVISORY_CATALOG.find(m => m.apiModel === modelId);
+  if (exact) return exact;
+
+  /*
+   * ── And once more with the punctuation taken out ─────────────────────────
+   *
+   * The same model is written two ways in this codebase. The advisory
+   * catalogue calls it 'gemini-3.8-flash'; the benchmark catalogue in the
+   * database, which is where a deployment's modelId comes from, calls it
+   * 'gemini-3-8-flash'. One dot.
+   *
+   * Every deployment created from the database catalogue therefore missed
+   * both exact tests above and was priced at the most expensive row — about
+   * forty times its real cost. Nothing said so. The meter simply read high,
+   * and the per-deployment spend cap was going to stop a customer's
+   * application on money nobody had spent.
+   *
+   * This is the second time the two spellings have diverged; the comment
+   * above is the first. Matching on the letters and digits alone is what
+   * stops there being a third.
+   */
+  const key = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const want = key(modelId);
+  return ADVISORY_CATALOG.find(m => key(m.apiModel) === want)
+      || ADVISORY_CATALOG.find(m => key(m.id) === want)
       || null;
 }
 
+/** Said once per model, so an unpriced one is noticed rather than absorbed. */
+const warnedUnpriced = new Set();
+
 export function estimateCostUsd(modelId, inputTokens = 0, outputTokens = 0) {
   const m = findCatalogModel(modelId);
-  // An unknown model is costed at the most expensive row rather than zero —
-  // an unpriced model must not become an uncapped one.
-  const priceIn  = m?.priceIn  ?? Math.max(...ADVISORY_CATALOG.map(x => x.priceIn  || 0));
-  const priceOut = m?.priceOut ?? Math.max(...ADVISORY_CATALOG.map(x => x.priceOut || 0));
+  const known = Number.isFinite(m?.priceIn) && Number.isFinite(m?.priceOut);
+
+  /*
+   * An unknown model is costed at the most expensive row rather than zero:
+   * an unpriced model must not become an uncapped one. That is right for a
+   * ceiling and wrong for a ledger, and for a long time it was silent in
+   * both — so it now says so, once, naming the model somebody needs to
+   * price. A number this far from the truth should not be able to hide.
+   */
+  if (!known && modelId && !warnedUnpriced.has(modelId)) {
+    warnedUnpriced.add(modelId);
+    console.warn(`[gateway] "${modelId}" has no price in the catalogue. `
+      + 'Charging it at the most expensive row until one is set, so its spend cap '
+      + 'will bite early and its ledger will read high.');
+  }
+
+  const priceIn  = known ? m.priceIn  : Math.max(...ADVISORY_CATALOG.map(x => x.priceIn  || 0));
+  const priceOut = known ? m.priceOut : Math.max(...ADVISORY_CATALOG.map(x => x.priceOut || 0));
   return (inputTokens / 1e6) * priceIn + (outputTokens / 1e6) * priceOut;
+}
+
+/** Whether this model prices from the catalogue at all. For scripts and tests. */
+export function isPriced(modelId) {
+  const m = findCatalogModel(modelId);
+  return Number.isFinite(m?.priceIn) && Number.isFinite(m?.priceOut);
 }
 
 export function estimateEmbeddingCostUsd(tokens = 0) {

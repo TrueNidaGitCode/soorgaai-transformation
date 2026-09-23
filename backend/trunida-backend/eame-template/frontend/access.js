@@ -42,9 +42,10 @@
     panel = el(
       '<section class="ac" id="ch-access" hidden aria-label="People">'
       + '<header class="ac__head">'
-      +   '<p class="ac__topline"><a href="#" class="ac__back" id="ac-back">&larr; Back to the chat</a></p>'
+      +   '<p class="ac__topline"><a href="#" class="ac__back" id="ac-back" hidden>&larr; Back to the chat</a></p>'
       +   '<p class="ac__eyebrow">People</p>'
-      +   '<h1 class="ac__title">Who can use <em>this application</em></h1>'
+      +   '<h1 class="ac__title">Give your team <em>access</em></h1>'
+      +   '<p class="ac__lede">Anyone you add here can sign in, read what the watchers found, and act on it. Only you can change what is watched.</p>'
       +   '<p class="ac__sub" id="ac-sub"></p>'
       + '</header>'
       + '<div class="ac__body">'

@@ -155,10 +155,19 @@ describe('the banner is drawn from what the page was actually told', () => {
     expect(SRC).toContain("(body.categories || []).length");
   });
 
-  it('does not repeat the verdict as the list heading', () => {
-    // Two headlines saying the same thing in different words is how a screen
-    // stops being read.
-    expect(SRC).toContain("el.title.textContent = 'What needs your attention';");
+  it('does not repeat the verdict as a second heading', () => {
+    /*
+     * The list had its own heading and its own severity breakdown, directly
+     * under a banner that said the same thing in more words and the area
+     * boxes that said it per area. Three statements of one fact is how a
+     * screen stops being read, so the findings now follow the boxes with no
+     * heading of their own.
+     */
+    const html = fs.readFileSync(new URL('../eame-template/frontend/index.html', import.meta.url), 'utf8');
+    expect(html).not.toContain('id="fn-title"');
+    expect(html).not.toContain('id="fn-sub"');
+    expect(SRC).not.toContain('el.title');
+    expect(SRC).not.toContain('el.sub');
   });
 
   it('leads somewhere from the health card, in every state', () => {

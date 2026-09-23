@@ -925,7 +925,7 @@ const CHALLENGE = /^\s*(are you sure|really\??|is that right|are you certain|you
  * sentence follows when it is ready. Callers that pass no onStage get exactly
  * what they got before.
  */
-export async function answer({ question, history = [], ctx = null, kind = 'own', onStage = null } = {}) {
+export async function answer({ question, history = [], ctx = null, kind = 'own', onStage = null, usePlan = null } = {}) {
   const stage = (name, payload) => { try { if (onStage) onStage(name, payload); } catch { /* a watcher must not break the answer */ } };
   const notes = [];
   const q = String(question || '').trim();
@@ -962,7 +962,28 @@ export async function answer({ question, history = [], ctx = null, kind = 'own',
   const asked = challenged ? lastQuestion : q;
 
   stage('planning');
-  const planned = await plan({ question: asked, history: history.slice(-8), ctx, cat });
+  /*
+   * ── A watcher asks the same question every day, so it gets the same plan ──
+   *
+   * A person's question is planned fresh, because it has never been asked
+   * before. A watcher's has: the same sentence, on a schedule, for months.
+   *
+   * Planning it again every run made the answer depend on what the model
+   * happened to return that morning. Two runs of one watcher could read
+   * different datasets, or filter on a different column, and the findings
+   * would differ for no reason anybody could see — a customer was told a
+   * problem had resolved itself when nothing about their business had
+   * changed, which is worse than not telling them at all.
+   *
+   * So a caller that has run this question before hands back the plan it got,
+   * and it is re-validated against TODAY'S datasets rather than trusted: a
+   * stored step naming a column that no longer exists is dropped here, and an
+   * empty result sends us back to the model to plan it again.
+   */
+  const pinned = usePlan ? sanitisePlan(usePlan, cat) : null;
+  const planned = pinned && pinned.steps.length
+    ? pinned
+    : await plan({ question: asked, history: history.slice(-8), ctx, cat });
   stage('reading', { reading: planned.reading || '' });
   const { groups } = await execute(planned, used);
   stage('checking');

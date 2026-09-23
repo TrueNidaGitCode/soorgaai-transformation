@@ -188,7 +188,6 @@
 
     <div class="ch-main" id="ch-main">
       <header class="ch-head">
-        <h1 class="ch-head__title ch-head__title--bar" id="ch-view-title">__APP_NAME__</h1>
         <span class="ch-head__state" id="ch-state"><span class="ch-head__dot"></span>Connecting…</span>
         <a href="#" class="ch-head__link ch-head__link--home" id="ch-home-link-2">Home</a>
         <div class="ch-who" id="ch-head-who-chip" hidden>
@@ -239,10 +238,6 @@
       </button>
     </section>
 
-    <header class="fn__head">
-      <h2 class="fn__title" id="fn-title">What needs your attention</h2>
-      <p class="fn__sub" id="fn-sub"></p>
-    </header>
 
     <!-- The business areas this industry groups its findings under, one box
          each. The words come from the industry's own knowledge base, so a
@@ -280,10 +275,6 @@
       <p class="fn__empty-note" id="fn-empty-note"></p>
     </div>
 
-    <div class="fn__resolved" id="fn-resolved" hidden>
-      <h3 class="fn__rhead" id="fn-rhead"></h3>
-      <ul class="fn__rlist" id="fn-rlist"></ul>
-    </div>
 
     <p class="fn__note" id="fn-note" hidden></p>
   </section>
@@ -336,7 +327,7 @@
        it. -->
   <section class="ag" id="ch-agents" hidden aria-label="Agents">
     <header class="ag__head">
-      <p class="ag__topline"><a href="#" class="ag__back" id="ag-back">&larr; Back to the chat</a></p>
+      <p class="ag__topline"><a href="#" class="ag__back" id="ag-back" hidden>&larr; Back to the chat</a></p>
       <p class="ag__eyebrow">Running on their own</p>
       <h1 class="ag__title">How this application is <em>watching your business</em></h1>
       <p class="ag__lede">A watcher asks one question of your own records on a schedule, and tells
@@ -354,43 +345,13 @@
          open, and the buttons that start, pause or remove it. -->
     <div class="ag-detail" id="ag-detail" hidden></div>
 
-    <!-- Writes, so it belongs to the owner. agents.js hides it for anyone
-         else rather than offering a form the API will refuse. -->
-    <div id="ag-own" hidden>
-    <h2 class="ag-sub">Or describe your own</h2>
-    <p class="ag-orlede">If none of those is quite it, say what you want to be told about.</p>
-    <form class="ag-form" id="ag-form">
-      <label class="ag-field">
-        <span>Call it</span>
-        <input type="text" id="ag-name" maxlength="80" placeholder="Dropout Watch" autocomplete="off">
-      </label>
-      <label class="ag-field ag-field--wide">
-        <span>Tell me when&hellip;</span>
-        <input type="text" id="ag-question" maxlength="600"
-               placeholder="a student has not attended for 14 days" autocomplete="off">
-      </label>
-      <label class="ag-field">
-        <span>How often</span>
-        <select id="ag-schedule">
-          <option value="weekdays">Every weekday</option>
-          <option value="daily">Every day</option>
-          <option value="hourly">Every hour</option>
-        </select>
-      </label>
-      <label class="ag-field">
-        <span>At</span>
-        <select id="ag-hour">
-          <option value="6">6am</option>
-          <option value="7" selected>7am</option>
-          <option value="8">8am</option>
-          <option value="9">9am</option>
-          <option value="17">5pm</option>
-        </select>
-      </label>
-      <button type="submit" class="ag-go">Start watching</button>
-    </form>
+    <!-- Whatever the page needs to say after an action.
+
+         A "describe your own" form used to sit here, asking somebody to
+         write a watcher question as a sentence. That is a different
+         product: watchers are derived from a business and its data, and
+         the way in is starting one from the map above. -->
     <p class="ag-note" id="ag-note" hidden></p>
-    </div>
   </section>
 
   <!-- ── The Data page ──────────────────────────────────────────────────
@@ -402,10 +363,10 @@
     <header class="dt__head">
       <div class="dt__headrow">
         <div class="dt__headtext">
-          <p class="dt__topline"><a href="#" class="dt__back" id="dt-back">&larr; Back to the chat</a><button type="button" class="dt__lock" id="dt-lock" hidden>Lock the Data page</button></p>
+          <p class="dt__topline"><a href="#" class="dt__back" id="dt-back" hidden>&larr; Back to the chat</a><button type="button" class="dt__lock" id="dt-lock" hidden>Lock the Data page</button></p>
           <p class="dt__eyebrow">Data sources</p>
-          <h1 class="dt__title">Connect your <em>data sources</em></h1>
-          <p class="dt__sub">Bring the places your records live together, so the application answers about your own work rather than about the sample it shipped with.</p>
+          <h1 class="dt__title" id="dt-title">Connect your <em>data sources</em></h1>
+          <p class="dt__sub" id="dt-sub">Bring the places your records live together, so the application answers about your own work rather than about the sample it shipped with.</p>
         </div>
         <!-- The sources, as two lit tiles and a spark between them. -->
         <div class="dt__art" aria-hidden="true">
@@ -452,32 +413,58 @@
     </div>
 
     <div class="dt__room" id="dt-room" hidden>
-      <!-- The sources, one card each, from data/sources.json in the
-           industry's order: documents (a folder) and WhatsApp for an
-           academy; Jira and Confluence for a software team. Whatever a
-           card does -- the upload, its progress, the matching, the
-           connection form, and what it holds afterwards -- happens inside
-           the card. -->
-      <div class="dt-choose">
-        <div class="dt-choose__main">
-          <h2 class="dt-choose__head">Choose how you want to connect</h2>
-          <!-- How many places records may come from, when the plan says. -->
-          <p class="dt-choose__used" id="dt-used" hidden></p>
-          <div class="dt-cards" id="dt-sources"></div>
-          <p class="dt-note" id="dt-note" hidden></p>
+      <!-- ── Two states, and they say different things ────────────────────
+           Before anything is connected, this page is an invitation: three
+           ways in, side by side, and nothing else to read. Once a source is
+           connected it becomes a report — what is connected, how much it
+           holds and when it last arrived — because by then the question has
+           changed from "how do I start" to "is it still working".
+
+           Which one shows is decided by whether anything is actually
+           connected, never by a step somebody clicked past. -->
+
+      <!-- BEFORE. The sources come from data/sources.json in the industry's
+           order: documents and WhatsApp for an academy, Jira and Confluence
+           for a software team, a database for everybody. Whatever a card
+           does -- the upload, its progress, the matching, the connection
+           form -- happens inside the card. -->
+      <section class="dt-start" id="dt-start" hidden>
+        <p class="dt-start__eyebrow">Connect your data</p>
+        <h2 class="dt-start__head">Bring the data your business <em>already uses</em> into Svarg.</h2>
+        <p class="dt-start__sub">It is read here and matched to what this application already expects, so its
+          answers are about your own records rather than the sample it shipped with.</p>
+        <!-- How many places records may come from, when the plan says. -->
+        <p class="dt-choose__used" id="dt-used" hidden></p>
+        <div class="dt-cards" id="dt-sources"></div>
+      </section>
+
+      <!-- AFTER. -->
+      <section class="dt-live" id="dt-live" hidden>
+        <div class="dt-live__banner">
+          <span class="dt-live__tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.2l2.8 2.8L16 9.5"/></svg></span>
+          <span class="dt-live__text">
+            <span class="dt-live__title">Your business data is connected</span>
+            <span class="dt-live__sub" id="dt-live-sub"></span>
+          </span>
         </div>
-        <!-- Numbered because it really is a sequence: nothing is matched
-             until the structure has been read, and nothing is watched
-             until it has been matched. -->
-        <aside class="dt-next">
-          <h2 class="dt-next__head">What happens next</h2>
-          <ol class="dt-next__list">
-            <li><span class="dt-next__n">1</span><div><b>We read the structure</b><span>Which columns are there, and how they relate.</span></div></li>
-            <li><span class="dt-next__n">2</span><div><b>We match it to your work</b><span>Each sheet or table becomes one of the datasets this application already expects.</span></div></li>
-            <li><span class="dt-next__n">3</span><div><b>The watchers start looking</b><span>From then on they read your own records, not the sample.</span></div></li>
-          </ol>
-        </aside>
-      </div>
+
+        <div class="dt-live__cards" id="dt-live-cards"></div>
+
+        <h3 class="dt-live__head">Connected data sources</h3>
+        <div class="dt-live__tablewrap">
+          <table class="dt-live__table">
+            <thead>
+              <tr><th>Name</th><th>Type</th><th>Records</th><th>Last updated</th><th>Status</th></tr>
+            </thead>
+            <tbody id="dt-live-rows"></tbody>
+          </table>
+        </div>
+
+        <!-- Back to the three ways in, without leaving the page. -->
+        <button type="button" class="dt-live__add" id="dt-live-add">+ Connect another source</button>
+      </section>
+
+      <p class="dt-note" id="dt-note" hidden></p>
 
       <!-- Folded shut: the answer to "what is actually in here?" is worth
            having, and is not worth a column down the side of a page about
@@ -1046,8 +1033,8 @@
       var viewSearch = document.getElementById('ch-view-search');
       var viewTable = document.getElementById('ch-view-table');
       var viewNote = document.getElementById('ch-view-note');
-      var viewTitle = document.getElementById('ch-view-title');
-      var appName = viewTitle ? viewTitle.textContent : '';
+      // Read from the brand in the sidebar, which is where the name lives now.
+      var appName = (document.querySelector('.ch-side__brandtext strong') || {}).textContent || '';
       var current = null;
       var kind = 'own';
       var SRC = { sample: 'simulated', own: 'file', folder: 'folder', chat: 'chat', whatsapp: 'WhatsApp', jira: 'Jira', confluence: 'Confluence', github: 'GitHub' };

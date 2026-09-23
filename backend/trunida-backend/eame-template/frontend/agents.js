@@ -340,7 +340,6 @@
       view.canManage = !!body.canManage;
       view.coverage = body.coverage || null;
       // The form below the map writes, so it belongs to the owner too.
-      if (els.form) els.form.hidden = !view.canManage;
       var aside = document.getElementById('ag-own');
       if (aside) aside.hidden = !view.canManage;
       if (picked && !view.catalogue.some(function (c) { return c.id === picked; })) picked = '';
@@ -354,32 +353,6 @@
         ? 'Only the person who created this application can see and change what it watches.'
         : 'What this application is watching could not be read. ' + err.message;
       say('');
-    });
-  }
-
-  if (els.form) {
-    els.form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      say('');
-      var body = {
-        name: els.name.value.trim(),
-        question: els.question.value.trim(),
-        schedule: els.schedule.value,
-        atHour: Number(els.hour.value),
-        // The owner's own clock. A morning briefing has to arrive in their
-        // morning, not the container's.
-        tz: (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'UTC',
-      };
-      if (!body.name || !body.question) { say('It needs a name and something to watch.', true); return; }
-
-      api('', { method: 'POST', body: JSON.stringify(body) })
-        .then(function () {
-          els.name.value = '';
-          els.question.value = '';
-          say('Watching. It will run ' + scheduleText({ schedule: body.schedule, atHour: body.atHour }) + '.');
-          return load();
-        })
-        .catch(function (err) { say(err.message, true); });
     });
   }
 

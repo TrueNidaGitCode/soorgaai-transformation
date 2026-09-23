@@ -160,7 +160,7 @@ describe('the agents are wired into the application', () => {
     expect(server).toContain('startAgentScheduler(');
     // Handed the pipeline rather than importing it inside the service, so the
     // one place an agent spends money is visible at the call site.
-    expect(server).toContain("answer({ question, kind: 'own' })");
+    expect(server).toContain("answer({ question, kind: 'own', usePlan })");
   });
 
   it('watches the owner’s real data, never the simulated rows', () => {
@@ -227,9 +227,8 @@ describe('the agents are wired into the application', () => {
     expect(ctl).toContain('canManage: await isOwner(req),');
     const ui = read('../eame-template/frontend/agents.js');
     expect(ui).toContain('view.canManage = !!body.canManage;');
-    // The buttons are drawn from it, and the form that writes is hidden.
+    // The buttons are drawn from it.
     expect(ui).toContain('      : !view.canManage');
-    expect(ui).toContain('if (els.form) els.form.hidden = !view.canManage;');
     // A refusal says it is one.
     expect(ui).toMatch(/Only the person who created this application can see and change/);
   });
@@ -320,12 +319,22 @@ describe('the board, which is the durable copy', () => {
     expect(ctrl).toContain('openCount');
   });
 
-  it('asks the owner for a sentence, not for a query', () => {
-    // The whole ICP is somebody who cannot write one. A screen that looks like
-    // a query builder loses them on sight.
+  it('never asks the owner to write a query, or a sentence either', () => {
+    /*
+     * The whole ICP is somebody who cannot write a query, and a screen that
+     * looks like a query builder loses them on sight. That much is unchanged.
+     *
+     * What went is the free-text box that asked them to write the watcher's
+     * question as a sentence instead. It was the same demand in friendlier
+     * words: a watcher is derived from a business and its data, and the way
+     * in is starting one from the map.
+     */
     const html = read2('../eame-template/frontend/index.html');
-    expect(html).toContain('Tell me when&hellip;');
-    expect(html).toContain('a student has not attended for 14 days');
+    expect(html).not.toContain('Tell me when&hellip;');
+    expect(html).not.toContain('ag-form');
+    expect(html).not.toMatch(/Or describe your own/);
+    // And the way in is still there.
+    expect(read2('../eame-template/frontend/agents.js')).toContain("data-start=");
   });
 
   it('creates the agent in the owner\u2019s own timezone', () => {

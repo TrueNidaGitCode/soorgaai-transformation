@@ -256,7 +256,7 @@ async function start() {
    * morning briefing built on the simulated rows a new application ships with
    * would be worse than sending nothing.
    */
-  startAgentScheduler(({ question }) => answer({ question, kind: 'own' }));
+  startAgentScheduler(({ question, usePlan }) => answer({ question, kind: 'own', usePlan }));
 
   /*
    * And it starts watching without being asked.

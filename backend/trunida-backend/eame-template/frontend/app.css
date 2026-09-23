@@ -1283,6 +1283,7 @@ body {
                color: var(--ch-accent); }
 .ac__title { margin: 0 0 10px; font-size: 30px; line-height: 1.15; font-weight: 800; letter-spacing: -0.02em; }
 .ac__title em { font-style: normal; color: var(--ch-accent); }
+.ac__lede { margin: 0 0 10px; max-width: 64ch; font-size: 14px; line-height: 1.55; color: var(--ch-dim); }
 .ac__sub { margin: 0; max-width: 62ch; color: var(--ch-dim); font-size: 14px; line-height: 1.55; }
 .ac__body { min-width: 0; }
 .ac__add { display: flex; gap: 8px; margin: 0 0 12px; }
@@ -2258,18 +2259,8 @@ body {
 
 /* The connect card and the rail beside it: the choice on the left, what
    happens after it on the right, dropping under at narrow widths. */
-.dt-choose { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 0; border: 1px solid var(--ch-line); border-radius: 22px; background: color-mix(in srgb, var(--ch-panel) 55%, transparent); overflow: hidden; }
-.dt-choose__main { padding: 22px; min-width: 0; }
-.dt-choose__head { margin: 0 0 16px; font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
 .dt-choose__used { margin: -10px 0 16px; font-size: 12.5px; color: var(--ch-faint); }
 .dt-choose__used.is-full { color: var(--ch-warn); }
-.dt-next { padding: 22px; border-left: 1px solid var(--ch-line); background: color-mix(in srgb, var(--ch-accent) 4%, transparent); }
-.dt-next__head { margin: 0 0 16px; font-size: 14.5px; font-weight: 800; }
-.dt-next__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; counter-reset: none; }
-.dt-next__list li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; align-items: start; }
-.dt-next__n { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11.5px; font-weight: 800; color: var(--ch-accent); background: color-mix(in srgb, var(--ch-accent) 16%, transparent); font-variant-numeric: tabular-nums; }
-.dt-next__list b { display: block; font-size: 13.5px; font-weight: 700; }
-.dt-next__list span:not(.dt-next__n) { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.5; color: var(--ch-dim); }
 
 /* Said once in the header, beside the title. */
 .dt__safe { flex: 0 0 auto; max-width: 280px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; align-items: start; padding-left: 24px; border-left: 1px solid var(--ch-line); }
@@ -2279,6 +2270,130 @@ body {
 .dt__safe-line { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ch-dim); }
 
 /* Shut until somebody wants it. */
+/* ── Data, before anything is connected ──────────────────────────────────────
+   An invitation, and nothing else to read: three ways in, side by side. */
+
+.dt-start__eyebrow {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ch-accent);
+}
+.dt-start__head {
+  margin: 0 0 12px;
+  max-width: 22ch;
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.dt-start__head em { font-style: normal; color: var(--ch-accent); }
+.dt-start__sub { margin: 0 0 26px; max-width: 62ch; font-size: 14.5px; line-height: 1.55; color: var(--ch-dim); }
+
+/* Side by side, because they are alternatives rather than steps. */
+.dt-start .dt-cards { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); align-items: stretch; }
+.dt-start .dt-card { flex-direction: column; }
+.dt-start .dt-card__head { grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.dt-start .dt-card__act { align-items: flex-start; margin-top: auto; }
+.dt-start .dt-card__icon { width: 44px; height: 44px; }
+
+/* ── Data, once something is connected ───────────────────────────────────────
+   A report rather than an invitation: the question has changed from "how do
+   I start" to "is it still arriving". */
+
+.dt-live__banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 22px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--ch-accent) 30%, var(--ch-line));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--ch-accent) 7%, transparent);
+}
+.dt-live__tick {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: var(--ch-accent);
+  background: color-mix(in srgb, var(--ch-accent) 16%, transparent);
+}
+.dt-live__tick svg { width: 22px; height: 22px; }
+.dt-live__text { min-width: 0; }
+.dt-live__title { display: block; font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+.dt-live__sub { display: block; margin-top: 3px; font-size: 13.5px; color: var(--ch-dim); }
+
+.dt-live__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 30px;
+}
+.dt-live__card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--ch-line);
+  border-radius: 13px;
+  background: var(--ch-panel);
+  min-width: 0;
+}
+.dt-live__cardname { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+.dt-live__cardtype { font-size: 11.5px; letter-spacing: 0.04em; color: var(--ch-faint); }
+.dt-live__cardstate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ch-accent);
+}
+.dt-live__cardstate::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.dt-live__cardwhen { font-size: 11.5px; color: var(--ch-faint); }
+
+.dt-live__head { margin: 0 0 12px; font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
+/* Its own scroller, so a narrow window moves the table and not the page. */
+.dt-live__tablewrap { overflow-x: auto; border: 1px solid var(--ch-line); border-radius: 14px; }
+.dt-live__table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.dt-live__table th,
+.dt-live__table td { padding: 12px 16px; text-align: left; white-space: nowrap; }
+.dt-live__table th {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ch-faint);
+  border-bottom: 1px solid var(--ch-line);
+}
+.dt-live__table td { border-bottom: 1px solid var(--ch-line); }
+.dt-live__table tr:last-child td { border-bottom: 0; }
+.dt-live__table td:first-child { font-weight: 600; }
+.dt-live__table td:nth-child(3) { font-variant-numeric: tabular-nums; }
+.dt-live__dot { display: inline-flex; align-items: center; gap: 7px; color: var(--ch-accent); font-weight: 600; }
+.dt-live__dot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+.dt-live__add {
+  margin-top: 20px;
+  padding: 11px 18px;
+  border: 1px dashed var(--ch-line-hi);
+  border-radius: 11px;
+  background: transparent;
+  color: var(--ch-dim);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dt-live__add:hover { color: var(--ch-text); border-color: var(--ch-accent); }
+
 .dt-holds { margin-top: 20px; border: 1px solid var(--ch-line); border-radius: 16px; background: color-mix(in srgb, var(--ch-panel) 45%, transparent); }
 .dt-holds__summary { display: flex; align-items: center; gap: 10px; padding: 14px 18px; font-size: 14px; font-weight: 700; color: var(--ch-dim); cursor: pointer; list-style: none; border-radius: 16px; }
 .dt-holds__summary::-webkit-details-marker { display: none; }
@@ -2292,8 +2407,6 @@ body {
 /* The rail is the second thing to read, so below the choice rather than
    beside it once there is no room for both. */
 @media (max-width: 900px) {
-  .dt-choose { grid-template-columns: minmax(0, 1fr); }
-  .dt-next { border-left: 0; border-top: 1px solid var(--ch-line); }
 }
 /* A card is a row until the row will not hold: then icon and title, with
    the button under them at full width. */

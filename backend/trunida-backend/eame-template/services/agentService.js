@@ -402,7 +402,16 @@ export async function setAgentEnabled(id, enabled) {
   const $set = enabled
     ? { enabled: true, status: 'active', failures: 0, lastError: '' }
     : { enabled: false, status: 'paused' };
-  await agentsCollection().updateOne({ _id }, { $set });
+  /*
+   * And it forgets the plan it was using.
+   *
+   * A watcher that stopped itself after three failures usually stopped
+   * because the plan it had pinned no longer fits the data — a column
+   * renamed, a dataset replaced. "Start it again" should mean try afresh,
+   * not run the same broken thing three more times and stop again.
+   */
+  const $unset = enabled ? { plan: '' } : undefined;
+  await agentsCollection().updateOne({ _id }, $unset ? { $set, $unset } : { $set });
   return agentsCollection().findOne({ _id }).then(publicView);
 }
 
@@ -429,7 +438,21 @@ export async function deleteAgent(id) {
 export async function runAgent(agent, ask) {
   const _id = agent._id;
   try {
-    const result = await ask({ question: agent.question });
+    /*
+     * The plan this watcher used last time, if it has one.
+     *
+     * A watcher asks the same sentence every morning, and planning it again
+     * each run made the answer depend on what the model returned that day.
+     * Findings appeared and "resolved themselves" while the customer's data
+     * sat unchanged -- which is the worst thing this product can say, because
+     * the whole promise is that a change in the findings means a change in
+     * the business.
+     *
+     * The pipeline re-validates it against today's datasets and plans afresh
+     * if it no longer fits, so a renamed column repairs itself on the next
+     * run rather than wedging.
+     */
+    const result = await ask({ question: agent.question, usePlan: agent.plan || null });
     const fired = evaluateCondition(agent.condition, result);
 
     const keys = [];
@@ -447,6 +470,15 @@ export async function runAgent(agent, ask) {
           }
         }
       }
+    }
+
+    /*
+     * Remembered only when the run produced something to work from: a plan
+     * that read no datasets is not one to repeat every morning for ever.
+     * Written before the diff so a crash below still leaves it pinned.
+     */
+    if (!agent.plan && result?.planned?.steps?.length) {
+      await agentsCollection().updateOne({ _id }, { $set: { plan: result.planned } }).catch(() => {});
     }
 
     const previous = await findingsCollection().find({ agentId: _id }).toArray();

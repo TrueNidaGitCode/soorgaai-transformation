@@ -43,6 +43,14 @@
     keyInput: document.getElementById('dt-key'),
     keyNote: document.getElementById('dt-key-note'),
     sources: document.getElementById('dt-sources'),
+    start: document.getElementById('dt-start'),
+    live: document.getElementById('dt-live'),
+    liveSub: document.getElementById('dt-live-sub'),
+    liveCards: document.getElementById('dt-live-cards'),
+    liveRows: document.getElementById('dt-live-rows'),
+    liveAdd: document.getElementById('dt-live-add'),
+    title: document.getElementById('dt-title'),
+    sub: document.getElementById('dt-sub'),
     note: document.getElementById('dt-note'),
     back: document.getElementById('dt-back'),
     lock: document.getElementById('dt-lock'),
@@ -227,6 +235,7 @@
         connectionLimit = c.connectionLimit || null;
       } catch (err) { kinds = []; connectors = []; connectionLimit = null; }
       drawUsed();
+      drawStates();
       renderSources();
     } catch (err) { /* the gate said why */ }
   }
@@ -279,6 +288,106 @@
     list = list.filter(function (s) { return s.kind !== 'form' && s.kind !== 'file'; });
     if (folded && !list.some(function (s) { return s.kind === 'folder'; })) list.unshift(DEFAULT_FOLDER);
     return list;
+  }
+
+  /*
+   * ── Which of the two states this page is in ──────────────────────────────
+   *
+   * Connected, or not. Decided by whether anything has actually arrived --
+   * a live connector, or a folder somebody uploaded -- and never by a step
+   * that was clicked past. A page that decided on a flag would keep telling
+   * a customer their data was connected after they removed it.
+   *
+   * "Connect another source" flips back to the invitation without leaving
+   * the page, and any successful connection flips it forward again.
+   */
+  var addingMore = false;
+
+  function connectedCount() { return connectors.length + (importsOf('folder').length ? 1 : 0); }
+
+  /** A source as the table names it: what it is, and where it came from. */
+  function liveSources() {
+    var out = connectors.map(function (c) {
+      var k = kinds.find(function (x) { return x.kind === c.kind; });
+      var ds = datasets.find(function (d) { return d.name === c.datasetName; });
+      return {
+        name: c.label || (k && k.label) || c.kind,
+        type: TYPE_OF[c.kind] || (k && k.label) || 'Connection',
+        rows: ds && ds.own ? ds.own.rows : null,
+        at: c.lastSyncAt || null,
+        dataset: c.datasetName || '',
+      };
+    });
+
+    // Everything uploaded as a folder is one source, however many sheets it
+    // held: the customer connected a folder, not eleven spreadsheets.
+    var f = importsOf('folder').concat(importsOf('own'));
+    if (f.length) {
+      var latest = f.slice().sort(function (a, b) { return new Date(b.at) - new Date(a.at); })[0];
+      out.unshift({
+        name: 'Documents',
+        type: 'Spreadsheets',
+        rows: f.reduce(function (n, e) { return n + (e.rows || 0); }, 0),
+        at: latest ? latest.at : null,
+        dataset: '',
+      });
+    }
+    return out;
+  }
+
+  var TYPE_OF = {
+    database: 'Database',
+    whatsapp: 'Messages',
+    'whatsapp-business': 'Messages',
+    jira: 'Issues',
+    confluence: 'Documents',
+    github: 'Repository',
+    svarg: 'Operations',
+  };
+
+  function liveCard(s) {
+    return '<article class="dt-live__card">'
+      + '<span class="dt-live__cardname">' + esc(s.name) + '</span>'
+      + '<span class="dt-live__cardtype">' + esc(s.type) + '</span>'
+      + '<span class="dt-live__cardstate">Connected</span>'
+      + '<span class="dt-live__cardwhen">' + (s.at ? 'Updated ' + esc(ago(s.at)) : 'Not synced yet') + '</span>'
+      + '</article>';
+  }
+
+  function liveRow(s) {
+    return '<tr>'
+      + '<td>' + esc(s.name) + '</td>'
+      + '<td>' + esc(s.type) + '</td>'
+      // Blank rather than nought: a source whose rows this page cannot count
+      // has not told us it holds none.
+      + '<td>' + (s.rows === null || s.rows === undefined ? '&mdash;' : plural(s.rows, 'record')) + '</td>'
+      + '<td>' + (s.at ? esc(ago(s.at)) : '&mdash;') + '</td>'
+      + '<td><span class="dt-live__dot">Connected</span></td>'
+      + '</tr>';
+  }
+
+  function drawStates() {
+    var n = connectedCount();
+    var live = n > 0 && !addingMore;
+    if (els.start) els.start.hidden = live;
+    if (els.live) els.live.hidden = !live;
+    if (els.title) {
+      els.title.innerHTML = live
+        ? 'Your <em>connected sources</em>'
+        : 'Connect your <em>data sources</em>';
+    }
+    if (els.sub) {
+      els.sub.textContent = live
+        ? 'These are what Svarg reads to understand your business. Rows stay in this application’s own database.'
+        : 'Bring the places your records live together, so the application answers about your own work rather than about the sample it shipped with.';
+    }
+    if (!live) return;
+
+    var rows = liveSources();
+    els.liveSub.textContent = 'Svarg is reading ' + plural(rows.length, 'source')
+      + ' and monitoring your business.';
+    els.liveCards.innerHTML = rows.map(liveCard).join('');
+    els.liveRows.innerHTML = rows.map(liveRow).join('');
   }
 
   function renderSources() {
@@ -696,7 +805,8 @@
     }
     progress('folder', keys.length, keys.length, 'Done');
     delete open.folder;
-    await refresh();
+    addingMore = false;
+      await refresh();
     if (bad.length) say(els.note, bad.join('; '), true);
     else say(els.note, lines.join(' · ') + '. Upload the folder again whenever the sheets change; only what changed moves.');
   }
@@ -808,6 +918,7 @@
     try {
       var res = await ownerJson('/api/data/import', 'POST', { datasetName: d.name, rows: rows, source: grid.source, origin: grid.origin, mode: 'merge', complete: grid.complete });
       delete open[kind];
+      addingMore = false;
       await refresh();
       say(els.note, d.name + ': ' + summary(res) + '. The answers use your data from now on.');
     } catch (err) {
@@ -878,6 +989,7 @@
     try {
       var r = await ownerJson('/api/connectors', 'POST', { kind: btn.dataset.kind, datasetName: datasets[di].name, config: config });
       delete open[kind];
+      addingMore = false;
       await refresh();
       say(els.note, r.connector.label + ' connected to ' + datasets[di].name + (kind === 'whatsapp' ? '. Messages land here as they are sent.' : '. Press Sync now to bring its rows in, or set a schedule.'));
     } catch (err) {
@@ -886,6 +998,10 @@
     }
   }
 
+
+  if (els.liveAdd) {
+    els.liveAdd.addEventListener('click', function () { addingMore = true; drawStates(); });
+  }
   // ── Getting here and back ─────────────────────────────────────────────────
 
   // Delegated: the shell redraws the sidebar the link sits in once it

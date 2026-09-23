@@ -25,15 +25,10 @@
   if (!page || !detail) return;
 
   var el = {
-    title: document.getElementById('fn-title'),
-    sub: document.getElementById('fn-sub'),
     list: document.getElementById('fn-list'),
     empty: document.getElementById('fn-empty'),
     emptyTitle: document.getElementById('fn-empty-title'),
     emptyNote: document.getElementById('fn-empty-note'),
-    resolved: document.getElementById('fn-resolved'),
-    rhead: document.getElementById('fn-rhead'),
-    rlist: document.getElementById('fn-rlist'),
     note: document.getElementById('fn-note'),
     areas: document.getElementById('fn-areas'),
     areagrid: document.getElementById('fn-areagrid'),
@@ -395,35 +390,6 @@
      * clear.
      */
     el.empty.hidden = true;
-
-    var bits = [];
-    if (counts.high) bits.push(counts.high + ' high');
-    if (counts.medium) bits.push(counts.medium + ' medium');
-    if (counts.low) bits.push(counts.low + ' low');
-
-    /*
-     * A heading for the list, not a second verdict.
-     *
-     * The count and what it means are said once, at the top, by the banner —
-     * which distinguishes "checked and clear" from "nothing has run yet" and
-     * from "checks have stopped", where this only ever knew the number. Two
-     * headlines saying the same thing in different words is how a screen
-     * stops being read.
-     */
-    el.title.textContent = 'What needs your attention';
-    el.sub.textContent = all.length ? bits.join(' · ') : '';
-    el.sub.hidden = !all.length;
-
-    var res = body.resolved || [];
-    el.resolved.hidden = res.length === 0;
-    if (res.length) {
-      el.rhead.textContent = res.length === 1
-        ? '1 thing resolved itself'
-        : res.length + ' things resolved themselves';
-      el.rlist.innerHTML = res.map(function (f) {
-        return '<li><b>' + esc(f.title) + '</b> <span>' + esc(f.watcher) + ' &middot; ' + esc(ago(f.resolvedAt)) + '</span></li>';
-      }).join('');
-    }
 
     // A degraded watcher is silence with a cause. Say it here, where somebody
     // is looking, rather than only on a screen they may never open.

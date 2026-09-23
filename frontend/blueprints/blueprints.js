@@ -464,6 +464,22 @@ function renderPlan(plan) {
    * happened before seats existed at all, except nobody was turned away and
    * thirty people used a one-person plan.
    */
+  /*
+   * How much of the business is watched — the line the plan is chosen on.
+   *
+   * Said without a total, deliberately. Five is what most industries name
+   * but Automotive names six, and this strip does not know which industry
+   * the reader is in. The application does, and says "3 of 5" there.
+   */
+  const cover = el('bp-plan-coverage');
+  if (cover && !plan.viaAdmin && plan.coverage) {
+    const n = plan.coverage.businessCategories;
+    cover.textContent = n === null || n === undefined
+      ? 'Every business area watched'
+      : n + (n === 1 ? ' business area' : ' business areas') + ' watched';
+    cover.hidden = false;
+  }
+
   const seats = el('bp-plan-seats');
   if (seats && !plan.viaAdmin && plan.seats) {
     seats.textContent = plan.seats === 1 ? '1 account' : `${plan.seats} accounts`;

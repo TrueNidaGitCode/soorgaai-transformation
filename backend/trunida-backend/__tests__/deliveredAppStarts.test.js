@@ -21,7 +21,7 @@
 import { describe, it, expect } from 'vitest';
 import path from 'path';
 import { readFileSync } from 'fs';
-import { buildRuntime } from '../services/eameProjectBuilder.js';
+import { buildRuntime, assertProjectResolves } from '../services/eameProjectBuilder.js';
 
 /** Every connector set a real application has been built with. */
 const SETS = [null, [], ['jira'], ['confluence'], ['github'], ['whatsapp'], ['jira', 'confluence', 'github', 'whatsapp']];
@@ -374,5 +374,59 @@ describe('every screen is a page of the same application', () => {
       new URL('../eame-template/frontend/app.css', import.meta.url), 'utf8');
     expect(css).toMatch(/\.ch-main > \.ag,/);
     expect(css).toMatch(/overflow-y: auto;/);
+  });
+});
+
+/**
+ * What a page asks the browser for, it must ship.
+ *
+ * The build already refused to ship a page whose <script src> named a file
+ * the project did not contain. It said nothing about stylesheets, which was
+ * an odd place to stop: a missing stylesheet fails more quietly than a
+ * missing script and looks like a broken design rather than a broken build,
+ * so it is the one somebody is least likely to report and most likely to
+ * live with.
+ */
+describe('a page cannot ask for a file the project does not have', () => {
+  /** The complete project: fixed files, plus the one the generator writes. */
+  const complete = () => buildRuntime({ appName: 'Padhivu', connectors: null })
+    .concat([{ path: 'frontend/app.js', content: '// written by the generator' }]);
+
+  it('passes on a real, complete build', () => {
+    expect(() => assertProjectResolves(complete())).not.toThrow();
+  });
+
+  it('refuses when a stylesheet the page links is missing', () => {
+    for (const sheet of ['frontend/app.css', 'frontend/base.css']) {
+      const without = complete().filter(f => f.path !== sheet);
+      expect(() => assertProjectResolves(without), sheet).toThrow(new RegExp(sheet));
+    }
+  });
+
+  it('still refuses when a script the page loads is missing', () => {
+    const without = complete().filter(f => f.path !== 'frontend/findings.js');
+    expect(() => assertProjectResolves(without)).toThrow(/findings\.js/);
+  });
+
+  it('reads rel and href in either order', () => {
+    // Both orderings are written in the wild, and a check that only caught
+    // one would pass on the day somebody reformatted the tag.
+    const page = (tag) => [{ path: 'frontend/index.html', content: tag }];
+    for (const tag of [
+      '<link rel="stylesheet" href="nope.css">',
+      '<link href="nope.css" rel="stylesheet">',
+    ]) {
+      expect(() => assertProjectResolves(page(tag)), tag).toThrow(/nope\.css/);
+    }
+  });
+
+  it('leaves alone what the browser fetches from somewhere else', () => {
+    // A CDN or a data: URI is not this project's to contain.
+    const page = [{
+      path: 'frontend/index.html',
+      content: '<link rel="stylesheet" href="https://fonts.example/x.css">'
+        + '<script src="//cdn.example/y.js"></script>',
+    }];
+    expect(() => assertProjectResolves(page)).not.toThrow();
   });
 });

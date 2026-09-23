@@ -310,13 +310,19 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
  * files the MODEL wrote, and both files involved in this failure were ours.
  */
 /**
- * Every script a shipped page loads must be a file the project actually has.
+ * Every script AND stylesheet a shipped page loads must be a file the project
+ * actually has.
  *
  * Separate from assertImportsResolve because it needs the complete project —
  * fixed files AND the ones the generator wrote. Removing a fixed file while
  * a page still asks for it is the same mistake as the WhatsApp connector, in
  * the other language: the build succeeds, the page loads, and one script 404s
  * silently in a browser nobody is watching.
+ *
+ * Stylesheets were not checked here for a long time, which was an odd place
+ * to stop: a missing stylesheet fails more quietly than a missing script and
+ * looks like a broken design rather than a broken build, so it is the one
+ * somebody is least likely to report and most likely to live with.
  */
 export function assertProjectResolves(files) {
   const have = new Set(files.map(f => f.path));
@@ -324,7 +330,13 @@ export function assertProjectResolves(files) {
 
   for (const f of files) {
     if (!f.path.endsWith('.html')) continue;
-    for (const m of String(f.content).matchAll(/<script[^>]+src\s*=\s*["']([^"']+)["']/g)) {
+    const refs = [
+      ...String(f.content).matchAll(/<script[^>]+src\s*=\s*["']([^"']+)["']/g),
+      // Both orderings, because rel and href are written either way round.
+      ...String(f.content).matchAll(/<link[^>]+rel\s*=\s*["']stylesheet["'][^>]*?href\s*=\s*["']([^"']+)["']/g),
+      ...String(f.content).matchAll(/<link[^>]+href\s*=\s*["']([^"']+)["'][^>]*?rel\s*=\s*["']stylesheet["']/g),
+    ];
+    for (const m of refs) {
       const src = m[1].replace(/^\.\//, '');
       if (/^(https?:)?\/\//.test(src) || src.startsWith('data:')) continue;
       const target = path.posix.normalize(path.posix.join(path.posix.dirname(f.path), src));

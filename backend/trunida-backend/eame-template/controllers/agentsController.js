@@ -16,6 +16,7 @@ import { fileURLToPath } from 'url';
 import { catalogueFor, entryFor, fillQuestion, matchDataset, severityFor } from '../services/agentCatalogue.js';
 import { readIndex } from '../services/connectorService.js';
 import { isOwner } from './accessController.js';
+import { activeCategories, categoryLimit, coversWatcher, allowedSchedule, coverageSummary } from '../services/coverage.js';
 import { draftFollowUp } from '../services/draftService.js';
 import { sendSignal } from '../services/tenantSignals.js';
 
@@ -331,9 +332,17 @@ export async function listAgentsHandler(req, res) {
        * A map that drew only the occupied columns would say "this is all
        * there is to watch", which is the opposite of what it is for.
        */
+      /*
+       * Every category the industry names, with the ones outside the plan
+       * marked rather than removed. A locked column greyed on the map is the
+       * honest answer to "what is nobody watching"; removing it would answer
+       * "there is nothing else to watch", which is the opposite.
+       */
       categories: (Array.isArray(plan().categories) ? plan().categories : []).map((c) => ({
         name: c.name, asks: c.asks || '',
+        locked: categoryLimit() ? !activeCategories(plan()).includes(c.name) : false,
       })),
+      coverage: coverageSummary(plan()),
       areas: [...new Set(catalogue.map((c) => c.area))],
       schedules: Object.keys(SCHEDULES),
     });
@@ -389,6 +398,22 @@ export async function startFromCatalogueHandler(req, res) {
     const entry = entryFor(req.params.id);
     if (!entry) return res.status(404).json({ error: 'No such watcher.' });
 
+    /*
+     * Coverage is checked here, and coverage is the ONLY thing checked.
+     *
+     * There is deliberately no count of any kind: inside a business area the
+     * customer has bought, they may start every watcher their data supports,
+     * whether that turns out to be three or thirteen. Charging for the
+     * difference would give them a reason to leave some of it unwatched.
+     */
+    if (!coversWatcher(plan(), entry.id)) {
+      const area = categoryOf(entry.id);
+      return res.status(403).json({
+        error: (area || 'That watcher') + ' is not one of the business areas your plan covers.',
+        coverage: coverageSummary(plan()),
+      });
+    }
+
     let match = null;
     for (const d of readIndex()) { match = matchDataset(entry, d); if (match) break; }
     if (!match) {
@@ -398,7 +423,7 @@ export async function startFromCatalogueHandler(req, res) {
     const agent = await createAgent({
       name: entry.name,
       question: fillQuestion(entry, match),
-      schedule: req.body?.schedule || 'weekdays',
+      schedule: allowedSchedule(req.body?.schedule || 'weekdays'),
       atHour: Number.isInteger(req.body?.atHour) ? req.body.atHour : 7,
       tz: req.body?.tz || 'UTC',
       condition: entry.condition || null,

@@ -57,6 +57,26 @@ export const PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
 const UNLIMITED = null;
 
 /**
+ * ── What a plan sells ──────────────────────────────────────────────────────
+ *
+ * Coverage, not consumption. A customer buys how much of their business is
+ * watched, never how much AI does the watching:
+ *
+ *   businessCategories   PRIMARY   — how many areas of the business
+ *   dataConnections      secondary — how many places records come from
+ *   monitoringFrequency  tertiary  — how often those areas are checked
+ *   seats                          — how many people can use it
+ *
+ * Watchers are deliberately absent. They are generated from the customer's
+ * own business knowledge and data, so two customers with the same coverage
+ * get different numbers of them, and charging for the difference would give
+ * everybody a reason to switch watchers off -- in a product whose entire
+ * promise is that nothing gets missed. Inside purchased coverage, watchers
+ * are unlimited and always will be.
+ *
+ * Model spend stays where it was: measured, capped per deployment, and never
+ * shown to a customer. It is an operating cost, not a meter.
+ *
  * The tiers, exactly as the pricing page states them.
  *
  * Hobby caps new blueprints but not how many you keep: the blueprint is the
@@ -68,6 +88,10 @@ const UNLIMITED = null;
 export const PLANS = {
   hobby: {
     label: 'Hobby',
+    // Monitor a small part of your business.
+    businessCategories:    2,
+    dataConnections:       2,
+    monitoringFrequency:   'daily',
     newBlueprintsPerMonth: 1,
     activeBlueprints:      UNLIMITED,
     applications:          1,
@@ -81,6 +105,10 @@ export const PLANS = {
   },
   pro: {
     label: 'Pro',
+    // Keep the core operations of your business under continuous watch.
+    businessCategories:    3,
+    dataConnections:       5,
+    monitoringFrequency:   'daily',
     newBlueprintsPerMonth: UNLIMITED,
     activeBlueprints:      1,
     applications:          UNLIMITED,
@@ -92,18 +120,24 @@ export const PLANS = {
     deploymentCostUsd:     5,
     capabilityBuilds:      3,
     /*
-     * One account, deliberately.
+     * Three, not one.
      *
-     * Pro is one person running one objective. The moment an academy wants
-     * its coaches in the application it is a team, and a team is Ultra — a
-     * delivered application had no seat limit at all before this, so thirty
-     * coaches could sign in to a one-person plan and nothing anywhere
-     * noticed.
+     * Pro used to be a single account, on the argument that it is one person
+     * running one objective and a team is Ultra. Coverage pricing moves that
+     * line: what Pro now sells is the core of a business under continuous
+     * watch, and the people who act on a finding -- the front desk, the
+     * person who chases the invoice -- are not the person who bought it. A
+     * plan whose findings only one person can read is a plan whose findings
+     * go unactioned.
      */
-    seats:                 1,
+    seats:                 3,
   },
   ultra: {
     label: 'Ultra',
+    // Monitor your business end to end.
+    businessCategories:    UNLIMITED,
+    dataConnections:       10,
+    monitoringFrequency:   'hourly',
     newBlueprintsPerMonth: UNLIMITED,
     activeBlueprints:      UNLIMITED,
     applications:          UNLIMITED,
@@ -111,15 +145,24 @@ export const PLANS = {
     deploymentCostUsd:     5,
     capabilityBuilds:      10,
     // Where "we need the team in here" is answered.
-    seats:                 5,
+    seats:                 10,
   },
   enterprise: {
     label: 'Enterprise',
+    // Continuous operational intelligence across the organisation. Every
+    // coverage limit is negotiated, so every one of them is unlimited here
+    // and narrowed per account on the AccountPlan row when a contract says
+    // something narrower.
+    businessCategories:    UNLIMITED,
+    dataConnections:       UNLIMITED,
+    monitoringFrequency:   'custom',
     newBlueprintsPerMonth: UNLIMITED,
     activeBlueprints:      UNLIMITED,
     applications:          UNLIMITED,
     launches:              UNLIMITED,
-    deploymentCostUsd:     5,
+    // Not five. A custom tier on the same ceiling as Pro is a contract the
+    // platform cannot keep; it is set per account alongside the coverage.
+    deploymentCostUsd:     50,
     capabilityBuilds:      UNLIMITED,
     // Thirty coaches and four admins.
     seats:                 UNLIMITED,

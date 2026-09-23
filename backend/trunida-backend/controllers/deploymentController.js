@@ -23,7 +23,7 @@ import { issueToken } from '../services/gatewayService.js';
 import crypto from 'crypto';
 import { requireEntitlement, deploymentCeilingUsd } from '../services/entitlements.js';
 import {
-  getDeployTarget, buildTenantEnv, tenantDbName, tenantProjectName, provisionTenantDatabase,
+  getDeployTarget, buildTenantEnv, coverageFrom, tenantDbName, tenantProjectName, provisionTenantDatabase,
 } from '../services/deployTargetService.js';
 
 /** Never leak the token hash or internal ids to the browser. */
@@ -357,6 +357,7 @@ export async function attachApplication(req, res) {
         appName: bp.appName,
         ownerKey,
         seats: plan?.limits?.seats ?? null,
+        coverage: coverageFrom(plan?.limits),
         ownerEmail: owner?.email || '',
         planLabel: plan?.limits?.label || '',
       });
@@ -371,6 +372,9 @@ export async function attachApplication(req, res) {
       dep.railway.url = attached.url || '';
       // Not live yet — Railway now builds the repository, which takes minutes
       // and can fail. GET .../deployment asks Railway and promotes it.
+            // Launched under coverage, so coverage applies to it from here on.
+      // Deployments that predate this stay grandfathered (see planEnv).
+      dep.coverageEnforced = true;
       dep.status = 'attaching';
       dep.statusMessage = 'Railway is building the application.';
       // Recorded so the screen can name the usual cause if nothing ever builds:

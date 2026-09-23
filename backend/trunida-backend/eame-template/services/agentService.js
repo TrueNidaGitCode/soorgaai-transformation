@@ -36,6 +36,7 @@
 import mongoose from 'mongoose';
 import { sendDigest } from './notifyService.js';
 import { SEVERITY_RANK } from './agentCatalogue.js';
+import { allowedSchedule } from './coverage.js';
 import { sendSignal } from './tenantSignals.js';
 
 /** How often an agent may run, and how often the scheduler looks. */
@@ -122,7 +123,10 @@ export function dueAgents(docs, now = Date.now()) {
     if (!a || a.enabled === false) return false;
     if (a.status === 'degraded' || a.status === 'paused') return false;
 
-    const spec = SCHEDULES[a.schedule];
+    // The plan's frequency, applied here as well as at creation: a watcher
+    // created under an hourly plan keeps 'hourly' on its record after the
+    // account moves to a daily one, and would otherwise outrun the downgrade.
+    const spec = SCHEDULES[allowedSchedule(a.schedule)];
     if (!spec) return false;
 
     const last = a.lastRunAt ? new Date(a.lastRunAt).getTime() : 0;
@@ -286,7 +290,8 @@ export function diffFindings(previous, currentKeys) {
  * Computed, never stored: a stored copy would be one more thing to keep true.
  */
 export function nextDueAt(a, now = Date.now()) {
-  const spec = SCHEDULES[a?.schedule];
+  // Same clamp as dueAgents, so the time a screen shows is the time it runs.
+  const spec = SCHEDULES[allowedSchedule(a?.schedule)];
   if (!spec) return null;
   if (a?.enabled === false || a?.status === 'degraded' || a?.status === 'paused') return null;
 
@@ -524,13 +529,29 @@ export async function runAgent(agent, ask) {
  * Returns the catalogue entries to create and the category names being
  * filled, so the caller can record both.
  */
-export function watchersToStart({ catalogue = [], categories = [], live = [], seeds = [] } = {}) {
+export function watchersToStart({ catalogue = [], categories = [], live = [], seeds = [], covered = null } = {}) {
   const running = new Set(live.map((a) => a.watcherId).filter(Boolean));
   const takenNames = new Set(live.map((a) => a.name));
   const seededWatchers = new Set(seeds.filter((s) => s.kind === 'watcher').map((s) => s.key));
   const seededCategories = new Set(seeds.filter((s) => s.kind === 'category').map((s) => s.key));
 
-  const ready = catalogue.filter((c) => c.ready && c.question);
+  /*
+   * Coverage first, and it is a filter on CATEGORIES, never on how many
+   * watchers a category turns out to hold. A customer who bought Retention
+   * gets every Retention watcher their data supports, whether that is three
+   * or thirteen.
+   *
+   * null means no coverage limit at all -- an application delivered before
+   * plans carried coverage, which keeps watching everything it already did.
+   */
+  const inCoverage = (c) => {
+    if (!covered) return true;
+    const name = categoryNameOf(categories, c.id);
+    // A watcher no table names is covered: the knowledge base can lag the
+    // catalogue, and a customer cannot see or fix that.
+    return !name || covered.includes(name);
+  };
+  const ready = catalogue.filter((c) => c.ready && c.question && inCoverage(c));
   const fresh = (c) => !!c && !running.has(c.id) && !takenNames.has(c.name) && !seededWatchers.has(c.id);
 
   const wanted = [];
@@ -637,12 +658,12 @@ export function categoryNameOf(categories, watcherId) {
  * off, stays switched off -- not because nothing has run since, but because
  * the seed says this application has already been offered that one.
  */
-export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = [] } = {}) {
+export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = [], covered = null } = {}) {
   if (mongoose.connection.readyState !== 1) return { started: [], skipped: 'no database' };
 
   const live = await agentsCollection().find({}, { projection: { watcherId: 1, name: 1 } }).toArray();
   const seeds = await seedsCollection().find({}).toArray().catch(() => []);
-  const { wanted, filled } = watchersToStart({ catalogue, categories, live, seeds });
+  const { wanted, filled } = watchersToStart({ catalogue, categories, live, seeds, covered });
   if (!wanted.length) return { started: [], skipped: 'nothing new to start' };
 
   const started = [];
@@ -651,7 +672,7 @@ export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = []
       await createAgent({
         name: c.name,
         question: c.question,
-        schedule: c.schedule,
+        schedule: allowedSchedule(c.schedule),
         atHour: c.atHour,
         tz,
         condition: c.condition || null,

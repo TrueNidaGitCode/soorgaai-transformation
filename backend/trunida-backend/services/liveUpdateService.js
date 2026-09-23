@@ -24,7 +24,8 @@ import HostedDeployment from '../models/HostedDeployment.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { projectFor, manifestHash } from '../controllers/deliveryController.js';
 import { isSvargGithubConfigured, ensureSvargRepo, publishToSvarg, repoDescription } from './svargGithubService.js';
-import { getDeployTarget } from './deployTargetService.js';
+import { getDeployTarget, coverageFrom } from './deployTargetService.js';
+import { resolvePlan } from './entitlements.js';
 import { ensureAppName } from './appNameService.js';
 import { tenantAuthEnv } from './tenantAuthService.js';
 
@@ -44,6 +45,44 @@ function gatewayBaseUrl() {
     try { if (u) return new URL(u).origin + '/api/gateway'; } catch { /* next */ }
   }
   return '';
+}
+
+/**
+ * A plan's limits as environment, for an application that is already running.
+ *
+ * Absent rather than empty when a limit is unlimited: Railway keeps a
+ * variable it is not sent, and clearing one to "" would have the application
+ * read a limit of zero and refuse everything.
+ */
+function planEnv(limits, dep) {
+  if (!limits) return {};
+  const base = {
+    ...(limits.label ? { APP_PLAN_LABEL: String(limits.label) } : {}),
+    ...(limits.seats ? { APP_SEATS: String(limits.seats) } : {}),
+  };
+
+  /*
+   * ── Grandfathering, and why it is opt-in ───────────────────────────────
+   *
+   * Coverage limits are sent only to a deployment that was launched under
+   * them. Vesoma is watching five business areas today on an account with no
+   * paid plan at all; the moment this sweep started sending a Hobby
+   * allowance, three of those areas would go dark on the next restart — and
+   * the customer would have done nothing and been told nothing.
+   *
+   * So the flag is set when a deployment is attached, not inferred. Every
+   * application that already exists keeps what it already watches until
+   * somebody decides otherwise, deliberately, on that account.
+   */
+  if (!dep?.coverageEnforced) return base;
+
+  const c = coverageFrom(limits);
+  return {
+    ...base,
+    ...(c?.categories ? { APP_CATEGORY_LIMIT: String(c.categories) } : {}),
+    ...(c?.connections ? { APP_MAX_CONNECTIONS: String(c.connections) } : {}),
+    ...(c?.frequency ? { APP_MONITORING: String(c.frequency) } : {}),
+  };
 }
 
 /** One live application: compose, compare, and if it differs, push and rebuild. */
@@ -72,14 +111,25 @@ export async function updateOne(dep, { reason = 'sweep' } = {}) {
     commitSha: pushed?.commitSha || '', manifestHash: hash,
   } } });
 
-  // The variables a newer runtime needs, added to an environment created
-  // before they existed: the sign-in through Svarg is the current one.
+  /*
+   * The variables a newer runtime needs, added to an environment created
+   * before they existed: the sign-in through Svarg is the current one.
+   *
+   * The plan's own limits go with them, and that is not cosmetic. Seats and
+   * coverage were only ever written at Go Live, so an account that upgraded
+   * afterwards kept the entitlements it had on the day it launched -- for
+   * ever, because nothing else wrote them again. This sweep is the only
+   * thing that regularly touches a running application, so it is where a
+   * plan change becomes real.
+   */
+  const plan = await resolvePlan(dep.userId).catch(() => null);
   await getDeployTarget().redeploy({
     deployment: dep,
     commitSha: pushed?.commitSha || '',
     env: {
       APP_NAME: bp.appName || 'AI Assistant', APP_PUBLIC_ACCESS: 'true',
       ...tenantAuthEnv({ deployment: dep, gatewayBaseUrl: gatewayBaseUrl() }),
+      ...planEnv(plan?.limits, dep),
     },
   });
   await HostedDeployment.updateOne({ _id: dep._id }, { $set: { status: 'attaching', statusMessage: 'Updating the application to the latest Svarg runtime.' } });

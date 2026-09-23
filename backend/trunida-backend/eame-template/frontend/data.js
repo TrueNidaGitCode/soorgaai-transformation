@@ -224,7 +224,9 @@
         var c = await ownerJson('/api/connectors');
         kinds = c.kinds || [];
         connectors = c.connectors || [];
-      } catch (err) { kinds = []; connectors = []; }
+        connectionLimit = c.connectionLimit || null;
+      } catch (err) { kinds = []; connectors = []; connectionLimit = null; }
+      drawUsed();
       renderSources();
     } catch (err) { /* the gate said why */ }
   }
@@ -241,6 +243,26 @@
   };
 
   var DEFAULT_FOLDER = { kind: 'folder', label: 'Documents', providers: ['upload'], note: 'Upload the folder your records are kept in; each sheet is matched to what the application expects.' };
+
+  /*
+   * How many data sources the plan connects, said before somebody picks a
+   * card rather than after they have filled in a form. Uploading a folder is
+   * not a connection and is never counted: it is the cheapest way to get
+   * started and pricing it out of the cheapest plan would be perverse.
+   */
+  var connectionLimit = null;
+
+  function drawUsed() {
+    var el = document.getElementById('dt-used');
+    if (!el) return;
+    if (!connectionLimit) { el.hidden = true; return; }
+    var used = connectors.length;
+    el.hidden = false;
+    el.textContent = used + ' of ' + connectionLimit + ' data source'
+      + (connectionLimit === 1 ? '' : 's') + ' connected'
+      + (used >= connectionLimit ? ' — remove one to connect something else.' : '.');
+    el.className = 'dt-choose__used' + (used >= connectionLimit ? ' is-full' : '');
+  }
 
   function importsOf(source) { return imports.filter(function (e) { return e.source === source; }); }
 

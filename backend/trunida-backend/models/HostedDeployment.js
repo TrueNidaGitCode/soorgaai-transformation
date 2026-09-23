@@ -86,6 +86,16 @@ const hostedDeploymentSchema = new mongoose.Schema({
    * and never stored in plaintext here. The public session that opens the
    * chat cannot reach any of that.
    */
+  /*
+   * Whether this deployment is held to its plan’s coverage limits.
+   *
+   * Set when a deployment is attached, never inferred. An application that
+   * launched before coverage existed keeps watching everything it already
+   * watches: the alternative was three of Vesoma’s five business areas going
+   * dark on a restart, with nobody told.
+   */
+  coverageEnforced: { type: Boolean, default: false },
+
   ownerKeyHash: { type: String, default: '' },
 
   // Snapshot of the Arth decision, as env vars were derived from it. Kept

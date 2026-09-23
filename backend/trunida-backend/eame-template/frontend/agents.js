@@ -123,6 +123,9 @@
     stopped: { label: 'Stopped', cls: 'is-stopped' },
     off: { label: 'Not running', cls: 'is-off' },
     blocked: { label: 'Needs records', cls: 'is-off' },
+    // Not a state the watcher is in — a state the PLAN is in. Kept beside
+    // the others so a node has exactly one thing to say about itself.
+    locked: { label: 'Not in your plan', cls: 'is-off' },
   };
 
   /* One per generic area, so a column of watchers is not a column of
@@ -140,15 +143,22 @@
 
   function areaIcon(area) { return AREA_ICON[area] || FALLBACK_ICON; }
 
+  /** Is this watcher's business area outside the plan? */
+  function locked(c) {
+    var cat = (view.categories || []).find(function (x) { return x.name === c.category; });
+    return !!(cat && cat.locked);
+  }
+
   /** One watcher, as a node in its column. */
   function node(c, picked) {
-    var st = STATE[c.state] || STATE.off;
-    return '<button type="button" class="ag-node' + (picked ? ' is-picked' : '') + '" data-watcher="' + esc(c.id) + '">'
+    var off = locked(c);
+    var st = off ? STATE.locked : (STATE[c.state] || STATE.off);
+    return '<button type="button" class="ag-node' + (picked ? ' is-picked' : '') + (off ? ' is-locked' : '') + '" data-watcher="' + esc(c.id) + '">'
       + '<span class="ag-node__icon" aria-hidden="true">' + areaIcon(c.area) + '</span>'
       + '<span class="ag-node__text">'
       + '<span class="ag-node__name">' + esc(c.name) + '</span>'
       + '<span class="ag-node__state ' + st.cls + '">' + esc(st.label)
-      + (c.openCount ? ' &middot; ' + c.openCount + ' open' : '') + '</span>'
+      + (!off && c.openCount ? ' &middot; ' + c.openCount + ' open' : '') + '</span>'
       + '</span>'
       + '</button>';
   }
@@ -156,12 +166,20 @@
   /** One business category, and everything that belongs to it. */
   function column(g, i, picked) {
     var running = g.items.filter(function (c) { return c.state === 'running'; }).length;
-    return '<section class="ag-col" style="--ag-hue: ' + (i * 62 % 360) + '">'
+    /*
+     * A category outside the plan keeps its column and everything in it,
+     * greyed. Hiding it would answer "there is nothing else to watch", which
+     * is the opposite of true and the opposite of useful: the empty column is
+     * how somebody finds out that nothing is watching their compliance.
+     */
+    return '<section class="ag-col' + (g.locked ? ' is-locked' : '') + '" style="--ag-hue: ' + (i * 62 % 360) + '">'
       + '<header class="ag-col__head">'
       + '<span class="ag-col__icon" aria-hidden="true">' + areaIcon(g.icon) + '</span>'
       + '<span class="ag-col__text">'
       + '<span class="ag-col__name">' + esc(g.name) + '</span>'
-      + '<span class="ag-col__count">' + running + ' of ' + g.items.length + ' running</span>'
+      + '<span class="ag-col__count">'
+      + (g.locked ? 'Not in your plan' : running + ' of ' + g.items.length + ' running')
+      + '</span>'
       + '</span></header>'
       + '<div class="ag-col__body">'
       + (g.items.length
@@ -183,7 +201,7 @@
     if (cats && cats.length) {
       return cats.map(function (c) {
         var items = cat.filter(function (x) { return x.category === c.name; });
-        return { name: c.name, asks: c.asks, items: items, icon: items.length ? items[0].area : '' };
+        return { name: c.name, asks: c.asks, items: items, locked: !!c.locked, icon: items.length ? items[0].area : '' };
       });
     }
     var seen = [];
@@ -201,9 +219,14 @@
     // What is running is always said; a watcher that stopped itself is said
     // as well, rather than instead — the owner needs both numbers to know
     // whether they are covered.
-    var line = running
-      ? running + ' of ' + cat.length + ' watching &middot; ' + open + ' open right now'
-      : 'Nothing is being watched yet';
+    var cov = view.coverage && view.coverage.categories;
+    var line = cov && cov.of
+      ? 'Watching ' + cov.covered + ' of ' + cov.of + ' business areas'
+        + (running ? ' &middot; ' + open + ' open right now' : '')
+      : running
+        ? running + ' of ' + cat.length + ' watching &middot; ' + open + ' open right now'
+        : 'Nothing is being watched yet';
+    if (cov && cov.of && !running) line += ' &middot; nothing is watching yet';
     if (stopped) line += ' &middot; ' + stopped + (stopped === 1 ? ' has' : ' have') + ' stopped after three failures';
     return '<div class="ag-chief' + (stopped ? ' is-bad' : running ? ' is-on' : '') + '">'
       + '<span class="ag-chief__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4.5V8M9.5 13.5h.01M14.5 13.5h.01M9.5 16.5h5"/><circle cx="12" cy="3.5" r="1.2"/></svg></span>'
@@ -257,7 +280,10 @@
      * read back off its label, which three labels would have broken.
      */
     var on = c.state === 'running';
-    var acts = !view.canManage
+    var acts = locked(c)
+      ? '<span class="ag-offer__need">' + esc(c.category || 'This area')
+        + ' is not one of the business areas your plan covers.</span>'
+      : !view.canManage
       ? '<span class="ag-offer__need">' + (c.state === 'blocked'
           ? esc(c.missing || 'Needs records this application does not hold yet.')
           : 'Only the person who created this application can change what it watches.') + '</span>'
@@ -292,7 +318,7 @@
 
   // What the map is drawn from, kept so a click can redraw without asking
   // the server again.
-  var view = { catalogue: [], categories: [], agents: [], canManage: false };
+  var view = { catalogue: [], categories: [], agents: [], canManage: false, coverage: null };
   var picked = '';
 
   function drawDetail() {
@@ -312,6 +338,7 @@
       view.catalogue = body.catalogue || [];
       view.categories = body.categories || [];
       view.canManage = !!body.canManage;
+      view.coverage = body.coverage || null;
       // The form below the map writes, so it belongs to the owner too.
       if (els.form) els.form.hidden = !view.canManage;
       var aside = document.getElementById('ag-own');

@@ -1563,6 +1563,15 @@ body {
 .ag-node__state.is-stopped { color: var(--ch-bad); }
 .ag-node__state.is-off { color: var(--ch-faint); }
 
+/* A business area the plan does not cover. Drawn, not hidden: the column is
+   how somebody finds out that nothing is watching it. Greyed through one
+   opacity plus a neutral top edge, so it reads as unavailable rather than as
+   broken or as a severity. */
+.ag-col.is-locked { opacity: 0.55; border-top-color: var(--ch-line-hi); }
+.ag-col.is-locked .ag-col__icon { color: var(--ch-faint); background: var(--ch-panel-hi); }
+.ag-col.is-locked .ag-col__count { color: var(--ch-faint); font-style: italic; }
+.ag-node.is-locked { cursor: pointer; border-style: dashed; }
+.ag-node.is-locked .ag-node__icon { color: var(--ch-faint); background: var(--ch-panel-hi); }
 /* One watcher, opened under the map rather than inside a 210px column. */
 .ag-detail { margin-top: 18px; }
 .ag-detail__card {
@@ -2040,6 +2049,8 @@ body {
 .dt-choose { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 0; border: 1px solid var(--ch-line); border-radius: 22px; background: color-mix(in srgb, var(--ch-panel) 55%, transparent); overflow: hidden; }
 .dt-choose__main { padding: 22px; min-width: 0; }
 .dt-choose__head { margin: 0 0 16px; font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+.dt-choose__used { margin: -10px 0 16px; font-size: 12.5px; color: var(--ch-faint); }
+.dt-choose__used.is-full { color: var(--ch-warn); }
 .dt-next { padding: 22px; border-left: 1px solid var(--ch-line); background: color-mix(in srgb, var(--ch-accent) 4%, transparent); }
 .dt-next__head { margin: 0 0 16px; font-size: 14.5px; font-weight: 800; }
 .dt-next__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; counter-reset: none; }

@@ -526,3 +526,7 @@
   .pr-dialog        { padding: 40px 24px 32px; }
   .pr-footer-cta    { padding: 52px 16px; }
 }
+
+/* The coverage line: the one number a plan is actually chosen on, so it
+   leads its list rather than sitting in it. */
+.pr-feature--lead b { color: var(--pr-accent, currentColor); font-weight: 700; }

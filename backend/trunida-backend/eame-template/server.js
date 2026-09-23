@@ -28,6 +28,7 @@ import { fileURLToPath } from 'url';
 import { startScheduler, restoreOwnFiles, readIndex } from './services/connectorService.js';
 import { startAgentScheduler, autoStartWatchers } from './services/agentService.js';
 import { catalogueFor } from './services/agentCatalogue.js';
+import { activeCategories, categoryLimit } from './services/coverage.js';
 // Cob's reading of which watchers matter here. Read from the same place the
 // agents screen reads it, rather than a second copy that could drift.
 import { plan as agentPlan } from './controllers/agentsController.js';
@@ -271,6 +272,9 @@ async function start() {
   autoStartWatchers(catalogueFor(readIndex(), agentPlan()), {
     tz: process.env.APP_TZ || 'UTC',
     categories: agentPlan().categories || [],
+    // What the plan covers. null when no limit is set, which is every
+    // application delivered before coverage existed.
+    covered: categoryLimit() ? activeCategories(agentPlan()) : null,
   }).catch((err) => console.warn('[agents] auto-start skipped:', err.message));
 
   // Registered after the routes, or it would swallow every API path below it.

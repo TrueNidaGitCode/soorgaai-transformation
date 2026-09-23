@@ -57,6 +57,22 @@ export async function provisionTenantDatabase(dbName, { blueprintId, userId } = 
  * The path segment is the database; anything already there is replaced rather
  * than appended, or two tenants could end up in one database.
  */
+/**
+ * The coverage a plan bought, in the shape buildTenantEnv wants.
+ *
+ * null on a limit means unlimited and is passed as absent rather than as the
+ * string "null", which an application would read as a number and refuse
+ * everything.
+ */
+export function coverageFrom(limits) {
+  if (!limits) return null;
+  return {
+    categories: limits.businessCategories ?? null,
+    connections: limits.dataConnections ?? null,
+    frequency: limits.monitoringFrequency || '',
+  };
+}
+
 export function tenantMongoUri(clusterUri, dbName) {
   if (!clusterUri) throw new Error('No cluster URI configured for tenant databases.');
   const [head, query] = String(clusterUri).split('?');
@@ -77,7 +93,7 @@ export function tenantMongoUri(clusterUri, dbName) {
  * this context; it is the delivered app's generic OpenAI-compatible client
  * pointed at the gateway, which is why hosting needs no code change.
  */
-export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName, ownerKey, seats, planLabel, ownerEmail }) {
+export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName, ownerKey, seats, planLabel, ownerEmail, coverage }) {
   // Arth ranks and the picker shows the benchmark catalog, not the advisory
   // ten (see services/selectableModelService.js), so a perfectly legitimate
   // selection arrives carrying an id the advisory list has never heard of —
@@ -128,6 +144,21 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
      * before this already assumed.
      */
     ...(seats ? { APP_SEATS: String(seats) } : {}),
+
+    /*
+     * What the plan bought, as the application needs to read it.
+     *
+     * Coverage is enforced inside the tenant rather than by refusing it from
+     * here, for the same reason seats are: the application is the thing that
+     * knows how many categories its industry has and which watcher belongs
+     * to which, and a limit enforced two planes away from the decision is a
+     * limit that drifts. Absent means unlimited, exactly as null does on the
+     * plan -- an application delivered before coverage existed keeps
+     * everything it was already watching.
+     */
+    ...(coverage?.categories ? { APP_CATEGORY_LIMIT: String(coverage.categories) } : {}),
+    ...(coverage?.connections ? { APP_MAX_CONNECTIONS: String(coverage.connections) } : {}),
+    ...(coverage?.frequency ? { APP_MONITORING: String(coverage.frequency) } : {}),
     // Named, so the refusal can say which plan it is rather than 'a plan'.
     ...(planLabel ? { APP_PLAN_LABEL: String(planLabel) } : {}),
     // The email that asked for this application runs it. Named here so the

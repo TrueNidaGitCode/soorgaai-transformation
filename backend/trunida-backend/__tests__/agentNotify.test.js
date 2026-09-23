@@ -228,7 +228,7 @@ describe('the agents are wired into the application', () => {
     const ui = read('../eame-template/frontend/agents.js');
     expect(ui).toContain('view.canManage = !!body.canManage;');
     // The buttons are drawn from it, and the form that writes is hidden.
-    expect(ui).toContain('var acts = !view.canManage');
+    expect(ui).toContain('      : !view.canManage');
     expect(ui).toContain('if (els.form) els.form.hidden = !view.canManage;');
     // A refusal says it is one.
     expect(ui).toMatch(/Only the person who created this application can see and change/);

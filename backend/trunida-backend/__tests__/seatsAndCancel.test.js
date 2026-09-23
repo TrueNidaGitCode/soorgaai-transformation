@@ -18,14 +18,27 @@ import { PLANS } from '../services/entitlements.js';
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
 describe('seats are part of the plan', () => {
-  it('gives Pro one account, because Pro is one person', () => {
+  it('gives every step up more people than the one below', () => {
+    /*
+     * Pro used to be one account, on the argument that it is one person
+     * running one objective. Coverage pricing moved that line: what Pro now
+     * sells is the core of a business under continuous watch, and the people
+     * who act on a finding — the front desk, whoever chases the invoice —
+     * are not the person who bought it. A plan whose findings only one
+     * person can read is a plan whose findings go unactioned.
+     *
+     * The numbers are pricing and will move again. What must not move is
+     * that each tier is worth more than the last, which is what "more
+     * users/seats" on the pricing page promises.
+     */
     expect(PLANS.hobby.seats).toBe(1);
-    expect(PLANS.pro.seats).toBe(1);
+    expect(PLANS.pro.seats).toBeGreaterThan(PLANS.hobby.seats);
+    expect(PLANS.ultra.seats).toBeGreaterThan(PLANS.pro.seats);
   });
 
   it('makes Ultra the answer to "we need the team in here"', () => {
-    expect(PLANS.ultra.seats).toBe(5);
-    expect(PLANS.ultra.seats).toBeGreaterThan(PLANS.pro.seats);
+    // A number a real team recognises, not a token increment.
+    expect(PLANS.ultra.seats).toBeGreaterThanOrEqual(5);
   });
 
   it('leaves Enterprise unlimited, for thirty coaches and four admins', () => {

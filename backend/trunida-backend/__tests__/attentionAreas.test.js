@@ -173,7 +173,16 @@ describe('the map is drawn from the categories, not from the code', () => {
     const block = ui.match(/var STATE = \{([\s\S]*?)\n  \};/);
     expect(block, 'the state map moved').toBeTruthy();
     const declared = [...block[1].matchAll(/(\w+):\s*\{\s*label:/g)].map(m => m[1]);
-    expect(declared.sort()).toEqual(['blocked', 'off', 'paused', 'running', 'stopped']);
+    /*
+     * Five states a watcher can be in, plus one the PLAN can be in.
+     *
+     * "locked" is deliberately here rather than somewhere else: a node has
+     * exactly one thing to say about itself, and "the area this watches is
+     * not in your plan" is that one thing when it applies. It is still not a
+     * state any agent record holds, which is what the controller check below
+     * pins down.
+     */
+    expect(declared.sort()).toEqual(['blocked', 'locked', 'off', 'paused', 'running', 'stopped']);
 
     // And every state the controller can hand back is one the screen draws:
     // a sixth added on the server would otherwise render as "Not running".
@@ -186,6 +195,9 @@ describe('the map is drawn from the categories, not from the code', () => {
     const produced = [...expr[1].matchAll(/[?:]\s*'(\w+)'/g)].map(m => m[1]);
     expect(produced.sort()).toEqual(['blocked', 'off', 'paused', 'running', 'stopped']);
     for (const s of produced) expect(declared).toContain(s);
+    // And 'locked' is never one of them: the server reports what a watcher
+    // is doing, and the screen decides what the plan lets it show.
+    expect(produced).not.toContain('locked');
   });
 
   it('places every catalogue watcher in exactly one column, for every industry', () => {

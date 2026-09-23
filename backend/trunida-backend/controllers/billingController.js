@@ -52,6 +52,19 @@ export async function getMyPlan(req, res) {
       // Named separately because the page reads it directly; it is the one
       // limit a customer feels the moment a colleague is turned away.
       seats: s.limits?.seats ?? null,
+      /*
+       * What the plan actually sells, in the words a customer thinks in.
+       *
+       * Named separately for the same reason seats are: this is the line the
+       * account screen leads with, and "3 of 5 business areas" is the whole
+       * proposition. null is unlimited, and there is deliberately no watcher
+       * count here or anywhere else.
+       */
+      coverage: {
+        businessCategories: s.limits?.businessCategories ?? null,
+        dataConnections: s.limits?.dataConnections ?? null,
+        monitoringFrequency: s.limits?.monitoringFrequency || 'daily',
+      },
       used: s.used,
       windowResetsAt: s.windowResetsAt,
     });

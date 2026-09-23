@@ -360,13 +360,19 @@
        browser, sent to this application's own server, written to the
        database that is theirs. Nothing goes to Svarg. data.js drives it. -->
   <section class="dt" id="ch-data" hidden aria-label="Your data">
+    <!-- A heading and a subheading, and nothing else.
+         There used to be six pieces of copy above the cards: a topline, an
+         eyebrow, a title, a subtitle, a security note with its own heading,
+         and then the same three again inside the page below. Every one was
+         defensible on its own and together they said one thing five times,
+         which is how somebody stops reading the one sentence that matters.
+         The security claim is the half of it worth keeping, so it is the
+         subheading rather than a panel of its own. -->
     <header class="dt__head">
       <div class="dt__headrow">
         <div class="dt__headtext">
-          <p class="dt__topline"><a href="#" class="dt__back" id="dt-back" hidden>&larr; Back to the chat</a><button type="button" class="dt__lock" id="dt-lock" hidden>Lock the Data page</button></p>
-          <p class="dt__eyebrow">Data sources</p>
           <h1 class="dt__title" id="dt-title">Connect your <em>data sources</em></h1>
-          <p class="dt__sub" id="dt-sub">Bring the places your records live together, so the application answers about your own work rather than about the sample it shipped with.</p>
+          <p class="dt__sub" id="dt-sub">Bring the data your business already uses. It is read here and stays in this application&rsquo;s own database &mdash; nothing reaches Svarg.</p>
         </div>
         <!-- The sources, as two lit tiles and a spark between them. -->
         <div class="dt__art" aria-hidden="true">
@@ -374,15 +380,6 @@
           <span class="dt__spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg></span>
           <span class="dt__tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"/><path d="M9 10a1 1 0 0 1 1-1h.5l1 2-.8.8a5 5 0 0 0 2.5 2.5l.8-.8 2 1v.5a1 1 0 0 1-1 1A6 6 0 0 1 9 10z"/></svg></span>
         </div>
-        <!-- Said once, at the top, rather than under every card: it is the
-             first question anybody asks about handing over their records. -->
-        <aside class="dt__safe">
-          <span class="dt__safe-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.3-2.9 8.2-7 9.5-4.1-1.3-7-5.2-7-9.5V6z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/></svg></span>
-          <div>
-            <h2 class="dt__safe-title">Your data is secure</h2>
-            <p class="dt__safe-line">Rows stay in this application&rsquo;s own database and never reach Svarg. Credentials are encrypted here, and forgotten when a source is removed.</p>
-          </div>
-        </aside>
       </div>
     </header>
 
@@ -429,10 +426,6 @@
            does -- the upload, its progress, the matching, the connection
            form -- happens inside the card. -->
       <section class="dt-start" id="dt-start" hidden>
-        <p class="dt-start__eyebrow">Connect your data</p>
-        <h2 class="dt-start__head">Bring the data your business <em>already uses</em> into Svarg.</h2>
-        <p class="dt-start__sub">It is read here and matched to what this application already expects, so its
-          answers are about your own records rather than the sample it shipped with.</p>
         <!-- How many places records may come from, when the plan says. -->
         <p class="dt-choose__used" id="dt-used" hidden></p>
         <div class="dt-cards" id="dt-sources"></div>

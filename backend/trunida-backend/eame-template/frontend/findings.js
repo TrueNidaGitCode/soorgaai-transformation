@@ -601,4 +601,19 @@
     tellTime();
     load();
   });
+
+  /*
+   * ── And once at startup, if the board is already on screen ───────────────
+   *
+   * This script is deferred, so it runs after the document has been parsed.
+   * The shell decides which screen to show DURING parsing — on a refresh it
+   * goes straight to the board and announces it — so by the time the
+   * listener above exists, the event it is waiting for has already been and
+   * gone. Nothing loaded, and the board sat empty under a hidden banner: a
+   * blank page where the product's first screen should be.
+   *
+   * So the state is read rather than the event trusted. An event that may
+   * have already fired is not something to build a screen on.
+   */
+  if (!page.hidden) { tellTime(); load(); }
 }());

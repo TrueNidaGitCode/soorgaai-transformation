@@ -53,7 +53,6 @@
     sub: document.getElementById('dt-sub'),
     note: document.getElementById('dt-note'),
     back: document.getElementById('dt-back'),
-    lock: document.getElementById('dt-lock'),
   };
 
   var ownerToken = '';
@@ -128,7 +127,6 @@
   function gate() {
     els.gate.hidden = false;
     els.room.hidden = true;
-    if (els.lock) els.lock.hidden = true;
     fetch(API + '/api/data/owner-status').then(function (r) { return r.ok ? r.json() : { configured: false }; })
       .then(function (d) {
         say(els.keyNote, d.configured ? '' : 'No owner key is set on this application, so nothing can be imported yet. If it runs on Svarg, the key is on the go-live screen; if you host it yourself, set APP_OWNER_KEY.', !d.configured);
@@ -138,7 +136,6 @@
   async function enter() {
     els.gate.hidden = true;
     els.room.hidden = false;
-    if (els.lock) els.lock.hidden = false;
     await refresh();
   }
 
@@ -200,12 +197,6 @@
     } catch (err) {
       say(els.keyNote, 'Could not reach the server.', true);
     }
-  });
-
-  if (els.lock) els.lock.addEventListener('click', function () {
-    ownerToken = '';
-    try { localStorage.removeItem('ownerToken'); } catch (e) { /* fine */ }
-    gate();
   });
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -378,8 +369,8 @@
     }
     if (els.sub) {
       els.sub.textContent = live
-        ? 'These are what Svarg reads to understand your business. Rows stay in this application’s own database.'
-        : 'Bring the places your records live together, so the application answers about your own work rather than about the sample it shipped with.';
+        ? 'These are what Svarg reads to understand your business. Rows stay in this application’s own database — nothing reaches Svarg.'
+        : 'Bring the data your business already uses. It is read here and stays in this application’s own database — nothing reaches Svarg.';
     }
     if (!live) return;
 

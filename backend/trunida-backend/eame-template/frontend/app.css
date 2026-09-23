@@ -890,11 +890,6 @@ body {
 /* ── The Data page: one card per source ───────────────────────────────────── */
 .dt__headrow { display: flex; gap: 24px; align-items: center; justify-content: space-between; }
 .dt__headtext { min-width: 0; }
-.dt__topline { display: flex; gap: 14px; align-items: center; margin: 0 0 16px; }
-.dt__topline .dt__back { margin: 0; }
-.dt__lock { border: 0; background: transparent; color: var(--ch-faint); font: inherit; font-size: 12.5px; cursor: pointer; padding: 0; }
-.dt__lock:hover { color: var(--ch-text); }
-.dt__eyebrow { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ch-faint); }
 .dt__title em { font-style: normal; color: var(--ch-accent); }
 .dt__art { position: relative; flex: 0 0 auto; display: flex; align-items: center; gap: 22px; padding: 10px 18px; }
 .dt__art::before { content: ""; position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--ch-accent) 16%, transparent), transparent 75%); filter: blur(8px); }
@@ -905,7 +900,6 @@ body {
 @media (max-width: 1180px) { .dt__art { display: none; } }
 @media (max-width: 900px) {
   .dt__headrow { flex-wrap: wrap; }
-  .dt__safe { max-width: none; padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--ch-line); }
 }
 
 .dt-cards { display: grid; gap: 14px; align-items: start; }
@@ -2263,35 +2257,11 @@ body {
 .dt-choose__used.is-full { color: var(--ch-warn); }
 
 /* Said once in the header, beside the title. */
-.dt__safe { flex: 0 0 auto; max-width: 280px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; align-items: start; padding-left: 24px; border-left: 1px solid var(--ch-line); }
-.dt__safe-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--ch-accent); background: color-mix(in srgb, var(--ch-accent) 13%, transparent); }
-.dt__safe-icon svg { width: 17px; height: 17px; }
-.dt__safe-title { margin: 0 0 4px; font-size: 14px; font-weight: 800; }
-.dt__safe-line { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ch-dim); }
 
 /* Shut until somebody wants it. */
 /* ── Data, before anything is connected ──────────────────────────────────────
    An invitation, and nothing else to read: three ways in, side by side. */
 
-.dt-start__eyebrow {
-  margin: 0 0 10px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ch-accent);
-}
-.dt-start__head {
-  margin: 0 0 12px;
-  max-width: 22ch;
-  font-size: 30px;
-  line-height: 1.15;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  text-wrap: balance;
-}
-.dt-start__head em { font-style: normal; color: var(--ch-accent); }
-.dt-start__sub { margin: 0 0 26px; max-width: 62ch; font-size: 14.5px; line-height: 1.55; color: var(--ch-dim); }
 
 /* Side by side, because they are alternatives rather than steps. */
 .dt-start .dt-cards { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); align-items: stretch; }

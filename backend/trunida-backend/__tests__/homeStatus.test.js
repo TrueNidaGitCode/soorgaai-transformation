@@ -170,6 +170,32 @@ describe('the banner is drawn from what the page was actually told', () => {
     expect(SRC).not.toContain('el.sub');
   });
 
+  it('loads on a refresh, without waiting for an event that already fired', () => {
+    /*
+     * ── The blank page on refresh ──────────────────────────────────────────
+     *
+     * findings.js is deferred, so it runs after the document is parsed. The
+     * shell decides which screen to show DURING parsing — on a refresh it
+     * goes straight to the board and announces it — so by the time the
+     * listener exists, the event it waits for has been and gone.
+     *
+     * Nothing loaded. And because the board's own heading was removed and
+     * the banner starts hidden, an unloaded board is not a thin board: it is
+     * a blank page, with the chat's "Try asking" showing through beneath it.
+     *
+     * So the state is read as well as the event listened for. An event that
+     * may already have fired is not something to build a screen on.
+     */
+    expect(SRC).toContain("window.addEventListener('svarg:findings-open'");
+    expect(SRC).toContain('if (!page.hidden) { tellTime(); load(); }');
+
+    const html = fs.readFileSync(new URL('../eame-template/frontend/index.html', import.meta.url), 'utf8');
+    // The two halves that make the race real: the shell announces the board
+    // while parsing, and the script that listens is deferred past it.
+    expect(html).toContain("window.dispatchEvent(new CustomEvent('svarg:findings-open'))");
+    expect(html).toContain('<script src="findings.js" defer>');
+  });
+
   it('leads somewhere from the health card, in every state', () => {
     expect(SRC).toContain("window.svargShowPanel('agents')");
   });

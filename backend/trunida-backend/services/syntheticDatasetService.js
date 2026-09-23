@@ -30,9 +30,38 @@ import { generate } from './llmService.js';
 export const SAMPLE_COLUMN = '_source';
 export const SAMPLE_VALUE = 'sample';
 
-/** Small on purpose: enough to show shape, too few to look like a real export. */
+/*
+ * Per pass, not per dataset. A reply is bounded by output tokens, and a CSV
+ * cut off mid-row is what made three of Vesoma's six datasets unreadable —
+ * so each pass stays small enough to arrive whole and several are merged.
+ */
 const TARGET_ROWS = 25;
-const MAX_CHARS = 20000;
+
+/*
+ * How many passes a dataset gets.
+ *
+ * Four is about a hundred rows, which is the difference between showing the
+ * SHAPE of a dataset and being able to demonstrate anything on top of it: a
+ * watcher looking for the client who stopped coming needs enough clients for
+ * one of them to have stopped. Settable without a deploy, because the right
+ * number is a demo judgement rather than a fact.
+ */
+export const SAMPLE_PASSES = Math.max(1, Math.min(Number(process.env.SAMPLE_PASSES || 4), 8));
+
+/*
+ * Two ceilings, because they guard different things.
+ *
+ * MAX_PASS_CHARS is one reply. A call capped at 2000 output tokens cannot
+ * legitimately produce more than a few thousand characters, so anything past
+ * this is a model that has started writing an export rather than a sample —
+ * the thing this must never look like — and it is refused rather than
+ * stored.
+ *
+ * MAX_CHARS is the accumulated file across passes. Reaching it is not an
+ * error: it is simply enough, and collecting stops.
+ */
+const MAX_PASS_CHARS = 20000;
+const MAX_CHARS = 60000;
 
 function systemPrompt() {
   return [
@@ -54,7 +83,7 @@ function systemPrompt() {
   ].join('\n');
 }
 
-function userPrompt({ dataset, objective, industry, companyName, context, existingKeys = [] }) {
+function userPrompt({ dataset, objective, industry, companyName, context, existingKeys = [], more = false }) {
   return [
     `Dataset: ${dataset.name}`,
     dataset.purpose ? `What it is for: ${dataset.purpose}` : '',
@@ -88,6 +117,23 @@ function userPrompt({ dataset, objective, industry, companyName, context, existi
           'unjoinable, and anything built on them cannot work:',
           ...existingKeys.map(k => '  ' + k.column + ': ' + k.values.join(', ') + (k.more ? ', ...' : '')),
           'Not every row needs one, and the same entity may appear more than once.',
+        ]
+      : []),
+    /*
+     * A later pass is being asked for MORE of a file that already exists,
+     * not for a new one. Without saying so it produces the same twenty rows
+     * again with the same identifiers, and the merge throws nearly all of
+     * them away — four calls for one call's worth of data.
+     */
+    ...(more
+      ? [
+          '',
+          'THIS IS A CONTINUATION. A file for this dataset already exists with the',
+          'header and identifiers above. Return MORE DATA ROWS FOR THAT SAME FILE:',
+          'the identical header, then rows describing entities and events that are',
+          'NOT already listed. Do not restate what is there. Keep the same date',
+          'range, the same statuses and the same shape, so the two halves read as',
+          'one export rather than two.',
         ]
       : []),
     'Generate the sample CSV.',
@@ -204,30 +250,143 @@ function wellFormed(row, columns) {
 }
 
 /**
- * Generate a sample export for one dataset.
+ * Add one pass's rows to what is already there.
  *
- * @returns {Promise<{csv, rowCount, columns, model}>}
+ * The header comes from the first pass and never changes: a later pass that
+ * invented a different column order would produce a file whose rows do not
+ * line up with their own header, which is the failure that dropped three of
+ * Vesoma's six datasets. A pass whose header disagrees is discarded whole.
+ *
+ * Rows are deduplicated on the identifier column when there is one, and on
+ * the whole line when there is not. Asking a model four times for more rows
+ * of the same thing gets some of the same rows back; a hundred rows of which
+ * thirty are the same client twice is not a hundred observations.
  */
-export async function generateSampleDataset({ dataset, objective = '', industry = '', companyName = '', context = '', existingKeys = [] }) {
-  if (!dataset?.name) throw new Error('A dataset name is required.');
+export function mergeSample(base, next) {
+  const lines = (s) => String(s || '').split('\n').map(l => l.trim()).filter(Boolean);
+  const a = lines(base);
+  const b = lines(next);
+  if (!a.length) return b.join('\n');
+  if (b.length < 2) return a.join('\n');
 
-  const result = await generate({
-    systemPrompt: systemPrompt(),
-    userMessage: userPrompt({ dataset, objective, industry, companyName, context, existingKeys }),
-    maxTokens: 2000,
-    // Prefixed so the usage ledger files it under Cob rather than 'other' —
-    // see stageFromLabel in usageLedgerService.js.
-    label: 'cob:synthetic-dataset',
-  });
+  const header = a[0];
+  if (b[0] !== header) return a.join('\n');
 
-  const csv = extractCsv(result.text);
-  if (!csv) throw new Error('The model returned nothing usable.');
-  if (csv.length > MAX_CHARS) throw new Error('The generated sample was implausibly large.');
+  // The first column after the marker is the identifier, when one is there.
+  const cols = header.split(',');
+  const keyAt = cols.length > 1 && cols[0].trim() === SAMPLE_COLUMN ? 1 : 0;
+  const keyOf = (row) => {
+    const parts = splitRow(row);
+    return (parts[keyAt] ?? row).trim().toLowerCase();
+  };
 
-  const { csv: marked, rowCount, columns } = enforceMarker(csv);
-  return { csv: marked, rowCount, columns, model: result.model || '' };
+  const seen = new Set(a.slice(1).map(keyOf));
+  const out = a.slice();
+  for (const row of b.slice(1)) {
+    const k = keyOf(row);
+    if (k && seen.has(k)) continue;
+    seen.add(k);
+    out.push(row);
+  }
+  return out.join('\n');
 }
 
+/** One CSV row into fields, respecting quotes. */
+function splitRow(row) {
+  const out = [];
+  let cur = '';
+  let quoted = false;
+  for (let i = 0; i < row.length; i++) {
+    const ch = row[i];
+    if (quoted) {
+      if (ch === '"' && row[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else cur += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ',') { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+/**
+ * Generate a sample export for one dataset.
+ *
+ * ── Why this asks more than once ───────────────────────────────────────────
+ *
+ * One call gave about twenty rows, which is enough to show the SHAPE of a
+ * dataset and not enough to demonstrate anything on top of it. A watcher
+ * looking for the client who stopped coming needs enough clients for one of
+ * them to have stopped; a board with three rows on it does not show a
+ * business anything about itself.
+ *
+ * More rows in one call is not the answer: the reply is bounded by output
+ * tokens, and a CSV cut off mid-row is exactly what produced the malformed
+ * files that made three of Vesoma's datasets unreadable. So it asks several
+ * times, each reply small enough to arrive whole, and merges them.
+ *
+ * @returns {Promise<{csv, rowCount, columns, model, passes}>}
+ */
+export async function generateSampleDataset({
+  dataset, objective = '', industry = '', companyName = '', context = '', existingKeys = [],
+  passes = SAMPLE_PASSES,
+} = {}) {
+  if (!dataset?.name) throw new Error('A dataset name is required.');
+
+  const want = Math.max(1, Math.min(Number(passes) || 1, 8));
+  let csv = '';
+  let model = '';
+  let done = 0;
+
+  for (let i = 0; i < want; i++) {
+    // What this dataset has already produced, so a later pass continues the
+    // file rather than starting it again with new identifiers.
+    const soFar = csv ? sharedKeys([csv]) : [];
+    let result;
+    try {
+      result = await generate({
+        systemPrompt: systemPrompt(),
+        userMessage: userPrompt({
+          dataset, objective, industry, companyName, context,
+          existingKeys: existingKeys.concat(soFar),
+          more: i > 0,
+        }),
+        maxTokens: 2000,
+        // Prefixed so the usage ledger files it under Cob rather than 'other' —
+        // see stageFromLabel in usageLedgerService.js.
+        label: 'cob:synthetic-dataset',
+      });
+    } catch (err) {
+      /*
+       * A later pass failing is not the dataset failing: what arrived is
+       * still a usable sample, and refusing it would trade a smaller file
+       * for none at all.
+       *
+       * try/catch rather than .catch(), because a provider that throws
+       * synchronously never returns a promise to hang a handler on — and
+       * that failure would take the whole dataset down instead of one pass.
+       */
+      if (!csv) throw err;
+      break;
+    }
+    if (!result) break;
+
+    const piece = extractCsv(result.text);
+    if (!piece) { if (!csv) throw new Error('The model returned nothing usable.'); break; }
+    if (piece.length > MAX_PASS_CHARS) throw new Error('The generated sample was implausibly large.');
+
+    model = result.model || model;
+    csv = csv ? mergeSample(csv, piece) : piece;
+    done++;
+    if (csv.length > MAX_CHARS) break;
+  }
+
+  if (!csv) throw new Error('The model returned nothing usable.');
+
+  const { csv: marked, rowCount, columns } = enforceMarker(csv);
+  return { csv: marked, rowCount, columns, model, passes: done };
+}
 
 /**
  * The identifier columns a set of already-generated CSVs share.

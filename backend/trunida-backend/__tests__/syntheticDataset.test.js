@@ -185,3 +185,108 @@ describe('the identifiers that tie the datasets together', () => {
     expect(svc.sharedKeys([])).toEqual([]);
   });
 });
+
+/**
+ * Enough rows to demonstrate something, and no question about whose data.
+ *
+ * ── Why more than one call ─────────────────────────────────────────────────
+ *
+ * One call gave about twenty rows. That is enough to show the SHAPE of a
+ * dataset and not enough to demonstrate anything on top of it: a watcher
+ * looking for the client who stopped coming needs enough clients for one of
+ * them to have stopped, and a board with three rows on it tells a business
+ * nothing about itself.
+ *
+ * Asking one call for hundreds is not the answer. The reply is bounded by
+ * output tokens and a CSV cut off mid-row is exactly what made three of
+ * Vesoma's six datasets unreadable. So it asks several times and merges.
+ */
+describe('a sample big enough to show a customer', () => {
+  const DS = { name: 'Members', purpose: 'who attends' };
+  /* Per call, so a later pass can answer differently from the first. */
+  const ok = (t) => generate.mockImplementation((args) => {
+    try {
+      const text = typeof t === 'function' ? t(args.systemPrompt, args.userMessage) : t;
+      return Promise.resolve({ text, model: 'gemini-x' });
+    } catch (err) { return Promise.reject(err); }
+  });
+
+  it('asks more than once, and merges what comes back', async () => {
+    let n = 0;
+    ok(() => {
+      n++;
+      return n === 1
+        ? '_source,member_id\nsample,M1\nsample,M2'
+        : `_source,member_id\nsample,M${n}0\nsample,M${n}1`;
+    });
+    const r = await svc.generateSampleDataset({ dataset: DS, passes: 3 });
+    expect(n).toBe(3);
+    expect(r.passes).toBe(3);
+    // Two from the first pass and two from each of the others.
+    expect(r.rowCount).toBe(6);
+  });
+
+  it('does not count the same row twice', async () => {
+    // A model asked four times for more of the same thing returns some of
+    // the same rows. A hundred rows of which thirty are one client twice is
+    // not a hundred observations.
+    ok('_source,member_id\nsample,M1\nsample,M2');
+    const r = await svc.generateSampleDataset({ dataset: DS, passes: 4 });
+    expect(r.rowCount).toBe(2);
+  });
+
+  it('keeps what arrived when a later pass fails', async () => {
+    let n = 0;
+    ok(() => {
+      n++;
+      if (n === 1) return '_source,member_id\nsample,M1\nsample,M2';
+      throw new Error('upstream fell over');
+    });
+    const r = await svc.generateSampleDataset({ dataset: DS, passes: 3 });
+    // A smaller sample beats none: the first pass is a usable file.
+    expect(r.rowCount).toBe(2);
+    expect(r.passes).toBe(1);
+  });
+
+  it('still fails when the very first pass gives nothing', async () => {
+    ok('   ');
+    await expect(svc.generateSampleDataset({ dataset: DS, passes: 3 })).rejects.toThrow(/nothing usable/);
+  });
+
+  it('discards a pass whose header disagrees with the file', async () => {
+    /*
+     * The failure that made three of Vesoma's datasets unreadable: rows that
+     * do not line up with their own header. A pass that invents a different
+     * column order is dropped whole rather than appended.
+     */
+    let n = 0;
+    ok(() => (++n === 1
+      ? '_source,member_id\nsample,M1'
+      : '_source,something_else\nsample,X1'));
+    const r = await svc.generateSampleDataset({ dataset: DS, passes: 2 });
+    expect(r.rowCount).toBe(1);
+    // The first pass's columns, unchanged: the stray header never landed.
+    expect(r.columns).toEqual(['member_id']);
+  });
+
+  it('tells a later pass it is continuing, not starting again', async () => {
+    // Without saying so it returns the same twenty rows with the same
+    // identifiers, and the merge throws nearly all of them away.
+    const seen = [];
+    ok((sys, user) => { seen.push(user); return '_source,member_id\nsample,M' + seen.length; });
+    await svc.generateSampleDataset({ dataset: DS, passes: 2 });
+    expect(seen[0]).not.toMatch(/CONTINUATION/);
+    expect(seen[1]).toMatch(/THIS IS A CONTINUATION/);
+    expect(seen[1]).toMatch(/NOT already listed/);
+  });
+
+  it('defaults to several passes without being asked', async () => {
+    expect(svc.SAMPLE_PASSES).toBeGreaterThan(1);
+    expect(svc.SAMPLE_PASSES).toBeLessThanOrEqual(8);
+  });
+
+  it('refuses one reply that is an export rather than a sample', async () => {
+    ok(`member_id\n${'M1\n'.repeat(9000)}`);
+    await expect(svc.generateSampleDataset({ dataset: DS })).rejects.toThrow(/implausibly large/);
+  });
+});

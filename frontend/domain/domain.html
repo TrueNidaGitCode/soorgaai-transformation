@@ -514,35 +514,12 @@
            whatever is there. The workbench detail -- the readiness card and the
            required-data table -- sits under the Upload path, where it answers
            "what does this need", and nowhere else. -->
-      <div class="dc-choice" id="aria-choice">
-        <button type="button" class="dc-card dc-card--sim" id="aria-choose-simulate" data-choice="simulate">
-          <span class="dc-card__flag">&#9733; Recommended</span>
-          <span class="dc-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2m0 20v-2m7-7h-2M4 13H2m15.5-5.5 1.5-1.5M5 19l1.5-1.5M5 7l1.5 1.5m11 11L19 19"/><path d="M12 8 4 16l4 4 8-8z"/></svg>
-          </span>
-          <span class="dc-card__text">
-            <span class="dc-card__title">Simulate your data</span>
-            <span class="dc-card__sub">Let Svarg create realistic data for your use case. The quickest way to see your application working.</span>
-          </span>
-          <span class="dc-card__arrow" aria-hidden="true">&rsaquo;</span>
-        </button>
-        <!-- No upload. The customer's records never come to Svarg: the
-             application is built on the shape of the data and their own rows
-             are imported inside it, after go-live, on its Data page. This
-             card records that intent and proceeds on the simulated shape. -->
-        <button type="button" class="dc-card" id="aria-choose-own" data-choice="own">
-          <span class="dc-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </span>
-          <span class="dc-card__text">
-            <span class="dc-card__title">Use my own data</span>
-            <span class="dc-card__sub">Your records stay with you. You import them inside your application once it is built &mdash; nothing is uploaded to Svarg.</span>
-          </span>
-          <span class="dc-card__arrow" aria-hidden="true">&rsaquo;</span>
-        </button>
-      </div>
-      <p class="dc-note" id="aria-choice-note">Either way the application is built on the shape of the data, not the rows. Simulated data lets you see it working straight away; your own is imported inside the application, into a database that is yours alone.</p>
-
+      <!-- The two cards that used to stand here asked the customer to choose
+           between simulated data and their own. Both answers did the same
+           thing — the application is built on the SHAPE of the data either
+           way, and neither ever uploaded a row. It simulates without asking
+           now; a customer’s records are imported inside their own
+           application after go live, into a database that is theirs. -->
       <!-- ── Simulate: the run ───────────────────────────────────────
            Four steps and an estimate, driven from the batch as it runs. -->
       <div class="dc-strip" id="aria-runstrip" style="display:none" role="status" aria-live="polite">

@@ -1228,17 +1228,12 @@ function chooseData(choice, { remember = true } = {}) {
   _choice = choice;
   if (remember) { try { sessionStorage.setItem(CHOICE_KEY, choice); } catch { /* fine */ } }
 
-  const wrap = document.getElementById('aria-choice');
-  wrap?.classList.toggle('dc-choice--decided', !!choice);
-  wrap?.querySelectorAll('.dc-card').forEach(c => c.classList.toggle('dc-card--on', c.dataset.choice === choice));
-  const note = document.getElementById('aria-choice-note');
-  if (note) note.style.display = choice ? 'none' : '';
-
   const strip = document.getElementById('aria-runstrip');
   const connectors = document.getElementById('aria-connectors');
   const workbench = document.getElementById('aria-workbench');
   // Both paths run the simulated shape, so both show the strip.
-  if (strip) strip.style.display = (choice === 'simulate' || choice === 'own') ? '' : 'none';
+  // 'own' was the other card, and there is no other card.
+  if (strip) strip.style.display = choice === 'simulate' ? '' : 'none';
   if (connectors) connectors.style.display = choice === 'upload' ? '' : 'none';
   // The readiness card and the required-data table answer "what does this
   // need" -- the question the Upload path asks. The Simulate path does not.
@@ -2063,24 +2058,6 @@ function wireStaticControls() {
   wireSampleData();
   document.getElementById('aria-sample-run')?.addEventListener('click', runSampleBatch);
 
-  document.getElementById('aria-choose-simulate')?.addEventListener('click', () => {
-    if (_choice === 'simulate') return;
-    chooseData('simulate');
-    simulateNow();
-  });
-  // Their own data: recorded as the intent, and the shape is still
-  // simulated -- the application is built on the shape either way, and their
-  // rows are imported inside it after go-live. Nothing is uploaded here.
-  document.getElementById('aria-choose-own')?.addEventListener('click', async () => {
-    if (_choice === 'own') return;
-    chooseData('own');
-    try {
-      await api(`/strategy-canvas/transformation-blueprint/${_blueprintId}/data-intent`, {
-        method: 'PATCH', body: JSON.stringify({ intent: 'own' }),
-      });
-    } catch { /* the word is a courtesy to later stages; the run does not depend on it */ }
-    simulateNow();
-  });
   document.getElementById('aria-runstrip-retry')?.addEventListener('click', () => {
     const box = document.getElementById('aria-runstrip-error');
     if (box) box.style.display = 'none';
@@ -2135,13 +2112,28 @@ document.addEventListener('aria:show', (e) => {
   // render so the opening tab is right on the first paint.
   renderTabs(bp);
 
-  // The decision. A choice made before leaving for OAuth is restored so the
-  // customer lands back on the connectors; a ?connect= link is an Upload
-  // choice by definition. Otherwise the two cards.
+  /*
+   * ── There is no decision to make here any more ───────────────────────────
+   *
+   * This asked the customer to choose between simulated data and their own.
+   * Both answers did the same thing: the application is built on the SHAPE
+   * of the data either way, and neither card ever uploaded a row — a
+   * customer's records are imported inside their own application after go
+   * live, into a database that is theirs. The question was real work for the
+   * customer and had no consequence, and asking it invited exactly the
+   * misunderstanding it was trying to avoid, that their records might come
+   * here.
+   *
+   * So it simulates, always, without asking. A ?connect= link is still an
+   * Upload choice by definition, and a choice made before leaving for OAuth
+   * is still restored, so somebody mid-way through connecting Jira lands
+   * back where they were.
+   */
   let remembered = null;
   try { remembered = sessionStorage.getItem(CHOICE_KEY); } catch { /* fine */ }
   const connectWanted = new URLSearchParams(window.location.search).get('connect');
-  chooseData(connectWanted ? 'upload' : (remembered === 'upload' ? 'upload' : null), { remember: false });
+  const path = connectWanted || remembered === 'upload' ? 'upload' : 'simulate';
+  chooseData(path, { remember: false });
 
   renderTable(_cachedDatasets, 0, 0);
 
@@ -2161,6 +2153,13 @@ document.addEventListener('aria:show', (e) => {
   Promise.allSettled([uploadsIn, sourcesIn]).then(() => {
     if (_choice === 'upload') renderConnectors();
     document.dispatchEvent(new CustomEvent('stage:ready', { detail: { stage: 'aria' } }));
+    /*
+     * And it starts itself, once what is already here is known. Before that
+     * samplableDatasets() cannot tell a dataset with no data from one whose
+     * upload has not loaded yet, and it would generate over the top of
+     * something the customer had already connected.
+     */
+    if (_choice === 'simulate') simulateNow();
   });
 
   // A ?connect= link lands back here; renderTabs has already opened the

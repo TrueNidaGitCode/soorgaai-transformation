@@ -1714,6 +1714,113 @@ body {
 .fn__title { margin: 0 0 6px; font-size: clamp(22px, 3.4vw, 30px); line-height: 1.15; color: var(--ch-text); }
 .fn__sub { margin: 0; font-size: 14px; color: var(--ch-dim); }
 
+/* ── The verdict banner ──────────────────────────────────────────────────────
+   One answer, before any detail: whether anything needs this person today.
+   The state tints a left edge and the card beside it, and nothing else — six
+   states each repainting the whole banner would make a quiet morning and a
+   broken one look like different products. */
+
+.fn__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
+  align-items: center;
+  margin-bottom: 26px;
+  padding: 22px 24px;
+  border: 1px solid var(--ch-line);
+  border-left: 3px solid var(--ch-line-hi);
+  border-radius: 18px;
+  background: linear-gradient(110deg, color-mix(in srgb, var(--ch-panel) 88%, var(--ch-accent)), var(--ch-panel) 62%);
+}
+.fn__hero.is-good { border-left-color: var(--ch-accent); }
+.fn__hero.is-watch { border-left-color: var(--ch-warn); }
+.fn__hero.is-bad { border-left-color: var(--ch-bad); }
+.fn__hero.is-idle { border-left-color: var(--ch-line-hi); }
+
+.fn__herotext { min-width: 0; }
+.fn__greet { margin: 0 0 8px; font-size: 13px; color: var(--ch-dim); }
+.fn__heroline {
+  margin: 0 0 8px;
+  font-size: 27px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.fn__hero.is-good .fn__heroline { color: var(--ch-accent); }
+.fn__hero.is-bad .fn__heroline { color: var(--ch-bad); }
+.fn__herosub { margin: 0 0 12px; max-width: 62ch; font-size: 14px; line-height: 1.55; color: var(--ch-dim); }
+
+/* What is doing the watching, in the customer's own units. */
+.fn__herometa {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ch-faint);
+  font-variant-numeric: tabular-nums;
+}
+.fn__herometa::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.fn__hero.is-good .fn__herometa { color: var(--ch-accent); }
+
+/* The verdict card. A button, because it always leads somewhere: whatever
+   the state, the useful next screen is what is doing the watching. */
+.fn__health {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-width: 240px;
+  padding: 16px 18px;
+  border: 1px solid var(--ch-line);
+  border-radius: 14px;
+  background: var(--ch-panel);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.fn__health:hover { border-color: var(--ch-line-hi); background: var(--ch-panel-hi); }
+.fn__health:focus-visible { outline: 2px solid var(--ch-accent); outline-offset: 2px; }
+
+.fn__health-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--ch-faint);
+  background: var(--ch-panel-hi);
+}
+.fn__health-icon svg { width: 22px; height: 22px; }
+.fn__health.is-good .fn__health-icon { color: var(--ch-accent); background: color-mix(in srgb, var(--ch-accent) 15%, transparent); }
+.fn__health.is-watch .fn__health-icon { color: var(--ch-warn); background: color-mix(in srgb, var(--ch-warn) 15%, transparent); }
+.fn__health.is-bad .fn__health-icon { color: var(--ch-bad); background: color-mix(in srgb, var(--ch-bad) 15%, transparent); }
+
+.fn__health-text { min-width: 0; }
+.fn__health-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ch-faint); }
+.fn__health-verdict { display: block; margin: 3px 0 2px; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+.fn__health.is-good .fn__health-verdict { color: var(--ch-accent); }
+.fn__health.is-watch .fn__health-verdict { color: var(--ch-warn); }
+.fn__health.is-bad .fn__health-verdict { color: var(--ch-bad); }
+.fn__health-note { display: block; font-size: 12px; line-height: 1.45; color: var(--ch-faint); }
+.fn__health-go { font-size: 22px; line-height: 1; color: var(--ch-faint); }
+
+@media (max-width: 760px) {
+  .fn__hero { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .fn__heroline { font-size: 23px; }
+  .fn__health { min-width: 0; }
+}
+
 .fn__list { display: grid; gap: 14px; }
 
 /* The severity rail is the only colour on a card. A whole card tinted red

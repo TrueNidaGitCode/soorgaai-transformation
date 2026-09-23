@@ -25,7 +25,6 @@
   if (!page || !detail) return;
 
   var el = {
-    eyebrow: document.getElementById('fn-eyebrow'),
     title: document.getElementById('fn-title'),
     sub: document.getElementById('fn-sub'),
     list: document.getElementById('fn-list'),
@@ -37,6 +36,15 @@
     rlist: document.getElementById('fn-rlist'),
     note: document.getElementById('fn-note'),
     cats: document.getElementById('fn-cats'),
+    hero: document.getElementById('fn-hero'),
+    greet: document.getElementById('fn-greet'),
+    heroline: document.getElementById('fn-heroline'),
+    herosub: document.getElementById('fn-herosub'),
+    herometa: document.getElementById('fn-herometa'),
+    health: document.getElementById('fn-health'),
+    healthIcon: document.getElementById('fn-health-icon'),
+    healthVerdict: document.getElementById('fn-health-verdict'),
+    healthNote: document.getElementById('fn-health-note'),
     eg: document.getElementById('fn-eg'),
     eglist: document.getElementById('fn-eglist'),
   };
@@ -103,6 +111,114 @@
   var LABEL = { high: 'High', medium: 'Medium', low: 'Low' };
 
   var LABEL_LONG = { high: 'High priority', medium: 'Medium priority', low: 'Low priority' };
+
+  /*
+   * ── The one answer, before the detail ──────────────────────────────────
+   *
+   * Six states, in this order, because the order is the whole correctness of
+   * it. "Everything looks good" is only true when watchers ran and found
+   * nothing — so a watcher that stopped itself, and an application whose
+   * first check has not happened yet, are checked FIRST. Both would
+   * otherwise render as all-clear, which is the one lie this screen must
+   * never tell: somebody reads it and stops looking.
+   */
+  var SHIELD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.3-2.9 8.2-7 9.5-4.1-1.3-7-5.2-7-9.5V6z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/></svg>';
+  var ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.3-2.9 8.2-7 9.5-4.1-1.3-7-5.2-7-9.5V6z"/><path d="M12 9v4M12 16.2h.01"/></svg>';
+  var CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>';
+
+  function health(body) {
+    var open = (body.open || []).length;
+    var counts = body.counts || {};
+
+    if (body.degraded) {
+      return {
+        cls: 'is-bad', icon: ALERT, verdict: 'Needs a look',
+        note: body.degraded === 1 ? '1 watcher has stopped itself' : body.degraded + ' watchers have stopped themselves',
+        line: 'Some checks have stopped.',
+        sub: 'They failed repeatedly and switched themselves off, so what they watched is not being watched. Open Watchers to start them again.',
+      };
+    }
+    if (!body.watching) {
+      return {
+        cls: 'is-idle', icon: CLOCK, verdict: 'Not watching yet',
+        note: 'Nothing is running',
+        line: 'Nothing is being watched yet.',
+        sub: 'Open Watchers to choose what this application should keep an eye on.',
+      };
+    }
+    if (!body.everRan) {
+      return {
+        cls: 'is-idle', icon: CLOCK, verdict: 'Starting up',
+        note: 'The first check has not run',
+        line: 'Getting started.',
+        sub: body.nextDueAt
+          ? 'Nothing has been checked yet. The first check is at ' + clockTime(body.nextDueAt) + '.'
+          : 'Nothing has been checked yet. The first check runs shortly.',
+      };
+    }
+    if (counts.high) {
+      return {
+        cls: 'is-bad', icon: ALERT, verdict: 'Needs attention',
+        note: counts.high === 1 ? '1 high priority item' : counts.high + ' high priority items',
+        line: open === 1 ? '1 thing needs you today.' : open + ' things need you today.',
+        sub: 'Svarg is monitoring your business, and some of what it found is worth doing first.',
+      };
+    }
+    if (open) {
+      return {
+        cls: 'is-watch', icon: SHIELD, verdict: 'Worth a look',
+        note: open === 1 ? '1 thing is open' : open + ' things are open',
+        line: open === 1 ? '1 thing to look at.' : open + ' things to look at.',
+        sub: 'Svarg is monitoring your business. Nothing urgent, but these are still open.',
+      };
+    }
+    return {
+      cls: 'is-good', icon: SHIELD, verdict: 'Healthy',
+      note: 'No critical issues at the moment',
+      line: 'Everything looks good!',
+      sub: 'Svarg is monitoring your business. No immediate issues detected.',
+    };
+  }
+
+  /** Morning, afternoon or evening — from the reader's own clock. */
+  function partOfDay() {
+    var h = new Date().getHours();
+    return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  }
+
+  /*
+   * The name the shell already resolved from the session. Read rather than
+   * fetched: this page has no business asking who somebody is a second time,
+   * and an empty greeting is better than a wrong one.
+   */
+  function firstName() {
+    var el = document.getElementById('ch-who-name');
+    return (el && el.textContent || '').trim();
+  }
+
+  function drawHero(body) {
+    if (!el.hero) return;
+    var h = health(body);
+    var name = firstName();
+    var areas = (body.categories || []).length;
+
+    el.greet.textContent = partOfDay() + (name ? ', ' + name : '') + ' 👋';
+    el.heroline.textContent = h.line;
+    el.herosub.textContent = h.sub;
+
+    // What is doing the watching, stated in the customer's own units: areas
+    // of their business, not a catalogue of machinery.
+    var bits = [body.watching + (body.watching === 1 ? ' watcher active' : ' watchers active')];
+    if (areas) bits.push(areas + (areas === 1 ? ' business area' : ' business areas'));
+    el.herometa.textContent = bits.join(' · ');
+
+    el.healthIcon.innerHTML = h.icon;
+    el.healthVerdict.textContent = h.verdict;
+    el.healthNote.textContent = h.note;
+    el.health.className = 'fn__health ' + h.cls;
+    el.hero.className = 'fn__hero ' + h.cls;
+    el.hero.hidden = false;
+  }
 
   /** Which category chip is selected. Empty means all of them. */
   var picked = '';
@@ -206,6 +322,7 @@
 
   function render(body) {
     _last = body;
+    drawHero(body);
     var all = body.open || [];
     var counts = body.counts || {};
     var cats = body.categories || [];
@@ -245,32 +362,18 @@
     if (counts.medium) bits.push(counts.medium + ' medium');
     if (counts.low) bits.push(counts.low + ' low');
 
-    el.title.textContent = all.length === 1
-      ? '1 thing needs your attention'
-      : all.length + ' things need your attention';
-
-    if (all.length) {
-      el.sub.textContent = bits.join(' · ');
-    } else {
-      /*
-       * Zero means one of three quite different things, and saying the wrong
-       * one is the difference between "all clear" and "nothing has run".
-       */
-      if (!body.watching) {
-        el.sub.textContent = 'Nothing is being watched yet — open Watchers to choose what this application should keep an eye on.';
-      } else if (!body.everRan) {
-        el.sub.textContent = body.nextDueAt
-          ? body.watching + (body.watching === 1 ? ' watcher is active. Its first check is at ' : ' watchers are active. The first check is at ') + clockTime(body.nextDueAt) + '.'
-          : body.watching + ' watchers are active. The first check runs shortly.';
-      } else {
-        el.sub.textContent = body.watching + (body.watching === 1 ? ' watcher has' : ' watchers have')
-          + ' checked and found nothing wrong.';
-      }
-    }
-
-    el.eyebrow.textContent = body.watching
-      ? 'Svarg is watching · ' + body.watching + (body.watching === 1 ? ' watcher' : ' watchers')
-      : 'Svarg is watching';
+    /*
+     * A heading for the list, not a second verdict.
+     *
+     * The count and what it means are said once, at the top, by the banner —
+     * which distinguishes "checked and clear" from "nothing has run yet" and
+     * from "checks have stopped", where this only ever knew the number. Two
+     * headlines saying the same thing in different words is how a screen
+     * stops being read.
+     */
+    el.title.textContent = 'What needs your attention';
+    el.sub.textContent = all.length ? bits.join(' · ') : '';
+    el.sub.hidden = !all.length;
 
     var res = body.resolved || [];
     el.resolved.hidden = res.length === 0;
@@ -299,6 +402,10 @@
     return api('/findings')
       .then(render)
       .catch(function (err) {
+        // No verdict when the findings could not be read: a banner saying
+        // "everything looks good" over a failed request is the worst
+        // possible combination on this screen.
+        if (el.hero) el.hero.hidden = true;
         el.list.hidden = true;
         drawExamples([]);
         el.empty.hidden = false;
@@ -460,6 +567,20 @@
       .catch(function () { /* a colleague, not the owner. Nothing to say. */ });
   }
 
+  /*
+   * The health card opens Watchers.
+   *
+   * A card that states a verdict should be able to show its working, and in
+   * every one of the six states the useful next screen is the same: what is
+   * doing the watching. Stopped checks are there, so is the area nothing is
+   * watching yet.
+   */
+  if (el.health) {
+    el.health.addEventListener('click', function () {
+      if (typeof window.svargShowPanel === 'function') window.svargShowPanel('agents');
+      else window.location.hash = '#agents';
+    });
+  }
   window.addEventListener('svarg:findings-open', function () {
     detail.hidden = true;
     page.hidden = false;

@@ -213,8 +213,33 @@
        application cannot reach Svarg at all, still sees everything noticed.
        findings.js drives it. -->
   <section class="fn" id="ch-findings" hidden aria-label="What needs attention">
+    <!-- The verdict, before the detail.
+         Somebody opening this at eight in the morning wants one answer, and
+         the answer is not a number of findings: it is whether anything needs
+         them. Every word of it is derived from what the watchers actually
+         did — including the states where "all clear" would be a lie, because
+         nothing has run yet or because checks have stopped themselves. -->
+    <section class="fn__hero" id="fn-hero" hidden>
+      <div class="fn__herotext">
+        <p class="fn__greet" id="fn-greet"></p>
+        <h2 class="fn__heroline" id="fn-heroline"></h2>
+        <p class="fn__herosub" id="fn-herosub"></p>
+        <p class="fn__herometa" id="fn-herometa"></p>
+      </div>
+      <!-- Always a way through to what is doing the watching: a card that
+           states a verdict should be able to show its working. -->
+      <button type="button" class="fn__health" id="fn-health">
+        <span class="fn__health-icon" id="fn-health-icon" aria-hidden="true"></span>
+        <span class="fn__health-text">
+          <span class="fn__health-label">Business health</span>
+          <span class="fn__health-verdict" id="fn-health-verdict"></span>
+          <span class="fn__health-note" id="fn-health-note"></span>
+        </span>
+        <span class="fn__health-go" aria-hidden="true">&rsaquo;</span>
+      </button>
+    </section>
+
     <header class="fn__head">
-      <p class="fn__eyebrow" id="fn-eyebrow">Svarg is watching</p>
       <h2 class="fn__title" id="fn-title">What needs your attention</h2>
       <p class="fn__sub" id="fn-sub"></p>
     </header>

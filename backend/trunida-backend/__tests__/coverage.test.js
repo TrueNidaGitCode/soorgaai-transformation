@@ -211,3 +211,97 @@ describe('the plan reaches the application the way seats already do', () => {
     expect(dep).toContain('coverageEnforced: { type: Boolean, default: false }');
   });
 });
+
+describe('every place a coverage limit is actually applied', () => {
+  /*
+   * The pure decisions are run above. These are the places that reach a
+   * database or a browser, where the only thing a test can hold is that the
+   * call is there and shaped right — which is still worth holding, because
+   * every one of them was absent before and nothing noticed.
+   */
+
+  it('records coverage on a deployment the moment it is attached', () => {
+    const ctl = read('../controllers/deploymentController.js');
+    // The allowance goes into the container...
+    expect(ctl).toContain('coverage: coverageFrom(plan?.limits),');
+    // ...and the deployment is marked as launched under it, so the sweep may
+    // keep writing it. Anything attached before this stays grandfathered.
+    expect(ctl).toContain('dep.coverageEnforced = true;');
+    const i = ctl.indexOf('dep.coverageEnforced = true;');
+    const j = ctl.indexOf('const attached = await target.attach(');
+    expect(i, 'the flag must be set after the attach succeeds').toBeGreaterThan(j);
+  });
+
+  it('marks a category the plan does not cover, rather than dropping it', () => {
+    const ctl = read('../eame-template/controllers/agentsController.js');
+    expect(ctl).toContain('locked: categoryLimit() ? !activeCategories(plan()).includes(c.name) : false,');
+    // And ships the summary the screen leads with.
+    expect(ctl).toContain('coverage: coverageSummary(plan()),');
+  });
+
+  it('draws a locked area greyed, with its watchers still in it', () => {
+    const ui = read('../eame-template/frontend/agents.js');
+    const css = read('../eame-template/frontend/app.css');
+    // The column is drawn and marked, never filtered out.
+    expect(ui).toContain("'<section class=\"ag-col' + (g.locked ? ' is-locked' : '')");
+    expect(ui).toContain("(g.locked ? 'Not in your plan'");
+    expect(css).toContain('.ag-col.is-locked');
+    // Its watchers are still listed — the greyed column is how somebody
+    // finds out what is not being watched.
+    expect(ui).not.toMatch(/filter\([^)]*!c\.locked/);
+    // And no button is offered that the API would refuse.
+    expect(ui).toContain('var acts = locked(c)');
+  });
+
+  it('caps connections where the connections are, and says both numbers', () => {
+    const ctl = read('../eame-template/controllers/connectorController.js');
+    expect(ctl).toContain('const limit = connectionLimit();');
+    expect(ctl).toContain('const used = (await listConnectors()).length;');
+    expect(ctl).toContain('if (used >= limit) {');
+    // A refusal, not a crash, and it names the limit and what is used.
+    expect(ctl).toMatch(/fail\(res, new Error\([\s\S]*?\), 403\)/);
+    expect(ctl).toContain("'Your plan connects ' + limit");
+    expect(ctl).toContain("+ used + ' '");
+    // The page is told before somebody picks a card.
+    expect(ctl).toContain('connectionLimit: connectionLimit(),');
+    expect(ctl).toContain('connectionsUsed: connectors.length,');
+  });
+
+  it('says how many connections are used, and only when the plan limits them', () => {
+    const ui = read('../eame-template/frontend/data.js');
+    expect(ui).toContain('function drawUsed()');
+    // No limit, no line: an application with unlimited connections should
+    // not be told it has unlimited connections.
+    expect(ui).toContain('if (!connectionLimit) { el.hidden = true; return; }');
+    expect(ui).toContain("' of ' + connectionLimit + ' data source'");
+    // Drawn on every refresh, including the one where the request failed.
+    expect(ui).toMatch(/catch \(err\) \{ kinds = \[\]; connectors = \[\]; connectionLimit = null; \}\s*\n\s*drawUsed\(\);/);
+  });
+
+  it('clamps a hand-started watcher to the plan’s frequency', () => {
+    const ctl = read('../eame-template/controllers/agentsController.js');
+    expect(ctl).toContain("schedule: allowedSchedule(req.body?.schedule || 'weekdays'),");
+  });
+
+  it('tells the account screen what its plan covers', () => {
+    const api = read('../controllers/billingController.js');
+    expect(api).toContain('businessCategories: s.limits?.businessCategories ?? null,');
+    expect(api).toContain('dataConnections: s.limits?.dataConnections ?? null,');
+    const ui = read('../../../frontend/blueprints/blueprints.js');
+    expect(ui).toContain("const cover = el('bp-plan-coverage');");
+    // Unlimited reads as a sentence, not as "null business areas".
+    expect(ui).toContain("'Every business area watched'");
+    const html = read('../../../frontend/blueprints/blueprints.html');
+    expect(html).toContain('id="bp-plan-coverage"');
+  });
+
+  it('ships the coverage module to every delivered application', () => {
+    /*
+     * A new template file has to be in BOTH the fixed-path list and the
+     * builder's source map. One without the other ships it to nobody, which
+     * has happened twice.
+     */
+    expect(read('../services/eameSpec.js')).toContain("'services/coverage.js',");
+    expect(read('../services/eameProjectBuilder.js')).toContain("'services/coverage.js':");
+  });
+});

@@ -1,49 +1,38 @@
 /**
- * The admin account is not a customer: every gate runs and none refuses.
+ * Which plan an account resolves to, and what that plan says.
  *
- * Everything else about entitlements is unchanged, so the second half pins
- * that a Hobby account at its limit is still refused -- the exemption is
- * keyed on the User's role, not on the absence of a plan.
+ * ── What this file used to be ──────────────────────────────────────────────
+ *
+ * Four monthly quotas — blueprints, applications, launches, capability builds
+ * — each with its own refusal, and most of this file was about the arithmetic
+ * of running out. That was a second pricing model sitting beside the first: a
+ * customer paid monthly AND spent from an allowance, and the allowance was
+ * what they felt.
+ *
+ * One price buys coverage now, and coverage is enforced where it is spent —
+ * business areas and connections inside the customer's own application, seats
+ * beside the people they invite. Nothing here refuses anything any more, so
+ * what is left to pin is resolution: which tier an account is on, that the
+ * admin account is not a customer, and that a lapsed subscription falls back
+ * without taking away what was already made.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const state = { role: 'user', plan: null, counts: { newBp: 0, activeBp: 0, apps: 0, launches: 0, capabilityBuilds: 0 } };
+const state = { role: 'user', plan: null };
 
 const q = (v) => ({ lean: async () => v, select: () => q(v), sort: () => q(v) });
 
 vi.mock('../models/user.js', () => ({ User: { findById: () => q(state.role ? { role: state.role } : null) } }));
 vi.mock('../models/AccountPlan.js', () => ({ default: { findOne: () => q(state.plan) } }));
-vi.mock('../models/TransformationBlueprint.js', () => ({ default: {
-  countDocuments: async (f) => (f.createdAt ? state.counts.newBp : state.counts.activeBp),
-  findOne: () => q(state.counts.newBp ? { createdAt: new Date() } : null),
-} }));
-vi.mock('../models/GeneratedApplication.js', () => ({ default: { countDocuments: async () => state.counts.apps } }));
-vi.mock('../models/HostedDeployment.js', () => ({ default: { countDocuments: async () => state.counts.launches } }));
-vi.mock('../models/CapabilityRequest.js', () => ({ default: { countDocuments: async () => state.counts.capabilityBuilds } }));
 
 const { checkEntitlement, usageSummary, deploymentCeilingUsd, PLANS } = await import('../services/entitlements.js');
 
 const USER = '000000000000000000000abc';
 
-beforeEach(() => {
-  state.role = 'user'; state.plan = null;
-  state.counts = { newBp: 0, activeBp: 0, apps: 0, launches: 0, capabilityBuilds: 0 };
-});
+beforeEach(() => { state.role = 'user'; state.plan = null; });
 
-describe('the admin account', () => {
-  beforeEach(() => {
-    state.role = 'admin';
-    // Well past every Hobby limit, and no AccountPlan row at all.
-    state.counts = { newBp: 40, activeBp: 40, apps: 40, launches: 40, capabilityBuilds: 40 };
-  });
-
-  it('is never refused a blueprint, an application or a launch', async () => {
-    for (const action of ['blueprint', 'application', 'launch']) {
-      const v = await checkEntitlement(USER, action);
-      expect(v.allowed, action).toBe(true);
-      expect(v.plan).toBe('enterprise');
-    }
-  });
+describe('the admin account is not a customer', () => {
+  beforeEach(() => { state.role = 'admin'; });
 
   it('reads as Enterprise, marked as coming from the role', async () => {
     const s = await usageSummary(USER);
@@ -51,74 +40,85 @@ describe('the admin account', () => {
     expect(s.viaAdmin).toBe(true);
     expect(s.lapsed).toBe(false);
     expect(s.limits).toEqual(PLANS.enterprise);
-    // Usage is still counted honestly; it just never bites.
-    expect(s.used.newBlueprints).toBe(40);
   });
 
   it('gets the Enterprise deployment ceiling, not Hobby\'s', async () => {
+    // The one limit that survived, and it is Svarg's exposure rather than
+    // anything the customer is billed on.
     expect(await deploymentCeilingUsd(USER)).toBe(PLANS.enterprise.deploymentCostUsd);
+    expect(PLANS.enterprise.deploymentCostUsd).toBeGreaterThan(PLANS.hobby.deploymentCostUsd);
   });
 
   it('is exempt even when a lapsed paid plan is on record', async () => {
     state.plan = { plan: 'pro', status: 'past_due' };
-    const v = await checkEntitlement(USER, 'blueprint');
-    expect(v.allowed).toBe(true);
     expect((await usageSummary(USER)).lapsed).toBe(false);
+    expect((await usageSummary(USER)).effective).toBe('enterprise');
   });
 });
 
-describe('everyone else', () => {
-  it('a Hobby account at its monthly limit is still refused', async () => {
-    state.counts.newBp = 1;
-    const v = await checkEntitlement(USER, 'blueprint');
-    expect(v.allowed).toBe(false);
-    expect(v.upgradeTo).toBe('pro');
-    expect((await usageSummary(USER)).viaAdmin).toBe(false);
+describe('everyone else resolves to the tier they are on', () => {
+  it('has no plan row, and is Hobby', async () => {
+    const s = await usageSummary(USER);
+    expect(s.effective).toBe('hobby');
+    expect(s.viaAdmin).toBe(false);
+    expect(s.limits.businessCategories).toBe(PLANS.hobby.businessCategories);
   });
 
-  it('an account with no User record resolves as Hobby, never as admin', async () => {
+  it('never resolves as admin without a User record saying so', async () => {
     state.role = null;
-    state.counts.launches = 1;
-    const v = await checkEntitlement(USER, 'launch');
-    expect(v.allowed).toBe(false);
+    expect((await usageSummary(USER)).effective).toBe('hobby');
+  });
+
+  it('falls back to Hobby limits while a subscription is unpaid', async () => {
+    /*
+     * For NEW work only, and nothing here hides what a customer already made.
+     * Under coverage pricing that means a lapsed account watches less, not
+     * that its watchers are deleted.
+     */
+    state.plan = { plan: 'ultra', status: 'past_due' };
+    const s = await usageSummary(USER);
+    expect(s.plan).toBe('ultra');
+    expect(s.effective).toBe('hobby');
+    expect(s.lapsed).toBe(true);
+    expect(s.limits.businessCategories).toBe(PLANS.hobby.businessCategories);
+  });
+
+  it('takes a per-account override, which is how Enterprise is narrowed', async () => {
+    // The mechanism a custom contract uses: any key the plan has, overridden
+    // on the account. It needed no new code when coverage was added.
+    state.plan = { plan: 'enterprise', status: 'active', overrides: { businessCategories: 4, seats: 25 } };
+    const s = await usageSummary(USER);
+    expect(s.limits.businessCategories).toBe(4);
+    expect(s.limits.seats).toBe(25);
+    // And everything not overridden stays the tier's own.
+    expect(s.limits.monitoringFrequency).toBe(PLANS.enterprise.monitoringFrequency);
   });
 });
 
-/**
- * Building what the Learner planned.
- *
- * The loop notices and plans for every account; building rewrites a running
- * application and spends real money, so it is a press by a person and a paid
- * plan. Hobby sees the capability and the reason it cannot build it.
- */
-describe('who may build a capability', () => {
-  it('refuses Hobby, and names the plan that would', async () => {
-    const v = await checkEntitlement(USER, 'capability');
-    expect(v.allowed).toBe(false);
-    expect(v.reason).toMatch(/Pro/);
-    expect(PLANS.hobby.capabilityBuilds).toBe(0);
+describe('nothing is refused on a plan any more', () => {
+  it('allows every action it is asked about', async () => {
+    /*
+     * checkEntitlement is kept because a plan will have something to say
+     * again and callers already know how to ask. Today every answer is yes —
+     * and this pins that, so a quota cannot be reintroduced by accident and
+     * start refusing customers who are paying one price a month.
+     */
+    for (const action of ['blueprint', 'application', 'launch', 'capability', 'anything-at-all']) {
+      const v = await checkEntitlement(USER, action);
+      expect(v.allowed, action).toBe(true);
+    }
   });
 
-  it('allows Pro until its monthly number is used', async () => {
-    state.plan = { plan: 'pro', status: 'active' };
-    expect((await checkEntitlement(USER, 'capability')).allowed).toBe(true);
-    state.counts.capabilityBuilds = PLANS.pro.capabilityBuilds;
-    const spent = await checkEntitlement(USER, 'capability');
-    expect(spent.allowed).toBe(false);
-    expect(spent.reason).toMatch(/builds \d+ of these a month/);
+  it('allows the guest journey, which has no account to charge', async () => {
+    const v = await checkEntitlement(null, 'blueprint');
+    expect(v.allowed).toBe(true);
+    expect(v.plan).toBe('guest');
   });
 
-  it('never refuses the admin account', async () => {
-    state.role = 'admin';
-    state.counts.capabilityBuilds = 999;
-    expect((await checkEntitlement(USER, 'capability')).allowed).toBe(true);
-  });
-
-  it('counts a build that was asked for, not one merely planned', async () => {
-    // A planned request has cost nothing; charging a slot for it would refuse
-    // the customer a build they never had.
-    const src = await import('fs').then(fs => fs.readFileSync(
-      new URL('../services/entitlements.js', import.meta.url), 'utf8'));
-    expect(src).toMatch(/status: \{ \$in: \['building', 'ready', 'live', 'failed'\] \}/);
+  it('holds no monthly quota on any tier', async () => {
+    const gone = ['newBlueprintsPerMonth', 'activeBlueprints', 'applications', 'launches', 'capabilityBuilds'];
+    for (const [name, plan] of Object.entries(PLANS)) {
+      for (const k of gone) expect(plan, `${name}.${k}`).not.toHaveProperty(k);
+    }
   });
 });

@@ -45,13 +45,8 @@
 
 import AccountPlan from '../models/AccountPlan.js';
 import { User } from '../models/user.js';
-import TransformationBlueprint from '../models/TransformationBlueprint.js';
-import GeneratedApplication from '../models/GeneratedApplication.js';
-import HostedDeployment from '../models/HostedDeployment.js';
-import CapabilityRequest from '../models/CapabilityRequest.js';
 
 /** Same window as the gateway meter, for the same reason. */
-export const PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** null is unlimited. 0 would be a real limit meaning "none allowed". */
 const UNLIMITED = null;
@@ -92,15 +87,10 @@ export const PLANS = {
     businessCategories:    2,
     dataConnections:       2,
     monitoringFrequency:   'daily',
-    newBlueprintsPerMonth: 1,
-    activeBlueprints:      UNLIMITED,
-    applications:          1,
-    launches:              1,
     deploymentCostUsd:     2,
     // Hobby sees what its team asked for and cannot build it. The demonstration
     // is the blueprint and one working application; a build that rewrites a
     // running application every time somebody complains is what Pro buys.
-    capabilityBuilds:      0,
     seats:                 1,
   },
   pro: {
@@ -109,16 +99,11 @@ export const PLANS = {
     businessCategories:    3,
     dataConnections:       5,
     monitoringFrequency:   'daily',
-    newBlueprintsPerMonth: UNLIMITED,
-    activeBlueprints:      1,
-    applications:          UNLIMITED,
     // One running application, like Hobby: what Pro buys is building every
     // opportunity inside the objective, not keeping several of them alive at
     // once. Hosting is the constraint, and a promise the platform cannot keep
     // is worse than a smaller one it can.
-    launches:              1,
     deploymentCostUsd:     5,
-    capabilityBuilds:      3,
     /*
      * Three, not one.
      *
@@ -138,12 +123,7 @@ export const PLANS = {
     businessCategories:    UNLIMITED,
     dataConnections:       10,
     monitoringFrequency:   'hourly',
-    newBlueprintsPerMonth: UNLIMITED,
-    activeBlueprints:      UNLIMITED,
-    applications:          UNLIMITED,
-    launches:              10,
     deploymentCostUsd:     5,
-    capabilityBuilds:      10,
     // Where "we need the team in here" is answered.
     seats:                 10,
   },
@@ -156,14 +136,9 @@ export const PLANS = {
     businessCategories:    UNLIMITED,
     dataConnections:       UNLIMITED,
     monitoringFrequency:   'custom',
-    newBlueprintsPerMonth: UNLIMITED,
-    activeBlueprints:      UNLIMITED,
-    applications:          UNLIMITED,
-    launches:              UNLIMITED,
     // Not five. A custom tier on the same ceiling as Pro is a contract the
     // platform cannot keep; it is set per account alongside the coverage.
     deploymentCostUsd:     50,
-    capabilityBuilds:      UNLIMITED,
     // Thirty coaches and four admins.
     seats:                 UNLIMITED,
   },
@@ -243,145 +218,53 @@ export async function resolvePlan(userId) {
 
 // ── Counting what exists ────────────────────────────────────────────────────
 
-function windowStart(now = new Date()) {
-  return new Date(now.getTime() - PERIOD_MS);
-}
-
 /**
- * What this account is using, against what it is allowed.
+ * What this account's plan allows.
  *
- * A single object rather than four calls because the usage panel needs all of
- * it and a gate needs one line of it — and because four separate round trips
- * would let the numbers disagree with each other mid-render.
+ * It used to count as well as allow: blueprints made this month, applications
+ * built, deployments running, capabilities requested — five queries on every
+ * read, because five monthly quotas needed to know how much was left.
+ *
+ * None of that is a limit now. One price buys coverage, and coverage is
+ * counted where it is spent: business areas and connections inside the
+ * customer's own application, seats beside the people they invite. Counting
+ * those things here would be five round trips to produce numbers nothing
+ * compares anything to.
+ *
+ * So this reads the plan and stops. The shape is unchanged for the callers
+ * that read `limits`, which is all of them.
  */
-export async function usageSummary(userId, now = new Date()) {
+export async function usageSummary(userId) {
   const { plan, status, effective, lapsed, limits, currentPeriodEnd, viaAdmin } = await resolvePlan(userId);
-  const since = windowStart(now);
-
-  const [newBlueprints, activeBlueprints, applications, launches, capabilityBuilds, oldest] = await Promise.all([
-    TransformationBlueprint.countDocuments({ userId, createdAt: { $gte: since } }),
-    TransformationBlueprint.countDocuments({ userId, archived: { $ne: true } }),
-    // A build that failed verification does not consume a slot. It cost Svarg
-    // real money, but charging a customer a slot for something that does not
-    // run is the kind of billing nobody forgives.
-    GeneratedApplication.countDocuments({ userId, status: { $ne: 'failed' } }),
-    HostedDeployment.countDocuments({ userId, status: { $nin: ['destroyed', 'failed'] } }),
-    // Capabilities this account has asked to have built inside the window. A
-    // request that was only planned has cost nothing, so it does not count.
-    CapabilityRequest.countDocuments({ userId, status: { $in: ['building', 'ready', 'live', 'failed'] }, updatedAt: { $gte: since } }),
-    // When the window frees up: the oldest blueprint still inside it.
-    TransformationBlueprint.findOne({ userId, createdAt: { $gte: since } })
-      .sort({ createdAt: 1 }).select('createdAt').lean(),
-  ]);
-
-  return {
-    plan, status, effective, lapsed, limits, currentPeriodEnd, viaAdmin,
-    used: { newBlueprints, activeBlueprints, applications, launches, capabilityBuilds },
-    // Null when nothing is in the window — there is nothing to wait for.
-    windowResetsAt: oldest ? new Date(new Date(oldest.createdAt).getTime() + PERIOD_MS) : null,
-  };
+  return { plan, status, effective, lapsed, limits, currentPeriodEnd, viaAdmin };
 }
 
 // ── The gate ────────────────────────────────────────────────────────────────
 
-function refusal(effective, limit, used, reason) {
-  const upgradeTo = UPGRADE_PATH[effective];
-  return {
-    allowed: false,
-    code: 'limit_reached',
-    reason,
-    limit, used,
-    plan: effective,
-    upgradeTo,
-    upgradeLabel: upgradeTo ? PLANS[upgradeTo].label : '',
-  };
-}
-
-function whenText(date) {
-  if (!date) return '';
-  return ` The limit frees up on ${date.toISOString().slice(0, 10)}.`;
-}
-
 /**
- * May this account do `action` right now?
+ * Whether this account may do something.
  *
- * @param {string} userId
- * @param {'blueprint'|'application'|'launch'} action
- * @returns {Promise<{allowed:boolean, reason?:string, upgradeTo?:string, limit?:number, used?:number}>}
+ * ── What is left to refuse, and what is not ────────────────────────────────
+ *
+ * There used to be four gates here — a blueprint, an application, a launch, a
+ * capability build — each a monthly quota, each its own reason to be turned
+ * away. That was a second pricing model running alongside the first: a
+ * customer paid a monthly price AND spent from an allowance, and the
+ * allowance was what they actually felt.
+ *
+ * There is one price now, and it buys coverage: how much of the business is
+ * watched, from how many sources, how often, for how many people. Those are
+ * enforced where the thing being limited actually is — coverage and
+ * connections inside the customer's own application, seats beside the people
+ * they invite — so nothing is left for this function to refuse.
+ *
+ * It is kept rather than deleted because a plan will have something to say
+ * again, and callers already know how to ask. Today every answer is yes.
  */
 export async function checkEntitlement(userId, action) {
-  // No user means the guest journey, which has its own IP-based rate limit and
-  // no account to charge. Gating it here would refuse the one thing the free
-  // preview exists to do.
+  // No user means the guest journey, which has its own IP-based rate limit.
   if (!userId) return { allowed: true, plan: 'guest' };
-
-  const s = await usageSummary(userId);
-  const { limits, used, effective } = s;
-  const lapsedNote = s.lapsed
-    ? ` Your ${PLANS[planKey(s.plan)].label} subscription is ${s.status.replace('_', ' ')}, so ${PLANS.hobby.label} limits apply until it is renewed.`
-    : '';
-
-  /*
-   * Building a capability the Learner noticed.
-   *
-   * Always asked for by a person now, from the Blueprints page — the loop
-   * decides and plans, and stops. An unattended build rewrites an application
-   * somebody is relying on and spends real money, and neither should happen
-   * because a coach complained twice.
-   */
-  if (action === 'capability') {
-    if (limits.capabilityBuilds === 0) {
-      return refusal(effective, 0, used.capabilityBuilds,
-        `${PLANS[effective].label} shows you what your team keeps asking for, and building it is part of `
-        + `${PLANS[UPGRADE_PATH[effective]] ? PLANS[UPGRADE_PATH[effective]].label : 'a paid plan'}.${lapsedNote}`);
-    }
-    if (limits.capabilityBuilds !== null && used.capabilityBuilds >= limits.capabilityBuilds) {
-      return refusal(effective, limits.capabilityBuilds, used.capabilityBuilds,
-        `${PLANS[effective].label} builds ${limits.capabilityBuilds} of these a month, and you have used `
-        + `${used.capabilityBuilds}.${whenText(s.windowResetsAt)}${lapsedNote}`);
-    }
-    return { allowed: true, plan: effective };
-  }
-
-  if (action === 'blueprint') {
-    if (limits.newBlueprintsPerMonth !== null && used.newBlueprints >= limits.newBlueprintsPerMonth) {
-      return refusal(effective, limits.newBlueprintsPerMonth, used.newBlueprints,
-        `${PLANS[effective].label} includes ${limits.newBlueprintsPerMonth} new blueprint`
-        + `${limits.newBlueprintsPerMonth === 1 ? '' : 's'} a month, and you have used `
-        + `${used.newBlueprints}.${whenText(s.windowResetsAt)}${lapsedNote}`);
-    }
-    if (limits.activeBlueprints !== null && used.activeBlueprints >= limits.activeBlueprints) {
-      return refusal(effective, limits.activeBlueprints, used.activeBlueprints,
-        `${PLANS[effective].label} covers ${limits.activeBlueprints} active business objective`
-        + `${limits.activeBlueprints === 1 ? '' : 's'}. Archive the one you have, or move up to carry `
-        + `more than one at a time.${lapsedNote}`);
-    }
-    return { allowed: true, plan: effective };
-  }
-
-  if (action === 'application') {
-    if (limits.applications !== null && used.applications >= limits.applications) {
-      return refusal(effective, limits.applications, used.applications,
-        `${PLANS[effective].label} builds ${limits.applications} application`
-        + `${limits.applications === 1 ? '' : 's'}. Move up to build the remaining AI opportunities `
-        + `in your blueprint.${lapsedNote}`);
-    }
-    return { allowed: true, plan: effective };
-  }
-
-  if (action === 'launch') {
-    if (limits.launches !== null && used.launches >= limits.launches) {
-      return refusal(effective, limits.launches, used.launches,
-        `${PLANS[effective].label} keeps ${limits.launches} application`
-        + `${limits.launches === 1 ? '' : 's'} running. Shut one down, or move up for more.${lapsedNote}`);
-    }
-    return { allowed: true, plan: effective };
-  }
-
-  // An unrecognised action is a coding mistake, not a customer's. Refusing it
-  // would break a feature in production for a typo; allowing it silently would
-  // leave a gate that never fires. Allow, and say so loudly.
-  console.warn(`[entitlements] unknown action "${action}" — allowing it`);
+  const { effective } = await resolvePlan(userId);
   return { allowed: true, plan: effective };
 }
 

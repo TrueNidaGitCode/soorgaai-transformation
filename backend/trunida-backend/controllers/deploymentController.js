@@ -21,7 +21,7 @@ import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import HostedDeployment, { isRunning } from '../models/HostedDeployment.js';
 import { issueToken } from '../services/gatewayService.js';
 import crypto from 'crypto';
-import { requireEntitlement, deploymentCeilingUsd } from '../services/entitlements.js';
+import { deploymentCeilingUsd } from '../services/entitlements.js';
 import {
   getDeployTarget, buildTenantEnv, coverageFrom, tenantDbName, tenantProjectName, provisionTenantDatabase,
 } from '../services/deployTargetService.js';
@@ -142,10 +142,6 @@ export async function prepareInfrastructure(req, res) {
       });
     }
 
-    // Only a NEW environment spends a slot. Re-preparing one the account
-    // already has would otherwise refuse every customer who is at their limit
-    // by exactly the deployment they are trying to fix.
-    if (!existing && !await requireEntitlement(req, res, 'launch')) return;
 
     const dep = existing || new HostedDeployment({ userId: req.user._id, blueprintId: bp._id });
     // The inference ceiling belongs to what the customer pays, not to the

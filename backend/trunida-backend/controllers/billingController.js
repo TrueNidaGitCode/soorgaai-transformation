@@ -1,8 +1,9 @@
 /**
  * Svarg — plans and usage
  *
- * What the account is on, what it has used, and what it may still do. Read by
- * the usage panel and by anything that wants to warn before a gate refuses.
+ * What the account is on and what its plan covers. One price a month buys
+ * coverage — how much of the business is watched, from how many sources, how
+ * often, for how many people — and there is nothing else to meter.
  *
  * Payment is not here yet. There is no Razorpay integration, no checkout and
  * no webhook, so the only way onto a paid tier today is an admin setting it —
@@ -65,8 +66,6 @@ export async function getMyPlan(req, res) {
         dataConnections: s.limits?.dataConnections ?? null,
         monitoringFrequency: s.limits?.monitoringFrequency || 'daily',
       },
-      used: s.used,
-      windowResetsAt: s.windowResetsAt,
     });
   } catch (err) {
     console.error('[billing] plan read error:', err.message);
@@ -79,11 +78,11 @@ export async function getMyPlan(req, res) {
 /**
  * Retire an objective, or bring it back.
  *
- * Pro carries one active objective, so without this the limit is a dead end:
- * the customer has no way to put one down, and "archive the one you have" in
- * the refusal message would name an action that does not exist. Nothing is
- * deleted — an archived blueprint is still readable, still downloadable, and
- * unarchiving is a second call to the same route.
+ * No longer a limit's escape hatch — there is no active-objective quota any
+ * more — but still worth having: an account with a dozen old objectives
+ * wants the finished ones out of the way. Nothing is deleted. An archived
+ * blueprint is still readable, still downloadable, and unarchiving is a
+ * second call to the same route.
  */
 export async function setArchived(req, res) {
   try {
@@ -96,23 +95,6 @@ export async function setArchived(req, res) {
 
     if (!bp) return res.status(404).json({ error: 'Blueprint not found.' });
 
-    // Un-archiving can put an account back over its limit — it is the one
-    // direction that grants something. Refuse rather than let a plan be
-    // stepped around by archiving and restoring.
-    if (!archived) {
-      const s = await usageSummary(req.user._id);
-      if (s.limits.activeBlueprints !== null && s.used.activeBlueprints > s.limits.activeBlueprints) {
-        await TransformationBlueprint.updateOne(
-          { _id: bp._id, userId: req.user._id },
-          { $set: { archived: true, archivedAt: new Date() } }
-        );
-        return res.status(402).json({
-          error: `${PLANS[planKey(s.effective)].label} covers ${s.limits.activeBlueprints} active objective`
-            + `${s.limits.activeBlueprints === 1 ? '' : 's'}. Archive another one first, or move up a plan.`,
-          code: 'limit_reached',
-        });
-      }
-    }
 
     auditLog(archived ? 'ARCHIVED' : 'UNARCHIVED', req.user._id, { blueprintId: String(bp._id) });
     return res.json({ blueprintId: bp._id, archived: bp.archived, archivedAt: bp.archivedAt });
@@ -144,13 +126,23 @@ export async function adminSetPlan(req, res) {
     const user = await User.findOne({ email: String(email).trim().toLowerCase() }).select('_id email').lean();
     if (!user) return res.status(404).json({ error: 'No account with that email.' });
 
-    // Only the five known override keys, and only numbers. An override is a
-    // hand-typed exception; letting arbitrary keys through would put junk in
-    // the document that entitlements.js would then read past silently.
+    /*
+     * Only the known override keys. An override is a hand-typed exception —
+     * letting arbitrary keys through would put junk in the document that
+     * entitlements.js would then read past silently.
+     *
+     * These are the numbers a plan sells, which is what an Enterprise
+     * contract narrows: how much of the business is watched, from how many
+     * sources, for how many people. monitoringFrequency is a word rather
+     * than a number and is handled separately below.
+     */
     const clean = {};
-    for (const k of ['newBlueprintsPerMonth', 'activeBlueprints', 'applications', 'launches', 'deploymentCostUsd']) {
+    for (const k of ['businessCategories', 'dataConnections', 'seats', 'deploymentCostUsd']) {
       if (overrides[k] === null) clean[k] = null;
       else if (Number.isFinite(Number(overrides[k]))) clean[k] = Number(overrides[k]);
+    }
+    if (['daily', 'hourly', 'custom'].includes(String(overrides.monitoringFrequency || ''))) {
+      clean.monitoringFrequency = String(overrides.monitoringFrequency);
     }
 
     const doc = await AccountPlan.findOneAndUpdate(
@@ -189,7 +181,6 @@ export async function adminGetUsage(req, res) {
     return res.json({
       email: user.email,
       plan: summary.plan,
-      used: summary.used,
       limits: summary.limits,
       months: months.map(m => ({
         period: m.period, calls: m.calls,

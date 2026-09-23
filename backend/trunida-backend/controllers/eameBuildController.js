@@ -77,10 +77,6 @@ export async function startBuild(req, res) {
 
     // Only when there is nothing to rebuild. A record that already exists has
     // already been counted, so re-running a failed or superseded build must not
-    // spend a second slot — the customer would be paying twice for one
-    // application because the first attempt did not work.
-    const already = await GeneratedApplication.findOne({ blueprintId }).select('_id').lean();
-    if (!already && !await requireEntitlement(req, res, 'application')) return;
 
     // One build at a time per blueprint. Two concurrent generations would race
     // to write the same record, and the loser's files would vanish with no

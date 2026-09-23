@@ -559,10 +559,6 @@ export async function startTransformationGeneration(req, res) {
       return res.status(400).json({ error: `Objective is too long (max ${MAX_OBJECTIVE_LENGTH} characters).` });
     }
 
-    // Before the objective guard, not after: this is two counts against an
-    // index, where the guard is a model call. Refusing for free costs nothing;
-    // refusing after paying for a check is a bill with no product attached.
-    if (!await requireEntitlement(req, res, 'blueprint')) return;
 
     // A full run is six domains and ~16 capability generations. Check once,
     // for a fraction of one capability, that this is worth generating at all
@@ -1079,10 +1075,6 @@ export async function buildCapability(req, res) {
       return res.status(409).json({ error: `This is already ${request.status}.` });
     }
 
-    const gate = await checkEntitlement(req.user._id, 'capability');
-    if (!gate.allowed) {
-      return res.status(402).json({ error: gate.reason, upgradeTo: gate.upgradeTo || null });
-    }
 
     // One build at a time for an application: two generations racing to
     // rewrite the same authored tree is a corrupted application, not two

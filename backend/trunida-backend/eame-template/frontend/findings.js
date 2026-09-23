@@ -35,7 +35,10 @@
     rhead: document.getElementById('fn-rhead'),
     rlist: document.getElementById('fn-rlist'),
     note: document.getElementById('fn-note'),
-    cats: document.getElementById('fn-cats'),
+    areas: document.getElementById('fn-areas'),
+    areagrid: document.getElementById('fn-areagrid'),
+    areasSub: document.getElementById('fn-areas-sub'),
+    areasLink: document.getElementById('fn-areas-link'),
     hero: document.getElementById('fn-hero'),
     greet: document.getElementById('fn-greet'),
     heroline: document.getElementById('fn-heroline'),
@@ -291,31 +294,67 @@
     el.eglist.innerHTML = show ? list.map(example).join('') : '';
   }
 
-  /**
-   * The category chips.
+  /*
+   * ── The business areas, one box each ────────────────────────────────────
    *
-   * The words are the industry's own, read from its knowledge base at delivery
-   * — Retention and Utilisation for a clinic, Schedule and Quality for an
-   * engineering organisation. Only categories with something in them appear:
-   * a chip leading to an empty screen is a wasted click, and what the
-   * application is watching FOR belongs on the Watchers page.
+   * Every area the industry names, including the quiet ones. A board that
+   * drew only the areas with something wrong would change shape every
+   * morning — and "All good" said against an area is the claim the product
+   * exists to make. An empty row of boxes is not the same sentence.
+   *
+   * There is no "All" box. Picking an area filters the list below; picking
+   * it again clears the filter, which is the same gesture and one fewer
+   * thing on the screen.
    */
-  function chips(cats, total) {
-    if (!cats.length) { el.cats.hidden = true; return; }
-    el.cats.hidden = false;
-    el.cats.innerHTML =
-      '<span class="fn__catslabel">' + cats.length + ' areas we&rsquo;re watching</span>'
-      + '<button type="button" class="fn__chip' + (picked ? '' : ' is-on') + '" data-pick="">'
-      + 'All <b>' + total + '</b></button>'
-      + cats.map(function (c) {
-        // A category at zero is shown, and shown as quiet rather than as
-        // missing: the reader is being told it was checked, which is the
-        // whole claim the product makes.
-        return '<button type="button" class="fn__chip'
-          + (picked === c.name ? ' is-on' : '') + (c.count ? '' : ' is-clear') + '"'
-          + ' data-pick="' + esc(c.name) + '"' + (c.asks ? ' title="' + esc(c.asks) + '"' : '') + '>'
-          + esc(c.name) + ' <b>' + c.count + '</b></button>';
-      }).join('');
+  var AREA_ICON = {
+    Retention: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="8" r="3.5"/></svg>',
+    Utilisation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V5M16 20v-7M22 20H2"/></svg>',
+    Growth: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
+    Cash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>',
+    Fees: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>',
+    Compliance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.3-2.9 8.2-7 9.5-4.1-1.3-7-5.2-7-9.5V6z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/></svg>',
+  };
+  var AREA_FALLBACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4l2.5 2"/></svg>';
+
+  function areaIcon(name) { return AREA_ICON[name] || AREA_FALLBACK; }
+
+  /** One area: what watches it, and whether anything is open under it. */
+  function area(c) {
+    var n = c.count || 0;
+    var state = c.locked
+      ? { cls: 'is-locked', text: 'Not in your plan' }
+      : n
+        ? { cls: 'is-open', text: n === 1 ? '1 to look at' : n + ' to look at' }
+        : { cls: 'is-clear', text: 'All good' };
+    var watchers = c.watchers === undefined ? null : c.watchers;
+    return '<button type="button" class="fn__area ' + state.cls + (picked === c.name ? ' is-picked' : '') + '"'
+      + ' data-pick="' + esc(c.name) + '" aria-pressed="' + (picked === c.name) + '"'
+      + (c.asks ? ' title="' + esc(c.asks) + '"' : '') + '>'
+      + '<span class="fn__area-top">'
+      +   '<span class="fn__area-icon" aria-hidden="true">' + areaIcon(c.name) + '</span>'
+      +   '<span class="fn__area-text">'
+      +     '<span class="fn__area-name">' + esc(c.name) + '</span>'
+      +     (watchers === null ? '' : '<span class="fn__area-agents">' + watchers
+            + (watchers === 1 ? ' agent' : ' agents') + '</span>')
+      +   '</span>'
+      +   '<span class="fn__area-go" aria-hidden="true">&rsaquo;</span>'
+      + '</span>'
+      + '<span class="fn__area-state">' + esc(state.text) + '</span>'
+      + '</button>';
+  }
+
+  function drawAreas(cats) {
+    if (!el.areas || !el.areagrid) return;
+    if (!cats.length) { el.areas.hidden = true; return; }
+    el.areas.hidden = false;
+    el.areagrid.innerHTML = cats.map(area).join('');
+
+    var busy = cats.filter(function (c) { return (c.count || 0) > 0; }).length;
+    el.areasSub.textContent = picked
+      ? 'Showing ' + picked + '. Pick it again to see them all.'
+      : busy
+        ? busy === 1 ? '1 area has something open.' : busy + ' areas have something open.'
+        : 'All areas are within normal range.';
   }
 
   var _last = null;   // the last body, so a chip can re-filter without refetching
@@ -332,7 +371,7 @@
     if (picked && !cats.some(function (c) { return c.name === picked; })) picked = '';
     var open = picked ? all.filter(function (f) { return f.category === picked; }) : all;
 
-    chips(cats, all.length);
+    drawAreas(cats);
 
     el.list.innerHTML = open.map(row).join('');
     el.list.hidden = open.length === 0;
@@ -484,14 +523,23 @@
 
   // ── Wiring ────────────────────────────────────────────────────────────────
 
-  el.cats.addEventListener('click', function (e) {
+  el.areagrid.addEventListener('click', function (e) {
     var b = e.target.closest('[data-pick]');
     if (!b) return;
     // Re-filter what is already loaded rather than asking the server again:
-    // the chips are a lens on one morning's findings, not a new question.
-    picked = b.dataset.pick || '';
+    // the areas are a lens on one morning's findings, not a new question.
+    var name = b.dataset.pick || '';
+    picked = picked === name ? '' : name;
     if (_last) render(_last);
   });
+
+  if (el.areasLink) {
+    el.areasLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (typeof window.svargShowPanel === 'function') window.svargShowPanel('agents');
+      else window.location.hash = '#agents';
+    });
+  }
 
   el.list.addEventListener('click', function (e) {
     var b = e.target.closest('[data-open]');

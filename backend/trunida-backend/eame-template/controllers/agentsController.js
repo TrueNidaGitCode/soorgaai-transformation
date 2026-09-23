@@ -123,13 +123,23 @@ export async function listFindingsHandler(req, res) {
      * screen keeps its shape and the numbers do the talking.
      */
     const defined = Array.isArray(plan().categories) ? plan().categories : [];
+    const agents = await listAgents();
+    /*
+     * How many watchers are actually looking at each area.
+     *
+     * Counted from the running agents rather than from the table, because
+     * the table names every watcher the industry COULD have and the number
+     * worth showing is the one that is watching. An area with watchers it
+     * cannot run yet should not claim them.
+     */
+    const live = agents.filter(a => a.enabled !== false && a.status !== 'degraded');
     const byCategory = defined.map(c => ({
       name: c.name,
       asks: c.asks || '',
       count: rows.filter(r => r.category === c.name).length,
+      watchers: live.filter(a => (c.watchers || []).includes(a.watcherId)).length,
+      locked: categoryLimit() ? !activeCategories(plan()).includes(c.name) : false,
     }));
-
-    const agents = await listAgents();
     return res.json({
       open: rows,
       resolved: resolved.map(findingView),

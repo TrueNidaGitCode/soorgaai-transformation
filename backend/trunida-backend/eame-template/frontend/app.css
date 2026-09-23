@@ -1699,8 +1699,10 @@ body {
 
 .fn {
   padding: 34px clamp(16px, 4vw, 48px) 72px;
-  max-width: 1000px;
-  margin: 0 auto;
+  /* The board fills the screen it is given. Five business areas across a
+     centred 1000px column left a third of a wide monitor empty beside the
+     one screen somebody reads every morning. */
+  max-width: none;
 }
 
 .fn__head { margin-bottom: 26px; }
@@ -1713,6 +1715,124 @@ body {
 }
 .fn__title { margin: 0 0 6px; font-size: clamp(22px, 3.4vw, 30px); line-height: 1.15; color: var(--ch-text); }
 .fn__sub { margin: 0; font-size: 14px; color: var(--ch-dim); }
+
+/* ── Business areas ──────────────────────────────────────────────────────────
+   One box per area the industry names, quiet ones included. "All good" said
+   against an area is the claim the product exists to make, and a row that
+   only showed the areas with problems could not make it.
+
+   Picking one filters the list below; picking it again clears the filter, so
+   there is no "All" box to explain. */
+
+.fn__areas {
+  margin-bottom: 26px;
+  padding: 18px 20px 20px;
+  border: 1px solid var(--ch-line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ch-panel) 50%, transparent);
+}
+
+.fn__areas-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.fn__areas-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  color: var(--ch-accent);
+  background: color-mix(in srgb, var(--ch-accent) 13%, transparent);
+}
+.fn__areas-icon svg { width: 17px; height: 17px; }
+.fn__areas-text { min-width: 0; }
+.fn__areas-title { display: block; font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
+.fn__areas-sub { display: block; margin-top: 2px; font-size: 12.5px; color: var(--ch-faint); }
+.fn__areas-link {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ch-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.fn__areas-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.fn__areagrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.fn__area {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--ch-line);
+  border-radius: 14px;
+  background: var(--ch-panel);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.fn__area:hover { border-color: var(--ch-line-hi); background: var(--ch-panel-hi); }
+.fn__area:focus-visible { outline: 2px solid var(--ch-accent); outline-offset: 2px; }
+.fn__area.is-picked { border-color: var(--ch-accent); background: var(--ch-panel-hi); }
+
+.fn__area-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.fn__area-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--ch-accent);
+  background: color-mix(in srgb, var(--ch-accent) 13%, transparent);
+}
+.fn__area-icon svg { width: 18px; height: 18px; }
+.fn__area-text { min-width: 0; }
+.fn__area-name { display: block; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.fn__area-agents { display: block; margin-top: 2px; font-size: 11.5px; color: var(--ch-faint); font-variant-numeric: tabular-nums; }
+.fn__area-go { font-size: 19px; line-height: 1; color: var(--ch-faint); }
+
+/* The verdict for one area, in the same green/amber language as the banner
+   above it — so a reader learns one colour scheme, not two. */
+.fn__area-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ch-faint);
+}
+.fn__area-state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.fn__area.is-clear .fn__area-state { color: var(--ch-accent); }
+.fn__area.is-open .fn__area-state { color: var(--ch-warn); }
+.fn__area.is-open .fn__area-icon { color: var(--ch-warn); background: color-mix(in srgb, var(--ch-warn) 14%, transparent); }
+
+/* Outside the plan: drawn, greyed, and still counted as an area that exists. */
+.fn__area.is-locked { opacity: 0.55; }
+.fn__area.is-locked .fn__area-icon { color: var(--ch-faint); background: var(--ch-panel-hi); }
+.fn__area.is-locked .fn__area-state { color: var(--ch-faint); font-style: italic; }
+
+@media (max-width: 560px) {
+  .fn__areagrid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .fn__areas-head { grid-template-columns: auto minmax(0, 1fr); }
+  .fn__areas-link { grid-column: 1 / -1; }
+}
 
 /* ── The verdict banner ──────────────────────────────────────────────────────
    One answer, before any detail: whether anything needs this person today.
@@ -2001,7 +2121,32 @@ body {
   overflow-y: auto;
   width: 100%;
   margin-inline: auto;
+  /* These panes are the ones that actually scroll, and the browser default
+     paints a light scrollbar on them — a white bar down the side of a dark
+     application, which reads as a rendering fault rather than a control. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--ch-line-hi) transparent;
 }
+.ch-main > .fn::-webkit-scrollbar,
+.ch-main > .fd::-webkit-scrollbar,
+.ch-main > .ag::-webkit-scrollbar,
+.ch-main > .dt::-webkit-scrollbar,
+.ch-main > .ac::-webkit-scrollbar { width: 10px; }
+.ch-main > .fn::-webkit-scrollbar-track,
+.ch-main > .fd::-webkit-scrollbar-track,
+.ch-main > .ag::-webkit-scrollbar-track,
+.ch-main > .dt::-webkit-scrollbar-track,
+.ch-main > .ac::-webkit-scrollbar-track { background: transparent; }
+.ch-main > .fn::-webkit-scrollbar-thumb,
+.ch-main > .fd::-webkit-scrollbar-thumb,
+.ch-main > .ag::-webkit-scrollbar-thumb,
+.ch-main > .dt::-webkit-scrollbar-thumb,
+.ch-main > .ac::-webkit-scrollbar-thumb { background: var(--ch-line-hi); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
+.ch-main > .fn:hover::-webkit-scrollbar-thumb,
+.ch-main > .fd:hover::-webkit-scrollbar-thumb,
+.ch-main > .ag:hover::-webkit-scrollbar-thumb,
+.ch-main > .dt:hover::-webkit-scrollbar-thumb,
+.ch-main > .ac:hover::-webkit-scrollbar-thumb { background: var(--ch-dim); background-clip: content-box; }
 
 /* ── The findings board, as rows under the industry's own headings ───────────
    Cards were replaced by rows because this screen is read down in one pass:
@@ -2013,42 +2158,6 @@ body {
    reads Retention and Utilisation where an engineering organisation reads
    Schedule and Quality. Nothing here knows which industry it is in. */
 
-.fn__cats {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 22px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--ch-line);
-}
-.fn__catslabel {
-  margin-right: 6px;
-  font-size: 13px;
-  color: var(--ch-accent);
-}
-.fn__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 14px;
-  border: 1px solid var(--ch-line-hi);
-  border-radius: 999px;
-  background: var(--ch-panel);
-  color: var(--ch-dim);
-  font: inherit;
-  font-size: 13.5px;
-  cursor: pointer;
-  transition: border-color .15s ease, color .15s ease;
-}
-.fn__chip b { font-weight: 700; color: var(--ch-text); }
-.fn__chip:hover { border-color: var(--ch-accent); color: var(--ch-text); }
-.fn__chip.is-on {
-  border-color: var(--ch-accent);
-  background: var(--ch-accent-soft);
-  color: var(--ch-accent);
-}
-.fn__chip.is-on b { color: var(--ch-accent); }
 
 /* One finding. A button, because the whole row is the target. */
 .fn__row {
@@ -2134,10 +2243,6 @@ body {
 /* A category with nothing in it. Shown, because the reader is being told it
    was checked — that is the claim the product makes — but quieter than one
    carrying findings, so the eye still goes to what needs doing first. */
-.fn__chip.is-clear { color: var(--ch-faint); border-color: var(--ch-line); }
-.fn__chip.is-clear b { color: var(--ch-faint); font-weight: 600; }
-.fn__chip.is-clear:hover { color: var(--ch-dim); border-color: var(--ch-line-hi); }
-.fn__chip.is-clear.is-on { color: var(--ch-accent); border-color: var(--ch-accent); }
 
 /* Said before the key box, because the reader arrived expecting their own
    data and needs to know why they are being asked for anything at all. */

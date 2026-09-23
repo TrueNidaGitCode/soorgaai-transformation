@@ -165,3 +165,95 @@ describe('the banner is drawn from what the page was actually told', () => {
     expect(SRC).toContain("window.svargShowPanel('agents')");
   });
 });
+
+/*
+ * The business areas, one box each.
+ *
+ * Same lifting trick as the banner: the renderer is pure given a category,
+ * so it is pulled out of the page and run rather than read.
+ */
+/** The AREA_ICON map, which spans several lines rather than one. */
+function liftBlock(name) {
+  const at = SRC.indexOf('var ' + name + ' = {');
+  if (at < 0) throw new Error('no var ' + name);
+  const end = SRC.indexOf('\n  };', at);
+  if (end < 0) throw new Error('unbalanced ' + name);
+  return SRC.slice(at, end + 5);
+}
+
+// eslint-disable-next-line no-new-func
+const area = new Function([
+  "var picked = '';",
+  lift('esc'),
+  liftVar('AREA_FALLBACK'),
+  liftBlock('AREA_ICON'),
+  lift('areaIcon'),
+  lift('area'),
+  "return function (c, p) { picked = p || ''; return area(c); };",
+].join('\n'))();
+
+describe('business areas, one box each', () => {
+  it('says All good for an area with nothing open', () => {
+    const html = area({ name: 'Retention', count: 0, watchers: 4 });
+    expect(html).toContain('All good');
+    expect(html).toContain('is-clear');
+    expect(html).toContain('4 agents');
+    expect(html).toContain('Retention');
+  });
+
+  it('says how many are open when something is', () => {
+    expect(area({ name: 'Cash', count: 3, watchers: 2 })).toContain('3 to look at');
+    expect(area({ name: 'Cash', count: 1, watchers: 2 })).toContain('1 to look at');
+    expect(area({ name: 'Cash', count: 3, watchers: 2 })).toContain('is-open');
+  });
+
+  it('draws a quiet area rather than dropping it', () => {
+    /*
+     * The whole claim the product makes. A row that showed only the areas
+     * with problems would change shape every morning, and "All good" against
+     * an area somebody can read is the thing they are paying for.
+     */
+    expect(area({ name: 'Compliance', count: 0, watchers: 4 })).toContain('Compliance');
+  });
+
+  it('counts one agent as one', () => {
+    expect(area({ name: 'Growth', count: 0, watchers: 1 })).toContain('1 agent<');
+  });
+
+  it('says nothing about agents when it was not told', () => {
+    // An older application that does not send the number must not claim zero.
+    expect(area({ name: 'Growth', count: 0 })).not.toContain('agent');
+  });
+
+  it('marks an area outside the plan without hiding it', () => {
+    const html = area({ name: 'Cash', count: 0, watchers: 3, locked: true });
+    expect(html).toContain('Not in your plan');
+    expect(html).toContain('is-locked');
+    expect(html).toContain('Cash');
+  });
+
+  it('marks the one being shown', () => {
+    expect(area({ name: 'Retention', count: 2, watchers: 4 }, 'Retention')).toContain('is-picked');
+    expect(area({ name: 'Retention', count: 2, watchers: 4 }, 'Cash')).not.toContain('is-picked');
+    expect(area({ name: 'Retention', count: 2, watchers: 4 }, 'Retention')).toContain('aria-pressed="true"');
+  });
+
+  it('has no All box, because picking the same area twice clears it', () => {
+    // One fewer control, and the same gesture. The old chip row had an "All"
+    // button whose only job was to undo the last click.
+    expect(SRC).not.toMatch(/'All <b>'/);
+    expect(SRC).toContain("picked = picked === name ? '' : name;");
+  });
+
+  it('counts the agents that are running, not the ones the table names', () => {
+    // An area must not claim watchers it cannot run.
+    const ctl = fs.readFileSync(new URL('../eame-template/controllers/agentsController.js', import.meta.url), 'utf8');
+    expect(ctl).toContain("const live = agents.filter(a => a.enabled !== false && a.status !== 'degraded');");
+    expect(ctl).toContain('watchers: live.filter(a => (c.watchers || []).includes(a.watcherId)).length,');
+  });
+
+  it('leads to the agent map from the section header', () => {
+    expect(SRC).toContain("el.areasLink");
+    expect(SRC).toContain("window.svargShowPanel('agents')");
+  });
+});

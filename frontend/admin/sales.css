@@ -2027,3 +2027,385 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 @media (max-width: 620px) {
   .sg-spine { grid-template-columns: 1fr; }
 }
+
+/* ── The B2B playbook tab ───────────────────────────────────────────────────
+   Its own block name throughout. The ICP tab and the Pitches tab already
+   collided once over .sg-flow — two components sharing a name in one
+   stylesheet means the later rules win and the damage shows up on the other
+   tab, where nobody is looking. Nothing here is reused from either, and no
+   colour below is new to this file. */
+
+.sg-pb { max-width: 900px; padding-block: 8px 48px; }
+
+.sg-pb__lead {
+  margin-bottom: 30px;
+  padding: 20px 24px;
+  background: rgba(92, 197, 167, 0.04);
+  border: 1px solid rgba(92, 197, 167, 0.22);
+  border-radius: 12px;
+}
+
+.sg-pb__aim {
+  margin: 0 0 8px;
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+.sg-pb__lead .sg-pb__aim { font-size: 1.12rem; }
+
+.sg-pb__note { margin: 0; font-size: 0.86rem; line-height: 1.55; color: rgba(255, 255, 255, 0.5); }
+.sg-pb__note b { color: rgba(255, 255, 255, 0.85); }
+
+.sg-pb__label {
+  margin: 22px 0 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.sg-pb__body > .sg-pb__label:first-child { margin-top: 0; }
+
+/* ── The ten steps ─────────────────────────────────────────────────────────
+   A rail down the left, because the sequence is the argument: each step is
+   only worth running once the one above it has produced something. */
+
+.sg-pb__steps { margin: 0; padding: 0; list-style: none; }
+
+.sg-pb__step {
+  position: relative;
+  padding: 0 0 30px 46px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sg-pb__step:last-child { border-left-color: transparent; padding-bottom: 8px; }
+
+.sg-pb__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.sg-pb__title { flex: 1 1 auto; min-width: 0; }
+.sg-pb__title h3 {
+  margin: 0 0 4px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* The number sits on the rail rather than beside it, so the column of digits
+   reads as one sequence down the page. */
+.sg-pb__n {
+  position: absolute;
+  left: -15px;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #14181c;
+  border: 1px solid rgba(92, 197, 167, 0.45);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #5CC5A7;
+}
+
+/* Three of the ten carry a target. A count nobody wrote down is one nobody
+   can be behind on. */
+.sg-pb__target {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(92, 197, 167, 0.35);
+  border-radius: 999px;
+  background: rgba(92, 197, 167, 0.08);
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #5CC5A7;
+}
+
+/* ── Pieces used inside a step ─────────────────────────────────────────────── */
+
+.sg-pb__list { margin: 0 0 6px; padding-left: 18px; }
+.sg-pb__list li {
+  margin-bottom: 5px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+.sg-pb__list li::marker { color: rgba(255, 255, 255, 0.28); }
+.sg-pb__list--check { list-style: none; padding-left: 0; }
+.sg-pb__list--check li { position: relative; padding-left: 20px; }
+.sg-pb__list--check li::before {
+  content: "\2713";
+  position: absolute;
+  left: 0;
+  color: #5CC5A7;
+  font-size: 0.85rem;
+}
+
+/* A sequence read left to right, with the arrow drawn rather than typed, so
+   the steps stay selectable text and wrap on a narrow screen. */
+.sg-pb__seq {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 4px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+.sg-pb__seq li {
+  padding: 6px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.84rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.78);
+}
+.sg-pb__seq li + li::before {
+  content: "\2192";
+  margin-right: 9px;
+  margin-left: -1px;
+  color: rgba(255, 255, 255, 0.3);
+}
+.sg-pb__seq--good li:last-child {
+  border-color: rgba(92, 197, 167, 0.45);
+  background: rgba(92, 197, 167, 0.1);
+  color: #5CC5A7;
+}
+/* Step 6 is a pipeline, not a row of options — stacking says so, and the
+   arrow sits between the boxes so every step keeps the same frame. */
+.sg-pb__seq--down { flex-direction: column; align-items: stretch; gap: 0; }
+.sg-pb__seq--down li { width: 100%; }
+.sg-pb__seq--down li + li { margin-top: 20px; position: relative; }
+.sg-pb__seq--down li + li::before {
+  content: "\2193";
+  position: absolute;
+  top: -17px;
+  left: 14px;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+.sg-pb__seq--down li:last-child {
+  border-color: rgba(92, 197, 167, 0.45);
+  background: rgba(92, 197, 167, 0.1);
+  color: #5CC5A7;
+}
+
+/* A sentence said out loud in a room — the wrong one, or the right one. */
+.sg-pb__say {
+  margin: 0 0 4px;
+  padding: 10px 14px;
+  border-left: 2px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.92rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+}
+.sg-pb__say.is-yes { border-left-color: #5CC5A7; color: rgba(255, 255, 255, 0.9); }
+.sg-pb__say.is-yes b { color: #5CC5A7; font-style: normal; font-weight: 600; }
+.sg-pb__say.is-no {
+  border-left-color: rgba(255, 190, 120, 0.5);
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 190, 120, 0.35);
+}
+
+.sg-pb__rule {
+  margin: 14px 0;
+  font-size: 0.93rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+}
+.sg-pb__rule b { color: #fff; }
+
+/* ── Step 3: the three buckets ─────────────────────────────────────────────── */
+
+.sg-pb__buckets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.sg-pb__bucket {
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  min-width: 0;
+}
+.sg-pb__bucket h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+.sg-pb__dot { font-size: 0.95rem; }
+/* Only the bucket we build for is lit. The other two are real answers and
+   are not prizes. */
+.sg-pb__bucket.is-fire {
+  border-color: rgba(92, 197, 167, 0.35);
+  background: rgba(92, 197, 167, 0.06);
+}
+.sg-pb__bucket.is-fire h4 { color: #5CC5A7; }
+.sg-pb__bucket.is-amber h4 { color: rgba(255, 190, 120, 0.85); }
+.sg-pb__bucket.is-red h4 { color: #fca5a5; }
+.sg-pb__bucket .sg-pb__list li { font-size: 0.84rem; color: rgba(255, 255, 255, 0.68); }
+
+/* ── Step 4: what you overhear ─────────────────────────────────────────────── */
+
+.sg-pb__heard {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.sg-pb__heard p {
+  margin: 0;
+  padding: 9px 13px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* ── Step 5: what replaces what ────────────────────────────────────────────── */
+
+.sg-pb__swap { margin-bottom: 4px; }
+.sg-pb__swap-from,
+.sg-pb__swap-to {
+  margin: 0;
+  padding: 11px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.sg-pb__swap-from {
+  color: rgba(255, 255, 255, 0.42);
+  border-style: dashed;
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 255, 255, 0.2);
+}
+.sg-pb__swap-to {
+  position: relative;
+  margin-top: 20px;
+  border-color: rgba(92, 197, 167, 0.45);
+  background: rgba(92, 197, 167, 0.08);
+  color: #5CC5A7;
+}
+.sg-pb__swap-to::before {
+  content: "\2193";
+  position: absolute;
+  top: -17px;
+  left: 14px;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Step 8: before and after ──────────────────────────────────────────────── */
+
+.sg-pb__econ { width: 100%; border-collapse: collapse; margin: 0 0 16px; }
+.sg-pb__econ th {
+  padding: 0 14px 8px 0;
+  text-align: left;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.45);
+}
+.sg-pb__econ th:last-child { color: #5CC5A7; }
+.sg-pb__econ td {
+  padding: 9px 14px 9px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: top;
+  font-size: 0.87rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.72);
+}
+.sg-pb__econ td:last-child { padding-right: 0; color: rgba(255, 255, 255, 0.85); }
+
+/* ── Step 9: the same problem, five times ──────────────────────────────────── */
+
+.sg-pb__repeat {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.sg-pb__co {
+  padding: 12px 14px;
+  border: 1px solid rgba(92, 197, 167, 0.3);
+  border-radius: 8px;
+  background: rgba(92, 197, 167, 0.05);
+  text-align: center;
+}
+.sg-pb__co span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+.sg-pb__co p { margin: 3px 0 0; font-size: 0.78rem; color: #5CC5A7; }
+
+/* ── Step 10: the wedge ────────────────────────────────────────────────────── */
+
+.sg-pb__wedge {
+  margin: 0 0 4px;
+  padding: 18px 20px;
+  border: 1px solid rgba(92, 197, 167, 0.35);
+  border-radius: 10px;
+  background: rgba(92, 197, 167, 0.06);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+/* The three blanks are the whole sentence — marked as blanks so nobody reads
+   them as filled in. */
+.sg-pb__wedge em {
+  font-style: normal;
+  padding: 1px 7px;
+  border-bottom: 1px dashed rgba(92, 197, 167, 0.6);
+  color: #5CC5A7;
+}
+
+.sg-pb__nots { display: grid; gap: 6px; margin-bottom: 14px; }
+.sg-pb__nots p {
+  margin: 0;
+  padding: 9px 13px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 620px) {
+  .sg-pb__step { padding-left: 34px; }
+  .sg-pb__n { left: -13px; width: 26px; height: 26px; font-size: 0.76rem; }
+  .sg-pb__head { flex-wrap: wrap; }
+  .sg-pb__buckets,
+  .sg-pb__repeat { grid-template-columns: 1fr; }
+  .sg-pb__econ,
+  .sg-pb__econ thead,
+  .sg-pb__econ tbody,
+  .sg-pb__econ tr,
+  .sg-pb__econ th,
+  .sg-pb__econ td { display: block; width: 100%; }
+  .sg-pb__econ td { padding-right: 0; }
+  .sg-pb__econ tr { padding: 8px 0; }
+}

@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="company-library.css">
-    <link rel="stylesheet" href="sales.css?v=34">
+    <link rel="stylesheet" href="sales.css?v=35">
     <script src="../login/config.js"></script>
 </head>
 <body>
@@ -28,6 +28,7 @@
             <div class="sg-account">
                 <div class="sg-views" role="tablist" aria-label="View">
                     <button type="button" id="sg-view-icp" class="sg-view" aria-selected="false">ICP</button>
+                    <button type="button" id="sg-view-playbook" class="sg-view" aria-selected="false">B2B Playbook</button>
                     <button type="button" id="sg-view-funnel" class="sg-view sg-view--on" aria-selected="true">Funnel</button>
                     <button type="button" id="sg-view-reports" class="sg-view" aria-selected="false">Reports</button>
                     <button type="button" id="sg-view-pitches" class="sg-view" aria-selected="false">Pitches</button>
@@ -62,6 +63,11 @@
              nobody can hold in their head is one that gets quietly widened
              back out on the next call. -->
         <div id="sg-icp" hidden></div>
+
+        <!-- The B2B playbook — how the ICP tab’s hypothesis gets tested. The ICP
+             tab is what we believe; this is the method that would confirm or
+             kill it, in ten steps that are read in order. -->
+        <div id="sg-playbook" hidden></div>
 
         <div id="sg-pitches" hidden></div>
 
@@ -98,6 +104,6 @@
         </div>
     </main>
 
-    <script src="sales.js?v=32"></script>
+    <script src="sales.js?v=33"></script>
 </body>
 </html>

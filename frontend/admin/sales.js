@@ -1846,6 +1846,7 @@ function setView(view) {
   const reports = view === 'reports';
   const pitches = view === 'pitches';
   const icp     = view === 'icp';
+  const play    = view === 'playbook';
 
   document.getElementById('sg-kinds').hidden = !funnel;
   document.getElementById('sg-tabs').hidden = !funnel;
@@ -1854,16 +1855,19 @@ function setView(view) {
   document.getElementById('sg-reports').hidden = !reports;
   document.getElementById('sg-pitches').hidden = !pitches;
   document.getElementById('sg-icp').hidden = !icp;
+  document.getElementById('sg-playbook').hidden = !play;
 
   document.getElementById('sg-subtitle').textContent = icp
     ? 'Who this is for, and who it is not. Every hour spent outside this is an hour that teaches nothing about the product.'
+    : play
+    ? 'Ten steps, in order. The ICP tab says what we believe; this says what would confirm it — and each step has a number attached, so it is possible to be honest about where we actually are.'
     : funnel
     ? 'Five stages, in the order a customer moves through them. Only Outreach is typed in — the rest are records the product already writes. Each account appears once, at the furthest stage it has reached, so the counts add up.'
     : reports
       ? 'Read-only. Which organisations have someone using this, and which cold emails turned into accounts.'
       : 'What to say in the room. Every pitch concedes the incumbent first — all three prospects already run software, and a pitch that ignores it is heard as an attack.';
 
-  for (const [id, on] of [['sg-view-icp', icp], ['sg-view-funnel', funnel], ['sg-view-reports', reports], ['sg-view-pitches', pitches]]) {
+  for (const [id, on] of [['sg-view-icp', icp], ['sg-view-playbook', play], ['sg-view-funnel', funnel], ['sg-view-reports', reports], ['sg-view-pitches', pitches]]) {
     const b = document.getElementById(id);
     b.classList.toggle('sg-view--on', on);
     b.setAttribute('aria-selected', String(on));
@@ -1872,6 +1876,7 @@ function setView(view) {
   if (reports) renderReports();
   if (pitches) renderPitches();
   if (icp) renderIcpView();
+  if (play) renderPlaybook();
 }
 
 function renderReports() {
@@ -1893,6 +1898,7 @@ function wireAccountControls() {
     localStorage.getItem('username') || 'admin';
 
   document.getElementById('sg-view-icp').addEventListener('click', () => setView('icp'));
+  document.getElementById('sg-view-playbook').addEventListener('click', () => setView('playbook'));
   document.getElementById('sg-view-funnel').addEventListener('click', () => setView('funnel'));
   document.getElementById('sg-view-reports').addEventListener('click', () => setView('reports'));
   document.getElementById('sg-view-pitches').addEventListener('click', () => setView('pitches'));
@@ -2547,6 +2553,259 @@ function renderIcpView() {
         </ul>
       </details>
 
+    </section>`;
+}
+
+/* ── The B2B playbook ───────────────────────────────────────────────────────
+ *
+ * The ICP tab states a hypothesis. This is the method that would confirm or
+ * kill it, and the two are deliberately adjacent: a belief with no test beside
+ * it hardens into a fact nobody checked.
+ *
+ * It is written as ten numbered steps because the order is the content. Step 9
+ * — the same problem at five companies — is worthless before step 2 has found
+ * the problem in the customer's own words, and step 6 builds the wrong thing
+ * if step 3 let an enthusiastic non-buyer into the roadmap. Numbering here is
+ * not decoration; skipping is the failure mode it exists to prevent.
+ *
+ * Three steps carry a count — 5–7 hypotheses, 30–40 interviews, 3–5 pilots —
+ * and they are shown as counts rather than buried in prose, because a target
+ * that is never written down is one nobody can be behind on.
+ */
+function renderPlaybook() {
+  const el = document.getElementById('sg-playbook');
+  if (!el) return;
+
+  /** A sequence where the order carries meaning, arrows drawn rather than typed. */
+  const seq = (steps, mod) => `<ol class="sg-pb__seq${mod ? ' sg-pb__seq--' + mod : ''}">`
+    + steps.map((s) => `<li>${s}</li>`).join('') + '</ol>';
+
+  const list = (items, mod) => `<ul class="sg-pb__list${mod ? ' sg-pb__list--' + mod : ''}">`
+    + items.map((i) => `<li>${i}</li>`).join('') + '</ul>';
+
+  /** Something said out loud — either the wrong sentence or the right one. */
+  const say = (text, good) => `<p class="sg-pb__say is-${good ? 'yes' : 'no'}">&ldquo;${text}&rdquo;</p>`;
+
+  const label = (t) => `<p class="sg-pb__label">${t}</p>`;
+
+  /*
+   * Step 1's filter is the same seven conditions the ICP tab already lists
+   * under "what has to be true of them". Said once in both places, because a
+   * playbook that qualifies a problem differently from the ICP tab is two
+   * definitions, and the seller uses whichever one the prospect passes.
+   */
+  const ACUTE = [
+    'It happens frequently',
+    'Warning signals already exist',
+    'Signals are spread across multiple systems',
+    'Someone currently connects the dots manually',
+    'The problem is discovered too late',
+    'Late discovery has a measurable cost',
+    'There is a clear action once detected',
+  ];
+
+  const BUCKETS = [
+    ['&#128293;', 'Acute', 'fire', [
+      'Problem happens frequently',
+      'Existing manual workaround',
+      'Clear financial or operational impact',
+      'Strong urgency',
+      'Wants to solve it now',
+    ]],
+    ['&#128993;', 'Adjacent', 'amber', [
+      'Problem exists',
+      'Interesting use case',
+      'But low frequency or low urgency',
+    ]],
+    ['&#128308;', 'Vanity', 'red', [
+      'Likes AI and likes Svarg',
+      'Wants experimentation',
+      'Requests custom features',
+      'But does not have the core problem acutely',
+    ]],
+  ];
+
+  const WHERE = ['LinkedIn', 'WhatsApp groups', 'Slack &amp; Discord', 'Reddit',
+    'Industry communities', 'Conferences and events', 'Professional associations'];
+
+  const LISTEN = [
+    'We keep having this problem&hellip;',
+    'Our team spends hours doing&hellip;',
+    'We only realise this when&hellip;',
+    'Our current software doesn&rsquo;t&hellip;',
+  ];
+
+  const SHOWME = [
+    'Where they get the information',
+    'Which systems they check',
+    'What signals they look for',
+    'How they connect the signals',
+    'Who investigates',
+    'What happens next',
+    'What action they take',
+  ];
+
+  const PILOT = [
+    'Connect the systems they already run',
+    'Configure the detection',
+    'Run it against real data',
+    'Identify actual problems',
+    'Take action',
+    'Measure what happened',
+  ];
+
+  const ECONOMICS = [
+    ['How was the problem detected?', 'How early was it detected?'],
+    ['How much human effort?', 'What action was taken?'],
+    ['How long did detection take?', 'How much effort was saved?'],
+    ['What was the impact?', 'What outcome changed?'],
+  ];
+
+  const SAME = ['Same buyer', 'Similar workflow', 'Similar data signals',
+    'Similar intervention', 'Similar ROI'];
+
+  const STEPS = [
+    {
+      title: 'Find the Acute Problem',
+      aim: 'Identify the problem that hurts enough to buy.',
+      target: '5&ndash;7 problem hypotheses',
+      body: label('Look for problems where') + list(ACUTE, 'check')
+        + `<p class="sg-pb__note">These are the seven conditions the ICP tab already qualifies on.
+           A problem that fails one of them is not a smaller opportunity &mdash; it is a pilot that
+           ends with everybody agreeing it was interesting.</p>`,
+    },
+    {
+      title: 'Find the Acute ICP',
+      aim: 'Identify who experiences that problem most intensely.',
+      target: '30&ndash;40 interviews',
+      body: label('For each problem, follow one line')
+        + seq(['Who', 'What workflow', 'What problem', 'Why too late', 'Cost', 'Action'])
+        + label('Do not start with')
+        + say('Our ICP is mid-market companies.', false)
+        + label('Aim for')
+        + say('Companies with <b>X workflow</b> where <b>Y problem</b> happens frequently, '
+            + 'currently detected by <b>Z person</b> using <b>A, B and C systems</b>.', true),
+    },
+    {
+      title: 'Separate Acute ICP from Vanity Users',
+      aim: 'Sort every interview into one of three buckets, before the roadmap does it for you.',
+      body: '<div class="sg-pb__buckets">'
+        + BUCKETS.map(([dot, name, tone, points]) => `
+            <div class="sg-pb__bucket is-${tone}">
+              <h4><span class="sg-pb__dot">${dot}</span>${name}</h4>
+              ${list(points)}
+            </div>`).join('')
+        + '</div>'
+        + `<p class="sg-pb__rule"><b>Build for &#128293;.</b> Do not let Adjacent or Vanity define
+           the roadmap &mdash; they are the pleasant conversations, which is exactly why they are
+           the dangerous ones.</p>`,
+    },
+    {
+      title: 'Embed Yourself in the ICP',
+      aim: 'Understand the problem in the customer&rsquo;s own language.',
+      body: label('Find where they already spend time') + list(WHERE)
+        + '<p class="sg-pb__rule">Do not sell initially.</p>'
+        + label('Listen for')
+        + `<div class="sg-pb__heard">${LISTEN.map((l) => `<p>&ldquo;${l}&rdquo;</p>`).join('')}</div>`
+        + `<p class="sg-pb__note">Capture the exact language, the workflow and the workaround. The
+           words they use are what the product has to say back to them.</p>`,
+    },
+    {
+      title: 'Run Reverse Problem Sessions',
+      aim: 'Watch how the problem is found today, before showing anything.',
+      body: label('Do not open with a demonstration. Ask')
+        + say('Show me how you currently discover this problem.', true)
+        + label('Let them show you') + list(SHOWME)
+        + label('Then introduce Svarg &mdash; as a replacement for one thing')
+        + `<div class="sg-pb__swap">
+             <p class="sg-pb__swap-from">A human manually connects the signals</p>
+             <p class="sg-pb__swap-to">Svarg detects &rarr; explains &rarr; recommends &rarr; enables action</p>
+           </div>`,
+    },
+    {
+      title: 'Build the Smallest Possible Solution',
+      aim: 'One problem, one workflow, one measurable outcome.',
+      body: '<p class="sg-pb__rule">Do not build the whole platform for the first ICP.</p>'
+        + seq(['Signals', 'Detect emerging problem', 'Explain why', 'Recommend action',
+          'Execute or notify', 'Measure outcome'], 'down')
+        + label('Every requested feature goes through one question')
+        + say('Does this solve the same problem for more than one ICP customer?', true)
+        + `<p class="sg-pb__note">If it does not, it is a custom request. Custom requests are revenue
+           and they are not product; calling them product is how a platform becomes an agency.</p>`,
+    },
+    {
+      title: 'Run Design-Partner Pilots',
+      aim: 'The same problem, at several companies, against real data.',
+      target: '3&ndash;5 companies',
+      body: label('For each') + list(PILOT)
+        + label('The objective is not')
+        + say('The customer liked the demo.', false)
+        + label('It is')
+        + say('Svarg found something the customer would otherwise have discovered later.', true),
+    },
+    {
+      title: 'Prove the Economic Value',
+      aim: 'Capture the before and the after, in the customer&rsquo;s own numbers.',
+      body: `<table class="sg-pb__econ">
+           <thead><tr><th>Before Svarg</th><th>With Svarg</th></tr></thead>
+           <tbody>${ECONOMICS.map(([b, w]) => `<tr><td>${b}</td><td>${w}</td></tr>`).join('')}</tbody>
+         </table>`
+        + seq(['Earlier detection', 'Earlier action', 'Measurable business impact'], 'good')
+        + `<p class="sg-pb__note">This is the sales story. Not the architecture and not the model
+           &mdash; the arithmetic of one problem found sooner.</p>`,
+    },
+    {
+      title: 'Validate Repeatability',
+      aim: 'The same problem at company after company. This is the gate.',
+      body: `<div class="sg-pb__repeat">
+           ${['A', 'B', 'C', 'D', 'E'].map((c) => `
+             <div class="sg-pb__co"><span>Company ${c}</span><p>same problem</p></div>`).join('')}
+         </div>`
+        + label('And ideally') + list(SAME, 'check')
+        + `<p class="sg-pb__note">Then there is the beginning of a real niche ICP. Before this point
+           there are customers; after it there is a market.</p>`,
+    },
+    {
+      title: 'Convert the Niche into a Product Wedge',
+      aim: 'One sentence, specific enough to be wrong.',
+      body: `<p class="sg-pb__wedge">Svarg helps <em>specific customer</em> detect
+           <em>specific problem</em> before <em>specific costly outcome</em>.</p>`
+        + label('Not')
+        + `<div class="sg-pb__nots">
+             <p>&ldquo;AI platform for enterprises.&rdquo;</p>
+             <p>&ldquo;Connect your data.&rdquo;</p>
+             <p>&ldquo;Proactive AI.&rdquo;</p>
+           </div>`
+        + `<p class="sg-pb__note">Those can stay part of the platform story. The customer-facing
+           wedge is the specific one, and its three blanks are filled from steps 1, 2 and 8
+           &mdash; not from a whiteboard.</p>`,
+    },
+  ];
+
+  el.innerHTML = `
+    <section class="sg-pb">
+      <div class="sg-pb__lead">
+        <p class="sg-pb__aim">The ICP tab says what we believe. This is what would prove it.</p>
+        <p class="sg-pb__note">Ten steps, read in order &mdash; the order is the content. Finding the
+          same problem at five companies means nothing until step 2 has found that problem in the
+          customer&rsquo;s own words, and step 6 builds the wrong thing if step 3 let an enthusiastic
+          non-buyer into the roadmap.</p>
+      </div>
+
+      <ol class="sg-pb__steps">
+        ${STEPS.map((s, i) => `
+          <li class="sg-pb__step">
+            <div class="sg-pb__head">
+              <span class="sg-pb__n">${i + 1}</span>
+              <div class="sg-pb__title">
+                <h3>${s.title}</h3>
+                <p class="sg-pb__aim">${s.aim}</p>
+              </div>
+              ${s.target ? `<span class="sg-pb__target">${s.target}</span>` : ''}
+            </div>
+            <div class="sg-pb__body">${s.body}</div>
+          </li>`).join('')}
+      </ol>
     </section>`;
 }
 

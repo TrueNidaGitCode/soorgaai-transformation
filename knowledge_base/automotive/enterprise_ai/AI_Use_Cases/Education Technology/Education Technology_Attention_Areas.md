@@ -47,5 +47,5 @@ else.
 | Retention | Learners disengaging | stopped-coming, missing-attendance, gone-quiet, no-show, repeat-complaint |
 | Delivery | Sessions and staffing that did not happen | empty-slot, over-capacity, unstaffed-session, leave-clash, timesheet-chaser |
 | Growth | Enquiries and trials not converted | unanswered-enquiry, promise-overdue, new-joiner |
-| Revenue | Subscriptions and invoices at risk | renewal-due, overdue-invoice, never-invoiced, part-payment, unusual-expense, price-change, unconfirmed-order, late-delivery |
+| Revenue | Subscriptions and invoices at risk | absent-but-attended, renewal-due, overdue-invoice, never-invoiced, part-payment, unusual-expense, price-change, unconfirmed-order, late-delivery |
 | Compliance | Records and documents that would not stand up | expiring-soon, deadline-approaching, missing-document, missing-detail, duplicate, nothing-new, stale-source |

@@ -47,5 +47,5 @@ else.
 | Retention | Who has stopped turning up | stopped-coming, missing-attendance, no-show, gone-quiet, repeat-complaint |
 | Utilisation | Sessions, grounds and coaches going unused | empty-slot, over-capacity, unstaffed-session, leave-clash, timesheet-chaser |
 | Growth | Enquiries and trials not converted | unanswered-enquiry, promise-overdue, new-joiner |
-| Fees | What has not been collected | overdue-invoice, never-invoiced, part-payment, renewal-due, unusual-expense, price-change, unconfirmed-order, late-delivery |
+| Fees | What has not been collected | absent-but-attended, overdue-invoice, never-invoiced, part-payment, renewal-due, unusual-expense, price-change, unconfirmed-order, late-delivery |
 | Compliance | Safeguarding, consent and certification | expiring-soon, deadline-approaching, missing-document, missing-detail, duplicate, nothing-new, stale-source |

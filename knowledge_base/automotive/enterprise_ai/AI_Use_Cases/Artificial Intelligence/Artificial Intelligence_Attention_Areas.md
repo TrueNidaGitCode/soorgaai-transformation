@@ -46,6 +46,6 @@ else.
 | --- | --- | --- |
 | Delivery | What is late or unfinished | promise-overdue, deadline-approaching, unconfirmed-order, late-delivery |
 | Quality | What is wrong or contradictory | repeat-complaint, missing-detail, duplicate, nothing-new, stale-source |
-| Cost | What is being spent | unusual-expense, overdue-invoice, never-invoiced, part-payment, renewal-due, price-change |
+| Cost | What is being spent | absent-but-attended, unusual-expense, overdue-invoice, never-invoiced, part-payment, renewal-due, price-change |
 | Adoption | Who has stopped using it | stopped-coming, gone-quiet, missing-attendance, no-show, unanswered-enquiry, new-joiner |
 | Risk | What would fail a review | expiring-soon, missing-document, empty-slot, over-capacity, unstaffed-session, leave-clash, timesheet-chaser |

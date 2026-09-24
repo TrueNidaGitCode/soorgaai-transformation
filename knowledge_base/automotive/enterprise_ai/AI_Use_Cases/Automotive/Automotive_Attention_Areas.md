@@ -46,7 +46,7 @@ else.
 | --- | --- | --- |
 | Schedule | What is slipping | promise-overdue, deadline-approaching, late-delivery, unconfirmed-order |
 | Quality | What came back wrong | repeat-complaint, missing-detail, duplicate, no-show |
-| Cost | What is being spent and not recovered | unusual-expense, overdue-invoice, never-invoiced, part-payment, price-change, renewal-due |
+| Cost | What is being spent and not recovered | absent-but-attended, unusual-expense, overdue-invoice, never-invoiced, part-payment, price-change, renewal-due |
 | People | Who is missing, and who has not been set up | timesheet-chaser, leave-clash, new-joiner, unstaffed-session, stopped-coming, missing-attendance |
 | Customer | What a customer is still waiting for | unanswered-enquiry, gone-quiet |
 | Risk | What is out of date or unattended | expiring-soon, missing-document, nothing-new, stale-source, empty-slot, over-capacity |

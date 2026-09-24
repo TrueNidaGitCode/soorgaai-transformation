@@ -99,6 +99,24 @@ export const CATALOGUE = [
   { id: 'renewal-due', area: 'Money', name: 'Renewal Due',
     says: 'A recurring charge coming up',
     needs: ['due'], question: 'rows in {dataset} whose {due} falls in the next 14 days' },
+  /*
+   * The record says nobody came; the rest of the row says somebody did.
+   *
+   * A real no-show is a fact of the week and the No Show watcher below finds
+   * those. This is the opposite and it is the one that costs money: the
+   * patient arrived, was treated, and the front desk never marked them in, so
+   * the session was delivered and never counted. Every trace of the visit is
+   * still in the row — a check-in time, a duration, a room, a therapist — and
+   * only the status disagrees with them.
+   *
+   * It is filed under Money rather than Schedule because that is what it is.
+   * A session given away is not a scheduling detail, and the person who cares
+   * is the one looking at the month's revenue.
+   */
+  { id: 'absent-but-attended', area: 'Money', name: 'Marked Absent, But Attended',
+    says: 'Recorded as a no-show, but the visit left its fingerprints',
+    needs: ['slot', 'status', 'when'],
+    question: '{slot} in {dataset} whose {status} says no show or absent, but which has a {when} recorded' },
 
   // ── Customers ────────────────────────────────────────────────────────────
   { id: 'unanswered-enquiry', area: 'Customers', name: 'Unanswered Enquiry',

@@ -55,6 +55,18 @@ const TERMS = {
   'part-payment':         ['part payment', 'partial payment', 'short paid', 'balance due'],
   'unusual-expense':      ['expense', 'spend', 'cost spike', 'overspend'],
   'renewal-due':          ['renewal', 'renew', 'subscription', 'membership', 'expiry', 'expiring'],
+  /*
+   * The words a business uses for a session it delivered and never counted.
+   *
+   * Deliberately narrower than the No Show watcher's, and none of them is
+   * just "no show": a business that mentions no-shows means people who did
+   * not turn up, and would be scored for that watcher instead. This one is
+   * reached by saying the record was WRONG — missed marking, marked absent
+   * by mistake, attendance not updated — or by naming what it costs.
+   */
+  'absent-but-attended':  ['marked absent', 'wrongly marked', 'incorrectly marked', 'missed marking',
+                           'not marked', 'attendance not updated', 'missed attendance',
+                           'revenue leakage', 'unbilled session', 'uncounted session'],
 
   'unanswered-enquiry':   ['enquiry', 'inquiry', 'lead', 'unanswered', 'no reply', 'response time', 'respond', 'follow up', 'follow-up', 'followup', 'quotation', 'quote', 'proposal', 'going cold', 'gone cold', 'goes cold'],
   'gone-quiet':           ['gone quiet', 'inactive', 'lapsed', 'stopped buying', 'declining', 'disengaged', 'at risk'],

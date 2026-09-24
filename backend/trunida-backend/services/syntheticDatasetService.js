@@ -78,7 +78,11 @@ function systemPrompt() {
     '   the most useful part of the output — they are what the design gets built against.',
     '5. Vary the rows. Realistic spread of dates, statuses and magnitudes; include the awkward',
     '   cases (a null, an outlier, a cancellation) because those are what break a design.',
-    '6. Invent no real people, companies, emails or phone numbers. Use obviously placeholder',
+    '6. Include two or three rows that CONTRADICT THEMSELVES, the way real records do: a status',
+    '   that disagrees with the rest of its own row — marked absent with a check-in time and a',
+    '   duration filled in, closed with no closing date, paid with a balance still outstanding.',
+    '   Do not flag them. They should look exactly like every other row.',
+    '7. Invent no real people, companies, emails or phone numbers. Use obviously placeholder',
     '   names. A sample that looks like leaked personal data is worse than no sample.',
   ].join('\n');
 }

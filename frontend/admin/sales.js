@@ -3051,7 +3051,17 @@ function renderAudience() {
   const el = document.getElementById('sg-audience');
   if (!el) return;
 
-  const SEGMENT = 'Physiotherapy';
+  /*
+   * The knowledge base's own name for this industry, not a description of it.
+   *
+   * There is an overlay at Clinics & Wellness — attention areas, opportunity
+   * discovery, use case classification — and it is what a delivered
+   * application for anyone in this column would be built on. "Physiotherapy"
+   * named the trade in front of us and matched nothing: a segment whose name
+   * exists only on this page cannot be joined to the overlay that decides how
+   * their screens are laid out.
+   */
+  const SEGMENT = 'Clinics &amp; Wellness';
 
   /**
    * The pointers, in two groups, each one a step of the playbook.
@@ -3210,7 +3220,8 @@ function renderAudience() {
   el.innerHTML = `
     <section class="sg-ta">
       <div class="sg-ta__lead">
-        <p class="sg-ta__seg">${SEGMENT}<span>1 of 5 interviewed</span></p>
+        <p class="sg-ta__seg">${SEGMENT}<span>1 of 5 interviewed</span>
+          <em class="sg-ta__kb">knowledge base overlay</em></p>
         <p class="sg-ta__hyp">Revenue leakage caused by a difference between what a customer
           actually did and what the record or the entitlement says they did.</p>
         <p class="sg-ta__note">One clinic with this problem is a customer. Four more with the same

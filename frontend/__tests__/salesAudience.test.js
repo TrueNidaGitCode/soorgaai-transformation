@@ -19,7 +19,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { join, dirname } from 'path';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const js = read('../admin/sales.js');
@@ -129,7 +131,29 @@ describe('five companies, one of them interviewed', () => {
   it('has five columns and holds the segment they belong to', () => {
     expect(companies).toHaveLength(5);
     expect(companies.map((c) => c.id)).toEqual(['A', 'B', 'C', 'D', 'E']);
-    expect(view).toContain("const SEGMENT = 'Physiotherapy';");
+  });
+
+  it('names the segment as the knowledge base names it', () => {
+    /*
+     * It said "Physiotherapy", which described the trade in front of us and
+     * matched nothing. The knowledge base has an overlay per industry — the
+     * attention areas, the opportunity discovery, the use case classification
+     * — and an application delivered to anybody in this column is built on
+     * the one called Clinics & Wellness. A segment whose name exists only on
+     * this page cannot be joined to the thing that decides their screens.
+     */
+    const m = /const SEGMENT = '([^']+)'/.exec(view);
+    expect(m, 'SEGMENT').toBeTruthy();
+    expect(m[1]).toBe('Clinics &amp; Wellness');
+
+    // Joined rather than URL-resolved: the folder name has a space and an
+    // ampersand in it, which is exactly the name being checked.
+    const overlay = join(
+      dirname(fileURLToPath(import.meta.url)),
+      '../../knowledge_base/automotive/enterprise_ai/AI_Use_Cases/Clinics & Wellness',
+    );
+    expect(existsSync(overlay), 'the overlay this segment names').toBe(true);
+    expect(view).toContain('knowledge base overlay');
   });
 
   it('leaves four of them genuinely empty', () => {

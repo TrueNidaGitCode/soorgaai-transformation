@@ -2677,6 +2677,17 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   color: #5CC5A7;
 }
 
+/* The segment is the knowledge base’s industry name, and saying so matters:
+   an application delivered to anyone in this column is built on that overlay. */
+.sg-ta__kb {
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+}
+
 .sg-ta__hyp {
   margin: 0 0 8px;
   font-size: 1rem;

@@ -142,6 +142,23 @@ describe('five companies, one of them interviewed', () => {
     expect(v.frequency[1]).toMatch(/no-show/);
     expect(v.late[0]).toBe('yes');
     expect(v.same[1]).toMatch(/does not match the record/);
+    // Answered after the first interview: the three places a signal lives.
+    expect(v.spread[0]).toBe('yes');
+    expect(v.spread[1]).toMatch(/WhatsApp/);
+    expect(v.spread[1]).toMatch(/phone calls/);
+    expect(v.spread[1]).toMatch(/CRM/);
+    // And the catch that came with the answer: one of the three is not readable.
+    expect(v.spread[1]).toMatch(/nothing to read unless/);
+    /*
+     * The sharpest answer of the three, and the one most easily flattened
+     * into a plain yes: the HOD notices SOMETIMES, and nobody does it
+     * consistently. “A person joins the dots by hand” and “nobody reliably
+     * joins them at all” are different findings, and the second is the
+     * stronger one — there is no process to displace, only an absence.
+     */
+    expect(v.manual[0]).toBe('yes');
+    expect(v.manual[1]).toMatch(/HOD notices, sometimes/);
+    expect(v.manual[1]).toMatch(/Nobody does it consistently/);
   });
 });
 

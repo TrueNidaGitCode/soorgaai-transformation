@@ -3049,15 +3049,18 @@ function renderAudience() {
       id: 'A', name: 'Vesoma', met: 'HOD', when: 'Interviewed',
       frequency: ['yes', '~20 bookings a month marked no-show after treatment; gym packages repeatedly over-used'],
       signals: ['yes', 'Entitlement vs actual usage; booking vs treatment record'],
-      spread: ['open', 'One system, several modules or spreadsheets &mdash; not established'],
-      manual: ['open', 'Who spots an over-used package? Possibly nobody consistently'],
+      spread: ['yes', 'WhatsApp, phone calls and a CRM. A call leaves nothing to read unless '
+        + 'somebody logs it'],
+      manual: ['yes', 'The HOD notices, sometimes. Nobody does it consistently &mdash; so it is '
+        + 'not a process, it is whether somebody happened to look'],
       late: ['yes', 'After the treatment; after the entitlement is passed'],
       cost: ['claim', '&#8377;20,000+ a month. The arithmetic behind it has not been shown'],
       action: ['open', 'Contact, explain, upgrade, collect? Not confirmed'],
       same: ['yes', 'Revenue leakage: activity does not match the record or the entitlement'],
       buyer: ['yes', 'HOD'],
       workflow: ['yes', 'Booking &rarr; treatment &rarr; front desk &rarr; system'],
-      simsignals: ['yes', 'Bookings, treatment records, package entitlement, usage'],
+      simsignals: ['yes', 'Bookings, treatment records, entitlement, usage &mdash; across a CRM, '
+        + 'WhatsApp and the phone'],
       simaction: ['open', 'Not established'],
       roi: ['claim', '&#8377;20,000+ a month, unverified'],
     },
@@ -3076,9 +3079,10 @@ function renderAudience() {
    */
   const ASKS = [
     ['cost', 'Can we work through how you arrived at &#8377;20,000 a month?'],
-    ['spread', 'Which systems hold the bookings, the treatment records, the entitlement and the usage?'],
-    ['manual', 'Who notices that somebody has gone past their package, and how do they find out?'],
     ['action', 'When you find one, what do you do about it?'],
+    // The bridge between "nobody looks consistently" and the ₹20,000: the
+    // months nobody looked are the months the number is made of.
+    ['cost', 'In a month when nobody looks &mdash; how many go past unnoticed altogether?'],
   ];
 
   const GLYPH = { yes: '&#10003;', open: '?', claim: '!' };

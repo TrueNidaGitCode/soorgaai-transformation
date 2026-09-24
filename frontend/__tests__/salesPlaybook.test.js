@@ -162,6 +162,17 @@ describe('ten steps, and the order is the content', () => {
     expect(view.indexOf('sg-pb__wedge')).toBeLessThan(view.indexOf('AI platform for enterprises'));
   });
 
+  it('keeps its seven conditions where the audience table can use them', () => {
+    /*
+     * They now live at module scope, shared with the target audience table —
+     * where each condition is a row companies are scored against. Written
+     * twice they drifted immediately, and a condition worded differently in
+     * two places is two conditions.
+     */
+    expect(js).toMatch(/^const ACUTE_CONDITIONS = \[/m);
+    expect(view).toContain('ACUTE_CONDITIONS.map');
+  });
+
   it('qualifies a problem on the same seven conditions as the ICP tab', () => {
     /*
      * Two instruments in two vocabularies is how a prospect qualifies on one
@@ -175,7 +186,9 @@ describe('ten steps, and the order is the content', () => {
       ['The problem is discovered too late', 'more expensive when found late'],
       ['There is a clear action once detected', 'There is a clear action'],
     ]) {
-      expect(view, pb).toContain(pb);
+      // The conditions moved to module scope when the audience table started
+      // sharing them, so this looks at the file rather than at the view.
+      expect(js, pb).toContain(pb);
       expect(icp, on).toContain(on);
     }
   });

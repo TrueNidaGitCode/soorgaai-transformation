@@ -50,19 +50,29 @@ function blocks(view) {
 
 const view = fn('renderAudience');
 
-/** The view's own data, evaluated — the arrays are plain literals. */
-function data(name) {
-  const at = view.indexOf(`const ${name} = [`);
+/** One `const NAME = [ … ];` literal, from the view or from module scope. */
+function literal(src, name) {
+  const at = src.indexOf(`const ${name} = [`);
   expect(at, `${name} not found`).toBeGreaterThan(-1);
   let depth = 0;
-  for (let i = view.indexOf('[', at); i < view.length; i++) {
-    if (view[i] === '[') depth++;
-    else if (view[i] === ']' && --depth === 0) {
-      // eslint-disable-next-line no-new-func
-      return new Function(`return ${view.slice(view.indexOf('[', at), i + 1)}`)();
-    }
+  for (let i = src.indexOf('[', at); i < src.length; i++) {
+    if (src[i] === '[') depth++;
+    else if (src[i] === ']' && --depth === 0) return src.slice(src.indexOf('[', at), i + 1);
   }
   throw new Error(`${name} is unbalanced`);
+}
+
+/**
+ * The view's own data, evaluated.
+ *
+ * ROWS spreads the shared ACUTE_CONDITIONS, so that comes along — which is
+ * the point of the change these tests cover: the table's first seven rows
+ * are the playbook's seven conditions, not a second wording of them.
+ */
+const SHARED = literal(js, 'ACUTE_CONDITIONS');
+function data(name) {
+  // eslint-disable-next-line no-new-func
+  return new Function(`const ACUTE_CONDITIONS = ${SHARED}; return ${literal(view, name)};`)();
 }
 
 describe('the tab is reachable', () => {
@@ -133,6 +143,24 @@ describe('five companies, one of them interviewed', () => {
     // Seven that qualify the problem, six that say whether it is the same one.
     expect(pointers).toHaveLength(13);
     expect(rows.filter(([k]) => k === 'group')).toHaveLength(2);
+  });
+
+  it('takes its first seven rows from the playbook, rather than rewording them', () => {
+    /*
+     * They were written twice and drifted within a day: "Signals are spread
+     * across multiple systems" became "Signals in more than one place" here.
+     * A condition worded differently in two places is two conditions, and the
+     * entire value of this table is that five companies answered the same
+     * seven questions.
+     */
+    // eslint-disable-next-line no-new-func
+    const acute = new Function(`return ${SHARED};`)();
+    const first = rows.slice(1, 1 + acute.length);
+    expect(first).toEqual(acute);
+    expect(acute.map(([, label]) => label)).toContain('Signals are spread across multiple systems');
+    // And the groups say which step of the playbook each half is.
+    expect(rows[0][1]).toMatch(/Step 1/);
+    expect(rows[1 + acute.length][1]).toMatch(/Step 9/);
   });
 
   it('records what Vesoma actually said', () => {

@@ -2584,6 +2584,32 @@ function renderIcpView() {
  * and they are shown as counts rather than buried in prose, because a target
  * that is never written down is one nobody can be behind on.
  */
+/**
+ * Step 1 of the playbook: what makes a problem acute.
+ *
+ * Module-level and shared, because two screens ask these questions — the
+ * playbook, where they are the filter, and the target audience table, where
+ * each one is a row that companies are scored against.
+ *
+ * They were written twice and drifted immediately: "Signals are spread across
+ * multiple systems" became "Signals in more than one place" on the table, and
+ * a condition that is worded differently in two places is two conditions. The
+ * whole value of the table is that five companies answered the SAME seven
+ * questions, so the seven live here, once.
+ *
+ * The keys are the table's column data; the order is the order they are asked
+ * in, and the table depends on it.
+ */
+const ACUTE_CONDITIONS = [
+  ['frequency', 'It happens frequently'],
+  ['signals', 'Warning signals already exist'],
+  ['spread', 'Signals are spread across multiple systems'],
+  ['manual', 'Someone currently connects the dots manually'],
+  ['late', 'The problem is discovered too late'],
+  ['cost', 'Late discovery has a measurable cost'],
+  ['action', 'There is a clear action once detected'],
+];
+
 function renderPlaybook() {
   const el = document.getElementById('sg-playbook');
   if (!el) return;
@@ -2600,21 +2626,8 @@ function renderPlaybook() {
 
   const label = (t) => `<p class="sg-pb__label">${t}</p>`;
 
-  /*
-   * Step 1's filter is the same seven conditions the ICP tab already lists
-   * under "what has to be true of them". Said once in both places, because a
-   * playbook that qualifies a problem differently from the ICP tab is two
-   * definitions, and the seller uses whichever one the prospect passes.
-   */
-  const ACUTE = [
-    'It happens frequently',
-    'Warning signals already exist',
-    'Signals are spread across multiple systems',
-    'Someone currently connects the dots manually',
-    'The problem is discovered too late',
-    'Late discovery has a measurable cost',
-    'There is a clear action once detected',
-  ];
+  // The filter itself; the keys beside each one belong to the table.
+  const ACUTE = ACUTE_CONDITIONS.map(([, condition]) => condition);
 
   const BUCKETS = [
     ['&#128293;', 'Acute', 'fire', [
@@ -3019,17 +3032,18 @@ function renderAudience() {
 
   const SEGMENT = 'Physiotherapy';
 
-  /** The pointers, in two groups: does the problem qualify, and is it the same one. */
+  /**
+   * The pointers, in two groups, each one a step of the playbook.
+   *
+   * The first seven are step 1's conditions, taken from the playbook itself
+   * rather than reworded here: a company that passes on this table has to be
+   * the same company that passes on that one. The six below are step 9, which
+   * is the gate — the same problem, company after company.
+   */
   const ROWS = [
-    ['group', 'Does the problem qualify'],
-    ['frequency', 'Happens often'],
-    ['signals', 'Signals already exist'],
-    ['spread', 'Signals in more than one place'],
-    ['manual', 'A person joins them up'],
-    ['late', 'Found too late'],
-    ['cost', 'Late costs something measurable'],
-    ['action', 'A clear action once known'],
-    ['group', 'Is it the same problem'],
+    ['group', 'Step 1 &mdash; Find the acute problem'],
+    ...ACUTE_CONDITIONS,
+    ['group', 'Step 9 &mdash; Validate repeatability'],
     ['same', 'Same problem'],
     ['buyer', 'Same buyer'],
     ['workflow', 'Similar workflow'],

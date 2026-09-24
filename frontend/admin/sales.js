@@ -1871,7 +1871,7 @@ function setView(view) {
       ? 'Read-only. Which organisations have someone using this, and which cold emails turned into accounts.'
       : 'What to say in the room. Every pitch concedes the incumbent first — all three prospects already run software, and a pitch that ignores it is heard as an attack.';
 
-  for (const [id, on] of [['sg-view-icp', icp], ['sg-view-playbook', play], ['sg-view-interview', iview], ['sg-view-funnel', funnel], ['sg-view-reports', reports], ['sg-view-pitches', pitches]]) {
+  for (const [id, on] of [['sg-view-icp', icp], ['sg-view-playbook', play], ['sg-view-interview', iview], ['sg-view-pitches', pitches], ['sg-view-funnel', funnel], ['sg-view-reports', reports]]) {
     const b = document.getElementById(id);
     b.classList.toggle('sg-view--on', on);
     b.setAttribute('aria-selected', String(on));

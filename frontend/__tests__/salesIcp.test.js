@@ -105,6 +105,30 @@ describe('class names the ICP tab owns', () => {
     expect(css).toMatch(/^\.sg-flow \{/m);
   });
 
+  it('puts the preparation tabs before the tabs that are worked', () => {
+    /*
+     * The bar reads in the order the work happens: who we sell to, the method
+     * that tests it, the interview that runs the method, what to say in the
+     * room — and only then the funnel and the reports, which are records
+     * rather than preparation. Pitches sat last, on the far side of two
+     * read-only tabs, which put the thing said out loud in a meeting furthest
+     * from the three screens it belongs with.
+     */
+    const at = html.indexOf('<div class="sg-views"');
+    const bar = html.slice(at, html.indexOf('</div>', at));
+    const order = [...bar.matchAll(/id="sg-view-([a-z]+)"/g)].map((m) => m[1]);
+    expect(order).toEqual(['icp', 'playbook', 'interview', 'pitches', 'funnel', 'reports']);
+  });
+
+  it('lights the tabs from one list, in the same order as the bar', () => {
+    // A tab missing from this list stays lit after you leave it; one out of
+    // order is the next reader wondering which of the two is authoritative.
+    const m = /for \(const \[id, on\] of \[([\s\S]*?)\]\) \{/.exec(js);
+    expect(m, 'the toggle list').toBeTruthy();
+    const order = [...m[1].matchAll(/'sg-view-([a-z]+)'/g)].map((x) => x[1]);
+    expect(order).toEqual(['icp', 'playbook', 'interview', 'pitches', 'funnel', 'reports']);
+  });
+
   it('is cache-busted, because the tab is styled entirely from this sheet', () => {
     const m = /sales\.css\?v=(\d+)/.exec(html);
     expect(m, 'sales.css must carry a ?v=').toBeTruthy();

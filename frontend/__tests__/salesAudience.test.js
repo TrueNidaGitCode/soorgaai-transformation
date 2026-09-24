@@ -159,6 +159,14 @@ describe('five companies, one of them interviewed', () => {
     expect(v.manual[0]).toBe('yes');
     expect(v.manual[1]).toMatch(/HOD notices, sometimes/);
     expect(v.manual[1]).toMatch(/Nobody does it consistently/);
+    /*
+     * The action is a correction, not a collection. Recording it as “they fix
+     * it” would quietly make the ₹20,000 look recoverable, and nobody has
+     * said that it is.
+     */
+    expect(v.action[0]).toBe('yes');
+    expect(v.action[1]).toMatch(/corrected by hand/);
+    expect(v.action[1]).toMatch(/not a collection/);
   });
 });
 
@@ -181,6 +189,19 @@ describe('a claim is not evidence', () => {
     expect(view).toContain('stated, not yet arithmetic');
     expect(view).toContain('asked, not established');
     expect(css).toMatch(/\.sg-ta__cell\.is-claim \{/);
+  });
+
+  it('leaves the money as the only thing still unproven about the problem', () => {
+    /*
+     * Six of the seven qualifying pointers are evidenced; the seventh is a
+     * number the HOD stated. That is the whole state of this interview in one
+     * line, and it is what every remaining question is about.
+     */
+    const v2 = data('COMPANIES')[0];
+    const qualify = ['frequency', 'signals', 'spread', 'manual', 'late', 'cost', 'action'];
+    const unproven = qualify.filter((k) => v2[k][0] !== 'yes');
+    expect(unproven).toEqual(['cost']);
+    for (const [key] of data('ASKS')) expect(['cost', 'roi']).toContain(key);
   });
 
   it('keeps the wedge a draft while only one column is full', () => {

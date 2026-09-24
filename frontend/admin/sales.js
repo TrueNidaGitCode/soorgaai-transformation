@@ -3055,13 +3055,14 @@ function renderAudience() {
         + 'not a process, it is whether somebody happened to look'],
       late: ['yes', 'After the treatment; after the entitlement is passed'],
       cost: ['claim', '&#8377;20,000+ a month. The arithmetic behind it has not been shown'],
-      action: ['open', 'Contact, explain, upgrade, collect? Not confirmed'],
+      action: ['yes', 'The HOD has the record corrected by hand. A correction, not a collection '
+        + '&mdash; whether the money follows is a separate question'],
       same: ['yes', 'Revenue leakage: activity does not match the record or the entitlement'],
       buyer: ['yes', 'HOD'],
       workflow: ['yes', 'Booking &rarr; treatment &rarr; front desk &rarr; system'],
       simsignals: ['yes', 'Bookings, treatment records, entitlement, usage &mdash; across a CRM, '
         + 'WhatsApp and the phone'],
-      simaction: ['open', 'Not established'],
+      simaction: ['yes', 'Correct the record by hand'],
       roi: ['claim', '&#8377;20,000+ a month, unverified'],
     },
     { id: 'B', name: '', met: '', when: 'Not yet' },
@@ -3079,10 +3080,12 @@ function renderAudience() {
    */
   const ASKS = [
     ['cost', 'Can we work through how you arrived at &#8377;20,000 a month?'],
-    ['action', 'When you find one, what do you do about it?'],
     // The bridge between "nobody looks consistently" and the ₹20,000: the
     // months nobody looked are the months the number is made of.
     ['cost', 'In a month when nobody looks &mdash; how many go past unnoticed altogether?'],
+    // The action is a correction. Whether a correction is money is the thing
+    // the whole figure rests on, and nobody has said yet.
+    ['roi', 'Once the record is corrected, does the money actually come back &mdash; or has it gone?'],
   ];
 
   const GLYPH = { yes: '&#10003;', open: '?', claim: '!' };

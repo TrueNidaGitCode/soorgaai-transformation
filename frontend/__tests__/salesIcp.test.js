@@ -117,7 +117,7 @@ describe('class names the ICP tab owns', () => {
     const at = html.indexOf('<div class="sg-views"');
     const bar = html.slice(at, html.indexOf('</div>', at));
     const order = [...bar.matchAll(/id="sg-view-([a-z]+)"/g)].map((m) => m[1]);
-    expect(order).toEqual(['icp', 'playbook', 'interview', 'pitches', 'funnel', 'reports']);
+    expect(order).toEqual(['icp', 'playbook', 'interview', 'audience', 'pitches', 'funnel', 'reports']);
   });
 
   it('lights the tabs from one list, in the same order as the bar', () => {
@@ -126,7 +126,7 @@ describe('class names the ICP tab owns', () => {
     const m = /for \(const \[id, on\] of \[([\s\S]*?)\]\) \{/.exec(js);
     expect(m, 'the toggle list').toBeTruthy();
     const order = [...m[1].matchAll(/'sg-view-([a-z]+)'/g)].map((x) => x[1]);
-    expect(order).toEqual(['icp', 'playbook', 'interview', 'pitches', 'funnel', 'reports']);
+    expect(order).toEqual(['icp', 'playbook', 'interview', 'audience', 'pitches', 'funnel', 'reports']);
   });
 
   it('is cache-busted, because the tab is styled entirely from this sheet', () => {

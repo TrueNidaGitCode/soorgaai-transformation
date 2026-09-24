@@ -1848,6 +1848,7 @@ function setView(view) {
   const icp     = view === 'icp';
   const play    = view === 'playbook';
   const iview   = view === 'interview';
+  const aud     = view === 'audience';
 
   document.getElementById('sg-kinds').hidden = !funnel;
   document.getElementById('sg-tabs').hidden = !funnel;
@@ -1858,9 +1859,12 @@ function setView(view) {
   document.getElementById('sg-icp').hidden = !icp;
   document.getElementById('sg-playbook').hidden = !play;
   document.getElementById('sg-interview').hidden = !iview;
+  document.getElementById('sg-audience').hidden = !aud;
 
   document.getElementById('sg-subtitle').textContent = icp
     ? 'Who this is for, and who it is not. Every hour spent outside this is an hour that teaches nothing about the product.'
+    : aud
+    ? 'One segment, five companies, one table. The same problem at company after company is what makes an ICP — and the empty columns are as much of the evidence as the full one.'
     : iview
     ? 'Fifteen minutes on a clock. Two to set up, eleven to listen, two to say what Svarg is — and the last two only if the eleven produced something.'
     : play
@@ -1871,7 +1875,7 @@ function setView(view) {
       ? 'Read-only. Which organisations have someone using this, and which cold emails turned into accounts.'
       : 'What to say in the room. Every pitch concedes the incumbent first — all three prospects already run software, and a pitch that ignores it is heard as an attack.';
 
-  for (const [id, on] of [['sg-view-icp', icp], ['sg-view-playbook', play], ['sg-view-interview', iview], ['sg-view-pitches', pitches], ['sg-view-funnel', funnel], ['sg-view-reports', reports]]) {
+  for (const [id, on] of [['sg-view-icp', icp], ['sg-view-playbook', play], ['sg-view-interview', iview], ['sg-view-audience', aud], ['sg-view-pitches', pitches], ['sg-view-funnel', funnel], ['sg-view-reports', reports]]) {
     const b = document.getElementById(id);
     b.classList.toggle('sg-view--on', on);
     b.setAttribute('aria-selected', String(on));
@@ -1882,6 +1886,7 @@ function setView(view) {
   if (icp) renderIcpView();
   if (play) renderPlaybook();
   if (iview) renderInterview();
+  if (aud) renderAudience();
 }
 
 function renderReports() {
@@ -1905,6 +1910,7 @@ function wireAccountControls() {
   document.getElementById('sg-view-icp').addEventListener('click', () => setView('icp'));
   document.getElementById('sg-view-playbook').addEventListener('click', () => setView('playbook'));
   document.getElementById('sg-view-interview').addEventListener('click', () => setView('interview'));
+  document.getElementById('sg-view-audience').addEventListener('click', () => setView('audience'));
   document.getElementById('sg-view-funnel').addEventListener('click', () => setView('funnel'));
   document.getElementById('sg-view-reports').addEventListener('click', () => setView('reports'));
   document.getElementById('sg-view-pitches').addEventListener('click', () => setView('pitches'));
@@ -2981,6 +2987,165 @@ function renderInterview() {
             <div class="sg-iv__body">${b.body}</div>
           </li>`).join('')}
       </ol>
+    </section>`;
+}
+
+/* ── Target audience ────────────────────────────────────────────────────────
+ *
+ * One segment, five companies, one table. This is where the interview tab's
+ * answers land, and it is the instrument the playbook's step 9 calls the gate:
+ * the same problem at company after company, or no ICP.
+ *
+ * ── Why it is mostly empty, and stays that way ─────────────────────────────
+ *
+ * Four of the five columns have nothing in them. That is the finding, not a
+ * gap in the page: one clinic with a problem is a customer, and this screen
+ * exists to stop that being read as a market. The empty columns are as much
+ * of the evidence as the full one.
+ *
+ * ── Filling it in ─────────────────────────────────────────────────────────
+ *
+ * Add the next company by writing its name, who was met and its answers into
+ * the same keys. Nothing else changes: the rows, the order and the states are
+ * shared, which is the point — five interviews answering slightly different
+ * questions cannot be compared, and comparison is the whole exercise.
+ *
+ * States: 'yes' evidenced in the interview · 'open' asked and not established
+ * · 'claim' stated by them and not yet arithmetic · '' not asked yet.
+ */
+function renderAudience() {
+  const el = document.getElementById('sg-audience');
+  if (!el) return;
+
+  const SEGMENT = 'Physiotherapy';
+
+  /** The pointers, in two groups: does the problem qualify, and is it the same one. */
+  const ROWS = [
+    ['group', 'Does the problem qualify'],
+    ['frequency', 'Happens often'],
+    ['signals', 'Signals already exist'],
+    ['spread', 'Signals in more than one place'],
+    ['manual', 'A person joins them up'],
+    ['late', 'Found too late'],
+    ['cost', 'Late costs something measurable'],
+    ['action', 'A clear action once known'],
+    ['group', 'Is it the same problem'],
+    ['same', 'Same problem'],
+    ['buyer', 'Same buyer'],
+    ['workflow', 'Similar workflow'],
+    ['simsignals', 'Similar signals'],
+    ['simaction', 'Similar action'],
+    ['roi', 'Similar ROI'],
+  ];
+
+  /*
+   * Company A is Vesoma, interviewed. Everything here comes from that
+   * conversation — nothing is inferred, and what was not asked is left empty
+   * rather than guessed at, because a guess in this table is indistinguishable
+   * from evidence three interviews later.
+   */
+  const COMPANIES = [
+    {
+      id: 'A', name: 'Vesoma', met: 'HOD', when: 'Interviewed',
+      frequency: ['yes', '~20 bookings a month marked no-show after treatment; gym packages repeatedly over-used'],
+      signals: ['yes', 'Entitlement vs actual usage; booking vs treatment record'],
+      spread: ['open', 'One system, several modules or spreadsheets &mdash; not established'],
+      manual: ['open', 'Who spots an over-used package? Possibly nobody consistently'],
+      late: ['yes', 'After the treatment; after the entitlement is passed'],
+      cost: ['claim', '&#8377;20,000+ a month. The arithmetic behind it has not been shown'],
+      action: ['open', 'Contact, explain, upgrade, collect? Not confirmed'],
+      same: ['yes', 'Revenue leakage: activity does not match the record or the entitlement'],
+      buyer: ['yes', 'HOD'],
+      workflow: ['yes', 'Booking &rarr; treatment &rarr; front desk &rarr; system'],
+      simsignals: ['yes', 'Bookings, treatment records, package entitlement, usage'],
+      simaction: ['open', 'Not established'],
+      roi: ['claim', '&#8377;20,000+ a month, unverified'],
+    },
+    { id: 'B', name: '', met: '', when: 'Not yet' },
+    { id: 'C', name: '', met: '', when: 'Not yet' },
+    { id: 'D', name: '', met: '', when: 'Not yet' },
+    { id: 'E', name: '', met: '', when: 'Not yet' },
+  ];
+
+  /**
+   * What the next conversation has to close.
+   *
+   * Each one is an amber cell above. They are written as questions because
+   * that is how they get asked, and they are few because a list of twelve
+   * gets none of them answered.
+   */
+  const ASKS = [
+    ['cost', 'Can we work through how you arrived at &#8377;20,000 a month?'],
+    ['spread', 'Which systems hold the bookings, the treatment records, the entitlement and the usage?'],
+    ['manual', 'Who notices that somebody has gone past their package, and how do they find out?'],
+    ['action', 'When you find one, what do you do about it?'],
+  ];
+
+  const GLYPH = { yes: '&#10003;', open: '?', claim: '!' };
+
+  const cell = (c, key) => {
+    const v = c[key];
+    if (!v) return '<td class="sg-ta__cell is-empty"><span class="sg-ta__mark">&middot;</span></td>';
+    return `<td class="sg-ta__cell is-${v[0]}">
+      <span class="sg-ta__mark">${GLYPH[v[0]] || ''}</span><span>${v[1]}</span></td>`;
+  };
+
+  el.innerHTML = `
+    <section class="sg-ta">
+      <div class="sg-ta__lead">
+        <p class="sg-ta__seg">${SEGMENT}<span>1 of 5 interviewed</span></p>
+        <p class="sg-ta__hyp">Revenue leakage caused by a difference between what a customer
+          actually did and what the record or the entitlement says they did.</p>
+        <p class="sg-ta__note">One clinic with this problem is a customer. Four more with the same
+          one is a segment &mdash; and the four empty columns are as much of the evidence as the
+          full one.</p>
+      </div>
+
+      <div class="sg-ta__wrap">
+        <table class="sg-ta__grid">
+          <thead>
+            <tr>
+              <th class="sg-ta__rowhead"></th>
+              ${COMPANIES.map((c) => `
+                <th class="sg-ta__co${c.name ? ' is-done' : ''}">
+                  <span class="sg-ta__coid">${c.id}</span>
+                  <span class="sg-ta__coname">${c.name || '&mdash;'}</span>
+                  <span class="sg-ta__cowho">${c.met || c.when}</span>
+                </th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${ROWS.map(([key, label]) => (key === 'group'
+              ? `<tr class="sg-ta__grouprow"><th colspan="${COMPANIES.length + 1}">${label}</th></tr>`
+              : `<tr>
+                   <th class="sg-ta__rowhead">${label}</th>
+                   ${COMPANIES.map((c) => cell(c, key)).join('')}
+                 </tr>`)).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <p class="sg-ta__key">
+        <span class="is-yes"><i>&#10003;</i>evidenced</span>
+        <span class="is-open"><i>?</i>asked, not established</span>
+        <span class="is-claim"><i>!</i>stated, not yet arithmetic</span>
+        <span class="is-empty"><i>&middot;</i>not asked</span>
+      </p>
+
+      <p class="sg-ta__label">What the next interview has to close</p>
+      <ol class="sg-ta__asks">
+        ${ASKS.map(([, q]) => `<li>&ldquo;${q}&rdquo;</li>`).join('')}
+      </ol>
+
+      <div class="sg-ta__wedge">
+        <p class="sg-ta__label">Draft wedge &mdash; not locked</p>
+        <p>Svarg helps <em>clinic and wellness operators</em> detect <em>revenue leakage from
+          activity that does not match the record</em> before <em>it is written off as a bad
+          month</em>.</p>
+        <p class="sg-ta__note">It stays a draft until the table has more than one full column.
+          The customer supplied the raw material for this sentence; nobody invented it in a
+          room.</p>
+      </div>
     </section>`;
 }
 

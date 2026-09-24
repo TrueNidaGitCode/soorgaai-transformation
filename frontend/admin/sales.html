@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="company-library.css">
-    <link rel="stylesheet" href="sales.css?v=36">
+    <link rel="stylesheet" href="sales.css?v=37">
     <script src="../login/config.js"></script>
 </head>
 <body>
@@ -30,6 +30,7 @@
                     <button type="button" id="sg-view-icp" class="sg-view" aria-selected="false">ICP</button>
                     <button type="button" id="sg-view-playbook" class="sg-view" aria-selected="false">B2B Playbook</button>
                     <button type="button" id="sg-view-interview" class="sg-view" aria-selected="false">ICP Interview</button>
+                    <button type="button" id="sg-view-audience" class="sg-view" aria-selected="false">Target Audience</button>
                     <button type="button" id="sg-view-pitches" class="sg-view" aria-selected="false">Pitches</button>
                     <button type="button" id="sg-view-funnel" class="sg-view sg-view--on" aria-selected="true">Funnel</button>
                     <button type="button" id="sg-view-reports" class="sg-view" aria-selected="false">Reports</button>
@@ -74,6 +75,10 @@
              call, so the questions are verbatim and the timings are visible. -->
         <div id="sg-interview" hidden></div>
 
+        <!-- Where the interviews land: one segment, five companies, one table.
+             The gate the playbook calls repeatability. -->
+        <div id="sg-audience" hidden></div>
+
         <div id="sg-pitches" hidden></div>
 
         <div id="sg-reports" hidden>
@@ -109,6 +114,6 @@
         </div>
     </main>
 
-    <script src="sales.js?v=35"></script>
+    <script src="sales.js?v=36"></script>
 </body>
 </html>

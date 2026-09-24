@@ -1,0 +1,200 @@
+/**
+ * The target audience table: one segment, five companies, and four of them empty.
+ *
+ * ── What this screen is for ────────────────────────────────────────────────
+ *
+ * The playbook calls step 9 the gate: the same problem at company after
+ * company, or there is no ICP. This is that gate as a table, and the thing it
+ * exists to prevent is one enthusiastic interview being read as a market.
+ *
+ * So the assertions are mostly about restraint rather than content:
+ *
+ *   - Four of five columns stay empty until somebody has actually been
+ *     interviewed. An empty column is evidence, not an unfinished page.
+ *   - A claim is never recorded as evidence. The ₹20,000 a month came from
+ *     the HOD, the arithmetic behind it has not been shown, and a cell that
+ *     said ✓ would launder an estimate into a fact three interviews later.
+ *   - Every pointer that is not evidenced has a question attached, because a
+ *     gap nobody wrote a question for is a gap that stays open.
+ */
+
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
+
+const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
+const js = read('../admin/sales.js');
+const css = read('../admin/sales.css');
+const html = read('../admin/sales.html');
+
+function fn(name) {
+  const start = js.search(new RegExp(`^function ${name}\\([a-z]*\\) \\{`, 'm'));
+  expect(start, `${name} not found`).toBeGreaterThan(-1);
+  let depth = 0;
+  for (let i = start; i < js.length; i++) {
+    if (js[i] === '{') depth++;
+    else if (js[i] === '}' && --depth === 0) return js.slice(start, i + 1);
+  }
+  throw new Error(`${name} is unbalanced`);
+}
+
+function blocks(view) {
+  const found = new Set();
+  for (const m of view.matchAll(/class="([^"]*)"/g)) {
+    for (const cls of m[1].split(/\s+/)) {
+      const bare = /^sg-[a-z0-9-]+/.exec(cls.split('__')[0].split('--')[0]);
+      if (bare) found.add(bare[0]);
+    }
+  }
+  return found;
+}
+
+const view = fn('renderAudience');
+
+/** The view's own data, evaluated — the arrays are plain literals. */
+function data(name) {
+  const at = view.indexOf(`const ${name} = [`);
+  expect(at, `${name} not found`).toBeGreaterThan(-1);
+  let depth = 0;
+  for (let i = view.indexOf('[', at); i < view.length; i++) {
+    if (view[i] === '[') depth++;
+    else if (view[i] === ']' && --depth === 0) {
+      // eslint-disable-next-line no-new-func
+      return new Function(`return ${view.slice(view.indexOf('[', at), i + 1)}`)();
+    }
+  }
+  throw new Error(`${name} is unbalanced`);
+}
+
+describe('the tab is reachable', () => {
+  it('sits after the interview, which is where its rows come from', () => {
+    const at = html.indexOf('<div class="sg-views"');
+    const bar = html.slice(at, html.indexOf('</div>', at));
+    expect(bar).toContain('Target Audience');
+    expect(bar.indexOf('sg-view-audience')).toBeGreaterThan(bar.indexOf('sg-view-interview'));
+  });
+
+  it('has a panel, and setView shows, hides and renders it', () => {
+    expect(html).toContain('id="sg-audience"');
+    const set = fn('setView');
+    expect(set).toContain("document.getElementById('sg-audience').hidden = !aud;");
+    expect(set).toContain('if (aud) renderAudience();');
+  });
+
+  it('is wired to a click', () => {
+    expect(fn('wireAccountControls')).toContain("setView('audience')");
+  });
+
+  it('shares no block name with the other four tabs', () => {
+    const mine = blocks(view);
+    expect(mine.size).toBeGreaterThan(0);
+    const theirs = new Set([
+      ...blocks(fn('renderIcpView')), ...blocks(fn('renderPlaybook')),
+      ...blocks(fn('renderInterview')), ...blocks(fn('renderPitches')),
+    ]);
+    expect([...mine].filter((b) => theirs.has(b))).toEqual([]);
+  });
+
+  it('is styled, and its table scrolls in its own container', () => {
+    expect(css).toMatch(/^\.sg-ta \{/m);
+    // Six columns of prose are wider than a phone. Only the table may scroll
+    // sideways — never the page.
+    expect(css).toMatch(/\.sg-ta__wrap \{\s*overflow-x: auto;/);
+  });
+});
+
+describe('five companies, one of them interviewed', () => {
+  const companies = data('COMPANIES');
+  const rows = data('ROWS');
+  const asks = data('ASKS');
+  const pointers = rows.filter(([k]) => k !== 'group').map(([k]) => k);
+
+  it('has five columns and holds the segment they belong to', () => {
+    expect(companies).toHaveLength(5);
+    expect(companies.map((c) => c.id)).toEqual(['A', 'B', 'C', 'D', 'E']);
+    expect(view).toContain("const SEGMENT = 'Physiotherapy';");
+  });
+
+  it('leaves four of them genuinely empty', () => {
+    /*
+     * Not placeholder answers, not "TBD" — nothing. A cell invented to make
+     * the table look finished is indistinguishable from evidence by the time
+     * anyone reads it back.
+     */
+    const filled = companies.filter((c) => pointers.some((k) => c[k]));
+    expect(filled).toHaveLength(1);
+    expect(filled[0].name).toBe('Vesoma');
+    for (const c of companies.slice(1)) {
+      expect(c.name, c.id).toBe('');
+      for (const k of pointers) expect(c[k], `${c.id}.${k}`).toBeUndefined();
+    }
+  });
+
+  it('asks every company the same pointers, in two groups', () => {
+    // Seven that qualify the problem, six that say whether it is the same one.
+    expect(pointers).toHaveLength(13);
+    expect(rows.filter(([k]) => k === 'group')).toHaveLength(2);
+  });
+
+  it('records what Vesoma actually said', () => {
+    const v = data('COMPANIES')[0];
+    expect(v.met).toBe('HOD');
+    expect(v.frequency[0]).toBe('yes');
+    expect(v.frequency[1]).toMatch(/no-show/);
+    expect(v.late[0]).toBe('yes');
+    expect(v.same[1]).toMatch(/does not match the record/);
+  });
+});
+
+describe('a claim is not evidence', () => {
+  const v = data('COMPANIES')[0];
+
+  it('does not record the ₹20,000 as proven', () => {
+    /*
+     * The number came from the HOD and the arithmetic behind it has not been
+     * shown. Marking it evidenced would turn an estimate into a fact by the
+     * third interview, and every figure downstream of it inherits that.
+     */
+    expect(v.cost[0]).toBe('claim');
+    expect(v.roi[0]).toBe('claim');
+    expect(v.cost[1]).toMatch(/arithmetic behind it has not been shown/);
+    expect(v.roi[1]).toMatch(/unverified/);
+  });
+
+  it('separates a claim from evidence in the key, so the glyph means something', () => {
+    expect(view).toContain('stated, not yet arithmetic');
+    expect(view).toContain('asked, not established');
+    expect(css).toMatch(/\.sg-ta__cell\.is-claim \{/);
+  });
+
+  it('keeps the wedge a draft while only one column is full', () => {
+    expect(view).toMatch(/Draft wedge/);
+    expect(view).toMatch(/stays a draft until the table has more than one full column/);
+  });
+});
+
+describe('every gap carries the question that closes it', () => {
+  const v = data('COMPANIES')[0];
+  const asks = data('ASKS');
+
+  it('asks about something unproven, never about something already evidenced', () => {
+    for (const [key] of asks) {
+      expect(v[key], `ASKS names ${key}`).toBeTruthy();
+      expect(v[key][0], `${key} is already evidenced`).not.toBe('yes');
+    }
+  });
+
+  it('covers every pointer that was asked and not established', () => {
+    // 'open' means the question was put and the answer was not there. One
+    // that nobody wrote a follow-up for is one that stays open forever.
+    const open = Object.keys(v).filter((k) => Array.isArray(v[k]) && v[k][0] === 'open');
+    const asked = new Set(asks.map(([k]) => k));
+    // simaction is the same question as action, one company along.
+    for (const k of open) {
+      expect(asked.has(k) || k === 'simaction', `no question closes ${k}`).toBe(true);
+    }
+  });
+
+  it('keeps the list short enough to actually ask', () => {
+    expect(asks.length).toBeLessThanOrEqual(5);
+  });
+});

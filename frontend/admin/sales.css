@@ -2640,3 +2640,209 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   .sg-iv__clock { position: static; flex-direction: row; gap: 6px; width: auto; padding: 5px 11px; margin-bottom: 8px; display: inline-flex; }
   .sg-iv__head { display: flex; flex-direction: column; align-items: flex-start; }
 }
+
+/* ── The target audience tab ────────────────────────────────────────────────
+   One segment, five companies, one table. Its own block name like the three
+   tabs above it. The table is dense on purpose: it is read as a grid, where
+   an empty column has to be as legible as a full one. */
+
+.sg-ta { max-width: 1100px; padding-block: 8px 48px; }
+
+.sg-ta__lead {
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: rgba(92, 197, 167, 0.04);
+  border: 1px solid rgba(92, 197, 167, 0.22);
+  border-radius: 12px;
+}
+
+.sg-ta__seg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+}
+.sg-ta__seg span {
+  padding: 3px 10px;
+  border: 1px solid rgba(92, 197, 167, 0.35);
+  border-radius: 999px;
+  background: rgba(92, 197, 167, 0.08);
+  font-size: 0.74rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #5CC5A7;
+}
+
+.sg-ta__hyp {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sg-ta__note { margin: 0; font-size: 0.85rem; line-height: 1.55; color: rgba(255, 255, 255, 0.5); }
+
+.sg-ta__label {
+  margin: 26px 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── The grid ──────────────────────────────────────────────────────────────
+   Wide by nature — six columns of prose — so it scrolls inside its own
+   container rather than pushing the page sideways. */
+
+.sg-ta__wrap { overflow-x: auto; }
+
+.sg-ta__grid {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+}
+
+.sg-ta__rowhead {
+  width: 14rem;
+  padding: 10px 14px 10px 0;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* A company column. The one that has been interviewed is lit; the four that
+   have not are deliberately quiet rather than hidden. */
+.sg-ta__co {
+  padding: 0 12px 12px;
+  text-align: left;
+  vertical-align: bottom;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.sg-ta__coid {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.3);
+}
+.sg-ta__coname {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+}
+.sg-ta__cowho {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+.sg-ta__co.is-done .sg-ta__coname { color: #fff; }
+.sg-ta__co.is-done .sg-ta__coid,
+.sg-ta__co.is-done .sg-ta__cowho { color: #5CC5A7; }
+
+/* The two groups: what qualifies the problem, and what makes it the same one. */
+.sg-ta__grouprow th {
+  padding: 22px 0 7px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.32);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sg-ta__cell {
+  padding: 10px 12px;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* The state is a glyph rather than a colour alone: this table gets read on a
+   phone, in a room, and printed. */
+.sg-ta__mark {
+  float: left;
+  width: 16px;
+  margin-right: 6px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+.sg-ta__cell.is-yes .sg-ta__mark { color: #5CC5A7; }
+.sg-ta__cell.is-open { color: rgba(255, 255, 255, 0.5); }
+.sg-ta__cell.is-open .sg-ta__mark { color: rgba(255, 190, 120, 0.9); }
+.sg-ta__cell.is-claim .sg-ta__mark { color: rgba(255, 190, 120, 0.9); }
+/* A claim is not evidence, and must not read like it. */
+.sg-ta__cell.is-claim { color: rgba(255, 190, 120, 0.85); }
+.sg-ta__cell.is-empty { background: rgba(255, 255, 255, 0.015); }
+
+/* ── The key ───────────────────────────────────────────────────────────────── */
+
+.sg-ta__key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 14px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+.sg-ta__key span { display: inline-flex; align-items: baseline; gap: 7px; }
+.sg-ta__key i { font-style: normal; font-weight: 700; }
+.sg-ta__key .is-yes i { color: #5CC5A7; }
+.sg-ta__key .is-open i,
+.sg-ta__key .is-claim i { color: rgba(255, 190, 120, 0.9); }
+.sg-ta__key .is-empty i { color: rgba(255, 255, 255, 0.3); }
+
+/* ── What the next interview has to close ──────────────────────────────────── */
+
+.sg-ta__asks { margin: 0; padding-left: 20px; }
+.sg-ta__asks li {
+  margin-bottom: 8px;
+  padding-left: 4px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+}
+.sg-ta__asks li::marker { color: rgba(255, 190, 120, 0.9); font-weight: 700; }
+
+/* ── The draft wedge ───────────────────────────────────────────────────────── */
+
+.sg-ta__wedge {
+  margin-top: 26px;
+  padding: 18px 20px;
+  border: 1px dashed rgba(92, 197, 167, 0.35);
+  border-radius: 10px;
+  background: rgba(92, 197, 167, 0.04);
+}
+.sg-ta__wedge .sg-ta__label { margin-top: 0; }
+.sg-ta__wedge p {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+}
+.sg-ta__wedge em {
+  font-style: normal;
+  border-bottom: 1px dashed rgba(92, 197, 167, 0.6);
+  color: #5CC5A7;
+}
+.sg-ta__wedge .sg-ta__note { margin: 0; }
+
+@media (max-width: 620px) {
+  .sg-ta__rowhead { width: 9rem; }
+  .sg-ta__grid { min-width: 720px; }
+}

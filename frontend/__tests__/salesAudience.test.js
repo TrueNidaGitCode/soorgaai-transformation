@@ -248,16 +248,28 @@ describe('five companies, one of them interviewed', () => {
 describe('a claim is not evidence', () => {
   const v = data('COMPANIES')[0];
 
-  it('does not record the ₹20,000 as proven', () => {
+  it('keeps the ₹20,000 as a ceiling, now that the arithmetic is known', () => {
     /*
-     * The number came from the HOD and the arithmetic behind it has not been
-     * shown. Marking it evidenced would turn an estimate into a fact by the
-     * third interview, and every figure downstream of it inherits that.
+     * The working came back: ₹1,000 a booking, about twenty a month left
+     * marked no-show. That settles MEASURABILITY — there is a unit price and
+     * a count — so the qualifying condition is evidenced.
+     *
+     * It does not settle the amount. Twenty is every no-show mark, and only
+     * some of those patients actually attended; twenty thousand is therefore
+     * the most it can be, not what it is. Recording the ceiling as the figure
+     * is the same laundering as before with an extra step in front of it, so
+     * the size stays a claim until somebody counts.
      */
-    expect(v.cost[0]).toBe('claim');
+    expect(v.cost[0]).toBe('yes');
+    expect(v.cost[1]).toMatch(/&#8377;1,000 a booking/);
+    expect(v.cost[1]).toMatch(/up to/);
+
     expect(v.roi[0]).toBe('claim');
-    expect(v.cost[1]).toMatch(/arithmetic behind it has not been shown/);
-    expect(v.roi[1]).toMatch(/unverified/);
+    expect(v.roi[1]).toMatch(/Up to/);
+    expect(v.roi[1]).toMatch(/however many of the 20 actually attended/);
+    expect(v.roi[1]).toMatch(/Nobody has counted/);
+    expect(v.economics[0]).toBe('claim');
+    expect(v.economics[1]).toMatch(/ceiling/);
   });
 
   it('separates a claim from evidence in the key, so the glyph means something', () => {
@@ -266,17 +278,18 @@ describe('a claim is not evidence', () => {
     expect(css).toMatch(/\.sg-ta__cell\.is-claim \{/);
   });
 
-  it('leaves the money as the only thing still unproven about the problem', () => {
+  it('qualifies the problem on all seven, and still asks only about the size', () => {
     /*
-     * Six of the seven qualifying pointers are evidenced; the seventh is a
-     * number the HOD stated. That is the whole state of this interview in one
-     * line, and it is what every remaining question is about.
+     * All seven conditions are now evidenced: this is an acute problem at
+     * this company, and the interview has converged on one unknown — how big.
+     * Every remaining question is about that, which is the state a first
+     * interview should end in.
      */
     const v2 = data('COMPANIES')[0];
-    const qualify = ['frequency', 'signals', 'spread', 'manual', 'late', 'cost', 'action'];
-    const unproven = qualify.filter((k) => v2[k][0] !== 'yes');
-    expect(unproven).toEqual(['cost']);
-    for (const [key] of data('ASKS')) expect(['cost', 'roi']).toContain(key);
+    // eslint-disable-next-line no-new-func
+    const qualify = new Function(`return ${SHARED};`)().map(([k]) => k);
+    expect(qualify.filter((k) => v2[k][0] !== 'yes')).toEqual([]);
+    for (const [key] of data('ASKS')) expect(['cost', 'roi', 'economics']).toContain(key);
   });
 
   it('keeps the wedge a draft while only one column is full', () => {

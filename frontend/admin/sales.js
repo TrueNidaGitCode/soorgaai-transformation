@@ -3103,9 +3103,10 @@ function renderAudience() {
         + 'forums &mdash; but the words they use for this are still ours, not theirs'] },
     { n: 5, title: PLAYBOOK_STEPS[4], key: 'reverse' },
     { n: 6, title: PLAYBOOK_STEPS[5],
-      segment: ['open', 'Three candidates and none chosen: the over-used package, the '
-        + 'booking-against-treatment mismatch, the treatment reminder. Pick one, or it becomes a '
-        + 'platform for one customer'] },
+      segment: ['open', 'The customer has named his biggest: bookings left marked no-show when the '
+        + 'patient was treated. That is the candidate to build, ahead of the over-used package and '
+        + 'the treatment reminder &mdash; one of the three, or it becomes a platform for one '
+        + 'customer'] },
     { n: 7, title: PLAYBOOK_STEPS[6], key: 'pilot' },
     { n: 8, title: PLAYBOOK_STEPS[7], key: 'economics' },
     { n: 9, title: PLAYBOOK_STEPS[8], rows: REPEATABILITY },
@@ -3123,14 +3124,19 @@ function renderAudience() {
   const COMPANIES = [
     {
       id: 'A', name: 'Vesoma', met: 'HOD', when: 'Interviewed',
-      frequency: ['yes', '~20 bookings a month marked no-show after treatment; gym packages repeatedly over-used'],
+      frequency: ['yes', '~20 bookings a month left marked no-show when the patient came and was '
+        + 'treated &mdash; the admin missed the attendance. Gym packages repeatedly over-used'],
       signals: ['yes', 'Entitlement vs actual usage; booking vs treatment record'],
       spread: ['yes', 'WhatsApp, phone calls and a CRM. A call leaves nothing to read unless '
         + 'somebody logs it'],
       manual: ['yes', 'The HOD notices, sometimes. Nobody does it consistently &mdash; so it is '
         + 'not a process, it is whether somebody happened to look'],
       late: ['yes', 'After the treatment; after the entitlement is passed'],
-      cost: ['claim', '&#8377;20,000+ a month. The arithmetic behind it has not been shown'],
+      // The condition is measurability, and that is now met: there is a unit
+      // price and a count. How many of the twenty were wrong is a separate
+      // question, and it is what decides the size — see roi.
+      cost: ['yes', '&#8377;1,000 a booking &times; ~20 a month = up to &#8377;20,000. The unit '
+        + 'price is known and the count is countable'],
       action: ['yes', 'The HOD has the record corrected by hand. A correction, not a collection '
         + '&mdash; whether the money follows is a separate question'],
       same: ['yes', 'Revenue leakage: activity does not match the record or the entitlement'],
@@ -3139,7 +3145,14 @@ function renderAudience() {
       simsignals: ['yes', 'Bookings, treatment records, entitlement, usage &mdash; across a CRM, '
         + 'WhatsApp and the phone'],
       simaction: ['yes', 'Correct the record by hand'],
-      roi: ['claim', '&#8377;20,000+ a month, unverified'],
+      /*
+       * A ceiling, not a figure. The twenty is every booking left marked
+       * no-show; the HOD says SOME of them attended. Twenty times a thousand
+       * is therefore the most it can be, and the actual number waits on how
+       * many of the twenty were wrong.
+       */
+      roi: ['claim', 'Up to &#8377;20,000 a month &mdash; &#8377;1,000 &times; however many of the '
+        + '20 actually attended. Nobody has counted that yet'],
 
       // Step 2 — the one line the playbook asks for, in the order it asks:
       // who, what workflow, what problem, why too late, cost, action.
@@ -3153,8 +3166,8 @@ function renderAudience() {
         + 'has not been watched'],
       pilot: ['', 'Not agreed. The ask is thirty days of usage data and a look at what it finds '
         + '&mdash; not a project'],
-      economics: ['claim', '&#8377;20,000+ a month &rarr; &#8377;2.4L a year, if the calculation '
-        + 'holds. Nobody has shown it yet'],
+      economics: ['claim', 'Arithmetic shown: &#8377;1,000 &times; ~20 = &#8377;20,000 a month, '
+        + '&#8377;2.4L a year. It is a ceiling until somebody counts how many of the 20 attended'],
     },
     { id: 'B', name: '', met: '', when: 'Not yet' },
     { id: 'C', name: '', met: '', when: 'Not yet' },
@@ -3170,10 +3183,9 @@ function renderAudience() {
    * gets none of them answered.
    */
   const ASKS = [
-    ['cost', 'Can we work through how you arrived at &#8377;20,000 a month?'],
-    // The bridge between "nobody looks consistently" and the ₹20,000: the
-    // months nobody looked are the months the number is made of.
-    ['cost', 'In a month when nobody looks &mdash; how many go past unnoticed altogether?'],
+    // The one number the whole figure now waits on. Twenty is every booking
+    // left marked no-show; the loss is however many of them actually came.
+    ['roi', 'Of those twenty a month, how many had actually attended?'],
     // The action is a correction. Whether a correction is money is the thing
     // the whole figure rests on, and nobody has said yet.
     ['roi', 'Once the record is corrected, does the money actually come back &mdash; or has it gone?'],

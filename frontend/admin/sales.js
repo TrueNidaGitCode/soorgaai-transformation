@@ -2863,9 +2863,16 @@ function renderInterview() {
       </div>
     </div>`;
 
-  /** What late discovery is allowed to cost — rupees are not the only answer. */
-  const COSTS = ['Lost patients', 'Lost revenue', 'Unused capacity', 'Staff hours',
-    'Delayed treatment', 'Customer dissatisfaction', 'Extra administrative work'];
+  /**
+   * What late discovery is allowed to cost — rupees are not the only answer.
+   *
+   * Written so the same list works for a clinic, a distributor and an academy:
+   * a customer lost is a patient, a buyer or a student depending on who is in
+   * the room, and naming one of them would make the other two read it as
+   * somebody else's script.
+   */
+  const COSTS = ['Lost customers', 'Lost revenue', 'Unused capacity', 'Staff hours',
+    'Work delivered late', 'Customer dissatisfaction', 'Extra administrative work'];
 
   const BLOCKS = [
     {
@@ -2873,10 +2880,11 @@ function renderInterview() {
       body: rule('Do not pitch Svarg yet.')
         + say('I&rsquo;ll keep this very short. I&rsquo;m working on a product that helps '
             + 'businesses identify problems earlier using signals they already have. Before I show '
-            + 'you anything, I wanted to understand how your <em class="sg-iv__slot">Clinic &amp; '
-            + 'Wellness</em> team currently identifies things that need attention.')
-        + note('The slot is whichever cluster you are calling &mdash; the sentence is the same for '
-             + 'a distributor and for an academy.')
+            + 'you anything, I wanted to understand how your <em class="sg-iv__slot">[team]</em> '
+            + 'currently identifies things that need attention.')
+        + note('The blank is the only thing that changes between businesses &mdash; whatever they '
+             + 'call the team in front of you: operations, the front office, the service desk, the '
+             + 'branch. Everything else in the fifteen minutes is asked word for word of everybody.')
         + ask('What are the biggest things your team has to keep track of every day?')
         + beat('Let them answer.'),
     },
@@ -2956,6 +2964,11 @@ function renderInterview() {
           seller starts explaining. The clock is there to stop that. Read the questions as written
           &mdash; each one fills a row of the validation matrix on the ICP tab, and a question whose
           purpose you have forgotten comes back as an opinion instead of an incident.</p>
+        <p class="sg-iv__note"><b>One script, every business.</b> Nothing below names an industry,
+          and only the opening blank changes from meeting to meeting. That is what makes the answers
+          comparable: the same questions asked of a clinic, a distributor and an academy are how you
+          find out whether the problem is the same one &mdash; which is the whole test on the
+          playbook tab.</p>
       </div>
 
       <ol class="sg-iv__blocks">

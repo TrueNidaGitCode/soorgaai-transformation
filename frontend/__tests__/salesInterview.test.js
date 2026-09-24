@@ -158,7 +158,39 @@ describe('fifteen minutes, and the clock is the content', () => {
 
   it('accepts impact in something other than rupees', () => {
     expect(view).toContain('do not push for rupees');
-    for (const c of ['Lost patients', 'Unused capacity', 'Staff hours']) expect(view, c).toContain(c);
+    for (const c of ['Lost customers', 'Unused capacity', 'Staff hours']) expect(view, c).toContain(c);
+  });
+
+  it('is one script for every business, with one blank in it', () => {
+    /*
+     * The same questions asked of a clinic, a distributor and an academy are
+     * what make the answers comparable — the playbook's step 9 is exactly
+     * "the same problem at company after company", and it cannot be run on
+     * five interviews that each asked something slightly different.
+     *
+     * So nothing SPOKEN may name an industry. The notes beside the script may
+     * (they are about reuse, and the reader is the seller, not the prospect),
+     * and so may the comments.
+     */
+    // Rendered for real, then the seller's own notes stripped out: what is
+    // left is the page as a prospect would hear it.
+    const el = { innerHTML: '' };
+    // eslint-disable-next-line no-new-func
+    new Function('document', `${view}; renderInterview();`)({ getElementById: () => el });
+    const spoken = el.innerHTML.replace(/<p class="sg-iv__note">[\s\S]*?<\/p>/g, '');
+    expect(spoken.length).toBeGreaterThan(1500);
+    for (const word of [/patient/i, /clinic/i, /wellness/i, /treatment/i, /academy/i,
+      /student/i, /coach/i, /distributor/i, /dealer/i, /hospital/i]) {
+      expect(spoken, `spoken: ${word}`).not.toMatch(word);
+    }
+    // Including the chips, which are the one place a vertical noun crept in:
+    // a lost customer is a patient, a buyer or a student depending on the room.
+    expect(view).not.toContain('Lost patients');
+
+    // Exactly one blank to fill in before the call, in the opening line.
+    const opener = view.slice(view.indexOf("from: '0'"), view.indexOf("from: '2'"));
+    expect(opener.match(/sg-iv__slot/g) || []).toHaveLength(1);
+    expect(opener).toContain('[team]');
   });
 
   it('ends on one question, not on a demonstration', () => {

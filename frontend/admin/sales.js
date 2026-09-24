@@ -1847,6 +1847,7 @@ function setView(view) {
   const pitches = view === 'pitches';
   const icp     = view === 'icp';
   const play    = view === 'playbook';
+  const iview   = view === 'interview';
 
   document.getElementById('sg-kinds').hidden = !funnel;
   document.getElementById('sg-tabs').hidden = !funnel;
@@ -1856,9 +1857,12 @@ function setView(view) {
   document.getElementById('sg-pitches').hidden = !pitches;
   document.getElementById('sg-icp').hidden = !icp;
   document.getElementById('sg-playbook').hidden = !play;
+  document.getElementById('sg-interview').hidden = !iview;
 
   document.getElementById('sg-subtitle').textContent = icp
     ? 'Who this is for, and who it is not. Every hour spent outside this is an hour that teaches nothing about the product.'
+    : iview
+    ? 'Fifteen minutes on a clock. Two to set up, eleven to listen, two to say what Svarg is — and the last two only if the eleven produced something.'
     : play
     ? 'Ten steps, in order. The ICP tab says what we believe; this says what would confirm it — and each step has a number attached, so it is possible to be honest about where we actually are.'
     : funnel
@@ -1867,7 +1871,7 @@ function setView(view) {
       ? 'Read-only. Which organisations have someone using this, and which cold emails turned into accounts.'
       : 'What to say in the room. Every pitch concedes the incumbent first — all three prospects already run software, and a pitch that ignores it is heard as an attack.';
 
-  for (const [id, on] of [['sg-view-icp', icp], ['sg-view-playbook', play], ['sg-view-funnel', funnel], ['sg-view-reports', reports], ['sg-view-pitches', pitches]]) {
+  for (const [id, on] of [['sg-view-icp', icp], ['sg-view-playbook', play], ['sg-view-interview', iview], ['sg-view-funnel', funnel], ['sg-view-reports', reports], ['sg-view-pitches', pitches]]) {
     const b = document.getElementById(id);
     b.classList.toggle('sg-view--on', on);
     b.setAttribute('aria-selected', String(on));
@@ -1877,6 +1881,7 @@ function setView(view) {
   if (pitches) renderPitches();
   if (icp) renderIcpView();
   if (play) renderPlaybook();
+  if (iview) renderInterview();
 }
 
 function renderReports() {
@@ -1899,6 +1904,7 @@ function wireAccountControls() {
 
   document.getElementById('sg-view-icp').addEventListener('click', () => setView('icp'));
   document.getElementById('sg-view-playbook').addEventListener('click', () => setView('playbook'));
+  document.getElementById('sg-view-interview').addEventListener('click', () => setView('interview'));
   document.getElementById('sg-view-funnel').addEventListener('click', () => setView('funnel'));
   document.getElementById('sg-view-reports').addEventListener('click', () => setView('reports'));
   document.getElementById('sg-view-pitches').addEventListener('click', () => setView('pitches'));
@@ -2804,6 +2810,162 @@ function renderPlaybook() {
               ${s.target ? `<span class="sg-pb__target">${s.target}</span>` : ''}
             </div>
             <div class="sg-pb__body">${s.body}</div>
+          </li>`).join('')}
+      </ol>
+    </section>`;
+}
+
+/* ── The ICP interview ──────────────────────────────────────────────────────
+ *
+ * Fifteen minutes, on a clock, because the failure mode of this conversation
+ * is always the same one: the seller starts explaining. Two minutes to set up,
+ * eleven to listen, two to say what Svarg is — and the last two only if the
+ * eleven produced something.
+ *
+ * The questions are written to be read out loud word for word, so they are
+ * rendered as speech rather than as bullet points. What each one is FOR is set
+ * beside it in small type, because the answer has to be written into the ICP
+ * tab's validation matrix afterwards and a question whose purpose the asker
+ * has forgotten comes back as an opinion instead of an incident.
+ *
+ * Every dimension tag here names a row of that matrix. One instrument, asked
+ * out loud — the same discipline the ICP tab holds itself to.
+ */
+function renderInterview() {
+  const el = document.getElementById('sg-interview');
+  if (!el) return;
+
+  /** A line read out word for word. */
+  const say = (t) => `<p class="sg-iv__say">&ldquo;${t}&rdquo;</p>`;
+
+  /** A stage direction: what to do, not what to say. */
+  const beat = (t) => `<p class="sg-iv__beat">${t}</p>`;
+
+  /** A rule that holds for the whole block. */
+  const rule = (t) => `<p class="sg-iv__rule">${t}</p>`;
+
+  const note = (t) => `<p class="sg-iv__note">${t}</p>`;
+
+  /**
+   * One question, with the matrix row it fills.
+   *
+   * `key` marks the single question the whole interview turns on: an answer
+   * to it is a prospect who discovers problems late, which is the hypothesis.
+   */
+  const ask = (q, { n = '', tests = '', key = false, after = '' } = {}) => `
+    <div class="sg-iv__q${key ? ' is-key' : ''}">
+      ${n ? `<span class="sg-iv__qn">${n}</span>` : ''}
+      <div class="sg-iv__qbody">
+        ${key ? '<p class="sg-iv__keytag">The question the interview turns on</p>' : ''}
+        <p class="sg-iv__qtext">&ldquo;${q}&rdquo;</p>
+        ${tests ? `<p class="sg-iv__tests"><span>Fills</span>${tests}</p>` : ''}
+        ${after}
+      </div>
+    </div>`;
+
+  /** What late discovery is allowed to cost — rupees are not the only answer. */
+  const COSTS = ['Lost patients', 'Lost revenue', 'Unused capacity', 'Staff hours',
+    'Delayed treatment', 'Customer dissatisfaction', 'Extra administrative work'];
+
+  const BLOCKS = [
+    {
+      from: '0', to: '2', title: 'Set the context',
+      body: rule('Do not pitch Svarg yet.')
+        + say('I&rsquo;ll keep this very short. I&rsquo;m working on a product that helps '
+            + 'businesses identify problems earlier using signals they already have. Before I show '
+            + 'you anything, I wanted to understand how your <em class="sg-iv__slot">Clinic &amp; '
+            + 'Wellness</em> team currently identifies things that need attention.')
+        + note('The slot is whichever cluster you are calling &mdash; the sentence is the same for '
+             + 'a distributor and for an academy.')
+        + ask('What are the biggest things your team has to keep track of every day?')
+        + beat('Let them answer.'),
+    },
+    {
+      from: '2', to: '7', title: 'Find the problem',
+      body: rule('Three questions. Not four.')
+        + ask('What tends to go wrong most often?', {
+          n: '1', tests: 'Recurrence',
+          after: '<p class="sg-iv__note">If they give you several, take the one that sounds most '
+               + 'frequent or most costly and leave the rest.</p>',
+        })
+        + ask('Which of these do you usually realise only after the problem has already happened?', {
+          n: '2', tests: 'Lateness', key: true,
+        })
+        + ask('Can you give me a recent example of when that happened?', {
+          n: '3', tests: 'Cost of lateness',
+        })
+        + beat('Now stop talking and listen. You are after a real incident, not an opinion.'),
+    },
+    {
+      from: '7', to: '11', title: 'Follow the one problem',
+      body: rule('One problem, three follow-ups. Do not go back and ask about the others.')
+        + `<p class="sg-iv__sub">A &mdash; Signals</p>`
+        + ask('Before you realised there was a problem, was there any information that could have '
+            + 'indicated it earlier?', { tests: 'Signal availability' })
+        + ask('Where was that information?', { tests: 'Fragmentation' })
+        + note('These two are the hypothesis itself: signals that already existed, sitting in more '
+             + 'than one place. A no to the first ends the qualification honestly.')
+        + `<p class="sg-iv__sub">B &mdash; Current detection</p>`
+        + ask('Who usually notices it, and how do they find out?', { tests: 'Manual effort' })
+        + note('You are listening for a person joining the dots by hand. If a system already tells '
+             + 'them, there is nothing here to replace.')
+        + `<p class="sg-iv__sub">C &mdash; Action</p>`
+        + ask('If you knew about it earlier, what would you do differently?', { tests: 'Actionability' })
+        + note('<b>The most important answer of the fifteen minutes.</b> Detection with no '
+             + 'intervention behind it is a dashboard, and nobody buys one twice.'),
+    },
+    {
+      from: '11', to: '13', title: 'Quantify it',
+      body: rule('Two questions, and do not push for rupees.')
+        + ask('How often does this happen?', { tests: 'Recurrence' })
+        + ask('What does it cost you when you discover it late?', { tests: 'Cost of lateness &middot; Measurability' })
+        + `<p class="sg-iv__label">Any of these is an answer</p>`
+        + `<ul class="sg-iv__costs">${COSTS.map((c) => `<li>${c}</li>`).join('')}</ul>`
+        + note('Measurable impact is the point, not a currency. A number they already track beats '
+             + 'a rupee figure they invent for you on the call.'),
+    },
+    {
+      from: '13', to: '15', title: 'Introduce Svarg',
+      body: rule('Only if the eleven minutes produced something. If they did not, thank them and '
+               + 'stop &mdash; a pitch into nothing teaches you nothing.')
+        + say('What you&rsquo;re describing is actually very close to the problem we&rsquo;re '
+            + 'exploring with Svarg.')
+        + `<p class="sg-iv__label">Then thirty seconds, no more</p>`
+        + say('Svarg looks at signals across the systems you&rsquo;re already using, identifies '
+            + 'patterns that indicate something is starting to go wrong, explains why it thinks '
+            + 'there&rsquo;s a problem, and helps the team take action earlier.')
+        + note('Detect and explain can be demonstrated today. &ldquo;Helps the team take action&rdquo; '
+             + 'means a person acts on what it found &mdash; nothing is sent outward yet, and the ICP '
+             + 'tab says so in the same words. Do not let the sentence grow in the room.')
+        + `<p class="sg-iv__label">Then tie it to what they just told you</p>`
+        + say('In your case, if the problem is <em class="sg-iv__slot">X</em>, and the signals are '
+            + 'coming from <em class="sg-iv__slot">A + B + C</em>, the idea would be for Svarg to '
+            + 'identify that pattern before your team normally discovers it.')
+        + `<p class="sg-iv__label">One closing question</p>`
+        + '<p class="sg-iv__close">&ldquo;Would it be useful if we looked at this specific problem'
+        + ' using your actual workflow?&rdquo;</p>'
+        + rule('Do not turn the last two minutes into a product demo.'),
+    },
+  ];
+
+  el.innerHTML = `
+    <section class="sg-iv">
+      <div class="sg-iv__lead">
+        <p class="sg-iv__headline">Two minutes to set up, eleven to listen, two to say what Svarg is.</p>
+        <p class="sg-iv__note">The failure mode of this conversation is always the same one: the
+          seller starts explaining. The clock is there to stop that. Read the questions as written
+          &mdash; each one fills a row of the validation matrix on the ICP tab, and a question whose
+          purpose you have forgotten comes back as an opinion instead of an incident.</p>
+      </div>
+
+      <ol class="sg-iv__blocks">
+        ${BLOCKS.map((b) => `
+          <li class="sg-iv__block">
+            <div class="sg-iv__head">
+              <span class="sg-iv__clock">${b.from}&ndash;${b.to}<em>min</em></span>
+              <h3>${b.title}</h3>
+            </div>
+            <div class="sg-iv__body">${b.body}</div>
           </li>`).join('')}
       </ol>
     </section>`;

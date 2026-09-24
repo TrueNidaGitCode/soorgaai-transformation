@@ -2409,3 +2409,234 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   .sg-pb__econ td { padding-right: 0; }
   .sg-pb__econ tr { padding: 8px 0; }
 }
+
+/* ── The ICP interview tab ──────────────────────────────────────────────────
+   Its own block name throughout, like the playbook above — three components
+   in one stylesheet is where a shared name starts silently overriding the
+   other two. The clock is the structure here rather than a number, because
+   what this page enforces is the fifteen minutes. */
+
+.sg-iv { max-width: 860px; padding-block: 8px 48px; }
+
+.sg-iv__lead {
+  margin-bottom: 30px;
+  padding: 20px 24px;
+  background: rgba(92, 197, 167, 0.04);
+  border: 1px solid rgba(92, 197, 167, 0.22);
+  border-radius: 12px;
+}
+.sg-iv__headline {
+  margin: 0 0 8px;
+  font-size: 1.12rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.sg-iv__note { margin: 8px 0 0; font-size: 0.85rem; line-height: 1.55; color: rgba(255, 255, 255, 0.5); }
+.sg-iv__note b { color: rgba(255, 255, 255, 0.85); }
+
+.sg-iv__label {
+  margin: 20px 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── The five blocks, down a clock ─────────────────────────────────────────── */
+
+.sg-iv__blocks { margin: 0; padding: 0; list-style: none; }
+
+.sg-iv__block {
+  padding: 0 0 34px 78px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+.sg-iv__block:last-child { border-left-color: transparent; padding-bottom: 8px; }
+
+.sg-iv__head { margin-bottom: 14px; }
+.sg-iv__head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* The time sits on the rail. It is the one thing that must be readable at a
+   glance while somebody is talking. */
+.sg-iv__clock {
+  position: absolute;
+  left: -30px;
+  top: -2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  padding: 6px 0;
+  border-radius: 8px;
+  background: #14181c;
+  border: 1px solid rgba(92, 197, 167, 0.45);
+  font-size: 0.86rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #5CC5A7;
+}
+.sg-iv__clock em {
+  font-style: normal;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── What you say, and what you do ─────────────────────────────────────────── */
+
+/* Read out word for word. */
+.sg-iv__say {
+  margin: 0 0 10px;
+  padding: 13px 16px;
+  border-left: 2px solid #5CC5A7;
+  border-radius: 0 8px 8px 0;
+  background: rgba(92, 197, 167, 0.05);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* A blank to fill from the call, never a value. */
+.sg-iv__slot {
+  font-style: normal;
+  padding: 0 5px;
+  border-bottom: 1px dashed rgba(92, 197, 167, 0.6);
+  color: #5CC5A7;
+}
+
+/* A stage direction: what to do, not what to say. */
+.sg-iv__beat {
+  margin: 12px 0 0;
+  padding-left: 14px;
+  border-left: 2px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.88rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sg-iv__rule {
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: rgba(255, 190, 120, 0.9);
+}
+
+.sg-iv__sub {
+  margin: 20px 0 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── A question ───────────────────────────────────────────────────────────── */
+
+.sg-iv__q {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 13px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.sg-iv__qn {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  font-variant-numeric: tabular-nums;
+}
+.sg-iv__qbody { min-width: 0; flex: 1 1 auto; }
+
+.sg-iv__qtext {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Which row of the ICP tab's matrix the answer fills. One instrument. */
+.sg-iv__tests {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 9px 0 0;
+  font-size: 0.78rem;
+  color: #5CC5A7;
+}
+.sg-iv__tests span {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.32);
+}
+
+.sg-iv__q .sg-iv__note { margin-top: 9px; }
+
+/* The one question the whole interview turns on. Everything else is context
+   for it, so it is the only question that gets an edge. */
+.sg-iv__q.is-key {
+  border-color: rgba(92, 197, 167, 0.45);
+  background: rgba(92, 197, 167, 0.07);
+}
+.sg-iv__keytag {
+  margin: 0 0 6px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+}
+
+/* ── What late discovery is allowed to cost ────────────────────────────────── */
+
+.sg-iv__costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sg-iv__costs li {
+  padding: 5px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* ── The one closing question ──────────────────────────────────────────────── */
+
+.sg-iv__close {
+  margin: 0 0 14px;
+  padding: 16px 18px;
+  border: 1px solid rgba(92, 197, 167, 0.4);
+  border-radius: 10px;
+  background: rgba(92, 197, 167, 0.07);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+@media (max-width: 620px) {
+  .sg-iv__block { padding-left: 0; border-left: 0; }
+  .sg-iv__clock { position: static; flex-direction: row; gap: 6px; width: auto; padding: 5px 11px; margin-bottom: 8px; display: inline-flex; }
+  .sg-iv__head { display: flex; flex-direction: column; align-items: flex-start; }
+}

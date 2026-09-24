@@ -578,16 +578,31 @@
      * than restructure markup that every generated application inherits —
      * and risk every one of them — the findings board sits beside them and
      * this shows or hides the set.
+     *
+     * The byline is one of the set. It reads as the page's footer and is
+     * really the bottom of the chat pane, so left behind it sat under the
+     * findings board signing a screen it does not belong to.
+     *
+     * Whether the chat is showing is remembered, because the try-asking strip
+     * is filled in later by the generated app.js and its observer has to know
+     * which screen is open before it unhides anything.
      */
+    var chatVisible = false;
     function chatParts(visible) {
+      chatVisible = !!visible;
       ['ch-log', 'ch-form', 'ch-tryask'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.hidden = !visible;
       });
       var hint = document.querySelector('.ch-compose__hint');
       if (hint) hint.hidden = !visible;
+      // Scoped to the chat pane: the front door has a byline of its own, and
+      // an unscoped selector would reach whichever came first in the markup.
+      var foot = document.querySelector('.ch-main .ch-foot');
+      if (foot) foot.hidden = !visible;
     }
     window.svargChatParts = chatParts;
+    window.svargChatShowing = function () { return chatVisible; };
 
     function say(text) { note.textContent = text; note.hidden = !text; }
 
@@ -1157,7 +1172,15 @@
         sync = function () {
           var welcome = !!log.querySelector('.ch-welcome');
           main.classList.toggle('ch-main--welcome', welcome);
-          tryask.hidden = !welcome || !examples.children.length;
+          /*
+           * Which screen is open decides this before anything else.
+           *
+           * app.js fills #ch-examples after the page has already settled on
+           * Home, and the observer fired on that — so the three example
+           * questions and the byline under them came back and sat at the
+           * bottom of the findings board, on every refresh.
+           */
+          tryask.hidden = !window.svargChatShowing() || !welcome || !examples.children.length;
         };
         new MutationObserver(sync).observe(log, { childList: true, subtree: true });
         new MutationObserver(sync).observe(examples, { childList: true });

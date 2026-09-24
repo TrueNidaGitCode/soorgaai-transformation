@@ -120,12 +120,24 @@ describe('ten steps, and the order is the content', () => {
     'Convert the Niche into a Product Wedge',
   ];
 
-  it('has all ten', () => {
-    for (const t of TITLES) expect(view, t).toContain(t);
+  it('has all ten, by the names the audience table also uses', () => {
+    /*
+     * The titles moved to module scope when the target audience table started
+     * rendering the same ten steps as rows. Shared rather than copied: a step
+     * named slightly differently on the second screen is a second step.
+     */
+    const shared = /^const PLAYBOOK_STEPS = \[([\s\S]*?)\];/m.exec(js);
+    expect(shared, 'PLAYBOOK_STEPS').toBeTruthy();
+    for (const t of TITLES) expect(shared[1], t).toContain(t);
+    // And the playbook reads them from there rather than spelling its own.
+    expect(view).toContain('title: PLAYBOOK_STEPS[0]');
+    expect(view).toContain('title: PLAYBOOK_STEPS[9]');
   });
 
   it('keeps them in order', () => {
-    const at = TITLES.map((t) => view.indexOf(t));
+    const shared = /^const PLAYBOOK_STEPS = \[([\s\S]*?)\];/m.exec(js)[1];
+    const at = TITLES.map((t) => shared.indexOf(t));
+    expect(at.every((i) => i > -1)).toBe(true);
     expect(at).toEqual([...at].sort((a, b) => a - b));
   });
 

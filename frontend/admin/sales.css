@@ -2790,6 +2790,35 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 .sg-ta__cell.is-claim { color: rgba(255, 190, 120, 0.85); }
 .sg-ta__cell.is-empty { background: rgba(255, 255, 255, 0.015); }
 
+/* A step that is one row: its number and name sit in the row head, so the
+   ten steps read down the left edge whether a step has one question under it
+   or seven. */
+.sg-ta__stepn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(92, 197, 167, 0.45);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #5CC5A7;
+  vertical-align: 1px;
+}
+.sg-ta__grouprow th .sg-ta__stepn {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.5);
+}
+.sg-ta__steprow .sg-ta__rowhead { padding-top: 14px; padding-bottom: 14px; }
+/* A step nobody can answer per company. One value, the full width, rather
+   than five cells inviting somebody to fill them in. */
+.sg-ta__steprow.is-segment .sg-ta__cell { background: rgba(255, 255, 255, 0.02); }
+/* The questions under a multi-part step are indented, so a sub-question is
+   never mistaken for a step of its own. */
+.sg-ta__rowhead.is-sub { padding-left: 26px; font-weight: 500; color: rgba(255, 255, 255, 0.62); }
+
 /* ── The key ───────────────────────────────────────────────────────────────── */
 
 .sg-ta__key {

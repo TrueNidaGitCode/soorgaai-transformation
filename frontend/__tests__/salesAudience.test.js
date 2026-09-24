@@ -70,9 +70,18 @@ function literal(src, name) {
  * are the playbook's seven conditions, not a second wording of them.
  */
 const SHARED = literal(js, 'ACUTE_CONDITIONS');
+const TITLES = literal(js, 'PLAYBOOK_STEPS');
 function data(name) {
+  const scope = `const ACUTE_CONDITIONS = ${SHARED};
+    const PLAYBOOK_STEPS = ${TITLES};
+    const REPEATABILITY = ${literal(view, 'REPEATABILITY')};`;
   // eslint-disable-next-line no-new-func
-  return new Function(`const ACUTE_CONDITIONS = ${SHARED}; return ${literal(view, name)};`)();
+  return new Function(`${scope} return ${literal(view, name)};`)();
+}
+
+/** Every key a company is scored on: the sub-rows, plus the one-row steps. */
+function pointerKeys(steps) {
+  return steps.flatMap((s) => (s.rows ? s.rows.map(([k]) => k) : s.key ? [s.key] : []));
 }
 
 describe('the tab is reachable', () => {
@@ -114,9 +123,8 @@ describe('the tab is reachable', () => {
 
 describe('five companies, one of them interviewed', () => {
   const companies = data('COMPANIES');
-  const rows = data('ROWS');
-  const asks = data('ASKS');
-  const pointers = rows.filter(([k]) => k !== 'group').map(([k]) => k);
+  const steps = data('STEPS');
+  const pointers = pointerKeys(steps);
 
   it('has five columns and holds the segment they belong to', () => {
     expect(companies).toHaveLength(5);
@@ -139,28 +147,43 @@ describe('five companies, one of them interviewed', () => {
     }
   });
 
-  it('asks every company the same pointers, in two groups', () => {
-    // Seven that qualify the problem, six that say whether it is the same one.
-    expect(pointers).toHaveLength(13);
-    expect(rows.filter(([k]) => k === 'group')).toHaveLength(2);
-  });
-
-  it('takes its first seven rows from the playbook, rather than rewording them', () => {
+  it('carries all ten steps, numbered and named as the playbook names them', () => {
     /*
-     * They were written twice and drifted within a day: "Signals are spread
-     * across multiple systems" became "Signals in more than one place" here.
-     * A condition worded differently in two places is two conditions, and the
-     * entire value of this table is that five companies answered the same
-     * seven questions.
+     * It showed two of the ten, which reads as eight steps done rather than
+     * eight outstanding — the opposite of what the table is for. And the
+     * titles are the playbook's own: this was already got wrong once, when
+     * "Signals are spread across multiple systems" became "Signals in more
+     * than one place" here, and a step called something slightly different on
+     * the second screen is a second step.
      */
     // eslint-disable-next-line no-new-func
+    const titles = new Function(`return ${TITLES};`)();
+    expect(titles).toHaveLength(10);
+    expect(steps).toHaveLength(10);
+    expect(steps.map((s) => s.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(steps.map((s) => s.title)).toEqual(titles);
+  });
+
+  it('breaks step 1 into the playbook’s seven conditions, not a rewording', () => {
+    // eslint-disable-next-line no-new-func
     const acute = new Function(`return ${SHARED};`)();
-    const first = rows.slice(1, 1 + acute.length);
-    expect(first).toEqual(acute);
+    expect(steps[0].rows).toEqual(acute);
     expect(acute.map(([, label]) => label)).toContain('Signals are spread across multiple systems');
-    // And the groups say which step of the playbook each half is.
-    expect(rows[0][1]).toMatch(/Step 1/);
-    expect(rows[1 + acute.length][1]).toMatch(/Step 9/);
+    // Step 9 is the other one that breaks up: the six comparisons.
+    expect(steps[8].rows.map(([, l]) => l)).toContain('Same problem');
+  });
+
+  it('spans the columns for the steps no single company can answer', () => {
+    /*
+     * Embedding yourself in a market, choosing what to build and locking a
+     * wedge are our work, not a customer's answer. Five cells against them
+     * would invite somebody to fill in five things that do not exist.
+     */
+    const ours = steps.filter((s) => s.segment).map((s) => s.n);
+    expect(ours).toEqual([4, 6, 10]);
+    for (const s of steps) {
+      expect(Boolean(s.rows) + Boolean(s.key) + Boolean(s.segment), `step ${s.n}`).toBe(1);
+    }
   });
 
   it('records what Vesoma actually said', () => {
@@ -249,14 +272,19 @@ describe('every gap carries the question that closes it', () => {
     }
   });
 
-  it('covers every pointer that was asked and not established', () => {
-    // 'open' means the question was put and the answer was not there. One
-    // that nobody wrote a follow-up for is one that stays open forever.
-    const open = Object.keys(v).filter((k) => Array.isArray(v[k]) && v[k][0] === 'open');
+  it('covers every acute-problem condition that is still unproven', () => {
+    /*
+     * Scoped to step 1 deliberately. Those seven are things the CUSTOMER
+     * answers, so a gap in them is a question for the next conversation. The
+     * later steps are our own work — nobody closes "choose what to build" by
+     * asking a clinic about it.
+     */
+    // eslint-disable-next-line no-new-func
+    const acute = new Function(`return ${SHARED};`)().map(([k]) => k);
     const asked = new Set(asks.map(([k]) => k));
-    // simaction is the same question as action, one company along.
-    for (const k of open) {
-      expect(asked.has(k) || k === 'simaction', `no question closes ${k}`).toBe(true);
+    for (const k of acute) {
+      if (v[k][0] === 'yes') continue;
+      expect(asked.has(k), `no question closes ${k}`).toBe(true);
     }
   });
 

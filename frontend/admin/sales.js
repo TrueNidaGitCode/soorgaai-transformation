@@ -2585,6 +2585,27 @@ function renderIcpView() {
  * that is never written down is one nobody can be behind on.
  */
 /**
+ * The ten steps, by name.
+ *
+ * Shared for the same reason the seven conditions are: the playbook renders
+ * them as its steps and the target audience table renders them as its rows,
+ * and a step called something slightly different on the second screen is a
+ * second step. The order is the order they are run in.
+ */
+const PLAYBOOK_STEPS = [
+  'Find the Acute Problem',
+  'Find the Acute ICP',
+  'Separate Acute ICP from Vanity Users',
+  'Embed Yourself in the ICP',
+  'Run Reverse Problem Sessions',
+  'Build the Smallest Possible Solution',
+  'Run Design-Partner Pilots',
+  'Prove the Economic Value',
+  'Validate Repeatability',
+  'Convert the Niche into a Product Wedge',
+];
+
+/**
  * Step 1 of the playbook: what makes a problem acute.
  *
  * Module-level and shared, because two screens ask these questions — the
@@ -2691,7 +2712,7 @@ function renderPlaybook() {
 
   const STEPS = [
     {
-      title: 'Find the Acute Problem',
+      title: PLAYBOOK_STEPS[0],
       aim: 'Identify the problem that hurts enough to buy.',
       target: '5&ndash;7 problem hypotheses',
       body: label('Look for problems where') + list(ACUTE, 'check')
@@ -2700,7 +2721,7 @@ function renderPlaybook() {
            ends with everybody agreeing it was interesting.</p>`,
     },
     {
-      title: 'Find the Acute ICP',
+      title: PLAYBOOK_STEPS[1],
       aim: 'Identify who experiences that problem most intensely.',
       target: '30&ndash;40 interviews',
       body: label('For each problem, follow one line')
@@ -2712,7 +2733,7 @@ function renderPlaybook() {
             + 'currently detected by <b>Z person</b> using <b>A, B and C systems</b>.', true),
     },
     {
-      title: 'Separate Acute ICP from Vanity Users',
+      title: PLAYBOOK_STEPS[2],
       aim: 'Sort every interview into one of three buckets, before the roadmap does it for you.',
       body: '<div class="sg-pb__buckets">'
         + BUCKETS.map(([dot, name, tone, points]) => `
@@ -2726,7 +2747,7 @@ function renderPlaybook() {
            the dangerous ones.</p>`,
     },
     {
-      title: 'Embed Yourself in the ICP',
+      title: PLAYBOOK_STEPS[3],
       aim: 'Understand the problem in the customer&rsquo;s own language.',
       body: label('Find where they already spend time') + list(WHERE)
         + '<p class="sg-pb__rule">Do not sell initially.</p>'
@@ -2736,7 +2757,7 @@ function renderPlaybook() {
            words they use are what the product has to say back to them.</p>`,
     },
     {
-      title: 'Run Reverse Problem Sessions',
+      title: PLAYBOOK_STEPS[4],
       aim: 'Watch how the problem is found today, before showing anything.',
       body: label('Do not open with a demonstration. Ask')
         + say('Show me how you currently discover this problem.', true)
@@ -2748,7 +2769,7 @@ function renderPlaybook() {
            </div>`,
     },
     {
-      title: 'Build the Smallest Possible Solution',
+      title: PLAYBOOK_STEPS[5],
       aim: 'One problem, one workflow, one measurable outcome.',
       body: '<p class="sg-pb__rule">Do not build the whole platform for the first ICP.</p>'
         + seq(['Signals', 'Detect emerging problem', 'Explain why', 'Recommend action',
@@ -2759,7 +2780,7 @@ function renderPlaybook() {
            and they are not product; calling them product is how a platform becomes an agency.</p>`,
     },
     {
-      title: 'Run Design-Partner Pilots',
+      title: PLAYBOOK_STEPS[6],
       aim: 'The same problem, at several companies, against real data.',
       target: '3&ndash;5 companies',
       body: label('For each') + list(PILOT)
@@ -2769,7 +2790,7 @@ function renderPlaybook() {
         + say('Svarg found something the customer would otherwise have discovered later.', true),
     },
     {
-      title: 'Prove the Economic Value',
+      title: PLAYBOOK_STEPS[7],
       aim: 'Capture the before and the after, in the customer&rsquo;s own numbers.',
       body: `<table class="sg-pb__econ">
            <thead><tr><th>Before Svarg</th><th>With Svarg</th></tr></thead>
@@ -2780,7 +2801,7 @@ function renderPlaybook() {
            &mdash; the arithmetic of one problem found sooner.</p>`,
     },
     {
-      title: 'Validate Repeatability',
+      title: PLAYBOOK_STEPS[8],
       aim: 'The same problem at company after company. This is the gate.',
       body: `<div class="sg-pb__repeat">
            ${['A', 'B', 'C', 'D', 'E'].map((c) => `
@@ -2791,7 +2812,7 @@ function renderPlaybook() {
            there are customers; after it there is a market.</p>`,
     },
     {
-      title: 'Convert the Niche into a Product Wedge',
+      title: PLAYBOOK_STEPS[9],
       aim: 'One sentence, specific enough to be wrong.',
       body: `<p class="sg-pb__wedge">Svarg helps <em>specific customer</em> detect
            <em>specific problem</em> before <em>specific costly outcome</em>.</p>`
@@ -3040,16 +3061,47 @@ function renderAudience() {
    * the same company that passes on that one. The six below are step 9, which
    * is the gate — the same problem, company after company.
    */
-  const ROWS = [
-    ['group', 'Step 1 &mdash; Find the acute problem'],
-    ...ACUTE_CONDITIONS,
-    ['group', 'Step 9 &mdash; Validate repeatability'],
+  const REPEATABILITY = [
     ['same', 'Same problem'],
     ['buyer', 'Same buyer'],
     ['workflow', 'Similar workflow'],
     ['simsignals', 'Similar signals'],
     ['simaction', 'Similar action'],
     ['roi', 'Similar ROI'],
+  ];
+
+  /**
+   * All ten steps, because a table showing two of them looks like eight are
+   * done rather than eight are outstanding.
+   *
+   * Three shapes, and the shape says who owes the answer:
+   *
+   *   rows     — the step breaks into several questions, one row each, asked
+   *              of every company (steps 1 and 9).
+   *   key      — one row, asked of every company.
+   *   segment  — one row spanning the companies, because the step is about
+   *              the segment or about us, not about any one of them. Embedding
+   *              yourself in a market, choosing what to build and locking a
+   *              wedge are our work; no column can answer them.
+   */
+  const STEPS = [
+    { n: 1, title: PLAYBOOK_STEPS[0], rows: ACUTE_CONDITIONS },
+    { n: 2, title: PLAYBOOK_STEPS[1], key: 'icpline' },
+    { n: 3, title: PLAYBOOK_STEPS[2], key: 'bucket' },
+    { n: 4, title: PLAYBOOK_STEPS[3],
+      segment: ['', 'Not started. Four more interviews are worth more right now than hours in '
+        + 'forums &mdash; but the words they use for this are still ours, not theirs'] },
+    { n: 5, title: PLAYBOOK_STEPS[4], key: 'reverse' },
+    { n: 6, title: PLAYBOOK_STEPS[5],
+      segment: ['open', 'Three candidates and none chosen: the over-used package, the '
+        + 'booking-against-treatment mismatch, the treatment reminder. Pick one, or it becomes a '
+        + 'platform for one customer'] },
+    { n: 7, title: PLAYBOOK_STEPS[6], key: 'pilot' },
+    { n: 8, title: PLAYBOOK_STEPS[7], key: 'economics' },
+    { n: 9, title: PLAYBOOK_STEPS[8], rows: REPEATABILITY },
+    { n: 10, title: PLAYBOOK_STEPS[9],
+      segment: ['open', 'Drafted below. It locks when more than one column is full, and not '
+        + 'before'] },
   ];
 
   /*
@@ -3078,6 +3130,21 @@ function renderAudience() {
         + 'WhatsApp and the phone'],
       simaction: ['yes', 'Correct the record by hand'],
       roi: ['claim', '&#8377;20,000+ a month, unverified'],
+
+      // Step 2 — the one line the playbook asks for, in the order it asks:
+      // who, what workflow, what problem, why too late, cost, action.
+      icpline: ['yes', 'HOD, physiotherapy clinic &middot; booking &rarr; treatment &rarr; front '
+        + 'desk &middot; the record does not match what happened &middot; seen only afterwards '
+        + '&middot; &#8377;20,000+ claimed &middot; corrected by hand'],
+      // Step 3 — and the reason it is Acute rather than Vanity is what he
+      // opened with, not what he said about AI.
+      bucket: ['yes', '&#128293; Acute. He opened on revenue loss, not on AI'],
+      reverse: ['open', 'The workflow is named as far as the front desk. Where it actually breaks '
+        + 'has not been watched'],
+      pilot: ['', 'Not agreed. The ask is thirty days of usage data and a look at what it finds '
+        + '&mdash; not a project'],
+      economics: ['claim', '&#8377;20,000+ a month &rarr; &#8377;2.4L a year, if the calculation '
+        + 'holds. Nobody has shown it yet'],
     },
     { id: 'B', name: '', met: '', when: 'Not yet' },
     { id: 'C', name: '', met: '', when: 'Not yet' },
@@ -3102,13 +3169,42 @@ function renderAudience() {
     ['roi', 'Once the record is corrected, does the money actually come back &mdash; or has it gone?'],
   ];
 
-  const GLYPH = { yes: '&#10003;', open: '?', claim: '!' };
+  const GLYPH = { yes: '&#10003;', open: '?', claim: '!', '': '&middot;' };
 
-  const cell = (c, key) => {
-    const v = c[key];
-    if (!v) return '<td class="sg-ta__cell is-empty"><span class="sg-ta__mark">&middot;</span></td>';
-    return `<td class="sg-ta__cell is-${v[0]}">
+  /** One value, in whatever width it is given. */
+  const value = (v, span) => {
+    const wide = span > 1 ? ` colspan="${span}"` : '';
+    if (!v) return `<td class="sg-ta__cell is-empty"${wide}><span class="sg-ta__mark">&middot;</span></td>`;
+    return `<td class="sg-ta__cell is-${v[0] || 'empty'}"${wide}>
       <span class="sg-ta__mark">${GLYPH[v[0]] || ''}</span><span>${v[1]}</span></td>`;
+  };
+
+  const cell = (c, key) => value(c[key], 1);
+
+  /** The step's number and name, as a row heading. */
+  const stepHead = (s) => `<span class="sg-ta__stepn">${s.n}</span>${s.title}`;
+
+  /*
+   * A step becomes one row, several rows, or one row spanning the companies —
+   * see STEPS. The last of those is not a formatting choice: a step nobody can
+   * answer per company should not have five cells inviting somebody to try.
+   */
+  const stepRows = (s) => {
+    if (s.rows) {
+      return `<tr class="sg-ta__grouprow">
+          <th colspan="${COMPANIES.length + 1}">${stepHead(s)}</th></tr>`
+        + s.rows.map(([key, label]) => `<tr>
+            <th class="sg-ta__rowhead is-sub">${label}</th>
+            ${COMPANIES.map((c) => cell(c, key)).join('')}</tr>`).join('');
+    }
+    if (s.segment) {
+      return `<tr class="sg-ta__steprow is-segment">
+          <th class="sg-ta__rowhead">${stepHead(s)}</th>
+          ${value(s.segment, COMPANIES.length)}</tr>`;
+    }
+    return `<tr class="sg-ta__steprow">
+        <th class="sg-ta__rowhead">${stepHead(s)}</th>
+        ${COMPANIES.map((c) => cell(c, s.key)).join('')}</tr>`;
   };
 
   el.innerHTML = `
@@ -3136,12 +3232,7 @@ function renderAudience() {
             </tr>
           </thead>
           <tbody>
-            ${ROWS.map(([key, label]) => (key === 'group'
-              ? `<tr class="sg-ta__grouprow"><th colspan="${COMPANIES.length + 1}">${label}</th></tr>`
-              : `<tr>
-                   <th class="sg-ta__rowhead">${label}</th>
-                   ${COMPANIES.map((c) => cell(c, key)).join('')}
-                 </tr>`)).join('')}
+            ${STEPS.map(stepRows).join('')}
           </tbody>
         </table>
       </div>
@@ -3150,7 +3241,7 @@ function renderAudience() {
         <span class="is-yes"><i>&#10003;</i>evidenced</span>
         <span class="is-open"><i>?</i>asked, not established</span>
         <span class="is-claim"><i>!</i>stated, not yet arithmetic</span>
-        <span class="is-empty"><i>&middot;</i>not asked</span>
+        <span class="is-empty"><i>&middot;</i>not asked, or not done yet</span>
       </p>
 
       <p class="sg-ta__label">What the next interview has to close</p>

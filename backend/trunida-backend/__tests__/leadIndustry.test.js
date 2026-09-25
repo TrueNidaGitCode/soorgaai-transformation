@@ -173,3 +173,53 @@ describe('the location select does not destroy what it does not recognise', () =
     expect(ui).not.toContain("${['India', 'US'].map(o =>");
   });
 });
+
+/*
+ * ── The half that was missing ──────────────────────────────────────────────
+ *
+ * Everything above is about the field being ASKED for and STORED. It was, and
+ * correctly. It was never read back.
+ *
+ * The funnel builds its own row for each lead rather than passing the document
+ * through, and industry was not among the fields it copied. So the industry
+ * cell rendered empty for every lead that had one, the edit form opened blank
+ * over a saved value — one Save away from erasing it — and the industry
+ * grouping put all hundred and two rows in "Not set". Four clinics were added
+ * and the Clinics & Wellness count stayed at zero.
+ *
+ * A field written and not returned looks, from the screen, exactly like a
+ * field nobody filled in.
+ */
+describe('the industry survives the round trip to the screen', () => {
+  const svc = read('../services/salesSignalsService.js');
+
+  /** The outreach row builder: the object the funnel actually renders. */
+  function outreachRow() {
+    const at = svc.indexOf('const outreach = leads');
+    expect(at, 'the outreach builder').toBeGreaterThan(-1);
+    return svc.slice(at, svc.indexOf('.sort(byRecency)', at));
+  }
+
+  it('is copied onto the row the funnel renders', () => {
+    expect(outreachRow()).toMatch(/industry: l\.industry \|\| '',/);
+  });
+
+  it('defaults to a string, like every other optional field on the row', () => {
+    // The row's own rule, learned when an undefined email reached .padEnd and
+    // was reported to the operator as "could not read the sales funnel".
+    expect(outreachRow()).not.toMatch(/industry: l\.industry,/);
+  });
+
+  it('is the field the row already renders and edits', () => {
+    const ui = read('../../../frontend/admin/sales.js');
+    // Both halves were already there, reading a value that never arrived.
+    expect(ui).toContain('function industryCell(r)');
+    expect(ui).toMatch(/value="\$\{esc\(r\.industry \|\| ''\)\}"/);
+  });
+
+  it('is what the funnel groups by, so an empty read reads as Not set', () => {
+    const ui = read('../../../frontend/admin/sales.js');
+    expect(ui).toContain('function segmentOf(row)');
+    expect(ui).toMatch(/if \(!text\) return 'unset';/);
+  });
+});

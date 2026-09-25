@@ -243,6 +243,19 @@ export async function collectSignals() {
       // A walk-in has no contact until the visit happens, which is allowed and
       // has to be visible — see leadQualitySignals.
       signals: leadSignals(l),
+      /**
+       * What business they are in.
+       *
+       * Stored on the lead, editable in the row, and never read back until
+       * now — so the industry cell rendered empty for every lead that had
+       * one, the edit form opened blank over a saved value, and the funnel's
+       * industry grouping put all hundred and two rows in "Not set". Four
+       * clinics were added and the Clinics & Wellness count stayed at zero.
+       *
+       * A field that is written and not returned looks, from the screen,
+       * exactly like a field nobody filled in.
+       */
+      industry: l.industry || '',
       via: l.via || '',
       nextStep: l.nextStep || '',
       nextStepAt: l.nextStepAt || null,

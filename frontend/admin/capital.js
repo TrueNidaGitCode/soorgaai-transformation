@@ -1,337 +1,426 @@
 /**
  * Svarg — Capital
  *
- * What to say to an investor, an accelerator or an incubator, and the numbers
- * behind it.
+ * The investor deck, as a page, with the proof slide reading from the live
+ * databases instead of from whatever was true the day it was typed.
  *
- * ── The rule this page holds itself to ─────────────────────────────────────
+ * ── Why the numbers are fetched ────────────────────────────────────────────
  *
- * It is read during a live conversation, which makes it the second screen in
- * this admin whose mistakes get repeated out loud — and the one where a
- * mistake is most expensive, because the person listening is deciding whether
- * to believe everything else.
+ * Every figure here was hand-typed once, from a query run once. That is
+ * honest for a day and a lie by the end of the month: watchers keep running,
+ * findings keep being raised and resolved, and a deck that says 285 when the
+ * database says 400 has stopped being evidence and become decoration. So the
+ * page asks — GET /api/admin/capital/proof — and prints what comes back, with
+ * the timestamp it was measured at.
  *
- * So the same discipline as the ICP tab, applied harder:
+ * ── What the deck claims, and what this admin copy adds ───────────────────
  *
- *   - Every verb carries whether it is BUILT. Two of the five are not, and
- *     they say so on the screen rather than in somebody's memory.
- *   - Every number on Proof was measured, on a date that is printed beside
- *     it. Nothing is annualised, projected, or rounded up.
- *   - The numbers that look bad are on it. One finding has ever been opened,
- *     against two hundred and eighty-five raised. An investor who finds that
- *     out later finds out that it was hidden, which costs more than the fact.
- *
- * Client-side role guard only; there is no API behind this page.
+ * The slides are the deck's own words. One thing is added that the deck
+ * cannot carry, because this copy is read by the people building the thing
+ * rather than by an investor: where a claim on a slide is ahead of what is
+ * built, or ahead of what has been validated, it is marked. Two of the five
+ * verbs on the solution slide are not built the way the slide implies, and
+ * the beachhead on slide 05 is not the industry the sales pages are actually
+ * interviewing. Both are said here rather than discovered in a room.
  */
 
-const MEASURED = '25 September 2026';
+const API_BASE = window.CONFIG.API_BASE;
 
-/* ── The story ──────────────────────────────────────────────────────────── */
+/** Filled by the one request this page makes. */
+let proof = null;
+let proofError = '';
 
-/**
- * The five things the product claims to do, and what is actually behind each.
+const esc = (s) => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+const num = (n) => (typeof n === 'number' ? n.toLocaleString('en-GB') : '—');
+const money = (n) => (typeof n === 'number' ? '$' + (n < 1 ? n.toFixed(2) : n.toFixed(0)) : '—');
+
+/* ── The deck ───────────────────────────────────────────────────────────────
  *
- * 'yes' runs today and can be demonstrated · 'part' exists but is thinner than
- * the word suggests · 'no' is not built. The state is the reason this list is
- * on the page: a founder who knows which two are missing demonstrates the
- * three that work and sells the rest as roadmap, with a date.
+ * Eleven slides, in the deck's order and its words. Each renders itself; the
+ * proof slide is the only one that waits for data.
  */
-const SPINE = [
-  ['Find', 'yes',
-    'Watchers run on a schedule and evaluate their condition in code. Twenty-nine of them ship with every application, chosen against the customer’s own words.'],
-  ['Explain', 'part',
-    'A finding carries the records behind it and names the dataset and the rule. What it does not yet carry is why it matters to that business.'],
-  ['Prioritise', 'no',
-    'The morning digest lists findings in the order the watchers ran. Nothing ranks them, so "which three first?" is still the reader’s job.'],
-  ['Act', 'yes',
-    'The follow-up is drafted and never sent. The application holds no mail credentials and no provider key by design — a person reads the draft and sends it themselves.'],
-  ['Verify', 'yes',
-    'Every run diffs against the last: new, still true, resolved. A hundred and eighteen findings have closed themselves because the rows behind them changed.'],
-];
 
-/** How an answer is produced, which is the answer to "isn't this a chatbot?" */
-const PIPELINE = [
-  ['Understand', 'model', 'The question becomes a plan: which dataset, which columns, which filter.'],
-  ['Execute', 'code', 'The plan runs against the records. No model sees the rows at this point.'],
-  ['Validate', 'code', 'The condition is evaluated in code. A finding the model merely asserted is discarded.'],
-  ['Answer', 'model', 'The model writes the sentence around a result it did not choose.'],
-];
-
-const SHAPE = [
-  ['One container and one database per customer',
-    'A delivered application is the customer’s. Their records never enter Svarg, which is also why the demonstration runs on simulated data.'],
-  ['No provider key inside it',
-    'Every model call crosses a gateway Svarg owns, metered and capped per deployment. A stolen container yields no credentials.'],
-  ['Sold as coverage, not tokens',
-    'A plan buys how much of the business is watched — business areas, connected sources, how often. Watchers are unlimited inside it, and model usage is never a customer-facing meter.'],
-];
-
-/**
- * The same product behaviour, in two industries that share nothing else.
- *
- * This is the whole bet stated as a comparison: if the problem travels, the
- * problem is the asset and the industry never mattered.
- */
-const TRAVELS = [
-  ['A physiotherapy clinic',
-    'A patient is treated and left marked "No Show". The session is delivered and never counted.',
-    'Interviewed. Every one of the seven acute conditions evidenced.'],
-  ['An automotive supplier',
-    'The same shape, untested: work done and never recorded against the job, the part or the claim.',
-    'Nobody spoken to yet. This is the next vertical, and it is empty on purpose.'],
-];
-
-function renderStory() {
-  const el = document.getElementById('cp-story');
-  if (!el) return;
-  el.innerHTML = `
-    <section class="cp">
-      <div class="cp-lead">
-        <p class="cp-lead__claim">Work falls through the cracks between systems and people.</p>
-        <p class="cp-lead__body">The signals that something is going wrong already exist — in a
-          booking system, a spreadsheet, a WhatsApp thread, an ERP. Nobody connects them
-          continuously, so the problem is found after it has happened. Svarg is the thing that
-          keeps looking.</p>
-      </div>
-
-      <p class="cp-label">What it does, and what is actually built</p>
-      <ol class="cp-spine">
-        ${SPINE.map(([verb, state, note]) => `
-          <li class="cp-spine__i is-${state}">
-            <p class="cp-spine__v">${verb}<span>${
-              state === 'yes' ? 'built' : state === 'part' ? 'partly' : 'not yet'}</span></p>
-            <p class="cp-note">${note}</p>
-          </li>`).join('')}
-      </ol>
-      <p class="cp-note cp-note--wide"><b>One of the five is not built and one is thin.</b> They are
-        on this page so that the person saying it knows which three to demonstrate. An investor who
-        discovers the gap later discovers that it was hidden, and that costs more than the gap.</p>
-
-      <p class="cp-label">Why it is not a chatbot over a database</p>
-      <ol class="cp-pipe">
-        ${PIPELINE.map(([step, by, what]) => `
-          <li class="cp-pipe__i is-${by}">
-            <p class="cp-pipe__s">${step}<span>${by}</span></p>
-            <p class="cp-note">${what}</p>
-          </li>`).join('')}
-      </ol>
-      <p class="cp-note cp-note--wide">Code decides; the model narrates. It is a checkable claim
-        rather than a positioning one: a finding whose condition the model judged rather than
-        evaluated is thrown away before anybody sees it.</p>
-
-      <p class="cp-label">The shape of the business</p>
-      <dl class="cp-shape">
-        ${SHAPE.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}
-      </dl>
-
-      <p class="cp-label">The bet, stated so it can lose</p>
-      <div class="cp-travel">
-        ${TRAVELS.map(([who, what, state]) => `
-          <div class="cp-travel__c">
-            <h3>${who}</h3>
-            <p>${what}</p>
-            <p class="cp-note">${state}</p>
-          </div>`).join('')}
-      </div>
-      <p class="cp-note cp-note--wide">If the same problem appears in both, the problem is the asset
-        and the industry never mattered. If it does not, this is a clinic product and the plan was
-        wrong — which is a thing worth finding out in ten interviews rather than in two years.</p>
+function slide(n, kicker, body, opts = {}) {
+  return `
+    <section class="ck-slide${opts.cover ? ' ck-slide--cover' : ''}">
+      <header class="ck-slide__head">
+        <span class="ck-slide__n">${n}</span>
+        <span class="ck-slide__k">${kicker}</span>
+      </header>
+      ${body}
     </section>`;
 }
 
-/* ── The proof ──────────────────────────────────────────────────────────── */
+/** A claim that is ahead of what exists. Admin copy only. */
+function flag(text) {
+  return `<p class="ck-flag"><span>Not on the investor copy</span>${text}</p>`;
+}
+
+function cover() {
+  return slide('SVARGAI &middot; PRE-SEED', '2026', `
+    <div class="ck-cover">
+      <p class="ck-logo">svarg</p>
+      <h1 class="ck-h1">AI agents that find problems<br>before they become costly</h1>
+      <p class="ck-lede"><em>Multiple AI agents.</em> / <em>Your existing data.</em> / <em>Earlier action.</em></p>
+      <p class="ck-sub">Detect emerging problems across your existing systems &mdash; before they
+        turn into delays, leakage or lost revenue.</p>
+    </div>`, { cover: true });
+}
+
+function problem() {
+  const chips = ['Schedules', 'Tasks', 'Resources', 'Dependencies', 'Approvals', 'Changes', 'Execution updates'];
+  const costs = [['Schedule delays', 'Idle resources'], ['Rework', 'Overtime'], ['Missed milestones', 'Cost overruns']];
+  return slide('01', 'The problem', `
+    <h2 class="ck-h2">Important problems are discovered too late</h2>
+    <ol class="ck-chain">
+      <li>Small signals</li><li>Emerging problem</li><li>Late discovery</li>
+      <li class="is-bad">Costly outcome</li>
+    </ol>
+    <div class="ck-two">
+      <div>
+        <p class="ck-strong">Engineering teams already have the data.</p>
+        <p class="ck-chips">${chips.map((c) => `<span>${c}</span>`).join('')}</p>
+        <p class="ck-body">But these signals live across different systems and workflows. A project
+          can still look &ldquo;on track&rdquo; while the signals of a future delay are already there.</p>
+        <p class="ck-quote"><b>The problem isn&rsquo;t lack of data.</b><br>
+          <em>It&rsquo;s that nobody continuously connects the signals.</em></p>
+      </div>
+      <div class="ck-panel">
+        <p class="ck-eyebrow">For engineering teams, this can mean</p>
+        <table class="ck-grid2"><tbody>
+          ${costs.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('')}
+        </tbody></table>
+        <p class="ck-accent">The earlier the problem is detected, the more options the team has to act.</p>
+      </div>
+    </div>`);
+}
 
 /**
- * Measured, not estimated.
+ * The five verbs, with what is behind each.
  *
- * Every figure here came from a query against the live databases on the date
- * at the top. Where a number is smaller than somebody would like, it is still
- * the number.
+ * `built` is the admin annotation: the deck says all five, and three of them
+ * run today. Act drafts and stops — the application holds no mail credentials
+ * — and Learn is not built at all.
  */
-const PROOF = [
-  ['Built and running', [
-    ['15', 'blueprints completed', 'A customer described their business and got a specification back.'],
-    ['9', 'applications generated', 'Each one its own container and its own database.'],
-    ['5', 'deployed and reachable', 'Live URLs, answering today.'],
-    ['4', 'holding real customer records', 'Of eight tenant databases. The rest are running on the sample data they were built with.'],
-  ]],
-  ['What the product did on its own', [
-    ['65', 'watchers running', 'Started from the customer’s own words, not configured by hand.'],
-    ['285', 'findings raised', 'Each one a condition evaluated in code against real rows.'],
-    ['118', 'findings closed themselves', 'The rows behind them changed and the next run said so.'],
-    ['30', 'resolutions reported back', 'Most recent: today.'],
-  ]],
-  ['What customers did', [
-    ['18', 'questions asked', 'Across every delivered application, ever.'],
-    ['1', 'finding opened', 'Against two hundred and eighty-five raised. This is the number that matters most on this page.'],
-    ['2', 'applications opened this week', 'Of five that are running.'],
-    ['1', 'customer interviewed to the full script', 'Fifteen minutes, every question asked in order.'],
-  ]],
-  ['What it costs to run', [
-    ['$0.60', 'model spend, every application, to date', '569 requests across all of them.'],
-    ['$0.07', 'spend on the busiest single application', 'Over nine days, against a $2 monthly cap.'],
-    ['$2', 'hard cap per application per month', 'Enforced at the gateway; the application cannot exceed it.'],
-  ]],
-  ['The pipeline', [
-    ['106', 'companies in the funnel', 'Typed in by hand, one row each.'],
-    ['62', 'of them in one industry', 'Electronics and industrial — from a trade show, not from the segment now being sold to.'],
-    ['4', 'in the segment now being sold to', 'Added this week.'],
-  ]],
+const STEPS = [
+  ['01', 'Observe', 'Connect existing systems and data.', 'yes'],
+  ['02', 'Detect', 'Identify unusual changes, patterns and combinations of signals.', 'yes'],
+  ['03', 'Understand', 'Determine what problem may be emerging and why.', 'part'],
+  ['04', 'Act', 'Bring it to the person who can intervene.', 'part'],
+  ['05', 'Learn', 'Measure the outcome and improve detection.', 'no'],
 ];
 
-/**
- * What the numbers above do NOT support.
- *
- * On the page rather than in a footnote, because every one of these is
- * something a careful person would work out for themselves in the second
- * meeting.
- */
-const CAVEATS = [
-  ['The build cost is not measured',
-    'The usage ledger holds nine rows and $2.05 for thirty-six blueprints. One model call per blueprint is not plausible, so most of what generation spends is not attributed to anybody. The $0.60 above is what delivered applications spend, which is measured, and is a different number.'],
-  ['Nobody is paying yet',
-    'There is no revenue. Plans, entitlements and per-deployment caps exist in code; no card has been charged.'],
-  ['One finding opened is the honest reading',
-    'It counts the signal a delivered application sends when somebody opens a finding. The application does not store an opened flag, so this is the only record — and it says what it says.'],
-  ['One interview is not an ICP',
-    'The target audience table has one full column out of five. Four empty columns are the current state of the evidence, not a gap in the reporting.'],
-];
+function solution() {
+  const LABEL = { yes: 'runs today', part: 'partly built', no: 'not built' };
+  return slide('02', 'The solution', `
+    <h2 class="ck-h2">SvargAI continuously looks for what is starting to go wrong</h2>
+    <p class="ck-body ck-body--wide">SvargAI runs multiple AI agents on top of the data and systems
+      you already use. <b>Each agent watches a different set of signals.</b></p>
+    <ol class="ck-steps">
+      ${STEPS.map(([n, name, what, state], i) => `
+        <li class="ck-step is-${state}${i === STEPS.length - 1 ? ' is-last' : ''}">
+          <p class="ck-step__n">${n}</p>
+          <p class="ck-step__name">${name}</p>
+          <p class="ck-step__what">${what}</p>
+          <p class="ck-step__state">${LABEL[state]}</p>
+        </li>`).join('')}
+    </ol>
+    <p class="ck-accent">&#8635; Every outcome feeds back into detection.</p>
+    ${flag('Three of the five run today. <b>Act</b> writes the follow-up and stops &mdash; a person '
+      + 'sends it, because the application holds no mail credentials by design. <b>Learn</b> is not '
+      + 'built: findings are diffed into new, still true and resolved, but nothing changes its own '
+      + 'behaviour from that yet. Demonstrate the three; sell the other two with a date.')}`);
+}
 
-function renderProof() {
-  const el = document.getElementById('cp-proof');
-  if (!el) return;
-  el.innerHTML = `
-    <section class="cp">
-      <p class="cp-measured">Every figure measured <b>${MEASURED}</b>, against the live databases.
-        Nothing annualised, projected or rounded.</p>
+function practice() {
+  const agents = [
+    ['Schedule Agent', 'Tracks planned vs actual progress'],
+    ['Dependency Agent', 'Identifies downstream impact'],
+    ['Resource Agent', 'Watches resource availability'],
+    ['Change Agent', 'Tracks changes affecting delivery'],
+    ['Execution Agent', 'Looks at actual project activity'],
+  ];
+  return slide('03', 'The solution in practice', `
+    <h2 class="ck-h2">Example: engineering schedule</h2>
+    <div class="ck-two">
+      <table class="ck-rows"><tbody>
+        ${agents.map(([a, b]) => `<tr><th>${a}</th><td>${b}</td></tr>`).join('')}
+      </tbody></table>
+      <div class="ck-panel ck-panel--lit">
+        <p class="ck-eyebrow">Together</p>
+        <p class="ck-said">&ldquo;The project is currently on schedule, but multiple signals indicate
+          that the electrical installation milestone is at risk.&rdquo;</p>
+        <p class="ck-body">Why &rarr; Impact &rarr; Who needs to act &rarr; What can be done</p>
+      </div>
+    </div>
+    ${flag('The five agents named here are an illustration, not a shipped set. What ships is a '
+      + 'catalogue of twenty-nine watchers chosen against the customer&rsquo;s own words, and none of '
+      + 'them reads a project schedule yet &mdash; the connectors today are a database, file uploads, '
+      + 'Confluence, Jira and inbound WhatsApp.')}`);
+}
 
-      ${PROOF.map(([group, rows]) => `
-        <p class="cp-label">${group}</p>
-        <div class="cp-figs">
-          ${rows.map(([n, what, note]) => `
-            <div class="cp-fig">
-              <p class="cp-fig__n">${n}</p>
-              <p class="cp-fig__w">${what}</p>
-              <p class="cp-note">${note}</p>
-            </div>`).join('')}
+function tools() {
+  const used = ['Project planning', 'Scheduling', 'Resource management', 'Documents',
+    'Communication', 'Execution', 'Reporting'];
+  return slide('04', 'Why existing tools aren’t enough', `
+    <h2 class="ck-h2">The data already exists. The problem is connecting it.</h2>
+    <div class="ck-two">
+      <div>
+        <p class="ck-eyebrow">Engineering teams already use</p>
+        <ul class="ck-list">${used.map((u) => `<li>${u}</li>`).join('')}</ul>
+      </div>
+      <div>
+        <div class="ck-ask"><span>Existing systems answer</span><b>&ldquo;What is happening?&rdquo;</b></div>
+        <div class="ck-ask"><span>Dashboards answer</span><b>&ldquo;What happened?&rdquo;</b></div>
+        <div class="ck-ask is-lit"><span>SvargAI is designed to answer</span>
+          <b>&ldquo;What is starting to go wrong &mdash; and who needs to know now?&rdquo;</b></div>
+        <p class="ck-body">Existing systems remain the system of record.
+          <b>SvargAI becomes the intelligence layer across them.</b></p>
+      </div>
+    </div>`);
+}
+
+function icp() {
+  const users = [
+    ['Project Manager', 'Owns schedule and delivery'],
+    ['Engineering Manager', 'Owns technical execution'],
+    ['Program Manager', 'Owns multiple dependencies / workstreams'],
+    ['Project Controls / PMO', 'Monitors schedule, cost and progress'],
+  ];
+  const validate = ['How often does this happen?', 'What signals existed beforehand?',
+    'Where do those signals live?', 'Who currently connects them?', 'How much does the delay cost?',
+    'What action could have been taken earlier?'];
+  return slide('05', 'Initial ICP — beachhead', `
+    <h2 class="ck-h2">Start with engineering teams where schedule risk is expensive</h2>
+    <div class="ck-two">
+      <div>
+        <p class="ck-eyebrow ck-eyebrow--accent">Beachhead ICP</p>
+        <p class="ck-body">Engineering and project-based organisations managing complex schedules
+          where delays are caused by dependencies, resources, approvals, changes and execution
+          issues spread across multiple systems.</p>
+      </div>
+      <div>
+        <p class="ck-eyebrow ck-eyebrow--accent">Primary users</p>
+        <table class="ck-rows"><tbody>
+          ${users.map(([a, b]) => `<tr><th>${a}</th><td>${b}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>
+    <div class="ck-two">
+      <div class="ck-panel ck-panel--lit">
+        <p class="ck-eyebrow">Initial problem</p>
+        <p class="ck-said">&ldquo;We find out a project is going to slip only after the warning
+          signals have already accumulated.&rdquo;</p>
+      </div>
+      <div class="ck-panel">
+        <p class="ck-eyebrow">What we need to validate</p>
+        <ul class="ck-list ck-list--two">${validate.map((v) => `<li>${v}</li>`).join('')}</ul>
+      </div>
+    </div>
+    ${flag('This is not the industry the sales pages are working. The interviews, the target '
+      + 'audience table and the outreach all address <b>Clinics &amp; Wellness</b>, where one company '
+      + 'has been interviewed and all seven acute conditions held. Engineering schedule risk has had '
+      + 'no interviews. Both cannot be the beachhead — decide which, then make the other tab agree, '
+      + 'because an investor who reads both learns that the ICP is unsettled.')}`);
+}
+
+/** The one slide that waits for data. */
+function validation() {
+  const p = proof;
+  const fig = (v, what, note) => `
+    <div class="ck-fig"><p class="ck-fig__n">${v}</p><p class="ck-fig__w">${what}</p>
+      ${note ? `<p class="ck-fig__note">${note}</p>` : ''}</div>`;
+
+  const measured = !p ? `<p class="ck-body">${proofError
+    ? esc(proofError) : 'Measuring&hellip;'}</p>` : `
+    <div class="ck-figs">
+      ${fig(num(p.built.completed), 'blueprints completed', 'A business described itself and got a specification back.')}
+      ${fig(num(p.built.applications), 'applications generated', 'Each its own container and its own database.')}
+      ${fig(num(p.built.deployed), 'deployed and reachable', 'Live URLs, answering today.')}
+      ${fig(num(p.product.watchers), 'watchers running', 'Started from the customer’s own words.')}
+      ${fig(num(p.product.findings), 'findings raised', 'Each a condition evaluated in code against real rows.')}
+      ${fig(num(p.product.resolved), 'closed themselves', 'The rows changed and the next run said so.')}
+      ${fig(num(p.customers.questionsAsked), 'questions asked', 'Across every delivered application, ever.')}
+      ${fig(num(p.customers.findingsOpened), 'findings opened', 'The number that matters most on this page.')}
+      ${fig(money(p.cost.spendUsd), 'model spend, all applications', num(p.cost.requests) + ' requests, capped at ' + money(p.cost.capUsd) + ' per application per month.')}
+    </div>
+    <p class="ck-measured">Measured <b>${esc(new Date(p.measuredAt).toUTCString().slice(5, 22))}</b>
+      from the live databases, when this page was opened. Nothing annualised, projected or rounded up.</p>`;
+
+  return slide('06', 'Validation &amp; proof', `
+    <h2 class="ck-h2">From AI application builder &rarr; proactive problem detector</h2>
+    <div class="ck-three">
+      <div class="ck-panel">
+        <p class="ck-eyebrow">What we have proven</p>
+        <p class="ck-strong">Working AI application engine</p>
+        <p class="ck-body">AI solutions can be built and deployed quickly using SvargAI.</p>
+      </div>
+      <div class="ck-panel">
+        <p class="ck-eyebrow ck-eyebrow--accent">What we are validating now</p>
+        <p class="ck-strong">Engineering schedule risk</p>
+        <ul class="ck-list">
+          <li>Problems discovered too late</li><li>Signals available before discovery</li>
+          <li>Systems containing those signals</li><li>Actions possible if detected earlier</li>
+          <li>Financial impact of delayed action</li>
+        </ul>
+      </div>
+      <div class="ck-panel ck-panel--lit">
+        <p class="ck-eyebrow">Initial hypothesis</p>
+        <p class="ck-strong">Schedule problems are often visible in the data before they are visible
+          to the team.</p>
+      </div>
+    </div>
+
+    <p class="ck-eyebrow ck-eyebrow--accent">The engine, measured rather than asserted</p>
+    ${measured}
+
+    <p class="ck-foot"><span>Next proof point</span> 3&ndash;5 design partners &rarr; same problem
+      &rarr; real data &rarr; measurable earlier detection</p>
+    ${flag('&ldquo;What we have proven&rdquo; is the engine, and the figures above are what proves it. '
+      + 'What is not proven and must not be implied: nobody is paying, one finding has ever been '
+      + 'opened, and the interviews so far are in a different industry from the beachhead on '
+      + 'slide 05.')}`);
+}
+
+function gtm() {
+  const cols = [
+    ['01', 'Find the acute problem', 'Interview 30–40 engineering / project teams. Identify the problem that:',
+      ['Happens frequently', 'Has existing warning signals', 'Requires connecting multiple systems',
+        'Is currently discovered manually or too late', 'Has measurable cost', 'Has a clear intervention']],
+    ['02', 'Prove the workflow', '3–5 design partners. Real data:', ['Detect', 'Explain', 'Act', 'Measure']],
+    ['03', 'Prove repeatability', '', ['Same problem', 'Similar buyer', 'Similar signals', 'Similar action', 'Similar ROI']],
+    ['04', 'Expand', 'Engineering:', ['Adjacent project workflows', 'Other industries with the same underlying problem']],
+  ];
+  return slide('07', 'Go-to-market', `
+    <h2 class="ck-h2">Problem first. Niche second. Scale third.</h2>
+    <div class="ck-four">
+      ${cols.map(([n, name, lede, items], i) => `
+        <div class="ck-panel${i === cols.length - 1 ? ' ck-panel--lit' : ''}">
+          <p class="ck-step__n">${n}</p>
+          <p class="ck-strong">${name}</p>
+          ${lede ? `<p class="ck-body">${lede}</p>` : ''}
+          <ul class="ck-list">${items.map((x) => `<li>${x}</li>`).join('')}</ul>
         </div>`).join('')}
-
-      <p class="cp-label">What these numbers do not support</p>
-      <ul class="cp-caveats">
-        ${CAVEATS.map(([head, body]) => `<li><b>${head}</b><span>${body}</span></li>`).join('')}
-      </ul>
-    </section>`;
+    </div>
+    <p class="ck-accent"><b class="ck-white">The wedge is narrow.</b> The platform remains horizontal.</p>`);
 }
 
-/* ── What they ask ──────────────────────────────────────────────────────── */
+function model() {
+  const pillars = [
+    ['Platform', 'Connect existing business systems'],
+    ['AI Agents', 'Deploy agents for specific problem areas'],
+    ['Monitoring', 'Continuously monitor signals'],
+    ['Business Value', 'Detect problems earlier and measure outcomes'],
+  ];
+  const tiers = [
+    ['Pilot', 'Fixed implementation / validation fee'],
+    ['Growth', 'Monthly SaaS based on number of monitored workflows / agents'],
+    ['Enterprise', 'Custom pricing based on scale, data sources and workflows'],
+  ];
+  return slide('08', 'Business model', `
+    <h2 class="ck-h2">SaaS priced around the value of problems detected</h2>
+    <div class="ck-four ck-four--pillars">
+      ${pillars.map(([k, v], i) => `
+        <div class="ck-pillar${i === pillars.length - 1 ? ' is-lit' : ''}">
+          <p class="ck-strong">${k}</p><p class="ck-body">${v}</p></div>`).join('')}
+    </div>
+    <div class="ck-two">
+      <div>
+        <p class="ck-eyebrow">Potential commercial structure</p>
+        <table class="ck-rows"><tbody>
+          ${tiers.map(([a, b]) => `<tr><th>${a}</th><td>${b}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+      <div class="ck-panel ck-panel--lit">
+        <p class="ck-eyebrow">Expansion</p>
+        <p class="ck-strong">One problem</p>
+        <p class="ck-accent">&darr; Multiple workflows<br>&darr; Multiple teams<br>&darr; Enterprise</p>
+      </div>
+    </div>
+    ${flag('The pricing in code today is not this. Plans sell <b>business coverage</b> &mdash; how much '
+      + 'of the business is watched, how many sources, how often &mdash; with watchers unlimited '
+      + 'inside it, and that was a deliberate decision against per-agent pricing. &ldquo;Monthly SaaS '
+      + 'based on number of monitored workflows / agents&rdquo; is the model that was rejected. Nobody '
+      + 'is being charged either way yet.')}`);
+}
 
-const AUDIENCES = [
-  { id: 'investor', name: 'Investor', note: 'Deciding whether this becomes large' },
-  { id: 'accelerator', name: 'Accelerator', note: 'Deciding whether a programme would change the outcome' },
-  { id: 'incubator', name: 'Incubator', note: 'Deciding whether there is something to build on' },
-];
+function ask() {
+  const cols = [
+    ['Product', 'Build the first repeatable proactive-detection workflow for engineering teams.', 'Schedule risk &rarr; Detect &rarr; Explain &rarr; Act'],
+    ['Validation', 'Run 30–40 problem interviews and establish the acute ICP.', ''],
+    ['Design partners', 'Deploy with 3–5 engineering organisations using real project data.', ''],
+    ['Commercial', 'Convert the validated workflow into the first 10 paying customers.', ''],
+    ['Repeatability', 'Prove: same problem &rarr; same buyer &rarr; similar signals &rarr; similar intervention &rarr; measurable ROI', ''],
+  ];
+  return slide('09', 'The ask', `
+    <h2 class="ck-h2">Raising <em class="ck-accent-text">$500K</em> to turn a working AI engine into a
+      repeatable business</h2>
+    <p class="ck-body ck-body--wide">The next 12 months are about commercial repeatability &mdash; not
+      proving the technology.</p>
+    <div class="ck-five">
+      ${cols.map(([k, v, sub]) => `
+        <div class="ck-col">
+          <p class="ck-eyebrow ck-eyebrow--accent">${k}</p>
+          <p class="ck-body">${v}</p>
+          ${sub ? `<p class="ck-fig__note">${sub}</p>` : ''}
+        </div>`).join('')}
+    </div>
+    <p class="ck-foot ck-foot--lit"><span>Milestone this buys</span>
+      <b>A repeatable problem-detection product with measurable economic value &mdash; not just
+      another AI prototype.</b></p>
+    ${flag('One interview has been run, of the 30&ndash;40 this slide commits to, and it was in the '
+      + 'other industry. That is the first question a careful investor asks about this slide, so have '
+      + 'the answer ready rather than the number.')}`);
+}
 
-let audience = 'investor';
+function founder() {
+  const years = [['16+', 'Years in technology'], ['10+', 'Years automotive'],
+    ['6+', 'Years semiconductor'], ['8+', 'Years product management']];
+  return slide('10', 'Founder', `
+    <h2 class="ck-h2">Pranesh Babykannan</h2>
+    <p class="ck-eyebrow ck-eyebrow--accent">Founder &amp; CEO</p>
+    <div class="ck-two">
+      <div class="ck-years">
+        ${years.map(([n, w]) => `<div><p class="ck-fig__n">${n}</p><p class="ck-fig__w">${w}</p></div>`).join('')}
+      </div>
+      <div>
+        <p class="ck-eyebrow">Why this problem</p>
+        <p class="ck-body">Years in engineering and product environments exposed a recurring problem:</p>
+        <p class="ck-strong">Projects rarely fail because there is no data. They fail because
+          important signals are not connected early enough to change the outcome.</p>
+        <p class="ck-body">SvargAI is built around solving that gap.</p>
+      </div>
+    </div>
+    <p class="ck-accent ck-accent--big">From data &rarr; signals &rarr; problems &rarr; action.</p>`);
+}
+
+function render() {
+  const el = document.getElementById('ck-deck');
+  if (!el) return;
+  el.innerHTML = [cover(), problem(), solution(), practice(), tools(), icp(),
+    validation(), gtm(), model(), ask(), founder()].join('');
+}
 
 /**
- * The questions each one actually asks, and what can be answered today.
+ * One request, and the page renders either way.
  *
- * 'have' can be evidenced from the Proof tab. 'partly' is true but thinner
- * than the question wants. 'not' has no honest answer yet, and the answer
- * written is what to say instead of inventing one.
+ * A proof slide that cannot measure says so. It does not fall back to the
+ * last numbers anybody typed, because a figure whose age is unknown is the
+ * thing this page was rebuilt to remove.
  */
-const ASKS = {
-  investor: [
-    ['have', 'What exactly does it do?',
-      'It watches a business’s own records on a schedule and reports what changed for the worse, with the rows behind it. Five applications are doing that today and 285 findings have come out of them.'],
-    ['have', 'Why is this not a chatbot over a database?',
-      'Because the condition is evaluated in code, not asserted by a model — and a finding the model merely asserted is discarded before anybody sees it. That is checkable in the source, which is a rarer answer than the question expects.'],
-    ['partly', 'Who is it for?',
-      'Clinics and wellness centres, on evidence of one interview where all seven acute conditions held. The honest version is: one company has confirmed the problem, four more have to.'],
-    ['partly', 'What is the wedge?',
-      'Revenue leakage from activity that does not match the record — treated patients marked absent, entitlements over-used. Drafted, not locked: it locks when a second company says the same thing.'],
-    ['not', 'What is the traction?',
-      'There is none to claim. Five running applications, no revenue, one finding ever opened. Say that, then say what the next ten interviews are for — a number nobody can check is worth less than a small one they can.'],
-    ['not', 'How big is the market?',
-      'No bottom-up number has been built. Do not reach for a top-down one: the same problem appearing in an unrelated industry is the evidence that matters here, and that test is running.'],
-  ],
-  accelerator: [
-    ['have', 'Is there a product?',
-      'Yes, and it is delivered software rather than a demonstration: nine applications generated, five running, each with its own container and database.'],
-    ['have', 'What would you use the programme for?',
-      'Interviews. The playbook needs 30–40 and one has been run. Introductions into clinics and automotive suppliers are worth more than the money at this stage.'],
-    ['partly', 'What is the team?',
-      'Small. Say the number plainly — an accelerator that finds out later has learned something about you rather than about the team.'],
-    ['not', 'What are the numbers?',
-      'No revenue, no retention curve, one finding opened. The strongest true thing is 118 findings that resolved themselves, which is the product working unattended.'],
-  ],
-  incubator: [
-    ['have', 'Is any of it built?',
-      'All of it that is claimed. Three of five verbs run today, one partly, one not — the Story tab marks each, and that list is the honest answer to this question.'],
-    ['have', 'What is the hardest technical part?',
-      'Keeping the model out of the decision. Understanding a question and narrating an answer are model work; choosing and evaluating are code, and a finding that crosses that line is thrown away.'],
-    ['partly', 'What do you need?',
-      'Access to clinic and automotive operators, and time to run the interviews. Money is not the binding constraint at $0.60 of infrastructure spend.'],
-    ['not', 'Do you have customers?',
-      'Users, not customers. Five running applications and nobody paying. Do not describe a delivered application as a sale.'],
-  ],
-};
-
-function renderAsks() {
-  const el = document.getElementById('cp-asks');
-  if (!el) return;
-  const rows = ASKS[audience] || [];
-  const LABEL = { have: 'can evidence', partly: 'true but thin', not: 'no answer yet' };
-
-  el.innerHTML = `
-    <section class="cp">
-      <div class="cp-seg" role="tablist" aria-label="Audience">
-        ${AUDIENCES.map((a) => `
-          <button type="button" class="cp-seg__b${a.id === audience ? ' is-on' : ''}"
-                  data-aud="${a.id}" aria-selected="${a.id === audience}">
-            ${a.name}<span>${a.note}</span>
-          </button>`).join('')}
-      </div>
-
-      <ul class="cp-asks">
-        ${rows.map(([state, q, a]) => `
-          <li class="cp-ask is-${state}">
-            <p class="cp-ask__q">${q}<span>${LABEL[state]}</span></p>
-            <p class="cp-ask__a">${a}</p>
-          </li>`).join('')}
-      </ul>
-
-      <p class="cp-note cp-note--wide">The third state is the useful one. A question with no honest
-        answer is not a hole to be filled in the room — it is the thing to say plainly and then
-        say what would answer it.</p>
-    </section>`;
-
-  el.querySelector('.cp-seg').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-aud]');
-    if (!b) return;
-    audience = b.dataset.aud;
-    renderAsks();
-  });
-}
-
-/* ── Views ──────────────────────────────────────────────────────────────── */
-
-const SUBTITLES = {
-  story: 'What to say to somebody deciding whether to back this, and the numbers behind it. Read during a live conversation, so nothing on it is rounded up.',
-  proof: `Measured ${MEASURED}, against the live databases. The numbers that look bad are on it — an investor who finds one out later finds out that it was hidden.`,
-  asks: 'What each audience actually asks, and which answers can be evidenced today. The ones that cannot are marked, because inventing one in the room is how a second meeting is lost.',
-};
-
-function setView(view) {
-  for (const v of ['story', 'proof', 'asks']) {
-    document.getElementById('cp-' + v).hidden = v !== view;
-    const b = document.getElementById('cp-view-' + v);
-    b.classList.toggle('cp-view--on', v === view);
-    b.setAttribute('aria-selected', String(v === view));
+async function load() {
+  try {
+    const r = await fetch(`${API_BASE}/admin/capital/proof`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    if (!r.ok) throw new Error(`The numbers could not be read (${r.status}).`);
+    proof = await r.json();
+  } catch (err) {
+    proofError = err.message || 'The numbers could not be read.';
   }
-  document.getElementById('cp-subtitle').textContent = SUBTITLES[view];
-  if (view === 'proof') renderProof();
-  if (view === 'asks') renderAsks();
+  render();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -342,9 +431,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/admin/login.html';
     return;
   }
-
-  renderStory();
-  for (const v of ['story', 'proof', 'asks']) {
-    document.getElementById('cp-view-' + v).addEventListener('click', () => setView(v));
-  }
+  render();
+  load();
 });

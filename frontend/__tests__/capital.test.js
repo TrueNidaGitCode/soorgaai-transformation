@@ -1,24 +1,18 @@
 /**
- * The Capital page: what to say to somebody deciding whether to back this.
+ * The Capital page: the investor deck, with the proof slide reading live.
  *
- * ── Why this page gets the strictest version of the rule ───────────────────
+ * ── The two failures this guards ───────────────────────────────────────────
  *
- * It is the second admin screen read aloud during a live conversation, and
- * the one where an overstatement is most expensive — the person listening is
- * deciding whether to believe everything else. The ICP tab's discipline
- * therefore applies harder here:
+ * A number that was true once. Every figure on the old version was typed in
+ * from a query run on one afternoon, which is honest for a day and decoration
+ * by the end of the month — the watchers keep running and the counts keep
+ * moving. So the page asks the server, and no figure may be hard-coded in it.
  *
- *   - Every verb carries whether it is built, and at least one says no.
- *   - Every figure was measured on a printed date. Nothing is annualised or
- *     projected, and no figure may appear that was not taken from the live
- *     databases.
- *   - The numbers that look bad are on the page. One finding opened against
- *     285 raised; no revenue. An investor who finds those out later finds out
- *     that they were hidden, which costs more than the facts.
- *
- * The third state on the questions tab is the one worth protecting: a
- * question with no honest answer is marked as having none, rather than being
- * quietly given a plausible one.
+ * And a slide that is ahead of the product. The deck claims five verbs; three
+ * run today. It names a beachhead the sales pages are not interviewing. Both
+ * are marked on this admin copy, because the alternative is finding out in
+ * the room. The marks are the thing being protected here: they are easy to
+ * delete in a tidy-up and expensive to be without.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -47,145 +41,117 @@ function data(name) {
   throw new Error(`${name} is unbalanced`);
 }
 
-describe('the page exists and is guarded like the rest of the admin', () => {
-  it('has the three views, wired both ways', () => {
-    for (const v of ['story', 'proof', 'asks']) {
-      expect(html, v).toContain(`id="cp-${v}"`);
-      expect(html, v).toContain(`id="cp-view-${v}"`);
+describe('the deck', () => {
+  it('renders all eleven slides, in the deck’s order', () => {
+    const order = [...js.matchAll(/return slide\('([^']+)', '([^']*)/g)].map((m) => m[1]);
+    expect(order).toEqual(['SVARGAI &middot; PRE-SEED', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10']);
+    const composed = js.slice(js.indexOf('el.innerHTML = [cover()'));
+    for (const fn of ['cover', 'problem', 'solution', 'practice', 'tools', 'icp',
+      'validation', 'gtm', 'model', 'ask', 'founder']) {
+      expect(composed, fn).toContain(`${fn}()`);
     }
-    expect(js).toContain("document.getElementById('cp-view-' + v).addEventListener");
   });
 
-  it('refuses anybody who is not an admin, and comes back after login', () => {
+  it('is guarded like the rest of the admin', () => {
     expect(js).toMatch(/role !== 'admin'/);
     expect(js).toContain("localStorage.setItem('redirectAfterLogin', '/admin/capital.html')");
   });
 
-  it('owns its own stylesheet and prefix, sharing no name with the sales page', () => {
-    /*
-     * A different page loading a different sheet, so a collision is not even
-     * possible — which is the cheapest version of the rule that the sg-flow
-     * bug taught this codebase.
-     */
+  it('owns its own stylesheet and does not borrow the dashboard’s', () => {
+    // The deck is not a dashboard and should not inherit one.
     expect(html).toContain('capital.css');
-    expect(html).not.toContain('sales.css');
-    const classes = [...js.matchAll(/class="([a-z0-9_ -]+)"/g)].flatMap((m) => m[1].split(/\s+/));
-    for (const c of classes) {
-      if (c === 'cp' || c.startsWith('cp-') || c.startsWith('is-') || c === 'header-subtitle') continue;
-      expect(c, `unexpected class ${c}`).toBe('');
-    }
-    expect(css).toMatch(/^\.cp \{/m);
+    expect(html).not.toContain('admin.css');
+    expect(css).toMatch(/^\.ck-body \{/m);
   });
 });
 
-describe('what the story claims is what is built', () => {
-  const spine = data('SPINE');
+describe('the proof slide is measured, never remembered', () => {
+  it('asks the server for its numbers', () => {
+    expect(js).toMatch(/\/admin\/capital\/proof/);
+    expect(js).toMatch(/Authorization: `Bearer \$\{localStorage\.getItem\('token'\)\}`/);
+  });
 
-  it('marks every verb with its build state', () => {
-    expect(spine).toHaveLength(5);
-    for (const [verb, state] of spine) {
-      expect(['yes', 'part', 'no'], verb).toContain(state);
+  it('hard-codes no figure of its own', () => {
+    /*
+     * The whole point. Every number on the proof slide comes out of `proof`,
+     * so a stale one cannot survive in the source. Checked against the
+     * figures that were hard-coded in the previous version of this page.
+     */
+    const v = js.slice(js.indexOf('function validation()'), js.indexOf('function gtm()'));
+    for (const stale of ['285', '118', '569', '$0.60', '0.5972', '65 watchers']) {
+      expect(v, `hard-coded ${stale}`).not.toContain(stale);
     }
+    expect(v).toMatch(/p\.product\.findings/);
+    expect(v).toMatch(/p\.customers\.findingsOpened/);
+    expect(v).toMatch(/p\.cost\.spendUsd/);
   });
 
-  it('admits at least one verb is not built', () => {
+  it('says it could not measure rather than showing the last known numbers', () => {
     /*
-     * The page is worthless the moment everything on it says "built". If a
-     * fifth verb ships, this test fails and somebody has to check that the
-     * claim is now true before changing it.
+     * A figure whose age is unknown is the thing this page was rebuilt to
+     * remove, so there is no fallback to fall back to.
      */
-    expect(spine.filter(([, s]) => s === 'no').length).toBeGreaterThanOrEqual(1);
-    expect(js).toMatch(/One of the five is not built/);
+    expect(js).toMatch(/proofError/);
+    expect(js).not.toMatch(/proof = \{[^}]*findings/);
   });
 
-  it('describes Act as drafting, never as sending', () => {
-    /*
-     * The application holds no mail credentials by design. "It acts" and "it
-     * drafts and a person sends" are different products, and only one of them
-     * exists.
-     */
-    const act = spine.find(([v]) => v === 'Act');
-    expect(act[1]).toBe('yes');
-    expect(act[2]).toMatch(/drafted and never sent/);
-    expect(js).not.toMatch(/sends the message|sends it for you|automatically sends/i);
-  });
-
-  it('keeps the two deciding steps in code', () => {
-    // The answer to "isn't this a chatbot?" is only checkable because these
-    // two are code rather than model.
-    const pipe = data('PIPELINE');
-    expect(pipe.find(([s]) => s === 'Execute')[1]).toBe('code');
-    expect(pipe.find(([s]) => s === 'Validate')[1]).toBe('code');
-  });
-});
-
-describe('the proof is measured, and dated', () => {
-  it('prints the date it was measured, on the page', () => {
-    expect(js).toMatch(/^const MEASURED = '/m);
-    expect(js).toMatch(/Every figure measured <b>\$\{MEASURED\}<\/b>/);
-  });
-
-  it('carries the numbers that look bad', () => {
-    /*
-     * One finding opened against 285 raised, and no revenue. Both are on the
-     * page by name. A proof tab that only holds flattering figures is a
-     * liability in the second meeting, not an asset in the first.
-     */
-    const flat = JSON.stringify(data('PROOF'));
-    expect(flat).toMatch(/finding opened/);
-    expect(flat).toMatch(/285/);
-    expect(JSON.stringify(data('CAVEATS'))).toMatch(/Nobody is paying yet/);
-  });
-
-  it('says what the numbers do not support', () => {
-    const caveats = data('CAVEATS');
-    expect(caveats.length).toBeGreaterThanOrEqual(3);
-    // The build cost is genuinely not known: nine ledger rows for thirty-six
-    // blueprints. Claiming it as measured would be the page's worst error.
-    expect(JSON.stringify(caveats)).toMatch(/build cost is not measured/);
+  it('prints when it was measured, beside the numbers', () => {
+    expect(js).toMatch(/Measured <b>\$\{esc\(new Date\(p\.measuredAt\)/);
   });
 
   it('projects nothing', () => {
     /*
-     * No annualised figure, no run rate, no multiple. Everything on Proof is
-     * a count of something that has already happened.
+     * Minus the sentence that promises not to — the page says "nothing
+     * annualised, projected or rounded up" out loud, and a check that cannot
+     * tell a promise from a breach would force that promise off the page.
      */
-    const flat = JSON.stringify(data('PROOF'));
-    for (const word of [/ARR/, /annual/i, /projected/i, /run rate/i, /forecast/i, /TAM/]) {
-      expect(flat, String(word)).not.toMatch(word);
+    const without = js.replace(/Nothing annualised[^<]*/g, '');
+    for (const word of [/ARR/, /annualis/i, /run rate/i, /forecast/i, /\bTAM\b/]) {
+      expect(without, String(word)).not.toMatch(word);
     }
   });
 });
 
-describe('the questions each audience asks', () => {
-  const asks = data('ASKS');
-
-  it('covers all three audiences named on the page', () => {
-    expect(Object.keys(asks).sort()).toEqual(['accelerator', 'incubator', 'investor']);
-    expect(data('AUDIENCES').map((a) => a.id).sort()).toEqual(['accelerator', 'incubator', 'investor']);
+describe('where the deck is ahead of the product, the admin copy says so', () => {
+  it('marks every one of the five verbs with what is behind it', () => {
+    const steps = data('STEPS');
+    expect(steps).toHaveLength(5);
+    for (const [, name, , state] of steps) expect(['yes', 'part', 'no'], name).toContain(state);
   });
 
-  it('marks every answer with whether it can be evidenced', () => {
-    for (const [who, rows] of Object.entries(asks)) {
-      expect(rows.length, who).toBeGreaterThanOrEqual(4);
-      for (const [state, q] of rows) expect(['have', 'partly', 'not'], `${who}: ${q}`).toContain(state);
-    }
-  });
-
-  it('admits, for every audience, at least one question it cannot answer', () => {
+  it('admits that Learn is not built and Act only drafts', () => {
     /*
-     * The state that keeps this page honest. Traction, market size and paying
-     * customers have no answer today; writing a plausible one in the room is
-     * how a second meeting is lost.
+     * The application holds no mail credentials by design. "It acts" and "it
+     * drafts and a person sends" are different products; the slide says the
+     * first and only the second exists.
      */
-    for (const [who, rows] of Object.entries(asks)) {
-      expect(rows.some(([s]) => s === 'not'), `${who} answers everything`).toBe(true);
-    }
+    const steps = data('STEPS');
+    expect(steps.find(([, n]) => n === 'Learn')[3]).toBe('no');
+    expect(steps.find(([, n]) => n === 'Act')[3]).toBe('part');
+    expect(js).toMatch(/holds no mail credentials by design/);
   });
 
-  it('does not describe a delivered application as a sale', () => {
-    const flat = JSON.stringify(asks);
-    expect(flat).toMatch(/Users, not customers/);
-    expect(flat).toMatch(/nobody paying/i);
+  it('flags that the beachhead is not the industry being interviewed', () => {
+    /*
+     * Slide 05 says engineering teams. The interviews, the target audience
+     * table and the outreach all address Clinics & Wellness. An investor who
+     * reads both learns that the ICP is unsettled, so the page says it first.
+     */
+    const v = js.slice(js.indexOf('function icp()'), js.indexOf('function validation()'));
+    expect(v).toMatch(/Clinics &amp; Wellness/);
+    expect(v).toMatch(/Both cannot be the beachhead/);
+  });
+
+  it('flags that the pricing on the business model slide was rejected in code', () => {
+    // Plans sell coverage; per-agent pricing was decided against deliberately.
+    const v = js.slice(js.indexOf('function model()'), js.indexOf('function ask()'));
+    expect(v).toMatch(/business coverage/);
+    expect(v).toMatch(/is the model that was rejected/);
+  });
+
+  it('keeps those marks visually impossible to mistake for a slide', () => {
+    expect(js).toMatch(/Not on the investor copy/);
+    expect(css).toMatch(/\.ck-flag \{/);
+    expect(css).toMatch(/border: 1px dashed/);
   });
 });

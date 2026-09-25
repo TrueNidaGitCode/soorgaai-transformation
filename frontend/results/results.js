@@ -319,8 +319,9 @@ function renderError(message) {
 
 // ── Consultation booking ──────────────────────────────────
 function bookConsultation() {
-    // Replace with Calendly URL or contact page when available
-    const email = 'advisory@soorgaai.com';
+    // Replace with Calendly URL or contact page when available.
+    // The one configured mailbox; the subject below keeps these separable.
+    const email = 'hello@svargai.com';
     const subject = encodeURIComponent('Svarg Advisory Consultation Request');
     const body = encodeURIComponent(
         `Hi Svarg team,\n\nI've completed the AI Maturity Assessment and would like to book an advisory consultation.\n\nPlease let me know your available slots.\n\nThank you!`

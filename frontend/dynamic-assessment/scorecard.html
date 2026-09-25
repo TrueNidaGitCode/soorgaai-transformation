@@ -154,7 +154,7 @@
             const score   = JSON.parse(localStorage.getItem('da_score') || '{}');
             const subject = encodeURIComponent(`AI Advisory Session — ${company}`);
             const body    = encodeURIComponent(`Hi,\n\nI just completed the Svarg AI Transformation Assessment for ${company}.\n\nOverall Score: ${Math.round(score.overallScore || 0)}/100\nMaturity Stage: ${score.maturityStage || '—'}\n\nI'd like to book an advisory session to discuss our AI transformation roadmap.\n\nThank you.`);
-            window.location.href = `mailto:hello@soorgaai.com?subject=${subject}&body=${body}`;
+            window.location.href = `mailto:hello@svargai.com?subject=${subject}&body=${body}`;
         }
 
         function retakeAssessment() {

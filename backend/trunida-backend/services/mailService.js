@@ -238,7 +238,16 @@ export async function sendPasswordResetEmail(to, url) {
   return 'sent';
 }
 
-const CONTACT_FORM_RECIPIENT = 'praneshbabykannan@soorgaai.com';
+/*
+ * Where the contact form lands.
+ *
+ * A mailbox rather than a person: this was one founder's address, so a
+ * submission arriving while he was unavailable reached nobody, and the
+ * address itself was on the old domain. hello@svargai.com is the same
+ * address the site's Contact links now use, which is the point — somebody
+ * who writes in and somebody who fills the form in reach the same inbox.
+ */
+const CONTACT_FORM_RECIPIENT = 'hello@svargai.com';
 
 function escapeHtml(str) {
   return String(str)

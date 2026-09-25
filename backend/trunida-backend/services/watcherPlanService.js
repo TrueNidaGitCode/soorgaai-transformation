@@ -68,6 +68,22 @@ const TERMS = {
                            'not marked', 'attendance not updated', 'missed attendance',
                            'revenue leakage', 'unbilled session', 'uncounted session'],
 
+  /*
+   * The words an engineering or project team uses about a schedule.
+   *
+   * Written when schedule risk became the vertical. Deliberately the
+   * vocabulary of a plan rather than of a diary: "slip", "milestone",
+   * "blocked", "float" — none of which reaches the session and booking
+   * watchers above, and all of which should reach these three.
+   */
+  'no-progress':          ['no progress', 'stalled', 'stuck', 'not moving', 'slipping', 'slip',
+                           'behind schedule', 'schedule risk', 'delay', 'delayed', 'milestone',
+                           'planned vs actual', 'percent complete'],
+  'blocked-work':         ['blocked', 'on hold', 'waiting on', 'held up', 'dependency',
+                           'dependencies', 'bottleneck', 'approval pending'],
+  'unassigned-work':      ['unassigned', 'nobody assigned', 'no owner', 'unallocated',
+                           'resource gap', 'resourcing'],
+
   'unanswered-enquiry':   ['enquiry', 'inquiry', 'lead', 'unanswered', 'no reply', 'response time', 'respond', 'follow up', 'follow-up', 'followup', 'quotation', 'quote', 'proposal', 'going cold', 'gone cold', 'goes cold'],
   'gone-quiet':           ['gone quiet', 'inactive', 'lapsed', 'stopped buying', 'declining', 'disengaged', 'at risk'],
   'repeat-complaint':     ['complaint', 'escalation', 'dissatisfied', 'unhappy'],

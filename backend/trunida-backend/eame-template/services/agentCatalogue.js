@@ -42,14 +42,34 @@ export const AREAS = ['People', 'Money', 'Customers', 'Suppliers', 'Schedule', '
  * because a column was called "Dt" instead of "Date".
  */
 export const ROLES = {
-  who:      /student|member|player|customer|client|patient|staff|employee|coach|person|contact|name|supplier|vendor/i,
+  /*
+   * `who` also covers the person a piece of work is ON. An engineering
+   * schedule names them assigned_to, owner or responsible, none of which is a
+   * "customer" word, and without them every watcher that asks who is
+   * accountable was offered to nobody on project data.
+   */
+  who:      /student|member|player|customer|client|patient|staff|employee|coach|person|contact|name|supplier|vendor|assign|owner|responsible|engineer/i,
   when:     /date|day|when|time|created|updated|logged|sent|received/i,
-  due:      /due|deadline|expir|valid|renew|by$/i,
+  /*
+   * `due` is any date work is measured AGAINST, not only a date something is
+   * owed by.
+   *
+   * Measured against a real project export — task_id, planned_finish,
+   * baseline_finish, actual_finish, percent_complete, float_days — the old
+   * pattern matched not one column. Every deadline watcher in the catalogue
+   * needs this role, so on an engineering schedule the application offered
+   * none of them: overdue, approaching, late delivery, all invisible. The
+   * words a planner uses are planned, baseline, target, forecast and finish.
+   */
+  due:      /due|deadline|expir|valid|renew|by$|planned|baseline|target|forecast|finish|eta\b|milestone/i,
   amount:   /amount|total|value|price|cost|fee|rate|paid|balance|outstanding/i,
   status:   /status|state|stage|result|outcome|confirm|approv/i,
   ref:      /(^|[^a-z])(id|no|num|ref|code|invoice|order|ticket)([^a-z]|$)/i,
   supplier: /supplier|vendor|seller|manufacturer|partner/i,
-  slot:     /slot|session|class|booking|appointment|shift|schedule|batch/i,
+  // A unit of scheduled work, whether it is an hour in a diary or a task on a
+  // plan. The Schedule watchers hang off this, and without the project words
+  // none of them reached a project.
+  slot:     /slot|session|class|booking|appointment|shift|schedule|batch|task|activity|milestone|work ?package|wbs|job|ticket|sprint/i,
   doc:      /document|certificate|licence|license|permit|policy|registration|insurance/i,
   reply:    /reply|response|answer|resolved|closed|handled|acknowledg/i,
 };
@@ -156,6 +176,32 @@ export const CATALOGUE = [
   { id: 'unstaffed-session', area: 'Schedule', name: 'Unstaffed Session',
     says: 'Scheduled with nobody assigned',
     needs: ['slot', 'who'], question: '{slot} in {dataset} with no {who} assigned' },
+
+  /*
+   * ── Work that has stopped moving ──────────────────────────────────────────
+   *
+   * Three watchers for the shape of a schedule rather than a diary, added
+   * when the first engineering conversation made schedule risk the vertical.
+   *
+   * Each one is two clauses over one dataset, both inside OPS, so a finding
+   * from them is a finding the code stands behind. What they deliberately do
+   * NOT attempt: comparing planned against actual on the same row, which
+   * needs a column-to-column comparison the where-clause cannot express, and
+   * following a dependency to its downstream impact, which needs a graph. Both
+   * are real gaps and are named on the Capital page rather than implied away.
+   */
+  { id: 'no-progress', area: 'Schedule', name: 'No Progress',
+    says: 'Still open, and nothing has moved on it for a fortnight',
+    needs: ['slot', 'status', 'when'],
+    question: '{slot} in {dataset} that is not done and whose {when} is older than 14 days' },
+  { id: 'blocked-work', area: 'Schedule', name: 'Blocked Work',
+    says: 'Waiting on somebody, and still waiting',
+    needs: ['slot', 'status'],
+    question: '{slot} in {dataset} whose {status} says blocked, on hold or waiting' },
+  { id: 'unassigned-work', area: 'Schedule', name: 'Unassigned Work',
+    says: 'Scheduled, open, and nobody owns it',
+    needs: ['slot', 'who', 'status'],
+    question: '{slot} in {dataset} that is not done and has no {who} against it' },
 
   // ── Records ──────────────────────────────────────────────────────────────
   { id: 'missing-detail', area: 'Records', name: 'Missing Detail',

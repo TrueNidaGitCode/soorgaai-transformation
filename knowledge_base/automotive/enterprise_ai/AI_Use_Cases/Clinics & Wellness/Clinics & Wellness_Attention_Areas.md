@@ -45,7 +45,7 @@ else.
 | Category | What it answers | Watchers |
 | --- | --- | --- |
 | Retention | Who is drifting out of treatment | stopped-coming, gone-quiet, missing-attendance, no-show, repeat-complaint |
-| Utilisation | What capacity is going to waste | empty-slot, over-capacity, unstaffed-session, leave-clash, timesheet-chaser |
+| Utilisation | What capacity is going to waste | no-progress, blocked-work, unassigned-work, empty-slot, over-capacity, unstaffed-session, leave-clash, timesheet-chaser |
 | Growth | Which new business is going cold | unanswered-enquiry, promise-overdue, new-joiner |
 | Cash | What money is at risk | absent-but-attended, overdue-invoice, never-invoiced, part-payment, renewal-due, unusual-expense, price-change, unconfirmed-order, late-delivery |
 | Compliance | What would fail an inspection | expiring-soon, deadline-approaching, missing-document, missing-detail, duplicate, nothing-new, stale-source |

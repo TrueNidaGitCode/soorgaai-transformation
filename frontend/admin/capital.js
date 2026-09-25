@@ -155,10 +155,14 @@ function practice() {
         <p class="ck-body">Why &rarr; Impact &rarr; Who needs to act &rarr; What can be done</p>
       </div>
     </div>
-    ${flag('The five agents named here are an illustration, not a shipped set. What ships is a '
-      + 'catalogue of twenty-nine watchers chosen against the customer&rsquo;s own words, and none of '
-      + 'them reads a project schedule yet &mdash; the connectors today are a database, file uploads, '
-      + 'Confluence, Jira and inbound WhatsApp.')}`);
+    ${flag('Three of the five exist, in the catalogue&rsquo;s own words rather than these. <b>No '
+      + 'Progress</b> (open, and nothing moved for a fortnight) is the Execution agent. <b>Blocked '
+      + 'Work</b> and <b>Unassigned Work</b> cover the change and resource ones. Against a real '
+      + 'project export the catalogue now offers 22 of its 32 watchers, where before it offered 10 '
+      + 'and none was about schedule. <br><br>Two are genuinely not built and should be sold as '
+      + 'roadmap: comparing <b>planned against actual</b> on the same row needs a column-to-column '
+      + 'comparison the condition language cannot express, and the <b>Dependency agent</b> needs to '
+      + 'follow a chain, which needs a graph. Say both plainly &mdash; a planner will ask.')}`);
 }
 
 function tools() {

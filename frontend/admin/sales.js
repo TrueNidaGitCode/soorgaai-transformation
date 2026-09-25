@@ -3164,14 +3164,15 @@ const VERTICALS = [
     id: 'automotive',
     name: 'Automotive',
     met: 0,
-    hypothesis: 'Untested. The question this vertical exists to answer is whether the clinic&rsquo;s '
-      + 'problem travels &mdash; work that was done and never recorded against the job, the part or '
-      + 'the claim.',
+    hypothesis: 'Untested, and now specific: a project slips, and the signals were in the plan '
+      + 'before anybody saw them &mdash; work sitting blocked, tasks nobody owns, activity that '
+      + 'stopped moving while the milestone date kept coming.',
     note: 'Nothing here is filled in, and nothing should be until somebody has been asked. A '
       + 'plausible example typed in advance is indistinguishable from evidence by the third '
-      + 'conversation. The knowledge base already carries an Automotive overlay, so an application '
-      + 'delivered here has categories to group its findings under on day one: Schedule, Quality, '
-      + 'Cost, People, Customer, Risk.',
+      + 'conversation. What IS ready is the product: the Automotive overlay opens on Schedule, and '
+      + 'three watchers now read a plan rather than a diary &mdash; No Progress, Blocked Work and '
+      + 'Unassigned Work. Against a real project export the catalogue offers 22 of its 32 watchers, '
+      + 'where before it offered 10 and not one of them was about schedule.',
   },
 ];
 

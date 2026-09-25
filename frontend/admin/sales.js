@@ -3389,7 +3389,7 @@ function renderAudience() {
  */
 const FIRST_MESSAGE = {
   'clinics': {
-    subject: 'Treated, but recorded as a no-show',
+    subject: 'When a treated patient is recorded as a &ldquo;No Show&rdquo;',
     // Sent as written.
     email: [
       'Hi [Name],',

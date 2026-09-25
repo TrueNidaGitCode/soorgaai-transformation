@@ -7,7 +7,7 @@
  */
 import {
   listAgents, createAgent, setAgentEnabled, deleteAgent,
-  findingsCollection, SCHEDULES, adoptTimezone,
+  findingsCollection, SCHEDULES, adoptTimezone, noteLooked,
 } from '../services/agentService.js';
 import mongoose from 'mongoose';
 import fs from 'fs';
@@ -93,6 +93,15 @@ function findingView(f) {
 export async function listFindingsHandler(req, res) {
   try {
     if (mongoose.connection.readyState !== 1) return res.json({ open: [], resolved: [], counts: {} });
+
+    /*
+     * Somebody is looking. This is the board, so loading it is the one honest
+     * signal that this application is being used — and it is what keeps the
+     * watchers running: they stop after a fortnight of nobody opening it.
+     * Not awaited, because a person waiting for their findings should never
+     * wait on bookkeeping.
+     */
+    noteLooked(req.user?._id || req.user?.id).catch(() => {});
 
     const open = await findingsCollection()
       .find({ state: 'open' }).sort({ firstSeenAt: 1 }).limit(200).toArray();

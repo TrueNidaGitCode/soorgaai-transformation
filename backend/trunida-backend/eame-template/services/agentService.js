@@ -110,6 +110,69 @@ export function localParts(at, tz) {
 }
 
 /**
+ * Somebody opened the board. Cheap, throttled, and never worth failing over.
+ *
+ * Called from the screens a person actually looks at rather than from the auth
+ * middleware. That middleware carries no database write by design — it was
+ * shipped one once, against a model the delivered application does not have,
+ * and three builds failed over it. This is also the more honest signal: a
+ * token being valid says nothing about whether anybody read anything.
+ *
+ * At most one write an hour per person; the clock only has to be accurate to
+ * the day for the fortnight below to mean anything.
+ */
+export async function noteLooked(userId, now = new Date()) {
+  if (!userId) return false;
+  const users = mongoose.connection.collection('svarg_users');
+  const r = await users.updateOne(
+    {
+      _id: typeof userId === 'string' && /^[0-9a-f]{24}$/i.test(userId)
+        ? new mongoose.Types.ObjectId(userId) : userId,
+      $or: [{ lastSeenAt: null }, { lastSeenAt: { $lt: new Date(now.getTime() - 60 * 60 * 1000) } }],
+    },
+    { $set: { lastSeenAt: now } },
+  ).catch(() => null);
+  return !!r?.modifiedCount;
+}
+
+/**
+ * How long an application keeps watching for somebody who has stopped coming.
+ *
+ * Fourteen days: two weeks of a daily digest nobody opened is not a signal
+ * that needs a third week to confirm.
+ */
+export const IDLE_DAYS = Math.max(1, Number(process.env.APP_IDLE_DAYS || 14));
+
+/**
+ * Has everybody stopped looking?
+ *
+ * ── Why an application stops watching at all ───────────────────────────────
+ *
+ * This product's promise is that it watches while nobody is looking, so
+ * pausing it needs a better reason than saving money — and there is one. A
+ * watcher run costs a model call whether or not a person ever sees what it
+ * found. One delivered application sat for nine days with nobody signed in,
+ * fifteen findings open and not one of them opened, still running every
+ * morning. That is not watching a business. It is talking to an empty room.
+ *
+ * So the rule is narrow, and it is about attention rather than about spend:
+ * when nobody has opened the application for a fortnight, the watchers stop.
+ * Nothing is disabled, nothing is deleted, no finding is lost. The next time
+ * anybody signs in, the sweep picks them all up again within five minutes and
+ * the board is current by the time they have finished reading it.
+ *
+ * An application nobody has EVER signed into counts from the day it was
+ * delivered, so a new one watches through its first fortnight and has
+ * something to show whoever arrives. It does not keep watching for a year for
+ * somebody who never came.
+ */
+export function wentQuiet(lookedAt, now = Date.now()) {
+  const at = lookedAt ? new Date(lookedAt).getTime() : 0;
+  if (!at || Number.isNaN(at)) return false;   // unknown is not idle
+  return now - at > IDLE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+/**
  * Which agents are due, as of `now`. Pure, so it can be tested without waiting.
  *
  * An hourly agent is due on elapsed time. A daily one is due on the local
@@ -118,7 +181,11 @@ export function localParts(at, tz) {
  * 07:04 tomorrow, then 07:09, and a week later the morning briefing arrives
  * at lunch.
  */
-export function dueAgents(docs, now = Date.now()) {
+export function dueAgents(docs, now = Date.now(), { lookedAt = null } = {}) {
+  // Nobody has been here in a fortnight. Watching costs money on every run,
+  // and a finding nobody opens is not a finding — see wentQuiet().
+  if (wentQuiet(lookedAt, now)) return [];
+
   return (docs || []).filter((a) => {
     if (!a || a.enabled === false) return false;
     if (a.status === 'degraded' || a.status === 'paused') return false;
@@ -788,6 +855,29 @@ export async function adoptTimezone(tz) {
 // ── The schedule ────────────────────────────────────────────────────────────
 
 let timer = null;
+let quiet = false;
+
+/**
+ * When anybody last opened this application.
+ *
+ * The most recent sign-in across everyone with access, not the owner's alone:
+ * a practice manager reading the board every morning while the owner never
+ * logs in is somebody looking.
+ *
+ * An application nobody has ever signed into falls back to the day it was
+ * prepared, so a new one watches through its first fortnight rather than
+ * being quiet before anyone has had the chance to arrive.
+ */
+export async function lastLookedAt() {
+  const users = mongoose.connection.collection('svarg_users');
+  const seen = await users.find({ lastSeenAt: { $ne: null } }, { projection: { lastSeenAt: 1 } })
+    .sort({ lastSeenAt: -1 }).limit(1).toArray().catch(() => []);
+  if (seen[0]?.lastSeenAt) return seen[0].lastSeenAt;
+
+  const meta = await mongoose.connection.collection('svarg_meta')
+    .findOne({ _id: 'tenant' }).catch(() => null);
+  return meta?.preparedAt || meta?.createdAt || null;
+}
 
 /**
  * Runs from this application's own process, beside the connector scheduler.
@@ -798,7 +888,23 @@ export function startAgentScheduler(ask) {
   const tick = async () => {
     try {
       if (mongoose.connection.readyState !== 1) return;
-      const due = dueAgents(await agentsCollection().find({}).toArray());
+
+      const lookedAt = await lastLookedAt();
+      if (wentQuiet(lookedAt)) {
+        // Once, not every five minutes: this is the state, not an event.
+        if (!quiet) {
+          quiet = true;
+          console.log(`[agents] nobody has opened this in ${IDLE_DAYS} days — watching paused`
+            + ' until somebody signs in');
+        }
+        return;
+      }
+      if (quiet) {
+        quiet = false;
+        console.log('[agents] somebody is back — watching resumed');
+      }
+
+      const due = dueAgents(await agentsCollection().find({}).toArray(), Date.now(), { lookedAt });
       if (!due.length) return;
 
       // Collected, not sent one by one. Six agents firing on a Monday must

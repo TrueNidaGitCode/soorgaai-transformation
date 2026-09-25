@@ -52,14 +52,23 @@ function blocks(view) {
 
 const view = fn('renderAudience');
 
-/** One `const NAME = [ … ];` literal, from the view or from module scope. */
+/**
+ * One `const NAME = … ;` declaration's value, from the view or module scope.
+ *
+ * To the semicolon at depth zero rather than to a matching bracket, because
+ * one of these is an object that is immediately indexed — `{…}[vertical] || {}`
+ * — and stopping at its closing brace would lose the half that chooses.
+ */
 function literal(src, name) {
-  const at = src.indexOf(`const ${name} = [`);
+  const at = src.search(new RegExp(`^\\s*const ${name} = `, 'm'));
   expect(at, `${name} not found`).toBeGreaterThan(-1);
+  const from = src.indexOf('=', at) + 1;
   let depth = 0;
-  for (let i = src.indexOf('[', at); i < src.length; i++) {
-    if (src[i] === '[') depth++;
-    else if (src[i] === ']' && --depth === 0) return src.slice(src.indexOf('[', at), i + 1);
+  for (let i = from; i < src.length; i++) {
+    const c = src[i];
+    if ('[{('.includes(c)) depth++;
+    else if (']})'.includes(c)) depth--;
+    else if (c === ';' && depth === 0) return src.slice(from, i).trim();
   }
   throw new Error(`${name} is unbalanced`);
 }
@@ -73,13 +82,30 @@ function literal(src, name) {
  */
 const SHARED = literal(js, 'ACUTE_CONDITIONS');
 const TITLES = literal(js, 'PLAYBOOK_STEPS');
-function data(name) {
-  const scope = `const ACUTE_CONDITIONS = ${SHARED};
+
+/**
+ * One of the view's own declarations, evaluated for a chosen vertical.
+ *
+ * The vertical is injected rather than read, so the same shipped code can be
+ * run twice — once for the industry with an interview behind it and once for
+ * the one nobody has visited — and the difference asserted rather than
+ * assumed.
+ */
+function dataFor(vertical, name) {
+  const scope = `const audienceVertical = ${JSON.stringify(vertical)};
+    const ACUTE_CONDITIONS = ${SHARED};
     const PLAYBOOK_STEPS = ${TITLES};
-    const REPEATABILITY = ${literal(view, 'REPEATABILITY')};`;
+    const VERTICALS = ${literal(js, 'VERTICALS')};
+    const REPEATABILITY = ${literal(view, 'REPEATABILITY')};
+    const OURS = ${literal(view, 'OURS')};
+    const INTERVIEWED = ${literal(view, 'INTERVIEWED')};
+    const blank = ${literal(view, 'blank')};
+    const ASKS_BY_VERTICAL = ${literal(view, 'ASKS_BY_VERTICAL')};`;
   // eslint-disable-next-line no-new-func
   return new Function(`${scope} return ${literal(view, name)};`)();
 }
+
+const data = (name) => dataFor('clinics', name);
 
 /** Every key a company is scored on: the sub-rows, plus the one-row steps. */
 function pointerKeys(steps) {
@@ -105,14 +131,25 @@ describe('the tab is reachable', () => {
     expect(fn('wireAccountControls')).toContain("setView('audience')");
   });
 
-  it('shares no block name with the other four tabs', () => {
+  it('shares no block name with the other four tabs, bar the switcher', () => {
+    /*
+     * The rule that caught the sg-flow collision, with the exception its own
+     * comment always allowed: a shared LAYOUT PRIMITIVE is fine, an
+     * accidentally shared component is not.
+     *
+     * sg-seg is the industry switcher. Pitches and this tab both choose an
+     * industry, they should look identical doing it, and one set of rules for
+     * one control is the opposite of the bug — two tabs each styling their own
+     * copy is how they drift.
+     */
+    const SHARED_PRIMITIVES = new Set(['sg-seg']);
     const mine = blocks(view);
     expect(mine.size).toBeGreaterThan(0);
     const theirs = new Set([
       ...blocks(fn('renderIcpView')), ...blocks(fn('renderPlaybook')),
       ...blocks(fn('renderInterview')), ...blocks(fn('renderPitches')),
     ]);
-    expect([...mine].filter((b) => theirs.has(b))).toEqual([]);
+    expect([...mine].filter((b) => theirs.has(b) && !SHARED_PRIMITIVES.has(b))).toEqual([]);
   });
 
   it('is styled, and its table scrolls in its own container', () => {
@@ -142,18 +179,52 @@ describe('five companies, one of them interviewed', () => {
      * the one called Clinics & Wellness. A segment whose name exists only on
      * this page cannot be joined to the thing that decides their screens.
      */
-    const m = /const SEGMENT = '([^']+)'/.exec(view);
-    expect(m, 'SEGMENT').toBeTruthy();
-    expect(m[1]).toBe('Clinics &amp; Wellness');
+    // eslint-disable-next-line no-new-func
+    const verticals = new Function(`return ${literal(js, 'VERTICALS')};`)();
+    expect(verticals.map((v) => v.name)).toEqual(['Clinics &amp; Wellness', 'Automotive']);
 
-    // Joined rather than URL-resolved: the folder name has a space and an
-    // ampersand in it, which is exactly the name being checked.
-    const overlay = join(
-      dirname(fileURLToPath(import.meta.url)),
-      '../../knowledge_base/automotive/enterprise_ai/AI_Use_Cases/Clinics & Wellness',
-    );
-    expect(existsSync(overlay), 'the overlay this segment names').toBe(true);
+    /*
+     * Every vertical must name a knowledge base overlay that exists. The
+     * overlay decides the categories a delivered application groups its
+     * findings under, so a vertical named only here produces a column that
+     * cannot become software. Joined rather than URL-resolved: one folder
+     * name has a space and an ampersand in it, which is the name being
+     * checked.
+     */
+    for (const v of verticals) {
+      const overlay = join(
+        dirname(fileURLToPath(import.meta.url)),
+        '../../knowledge_base/automotive/enterprise_ai/AI_Use_Cases',
+        v.name.replace('&amp;', '&'),
+      );
+      expect(existsSync(overlay), `no overlay for ${v.name}`).toBe(true);
+    }
     expect(view).toContain('knowledge base overlay');
+  });
+
+  it('starts a new vertical with five empty columns and no invented evidence', () => {
+    /*
+     * The whole risk of adding a second industry before visiting it: a
+     * plausible example typed in advance is indistinguishable from evidence
+     * by the third conversation. So the shipped code is run for Automotive
+     * and every cell checked, rather than the emptiness being assumed.
+     */
+    const auto = dataFor('automotive', 'COMPANIES');
+    const steps = dataFor('automotive', 'STEPS');
+    expect(auto).toHaveLength(5);
+    const keys = steps.flatMap((s) => (s.rows ? s.rows.map(([k]) => k) : s.key ? [s.key] : []));
+    for (const c of auto) {
+      expect(c.name, c.id).toBe('');
+      for (const k of keys) expect(c[k], `${c.id}.${k}`).toBeUndefined();
+    }
+    // And the three steps that are our work say plainly that they have not
+    // begun, rather than borrowing the first vertical's answers.
+    for (const s of steps.filter((x) => x.segment)) {
+      expect(s.segment[0], `step ${s.n} state`).toBe('');
+      expect(s.segment[1].length, `step ${s.n} text`).toBeGreaterThan(20);
+    }
+    // No follow-up questions, because nothing has been answered yet.
+    expect(dataFor('automotive', 'ASKS')).toEqual([]);
   });
 
   it('leaves four of them genuinely empty', () => {

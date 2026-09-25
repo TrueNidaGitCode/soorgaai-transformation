@@ -3132,6 +3132,56 @@ function renderInterview() {
  * States: 'yes' evidenced in the interview · 'open' asked and not established
  * · 'claim' stated by them and not yet arithmetic · '' not asked yet.
  */
+/* ── The verticals being tested ─────────────────────────────────────────────
+ *
+ * One table per industry, each one a column short of an ICP until five
+ * companies have answered the same questions.
+ *
+ * ── Why a second vertical is not a second product ─────────────────────────
+ *
+ * The strongest thing a second industry can do is not widen the pipeline. It
+ * is to test whether the problem found in the first one TRAVELS — the ICP tab
+ * says so outright: seven of ten distributors with essentially the same
+ * problem in a different industry would mean the problem is the asset and the
+ * industry never mattered.
+ *
+ * So Automotive starts with the clinic's problem written down as a hypothesis
+ * and nothing else. Not one cell is filled: no interviews have happened, and
+ * a plausible example typed here in advance is indistinguishable from
+ * evidence by the third conversation.
+ */
+const VERTICALS = [
+  {
+    id: 'clinics',
+    name: 'Clinics &amp; Wellness',
+    met: 1,
+    hypothesis: 'Revenue leakage caused by a difference between what a customer actually did and '
+      + 'what the record or the entitlement says they did.',
+    note: 'One clinic with this problem is a customer. Four more with the same one is a segment '
+      + '&mdash; and the four empty columns are as much of the evidence as the full one.',
+  },
+  {
+    id: 'automotive',
+    name: 'Automotive',
+    met: 0,
+    hypothesis: 'Untested. The question this vertical exists to answer is whether the clinic&rsquo;s '
+      + 'problem travels &mdash; work that was done and never recorded against the job, the part or '
+      + 'the claim.',
+    note: 'Nothing here is filled in, and nothing should be until somebody has been asked. A '
+      + 'plausible example typed in advance is indistinguishable from evidence by the third '
+      + 'conversation. The knowledge base already carries an Automotive overlay, so an application '
+      + 'delivered here has categories to group its findings under on day one: Schedule, Quality, '
+      + 'Cost, People, Customer, Risk.',
+  },
+];
+
+let audienceVertical = 'clinics';
+
+function setAudienceVertical(id) {
+  audienceVertical = VERTICALS.some((v) => v.id === id) ? id : 'clinics';
+  renderAudience();
+}
+
 function renderAudience() {
   const el = document.getElementById('sg-audience');
   if (!el) return;
@@ -3139,14 +3189,16 @@ function renderAudience() {
   /*
    * The knowledge base's own name for this industry, not a description of it.
    *
-   * There is an overlay at Clinics & Wellness — attention areas, opportunity
-   * discovery, use case classification — and it is what a delivered
-   * application for anyone in this column would be built on. "Physiotherapy"
-   * named the trade in front of us and matched nothing: a segment whose name
-   * exists only on this page cannot be joined to the overlay that decides how
-   * their screens are laid out.
+   * Every vertical here is named as an overlay is named — Clinics & Wellness,
+   * Automotive — because that overlay is what a delivered application for
+   * anybody in this column gets built on: its attention areas decide the
+   * categories their findings are grouped under. "Physiotherapy" named the
+   * trade in front of us and matched nothing, and a segment whose name exists
+   * only on this page cannot be joined to the thing that lays out their
+   * screens.
    */
-  const SEGMENT = 'Clinics &amp; Wellness';
+  const V = VERTICALS.find((x) => x.id === audienceVertical) || VERTICALS[0];
+  const SEGMENT = V.name;
 
   /**
    * The pointers, in two groups, each one a step of the playbook.
@@ -3156,6 +3208,33 @@ function renderAudience() {
    * the same company that passes on that one. The six below are step 9, which
    * is the gate — the same problem, company after company.
    */
+  /*
+   * The three steps that are our work rather than a customer's answer, per
+   * vertical. They read differently depending on how far along the vertical
+   * is, and for one nobody has visited yet they all say the same thing: it
+   * has not started. Saying that plainly is the point of showing the step at
+   * all.
+   */
+  const OURS = {
+    clinics: {
+      embed: ['', 'Not started. Four more interviews are worth more right now than hours in '
+        + 'forums &mdash; but the words they use for this are still ours, not theirs'],
+      build: ['open', 'The customer has named his biggest: bookings left marked no-show when the '
+        + 'patient was treated. That is the candidate to build, ahead of the over-used package and '
+        + 'the treatment reminder &mdash; one of the three, or it becomes a platform for one '
+        + 'customer'],
+      wedge: ['open', 'Drafted below. It locks when more than one column is full, and not before'],
+    },
+    automotive: {
+      embed: ['', 'Not started. Nobody here has been spoken to yet, so there is no vocabulary to '
+        + 'borrow &mdash; step 2 comes first'],
+      build: ['', 'Nothing to choose between. A candidate before an interview is a guess with a '
+        + 'roadmap attached'],
+      wedge: ['', 'No wedge. It is written from steps 1, 2 and 8, and none of them has been run '
+        + 'in this vertical'],
+    },
+  }[audienceVertical] || {};
+
   const REPEATABILITY = [
     ['same', 'Same problem'],
     ['buyer', 'Same buyer'],
@@ -3184,20 +3263,15 @@ function renderAudience() {
     { n: 2, title: PLAYBOOK_STEPS[1], key: 'icpline' },
     { n: 3, title: PLAYBOOK_STEPS[2], key: 'bucket' },
     { n: 4, title: PLAYBOOK_STEPS[3],
-      segment: ['', 'Not started. Four more interviews are worth more right now than hours in '
-        + 'forums &mdash; but the words they use for this are still ours, not theirs'] },
+      segment: OURS.embed },
     { n: 5, title: PLAYBOOK_STEPS[4], key: 'reverse' },
     { n: 6, title: PLAYBOOK_STEPS[5],
-      segment: ['open', 'The customer has named his biggest: bookings left marked no-show when the '
-        + 'patient was treated. That is the candidate to build, ahead of the over-used package and '
-        + 'the treatment reminder &mdash; one of the three, or it becomes a platform for one '
-        + 'customer'] },
+      segment: OURS.build },
     { n: 7, title: PLAYBOOK_STEPS[6], key: 'pilot' },
     { n: 8, title: PLAYBOOK_STEPS[7], key: 'economics' },
     { n: 9, title: PLAYBOOK_STEPS[8], rows: REPEATABILITY },
     { n: 10, title: PLAYBOOK_STEPS[9],
-      segment: ['open', 'Drafted below. It locks when more than one column is full, and not '
-        + 'before'] },
+      segment: OURS.wedge },
   ];
 
   /*
@@ -3206,7 +3280,13 @@ function renderAudience() {
    * rather than guessed at, because a guess in this table is indistinguishable
    * from evidence three interviews later.
    */
-  const COMPANIES = [
+  /*
+   * Column A is filled only where somebody has actually been interviewed. A
+   * vertical nobody has spoken to yet gets five blanks, which is the honest
+   * shape of it and the whole reason the empty columns are shown at all.
+   */
+  const INTERVIEWED = {
+    clinics: [
     {
       id: 'A', name: 'Vesoma', met: 'HOD', when: 'Interviewed',
       frequency: ['yes', '~20 bookings a month left marked no-show when the patient came and was '
@@ -3254,10 +3334,13 @@ function renderAudience() {
       economics: ['claim', 'Arithmetic shown: &#8377;1,000 &times; ~20 = &#8377;20,000 a month, '
         + '&#8377;2.4L a year. It is a ceiling until somebody counts how many of the 20 attended'],
     },
-    { id: 'B', name: '', met: '', when: 'Not yet' },
-    { id: 'C', name: '', met: '', when: 'Not yet' },
-    { id: 'D', name: '', met: '', when: 'Not yet' },
-    { id: 'E', name: '', met: '', when: 'Not yet' },
+    ],
+  };
+
+  const blank = (id) => ({ id, name: '', met: '', when: 'Not yet' });
+  const COMPANIES = [
+    ...(INTERVIEWED[audienceVertical] || [blank('A')]),
+    blank('B'), blank('C'), blank('D'), blank('E'),
   ];
 
   /**
@@ -3267,14 +3350,25 @@ function renderAudience() {
    * that is how they get asked, and they are few because a list of twelve
    * gets none of them answered.
    */
-  const ASKS = [
-    // The one number the whole figure now waits on. Twenty is every booking
-    // left marked no-show; the loss is however many of them actually came.
-    ['roi', 'Of those twenty a month, how many had actually attended?'],
-    // The action is a correction. Whether a correction is money is the thing
-    // the whole figure rests on, and nobody has said yet.
-    ['roi', 'Once the record is corrected, does the money actually come back &mdash; or has it gone?'],
-  ];
+  const ASKS_BY_VERTICAL = {
+    clinics: [
+      // The one number the whole figure now waits on. Twenty is every booking
+      // left marked no-show; the loss is however many of them actually came.
+      ['roi', 'Of those twenty a month, how many had actually attended?'],
+      // The action is a correction. Whether a correction is money is the thing
+      // the whole figure rests on, and nobody has said yet.
+      ['roi', 'Once the record is corrected, does the money actually come back &mdash; or has it gone?'],
+    ],
+    /*
+     * A vertical nobody has spoken to has no follow-ups, because there is
+     * nothing to follow up. What it has is the interview, unchanged — the
+     * same questions asked of everybody, which is what makes five answers
+     * comparable. So it points at the tab that holds them rather than
+     * inventing automotive-flavoured versions of them here.
+     */
+    automotive: [],
+  };
+  const ASKS = ASKS_BY_VERTICAL[audienceVertical] || [];
 
   const GLYPH = { yes: '&#10003;', open: '?', claim: '!', '': '&middot;' };
 
@@ -3316,14 +3410,19 @@ function renderAudience() {
 
   el.innerHTML = `
     <section class="sg-ta">
+      <div class="sg-seg" role="tablist" aria-label="Vertical">
+        ${VERTICALS.map((v) => `
+          <button type="button" class="sg-seg__b${v.id === audienceVertical ? ' is-on' : ''}"
+                  data-vert="${v.id}" aria-selected="${v.id === audienceVertical}">
+            ${v.name}<span>${v.met} of 5 interviewed</span>
+          </button>`).join('')}
+      </div>
+
       <div class="sg-ta__lead">
-        <p class="sg-ta__seg">${SEGMENT}<span>1 of 5 interviewed</span>
+        <p class="sg-ta__seg">${SEGMENT}<span>${V.met} of 5 interviewed</span>
           <em class="sg-ta__kb">knowledge base overlay</em></p>
-        <p class="sg-ta__hyp">Revenue leakage caused by a difference between what a customer
-          actually did and what the record or the entitlement says they did.</p>
-        <p class="sg-ta__note">One clinic with this problem is a customer. Four more with the same
-          one is a segment &mdash; and the four empty columns are as much of the evidence as the
-          full one.</p>
+        <p class="sg-ta__hyp">${V.hypothesis}</p>
+        <p class="sg-ta__note">${V.note}</p>
       </div>
 
       <div class="sg-ta__wrap">
@@ -3352,11 +3451,18 @@ function renderAudience() {
         <span class="is-empty"><i>&middot;</i>not asked, or not done yet</span>
       </p>
 
+      ${ASKS.length ? `
       <p class="sg-ta__label">What the next interview has to close</p>
       <ol class="sg-ta__asks">
         ${ASKS.map(([, q]) => `<li>&ldquo;${q}&rdquo;</li>`).join('')}
-      </ol>
+      </ol>` : `
+      <p class="sg-ta__label">What the first interview asks</p>
+      <p class="sg-ta__note">The fifteen minutes on the ICP Interview tab, unchanged. Follow-ups
+        are what an answer produces; there are no answers here yet, and inventing
+        automotive-flavoured questions in advance would break the one property that makes five
+        interviews comparable.</p>`}
 
+      ${audienceVertical === 'clinics' ? `
       <div class="sg-ta__wedge">
         <p class="sg-ta__label">Draft wedge &mdash; not locked</p>
         <p>Svarg helps <em>clinic and wellness operators</em> detect <em>revenue leakage from
@@ -3365,8 +3471,20 @@ function renderAudience() {
         <p class="sg-ta__note">It stays a draft until the table has more than one full column.
           The customer supplied the raw material for this sentence; nobody invented it in a
           room.</p>
-      </div>
+      </div>` : `
+      <div class="sg-ta__wedge">
+        <p class="sg-ta__label">No wedge yet</p>
+        <p>Svarg helps <em>&hellip;</em> detect <em>&hellip;</em> before <em>&hellip;</em>.</p>
+        <p class="sg-ta__note">The blanks are filled from steps 1, 2 and 8, in this vertical, by
+          the people in it. Writing a plausible sentence here first is how a wedge ends up being
+          defended rather than tested.</p>
+      </div>`}
     </section>`;
+
+  el.querySelector('.sg-seg').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-vert]');
+    if (b) setAudienceVertical(b.dataset.vert);
+  });
 }
 
 /* ── Outreach, by industry ──────────────────────────────────────────────────

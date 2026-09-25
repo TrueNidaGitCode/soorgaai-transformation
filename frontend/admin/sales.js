@@ -3305,26 +3305,37 @@ function renderAudience() {
 const FIRST_MESSAGE = {
   'clinics': {
     subject: 'Treated, but recorded as a no-show',
+    // Sent as written.
     email: [
       'Hi [Name],',
-      'I work with clinics and wellness centres on a problem that quietly costs money: '
-        + 'work that gets done but never gets recorded properly.',
-      'A wellness centre in Bengaluru told us about two of them. Patients who came in and were '
-        + 'treated, but were left marked &ldquo;No Show&rdquo;. And customers using more sessions '
-        + 'than their package allows, with nobody noticing until much later.',
-      'SvargAI reads the records you already keep &mdash; bookings, attendance, packages &mdash; '
-        + 'and picks these up while they can still be fixed. It tells the person who can act on it.',
-      'I&rsquo;d like to find out whether the same things happen at your centre.',
+      'I work with clinics and wellness centres on a problem that quietly costs money: work that '
+        + 'gets done but never gets recorded properly.',
+      'A wellness centre in Bengaluru recently shared two examples with us &mdash; patients who '
+        + 'came in and were treated but were still marked as &ldquo;No Show&rdquo;, and customers '
+        + 'using more sessions than their package allows without anyone noticing until much later.',
+      'SvargAI runs multiple AI agents on top of the data and systems you already use. They '
+        + 'continuously look for signals like these, identify problems early, and bring them to the '
+        + 'person who can act on them &mdash; before they become costly.',
+      'I&rsquo;d like to understand whether you see similar problems at your centre.',
       'Would you be open to a 15-minute call?',
+      'Learn more: https://www.svargai.com/',
     ],
     sign: ['Regards,', 'Pranesh', 'Founder &amp; CEO, SvargAI'],
+    /*
+     * Sent as written. The attribution is already right — it is the centre
+     * that found these, not us — which is the one thing the email above had
+     * to be corrected on.
+     */
     short: [
       'Hi [Name] &mdash; I work with clinics and wellness centres on problems that quietly cost money.',
-      'A wellness centre in Bengaluru told us about two: patients treated but left marked '
-        + '&ldquo;No Show&rdquo;, and customers using more than their package allows without anyone '
-        + 'noticing early.',
-      'SvargAI reads the records you already keep and picks these up early.',
-      'Do you see the same at your centre? Happy to have a short chat.',
+      'SvargAI runs multiple AI agents on top of the data and systems you already use. They '
+        + 'continuously look for signals that something is going wrong and identify problems early '
+        + '&mdash; before they turn into significant costs.',
+      'For example, a wellness centre in Bengaluru found patients marked as &ldquo;No Show&rdquo; '
+        + 'even though they had been treated, and customers using more than their package '
+        + 'entitlement without being noticed early.',
+      'Do you see similar problems at your centre? Happy to have a short chat.',
+      'Learn more: https://www.svargai.com/',
     ],
     /*
      * Two sentences that must not appear in a first message. Both are true
@@ -3378,7 +3389,7 @@ function renderFirstMessage(seg) {
 
         <article class="sg-fm__msg">
           <p class="sg-fm__kind">WhatsApp or LinkedIn</p>
-          <p class="sg-fm__subject"><span>Length</span>Four lines. Anything longer is not read on a phone.</p>
+          <p class="sg-fm__subject"><span>Ends with</span>The link. Nothing after it gets read on a phone.</p>
           <div class="sg-fm__body">${para(o.short)}</div>
         </article>
       </div>

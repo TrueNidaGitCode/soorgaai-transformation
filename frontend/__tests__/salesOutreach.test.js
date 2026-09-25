@@ -83,15 +83,31 @@ describe('the pitches tab is split by industry', () => {
 describe('what the first message claims', () => {
   const text = copy();
 
-  /** The words that get sent — the avoid list quotes the bad ones on purpose. */
-  const sent = text.slice(0, text.indexOf('avoid:'));
+  /**
+   * The words that get sent.
+   *
+   * The avoid list quotes the bad sentences on purpose, so it is cut off; and
+   * a long line is written as two joined literals, so those are rejoined —
+   * the test is about the sentence, not about where it wrapped.
+   */
+  const sent = text.slice(0, text.indexOf('avoid:')).replace(/'\s*\+\s*'/g, '');
 
-  it('says the centre told us, never that we found it', () => {
-    expect(sent).toMatch(/told us about two of them/);
-    expect(sent).toMatch(/told us about two:/);
-    // The claim that would not survive the follow-up question.
+  it('credits the centre with finding it, never us', () => {
+    /*
+     * Both messages attribute it, in their own words: the email says the
+     * centre told us, the short one says the centre found them. Either is
+     * true. "We found" is the one that gets asked about.
+     */
+    expect(sent).toMatch(/recently shared two examples with us/);
+    expect(sent).toMatch(/a wellness centre in Bengaluru found/);
     expect(sent).not.toMatch(/we found/i);
     expect(sent).not.toMatch(/we detected/i);
+  });
+
+  it('sends people to a domain that answers', () => {
+    // svargai.com did not resolve earlier in this project's life; a link in a
+    // first message that goes nowhere is worse than no link.
+    expect(sent).toContain('https://www.svargai.com/');
   });
 
   it('describes only what the product does today', () => {
@@ -100,13 +116,13 @@ describe('what the first message claims', () => {
      * Detect and explain are built; nothing here promises it acts by itself,
      * which the ICP tab lists as not built.
      */
-    expect(text).toMatch(/reads the records you already keep/);
-    expect(text).toMatch(/tells the person who can act on it/);
-    expect(text).not.toMatch(/fixes|automatically|on its own|without you/i);
+    expect(sent).toMatch(/runs multiple AI agents on top of the data and systems you already use/);
+    expect(sent).toMatch(/bring them to the person who can act on them/);
+    expect(sent).not.toMatch(/fixes|automatically|on its own|without you/i);
   });
 
   it('asks for the fifteen minutes the interview tab is built around', () => {
-    expect(text).toMatch(/15-minute call/);
+    expect(sent).toMatch(/15-minute call/);
   });
 
   it('carries no unverified number', () => {

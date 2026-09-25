@@ -2886,3 +2886,152 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   .sg-ta__rowhead { width: 9rem; }
   .sg-ta__grid { min-width: 720px; }
 }
+
+/* ── Pitches: the industry switch, and the first message ────────────────────
+   Two new blocks on the Pitches tab. Own names, like every other component in
+   this sheet — sg-flow and sg-pitch already collided once between tabs. */
+
+.sg-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 26px;
+}
+
+.sg-seg__b {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+.sg-seg__b span {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.35);
+}
+.sg-seg__b:hover { border-color: rgba(255, 255, 255, 0.2); }
+/* The one being worked. The other is kept, not promoted. */
+.sg-seg__b.is-on {
+  border-color: rgba(92, 197, 167, 0.45);
+  background: rgba(92, 197, 167, 0.08);
+  color: #fff;
+}
+.sg-seg__b.is-on span { color: #5CC5A7; }
+
+/* ── The first message ─────────────────────────────────────────────────────
+   Set to be copied out, not admired: plain paragraphs, real line breaks, and
+   nothing in the way of a selection. */
+
+.sg-fm { margin-bottom: 34px; }
+
+.sg-fm__title {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+}
+.sg-fm__sub { margin: 0 0 16px; font-size: 0.86rem; line-height: 1.5; color: rgba(255, 255, 255, 0.5); }
+
+.sg-fm__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.sg-fm__msg {
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  min-width: 0;
+}
+
+.sg-fm__kind {
+  margin: 0 0 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+}
+
+.sg-fm__subject {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+.sg-fm__subject span {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  align-self: center;
+}
+
+.sg-fm__body p,
+.sg-fm__sign p {
+  margin: 0 0 11px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+}
+.sg-fm__sign {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.sg-fm__sign p { margin-bottom: 2px; font-size: 0.86rem; color: rgba(255, 255, 255, 0.6); }
+
+.sg-fm__label {
+  margin: 24px 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Both are true things said wrongly, which is the kind that survives a
+   proofread — so they are shown as the sentence, then the reason. */
+.sg-fm__avoid { margin: 0; padding: 0; list-style: none; }
+.sg-fm__avoid li {
+  margin-bottom: 10px;
+  padding: 12px 16px;
+  border-left: 2px solid rgba(255, 190, 120, 0.5);
+  border-radius: 0 8px 8px 0;
+  background: rgba(255, 190, 120, 0.04);
+}
+.sg-fm__avoid b {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 190, 120, 0.9);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 190, 120, 0.35);
+}
+.sg-fm__avoid span {
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 620px) {
+  .sg-fm__grid { grid-template-columns: 1fr; }
+  .sg-seg__b { width: 100%; }
+}

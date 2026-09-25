@@ -3284,10 +3284,138 @@ function renderAudience() {
     </section>`;
 }
 
+/* ── Outreach, by industry ──────────────────────────────────────────────────
+ *
+ * The first message, before there is a meeting to have a pitch in.
+ *
+ * ── The one word that was changed ─────────────────────────────────────────
+ *
+ * The draft said "we found examples such as patients being treated but
+ * recorded as No Show". We did not find them. A wellness centre told us, in a
+ * fifteen-minute interview, and the difference is the whole credibility of
+ * the mail: a prospect reads "we found" as "your product detected this", asks
+ * how, and the answer is "he told us".
+ *
+ * Attributing it to the centre is also the stronger sentence. It says you have
+ * already sat with somebody in their trade and listened, which is the only
+ * thing a cold mail can offer that a product page cannot.
+ *
+ * Everything else is the same message in shorter words.
+ */
+const FIRST_MESSAGE = {
+  'clinics': {
+    subject: 'Treated, but recorded as a no-show',
+    email: [
+      'Hi [Name],',
+      'I work with clinics and wellness centres on a problem that quietly costs money: '
+        + 'work that gets done but never gets recorded properly.',
+      'A wellness centre in Bengaluru told us about two of them. Patients who came in and were '
+        + 'treated, but were left marked &ldquo;No Show&rdquo;. And customers using more sessions '
+        + 'than their package allows, with nobody noticing until much later.',
+      'SvargAI reads the records you already keep &mdash; bookings, attendance, packages &mdash; '
+        + 'and picks these up while they can still be fixed. It tells the person who can act on it.',
+      'I&rsquo;d like to find out whether the same things happen at your centre.',
+      'Would you be open to a 15-minute call?',
+    ],
+    sign: ['Regards,', 'Pranesh', 'Founder &amp; CEO, SvargAI'],
+    short: [
+      'Hi [Name] &mdash; I work with clinics and wellness centres on problems that quietly cost money.',
+      'A wellness centre in Bengaluru told us about two: patients treated but left marked '
+        + '&ldquo;No Show&rdquo;, and customers using more than their package allows without anyone '
+        + 'noticing early.',
+      'SvargAI reads the records you already keep and picks these up early.',
+      'Do you see the same at your centre? Happy to have a short chat.',
+    ],
+    /*
+     * Two sentences that must not appear in a first message. Both are true
+     * things said wrongly, which is the kind that survives a proofread.
+     */
+    avoid: [
+      ['&ldquo;We found &#8377;20,000 a month of leakage.&rdquo;',
+        'That figure is the centre&rsquo;s own estimate and nobody has checked the arithmetic. '
+        + 'Quoting it as ours makes the first number out of your mouth one you cannot defend.'],
+      ['&ldquo;We detected these problems.&rdquo;',
+        'A customer described them in an interview. Say so &mdash; having sat with somebody in '
+        + 'their trade is worth more in a cold mail than a claim they cannot check.'],
+    ],
+  },
+};
+
+/** Which industries the Pitches tab is organised into. */
+const PITCH_SEGMENTS = [
+  { id: 'clinics', name: 'Clinics &amp; Wellness', note: 'Where the effort is going now' },
+  { id: 'other', name: 'Other industries', note: 'Patterns kept from earlier conversations' },
+];
+
+/** Which industry a pitch pattern belongs to. */
+const PITCH_SEGMENT_OF = { 'multi-service-wellness': 'clinics' };
+
+let pitchSegment = 'clinics';
+
+function setPitchSegment(id) {
+  pitchSegment = PITCH_SEGMENTS.some((s) => s.id === id) ? id : 'clinics';
+  renderPitches();
+}
+
+/** The first message, laid out to be copied rather than read. */
+function renderFirstMessage(seg) {
+  const o = FIRST_MESSAGE[seg];
+  if (!o) return '';
+  const para = (lines) => lines.map((l) => `<p>${l}</p>`).join('');
+  return `
+    <section class="sg-fm">
+      <h3 class="sg-fm__title">The first message</h3>
+      <p class="sg-fm__sub">Before there is a meeting to pitch in. Send it as written; the
+        brackets are the only thing to fill.</p>
+
+      <div class="sg-fm__grid">
+        <article class="sg-fm__msg">
+          <p class="sg-fm__kind">Email</p>
+          <p class="sg-fm__subject"><span>Subject</span>${o.subject}</p>
+          <div class="sg-fm__body">${para(o.email)}</div>
+          <div class="sg-fm__sign">${para(o.sign)}</div>
+        </article>
+
+        <article class="sg-fm__msg">
+          <p class="sg-fm__kind">WhatsApp or LinkedIn</p>
+          <p class="sg-fm__subject"><span>Length</span>Four lines. Anything longer is not read on a phone.</p>
+          <div class="sg-fm__body">${para(o.short)}</div>
+        </article>
+      </div>
+
+      <p class="sg-fm__label">Two things not to say</p>
+      <ul class="sg-fm__avoid">
+        ${o.avoid.map(([said, why]) => `<li><b>${said}</b><span>${why}</span></li>`).join('')}
+      </ul>
+    </section>`;
+}
+
+/*
+ * Pitches, by industry.
+ *
+ * One industry is being worked at a time — Clinics & Wellness, which is where
+ * the interviews and the only full column of evidence are. The patterns from
+ * earlier conversations are not deleted for that: they cost real meetings to
+ * learn, and an academy that walks in next month should not find an empty
+ * screen. They move one click away, under their own heading.
+ */
 function renderPitches() {
   const el = document.getElementById('sg-pitches');
   if (!el) return;
+
+  const mine = PITCHES.filter((p) => (PITCH_SEGMENT_OF[p.id] || 'other') === pitchSegment);
+
   el.innerHTML = `
+    <div class="sg-seg" role="tablist" aria-label="Industry">
+      ${PITCH_SEGMENTS.map((s) => `
+        <button type="button" class="sg-seg__b${s.id === pitchSegment ? ' is-on' : ''}"
+                data-seg="${s.id}" aria-selected="${s.id === pitchSegment}">
+          ${s.name}<span>${s.note}</span>
+        </button>`).join('')}
+    </div>
+
+    ${renderFirstMessage(pitchSegment)}
+
     <section class="sg-flow">
       <h3 class="sg-flow__title">The demonstration structure</h3>
       <p class="sg-flow__sub">Use this in every meeting. Not a product tour — five moves, in order.</p>
@@ -3303,5 +3431,10 @@ function renderPitches() {
       </ol>
     </section>
 
-    <div class="sg-pitches">${PITCHES.map(renderPitch).join('')}</div>`;
+    <div class="sg-pitches">${mine.map(renderPitch).join('')}</div>`;
+
+  el.querySelector('.sg-seg').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-seg]');
+    if (b) setPitchSegment(b.dataset.seg);
+  });
 }

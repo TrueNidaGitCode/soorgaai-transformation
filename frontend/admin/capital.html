@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital - Svarg Admin</title>
+
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="capital.css?v=1">
+    <script src="../login/config.js"></script>
+</head>
+<body>
+    <header>
+        <div id="navbar-container"></div>
+    </header>
+
+    <main class="admin-dashboard">
+        <div class="cp-topbar">
+            <div>
+                <h1>Capital</h1>
+                <p class="header-subtitle" id="cp-subtitle">What to say to somebody deciding whether to back this, and the numbers behind it. Read during a live conversation, so nothing on it is rounded up.</p>
+            </div>
+
+            <div class="cp-views" role="tablist" aria-label="View">
+                <button type="button" id="cp-view-story" class="cp-view cp-view--on" aria-selected="true">Story</button>
+                <button type="button" id="cp-view-proof" class="cp-view" aria-selected="false">Proof</button>
+                <button type="button" id="cp-view-asks" class="cp-view" aria-selected="false">What they ask</button>
+            </div>
+        </div>
+
+        <div id="cp-story"></div>
+        <div id="cp-proof" hidden></div>
+        <div id="cp-asks" hidden></div>
+    </main>
+
+    <script src="../navbar/navbar.js"></script>
+    <script src="capital.js?v=1"></script>
+</body>
+</html>

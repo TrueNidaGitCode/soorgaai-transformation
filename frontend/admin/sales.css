@@ -3035,3 +3035,30 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   .sg-fm__grid { grid-template-columns: 1fr; }
   .sg-seg__b { width: 100%; }
 }
+
+/* ── The funnel, by industry ────────────────────────────────────────────────
+   Same chip as the kinds row above, one choice at a time rather than a set of
+   toggles: the question is what the funnel looks like for ONE industry, and
+   reaching that by switching five others off is not an answer. */
+.sg-kinds--ind { margin-top: -0.5rem; }
+
+.sg-ind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.sg-ind:hover { border-color: rgba(255, 255, 255, 0.3); }
+.sg-ind--on { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+
+/* The segment being sold to, shown even when it holds nobody. A chip reading
+   “Clinics & Wellness 0” is the most useful thing on this screen. */
+.sg-ind--focus { border-style: dashed; border-color: rgba(92, 197, 167, 0.45); color: rgba(92, 197, 167, 0.8); }
+.sg-ind--focus.sg-ind--on { border-style: solid; border-color: #5CC5A7; color: #5CC5A7; }

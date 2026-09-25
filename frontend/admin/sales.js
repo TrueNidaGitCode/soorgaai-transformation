@@ -35,6 +35,8 @@ const TABS = [
 let state = {
   signals: null, mail: null, template: null, tab: 'outreach',
   kinds: new Set(['real']), view: 'funnel',
+  /** Which industry the funnel is being read for. 'all' or a segment id. */
+  industry: 'all',
   /**
    * The go-to-market motions, fetched from the server.
    *
@@ -66,7 +68,8 @@ let state = {
 
 /** The rows of one stage, after the kind filter. */
 function visible(rows) {
-  return (rows || []).filter(r => !r.kind || state.kinds.has(r.kind));
+  return (rows || []).filter(r => (!r.kind || state.kinds.has(r.kind))
+    && (state.industry === 'all' || segmentOf(r) === state.industry));
 }
 
 function hiddenCount(rows) {
@@ -180,6 +183,84 @@ function table(cols, rows, row) {
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 
+/* ── The funnel, by industry ────────────────────────────────────────────────
+ *
+ * Every row carries an industry typed by whoever added it, in whatever words
+ * they used: "Electronics Manufacturing Services", "PCB Manufacturing",
+ * "Test & Measurement". Thirty-odd spellings of about five businesses, which
+ * reads as variety and is really one pipeline wearing many labels.
+ *
+ * So the rows are grouped rather than listed, and the grouping is the point.
+ * The first time this ran it said what a hundred rows could not: the funnel
+ * holds sixty-three electronics and industrial companies, thirty-nine with no
+ * industry at all, and nobody in the segment being sold to.
+ *
+ * ── Rules it keeps ─────────────────────────────────────────────────────────
+ *
+ * Nothing is hidden by being unrecognised: a row whose words match no group
+ * lands in Other, and a row with no industry lands in Not set. Both are shown
+ * with their counts, because a silent filter that quietly drops a real
+ * prospect is worse than a bucket nobody likes the look of.
+ *
+ * And the segment being sold to is always shown, even at zero. A chip reading
+ * "Clinics & Wellness 0" is the most useful thing on this screen.
+ */
+const FUNNEL_SEGMENTS = [
+  { id: 'clinics', name: 'Clinics &amp; Wellness', always: true,
+    is: /clinic|wellness|physio|rehab|therap|spa\b|salon|dental|health|hospital|fitness|gym|yoga|nutrition|medic/i },
+  { id: 'sports', name: 'Sports &amp; coaching',
+    is: /academy|academies|sport|cricket|tennis|football|badminton|coaching|athlet/i },
+  { id: 'education', name: 'Education',
+    is: /school|edtech|education|tuition|learning|college|university|institute/i },
+  { id: 'electronics', name: 'Electronics &amp; industrial',
+    is: /electronic|semiconductor|pcb|embedded|automation|robot|sensor|metrology|machine|instrument|component|power|material|chemical|cable|connector|smt|solder|manufactur|engineering software|eda|iot|vision|energy|warehouse|wire|surface treatment|test|media|tool/i },
+  { id: 'other', name: 'Other' },
+  { id: 'unset', name: 'Not set' },
+];
+
+/** Which group a row falls in. Never null: everything lands somewhere. */
+function segmentOf(row) {
+  const text = String(row?.industry || '').trim();
+  if (!text) return 'unset';
+  for (const s of FUNNEL_SEGMENTS) if (s.is && s.is.test(text)) return s.id;
+  return 'other';
+}
+
+/**
+ * The industry row.
+ *
+ * One choice at a time rather than a set of toggles like the kinds above it:
+ * the question this answers is "what does the funnel look like for THIS
+ * industry", and reaching that by switching five others off is not an answer.
+ */
+function renderIndustryFilter() {
+  const el = document.getElementById('sg-inds');
+  if (!el) return;
+
+  const all = TABS.flatMap(t => (state.signals[t.key] || []))
+    .filter(r => !r.kind || state.kinds.has(r.kind));
+  const totals = {};
+  for (const r of all) totals[segmentOf(r)] = (totals[segmentOf(r)] || 0) + 1;
+
+  const shown = FUNNEL_SEGMENTS.filter(s => totals[s.id] || s.always);
+
+  el.innerHTML = `<span class="sg-kinds__label">Industry</span>`
+    + `<button type="button" data-ind="all" class="sg-ind${state.industry === 'all' ? ' sg-ind--on' : ''}">`
+    + `All <span class="sg-kind__n">${all.length}</span></button>`
+    + shown.map(s => `
+      <button type="button" data-ind="${s.id}"
+              class="sg-ind${state.industry === s.id ? ' sg-ind--on' : ''}${s.always ? ' sg-ind--focus' : ''}">
+        ${s.name} <span class="sg-kind__n">${totals[s.id] || 0}</span>
+      </button>`).join('');
+
+  el.querySelectorAll('.sg-ind').forEach(b => {
+    b.addEventListener('click', () => {
+      state.industry = b.dataset.ind;
+      renderIndustryFilter(); renderTabs(); renderStage();
+    });
+  });
+}
+
 const KIND_LABELS = { real: 'Real', internal: 'Internal', test: 'Test' };
 
 function renderKindFilter() {
@@ -202,7 +283,9 @@ function renderKindFilter() {
       // exactly like a board with nothing in it.
       if (state.kinds.has(k) && state.kinds.size === 1) return;
       state.kinds.has(k) ? state.kinds.delete(k) : state.kinds.add(k);
-      renderKindFilter(); renderTabs(); renderStage();
+      // The industry counts are counts of what the kind filter left, so they
+      // are redrawn with it.
+      renderKindFilter(); renderIndustryFilter(); renderTabs(); renderStage();
     });
   });
 }
@@ -1558,6 +1641,7 @@ async function load(keepTab) {
     renderIndustryDatalist();
     if (keepTab) state.tab = keepTab;
     renderKindFilter();
+    renderIndustryFilter();
     renderTabs();
     renderStage();
     // Re-applied after every load: the renderers above rebuild the funnel
@@ -1851,6 +1935,7 @@ function setView(view) {
   const aud     = view === 'audience';
 
   document.getElementById('sg-kinds').hidden = !funnel;
+  document.getElementById('sg-inds').hidden = !funnel;
   document.getElementById('sg-tabs').hidden = !funnel;
   document.getElementById('sg-stage').hidden = !funnel;
   document.getElementById('nl-panel').hidden = !funnel;

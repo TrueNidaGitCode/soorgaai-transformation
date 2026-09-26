@@ -1,0 +1,86 @@
+/* ── The admin home ─────────────────────────────────────────────────────────
+ *
+ * Two ways in and a way out, on the same ground as the rest of the admin.
+ *
+ * It does not load admin.css: that sheet dresses a dashboard of panels and
+ * forms, and there is no longer a form here. Its own prefix, its own file.
+ */
+
+:root {
+  --ad-bg: #0B0B0B;
+  --ad-panel: #141414;
+  --ad-line: rgba(255, 255, 255, 0.09);
+  --ad-dim: rgba(255, 255, 255, 0.6);
+  --ad-faint: rgba(255, 255, 255, 0.38);
+  --ad-accent: #4ECFA8;
+}
+
+.ad-body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ad-bg);
+  color: #fff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ad { max-width: 900px; margin: 0 auto; padding: 64px 24px 80px; }
+
+.ad__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 44px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--ad-line);
+}
+.ad__eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ad-faint);
+}
+.ad__h1 { margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; }
+
+.ad__who { display: flex; align-items: center; gap: 14px; font-size: 0.88rem; color: var(--ad-dim); }
+.ad__out {
+  padding: 7px 14px;
+  border: 1px solid var(--ad-line);
+  border-radius: 999px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.84rem;
+  color: var(--ad-dim);
+  cursor: pointer;
+}
+.ad__out:hover { border-color: rgba(255, 255, 255, 0.3); color: #fff; }
+
+/* ── The two ways in ───────────────────────────────────────────────────────── */
+
+.ad__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+.ad__card {
+  display: block;
+  padding: 26px 28px;
+  border: 1px solid var(--ad-line);
+  border-radius: 14px;
+  background: var(--ad-panel);
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+.ad__card:hover { border-color: rgba(78, 207, 168, 0.45); background: rgba(78, 207, 168, 0.05); }
+.ad__card:focus-visible { outline: 2px solid var(--ad-accent); outline-offset: 3px; }
+
+.ad__card h2 { margin: 0 0 10px; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.01em; }
+.ad__card p { margin: 0 0 16px; font-size: 0.92rem; line-height: 1.6; color: var(--ad-dim); }
+.ad__go { font-size: 0.86rem; font-weight: 600; color: var(--ad-accent); }
+
+@media (max-width: 620px) {
+  .ad { padding: 40px 18px 56px; }
+  .ad__cards { grid-template-columns: 1fr; }
+}

@@ -27,16 +27,25 @@ const js = read('../admin/dashboard.js');
 const css = read('../admin/dashboard.css');
 
 describe('the two ways in', () => {
-  it('links to Sales and Capital, and to nothing that no longer exists', () => {
+  it('links to the pages that are worked, and to nothing that no longer exists', () => {
     const hrefs = [...html.matchAll(/href="(\/admin\/[^"]+)"/g)].map((m) => m[1]);
-    expect(hrefs).toEqual(['/admin/sales.html', '/admin/capital.html']);
+    expect(hrefs).toEqual(['/admin/sales.html', '/admin/capital.html', '/admin/model-catalog.html']);
   });
 
-  it('links to pages that are actually there', () => {
-    // A home whose links 404 is worse than no home.
+  it('links to pages that are actually there, and still have a server behind them', () => {
+    /*
+     * A home whose links 404 is worse than no home — and the dead screen this
+     * page replaced proved that a file existing says nothing about whether it
+     * works. So the admin pages that have an API are checked for the route
+     * that serves them, not only for the file.
+     */
     const here = dirname(fileURLToPath(import.meta.url));
-    for (const page of ['sales.html', 'capital.html']) {
+    for (const page of ['sales.html', 'capital.html', 'model-catalog.html']) {
       expect(existsSync(join(here, '../admin', page)), page).toBe(true);
+    }
+    const server = readFileSync(join(here, '../../backend/trunida-backend/server.js'), 'utf8');
+    for (const route of ['/api/admin/sales-signals', '/api/admin/capital', '/api/admin/model-catalog']) {
+      expect(server, route).toContain(`app.use("${route}"`);
     }
   });
 });

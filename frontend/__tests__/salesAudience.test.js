@@ -100,6 +100,7 @@ function dataFor(vertical, name) {
     const OURS = ${literal(view, 'OURS')};
     const INTERVIEWED = ${literal(view, 'INTERVIEWED')};
     const blank = ${literal(view, 'blank')};
+    const done = ${literal(view, 'done')};
     const ASKS_BY_VERTICAL = ${literal(view, 'ASKS_BY_VERTICAL')};`;
   // eslint-disable-next-line no-new-func
   return new Function(`${scope} return ${literal(view, name)};`)();
@@ -227,19 +228,39 @@ describe('five companies, one of them interviewed', () => {
     expect(dataFor('automotive', 'ASKS')).toEqual([]);
   });
 
-  it('leaves four of them genuinely empty', () => {
+  it('leaves the columns nobody has visited genuinely empty', () => {
     /*
      * Not placeholder answers, not "TBD" — nothing. A cell invented to make
      * the table look finished is indistinguishable from evidence by the time
-     * anyone reads it back.
+     * anyone reads it back, and a second column that agrees with the first
+     * because somebody filled its gaps in is how a repeatability table stops
+     * being evidence at all.
      */
-    const filled = companies.filter((c) => pointers.some((k) => c[k]));
-    expect(filled).toHaveLength(1);
-    expect(filled[0].name).toBe('Vesoma');
-    for (const c of companies.slice(1)) {
-      expect(c.name, c.id).toBe('');
+    const named = companies.filter((c) => c.name);
+    expect(named.length).toBeGreaterThan(0);
+    expect(named[0].name).toBe('Vesoma');
+    for (const c of companies) {
+      if (c.name) continue;
       for (const k of pointers) expect(c[k], `${c.id}.${k}`).toBeUndefined();
     }
+  });
+
+  it('leaves a short interview short, rather than inferring the rest', () => {
+    /*
+     * The Wellness Co. was one problem and most of the script unasked. Every
+     * row they were not asked about is absent, including the ones the first
+     * company answered — the temptation being to carry those across because
+     * the problems look alike.
+     */
+    const b = companies.find((c) => c.name === 'The Wellness Co.');
+    expect(b, 'the second interview').toBeTruthy();
+    for (const unasked of ['frequency', 'manual', 'late', 'cost', 'action', 'roi', 'simaction']) {
+      expect(b[unasked], `B.${unasked} was not asked`).toBeUndefined();
+    }
+    // And what they did say is recorded as said: two systems that do not talk.
+    expect(b.spread[0]).toBe('yes');
+    expect(b.same[0]).toBe('open');
+    expect(b.same[1]).toMatch(/was not asked/);
   });
 
   it('carries all ten steps, numbered and named as the playbook names them', () => {
@@ -349,18 +370,16 @@ describe('a claim is not evidence', () => {
     expect(css).toMatch(/\.sg-ta__cell\.is-claim \{/);
   });
 
-  it('qualifies the problem on all seven, and still asks only about the size', () => {
+  it('qualifies the first company on all seven conditions', () => {
     /*
-     * All seven conditions are now evidenced: this is an acute problem at
-     * this company, and the interview has converged on one unknown — how big.
-     * Every remaining question is about that, which is the state a first
-     * interview should end in.
+     * Every one of step 1's conditions is evidenced at Vesoma: it is an acute
+     * problem there. What is still open is how big, which is what its two
+     * questions are about.
      */
     const v2 = data('COMPANIES')[0];
     // eslint-disable-next-line no-new-func
     const qualify = new Function(`return ${SHARED};`)().map(([k]) => k);
     expect(qualify.filter((k) => v2[k][0] !== 'yes')).toEqual([]);
-    for (const [key] of data('ASKS')) expect(['cost', 'roi', 'economics']).toContain(key);
   });
 
   it('keeps the wedge a draft while only one column is full', () => {
@@ -373,10 +392,21 @@ describe('every gap carries the question that closes it', () => {
   const v = data('COMPANIES')[0];
   const asks = data('ASKS');
 
-  it('asks about something unproven, never about something already evidenced', () => {
+  it('asks about something unproven at some company, never about a settled row', () => {
+    /*
+     * A question belongs to whichever company has not answered it. Vesoma's
+     * frequency is evidenced; The Wellness Co.'s is not, and "how often does
+     * a call fail to reach the CRM" is a real question because of the second
+     * company rather than the first.
+     *
+     * So the rule is: every question names a row that is unproven SOMEWHERE
+     * in the table. A question about a row every company has answered is one
+     * nobody needs to ask.
+     */
+    const all = data('COMPANIES').filter((c) => c.name);
     for (const [key] of asks) {
-      expect(v[key], `ASKS names ${key}`).toBeTruthy();
-      expect(v[key][0], `${key} is already evidenced`).not.toBe('yes');
+      const unproven = all.filter((c) => !c[key] || c[key][0] !== 'yes');
+      expect(unproven.length, `${key} is settled at every company`).toBeGreaterThan(0);
     }
   });
 

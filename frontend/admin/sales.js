@@ -3154,11 +3154,14 @@ const VERTICALS = [
   {
     id: 'clinics',
     name: 'Clinics &amp; Wellness',
-    met: 1,
+    met: 2,
     hypothesis: 'Revenue leakage caused by a difference between what a customer actually did and '
       + 'what the record or the entitlement says they did.',
-    note: 'One clinic with this problem is a customer. Four more with the same one is a segment '
-      + '&mdash; and the four empty columns are as much of the evidence as the full one.',
+    note: 'Two clinics, and the second is the same SHAPE &mdash; activity that never reaches the '
+      + 'record: a treatment marked no-show, a call the CRM never hears about. The cost side of '
+      + 'the second was not asked, so the hypothesis still says revenue leakage. Whether it should '
+      + 'say something broader is a decision for after the third, not a gap to close by widening '
+      + 'it to fit the newest conversation.',
   },
   {
     id: 'automotive',
@@ -3335,14 +3338,45 @@ function renderAudience() {
       economics: ['claim', 'Arithmetic shown: &#8377;1,000 &times; ~20 = &#8377;20,000 a month, '
         + '&#8377;2.4L a year. It is a ceiling until somebody counts how many of the 20 attended'],
     },
+    /*
+     * A short conversation, and it shows: one problem understood and most of
+     * the script unasked. Every unasked row is left blank rather than
+     * inferred from the first company — the second column agreeing with the
+     * first because somebody filled the gaps in is exactly how a repeatability
+     * table stops being evidence.
+     *
+     * What they said: their CRM and their phone activity are disconnected, so
+     * a call happens and the business does not know it did. What they did NOT
+     * say: how often, what it costs, who notices, or what they would do. Those
+     * are the next conversation, not this one.
+     */
+    {
+      id: 'B', name: 'The Wellness Co.', met: 'Not recorded', when: 'Interviewed, briefly',
+      signals: ['yes', 'A phone system and a CRM, both already in use. Whether the call record '
+        + 'carries an outcome was not asked'],
+      spread: ['yes', 'Two systems that do not talk: the call happens in one, the customer lives '
+        + 'in the other'],
+      same: ['open', 'The same shape as Vesoma &mdash; activity that never reaches the record. '
+        + 'Whether it costs money the same way was not asked'],
+      workflow: ['yes', 'Call &rarr; the CRM should reflect it &rarr; it does not'],
+      simsignals: ['yes', 'Call activity and CRM records'],
+      icpline: ['open', 'Wellness operator &middot; call &rarr; CRM &middot; the call does not '
+        + 'reach the record &middot; the rest of the line was not asked'],
+      bucket: ['open', 'They raised it unprompted and stressed it, which is a signal. Frequency, '
+        + 'cost and urgency were not asked, so it is not yet Acute on the evidence'],
+    },
     ],
   };
 
+  /*
+   * Five columns, however many have been filled. The blanks are appended
+   * rather than declared, so adding an interview is adding one object and
+   * nothing else.
+   */
   const blank = (id) => ({ id, name: '', met: '', when: 'Not yet' });
-  const COMPANIES = [
-    ...(INTERVIEWED[audienceVertical] || [blank('A')]),
-    blank('B'), blank('C'), blank('D'), blank('E'),
-  ];
+  const done = INTERVIEWED[audienceVertical] || [];
+  const COMPANIES = ['A', 'B', 'C', 'D', 'E']
+    .map((id, i) => done[i] || blank(id));
 
   /**
    * What the next conversation has to close.
@@ -3359,6 +3393,13 @@ function renderAudience() {
       // The action is a correction. Whether a correction is money is the thing
       // the whole figure rests on, and nobody has said yet.
       ['roi', 'Once the record is corrected, does the money actually come back &mdash; or has it gone?'],
+      /*
+       * The second interview was short and stopped at the problem. These two
+       * are the rest of the script, and until they are answered the second
+       * column cannot count towards repeatability however similar it looks.
+       */
+      ['frequency', 'How often does a call fail to reach the CRM &mdash; and who notices when it does?'],
+      ['cost', 'What is lost when it happens: a follow-up, a booking, or a customer?'],
     ],
     /*
      * A vertical nobody has spoken to has no follow-ups, because there is

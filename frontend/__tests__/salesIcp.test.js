@@ -26,7 +26,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { join, dirname } from 'path';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const js  = read('../admin/sales.js');
@@ -203,5 +205,81 @@ describe('what the page admits about itself', () => {
      * the claim is now true.
      */
     expect(icpView()).toMatch(/Two of the four are not built/);
+  });
+});
+
+/**
+ * The sentence to say out loud, and the two words in it that outrun the product.
+ *
+ * Two clinic interviews produced a sharper problem statement than the page had:
+ * not "they find out late" but "the record disagrees with what happened".
+ * Lateness is what the gap costs, so it moved into the sentence as the
+ * consequence.
+ *
+ * The risk that comes with a good sentence is that it is easy to say and hard
+ * to hold to. "The systems you already use" implies connectors that do not
+ * exist, and "put it in front of the person who can fix it" implies an action
+ * the product does not take. This page's own rule is that anything it
+ * overstates is overstated out loud to a customer — so the caveat travels with
+ * the sentence, and the shipped connector list is checked rather than trusted.
+ */
+describe('the problem, as two interviews described it', () => {
+  const view = icpView();
+
+  it('states the gap between what happened and what the record says', () => {
+    expect(view).toMatch(/reality does not reach the business system/i);
+    // Lateness stays, as the consequence. It was the problem before, and a
+    // page that keeps both framings as the problem argues with itself.
+    expect(view).toMatch(/Finding out late is what that costs them/);
+  });
+
+  it('carries the one sentence a buyer repeats back', () => {
+    expect(view).toMatch(/Reality doesn&rsquo;t always make it into the business system\./);
+  });
+
+  it('never ships that sentence without what it may not claim', () => {
+    /*
+     * The pairing is the test. If the product sentence is on the page, the two
+     * qualifications are too — delete either one and the page starts promising
+     * a CRM integration and an action, in a room, to a customer.
+     */
+    if (!/systems you already use/.test(view)) return;
+    expect(view).toMatch(/no CRM connector/);
+    expect(view).toMatch(/morning email/);
+    expect(view).toMatch(/Act is still not built/);
+  });
+
+  it('is still true that there is no CRM connector', () => {
+    /*
+     * The other direction of staleness, and the one nobody notices: the page
+     * says a capability is missing, somebody builds it, and the page keeps
+     * talking a seller out of a claim they could now make.
+     */
+    const dir = join(dirname(fileURLToPath(import.meta.url)),
+      '../../backend/trunida-backend/eame-template/services/connectors');
+    const shipped = readdirSync(dir).map((f) => f.replace(/\.js$/, ''));
+    expect(shipped.length, 'no connectors found — has the directory moved?')
+      .toBeGreaterThan(0);
+    expect(shipped.filter((c) => /crm|salesforce|hubspot|zoho|pipedrive/i.test(c)))
+      .toEqual([]);
+    // And the ones the page does name are the ones that are there.
+    for (const named of ['confluence', 'github', 'jira', 'whatsapp']) {
+      expect(shipped, named).toContain(named);
+    }
+  });
+});
+
+describe('the problem is argued once, not twice', () => {
+  it('does not keep the older framing running beside the new one', () => {
+    /*
+     * This tab has contradicted itself before — a validation matrix asking for
+     * one thing while the criteria beside it asked for another — and the
+     * failure mode is always the same: a sentence gets rewritten and the one
+     * three paragraphs above it does not. Both blocks here close on a
+     * statement, and both now close on the gap.
+     */
+    const view = icpView().replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(view).not.toMatch(/discover important problems too\s+late because/);
+    expect(view).toMatch(/the record says otherwise<\/b>/);
   });
 });

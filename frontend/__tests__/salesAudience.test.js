@@ -260,7 +260,7 @@ describe('five companies, one of them interviewed', () => {
     // And what they did say is recorded as said: two systems that do not talk.
     expect(b.spread[0]).toBe('yes');
     expect(b.same[0]).toBe('open');
-    expect(b.same[1]).toMatch(/was not asked/);
+    expect(b.same[1]).toMatch(/unasked|not asked/);
   });
 
   it('carries all ten steps, numbered and named as the playbook names them', () => {
@@ -308,7 +308,7 @@ describe('five companies, one of them interviewed', () => {
     expect(v.frequency[0]).toBe('yes');
     expect(v.frequency[1]).toMatch(/no-show/);
     expect(v.late[0]).toBe('yes');
-    expect(v.same[1]).toMatch(/does not match the record/);
+    expect(v.same[1]).toMatch(/marked no-show/);
     // Answered after the first interview: the three places a signal lives.
     expect(v.spread[0]).toBe('yes');
     expect(v.spread[1]).toMatch(/WhatsApp/);
@@ -428,5 +428,73 @@ describe('every gap carries the question that closes it', () => {
 
   it('keeps the list short enough to actually ask', () => {
     expect(asks.length).toBeLessThanOrEqual(5);
+  });
+});
+
+/**
+ * Widening a hypothesis is the cheapest way to make it look confirmed.
+ *
+ * The clinics hypothesis started as "revenue leakage". Two interviews in, it
+ * says something broader: reality does not reach the business system. That
+ * change is defensible — Vesoma alone carries two versions of the gap, a
+ * treated patient marked no-show and a cancellation that never reached the
+ * booking, and only one of them loses money — but a broader claim is an easier
+ * claim, and an easier claim passes on evidence that would not have passed
+ * before.
+ *
+ * So the widening comes with a bar, and the bar lives here rather than in the
+ * prose beside it: the hypothesis is a gap THAT COSTS SOMETHING. A company
+ * whose "Same problem" cell reads evidenced must have had the cost side
+ * established too. Otherwise the table records a match nobody priced, which is
+ * how six repeatability rows turn into a market that does not exist.
+ */
+describe('the wider hypothesis kept its bar', () => {
+  // Module scope rather than the view's: the verticals are declared beside the
+  // tab instead of inside it, so dataFor cannot reach them.
+  // eslint-disable-next-line no-new-func
+  const clinics = new Function(`return ${literal(js, 'VERTICALS')};`)()
+    .find((v) => v.id === 'clinics');
+
+  it('names the gap, and still names a consequence', () => {
+    expect(clinics.hypothesis).toMatch(/does not reach the business system/i);
+    // A gap alone is not the hypothesis. Something has to be at stake in it,
+    // or every disconnected pair of systems in the world qualifies.
+    expect(clinics.hypothesis).toMatch(/consequence|cost|revenue/i);
+  });
+
+  it('never records the same problem at a company whose cost side is unasked', () => {
+    /*
+     * The rule the widening has to survive. Vesoma passes it — ₹1,000 × ~20,
+     * with the arithmetic shown and marked as a ceiling. The Wellness Co. does
+     * not, so its cell stays amber however strongly the shape matches.
+     */
+    for (const c of dataFor('clinics', 'COMPANIES').filter((x) => x.name)) {
+      if (!c.same || c.same[0] !== 'yes') continue;
+      const priced = ['cost', 'roi', 'economics'].filter((k) => c[k] && c[k][1]);
+      expect(priced.length, `${c.name} matches the problem but nothing was priced`)
+        .toBeGreaterThan(0);
+    }
+  });
+
+  it('leaves the second company amber on the problem, not green', () => {
+    // Stated as itself rather than derived, because this is the exact cell a
+    // rewrite would flip by accident: the gap IS the same, and under a wider
+    // hypothesis "same" reads true long before anybody has asked what it costs.
+    const b = dataFor('clinics', 'COMPANIES').find((c) => c.id === 'B');
+    expect(b.name).toBeTruthy();
+    expect(b.same[0]).toBe('open');
+    expect(b.cost).toBeUndefined();
+    expect(b.roi).toBeUndefined();
+  });
+
+  it('records why it was widened, so the next reader can disagree with it', () => {
+    /*
+     * A hypothesis that changes without a reason attached is indistinguishable
+     * from one that drifted. The note has to say which company the
+     * generalisation came from — the first, not the newest — and it has to
+     * admit the part that is inference rather than interview.
+     */
+    expect(clinics.note).toMatch(/Vesoma/);
+    expect(clinics.note).toMatch(/inference|inferred/i);
   });
 });

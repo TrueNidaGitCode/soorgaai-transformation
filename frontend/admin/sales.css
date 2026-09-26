@@ -1723,6 +1723,10 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 
 .sg-who__note { margin: 0; font-size: 0.86rem; line-height: 1.5; color: rgba(255, 255, 255, 0.5); }
 .sg-who__note b { color: rgba(255, 255, 255, 0.85); }
+/* Two notes in a row: the sentence, then what it may not claim. Margin lives
+   here rather than on the note itself, which is a single paragraph everywhere
+   else on this tab and should stay flush there. */
+.sg-who__note + .sg-who__note { margin-top: 10px; }
 
 /* ── The seven attributes ────────────────────────────────────────────────── */
 

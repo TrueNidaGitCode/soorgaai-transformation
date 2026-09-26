@@ -2401,8 +2401,18 @@ function renderIcpView() {
     'Cost &middot; revenue &middot; customer &middot; operational impact',
   ];
 
+  /*
+   * The Problem hypothesis was rewritten by the interviews, which is what this
+   * block is for.
+   *
+   * It used to say businesses discover problems too late. Two clinics were
+   * asked and neither described lateness: both described a RECORD that
+   * disagrees with what happened — a treated patient marked no-show, a call
+   * the CRM never hears about. Finding out late is what the gap costs them, so
+   * it belongs in the sentence as the consequence rather than the problem.
+   */
   const HYPOTHESES = [
-    ['Problem', 'businesses discover important problems too late, because nobody continuously connects the signals that are already sitting across the systems they run.'],
+    ['Problem', 'reality does not reach the business system: something happens, a signal of it exists in one of the tools they already run, and the record says otherwise. Finding out late is what that costs them &mdash; not what it is.'],
     ['ICP', 'the organisations where this costs the most are mid-market, with high-volume recurring operational workflows, and a small team finding problems reactively.'],
     ['Product', 'Svarg can watch those systems continuously and surface what is starting to go wrong, without the organisation replacing anything it already runs.'],
     ['Business value', 'customers pay when a problem found early is measurably cheaper than the same problem found late &mdash; in rupees, hours or a customer who stayed.'],
@@ -2506,9 +2516,10 @@ function renderIcpView() {
         <p class="sg-who__label">What should happen</p>
         ${chain(INSTEAD, 'good')}
 
-        <p class="sg-who__statement sg-who__statement--quiet">Businesses discover important problems too
-          late because <b>nobody continuously connects the signals</b> across the systems they already
-          run.</p>
+        <p class="sg-who__statement sg-who__statement--quiet">Something happens, a signal of it exists
+          in one of the tools they already run, and <b>the record says otherwise</b> &mdash; because
+          nobody continuously connects the two. They find out late, and finding out late is what the
+          gap costs them.</p>
       </div>
 
       <p class="sg-who__label">What Svarg sells &mdash; find problems before they become costly</p>
@@ -2547,6 +2558,23 @@ function renderIcpView() {
       <p class="sg-who__note">Better than &ldquo;SMB&rdquo;, &ldquo;mid-market&rdquo; or
         &ldquo;enterprise&rdquo; as a definition, because every line of it is observable in a first
         conversation &mdash; a size band is not.</p>
+
+      <div class="sg-who__block sg-who__block--lead">
+        <p class="sg-who__label">How to say it &mdash; <em>one sentence a non-technical buyer finishes for you</em></p>
+        <p class="sg-who__statement">Reality doesn&rsquo;t always make it into the business system.</p>
+        <p class="sg-who__note">Then the product, also in one sentence: <b>Svarg runs several agents
+          that keep comparing the signals across the systems you already use, spot where reality and
+          the record disagree, and put it in front of the person who can fix it.</b></p>
+        <p class="sg-who__note">Both sentences are earned &mdash; two clinics described exactly this
+          and neither was prompted with it. Two words in the second one are doing more work than the
+          product does, and this page does not let them pass unmarked. <b>&ldquo;The systems you
+          already use&rdquo;</b> means whatever Svarg can read: an upload, a database connection, or
+          Confluence, GitHub, Jira and inbound WhatsApp. There is no CRM connector and none for a
+          phone system, so call activity arrives as an export or a database, and that is the first
+          thing to establish rather than the last. <b>&ldquo;Put it in front of&rdquo;</b> is a
+          morning email &mdash; true, and the whole of it. Act is still not built; see the spine
+          above.</p>
+      </div>
 
       <p class="sg-who__label">What we believe, and would test</p>
       <div class="sg-who__grid">
@@ -3155,13 +3183,21 @@ const VERTICALS = [
     id: 'clinics',
     name: 'Clinics &amp; Wellness',
     met: 2,
-    hypothesis: 'Revenue leakage caused by a difference between what a customer actually did and '
-      + 'what the record or the entitlement says they did.',
-    note: 'Two clinics, and the second is the same SHAPE &mdash; activity that never reaches the '
-      + 'record: a treatment marked no-show, a call the CRM never hears about. The cost side of '
-      + 'the second was not asked, so the hypothesis still says revenue leakage. Whether it should '
-      + 'say something broader is a decision for after the third, not a gap to close by widening '
-      + 'it to fit the newest conversation.',
+    hypothesis: 'Reality does not reach the business system. Something happens &mdash; a patient is '
+      + 'treated, a customer calls &mdash; a signal of it exists somewhere, and the record says '
+      + 'otherwise. Revenue leakage is one consequence of that gap, and was mistaken for the '
+      + 'definition of it.',
+    note: 'The hypothesis was widened, and WHY it was widened matters more than the wording: '
+      + 'Vesoma alone carries two versions of it. A patient is treated and the booking still says '
+      + 'no-show; a patient cancels by phone and the booking still says no-show. The same gap, '
+      + 'opposite facts, and only the first one loses money &mdash; so the gap is the pattern and '
+      + 'revenue was one consequence of it. That generalisation comes from the FIRST company, not '
+      + 'from the second, which is the difference between reading the evidence and widening a '
+      + 'hypothesis to fit the newest conversation. Two honest caveats: the cancellation variant is '
+      + 'our inference from the systems Vesoma described, not something they reported; and widening '
+      + 'is not free, so the bar moves with it. A gap alone no longer passes &mdash; the hypothesis '
+      + 'is a gap that costs something, which is why The Wellness Co. still owes the cost side and '
+      + 'its Same problem cell stays open until somebody asks.',
   },
   {
     id: 'automotive',
@@ -3308,7 +3344,8 @@ function renderAudience() {
         + 'price is known and the count is countable'],
       action: ['yes', 'The HOD has the record corrected by hand. A correction, not a collection '
         + '&mdash; whether the money follows is a separate question'],
-      same: ['yes', 'Revenue leakage: activity does not match the record or the entitlement'],
+      same: ['yes', 'The gap, and priced: a treated patient left marked no-show, a package used '
+        + 'past the entitlement. Here it costs revenue'],
       buyer: ['yes', 'HOD'],
       workflow: ['yes', 'Booking &rarr; treatment &rarr; front desk &rarr; system'],
       simsignals: ['yes', 'Bookings, treatment records, entitlement, usage &mdash; across a CRM, '
@@ -3356,8 +3393,9 @@ function renderAudience() {
         + 'carries an outcome was not asked'],
       spread: ['yes', 'Two systems that do not talk: the call happens in one, the customer lives '
         + 'in the other'],
-      same: ['open', 'The same shape as Vesoma &mdash; activity that never reaches the record. '
-        + 'Whether it costs money the same way was not asked'],
+      same: ['open', 'The gap is evidenced and it is the same gap: the call happens, the CRM does '
+        + 'not know it did. Missing is the other half of the hypothesis &mdash; nothing has been '
+        + 'counted, so whether it costs anything is unasked'],
       workflow: ['yes', 'Call &rarr; the CRM should reflect it &rarr; it does not'],
       simsignals: ['yes', 'Call activity and CRM records'],
       icpline: ['open', 'Wellness operator &middot; call &rarr; CRM &middot; the call does not '
@@ -3512,7 +3550,9 @@ function renderAudience() {
           month</em>.</p>
         <p class="sg-ta__note">It stays a draft until the table has more than one full column.
           The customer supplied the raw material for this sentence; nobody invented it in a
-          room.</p>
+          room. And it stays NARROWER than the hypothesis above on purpose &mdash; a hypothesis
+          is what we are testing, a wedge is what we sell first, and &ldquo;we find where your
+          records disagree with reality&rdquo; is a platform pitch with nobody in it.</p>
       </div>` : `
       <div class="sg-ta__wedge">
         <p class="sg-ta__label">No wedge yet</p>

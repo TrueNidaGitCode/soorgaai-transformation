@@ -46,6 +46,6 @@ else.
 | --- | --- | --- |
 | Retention | Who is drifting out of treatment | stopped-coming, gone-quiet, missing-attendance, no-show, repeat-complaint, no-show-then-contact |
 | Utilisation | What capacity is going to waste | no-progress, blocked-work, unassigned-work, empty-slot, over-capacity, unstaffed-session, leave-clash, timesheet-chaser |
-| Growth | Which new business is going cold | unanswered-enquiry, promise-overdue, new-joiner, contact-no-record |
+| Growth | Which new business is going cold | unanswered-enquiry, promise-overdue, new-joiner, contact-no-record, promise-not-kept |
 | Cash | What money is at risk | absent-but-attended, overdue-invoice, never-invoiced, part-payment, renewal-due, unusual-expense, price-change, unconfirmed-order, late-delivery, cancelled-not-updated |
 | Compliance | What would fail an inspection | expiring-soon, deadline-approaching, missing-document, missing-detail, duplicate, nothing-new, stale-source |

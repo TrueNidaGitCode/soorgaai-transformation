@@ -72,6 +72,16 @@ export const ROLES = {
   slot:     /slot|session|class|booking|appointment|shift|schedule|batch|task|activity|milestone|work ?package|wbs|job|ticket|sprint/i,
   doc:      /document|certificate|licence|license|permit|policy|registration|insurance/i,
   reply:    /reply|response|answer|resolved|closed|handled|acknowledg/i,
+  /*
+   * Somebody here said they would do something.
+   *
+   * A column that exists because a conversation was read into one — see
+   * callSignalService. It is deliberately its own role rather than a use of
+   * `status`: a call's status is "completed" and says nothing about whether
+   * anyone committed to anything, and the two columns sit side by side on the
+   * same row.
+   */
+  promise:  /promise|commit|undertak|assur|callback|call ?back|follow ?up/i,
 };
 
 const C = (over) => ({ over: 'rows', op: 'gt', value: 0, ...over });
@@ -237,7 +247,7 @@ export const CATALOGUE = [
       mode: 'both', when: 'before',
     },
     question: '{left.who} in {left} whose {left.status} says no show or cancelled, who also appear'
-      + ' in {right} with a {right.when} BEFORE that appointment' },
+      + ' in {right} whose {right.when} is BEFORE that appointment' },
   { id: 'no-show-then-contact', area: 'Customers', name: 'No Show, Then Got In Touch',
     says: 'Marked absent, and then they contacted you',
     across: {
@@ -246,7 +256,31 @@ export const CATALOGUE = [
       mode: 'both', when: 'after',
     },
     question: '{left.who} in {left} whose {left.status} says no show or absent, who also appear'
-      + ' in {right} with a {right.when} AFTER that appointment' },
+      + ' in {right} whose {right.when} is AFTER that appointment' },
+  /*
+   * The one a clinic recognises instantly, and the reason recordings are read
+   * at all.
+   *
+   * A customer rings to ask about upgrading. Whoever answers says they will
+   * check and get back to them. Nothing is written down anywhere, because the
+   * conversation happened on the phone — and the business never learns it
+   * lost a sale it had already half made.
+   *
+   * It fires on the `promise` column, which exists because a transcript was
+   * read into one, and only when that reading carried the staff member's own
+   * words. See callSignalService: a promise nobody can quote is discarded
+   * rather than reported, because this watcher puts a named person on
+   * somebody's morning list for forgetting something.
+   */
+  { id: 'promise-not-kept', area: 'Customers', name: 'Promise Not Kept',
+    says: 'Someone here said they would get back, and nothing followed',
+    across: {
+      left: { needs: ['who', 'when', 'promise'], prefer: /call|phone|enquir|contact|conversation|lead/i },
+      right: { needs: ['who', 'when'], prefer: /appoint|booking|diary|session|task|follow|slot|schedule/i },
+      mode: 'leftOnly', when: 'after',
+    },
+    question: '{left.who} in {left} whose {left.promise} says yes, who have no row in'
+      + ' {right} whose {right.when} is AFTER that call' },
   { id: 'contact-no-record', area: 'Customers', name: 'Contact Never Recorded',
     says: 'They got in touch and nothing happened afterwards',
     across: {
@@ -254,7 +288,7 @@ export const CATALOGUE = [
       right: { needs: ['who', 'when'], prefer: /appoint|booking|diary|session|slot|schedule/i },
       mode: 'leftOnly', when: 'after',
     },
-    question: '{left.who} in {left} who have no row in {right} with a {right.when} AFTER'
+    question: '{left.who} in {left} who have no row in {right} whose {right.when} is AFTER'
       + ' they got in touch' },
 
   // ── Records ──────────────────────────────────────────────────────────────
@@ -648,6 +682,7 @@ function niceRole(role) {
     who: 'a name', when: 'a date', due: 'a due date', amount: 'an amount',
     status: 'a status', ref: 'a reference', supplier: 'a supplier',
     slot: 'a session or booking', doc: 'a document', reply: 'a reply or response',
+    promise: 'whether someone committed to call back',
   })[role] || role;
 }
 

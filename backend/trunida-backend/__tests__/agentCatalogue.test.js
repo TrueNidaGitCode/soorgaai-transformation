@@ -173,7 +173,10 @@ describe('the question uses this application’s own column names', () => {
  */
 const CLINIC = [
   { name: 'Appointment Booking Diary', columns: ['Client Name', 'Appointment Date', 'Status', 'Practitioner'] },
-  { name: 'Enquiries and Calls', columns: ['Client Name', 'Contact Date', 'Channel', 'Notes'] },
+  // The call log carries `promise` because a transcript was read into it —
+  // see callSignalService. It is what Promise Not Kept hangs off, and the
+  // reason that watcher can exist at all.
+  { name: 'Enquiries and Calls', columns: ['Client Name', 'Contact Date', 'Channel', 'Notes', 'Promise', 'Intent'] },
   { name: 'Fee payments', columns: ['Client Name', 'Invoice No', 'Amount', 'Due Date', 'Paid'] },
 ];
 

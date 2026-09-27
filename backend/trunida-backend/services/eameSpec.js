@@ -101,6 +101,9 @@ export const FIXED_PATHS = [
   // Audio in, text out, across the gateway: this container holds no provider
   // key, so a recording it cannot read is a recording nobody reads.
   'services/transcribeService.js',
+  // A transcript read into columns a watcher can filter on. Without it the
+  // recording is readable by a person and invisible to the product.
+  'services/callSignalService.js',
   'controllers/agentsController.js',
   'routes/agentsRoutes.js',
   'frontend/agents.js',

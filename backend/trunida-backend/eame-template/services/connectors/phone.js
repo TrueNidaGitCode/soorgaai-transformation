@@ -43,6 +43,8 @@ import axios from 'axios';
 import mongoose from 'mongoose';
 import { callsIn, PROVIDERS, PROVIDER_IDS } from '../phoneProviders.js';
 import { transcribe, canTranscribe } from '../transcribeService.js';
+import { readSignals, SIGNAL_FIELDS } from '../callSignalService.js';
+import { generate } from '../llmService.js';
 
 export const kind = 'phone';
 export const label = 'Your phone system';
@@ -64,10 +66,19 @@ export const fields = [
     hint: 'Turning this off keeps who rang and when, and skips the cost of listening.' },
 ];
 
-/** What one call carries, for the mapping onto the dataset. */
+/**
+ * What one call carries, for the mapping onto the dataset.
+ *
+ * The last five are the transcript read into columns a watcher can filter on
+ * — see callSignalService. A transcript is four hundred characters of prose
+ * and every operator in the answer pipeline compares a column to a value, so
+ * without these the recording is readable by a person and invisible to the
+ * product.
+ */
 export const provides = [
   'date', 'time', 'name', 'phone', 'direction', 'duration_seconds', 'agent',
   'status', 'transcript', 'transcript_status', 'call_id', 'received_at',
+  ...SIGNAL_FIELDS,
 ];
 
 /** Where calls received at the webhook are kept: this application's database. */
@@ -184,10 +195,40 @@ async function transcribePending(config) {
     } catch (err) {
       why = String(err?.message || err).slice(0, 300);
     }
+
+    /*
+     * And what the conversation was about, in columns.
+     *
+     * Only for a call that was actually read: there is nothing to extract
+     * from silence, and asking anyway would spend a model call to be told so.
+     */
+    const signals = status === 'read'
+      ? await readSignals(text, askModel)
+      : null;
+
     await col.updateOne({ _id: call._id }, {
-      $set: { transcript: text, transcriptStatus: status, transcriptError: why, transcribedAt: new Date() },
+      $set: {
+        transcript: text, transcriptStatus: status, transcriptError: why,
+        transcribedAt: new Date(),
+        ...(signals ? { signals } : {}),
+      },
     }).catch(() => {});
   }
+}
+
+/**
+ * The one model call this connector makes on its own behalf.
+ *
+ * Wrapped rather than passed straight through so the signature stays the one
+ * callSignalService is tested against, and so the spend has one name in the
+ * logs rather than appearing as an anonymous generate().
+ */
+async function askModel({ systemPrompt, userMessage, thinking }) {
+  const out = await generate({
+    systemPrompt, userMessage, thinking, label: 'call-signals',
+    maxTokens: Number(process.env.CALL_SIGNAL_MAX_TOKENS || 400),
+  });
+  return out?.text || '';
 }
 
 /**
@@ -233,6 +274,19 @@ export async function pull(config, { maxRows = 50000 } = {}) {
       transcript_status: statusOf(c, config),
       call_id: c.callId || '',
       received_at: at ? at.toISOString() : '',
+      /*
+       * What the call was about, as columns a watcher can filter on.
+       *
+       * Empty where the call was never read — deliberately not 'no'. "No
+       * promise was made" and "nobody has read this call" are different
+       * facts, and a watcher looking for kept promises must not count the
+       * second as the first.
+       */
+      intent: c.signals?.intent || '',
+      request: c.signals?.request || '',
+      promise: c.signals?.promise || '',
+      promise_quote: c.signals?.promise_quote || '',
+      signals_checked: c.signals?.signals_checked || '',
     };
   });
 }

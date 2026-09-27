@@ -395,9 +395,30 @@ describe('the board, which is the durable copy', () => {
     const body = ctl.slice(ctl.indexOf('const counts = { high: 0'), ctl.indexOf('everRan:'));
     expect(body).toContain('for (const r of rows) counts[r.severity]');
     expect(body).toMatch(/count: rows\.filter/);
-    // Nothing that feeds a number is allowed to mention them.
-    expect(body.replace(/examples: rows\.length \? \[\] : examples\(\),/, ''))
-      .not.toMatch(/example/i);
+
+    /*
+     * Two different things are now called an example in this file, and only
+     * one of them is what this test is about:
+     *
+     *   examples()   the illustrative rows shown when nothing is open. They
+     *                carry no person and no date, are not openable, and must
+     *                never reach a number.
+     *   example      the mode. Findings built on the sample data, which ARE
+     *                real findings about invented people — so when the mode
+     *                is on they are counted, and the board says at the top of
+     *                the screen what it is counting.
+     *
+     * The invariant is unchanged: every number comes from `rows`, and `rows`
+     * is one set or the other, never both. The three lines below are the
+     * mode's own reporting and feed nothing.
+     */
+    const feeding = body
+      .replace(/examples: rows\.length \? \[\] : examples\(\),/, '')
+      .replace(/hasExample: await findingsCollection\(\)[\s\S]*?catch\(\(\) => false\),/, '')
+      .replace(/^\s*example,\s*$/m, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+    expect(feeding).not.toMatch(/example/i);
 
     const ui = read2('../eame-template/frontend/findings.js');
     // The board's own list is built from `open`, never from the examples.

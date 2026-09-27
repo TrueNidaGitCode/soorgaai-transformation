@@ -46,6 +46,17 @@ export function composeDigest(results) {
   const lines = [];
   for (const r of results || []) {
     if (!r || !r.ran) continue;
+    /*
+     * A run against the sample data is never mailed.
+     *
+     * The answer pipeline falls back to the samples an application ships with
+     * when no real records are connected. On a screen that is a demonstration
+     * and is labelled as one; in an inbox it is a morning briefing about
+     * customers who do not exist, and one delivered application sent two of
+     * them before anybody noticed. An email cannot be un-sent or labelled
+     * after the fact, so it is the one place the fallback must not reach.
+     */
+    if (r.simulated) continue;
     const fresh = (r.new || []).length;
     const gone = (r.resolved || []).length;
     if (fresh) lines.push(`${r.name}: ${fresh} new — ${(r.new || []).slice(0, 6).join(', ')}`);

@@ -128,6 +128,30 @@
     var open = (body.open || []).length;
     var counts = body.counts || {};
 
+    /*
+     * Nothing of theirs is connected yet, and that is not "healthy".
+     *
+     * This state was missing, and its absence was the whole problem. With no
+     * records connected the watchers still run, still find nothing real, and
+     * the board said "Everything looks good" — which reads as "we checked
+     * your business and it is fine" when nothing of their business had been
+     * looked at. The honest answer names the next step instead.
+     *
+     * Checked before every other state but a stopped watcher: nothing else
+     * on this screen means anything until there is something to watch.
+     */
+    if (!body.example && body.hasRealData === false) {
+      return {
+        cls: 'is-idle', icon: CLOCK, verdict: 'Nothing connected yet',
+        note: 'No records of yours have arrived',
+        line: 'Connect your business data.',
+        sub: body.hasExample
+          ? 'Svarg has nothing of yours to watch yet. Open Data to connect a source — '
+            + 'or turn on Example mode above to see how this works first.'
+          : 'Svarg has nothing of yours to watch yet. Open Data to connect a source.',
+      };
+    }
+
     if (body.degraded) {
       return {
         cls: 'is-bad', icon: ALERT, verdict: 'Needs a look',
@@ -197,6 +221,18 @@
   function drawHero(body) {
     if (!el.hero) return;
     var h = health(body);
+    /*
+     * In Example mode the verdict is about the example.
+     *
+     * Every one of the sentences below says "Svarg is monitoring your
+     * business", which is the right thing to say and the wrong thing to say
+     * over invented people. The banner above already says the mode; this is
+     * the line somebody actually reads.
+     */
+    if (body.example) {
+      h.sub = 'This is example data, so you can see what Svarg does before connecting anything. '
+        + 'Turn Example mode off to go back to your business.';
+    }
     var name = firstName();
     var areas = (body.categories || []).length;
 
@@ -235,8 +271,17 @@
     var cat = f.category || f.watcher || '';
     var from = ev.dataset
       ? '<p class="fn__from">Evidence <b>' + esc(ev.dataset) + '</b></p>' : '';
+    /*
+     * Said twice, on purpose.
+     *
+     * The sentence explains; the tag is what somebody sees when they are
+     * scanning, and scanning is what this screen is for. One quiet line under
+     * a finding was the whole labelling a board full of invented people had,
+     * and it was not enough — a screenshot of it was indistinguishable from a
+     * screenshot of a real morning.
+     */
     var sample = ev.simulated
-      ? '<p class="fn__sim">Built on the sample data this application shipped with, not your own records.</p>'
+      ? '<p class="fn__sim">Example data &mdash; not your own records.</p>'
       : '';
     return '<button type="button" class="fn__row fn__row--' + esc(f.severity) + '"'
       + ' data-open="' + esc(f.id) + '" data-cat="' + esc(cat) + '">'
@@ -250,6 +295,7 @@
       +   from + sample
       + '</span>'
       + '<span class="fn__rowmeta">'
+      +   (ev.simulated ? '<span class="fn__egtag">Example</span>' : '')
       +   '<span class="fn__pri fn__pri--' + esc(f.severity) + '">' + esc(LABEL_LONG[f.severity] || 'Medium priority') + '</span>'
       +   '<span class="fn__age">' + esc(ago(f.since)) + '</span>'
       + '</span>'
@@ -313,14 +359,24 @@
 
   function areaIcon(name) { return AREA_ICON[name] || AREA_FALLBACK; }
 
-  /** One area: what watches it, and whether anything is open under it. */
-  function area(c) {
+  /**
+   * One area: what watches it, and whether anything is open under it.
+   *
+   * `nothing` is the state that was missing, and it is not a nicety. With no
+   * records connected every area read "All good" — five green ticks over a
+   * business nothing had looked at. The verdict above them says so now, and
+   * an area saying the opposite three inches below it is the same lie moved
+   * down the page.
+   */
+  function area(c, nothing) {
     var n = c.count || 0;
     var state = c.locked
       ? { cls: 'is-locked', text: 'Not in your plan' }
       : n
         ? { cls: 'is-open', text: n === 1 ? '1 to look at' : n + ' to look at' }
-        : { cls: 'is-clear', text: 'All good' };
+        : nothing
+          ? { cls: 'is-idle', text: 'Nothing to watch yet' }
+          : { cls: 'is-clear', text: 'All good' };
     var watchers = c.watchers === undefined ? null : c.watchers;
     return '<button type="button" class="fn__area ' + state.cls + (picked === c.name ? ' is-picked' : '') + '"'
       + ' data-pick="' + esc(c.name) + '" aria-pressed="' + (picked === c.name) + '"'
@@ -338,18 +394,23 @@
       + '</button>';
   }
 
-  function drawAreas(cats) {
+  function drawAreas(cats, body) {
     if (!el.areas || !el.areagrid) return;
     if (!cats.length) { el.areas.hidden = true; return; }
     el.areas.hidden = false;
-    el.areagrid.innerHTML = cats.map(area).join('');
+    // Nothing of theirs connected, and not the demonstration: these areas
+    // have not been looked at, and must not claim to have been.
+    var nothing = !body.example && body.hasRealData === false;
+    el.areagrid.innerHTML = cats.map(function (c) { return area(c, nothing); }).join('');
 
     var busy = cats.filter(function (c) { return (c.count || 0) > 0; }).length;
     el.areasSub.textContent = picked
       ? 'Showing ' + picked + '. Pick it again to see them all.'
-      : busy
-        ? busy === 1 ? '1 area has something open.' : busy + ' areas have something open.'
-        : 'All areas are within normal range.';
+      : nothing
+        ? 'Nothing has been connected for these to watch.'
+        : busy
+          ? busy === 1 ? '1 area has something open.' : busy + ' areas have something open.'
+          : 'All areas are within normal range.';
   }
 
   var _last = null;   // the last body, so a chip can re-filter without refetching
@@ -366,7 +427,7 @@
     if (picked && !cats.some(function (c) { return c.name === picked; })) picked = '';
     var open = picked ? all.filter(function (f) { return f.category === picked; }) : all;
 
-    drawAreas(cats);
+    drawAreas(cats, body);
 
     el.list.innerHTML = open.map(row).join('');
     el.list.hidden = open.length === 0;
@@ -403,8 +464,46 @@
     }
   }
 
+  /**
+   * Example mode, per reader and per browser.
+   *
+   * Deliberately not a setting on the application. It is a way of looking at
+   * the product, not a fact about the business: two people can have this
+   * screen open, and one of them being shown the demonstration must not
+   * change what the other is working from. It also means it cannot be left on
+   * by accident for somebody else — the worst outcome this mode could have.
+   */
+  function exampleOn() {
+    try { return localStorage.getItem('ch-example') === '1'; } catch (e) { return false; }
+  }
+  function setExample(on) {
+    try { localStorage.setItem('ch-example', on ? '1' : '0'); } catch (e) { /* fine */ }
+  }
+
+  function drawMode(body) {
+    var box = document.getElementById('fn-mode');
+    if (!box) return;
+    // Nothing to switch to, nothing to offer.
+    box.hidden = !body.hasExample;
+    if (!body.hasExample) return;
+
+    var on = !!body.example;
+    var title = document.getElementById('fn-mode-title');
+    var sub = document.getElementById('fn-mode-sub');
+    var btn = document.getElementById('fn-mode-toggle');
+    if (title) title.innerHTML = 'Example mode <b>' + (on ? 'ON' : 'OFF') + '</b>';
+    if (sub) {
+      sub.textContent = on
+        ? 'You’re viewing example data to see how Svarg works.'
+        : 'You’re viewing your business data.';
+    }
+    if (btn) btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    box.className = 'fn__mode' + (on ? ' is-on' : '');
+  }
+
   function load() {
-    return api('/findings')
+    return api('/findings' + (exampleOn() ? '?example=1' : ''))
+      .then(function (body) { drawMode(body); return body; })
       .then(render)
       .catch(function (err) {
         // No verdict when the findings could not be read: a banner saying
@@ -442,8 +541,16 @@
       var f = body.finding || {};
       var ev = f.evidence || {};
 
-      d.chip.textContent = (LABEL[f.severity] || 'Medium') + ' · ' + (f.watcher || 'A watcher');
-      d.chip.className = 'fd__chip fd__chip--' + (f.severity || 'medium');
+      /*
+       * The label travels to the detail screen too.
+       *
+       * This is the screen somebody reads before acting on a finding, and
+       * acting on an invented one means ringing a customer who does not
+       * exist. The list said Example; so does this.
+       */
+      d.chip.textContent = (ev.simulated ? 'Example · ' : '')
+        + (LABEL[f.severity] || 'Medium') + ' · ' + (f.watcher || 'A watcher');
+      d.chip.className = 'fd__chip fd__chip--' + (ev.simulated ? 'eg' : (f.severity || 'medium'));
       d.title.textContent = f.title || f.key || 'A finding';
       d.sub.textContent = f.state === 'resolved'
         ? 'Resolved ' + ago(f.resolvedAt) + '. It was first seen ' + ago(f.since) + '.'
@@ -517,6 +624,19 @@
   }
 
   // ── Wiring ────────────────────────────────────────────────────────────────
+
+  (function wireMode() {
+    var btn = document.getElementById('fn-mode-toggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      setExample(!exampleOn());
+      // The whole board is re-read rather than re-filtered here: the verdict,
+      // the area counts and the list all change together, and a screen that
+      // updated some of them would be worse than one that reloaded.
+      picked = '';
+      load();
+    });
+  }());
 
   el.areagrid.addEventListener('click', function (e) {
     var b = e.target.closest('[data-pick]');

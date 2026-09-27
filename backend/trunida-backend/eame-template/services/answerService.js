@@ -80,6 +80,22 @@ const DATEISH = /date|day|on$|when|session|due|paid/i;
  */
 const _catalogue = new Map();
 
+/**
+ * Has anybody connected any of their own records yet?
+ *
+ * The question the whole of Example mode turns on, and it is asked here
+ * because this file already owns the answer: `bare(cat)` below is the same
+ * test, and two places deciding what "no data" means would drift the first
+ * time one of them learned about a new source.
+ *
+ * Cheap after the first call — the catalogue is cached on dataVersion, which
+ * changes the moment rows land.
+ */
+export async function hasOwnRows() {
+  const cat = await catalogue('own');
+  return cat.some((d) => d.rows > 0);
+}
+
 export async function catalogue(kind = 'own') {
   const version = dataVersion();
   const hit = _catalogue.get(kind);

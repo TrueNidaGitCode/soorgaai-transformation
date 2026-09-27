@@ -212,6 +212,30 @@
        application cannot reach Svarg at all, still sees everything noticed.
        findings.js drives it. -->
   <section class="fn" id="ch-findings" hidden aria-label="What needs attention">
+    <!-- Example mode.
+
+         Above the verdict, because it changes what the verdict means. This
+         application ships with generated sample records so a new owner can
+         see the shape of the thing before connecting anything, and the answer
+         pipeline falls back to them when no real records are connected — so
+         the board used to open on findings about invented people, with one
+         quiet line admitting it.
+
+         Off is the business. On is the demonstration, and the banner says so
+         in the first person somebody reads. Hidden entirely when there is no
+         demonstration to switch to: a toggle that does nothing is worse than
+         no toggle. -->
+    <div class="fn__mode" id="fn-mode" hidden>
+      <div class="fn__modetext">
+        <p class="fn__modetitle" id="fn-mode-title">Example mode <b>OFF</b></p>
+        <p class="fn__modesub" id="fn-mode-sub">You&rsquo;re viewing your business data.</p>
+      </div>
+      <button type="button" class="fn__toggle" id="fn-mode-toggle"
+              role="switch" aria-checked="false" aria-label="Example mode">
+        <span class="fn__toggle-knob" aria-hidden="true"></span>
+      </button>
+    </div>
+
     <!-- The verdict, before the detail.
          Somebody opening this at eight in the morning wants one answer, and
          the answer is not a number of findings: it is whether anything needs

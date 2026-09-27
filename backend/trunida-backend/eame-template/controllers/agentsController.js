@@ -15,6 +15,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { catalogueFor, entryFor, fillQuestion, matchDataset, severityFor } from '../services/agentCatalogue.js';
 import { readIndex, provenanceSummary, sourcesFrom } from '../services/connectorService.js';
+import { hasOwnRows } from '../services/answerService.js';
 import { isOwner } from './accessController.js';
 import { activeCategories, categoryLimit, coversWatcher, allowedSchedule, coverageSummary } from '../services/coverage.js';
 import { draftFollowUp } from '../services/draftService.js';
@@ -103,12 +104,36 @@ export async function listFindingsHandler(req, res) {
      */
     noteLooked(req.user?._id || req.user?.id).catch(() => {});
 
+    /*
+     * Example mode: the customer's findings, or the demonstration. Never both.
+     *
+     * ── Why this filter exists ────────────────────────────────────────────
+     *
+     * The answer pipeline falls back to the sample data an application ships
+     * with when no real records are connected, and the watchers go through
+     * that same pipeline. So a freshly delivered application filled its board
+     * with findings about invented people, carrying a line saying they were
+     * built on sample data — true, and far too quiet for what it was doing.
+     * The verdict above them read "2 things need you today", the area counts
+     * were the samples' counts, and the whole screen was a demonstration
+     * wearing the clothes of a morning briefing.
+     *
+     * Off by default, so what the board shows is the business. On, and it is
+     * the demonstration, said plainly at the top of the screen.
+     *
+     * A finding already knows which it is: evidence.simulated was recorded
+     * when it was found. Nothing is recomputed here and no watcher changes
+     * behaviour -- the two sets simply never appear together.
+     */
+    const example = String(req.query.example || '') === '1';
+    const onlyKind = { 'evidence.simulated': example ? true : { $ne: true } };
+
     const open = await findingsCollection()
-      .find({ state: 'open' }).sort({ firstSeenAt: 1 }).limit(200).toArray();
+      .find({ state: 'open', ...onlyKind }).sort({ firstSeenAt: 1 }).limit(200).toArray();
 
     // Resolved is a reassurance, not a to-do list: the most recent handful.
     const resolved = await findingsCollection()
-      .find({ state: 'resolved' }).sort({ resolvedAt: -1 }).limit(20).toArray();
+      .find({ state: 'resolved', ...onlyKind }).sort({ resolvedAt: -1 }).limit(20).toArray();
 
     const RANK = { high: 0, medium: 1, low: 2 };
     const rows = open.map(findingView).sort((a, b) =>
@@ -154,6 +179,21 @@ export async function listFindingsHandler(req, res) {
       resolved: resolved.map(findingView),
       counts,
       categories: byCategory,
+      /*
+       * Whether this application holds any of the customer's own records.
+       *
+       * The board needs it to tell two quiet states apart, and they mean
+       * opposite things: watchers running over real data and finding nothing
+       * is good news, and watchers running over nothing at all is a product
+       * that has not been connected yet. Both look like an empty list.
+       */
+      hasRealData: await hasOwnRows().catch(() => false),
+      // Whether there is a demonstration to switch to at all. An application
+      // whose samples were replaced has nothing to show in Example mode, and
+      // a toggle that does nothing is worse than no toggle.
+      hasExample: await findingsCollection()
+        .countDocuments({ 'evidence.simulated': true }).then((n) => n > 0).catch(() => false),
+      example,
       examples: rows.length ? [] : examples(),
       watching: agents.filter(a => a.enabled && a.status !== 'degraded').length,
       degraded: agents.filter(a => a.status === 'degraded').length,

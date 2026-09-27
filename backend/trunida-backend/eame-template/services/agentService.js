@@ -599,7 +599,18 @@ export async function runAgent(agent, ask) {
       },
     });
 
-    return { ran: true, fired, ...change };
+    /*
+     * Whether this run read the customer's records or the samples the
+     * application shipped with.
+     *
+     * It travels because the digest must not carry a sample. The answer
+     * pipeline falls back to the sample data when no real records are
+     * connected, which is right for somebody exploring the Ask tab and wrong
+     * for an email: one delivered application sent its owner two morning
+     * briefings about patients who do not exist. Nothing about the finding
+     * was wrong — the finding was about a made-up person, correctly.
+     */
+    return { ran: true, fired, simulated: !!result?.simulated, ...change };
   } catch (err) {
     const failures = (agent.failures || 0) + 1;
     await agentsCollection().updateOne({ _id }, {

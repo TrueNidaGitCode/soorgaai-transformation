@@ -188,7 +188,14 @@ export function buildManifest({ appName = '', copy = {} } = {}) {
  * now catches the general case; this set is the specific answer for the one
  * connector that has a statically imported surface.
  */
-const ALWAYS_SHIPPED = new Set(['services/connectors/whatsapp.js', 'services/connectors/database.js']);
+const ALWAYS_SHIPPED = new Set([
+  'services/connectors/whatsapp.js',
+  'services/connectors/database.js',
+  // Same reason as WhatsApp: routes/ is auto-mounted, phoneRoutes imports
+  // phoneController, which imports this. Ship the route without the
+  // connector and the application dies on boot.
+  'services/connectors/phone.js',
+]);
 
 /**
  * Asked for by name, or not shipped at all.
@@ -241,6 +248,10 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/connectors/database.js':  { template: 'services/connectors/database.js' },
     'controllers/whatsappController.js': { template: 'controllers/whatsappController.js' },
     'routes/whatsappRoutes.js':         { template: 'routes/whatsappRoutes.js' },
+    'services/connectors/phone.js':     { template: 'services/connectors/phone.js' },
+    'services/phoneProviders.js':       { template: 'services/phoneProviders.js' },
+    'controllers/phoneController.js':   { template: 'controllers/phoneController.js' },
+    'routes/phoneRoutes.js':            { template: 'routes/phoneRoutes.js' },
     'controllers/connectorController.js': { template: 'controllers/connectorController.js' },
     'routes/connectorsRoutes.js':       { template: 'routes/connectorsRoutes.js' },
     'services/tenantSignals.js':        { template: 'services/tenantSignals.js' },

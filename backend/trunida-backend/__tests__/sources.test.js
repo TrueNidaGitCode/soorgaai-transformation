@@ -52,7 +52,7 @@ describe('where an industry keeps its data', () => {
   it('ships only the connector modules the sources call for', async () => {
     const { buildRuntime } = await import('../services/eameProjectBuilder.js');
     const paths = (o) => buildRuntime({ appName: 'x', ...o }).map(f => f.path).filter(p => p.startsWith('services/connectors/'));
-    expect(paths({}).length).toBe(5);
+    expect(paths({}).length).toBe(6);
     /*
      * WhatsApp is always among them, and that is not the filter leaking.
      *
@@ -60,12 +60,19 @@ describe('where an industry keeps its data', () => {
      * module statically, so an application built without it died on boot with
      * "Cannot find module" — which is what happened to Arthi's. Optional means
      * optional only for the connectors connectorService discovers at boot.
+     *
+     * The phone connector is here for exactly the same reason and was added
+     * knowing it: routes/ is auto-mounted, phoneRoutes imports phoneController,
+     * and phoneController imports the connector. Ship the route without the
+     * module and the application dies on boot in the identical way.
      */
     expect(paths({ connectors: ['jira'] }).sort())
-      .toEqual(['services/connectors/database.js', 'services/connectors/jira.js', 'services/connectors/whatsapp.js']);
+      .toEqual(['services/connectors/database.js', 'services/connectors/jira.js',
+        'services/connectors/phone.js', 'services/connectors/whatsapp.js']);
     // The database ships with every application too, for the same reason
     // the card is on every Data page: it is offered to everybody.
-    expect(paths({ connectors: [] }).sort()).toEqual(['services/connectors/database.js', 'services/connectors/whatsapp.js']);
+    expect(paths({ connectors: [] }).sort()).toEqual(['services/connectors/database.js',
+      'services/connectors/phone.js', 'services/connectors/whatsapp.js']);
     // Everything else still ships.
     expect(buildRuntime({ appName: 'x', connectors: [] }).map(f => f.path)).toContain('services/connectorService.js');
   });

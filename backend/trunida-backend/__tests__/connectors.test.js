@@ -144,7 +144,7 @@ describe('what each connector reads', () => {
         expect(k.provides.length).toBeGreaterThan(3);
       }
     }
-    expect(catalog().map(c => c.kind).sort()).toEqual(['confluence', 'database', 'github', 'jira', 'svarg', 'whatsapp-business']);
+    expect(catalog().map(c => c.kind).sort()).toEqual(['confluence', 'database', 'github', 'jira', 'phone', 'svarg', 'whatsapp-business']);
     // The catalog never carries a function or a secret.
     expect(JSON.stringify(catalog())).not.toMatch(/function|apiToken":"[^"]+"/);
   });

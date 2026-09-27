@@ -26,6 +26,37 @@ describe('the webhook', () => {
     expect(messagesIn({})).toEqual([]);
   });
 
+  it('carries a voice note’s media id, rather than landing the word "[audio]"', async () => {
+    /*
+     * What this replaced: a voice note became the literal text "[audio]" — a
+     * row saying a customer got in touch and refusing to say what about. On
+     * WhatsApp a voice note is frequently the LONGEST thing anybody sends,
+     * so that was the most important message in the inbox reduced to its
+     * file type.
+     *
+     * Meta delivers only an id; the media is fetched with the owner's token
+     * on the sync, where there is a gateway to read it and somewhere to
+     * record that it failed. So what the webhook has to do is keep the id.
+     */
+    const { messagesIn } = await import(T + 'services/connectors/whatsapp.js');
+    const [m] = messagesIn({ entry: [{ changes: [{ field: 'messages', value: {
+      metadata: { phone_number_id: '111' },
+      messages: [{ id: 'wamid.9', from: '919800000003', timestamp: '1789600200',
+        type: 'audio', audio: { id: 'media-77', mime_type: 'audio/ogg; codecs=opus' } }],
+    } }] }] });
+    expect(m.mediaId).toBe('media-77');
+    expect(m.mediaMime).toMatch(/^audio\/ogg/);
+    // The placeholder stays as the text until the note has been read, so a
+    // row is never blank about what it is.
+    expect(m.text).toBe('[audio]');
+  });
+
+  it('leaves a typed message with no media to fetch', async () => {
+    const { messagesIn } = await import(T + 'services/connectors/whatsapp.js');
+    const m = messagesIn(PAYLOAD);
+    expect(m.every(x => x.mediaId === '')).toBe(true);
+  });
+
   it('accepts only a payload Meta signed with the app secret, and any payload when none was given', async () => {
     const { signatureOk } = await import(T + 'controllers/whatsappController.js');
     const raw = Buffer.from(JSON.stringify(PAYLOAD));
@@ -53,7 +84,7 @@ describe('the webhook', () => {
     expect(classifyReply('Yes coach')).toBe('present');
     expect(classifyReply('Not coming, fever')).toBe('absent');
     expect(classifyReply('Is there practice tomorrow?')).toBe('');
-    expect(fields.map(f => f.name)).toEqual(['phoneNumberId', 'accessToken', 'appSecret', 'mode']);
+    expect(fields.map(f => f.name)).toEqual(['phoneNumberId', 'accessToken', 'appSecret', 'mode', 'transcribeVoice']);
     expect(provides).toContain('status');
   });
 

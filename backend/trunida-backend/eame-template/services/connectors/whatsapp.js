@@ -22,6 +22,7 @@
  */
 import axios from 'axios';
 import mongoose from 'mongoose';
+import { transcribe, canTranscribe } from '../transcribeService.js';
 
 export const kind = 'whatsapp-business';
 export const label = 'WhatsApp Business';
@@ -38,6 +39,11 @@ export const fields = [
   { name: 'appSecret', label: 'App secret', required: false, secret: true,
     hint: 'Optional, but worth setting: without it, anything that learns the webhook address could post messages into this application.' },
   { name: 'mode', label: 'Read replies as', options: ['attendance', 'messages'] },
+  // On WhatsApp a voice note is often the longest thing anybody sends, and it
+  // used to land as the literal text "[audio]" — a row saying a customer got
+  // in touch and refusing to say what about.
+  { name: 'transcribeVoice', label: 'Read voice notes', options: ['yes', 'no'], required: false,
+    hint: 'Turning this off keeps the message and skips the cost of listening to it.' },
 ];
 
 /** What each received message carries, for the mapping onto the dataset. */
@@ -112,12 +118,29 @@ export function messagesIn(payload) {
           : m.type === 'interactive' ? (m.interactive?.button_reply?.title || m.interactive?.list_reply?.title)
           : m.type === 'reaction' ? m.reaction?.emoji
           : `[${m.type}]`;
+        /*
+         * A voice note is a message somebody spoke rather than typed.
+         *
+         * It used to land as the literal text "[audio]", which is a row
+         * saying a customer got in touch and refusing to say what about —
+         * and on WhatsApp a voice note is often the LONGEST thing anybody
+         * sends. Meta delivers only an id; the media has to be fetched with
+         * the owner's token, so the id is carried here and the fetching and
+         * reading happen on the sync, where there is a gateway to do it and
+         * a place to record that it failed.
+         */
+        const mediaId = m.type === 'audio' ? String(m.audio?.id || '')
+          : m.type === 'voice' ? String(m.voice?.id || '')
+          : '';
+
         out.push({
           messageId: String(m.id || ''),
           phone: String(m.from || ''),
           name: names[m.from] || '',
           text: String(text || ''),
           type: String(m.type || ''),
+          mediaId,
+          mediaMime: mediaId ? String(m.audio?.mime_type || m.voice?.mime_type || 'audio/ogg') : '',
           at: m.timestamp ? new Date(Number(m.timestamp) * 1000) : new Date(),
           phoneNumberId: String(v.metadata?.phone_number_id || ''),
         });
@@ -143,13 +166,80 @@ export async function keep(messages) {
  * schedule land what has arrived, and the webhook asks for a sync itself
  * as messages come in.
  */
+/** How many voice notes one sync will listen to. A ceiling on cost, per run. */
+const MAX_VOICE_PER_SYNC = Number(process.env.WHATSAPP_TRANSCRIBE_PER_SYNC || 15);
+
+/**
+ * Read the voice notes that have arrived and not been read.
+ *
+ * Two steps, because Meta does not deliver media: the webhook carries an id,
+ * that id is exchanged for a short-lived URL, and the URL is fetched with the
+ * same token. Then Svarg turns it into text across the gateway.
+ *
+ * Every outcome is written back to the message, so a voice note that cannot
+ * be fetched is tried once and recorded as failed rather than retried on
+ * every sync for ever at the cost of a model call.
+ */
+async function readVoiceNotes(config) {
+  if (config.transcribeVoice === 'no' || !canTranscribe()) return;
+  const token = String(config.accessToken || '').trim();
+  if (!token) return;
+
+  const col = inboxCollection();
+  const pending = await col.find({
+    mediaId: { $nin: ['', null] },
+    voiceStatus: { $in: [null, 'pending'] },
+  }).sort({ at: 1 }).limit(MAX_VOICE_PER_SYNC).toArray().catch(() => []);
+
+  for (const m of pending) {
+    let status = 'failed';
+    let text = '';
+    try {
+      const meta = await axios.get(`${GRAPH()}/${m.mediaId}`, {
+        headers: { Authorization: `Bearer ${token}` }, timeout: 20000,
+      });
+      const url = meta.data?.url;
+      if (!url) throw new Error('Meta returned no address for that voice note.');
+      const media = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'arraybuffer', timeout: 60000,
+        maxContentLength: Infinity, maxBodyLength: Infinity,
+      });
+      const out = await transcribe(
+        Buffer.from(media.data),
+        String(media.headers?.['content-type'] || m.mediaMime || 'audio/ogg').split(';')[0].trim(),
+      );
+      if (out.ok && !out.empty) { status = 'read'; text = out.text; }
+      else if (out.ok) { status = 'silent'; }
+    } catch {
+      // The reason is not kept here: unlike a call, a voice note that cannot
+      // be read costs the owner nothing to ask about again next week, and the
+      // inbox is not a place anybody debugs.
+      status = 'failed';
+    }
+    await col.updateOne({ _id: m._id }, { $set: { voiceStatus: status, voiceText: text } }).catch(() => {});
+  }
+}
+
 export async function pull(config, { maxRows = 50000 } = {}) {
+  await readVoiceNotes(config);
   const id = String(config.phoneNumberId || '').trim();
   const docs = await inboxCollection().find(id ? { $or: [{ phoneNumberId: id }, { phoneNumberId: '' }] } : {}).sort({ at: 1 }).limit(maxRows).toArray();
   const attendance = config.mode !== 'messages';
   const rows = [];
   for (const m of docs) {
-    const status = attendance ? classifyReply(m.text) : '';
+    /*
+     * What a voice note said, where there is one.
+     *
+     * The spoken words ARE the message — a customer who sends thirty seconds
+     * of audio has said more than one who types "ok" — so a read voice note
+     * becomes the message text rather than sitting in a column beside it.
+     * Anything not read keeps the placeholder, which at least says the type.
+     */
+    const spoken = m.voiceStatus === 'read' && m.voiceText ? String(m.voiceText) : '';
+    const body = spoken || m.text || '';
+
+    const status = attendance ? classifyReply(body) : '';
     if (attendance && !status) continue;
     const at = new Date(m.at);
     rows.push({
@@ -157,7 +247,7 @@ export async function pull(config, { maxRows = 50000 } = {}) {
       time: at.toTimeString().slice(0, 5),
       name: m.name || m.phone,
       phone: m.phone,
-      message: String(m.text || '').replace(/\n/g, ' '),
+      message: String(body).replace(/\s*\n\s*/g, ' | '),
       status,
       received_at: at.toISOString(),
       message_id: m.messageId,

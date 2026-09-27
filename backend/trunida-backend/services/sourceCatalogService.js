@@ -40,6 +40,11 @@ export const CONNECTOR_MODULES = {
   // The Business account, through the owner's own Meta app; the export is
   // parsed on the Data page and needs no module.
   whatsapp:   'services/connectors/whatsapp.js',
+  // A cloud telephony service, whichever one. Ships with every application
+  // anyway (ALWAYS_SHIPPED, because its route is auto-mounted and imports it),
+  // and is named here so an industry that keeps records on the phone can ask
+  // for the card as well as the module.
+  phone:      'services/connectors/phone.js',
   // Svarg's own operations, for the one tenant Svarg runs itself on. Named
   // here so it can be asked for; not in ALWAYS_SHIPPED, so no customer's
   // application is offered a source it will only ever be refused.
@@ -99,6 +104,17 @@ export function sourcesFromDatasets(datasets = []) {
     const t = String(d?.typicalSource || '').toLowerCase();
     if (!t) continue;
     if (/whatsapp/.test(t)) add('whatsapp', 'WhatsApp', 'Export the chat, without media, and import it here.');
+    /*
+     * A phone system, where a dataset says the records live on the phone.
+     *
+     * This is the one source a business always has and almost never treats
+     * as data — the clinics knowledge base says outright that phone enquiries
+     * "often do not exist at all", and that is exactly why the card belongs
+     * on the page. Naming it is how somebody finds out it can be read.
+     */
+    if (/phone|call log|calls|telephon|ivr|exotel|knowlarity|ozonetel|twilio|myoperator/.test(t)) {
+      add('phone', 'Your phone system', 'Calls arrive as they end, with the recording read into text. Needs a cloud telephony service.');
+    }
     if (/excel|xlsx|spreadsheet|google sheet|sheets|drive|onedrive|csv|folder/.test(t)) add('folder', 'Your folder of spreadsheets', 'Upload the folder; each sheet is matched to what the application expects.');
     if (/jira/.test(t)) add('jira', 'Jira', '');
     if (/confluence/.test(t)) add('confluence', 'Confluence', '');

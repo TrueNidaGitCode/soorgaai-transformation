@@ -159,6 +159,10 @@
       + '<span class="ag-node__name">' + esc(c.name) + '</span>'
       + '<span class="ag-node__state ' + st.cls + '">' + esc(st.label)
       + (!off && c.openCount ? ' &middot; ' + c.openCount + ' open' : '') + '</span>'
+      // Which systems this one reads. Two chips is the interesting case: an
+      // agent comparing one system against another, which is the only kind
+      // of problem neither system can see on its own.
+      + sourceChips(c)
       + '</span>'
       + '</button>';
   }
@@ -231,14 +235,101 @@
     return '<div class="ag-chief' + (stopped ? ' is-bad' : running ? ' is-on' : '') + '">'
       + '<span class="ag-chief__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4.5V8M9.5 13.5h.01M14.5 13.5h.01M9.5 16.5h5"/><circle cx="12" cy="3.5" r="1.2"/></svg></span>'
       + '<h2 class="ag-chief__name">Chief of Agents</h2>'
-      + '<p class="ag-chief__what">Runs each watcher on its own schedule and keeps what it found</p>'
+      // It used to say "runs each watcher on its own schedule", from when
+      // there was one kind of thing to run. There are two now — the systems
+      // being read, and the agents that decide what the rows mean — and a
+      // header that calls both a watcher makes the distinction below unreadable.
+      + '<p class="ag-chief__what">Coordinates agents that continuously look for business problems'
+      + ' across your connected systems</p>'
       + '<p class="ag-chief__state">' + line + '</p>'
       + '</div>';
   }
 
+  /**
+   * The three layers, in one line each.
+   *
+   * ── Why this is on the screen at all ───────────────────────────────────────
+   *
+   * Without it the sources below read as three more agents, and the product
+   * reads as an integration monitor: "here are your CRM, phone and WhatsApp
+   * agents". What a customer buys is the middle row — somebody noticed the
+   * invoice was never raised — and the systems underneath are how it was
+   * noticed, which is evidence rather than the point.
+   *
+   * Each line is a question rather than a label, because the questions are
+   * what make the difference obvious to somebody who has never thought about
+   * it: what happened, what it means, and what to do.
+   */
+  function layers() {
+    var rows = [
+      ['Your systems', 'What happened?', 'ag-layer--src'],
+      ['Business agents', 'What does it mean?', 'ag-layer--biz'],
+      ['Chief of Agents', 'What should you know about?', 'ag-layer--chief'],
+    ];
+    return '<ol class="ag-layers" aria-label="How this works">'
+      + rows.map(function (r) {
+        return '<li class="ag-layer ' + r[2] + '">'
+          + '<span class="ag-layer__name">' + esc(r[0]) + '</span>'
+          + '<span class="ag-layer__asks">' + esc(r[1]) + '</span></li>';
+      }).join('')
+      + '</ol>';
+  }
+
+  /** How long ago, for a source that last changed at this time. */
+  function sourceLine(s) {
+    var rows = s.rows === 1 ? '1 row' : (s.rows || 0).toLocaleString() + ' rows';
+    return rows + (s.lastChange ? ' &middot; last changed ' + when(s.lastChange) : '');
+  }
+
+  /**
+   * The systems being read, as themselves.
+   *
+   * Drawn differently from an agent on purpose — a strip of plain rows rather
+   * than cards with states and buttons — because a source has nothing to
+   * decide and nothing to start. What it has is rows, and when they last
+   * moved.
+   *
+   * Every number here is counted from the rows that actually landed, so an
+   * application whose owner uploaded one spreadsheet says one spreadsheet
+   * however many systems its industry usually runs on.
+   */
+  function sources(list) {
+    if (!list || !list.length) {
+      return '<section class="ag-src">'
+        + '<h3 class="ag-src__head">Your systems</h3>'
+        + '<p class="ag-src__none">No records have arrived yet. Connect a source on the Data page'
+        + ' and the agents below start with something to read.</p></section>';
+    }
+    return '<section class="ag-src">'
+      + '<h3 class="ag-src__head">Your systems <span>what the agents read</span></h3>'
+      + '<ul class="ag-src__list">'
+      + list.map(function (s) {
+        return '<li class="ag-src__item">'
+          + '<span class="ag-src__name">' + esc(s.label) + '</span>'
+          + '<span class="ag-src__meta">' + sourceLine(s) + '</span>'
+          // Escaped one at a time, then joined with the separator — joining
+          // first and escaping the lot turns the separator into text.
+          + '<span class="ag-src__in">'
+          + (s.datasets || []).map(esc).join(' &middot; ') + '</span>'
+          + '</li>';
+      }).join('')
+      + '</ul></section>';
+  }
+
+  /** Which systems one agent reads, as chips small enough to sit under a name. */
+  function sourceChips(c) {
+    var list = c.sources || [];
+    if (!list.length) return '';
+    return '<span class="ag-chips">'
+      + list.map(function (s) { return '<span class="ag-chip">' + esc(s.label) + '</span>'; }).join('')
+      + '</span>';
+  }
+
   function drawMap(cat, cats, picked) {
     var gs = groups(cat, cats);
-    els.map.innerHTML = chief(cat)
+    els.map.innerHTML = layers()
+      + sources(view.sources)
+      + chief(cat)
       + '<div class="ag-map__stem" aria-hidden="true"></div>'
       // The count goes to CSS, which needs it to stop the bus at the centre
       // of the first and last column rather than at the edge of the row.
@@ -306,6 +397,13 @@
       + '<button type="button" class="ag-detail__shut" data-shut="1" aria-label="Close">&times;</button>'
       + '</header>'
       + '<p class="ag-detail__says">' + esc(c.says) + '</p>'
+      // What it reads, before what it asks. Somebody deciding whether to
+      // believe a finding asks "from where?" first.
+      + (c.sources && c.sources.length
+        ? '<p class="ag-detail__src"><span>Reads</span>'
+          + c.sources.map(function (s) { return '<span class="ag-chip">' + esc(s.label) + '</span>'; }).join('')
+          + '</p>'
+        : '')
       + (c.question ? '<p class="ag-q">' + esc(c.question) + '</p>' : '')
       + (a ? '<p class="ag-meta">' + esc(scheduleText(a)) + ' &middot; last run ' + when(a.lastRunAt) + '</p>' : '')
       + (a && a.lastError ? '<p class="ag-err">' + esc(a.lastError) + '</p>' : '')
@@ -318,7 +416,7 @@
 
   // What the map is drawn from, kept so a click can redraw without asking
   // the server again.
-  var view = { catalogue: [], categories: [], agents: [], canManage: false, coverage: null };
+  var view = { catalogue: [], categories: [], agents: [], canManage: false, coverage: null, sources: [] };
   var picked = '';
 
   function drawDetail() {
@@ -339,6 +437,7 @@
       view.categories = body.categories || [];
       view.canManage = !!body.canManage;
       view.coverage = body.coverage || null;
+      view.sources = body.sources || [];
       // The form below the map writes, so it belongs to the owner too.
       var aside = document.getElementById('ag-own');
       if (aside) aside.hidden = !view.canManage;

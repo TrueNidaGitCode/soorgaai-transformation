@@ -237,9 +237,21 @@ export function joinOnEntity(left, right, mode = 'both', order = null, now = new
   for (const l of left) {
     const r = rightBy.get(key(l.name));
     // Without an order the test is presence, exactly as before.
-    const pair = r && order ? firstInOrder(l, r, order, now) : (r ? { records: [...l.records, ...r.records] } : null);
-    if (mode === 'both' && pair) out.push({ name: l.name, records: pair.records, sides: 2 });
-    else if (mode === 'leftOnly' && !pair) out.push({ name: l.name, records: l.records, sides: 1 });
+    const pair = r && order
+      ? firstInOrder(l, r, order, now)
+      : (r ? { records: [...l.records, ...r.records], leftCount: l.records.length } : null);
+    /*
+     * `leftCount` says how many of the records came from the left dataset,
+     * and it is not bookkeeping: the two sides have DIFFERENT columns, and
+     * the finding screen renders the rows under a header. Without it, a call
+     * log's cells are drawn under an appointment diary's headings — a table
+     * that looks authoritative and is nonsense.
+     */
+    if (mode === 'both' && pair) {
+      out.push({ name: l.name, records: pair.records, sides: 2, leftCount: pair.leftCount });
+    } else if (mode === 'leftOnly' && !pair) {
+      out.push({ name: l.name, records: l.records, sides: 1, leftCount: l.records.length });
+    }
   }
   return out;
 }
@@ -261,7 +273,7 @@ function firstInOrder(l, r, { direction, leftIdx, rightIdx }, now) {
       const rd = parseDate(rr.cells[rightIdx], now);
       if (!rd) continue;
       const ok = direction === 'before' ? rd < ld : rd > ld;
-      if (ok) return { records: [lr, rr] };
+      if (ok) return { records: [lr, rr], leftCount: 1 };
     }
   }
   return null;

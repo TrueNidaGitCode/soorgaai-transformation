@@ -255,3 +255,48 @@ describe('a join that knows which came first', () => {
     expect(joinOnEntity(enquiry, booked, 'leftOnly', order('after'), NOW).map(o => o.name)).toEqual(['Priya']);
   });
 });
+
+/**
+ * Two systems, two shapes, and the table that would have drawn them as one.
+ *
+ * A finding that compares an appointment diary against a call log carries
+ * rows from both. They have different columns. The group can only publish
+ * one `columns`, so without saying where the first dataset's rows stop, the
+ * screen draws a call log's cells under the diary's headings — which does not
+ * look broken. It looks authoritative and is wrong, which is worse.
+ */
+describe('evidence from two systems keeps them apart', () => {
+  const appt = [{ name: 'Rahul', records: [{ cells: ['Rahul', '2026-09-12', 'No Show'] }] }];
+  const calls = [{
+    name: 'Rahul',
+    records: [{ cells: ['Rahul', '2026-09-13', 'phone', 'asked about upgrading'] }],
+  }];
+
+  it('says how many rows came from the first dataset', () => {
+    const out = joinOnEntity(appt, calls, 'both', { direction: 'after', leftIdx: 1, rightIdx: 1 }, NOW);
+    expect(out[0].leftCount).toBe(1);
+    expect(out[0].records).toHaveLength(2);
+    // The split the screen makes: one row each side, under its own header.
+    expect(out[0].records.slice(0, out[0].leftCount)[0].cells[2]).toBe('No Show');
+    expect(out[0].records.slice(out[0].leftCount)[0].cells[3]).toBe('asked about upgrading');
+  });
+
+  it('counts the left side correctly for a presence join too', () => {
+    // Not one-per-side here: every row from both, left first.
+    const many = [{ name: 'Rahul', records: [{ cells: ['a'] }, { cells: ['b'] }] }];
+    const out = joinOnEntity(many, calls, 'both', null, NOW);
+    expect(out[0].leftCount).toBe(2);
+    expect(out[0].records).toHaveLength(3);
+  });
+
+  it('gives leftOnly a count covering all of its rows', () => {
+    /*
+     * Nothing from the right side is in a leftOnly result by definition, so
+     * every row belongs to the left dataset. Saying so rather than leaving it
+     * null keeps the screen on one path.
+     */
+    const out = joinOnEntity(appt, [], 'leftOnly', null, NOW);
+    expect(out[0].leftCount).toBe(1);
+    expect(out[0].records).toHaveLength(1);
+  });
+});

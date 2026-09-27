@@ -2425,3 +2425,120 @@ body {
    right-hand column with a dead gutter beside it. `:has` keeps the two-column
    rule intact for an older generated application that still renders the nav. */
 .dt__layout:has(> .dt__side[hidden]) { grid-template-columns: minmax(0, 1fr); }
+
+/* ── The three layers, your systems, and which ones an agent reads ──────────
+ *
+ * Added when the page grew a second kind of thing on it. It had one — a
+ * watcher — and the word covered both the systems being read and the agents
+ * deciding what the rows meant. Two concepts under one word is how a product
+ * that finds business problems starts reading as an integration monitor.
+ *
+ * So the sources are drawn as plainly as possible: a list, no card, no state
+ * dot, no button. Nothing about them should invite the eye before the agents
+ * below them, because what a customer buys is the finding and the system is
+ * how it was noticed.
+ */
+
+.ag-layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+  justify-content: center;
+}
+.ag-layer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 260px;
+  padding: 10px 14px;
+  border: 1px solid var(--ch-line);
+  border-radius: 12px;
+  background: var(--ch-bg-2);
+}
+.ag-layer__name { font-size: 12px; font-weight: 700; color: var(--ch-text); }
+.ag-layer__asks { font-size: 12px; color: var(--ch-faint); }
+/* The one the customer is buying, so it is the one with colour on it. */
+.ag-layer--biz { border-color: color-mix(in srgb, var(--ch-accent) 34%, transparent); }
+.ag-layer--biz .ag-layer__name { color: var(--ch-accent); }
+
+.ag-src { margin: 0 0 22px; }
+.ag-src__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ch-faint);
+}
+.ag-src__head span { font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 12px; }
+.ag-src__none { margin: 0; font-size: 13px; line-height: 1.55; color: var(--ch-dim); }
+.ag-src__list { margin: 0; padding: 0; list-style: none; display: grid; gap: 1px; background: var(--ch-line); border: 1px solid var(--ch-line); border-radius: 12px; overflow: hidden; }
+.ag-src__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 14px;
+  padding: 10px 14px;
+  background: var(--ch-bg-2);
+}
+.ag-src__name { font-size: 13px; font-weight: 600; color: var(--ch-text); min-width: 0; }
+.ag-src__meta { font-size: 12px; color: var(--ch-faint); font-variant-numeric: tabular-nums; text-align: right; }
+.ag-src__in { grid-column: 1 / -1; font-size: 12px; color: var(--ch-faint); min-width: 0; overflow-wrap: anywhere; }
+
+/* Which systems one agent reads. Quiet enough to be read after the name.
+ *
+ * A column is 150px at its narrowest and "Your folder of spreadsheets" is not,
+ * so the chip has to be allowed to end in an ellipsis rather than run out past
+ * the card — which it did, over the column beside it. The full name is on the
+ * panel the node opens, and in the systems list at the top of the page. */
+.ag-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; max-width: 100%; }
+.ag-chip {
+  max-width: 100%;
+  padding: 1px 7px;
+  border: 1px solid var(--ch-line);
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ch-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* In the panel there is room, so it says the whole thing. */
+.ag-detail__src .ag-chip { max-width: none; }
+.ag-detail__src { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; }
+.ag-detail__src > span:first-child {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ch-faint);
+}
+
+@media (max-width: 620px) {
+  .ag-layers { flex-direction: column; }
+  .ag-layer { max-width: none; }
+  .ag-src__item { grid-template-columns: 1fr; }
+  .ag-src__meta { text-align: left; }
+}
+
+/* The dataset a block of evidence rows came from, when a finding compares two
+   systems. A caption row rather than a heading above the table, so the two
+   blocks read as one piece of evidence and not as two findings. */
+.fd-rows__from th {
+  padding-top: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ch-faint);
+  text-align: left;
+}

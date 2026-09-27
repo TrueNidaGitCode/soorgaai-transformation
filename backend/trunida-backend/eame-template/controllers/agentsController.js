@@ -14,7 +14,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { catalogueFor, entryFor, fillQuestion, matchDataset, severityFor } from '../services/agentCatalogue.js';
-import { readIndex } from '../services/connectorService.js';
+import { readIndex, provenanceSummary, sourcesFrom } from '../services/connectorService.js';
 import { isOwner } from './accessController.js';
 import { activeCategories, categoryLimit, coversWatcher, allowedSchedule, coverageSummary } from '../services/coverage.js';
 import { draftFollowUp } from '../services/draftService.js';
@@ -319,11 +319,27 @@ export async function listAgentsHandler(req, res) {
      */
     const byWatcher = new Map();
     for (const a of withFindings) if (a.watcherId) byWatcher.set(a.watcherId, a);
+
+    /*
+     * Which systems each business agent is reading.
+     *
+     * Measured from the rows themselves rather than read off the industry's
+     * source block: a finding's sources have to be the systems its rows
+     * actually came from. A watcher reading two datasets -- the ones that
+     * compare one system against another -- names both.
+     */
+    const prov = await provenanceSummary();
+
     const catalogue = catalogueFor(readIndex(), plan())
       .map((c) => {
         const live = byWatcher.get(c.id) || null;
+        // `using` is one dataset name, or two joined by " + " for a watcher
+        // that reads two systems against each other.
+        const datasets = String(c.using || '').split(' + ').map((s) => s.trim()).filter(Boolean);
         return {
           ...c,
+          datasets,
+          sources: sourcesFrom(prov, datasets),
           running: running.has(c.name) || !!live,
           category: categoryOf(c.id),
           // What the map draws a dot for. Every value here is read off the
@@ -362,6 +378,16 @@ export async function listAgentsHandler(req, res) {
         locked: categoryLimit() ? !activeCategories(plan()).includes(c.name) : false,
       })),
       coverage: coverageSummary(plan()),
+      /*
+       * The systems this application is reading, as themselves.
+       *
+       * Deliberately not presented as a third kind of agent. A source
+       * observes and hands over rows; it never decides that anything is a
+       * problem. Keeping the two apart on the screen is what stops the
+       * product reading as an integration monitor — the customer cares that
+       * a payment was never invoiced, not that a spreadsheet synced.
+       */
+      sources: sourcesFrom(prov),
       areas: [...new Set(catalogue.map((c) => c.area))],
       schedules: Object.keys(SCHEDULES),
     });

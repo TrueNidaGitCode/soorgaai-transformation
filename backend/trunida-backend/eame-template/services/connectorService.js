@@ -510,6 +510,62 @@ export async function provenanceSummary() {
   return out;
 }
 
+/**
+ * The systems feeding this application, in the words the owner uses for them.
+ *
+ * ── Why this is measured and not declared ──────────────────────────────────
+ *
+ * data/sources.json says which systems the industry USUALLY runs on, which is
+ * a good thing to offer somebody on the Data page and the wrong thing to put
+ * beside a finding. A finding's sources have to be the systems the rows
+ * actually came from, and that is written on every row as it lands.
+ *
+ * So this reads provenance — what arrived, from where, and when — rather than
+ * the catalogue of what might. An application whose owner uploaded one
+ * spreadsheet says one spreadsheet, however many systems its industry block
+ * lists.
+ */
+export const SOURCE_LABELS = {
+  own: 'A file you uploaded',
+  folder: 'Your folder of spreadsheets',
+  whatsapp: 'WhatsApp',
+  chat: 'Added in the chat',
+  database: 'Your database',
+  jira: 'Jira',
+  confluence: 'Confluence',
+  github: 'GitHub',
+  svarg: 'Svarg',
+  sample: 'Sample data',
+};
+
+export function sourceLabel(kind) {
+  const k = String(kind || '').toLowerCase();
+  return SOURCE_LABELS[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1) : 'Unknown');
+}
+
+/**
+ * Every system that has actually put rows into this application.
+ *
+ * @param {object} prov  from provenanceSummary()
+ * @param {string[]} [only]  restrict to these datasets — what one watcher reads
+ * @returns {{kind,label,rows,datasets,lastChange}[]} busiest first
+ */
+export function sourcesFrom(prov, only = null) {
+  const want = only ? new Set(only) : null;
+  const by = new Map();
+  for (const [dataset, d] of Object.entries(prov || {})) {
+    if (want && !want.has(dataset)) continue;
+    for (const [kind, n] of Object.entries(d.bySource || {})) {
+      const s = by.get(kind) || { kind, label: sourceLabel(kind), rows: 0, datasets: [], lastChange: null };
+      s.rows += n;
+      if (!s.datasets.includes(dataset)) s.datasets.push(dataset);
+      if (d.lastChange && (!s.lastChange || d.lastChange > s.lastChange)) s.lastChange = d.lastChange;
+      by.set(kind, s);
+    }
+  }
+  return [...by.values()].sort((a, b) => b.rows - a.rows);
+}
+
 /** Objects from a connector, onto the dataset's columns, by the connector's mapping. */
 export function mapOntoColumns(dataset, objects, mapping) {
   const columns = (dataset.columns || []).filter(c => c !== '_source');

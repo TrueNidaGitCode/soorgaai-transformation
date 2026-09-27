@@ -360,9 +360,17 @@ async function plan(args) {
 
 // ── EXECUTE ─────────────────────────────────────────────────────────────────
 
-function groupFrom({ step, columns, dataset, items, records, window, coverage, opaque }) {
+function groupFrom({ step, columns, dataset, items, records, window, coverage, opaque, sides = null }) {
   return {
     id: step.id, label: step.label, category: step.category, dataset, columns,
+    /*
+     * For a join, the two datasets and their own columns.
+     *
+     * A joined group's rows come from two places with different shapes, and
+     * `columns` can only describe one of them. Anything rendering the rows
+     * needs to know where each one stops — see leftCount on the items.
+     */
+    sides: sides || null,
     entity: step.entity || null, window: window || null, coverage: coverage || null,
     records, entities: items.length,
     // Whether these "names" are identifiers nothing could resolve to a person.
@@ -558,6 +566,10 @@ async function execute(planned, kind, now = new Date()) {
       const items = joinOnEntity(l.group.items, r.group.items, step.mode, order, now);
       const g = groupFrom({
         step, columns: l.columns, dataset: `${l.dataset} + ${r.dataset}`, items,
+        sides: [
+          { dataset: l.dataset, columns: l.columns },
+          { dataset: r.dataset, columns: r.columns },
+        ],
         // The join carries whatever the sides carried: matching two lists of
         // identifiers yields a list of identifiers.
         opaque: l.group.opaque || r.group.opaque,
@@ -898,12 +910,17 @@ function envelope({ answer, groups, cross, notes, planned, kind, checked, state,
       categoryLabel: CATEGORIES[g.category].label, tone: CATEGORIES[g.category].tone,
       records: g.records, entities: g.entities, dataset: g.dataset, columns: g.columns,
       opaque: !!g.opaque,
+      sides: g.sides || null,
       window: g.window || '', rule: g.rule || '', note: g.note || '',
       items: g.items.map(i => ({
         name: i.name,
         id: i.id || '',
         lines: i.records.slice(0, 6).map(r => r.cells),
         records: i.records.length,
+        // How many of those lines belong to the first dataset. Only a join
+        // sets it, and without it the rest would be drawn under the wrong
+        // headings.
+        leftCount: Number.isInteger(i.leftCount) ? Math.min(i.leftCount, 6) : null,
         source: i.records[0]?.source || '',
       })),
     })),

@@ -305,9 +305,14 @@ export function evidenceFor(item, group, result) {
     // The two counts the pipeline computed for the group this item sits in.
     records:  Number(group?.records || 0),
     entities: Number(group?.entities || 0),
+    // Both datasets, when the finding came from comparing two of them. The
+    // rows below are from two different shapes and `columns` describes only
+    // the first, so a screen drawing them needs this and leftCount.
+    sides:    Array.isArray(group?.sides) ? group.sides : null,
     // This item's own rows, and how many of them there were in total.
     source:   String(item?.source || ''),
     lines:    Array.isArray(item?.lines) ? item.lines : [],
+    leftCount: Number.isInteger(item?.leftCount) ? item.leftCount : null,
     rows:     Number(item?.records || 0),
     // Whether the pipeline stood behind the answer, and whether the rows were
     // the customer's or the sample the application shipped with. Both travel

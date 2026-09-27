@@ -423,7 +423,10 @@
 
   function facts(ev) {
     var rows = [];
-    if (ev.dataset) rows.push(['Source', ev.dataset]);
+    // Named "systems" when there are two: a finding that compares a diary
+    // against a call log is read as "where did this come from", and the
+    // answer is two places rather than one dataset with a plus in its name.
+    if (ev.dataset) rows.push([ev.sides && ev.sides.length === 2 ? 'Systems read' : 'Source', ev.dataset]);
     if (ev.columns && ev.columns.length) rows.push(['Fields read', ev.columns.join(', ')]);
     if (ev.window) rows.push(['Period', ev.window]);
     if (ev.records) rows.push(['Records considered', String(ev.records)]);
@@ -454,12 +457,38 @@
       var lines = ev.lines || [];
       d.rows.hidden = lines.length === 0;
       if (lines.length) {
-        var head = (ev.columns && ev.columns.length)
-          ? '<thead><tr>' + ev.columns.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead>'
-          : '';
-        d.table.innerHTML = head + '<tbody>' + lines.map(function (row) {
-          return '<tr>' + (row || []).map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>';
-        }).join('') + '</tbody>';
+        /*
+         * One table per system.
+         *
+         * A finding that compares two systems carries rows from both, and
+         * they have different columns. Drawing them all under one header
+         * puts a call log's cells beneath an appointment diary's headings —
+         * which does not look broken, it looks authoritative and wrong.
+         *
+         * `leftCount` says where the first dataset's rows stop. Without it —
+         * every finding from a single dataset — this is the one table it
+         * always was.
+         */
+        var split = (ev.sides && ev.sides.length === 2 && ev.leftCount != null)
+          ? [
+            { dataset: ev.sides[0].dataset, columns: ev.sides[0].columns, rows: lines.slice(0, ev.leftCount) },
+            { dataset: ev.sides[1].dataset, columns: ev.sides[1].columns, rows: lines.slice(ev.leftCount) },
+          ].filter(function (s) { return s.rows.length; })
+          : [{ dataset: '', columns: ev.columns || [], rows: lines }];
+
+        d.table.innerHTML = split.map(function (s) {
+          var head = (s.columns && s.columns.length)
+            ? '<thead>'
+              + (s.dataset ? '<tr class="fd-rows__from"><th colspan="' + s.columns.length + '">'
+                  + esc(s.dataset) + '</th></tr>' : '')
+              + '<tr>' + s.columns.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>'
+              + '</thead>'
+            : '';
+          return head + '<tbody>' + s.rows.map(function (row) {
+            return '<tr>' + (row || []).map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>';
+          }).join('') + '</tbody>';
+        }).join('');
+
         // Saying how many are shown of how many there are keeps the sample
         // from reading as the whole of it.
         d.rowsnote.textContent = ev.rows && ev.rows > lines.length

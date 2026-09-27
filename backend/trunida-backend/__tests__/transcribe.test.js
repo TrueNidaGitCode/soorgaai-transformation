@@ -20,6 +20,7 @@
  * duration.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'fs';
 
 const generateContent = vi.fn();
 vi.mock('@google/generative-ai', () => ({
@@ -47,6 +48,39 @@ beforeEach(() => {
   process.env.GOOGLE_API_KEY = 'test-key';
 });
 afterEach(() => { delete process.env.GOOGLE_API_KEY; });
+
+describe('the application is given the address, and can reach it', () => {
+  /*
+   * The gap this closes, found by checking a live application rather than by
+   * reading the code: the env var was added to .env.example — which is
+   * documentation — and not to what actually configures a tenant. A delivered
+   * application would have shipped the phone connector, recorded who rang and
+   * when, and quietly never read a single recording, with nothing on any
+   * screen explaining why.
+   */
+  const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
+
+  it('is handed the transcription address by the deployment, not hard-coded', () => {
+    expect(read('../services/deployTargetService.js'))
+      .toContain('SVARG_TRANSCRIBE_URL: `${gatewayBaseUrl}/v1/audio/transcriptions`');
+    expect(read('../eame-template/services/transcribeService.js'))
+      .toContain('process.env.SVARG_TRANSCRIBE_URL');
+  });
+
+  it('points at a route the gateway actually mounts', () => {
+    // The two halves of one address, which drifted apart once already on a
+    // different route and produced a 404 that read as a broken connector.
+    expect(read('../routes/gatewayRoutes.js'))
+      .toContain("router.post('/audio/transcriptions'");
+  });
+
+  it('says so plainly when it was never given one', () => {
+    // Rather than throwing, or worse, returning an empty transcript that
+    // reads as a call in which nothing was said.
+    expect(read('../eame-template/services/transcribeService.js'))
+      .toContain('This application was not set up to read recordings.');
+  });
+});
 
 describe('what it refuses, before spending anything', () => {
   it('refuses a recording past the ceiling, and says how big it was', async () => {

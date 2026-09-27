@@ -191,6 +191,17 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
     // Svarg's own operations. Every application is told the address; only a
     // deployment flagged internal is answered, which is checked there.
     SVARG_OPS_URL: `${gatewayBaseUrl}/v1/ops`,
+    /*
+     * Where a recording is turned into text.
+     *
+     * The application holds no provider key, so it cannot listen to anything
+     * itself: it sends the audio here and Svarg spends and meters it. Without
+     * this address the phone connector still records who rang and when, and
+     * says "This application was not set up to read recordings" rather than
+     * failing — but the half that makes a conversation readable is missing,
+     * and nothing on a screen would explain why.
+     */
+    SVARG_TRANSCRIBE_URL: `${gatewayBaseUrl}/v1/audio/transcriptions`,
     SELFHOSTED_MODEL: catalog.apiModel,
 
     // Embeddings through the same gateway. The dimension MUST be pinned:

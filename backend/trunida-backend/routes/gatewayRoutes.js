@@ -7,12 +7,22 @@
  */
 
 import express from 'express';
-import { chatCompletions, embeddings, signals, notify, ops, opsCatalogue } from '../controllers/gatewayController.js';
+import { chatCompletions, embeddings, transcriptions, signals, notify, ops, opsCatalogue } from '../controllers/gatewayController.js';
 
 const router = express.Router();
 
 router.post('/chat/completions', chatCompletions);
 router.post('/embeddings',       embeddings);
+/*
+ * A recorded call, base64 in a JSON body.
+ *
+ * The limit is the one place on this surface where the default is nowhere
+ * near enough: base64 is a third larger than the bytes it carries, so the
+ * 24MB recording transcribeService allows arrives as about 32MB of body. A
+ * limit that quietly refused every call over a minute would look like a
+ * broken connector rather than a configured ceiling.
+ */
+router.post('/audio/transcriptions', express.json({ limit: '36mb' }), transcriptions);
 // What a live application reports about itself. Small JSON; the default
 // body limit is plenty and anything larger is not a batch of signals.
 router.post('/signals',          express.json({ limit: '256kb' }), signals);

@@ -253,6 +253,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/agentCatalogue.js':        { template: 'services/agentCatalogue.js' },
     'services/draftService.js':          { template: 'services/draftService.js' },
     'services/notifyService.js':         { template: 'services/notifyService.js' },
+    'services/transcribeService.js':     { template: 'services/transcribeService.js' },
     'controllers/agentsController.js':   { template: 'controllers/agentsController.js' },
     'routes/agentsRoutes.js':            { template: 'routes/agentsRoutes.js' },
     'frontend/agents.js':                { template: 'frontend/agents.js' },

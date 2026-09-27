@@ -3,6 +3,7 @@
  *
  * POST /api/gateway/v1/chat/completions
  * POST /api/gateway/v1/embeddings
+ * POST /api/gateway/v1/audio/transcriptions  a recorded call, as text
  * POST /api/gateway/v1/signals        what a live application reports about itself
  * POST /api/gateway/v1/notify         an application telling its own owner something
  * GET  /api/gateway/v1/ops/:dataset   Svarg's own operations, for the tenant Svarg runs itself on
@@ -23,6 +24,7 @@ import {
 import { THINKING_HEADER } from '../services/llmService.js';
 import { embedBatchWithUsage } from '../services/embeddingService.js';
 import { acceptSignals } from '../services/tenantSignalService.js';
+import { transcribe, MAX_AUDIO_BYTES } from '../services/transcribeService.js';
 import { notifyOwner } from '../services/tenantNotifyService.js';
 import { opsRows, DATASETS } from '../services/opsDatasetService.js';
 import { learnFromConversation } from '../services/customerUnderstandingService.js';
@@ -105,6 +107,77 @@ export async function chatCompletions(req, res) {
   } catch (err) {
     if (err.status === 501) return fail(res, 501, err.message, 'invalid_request_error');
     console.error('[gateway] chat error:', err.message);
+    return fail(res, 502, classifyUpstreamError(err.message), 'api_error');
+  }
+}
+
+/**
+ * A recording in, a transcript out.
+ *
+ * ── Why this is a gateway route and not a library ──────────────────────────
+ *
+ * A delivered application holds no provider key, so it cannot transcribe
+ * anything itself. It sends the audio here, Svarg spends the money, and the
+ * cap and the ledger see it — the same arrangement as every other call an
+ * application makes, for the same reason.
+ *
+ * ── The cost that makes this different ─────────────────────────────────────
+ *
+ * Every other route on this surface carries a few thousand tokens. Audio is
+ * roughly 32 input tokens a second, so a three-minute call is about 5,800
+ * before the transcript comes back, and a clinic's day of forty calls is a
+ * quarter of a million. That is still small money — a few dollars a month —
+ * but it is the first thing on this gateway where a customer could run up a
+ * bill by accident rather than by asking a lot of questions.
+ *
+ * So the allowance is checked before the audio is read, the recording is
+ * capped, and the usage recorded is the provider's own reported count rather
+ * than anything estimated from duration.
+ */
+export async function transcriptions(req, res) {
+  try {
+    const deployment = await requireDeployment(req, res);
+    if (!deployment) return;
+
+    const { audio, mime_type: mimeType } = req.body || {};
+    if (!audio) return fail(res, 400, 'audio must be a base64-encoded recording.');
+
+    let buf;
+    try {
+      buf = Buffer.from(String(audio), 'base64');
+    } catch {
+      return fail(res, 400, 'audio could not be read as base64.');
+    }
+
+    const out = await transcribe({
+      audio: buf,
+      mimeType,
+      // The deployment's own model when it has one that can hear; otherwise
+      // the transcription default. A tenant on a text-only model still gets
+      // transcription rather than a refusal it cannot act on.
+      model: deployment.model?.audioModel || undefined,
+    });
+
+    const costUsd = estimateCostUsd(deployment.model?.modelId, out.inputTokens, out.outputTokens);
+    // Before responding, as everywhere else on this surface: a tenant that
+    // disconnects has still spent Svarg's money.
+    await recordUsage(deployment._id, {
+      inputTokens: out.inputTokens, outputTokens: out.outputTokens, costUsd, rollover: req.rollover,
+    });
+
+    return res.json({
+      text: out.text,
+      // Said rather than implied. An empty transcript is a real answer —
+      // silence, hold music, a wrong number — and it must not travel on
+      // looking like a call that was read and found to contain nothing.
+      empty: !!out.empty,
+      model: out.model,
+      usage: { input_tokens: out.inputTokens, output_tokens: out.outputTokens },
+    });
+
+  } catch (err) {
+    if (err.status === 400) return fail(res, 400, err.message);
+    console.error('[gateway] transcribe error:', err.message);
     return fail(res, 502, classifyUpstreamError(err.message), 'api_error');
   }
 }

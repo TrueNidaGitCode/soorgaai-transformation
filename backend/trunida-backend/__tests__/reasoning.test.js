@@ -174,3 +174,84 @@ describe('what may safely be said', () => {
     expect(g.note).toBe('6 records across 5 people');
   });
 });
+
+/**
+ * Sequence, which is the difference between two opposite findings.
+ *
+ * Rahul's booking says No Show. He also rang the clinic. Those two facts
+ * together mean nothing until you know which came first:
+ *
+ *   he rang BEFORE the appointment    he cancelled, and nobody changed the
+ *                                     booking — the slot could have been sold
+ *   he rang AFTER the appointment     he came, or he wants something, and
+ *                                     nobody followed up
+ *
+ * Presence alone returns one pile containing both. Every window in this file
+ * is measured from now, so none of them can express "after the date in the
+ * other row" — which is why the join learned to.
+ */
+describe('a join that knows which came first', () => {
+  // One appointment, on the 12th. Two calls: one before it, one after.
+  const appt = [{ name: 'Rahul', records: [{ cells: ['Rahul', '2026-09-12', 'No Show'] }] }];
+  const calls = [{
+    name: 'Rahul',
+    records: [
+      { cells: ['Rahul', '2026-09-10', 'cannot make Saturday'] },
+      { cells: ['Rahul', '2026-09-13', 'asked about upgrading'] },
+    ],
+  }];
+  const order = (direction) => ({ direction, leftIdx: 1, rightIdx: 1 });
+
+  it('finds the call that came after the appointment, and only that one', () => {
+    const out = joinOnEntity(appt, calls, 'both', order('after'), NOW);
+    expect(out.map(o => o.name)).toEqual(['Rahul']);
+    // The two rows the sentence is about, not everything both sides hold:
+    // handing over every appointment he ever had buries the one that matters.
+    expect(out[0].records).toHaveLength(2);
+    expect(out[0].records[1].cells[2]).toBe('asked about upgrading');
+  });
+
+  it('finds the one before it when asked the other way', () => {
+    const out = joinOnEntity(appt, calls, 'both', order('before'), NOW);
+    expect(out[0].records[1].cells[2]).toBe('cannot make Saturday');
+  });
+
+  it('still answers presence when no order is asked for', () => {
+    // The old behaviour, untouched: both rows, no sequence test.
+    const out = joinOnEntity(appt, calls, 'both', null, NOW);
+    expect(out[0].records).toHaveLength(3);
+  });
+
+  it('reports nobody when the sequence does not hold', () => {
+    const late = [{ name: 'Rahul', records: [{ cells: ['Rahul', '2026-09-20', 'x'] }] }];
+    // Nothing before the 12th here, so "cancelled beforehand" finds nobody.
+    expect(joinOnEntity(appt, late, 'both', order('before'), NOW)).toEqual([]);
+  });
+
+  it('treats an unreadable date as no match, never as a match', () => {
+    /*
+     * The failure that would matter: a blank or broken date silently passing
+     * the test would invent a finding about a real customer, which is the one
+     * thing this pipeline may never do.
+     */
+    const broken = [{ name: 'Rahul', records: [{ cells: ['Rahul', '', 'x'] }, { cells: ['Rahul', 'n/a', 'y'] }] }];
+    expect(joinOnEntity(appt, broken, 'both', order('after'), NOW)).toEqual([]);
+    // And leftOnly is its complement: unmatched means it belongs there.
+    expect(joinOnEntity(appt, broken, 'leftOnly', order('after'), NOW).map(o => o.name)).toEqual(['Rahul']);
+  });
+
+  it('says nothing at all when a side has no date column', () => {
+    expect(joinOnEntity(appt, calls, 'both', { direction: 'after', leftIdx: -1, rightIdx: 1 }, NOW)).toEqual([]);
+  });
+
+  it('leftOnly means the sequence never held — a call nobody followed up', () => {
+    /*
+     * The other half of the demo, and the more valuable one: an enquiry with
+     * no appointment booked after it. Same machinery, sides swapped.
+     */
+    const enquiry = [{ name: 'Priya', records: [{ cells: ['Priya', '2026-09-11', 'wants a slot'] }] }];
+    const booked  = [{ name: 'Priya', records: [{ cells: ['Priya', '2026-09-08', 'Attended'] }] }];
+    // Her only appointment predates the enquiry, so nothing followed it.
+    expect(joinOnEntity(enquiry, booked, 'leftOnly', order('after'), NOW).map(o => o.name)).toEqual(['Priya']);
+  });
+});

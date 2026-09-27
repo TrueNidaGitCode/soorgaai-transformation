@@ -11,7 +11,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import {
-  sanitisePlan, overlap, allowedNumbers, unsupportedNumbers, composeAnswer, CATEGORIES,
+  sanitisePlan, planFingerprint, overlap, allowedNumbers, unsupportedNumbers, composeAnswer, CATEGORIES,
 } from '../eame-template/services/answerService.js';
 
 const CAT = [{
@@ -193,5 +193,50 @@ describe('a refusal has to be earned, and has to leave the customer somewhere', 
     // So the person can see whether the refusal is fair, and rephrase.
     expect(src).toMatch(/This application holds \$\{holds/);
     expect(src).toMatch(/ask me about any of those/);
+  });
+});
+
+/**
+ * Sequence, from the plan a model returns to the step code runs.
+ *
+ * This is the wiring most easily lost: joinOnEntity can compare dates and the
+ * catalogue can ask it to, but if the sanitiser drops "when" on the way
+ * through then every sequence join quietly becomes a presence join. It would
+ * not error. It would return a bigger, wrong set — the very thing that looks
+ * like a working feature.
+ */
+describe('a join that carries which came first', () => {
+  const two = (when) => sanitisePlan({
+    steps: [
+      step({ id: 'a' }),
+      step({ id: 'b', dataset: CAT[1].name, entity: 'name' }),
+      { id: 'c', op: 'join', left: 'a', right: 'b', mode: 'both', when, label: 'Both', category: 'discrepancy' },
+    ],
+  }, CAT);
+
+  it('keeps after and before', () => {
+    expect(two('after').steps[2].when).toBe('after');
+    expect(two('before').steps[2].when).toBe('before');
+  });
+
+  it('drops anything else rather than guessing at it', () => {
+    /*
+     * An unrecognised word must not fall through as a presence join wearing a
+     * sequence label. Null is the honest state: no order was asked for.
+     */
+    for (const bad of ['AFTER', 'during', 'yes', true, 1, {}]) {
+      expect(two(bad).steps[2].when, String(bad)).toBeNull();
+    }
+    expect(two(undefined).steps[2].when).toBeNull();
+  });
+
+  it('changes the plan fingerprint, so a watcher re-plans rather than reusing', () => {
+    /*
+     * A pinned plan is reused every morning. "In both" and "in both, the
+     * second one afterwards" are different questions, and if they hash alike
+     * a watcher edited from one to the other keeps answering the old one.
+     */
+    expect(planFingerprint(two('after'))).not.toBe(planFingerprint(two('before')));
+    expect(planFingerprint(two('after'))).not.toBe(planFingerprint(two(null)));
   });
 });

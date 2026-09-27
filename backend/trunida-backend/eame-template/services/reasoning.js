@@ -209,17 +209,62 @@ export function matchesAll(cells, columns, where) {
  * "Students with both poor attendance and overdue fees" is not two answers put
  * next to each other; it is the people in both. Names are matched loosely
  * because one sheet writes "Arjun Bose" and another " arjun  bose".
+ *
+ * ── Order, and why a join needed it ────────────────────────────────────────
+ *
+ * Presence alone answers "did both of these happen to the same person". It
+ * cannot answer the question a clinic actually asks, which is about sequence:
+ *
+ *   the patient rang BEFORE the appointment    they cancelled, and the front
+ *                                              desk never changed the booking
+ *   the patient rang AFTER the appointment     they were treated, or they want
+ *                                              something, and nobody followed up
+ *
+ * Same two datasets, same two people, opposite meanings and opposite actions.
+ * Every window in this file is measured from `now` — this week, last 30 days —
+ * so none of them can express "after the date in the other row". Without that,
+ * a join across a diary and a call log returns one undifferentiated pile.
+ *
+ * `order` is {direction: 'after'|'before', leftIdx, rightIdx}, the date column
+ * on each side. It reads the RIGHT row's date against the LEFT row's, and a
+ * date that cannot be parsed never matches — an unreadable cell must not
+ * become a finding about somebody.
  */
-export function joinOnEntity(left, right, mode = 'both') {
+export function joinOnEntity(left, right, mode = 'both', order = null, now = new Date()) {
   const key = (n) => norm(n).replace(/\s+/g, ' ');
   const rightBy = new Map(right.map(i => [key(i.name), i]));
   const out = [];
   for (const l of left) {
     const r = rightBy.get(key(l.name));
-    if (mode === 'both' && r) out.push({ name: l.name, records: [...l.records, ...r.records], sides: 2 });
-    else if (mode === 'leftOnly' && !r) out.push({ name: l.name, records: l.records, sides: 1 });
+    // Without an order the test is presence, exactly as before.
+    const pair = r && order ? firstInOrder(l, r, order, now) : (r ? { records: [...l.records, ...r.records] } : null);
+    if (mode === 'both' && pair) out.push({ name: l.name, records: pair.records, sides: 2 });
+    else if (mode === 'leftOnly' && !pair) out.push({ name: l.name, records: l.records, sides: 1 });
   }
   return out;
+}
+
+/**
+ * The first pair of rows standing in the asked-for time relation, or null.
+ *
+ * Returns only the two rows that matched rather than everything both sides
+ * hold. A finding that says "he rang on the 13th about an appointment on the
+ * 12th" should carry those two rows — handing over all eleven of his
+ * appointments buries the one the sentence is about.
+ */
+function firstInOrder(l, r, { direction, leftIdx, rightIdx }, now) {
+  if (!(leftIdx >= 0) || !(rightIdx >= 0)) return null;
+  for (const lr of l.records) {
+    const ld = parseDate(lr.cells[leftIdx], now);
+    if (!ld) continue;
+    for (const rr of r.records) {
+      const rd = parseDate(rr.cells[rightIdx], now);
+      if (!rd) continue;
+      const ok = direction === 'before' ? rd < ld : rd > ld;
+      if (ok) return { records: [lr, rr] };
+    }
+  }
+  return null;
 }
 
 // ── Validation ──────────────────────────────────────────────────────────────

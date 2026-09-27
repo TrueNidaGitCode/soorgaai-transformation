@@ -157,6 +157,12 @@ const PLAN_RULES = [
   '  "consistently missing" is the same with a larger number.',
   '- join: the people in both of two steps (mode "both"), or in the first and not the second',
   '  (mode "leftOnly"). This is the ONLY way to answer "students with X and Y".',
+  '  Add "when":"after" or "when":"before" when the question is about SEQUENCE — whether the',
+  '  right-hand thing happened after or before the left-hand one, comparing each dataset\'s own',
+  '  date. "Rang after the appointment" is {"op":"join","left":"appointments","right":"calls",',
+  '  "when":"after"}; "cancelled beforehand" is the same with "before". Without "when" a join',
+  '  only asks whether both happened at all, which for a diary and a message log is a different',
+  '  and usually wrong question.',
   '',
   'RULES',
   '- Use dataset and column names EXACTLY as given.',
@@ -232,7 +238,7 @@ export function planFingerprint(planned) {
       .join(',');
     const parts = [s.op, s.dataset || '', s.entity || '', s.window || '', where];
     if (s.op === 'derive') parts.push(s.metric || '', s.having ? s.having.join('') : '');
-    if (s.op === 'join') parts.push(s.mode || '');
+    if (s.op === 'join') parts.push(s.mode || '', s.when || '');
     return parts.join('|');
   });
 
@@ -293,6 +299,10 @@ export function sanitisePlan(raw, cat) {
         ...base, op: 'join', left: left.id, right: right.id,
         label: base.label || 'In both',
         mode: s?.mode === 'leftOnly' ? 'leftOnly' : 'both',
+        // Sequence, when the question is about it. Anything else is dropped
+        // rather than guessed at: an unrecognised word here would silently
+        // become a presence join and answer a different question.
+        when: s?.when === 'after' || s?.when === 'before' ? s.when : null,
       });
     } else continue;
     seen.add(id);
@@ -535,7 +545,17 @@ async function execute(planned, kind, now = new Date()) {
       const l = byId.get(step.left);
       const r = byId.get(step.right);
       if (!l || !r) continue;
-      const items = joinOnEntity(l.group.items, r.group.items, step.mode);
+      /*
+       * A sequence join reads each side's own date column, because the two
+       * datasets are different shapes — a diary calls it appointment_date and
+       * a call log calls it called_on.
+       */
+      const order = step.when ? {
+        direction: step.when,
+        leftIdx: l.columns.findIndex(c => DATEISH.test(c)),
+        rightIdx: r.columns.findIndex(c => DATEISH.test(c)),
+      } : null;
+      const items = joinOnEntity(l.group.items, r.group.items, step.mode, order, now);
       const g = groupFrom({
         step, columns: l.columns, dataset: `${l.dataset} + ${r.dataset}`, items,
         // The join carries whatever the sides carried: matching two lists of
@@ -544,6 +564,12 @@ async function execute(planned, kind, now = new Date()) {
         records: items.reduce((n, i) => n + i.records.length, 0),
         window: l.group.window || r.group.window,
       });
+      // The reader is owed the rule, exactly as a derivation states its
+      // threshold. "In both" and "in both, the second one afterwards" are
+      // different findings and must not read identically on the screen.
+      if (step.when) {
+        g.rule = `${r.dataset} ${step.when === 'before' ? 'before' : 'after'} ${l.dataset}`;
+      }
       byId.set(step.id, { group: g, columns: l.columns, rows: l.rows, dataset: g.dataset });
       groups.push(g);
     }

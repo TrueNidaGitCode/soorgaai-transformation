@@ -66,7 +66,14 @@ describe('a project schedule is data this product can read', () => {
   });
 
   it('offers most of the catalogue, where it used to offer a third', () => {
-    const offered = CATALOGUE.filter((e) => e.needs.every((n) => have.has(n)));
+    /*
+     * Single-dataset watchers only, because that is what this measures: one
+     * project export, and how much of the catalogue its columns unlock. A
+     * watcher that reads two systems against each other cannot be offered by
+     * one file however good the file is, so counting it here would report a
+     * number about a different question.
+     */
+    const offered = CATALOGUE.filter((e) => e.needs && e.needs.every((n) => have.has(n)));
     expect(offered.length).toBeGreaterThanOrEqual(20);
     // And the ones that matter are among them.
     for (const id of ['no-progress', 'blocked-work', 'unassigned-work', 'promise-overdue',

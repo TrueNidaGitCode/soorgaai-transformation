@@ -15,7 +15,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  CATALOGUE, AREAS, catalogueFor, matchDataset, assignRoles, columnsFor,
+  CATALOGUE, AREAS, catalogueFor, matchDataset, matchPair, assignRoles, columnsFor,
   fillQuestion, entryFor,
 } from '../eame-template/services/agentCatalogue.js';
 
@@ -50,10 +50,48 @@ describe('the catalogue itself', () => {
     // A role named in the question but absent from needs would reach the
     // model as literal braces.
     for (const e of CATALOGUE) {
+      /*
+       * A two-dataset watcher names its roles by side — {left.who} rather
+       * than {who} — because both halves have a name and a date and an
+       * unsided placeholder could only ever mean one of them.
+       */
+      if (e.across) {
+        for (const m of e.question.matchAll(/\{(left|right)\.([a-z]+)\}/g)) {
+          expect(e.across[m[1]].needs, `${e.id} asks for {${m[1]}.${m[2]}} but does not need it`)
+            .toContain(m[2]);
+        }
+        // And the two datasets themselves are always named.
+        expect(e.question, e.id).toContain('{left}');
+        expect(e.question, e.id).toContain('{right}');
+        // Anything unsided would silently resolve to nothing.
+        for (const m of e.question.matchAll(/\{([a-z]+)\}/g)) {
+          expect(['left', 'right'], `${e.id}: unsided {${m[1]}}`).toContain(m[1]);
+        }
+        continue;
+      }
       for (const m of e.question.matchAll(/\{([a-z]+)\}/g)) {
         if (m[1] === 'dataset') continue;
         expect(e.needs, `${e.id} asks for {${m[1]}} but does not need it`).toContain(m[1]);
       }
+    }
+  });
+
+  it('declares exactly one of the two shapes, never both and never neither', () => {
+    /*
+     * The shapes answer different kinds of question and are matched by
+     * different code. An entry carrying both would be matched as one and
+     * read as the other, which is the sort of thing that produces a watcher
+     * asking about a dataset it never looked at.
+     */
+    for (const e of CATALOGUE) {
+      expect(Boolean(e.needs) !== Boolean(e.across), `${e.id} must have needs or across`).toBe(true);
+      if (!e.across) continue;
+      expect(e.across.left.needs.length, e.id).toBeGreaterThan(0);
+      expect(e.across.right.needs.length, e.id).toBeGreaterThan(0);
+      expect(['both', 'leftOnly'], e.id).toContain(e.across.mode);
+      // Sequence is the point of these; one without it asks a different and
+      // usually wrong question — see the comment above them in the catalogue.
+      expect(['after', 'before'], e.id).toContain(e.across.when);
     }
   });
 });
@@ -111,11 +149,85 @@ describe('the question uses this application’s own column names', () => {
 
   it('leaves no braces behind whatever the entry', () => {
     for (const e of CATALOGUE) {
+      // Two-dataset entries are filled from a pair, below; matchDataset
+      // answers null for them by design.
       for (const d of ACADEMY) {
         const m = matchDataset(e, d);
         if (m) expect(fillQuestion(e, m), e.id).not.toMatch(/[{}]/);
       }
+      if (e.across) {
+        const m = matchPair(e, CLINIC);
+        expect(m, `${e.id} should pair on a clinic`).toBeTruthy();
+        expect(fillQuestion(e, m), e.id).not.toMatch(/[{}]/);
+      }
     }
+  });
+});
+
+/**
+ * The two systems that disagree, which is the whole reason `across` exists.
+ *
+ * A booking diary and a call log: structurally almost identical — a name, a
+ * date, a status — and that is exactly why the pair cannot be chosen on
+ * column shape alone.
+ */
+const CLINIC = [
+  { name: 'Appointment Booking Diary', columns: ['Client Name', 'Appointment Date', 'Status', 'Practitioner'] },
+  { name: 'Enquiries and Calls', columns: ['Client Name', 'Contact Date', 'Channel', 'Notes'] },
+  { name: 'Fee payments', columns: ['Client Name', 'Invoice No', 'Amount', 'Due Date', 'Paid'] },
+];
+
+describe('a watcher that reads two systems against each other', () => {
+  const entry = entryFor('no-show-then-contact');
+
+  it('pairs the diary with the call log, not the diary with itself', () => {
+    /*
+     * The failure this prevents is not an error — it is a plausible-looking
+     * finding. Joined to itself, a diary reports every customer who ever
+     * booked twice, which is noise wearing the clothes of a discrepancy.
+     */
+    const m = matchPair(entry, CLINIC);
+    expect(m.left.dataset).toBe('Appointment Booking Diary');
+    expect(m.right.dataset).toBe('Enquiries and Calls');
+    expect(m.left.dataset).not.toBe(m.right.dataset);
+  });
+
+  it('writes a question naming both datasets and the order they are read in', () => {
+    const q = fillQuestion(entry, matchPair(entry, CLINIC));
+    expect(q).toContain('Appointment Booking Diary');
+    expect(q).toContain('Enquiries and Calls');
+    expect(q).toContain('AFTER');
+    expect(q).not.toMatch(/[{}]/);
+  });
+
+  it('turns the sides round when the question is about the other order', () => {
+    // Same two datasets, opposite finding: they rang BEFORE the appointment,
+    // so they cancelled and nobody changed the booking.
+    const m = matchPair(entryFor('cancelled-not-updated'), CLINIC);
+    expect(m.when).toBe('before');
+    expect(m.mode).toBe('both');
+    // And the one that looks for an absence rather than a coincidence.
+    expect(matchPair(entryFor('contact-no-record'), CLINIC).mode).toBe('leftOnly');
+  });
+
+  it('is not ready when there is only one system to read', () => {
+    /*
+     * The honest answer for a customer who has connected a diary and nothing
+     * else — and the line that tells them what would change it, since "needs
+     * a name and a date" would send them to look at the diary they have.
+     */
+    const rows = catalogueFor([CLINIC[0]], {});
+    const row = rows.find((r) => r.id === 'no-show-then-contact');
+    expect(row.ready).toBe(false);
+    expect(row.missing).toMatch(/two sources/i);
+    expect(row.missing).toMatch(/calls, messages or enquiries/i);
+  });
+
+  it('is ready, and names both datasets, once the second one is there', () => {
+    const row = catalogueFor(CLINIC, {}).find((r) => r.id === 'no-show-then-contact');
+    expect(row.ready).toBe(true);
+    expect(row.using).toBe('Appointment Booking Diary + Enquiries and Calls');
+    expect(row.missing).toBe('');
   });
 });
 

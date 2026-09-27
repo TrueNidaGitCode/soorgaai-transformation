@@ -44,8 +44,8 @@ else.
 
 | Category | What it answers | Watchers |
 | --- | --- | --- |
-| Retention | Who has stopped turning up | stopped-coming, missing-attendance, no-show, gone-quiet, repeat-complaint |
+| Retention | Who has stopped turning up | stopped-coming, missing-attendance, no-show, gone-quiet, repeat-complaint, no-show-then-contact |
 | Utilisation | Sessions, grounds and coaches going unused | no-progress, blocked-work, unassigned-work, empty-slot, over-capacity, unstaffed-session, leave-clash, timesheet-chaser |
-| Growth | Enquiries and trials not converted | unanswered-enquiry, promise-overdue, new-joiner |
-| Fees | What has not been collected | absent-but-attended, overdue-invoice, never-invoiced, part-payment, renewal-due, unusual-expense, price-change, unconfirmed-order, late-delivery |
+| Growth | Enquiries and trials not converted | unanswered-enquiry, promise-overdue, new-joiner, contact-no-record |
+| Fees | What has not been collected | absent-but-attended, overdue-invoice, never-invoiced, part-payment, renewal-due, unusual-expense, price-change, unconfirmed-order, late-delivery, cancelled-not-updated |
 | Compliance | Safeguarding, consent and certification | expiring-soon, deadline-approaching, missing-document, missing-detail, duplicate, nothing-new, stale-source |

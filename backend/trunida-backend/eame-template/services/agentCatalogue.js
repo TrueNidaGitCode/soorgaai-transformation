@@ -83,6 +83,12 @@ const C = (over) => ({ over: 'rows', op: 'gt', value: 0, ...over });
  * watcher asks one question of one body of records. `question` is filled from
  * the columns that matched, so a created agent asks about the real column
  * names rather than about the words in this file.
+ *
+ * A few entries carry `across` instead: two sides, each with its own roles,
+ * matched to two DIFFERENT datasets and compared on the person and on the
+ * clock. That shape exists for one kind of question — where one system
+ * disagrees with another — and it is the only kind that cannot be asked of a
+ * single dataset by construction. See matchPair.
  */
 export const CATALOGUE = [
   // ── People ───────────────────────────────────────────────────────────────
@@ -203,6 +209,54 @@ export const CATALOGUE = [
     needs: ['slot', 'who', 'status'],
     question: '{slot} in {dataset} that is not done and has no {who} against it' },
 
+  /*
+   * ── Where the record disagrees with what happened ─────────────────────────
+   *
+   * Every watcher above asks one question of one body of records, because
+   * that was the only thing the matcher could express. It is also the reason
+   * the product could not see the problem two clinics actually described:
+   * the customer did something, a trace of it exists in one system, and the
+   * system that runs the business says otherwise. Neither dataset is wrong on
+   * its own. The disagreement IS the finding, and it is invisible to anything
+   * that reads one of them at a time.
+   *
+   * These three read two datasets and compare them on the person and on the
+   * clock — see `across` and matchPair below. Sequence is the whole point: a
+   * call before the appointment and a call after it are opposite findings
+   * with opposite actions, and a join that only asked "did both happen"
+   * returns them as one undifferentiated pile.
+   *
+   * Still no model in the decision. The join is set logic, the date
+   * comparison is arithmetic, and a date that cannot be parsed never matches.
+   */
+  { id: 'cancelled-not-updated', area: 'Money', name: 'Cancelled, Still No Show',
+    says: 'They said they could not come, and the booking was never changed',
+    across: {
+      left:  { needs: ['who', 'when', 'status'], prefer: /appoint|booking|diary|session|slot|schedule/i },
+      right: { needs: ['who', 'when'], prefer: /enquir|call|contact|message|whatsapp|conversation|lead/i },
+      mode: 'both', when: 'before',
+    },
+    question: '{left.who} in {left} whose {left.status} says no show or cancelled, who also appear'
+      + ' in {right} with a {right.when} BEFORE that appointment' },
+  { id: 'no-show-then-contact', area: 'Customers', name: 'No Show, Then Got In Touch',
+    says: 'Marked absent, and then they contacted you',
+    across: {
+      left:  { needs: ['who', 'when', 'status'], prefer: /appoint|booking|diary|session|slot|schedule/i },
+      right: { needs: ['who', 'when'], prefer: /enquir|call|contact|message|whatsapp|conversation|lead/i },
+      mode: 'both', when: 'after',
+    },
+    question: '{left.who} in {left} whose {left.status} says no show or absent, who also appear'
+      + ' in {right} with a {right.when} AFTER that appointment' },
+  { id: 'contact-no-record', area: 'Customers', name: 'Contact Never Recorded',
+    says: 'They got in touch and nothing happened afterwards',
+    across: {
+      left:  { needs: ['who', 'when'], prefer: /enquir|call|contact|message|whatsapp|conversation|lead/i },
+      right: { needs: ['who', 'when'], prefer: /appoint|booking|diary|session|slot|schedule/i },
+      mode: 'leftOnly', when: 'after',
+    },
+    question: '{left.who} in {left} who have no row in {right} with a {right.when} AFTER'
+      + ' they got in touch' },
+
   // ── Records ──────────────────────────────────────────────────────────────
   { id: 'missing-detail', area: 'Records', name: 'Missing Detail',
     says: 'Rows without something you rely on',
@@ -261,6 +315,10 @@ const SEVERITY = {
     'stopped-coming', 'gone-quiet', 'unanswered-enquiry',
     'expiring-soon', 'deadline-approaching',
     'unstaffed-session', 'late-delivery',
+    // A cancelled session nobody re-sold, and a customer who asked for
+    // something and was never answered. Both are money, and both were
+    // invisible to every watcher that reads one dataset at a time.
+    'cancelled-not-updated', 'contact-no-record',
   ],
   low: [
     'missing-detail', 'duplicate', 'nothing-new', 'stale-source',
@@ -388,8 +446,67 @@ export function assignRoles(roles, columns) {
  * the invoices and a name in the attendance do not make an overdue invoice.
  */
 export function matchDataset(entry, dataset) {
+  // A two-dataset watcher has no single-dataset answer, and asking for one
+  // must return "no" rather than throw: this is called in a loop over every
+  // entry in the catalogue.
+  if (!Array.isArray(entry?.needs)) return null;
   const using = assignRoles(entry.needs, dataset?.columns || []);
   return using ? { dataset: dataset.name, using, fit: fitOf(entry, dataset, using) } : null;
+}
+
+/**
+ * Two datasets that, read together, could answer this watcher.
+ *
+ * ── Why a second matcher rather than a longer `needs` ──────────────────────
+ *
+ * matchDataset is deliberately single-dataset: a date in the invoices and a
+ * name in the attendance do not make an overdue invoice, and relaxing that
+ * would make almost everything look possible. That rule is still right for
+ * every watcher that asks one question of one body of records.
+ *
+ * A disagreement between two systems is not that kind of question. It cannot
+ * be asked of one dataset by construction, and it is the question two clinics
+ * described unprompted. So it gets its own shape rather than weakening the
+ * existing one.
+ *
+ * ── How a side is chosen ───────────────────────────────────────────────────
+ *
+ * Both sides must fill their roles, and the two must be DIFFERENT datasets —
+ * a diary joined to itself finds every customer who ever rebooked, which is
+ * noise wearing the clothes of a finding. `prefer` is a name hint, worth
+ * three points, because structure alone cannot tell a booking diary from a
+ * call log: both are a name, a date and a status. Without it the pair is
+ * chosen by column shape, which is how "no-show, then got in touch" would be
+ * answered from two attendance sheets.
+ */
+export function matchPair(entry, datasets) {
+  const spec = entry.across;
+  if (!spec) return null;
+  const pool = (datasets || []).filter(Boolean);
+
+  const side = (s, d) => {
+    const using = assignRoles(s.needs, d?.columns || []);
+    if (!using) return null;
+    let fit = fitOf({ ...entry, area: null }, d, using);
+    if (s.prefer && s.prefer.test(String(d.name || ''))) fit += 3;
+    return { dataset: d.name, using, fit };
+  };
+
+  let best = null;
+  for (const l of pool) {
+    const left = side(spec.left, l);
+    if (!left) continue;
+    for (const r of pool) {
+      if (r === l || r.name === l.name) continue;
+      const right = side(spec.right, r);
+      if (!right) continue;
+      const fit = left.fit + right.fit;
+      if (!best || fit > best.fit) {
+        best = { dataset: `${l.name} + ${r.name}`, left, right, fit, mode: spec.mode, when: spec.when };
+      }
+    }
+  }
+  return best;
 }
 
 /**
@@ -431,6 +548,17 @@ function fitOf(entry, dataset, using) {
 
 /** The question, with the real column and dataset names in it. */
 export function fillQuestion(entry, match) {
+  // Two datasets: the placeholders are sided, because both halves have a
+  // `who` and a `when` and an unsided {who} could only mean one of them.
+  if (entry.across && match.left && match.right) {
+    let q = entry.question
+      .split('{left}').join(match.left.dataset)
+      .split('{right}').join(match.right.dataset);
+    for (const [role, col] of Object.entries(match.left.using)) q = q.split(`{left.${role}}`).join(col);
+    for (const [role, col] of Object.entries(match.right.using)) q = q.split(`{right.${role}}`).join(col);
+    return q.replace(/\{[a-z.]+\}/g, '').replace(/\s{2,}/g, ' ').trim();
+  }
+
   let q = entry.question.replace('{dataset}', match.dataset);
   for (const [role, col] of Object.entries(match.using)) q = q.split(`{${role}}`).join(col);
   // A role named in the question but not in `needs` leaves a placeholder,
@@ -460,9 +588,13 @@ export function catalogueFor(datasets, plan = {}) {
      * dataset, so an application with one obvious source is unchanged.
      */
     let match = null;
-    for (const d of datasets || []) {
-      const m = matchDataset(entry, d);
-      if (m && (!match || m.fit > match.fit)) match = m;
+    if (entry.across) {
+      match = matchPair(entry, datasets);
+    } else {
+      for (const d of datasets || []) {
+        const m = matchDataset(entry, d);
+        if (m && (!match || m.fit > match.fit)) match = m;
+      }
     }
     return {
       id: entry.id,
@@ -479,7 +611,7 @@ export function catalogueFor(datasets, plan = {}) {
       condition: entry.condition || DEFAULT.condition,
       // Said in the owner's terms, because this line is what makes them
       // connect a source: it names the thing that would unlock the watcher.
-      missing: match ? '' : `Needs records with ${entry.needs.map(niceRole).join(' and ')}`,
+      missing: match ? '' : missingFor(entry),
     };
   });
 
@@ -492,6 +624,23 @@ export function catalogueFor(datasets, plan = {}) {
     return r.ready ? 500 : 1000;
   };
   return rows.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+}
+
+/**
+ * What would unlock this watcher, in the owner's own terms.
+ *
+ * For a two-dataset watcher this is the line that matters most on the whole
+ * screen: the reason it cannot run is almost always that the second source
+ * has never been connected, and "needs a name and a date" would send somebody
+ * to look at the diary they already have.
+ */
+function missingFor(entry) {
+  if (entry.across) {
+    return 'Needs two sources: records with '
+      + `${entry.across.left.needs.map(niceRole).join(' and ')}, and a separate log of calls,`
+      + ' messages or enquiries with a name and a date';
+  }
+  return `Needs records with ${entry.needs.map(niceRole).join(' and ')}`;
 }
 
 function niceRole(role) {

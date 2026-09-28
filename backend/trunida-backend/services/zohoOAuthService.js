@@ -91,7 +91,16 @@ export function isZohoOAuthConfigured() {
  * settings.modules.READ is what lets a connection name a module and be told
  * whether it exists, rather than discovering it did not at the first sync.
  */
-export const ZOHO_SCOPES = ['ZohoCRM.modules.READ', 'ZohoCRM.settings.modules.READ'];
+export const ZOHO_SCOPES = [
+  'ZohoCRM.modules.READ',
+  // Which modules this customer has, so a person picks from a list of their
+  // own things rather than typing an API name they should never have to know.
+  'ZohoCRM.settings.modules.READ',
+  // And which fields each module has, so the dataset is the module's own
+  // shape rather than a guess made before anyone connected anything. Read
+  // like the rest: nothing here writes to a CRM.
+  'ZohoCRM.settings.fields.READ',
+];
 
 export const isRegion = (r) => ZOHO_REGIONS.includes(String(r || '').trim());
 const accountsHost = (region) => `https://accounts.zoho.${isRegion(region) ? region : 'com'}`;

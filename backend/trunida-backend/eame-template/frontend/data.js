@@ -68,15 +68,6 @@
    */
   var zohoOneClick = false;
 
-  /*
-   * What was chosen before the browser left for Zoho.
-   *
-   * It comes back to the same origin, so sessionStorage survives the round
-   * trip. It is kept here rather than sent through Zoho because the dataset
-   * and the module are no business of Zoho's, and because a value that goes
-   * out through a redirect comes back changeable.
-   */
-  var ZOHO_PENDING = 'dt-zoho-pending';
 
   var ownerToken = '';
   try { ownerToken = localStorage.getItem('ownerToken') || ''; } catch (e) { /* fine */ }
@@ -1052,6 +1043,9 @@
     var zman = t.closest('[data-zoho-manual]');
     if (zman) { zohoOneClick = false; openSource('zoho-crm'); return; }
 
+    var zfin = t.closest('[data-zoho-finish]');
+    if (zfin) { await finishZohoModule(zfin); return; }
+
     var sync = t.closest('[data-sync]');
     if (sync) {
       sync.disabled = true; sync.textContent = 'Syncing…';
@@ -1161,40 +1155,65 @@
    * an API console this exists to remove. What is left is the two things only
    * the owner can answer: which module, and which dataset it feeds.
    */
+  /**
+   * Before the consent: one question, and it is not about Zoho.
+   *
+   * Everything else worth knowing can only be asked afterwards. Which module
+   * to read is a question about THEIR business and is answered from a list of
+   * their own modules once Zoho lets us see them; what the dataset looks like
+   * is not a question at all any more, because the module answers it.
+   *
+   * The data centre stays because it decides where the consent is sent, and
+   * getting it wrong is a Zoho error page rather than anything this
+   * application can catch.
+   */
   function openZoho(k) {
     var regionField = (k.fields || []).find(function (f) { return f.name === 'region'; }) || { options: ['com'] };
-    var guess = datasets.findIndex(function (d) { return /client|customer|contact|booking|appoint|lead|deal/i.test(d.name); });
     openFlow('zoho-crm', '<p class="dt-panel__head">Connect Zoho CRM</p>'
-      + '<p class="dt-form__help">You will be sent to Zoho to approve the connection, and back here when it is done. '
-      + 'Svarg reads the module you name and nothing else; the permission is kept in this application’s own database.</p>'
+      + '<p class="dt-form__help">You will be sent to Zoho to approve this, and back here to choose what to read. '
+      + 'Svarg asks only to read; the permission is kept in this application’s own database.</p>'
       + '<div class="dt-form__grid">'
-      + '<label class="dt-form__field">Into which dataset<select class="dt-select" name="__dataset">' + datasetOptions(guess >= 0 ? guess : 0) + '</select></label>'
-      + '<label class="dt-form__field">Module<input type="text" name="module" value="Contacts" autocomplete="off">'
-      + '<em class="dt-form__note">Contacts, Leads, Deals, Events, or a custom module’s API name.</em></label>'
       + '<label class="dt-form__field">Data centre<select name="region">'
       + (regionField.options || ['com']).map(function (o) { return '<option value="' + esc(o) + '"' + (o === 'in' ? ' selected' : '') + '>zoho.' + esc(o) + '</option>'; }).join('')
-      + '</select><em class="dt-form__note">Zoho will correct this if your account lives elsewhere.</em></label>'
+      + '</select><em class="dt-form__note">The address you sign in at. Zoho will correct this if your account lives elsewhere.</em></label>'
       + '</div>'
       + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-zoho-go="1">Connect Zoho CRM <span aria-hidden="true">&rarr;</span></button>'
       + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button>'
       + '<button type="button" class="dt-btn dt-btn--quiet" data-zoho-manual="1">Use my own Zoho credentials</button></div>');
   }
 
+  /**
+   * After the consent: their modules, by their own labels.
+   *
+   * A custom module is the whole point — it is where a clinic keeps
+   * appointments, and it is exactly the one whose API name is not what the
+   * screen calls it. Nobody should have to know that, and now nobody does.
+   */
+  function pickModule(handoff, modules) {
+    var byLabel = modules.slice().sort(function (a, b) { return a.label.localeCompare(b.label); });
+    openFlow('zoho-crm', '<p class="dt-panel__head">What should Svarg read?</p>'
+      + '<p class="dt-form__help">Zoho is connected. Choose the module your customers and appointments are in — '
+      + 'the dataset is built from that module’s own fields, so nothing has to be matched up by hand.</p>'
+      + '<div class="dt-form__grid">'
+      + '<label class="dt-form__field">Module<select class="dt-select" name="module">'
+      + byLabel.map(function (m) {
+        return '<option value="' + esc(m.apiName) + '"' + (m.apiName === 'Contacts' ? ' selected' : '') + '>'
+          + esc(m.label) + (m.custom ? ' — your own' : '') + '</option>';
+      }).join('')
+      + '</select></label>'
+      + '</div>'
+      + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-zoho-finish="' + esc(handoff) + '">Read this module</button>'
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
+  }
+
   async function startZoho(btn) {
     var b = bodyOf('zoho-crm');
-    var di = Number((b.querySelector('[name="__dataset"]') || {}).value || 0);
-    var pending = {
-      datasetName: (datasets[di] || {}).name || '',
-      module: (b.querySelector('[name="module"]') || {}).value || 'Contacts',
-      region: (b.querySelector('[name="region"]') || {}).value || 'com',
-    };
-    if (!pending.datasetName) { say(els.note, 'Choose which dataset the records go into.', true); return; }
+    var region = (b.querySelector('[name="region"]') || {}).value || 'com';
 
     btn.disabled = true; btn.textContent = 'Opening Zoho…';
     try {
-      try { sessionStorage.setItem(ZOHO_PENDING, JSON.stringify(pending)); } catch (e) { /* fine */ }
       var r = await ownerJson('/api/connectors/zoho/start', 'POST', {
-        region: pending.region,
+        region: region,
         // Where Svarg sends the browser back to. Svarg checks it against the
         // address it recorded for this application rather than trusting it.
         back: location.origin + location.pathname + '#data',
@@ -1209,34 +1228,52 @@
   /**
    * The browser came back from Zoho.
    *
-   * Runs once, on the way into the Data page, and clears the id from the
-   * address whatever happens — a reload that re-claimed a spent handoff would
-   * report a failure for a connection that had already worked.
+   * Nothing was carried across the redirect, because nothing needed to be:
+   * the only thing chosen beforehand was the data centre, and Zoho has
+   * confirmed that itself by now. What comes back is the list of modules.
+   *
+   * The id is cleared from the address whatever happens — a reload that
+   * re-claimed a spent handoff would report a failure for a consent that had
+   * already worked.
    */
   async function finishZoho() {
     var handoff = new URLSearchParams(location.search).get('zoho');
     if (!handoff) return false;
-
-    var pending = {};
-    try { pending = JSON.parse(sessionStorage.getItem(ZOHO_PENDING) || '{}'); } catch (e) { pending = {}; }
-    try { sessionStorage.removeItem(ZOHO_PENDING); } catch (e) { /* fine */ }
     history.replaceState(null, '', location.origin + location.pathname + '#data');
 
-    if (!pending.datasetName) {
-      say(els.note, 'Zoho approved the connection, but this browser had forgotten which dataset to use. Press Connect again.', true);
-      return false;
-    }
     try {
-      await ownerJson('/api/connectors/zoho/finish', 'POST', {
-        handoff: handoff,
-        datasetName: pending.datasetName,
-        module: pending.module || 'Contacts',
-      });
-      say(els.note, 'Zoho CRM is connected. The first sync is running now.');
+      var r = await ownerJson('/api/connectors/zoho/modules', 'POST', { handoff: handoff });
+      if (!r.modules || !r.modules.length) {
+        say(els.note, 'Zoho connected, but listed no modules this account can read.', true);
+        return false;
+      }
+      pickModule(handoff, r.modules);
       return true;
     } catch (err) {
       say(els.note, err.message, true);
       return false;
+    }
+  }
+
+  /** The module is chosen: build the dataset from it, and connect. */
+  async function finishZohoModule(btn) {
+    var b = bodyOf('zoho-crm');
+    var moduleName = (b.querySelector('[name="module"]') || {}).value || '';
+    if (!moduleName) { say(els.note, 'Choose a module.', true); return; }
+
+    btn.disabled = true; btn.textContent = 'Reading…';
+    try {
+      var r = await ownerJson('/api/connectors/zoho/finish', 'POST', {
+        handoff: btn.dataset.zohoFinish,
+        module: moduleName,
+      });
+      closeFlow('zoho-crm');
+      await refresh();
+      say(els.note, 'Zoho CRM is connected. ' + r.dataset.name + ' was created with '
+        + r.dataset.columns + ' columns, and the first sync is running now.');
+    } catch (err) {
+      btn.disabled = false; btn.textContent = 'Read this module';
+      say(els.note, err.message, true);
     }
   }
 

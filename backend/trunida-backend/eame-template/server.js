@@ -25,7 +25,7 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { startScheduler, restoreOwnFiles, readIndex } from './services/connectorService.js';
+import { startScheduler, restoreOwnFiles, readIndex, loadDefinedDatasets } from './services/connectorService.js';
 import { startAgentScheduler, autoStartWatchers } from './services/agentService.js';
 import { catalogueFor } from './services/agentCatalogue.js';
 import { activeCategories, categoryLimit } from './services/coverage.js';
@@ -234,6 +234,13 @@ async function start() {
 
   // The owner's files under data/own, back from the database: a host that
   // lost its disk on this restart still has every row the owner brought in.
+  /*
+   * Before the rows: a dataset a source defined is not in any file, so
+   * restoring rows onto it would find no dataset to restore them to. And
+   * before the watchers below, which read the index to decide what they can
+   * watch at all.
+   */
+  await loadDefinedDatasets();
   const restored = await restoreOwnFiles();
   if (restored) console.log(`[data] ${restored} owner file(s) restored from the database`);
 

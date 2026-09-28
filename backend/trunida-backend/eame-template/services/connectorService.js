@@ -116,11 +116,88 @@ export function decryptSecret(box) {
 
 // ── Datasets and the index ──────────────────────────────────────────────────
 
-export function readIndex() {
+/*
+ * ── Two kinds of dataset ──────────────────────────────────────────────────
+ *
+ * data/datasets.json is what Eame wrote from the blueprint before anyone had
+ * connected anything: a reasonable guess at the shape of a business's
+ * records, baked into the container at build time. It is a good way to start
+ * and a bad way to finish — when a real CRM arrives, its fields are whatever
+ * this customer made them, and mapping them onto a guess drops whatever the
+ * guess did not think of. A physiotherapy package and a session count are
+ * exactly the sort of thing a guess does not think of, and exactly what the
+ * watchers need.
+ *
+ * So a source can define its own. A dataset created when a connector is made
+ * has the columns the source really has, is stored in Mongo rather than in a
+ * file, and is read back into this list.
+ *
+ * Held in memory as well because readIndex is synchronous and is called from
+ * a dozen places, several of them inside request handlers that have no
+ * business awaiting a database. The cache is filled at boot and rewritten on
+ * every change, which are the only two moments it can go stale.
+ */
+let defined = [];
+
+export function datasetsCollection() {
+  return mongoose.connection.collection('svarg_datasets');
+}
+
+function fromFile() {
   try {
     const list = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'datasets.json'), 'utf8'));
     return Array.isArray(list) ? list : [];
   } catch { return []; }
+}
+
+export function readIndex() {
+  /*
+   * The source's own shape wins on a name clash.
+   *
+   * A guess and a fact about the same dataset are not two datasets, and the
+   * fact is the one the rows are in. The guess stays in the file so nothing
+   * is lost if a connector is removed.
+   */
+  const out = fromFile().filter(d => !defined.some(x => x.name === d.name));
+  return [...out, ...defined];
+}
+
+/** Read what sources have defined, into the cache readIndex serves from. */
+export async function loadDefinedDatasets() {
+  if (mongoose.connection.readyState !== 1) return 0;
+  try {
+    defined = await datasetsCollection().find({}).sort({ name: 1 }).toArray();
+    return defined.length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * A dataset as a source describes it.
+ *
+ * `columns` are the source's own field names, in the source's own order, so
+ * nothing needs mapping and nothing is dropped. `key` is what makes a row
+ * the same row on the next sync — without it every sync would look like a
+ * new set of people.
+ */
+export async function defineDataset({ name, columns, key = '', from = '' }) {
+  const clean = [...new Set((columns || []).map(c => String(c || '').trim()).filter(Boolean))]
+    .filter(c => c !== '_source');
+  if (!name || !clean.length) throw new Error('A dataset needs a name and at least one column.');
+
+  const doc = {
+    name: String(name).trim(),
+    columns: clean,
+    key: key && clean.includes(key) ? key : '',
+    // Where it came from, so a screen can say so and a later connection to
+    // the same place can recognise its own.
+    definedBy: String(from || ''),
+    definedAt: new Date(),
+  };
+  await datasetsCollection().updateOne({ name: doc.name }, { $set: doc }, { upsert: true });
+  await loadDefinedDatasets();
+  return findDataset(doc.name);
 }
 
 export function findDataset(datasetName) {

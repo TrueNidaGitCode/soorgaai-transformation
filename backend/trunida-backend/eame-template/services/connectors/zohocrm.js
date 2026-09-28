@@ -283,6 +283,67 @@ export function toRow(record, config) {
 }
 
 /**
+ * The modules this customer actually has.
+ *
+ * So the question becomes "which of your things should Svarg watch?" —
+ * answered from a list of their own labels — instead of "type the API name
+ * of a module", which is a question about Zoho's internals that nobody
+ * outside a developer console can answer. Custom modules are the point:
+ * they are where a clinic keeps appointments, and they are exactly the ones
+ * whose API name is not what the screen says.
+ */
+export async function listModules(config) {
+  const token = await accessToken(config);
+  let r;
+  try {
+    r = await client(config, token).get('/settings/modules');
+  } catch (err) {
+    throw new Error(reason(err, config));
+  }
+  return (r.data?.modules || [])
+    // api_supported is Zoho's own answer to "can this be read over the API".
+    // A module that cannot be is not a choice, it is a dead end with a name.
+    .filter((m) => m.api_supported && m.api_name)
+    .map((m) => ({
+      apiName: m.api_name,
+      label: m.plural_label || m.module_name || m.api_name,
+      custom: !!m.generated_type && m.generated_type !== 'default',
+    }));
+}
+
+/**
+ * A module's own shape: what the dataset should be, rather than what was
+ * guessed before anyone connected anything.
+ *
+ * Asked of Zoho rather than inferred from a page of records, because a field
+ * nobody has filled in yet still belongs in the dataset — and a module with
+ * no records at all would otherwise describe itself as having no shape.
+ *
+ * The id column leads, because it is what makes a row the same row on the next sync.
+ */
+export async function describeShape(config) {
+  const token = await accessToken(config);
+  const name = moduleOf(config);
+  let r;
+  try {
+    r = await client(config, token).get('/settings/fields', { params: { module: name } });
+  } catch (err) {
+    throw new Error(reason(err, config));
+  }
+  const fields = (r.data?.fields || [])
+    .filter((f) => f.api_name && f.data_type !== 'subform')
+    .map((f) => f.api_name);
+  if (!fields.length) throw new Error(`Zoho listed no readable fields for ${name}.`);
+  return {
+    name,
+    // The id first and never twice: Zoho does not list it as a field, and it
+    // is the only value that identifies a record across syncs.
+    columns: ['id', ...fields.filter((f) => f !== 'id')],
+    key: 'id',
+  };
+}
+
+/**
  * Every record in the module, newest change first.
  *
  * Two endpoints, because Zoho has two: the plain module read, which pages by

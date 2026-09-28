@@ -1,18 +1,49 @@
 /**
- * Connecting Zoho CRM in one click, from this application's side.
+ * Connecting Zoho CRM, from this application's side.
  *
- * Three steps, and the browser only ever carries an opaque id:
+ * ── The order this happens in, and why ────────────────────────────────────
  *
- *   status  is the one-click path available on this Svarg server?
- *   start   open a consent; the browser is sent to the URL this returns
- *   finish  the browser came back with an id; claim the token and connect
+ *   status   is the one-click path available on this Svarg server?
+ *   start    open a consent; the browser is sent to the URL this returns
+ *   modules  the browser came back — here are THEIR modules, by their labels
+ *   finish   make the dataset from the module's own fields, and connect
  *
- * Owner-only, like every other route on this surface. The refresh token this
- * produces is the customer's own and is stored encrypted here, exactly as a
- * hand-typed one is: what Svarg brokered is the permission, not the data.
+ * The consent comes first because everything worth asking can only be asked
+ * afterwards. Before it, the only questions available are the ones nobody
+ * should have to answer: type your module's API name, choose which of our
+ * invented datasets this should pretend to be. After it, the CRM can be
+ * asked what it actually holds.
+ *
+ * Owner-only, like every other route on this surface. The refresh token is
+ * the customer's own and is stored encrypted here: Svarg brokered the
+ * permission, it did not take custody of the data.
  */
 import { available, startConsent, claimConsent } from '../services/svargZohoService.js';
-import { createConnector } from '../services/connectorService.js';
+import { createConnector, defineDataset } from '../services/connectorService.js';
+import { listModules, describeShape } from '../services/connectors/zohocrm.js';
+
+/*
+ * The token between the consent and the connection.
+ *
+ * Claiming it from Svarg can only happen once, and the questions that follow
+ * — which module, and therefore which fields — need it. So it is held here,
+ * in this container's memory, for as long as it takes somebody to read a
+ * list and pick. Not written to the database: a connection that is never
+ * finished should leave nothing behind.
+ */
+const HOLD_MS = 15 * 60 * 1000;
+const held = new Map();
+
+function hold(handoff, value) {
+  for (const [k, v] of held) if (v.until <= Date.now()) held.delete(k);
+  held.set(handoff, { ...value, until: Date.now() + HOLD_MS });
+}
+
+function heldFor(handoff) {
+  const h = held.get(String(handoff || ''));
+  if (!h || h.until <= Date.now()) return null;
+  return h;
+}
 
 export async function zohoStatus(req, res) {
   try {
@@ -45,48 +76,95 @@ export async function zohoStart(req, res) {
 }
 
 /**
- * The consent came back. Make the connection.
+ * The consent came back. Ask the CRM what it holds.
  *
- * The dataset and module are sent now rather than carried through Zoho:
- * they were chosen in this browser before the redirect and are no business
- * of Zoho's. The token is claimed over the gateway, so it never touches a
- * URL, a log or a browser history.
+ * This is the only moment the refresh token is claimed, so the answer is
+ * kept against the handoff for the one question that follows it.
  */
-export async function zohoFinish(req, res) {
+export async function zohoModules(req, res) {
   const handoff = String(req.body?.handoff || '').trim();
-  const datasetName = String(req.body?.datasetName || '').trim();
-  const moduleName = String(req.body?.module || '').trim() || 'Contacts';
   if (!handoff) return res.status(400).json({ error: 'No connection attempt was named.' });
-  if (!datasetName) return res.status(400).json({ error: 'Choose which dataset the records go into.' });
 
-  let claimed;
-  try {
-    claimed = await claimConsent(handoff);
-  } catch (err) {
-    return res.status(400).json({ error: err.message });
+  let creds = heldFor(handoff);
+  if (!creds) {
+    try {
+      const claimed = await claimConsent(handoff);
+      creds = { refreshToken: claimed.refreshToken, region: claimed.region };
+      hold(handoff, creds);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
   }
 
   try {
+    const modules = await listModules({
+      region: creds.region, refreshToken: creds.refreshToken, brokered: 'yes',
+    });
+    return res.json({ modules, region: creds.region });
+  } catch (err) {
+    return res.status(502).json({ error: err.message });
+  }
+}
+
+/**
+ * Make the dataset from the module, then connect.
+ *
+ * The dataset is not chosen from a list of guesses any more: it IS the
+ * module, with the module's own fields as its columns and Zoho's record id
+ * as its key. Nothing maps, so nothing is dropped — a package and a session
+ * count survive because nobody had to think of them in advance.
+ */
+export async function zohoFinish(req, res) {
+  const handoff = String(req.body?.handoff || '').trim();
+  const moduleName = String(req.body?.module || '').trim();
+  if (!moduleName) return res.status(400).json({ error: 'Choose which module to read.' });
+
+  const creds = heldFor(handoff);
+  if (!creds) return res.status(400).json({ error: 'That connection attempt has expired. Press Connect again.' });
+
+  const config = {
+    region: creds.region,
+    refreshToken: creds.refreshToken,
+    module: moduleName,
+    criteria: String(req.body?.criteria || '').trim(),
+    // What tells the connector to ask Svarg for access tokens rather than
+    // reach for a client secret it does not have.
+    brokered: 'yes',
+  };
+
+  let shape;
+  try {
+    shape = await describeShape(config);
+  } catch (err) {
+    return res.status(502).json({ error: err.message });
+  }
+
+  try {
+    /*
+     * Named for the module and the system, because a business can keep
+     * people in more than one place and "Contacts" alone stops being an
+     * answer the moment a second CRM or a spreadsheet arrives.
+     */
+    const dataset = await defineDataset({
+      name: `${shape.name} (Zoho CRM)`,
+      columns: shape.columns,
+      key: shape.key,
+      from: 'zoho-crm',
+    });
+
     const connector = await createConnector({
       kind: 'zoho-crm',
-      datasetName,
-      config: {
-        region: claimed.region,
-        refreshToken: claimed.refreshToken,
-        module: moduleName,
-        criteria: String(req.body?.criteria || '').trim(),
-        // What tells the connector to ask Svarg for access tokens rather
-        // than reach for a client secret it does not have.
-        brokered: 'yes',
-      },
+      datasetName: dataset.name,
+      config,
       schedule: 'hourly',
     });
-    return res.json({ connector });
+    held.delete(handoff);
+    return res.json({ connector, dataset: { name: dataset.name, columns: dataset.columns.length } });
   } catch (err) {
     /*
      * createConnector tests before it keeps, so reaching here means the
-     * consent worked and Zoho still refused the read — almost always the
-     * module name. Said as that, rather than as a failed connection.
+     * consent worked and Zoho still refused the read. Said as that, rather
+     * than as a failed connection.
      */
     return res.status(400).json({ error: err.message });
   }

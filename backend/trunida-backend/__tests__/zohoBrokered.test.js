@@ -115,7 +115,13 @@ describe('the consent Zoho is asked for', () => {
      * asking for something it never uses. If a write ever appears in this
      * codebase, this line is where the argument starts.
      */
-    expect(zoho.ZOHO_SCOPES).toEqual(['ZohoCRM.modules.READ', 'ZohoCRM.settings.modules.READ']);
+    expect(zoho.ZOHO_SCOPES).toEqual([
+      'ZohoCRM.modules.READ',
+      // Which modules this customer has, so nobody types an API name.
+      'ZohoCRM.settings.modules.READ',
+      // And which fields each has, so the dataset is the module's own shape.
+      'ZohoCRM.settings.fields.READ',
+    ]);
     expect(zoho.ZOHO_SCOPES.join(' ')).not.toMatch(/modules\.ALL|CREATE|UPDATE|DELETE|WRITE/);
   });
 
@@ -221,14 +227,31 @@ describe('what the Data page does with it', () => {
     expect(ui).toContain('data-zoho-manual');
   });
 
-  it('keeps the dataset and module out of Zoho’s hands', () => {
+  it('carries nothing across the redirect, because nothing needs to be', () => {
     /*
-     * They go in sessionStorage across the redirect rather than through
-     * Zoho: they are no business of Zoho's, and a value that leaves through
-     * a redirect comes back changeable.
+     * The module used to be chosen before the consent and stashed in
+     * sessionStorage to survive the round trip. It is chosen AFTER now, from
+     * the customer's own list, so there is nothing to stash and nothing to
+     * go stale — and a browser that loses its session storage mid-consent no
+     * longer loses the connection with it.
      */
-    expect(ui).toContain('sessionStorage.setItem(ZOHO_PENDING');
-    expect(ui).toContain('sessionStorage.removeItem(ZOHO_PENDING)');
+    expect(ui).not.toContain('ZOHO_PENDING');
+    const back = ui.slice(ui.indexOf('async function finishZoho()'), ui.indexOf('async function finishZohoModule'));
+    expect(back).toContain("ownerJson('/api/connectors/zoho/modules'");
+  });
+
+  it('asks the CRM what it holds, rather than asking the owner', () => {
+    /*
+     * The whole point of the reorder. Before the consent the only question
+     * left is the data centre, which decides where the consent is SENT and
+     * so cannot be asked afterwards.
+     */
+    const form = ui.slice(ui.indexOf('function openZoho(k)'), ui.indexOf('function pickModule'));
+    expect(form).not.toMatch(/name="module"|__dataset/);
+    expect(form).toContain('name="region"');
+    // And afterwards, their own labels — a custom module is marked as theirs
+    // because that is the one whose API name is not what the screen says.
+    expect(ui).toContain("esc(m.label) + (m.custom ? ' — your own' : '')");
   });
 
   it('clears the id from the address whatever happens', () => {

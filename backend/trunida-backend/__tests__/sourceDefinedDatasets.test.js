@@ -1,0 +1,131 @@
+/**
+ * A dataset the source defines, rather than one we guessed.
+ *
+ * ── What was wrong ────────────────────────────────────────────────────────
+ *
+ * data/datasets.json is what Eame wrote from the blueprint before anybody had
+ * connected anything: a reasonable guess at the shape of a business's
+ * records, baked into the container at build time. It is a good way to start
+ * and a bad way to finish.
+ *
+ * When a real CRM arrives its fields are whatever this customer made them,
+ * and mapping them onto the guess drops everything the guess did not think
+ * of. The demonstration turns on two such fields — a physiotherapy package
+ * and a session count — and no list written in advance would have contained
+ * either. The Data page went as far as offering "Physiotherapy Discharge
+ * Guidelines" as the place to put Zoho's Contacts, which is the guess failing
+ * out loud.
+ *
+ * So a connected module now defines its own dataset: the module's fields are
+ * the columns, Zoho's record id is the key, and nothing is mapped because
+ * nothing needs to be.
+ */
+import { describe, it, expect, vi } from 'vitest';
+import { readFileSync } from 'fs';
+
+const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
+const svc = read('../eame-template/services/connectorService.js');
+const ctl = read('../eame-template/controllers/zohoConnectController.js');
+const boot = read('../eame-template/server.js');
+
+describe('the index has two halves', () => {
+  it('reads the file and what sources have defined', () => {
+    expect(svc).toContain('export async function defineDataset(');
+    expect(svc).toContain('export function datasetsCollection()');
+    expect(svc).toContain('return [...out, ...defined];');
+  });
+
+  it('lets the source win a name clash, and keeps the guess', () => {
+    /*
+     * A guess and a fact about the same dataset are not two datasets, and the
+     * fact is the one the rows are actually in. The guess stays in the file,
+     * so removing a connector does not delete the shape the application was
+     * built around.
+     */
+    expect(svc).toContain('const out = fromFile().filter(d => !defined.some(x => x.name === d.name));');
+  });
+
+  it('stays synchronous, because a dozen callers are', () => {
+    // readIndex is called inside request handlers that have no business
+    // awaiting a database. The cache is filled at boot and rewritten on
+    // every change, which are the only two moments it can go stale.
+    expect(svc).toMatch(/export function readIndex\(\)/);
+    expect(svc).toContain('await loadDefinedDatasets();');
+  });
+
+  it('is loaded before anything reads it', () => {
+    /*
+     * Before restoreOwnFiles, or rows would be restored onto a dataset that
+     * does not exist yet; and before the watchers, which read the index to
+     * decide what they can watch at all.
+     */
+    const i = boot.indexOf('await loadDefinedDatasets();');
+    expect(i).toBeGreaterThan(0);
+    expect(i).toBeLessThan(boot.indexOf('await restoreOwnFiles()'));
+  });
+
+  it('refuses a dataset with no shape', () => {
+    // A dataset with no columns is a name with nothing behind it, and every
+    // watcher that matched it would find nothing for ever.
+    expect(svc).toContain("throw new Error('A dataset needs a name and at least one column.');");
+  });
+});
+
+describe('what a connected module becomes', () => {
+  const zoho = read('../eame-template/services/connectors/zohocrm.js');
+
+  it('asks Zoho for the fields rather than reading a page of records', () => {
+    /*
+     * A field nobody has filled in yet still belongs in the dataset, and a
+     * module holding no records at all would otherwise describe itself as
+     * having no shape — which is exactly the state a customer is in five
+     * minutes before they put the first record in.
+     */
+    expect(zoho).toContain("get('/settings/fields', { params: { module: name } })");
+    expect(zoho).toContain('export async function describeShape(config)');
+  });
+
+  it('keys on the record id, so a sync is an update and not a new set of people', () => {
+    expect(zoho).toContain("columns: ['id', ...fields.filter((f) => f !== 'id')]");
+    expect(zoho).toContain("key: 'id'");
+  });
+
+  it('offers only modules the API can actually read', () => {
+    // api_supported is Zoho's own answer. A module that cannot be read is
+    // not a choice, it is a dead end with a name on it.
+    expect(zoho).toContain('.filter((m) => m.api_supported && m.api_name)');
+  });
+
+  it('names the dataset for the module and the system it came from', () => {
+    // A business can keep people in more than one place: "Contacts" stops
+    // being an answer the moment a second CRM or a spreadsheet arrives.
+    expect(ctl).toContain('name: `${shape.name} (Zoho CRM)`');
+  });
+
+  it('builds the dataset before it makes the connection', () => {
+    // createConnector refuses a dataset it cannot find, so the order is not
+    // a preference.
+    expect(ctl.indexOf('await defineDataset(')).toBeLessThan(ctl.indexOf('await createConnector('));
+  });
+});
+
+describe('the consent comes before the questions', () => {
+  it('holds the claimed token only in memory, and only while it is needed', () => {
+    /*
+     * Claiming from Svarg can happen once, and the question that follows
+     * needs it. A connection nobody finishes should leave nothing behind, so
+     * it is never written down.
+     */
+    expect(ctl).toContain('const held = new Map();');
+    expect(ctl).toMatch(/HOLD_MS = 15 \* 60 \* 1000/);
+    expect(ctl).not.toMatch(/insertOne|updateOne|save\(\)/);
+  });
+
+  it('drops the hold once the connection exists', () => {
+    expect(ctl).toContain('held.delete(handoff);');
+  });
+
+  it('will not connect a module nobody chose', () => {
+    expect(ctl).toContain("if (!moduleName) return res.status(400).json({ error: 'Choose which module to read.' });");
+  });
+});

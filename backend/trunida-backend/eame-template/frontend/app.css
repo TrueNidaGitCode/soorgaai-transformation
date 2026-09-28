@@ -957,6 +957,11 @@ body {
 .dt-cards--systems .dt-card__head { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .dt-cards--systems .dt-card--open { grid-column: 1 / -1; }
 .dt-cards--systems .dt-card--open .dt-card__head { grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; }
+/* Shown, and not offered: enough presence to say what it is, not enough to
+   invite setting it up in the middle of a conversation about something
+   else. Nothing inside it is interactive, so nothing can be tabbed into. */
+.dt-card--muted { opacity: 0.5; }
+.dt-card--muted .dt-card__icon { background: var(--ch-panel-hi); color: var(--ch-faint); box-shadow: none; }
 .dt-other { margin-top: 28px; }
 .dt-other__head { margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ch-faint); }
 .dt-start__foot { margin: 22px 0 0; font-size: 13px; color: var(--ch-faint); }

@@ -147,18 +147,23 @@ describe('the Data page names the systems a business runs on', () => {
   const ui = fs.readFileSync(new URL('../eame-template/frontend/data.js', import.meta.url), 'utf8');
   const html = fs.readFileSync(new URL('../eame-template/frontend/index.html', import.meta.url), 'utf8');
 
-  it('offers the three whether or not the industry thought to name them', () => {
+  it('offers them whether or not the industry thought to name them', () => {
     /*
-     * The industry's own block is still the source of truth for what ELSE
-     * a business has — Jira for a software team, a diary for a clinic. It
-     * is not the source of truth for the phone, because a connector nobody
-     * can see on this page is a connector nobody uses.
+     * The industry's own block is still what names everything ELSE a
+     * business has — Jira for a software team, a diary for a clinic — and
+     * all of that now sits under Other data. It was never the source of
+     * truth for the phone: a connector nobody can see on this page is a
+     * connector nobody uses.
+     *
+     * shipped() is what decides. A card for a connector this application
+     * does not have would open a flow the server refuses, which reads as a
+     * product that does not work.
      */
-    expect(ui).toContain("var CORE = ['zoho-crm', 'phone', 'whatsapp'];");
-    expect(ui).toContain('if (!shipped(kind)) return;');
+    expect(ui).toContain("var CORE = ['zoho-crm', 'phone'];");
+    expect(ui).toContain('return CORE.filter(shipped).map(function (kind) {');
   });
 
-  it('leads with the three that carry different kinds of signal', () => {
+  it('leads with the two that carry different kinds of signal', () => {
     /*
      * The database led this row until it was read back as a question asked
      * in front of somebody's own screen: connect PostgreSQL or MySQL,
@@ -172,17 +177,21 @@ describe('the Data page names the systems a business runs on', () => {
      * to be wrong.
      */
     const core = ui.slice(ui.indexOf('var CORE ='), ui.indexOf('var CORE =') + 60);
-    expect(core).toMatch(/\['zoho-crm', 'phone', 'whatsapp'\]/);
+    expect(core).toMatch(/\['zoho-crm', 'phone'\]/);
   });
 
   it('keeps the database, one section down', () => {
     // Not deleted: the customer who says "it is all in our practice
     // software" means a database somebody else's software writes to, and
     // that customer exists. Offered to everybody, asked of nobody.
-    expect(ui).toContain("if (shipped('database')) out.push({ kind: 'database', label: 'Database' });");
-    // And the industry's own copy cannot climb back into the systems row:
-    // sourcesForBlueprint appends a database source to every application.
-    expect(ui).toContain("return ['form', 'file', 'folder', 'database'].indexOf(s.kind) === -1;");
+    expect(ui).toContain("out.push({ kind: 'database', label: 'Database', muted: true });");
+    /*
+     * A muted card is a statement, not a control. It keeps its name, its
+     * icon and its line so a reader knows what it is, and offers no way in:
+     * a greyed-out button that still opens a form is worse than either.
+     */
+    expect(ui).toContain('var go = !s.muted && !isOpen && d.goAction');
+    expect(ui).toContain("(s.muted ? ' dt-card--muted' : '')");
   });
 
   it('connects WhatsApp to the business account, with no export beside it', () => {
@@ -218,8 +227,14 @@ describe('the Data page names the systems a business runs on', () => {
   });
 
   it('keeps Documents out of the systems, under its own heading', () => {
-    expect(ui).toContain("['form', 'file', 'folder', 'database'].indexOf(s.kind) === -1");
-    expect(ui).toContain('var out = [DEFAULT_FOLDER];');
+    /*
+     * The top row used to be the industry's own source list with the core
+     * kinds added, so a clinic whose blueprint mentioned a spreadsheet met
+     * it as an equal of the CRM. What a business runs on is the same short
+     * answer for all of them.
+     */
+    expect(ui).toContain('return CORE.filter(shipped).map(function (kind) {');
+    expect(ui).toContain('var out = [Object.assign({ muted: true }, DEFAULT_FOLDER)];');
     expect(html).toContain('<h3 class="dt-other__head">Other data</h3>');
     expect(html).toContain('id="dt-other-cards"');
   });

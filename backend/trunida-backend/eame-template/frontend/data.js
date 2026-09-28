@@ -336,10 +336,22 @@
    * practice software" and means a database somebody else's software writes
    * to. Available when asked for, out of the way when not.
    */
-  var CORE = ['zoho-crm', 'phone', 'whatsapp'];
-  var CORE_LABEL = {
-    'zoho-crm': 'CRM', phone: 'Phone system', whatsapp: 'WhatsApp',
-  };
+  /*
+   * Two, because two is the argument.
+   *
+   * The CRM says what the business believes: booked, ten sessions, No Show.
+   * The phone says what actually happened: he rang that morning asking to
+   * upgrade. Neither record is wrong and nobody put them side by side, which
+   * is the entire case this product makes — and it is made with two systems,
+   * not five.
+   *
+   * Everything else is still here, under Other data, shown and not offered.
+   * Greyed rather than hidden because a reader should be able to see what
+   * this will read next without being invited to set it up in the middle of
+   * a conversation about something else.
+   */
+  var CORE = ['zoho-crm', 'phone'];
+  var CORE_LABEL = { 'zoho-crm': 'CRM', phone: 'Phone system' };
 
   /** Does this application actually ship the connector behind this card? */
   function shipped(kind) {
@@ -348,43 +360,45 @@
     });
   }
 
+  /*
+   * The top row is CORE, and only CORE.
+   *
+   * It used to be the industry's own source list with the core kinds added
+   * to it, which meant a clinic whose block happened to mention a spreadsheet
+   * met it as an equal of the CRM. What a business runs on is not decided by
+   * what a blueprint listed; it is the same short answer for all of them, and
+   * anything else belongs a section down.
+   */
   function systemCards() {
-    var list = sources.filter(function (s) {
-      // 'database' among them: sourcesForBlueprint appends it to every
-      // application's list, so filtering only by CORE would let the industry's
-      // own copy back into the row it was moved out of.
-      return ['form', 'file', 'folder', 'database'].indexOf(s.kind) === -1;
-    });
-    /*
-     * The three every business has, when the connector for them is really
-     * here. The industry's own sources block may not name them -- a clinic's
-     * says nothing about a phone system -- and a connector nobody can see
-     * on this page is a connector nobody uses.
-     */
-    CORE.forEach(function (kind) {
-      if (list.some(function (s) { return s.kind === kind; })) return;
-      if (!shipped(kind)) return;
-      list.push({ kind: kind, label: CORE_LABEL[kind] || kind });
-    });
-    // The reader's order, not the file's: the three first, in the order
-    // somebody thinks of them, then whatever else the industry named.
-    return list.sort(function (a, b) {
-      var ai = CORE.indexOf(a.kind), bi = CORE.indexOf(b.kind);
-      return (ai < 0 ? 9 : ai) - (bi < 0 ? 9 : bi);
+    return CORE.filter(shipped).map(function (kind) {
+      return { kind: kind, label: CORE_LABEL[kind] || kind };
     });
   }
 
   /*
-   * Documents first: uploading a folder needs no connector, is not counted
-   * against the plan's limit, and is the cheapest way to get started. Then
-   * the database, for the business that really does run its own software —
-   * offered to everybody, asked of nobody.
+   * Everything else: shown, and not offered.
+   *
+   * The industry's own list, plus documents and the database, each greyed —
+   * so somebody reading the page can see what this application will read
+   * next without being led into setting it up now.
    */
   function otherCards() {
-    var out = [DEFAULT_FOLDER];
-    if (shipped('database')) out.push({ kind: 'database', label: 'Database' });
+    var out = [Object.assign({ muted: true }, DEFAULT_FOLDER)];
+    sources.forEach(function (s) {
+      if (['form', 'file', 'folder'].indexOf(s.kind) !== -1) return;
+      if (CORE.indexOf(s.kind) !== -1) return;
+      if (out.some(function (o) { return o.kind === s.kind; })) return;
+      out.push(Object.assign({ muted: true }, s));
+    });
+    if (shipped('whatsapp') && !out.some(function (o) { return o.kind === 'whatsapp'; })) {
+      out.push({ kind: 'whatsapp', label: 'WhatsApp', muted: true });
+    }
+    if (shipped('database') && !out.some(function (o) { return o.kind === 'database'; })) {
+      out.push({ kind: 'database', label: 'Database', muted: true });
+    }
     return out;
   }
+
 
   /*
    * ── Which of the two states this page is in ──────────────────────────────
@@ -622,11 +636,16 @@
     var d = describe(s);
     var isOpen = !!open[s.kind];
     var body = isOpen ? open[s.kind].html : d.held;
-    var go = !isOpen && d.goAction
+    /*
+     * A muted card is a statement, not a control. It keeps its name, its
+     * icon and its line so a reader knows what it is, and offers no way in —
+     * a greyed-out button that still opens a form is worse than either.
+     */
+    var go = !s.muted && !isOpen && d.goAction
       ? '<button type="button" class="dt-card__go' + (d.on ? ' dt-card__go--quiet' : '') + '" data-open="' + esc(d.goAction) + '">' + esc(d.go) + ' <span aria-hidden="true">&rarr;</span></button>'
       : '';
-    var alt = !isOpen && d.alt ? '<p class="dt-card__alt">' + d.alt + '</p>' : '';
-    return '<article class="dt-card' + (d.on ? ' dt-card--on' : '') + (isOpen ? ' dt-card--open' : '') + '" data-card="' + esc(s.kind) + '">'
+    var alt = !s.muted && !isOpen && d.alt ? '<p class="dt-card__alt">' + d.alt + '</p>' : '';
+    return '<article class="dt-card' + (d.on ? ' dt-card--on' : '') + (isOpen ? ' dt-card--open' : '') + (s.muted ? ' dt-card--muted' : '') + '" data-card="' + esc(s.kind) + '">'
       + '<div class="dt-card__head"><span class="dt-card__icon" aria-hidden="true">' + d.icon + '</span>'
       + '<div class="dt-card__text"><h3 class="dt-card__title">' + esc(d.title) + '</h3><p class="dt-card__note">' + esc(d.note) + '</p>'
       + (d.on && !isOpen ? '<p class="dt-card__label">' + esc(d.status) + '</p>' : '')

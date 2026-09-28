@@ -162,11 +162,35 @@ export function readIndex() {
   return [...out, ...defined];
 }
 
-/** Read what sources have defined, into the cache readIndex serves from. */
+/** A dataset's filename stem: one definition, used when defining and when repairing. */
+export function slugFor(name) {
+  return String(name || '').trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'dataset';
+}
+
+/**
+ * Read what sources have defined, into the cache readIndex serves from.
+ *
+ * And repair anything written before a dataset was given a slug. The first
+ * source-defined datasets were created without one, which made them
+ * unreadable and unwritable — otherSources builds a regular expression
+ * straight out of the slug and runs on every read AND write of rows. Guarding
+ * that call stopped the crash; this puts the dataset right, so the repair is
+ * not "connect it again and hope".
+ *
+ * Cheap and idempotent: a matched-count query on a handful of documents,
+ * once per boot.
+ */
 export async function loadDefinedDatasets() {
   if (mongoose.connection.readyState !== 1) return 0;
   try {
-    defined = await datasetsCollection().find({}).sort({ name: 1 }).toArray();
+    const col = datasetsCollection();
+    const broken = await col.find({ $or: [{ slug: { $exists: false } }, { slug: '' }] }).toArray();
+    for (const d of broken) {
+      await col.updateOne({ _id: d._id }, { $set: { slug: slugFor(d.name) } });
+      console.warn('[datasets] %s had no slug; set to %s', d.name, slugFor(d.name));
+    }
+    defined = await col.find({}).sort({ name: 1 }).toArray();
     return defined.length;
   } catch {
     return 0;
@@ -196,8 +220,7 @@ export async function defineDataset({ name, columns, key = '', from = '' }) {
    */
   const doc = {
     name: String(name).trim(),
-    slug: String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-      || 'dataset',
+    slug: slugFor(name),
     columns: clean,
     key: key && clean.includes(key) ? key : '',
     // Where it came from, so a screen can say so and a later connection to

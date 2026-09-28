@@ -145,7 +145,11 @@ describe('a dataset that has to survive the machinery around it', () => {
      * and runs on every read AND write of rows, so a dataset without one
      * could not be read from or written to at all.
      */
-    expect(svc).toContain("slug: String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')");
+    expect(svc).toContain("export function slugFor(name)");
+    expect(svc).toContain("slug: slugFor(name),");
+    // And anything written before slugs existed repairs itself at boot,
+    // rather than needing somebody to connect it again and hope.
+    expect(svc).toContain("const broken = await col.find({ $or: [{ slug: { $exists: false } }, { slug: '' }] }).toArray();");
   });
 
   it('reads as having no files rather than throwing, if it somehow has none', () => {

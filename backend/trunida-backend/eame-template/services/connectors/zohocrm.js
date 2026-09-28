@@ -27,7 +27,7 @@ import { brokeredAccessToken } from '../svargZohoService.js';
 export const kind = 'zoho-crm';
 export const label = 'Zoho CRM';
 export const help = 'Records from one Zoho CRM module. In the Zoho API console create a Self Client, '
-  + 'grant ZohoCRM.modules.ALL, and exchange the generated code for a refresh token.';
+  + 'grant ZohoCRM.modules.READ, and exchange the generated code for a refresh token.';
 
 /**
  * The data centres Zoho runs. Not free text: the wrong one fails as "invalid
@@ -178,7 +178,7 @@ export function reason(err, config) {
   const code = body?.code || body?.data?.[0]?.code;
   const status = err.response?.status;
   if (code === 'INVALID_MODULE') return `Zoho has no module called "${moduleOf(config)}". Use the module's API name, which is not always what the screen calls it.`;
-  if (code === 'OAUTH_SCOPE_MISMATCH') return 'The refresh token was granted without ZohoCRM.modules.ALL. Generate a new one with that scope.';
+  if (code === 'OAUTH_SCOPE_MISMATCH') return 'The refresh token was granted without ZohoCRM.modules.READ. Generate a new one with that scope.';
   if (code === 'INVALID_QUERY' || code === 'INVALID_DATA') return `Zoho did not understand that criteria: ${body?.message || 'check the field names.'}`;
   if (status === 401) return 'Zoho refused the access token.';
   if (status === 429) return 'Zoho is rate limiting this application. It will catch up on the next sync.';

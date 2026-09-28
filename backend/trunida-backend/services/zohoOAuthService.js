@@ -74,14 +74,24 @@ export function isZohoOAuthConfigured() {
 }
 
 /**
- * Read and nothing else.
+ * Read, and only read.
  *
- * modules.ALL is read/write on Zoho's side and there is no read-only variant
- * of it, so the restraint has to live here: nothing in this codebase writes
- * to a CRM, and the connector exposes no way to. If that changes, this list
- * is the thing to argue about first.
+ * This asked for ZohoCRM.modules.ALL first, on a wrong belief that it was the
+ * only module scope there is. It is not: modules.READ exists, and ALL is
+ * read AND WRITE.
+ *
+ * The difference is not academic. What a customer is shown on the consent
+ * screen is the whole basis on which they decide, and a product whose claim
+ * is "we watch your systems" asking for permission to change records is
+ * asking for something it does not use. Nothing in this codebase writes to a
+ * CRM and the connector exposes no way to — so nothing is lost by saying so
+ * to Zoho, and the screen a customer's IT will read now matches what the
+ * software actually does.
+ *
+ * settings.modules.READ is what lets a connection name a module and be told
+ * whether it exists, rather than discovering it did not at the first sync.
  */
-export const ZOHO_SCOPES = ['ZohoCRM.modules.ALL', 'ZohoCRM.settings.modules.READ'];
+export const ZOHO_SCOPES = ['ZohoCRM.modules.READ', 'ZohoCRM.settings.modules.READ'];
 
 export const isRegion = (r) => ZOHO_REGIONS.includes(String(r || '').trim());
 const accountsHost = (region) => `https://accounts.zoho.${isRegion(region) ? region : 'com'}`;

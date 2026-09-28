@@ -105,8 +105,18 @@ describe('the consent Zoho is asked for', () => {
     expect(zoho.buildAuthorizeUrl('st', 'evil.test')).toMatch(/^https:\/\/accounts\.zoho\.com\//);
   });
 
-  it('asks for the CRM and nothing else', () => {
-    expect(zoho.ZOHO_SCOPES).toEqual(['ZohoCRM.modules.ALL', 'ZohoCRM.settings.modules.READ']);
+  it('asks to read the CRM, and not to change it', () => {
+    /*
+     * ZohoCRM.modules.ALL is read AND write. This asked for it first, on the
+     * wrong belief that no read-only module scope existed.
+     *
+     * The consent screen is the whole basis on which a customer decides, and
+     * a product that watches asking for permission to change records is
+     * asking for something it never uses. If a write ever appears in this
+     * codebase, this line is where the argument starts.
+     */
+    expect(zoho.ZOHO_SCOPES).toEqual(['ZohoCRM.modules.READ', 'ZohoCRM.settings.modules.READ']);
+    expect(zoho.ZOHO_SCOPES.join(' ')).not.toMatch(/modules\.ALL|CREATE|UPDATE|DELETE|WRITE/);
   });
 
   it('uses the data centre’s own secret when there is one', async () => {

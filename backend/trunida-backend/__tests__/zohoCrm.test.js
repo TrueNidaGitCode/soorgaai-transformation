@@ -207,7 +207,7 @@ describe('reading a module', () => {
     tokenOk();
     const get = vi.fn().mockRejectedValue({ response: { status: 401, data: { code: 'OAUTH_SCOPE_MISMATCH' } } });
     axios.create.mockReturnValue({ get });
-    await expect(zoho.pull({ ...CONFIG })).rejects.toThrow(/ZohoCRM\.modules\.ALL/);
+    await expect(zoho.pull({ ...CONFIG })).rejects.toThrow(/ZohoCRM\.modules\.READ/);
   });
 });
 

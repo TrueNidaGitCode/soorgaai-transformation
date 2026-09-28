@@ -154,8 +154,44 @@ describe('the Data page names the systems a business runs on', () => {
      * is not the source of truth for the phone, because a connector nobody
      * can see on this page is a connector nobody uses.
      */
-    expect(ui).toContain("var CORE = ['phone', 'whatsapp', 'database'];");
+    expect(ui).toContain("var CORE = ['database', 'phone', 'whatsapp'];");
     expect(ui).toContain('if (!shipped(kind)) return;');
+  });
+
+  it('leads with the database', () => {
+    /*
+     * It is the system a business already keeps its records in, so it is
+     * the one connection that makes every watcher work at once, and the one
+     * a reader recognises without being told what it is for. The phone and
+     * WhatsApp add what the records never had: what was actually said.
+     */
+    const core = ui.slice(ui.indexOf('var CORE ='), ui.indexOf('var CORE =') + 60);
+    expect(core).toMatch(/\['database'/);
+  });
+
+  it('connects WhatsApp to the business account, with no export beside it', () => {
+    /*
+     * An exported chat is a file somebody remembers to send: a day old when
+     * it lands, and it stops arriving the week everybody is busy. The point
+     * of watching WhatsApp is that a customer said something an hour ago.
+     *
+     * Offering both made the weaker one look like an equal choice. It is
+     * the fallback for an application with no WhatsApp Business connector,
+     * and nothing more — so the branch turns on the connector existing, not
+     * on what the industry's providers list happens to say. That list was
+     * written before the connector existed, and was still sending
+     * applications that could connect live off to find a file.
+     */
+    expect(ui).toContain("if (biz) {");
+    expect(ui).toContain("d.goAction = 'whatsapp-business';");
+    expect(ui).not.toContain("Import an exported chat</button>");
+    expect(ui).not.toContain("providers.indexOf('business-account')");
+  });
+
+  it('keeps the export as the only way in when there is no connector', () => {
+    // Removing it outright would leave an application that shipped without
+    // the WhatsApp Business module with a card and no way through it.
+    expect(ui).toContain("d.go = w.length ? 'Import another export' : 'Import an exported chat'; d.goAction = 'whatsapp';");
   });
 
   it('never offers a card for a connector this application does not have', () => {

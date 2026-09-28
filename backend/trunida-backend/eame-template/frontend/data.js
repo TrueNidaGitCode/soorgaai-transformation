@@ -296,7 +296,15 @@
    * that shipped without being named (the WhatsApp Business module behind
    * the WhatsApp card) is not a card of its own.
    */
-  var CORE = ['phone', 'whatsapp', 'database'];
+  /*
+   * The database first.
+   *
+   * It is the system a business already keeps its records in, so it is the
+   * one connection that makes every watcher work at once — and the one a
+   * reader recognises without being told what it is for. The phone and
+   * WhatsApp add what the records never had: what was actually said.
+   */
+  var CORE = ['database', 'phone', 'whatsapp'];
 
   /** Does this application actually ship the connector behind this card? */
   function shipped(kind) {
@@ -321,9 +329,6 @@
       list.push({
         kind: kind,
         label: kind === 'phone' ? 'Phone system' : kind === 'whatsapp' ? 'WhatsApp' : 'Database',
-        providers: kind === 'whatsapp'
-          ? (shipped('whatsapp-business') ? ['business-account', 'export'] : ['export'])
-          : [],
       });
     });
     // The reader's order, not the file's: the three first, in the order
@@ -470,16 +475,27 @@
       var biz = kinds.find(function (x) { return x.kind === 'whatsapp-business'; });
       var mine = connectors.filter(function (c) { return c.kind === 'whatsapp-business'; });
       var w = importsOf('whatsapp');
-      var providers = s.providers || ['export'];
       d.icon = ICON.whatsapp; d.title = 'WhatsApp';
-      // One line on the card. Which way in -- the business account or an
-      // exported chat -- is what the button and the flow behind it say.
       d.note = 'Customer conversations and requests.';
       if (mine.length) { d.on = true; d.status = 'Connected' + (mine[0].lastSyncAt ? ' · last message ' + ago(mine[0].lastSyncAt) : ' · waiting for the first message'); d.held = '<ul class="dt-src__list">' + mine.map(renderConnector).join('') + '</ul>'; }
       else if (w.length) { d.on = true; d.status = plural(w[0].rows, 'row') + ' from an export · ' + ago(w[0].at); }
-      if (biz && providers.indexOf('business-account') !== -1) {
+    /*
+     * The live account whenever this application has the connector for it,
+     * and no second way offered beside it.
+     *
+     * An exported chat is a file somebody remembers to send. It is a day old
+     * the moment it lands and it stops arriving the week everybody is busy —
+     * and the whole point of watching WhatsApp is that a customer said
+     * something an hour ago. Offering both made the weaker one look like an
+     * equal choice, and it is not one: it is the fallback for an application
+     * with no WhatsApp Business connector at all.
+     *
+     * The industry's own providers list is not consulted for this any more.
+     * It was written before that connector existed, so an application that
+     * could connect live was still being offered a file.
+     */
+      if (biz) {
         d.go = mine.length ? 'Connect another number' : 'Connect'; d.goAction = 'whatsapp-business';
-        if (providers.indexOf('export') !== -1) d.alt = '<button type="button" data-open="whatsapp">Import an exported chat</button>';
       } else {
         d.go = w.length ? 'Import another export' : 'Import an exported chat'; d.goAction = 'whatsapp';
       }

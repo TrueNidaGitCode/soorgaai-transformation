@@ -166,3 +166,46 @@ describe('the email, which cannot be unsent', () => {
     expect(agents).toContain('return { ran: true, fired, simulated:');
   });
 });
+
+describe('the empty board says one thing, not the same thing twice', () => {
+  /*
+   * With nothing connected the board drew five area boxes, every one of them
+   * reading "Nothing to watch yet", directly above an examples list naming
+   * those same five areas with something true to say about each. The reader
+   * met the five categories twice on one screen, and the emptier copy came
+   * first.
+   *
+   * So the areas stand down when the examples can carry the screen, and only
+   * then: an application with no ready watcher has no examples to show, and
+   * hiding the areas there would leave a bare page.
+   */
+  it('hides the areas grid only when there are examples to stand in for it', () => {
+    expect(ui).toContain('if (!cats.length || insteadOfExamples) { el.areas.hidden = true; return; }');
+    expect(ui).toContain('drawAreas(cats, body, unconnected && egs.length > 0);');
+  });
+
+  it('decides "unconnected" once, from the same test the verdict uses', () => {
+    // Two definitions of "nothing has arrived" drift, and then the hero and
+    // the body of the page disagree about which morning this is.
+    expect(ui).toContain('var unconnected = !body.example && body.hasRealData === false;');
+    expect(ui).toContain('drawExamples(egs, unconnected);');
+  });
+
+  it('tells the unconnected reader the next move is the toggle', () => {
+    /*
+     * Two different silences. A connected business with a quiet morning is
+     * being told what its running watchers will report, and waiting is the
+     * right thing to do. Somebody who has connected nothing is being told
+     * what the product is, and waiting is not.
+     */
+    expect(ui).toContain('Turn on Example mode above ');
+    expect(ui).toContain('the watchers below are ');
+  });
+
+  it('still keeps the areas for a connected business with nothing open', () => {
+    // The shape of a good morning must not change: five areas reading "All
+    // good" is the claim this product exists to make.
+    const fn = ui.slice(ui.indexOf('function area(c, nothing)'), ui.indexOf('var _last = null'));
+    expect(fn).toContain("{ cls: 'is-clear', text: 'All good' }");
+  });
+});

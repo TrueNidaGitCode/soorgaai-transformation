@@ -381,7 +381,11 @@ describe('the board, which is the durable copy', () => {
     const ui = read2('../eame-template/frontend/findings.js');
     // And not while a chip is filtering: an example under "Cash" with Cash
     // selected would read as a Cash finding.
-    expect(ui).toContain('drawExamples(all.length || picked ? [] : body.examples)');
+    // The list is decided in one expression before anything draws, so
+    // there is no branch on which a filtered board still has examples under
+    // it — and drawExamples is given that list and nothing else.
+    expect(ui).toContain('var egs = all.length || picked ? [] : (body.examples || []);');
+    expect(ui).toContain('drawExamples(egs, unconnected);');
   });
 
   it('never counts an example anywhere', () => {

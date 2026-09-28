@@ -525,7 +525,13 @@
            in place of the conversation; Home brings the conversation back. -->
       <section class="ch-view" id="ch-view" hidden aria-live="polite">
         <div class="ch-view__head">
-          <div><h2 class="ch-view__title" id="ch-view-name"></h2><p class="ch-view__sub" id="ch-view-sub"></p></div>
+          <!-- The only way out.
+               This screen is reached from the Data page and replaces it, and
+               nothing here pushes a history entry — so the browser's own back
+               button is greyed out and somebody who opened a table was
+               stuck in it. -->
+          <div><button type="button" class="dt-btn dt-btn--quiet" id="ch-view-back">&lsaquo; Back to Data</button>
+            <h2 class="ch-view__title" id="ch-view-name"></h2><p class="ch-view__sub" id="ch-view-sub"></p></div>
           <div class="ch-view__tools">
             <!-- Theirs, or the simulated rows the application was built with. -->
             <div class="ch-switch" id="ch-view-switch" role="group" aria-label="Which rows"></div>
@@ -1084,7 +1090,8 @@
       refreshAreas = function () {
         var t = ''; try { t = localStorage.getItem('token') || ''; } catch (e) { /* fine */ }
         if (!t) return;
-        fetch(API + '/api/data/areas', { headers: { Authorization: 'Bearer ' + t } })
+        // Returned so a caller can wait for it — svargOpenDataset does.
+        return fetch(API + '/api/data/areas', { headers: { Authorization: 'Bearer ' + t } })
           .then(function (r) { return r.ok ? r.json() : { areas: [] }; })
           .then(function (d) {
             if (!d.areas) return;
@@ -1105,6 +1112,9 @@
       var viewSearch = document.getElementById('ch-view-search');
       var viewTable = document.getElementById('ch-view-table');
       var viewNote = document.getElementById('ch-view-note');
+      var viewBack = document.getElementById('ch-view-back');
+      if (viewBack) viewBack.addEventListener('click', function () { showConnections(); });
+
       // Read from the brand in the sidebar, which is where the name lives now.
       var appName = (document.querySelector('.ch-side__brandtext strong') || {}).textContent || '';
       var current = null;
@@ -1232,8 +1242,23 @@
        */
       window.svargOpenDataset = function (name) {
         var ds = datasets.find(function (d) { return d.name === name; });
-        if (ds) openView(ds);
-        return !!ds;
+        if (ds) { openView(ds); return true; }
+        /*
+         * The list can be older than the dataset.
+         *
+         * It is loaded when the application opens and again whenever the
+         * data changes, so a browser that went straight to the Data page and
+         * connected a CRM there has a list from before any of it existed —
+         * and View did nothing at all, silently, which is the worst way for
+         * a button to fail.
+         */
+        var again = refreshAreas();
+        if (!again || typeof again.then !== 'function') return false;
+        return again.then(function () {
+          var found = datasets.find(function (d) { return d.name === name; });
+          if (found) openView(found);
+          return !!found;
+        });
       };
       window.svargGoHome = goHomeTab;
       window.svargGoAsk = goAskTab;

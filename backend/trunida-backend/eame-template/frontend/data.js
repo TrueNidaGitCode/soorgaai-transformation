@@ -1178,9 +1178,15 @@
        * only answer to "is this right", and it was two screens away.
        */
       var name = viewing.dataset.view;
-      if (!(typeof window.svargOpenDataset === 'function' && window.svargOpenDataset(name))) {
-        say(els.note, 'That dataset is not on this screen yet. Reload and try again.', true);
+      if (typeof window.svargOpenDataset !== 'function') {
+        say(els.note, 'This application cannot open a table from here.', true);
+        return;
       }
+      // It may have to fetch the dataset list first, so the answer can be a
+      // promise. A button that does nothing and says nothing is the failure
+      // this replaces.
+      var opened = await window.svargOpenDataset(name);
+      if (!opened) say(els.note, 'That dataset could not be opened: ' + name, true);
       return;
     }
 

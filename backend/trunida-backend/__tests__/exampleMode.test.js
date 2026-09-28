@@ -167,45 +167,59 @@ describe('the email, which cannot be unsent', () => {
   });
 });
 
-describe('the empty board says one thing, not the same thing twice', () => {
+describe('the switch means one thing', () => {
   /*
-   * With nothing connected the board drew five area boxes, every one of them
-   * reading "Nothing to watch yet", directly above an examples list naming
-   * those same five areas with something true to say about each. The reader
-   * met the five categories twice on one screen, and the emptier copy came
-   * first.
+   * ── What was wrong ───────────────────────────────────────────────────────
    *
-   * So the areas stand down when the examples can carry the screen, and only
-   * then: an application with no ready watcher has no examples to show, and
-   * hiding the areas there would leave a bare page.
+   * A section headed "What a finding will look like", every row of it tagged
+   * Example, appeared on a board whose Example mode was OFF -- and vanished
+   * the moment somebody switched it ON, because switching it on produced
+   * real (simulated) findings for the list and the examples only show when
+   * nothing is open.
+   *
+   * So the switch ran backwards as far as the reader was concerned: the
+   * examples were visible exactly when they had said they did not want them.
+   *
+   * The rule now is one sentence with no exceptions. Off is the business.
+   * On is the demonstration. Everything demonstrative -- the simulated
+   * findings AND the examples that stand in for them -- is on one side of
+   * it, and that side is the one the reader asked for.
    */
-  it('hides the areas grid only when there are examples to stand in for it', () => {
-    expect(ui).toContain('if (!cats.length || insteadOfExamples) { el.areas.hidden = true; return; }');
-    expect(ui).toContain('drawAreas(cats, body, unconnected && egs.length > 0);');
+  it('sends examples only when the demonstration was asked for', () => {
+    expect(ctl).toContain('examples: example && !rows.length ? examples() : [],');
   });
 
-  it('decides "unconnected" once, from the same test the verdict uses', () => {
-    // Two definitions of "nothing has arrived" drift, and then the hero and
-    // the body of the page disagree about which morning this is.
-    expect(ui).toContain('var unconnected = !body.example && body.hasRealData === false;');
-    expect(ui).toContain('drawExamples(egs, unconnected);');
+  it('draws them only in example mode, and never over a filtered board', () => {
+    // An example under "Cash" with Cash selected reads as a Cash finding,
+    // which is the one thing a tagged row must never manage to do.
+    expect(ui).toContain('var egs = body.example && !all.length && !picked ? (body.examples || []) : [];');
+    expect(ui).toContain('drawExamples(egs);');
   });
 
-  it('tells the unconnected reader the next move is the toggle', () => {
+  it('gates them on the server as well as the screen', () => {
     /*
-     * Two different silences. A connected business with a quiet morning is
-     * being told what its running watchers will report, and waiting is the
-     * right thing to do. Somebody who has connected nothing is being told
-     * what the product is, and waiting is not.
+     * The board gates this too. The server gates it because it is the same
+     * rule as the findings filter, and a demonstration reaching a business
+     * board is the single thing this mode exists to prevent -- a rule worth
+     * holding in the place that cannot be got at from a browser.
      */
-    expect(ui).toContain('Turn on Example mode above ');
-    expect(ui).toContain('the watchers below are ');
+    const body = ctl.slice(ctl.indexOf('const example = String('), ctl.indexOf('everRan:'));
+    expect(body).toContain("'evidence.simulated': example ? true : { $ne: true }");
+    expect(body).toContain('examples: example && !rows.length');
   });
 
-  it('still keeps the areas for a connected business with nothing open', () => {
-    // The shape of a good morning must not change: five areas reading "All
-    // good" is the claim this product exists to make.
+  it('keeps the areas grid on every board, as it always was', () => {
+    // Five areas reading "All good" is the claim this product exists to
+    // make, and the board's shape must not change with the morning.
+    expect(ui).toContain('if (!cats.length) { el.areas.hidden = true; return; }');
+    expect(ui).toContain('drawAreas(cats, body);');
     const fn = ui.slice(ui.indexOf('function area(c, nothing)'), ui.indexOf('var _last = null'));
     expect(fn).toContain("{ cls: 'is-clear', text: 'All good' }");
+  });
+
+  it('points an unconnected reader at the toggle, which is now the only way in', () => {
+    // With the examples behind the switch, the hero is what tells somebody
+    // who has connected nothing that there is anything to see at all.
+    expect(ui).toContain('or turn on Example mode above to see how this works first.');
   });
 });

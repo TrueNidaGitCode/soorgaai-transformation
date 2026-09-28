@@ -328,30 +328,11 @@
       + '</div>';
   }
 
-  function drawExamples(list, unconnected) {
+  function drawExamples(list) {
     if (!el.eg || !el.eglist) return;
     var show = (list || []).length > 0;
     el.eg.hidden = !show;
     el.eglist.innerHTML = show ? list.map(example).join('') : '';
-    if (!show) return;
-
-    /*
-     * Two different silences, and the same five rows explain both.
-     *
-     * A connected business with a quiet morning is being told what its
-     * running watchers will report. An application with nothing connected is
-     * being told what the product does at all -- and for that reader the next
-     * move is the toggle a few inches above, not patience.
-     */
-    var note = document.getElementById('fn-egnote');
-    if (note) {
-      note.textContent = unconnected
-        ? 'Nothing of yours has been connected yet, so these are examples \u2014 the shape '
-          + 'of what Svarg will bring you once your data is in. Turn on Example mode above '
-          + 'to see a full board of them.'
-        : 'Nothing has been found yet, so these are examples \u2014 the watchers below are '
-          + 'running, and this is the shape of what they will report.';
-    }
   }
 
   /*
@@ -413,19 +394,9 @@
       + '</button>';
   }
 
-  function drawAreas(cats, body, insteadOfExamples) {
+  function drawAreas(cats, body) {
     if (!el.areas || !el.areagrid) return;
-    /*
-     * Five boxes all reading "Nothing to watch yet" is not a structure a
-     * reader learns -- it is the same sentence five times, above an examples
-     * list that names those same five areas with something to say about each.
-     * On a board with nothing connected the examples are the better half, so
-     * this one stands down until there is a count to put in it.
-     *
-     * Only ever when there ARE examples to show instead: an application with
-     * no ready watcher still needs the areas, or the page is bare.
-     */
-    if (!cats.length || insteadOfExamples) { el.areas.hidden = true; return; }
+    if (!cats.length) { el.areas.hidden = true; return; }
     el.areas.hidden = false;
     // Nothing of theirs connected, and not the demonstration: these areas
     // have not been looked at, and must not claim to have been.
@@ -456,18 +427,26 @@
     if (picked && !cats.some(function (c) { return c.name === picked; })) picked = '';
     var open = picked ? all.filter(function (f) { return f.category === picked; }) : all;
 
-    // Nothing of theirs has arrived, and this is not the demonstration.
-    var unconnected = !body.example && body.hasRealData === false;
-    // Only ever on a board with nothing open, and never while a chip is
-    // filtering -- an example under "Cash" would look like a Cash finding.
-    var egs = all.length || picked ? [] : (body.examples || []);
+    /*
+     * The examples follow the switch, because they are the demonstration.
+     *
+     * They used to appear on any board with nothing open, which put a
+     * section headed "What a finding will look like", every row tagged
+     * Example, on the screen of somebody who had deliberately turned Example
+     * mode OFF -- and took it away when they turned it ON. The switch has
+     * one meaning now: off is the business, on is the demonstration.
+     *
+     * Still never while something is open or a chip is filtering: an example
+     * under "Cash" with Cash selected would read as a Cash finding.
+     */
+    var egs = body.example && !all.length && !picked ? (body.examples || []) : [];
 
-    drawAreas(cats, body, unconnected && egs.length > 0);
+    drawAreas(cats, body);
 
     el.list.innerHTML = open.map(row).join('');
     el.list.hidden = open.length === 0;
 
-    drawExamples(egs, unconnected);
+    drawExamples(egs);
 
     /*
      * ── A quiet morning keeps the same screen ──────────────────────────────

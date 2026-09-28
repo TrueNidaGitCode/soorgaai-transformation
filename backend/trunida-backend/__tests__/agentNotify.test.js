@@ -374,18 +374,17 @@ describe('the board, which is the durable copy', () => {
    * Two rules keep that from happening, and both are tested here — they are
    * never counted, and they invent nothing.
    */
-  it('shows examples only when nothing at all is open', () => {
+  it('shows examples only in example mode, and only with nothing open', () => {
     const ctl = read2('../eame-template/controllers/agentsController.js');
-    // One expression, so there is no path on which both exist.
-    expect(ctl).toContain('examples: rows.length ? [] : examples()');
+    // One expression, so there is no path on which both exist — and it is
+    // the demonstration's expression: a business board never receives them.
+    expect(ctl).toContain('examples: example && !rows.length ? examples() : [],');
     const ui = read2('../eame-template/frontend/findings.js');
-    // And not while a chip is filtering: an example under "Cash" with Cash
-    // selected would read as a Cash finding.
-    // The list is decided in one expression before anything draws, so
-    // there is no branch on which a filtered board still has examples under
-    // it — and drawExamples is given that list and nothing else.
-    expect(ui).toContain('var egs = all.length || picked ? [] : (body.examples || []);');
-    expect(ui).toContain('drawExamples(egs, unconnected);');
+    // Nor while a chip is filtering: an example under "Cash" with Cash
+    // selected would read as a Cash finding. Decided in one expression
+    // before anything draws, so no branch can leave them on the screen.
+    expect(ui).toContain('var egs = body.example && !all.length && !picked ? (body.examples || []) : [];');
+    expect(ui).toContain('drawExamples(egs);');
   });
 
   it('never counts an example anywhere', () => {
@@ -417,7 +416,7 @@ describe('the board, which is the durable copy', () => {
      * mode's own reporting and feed nothing.
      */
     const feeding = body
-      .replace(/examples: rows\.length \? \[\] : examples\(\),/, '')
+      .replace(/examples: example && !rows\.length \? examples\(\) : \[\],/, '')
       .replace(/hasExample: await findingsCollection\(\)[\s\S]*?catch\(\(\) => false\),/, '')
       .replace(/^\s*example,\s*$/m, '')
       .replace(/\/\*[\s\S]*?\*\//g, '')

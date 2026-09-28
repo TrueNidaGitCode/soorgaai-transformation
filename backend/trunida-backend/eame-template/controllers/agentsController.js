@@ -194,7 +194,14 @@ export async function listFindingsHandler(req, res) {
       hasExample: await findingsCollection()
         .countDocuments({ 'evidence.simulated': true }).then((n) => n > 0).catch(() => false),
       example,
-      examples: rows.length ? [] : examples(),
+      /*
+       * Only in Example mode, and only when the demonstration has nothing
+       * open either. The board gates this too; the server gates it because
+       * the rule is the same rule as the findings filter above, and a
+       * demonstration that reaches a business board is the thing this whole
+       * mode exists to prevent.
+       */
+      examples: example && !rows.length ? examples() : [],
       watching: agents.filter(a => a.enabled && a.status !== 'degraded').length,
       degraded: agents.filter(a => a.status === 'degraded').length,
       // So the screen can say "your first check is at 09:30" instead of

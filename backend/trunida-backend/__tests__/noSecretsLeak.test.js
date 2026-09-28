@@ -90,12 +90,33 @@ describe('what a customer receives', () => {
      * so a customer's repository, container and database contain no OpenAI or
      * Anthropic credential to lose.
      */
+    /*
+     * Two functions write a tenant's environment now, so the guard reads
+     * both: gatewayAddressEnv, which the live-update sweep also spreads into
+     * every running application, and buildTenantEnv around it. Checking only
+     * the second would have stopped seeing the addresses the day they moved.
+     */
     const deploy = read('../services/deployTargetService.js');
-    const env = deploy.slice(deploy.indexOf('export function buildTenantEnv'), deploy.indexOf('/** Ask Railway'));
+    const env = deploy.slice(deploy.indexOf('export function gatewayAddressEnv'), deploy.indexOf('/** Ask Railway'));
     for (const key of ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'GEMINI_API_KEY']) {
-      expect(env, `buildTenantEnv sets ${key}`).not.toContain(key);
+      expect(env, `the tenant environment sets ${key}`).not.toContain(key);
     }
     expect(env).toContain('SELFHOSTED_BASE_URL');
+
+    /*
+     * And the sweep carries addresses only.
+     *
+     * It runs unattended against every live application. A credential in
+     * that spread would be rewritten into every container on a schedule,
+     * which is the one way a key could spread without anybody deploying
+     * anything — so the block it spreads must not contain a token, and
+     * SELFHOSTED_API_KEY stays behind in buildTenantEnv where Go Live sets
+     * it once.
+     */
+    const addresses = deploy.slice(deploy.indexOf('export function gatewayAddressEnv'),
+      deploy.indexOf('export function buildTenantEnv'));
+    expect(addresses).not.toContain('SELFHOSTED_API_KEY');
+    expect(addresses).not.toMatch(/gatewayToken|ownerKey|jwtSecret|clusterUri/);
   });
 });
 

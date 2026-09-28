@@ -93,6 +93,54 @@ export function tenantMongoUri(clusterUri, dbName) {
  * this context; it is the delivered app's generic OpenAI-compatible client
  * pointed at the gateway, which is why hosting needs no code change.
  */
+/**
+ * Where a delivered application reaches Svarg — addresses only, no token.
+ *
+ * ── Why this is its own function ──────────────────────────────────────────
+ *
+ * These were written once, at Go Live, inside the big environment block. The
+ * live-update sweep rewrites a running application's CODE every time Svarg
+ * changes, and rewrote only APP_NAME, the auth settings and the plan — so an
+ * application delivered last month ran the new runtime with none of the
+ * addresses that runtime needed.
+ *
+ * That is not hypothetical. The Zoho broker shipped, every application got
+ * the code for it, and not one of them had SVARG_ZOHO_URL — so every Data
+ * page decided one-click was unavailable and drew the manual form: correctly,
+ * and uselessly. The transcription address had the same shape of problem
+ * before it, and was found the same way — by looking at a running
+ * application rather than at the code meant to configure it.
+ *
+ * So the addresses live here and the sweep spreads them too. A gateway
+ * endpoint added tomorrow reaches every application on the next sweep,
+ * instead of only the ones delivered after it.
+ *
+ * No token: rotating a credential is not this function's business, and the
+ * sweep must never do it by accident.
+ */
+export function gatewayAddressEnv(gatewayBaseUrl) {
+  if (!gatewayBaseUrl) return {};
+  return {
+    SELFHOSTED_BASE_URL: `${gatewayBaseUrl}/v1`,
+    // Where the application reports usage -- counts, votes, corrections.
+    // The list of what it may send is fixed on its side and refused here.
+    SVARG_SIGNALS_URL: `${gatewayBaseUrl}/v1/signals`,
+    // Where an agent asks Svarg to tell the owner what it found. The
+    // recipient is resolved there, never sent.
+    SVARG_NOTIFY_URL: `${gatewayBaseUrl}/v1/notify`,
+    // Svarg's own operations. Every application is told the address; only a
+    // deployment flagged internal is answered, which is checked there.
+    SVARG_OPS_URL: `${gatewayBaseUrl}/v1/ops`,
+    // Where a recording is turned into text. Without it the phone connector
+    // still records who rang and when, and says so rather than failing.
+    SVARG_TRANSCRIBE_URL: `${gatewayBaseUrl}/v1/audio/transcriptions`,
+    // Zoho, brokered: open a consent, claim the refresh token, mint an
+    // access token. The last has to be here because the client secret is
+    // Svarg's and a container holds no key of Svarg's.
+    SVARG_ZOHO_URL: `${gatewayBaseUrl}/v1/oauth/zoho`,
+  };
+}
+
 export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl, clusterUri, jwtSecret, appName, ownerKey, seats, planLabel, ownerEmail, coverage }) {
   // Arth ranks and the picker shows the benchmark catalog, not the advisory
   // ten (see services/selectableModelService.js), so a perfectly legitimate
@@ -179,44 +227,11 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
     // Generation: the app's 'selfhosted' provider is a plain OpenAI client
     // against an arbitrary base URL, so pointing it at the gateway is enough.
     PROVIDER_CHAIN: 'selfhosted',
-    SELFHOSTED_BASE_URL: `${gatewayBaseUrl}/v1`,
+    // Every address the application reaches Svarg on. Its own function, so
+    // the live-update sweep can carry the same set to applications that
+    // already exist -- see gatewayAddressEnv above.
+    ...gatewayAddressEnv(gatewayBaseUrl),
     SELFHOSTED_API_KEY: gatewayToken,
-    // Where the application reports usage -- counts, votes, corrections --
-    // with the same token. The list of what it may send is fixed on its side
-    // (services/tenantSignals.js) and refused here if it strays.
-    SVARG_SIGNALS_URL: `${gatewayBaseUrl}/v1/signals`,
-    // Where an agent inside the application asks Svarg to tell the owner what
-    // it found. Same token; the recipient is resolved here, never sent.
-    SVARG_NOTIFY_URL: `${gatewayBaseUrl}/v1/notify`,
-    // Svarg's own operations. Every application is told the address; only a
-    // deployment flagged internal is answered, which is checked there.
-    SVARG_OPS_URL: `${gatewayBaseUrl}/v1/ops`,
-    /*
-     * Where a recording is turned into text.
-     *
-     * The application holds no provider key, so it cannot listen to anything
-     * itself: it sends the audio here and Svarg spends and meters it. Without
-     * this address the phone connector still records who rang and when, and
-     * says "This application was not set up to read recordings" rather than
-     * failing — but the half that makes a conversation readable is missing,
-     * and nothing on a screen would explain why.
-     */
-    SVARG_TRANSCRIBE_URL: `${gatewayBaseUrl}/v1/audio/transcriptions`,
-    /*
-     * Zoho, brokered.
-     *
-     * Three calls behind one address: open a consent, claim the refresh token
-     * it produced, and mint an access token from it. The last is the one that
-     * has to be here — Zoho refreshes against a client secret, and the client
-     * is Svarg's, so a container holding only a customer's refresh token
-     * cannot do it alone.
-     *
-     * Unset on a Svarg server with no Zoho client, and the application simply
-     * offers the manual fields instead. It is told the address either way:
-     * whether the one-click path works is answered by asking, not by what was
-     * baked in on the day it was built.
-     */
-    SVARG_ZOHO_URL: `${gatewayBaseUrl}/v1/oauth/zoho`,
     SELFHOSTED_MODEL: catalog.apiModel,
 
     // Embeddings through the same gateway. The dimension MUST be pinned:

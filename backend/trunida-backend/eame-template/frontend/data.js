@@ -1135,7 +1135,12 @@
       + setupHtml
       + '<div class="dt-form__grid">'
       + '<label class="dt-form__field">Into which dataset<select class="dt-select" name="__dataset">' + datasetOptions(guessDs >= 0 ? guessDs : 0) + '</select></label>'
-      + k.fields.map(function (f) {
+      // A field the flow writes rather than a person: 'brokered' says how
+      // this connection was made and is set by the one-click path. Declared
+      // on the kind because connectorService stores only declared fields,
+      // and drawn nowhere -- it appeared on the form as "Connected through
+      // Svarg (optional)", which is not a question anybody can answer.
+      + k.fields.filter(function (f) { return !f.hidden; }).map(function (f) {
         var input = f.options
           ? '<select name="' + esc(f.name) + '">' + f.options.map(function (o) { return '<option value="' + esc(o) + '">' + esc(o) + '</option>'; }).join('') + '</select>'
           : '<input type="' + (f.secret ? 'password' : 'text') + '" name="' + esc(f.name) + '" placeholder="' + esc(f.placeholder || '') + '" autocomplete="off">';

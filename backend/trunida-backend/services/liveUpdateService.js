@@ -24,7 +24,7 @@ import HostedDeployment from '../models/HostedDeployment.js';
 import TransformationBlueprint from '../models/TransformationBlueprint.js';
 import { projectFor, manifestHash } from '../controllers/deliveryController.js';
 import { isSvargGithubConfigured, ensureSvargRepo, publishToSvarg, repoDescription } from './svargGithubService.js';
-import { getDeployTarget, coverageFrom } from './deployTargetService.js';
+import { getDeployTarget, coverageFrom, gatewayAddressEnv } from './deployTargetService.js';
 import { resolvePlan } from './entitlements.js';
 import { ensureAppName } from './appNameService.js';
 import { tenantAuthEnv } from './tenantAuthService.js';
@@ -128,6 +128,16 @@ export async function updateOne(dep, { reason = 'sweep' } = {}) {
     commitSha: pushed?.commitSha || '',
     env: {
       APP_NAME: bp.appName || 'AI Assistant', APP_PUBLIC_ACCESS: 'true',
+      /*
+       * The addresses, every time.
+       *
+       * This sweep is the only thing that regularly touches a running
+       * application, and it was rewriting the code without the configuration
+       * that code needs. An application delivered before a gateway endpoint
+       * existed got the endpoint's client and not its address, decided the
+       * feature was unavailable, and said so — correctly, and for ever.
+       */
+      ...gatewayAddressEnv(gatewayBaseUrl()),
       ...tenantAuthEnv({ deployment: dep, gatewayBaseUrl: gatewayBaseUrl() }),
       ...planEnv(plan?.limits, dep),
     },

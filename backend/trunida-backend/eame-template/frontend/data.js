@@ -1088,9 +1088,6 @@
     var zman = t.closest('[data-zoho-manual]');
     if (zman) { zohoOneClick = false; openSource('zoho-crm'); return; }
 
-    var zfin = t.closest('[data-zoho-finish]');
-    if (zfin) { await finishZohoModule(zfin); return; }
-
     /*
      * The consent is still good: the token is held here for fifteen minutes,
      * so a failure to read the module list is worth retrying on its own
@@ -1101,12 +1098,13 @@
       var handoff = zre.dataset.zohoRetry;
       zre.disabled = true; zre.textContent = 'Reading…';
       try {
-        var r = await ownerJson('/api/connectors/zoho/modules', 'POST', { handoff: handoff });
-        if (r.modules && r.modules.length) pickModule(handoff, r.modules);
-        else flowErr('zoho-crm', 'Zoho still lists no modules this account can read.');
+        var r = await ownerJson('/api/connectors/zoho/finish', 'POST', { handoff: handoff });
+        closeFlow('zoho-crm');
+        await refresh();
+        connected(r);
       } catch (err) {
         console.error('[zoho] retry failed:', err);
-        zre.disabled = false; zre.textContent = 'Try reading the modules again';
+        zre.disabled = false; zre.textContent = 'Try reading the CRM again';
         flowErr('zoho-crm', err.message);
       }
       return;
@@ -1248,29 +1246,6 @@
       + '<button type="button" class="dt-btn dt-btn--quiet" data-zoho-manual="1">Use my own Zoho credentials</button></div>');
   }
 
-  /**
-   * After the consent: their modules, by their own labels.
-   *
-   * A custom module is the whole point — it is where a clinic keeps
-   * appointments, and it is exactly the one whose API name is not what the
-   * screen calls it. Nobody should have to know that, and now nobody does.
-   */
-  function pickModule(handoff, modules) {
-    var byLabel = modules.slice().sort(function (a, b) { return a.label.localeCompare(b.label); });
-    openFlow('zoho-crm', '<p class="dt-panel__head">What should Svarg read?</p>'
-      + '<p class="dt-form__help">Zoho is connected. Choose the module your customers and appointments are in — '
-      + 'the dataset is built from that module’s own fields, so nothing has to be matched up by hand.</p>'
-      + '<div class="dt-form__grid">'
-      + '<label class="dt-form__field">Module<select class="dt-select" name="module">'
-      + byLabel.map(function (m) {
-        return '<option value="' + esc(m.apiName) + '"' + (m.apiName === 'Contacts' ? ' selected' : '') + '>'
-          + esc(m.label) + (m.custom ? ' — your own' : '') + '</option>';
-      }).join('')
-      + '</select></label>'
-      + '</div>'
-      + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-zoho-finish="' + esc(handoff) + '">Read this module</button>'
-      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
-  }
 
   async function startZoho(btn) {
     var b = bodyOf('zoho-crm');
@@ -1323,14 +1298,26 @@
     if (!handoff) return false;
     history.replaceState(null, '', location.origin + location.pathname + '#data');
 
+    /*
+     * No question here any more.
+     *
+     * This used to come back with a dropdown of every module Zoho ships —
+     * about forty — and ask which one to read. That is asking somebody to
+     * tell the software something the software can find out in three
+     * seconds, and "which module are your appointments in" is a question a
+     * clinic owner often cannot answer, because a consultant set it up two
+     * years ago.
+     *
+     * So it reads. Every module holding a record is connected, each as its
+     * own dataset; the empty ones are not offered, because a dataset with no
+     * rows gives the watchers nothing to watch.
+     */
+    reading(handoff);
     try {
-      var r = await ownerJson('/api/connectors/zoho/modules', 'POST', { handoff: handoff });
-      if (!r.modules || !r.modules.length) {
-        zohoFailed(handoff, 'Zoho approved the connection but listed no modules this account can read. '
-          + 'The account that approved it may not have permission to see them.');
-        return false;
-      }
-      pickModule(handoff, r.modules);
+      var r = await ownerJson('/api/connectors/zoho/finish', 'POST', { handoff: handoff });
+      closeFlow('zoho-crm');
+      await refresh();
+      connected(r);
       return true;
     } catch (err) {
       /*
@@ -1347,37 +1334,45 @@
     }
   }
 
+  /** While the CRM is being read: a few seconds, and worth saying so. */
+  function reading(handoff) {
+    openFlow('zoho-crm', '<p class="dt-panel__head">Reading your CRM</p>'
+      + '<p class="dt-form__help">Looking through the modules in this Zoho account and connecting '
+      + 'the ones that hold records. This takes a few seconds.</p>');
+  }
+
+  /**
+   * What was connected, named.
+   *
+   * Not a dialogue to dismiss: the page behind it has already been refreshed
+   * and shows the connections. This is the receipt — which modules, and how
+   * many columns each dataset took from them — because "connected" on its own
+   * does not tell anybody whether the right thing happened.
+   */
+  function connected(r) {
+    var list = (r.connected || []).map(function (c) {
+      return '<li><b>' + esc(c.module) + '</b> &rarr; ' + esc(c.dataset)
+        + ' <span class="dt-conn__meta">' + c.columns + ' columns</span></li>';
+    }).join('');
+    var missed = (r.skipped || []).length
+      ? '<p class="dt-form__note">Not read: ' + (r.skipped || []).map(function (s) { return esc(s.module); }).join(', ') + '.</p>'
+      : '';
+    openFlow('zoho-crm', '<p class="dt-panel__head">Connected</p>'
+      + '<p class="dt-form__help">Every module holding records is now being read. '
+      + 'The first sync is running; the empty ones were left alone.</p>'
+      + '<ul class="dt-src__list">' + list + '</ul>' + missed
+      + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-cancel="1">Done</button></div>');
+  }
+
   /** A consent that came back and then went wrong, said on the card. */
   function zohoFailed(handoff, message) {
     openFlow('zoho-crm', '<p class="dt-panel__head">Zoho approved, but the connection did not finish</p>'
       + '<p class="dt-card__err">' + esc(message) + '</p>'
       + '<div class="dt-map__actions">'
-      + '<button type="button" class="dt-btn" data-zoho-retry="' + esc(handoff) + '">Try reading the modules again</button>'
+      + '<button type="button" class="dt-btn" data-zoho-retry="' + esc(handoff) + '">Try reading the CRM again</button>'
       + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
   }
 
-  /** The module is chosen: build the dataset from it, and connect. */
-  async function finishZohoModule(btn) {
-    var b = bodyOf('zoho-crm');
-    var moduleName = (b.querySelector('[name="module"]') || {}).value || '';
-    if (!moduleName) { say(els.note, 'Choose a module.', true); return; }
-
-    btn.disabled = true; btn.textContent = 'Reading…';
-    try {
-      var r = await ownerJson('/api/connectors/zoho/finish', 'POST', {
-        handoff: btn.dataset.zohoFinish,
-        module: moduleName,
-      });
-      closeFlow('zoho-crm');
-      await refresh();
-      say(els.note, 'Zoho CRM is connected. ' + r.dataset.name + ' was created with '
-        + r.dataset.columns + ' columns, and the first sync is running now.');
-    } catch (err) {
-      btn.disabled = false; btn.textContent = 'Read this module';
-      console.error('[zoho] finishing the connection failed:', err);
-      flowErr('zoho-crm', err.message);
-    }
-  }
 
   async function submitConnector(btn, kind) {
     var b = bodyOf(kind);

@@ -20,7 +20,7 @@
  */
 import { available, startConsent, claimConsent } from '../services/svargZohoService.js';
 import { createConnector, defineDataset } from '../services/connectorService.js';
-import { listModules, describeShape } from '../services/connectors/zohocrm.js';
+import { listModules, listPopulated, describeShape } from '../services/connectors/zohocrm.js';
 
 /*
  * The token between the consent and the connection.
@@ -107,14 +107,86 @@ export async function zohoModules(req, res) {
 }
 
 /**
- * Make the dataset from the module, then connect.
+ * Connect everything in this CRM that holds anything.
  *
- * The dataset is not chosen from a list of guesses any more: it IS the
- * module, with the module's own fields as its columns and Zoho's record id
- * as its key. Nothing maps, so nothing is dropped — a package and a session
- * count survive because nobody had to think of them in advance.
+ * ── Why nobody is asked which module ──────────────────────────────────────
+ *
+ * Zoho ships around forty modules and a business uses a handful. A dropdown
+ * of all of them asks somebody to tell the software something the software
+ * can find out in three seconds — and "which module are your appointments
+ * in" is a question a clinic owner often cannot answer, because a consultant
+ * set it up two years ago.
+ *
+ * So every module is asked whether it holds a record, and the ones that do
+ * are connected. Each becomes its own dataset, with that module's own fields
+ * as columns and Zoho's record id as the key. Nothing maps, so nothing is
+ * dropped — a package and a session count survive because nobody had to
+ * think of them in advance.
+ *
+ * A module that fails to connect does not stop the others. A CRM where one
+ * module is locked down should still give up the rest.
  */
+const MOST_AT_ONCE = 15;
+
 export async function zohoFinish(req, res) {
+  const handoff = String(req.body?.handoff || '').trim();
+  const creds = heldFor(handoff);
+  if (!creds) return res.status(400).json({ error: 'That connection attempt has expired. Press Connect again.' });
+
+  const base = { region: creds.region, refreshToken: creds.refreshToken, brokered: 'yes' };
+
+  let populated;
+  try {
+    const all = await listModules(base);
+    populated = (await listPopulated(base, all)).slice(0, MOST_AT_ONCE);
+  } catch (err) {
+    return res.status(502).json({ error: err.message });
+  }
+  if (!populated.length) {
+    return res.status(400).json({
+      error: 'Every module in this Zoho account is empty, so there is nothing to read yet. '
+        + 'Add a record and connect again.',
+    });
+  }
+
+  const connected = [];
+  const skipped = [];
+  for (const m of populated) {
+    const config = { ...base, module: m.apiName, criteria: '' };
+    try {
+      const shape = await describeShape(config);
+      /*
+       * Named for the module and the system, because a business can keep
+       * people in more than one place and "Contacts" alone stops being an
+       * answer the moment a second CRM or a spreadsheet arrives.
+       */
+      const dataset = await defineDataset({
+        name: `${m.label} (Zoho CRM)`,
+        columns: shape.columns,
+        key: shape.key,
+        from: 'zoho-crm',
+      });
+      await createConnector({ kind: 'zoho-crm', datasetName: dataset.name, config, schedule: 'hourly' });
+      connected.push({ module: m.label, dataset: dataset.name, columns: dataset.columns.length });
+    } catch (err) {
+      console.error('[zoho] %s could not be connected:', m.apiName, err.message);
+      skipped.push({ module: m.label, reason: err.message });
+    }
+  }
+
+  if (!connected.length) {
+    return res.status(502).json({
+      error: 'Zoho approved, but none of the modules holding records could be read. '
+        + (skipped[0] ? skipped[0].reason : ''),
+    });
+  }
+
+  held.delete(handoff);
+  return res.json({ connected, skipped });
+}
+
+/** Kept for the manual path, which still names one module. */
+export async function zohoFinishOne(req, res) {
   const handoff = String(req.body?.handoff || '').trim();
   const moduleName = String(req.body?.module || '').trim();
   if (!moduleName) return res.status(400).json({ error: 'Choose which module to read.' });
@@ -127,8 +199,6 @@ export async function zohoFinish(req, res) {
     refreshToken: creds.refreshToken,
     module: moduleName,
     criteria: String(req.body?.criteria || '').trim(),
-    // What tells the connector to ask Svarg for access tokens rather than
-    // reach for a client secret it does not have.
     brokered: 'yes',
   };
 
@@ -140,11 +210,6 @@ export async function zohoFinish(req, res) {
   }
 
   try {
-    /*
-     * Named for the module and the system, because a business can keep
-     * people in more than one place and "Contacts" alone stops being an
-     * answer the moment a second CRM or a spreadsheet arrives.
-     */
     const dataset = await defineDataset({
       name: `${shape.name} (Zoho CRM)`,
       columns: shape.columns,

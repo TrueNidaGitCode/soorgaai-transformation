@@ -312,6 +312,48 @@ export async function listModules(config) {
 }
 
 /**
+ * Which of a customer's modules hold anything.
+ *
+ * ── Why this is asked rather than offered ─────────────────────────────────
+ *
+ * Zoho ships around forty modules and a business uses a handful. Presenting
+ * all of them as a list is asking somebody to tell the software something the
+ * software can find out in three seconds — and the honest answer to "which
+ * module are your appointments in" is often "I don't know, whichever one the
+ * consultant set up".
+ *
+ * So: one record is requested from each. A module with something in it is
+ * connected; a module with nothing is not a choice worth making, because
+ * connecting it would produce a dataset with no rows and watchers with
+ * nothing to watch.
+ *
+ * In small batches, because forty requests at once is how an integration
+ * gets rate-limited on its first contact with a customer's account. A module
+ * that refuses to be read is skipped rather than fatal — a CRM where one
+ * module is locked down is not a CRM that cannot be read.
+ */
+export async function listPopulated(config, modules, { batch = 5 } = {}) {
+  const token = await accessToken(config);
+  const c = client(config, token);
+  const out = [];
+
+  for (let i = 0; i < modules.length; i += batch) {
+    const slice = modules.slice(i, i + batch);
+    const answers = await Promise.all(slice.map(async (m) => {
+      try {
+        const r = await c.get(`/${encodeURIComponent(m.apiName)}`, { params: { per_page: 1 } });
+        // 204 is Zoho for "this module is real and empty".
+        return r.status !== 204 && !!r.data?.data?.length;
+      } catch {
+        return false;
+      }
+    }));
+    slice.forEach((m, n) => { if (answers[n]) out.push(m); });
+  }
+  return out;
+}
+
+/**
  * A module's own shape: what the dataset should be, rather than what was
  * guessed before anyone connected anything.
  *

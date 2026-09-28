@@ -238,22 +238,36 @@ describe('what the Data page does with it', () => {
      * longer loses the connection with it.
      */
     expect(ui).not.toContain('ZOHO_PENDING');
-    const back = ui.slice(ui.indexOf('async function finishZoho()'), ui.indexOf('async function finishZohoModule'));
-    expect(back).toContain("ownerJson('/api/connectors/zoho/modules'");
+    const back = ui.slice(ui.indexOf('async function finishZoho()'), ui.indexOf('function reading('));
+    expect(back).toContain("ownerJson('/api/connectors/zoho/finish'");
   });
 
   it('asks the CRM what it holds, rather than asking the owner', () => {
     /*
-     * The whole point of the reorder. Before the consent the only question
-     * left is the data centre, which decides where the consent is SENT and
-     * so cannot be asked afterwards.
+     * Before the consent the only question left is the data centre, which
+     * decides where the consent is SENT and so cannot be asked afterwards.
      */
-    const form = ui.slice(ui.indexOf('function openZoho(k)'), ui.indexOf('function pickModule'));
+    const form = ui.slice(ui.indexOf('function openZoho(k)'), ui.indexOf('async function startZoho'));
     expect(form).not.toMatch(/name="module"|__dataset/);
     expect(form).toContain('name="region"');
-    // And afterwards, their own labels — a custom module is marked as theirs
-    // because that is the one whose API name is not what the screen says.
-    expect(ui).toContain("esc(m.label) + (m.custom ? ' — your own' : '')");
+  });
+
+  it('asks nothing afterwards either', () => {
+    /*
+     * There was a dropdown here, of every module Zoho ships — about forty.
+     * It asked somebody to tell the software something the software can find
+     * out in three seconds, and "which module are your appointments in" is a
+     * question a clinic owner often cannot answer, because a consultant set
+     * it up two years ago.
+     *
+     * Every module holding a record is connected instead. The empty ones are
+     * not offered, because a dataset with no rows gives the watchers nothing
+     * to watch.
+     */
+    expect(ui).not.toContain('function pickModule');
+    expect(ui).not.toContain('data-zoho-finish');
+    expect(ui).toContain('function reading(handoff)');
+    expect(ui).toContain('function connected(r)');
   });
 
   it('clears the id from the address whatever happens', () => {

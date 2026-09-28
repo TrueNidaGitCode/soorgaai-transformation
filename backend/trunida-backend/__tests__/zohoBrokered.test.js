@@ -380,3 +380,36 @@ describe('the address the browser is returned to', () => {
     expect(tail).toContain('the connection is not finished');
   });
 });
+
+describe('the page exists before the consent is picked up', () => {
+  const ui = read('../eame-template/frontend/data.js');
+
+  /*
+   * ── The bug this exists for ──────────────────────────────────────────────
+   *
+   * Reported as "the CRM connection fails", with no error on the card and no
+   * error in the console — and, just before the Data page settled, a flash of
+   * "This application lists no datasets to bring records onto."
+   *
+   * finishZoho opens a panel on the CRM card, and it ran BEFORE refresh. The
+   * page had not been drawn: datasets, kinds and sources were all still
+   * empty, so systemCards produced no cards, openFlow found none to attach
+   * to, and its last line — delete open[kind]; return — threw the panel away
+   * without a word. The flash was that same empty state going past.
+   *
+   * Nothing had failed, which is why nothing said so. The page had been asked
+   * to put something on a card that did not exist yet.
+   */
+  it('draws the page before opening anything on it', () => {
+    const fn = ui.slice(ui.indexOf('async function enter()'), ui.indexOf('async function enter()') + 1600);
+    expect(fn).toContain('await refresh();');
+    expect(fn).toContain('await finishZoho();');
+    expect(fn.indexOf('await refresh();')).toBeLessThan(fn.indexOf('await finishZoho();'));
+  });
+
+  it('leaves a trace when a panel has no card to open on', () => {
+    // There is no screen to put an error on in that case, which is exactly
+    // why it needs to reach the console instead of disappearing.
+    expect(ui).toContain("console.error('[data] no \"%s\" card to open a flow on; the page may not have loaded yet', kind);");
+  });
+});

@@ -164,13 +164,28 @@
     els.gate.hidden = true;
     els.room.hidden = false;
     /*
-     * Both before the first draw: whether one click is on offer decides which
-     * form the CRM card opens, and a browser returning from Zoho has a
-     * connection to make before the page reports what is connected.
+     * Whether one click is on offer decides which form the CRM card opens,
+     * so it is asked before anything is drawn.
      */
     try { zohoOneClick = !!(await ownerJson('/api/connectors/zoho/status')).available; } catch (e) { zohoOneClick = false; }
-    await finishZoho();
+
+    /*
+     * ── refresh BEFORE finishZoho, and the order is not cosmetic ───────────
+     *
+     * finishZoho opens a panel on the CRM card. It ran first, against a page
+     * that had not been drawn: datasets, kinds and sources were all still
+     * empty, so systemCards produced no cards at all, openFlow could not find
+     * one to attach to, and its last line — delete open[kind]; return —
+     * threw the panel away without a word.
+     *
+     * What a reader saw was a consent that worked, a return to the Data page,
+     * no module list, no error, and a flash of "this application lists no
+     * datasets" as the empty state went past. Nothing in the console, because
+     * nothing had failed: the page had simply been asked to put something on
+     * a card that did not exist yet.
+     */
     await refresh();
+    await finishZoho();
   }
 
   /*
@@ -683,7 +698,18 @@
     open[kind] = Object.assign({ html: html }, state || {});
     var card = page.querySelector('[data-card="' + kind + '"]');
     if (!card) { renderSources(); card = page.querySelector('[data-card="' + kind + '"]'); }
-    if (!card) { delete open[kind]; return; }
+    if (!card) {
+      /*
+       * Nothing to attach to, which happens when the page has not been drawn
+       * or when this kind is not among the cards it drew. Silently dropping
+       * the panel is how a working consent came back looking like nothing at
+       * all, so it leaves a trace even though there is no screen to put one
+       * on.
+       */
+      console.error('[data] no "%s" card to open a flow on; the page may not have loaded yet', kind);
+      delete open[kind];
+      return;
+    }
     card.classList.add('dt-card--open');
     var act = card.querySelector('.dt-card__act'); if (act) act.innerHTML = '';
     var status = card.querySelector('.dt-card__label'); if (status) status.remove();

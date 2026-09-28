@@ -43,6 +43,53 @@
 
 * { box-sizing: border-box; }
 
+/*
+ * ── The scrollbar belongs to the design ──────────────────────────────────
+ *
+ * Two things were missing, and the second only became visible where the
+ * first had been patched over.
+ *
+ * `color-scheme` was never declared, so the browser drew this deep navy
+ * application as though it were a light document. That is not only the
+ * scrollbar: it is every piece of chrome CSS cannot reach — the caret, the
+ * autofill wash, number spinners, the overscroll edge, the fallback
+ * selection colour. Saying `dark` once settles all of them.
+ *
+ * And the bar itself had been styled on five named panes, one selector
+ * each. The sidebar and the conversation log were not among them, so they
+ * kept the browser's own white bar, and every pane added later would have
+ * arrived the same way. `scrollbar-width` and `scrollbar-color` are
+ * inherited properties, so the treatment is declared once here and every
+ * scrolling surface in the application has it, including the ones that do
+ * not exist yet.
+ *
+ * .ch-tabs still hides its own bar: a class beats :root on specificity.
+ */
+:root {
+  color-scheme: dark;
+  /* Inherited, so declaring it here reaches every scrolling surface. */
+  scrollbar-color: var(--ch-line-hi) transparent;
+}
+/* Its sibling is NOT inherited, so the width has to be said to everything
+   or the panes fall back to the browser's much wider default bar -- which
+   is how this was measured: colour right, width wrong. .ch-tabs still wins
+   with "none", a class over a universal selector. */
+* { scrollbar-width: thin; }
+
+/* Safari, and Chrome before it understood the two properties above. Modern
+   Chrome uses the standard ones and ignores these, which is why the widths
+   differ: thin is the browser's, 10px is ours. */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--ch-line-hi);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--ch-dim); background-clip: content-box; }
+*::-webkit-scrollbar-corner { background: transparent; }
+
 /* .ch-app is display:flex, which would beat the hidden attribute. */
 [hidden] { display: none !important; }
 
@@ -2126,32 +2173,9 @@ body {
   overflow-y: auto;
   width: 100%;
   margin-inline: auto;
-  /* These panes are the ones that actually scroll, and the browser default
-     paints a light scrollbar on them — a white bar down the side of a dark
-     application, which reads as a rendering fault rather than a control. */
-  scrollbar-width: thin;
-  scrollbar-color: var(--ch-line-hi) transparent;
+  /* The scrollbar these panes get is the application's, declared once at
+     :root near the top of this file rather than pane by pane here. */
 }
-.ch-main > .fn::-webkit-scrollbar,
-.ch-main > .fd::-webkit-scrollbar,
-.ch-main > .ag::-webkit-scrollbar,
-.ch-main > .dt::-webkit-scrollbar,
-.ch-main > .ac::-webkit-scrollbar { width: 10px; }
-.ch-main > .fn::-webkit-scrollbar-track,
-.ch-main > .fd::-webkit-scrollbar-track,
-.ch-main > .ag::-webkit-scrollbar-track,
-.ch-main > .dt::-webkit-scrollbar-track,
-.ch-main > .ac::-webkit-scrollbar-track { background: transparent; }
-.ch-main > .fn::-webkit-scrollbar-thumb,
-.ch-main > .fd::-webkit-scrollbar-thumb,
-.ch-main > .ag::-webkit-scrollbar-thumb,
-.ch-main > .dt::-webkit-scrollbar-thumb,
-.ch-main > .ac::-webkit-scrollbar-thumb { background: var(--ch-line-hi); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
-.ch-main > .fn:hover::-webkit-scrollbar-thumb,
-.ch-main > .fd:hover::-webkit-scrollbar-thumb,
-.ch-main > .ag:hover::-webkit-scrollbar-thumb,
-.ch-main > .dt:hover::-webkit-scrollbar-thumb,
-.ch-main > .ac:hover::-webkit-scrollbar-thumb { background: var(--ch-dim); background-clip: content-box; }
 
 /* ── The findings board, as rows under the industry's own headings ───────────
    Cards were replaced by rows because this screen is read down in one pass:

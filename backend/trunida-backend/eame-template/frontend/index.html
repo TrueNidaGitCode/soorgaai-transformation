@@ -929,16 +929,27 @@
        * built with -- kept apart, so nobody mistakes one for the other.
        */
       nav.innerHTML = '<button type="button" class="ch-side__item ch-side__item--on" data-side="home">' + svg('home') + '<span>Home</span></button>'
-        // Ask, not Chat, and second rather than first. The question box used
-        // to BE the home screen, which made a product that watches look like
-        // a product that waits: you only got an answer if you already
-        // suspected the question. It is still here, one place in, for when
-        // somebody wants to go deeper than a finding.
-        + '<a href="#ask" class="ch-side__item" id="ch-ask-link" data-side="ask">' + svg('chat') + '<span>Ask</span></a>'
         + '<a href="#data" class="ch-side__item" id="ch-data-link" data-side="data">' + svg('data') + '<span>Data</span></a>'
         // What the application is watching while nobody is looking. Changing
         // what is watched is owner-only; reading what it found is not.
-        + '<a href="#agents" class="ch-side__item" id="ch-agents-link" data-side="agents">' + svg('watch') + '<span>Watchers</span></a>';
+        + '<a href="#agents" class="ch-side__item" id="ch-agents-link" data-side="agents">' + svg('watch') + '<span>Watchers</span></a>'
+        /*
+         * Ask, not Chat, and last of the four.
+         *
+         * The question box used to BE the home screen, which made a product
+         * that watches look like a product that waits: you only got an
+         * answer if you already suspected the question. Moving it one place
+         * in fixed the front door but left it sitting among the three
+         * entries that describe what the application does on its own -- the
+         * morning's findings, the data behind them, the watchers that
+         * produce them. Those three read as one sequence, and Ask
+         * interrupted it.
+         *
+         * It belongs after them, because that is when somebody reaches for
+         * it: they have read a finding and want to go further than the
+         * finding goes.
+         */
+        + '<a href="#ask" class="ch-side__item" id="ch-ask-link" data-side="ask">' + svg('chat') + '<span>Ask</span></a>';
       nav.addEventListener('click', function (e) {
         var b = e.target.closest('[data-side]'); if (!b) return;
         if (b.dataset.side === 'home') { e.preventDefault(); goHomeTab(); }

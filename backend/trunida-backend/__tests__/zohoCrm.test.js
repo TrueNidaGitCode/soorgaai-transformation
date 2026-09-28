@@ -32,13 +32,32 @@ function tokenOk() {
   axios.post.mockResolvedValue({ data: { access_token: 'tok', expires_in: 3600 } });
 }
 
-/** Pages of records, answered in order. */
+/**
+ * Pages of records, answered in order — and the field list, answered
+ * whenever it is asked for.
+ *
+ * Zoho requires a `fields` parameter on every record read, so pull asks
+ * /settings/fields first. A mock that answered purely by turn gave that call
+ * the first page of records and everything after it was off by one.
+ */
+const FIELDS = { status: 200, data: { fields: [
+  { api_name: 'Full_Name', data_type: 'text' },
+  { api_name: 'Email', data_type: 'email' },
+  { api_name: 'Appointment_Status', data_type: 'picklist' },
+] } };
+
 function pages(...responses) {
-  const get = vi.fn();
-  responses.forEach((r) => get.mockResolvedValueOnce(r));
+  const queue = [...responses];
+  const get = vi.fn((path) => {
+    if (String(path).includes('/settings/fields')) return Promise.resolve(FIELDS);
+    return Promise.resolve(queue.shift() || { status: 204, data: null });
+  });
   axios.create.mockReturnValue({ get });
   return get;
 }
+
+/** Only the calls that asked for records, so an assertion can count pages. */
+const recordCalls = (get) => get.mock.calls.filter((c) => !String(c[0]).includes('/settings/'));
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -155,7 +174,10 @@ describe('reading a module', () => {
     expect(rows.map((r) => r.id)).toEqual(['1', '2', '3']);
     // The second page is asked for by the token Zoho handed back, not by a
     // page number: a number stops working past 2000 records.
-    expect(get.mock.calls[1][1].params.page_token).toBe('p2');
+    expect(recordCalls(get)[1][1].params.page_token).toBe('p2');
+    // And every record read names its fields, because Zoho refuses one that
+    // does not — the failure that told a customer their whole CRM was empty.
+    expect(recordCalls(get)[0][1].params.fields).toContain('id');
   });
 
   it('stops at the row ceiling rather than pulling a whole CRM into memory', async () => {
@@ -180,14 +202,14 @@ describe('reading a module', () => {
     tokenOk();
     const plain = pages({ status: 200, data: { data: [], info: { more_records: false } } });
     await zoho.pull({ ...CONFIG });
-    expect(plain.mock.calls[0][0]).toBe('/Contacts');
+    expect(recordCalls(plain)[0][0]).toBe('/Contacts');
 
     vi.clearAllMocks();
     tokenOk();
     const searched = pages({ status: 200, data: { data: [], info: { more_records: false } } });
     await zoho.pull({ ...CONFIG, criteria: '(Lead_Status:equals:Active)' });
-    expect(searched.mock.calls[0][0]).toBe('/Contacts/search');
-    expect(searched.mock.calls[0][1].params.criteria).toBe('(Lead_Status:equals:Active)');
+    expect(recordCalls(searched)[0][0]).toBe('/Contacts/search');
+    expect(recordCalls(searched)[0][1].params.criteria).toBe('(Lead_Status:equals:Active)');
   });
 
   it('says what to go and fix when the module name is wrong', async () => {

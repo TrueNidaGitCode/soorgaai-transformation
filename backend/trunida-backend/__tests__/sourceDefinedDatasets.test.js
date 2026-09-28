@@ -86,7 +86,7 @@ describe('what a connected module becomes', () => {
   });
 
   it('keys on the record id, so a sync is an update and not a new set of people', () => {
-    expect(zoho).toContain("columns: ['id', ...fields.filter((f) => f !== 'id')]");
+    expect(zoho).toContain("const columns = ['id', ...fields.filter((f) => f !== 'id')].slice(0, MAX_FIELDS);");
     expect(zoho).toContain("key: 'id'");
   });
 

@@ -81,6 +81,49 @@ export const provides = [
 const PAGE = 200;
 const TIMEOUT = 30000;
 
+/*
+ * ── Zoho will not list records without being told which fields ────────────
+ *
+ * GET /crm/v6/{module} requires a `fields` parameter. Omit it and every call
+ * comes back REQUIRED_PARAM_MISSING — which, inside a try/catch that treats a
+ * failure as "this module is empty", read as a CRM with nothing in it at all.
+ * A customer with records in three modules was told every one of their forty
+ * was empty.
+ *
+ * At most fifty names per request, which is Zoho's limit and not a choice.
+ * A module with more fields than that is read down to fifty, and the dataset
+ * is built from the same fifty — so the columns a dataset promises are
+ * exactly the columns a sync can fill. A dataset with columns nothing will
+ * ever put a value in is worse than a narrower one.
+ */
+export const MAX_FIELDS = 50;
+
+const fieldCache = new Map();
+const fieldKey = (config) => `${region(config)}|${moduleOf(config)}`;
+
+/** The field API names to ask for: the record id, then the module's own. */
+export async function fieldsFor(config) {
+  const key = fieldKey(config);
+  const held = fieldCache.get(key);
+  if (held) return held;
+
+  const token = await accessToken(config);
+  let r;
+  try {
+    r = await client(config, token).get('/settings/fields', { params: { module: moduleOf(config) } });
+  } catch (err) {
+    throw new Error(reason(err, config));
+  }
+  const names = (r.data?.fields || [])
+    .filter((f) => f.api_name && f.data_type !== 'subform')
+    .map((f) => f.api_name)
+    .filter((n) => n !== 'id');
+
+  const list = ['id', ...names].slice(0, MAX_FIELDS);
+  fieldCache.set(key, list);
+  return list;
+}
+
 /**
  * A connection Svarg brokered, as opposed to one the owner made themselves.
  *
@@ -203,7 +246,9 @@ export async function test(config) {
   const token = await accessToken(config);
   const name = moduleOf(config);
   try {
-    const r = await client(config, token).get(`/${encodeURIComponent(name)}`, { params: { per_page: 1 } });
+    // 'id' alone: this asks whether the module answers and holds anything,
+    // not what is in it, and Zoho refuses the question without a field list.
+    const r = await client(config, token).get(`/${encodeURIComponent(name)}`, { params: { fields: 'id', per_page: 1 } });
     if (r.status === 204 || !r.data?.data?.length) {
       return { ok: true, message: `Connected to ${name}, which holds no records yet.` };
     }
@@ -341,7 +386,7 @@ export async function listPopulated(config, modules, { batch = 5 } = {}) {
     const slice = modules.slice(i, i + batch);
     const answers = await Promise.all(slice.map(async (m) => {
       try {
-        const r = await c.get(`/${encodeURIComponent(m.apiName)}`, { params: { per_page: 1 } });
+        const r = await c.get(`/${encodeURIComponent(m.apiName)}`, { params: { fields: 'id', per_page: 1 } });
         // 204 is Zoho for "this module is real and empty".
         return r.status !== 204 && !!r.data?.data?.length;
       } catch {
@@ -376,13 +421,16 @@ export async function describeShape(config) {
     .filter((f) => f.api_name && f.data_type !== 'subform')
     .map((f) => f.api_name);
   if (!fields.length) throw new Error(`Zoho listed no readable fields for ${name}.`);
-  return {
-    name,
-    // The id first and never twice: Zoho does not list it as a field, and it
-    // is the only value that identifies a record across syncs.
-    columns: ['id', ...fields.filter((f) => f !== 'id')],
-    key: 'id',
-  };
+  /*
+   * The same fifty the sync will ask for, in the same order.
+   *
+   * Zoho takes at most fifty field names per request, so a dataset built
+   * from every field of a wide module would promise columns no sync could
+   * ever fill. The id leads: Zoho does not list it as a field, and it is the
+   * only value that identifies a record from one sync to the next.
+   */
+  const columns = ['id', ...fields.filter((f) => f !== 'id')].slice(0, MAX_FIELDS);
+  return { name, columns, key: 'id' };
 }
 
 /**
@@ -397,6 +445,9 @@ export async function pull(config, { maxRows = 50000 } = {}) {
   const c = client(config, token);
   const name = encodeURIComponent(moduleOf(config));
   const criteria = String(config.criteria || '').trim();
+  // Required by Zoho, and the same list the dataset's columns were built
+  // from, so every column has something that can fill it.
+  const fields = (await fieldsFor(config)).join(',');
   const out = [];
 
   let page = 1;
@@ -405,9 +456,10 @@ export async function pull(config, { maxRows = 50000 } = {}) {
     let r;
     try {
       r = criteria
-        ? await c.get(`/${name}/search`, { params: { criteria, per_page: PAGE, page } })
+        ? await c.get(`/${name}/search`, { params: { criteria, fields, per_page: PAGE, page } })
         : await c.get(`/${name}`, {
           params: {
+            fields,
             per_page: PAGE,
             sort_by: 'Modified_Time',
             sort_order: 'desc',

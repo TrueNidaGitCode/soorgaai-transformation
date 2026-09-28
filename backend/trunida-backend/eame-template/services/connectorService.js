@@ -186,8 +186,18 @@ export async function defineDataset({ name, columns, key = '', from = '' }) {
     .filter(c => c !== '_source');
   if (!name || !clean.length) throw new Error('A dataset needs a name and at least one column.');
 
+  /*
+   * The slug is not decoration: it is the filename every row file is written
+   * to and matched by, and otherSources builds a regular expression straight
+   * out of it. A dataset without one threw "Cannot read properties of
+   * undefined (reading 'replace')" the moment anything read or wrote a row —
+   * which is the first sync, immediately after a connection that had just
+   * been reported as successful.
+   */
   const doc = {
     name: String(name).trim(),
+    slug: String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      || 'dataset',
     columns: clean,
     key: key && clean.includes(key) ? key : '',
     // Where it came from, so a screen can say so and a later connection to
@@ -537,8 +547,15 @@ export async function countRows(dataset) {
 /** The other sources this dataset holds rows from: the record's, plus any file an earlier version left. */
 async function otherSources(dataset, src) {
   const found = new Set(await rowsCollection().distinct('source', { datasetName: dataset.name }).catch(() => []));
-  if (fs.existsSync(OWN_DIR)) {
-    const escaped = dataset.slug.replace(/[.*+?^${}()|[\]\\]/g, (m) => '\\' + m);
+  /*
+   * No slug means no files to find, not a crash. The rows are in the
+   * database either way — the file scan is only here to pick up what an
+   * earlier version of this application left on disk — so a dataset that
+   * has never had a file should read as having none.
+   */
+  const slug = String(dataset.slug || '');
+  if (slug && fs.existsSync(OWN_DIR)) {
+    const escaped = slug.replace(/[.*+?^${}()|[\]\\]/g, (m) => '\\' + m);
     const re = new RegExp('^' + escaped + '(?:\\.([a-z0-9_-]+))?\\.csv$', 'i');
     for (const f of fs.readdirSync(OWN_DIR)) { const m = f.match(re); if (m) found.add(m[1] || 'own'); }
   }

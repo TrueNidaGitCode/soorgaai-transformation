@@ -129,3 +129,41 @@ describe('the consent comes before the questions', () => {
     expect(ctl).toContain("if (!moduleName) return res.status(400).json({ error: 'Choose which module to read.' });");
   });
 });
+
+describe('a dataset that has to survive the machinery around it', () => {
+  const svc = read('../eame-template/services/connectorService.js');
+  const ctl = read('../eame-template/controllers/zohoConnectController.js');
+
+  it('gets a slug, because every row file is named by one', () => {
+    /*
+     * The real failure, reported as "an error in the webpage which could not
+     * be traced": a connection that had just been made, a first sync, and
+     * "Cannot read properties of undefined (reading 'replace')" from three
+     * calls deep.
+     *
+     * otherSources builds a regular expression straight out of dataset.slug
+     * and runs on every read AND write of rows, so a dataset without one
+     * could not be read from or written to at all.
+     */
+    expect(svc).toContain("slug: String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')");
+  });
+
+  it('reads as having no files rather than throwing, if it somehow has none', () => {
+    // The rows are in the database either way; the file scan only picks up
+    // what an earlier version of the application left on disk.
+    expect(svc).toContain("const slug = String(dataset.slug || '');");
+    expect(svc).toContain('if (slug && fs.existsSync(OWN_DIR)) {');
+  });
+
+  it('tells a fault here apart from a refusal from Zoho', () => {
+    /*
+     * A refusal from Zoho is a sentence somebody can act on — a module that
+     * cannot be read, a scope that was not granted. A fault in this
+     * application is whatever the runtime threw, which is no use to a
+     * customer and every use in a log.
+     */
+    expect(ctl).toContain("const zoho = /zoho|module|scope|token|refused/i.test(err.message || '');");
+    expect(ctl).toContain("console.error('[zoho] connecting %s failed after the consent:', moduleName, err);");
+    expect(ctl).toContain('The reason has been logged: ');
+  });
+});

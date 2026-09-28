@@ -162,10 +162,29 @@ export async function zohoFinish(req, res) {
     return res.json({ connector, dataset: { name: dataset.name, columns: dataset.columns.length } });
   } catch (err) {
     /*
-     * createConnector tests before it keeps, so reaching here means the
-     * consent worked and Zoho still refused the read. Said as that, rather
-     * than as a failed connection.
+     * Two very different things land here, and telling them apart is the
+     * difference between a message somebody can act on and one they cannot.
+     *
+     * createConnector tests before it keeps, so a refusal from Zoho — a
+     * module that cannot be read, a scope that was not granted — arrives as
+     * a sentence about Zoho, and is passed on as one.
+     *
+     * A fault in this application arrives as whatever the runtime threw.
+     * "Cannot read properties of undefined (reading 'replace')" was the real
+     * one: a dataset created without a slug, thrown from three calls deep on
+     * the first sync, reported to the customer as an untraceable error on a
+     * connection that had just succeeded. Those are logged with the step
+     * they came from, so the next one can be found from the logs instead of
+     * guessed at.
      */
+    const zoho = /zoho|module|scope|token|refused/i.test(err.message || '');
+    if (!zoho) {
+      console.error('[zoho] connecting %s failed after the consent:', moduleName, err);
+      return res.status(500).json({
+        error: 'Zoho approved, but this application could not finish the connection. '
+          + 'The reason has been logged: ' + (err.message || 'no message'),
+      });
+    }
     return res.status(400).json({ error: err.message });
   }
 }

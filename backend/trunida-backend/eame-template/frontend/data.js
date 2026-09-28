@@ -1065,6 +1065,27 @@
     var zfin = t.closest('[data-zoho-finish]');
     if (zfin) { await finishZohoModule(zfin); return; }
 
+    /*
+     * The consent is still good: the token is held here for fifteen minutes,
+     * so a failure to read the module list is worth retrying on its own
+     * rather than sending somebody back to Zoho to approve it again.
+     */
+    var zre = t.closest('[data-zoho-retry]');
+    if (zre) {
+      var handoff = zre.dataset.zohoRetry;
+      zre.disabled = true; zre.textContent = 'Reading…';
+      try {
+        var r = await ownerJson('/api/connectors/zoho/modules', 'POST', { handoff: handoff });
+        if (r.modules && r.modules.length) pickModule(handoff, r.modules);
+        else flowErr('zoho-crm', 'Zoho still lists no modules this account can read.');
+      } catch (err) {
+        console.error('[zoho] retry failed:', err);
+        zre.disabled = false; zre.textContent = 'Try reading the modules again';
+        flowErr('zoho-crm', err.message);
+      }
+      return;
+    }
+
     var sync = t.closest('[data-sync]');
     if (sync) {
       sync.disabled = true; sync.textContent = 'Syncing…';
@@ -1253,7 +1274,10 @@
       location.href = r.url;
     } catch (err) {
       btn.disabled = false; btn.innerHTML = 'Connect Zoho CRM <span aria-hidden="true">&rarr;</span>';
-      say(els.note, err.message, true);
+      // On the card, where the button that failed is. dt-note sits near the
+      // foot of the page and had been carrying these where nobody looks.
+      console.error('[zoho] start failed:', err);
+      flowErr('zoho-crm', err.message);
     }
   }
 
@@ -1276,15 +1300,34 @@
     try {
       var r = await ownerJson('/api/connectors/zoho/modules', 'POST', { handoff: handoff });
       if (!r.modules || !r.modules.length) {
-        say(els.note, 'Zoho connected, but listed no modules this account can read.', true);
+        zohoFailed(handoff, 'Zoho approved the connection but listed no modules this account can read. '
+          + 'The account that approved it may not have permission to see them.');
         return false;
       }
       pickModule(handoff, r.modules);
       return true;
     } catch (err) {
-      say(els.note, err.message, true);
+      /*
+       * The hardest failure in this flow to see, because it happens on a
+       * page load: nobody is watching a button, the browser has just come
+       * back from somewhere else, and a line at the foot of the page is
+       * indistinguishable from the page simply not having worked.
+       *
+       * So it opens the card and says so there, with the way to try again.
+       */
+      console.error('[zoho] reading the module list failed:', err);
+      zohoFailed(handoff, err.message);
       return false;
     }
+  }
+
+  /** A consent that came back and then went wrong, said on the card. */
+  function zohoFailed(handoff, message) {
+    openFlow('zoho-crm', '<p class="dt-panel__head">Zoho approved, but the connection did not finish</p>'
+      + '<p class="dt-card__err">' + esc(message) + '</p>'
+      + '<div class="dt-map__actions">'
+      + '<button type="button" class="dt-btn" data-zoho-retry="' + esc(handoff) + '">Try reading the modules again</button>'
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
   }
 
   /** The module is chosen: build the dataset from it, and connect. */
@@ -1305,7 +1348,8 @@
         + r.dataset.columns + ' columns, and the first sync is running now.');
     } catch (err) {
       btn.disabled = false; btn.textContent = 'Read this module';
-      say(els.note, err.message, true);
+      console.error('[zoho] finishing the connection failed:', err);
+      flowErr('zoho-crm', err.message);
     }
   }
 

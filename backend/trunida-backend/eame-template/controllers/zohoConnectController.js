@@ -19,7 +19,7 @@
  * permission, it did not take custody of the data.
  */
 import { available, startConsent, claimConsent } from '../services/svargZohoService.js';
-import { createConnector, defineDataset } from '../services/connectorService.js';
+import { createConnector, defineDataset, syncConnector } from '../services/connectorService.js';
 import { listModules, listPopulated, describeShape } from '../services/connectors/zohocrm.js';
 
 /*
@@ -188,8 +188,27 @@ export async function zohoFinish(req, res) {
         key: shape.key,
         from: 'zoho-crm',
       });
-      await createConnector({ kind: 'zoho-crm', datasetName: dataset.name, config, schedule: 'hourly' });
-      connected.push({ module: m.label, dataset: dataset.name, columns: dataset.columns.length });
+      const made = await createConnector({ kind: 'zoho-crm', datasetName: dataset.name, config, schedule: 'hourly' });
+      /*
+       * And read it now.
+       *
+       * createConnector schedules; it does not fetch. So a page that had
+       * just reported nine connections showed nine rows of "Not synced yet"
+       * and no records, and would have gone on doing so for up to an hour.
+       * Somebody who has just connected their CRM is standing in front of
+       * the screen — that is the moment the data should arrive.
+       *
+       * A module whose first read fails is still connected and will be
+       * retried on the hour, so the failure is logged rather than unwound.
+       */
+      let rows = null;
+      try {
+        const r = await syncConnector(made.id, { by: 'owner' });
+        rows = r && typeof r.rows === 'number' ? r.rows : null;
+      } catch (err) {
+        console.error('[zoho] %s connected but the first read failed:', m.apiName, err.message);
+      }
+      connected.push({ module: m.label, dataset: dataset.name, columns: dataset.columns.length, rows });
     } catch (err) {
       console.error('[zoho] %s could not be connected:', m.apiName, err.message);
       skipped.push({ module: m.label, reason: err.message });

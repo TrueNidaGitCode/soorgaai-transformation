@@ -435,8 +435,19 @@
     var out = connectors.map(function (c) {
       var k = kinds.find(function (x) { return x.kind === c.kind; });
       var ds = datasets.find(function (d) { return d.name === c.datasetName; });
+      /*
+       * The dataset names the source, because the connector cannot.
+       *
+       * A connector's label is its KIND — "Zoho CRM" — which was fine while
+       * one connection meant one system. Reading nine modules of one CRM put
+       * nine identical rows on the screen, every one of them saying Zoho CRM
+       * twice, and a page that cannot tell nine sources apart is not
+       * reporting anything.
+       *
+       * The dataset knows: it was named for the module it was built from.
+       */
       return {
-        name: c.label || (k && k.label) || c.kind,
+        name: c.datasetName || c.label || (k && k.label) || c.kind,
         type: TYPE_OF[c.kind] || (k && k.label) || 'Connection',
         rows: ds && ds.own ? ds.own.rows : null,
         at: c.lastSyncAt || null,
@@ -461,6 +472,7 @@
   }
 
   var TYPE_OF = {
+    'zoho-crm': 'CRM',
     database: 'Database',
     whatsapp: 'Messages',
     'whatsapp-business': 'Messages',
@@ -1351,8 +1363,11 @@
    */
   function connected(r) {
     var list = (r.connected || []).map(function (c) {
+      var rows = c.rows === null || c.rows === undefined
+        ? 'reading…'
+        : plural(c.rows, 'record');
       return '<li><b>' + esc(c.module) + '</b> &rarr; ' + esc(c.dataset)
-        + ' <span class="dt-conn__meta">' + c.columns + ' columns</span></li>';
+        + ' <span class="dt-conn__meta">' + esc(rows) + ' &middot; ' + c.columns + ' columns</span></li>';
     }).join('');
     var missed = (r.skipped || []).length
       ? '<p class="dt-form__note">Not read: ' + (r.skipped || []).map(function (s) { return esc(s.module); }).join(', ') + '.</p>'

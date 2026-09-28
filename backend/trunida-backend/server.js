@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 // ✅ Import routes
 import userRoutes              from "./routes/userRoutes.js";
 import oauthRoutes             from "./routes/oauthRoutes.js";
+import zohoOAuthRoutes         from "./routes/zohoOAuthRoutes.js";
 import knowledgeSuggestionRoutes from "./routes/knowledgeSuggestionRoutes.js";
 import debugRoutes                  from "./routes/debugRoutes.js"; // TEMPORARY — see controllers/debugController.js
 import assessmentRoutes        from "./routes/assessmentRoutes.js";
@@ -170,6 +171,15 @@ app.use(async (req, res, next) => {
 // so Express doesn't swallow dynamic requests under the broader prefix.
 app.use("/api/users",                 userRoutes);
 app.use("/api/auth/oauth",            oauthRoutes);
+/*
+ * Zoho's consent, on its way to a delivered application.
+ *
+ * Not under /api/auth/oauth, which is how a PERSON signs in to Svarg. These
+ * two authorise nothing here: they carry one customer's consent to their own
+ * application, and the address is registered with Zoho as a redirect URI, so
+ * it is deliberately short and deliberately stable.
+ */
+app.use("/api/oauth/zoho",            zohoOAuthRoutes);
 app.use("/api/assessment/dynamic",    dynamicAssessmentRoutes);  // ← more specific first
 app.use("/api/assessment",            assessmentRoutes);
 app.use("/api/kb",                    kbRoutes);                 // Knowledge Base read endpoints

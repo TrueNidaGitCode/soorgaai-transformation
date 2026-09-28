@@ -22,6 +22,7 @@
  * accounts.zoho.in is refused by accounts.zoho.com.
  */
 import axios from 'axios';
+import { brokeredAccessToken } from '../svargZohoService.js';
 
 export const kind = 'zoho-crm';
 export const label = 'Zoho CRM';
@@ -38,9 +39,23 @@ export const REGIONS = ['com', 'in', 'eu', 'com.au', 'jp', 'ca', 'com.cn', 'sa']
 export const fields = [
   { name: 'region', label: 'Data centre', options: REGIONS,
     hint: 'The end of the address you sign in at — zoho.com, zoho.in, zoho.eu. A token from one is refused by the others.' },
-  { name: 'clientId', label: 'Client ID', placeholder: '1000.XXXXXXXXXXXXXXXX' },
-  { name: 'clientSecret', label: 'Client secret', secret: true },
+  /*
+   * Optional, because there are two ways to hold this connection.
+   *
+   * The owner's own Self Client fills all three. A connection made by
+   * consenting to Svarg's client fills only the refresh token, and Svarg
+   * keeps the halves that mint access tokens from it — so requiring them
+   * here would refuse the very connection the one-click path creates.
+   *
+   * test() checks that one of the two shapes is complete, which is where a
+   * per-field rule could never have seen it.
+   */
+  { name: 'clientId', label: 'Client ID', required: false, placeholder: '1000.XXXXXXXXXXXXXXXX' },
+  { name: 'clientSecret', label: 'Client secret', required: false, secret: true },
   { name: 'refreshToken', label: 'Refresh token', secret: true },
+  // Written by the one-click flow, never typed. Declared because
+  // connectorService stores only the fields a kind names.
+  { name: 'brokered', label: 'Connected through Svarg', hidden: true, required: false },
   { name: 'module', label: 'Module', placeholder: 'Contacts',
     hint: 'Contacts, Leads, Deals, Events, or a custom module’s API name.' },
   { name: 'criteria', label: 'Only records matching', required: false,
@@ -66,6 +81,16 @@ export const provides = [
 const PAGE = 200;
 const TIMEOUT = 30000;
 
+/**
+ * A connection Svarg brokered, as opposed to one the owner made themselves.
+ *
+ * Read from the config rather than guessed from a missing client id, so a
+ * half-typed manual connection is a manual connection with a field missing
+ * and says so, instead of quietly becoming a brokered one that fails later
+ * against a Svarg server holding no client.
+ */
+export const isBrokered = (config) => String(config.brokered || '') === 'yes';
+
 const region = (config) => String(config.region || 'com').trim().replace(/^\.+/, '') || 'com';
 const accountsHost = (config) => `https://accounts.zoho.${region(config)}`;
 const apiHost = (config) => `https://www.zohoapis.${region(config)}`;
@@ -87,6 +112,25 @@ export async function accessToken(config) {
   const key = tokenKey(config);
   const held = tokens.get(key);
   if (held && held.until > Date.now()) return held.token;
+
+  /*
+   * Zoho mints an access token against the client secret. On a brokered
+   * connection that secret is Svarg's and is not in this container, so the
+   * exchange happens there and the token comes back over the gateway. The
+   * customer's refresh token still lives only here.
+   */
+  if (isBrokered(config)) {
+    const got = await brokeredAccessToken({
+      refreshToken: String(config.refreshToken || '').trim(),
+      region: region(config),
+    });
+    tokens.set(key, { token: got.accessToken, until: Date.now() + (got.expiresIn - 60) * 1000 });
+    return got.accessToken;
+  }
+
+  if (!String(config.clientId || '').trim() || !String(config.clientSecret || '').trim()) {
+    throw new Error('This connection has no Zoho client. Connect through Svarg, or fill in the Client ID and secret.');
+  }
 
   let data;
   try {

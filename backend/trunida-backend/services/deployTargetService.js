@@ -202,6 +202,21 @@ export function buildTenantEnv({ deployment, model, gatewayToken, gatewayBaseUrl
      * and nothing on a screen would explain why.
      */
     SVARG_TRANSCRIBE_URL: `${gatewayBaseUrl}/v1/audio/transcriptions`,
+    /*
+     * Zoho, brokered.
+     *
+     * Three calls behind one address: open a consent, claim the refresh token
+     * it produced, and mint an access token from it. The last is the one that
+     * has to be here — Zoho refreshes against a client secret, and the client
+     * is Svarg's, so a container holding only a customer's refresh token
+     * cannot do it alone.
+     *
+     * Unset on a Svarg server with no Zoho client, and the application simply
+     * offers the manual fields instead. It is told the address either way:
+     * whether the one-click path works is answered by asking, not by what was
+     * baked in on the day it was built.
+     */
+    SVARG_ZOHO_URL: `${gatewayBaseUrl}/v1/oauth/zoho`,
     SELFHOSTED_MODEL: catalog.apiModel,
 
     // Embeddings through the same gateway. The dimension MUST be pinned:

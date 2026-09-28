@@ -81,6 +81,8 @@ export const FIXED_PATHS = [
   'services/connectors/svarg.js',
   'services/connectors/database.js',
   'services/connectors/zohocrm.js',
+  'services/svargZohoService.js',
+  'controllers/zohoConnectController.js',
   'controllers/whatsappController.js',
   'routes/whatsappRoutes.js',
   'controllers/phoneController.js',

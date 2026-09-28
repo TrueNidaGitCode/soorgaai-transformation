@@ -8,6 +8,7 @@
 
 import express from 'express';
 import { chatCompletions, embeddings, transcriptions, signals, notify, ops, opsCatalogue } from '../controllers/gatewayController.js';
+import { zohoStatus, zohoStart, zohoClaim, zohoToken } from '../controllers/gatewayZohoController.js';
 
 const router = express.Router();
 
@@ -31,6 +32,18 @@ router.post('/signals',          express.json({ limit: '256kb' }), signals);
 router.post('/notify',           express.json({ limit: '64kb' }), notify);
 // Svarg's own operations, for the one tenant Svarg runs itself on. Refused for
 // every other deployment by a flag no API can set.
+/*
+ * Zoho, brokered.
+ *
+ * start opens a consent and hands back a URL for the browser; claim collects
+ * the refresh token once the customer has consented; token mints an access
+ * token, because a container holding only a refresh token cannot — the client
+ * secret is Svarg's and stays here. Small JSON, all three.
+ */
+router.get ('/oauth/zoho/status', zohoStatus);
+router.post('/oauth/zoho/start', express.json({ limit: '8kb' }), zohoStart);
+router.post('/oauth/zoho/claim', express.json({ limit: '8kb' }), zohoClaim);
+router.post('/oauth/zoho/token', express.json({ limit: '8kb' }), zohoToken);
 router.get ('/ops',              opsCatalogue);
 router.get ('/ops/:dataset',     ops);
 

@@ -57,6 +57,27 @@
     back: document.getElementById('dt-back'),
   };
 
+  /*
+   * ── Connecting Zoho in one click ─────────────────────────────────────────
+   *
+   * Whether this is offered is a fact about the Svarg server, not about this
+   * application, so it is asked for rather than baked in: a server that gains
+   * a Zoho client starts offering it without anything being rebuilt. Until
+   * the answer arrives the manual fields are what a reader gets, which is the
+   * right way round — the slower path always works.
+   */
+  var zohoOneClick = false;
+
+  /*
+   * What was chosen before the browser left for Zoho.
+   *
+   * It comes back to the same origin, so sessionStorage survives the round
+   * trip. It is kept here rather than sent through Zoho because the dataset
+   * and the module are no business of Zoho's, and because a value that goes
+   * out through a redirect comes back changeable.
+   */
+  var ZOHO_PENDING = 'dt-zoho-pending';
+
   var ownerToken = '';
   try { ownerToken = localStorage.getItem('ownerToken') || ''; } catch (e) { /* fine */ }
 
@@ -151,6 +172,13 @@
   async function enter() {
     els.gate.hidden = true;
     els.room.hidden = false;
+    /*
+     * Both before the first draw: whether one click is on offer decides which
+     * form the CRM card opens, and a browser returning from Zoho has a
+     * connection to make before the page reports what is connected.
+     */
+    try { zohoOneClick = !!(await ownerJson('/api/connectors/zoho/status')).available; } catch (e) { zohoOneClick = false; }
+    await finishZoho();
     await refresh();
   }
 
@@ -995,6 +1023,12 @@
     var connect = t.closest('[data-connect]');
     if (connect) { await submitConnector(connect, kind); return; }
 
+    var zgo = t.closest('[data-zoho-go]');
+    if (zgo) { await startZoho(zgo); return; }
+
+    var zman = t.closest('[data-zoho-manual]');
+    if (zman) { zohoOneClick = false; openSource('zoho-crm'); return; }
+
     var sync = t.closest('[data-sync]');
     if (sync) {
       sync.disabled = true; sync.textContent = 'Syncing…';
@@ -1057,6 +1091,8 @@
     var k = kinds.find(function (x) { return x.kind === kindName; });
     if (!k) return;
     var kind = cardKind(kindName);
+
+    if (kindName === 'zoho-crm' && zohoOneClick) { openZoho(k); return; }
     var guessDs = datasets.findIndex(function (d) { return new RegExp(kindName.split('-')[0], 'i').test(d.name) || /attend/i.test(d.name) && kindName === 'whatsapp-business' || (k.provides || []).some(function (p) { return new RegExp(p, 'i').test(d.name); }); });
     var setupHtml = kindName === 'whatsapp-business'
       ? '<div class="dt-setup" id="dt-wa-setup"><p class="dt-setup__head">In the Meta app, WhatsApp → Configuration → Webhook:</p><dl class="dt-setup__lines"><dt>Callback URL</dt><dd><code id="dt-wa-url">…</code></dd><dt>Verify token</dt><dd><code id="dt-wa-verify">…</code></dd><dt>Subscribe to</dt><dd><code>messages</code></dd></dl></div>'
@@ -1088,6 +1124,92 @@
       }).join('') + '</div>'
       + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-connect="1" data-kind="' + esc(k.kind) + '">Test and connect</button>'
       + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
+  }
+
+  /**
+   * The CRM form when Svarg brokers it: what to read, and one button.
+   *
+   * No client id, no secret, no refresh token — those are the ten minutes in
+   * an API console this exists to remove. What is left is the two things only
+   * the owner can answer: which module, and which dataset it feeds.
+   */
+  function openZoho(k) {
+    var regionField = (k.fields || []).find(function (f) { return f.name === 'region'; }) || { options: ['com'] };
+    var guess = datasets.findIndex(function (d) { return /client|customer|contact|booking|appoint|lead|deal/i.test(d.name); });
+    openFlow('zoho-crm', '<p class="dt-panel__head">Connect Zoho CRM</p>'
+      + '<p class="dt-form__help">You will be sent to Zoho to approve the connection, and back here when it is done. '
+      + 'Svarg reads the module you name and nothing else; the permission is kept in this application’s own database.</p>'
+      + '<div class="dt-form__grid">'
+      + '<label class="dt-form__field">Into which dataset<select class="dt-select" name="__dataset">' + datasetOptions(guess >= 0 ? guess : 0) + '</select></label>'
+      + '<label class="dt-form__field">Module<input type="text" name="module" value="Contacts" autocomplete="off">'
+      + '<em class="dt-form__note">Contacts, Leads, Deals, Events, or a custom module’s API name.</em></label>'
+      + '<label class="dt-form__field">Data centre<select name="region">'
+      + (regionField.options || ['com']).map(function (o) { return '<option value="' + esc(o) + '"' + (o === 'in' ? ' selected' : '') + '>zoho.' + esc(o) + '</option>'; }).join('')
+      + '</select><em class="dt-form__note">Zoho will correct this if your account lives elsewhere.</em></label>'
+      + '</div>'
+      + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-zoho-go="1">Connect Zoho CRM <span aria-hidden="true">&rarr;</span></button>'
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button>'
+      + '<button type="button" class="dt-btn dt-btn--quiet" data-zoho-manual="1">Use my own Zoho credentials</button></div>');
+  }
+
+  async function startZoho(btn) {
+    var b = bodyOf('zoho-crm');
+    var di = Number((b.querySelector('[name="__dataset"]') || {}).value || 0);
+    var pending = {
+      datasetName: (datasets[di] || {}).name || '',
+      module: (b.querySelector('[name="module"]') || {}).value || 'Contacts',
+      region: (b.querySelector('[name="region"]') || {}).value || 'com',
+    };
+    if (!pending.datasetName) { say(els.note, 'Choose which dataset the records go into.', true); return; }
+
+    btn.disabled = true; btn.textContent = 'Opening Zoho…';
+    try {
+      try { sessionStorage.setItem(ZOHO_PENDING, JSON.stringify(pending)); } catch (e) { /* fine */ }
+      var r = await ownerJson('/api/connectors/zoho/start', 'POST', {
+        region: pending.region,
+        // Where Svarg sends the browser back to. Svarg checks it against the
+        // address it recorded for this application rather than trusting it.
+        back: location.origin + location.pathname + '#data',
+      });
+      location.href = r.url;
+    } catch (err) {
+      btn.disabled = false; btn.innerHTML = 'Connect Zoho CRM <span aria-hidden="true">&rarr;</span>';
+      say(els.note, err.message, true);
+    }
+  }
+
+  /**
+   * The browser came back from Zoho.
+   *
+   * Runs once, on the way into the Data page, and clears the id from the
+   * address whatever happens — a reload that re-claimed a spent handoff would
+   * report a failure for a connection that had already worked.
+   */
+  async function finishZoho() {
+    var handoff = new URLSearchParams(location.search).get('zoho');
+    if (!handoff) return false;
+
+    var pending = {};
+    try { pending = JSON.parse(sessionStorage.getItem(ZOHO_PENDING) || '{}'); } catch (e) { pending = {}; }
+    try { sessionStorage.removeItem(ZOHO_PENDING); } catch (e) { /* fine */ }
+    history.replaceState(null, '', location.origin + location.pathname + '#data');
+
+    if (!pending.datasetName) {
+      say(els.note, 'Zoho approved the connection, but this browser had forgotten which dataset to use. Press Connect again.', true);
+      return false;
+    }
+    try {
+      await ownerJson('/api/connectors/zoho/finish', 'POST', {
+        handoff: handoff,
+        datasetName: pending.datasetName,
+        module: pending.module || 'Contacts',
+      });
+      say(els.note, 'Zoho CRM is connected. The first sync is running now.');
+      return true;
+    } catch (err) {
+      say(els.note, err.message, true);
+      return false;
+    }
   }
 
   async function submitConnector(btn, kind) {

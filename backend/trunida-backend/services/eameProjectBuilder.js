@@ -259,6 +259,8 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/connectors/svarg.js':     { template: 'services/connectors/svarg.js' },
     'services/connectors/database.js':  { template: 'services/connectors/database.js' },
     'services/connectors/zohocrm.js':   { template: 'services/connectors/zohocrm.js' },
+    'services/svargZohoService.js':     { template: 'services/svargZohoService.js' },
+    'controllers/zohoConnectController.js': { template: 'controllers/zohoConnectController.js' },
     'controllers/whatsappController.js': { template: 'controllers/whatsappController.js' },
     'routes/whatsappRoutes.js':         { template: 'routes/whatsappRoutes.js' },
     'services/connectors/phone.js':     { template: 'services/connectors/phone.js' },

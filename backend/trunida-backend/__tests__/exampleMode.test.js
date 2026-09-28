@@ -223,3 +223,62 @@ describe('the switch means one thing', () => {
     expect(ui).toContain('or turn on Example mode above to see how this works first.');
   });
 });
+
+describe('the switch is reliable, not usually right', () => {
+  /*
+   * ── What was wrong ───────────────────────────────────────────────────────
+   *
+   * "Sometimes it turns off the moment I turn it on."
+   *
+   * Two causes, and both had to go, because either alone reproduces it.
+   *
+   * 1. Five things call load(), and two are routinely in flight at once —
+   *    the boot read and the shell's announcement of the board, or a read
+   *    already running when somebody reaches for the switch. Nothing
+   *    sequenced them, so the answer that arrived LAST painted the screen
+   *    rather than the one asked for last. A slow business read landing
+   *    after a quick demonstration read turned the switch back off under
+   *    the reader's hand — with ch-example still saying "1", so the choice
+   *    was saved and only the screen disagreed.
+   *
+   * 2. The switch waited for the round trip before moving at all. On a slow
+   *    read the click looked like it had not taken, and the obvious response
+   *    to that is to press it again, which undid it.
+   *
+   * Measured before and after by holding the first read open in the page,
+   * clicking while it was outstanding, and letting the stale answer land:
+   * before, the switch read false and the board emptied; after, both hold.
+   */
+  it('lets only the newest read paint the board', () => {
+    expect(ui).toContain('var mine = ++reading;');
+    expect(ui).toContain('if (mine !== reading) return null;');
+  });
+
+  it('drops a stale failure too, not just a stale success', () => {
+    // A read abandoned mid-flight must not be able to replace a good board
+    // with "The findings could not be read."
+    const fn = ui.slice(ui.indexOf('function load()'), ui.indexOf('// ── One finding'));
+    expect(fn).toContain('if (mine !== reading) return;');
+    expect(fn.indexOf('if (mine !== reading) return;'))
+      .toBeLessThan(fn.indexOf('could not be read'));
+  });
+
+  it('moves the switch on the click rather than on the answer', () => {
+    /*
+     * What the switch reports is what this browser is about to ask for, and
+     * that is known at the moment of the click. Waiting for the server to
+     * confirm a fact the browser already holds is what made it feel broken.
+     */
+    expect(ui).toContain('var next = !exampleOn();');
+    expect(ui).toContain('drawMode({ hasExample: _last ? _last.hasExample : true, example: next });');
+    const click = ui.slice(ui.indexOf("var next = !exampleOn();"));
+    expect(click.indexOf('drawMode(')).toBeLessThan(click.indexOf('load();'));
+  });
+
+  it('still asks the server for the board it just switched to', () => {
+    // The optimistic paint is the switch only. The findings, counts, areas
+    // and verdict all still come from a fresh read — a board assembled in
+    // the browser from the wrong set is the failure this mode prevents.
+    expect(ui).toContain("api('/findings' + (exampleOn() ? '?example=1' : ''))");
+  });
+});

@@ -513,11 +513,37 @@
     box.className = 'fn__mode' + (on ? ' is-on' : '');
   }
 
+  /*
+   * ── One board at a time ──────────────────────────────────────────────────
+   *
+   * Five things call load(), and two of them are routinely in flight at
+   * once: the boot read and the shell's own announcement of the board, or a
+   * read already running when somebody reaches for the Example mode switch.
+   *
+   * Without a sequence, the answer that arrives LAST paints the screen --
+   * not the one that was asked for last. Ask for the business, then ask for
+   * the demonstration, and if the first answer is the slower of the two it
+   * lands second and turns the switch back off under the reader's hand.
+   *
+   * Which makes it intermittent, and an intermittent control is worse than
+   * a broken one: a broken switch gets reported, a flaky one gets distrusted
+   * along with everything around it.
+   */
+  var reading = 0;
+
   function load() {
+    var mine = ++reading;
     return api('/findings' + (exampleOn() ? '?example=1' : ''))
-      .then(function (body) { drawMode(body); return body; })
-      .then(render)
+      .then(function (body) {
+        // Somebody asked a newer question. This answer is about a board the
+        // reader has already moved on from.
+        if (mine !== reading) return null;
+        drawMode(body);
+        render(body);
+        return body;
+      })
       .catch(function (err) {
+        if (mine !== reading) return;
         // No verdict when the findings could not be read: a banner saying
         // "everything looks good" over a failed request is the worst
         // possible combination on this screen.
@@ -641,11 +667,22 @@
     var btn = document.getElementById('fn-mode-toggle');
     if (!btn) return;
     btn.addEventListener('click', function () {
-      setExample(!exampleOn());
+      var next = !exampleOn();
+      setExample(next);
       // The whole board is re-read rather than re-filtered here: the verdict,
       // the area counts and the list all change together, and a screen that
       // updated some of them would be worse than one that reloaded.
       picked = '';
+      /*
+       * The switch moves now, not when the server answers.
+       *
+       * It used to wait for the round trip, so on a slow read the control
+       * stayed where it was and the click looked like it had not taken --
+       * and the obvious response to a switch that did not take is to press
+       * it again, which undid it. What the switch reports is what this
+       * browser is about to ask for, and that is already known here.
+       */
+      drawMode({ hasExample: _last ? _last.hasExample : true, example: next });
       load();
     });
   }());

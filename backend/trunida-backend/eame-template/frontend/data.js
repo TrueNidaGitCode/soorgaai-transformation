@@ -110,6 +110,19 @@
    * browser is a second thing to keep true.
    */
   async function openOrAsk() {
+    /*
+     * Neither screen until the answer is known.
+     *
+     * Almost nobody needs the key — requireWriter passes any session that
+     * already says owner — so what almost everybody met was a password box
+     * that vanished a second later. A pane that is briefly empty says
+     * nothing false; a pane that briefly demands a secret does.
+     *
+     * Said here as well as in the markup, because the second visit to this
+     * page starts from wherever the first one left it.
+     */
+    els.gate.hidden = true;
+    els.room.hidden = true;
     try {
       const r = await fetch(API + '/api/data/datasets', {
         headers: { Authorization: 'Bearer ' + sessionToken() },
@@ -999,7 +1012,13 @@
   // knows what the application holds, and a listener on the old element
   // would go with it.
   document.addEventListener('click', function (e) { var l = e.target.closest('#ch-data-link'); if (!l) return; e.preventDefault(); show('data'); });
-  els.back.addEventListener('click', function (e) { e.preventDefault(); show('app'); });
+  /*
+     * Guarded because #dt-back is not in the markup: this threw on every
+     * load of every delivered application, and an uncaught error here ends
+     * the file — taking the "#data" deep link below it with it, which is
+     * how Svarg's go-live screen sends somebody straight to this page.
+     */
+    if (els.back) els.back.addEventListener('click', function (e) { e.preventDefault(); show('app'); });
   if (window.location.hash === '#data') {
     // A link from the Svarg go-live screen: straight to the room, through
     // the door if the door has not been passed yet.

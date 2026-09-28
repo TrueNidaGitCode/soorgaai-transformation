@@ -427,7 +427,12 @@
          through, because requireWriter accepts that session already. It is
          here for the case it was built for — somebody with no session, or an
          owner whose email no longer reaches them. -->
-    <div class="dt__gate" id="dt-gate">
+    <!-- Hidden until the door has been tried. This used to be the Data
+         page's default screen, so opening Data showed a password box for the
+         length of one request and then took it away again — a demand for a
+         secret, withdrawn a moment later, in front of somebody who did not
+         need it. data.js shows whichever of gate/room is right. -->
+    <div class="dt__gate" id="dt-gate" hidden>
       <form class="dt__keyform" id="dt-key-form">
         <p class="dt__gateline">This is the owner's page. Your account cannot change this
           application's data yet.</p>

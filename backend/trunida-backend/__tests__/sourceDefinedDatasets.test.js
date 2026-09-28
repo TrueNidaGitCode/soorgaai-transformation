@@ -171,3 +171,40 @@ describe('a dataset that has to survive the machinery around it', () => {
     expect(ctl).toContain('The reason has been logged: ');
   });
 });
+
+describe('whichever step asks first is the one that claims', () => {
+  const ctl = read('../eame-template/controllers/zohoConnectController.js');
+
+  /*
+   * ── The bug this exists for ──────────────────────────────────────────────
+   *
+   * "That connection attempt has expired. Press Connect again." — reported
+   * immediately after a consent that had just succeeded.
+   *
+   * Svarg hands a refresh token over once and once only, so whichever step
+   * asks first has to be the one that claims it. That used to be the module
+   * listing. When the listing was removed — because nobody should be asked
+   * which module to read — nothing claimed at all, and finishing looked for
+   * a token in a hold that was never filled. The handoff id was perfectly
+   * good; there was simply nothing behind it.
+   *
+   * A step that is removed should not take a responsibility with it, so the
+   * claim no longer lives in a step.
+   */
+  it('claims inside one helper, not inside whichever step happens to run', () => {
+    expect(ctl).toContain('async function credsFor(handoff)');
+    expect(ctl).toContain('const claimed = await claimConsent(handoff);');
+  });
+
+  it('is used by every step that needs credentials', () => {
+    // Three of them, and any one can be the first to run.
+    const uses = (ctl.match(/await credsFor\(handoff\)/g) || []).length;
+    expect(uses).toBe(3);
+  });
+
+  it('no longer reports a fresh consent as expired', () => {
+    // The message stays for a handoff that really has expired — it was only
+    // wrong when nothing ever tried to claim.
+    expect(ctl).not.toMatch(/const creds = heldFor\(handoff\);/);
+  });
+});

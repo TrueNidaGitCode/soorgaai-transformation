@@ -45,6 +45,26 @@ function heldFor(handoff) {
   return h;
 }
 
+/**
+ * The credentials behind a handoff: already held, or claimed now.
+ *
+ * Svarg hands a refresh token over once and once only, so whichever step
+ * asks first has to be the one that claims. That used to be the module
+ * listing; when the listing went, nothing claimed at all and finishing
+ * reported "that connection attempt has expired" about a consent that had
+ * just succeeded — the id was good, there was simply nothing behind it.
+ *
+ * So the claim lives here rather than in a step, and any step can be first.
+ */
+async function credsFor(handoff) {
+  const already = heldFor(handoff);
+  if (already) return already;
+  const claimed = await claimConsent(handoff);
+  const creds = { refreshToken: claimed.refreshToken, region: claimed.region };
+  hold(handoff, creds);
+  return creds;
+}
+
 export async function zohoStatus(req, res) {
   try {
     return res.json({ available: await available() });
@@ -85,15 +105,11 @@ export async function zohoModules(req, res) {
   const handoff = String(req.body?.handoff || '').trim();
   if (!handoff) return res.status(400).json({ error: 'No connection attempt was named.' });
 
-  let creds = heldFor(handoff);
-  if (!creds) {
-    try {
-      const claimed = await claimConsent(handoff);
-      creds = { refreshToken: claimed.refreshToken, region: claimed.region };
-      hold(handoff, creds);
-    } catch (err) {
-      return res.status(400).json({ error: err.message });
-    }
+  let creds;
+  try {
+    creds = await credsFor(handoff);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
   }
 
   try {
@@ -130,8 +146,14 @@ const MOST_AT_ONCE = 15;
 
 export async function zohoFinish(req, res) {
   const handoff = String(req.body?.handoff || '').trim();
-  const creds = heldFor(handoff);
-  if (!creds) return res.status(400).json({ error: 'That connection attempt has expired. Press Connect again.' });
+  if (!handoff) return res.status(400).json({ error: 'No connection attempt was named.' });
+
+  let creds;
+  try {
+    creds = await credsFor(handoff);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
 
   const base = { region: creds.region, refreshToken: creds.refreshToken, brokered: 'yes' };
 
@@ -191,8 +213,12 @@ export async function zohoFinishOne(req, res) {
   const moduleName = String(req.body?.module || '').trim();
   if (!moduleName) return res.status(400).json({ error: 'Choose which module to read.' });
 
-  const creds = heldFor(handoff);
-  if (!creds) return res.status(400).json({ error: 'That connection attempt has expired. Press Connect again.' });
+  let creds;
+  try {
+    creds = await credsFor(handoff);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
 
   const config = {
     region: creds.region,

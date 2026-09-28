@@ -326,16 +326,28 @@
    * the WhatsApp card) is not a card of its own.
    */
   /*
-   * The database first.
+   * ── Why these three, and why not the database ────────────────────────────
    *
-   * It is the system a business already keeps its records in, so it is the
-   * one connection that makes every watcher work at once — and the one a
-   * reader recognises without being told what it is for. The phone and
-   * WhatsApp add what the records never had: what was actually said.
+   * The database led this list until it was read back as a question somebody
+   * would be asked in front of their own screen: connect PostgreSQL or MySQL,
+   * read-only. A clinic owner cannot answer that. It needs their software
+   * vendor, a connection string and probably a firewall rule — and their CRM
+   * already IS their database.
+   *
+   * The three that are left are also the three that carry DIFFERENT KINDS of
+   * signal, which is the whole argument this product makes: the CRM says what
+   * the business believes, and the phone and WhatsApp say what actually
+   * happened. A second record store adds records; it does not add a way for
+   * the record to be wrong.
+   *
+   * The database is not gone — it is under "Other data" with the documents,
+   * which is where it belongs for the customer who says "it is all in our
+   * practice software" and means a database somebody else's software writes
+   * to. Available when asked for, out of the way when not.
    */
-  var CORE = ['database', 'zoho-crm', 'phone', 'whatsapp'];
+  var CORE = ['zoho-crm', 'phone', 'whatsapp'];
   var CORE_LABEL = {
-    database: 'Database', 'zoho-crm': 'CRM', phone: 'Phone system', whatsapp: 'WhatsApp',
+    'zoho-crm': 'CRM', phone: 'Phone system', whatsapp: 'WhatsApp',
   };
 
   /** Does this application actually ship the connector behind this card? */
@@ -347,7 +359,10 @@
 
   function systemCards() {
     var list = sources.filter(function (s) {
-      return s.kind !== 'form' && s.kind !== 'file' && s.kind !== 'folder';
+      // 'database' among them: sourcesForBlueprint appends it to every
+      // application's list, so filtering only by CORE would let the industry's
+      // own copy back into the row it was moved out of.
+      return ['form', 'file', 'folder', 'database'].indexOf(s.kind) === -1;
     });
     /*
      * The three every business has, when the connector for them is really
@@ -368,9 +383,17 @@
     });
   }
 
-  /* Always offered. Uploading a folder needs no connector, is not counted
-     against the plan's limit, and is the cheapest way to get started. */
-  function otherCards() { return [DEFAULT_FOLDER]; }
+  /*
+   * Documents first: uploading a folder needs no connector, is not counted
+   * against the plan's limit, and is the cheapest way to get started. Then
+   * the database, for the business that really does run its own software —
+   * offered to everybody, asked of nobody.
+   */
+  function otherCards() {
+    var out = [DEFAULT_FOLDER];
+    if (shipped('database')) out.push({ kind: 'database', label: 'Database' });
+    return out;
+  }
 
   /*
    * ── Which of the two states this page is in ──────────────────────────────

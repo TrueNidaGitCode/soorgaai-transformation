@@ -154,19 +154,35 @@ describe('the Data page names the systems a business runs on', () => {
      * is not the source of truth for the phone, because a connector nobody
      * can see on this page is a connector nobody uses.
      */
-    expect(ui).toContain("var CORE = ['database', 'zoho-crm', 'phone', 'whatsapp'];");
+    expect(ui).toContain("var CORE = ['zoho-crm', 'phone', 'whatsapp'];");
     expect(ui).toContain('if (!shipped(kind)) return;');
   });
 
-  it('leads with the database', () => {
+  it('leads with the three that carry different kinds of signal', () => {
     /*
-     * It is the system a business already keeps its records in, so it is
-     * the one connection that makes every watcher work at once, and the one
-     * a reader recognises without being told what it is for. The phone and
-     * WhatsApp add what the records never had: what was actually said.
+     * The database led this row until it was read back as a question asked
+     * in front of somebody's own screen: connect PostgreSQL or MySQL,
+     * read-only. A clinic owner cannot answer that — it needs their software
+     * vendor, a connection string and probably a firewall rule — and their
+     * CRM already is their database.
+     *
+     * What is left is also the argument this product makes. The CRM says
+     * what the business believes; the phone and WhatsApp say what actually
+     * happened. A second record store adds records, not a way for the record
+     * to be wrong.
      */
     const core = ui.slice(ui.indexOf('var CORE ='), ui.indexOf('var CORE =') + 60);
-    expect(core).toMatch(/\['database'/);
+    expect(core).toMatch(/\['zoho-crm', 'phone', 'whatsapp'\]/);
+  });
+
+  it('keeps the database, one section down', () => {
+    // Not deleted: the customer who says "it is all in our practice
+    // software" means a database somebody else's software writes to, and
+    // that customer exists. Offered to everybody, asked of nobody.
+    expect(ui).toContain("if (shipped('database')) out.push({ kind: 'database', label: 'Database' });");
+    // And the industry's own copy cannot climb back into the systems row:
+    // sourcesForBlueprint appends a database source to every application.
+    expect(ui).toContain("return ['form', 'file', 'folder', 'database'].indexOf(s.kind) === -1;");
   });
 
   it('connects WhatsApp to the business account, with no export beside it', () => {
@@ -202,8 +218,8 @@ describe('the Data page names the systems a business runs on', () => {
   });
 
   it('keeps Documents out of the systems, under its own heading', () => {
-    expect(ui).toContain("s.kind !== 'form' && s.kind !== 'file' && s.kind !== 'folder'");
-    expect(ui).toContain('function otherCards() { return [DEFAULT_FOLDER]; }');
+    expect(ui).toContain("['form', 'file', 'folder', 'database'].indexOf(s.kind) === -1");
+    expect(ui).toContain('var out = [DEFAULT_FOLDER];');
     expect(html).toContain('<h3 class="dt-other__head">Other data</h3>');
     expect(html).toContain('id="dt-other-cards"');
   });

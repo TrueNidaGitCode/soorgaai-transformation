@@ -1224,6 +1224,17 @@
       // Exposed so the panel scripts hand control back rather than reaching
       // into this closure, and so none of them hides the shell again.
       window.svargShowPanel = showPanel;
+      /*
+       * The Data page lists what a connection reads and wants to show it.
+       * Exposed by NAME rather than by handing out openView, so a caller
+       * needs nothing from this closure and cannot open something that is
+       * not one of the application's datasets.
+       */
+      window.svargOpenDataset = function (name) {
+        var ds = datasets.find(function (d) { return d.name === name; });
+        if (ds) openView(ds);
+        return !!ds;
+      };
       window.svargGoHome = goHomeTab;
       window.svargGoAsk = goAskTab;
       var searchTimer = null;

@@ -325,6 +325,17 @@
    * way to something else. Nine connections spelled out on a card is a list
    * somebody scrolls past to reach the thing they came for.
    */
+  /**
+   * "Leads (Zoho CRM)" inside the CRM card is the card's own name said twice.
+   *
+   * The dataset keeps the long name, because it sits beside a folder of
+   * spreadsheets and a database on other screens and has to be told apart
+   * there. Here the surrounding card has already said which system this is.
+   */
+  function moduleLabel(name) {
+    return String(name || '').replace(/\s*\([^()]*\)\s*$/, '') || String(name || '');
+  }
+
   function folded(summary, html) {
     return '<details class="dt-holds"><summary class="dt-holds__summary">'
       + '<span>' + esc(summary) + '</span><span class="dt-holds__count">Show</span></summary>'
@@ -723,9 +734,9 @@
      * make twice.
      */
     return '<li class="dt-conn" data-conn="' + esc(c.id) + '">'
-      + '<span class="dt-conn__kind">' + esc(c.datasetName || c.label) + '</span>' + meta
+      + '<span class="dt-conn__kind">' + esc(moduleLabel(c.datasetName || c.label)) + '</span>' + meta
       + '<span class="dt-conn__acts">'
-      + '<button type="button" class="dt-mini" data-remove="' + esc(c.id) + '">Remove</button>'
+      + '<button type="button" class="dt-mini" data-view="' + esc(c.datasetName || '') + '">View</button>'
       + '</span></li>';
   }
 
@@ -1157,6 +1168,19 @@
         await refresh();
         say(els.note, r.rows ? r.rows + ' rows synced into ' + (row ? row.datasetName : 'the dataset') + '. The answers use them from now on.' : (r.message || 'Nothing to sync.'));
       } catch (err) { await refresh(); say(els.note, err.message, true); }
+      return;
+    }
+
+    var viewing = t.closest('[data-view]');
+    if (viewing) {
+      /*
+       * Straight to the rows. What a connection actually brought in is the
+       * only answer to "is this right", and it was two screens away.
+       */
+      var name = viewing.dataset.view;
+      if (!(typeof window.svargOpenDataset === 'function' && window.svargOpenDataset(name))) {
+        say(els.note, 'That dataset is not on this screen yet. Reload and try again.', true);
+      }
       return;
     }
 

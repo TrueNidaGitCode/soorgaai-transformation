@@ -19,7 +19,9 @@
  * permission, it did not take custody of the data.
  */
 import { available, startConsent, claimConsent } from '../services/svargZohoService.js';
-import { createConnector, defineDataset, syncConnector } from '../services/connectorService.js';
+import {
+  createConnector, defineDataset, syncConnector, listConnectors, deleteConnector,
+} from '../services/connectorService.js';
 import { listModules, listPopulated, describeShape } from '../services/connectors/zohocrm.js';
 
 /*
@@ -218,6 +220,24 @@ export async function zohoConnectOne(req, res) {
       key: shape.key,
       from: 'zoho-crm',
     });
+
+    /*
+     * Connecting the same module again replaces the connection rather than
+     * adding a second one.
+     *
+     * Nine modules reconnected after a fix left eighteen connections, nine
+     * of them reading nothing, and the only way out was a Remove button on
+     * every row — a control that exists because of a mistake this can simply
+     * not make. Reconnecting is a repair, and a repair should leave one of
+     * the thing being repaired.
+     *
+     * The dataset and its rows are untouched: the same module keyed the same
+     * way lands on the same rows.
+     */
+    const already = (await listConnectors().catch(() => []))
+      .filter((c) => c.kind === 'zoho-crm' && c.datasetName === dataset.name);
+    for (const old of already) await deleteConnector(old.id).catch(() => {});
+
     const made = await createConnector({ kind: 'zoho-crm', datasetName: dataset.name, config, schedule: 'hourly' });
 
     let rows = null;

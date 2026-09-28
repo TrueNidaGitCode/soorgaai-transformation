@@ -950,6 +950,16 @@ body {
 }
 
 .dt-cards { display: grid; gap: 14px; align-items: start; }
+/* The three systems side by side, stacking on a narrow screen. A card whose
+   flow is open takes the whole row back: a connection form in a third of the
+   width is not a form. */
+.dt-cards--systems { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.dt-cards--systems .dt-card__head { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.dt-cards--systems .dt-card--open { grid-column: 1 / -1; }
+.dt-cards--systems .dt-card--open .dt-card__head { grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; }
+.dt-other { margin-top: 28px; }
+.dt-other__head { margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ch-faint); }
+.dt-start__foot { margin: 22px 0 0; font-size: 13px; color: var(--ch-faint); }
 .dt-card { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 18px 20px; border: 1px solid var(--ch-line); border-radius: 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--ch-panel) 94%, var(--ch-accent)), var(--ch-panel) 60%); box-shadow: 0 24px 60px -40px rgba(0,0,0,0.7); }
 .dt-card--on { border-color: color-mix(in srgb, var(--ch-accent) 28%, transparent); }
 .dt-card--open { border-color: color-mix(in srgb, var(--ch-accent) 45%, transparent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ch-accent) 8%, transparent), 0 24px 60px -40px rgba(0,0,0,0.7); }

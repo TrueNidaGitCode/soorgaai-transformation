@@ -127,3 +127,68 @@ import { x } from './local.js';`;
     expect(out.relative).toEqual(['./re.js']);
   });
 });
+
+describe('the Data page names the systems a business runs on', () => {
+  /*
+   * ── What changed, and why ────────────────────────────────────────────────
+   *
+   * The page drew one list: whatever data/sources.json named for the
+   * industry, in the file's order, with Documents folded in among them. For
+   * a clinic that meant a folder of spreadsheets and WhatsApp, as equals,
+   * and no phone at all — although the phone connector ships in every
+   * application and the demonstration this product is sold on turns on a
+   * phone call.
+   *
+   * Two groups now. The systems a business runs on are connected once and
+   * keep arriving; a folder of spreadsheets is sent again every time it
+   * changes. They are different acts and they no longer look like the same
+   * one.
+   */
+  const ui = fs.readFileSync(new URL('../eame-template/frontend/data.js', import.meta.url), 'utf8');
+  const html = fs.readFileSync(new URL('../eame-template/frontend/index.html', import.meta.url), 'utf8');
+
+  it('offers the three whether or not the industry thought to name them', () => {
+    /*
+     * The industry's own block is still the source of truth for what ELSE
+     * a business has — Jira for a software team, a diary for a clinic. It
+     * is not the source of truth for the phone, because a connector nobody
+     * can see on this page is a connector nobody uses.
+     */
+    expect(ui).toContain("var CORE = ['phone', 'whatsapp', 'database'];");
+    expect(ui).toContain('if (!shipped(kind)) return;');
+  });
+
+  it('never offers a card for a connector this application does not have', () => {
+    // A Connect button that opens a flow the server will refuse is worse
+    // than no button: it reads as a product that does not work.
+    expect(ui).toContain('function shipped(kind)');
+    expect(ui).toContain("k.kind === kind || (kind === 'whatsapp' && k.kind === 'whatsapp-business')");
+  });
+
+  it('keeps Documents out of the systems, under its own heading', () => {
+    expect(ui).toContain("s.kind !== 'form' && s.kind !== 'file' && s.kind !== 'folder'");
+    expect(ui).toContain('function otherCards() { return [DEFAULT_FOLDER]; }');
+    expect(html).toContain('<h3 class="dt-other__head">Other data</h3>');
+    expect(html).toContain('id="dt-other-cards"');
+  });
+
+  it('puts one line on a card and leaves the detail to the flow', () => {
+    // The spec sheet — PostgreSQL and MySQL, read-only — is true and is the
+    // answer to a question nobody has asked before pressing Connect.
+    expect(ui).toContain("d.note = 'Capture calls and call signals.';");
+    expect(ui).toContain("d.note = 'Customer conversations and requests.';");
+    expect(ui).toContain("d.note = 'Your existing application data.';");
+    expect(ui).toContain("d.note = 'Bring spreadsheets and existing business records.';");
+  });
+
+  it('still says where the records stay, below rather than in the headline', () => {
+    /*
+     * The promise was the second half of the subheading, where it met
+     * somebody who had not yet decided to connect anything. It is still
+     * made — it is the reason a business can connect its phone system at
+     * all — just where the question actually occurs.
+     */
+    expect(html).toContain('Records stay in this application&rsquo;s own database. Nothing reaches Svarg.');
+    expect(ui).toContain('Bring the systems your business already uses. Svarg reads them together to find what needs attention.');
+  });
+});

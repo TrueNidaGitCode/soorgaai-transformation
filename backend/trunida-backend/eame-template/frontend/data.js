@@ -43,6 +43,8 @@
     keyInput: document.getElementById('dt-key'),
     keyNote: document.getElementById('dt-key-note'),
     sources: document.getElementById('dt-sources'),
+    other: document.getElementById('dt-other'),
+    otherCards: document.getElementById('dt-other-cards'),
     start: document.getElementById('dt-start'),
     live: document.getElementById('dt-live'),
     liveSub: document.getElementById('dt-live-sub'),
@@ -253,6 +255,7 @@
     upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>',
     tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>',
     database: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="3"/><path d="M4.5 5.5v13c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-13"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h3l1.5 4-2 1.4a12 12 0 0 0 5.6 5.6l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 5.5 5.7 2 2 0 0 1 7 3.5z"/></svg>',
   };
 
   var DEFAULT_FOLDER = { kind: 'folder', label: 'Documents', providers: ['upload'], note: 'Upload the folder your records are kept in; each sheet is matched to what the application expects.' };
@@ -279,20 +282,61 @@
 
   function importsOf(source) { return imports.filter(function (e) { return e.source === source; }); }
 
-  /**
-   * The cards to draw: the industry's sources, with a form and the odd
-   * file folded into Documents -- a form's responses sheet is one more
-   * document in the folder. A connector that shipped without being named
-   * (the WhatsApp Business module behind the WhatsApp card) is not a card
-   * of its own.
+  /*
+   * ── Two groups, because they are two different acts ──────────────────────
+   *
+   * The systems a business runs on -- the phone, WhatsApp, the database its
+   * own software writes to -- are connected once and then keep arriving.
+   * A folder of spreadsheets is sent again every time it changes. Putting
+   * them in one list made the page a menu of eight equivalent options; the
+   * three that matter now lead, and the folder sits under its own heading.
+   *
+   * A form or a stray file is still folded into Documents: a form's
+   * responses sheet is one more document in the folder. And a connector
+   * that shipped without being named (the WhatsApp Business module behind
+   * the WhatsApp card) is not a card of its own.
    */
-  function cards() {
-    var list = sources.length ? sources.slice() : [DEFAULT_FOLDER];
-    var folded = list.some(function (s) { return s.kind === 'form' || s.kind === 'file'; });
-    list = list.filter(function (s) { return s.kind !== 'form' && s.kind !== 'file'; });
-    if (folded && !list.some(function (s) { return s.kind === 'folder'; })) list.unshift(DEFAULT_FOLDER);
-    return list;
+  var CORE = ['phone', 'whatsapp', 'database'];
+
+  /** Does this application actually ship the connector behind this card? */
+  function shipped(kind) {
+    return kinds.some(function (k) {
+      return k.kind === kind || (kind === 'whatsapp' && k.kind === 'whatsapp-business');
+    });
   }
+
+  function systemCards() {
+    var list = sources.filter(function (s) {
+      return s.kind !== 'form' && s.kind !== 'file' && s.kind !== 'folder';
+    });
+    /*
+     * The three every business has, when the connector for them is really
+     * here. The industry's own sources block may not name them -- a clinic's
+     * says nothing about a phone system -- and a connector nobody can see
+     * on this page is a connector nobody uses.
+     */
+    CORE.forEach(function (kind) {
+      if (list.some(function (s) { return s.kind === kind; })) return;
+      if (!shipped(kind)) return;
+      list.push({
+        kind: kind,
+        label: kind === 'phone' ? 'Phone system' : kind === 'whatsapp' ? 'WhatsApp' : 'Database',
+        providers: kind === 'whatsapp'
+          ? (shipped('whatsapp-business') ? ['business-account', 'export'] : ['export'])
+          : [],
+      });
+    });
+    // The reader's order, not the file's: the three first, in the order
+    // somebody thinks of them, then whatever else the industry named.
+    return list.sort(function (a, b) {
+      var ai = CORE.indexOf(a.kind), bi = CORE.indexOf(b.kind);
+      return (ai < 0 ? 9 : ai) - (bi < 0 ? 9 : bi);
+    });
+  }
+
+  /* Always offered. Uploading a folder needs no connector, is not counted
+     against the plan's limit, and is the cheapest way to get started. */
+  function otherCards() { return [DEFAULT_FOLDER]; }
 
   /*
    * ── Which of the two states this page is in ──────────────────────────────
@@ -378,12 +422,18 @@
     if (els.title) {
       els.title.innerHTML = live
         ? 'Your <em>connected sources</em>'
-        : 'Connect your <em>data sources</em>';
+        : 'Connect your <em>business systems</em>';
     }
     if (els.sub) {
+      /*
+       * The promise about where the rows stay used to be the second half of
+       * this sentence. It is still made -- at the foot of the page, under
+       * the cards -- because it answers a question somebody asks after
+       * deciding to connect something, not before.
+       */
       els.sub.textContent = live
         ? 'These are what Svarg reads to understand your business. Rows stay in this application’s own database — nothing reaches Svarg.'
-        : 'Bring the data your business already uses. It is read here and stays in this application’s own database — nothing reaches Svarg.';
+        : 'Bring the systems your business already uses. Svarg reads them together to find what needs attention.';
     }
     if (!live) return;
 
@@ -395,7 +445,10 @@
   }
 
   function renderSources() {
-    els.sources.innerHTML = cards().map(renderCard).join('');
+    els.sources.innerHTML = systemCards().map(renderCard).join('');
+    var other = otherCards();
+    if (els.other) els.other.hidden = !other.length;
+    if (els.otherCards) els.otherCards.innerHTML = other.map(renderCard).join('');
     if (!datasets.length) say(els.note, 'This application lists no datasets to bring records onto. It was built without sample data, so its seed script says what file it expects.', true);
   }
 
@@ -405,7 +458,7 @@
     if (s.kind === 'folder') {
       var f = importsOf('folder');
       d.icon = ICON.folder; d.title = 'Documents';
-      d.note = 'Upload the folder your records are kept in. Every spreadsheet in it is read here, in your browser.';
+      d.note = 'Bring spreadsheets and existing business records.';
       if (f.length) {
         var files = {}; f.forEach(function (e) { (e.origin || '').split(', ').forEach(function (n) { if (n) files[n] = 1; }); });
         d.on = true; d.status = plural(Object.keys(files).length, 'sheet') + ' read · ' + ago(f[0].at);
@@ -418,12 +471,14 @@
       var mine = connectors.filter(function (c) { return c.kind === 'whatsapp-business'; });
       var w = importsOf('whatsapp');
       var providers = s.providers || ['export'];
-      d.icon = ICON.whatsapp; d.title = biz ? 'WhatsApp Business' : 'WhatsApp';
-      d.note = biz ? 'Connect your WhatsApp Business account. Replies arrive here as they are sent.' : 'Export a chat from WhatsApp and import it here.';
+      d.icon = ICON.whatsapp; d.title = 'WhatsApp';
+      // One line on the card. Which way in -- the business account or an
+      // exported chat -- is what the button and the flow behind it say.
+      d.note = 'Customer conversations and requests.';
       if (mine.length) { d.on = true; d.status = 'Connected' + (mine[0].lastSyncAt ? ' · last message ' + ago(mine[0].lastSyncAt) : ' · waiting for the first message'); d.held = '<ul class="dt-src__list">' + mine.map(renderConnector).join('') + '</ul>'; }
       else if (w.length) { d.on = true; d.status = plural(w[0].rows, 'row') + ' from an export · ' + ago(w[0].at); }
       if (biz && providers.indexOf('business-account') !== -1) {
-        d.go = mine.length ? 'Connect another number' : 'Connect WhatsApp Business'; d.goAction = 'whatsapp-business';
+        d.go = mine.length ? 'Connect another number' : 'Connect'; d.goAction = 'whatsapp-business';
         if (providers.indexOf('export') !== -1) d.alt = '<button type="button" data-open="whatsapp">Import an exported chat</button>';
       } else {
         d.go = w.length ? 'Import another export' : 'Import an exported chat'; d.goAction = 'whatsapp';
@@ -431,11 +486,25 @@
     } else if (s.kind === 'database') {
       var db = kinds.find(function (x) { return x.kind === 'database'; });
       var dbc = connectors.filter(function (c) { return c.kind === 'database'; });
-      d.icon = ICON.database; d.title = 'Connect your database';
-      d.note = 'Read straight from the database your own software writes to. PostgreSQL and MySQL, read-only.';
+      d.icon = ICON.database; d.title = 'Database';
+      // PostgreSQL, MySQL, read-only: true, and the answer to a question
+      // nobody has asked yet. It waits inside the flow with the fields.
+      d.note = 'Your existing application data.';
       if (!db) d.status = 'Not available on this application';
       else if (dbc.length) { d.on = true; d.status = plural(dbc.length, 'connection') + (dbc[0].lastSyncAt ? ' · last synced ' + ago(dbc[0].lastSyncAt) : ' · not synced yet'); d.held = '<ul class="dt-src__list">' + dbc.map(renderConnector).join('') + '</ul>'; }
       if (db) { d.go = dbc.length ? 'Connect another' : 'Connect'; d.goAction = 'database'; }
+    } else if (s.kind === 'phone') {
+      var ph = kinds.find(function (x) { return x.kind === 'phone'; });
+      var phc = connectors.filter(function (c) { return c.kind === 'phone'; });
+      d.icon = ICON.phone; d.title = 'Phone system';
+      d.note = 'Capture calls and call signals.';
+      if (!ph) d.status = 'Not available on this application';
+      else if (phc.length) {
+        d.on = true;
+        d.status = plural(phc.length, 'connection') + (phc[0].lastSyncAt ? ' · last synced ' + ago(phc[0].lastSyncAt) : ' · not synced yet');
+        d.held = '<ul class="dt-src__list">' + phc.map(renderConnector).join('') + '</ul>';
+      }
+      if (ph) { d.go = phc.length ? 'Connect another' : 'Connect'; d.goAction = 'phone'; }
     } else {
       // A live source: connected once per dataset it feeds.
       var k = kinds.find(function (x) { return x.kind === s.kind; });

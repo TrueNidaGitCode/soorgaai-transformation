@@ -466,7 +466,22 @@
       <section class="dt-start" id="dt-start" hidden>
         <!-- How many places records may come from, when the plan says. -->
         <p class="dt-choose__used" id="dt-used" hidden></p>
-        <div class="dt-cards" id="dt-sources"></div>
+
+        <!-- The systems a business runs on: three across, each one line and
+             a way in. What each can bring, and the fields it needs, wait
+             inside the flow the button opens. -->
+        <div class="dt-cards dt-cards--systems" id="dt-sources"></div>
+
+        <!-- Not a system that runs, but a folder somebody uploads. Separated
+             because it is a different kind of act: connecting a phone system
+             is something you do once, and sending a spreadsheet is something
+             you do again. -->
+        <section class="dt-other" id="dt-other" hidden>
+          <h3 class="dt-other__head">Other data</h3>
+          <div class="dt-cards" id="dt-other-cards"></div>
+        </section>
+
+        <p class="dt-start__foot">Records stay in this application&rsquo;s own database. Nothing reaches Svarg.</p>
       </section>
 
       <!-- AFTER. -->

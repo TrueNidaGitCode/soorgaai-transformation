@@ -1119,7 +1119,7 @@
       var appName = (document.querySelector('.ch-side__brandtext strong') || {}).textContent || '';
       var current = null;
       var kind = 'own';
-      var SRC = { sample: 'simulated', own: 'file', folder: 'folder', chat: 'chat', whatsapp: 'WhatsApp', jira: 'Jira', confluence: 'Confluence', github: 'GitHub' };
+      var SRC = { sample: 'simulated', own: 'file', folder: 'folder', chat: 'chat', whatsapp: 'WhatsApp', jira: 'Jira', confluence: 'Confluence', github: 'GitHub', 'zoho-crm': 'Zoho CRM', phone: 'Phone', database: 'Database' };
       function drawSwitch() {
         if (!current) return;
         viewSwitch.innerHTML = '<button type="button" class="ch-switch__opt' + (kind === 'own' ? ' ch-switch__opt--on' : '') + '" data-kind="own">Your data <i>' + (current.own || 0) + '</i></button>'
@@ -1166,9 +1166,18 @@
         viewSub.textContent = 'Loading…';
         viewSearch.value = '';
         viewTable.innerHTML = '';
-        // On the Data page, in place of Connections.
-        if (page) page.hidden = false;
-        app.hidden = true;
+        /*
+         * On the Data page, in place of Connections.
+         *
+         * Through showPanel, because this screen lives INSIDE the shell.
+         * It used to hide the shell -- correct when Data was a sibling of
+         * it, and quietly fatal once every panel moved inside: ch-view sits
+         * under ch-data, ch-data under ch-main, ch-main under ch-app, so
+         * hiding the shell hid the very table this was opening. Everything
+         * worked -- the rows arrived, the title was set, the element was
+         * not hidden -- and the page went black.
+         */
+        showPanel('data');
         if (connections) connections.hidden = true;
         view.hidden = false;
         refreshAreas();

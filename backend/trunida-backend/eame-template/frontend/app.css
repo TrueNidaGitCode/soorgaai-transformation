@@ -1022,8 +1022,13 @@ body {
 .dt-card .dt-form__grid { grid-template-columns: 1fr; }
 .dt-card .dt-form__help { margin-bottom: 4px; }
 .dt-card .dt-src__list { margin: 0; }
-.dt-card .dt-conn { grid-template-columns: minmax(0, 1fr) auto; }
-.dt-card .dt-conn__kind { display: none; }
+/* The pill on a row inside a card used to repeat the card's own title --
+   "Zoho CRM" under a card headed CRM -- so it was hidden here. It now
+   carries the module's name, which is the only thing on the row that says
+   WHICH connection this is, so hiding it left nine rows reading "10 records"
+   and nothing else. Shown, and the column it needs given back. */
+.dt-card .dt-conn { grid-template-columns: auto minmax(0, 1fr) auto; }
+.dt-card .dt-conn__kind { white-space: nowrap; }
 .dt-card .dt-conn__meta { white-space: normal; }
 .dt-card .dt-panel__head { margin-bottom: 8px; font-size: 13px; }
 .dt-btn--file { cursor: pointer; }

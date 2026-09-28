@@ -34,8 +34,34 @@ import crypto from 'crypto';
 export const ZOHO_REGIONS = ['com', 'in', 'eu', 'com.au', 'jp', 'ca', 'com.cn', 'sa'];
 
 const CLIENT_ID     = process.env.ZOHO_OAUTH_CLIENT_ID;
-const CLIENT_SECRET = process.env.ZOHO_OAUTH_CLIENT_SECRET;
 const CALLBACK_URL  = process.env.ZOHO_OAUTH_CALLBACK_URL;
+
+/**
+ * The client secret for one data centre.
+ *
+ * Zoho keeps the client ID constant across data centres and mints a separate
+ * secret for each one it is enabled in — a client may be configured to share
+ * a single secret, but that is a choice somebody has to make in the console
+ * and not what happens by default.
+ *
+ * So a per-DC variable wins where it is set, and the shared one is the
+ * fallback. Getting this wrong produces "invalid_client", which reads as a
+ * bad secret and sends somebody to regenerate a credential that was correct.
+ *
+ *   ZOHO_OAUTH_CLIENT_SECRET_IN      the secret for zoho.in
+ *   ZOHO_OAUTH_CLIENT_SECRET_COM_AU  for zoho.com.au (dots become underscores)
+ *   ZOHO_OAUTH_CLIENT_SECRET         used for any data centre without its own
+ */
+export function clientSecretFor(region) {
+  const key = 'ZOHO_OAUTH_CLIENT_SECRET_' + String(region || 'com').toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+  return process.env[key] || process.env.ZOHO_OAUTH_CLIENT_SECRET || '';
+}
+
+/** Whether any secret is set at all, per data centre or shared. */
+function haveAnySecret() {
+  if (process.env.ZOHO_OAUTH_CLIENT_SECRET) return true;
+  return ZOHO_REGIONS.some((r) => clientSecretFor(r));
+}
 
 /**
  * Read once per call rather than captured, so the module can say "not
@@ -44,7 +70,7 @@ const CALLBACK_URL  = process.env.ZOHO_OAUTH_CALLBACK_URL;
  * stay on the form.
  */
 export function isZohoOAuthConfigured() {
-  return !!(CLIENT_ID && CLIENT_SECRET && CALLBACK_URL);
+  return !!(CLIENT_ID && CALLBACK_URL && haveAnySecret());
 }
 
 /**
@@ -176,7 +202,7 @@ export async function exchangeCode(code, region) {
     params: {
       grant_type: 'authorization_code',
       client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
+      client_secret: clientSecretFor(region),
       redirect_uri: CALLBACK_URL,
       code,
     },
@@ -194,7 +220,7 @@ export async function refreshAccessToken(refreshToken, region) {
     params: {
       grant_type: 'refresh_token',
       client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
+      client_secret: clientSecretFor(region),
       refresh_token: refreshToken,
     },
     timeout: 30000,

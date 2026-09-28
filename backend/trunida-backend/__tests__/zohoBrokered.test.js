@@ -109,6 +109,35 @@ describe('the consent Zoho is asked for', () => {
     expect(zoho.ZOHO_SCOPES).toEqual(['ZohoCRM.modules.ALL', 'ZohoCRM.settings.modules.READ']);
   });
 
+  it('uses the data centre’s own secret when there is one', async () => {
+    /*
+     * Zoho mints a separate secret per data centre a client is enabled in.
+     * Sharing one is allowed but is a choice made in the console, so the
+     * default arrangement has to work — and the failure if it does not is
+     * "invalid_client", which reads as a bad secret rather than as the wrong
+     * one of two correct ones.
+     */
+    process.env.ZOHO_OAUTH_CLIENT_SECRET_IN = 'in-secret';
+    expect(zoho.clientSecretFor('in')).toBe('in-secret');
+    // Anything without its own falls back to the shared secret.
+    expect(zoho.clientSecretFor('eu')).toBe('shh');
+    // And a dotted data centre becomes a legal variable name.
+    process.env.ZOHO_OAUTH_CLIENT_SECRET_COM_AU = 'au-secret';
+    expect(zoho.clientSecretFor('com.au')).toBe('au-secret');
+    delete process.env.ZOHO_OAUTH_CLIENT_SECRET_IN;
+    delete process.env.ZOHO_OAUTH_CLIENT_SECRET_COM_AU;
+  });
+
+  it('counts a per-data-centre secret as being configured', async () => {
+    vi.resetModules();
+    delete process.env.ZOHO_OAUTH_CLIENT_SECRET;
+    process.env.ZOHO_OAUTH_CLIENT_SECRET_IN = 'in-only';
+    const only = await import('../services/zohoOAuthService.js');
+    expect(only.isZohoOAuthConfigured()).toBe(true);
+    delete process.env.ZOHO_OAUTH_CLIENT_SECRET_IN;
+    process.env.ZOHO_OAUTH_CLIENT_SECRET = 'shh';
+  });
+
   it('is off until a client is configured, so the manual fields stay', async () => {
     vi.resetModules();
     delete process.env.ZOHO_OAUTH_CLIENT_ID;

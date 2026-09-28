@@ -319,3 +319,64 @@ describe('where the browser is sent back to', () => {
     expect(ctl).not.toContain("say(res, 200, 'Connected'");
   });
 });
+
+describe('the address the browser is returned to', () => {
+  /*
+   * ── The bug this exists for ──────────────────────────────────────────────
+   *
+   * Reported from a real attempt, after the return address itself was fixed:
+   * the consent worked, the browser came back to the Data page, and the card
+   * still offered to connect.
+   *
+   * The application asks to come back to its Data page, so the address it
+   * sends ends in a fragment: ".../#data". The id was appended with string
+   * concatenation, which put the query INSIDE the fragment —
+   *
+   *   https://app.example/#data?zoho=STATE
+   *     location.search  ""
+   *     location.hash    "#data?zoho=STATE"
+   *
+   * — so the page looked for an id in an empty search string, found none,
+   * and carried on as though nobody had just connected anything. The token
+   * then expired unclaimed, exactly as it had before.
+   *
+   * Nothing about this is visible from either end on its own: Svarg issued a
+   * redirect that looks right, and the page ran the code that reads it.
+   */
+  const put = (back, state) => {
+    const u = new URL(back);
+    u.searchParams.set('zoho', state);
+    return u.toString();
+  };
+
+  it('puts the id in the query, never in the fragment', () => {
+    const url = new URL(put('https://app.example/#data', 'STATE'));
+    expect(url.searchParams.get('zoho')).toBe('STATE');
+    expect(url.hash).toBe('#data');
+  });
+
+  it('keeps the fragment, because it is what opens the Data page', () => {
+    // Drop it and the browser lands on the board instead, with an id in the
+    // address that nothing will ever read.
+    expect(put('https://app.example/#data', 'S')).toBe('https://app.example/?zoho=S#data');
+  });
+
+  it('does not lose a query the address already had', () => {
+    expect(put('https://app.example/?x=1#data', 'S'))
+      .toBe('https://app.example/?x=1&zoho=S#data');
+  });
+
+  it('is assembled by URL rather than by joining strings', () => {
+    const ctl = read('../controllers/zohoOAuthController.js');
+    expect(ctl).toContain("u.searchParams.set('zoho', h.state);");
+    // The join is what put the query inside the fragment.
+    expect(ctl).not.toContain("h.back.includes('?') ? '&' : '?'");
+  });
+
+  it('says so rather than redirecting to something unparseable', () => {
+    const ctl = read('../controllers/zohoOAuthController.js');
+    const tail = ctl.slice(ctl.indexOf('let to;'));
+    expect(tail).toContain('} catch {');
+    expect(tail).toContain('the connection is not finished');
+  });
+});

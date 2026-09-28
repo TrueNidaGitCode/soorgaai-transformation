@@ -97,8 +97,34 @@ export async function zohoCallback(req, res) {
       'This Svarg server does not know your application\u2019s address, so it could not send you back. '
       + 'Open your application\u2019s Data page and press Connect again.');
   }
-  // The id only. The token is claimed by the application over its own
-  // gateway token, so it never reaches a URL, a log or a browser history.
-  const sep = h.back.includes('?') ? '&' : '?';
-  return res.redirect(`${h.back}${sep}zoho=${encodeURIComponent(h.state)}`);
+  /*
+   * The id only — the token is claimed by the application over its own
+   * gateway token, so it never reaches a URL, a log or a browser history.
+   *
+   * Assembled with URL rather than by joining strings, because the address
+   * the application asks to come back to ends in a fragment: it wants the
+   * Data page, so it sends ".../#data". Appending "?zoho=..." to that put the
+   * query INSIDE the fragment —
+   *
+   *   https://app.example/#data?zoho=STATE   ->  search "" , hash "#data?zoho=STATE"
+   *
+   * — so location.search was empty, the page never saw the id, and a consent
+   * that had worked perfectly landed on a Data page still offering to
+   * connect. URL puts the query where a query goes and keeps the fragment
+   * last, which is the whole of the fix.
+   */
+  let to;
+  try {
+    const u = new URL(h.back);
+    u.searchParams.set('zoho', h.state);
+    to = u.toString();
+  } catch {
+    // allowedBack only ever returns '' or an address it parsed, so this is
+    // unreachable by design — and a redirect to a string nobody can parse is
+    // not a better outcome than saying so.
+    return say(res, 200, 'Zoho approved, but the connection is not finished',
+      'Your application\u2019s address could not be read, so it could not be sent back. '
+      + 'Open the Data page and press Connect again.');
+  }
+  return res.redirect(to);
 }

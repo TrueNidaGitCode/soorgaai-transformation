@@ -317,6 +317,20 @@
 
   function importsOf(source) { return imports.filter(function (e) { return e.source === source; }); }
 
+  /**
+   * Detail, shut by default.
+   *
+   * The same shape as "What it holds" at the foot of this page, and for the
+   * same reason: the answer is worth having and is not worth meeting on the
+   * way to something else. Nine connections spelled out on a card is a list
+   * somebody scrolls past to reach the thing they came for.
+   */
+  function folded(summary, html) {
+    return '<details class="dt-holds"><summary class="dt-holds__summary">'
+      + '<span>' + esc(summary) + '</span><span class="dt-holds__count">Show</span></summary>'
+      + '<div class="dt-holds__body">' + html + '</div></details>';
+  }
+
   /*
    * ── Two groups, because they are two different acts ──────────────────────
    *
@@ -503,34 +517,28 @@
       + '</tr>';
   }
 
+  /**
+   * ── One page, and it keeps its shape ────────────────────────────────────
+   *
+   * This used to be two screens: an invitation while nothing was connected,
+   * and a report once something was. Connecting a CRM replaced the first with
+   * the second, which produced a page listing nine Zoho modules as cards,
+   * then the same nine again as a table, then a button to connect something
+   * else — three answers to a question nobody had asked, and no sign of the
+   * phone, which was the other half of the point.
+   *
+   * So there is one screen. The systems are always the systems: a card says
+   * Connected when it is, and what it holds folds away inside it. Nothing is
+   * replaced, nothing is listed twice, and connecting the phone after the
+   * CRM does not need a button to get back to a page that never left.
+   */
   function drawStates() {
-    var n = connectedCount();
-    var live = n > 0 && !addingMore;
-    if (els.start) els.start.hidden = live;
-    if (els.live) els.live.hidden = !live;
-    if (els.title) {
-      els.title.innerHTML = live
-        ? 'Your <em>connected sources</em>'
-        : 'Connect your <em>business systems</em>';
-    }
+    if (els.start) els.start.hidden = false;
+    if (els.live) els.live.hidden = true;
+    if (els.title) els.title.innerHTML = 'Connect your <em>business systems</em>';
     if (els.sub) {
-      /*
-       * The promise about where the rows stay used to be the second half of
-       * this sentence. It is still made -- at the foot of the page, under
-       * the cards -- because it answers a question somebody asks after
-       * deciding to connect something, not before.
-       */
-      els.sub.textContent = live
-        ? 'These are what Svarg reads to understand your business. Rows stay in this application’s own database — nothing reaches Svarg.'
-        : 'Bring the systems your business already uses. Svarg reads them together to find what needs attention.';
+      els.sub.textContent = 'Bring the systems your business already uses. Svarg reads them together to find what needs attention.';
     }
-    if (!live) return;
-
-    var rows = liveSources();
-    els.liveSub.textContent = 'Svarg is reading ' + plural(rows.length, 'source')
-      + ' and monitoring your business.';
-    els.liveCards.innerHTML = rows.map(liveCard).join('');
-    els.liveRows.innerHTML = rows.map(liveRow).join('');
   }
 
   function renderSources() {
@@ -609,8 +617,11 @@
       if (!crm) d.status = 'Not available on this application';
       else if (crmc.length) {
         d.on = true;
-        d.status = plural(crmc.length, 'connection') + (crmc[0].lastSyncAt ? ' · last synced ' + ago(crmc[0].lastSyncAt) : ' · not synced yet');
-        d.held = '<ul class="dt-src__list">' + crmc.map(renderConnector).join('') + '</ul>';
+        d.status = 'Connected · ' + plural(crmc.length, 'module')
+          + (crmc[0].lastSyncAt ? ' · read ' + ago(crmc[0].lastSyncAt) : '');
+        // Nine modules is a lot of rows to meet on the way to anything else.
+        d.held = folded(plural(crmc.length, 'module') + ' from this CRM',
+          '<ul class="dt-src__list">' + crmc.map(renderConnector).join('') + '</ul>');
       }
       if (crm) { d.go = crmc.length ? 'Connect another' : 'Connect'; d.goAction = 'zoho-crm'; }
     } else if (s.kind === 'phone') {
@@ -621,8 +632,10 @@
       if (!ph) d.status = 'Not available on this application';
       else if (phc.length) {
         d.on = true;
-        d.status = plural(phc.length, 'connection') + (phc[0].lastSyncAt ? ' · last synced ' + ago(phc[0].lastSyncAt) : ' · not synced yet');
-        d.held = '<ul class="dt-src__list">' + phc.map(renderConnector).join('') + '</ul>';
+        d.status = 'Connected · ' + plural(phc.length, 'connection')
+          + (phc[0].lastSyncAt ? ' · read ' + ago(phc[0].lastSyncAt) : '');
+        d.held = folded(plural(phc.length, 'connection'),
+          '<ul class="dt-src__list">' + phc.map(renderConnector).join('') + '</ul>');
       }
       if (ph) { d.go = phc.length ? 'Connect another' : 'Connect'; d.goAction = 'phone'; }
     } else {
@@ -631,7 +644,13 @@
       var conns = connectors.filter(function (c) { return c.kind === s.kind; });
       if (k) d.note = k.help || d.note;
       if (!k) d.status = 'Not available on this application';
-      else if (conns.length) { d.on = true; d.status = plural(conns.length, 'connection') + (conns[0].lastSyncAt ? ' · last synced ' + ago(conns[0].lastSyncAt) : ' · not synced yet'); d.held = '<ul class="dt-src__list">' + conns.map(renderConnector).join('') + '</ul>'; }
+      else if (conns.length) {
+        d.on = true;
+        d.status = 'Connected · ' + plural(conns.length, 'connection')
+          + (conns[0].lastSyncAt ? ' · read ' + ago(conns[0].lastSyncAt) : '');
+        d.held = folded(plural(conns.length, 'connection'),
+          '<ul class="dt-src__list">' + conns.map(renderConnector).join('') + '</ul>');
+      }
       if (k) { d.go = conns.length ? 'Connect another' : 'Connect ' + s.label; d.goAction = s.kind; }
     }
     return d;
@@ -686,16 +705,26 @@
     var meta;
     if (c.status === 'error') meta = '<span class="dt-conn__meta dt-conn__meta--bad">' + esc(c.lastError || 'The last sync failed.') + '</span>';
     else if (c.status === 'syncing') meta = '<span class="dt-conn__meta">Syncing…</span>';
-    else if (c.lastSyncAt) meta = '<span class="dt-conn__meta"><b>' + c.lastRows + ' rows</b> into ' + esc(c.datasetName) + ' · ' + esc(ago(c.lastSyncAt)) + '</span>';
-    else meta = '<span class="dt-conn__meta">Into ' + esc(c.datasetName) + ' · nothing has arrived yet</span>';
-    var sched = ['manual', 'hourly', 'daily'].map(function (s) {
-      return '<option value="' + s + '"' + (c.schedule === s ? ' selected' : '') + '>' + (s === 'manual' ? 'On demand' : s === 'hourly' ? 'Every hour' : 'Every day') + '</option>';
-    }).join('');
+    else if (c.lastSyncAt) meta = '<span class="dt-conn__meta"><b>' + plural(c.lastRows, 'record') + '</b> · read ' + esc(ago(c.lastSyncAt)) + '</span>';
+    // Reading happens on connecting and then every hour, so this is a moment
+    // between the two rather than something waiting to be asked for.
+    else meta = '<span class="dt-conn__meta">Reading…</span>';
+    /*
+     * No schedule picker, and no "Sync now".
+     *
+     * A connection reads itself every hour and reads itself the moment it is
+     * made. Offering a button to do the thing that is already happening
+     * invites somebody to believe it will not happen unless they press it —
+     * and a page with nine of those beside nine connections is a page that
+     * looks like work.
+     *
+     * Remove stays. It is the one thing here that is genuinely a decision,
+     * and a connection somebody cannot undo is worse than one they have to
+     * make twice.
+     */
     return '<li class="dt-conn" data-conn="' + esc(c.id) + '">'
-      + '<span class="dt-conn__kind">' + esc(c.label) + '</span>' + meta
+      + '<span class="dt-conn__kind">' + esc(c.datasetName || c.label) + '</span>' + meta
       + '<span class="dt-conn__acts">'
-      + '<select data-schedule="' + esc(c.id) + '" title="How often to sync">' + sched + '</select>'
-      + '<button type="button" class="dt-mini" data-sync="' + esc(c.id) + '">Sync now</button>'
       + '<button type="button" class="dt-mini" data-remove="' + esc(c.id) + '">Remove</button>'
       + '</span></li>';
   }

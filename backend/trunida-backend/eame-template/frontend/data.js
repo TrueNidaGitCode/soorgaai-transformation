@@ -256,6 +256,7 @@
     tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>',
     database: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="3"/><path d="M4.5 5.5v13c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-13"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg>',
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h3l1.5 4-2 1.4a12 12 0 0 0 5.6 5.6l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 5.5 5.7 2 2 0 0 1 7 3.5z"/></svg>',
+    crm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 6"/><path d="M17.5 14.2a5.5 5.5 0 0 1 3 5.3"/></svg>',
   };
 
   var DEFAULT_FOLDER = { kind: 'folder', label: 'Documents', providers: ['upload'], note: 'Upload the folder your records are kept in; each sheet is matched to what the application expects.' };
@@ -304,7 +305,10 @@
    * reader recognises without being told what it is for. The phone and
    * WhatsApp add what the records never had: what was actually said.
    */
-  var CORE = ['database', 'phone', 'whatsapp'];
+  var CORE = ['database', 'zoho-crm', 'phone', 'whatsapp'];
+  var CORE_LABEL = {
+    database: 'Database', 'zoho-crm': 'CRM', phone: 'Phone system', whatsapp: 'WhatsApp',
+  };
 
   /** Does this application actually ship the connector behind this card? */
   function shipped(kind) {
@@ -326,10 +330,7 @@
     CORE.forEach(function (kind) {
       if (list.some(function (s) { return s.kind === kind; })) return;
       if (!shipped(kind)) return;
-      list.push({
-        kind: kind,
-        label: kind === 'phone' ? 'Phone system' : kind === 'whatsapp' ? 'WhatsApp' : 'Database',
-      });
+      list.push({ kind: kind, label: CORE_LABEL[kind] || kind });
     });
     // The reader's order, not the file's: the three first, in the order
     // somebody thinks of them, then whatever else the industry named.
@@ -509,6 +510,26 @@
       if (!db) d.status = 'Not available on this application';
       else if (dbc.length) { d.on = true; d.status = plural(dbc.length, 'connection') + (dbc[0].lastSyncAt ? ' · last synced ' + ago(dbc[0].lastSyncAt) : ' · not synced yet'); d.held = '<ul class="dt-src__list">' + dbc.map(renderConnector).join('') + '</ul>'; }
       if (db) { d.go = dbc.length ? 'Connect another' : 'Connect'; d.goAction = 'database'; }
+    } else if (s.kind === 'zoho-crm') {
+      /*
+       * "CRM" on the card, Zoho inside it.
+       *
+       * The card names the system a business thinks it has -- nobody looks
+       * at this page wanting to connect a vendor, they want the place their
+       * customers are kept. Which CRM is a question for the form, and the
+       * form says Zoho plainly.
+       */
+      var crm = kinds.find(function (x) { return x.kind === 'zoho-crm'; });
+      var crmc = connectors.filter(function (c) { return c.kind === 'zoho-crm'; });
+      d.icon = ICON.crm; d.title = 'CRM';
+      d.note = 'Customers, packages and appointments.';
+      if (!crm) d.status = 'Not available on this application';
+      else if (crmc.length) {
+        d.on = true;
+        d.status = plural(crmc.length, 'connection') + (crmc[0].lastSyncAt ? ' · last synced ' + ago(crmc[0].lastSyncAt) : ' · not synced yet');
+        d.held = '<ul class="dt-src__list">' + crmc.map(renderConnector).join('') + '</ul>';
+      }
+      if (crm) { d.go = crmc.length ? 'Connect another' : 'Connect'; d.goAction = 'zoho-crm'; }
     } else if (s.kind === 'phone') {
       var ph = kinds.find(function (x) { return x.kind === 'phone'; });
       var phc = connectors.filter(function (c) { return c.kind === 'phone'; });

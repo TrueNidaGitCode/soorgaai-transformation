@@ -80,6 +80,7 @@ export const FIXED_PATHS = [
   'services/phoneProviders.js',
   'services/connectors/svarg.js',
   'services/connectors/database.js',
+  'services/connectors/zohocrm.js',
   'controllers/whatsappController.js',
   'routes/whatsappRoutes.js',
   'controllers/phoneController.js',

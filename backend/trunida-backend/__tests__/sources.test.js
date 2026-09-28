@@ -52,7 +52,7 @@ describe('where an industry keeps its data', () => {
   it('ships only the connector modules the sources call for', async () => {
     const { buildRuntime } = await import('../services/eameProjectBuilder.js');
     const paths = (o) => buildRuntime({ appName: 'x', ...o }).map(f => f.path).filter(p => p.startsWith('services/connectors/'));
-    expect(paths({}).length).toBe(6);
+    expect(paths({}).length).toBe(7);
     /*
      * WhatsApp is always among them, and that is not the filter leaking.
      *
@@ -68,11 +68,19 @@ describe('where an industry keeps its data', () => {
      */
     expect(paths({ connectors: ['jira'] }).sort())
       .toEqual(['services/connectors/database.js', 'services/connectors/jira.js',
-        'services/connectors/phone.js', 'services/connectors/whatsapp.js']);
-    // The database ships with every application too, for the same reason
-    // the card is on every Data page: it is offered to everybody.
+        'services/connectors/phone.js', 'services/connectors/whatsapp.js',
+        'services/connectors/zohocrm.js']);
+    /*
+     * The database ships with every application too, for the same reason the
+     * card is on every Data page: it is offered to everybody. So does the
+     * CRM, and that one is NOT here to stop a boot failure — nothing imports
+     * it statically. It is a decision about what every application can be
+     * asked to connect, and it belongs with the database rather than with
+     * the two above it.
+     */
     expect(paths({ connectors: [] }).sort()).toEqual(['services/connectors/database.js',
-      'services/connectors/phone.js', 'services/connectors/whatsapp.js']);
+      'services/connectors/phone.js', 'services/connectors/whatsapp.js',
+      'services/connectors/zohocrm.js']);
     // Everything else still ships.
     expect(buildRuntime({ appName: 'x', connectors: [] }).map(f => f.path)).toContain('services/connectorService.js');
   });

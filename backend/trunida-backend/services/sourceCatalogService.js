@@ -26,7 +26,7 @@ import { KB_ENTERPRISE_ROOT } from './strategyCanvasService.js';
 import { readDatasets } from './eameSpec.js';
 
 /** Kinds the Data page knows how to draw. Anything else in a block is dropped. */
-export const SOURCE_KINDS = ['folder', 'whatsapp', 'form', 'jira', 'confluence', 'github', 'file', 'database'];
+export const SOURCE_KINDS = ['folder', 'whatsapp', 'form', 'jira', 'confluence', 'github', 'file', 'database', 'zoho-crm'];
 
 /**
  * The connector modules, by the source kind that needs them. A kind with no
@@ -54,6 +54,10 @@ export const CONNECTOR_MODULES = {
   // kind is not chosen per industry: it is in ALWAYS_SHIPPED, and the card
   // is added to every application's list by sourcesForBlueprint.
   database:   'services/connectors/database.js',
+  // The CRM most of the businesses this is sold to actually run on. In
+  // ALWAYS_SHIPPED for the same reason as the database, and named here so an
+  // industry that keeps its records in a CRM can ask for the card as well.
+  'zoho-crm': 'services/connectors/zohocrm.js',
 };
 
 function normalise(list) {
@@ -117,6 +121,7 @@ export function sourcesFromDatasets(datasets = []) {
     }
     if (/excel|xlsx|spreadsheet|google sheet|sheets|drive|onedrive|csv|folder/.test(t)) add('folder', 'Your folder of spreadsheets', 'Upload the folder; each sheet is matched to what the application expects.');
     if (/jira/.test(t)) add('jira', 'Jira', '');
+    if (/zoho|crm|customer relationship/.test(t)) add('zoho-crm', 'Your CRM', 'Customers, packages and appointments, read from the CRM your business already runs on.');
     if (/confluence/.test(t)) add('confluence', 'Confluence', '');
     if (/github|gitlab|bitbucket/.test(t)) add('github', 'GitHub', '');
     if (/form/.test(t)) add('form', 'A form', 'Its responses sheet belongs in your folder.');

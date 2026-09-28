@@ -195,6 +195,18 @@ const ALWAYS_SHIPPED = new Set([
   // phoneController, which imports this. Ship the route without the
   // connector and the application dies on boot.
   'services/connectors/phone.js',
+  /*
+   * The CRM, for the reason the database is here: every business keeps its
+   * records somewhere, and for a great many of them that somewhere is a CRM
+   * rather than a database another vendor writes to. An industry block that
+   * never thought to name it would otherwise leave the card off a page whose
+   * whole subject is the business system.
+   *
+   * Unlike the three above it, nothing imports this statically — it is here
+   * as a policy about what every application can offer, not to keep one
+   * from dying on boot.
+   */
+  'services/connectors/zohocrm.js',
 ]);
 
 /**
@@ -246,6 +258,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/connectors/whatsapp.js':  { template: 'services/connectors/whatsapp.js' },
     'services/connectors/svarg.js':     { template: 'services/connectors/svarg.js' },
     'services/connectors/database.js':  { template: 'services/connectors/database.js' },
+    'services/connectors/zohocrm.js':   { template: 'services/connectors/zohocrm.js' },
     'controllers/whatsappController.js': { template: 'controllers/whatsappController.js' },
     'routes/whatsappRoutes.js':         { template: 'routes/whatsappRoutes.js' },
     'services/connectors/phone.js':     { template: 'services/connectors/phone.js' },

@@ -154,7 +154,7 @@ describe('the Data page names the systems a business runs on', () => {
      * is not the source of truth for the phone, because a connector nobody
      * can see on this page is a connector nobody uses.
      */
-    expect(ui).toContain("var CORE = ['database', 'phone', 'whatsapp'];");
+    expect(ui).toContain("var CORE = ['database', 'zoho-crm', 'phone', 'whatsapp'];");
     expect(ui).toContain('if (!shipped(kind)) return;');
   });
 

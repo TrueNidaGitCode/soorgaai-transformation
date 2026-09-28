@@ -401,16 +401,51 @@ const SLOW = new Set(['renewal-due', 'expiring-soon', 'deadline-approaching', 'p
  * column that fits when a better one is sitting further along the row.
  */
 const PREFER = {
-  // Recency beats origin. A watcher asking who has gone missing wants the
-  // last time something happened, not the day the record was created.
+  /*
+   * Recency beats origin, and the business event beats the record's own
+   * history.
+   *
+   * A watcher asking who has gone missing wants the last time something
+   * happened, not the day the record was created. Both of those were already
+   * here. What was not: a CRM hands over its own audit stamps alongside the
+   * dates a business actually cares about, and Created_Time and
+   * Appointment_Date ranked the same — so which one a watcher asked about was
+   * decided by the order Zoho happened to return its fields in.
+   *
+   * An appointment, a booking, a session or a scheduled thing IS the event.
+   * A creation timestamp is a fact about the row.
+   */
   when: {
-    good: /last|latest|recent|seen|visit|attend|activity|check.?in/i,
-    bad:  /expir|valid|renew|birth|dob|sale|purchase|join|enrol|signup|sign.?up|start/i,
+    good: /last|latest|recent|seen|visit|attend|activity|check.?in|appoint|book|session|schedul/i,
+    bad:  /expir|valid|renew|birth|dob|sale|purchase|join|enrol|signup|sign.?up|start|created/i,
   },
+  /*
+   * A state the business set beats a state the software set.
+   *
+   * Every record in a CRM carries approval, review and lock states that say
+   * something about the row's passage through the system and nothing about
+   * the customer. A watcher looking for "no show or absent" must not be
+   * pointed at one of those.
+   */
+  status: { bad: /approval|review|lock|sync|record|convert/i },
   // A count is never the thing that was booked.
   slot: {
     good: /slot|cabin|room|booking|appointment|class|batch|shift/i,
     bad:  /^total|count|num|_no$|qty|quantity|remaining|completed/i,
+    /*
+     * A date is not the thing that was booked — but it is a better answer
+     * than a count, so it cannot simply be forbidden.
+     *
+     * Appointment_Date matched this role and the when role equally well and
+     * took whichever was assigned first, leaving the watcher asking whether
+     * a no-show had a Modified_Time, which every row on earth has. Vetoing
+     * dates outright then broke the opposite case: on a packages sheet whose
+     * only other candidates are total_sessions and sessions_completed,
+     * last_session_date IS the best available answer.
+     *
+     * So: worse than a real booked thing, better than a tally.
+     */
+    weak: /date|time|status|state/i,
   },
   who: {
     good: /name/i,
@@ -431,10 +466,27 @@ export function columnsFor(role, columns) {
 
   const p = PREFER[role];
   if (!p) return hits;
+  /*
+   * The veto is read first, and that order is the whole point of having one.
+   *
+   * good said "this is the kind of word the role is about"; bad said "this is
+   * not the kind of thing". A column can carry both — Appointment_Date is
+   * about appointments AND is a date — and with good tested first it scored
+   * top for 'the thing that was booked' on the strength of the word
+   * "appointment", before the veto on dates was ever consulted. The watcher
+   * then asked whether a no-show had a Modified_Time, which every row has.
+   *
+   * The same reading fixes others of the same shape: Total Sessions is not an
+   * amount, however much "total" sounds like one.
+   */
   const rank = (c) => {
     const s = String(c);
+    // bad first, because a veto that can be out-argued is not a veto; then
+    // weak, because a column can read as good and still be the wrong shape
+    // (Appointment_Date is about appointments AND is a date); then good.
+    if (p.bad && p.bad.test(s)) return 3;
+    if (p.weak && p.weak.test(s)) return 2;
     if (p.good && p.good.test(s)) return 0;
-    if (p.bad && p.bad.test(s)) return 2;
     return 1;
   };
   // Stable within a rank, so a dataset's own column order still decides

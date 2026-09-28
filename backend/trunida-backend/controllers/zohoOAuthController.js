@@ -87,7 +87,15 @@ export async function zohoCallback(req, res) {
   }
 
   if (!h.back) {
-    return say(res, 200, 'Connected', 'You can close this tab and go back to your application.');
+    /*
+     * Reached only when Svarg does not know this application's address,
+     * which means the application cannot be sent back to claim the token —
+     * so the consent worked and the connection did not. Said as that, rather
+     * than as "Connected", which is what it used to say and was not true.
+     */
+    return say(res, 200, 'Zoho approved, but the connection is not finished',
+      'This Svarg server does not know your application\u2019s address, so it could not send you back. '
+      + 'Open your application\u2019s Data page and press Connect again.');
   }
   // The id only. The token is claimed by the application over its own
   // gateway token, so it never reaches a URL, a log or a browser history.

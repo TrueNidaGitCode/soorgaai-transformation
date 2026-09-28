@@ -197,7 +197,9 @@ describe('where the line between Svarg and a container is', () => {
      * recorded for the deployment.
      */
     expect(controller).toContain('function allowedBack(deployment, wanted)');
-    expect(controller).toContain('new URL(w).origin === new URL(home).origin ? w : home');
+    // The behaviour itself is tested below, against the record shape a
+    // real deployment has; this only holds the check in place.
+    expect(controller).toContain('new URL(w).origin === new URL(full).origin ? w : full');
   });
 
   it('authenticates every one of the three on the deployment token', () => {
@@ -260,5 +262,60 @@ describe('what the Data page does with it', () => {
     const fn = ui.slice(ui.indexOf('async function finishZoho()'), ui.indexOf('async function submitConnector'));
     expect(fn).toContain('history.replaceState');
     expect(fn.indexOf('history.replaceState')).toBeLessThan(fn.indexOf('/api/connectors/zoho/finish'));
+  });
+});
+
+describe('where the browser is sent back to', () => {
+  /*
+   * ── The bug this exists for ──────────────────────────────────────────────
+   *
+   * A delivered application's address is kept at deployment.railway.url.
+   * This read deployment.url, which HostedDeployment does not have — so the
+   * allow-list was empty, `back` was empty, and the consent ended on a Svarg
+   * page with nowhere to go.
+   *
+   * The customer saw the word "Connected" and was connected to nothing: the
+   * refresh token sat in the handoff until it expired, because the
+   * application was never sent back to claim it. Both halves of that were
+   * reported from a real attempt — a dead-end page, and no connection
+   * afterwards.
+   *
+   * Railway stores a host with no scheme, which is the second half: new URL()
+   * needs one, so every origin comparison threw and fell back to the bare
+   * host even when the address WAS known.
+   */
+  const dep = { railway: { url: 'app-production-2ca2.up.railway.app' } };
+
+  it('finds the address where deployments actually keep it', async () => {
+    const { allowedBack } = await import('../controllers/gatewayZohoController.js');
+    expect(allowedBack(dep, '')).toBe('https://app-production-2ca2.up.railway.app');
+  });
+
+  it('keeps a return address on the application’s own origin', async () => {
+    const { allowedBack } = await import('../controllers/gatewayZohoController.js');
+    expect(allowedBack(dep, 'https://app-production-2ca2.up.railway.app/#data'))
+      .toBe('https://app-production-2ca2.up.railway.app/#data');
+  });
+
+  it('refuses one that is not, rather than trusting the request body', async () => {
+    /*
+     * `back` arrives in a request body. An open redirect on the domain
+     * registered with Zoho as a redirect URI is worth more to somebody than
+     * the connection is.
+     */
+    const { allowedBack } = await import('../controllers/gatewayZohoController.js');
+    expect(allowedBack(dep, 'https://evil.test/steal'))
+      .toBe('https://app-production-2ca2.up.railway.app');
+  });
+
+  it('returns nothing when there is no address, so the page says so', async () => {
+    // And the callback then tells the customer the connection is NOT
+    // finished, rather than the word "Connected" over a token nobody claimed.
+    const { allowedBack } = await import('../controllers/gatewayZohoController.js');
+    expect(allowedBack({ railway: {} }, 'https://x/y')).toBe('');
+
+    const ctl = read('../controllers/zohoOAuthController.js');
+    expect(ctl).toContain('Zoho approved, but the connection is not finished');
+    expect(ctl).not.toContain("say(res, 200, 'Connected'");
   });
 });

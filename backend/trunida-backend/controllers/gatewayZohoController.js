@@ -39,14 +39,26 @@ async function deploymentOr401(req, res) {
  * registered with Zoho is worth more to somebody than the connection is. So
  * it has to be the address Svarg itself recorded for this deployment.
  */
-function allowedBack(deployment, wanted) {
-  const home = String(deployment?.appUrl || deployment?.url || '').replace(/\/+$/, '');
+export function allowedBack(deployment, wanted) {
+  /*
+   * railway.url is where a delivered application's address is kept —
+   * HostedDeployment has no top-level `url`, and reading one that does not
+   * exist produced an empty allow-list, an empty `back`, and a consent that
+   * ended on a Svarg page with nowhere to go. The customer saw "Connected"
+   * and was connected to nothing: the token sat in the handoff until it
+   * expired, because the application never came back to claim it.
+   */
+  const home = String(deployment?.railway?.url || deployment?.appUrl || deployment?.url || '')
+    .replace(/\/+$/, '');
   if (!home) return '';
+  // Railway records a host without a scheme; new URL() needs one, and
+  // without it every comparison below threw and fell back to the bare host.
+  const full = /^https?:\/\//.test(home) ? home : `https://${home}`;
   const w = String(wanted || '').trim();
-  if (!w) return home;
+  if (!w) return full;
   try {
-    return new URL(w).origin === new URL(home).origin ? w : home;
-  } catch { return home; }
+    return new URL(w).origin === new URL(full).origin ? w : full;
+  } catch { return full; }
 }
 
 /**

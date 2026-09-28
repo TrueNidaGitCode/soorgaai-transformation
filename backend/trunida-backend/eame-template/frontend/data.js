@@ -1218,7 +1218,24 @@
         // address it recorded for this application rather than trusting it.
         back: location.origin + location.pathname + '#data',
       });
-      location.href = r.url;
+      /*
+       * A new tab, so the application is never navigated away from.
+       *
+       * The consent ends by returning to this application's Data page, which
+       * is where the rest of the connection happens — so that tab becomes the
+       * one to finish in, and this one is left exactly as it was rather than
+       * replaced by somebody else's login screen.
+       */
+      var tab = window.open(r.url, '_blank');
+      if (tab) {
+        try { tab.opener = null; } catch (e) { /* fine */ }
+        btn.disabled = false;
+        btn.innerHTML = 'Connect Zoho CRM <span aria-hidden="true">&rarr;</span>';
+        say(els.note, 'Zoho has opened in a new tab. Approve it there, and the connection finishes in that tab.');
+      } else {
+        // Blocked by the browser: this tab is better than no tab.
+        location.href = r.url;
+      }
     } catch (err) {
       btn.disabled = false; btn.innerHTML = 'Connect Zoho CRM <span aria-hidden="true">&rarr;</span>';
       say(els.note, err.message, true);

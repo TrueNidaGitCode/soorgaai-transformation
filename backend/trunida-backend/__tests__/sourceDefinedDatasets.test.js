@@ -197,9 +197,15 @@ describe('whichever step asks first is the one that claims', () => {
   });
 
   it('is used by every step that needs credentials', () => {
-    // Three of them, and any one can be the first to run.
+    /*
+     * Five of them now — status, modules, scan, connect, finish — and any
+     * one can be the first to run. The count is asserted rather than the
+     * list, because the failure this guards against is a NEW step that
+     * claims for itself, or an old one that stops claiming when another is
+     * removed.
+     */
     const uses = (ctl.match(/await credsFor\(handoff\)/g) || []).length;
-    expect(uses).toBe(3);
+    expect(uses).toBe(5);
   });
 
   it('no longer reports a fresh consent as expired', () => {

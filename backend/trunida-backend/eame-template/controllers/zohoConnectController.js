@@ -144,6 +144,97 @@ export async function zohoModules(req, res) {
  */
 const MOST_AT_ONCE = 15;
 
+/**
+ * Which modules hold anything — and nothing else.
+ *
+ * Split out from connecting so the browser can show what is really
+ * happening. Reading nine modules takes twenty or thirty seconds, and a
+ * single request that returns at the end of it leaves a page with nothing
+ * true to say meanwhile: a spinner that claims progress it cannot see is a
+ * worse answer than no spinner.
+ *
+ * So this answers quickly with the list, the browser draws it, and each
+ * module is connected by its own short request. The progress is then a fact
+ * rather than an animation — and no single request is long enough for a
+ * proxy to lose patience with.
+ */
+export async function zohoScan(req, res) {
+  const handoff = String(req.body?.handoff || '').trim();
+  if (!handoff) return res.status(400).json({ error: 'No connection attempt was named.' });
+
+  let creds;
+  try {
+    creds = await credsFor(handoff);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  const base = { region: creds.region, refreshToken: creds.refreshToken, brokered: 'yes' };
+  try {
+    const all = await listModules(base);
+    const populated = (await listPopulated(base, all)).slice(0, MOST_AT_ONCE);
+    if (!populated.length) {
+      return res.status(400).json({
+        error: 'Every module in this Zoho account is empty, so there is nothing to read yet. '
+          + 'Add a record and connect again.',
+      });
+    }
+    return res.json({ modules: populated.map((m) => ({ apiName: m.apiName, label: m.label })) });
+  } catch (err) {
+    return res.status(502).json({ error: err.message });
+  }
+}
+
+/**
+ * One module: its shape, its dataset, its connection, and its first read.
+ *
+ * One at a time because that is what lets the page count them. A failure
+ * here is that module's failure and nobody else's — a CRM where one module
+ * is locked down should still give up the rest.
+ */
+export async function zohoConnectOne(req, res) {
+  const handoff = String(req.body?.handoff || '').trim();
+  const apiName = String(req.body?.module || '').trim();
+  const label = String(req.body?.label || '').trim() || apiName;
+  if (!apiName) return res.status(400).json({ error: 'No module was named.' });
+
+  let creds;
+  try {
+    creds = await credsFor(handoff);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  const config = {
+    region: creds.region, refreshToken: creds.refreshToken,
+    module: apiName, criteria: '', brokered: 'yes',
+  };
+
+  try {
+    const shape = await describeShape(config);
+    const dataset = await defineDataset({
+      name: `${label} (Zoho CRM)`,
+      columns: shape.columns,
+      key: shape.key,
+      from: 'zoho-crm',
+    });
+    const made = await createConnector({ kind: 'zoho-crm', datasetName: dataset.name, config, schedule: 'hourly' });
+
+    let rows = null;
+    try {
+      const r = await syncConnector(made.id, { by: 'owner' });
+      rows = r && typeof r.rows === 'number' ? r.rows : null;
+    } catch (err) {
+      // Connected, and it will be read again on the hour.
+      console.error('[zoho] %s connected but the first read failed:', apiName, err.message);
+    }
+    return res.json({ module: label, dataset: dataset.name, columns: dataset.columns.length, rows });
+  } catch (err) {
+    console.error('[zoho] %s could not be connected:', apiName, err.message);
+    return res.status(502).json({ error: err.message });
+  }
+}
+
 export async function zohoFinish(req, res) {
   const handoff = String(req.body?.handoff || '').trim();
   if (!handoff) return res.status(400).json({ error: 'No connection attempt was named.' });

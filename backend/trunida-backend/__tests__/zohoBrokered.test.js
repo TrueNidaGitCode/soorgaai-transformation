@@ -238,8 +238,8 @@ describe('what the Data page does with it', () => {
      * longer loses the connection with it.
      */
     expect(ui).not.toContain('ZOHO_PENDING');
-    const back = ui.slice(ui.indexOf('async function finishZoho()'), ui.indexOf('function reading('));
-    expect(back).toContain("ownerJson('/api/connectors/zoho/finish'");
+    const back = ui.slice(ui.indexOf('async function finishZoho()'), ui.indexOf('async function readCrm('));
+    expect(back).toContain('await readCrm(handoff)');
   });
 
   it('asks the CRM what it holds, rather than asking the owner', () => {
@@ -266,16 +266,28 @@ describe('what the Data page does with it', () => {
      */
     expect(ui).not.toContain('function pickModule');
     expect(ui).not.toContain('data-zoho-finish');
-    expect(ui).toContain('function reading(handoff)');
+    expect(ui).toContain('async function readCrm(handoff)');
     expect(ui).toContain('function connected(r)');
+
+    /*
+     * Finding the modules is one request; connecting each is its own. So the
+     * bar counts modules that have really landed rather than animating a
+     * guess — twenty or thirty seconds is long enough that the difference
+     * between a fact and an animation is the difference between waiting and
+     * wondering. It also keeps every request short enough that a proxy will
+     * not give up halfway through a connection.
+     */
+    expect(ui).toContain("ownerJson('/api/connectors/zoho/scan'");
+    expect(ui).toContain("ownerJson('/api/connectors/zoho/connect'");
+    expect(ui).toContain("progress('zoho-crm', i, modules.length, 'Reading ' + m.label)");
   });
 
   it('clears the id from the address whatever happens', () => {
     // A reload that re-claimed a spent handoff would report a failure for a
     // connection that had already worked.
-    const fn = ui.slice(ui.indexOf('async function finishZoho()'), ui.indexOf('async function submitConnector'));
+    const fn = ui.slice(ui.indexOf('async function finishZoho()'), ui.indexOf('async function readCrm('));
     expect(fn).toContain('history.replaceState');
-    expect(fn.indexOf('history.replaceState')).toBeLessThan(fn.indexOf('/api/connectors/zoho/finish'));
+    expect(fn.indexOf('history.replaceState')).toBeLessThan(fn.indexOf('await readCrm(handoff)'));
   });
 });
 

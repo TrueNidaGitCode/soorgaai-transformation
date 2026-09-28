@@ -1110,10 +1110,7 @@
       var handoff = zre.dataset.zohoRetry;
       zre.disabled = true; zre.textContent = 'Reading…';
       try {
-        var r = await ownerJson('/api/connectors/zoho/finish', 'POST', { handoff: handoff });
-        closeFlow('zoho-crm');
-        await refresh();
-        connected(r);
+        await readCrm(handoff);
       } catch (err) {
         console.error('[zoho] retry failed:', err);
         zre.disabled = false; zre.textContent = 'Try reading the CRM again';
@@ -1324,12 +1321,8 @@
      * own dataset; the empty ones are not offered, because a dataset with no
      * rows gives the watchers nothing to watch.
      */
-    reading(handoff);
     try {
-      var r = await ownerJson('/api/connectors/zoho/finish', 'POST', { handoff: handoff });
-      closeFlow('zoho-crm');
-      await refresh();
-      connected(r);
+      await readCrm(handoff);
       return true;
     } catch (err) {
       /*
@@ -1346,11 +1339,52 @@
     }
   }
 
-  /** While the CRM is being read: a few seconds, and worth saying so. */
-  function reading(handoff) {
+  /**
+   * Read the CRM, and say what is happening while it happens.
+   *
+   * Two steps, and the split is the point. Finding out which modules hold
+   * anything is one request that answers in a few seconds; connecting each
+   * one is its own request. So the bar counts modules that have really
+   * landed rather than animating a guess — twenty or thirty seconds is long
+   * enough that the difference between a fact and an animation is the
+   * difference between waiting and wondering.
+   *
+   * It also keeps every request short. Nine modules read inside one request
+   * is a request a proxy may give up on, and a connection that half
+   * happened is the worst outcome available here.
+   */
+  async function readCrm(handoff) {
     openFlow('zoho-crm', '<p class="dt-panel__head">Reading your CRM</p>'
-      + '<p class="dt-form__help">Looking through the modules in this Zoho account and connecting '
-      + 'the ones that hold records. This takes a few seconds.</p>');
+      + '<div class="dt-prog"><div class="dt-prog__row"><b>Looking for modules with records</b><span></span></div>'
+      + '<div class="dt-prog__bar"><div class="dt-prog__fill" style="width:8%"></div></div></div>');
+
+    var found = await ownerJson('/api/connectors/zoho/scan', 'POST', { handoff: handoff });
+    var modules = found.modules || [];
+    if (!modules.length) throw new Error('No module in this Zoho account holds any records yet.');
+
+    var done = [];
+    var failed = [];
+    for (var i = 0; i < modules.length; i++) {
+      var m = modules[i];
+      progress('zoho-crm', i, modules.length, 'Reading ' + m.label);
+      try {
+        var one = await ownerJson('/api/connectors/zoho/connect', 'POST', {
+          handoff: handoff, module: m.apiName, label: m.label,
+        });
+        done.push(one);
+      } catch (err) {
+        console.error('[zoho] %s failed:', m.label, err);
+        failed.push({ module: m.label, reason: err.message });
+      }
+    }
+    progress('zoho-crm', modules.length, modules.length, 'Finishing');
+
+    if (!done.length) {
+      throw new Error('Nothing could be read. ' + (failed[0] ? failed[0].reason : ''));
+    }
+    closeFlow('zoho-crm');
+    await refresh();
+    connected({ connected: done, skipped: failed });
   }
 
   /**

@@ -3791,12 +3791,43 @@ const DECK = [
     kicker: 'Privacy and control',
     title: 'Your clinic keeps control of its data.',
     sub: '',
+    /*
+     * Every line here was checked against the code before it was written.
+     *
+     * This is the slide a clinic is right to press hardest on, because the
+     * records are patients'. A reassuring sentence nobody verified is worth
+     * less than nothing on it: the first one a buyer checks and finds soft is
+     * the one that ends the conversation.
+     *
+     *   encrypted there      connectorService: AES-256-GCM, keyed per
+     *                        application by CONNECTOR_ENCRYPTION_KEY
+     *   cannot contact       draftService writes and stops; the container
+     *                        holds no mail credential at all
+     *   never receives       tenantSignalService.normaliseSignal, an
+     *                        allow-list that drops anything not named
+     *   not kept by us       gatewayController forwards and records tokens;
+     *                        transcribeService keeps no audio
+     */
     pillars: [
-      ['Your systems', 'SvargAI only reads the systems you connect.'],
-      ['Your data', 'Records stay in your own application.'],
-      ['Your decisions', 'Your team decides what happens next.'],
-      ['Your patients', 'You control what information is shared and when.'],
+      ['Your systems', 'SvargAI reads only the systems you connect, and stops the moment you disconnect one.'],
+      ['Your records', 'Patient records stay in your own application. The logins to your CRM and phone '
+        + 'system are encrypted there, with a key used by no other clinic.'],
+      ['Your patients', 'No message is ever sent to a patient automatically. The application holds no '
+        + 'email or messaging login — it cannot contact anyone. That is how it is built, not a setting.'],
+      ['Your decisions', 'SvargAI can prepare a follow-up. A person reads it and decides whether to send it.'],
     ],
+    seen: {
+      head: 'What SvargAI can see',
+      points: [
+        ['We never receive your patient records.',
+          'Our platform is told which check ran and how often — never who it was about.'],
+        ['To answer a question or turn a recording into text, that information is sent to the AI service that does the work.',
+          'It is not stored there, and it is not stored by us.'],
+      ],
+    },
+    note: 'Recording a patient call is your clinic’s decision. Switch the “this call is being '
+      + 'recorded” announcement on in your phone system before you start — that announcement '
+      + 'is how a patient consents, and SvargAI cannot set it for you.',
     close: 'Connect what you want. Disconnect what you want. Your team stays in control.',
   },
   {
@@ -3969,6 +4000,16 @@ function deckSlide(sl) {
     body += `<div class="sg-deck__pillars">${sl.pillars.map(([t, d], i) => `
       <article><span>0${i + 1}</span><b>${esc(t)}</b><p>${esc(d)}</p></article>`).join('')}</div>`;
   }
+
+  if (sl.seen) {
+    body += `<div class="sg-deck__seen">
+      <p class="sg-deck__lbl">${esc(sl.seen.head)}</p>
+      <ul>${sl.seen.points.map(([claim, detail]) => `
+        <li><b>${esc(claim)}</b><span>${esc(detail)}</span></li>`).join('')}</ul>
+    </div>`;
+  }
+
+  if (sl.note) body += `<p class="sg-deck__note">${esc(sl.note)}</p>`;
 
   if (sl.plans) {
     body += `<div class="sg-deck__plans">${sl.plans.map(([name, price, per, on, who, has, year]) => `

@@ -30,6 +30,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { join, dirname } from 'path';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const js = read('../admin/sales.js');
@@ -176,7 +178,7 @@ describe('the words a clinic owner should never have to read', () => {
   it('says who decides', () => {
     expect(deck).toContain('Your Team Decides');
     expect(deck).toContain('Your team makes the final call.');
-    expect(deck).toContain('Your team decides what happens next.');
+    expect(deck).toContain('A person reads it and decides whether to send it.');
   });
 });
 
@@ -238,5 +240,96 @@ describe('the page serves it', () => {
     // Line drawings, inline. No stock imagery, no robots, nothing decorative.
     expect(deck).toContain('const RING_ICON = {');
     expect(deck).not.toMatch(/<img|background-image|\.png|\.jpg/);
+  });
+});
+
+/**
+ * Privacy, which is the slide a clinic is right to press hardest on.
+ *
+ * The records are patients'. A reassuring sentence nobody verified is worth
+ * less than nothing here: the first claim a buyer checks and finds soft is
+ * the one that ends the conversation.
+ *
+ * So every claim on that slide is tied below to the code that makes it true.
+ * If somebody gives the delivered application a mail credential, or widens
+ * what the platform stores, or starts keeping the audio, these fail — and
+ * they fail before a clinic finds out the slide was wrong.
+ */
+describe('every privacy claim, against the code that makes it true', () => {
+  // Joined rather than built as a URL: a template literal inside new URL() is
+  // read by the bundler as a module import and refused.
+  const HERE = dirname(fileURLToPath(import.meta.url));
+  const api = (p) => readFileSync(join(HERE, '../../backend/trunida-backend', p), 'utf8');
+  const privacy = deck.slice(deck.indexOf("n: '05'"), deck.indexOf("n: '06'"));
+
+  it('says the records stay in the clinic\u2019s own application', () => {
+    expect(privacy).toContain('Patient records stay in your own application');
+  });
+
+  it('says the source logins are encrypted there, and they are', () => {
+    expect(privacy).toContain('encrypted there, with a key used by no other clinic');
+    const conn = api('eame-template/services/connectorService.js');
+    expect(conn).toContain("crypto.createCipheriv('aes-256-gcm'");
+    // Per application, not one key across the estate.
+    expect(conn).toContain('CONNECTOR_ENCRYPTION_KEY');
+  });
+
+  it('says it cannot contact a patient, and it holds no way to', () => {
+    /*
+     * The strongest claim on the slide, and structural rather than a
+     * setting: drafting writes the message and stops.
+     */
+    expect(privacy).toContain('No message is ever sent to a patient automatically');
+    expect(privacy).toContain('That is how it is built, not a setting');
+    const draft = api('eame-template/services/draftService.js');
+    // Matched across the comment wrap rather than asserting a line break.
+    expect(draft).toMatch(/This application holds no mail\s+\*?\s*credentials/);
+  });
+
+  it('says the platform never receives patient records, and the wire refuses them', () => {
+    expect(privacy).toContain('We never receive your patient records.');
+    expect(privacy).toContain('never who it was about');
+    // The allow-list, which drops a name, a row or a finding key before it
+    // is ever stored. A promise in the application is not a control; this is.
+    const wire = api('services/tenantSignalService.js');
+    expect(wire).toContain("doc.watcherId = String(raw.watcherId || '').slice(0, 64);");
+  });
+
+  it('discloses that answering a question sends the information onward', () => {
+    /*
+     * The one thing on this slide that is a disclosure rather than a
+     * reassurance, and it belongs there. A clinic handing over patient
+     * information is entitled to know it reaches the service that does the
+     * reading, and would find out anyway.
+     */
+    expect(privacy).toContain('sent to the AI service that does the work');
+    expect(privacy).toContain('It is not stored there, and it is not stored by us.');
+  });
+
+  it('is true that we do not store it: the gateway forwards and counts', () => {
+    const gw = api('controllers/gatewayController.js');
+    expect(gw).toContain('await recordUsage(deployment._id, { inputTokens, outputTokens, costUsd');
+    // Nothing writes the prompt or the answer anywhere.
+    const chat = gw.slice(gw.indexOf('export async function chatCompletions'), gw.indexOf('export async function embeddings'));
+    expect(chat).not.toMatch(/\.create\(\{[^)]*messages/);
+    expect(chat).not.toMatch(/save\(\)|insertOne|insertMany/);
+  });
+
+  it('is true that the recording is not kept', () => {
+    const tx = api('services/transcribeService.js');
+    expect(tx).not.toMatch(/insertOne|insertMany|writeFile|\.save\(\)/);
+  });
+
+  it('puts the consent for recording where it belongs \u2014 with the clinic', () => {
+    // The announcement is the consent, and this application cannot set it.
+    expect(privacy).toContain('that announcement');
+    expect(privacy).toContain('SvargAI cannot set it for you');
+    const phone = api('eame-template/services/connectors/phone.js');
+    expect(phone).toContain('that announcement is how a caller consents');
+  });
+
+  it('keeps the four headings a reader scans', () => {
+    expect([...privacy.matchAll(/\['(Your [a-z]+)',/g)].map((m) => m[1]))
+      .toEqual(['Your systems', 'Your records', 'Your patients', 'Your decisions']);
   });
 });

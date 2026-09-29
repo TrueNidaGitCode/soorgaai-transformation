@@ -3219,6 +3219,41 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 .sg-deck__pillars b { display: block; margin: 8px 0 6px; font-size: 1.02rem; color: #fff; }
 .sg-deck__pillars p { margin: 0; font-size: 0.88rem; line-height: 1.5; color: rgba(255, 255, 255, 0.58); }
 
+/* The band that answers the question a clinic actually asks: can your
+   people see my patients. Teal-edged rather than boxed, so it reads as the
+   slide continuing rather than a fifth card competing with the four. */
+.sg-deck__seen {
+  margin-top: 18px;
+  padding: 16px 20px;
+  border-left: 3px solid #5CC5A7;
+  background: rgba(92, 197, 167, 0.05);
+  border-radius: 0 10px 10px 0;
+}
+.sg-deck__seen ul { margin: 0; padding: 0; list-style: none; }
+.sg-deck__seen li { padding: 6px 0; max-width: 88ch; }
+.sg-deck__seen b {
+  display: block;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: #fff;
+}
+.sg-deck__seen span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+/* The clinic's own obligation, said quietly and said anyway. */
+.sg-deck__note {
+  margin: 16px 0 0;
+  max-width: 84ch;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.45);
+}
+
 /* ── 06 Pricing ─────────────────────────────────────────────────────────── */
 .sg-deck__plans {
   display: grid;

@@ -1,28 +1,30 @@
 /**
- * The presentation: the third thing that leaves this page.
+ * The presentation: the third thing that leaves this page, and the only one
+ * that leaves it alone.
  *
- * ── The finding this was built on ──────────────────────────────────────────
+ * ── Who it is written for ──────────────────────────────────────────────────
  *
- * The deck it replaces had a Chief of Agents connecting a No Show, a phone
- * call and an unkept promise into "Rahul needs attention". That is the most
- * persuasive slide in it, and it is the one thing the product does not do.
- * composeDigest walks the results agent by agent and never compares two;
- * nothing joins a finding from one watcher to a finding from another.
+ * A clinic owner, manager or admin lead, reading it in their inbox with
+ * nobody there to explain it. That is a different reader from the one in the
+ * room, and it decides everything: six slides in the order they would ask the
+ * questions, plain business words, and one story — a patient who did not turn
+ * up, rang about a package, was promised a call back and never got one —
+ * carried from the first slide to the third so the deck holds together.
  *
- * Sold in the present tense, that is the claim a buyer discovers in week one
- * — and everything else in the deck gets re-examined when they do. Stated as
- * where this is going, it is a roadmap they can be excited by, and the rest
- * of the deck keeps its credibility.
+ * ── What this file protects ────────────────────────────────────────────────
  *
- * So this file's real job is the one thing no renderer can enforce: that the
- * unbuilt claims stay on the unbuilt side.
+ * Two things a renderer cannot.
  *
- * ── And the numbers ────────────────────────────────────────────────────────
+ * THE WORDS. A reader who knows nothing about software has to finish it
+ * understanding the product. Every term of art that creeps back in — dataset,
+ * column, row, model, pipeline, webhook — costs a reader rather than earning
+ * one, so they are asserted absent rather than discouraged in a comment.
  *
- * A deck goes stale the day it is exported, and the stale part is always the
- * figures. An earlier version said five agents watch for five things; the
- * catalogue is thirty-six across seven areas. So every countable claim is
- * counted from the running product, and none of them is typed into the page.
+ * THE ONE FUTURE-TENSE CLAIM. Reading a No Show and a phone call as one
+ * patient needing attention is not built: each check finds its own thing and
+ * the briefing lists them separately. Slide 4 says SvargAI *will* do it, under
+ * "Coming next". Future tense is the whole safeguard, and a tense is exactly
+ * the kind of thing an edit slips.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -36,6 +38,15 @@ const html = read('../admin/sales.html');
 /** The deck's own block, so a match elsewhere in the file cannot pass for it. */
 const deck = js.slice(js.indexOf('/* ── The presentation'), js.indexOf('/*\n * Pitches, by industry.'));
 
+/**
+ * The prose the reader actually sees.
+ *
+ * From the watcher names through the last slide, so it covers everything
+ * printed and none of the comments that explain it — several of which quote
+ * the very words the slides must not use, in order to forbid them.
+ */
+const slides = deck.slice(deck.indexOf('const CLINIC_WATCHERS = ['), deck.indexOf('function deckWatchers'));
+
 describe('the three things that leave this page', () => {
   it('still sends an email and a short message', () => {
     expect(js).toContain('<p class="sg-fm__kind">Email</p>');
@@ -44,113 +55,206 @@ describe('the three things that leave this page', () => {
 
   it('now also has the presentation, beside them', () => {
     expect(js).toContain('<p class="sg-fm__kind">Presentation</p>');
-  });
-
-  it('puts the deck where the card points', () => {
     expect(js).toContain('href="#sg-deck"');
     expect(js).toContain('<div id="sg-deck"></div>');
   });
 });
 
-describe('what runs, and what does not', () => {
-  it('separates the two, in that order', () => {
-    expect(deck).toContain('Runs today');
-    expect(deck).toContain('Next \\u2014 say so as next');
-    expect(deck.indexOf('sg-deck__when--now')).toBeLessThan(deck.indexOf('sg-deck__when--next'));
+describe('six slides, in the order a clinic owner asks the questions', () => {
+  it('has exactly six, numbered in order', () => {
+    expect([...deck.matchAll(/n: '(\d\d)'/g)].map((m) => m[1]))
+      .toEqual(['01', '02', '03', '04', '05', '06']);
   });
 
-  it('puts joining signals across agents on the unbuilt side', () => {
-    /*
-     * The whole reason this file exists. If this assertion ever has to be
-     * changed, the thing to change first is notifyService — and then this.
-     */
-    const next = deck.slice(deck.indexOf('next: ['), deck.indexOf('n: \'04\''));
-    expect(next).toContain('Signals joined across agents');
-    expect(next).toContain('it is not built');
+  it('asks them in the order somebody reading alone would', () => {
+    // Is this my problem, what does it do, what would I see, how does it
+    // work, what happens to my records, what does it cost.
+    expect([...deck.matchAll(/kicker: '([^']+)'/g)].map((m) => m[1])).toEqual([
+      'The problem', 'What it does', 'What you see',
+      'How it works', 'Privacy and control', 'Pricing',
+    ]);
   });
 
-  it('puts ranking on the unbuilt side too', () => {
-    const next = deck.slice(deck.indexOf('next: ['), deck.indexOf('n: \'04\''));
-    expect(next).toContain('Ranked, not just listed');
-    expect(next).toContain('no implementation yet');
+  it('opens on the sentence the reader has to recognise', () => {
+    expect(deck).toContain('Your clinic already has the information. It is just spread across different places.');
+    expect(deck).toContain('The clinic has all the information. But nobody sees the full picture.');
   });
 
-  it('claims drafting, which is built, and never sending', () => {
-    const today = deck.slice(deck.indexOf('today: ['), deck.indexOf('next: ['));
-    expect(today).toContain('A follow-up is drafted');
-    expect(today).toContain('A person sends it');
-    expect(today).toContain('holds no mail credentials');
-  });
-
-  it('gives the unbuilt half a colour it shares with nothing else', () => {
-    // So a claim cannot quietly change category by being restyled.
-    expect(css).toContain('.sg-deck__when--next { color: #E8A34A; }');
-    const others = css.split('#E8A34A').length - 1;
-    const amber = css.split('232, 163, 74').length - 1;
-    expect(others).toBe(1);
-    // The only other uses are the two borders on the same block.
-    expect(amber).toBeLessThanOrEqual(2);
+  it('ends on one ask and where to find us', () => {
+    expect(deck).toContain('Show us where your clinic loses the signal.');
+    expect(deck).toContain('www.svargai.com');
   });
 });
 
-describe('the numbers', () => {
-  it('are read, never written into the page', () => {
-    // 36 watchers and 7 areas are facts about the catalogue. The moment one
-    // of them is a literal in this file, the deck can go stale.
-    expect(deck).not.toMatch(/\b36 watchers\b/);
-    expect(deck).not.toMatch(/\bthirty-six watchers\b/i);
-    expect(deck).toContain('f.watchers.total');
-    expect(deck).toContain('f.watchers.areas.length');
-    expect(deck).toContain('f.connectors.total');
+describe('one patient, carried through the deck', () => {
+  it('tells the story on slide 1 in the order it happened', () => {
+    const one = deck.slice(deck.indexOf("n: '01'"), deck.indexOf("n: '02'"));
+    const said = [...one.matchAll(/\['(CRM|Phone|Staff)', '([^']*)/g)].map((m) => `${m[1]}: ${m[2]}`);
+    expect(said).toEqual([
+      'CRM: Patient books an appointment.',
+      'CRM: Appointment marked No Show.',
+      'Phone: Patient calls and asks about a treatment package.',
+      // The staff line is in curly quotes, so it runs to the end of the match.
+      'Staff: “I’ll check and get back to you.”',
+      'CRM: No follow-up recorded.',
+    ]);
   });
 
-  it('come from the product, over its own endpoint', () => {
+  it('keeps the first demonstration to a CRM and a phone', () => {
+    // WhatsApp is a connector, not part of this story, and a third system in
+    // the example is a third thing to explain before the point lands.
+    const one = deck.slice(deck.indexOf("n: '01'"), deck.indexOf("n: '02'"));
+    expect(one).not.toMatch(/WhatsApp/i);
+  });
+
+  it('pays the story off on slide 3 with the same patient', () => {
+    const three = deck.slice(deck.indexOf("n: '03'"), deck.indexOf("n: '04'"));
+    expect(three).toContain('Rahul Sharma');
+    expect(three).toContain('Needs follow-up');
+    expect(three).toContain('Call Rahul back about the package he asked about.');
+  });
+
+  it('shows the evidence, which is the point of the slide', () => {
+    const three = deck.slice(deck.indexOf("n: '03'"), deck.indexOf("n: '04'"));
+    expect(three).toContain('evidence: [');
+    expect(deck).toContain('The evidence behind it');
+    expect(three).toContain('It shows you why it raised it');
+  });
+});
+
+describe('what it says it watches', () => {
+  it('names them in four groups a clinic recognises', () => {
+    expect([...deck.matchAll(/group: '([^']+)'/g)].map((m) => m[1]))
+      .toEqual(['Patients', 'Appointments', 'Payments', 'Follow-ups']);
+  });
+
+  it('explains the word "watchers" the first time it uses it', () => {
+    expect(deck).toContain('Watchers are small checks that look for specific situations');
+  });
+
+  it('checks every one against the live catalogue before drawing it', () => {
+    /*
+     * The deck must not name a check the product does not have. Each entry
+     * carries the catalogue id it corresponds to, and an id the catalogue has
+     * dropped is filtered out rather than printed.
+     */
+    expect(deck).toContain("g.items.filter(([id]) => !f || known.has(id))");
+    for (const id of ['no-show', 'promise-overdue', 'gone-quiet', 'overdue-invoice']) {
+      expect(deck).toContain(`'${id}'`);
+    }
+  });
+
+  it('puts the counts under the examples, not over them', () => {
+    // A clinic owner does not buy thirty-six of anything. The number is there
+    // to be checked, not to persuade, so it is small and it comes last.
+    const two = deck.slice(deck.indexOf("n: '02'"), deck.indexOf("n: '03'"));
+    expect(two).not.toMatch(/\b36\b|\bwatchers in the catalogue\b/);
+    expect(deck).toContain('sg-deck__quiet');
+    expect(deck).toContain('checks like these are available today');
+  });
+
+  it('still reads those counts rather than hard-coding them', () => {
+    expect(deck).toContain('f.watchers.total');
+    expect(deck).toContain('f.connectors.total');
     expect(deck).toContain("api('/deck')");
   });
 
-  it('each carry where they came from, so "how do you know" is answerable', () => {
-    expect(deck).toContain('function deckStat(value, label, source)');
-    expect(deck).toContain('f.watchers.source');
-    expect(deck).toContain('f.connectors.source');
-  });
-
-  it('draw the deck even when the figures have not arrived', () => {
-    // A slow answer must show a deck missing its numbers, not an empty panel.
-    expect(deck).toContain(".catch(() => { renderDeck(); })");
-    expect(deck).toContain("if (!f) return '<p class=\"sg-deck__wait\">");
+  it('draws the deck even when the counts have not arrived', () => {
+    expect(deck).toContain('.catch(() => { renderDeck(); })');
   });
 });
 
-describe('what the deck is not allowed to know', () => {
-  it('shows no customer of anybody\'s, because the wire carries none', () => {
-    expect(deck).toContain('no finding, no name, no row');
+describe('the one claim that is not yet true', () => {
+  it('is future tense, under "Coming next"', () => {
+    expect(deck).toContain('Coming next');
+    expect(deck).toMatch(/SvargAI will connect related findings across your systems/);
   });
 
-  it('says so on the slide rather than in a policy somewhere', () => {
-    expect(deck).toContain('u.boundary');
-    expect(deck).toContain('What Svarg receives');
+  it('is never stated as something it does today', () => {
+    expect(deck).not.toMatch(/SvargAI connects related findings/);
+    expect(deck).not.toMatch(/connects the signals/i);
   });
 
-  it('keeps the worked example as prose, not as a live record', () => {
-    // "Rahul" is a demonstration account the founder owns, written here by
-    // hand. It must never become something fetched.
-    const slide1 = deck.slice(deck.indexOf("n: '01'"), deck.indexOf("n: '02'"));
-    expect(slide1).toContain('One customer, one week');
-    expect(slide1).not.toContain('deckFacts');
-    expect(slide1).not.toContain('api(');
+  it('is said plainly to the seller on the card, where the reader is not the buyer', () => {
+    /*
+     * The deck is customer-facing and future tense is enough there. The card
+     * above it is read by the person selling, who needs the blunt version.
+     */
+    const card = js.slice(js.indexOf('sg-fm__msg--deck'), js.indexOf('href="#sg-deck"'));
+    expect(card).toContain('it is not built');
+    expect(card).toContain('Do not say it in the present tense in a room');
+  });
+
+  it('claims drafting, which is built, and never sending', () => {
+    expect(deck).toContain('SvargAI can draft the follow-up message for you');
+    expect(deck).toContain('A person reads it and decides');
+    expect(deck).toContain('No message is ever sent to a patient automatically.');
+  });
+});
+
+describe('the words a clinic owner should never have to read', () => {
+  it('uses none of them', () => {
+    for (const word of [
+      'dataset', 'column', 'schema', 'pipeline', 'webhook', 'API',
+      'orchestration', 'machine learning', 'autonomous', 'LLM', 'model',
+    ]) {
+      expect(slides.toLowerCase(), word).not.toContain(word.toLowerCase());
+    }
+  });
+
+  it('says what happened, not what a field was set to', () => {
+    // Against the slides, not the whole block: the comment above them quotes
+    // the phrase in order to forbid it.
+    expect(slides).toContain('Patient did not turn up');
+    expect(slides).not.toContain('status changed to');
+  });
+
+  it('says who decides, in words, twice', () => {
+    expect(deck).toContain('Your team decides what to do next');
+    expect(deck).toContain('Your team decides what happens next');
+  });
+});
+
+describe('pricing, as the pricing page states it', () => {
+  it('carries all four plans', () => {
+    for (const p of ['Hobby', 'Pro', 'Ultra', 'Enterprise']) expect(deck).toContain(`'${p}'`);
+  });
+
+  it('quotes the prices the pricing page quotes', () => {
+    // The deck carries the rupee sign itself; the pricing page writes it as
+    // an HTML entity, so only the figures can be compared across the two.
+    const page = read('../pricing/pricing.html');
+    for (const amount of ['2,999', '28,999', '16,999', '1,63,999']) {
+      expect(deck, amount).toContain(amount);
+      expect(page, amount).toContain(amount);
+    }
+    expect(deck).toContain('₹');
+  });
+
+  it('describes each plan by what a clinic gets, not by a tier name', () => {
+    expect(deck).toContain('For watching a small part of the clinic.');
+    expect(deck).toContain('For keeping core clinic operations under continuous watch.');
+  });
+
+  it('lines the four cards up, because a reader compares them across', () => {
+    // A feature list starting at a different height in each card makes four
+    // related things read as four unrelated boxes.
+    expect(css).toContain('.sg-deck__price {');
+    expect(css).toMatch(/\.sg-deck__price \{[^}]*min-height/);
+    expect(css).toMatch(/\.sg-deck__pwho \{[^}]*min-height/);
   });
 });
 
 describe('the page serves it', () => {
   it('bumps the cache-busting version, or nobody sees any of this', () => {
-    const jsv = Number((html.match(/sales\.js\?v=(\d+)/) || [])[1]);
-    const cssv = Number((css ? html.match(/sales\.css\?v=(\d+)/) : []) [1]);
-    expect(jsv).toBeGreaterThanOrEqual(51);
-    expect(cssv).toBeGreaterThanOrEqual(43);
+    expect(Number((html.match(/sales\.js\?v=(\d+)/) || [])[1])).toBeGreaterThanOrEqual(53);
+    expect(Number((html.match(/sales\.css\?v=(\d+)/) || [])[1])).toBeGreaterThanOrEqual(45);
   });
 
-  it('renders four slides and no more, because a fifth is a different deck', () => {
-    const ids = [...deck.matchAll(/n: '(\d\d)'/g)].map((m) => m[1]);
-    expect(ids).toEqual(['01', '02', '03', '04']);
+  it('keeps the one accent that means something', () => {
+    // Orange marks the single line in the whole deck where something went
+    // wrong — the missing follow-up — and the finding's own status. Nothing
+    // else uses it, so it means one thing.
+    expect(css).toContain('.sg-deck__case li.is-bad b { color: #E8834A; font-weight: 600; }');
   });
 });

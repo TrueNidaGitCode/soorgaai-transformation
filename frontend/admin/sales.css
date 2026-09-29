@@ -2911,13 +2911,14 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 .sg-fm__sign p { margin-bottom: 2px; font-size: 0.86rem; color: rgba(255, 255, 255, 0.6); }
 
 /* ── The presentation ───────────────────────────────────────────────────────
-   The third artefact beside the two messages. Same surface and the same teal
-   as everything else on this tab, one step brighter: this is the thing that
-   gets shown on a screen in a room rather than read at a desk.
+   Six slides read by a clinic owner at their desk. Large headings, short
+   lines, and one idea per block — a reader should get each slide in five to
+   ten seconds without anyone explaining it.
 
-   The colour carries meaning here rather than decoration. Teal is what runs
-   today; amber is what does not yet, and it is used nowhere else on the tab,
-   so a claim cannot quietly change category by being restyled. */
+   Same surface and the same teal as the rest of the tab. The teal marks the
+   thing being pointed at on each slide, and one orange marks the single line
+   in the whole deck where something went wrong — the missing follow-up. It is
+   used nowhere else, so it means one thing. */
 
 .sg-fm__msg--deck { border-color: rgba(92, 197, 167, 0.28); }
 .sg-fm__go {
@@ -2935,21 +2936,20 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
 .sg-deck__h { margin: 0 0 4px; font-size: 1.05rem; font-weight: 700; color: #fff; }
 .sg-deck__s {
   margin: 0 0 18px;
-  max-width: 68ch;
+  max-width: 70ch;
   font-size: 0.86rem;
   line-height: 1.55;
   color: rgba(255, 255, 255, 0.5);
 }
-.sg-deck__s em { display: block; margin-top: 6px; font-style: normal; color: rgba(255, 255, 255, 0.38); }
 
 .sg-deck__slide {
-  padding: 22px 24px;
+  padding: 26px 28px;
   margin-bottom: 14px;
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.03);
 }
-.sg-deck__slide header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.sg-deck__slide header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .sg-deck__n {
   font-size: 0.72rem;
   font-weight: 700;
@@ -2964,210 +2964,326 @@ details.sg-icp:not([open]) .sg-icp__foot { display: none; }
   color: #5CC5A7;
 }
 .sg-deck__title {
-  margin: 0 0 6px;
-  font-size: 1.22rem;
-  line-height: 1.3;
+  margin: 0 0 8px;
+  max-width: 28ch;
+  font-size: 1.5rem;
+  line-height: 1.25;
   font-weight: 700;
   color: #fff;
   text-wrap: balance;
 }
 .sg-deck__sub {
-  margin: 0 0 18px;
-  max-width: 72ch;
-  font-size: 0.9rem;
+  margin: 0 0 20px;
+  max-width: 68ch;
+  font-size: 0.95rem;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.58);
+}
+.sg-deck__lead {
+  margin: 0 0 18px;
+  padding-left: 14px;
+  max-width: 68ch;
+  border-left: 2px solid #5CC5A7;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.85);
 }
 .sg-deck__close {
-  margin: 18px 0 0;
-  padding-top: 14px;
-  max-width: 76ch;
+  margin: 20px 0 0;
+  padding-top: 15px;
+  max-width: 72ch;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
-  font-size: 0.88rem;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.62);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+.sg-deck__lbl {
+  margin: 0 0 7px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5CC5A7;
 }
 
-/* Slide 01: what is recorded, and the one case where it came apart. */
-.sg-deck__two { display: grid; grid-template-columns: 1.1fr 1fr; gap: 18px; align-items: start; }
-.sg-deck__lead, .sg-deck__case ul { margin: 0; padding: 0; list-style: none; }
-.sg-deck__lead li, .sg-deck__case li {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 9px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 0.87rem;
-}
-.sg-deck__lead li span { color: rgba(255, 255, 255, 0.85); font-weight: 600; }
-.sg-deck__lead li b { font-weight: 400; color: rgba(255, 255, 255, 0.42); text-align: right; }
+/* Slide 01 — one patient, one week. */
 .sg-deck__case {
-  padding: 14px 16px;
+  max-width: 640px;
+  padding: 18px 20px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.22);
 }
 .sg-deck__caseh {
-  margin: 0 0 6px;
-  font-size: 0.7rem;
+  margin: 0 0 10px;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #5CC5A7;
 }
-.sg-deck__case li span { min-width: 58px; color: rgba(255, 255, 255, 0.4); font-weight: 600; }
-.sg-deck__case li b { flex: 1; font-weight: 400; color: rgba(255, 255, 255, 0.82); text-align: left; }
+.sg-deck__case ul { margin: 0; padding: 0; list-style: none; }
+.sg-deck__case li {
+  display: flex;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.95rem;
+}
+.sg-deck__case li:last-child { border-bottom: 0; padding-bottom: 0; }
+.sg-deck__case li span { flex: 0 0 66px; color: rgba(255, 255, 255, 0.4); font-weight: 600; font-size: 0.85rem; }
+.sg-deck__case li b { flex: 1; font-weight: 400; color: rgba(255, 255, 255, 0.88); }
 .sg-deck__case li.is-bad b { color: #E8834A; font-weight: 600; }
-.sg-deck__case li:last-child { border-bottom: 0; }
 
-/* Figures, each with where it came from. */
-.sg-deck__stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 12px;
-  margin-bottom: 18px;
-}
-.sg-deck__stat {
-  padding: 14px 16px;
-  border: 1px solid rgba(92, 197, 167, 0.2);
-  border-radius: 10px;
-  background: rgba(92, 197, 167, 0.05);
-}
-.sg-deck__stat b {
-  display: block;
-  font-size: 1.7rem;
-  line-height: 1.1;
-  font-weight: 700;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
-}
-.sg-deck__stat span { display: block; margin-top: 2px; font-size: 0.84rem; color: rgba(255, 255, 255, 0.72); }
-.sg-deck__stat em {
-  display: block;
-  margin-top: 6px;
-  font-style: normal;
-  font-size: 0.72rem;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.36);
-}
-
-.sg-deck__areas {
+/* Slide 02 — what it looks for, in four groups. */
+.sg-deck__groups {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 10px;
-  margin: 0 0 14px;
-  padding: 0;
-  list-style: none;
-}
-.sg-deck__areas li {
-  padding: 11px 13px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 9px;
-  background: rgba(0, 0, 0, 0.18);
-}
-.sg-deck__area {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  margin: 0 0 3px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #fff;
-}
-.sg-deck__area span { font-size: 0.8rem; color: #5CC5A7; font-variant-numeric: tabular-nums; }
-.sg-deck__eg { margin: 0; font-size: 0.78rem; line-height: 1.45; color: rgba(255, 255, 255, 0.42); }
-.sg-deck__conn { margin: 0; font-size: 0.84rem; color: rgba(255, 255, 255, 0.55); }
-.sg-deck__conn b { color: rgba(255, 255, 255, 0.8); margin-right: 6px; }
-.sg-deck__wait { margin: 0 0 14px; font-size: 0.85rem; color: rgba(255, 255, 255, 0.4); }
-
-/* Slide 03: what runs, beside what does not. The colour is the claim. */
-.sg-deck__split { display: grid; grid-template-columns: 1.35fr 1fr; gap: 20px; align-items: start; }
-.sg-deck__when {
-  margin: 0 0 10px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-.sg-deck__when--now { color: #5CC5A7; }
-.sg-deck__when--next { color: #E8A34A; }
-
-.sg-deck__steps { margin: 0; padding: 0; list-style: none; counter-reset: none; }
-.sg-deck__steps li { display: flex; gap: 12px; padding: 0 0 13px; }
-.sg-deck__steps li span {
-  flex: 0 0 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: rgba(92, 197, 167, 0.14);
-  color: #5CC5A7;
-  font-size: 0.76rem;
-  font-weight: 700;
-}
-.sg-deck__steps li b, .sg-deck__next li b {
-  display: block;
-  font-size: 0.88rem;
-  color: #fff;
-  margin-bottom: 2px;
-}
-.sg-deck__steps li p, .sg-deck__next li p {
-  margin: 0;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.52);
-}
-.sg-deck__next { margin: 0; padding: 0; list-style: none; }
-.sg-deck__next li {
-  padding: 11px 13px;
-  margin-bottom: 10px;
-  border: 1px solid rgba(232, 163, 74, 0.26);
-  border-radius: 9px;
-  background: rgba(232, 163, 74, 0.05);
-}
-
-/* Slide 04. */
-.sg-deck__pillars {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
-.sg-deck__pillars article {
+.sg-deck__groups section {
   padding: 15px 17px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.18);
 }
-.sg-deck__pillars span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; color: #5CC5A7; }
-.sg-deck__pillars b { display: block; margin: 5px 0 4px; font-size: 0.95rem; color: #fff; }
-.sg-deck__pillars p { margin: 0; font-size: 0.82rem; line-height: 1.5; color: rgba(255, 255, 255, 0.52); }
-
-.sg-deck__claims { margin: 0 0 16px; padding: 0; list-style: none; }
-.sg-deck__claims li {
-  padding: 12px 0 12px 15px;
-  border-left: 2px solid #5CC5A7;
-  margin-bottom: 10px;
+.sg-deck__gname {
+  margin: 0 0 9px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
 }
-.sg-deck__claims b { display: block; margin-bottom: 3px; font-size: 0.9rem; color: #fff; }
-.sg-deck__claims span { font-size: 0.82rem; line-height: 1.5; color: rgba(255, 255, 255, 0.52); }
-
-.sg-deck__wire {
+.sg-deck__groups ul { margin: 0; padding: 0; list-style: none; }
+.sg-deck__groups li {
+  padding: 5px 0;
+  font-size: 0.87rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.62);
+}
+.sg-deck__quiet {
   margin: 0;
-  padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 9px;
-  background: rgba(0, 0, 0, 0.2);
-  font-size: 0.83rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.38);
+}
+.sg-deck__quiet em { font-style: normal; color: rgba(255, 255, 255, 0.28); }
+
+/* Slide 03 — one finding, as it arrives. */
+.sg-deck__find {
+  max-width: 660px;
+  padding: 20px 22px;
+  border: 1px solid rgba(92, 197, 167, 0.24);
+  border-radius: 12px;
+  background: rgba(92, 197, 167, 0.04);
+}
+.sg-deck__findh {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.sg-deck__findh b { font-size: 1.15rem; color: #fff; }
+.sg-deck__findh span {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(232, 131, 74, 0.16);
+  color: #E8834A;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+.sg-deck__what { margin: 0 0 18px; padding: 0; list-style: none; }
+.sg-deck__what li {
+  display: flex;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.9rem;
+}
+.sg-deck__what li:last-child { border-bottom: 0; }
+.sg-deck__what li span { flex: 0 0 104px; color: rgba(255, 255, 255, 0.42); font-weight: 600; font-size: 0.83rem; }
+.sg-deck__what li b { flex: 1; font-weight: 400; color: rgba(255, 255, 255, 0.88); }
+.sg-deck__why, .sg-deck__do {
+  margin: 0 0 18px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+.sg-deck__do { color: #fff; font-weight: 600; }
+.sg-deck__ev { margin: 0; padding: 0; list-style: none; }
+.sg-deck__ev li {
+  position: relative;
+  padding: 4px 0 4px 16px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.55);
+}
+.sg-deck__ev li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 12px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #5CC5A7;
+}
+
+/* Slide 04 — four steps, and what stays with a person. */
+.sg-deck__steps {
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+.sg-deck__steps li { display: flex; gap: 12px; }
+.sg-deck__steps li span {
+  flex: 0 0 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(92, 197, 167, 0.14);
+  color: #5CC5A7;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.sg-deck__steps li b { display: block; margin-bottom: 3px; font-size: 0.95rem; color: #fff; }
+.sg-deck__steps li p { margin: 0; font-size: 0.85rem; line-height: 1.5; color: rgba(255, 255, 255, 0.55); }
+.sg-deck__control {
+  margin: 0 0 18px;
+  padding: 13px 16px;
+  max-width: 68ch;
+  border-left: 2px solid #5CC5A7;
+  background: rgba(92, 197, 167, 0.05);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #fff;
+}
+.sg-deck__soon {
+  padding: 14px 16px;
+  max-width: 68ch;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+}
+.sg-deck__soon p:last-child {
+  margin: 0;
+  font-size: 0.87rem;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.55);
 }
-.sg-deck__wire b { color: rgba(255, 255, 255, 0.82); margin-right: 6px; }
+
+/* Slide 05 — four promises. */
+.sg-deck__pillars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.sg-deck__pillars article {
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.sg-deck__pillars b { display: block; margin-bottom: 6px; font-size: 1rem; color: #fff; }
+.sg-deck__pillars p { margin: 0; font-size: 0.87rem; line-height: 1.5; color: rgba(255, 255, 255, 0.58); }
+
+/* Slide 06 — four plans and one ask. */
+.sg-deck__plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.sg-deck__plans article {
+  padding: 17px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.sg-deck__pname {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5CC5A7;
+}
+/*
+ * The four plans are one object repeated, so their parts line up across the
+ * row: a reader compares them left to right, and a feature list that starts
+ * at a different height in each card makes them read as four unrelated
+ * boxes. The two heights below are what the longest card needs — Hobby and
+ * Enterprise have no billing period and some descriptions wrap to two lines,
+ * and without them every card's list began somewhere else.
+ */
+.sg-deck__price {
+  margin: 0 0 4px;
+  min-height: 2.7em;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.sg-deck__price span {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.42);
+  font-variant-numeric: normal;
+}
+.sg-deck__pwho {
+  margin: 8px 0 12px;
+  min-height: 4.4em;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.62);
+}
+.sg-deck__plans ul {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  list-style: none;
+}
+.sg-deck__plans li {
+  padding: 4px 0;
+  font-size: 0.83rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.55);
+}
+.sg-deck__cta {
+  padding: 24px 26px;
+  border: 1px solid rgba(92, 197, 167, 0.3);
+  border-radius: 12px;
+  background: rgba(92, 197, 167, 0.06);
+}
+.sg-deck__ctah {
+  margin: 0 0 8px;
+  max-width: 24ch;
+  font-size: 1.45rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #fff;
+  text-wrap: balance;
+}
+.sg-deck__ctab {
+  margin: 0 0 14px;
+  max-width: 50ch;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+.sg-deck__ctaw { margin: 0; font-size: 0.92rem; font-weight: 600; color: #5CC5A7; }
 
 @media (max-width: 860px) {
-  .sg-deck__two, .sg-deck__split { grid-template-columns: 1fr; }
+  .sg-deck__slide { padding: 20px 18px; }
+  .sg-deck__title { font-size: 1.28rem; max-width: none; }
 }
+
 
 /* ── The funnel, by industry ────────────────────────────────────────────────
    Same chip as the kinds row above, one choice at a time rather than a set of

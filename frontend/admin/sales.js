@@ -3621,16 +3621,20 @@ function renderFirstMessage(seg) {
 
         <article class="sg-fm__msg sg-fm__msg--deck">
           <p class="sg-fm__kind">Presentation</p>
-          <p class="sg-fm__subject"><span>When</span>In the meeting, and left behind after it.</p>
+          <p class="sg-fm__subject"><span>When</span>Emailed after the call, or instead of one.</p>
           <div class="sg-fm__body">
-            <p>Four slides: the problem, what it does, what you get, and what
-              happens to your records.</p>
-            <p>Its figures are read from the running product every time this page
-              loads, so the deck cannot claim more watchers, connectors or usage
-              than actually exist.</p>
-            <p>It separates <b>what runs today</b> from <b>what is next</b>. Present it
-              that way \u2014 the most persuasive claim in the old version was the
-              one thing not yet built.</p>
+            <p>Six slides, written to be read by a clinic owner with nobody there
+              to explain them: the problem, what it watches, what they would see,
+              how it works, what happens to their records, and what it costs.</p>
+            <p>Slide 2's figures are read from the running product every time this
+              page loads, and every check it names is looked up in the catalogue
+              first \u2014 so the deck cannot promise something that is not there.</p>
+            <p><b>One thing to hold in your head.</b> Slide 4 says SvargAI
+              <i>will</i> connect findings across systems. That is future tense
+              because it is not built: each check finds its own thing and the
+              briefing lists them separately. Reading a No Show and a phone call
+              as one patient is the slide 3 story, and today a person does that
+              last step. Do not say it in the present tense in a room.</p>
           </div>
           <a class="sg-fm__go" href="#sg-deck">Read it below</a>
         </article>
@@ -3643,215 +3647,292 @@ function renderFirstMessage(seg) {
 
 /* ── The presentation ───────────────────────────────────────────────────────
  *
- * The third thing that leaves this page. The email and the short message get
- * a meeting; this is what is walked through in it, and what gets left behind
- * afterwards.
+ * The third thing that leaves this page, and the only one that leaves it
+ * alone. The email and the short message get a meeting; this is read by a
+ * clinic owner at their desk with nobody there to explain it.
  *
- * ── Why it is here and not a PDF ───────────────────────────────────────────
+ * That is the whole design brief. Six slides, each answering one question a
+ * clinic owner would actually ask, in the order they would ask it: is this my
+ * problem, what does it do, what would I see, how does it work, what happens
+ * to my records, what does it cost and what do I do next.
  *
- * A deck goes stale the day it is exported, and the stale parts are always
- * the numbers. An earlier version of this one said five agents watch for five
- * things; the catalogue is thirty-six across seven areas, and neither the
- * slide nor the person presenting it knew that. So the countable claims are
- * counted, from the same code the product runs on, and the deck says what is
- * true this morning.
+ * ── The words ─────────────────────────────────────────────────────────────
  *
- * ── The line that matters most ─────────────────────────────────────────────
+ * "Patient did not turn up", not "appointment status changed to No Show".
+ * "SvargAI checks your records", not "agents evaluate datasets". Nothing on
+ * these slides says dataset, column, row, rule, model, pipeline or webhook —
+ * a reader who knows nothing about software has to finish it understanding
+ * the product, and every one of those words costs a reader rather than
+ * earning one.
  *
- * RUNS TODAY and NEXT are separate, and every claim sits under one of them.
+ * ── Why the figures are read rather than typed ────────────────────────────
  *
- * That is not caution, it is the finding that this deck was built on. The
- * original slide three has a Chief of Agents connecting a No Show, a phone
- * call and an unkept promise into "Rahul needs attention" — which is the most
- * persuasive thing in the deck and the one thing the product does not do.
- * Each watcher finds its own thing and the briefing lists them per watcher;
- * nothing joins them. Sold as present tense, that is the claim a buyer
- * discovers in week one, and everything else in the deck gets re-examined
- * when they do.
+ * A deck goes stale the day it is exported and the stale part is always the
+ * numbers. They are counted from the running product on every page load, and
+ * they sit UNDER the examples rather than over them: a clinic owner does not
+ * buy thirty-six of anything, they buy "I will know when somebody does not
+ * turn up". The count is there to be checked, not to persuade.
  *
- * Stated as where this is going, it is a roadmap a buyer can be excited by
- * without being misled, and the rest of the deck keeps its credibility. See
- * eame-template/services/notifyService.js — composeDigest walks the results
- * agent by agent and never compares two.
+ * Every watcher named on slide 2 is looked up in that live catalogue before
+ * it is drawn, so the deck cannot name something the product does not have.
+ *
+ * ── The one claim that is future tense ────────────────────────────────────
+ *
+ * Reading a No Show and a phone call as one patient who needs attention is
+ * not built: each watcher finds its own thing and the briefing lists them
+ * separately. Slide 4 says "Coming next" and says it in the future — which is
+ * true, and is the difference between a roadmap and a claim a buyer finds out
+ * about in week one. The Presentation card above says it in blunter words,
+ * because the person reading that card is the one selling it.
  */
 
 /** Filled from /deck. Null until it answers; the deck renders either way. */
 let deckFacts = null;
 
 /**
- * The slides. Prose is written here; every figure comes from deckFacts.
+ * What a clinic would call the things SvargAI looks for.
  *
- * Each slide names what it is for, because a deck read by somebody who did
- * not write it needs to say what each part is doing, not only what it says.
+ * Four groups a clinic owner recognises, rather than the seven areas the
+ * product organises itself by. Each entry names a real watcher by its
+ * catalogue id and gives it the words a clinic uses — and an id the
+ * catalogue no longer has is dropped before it is drawn, so this cannot
+ * promise something that has been removed.
  */
+const CLINIC_WATCHERS = [
+  { group: 'Patients', items: [
+    ['unanswered-enquiry', 'Enquiry with no reply'],
+    ['gone-quiet', 'Patient gone quiet'],
+    ['repeat-complaint', 'The same complaint again'],
+  ] },
+  { group: 'Appointments', items: [
+    ['no-show', 'Patient did not turn up'],
+    ['empty-slot', 'Empty appointment slot'],
+    ['over-capacity', 'Overbooked schedule'],
+  ] },
+  { group: 'Payments', items: [
+    ['overdue-invoice', 'Payment overdue'],
+    ['part-payment', 'Only part paid'],
+    ['never-invoiced', 'Treated but never invoiced'],
+  ] },
+  { group: 'Follow-ups', items: [
+    ['promise-overdue', 'Promised a call back, not made'],
+    ['stopped-coming', 'Stopped coming mid-treatment'],
+    ['missing-detail', 'Record left unfinished'],
+  ] },
+];
+
+/** The slides. Prose is written here; every figure comes from deckFacts. */
 const DECK = [
   {
     n: '01',
     kicker: 'The problem',
-    title: 'Your business already knows. It just does not know it in one place.',
-    sub: 'Every one of these is recorded. No two of them are recorded together.',
-    lead: [
-      ['Books an appointment', 'CRM'],
-      ['Does not turn up', 'CRM'],
-      ['Rings the centre', 'Phone'],
-      ['Asks about a package', 'Phone or WhatsApp'],
-      ['Is promised a call back', 'The conversation, and nowhere else'],
-    ],
-    caseTitle: 'One customer, one week',
+    title: 'Your clinic already has the information. It is just spread across different places.',
+    sub: 'Nothing here is broken. Every one of these was recorded properly — no two of them were recorded together.',
+    caseTitle: 'One patient. One week.',
     case: [
-      ['CRM', 'Appointment marked No Show', false],
-      ['Phone', 'Asked about upgrading his package', false],
-      ['Staff', '\u201cI\u2019ll check and get back to you.\u201d', false],
-      ['CRM', 'No follow-up recorded', true],
+      ['CRM', 'Patient books an appointment.', false],
+      ['CRM', 'Appointment marked No Show.', false],
+      ['Phone', 'Patient calls and asks about a treatment package.', false],
+      ['Staff', '“I’ll check and get back to you.”', false],
+      ['CRM', 'No follow-up recorded.', true],
     ],
-    close: 'Nobody did anything wrong. The record and what actually happened '
-      + 'came apart, and nothing in the business is watching for that.',
+    close: 'The clinic has all the information. But nobody sees the full picture.',
   },
   {
     n: '02',
     kicker: 'What it does',
-    title: 'Agents watch the business while your team runs it.',
-    sub: 'Not a dashboard to check. Watchers that run on a schedule and speak up '
-      + 'only when something is true.',
-    live: 'areas',
-    close: 'Each one is a question asked of your own records, evaluated in code '
-      + 'rather than guessed at \u2014 so a finding is either true or it is not raised.',
+    title: 'SvargAI watches your clinic while your team runs it.',
+    sub: 'It checks the systems you already use and speaks up when something needs attention. '
+      + 'There is no new system to learn and nothing to replace.',
+    lead: 'Watchers are small checks that look for specific situations in the records you already keep.',
+    live: 'watchers',
+    close: 'You choose which of these SvargAI watches, and you can change it whenever you like.',
   },
   {
     n: '03',
-    kicker: 'What you get',
-    title: 'A short list of things that need attention, with the evidence attached.',
-    sub: 'Every finding names the records behind it, so the first question in the '
-      + 'room \u2014 how do you know \u2014 has an answer on the screen.',
-    today: [
-      ['A watcher finds it', 'Counted in code against your own records. A finding '
-        + 'that cannot be evidenced is not raised.'],
-      ['The evidence travels with it', 'Which dataset, which columns, which rows, '
-        + 'under what rule \u2014 refreshed on every run, not frozen at first sight.'],
-      ['One briefing, not six emails', 'Everything found that morning arrives '
-        + 'together, and it says what has been resolved as well as what is new.'],
-      ['A follow-up is drafted', 'Written from the finding\u2019s own evidence. The '
-        + 'model writes the sentence and supplies no fact.'],
-      ['A person sends it', 'The application holds no mail credentials. It cannot '
-        + 'contact your customer, by construction.'],
-    ],
-    next: [
-      ['Signals joined across agents', 'Today the No Show and the phone call are '
-        + 'two findings from two watchers. Reading them as one customer who needs '
-        + 'attention is the next piece of work, and it is not built.'],
-      ['Ranked, not just listed', 'The briefing lists findings in agent order. '
-        + '\u201cWhich three first\u201d has no implementation yet.'],
-    ],
+    kicker: 'What you see',
+    title: 'A short list of things that need attention.',
+    sub: 'Not a dashboard to go and check. A short list, with the reason attached to every item on it.',
+    finding: {
+      who: 'Rahul Sharma',
+      verdict: 'Needs follow-up',
+      what: [
+        ['Appointment', 'Did not turn up'],
+        ['Phone call', 'Asked about upgrading his treatment package'],
+        ['Staff', 'Promised to call him back'],
+        ['CRM', 'No follow-up recorded'],
+      ],
+      why: 'Rahul may still be interested, but there is no recorded next step.',
+      doNext: 'Call Rahul back about the package he asked about.',
+      evidence: [
+        'The appointment in your CRM, marked No Show',
+        'The phone call where he asked about the package',
+        'Your CRM, showing nothing recorded since',
+      ],
+    },
+    close: 'SvargAI does not simply say that something looks wrong. It shows you why it raised it, '
+      + 'so your team can judge it in seconds.',
   },
   {
     n: '04',
+    kicker: 'How it works',
+    title: 'From information to action.',
+    sub: 'Four steps, and your team decides the last one.',
+    steps: [
+      ['SvargAI checks', 'It looks at the systems you have connected, on a schedule you set.'],
+      ['It finds something', 'A watcher spots a situation that needs attention.'],
+      ['It shows the evidence', 'You can see exactly why it was raised, in plain words.'],
+      ['Your team decides', 'Your team decides what to do next, and does it.'],
+    ],
+    control: 'SvargAI can draft the follow-up message for you. A person reads it and decides '
+      + 'whether to send it.',
+    soon: 'SvargAI will connect related findings across your systems, so your team can see the '
+      + 'full picture of a patient or a situation in one place.',
+  },
+  {
+    n: '05',
     kicker: 'Privacy and control',
-    title: 'Your records stay in your application.',
-    sub: 'Not a policy. Where the code puts things.',
+    title: 'Your clinic keeps control of its data.',
+    sub: '',
     pillars: [
-      ['Your data', 'Connected records are stored in your own application\u2019s '
-        + 'database, on your own instance. Credentials are encrypted there and '
-        + 'nowhere else.'],
-      ['Your systems', 'It reads the systems you connect and nothing else. '
-        + 'Connecting and disconnecting is the owner\u2019s, not ours.'],
-      ['Your decisions', 'It finds things and drafts follow-ups. What happens '
-        + 'next is a person\u2019s decision, every time.'],
+      ['Your systems', 'SvargAI only reads the systems you choose to connect.'],
+      ['Your data', 'Your records stay in your own application.'],
+      ['Your decisions', 'SvargAI finds issues and can prepare a follow-up. Your team decides what happens next.'],
+      ['Your patients', 'No message is ever sent to a patient automatically.'],
     ],
-    claims: [
-      ['No message reaches a customer without a person sending it',
-        'The application holds no mail credentials. This is not a setting that '
-        + 'can be switched the other way.'],
-      ['Svarg cannot read your records',
-        'A delivered application reports which watcher fired and nothing else '
-        + '\u2014 no finding, no name, no row. The allow-list drops the rest '
-        + 'before it is stored.'],
+    close: 'Connect what you want. Disconnect what you want. Your team stays in control.',
+  },
+  {
+    n: '06',
+    kicker: 'Pricing',
+    title: 'Simple pricing, based on how much of your clinic you want watched.',
+    sub: '',
+    plans: [
+      ['Hobby', '₹0', '',
+        'For watching a small part of the clinic.',
+        ['2 of 5 areas watched', '2 connected systems', 'Checked every day', '1 person']],
+      ['Pro', '₹2,999', 'a month, or ₹28,999 a year',
+        'For keeping core clinic operations under continuous watch.',
+        ['3 of 5 areas watched', '5 connected systems', 'Checked every day', '3 people']],
+      ['Ultra', '₹16,999', 'a month, or ₹1,63,999 a year',
+        'For watching the clinic across every area.',
+        ['All 5 areas watched', '10 connected systems', 'Checked every hour', '10 people']],
+      ['Enterprise', 'Talk to us', '',
+        'For larger organisations, several teams or more than one location.',
+        ['Areas and coverage agreed with you', 'Connected systems as needed', 'As often as you need', 'Your whole team']],
     ],
-    live: 'boundary',
+    cta: {
+      head: 'Show us where your clinic loses the signal.',
+      body: 'Connect one or two systems. We’ll show you what SvargAI finds.',
+      where: 'www.svargai.com',
+    },
   },
 ];
 
-/** A figure with its provenance, so "how do you know" is answerable. */
-function deckStat(value, label, source) {
-  return `<div class="sg-deck__stat">
-    <b>${esc(String(value))}</b>
-    <span>${esc(label)}</span>
-    <em>${esc(source)}</em>
-  </div>`;
-}
-
-/** Slide 02: the catalogue, counted off the code the applications run. */
-function deckAreas() {
+/**
+ * Slide 02: what SvargAI looks for, in a clinic's own words.
+ *
+ * Every watcher is checked against the live catalogue before it is drawn. The
+ * counts sit underneath, small: a clinic owner does not buy thirty-six of
+ * anything, and a number leading this slide is a number arguing with the
+ * examples that would have persuaded them.
+ */
+function deckWatchers() {
   const f = deckFacts;
-  if (!f) return '<p class="sg-deck__wait">Reading the catalogue\u2026</p>';
+  const known = new Map();
+  if (f) {
+    for (const a of f.watchers.areas) for (const w of a.watchers) known.set(w.id, w.name);
+  }
+
+  const groups = CLINIC_WATCHERS.map((g) => ({
+    group: g.group,
+    items: g.items.filter(([id]) => !f || known.has(id)).map(([, said]) => said),
+  })).filter((g) => g.items.length);
+
+  const counted = f
+    ? `<p class="sg-deck__quiet">${f.watchers.total} checks like these are available today, across
+       ${f.connectors.total} kinds of system.
+       <em>Counted from the running product, ${new Date(f.generatedAt).toLocaleDateString()}.</em></p>`
+    : '';
+
   return `
-    <div class="sg-deck__stats">
-      ${deckStat(f.watchers.total, 'watchers in the catalogue', f.watchers.source)}
-      ${deckStat(f.watchers.areas.length, 'areas of a business', f.watchers.source)}
-      ${deckStat(f.connectors.total, 'systems it can read', f.connectors.source)}
+    <div class="sg-deck__groups">
+      ${groups.map((g) => `
+        <section>
+          <p class="sg-deck__gname">${esc(g.group)}</p>
+          <ul>${g.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
+        </section>`).join('')}
     </div>
-    <ul class="sg-deck__areas">
-      ${f.watchers.areas.map((a) => `
-        <li>
-          <p class="sg-deck__area">${esc(a.area)}<span>${a.count}</span></p>
-          <p class="sg-deck__eg">${a.watchers.slice(0, 3).map((w) => esc(w.name)).join(' \u00b7 ')}</p>
-        </li>`).join('')}
-    </ul>
-    <p class="sg-deck__conn"><b>Reads</b> ${f.connectors.list.map((c) => esc(c.name)).join(' \u00b7 ')}</p>`;
+    ${counted}`;
 }
 
-/** Slide 04: what customers have actually done with it, and the boundary. */
-function deckBoundary() {
-  const f = deckFacts;
-  if (!f) return '';
-  const u = f.use;
-  const any = u.started || u.opened;
+/** Slide 03: one finding, as it would actually arrive. */
+function deckFinding(fd) {
   return `
-    ${any ? `<div class="sg-deck__stats">
-      ${deckStat(u.started, 'watchers switched on by customers', u.source)}
-      ${deckStat(u.kept, 'still running', u.source)}
-      ${deckStat(`${u.resolved} of ${u.opened}`, 'findings resolved', u.source)}
-    </div>` : ''}
-    <p class="sg-deck__wire"><b>What Svarg receives</b> ${esc(u.boundary)}</p>`;
+    <div class="sg-deck__find">
+      <p class="sg-deck__findh"><b>${esc(fd.who)}</b><span>${esc(fd.verdict)}</span></p>
+
+      <p class="sg-deck__lbl">What happened</p>
+      <ul class="sg-deck__what">
+        ${fd.what.map(([where, said]) => `<li><span>${esc(where)}</span><b>${esc(said)}</b></li>`).join('')}
+      </ul>
+
+      <p class="sg-deck__lbl">Why it matters</p>
+      <p class="sg-deck__why">${esc(fd.why)}</p>
+
+      <p class="sg-deck__lbl">Suggested next step</p>
+      <p class="sg-deck__do">${esc(fd.doNext)}</p>
+
+      <p class="sg-deck__lbl">The evidence behind it</p>
+      <ul class="sg-deck__ev">${fd.evidence.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>
+    </div>`;
 }
 
 function deckSlide(sl) {
-  const rows = (list) => list.map(([a, b, bad]) => `
-    <li${bad ? ' class="is-bad"' : ''}><span>${esc(a)}</span><b>${esc(b)}</b></li>`).join('');
-
   let body = '';
-  if (sl.lead) {
-    body += `<div class="sg-deck__two">
-      <ul class="sg-deck__lead">${rows(sl.lead)}</ul>
-      <div class="sg-deck__case">
-        <p class="sg-deck__caseh">${esc(sl.caseTitle)}</p>
-        <ul>${rows(sl.case)}</ul>
-      </div>
+
+  if (sl.case) {
+    body += `<div class="sg-deck__case">
+      <p class="sg-deck__caseh">${esc(sl.caseTitle)}</p>
+      <ul>${sl.case.map(([where, said, bad]) => `
+        <li${bad ? ' class="is-bad"' : ''}><span>${esc(where)}</span><b>${esc(said)}</b></li>`).join('')}</ul>
     </div>`;
   }
-  if (sl.live === 'areas') body += deckAreas();
-  if (sl.today) {
-    body += `<div class="sg-deck__split">
-      <section>
-        <p class="sg-deck__when sg-deck__when--now">Runs today</p>
-        <ol class="sg-deck__steps">${sl.today.map(([t, d], i) => `
-          <li><span>${i + 1}</span><div><b>${esc(t)}</b><p>${esc(d)}</p></div></li>`).join('')}</ol>
-      </section>
-      <section>
-        <p class="sg-deck__when sg-deck__when--next">Next \u2014 say so as next</p>
-        <ul class="sg-deck__next">${sl.next.map(([t, d]) => `
-          <li><b>${esc(t)}</b><p>${esc(d)}</p></li>`).join('')}</ul>
-      </section>
-    </div>`;
+
+  if (sl.lead) body += `<p class="sg-deck__lead">${esc(sl.lead)}</p>`;
+  if (sl.live === 'watchers') body += deckWatchers();
+  if (sl.finding) body += deckFinding(sl.finding);
+
+  if (sl.steps) {
+    body += `<ol class="sg-deck__steps">${sl.steps.map(([t, d], i) => `
+      <li><span>${i + 1}</span><div><b>${esc(t)}</b><p>${esc(d)}</p></div></li>`).join('')}</ol>
+      <p class="sg-deck__control">${esc(sl.control)}</p>
+      <div class="sg-deck__soon">
+        <p class="sg-deck__lbl">Coming next</p>
+        <p>${esc(sl.soon)}</p>
+      </div>`;
   }
+
   if (sl.pillars) {
-    body += `<div class="sg-deck__pillars">${sl.pillars.map(([t, d], i) => `
-      <article><span>0${i + 1}</span><b>${esc(t)}</b><p>${esc(d)}</p></article>`).join('')}</div>`;
+    body += `<div class="sg-deck__pillars">${sl.pillars.map(([t, d]) => `
+      <article><b>${esc(t)}</b><p>${esc(d)}</p></article>`).join('')}</div>`;
   }
-  if (sl.claims) {
-    body += `<ul class="sg-deck__claims">${sl.claims.map(([t, d]) => `
-      <li><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join('')}</ul>`;
+
+  if (sl.plans) {
+    body += `<div class="sg-deck__plans">${sl.plans.map(([name, price, per, who, has]) => `
+      <article>
+        <p class="sg-deck__pname">${esc(name)}</p>
+        <p class="sg-deck__price">${esc(price)}${per ? `<span>${esc(per)}</span>` : ''}</p>
+        <p class="sg-deck__pwho">${esc(who)}</p>
+        <ul>${has.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>
+      </article>`).join('')}</div>
+      <div class="sg-deck__cta">
+        <p class="sg-deck__ctah">${esc(sl.cta.head)}</p>
+        <p class="sg-deck__ctab">${esc(sl.cta.body)}</p>
+        <p class="sg-deck__ctaw">${esc(sl.cta.where)}</p>
+      </div>`;
   }
-  if (sl.live === 'boundary') body += deckBoundary();
+
   if (sl.close) body += `<p class="sg-deck__close">${esc(sl.close)}</p>`;
 
   return `
@@ -3861,7 +3942,7 @@ function deckSlide(sl) {
         <span class="sg-deck__kicker">${esc(sl.kicker)}</span>
       </header>
       <h4 class="sg-deck__title">${esc(sl.title)}</h4>
-      <p class="sg-deck__sub">${esc(sl.sub)}</p>
+      ${sl.sub ? `<p class="sg-deck__sub">${esc(sl.sub)}</p>` : ''}
       ${body}
     </article>`;
 }
@@ -3870,20 +3951,18 @@ function deckSlide(sl) {
  * The deck, drawn from the slides above and whatever /deck has answered with.
  *
  * Drawn before the figures arrive and again after, so a slow answer shows a
- * deck missing its numbers rather than an empty panel. Nothing here waits.
+ * deck missing one small line rather than an empty panel. Nothing here waits.
  */
 function renderDeck() {
   const el = document.getElementById('sg-deck');
   if (!el) return;
-  const when = deckFacts
-    ? `Figures read ${new Date(deckFacts.generatedAt).toLocaleString()}, live from the product`
-    : 'Reading the figures\u2026';
   el.innerHTML = `
     <section class="sg-deck">
       <h3 class="sg-deck__h">The presentation</h3>
-      <p class="sg-deck__s">Walked through in the meeting and left behind after it. Every
-        number below is counted from the running product when this page loads \u2014 nothing
-        here is typed in, so nothing here goes stale. <em>${esc(when)}</em></p>
+      <p class="sg-deck__s">Six slides, written to be read by a clinic owner with nobody there to
+        explain them. Send it after the call, or instead of one. The figures on slide 2 are counted
+        from the running product each time this page loads, so the deck cannot claim more than
+        exists.</p>
       ${DECK.map(deckSlide).join('')}
     </section>`;
 }

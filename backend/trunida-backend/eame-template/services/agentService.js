@@ -916,10 +916,28 @@ export async function rebindWatchers(catalogue) {
     }
   }
 
+  /*
+   * And any watcher that moved but has not looked since.
+   *
+   * The rule is the same one, stated over the record rather than over this
+   * run: a watcher rebound after its last run has not yet asked the question
+   * it is now asking. It catches the case the loop above cannot — a rebind
+   * that happened before this clearing existed, or one whose run then failed
+   * — and it settles by itself, because a run puts lastRunAt past reboundAt.
+   */
+  const waiting = live.filter((a) => a.reboundAt && a.lastRunAt
+    && new Date(a.reboundAt).getTime() > new Date(a.lastRunAt).getTime());
+  for (const a of waiting) {
+    await agentsCollection().updateOne({ _id: a._id }, { $set: { lastRunAt: null } }).catch(() => {});
+  }
+
   if (rebound.length) {
     console.log(`[agents] followed the data: ${rebound.map((r) => r.watcherId).join(', ')}`);
   }
-  return { rebound };
+  if (waiting.length) {
+    console.log(`[agents] due again after moving: ${waiting.map((a) => a.watcherId).join(', ')}`);
+  }
+  return { rebound, due: waiting.map((a) => a.watcherId) };
 }
 
 /** What this application has already been offered, so it is offered once. */

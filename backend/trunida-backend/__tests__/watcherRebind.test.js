@@ -95,6 +95,14 @@ describe('what moving one costs', () => {
     expect(rebind).toContain('lastRunAt: null');
   });
 
+  it('catches one that moved earlier and has still not looked', () => {
+    // Stated over the record rather than over this run, so a rebind that
+    // happened before the clearing existed -- or one whose run then failed --
+    // is still picked up. It settles by itself: a run puts lastRunAt past
+    // reboundAt.
+    expect(rebind).toContain('new Date(a.reboundAt).getTime() > new Date(a.lastRunAt).getTime()');
+  });
+
   it('creates nothing, deletes nothing, and switches nothing on', () => {
     expect(rebind).not.toContain('createAgent');
     expect(rebind).not.toContain('deleteAgent');

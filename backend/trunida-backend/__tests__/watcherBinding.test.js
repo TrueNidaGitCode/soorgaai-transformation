@@ -108,3 +108,87 @@ describe('choosing the dataset', () => {
     if (row.ready) expect(row.using).toBe('Package Sales and Balances');
   });
 });
+
+/**
+ * A CRM is not a spreadsheet, and the catalogue did not speak its language.
+ *
+ * ── Measured on a live Zoho account, not imagined ──────────────────────────
+ *
+ * Nine modules connected: Leads, Contacts, Accounts, Deals, Tasks, Meetings,
+ * Calls, Stage History, Notes. A real appointment sat in Meetings with
+ * Appointment_Status = "No Show" against Who_Id = "Rahul Sharma".
+ *
+ * Thirty-two of thirty-six watchers reported ready, and almost every one had
+ * bound to Leads — the widest module, first in the list — because nothing in
+ * these patterns knew the words a CRM uses. What that produced:
+ *
+ *   No Show          → "First_Name in Leads booked but marked absent"
+ *   Overdue Invoice  → "rows in Deals past their Created_By and not paid"
+ *   Marked Absent…   → "Enrich_Status__s ... has a Last_Enriched_Time__s"
+ *   Late Delivery    → "orders in Contacts past their Created_By"
+ *
+ * Every one of those runs, attaches real rows, and is about nothing. Created_By
+ * names a person; Enrich_Status__s describes Zoho's own enrichment feature;
+ * and the module actually holding the no-show was never chosen by anything.
+ */
+describe('a CRM’s own words', () => {
+  const meetings = {
+    name: 'Meetings (Zoho CRM)',
+    columns: ['id', 'Event_Title', 'Venue', 'Start_DateTime', 'End_DateTime', 'Owner', 'Who_Id',
+      'Created_By', 'Modified_By', 'Created_Time', 'Modified_Time', 'Participants', 'Check_In_State',
+      'Check_In_Status', 'Last_Activity_Time', 'Record_Status__s', 'Appointment_Status'],
+    internal: ['Record_Status__s'],
+  };
+  const leads = {
+    name: 'Leads (Zoho CRM)',
+    columns: ['id', 'Owner', 'First_Name', 'Last_Name', 'Full_Name', 'Email', 'Phone', 'Lead_Source',
+      'Lead_Status', 'Created_By', 'Modified_By', 'Created_Time', 'Modified_Time',
+      'Last_Activity_Time', 'Enrich_Status__s', 'Last_Enriched_Time__s'],
+    internal: ['Enrich_Status__s', 'Last_Enriched_Time__s'],
+  };
+  const deals = {
+    name: 'Deals (Zoho CRM)',
+    columns: ['id', 'Owner', 'Amount', 'Deal_Name', 'Closing_Date', 'Stage', 'Created_By',
+      'Modified_By', 'Created_Time', 'Modified_Time', 'Last_Activity_Time'],
+  };
+  const all = [leads, deals, meetings];
+  const row = (id) => catalogueFor(all, {}).find((r) => r.id === id);
+
+  it('asks the diary about the no-show, not the lead list', () => {
+    const r = row('no-show');
+    expect(r.ready).toBe(true);
+    expect(r.using).toBe('Meetings (Zoho CRM)');
+    // The person the appointment is WITH, and the status the practice set.
+    expect(r.question).toContain('Who_Id');
+  });
+
+  it('never reads a deadline off the name of whoever created the record', () => {
+    for (const id of ['overdue-invoice', 'late-delivery', 'promise-overdue']) {
+      const r = row(id);
+      expect(r.question).not.toContain('Created_By');
+      expect(r.question).not.toContain('Modified_By');
+    }
+  });
+
+  it('measures a deal against the date a CRM closes it on', () => {
+    const r = row('overdue-invoice');
+    expect(r.ready).toBe(true);
+    expect(r.question).toContain('Closing_Date');
+  });
+
+  it('asks nothing about the source’s own bookkeeping', () => {
+    for (const r of catalogueFor(all, {})) {
+      expect(r.question).not.toContain('Enrich_Status__s');
+      expect(r.question).not.toContain('Last_Enriched_Time__s');
+      expect(r.question).not.toContain('Record_Status__s');
+    }
+  });
+
+  it('keeps the owner when the owner is the only name there', () => {
+    // Weaker than a customer's name, not forbidden: on an engineering
+    // schedule the owner of a task is exactly who the watcher means.
+    const plan = { name: 'Delivery Plan', columns: ['Task_Id', 'Owner', 'Planned_Finish', 'Status'] };
+    const r = catalogueFor([plan], {}).find((x) => x.id === 'unassigned-work');
+    if (r.ready) expect(r.question).toContain('Owner');
+  });
+});

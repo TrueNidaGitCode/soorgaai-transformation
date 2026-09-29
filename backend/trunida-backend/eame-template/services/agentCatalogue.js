@@ -48,7 +48,14 @@ export const ROLES = {
    * "customer" word, and without them every watcher that asks who is
    * accountable was offered to nobody on project data.
    */
-  who:      /student|member|player|customer|client|patient|staff|employee|coach|person|contact|name|supplier|vendor|assign|owner|responsible|engineer/i,
+  /*
+   * A CRM names the person a meeting is WITH differently again: who_id is
+   * Zoho's column for the contact an appointment belongs to, and participants
+   * is the list of people invited. Without them, every watcher asking about
+   * an appointment matched `owner` — the member of staff whose diary it is —
+   * and asked which of the practice's own staff had failed to turn up.
+   */
+  who:      /student|member|player|customer|client|patient|staff|employee|coach|person|contact|name|supplier|vendor|assign|owner|responsible|engineer|who_?id|participant|attendee|invitee/i,
   when:     /date|day|when|time|created|updated|logged|sent|received/i,
   /*
    * `due` is any date work is measured AGAINST, not only a date something is
@@ -61,7 +68,18 @@ export const ROLES = {
    * none of them: overdue, approaching, late delivery, all invisible. The
    * words a planner uses are planned, baseline, target, forecast and finish.
    */
-  due:      /due|deadline|expir|valid|renew|by$|planned|baseline|target|forecast|finish|eta\b|milestone/i,
+  /*
+   * `by$` used to be here on its own, for "complete by" and "pay by". It also
+   * matched Created_By, Modified_By and Check_In_By — three columns naming a
+   * PERSON, present on every record a CRM hands over. On Zoho's Deals, where
+   * no real deadline column matched at all, they were the only candidates, so
+   * Overdue Invoice offered to find "rows past their Created_By".
+   *
+   * So `by` only after a word that makes it a deadline. Closing is here for
+   * the same reason from the other side: Closing_Date is the date a CRM
+   * measures a deal against, and nothing in this pattern reached it.
+   */
+  due:      /due|deadline|expir|valid|renew|(?:complete|finish|submit|respond|repl|pay|deliver|return|confirm|book|clos)[a-z]*[_ ]?by$|clos(?:e|ing)|planned|baseline|target|forecast|finish|eta\b|milestone/i,
   amount:   /amount|total|value|price|cost|fee|rate|paid|balance|outstanding/i,
   status:   /status|state|stage|result|outcome|confirm|approv/i,
   ref:      /(^|[^a-z])(id|no|num|ref|code|invoice|order|ticket)([^a-z]|$)/i,
@@ -69,7 +87,10 @@ export const ROLES = {
   // A unit of scheduled work, whether it is an hour in a diary or a task on a
   // plan. The Schedule watchers hang off this, and without the project words
   // none of them reached a project.
-  slot:     /slot|session|class|booking|appointment|shift|schedule|batch|task|activity|milestone|work ?package|wbs|job|ticket|sprint/i,
+  // meeting/event/visit/consult are what a CRM calls the booked thing. Their
+  // absence is why an appointment diary lost every Schedule watcher to a
+  // lead list that merely happened to have more columns.
+  slot:     /slot|session|class|booking|appointment|meeting|event|visit|consult|shift|schedule|batch|task|activity|milestone|work ?package|wbs|job|ticket|sprint/i,
   doc:      /document|certificate|licence|license|permit|policy|registration|insurance/i,
   reply:    /reply|response|answer|resolved|closed|handled|acknowledg/i,
   /*
@@ -427,7 +448,22 @@ const PREFER = {
    * the customer. A watcher looking for "no show or absent" must not be
    * pointed at one of those.
    */
-  status: { bad: /approval|review|lock|sync|record|convert/i },
+  /*
+   * A state the business set beats a state the software set — and a state
+   * about whether somebody turned up beats both.
+   *
+   * Measured on a real Zoho account: a meeting carried Check_In_State,
+   * Check_In_Status, Record_Status__s and the practice's own
+   * Appointment_Status. All four could play the role, so the column order
+   * Zoho happened to return decided it, and the no-show watcher was pointed
+   * at a check-in flag nobody fills in.
+   */
+  status: {
+    good: /appointment|attend|show|present|absent|arriv/i,
+    // `state` is a status word and also half of every postal address a CRM
+    // holds. Billing_State is not a state anything is in.
+    bad: /approval|review|lock|sync|record|convert|mailing|billing|shipping|address|city|country|province|postal/i,
+  },
   // A count is never the thing that was booked.
   slot: {
     good: /slot|cabin|room|booking|appointment|class|batch|shift/i,
@@ -447,8 +483,19 @@ const PREFER = {
      */
     weak: /date|time|status|state/i,
   },
+  /*
+   * The person the record is ABOUT, not the member of staff who owns it.
+   *
+   * `owner` has to stay eligible — on an engineering schedule the owner of a
+   * task is exactly who the watcher means, and it is often the only name
+   * there. But on an appointment it is the practitioner whose diary it is,
+   * and a no-show watcher pointed at it asks which of the practice's own
+   * staff failed to turn up. So: weaker than a customer's name, still better
+   * than nothing.
+   */
   who: {
-    good: /name/i,
+    good: /name|who_?id|participant|attendee|invitee/i,
+    weak: /owner|assign|responsible|manager/i,
     bad:  /^total|count|num|qty/i,
   },
   due: { good: /due|deadline/i, bad: /^total|count/i },
@@ -536,8 +583,28 @@ export function matchDataset(entry, dataset) {
   // must return "no" rather than throw: this is called in a loop over every
   // entry in the catalogue.
   if (!Array.isArray(entry?.needs)) return null;
-  const using = assignRoles(entry.needs, dataset?.columns || []);
+  const using = assignRoles(entry.needs, businessColumns(dataset));
   return using ? { dataset: dataset.name, using, fit: fitOf(entry, dataset, using) } : null;
+}
+
+/**
+ * The columns a question can be about.
+ *
+ * A source may declare some of its columns to be its own bookkeeping —
+ * Zoho's Enrich_Status__s and Last_Enriched_Time__s, say, which describe the
+ * CRM's data-enrichment feature and nothing about the customer. They are kept
+ * as data, because a row is a row and the owner may want to read them; they
+ * are just never what a watcher is ABOUT. Without this, "marked absent but
+ * attended" offered to compare an enrichment status against an enrichment
+ * timestamp, which is a question about Zoho.
+ *
+ * Declared by the connector rather than pattern-matched here, because which
+ * columns are housekeeping is knowledge the source has and this file cannot
+ * guess without learning one vendor's naming.
+ */
+export function businessColumns(dataset) {
+  const skip = new Set(Array.isArray(dataset?.internal) ? dataset.internal : []);
+  return (dataset?.columns || []).filter((c) => !skip.has(c));
 }
 
 /**
@@ -571,7 +638,7 @@ export function matchPair(entry, datasets) {
   const pool = (datasets || []).filter(Boolean);
 
   const side = (s, d) => {
-    const using = assignRoles(s.needs, d?.columns || []);
+    const using = assignRoles(s.needs, businessColumns(d));
     if (!using) return null;
     let fit = fitOf({ ...entry, area: null }, d, using);
     if (s.prefer && s.prefer.test(String(d.name || ''))) fit += 3;
@@ -620,7 +687,9 @@ function fitOf(entry, dataset, using) {
   }
   // "Appointment Booking Diary" for a Schedule watcher; "Fee Ledger" for Money.
   const areaWords = {
-    Schedule: /appointment|booking|diary|slot|schedule|session|calendar/i,
+    // meeting/event/visit/consult: a CRM's diary is called Meetings, and
+    // without them it lost every Schedule watcher to a lead list.
+    Schedule: /appointment|booking|diary|slot|schedule|session|calendar|meeting|event|visit|consult/i,
     Money: /invoice|payment|fee|ledger|billing|package|sales|account/i,
     People: /attendance|roll|register|staff|student|member|client|patient/i,
     Customers: /enquir|inquir|lead|customer|complaint|ticket/i,

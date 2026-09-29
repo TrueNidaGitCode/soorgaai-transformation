@@ -440,8 +440,26 @@ export async function describeShape(config) {
    */
   const columns = await fieldsFor(config);
   if (columns.length < 2) throw new Error(`Zoho listed no readable fields for ${name}.`);
-  return { name, columns, key: 'id' };
+  return { name, columns, key: 'id', internal: columns.filter((c) => INTERNAL.test(c)) };
 }
+
+/**
+ * Zoho's own bookkeeping, by name.
+ *
+ * Kept as data — the owner can read them — but never what a watcher asks
+ * about. Zoho suffixes system fields with __s, and most of those describe the
+ * record's passage through Zoho: whether it is locked, when its change log
+ * last moved, what its data-enrichment run concluded. A watcher pointed at
+ * them asks a question about the CRM rather than about the business, and two
+ * did: "marked absent but attended" compared Enrich_Status__s against
+ * Last_Enriched_Time__s, and "unconfirmed order" read the same enrichment
+ * status on Contacts.
+ *
+ * Named rather than matched on the suffix alone, because the suffix is not
+ * the tell: Meeting_Venue__s and Reason_For_Loss__s carry the same __s and
+ * hold what a person typed.
+ */
+const INTERNAL = /^(Record_Status|Locked|Change_Log_Time|Converted|Enrich_Status|Last_Enriched_Time|Approval_State|Process_Flow|Unsubscribed_Mode|Unsubscribed_Time|Record_Image|Latitude|Longitude|Mailing_Latitude|Mailing_Longitude|Other_Latitude|Other_Longitude|Billing_Latitude|Billing_Longitude|Shipping_Latitude|Shipping_Longitude)(__s)?$/;
 
 /**
  * Every record in the module, newest change first.

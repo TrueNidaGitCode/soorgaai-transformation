@@ -218,6 +218,7 @@ export async function zohoConnectOne(req, res) {
       name: `${label} (Zoho CRM)`,
       columns: shape.columns,
       key: shape.key,
+      internal: shape.internal,
       from: 'zoho-crm',
     });
 
@@ -297,6 +298,7 @@ export async function zohoFinish(req, res) {
         name: `${m.label} (Zoho CRM)`,
         columns: shape.columns,
         key: shape.key,
+        internal: shape.internal,
         from: 'zoho-crm',
       });
       const made = await createConnector({ kind: 'zoho-crm', datasetName: dataset.name, config, schedule: 'hourly' });
@@ -370,6 +372,7 @@ export async function zohoFinishOne(req, res) {
       name: `${shape.name} (Zoho CRM)`,
       columns: shape.columns,
       key: shape.key,
+      internal: shape.internal,
       from: 'zoho-crm',
     });
 

@@ -205,7 +205,7 @@ export async function loadDefinedDatasets() {
  * the same row on the next sync — without it every sync would look like a
  * new set of people.
  */
-export async function defineDataset({ name, columns, key = '', from = '' }) {
+export async function defineDataset({ name, columns, key = '', from = '', internal = [] }) {
   const clean = [...new Set((columns || []).map(c => String(c || '').trim()).filter(Boolean))]
     .filter(c => c !== '_source');
   if (!name || !clean.length) throw new Error('A dataset needs a name and at least one column.');
@@ -222,6 +222,17 @@ export async function defineDataset({ name, columns, key = '', from = '' }) {
     name: String(name).trim(),
     slug: slugFor(name),
     columns: clean,
+    /*
+     * Columns the source calls its own bookkeeping.
+     *
+     * Kept as data — they are read, stored and shown like any other column —
+     * but a watcher is never ABOUT them. See businessColumns in
+     * agentCatalogue. Held here rather than inferred there, because which
+     * columns are housekeeping is something the source knows and the
+     * catalogue would have to learn one vendor's naming to guess.
+     */
+    internal: [...new Set((internal || []).map(c => String(c || '').trim()).filter(Boolean))]
+      .filter(c => clean.includes(c)),
     key: key && clean.includes(key) ? key : '',
     // Where it came from, so a screen can say so and a later connection to
     // the same place can recognise its own.

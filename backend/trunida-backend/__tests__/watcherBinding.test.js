@@ -245,3 +245,40 @@ describe('sample data and the real thing', () => {
     expect(r.ready).toBe(true);
   });
 });
+
+/**
+ * An address is not a person.
+ *
+ * A CRM's Accounts module carries Billing_Flat_House_No_Building_Apartment_Name.
+ * It matches `name`, so it ranked exactly as well as First_Name did, and with
+ * the modules tied on everything else the choice fell to alphabetical order —
+ * Accounts before Leads. The board read:
+ *
+ *   Billing_Flat_House_No_Building_Apartment_Name in Accounts (Zoho CRM)
+ *   with no Last_Activity_Time in the last 14 days
+ */
+describe('a name-shaped column that is not a name', () => {
+  const accounts = {
+    name: 'Accounts (Zoho CRM)',
+    columns: ['id', 'Account_Name', 'Billing_City', 'Billing_State',
+      'Billing_Flat_House_No_Building_Apartment_Name', 'Last_Activity_Time'],
+    own: 11,
+  };
+
+  it('is never the person a finding is about', () => {
+    const r = catalogueFor([accounts], {}).find((x) => x.id === 'stopped-coming');
+    expect(r.question).not.toContain('Billing_Flat');
+    expect(r.question).toContain('Account_Name');
+  });
+
+  it('loses to a real name in another dataset', () => {
+    const leads = {
+      name: 'Leads (Zoho CRM)',
+      columns: ['id', 'First_Name', 'Lead_Status', 'Last_Activity_Time'],
+      own: 10,
+    };
+    // Accounts sorts first; nothing but the veto separates them.
+    const r = catalogueFor([accounts, leads], {}).find((x) => x.id === 'stopped-coming');
+    expect(r.question).toContain('First_Name');
+  });
+});

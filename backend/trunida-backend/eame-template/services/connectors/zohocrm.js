@@ -440,7 +440,17 @@ export async function describeShape(config) {
    */
   const columns = await fieldsFor(config);
   if (columns.length < 2) throw new Error(`Zoho listed no readable fields for ${name}.`);
-  return { name, columns, key: 'id', internal: columns.filter((c) => INTERNAL.test(c)) };
+  return { name, columns, key: 'id', internal: internalColumns(columns) };
+}
+
+/**
+ * Which of these columns are Zoho's own bookkeeping.
+ *
+ * Exported so a dataset defined before this existed can be brought up to date
+ * without asking the owner to reconnect anything — see loadDefinedDatasets.
+ */
+export function internalColumns(columns = []) {
+  return (columns || []).filter((c) => INTERNAL.test(String(c)));
 }
 
 /**

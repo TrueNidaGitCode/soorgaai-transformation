@@ -190,6 +190,26 @@ export async function loadDefinedDatasets() {
       await col.updateOne({ _id: d._id }, { $set: { slug: slugFor(d.name) } });
       console.warn('[datasets] %s had no slug; set to %s', d.name, slugFor(d.name));
     }
+    /*
+     * And which of their columns the source calls its own bookkeeping.
+     *
+     * Declared at describeShape now, so a dataset defined from here on
+     * carries it. One defined before that does not, and the alternative to
+     * filling it in here is telling the owner to reconnect a CRM that is
+     * working perfectly well — which is the sort of instruction that makes
+     * "no user intervention" a slogan rather than a description.
+     *
+     * The source answers, because it is the only thing that knows.
+     */
+    const noInternal = await col.find({ internal: { $exists: false } }).toArray();
+    for (const d of noInternal) {
+      const kind = KINDS[d.definedBy];
+      if (typeof kind?.internalColumns !== 'function') continue;
+      const internal = kind.internalColumns(d.columns || []);
+      await col.updateOne({ _id: d._id }, { $set: { internal } });
+      if (internal.length) console.log('[datasets] %s: %d columns are %s bookkeeping', d.name, internal.length, d.definedBy);
+    }
+
     defined = await col.find({}).sort({ name: 1 }).toArray();
     return defined.length;
   } catch {

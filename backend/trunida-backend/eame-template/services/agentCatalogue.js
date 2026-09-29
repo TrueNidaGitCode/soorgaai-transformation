@@ -496,7 +496,16 @@ const PREFER = {
   who: {
     good: /name|who_?id|participant|attendee|invitee/i,
     weak: /owner|assign|responsible|manager/i,
-    bad:  /^total|count|num|qty/i,
+    /*
+     * An address is not a person, however many name-shaped words are in it.
+     *
+     * A CRM's Accounts module carries
+     * Billing_Flat_House_No_Building_Apartment_Name, which matches `name` and
+     * so ranked as well as First_Name did. Stopped Coming went to it, and the
+     * board read: "Billing_Flat_House_No_Building_Apartment_Name with no
+     * Last_Activity_Time in the last 14 days".
+     */
+    bad:  /^total|count|num|qty|address|street|house|flat|building|apartment|city|country|postal|zip|state|province|lane|road/i,
   },
   due: { good: /due|deadline/i, bad: /^total|count/i },
   amount: { good: /amount|balance|outstanding|total/i, bad: /count|qty|sessions/i },

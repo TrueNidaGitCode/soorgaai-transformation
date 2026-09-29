@@ -33,7 +33,7 @@ describe('a watcher reuses the plan it was given', () => {
     expect(SVC).toContain("const result = await ask({ question: agent.question, usePlan: agent.plan || null });");
     // And the scheduler carries it through, which is the half that is easy to
     // leave out: the pipeline would accept a plan nobody ever passes.
-    expect(SRV).toContain("startAgentScheduler(({ question, usePlan }) => answer({ question, kind: 'own', usePlan }));");
+    expect(SRV).toContain("({ question, usePlan }) => answer({ question, kind: 'own', usePlan })");
     expect(ANS).toContain('usePlan = null');
   });
 

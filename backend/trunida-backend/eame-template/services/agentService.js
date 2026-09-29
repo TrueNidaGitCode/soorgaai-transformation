@@ -817,6 +817,91 @@ export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = []
   return { started, skipped: started.length ? '' : 'nothing could be started' };
 }
 
+/**
+ * A watcher follows the data, rather than the data it was started on.
+ *
+ * ── What was wrong ─────────────────────────────────────────────────────────
+ *
+ * A watcher's question is written when it is created and never again. That is
+ * right for one somebody typed, and quietly wrong for one this application
+ * started from the catalogue: the question is a BINDING — a dataset and its
+ * columns, chosen from whatever happened to be connected that morning.
+ *
+ * Measured on a live physiotherapy application. Fourteen watchers, all started
+ * on the sample data delivered with it. A Zoho CRM was then connected, nine
+ * modules of real records, a real appointment marked No Show against a real
+ * patient. The No Show watcher went on asking:
+ *
+ *     practitioner_name in Appointment Booking Diary booked but marked absent
+ *
+ * — the sample diary, week after week, while the answer sat in Meetings. The
+ * customer's word for what they expected was "zero user intervention", and
+ * the only way to get it was to delete each watcher and start it again.
+ *
+ * ── What this does, and what it refuses to do ──────────────────────────────
+ *
+ * Only watchers that came from the catalogue, and only where the catalogue
+ * now binds that same entry somewhere better. A hand-written question is the
+ * customer's sentence and is never touched. Nothing is created, deleted,
+ * enabled or disabled here — a watcher somebody switched off stays off.
+ *
+ * The pinned plan goes with the question, because a plan names the datasets
+ * it reads; keeping it would send the new question at the old records.
+ *
+ * And the findings go too. They are evidence about the old question, and
+ * leaving them makes the next run report every one of them as RESOLVED — a
+ * digest announcing that eleven things were fixed overnight, on a morning
+ * when nothing happened at all. Cleared rather than resolved, so the count
+ * starts again from what is true.
+ */
+export function watchersToRebind(live = [], catalogue = []) {
+  const byId = new Map(
+    (catalogue || []).filter((c) => c?.ready && c.question).map((c) => [c.id, c]),
+  );
+  if (!byId.size) return [];
+  return (live || []).filter((a) => {
+    // A question somebody typed is theirs. Only a watcher this application
+    // started from the catalogue is one the catalogue may move.
+    if (!a?.watcherId) return false;
+    const c = byId.get(a.watcherId);
+    return !!c && !!c.question && c.question !== a.question;
+  });
+}
+
+export async function rebindWatchers(catalogue) {
+  if (mongoose.connection.readyState !== 1) return { rebound: [] };
+  const byId = new Map((catalogue || []).filter((c) => c.ready && c.question).map((c) => [c.id, c]));
+  if (!byId.size) return { rebound: [] };
+
+  const live = await agentsCollection().find({ watcherId: { $nin: ['', null] } }).toArray();
+  const rebound = [];
+
+  for (const a of watchersToRebind(live, catalogue)) {
+    const c = byId.get(a.watcherId);
+    try {
+      await agentsCollection().updateOne(
+        { _id: a._id },
+        {
+          $set: { question: c.question, reboundAt: new Date(), boundTo: c.using || '' },
+          // The plan named the old dataset; the findings were about it.
+          $unset: { plan: '' },
+        },
+      );
+      await findingsCollection().deleteMany({ agentId: a._id });
+      rebound.push({ watcherId: a.watcherId, name: a.name, from: a.question, to: c.question });
+      sendSignal('watcher_rebound', { watcherId: a.watcherId, using: c.using || '' });
+    } catch (err) {
+      // One that will not move must not stop the rest.
+      console.warn(`[agents] could not rebind "${a.watcherId}":`, err.message);
+    }
+  }
+
+  if (rebound.length) {
+    console.log(`[agents] followed the data: ${rebound.map((r) => r.watcherId).join(', ')}`);
+  }
+  return { rebound };
+}
+
 /** What this application has already been offered, so it is offered once. */
 async function rememberSeeds(entries) {
   if (!entries.length) return;
@@ -899,7 +984,17 @@ export async function lastLookedAt() {
  * Runs from this application's own process, beside the connector scheduler.
  * Looks every five minutes and runs whatever is due.
  */
-export function startAgentScheduler(ask) {
+/**
+ * `catalogue` is injected for the same reason `ask` is: this file decides
+ * when a watcher runs, and knows nothing about where datasets come from.
+ *
+ * It is read on every tick rather than once, because that is the point —
+ * connecting a CRM at eleven o'clock must reach the watchers without a
+ * restart and without anybody pressing anything. The work is a handful of
+ * regular expressions over a handful of column names, and it writes only
+ * when a binding has actually moved.
+ */
+export function startAgentScheduler(ask, { catalogue = null } = {}) {
   if (timer) return timer;
   const tick = async () => {
     try {
@@ -918,6 +1013,12 @@ export function startAgentScheduler(ask) {
       if (quiet) {
         quiet = false;
         console.log('[agents] somebody is back — watching resumed');
+      }
+
+      // Before anything is due, so a watcher that runs this tick runs the
+      // question that fits today's data rather than yesterday's.
+      if (typeof catalogue === 'function') {
+        await rebindWatchers(catalogue()).catch((err) => console.warn('[agents] rebind skipped:', err.message));
       }
 
       const due = dueAgents(await agentsCollection().find({}).toArray(), Date.now(), { lookedAt });

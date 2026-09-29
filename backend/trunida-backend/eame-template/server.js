@@ -26,7 +26,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startScheduler, restoreOwnFiles, readIndex, loadDefinedDatasets } from './services/connectorService.js';
-import { startAgentScheduler, autoStartWatchers } from './services/agentService.js';
+import { startAgentScheduler, autoStartWatchers, rebindWatchers } from './services/agentService.js';
 import { catalogueFor } from './services/agentCatalogue.js';
 import { activeCategories, categoryLimit } from './services/coverage.js';
 // Cob's reading of which watchers matter here. Read from the same place the
@@ -263,7 +263,12 @@ async function start() {
    * morning briefing built on the simulated rows a new application ships with
    * would be worse than sending nothing.
    */
-  startAgentScheduler(({ question, usePlan }) => answer({ question, kind: 'own', usePlan }));
+  startAgentScheduler(
+    ({ question, usePlan }) => answer({ question, kind: 'own', usePlan }),
+    // Read fresh on every tick, so connecting a source moves the watchers
+    // onto it without a restart and without anybody being asked.
+    { catalogue: () => catalogueFor(readIndex(), agentPlan()) },
+  );
 
   /*
    * And it starts watching without being asked.
@@ -276,6 +281,16 @@ async function start() {
    * Never blocks the boot and never fails it: an application that cannot start
    * its watchers must still serve, so the owner can go and start them by hand.
    */
+  /*
+   * First, the watchers already running follow the data.
+   *
+   * The scheduler does this on every tick, but its first tick is five minutes
+   * away, and an application that has been asking about the wrong dataset for
+   * a week should not spend another five minutes doing it.
+   */
+  rebindWatchers(catalogueFor(readIndex(), agentPlan()))
+    .catch((err) => console.warn('[agents] rebind skipped:', err.message));
+
   autoStartWatchers(catalogueFor(readIndex(), agentPlan()), {
     tz: process.env.APP_TZ || 'UTC',
     categories: agentPlan().categories || [],

@@ -21,12 +21,22 @@
  * through the same keep(), keyed on the call id, so a call that arrives twice
  * is one row.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { readFileSync } from 'fs';
+import axios from 'axios';
 import { callsIn, readCall } from '../eame-template/services/phoneProviders.js';
 import {
-  windowsFor, stamp, hostFor, REGION_IDS, MAX_HISTORY_DAYS,
+  windowsFor, stamp, hostFor, ping, HOSTS, MAX_HISTORY_DAYS,
 } from '../eame-template/services/exotelApi.js';
+
+// Only the two cluster probes are faked. Everything else here is the real
+// parser on a real payload shape.
+vi.mock('axios', () => ({ default: { get: vi.fn() } }));
+
+/** An HTTP refusal shaped the way axios throws one. */
+const refusal = (status) => Object.assign(new Error(String(status)), { response: { status } });
+
+beforeEach(() => { axios.get.mockReset(); });
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
@@ -158,23 +168,119 @@ describe('the date window Exotel insists on', () => {
   });
 });
 
-describe('the region, which is part of the credential', () => {
+/**
+ * The question that used to be on the card, and is not any more.
+ *
+ * Nothing on an Exotel dashboard is labelled "region". The answer is
+ * inferrable only from the address somebody signs in at, which they have no
+ * reason to have noticed — and choosing wrong produced a 404 that reads as a
+ * bad Account SID, sending them off to re-check something that was right.
+ *
+ * So it is not asked. Both are tried, the one that answers is remembered, and
+ * the failure when neither answers says more than either could alone.
+ */
+describe('finding the account without asking which cluster it is on', () => {
+  /** Only this host holds the account; every other answers 404. */
+  const only = (host, { total = 7 } = {}) => {
+    const tried = [];
+    axios.get.mockImplementation(async (url) => {
+      tried.push(new URL(url).host);
+      if (!url.includes(host)) { throw refusal(404); }
+      return { data: { Calls: [], Metadata: { Total: total } } };
+    });
+    return tried;
+  };
+
+  it('finds an account in Singapore', async () => {
+    only('api.exotel.com');
+    const out = await ping({ key: 'k', token: 't', sid: 'acct-sg' });
+    expect(out.host).toBe('api.exotel.com');
+    expect(out.total).toBe(7);
+  });
+
+  it('finds an account in Mumbai, which used to need the right dropdown', async () => {
+    const tried = only('api.in.exotel.com');
+    const out = await ping({ key: 'k', token: 't', sid: 'acct-in' });
+    expect(out.host).toBe('api.in.exotel.com');
+    // It got there by trying, not by being told.
+    expect(tried).toEqual(['api.exotel.com', 'api.in.exotel.com']);
+  });
+
+  it('asks the one that answered first next time', async () => {
+    const tried = only('api.in.exotel.com');
+    await ping({ key: 'k', token: 't', sid: 'acct-remembered' });
+    tried.length = 0;
+    await ping({ key: 'k', token: 't', sid: 'acct-remembered' });
+    // One request, not two: the cluster is worked out once per account.
+    expect(tried).toEqual(['api.in.exotel.com']);
+  });
+
+  it('says the SID is wrong, because both were tried', async () => {
+    /*
+     * The reason this is better than the dropdown it replaced. A 404 from one
+     * cluster means "not here". A 404 from both means the SID really is
+     * wrong, and that is something the message can now state outright rather
+     * than leave somebody guessing between two causes.
+     */
+    axios.get.mockImplementation(async () => { throw refusal(404); });
+    await expect(ping({ key: 'k', token: 't', sid: 'nope' }))
+      .rejects.toThrow(/tried both Singapore and Mumbai/);
+  });
+
+  it('blames the credentials only when every cluster refused them', async () => {
+    axios.get.mockImplementation(async () => { throw refusal(401); });
+    await expect(ping({ key: 'bad', token: 'bad', sid: 'acct' }))
+      .rejects.toThrow(/refused the API key and token/);
+  });
+
+  it('does not blame the credentials when one cluster simply broke', async () => {
+    // 401 from one and a 500 from the other is not a bad token, and must not
+    // send somebody to regenerate one that was fine.
+    let n = 0;
+    axios.get.mockImplementation(async () => { n += 1; throw refusal(n === 1 ? 401 : 500); });
+    await expect(ping({ key: 'k', token: 't', sid: 'acct' }))
+      .rejects.not.toThrow(/refused the API key and token/);
+  });
+
+  it('asks for all three before making any request at all', async () => {
+    axios.get.mockImplementation(async () => { throw refusal(500); });
+    await expect(ping({ key: 'k', token: 't' })).rejects.toThrow(/Account SID/);
+    expect(axios.get).not.toHaveBeenCalled();
+  });
+
   it('knows the two Exotel runs', () => {
+    expect(HOSTS).toEqual(['api.exotel.com', 'api.in.exotel.com']);
+  });
+
+  it('still honours a region on a connection saved before the field went', () => {
     expect(hostFor('sg')).toBe('api.exotel.com');
     expect(hostFor('in')).toBe('api.in.exotel.com');
-    expect(REGION_IDS).toEqual(['sg', 'in']);
-  });
-
-  it('falls back rather than building an address out of nothing', () => {
     expect(hostFor('')).toBe('api.exotel.com');
-    expect(hostFor('nowhere')).toBe('api.exotel.com');
   });
 
-  it('says so when the account is not in the region asked for', () => {
-    // 404 here means the wrong cluster far more often than a wrong SID, and
-    // "no such account" sends somebody to re-check a SID that was right.
+  it('says the SID is wrong only after trying both', async () => {
+    /*
+     * The reason this is better than the dropdown it replaced. A 404 from one
+     * cluster means "not here". A 404 from both means the SID really is
+     * wrong, and that is now something the message can state outright.
+     */
     const api = read('../eame-template/services/exotelApi.js');
-    expect(api).toContain('an account in Mumbai is not reachable in Singapore');
+    expect(api).toContain('tried both Singapore and Mumbai');
+  });
+
+  it('does not blame the credentials when only one cluster refused them', () => {
+    // Every host saying 401 is a credential. One saying 401 and the other
+    // timing out is not, and must not send somebody to regenerate a token.
+    const api = read('../eame-template/services/exotelApi.js');
+    expect(api).toContain("codes.every((c) => c === 401 || c === 403)");
+  });
+
+  it('remembers which one answered, so it is worked out once', () => {
+    const api = read('../eame-template/services/exotelApi.js');
+    expect(api).toContain('found.set(auth.sid, host)');
+    // In memory, not written back: a config the connector silently edits
+    // behind the owner is worse than one extra request after a restart.
+    expect(api).toContain('const found = new Map()');
   });
 });
 

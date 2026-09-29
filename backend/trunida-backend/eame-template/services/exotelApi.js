@@ -33,17 +33,36 @@
 import axios from 'axios';
 
 /**
- * Exotel runs separate clusters and an account lives in exactly one. The
- * wrong one answers 404, which reads as "no such account" and sends somebody
- * to check a SID that was right all along.
+ * Exotel runs separate clusters and an account lives in exactly one.
+ *
+ * This used to be a question on the card, and it was the wrong question to
+ * ask anybody. Nothing on an Exotel dashboard is labelled "region"; the
+ * answer is inferrable only from the address somebody signs in at, which they
+ * have no reason to have noticed. Choose wrong and Exotel answers 404, which
+ * reads as "no such account" and sends them off to re-check a SID that was
+ * right all along.
+ *
+ * So it is not asked. Both are tried, the one that answers is remembered, and
+ * the failure when neither answers is a better sentence than either could
+ * have given on its own: tried in both, so the SID really is wrong.
  */
 export const REGIONS = [
-  { id: 'sg', host: 'api.exotel.com', label: 'Singapore (api.exotel.com)' },
-  { id: 'in', host: 'api.in.exotel.com', label: 'Mumbai (api.in.exotel.com)' },
+  { id: 'sg', host: 'api.exotel.com', label: 'Singapore' },
+  { id: 'in', host: 'api.in.exotel.com', label: 'Mumbai' },
 ];
 
-export const REGION_IDS = REGIONS.map((r) => r.id);
+export const HOSTS = REGIONS.map((r) => r.host);
 
+/**
+ * Which cluster answered for an account, so it is worked out once.
+ *
+ * In memory rather than written back to the connection: a restart costs one
+ * extra request on the next sync, and a config the connector silently edits
+ * behind the owner is worse than that.
+ */
+const found = new Map();
+
+/** Only for a connection made before the region stopped being asked about. */
 export const hostFor = (region) =>
   (REGIONS.find((r) => r.id === String(region || '').trim()) || REGIONS[0]).host;
 
@@ -157,15 +176,15 @@ async function page(host, auth, uri, params, timeout) {
  * of the application holds, and it is the same function the webhook uses.
  */
 export async function fetchCalls({
-  key, token, sid, region = 'sg', days = 30, maxRows = 5000,
+  key, token, sid, days = 30, maxRows = 5000,
   timeout = Number(process.env.EXOTEL_TIMEOUT_MS || 30000),
-  now = new Date(),
+  now = new Date(), hosts = HOSTS,
 } = {}) {
-  if (!key || !token || !sid) {
-    throw new Error('Exotel needs the API key, the API token and the Account SID.');
-  }
-  const host = hostFor(region);
-  const auth = { key: String(key).trim(), token: String(token).trim(), sid: String(sid).trim() };
+  const auth = credentials({ key, token, sid });
+  // Which cluster, worked out rather than asked — and on the first sync this
+  // is also the request that proves the credentials, so a bad one fails here
+  // with a sentence instead of part way through paging.
+  const { host } = await ping({ key, token, sid, timeout, now, hosts });
 
   const out = [];
   let pages = 0;
@@ -213,21 +232,65 @@ export async function fetchCalls({
  * pulling instead of waiting is that the owner finds out now, on the card,
  * rather than tomorrow when nothing has arrived.
  */
-export async function ping({ key, token, sid, region = 'sg', timeout = 15000, now = new Date() } = {}) {
-  if (!key || !token || !sid) {
-    throw new Error('Exotel needs the API key, the API token and the Account SID.');
-  }
-  const host = hostFor(region);
+export async function ping({ key, token, sid, timeout = 15000, now = new Date(), hosts = HOSTS } = {}) {
+  const auth = credentials({ key, token, sid });
   const to = new Date(now);
   const from = new Date(to.getTime() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
-  try {
-    const got = await page(host, { key: String(key).trim(), token: String(token).trim(), sid: String(sid).trim() }, '', {
-      DateCreated: `gte:${stamp(from)};lte:${stamp(to)}`,
-      PageSize: 1,
-      SortBy: 'DateCreated:desc',
-    }, timeout);
-    return { ok: true, total: got.total, host };
-  } catch (err) {
-    throw explain(err, sid);
+  const params = {
+    DateCreated: `gte:${stamp(from)};lte:${stamp(to)}`,
+    PageSize: 1,
+    SortBy: 'DateCreated:desc',
+  };
+
+  const known = found.get(auth.sid);
+  const order = known ? [known, ...hosts.filter((h) => h !== known)] : hosts;
+
+  const failures = [];
+  for (const host of order) {
+    try {
+      const got = await page(host, auth, '', params, timeout);
+      found.set(auth.sid, host);
+      return { ok: true, total: got.total, host };
+    } catch (err) {
+      failures.push({ host, status: err?.response?.status, err });
+    }
   }
+  throw whyNone(failures, auth.sid);
+}
+
+function credentials({ key, token, sid }) {
+  if (!key || !token || !sid) {
+    throw new Error('Exotel needs the API key, the API token and the Account SID. '
+      + 'All three are on one page: Settings, then API Settings, in your Exotel dashboard.');
+  }
+  return { key: String(key).trim(), token: String(token).trim(), sid: String(sid).trim() };
+}
+
+/**
+ * What to say when no cluster answered.
+ *
+ * Better than any single attempt could manage, which is the point of not
+ * asking. A 404 from one cluster means "not here"; a 404 from both means the
+ * SID is wrong, and that is now a thing this can state rather than hint at.
+ */
+function whyNone(failures, sid) {
+  const codes = failures.map((f) => f.status);
+  if (codes.every((c) => c === 401 || c === 403)) {
+    return new Error('Exotel refused the API key and token. Settings, then API Settings, in your '
+      + 'Exotel dashboard — and they are not the same as the sign-in password.');
+  }
+  if (codes.every((c) => c === 404 || c === 401 || c === 403)) {
+    return new Error(`Exotel has no account "${sid}" — tried both Singapore and Mumbai. `
+      + 'The Account SID is on the API Settings page, beside the key and token.');
+  }
+  /*
+   * Mixed, so something other than the credentials is going on.
+   *
+   * The interesting failure is reported, not the first one. A 401 from the
+   * cluster that does not hold the account and a timeout from the one that
+   * does is a timeout — and reporting the 401 because it happened to come
+   * first sends somebody to regenerate a token that was never the problem.
+   */
+  const real = failures.find((f) => ![401, 403, 404].includes(f.status)) || failures[0];
+  return explain(real.err, sid);
 }

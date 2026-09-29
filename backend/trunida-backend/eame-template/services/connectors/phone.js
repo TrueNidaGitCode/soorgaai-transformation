@@ -44,17 +44,19 @@ import mongoose from 'mongoose';
 import { callsIn, PROVIDERS, PROVIDER_IDS } from '../phoneProviders.js';
 import { transcribe, canTranscribe } from '../transcribeService.js';
 import { readSignals, SIGNAL_FIELDS } from '../callSignalService.js';
-import { fetchCalls, ping, REGIONS, REGION_IDS, MAX_HISTORY_DAYS } from '../exotelApi.js';
+import { fetchCalls, ping, MAX_HISTORY_DAYS } from '../exotelApi.js';
 import { generate } from '../llmService.js';
 
 export const kind = 'phone';
 export const label = 'Your phone system';
-export const help = 'Calls from your cloud telephony service, arriving as they end. '
-  + 'Choose your provider, paste the credentials that let this application download a '
-  + 'recording, then put the webhook address shown here into your provider\'s call-end or '
-  + 'recording callback. Switch the "this call is being recorded" announcement on in your '
-  + 'provider account before you start: that announcement is how a caller consents, and it '
-  + 'cannot be set from here.';
+export const help = 'Calls from your cloud telephony service. '
+  + 'On Exotel, paste the API key, token and Account SID from Settings → API Settings and '
+  + 'press Test — your calls are read from there, last month included, with nothing to set '
+  + 'up in Exotel. On any other service, put the webhook address shown here into the '
+  + 'call-end or recording callback and calls arrive as they finish. '
+  + 'Switch the "this call is being recorded" announcement on in your provider account '
+  + 'before you start: that announcement is how a caller consents, and it cannot be set '
+  + 'from here.';
 
 export const fields = [
   { name: 'provider', label: 'Which service', options: PROVIDER_IDS,
@@ -66,23 +68,39 @@ export const fields = [
   { name: 'transcribe', label: 'Read the recordings', options: ['yes', 'no'],
     hint: 'Turning this off keeps who rang and when, and skips the cost of listening.' },
   /*
-   * The three that turn Exotel from a letterbox into a source.
+   * The one that turns Exotel from a letterbox into a source.
+   *
+   * The key and token above were already here for downloading a recording;
+   * this is the third thing Exotel's API wants, and with all three the calls
+   * are FETCHED — history included, with nothing to configure in Exotel — so
+   * the webhook becomes the thing that makes it immediate rather than the
+   * thing that makes it work at all. See services/exotelApi.js.
    *
    * Optional, because every other provider here is webhook-only and a
-   * required field somebody cannot fill is a card they cannot save. Filled,
-   * the calls are FETCHED — history included, with nothing to configure in
-   * Exotel — and the webhook becomes the thing that makes it immediate
-   * rather than the thing that makes it work at all. See services/exotelApi.js.
+   * required field somebody cannot fill is a card they cannot save.
    */
   { name: 'accountSid', label: 'Account SID', required: false,
-    hint: 'Exotel only, and the reason it can read your call history without a webhook. '
-      + 'API Settings in your Exotel dashboard, beside the key and token above.' },
-  { name: 'region', label: 'Exotel region', options: REGION_IDS, required: false,
-    hint: REGIONS.map((r) => `${r.id} = ${r.label}`).join(' · ')
-      + '. An account in one is answered "no such account" by the other.' },
-  { name: 'history', label: 'How far back to read', required: false, placeholder: '30',
-    hint: `Days of call history to fetch on Exotel. Up to ${MAX_HISTORY_DAYS}, which is all Exotel keeps.` },
+    hint: 'Exotel only. Fill this in and your calls are read straight from Exotel, history '
+      + 'and all, with nothing to set up there. It sits beside the key and token on the '
+      + 'same page.' },
 ];
+
+/**
+ * Two things this deliberately does not ask.
+ *
+ * WHICH CLUSTER. Nothing on an Exotel dashboard is labelled "region", so it
+ * was a question with no findable answer, and getting it wrong produced a 404
+ * that reads as a bad Account SID. Both are tried and the one that answers is
+ * remembered — see exotelApi.js.
+ *
+ * HOW FAR BACK. A number of days is a decision nobody can make before they
+ * have seen anything, and every answer but the first is a re-sync. A month is
+ * what a business has an opinion about, and it is one request.
+ *
+ * Both are still read from the config where an older connection set them, so
+ * nothing already saved changes behaviour.
+ */
+const HISTORY_DAYS = 30;
 
 /** Whether this connection can fetch, or only receive. */
 export function canPull(config) {
@@ -94,7 +112,7 @@ export function canPull(config) {
 
 const historyDays = (config) => {
   const n = Number(String(config.history || '').trim());
-  return Number.isFinite(n) && n > 0 ? Math.min(n, MAX_HISTORY_DAYS) : 30;
+  return Number.isFinite(n) && n > 0 ? Math.min(n, MAX_HISTORY_DAYS) : HISTORY_DAYS;
 };
 
 /**
@@ -152,8 +170,7 @@ export async function test(config) {
    */
   if (canPull(config)) {
     const seen = await ping({
-      key: config.authUser, token: config.authToken,
-      sid: config.accountSid, region: config.region,
+      key: config.authUser, token: config.authToken, sid: config.accountSid,
     });
     return {
       ok: true,
@@ -319,7 +336,7 @@ export async function pull(config, { maxRows = 50000 } = {}) {
     try {
       const got = await fetchCalls({
         key: config.authUser, token: config.authToken,
-        sid: config.accountSid, region: config.region,
+        sid: config.accountSid,
         days: historyDays(config),
       });
       /*

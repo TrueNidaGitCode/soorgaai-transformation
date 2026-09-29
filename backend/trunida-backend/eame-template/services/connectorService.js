@@ -45,6 +45,7 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import { sendSignal } from './tenantSignals.js';
+import { wakeWatchersFor } from './agentService.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -554,6 +555,20 @@ export async function landRows({
   } else {
     result = mergeRows(await readSourceRows(dataset, src), incoming, keyIndexes);
   }
+  /*
+   * What the dataset now amounts to, in sixteen characters.
+   *
+   * Landing rows is not news; landing DIFFERENT rows is. A connection reads
+   * its source every hour and almost always finds exactly what it found last
+   * time, and everything downstream of a sync — waking watchers above all —
+   * should cost nothing on those. Taken over the rows as landed rather than
+   * as pulled, so a reordering upstream that lands identically counts as no
+   * change.
+   */
+  const fingerprint = crypto.createHash('sha1')
+    .update(result.rows.map((r) => r.join('')).sort().join(''))
+    .digest('hex').slice(0, 16);
+
   const file = await writeSourceRows(dataset, src, result.rows);
   const seeded = await reseed(dataset.name, file);
 
@@ -583,7 +598,7 @@ export async function landRows({
   // Svarg hears that rows arrived -- the dataset, the kind of source and the
   // count -- and nothing of the rows.
   sendSignal('import', { datasetName: dataset.name, source: src, rows: incoming.length });
-  return { rows: incoming.length, added: result.added, updated: result.updated, unchanged: result.unchanged, missing: complete ? result.missing.length : 0, moved, key, seeded, file: entry.file };
+  return { rows: incoming.length, added: result.added, updated: result.updated, unchanged: result.unchanged, missing: complete ? result.missing.length : 0, moved, key, seeded, file: entry.file, fingerprint };
 }
 
 /**
@@ -950,7 +965,25 @@ export async function syncConnector(id, { by = 'owner' } = {}) {
     const rows = mapOntoColumns(dataset, objects, doc.mapping || {});
     // A pull is the whole source: this source's rows are exactly these now.
     const landed = await landRows({ dataset, rows, source: doc.kind, by, detail: kind.describe ? kind.describe(openConfig(kind, doc.config)) : '', origin: kind.label, mode: 'replace', complete: true, allowEmpty: true });
-    await connectorsCollection().updateOne({ _id: doc._id }, { $set: { status: 'connected', lastSyncAt: new Date(), lastRows: landed.rows } });
+
+    /*
+     * And if the records actually moved, the watchers reading them look again.
+     *
+     * Syncing keeps the Data page honest. It does not keep the FRONT page
+     * honest, and the front page is the one the owner opens: findings are a
+     * snapshot taken the last time a watcher ran, and a watcher that has run
+     * today does not run again until tomorrow morning. Empty a module in the
+     * CRM and the two screens disagree for a day — one saying the records are
+     * gone, the other still naming them.
+     *
+     * Compared rather than assumed, because this is the hourly path: nearly
+     * every sync lands what the last one landed and must cost nothing.
+     * wakeWatchersFor only makes them due — the schedule, the owner's hour
+     * and the once-an-hour floor all still apply.
+     */
+    const changed = landed.fingerprint && landed.fingerprint !== doc.fingerprint;
+    await connectorsCollection().updateOne({ _id: doc._id }, { $set: { status: 'connected', lastSyncAt: new Date(), lastRows: landed.rows, fingerprint: landed.fingerprint || '' } });
+    if (changed) await wakeWatchersFor(dataset.name).catch(() => {});
     return landed;
   } catch (err) {
     await connectorsCollection().updateOne({ _id: doc._id }, { $set: { status: 'error', lastError: String(err.message || err).slice(0, 500) } }).catch(() => {});

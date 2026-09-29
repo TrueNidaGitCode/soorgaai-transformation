@@ -525,6 +525,9 @@ export async function startFromCatalogueHandler(req, res) {
       // which watcher it came from, without either asking a model.
       watcherId: entry.id,
       severity: severityFor(entry.id),
+      // The dataset it was matched to, so a change in those records can find
+      // its way back to this watcher.
+      boundTo: match.dataset || '',
     });
     // Which watcher, never what it watches.
     sendSignal('watcher_started', { watcherId: entry.id });

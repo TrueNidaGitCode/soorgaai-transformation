@@ -468,6 +468,15 @@ export async function createAgent({
   // hand-written watcher has no catalogue entry and is medium, which is the
   // honest answer for a question nobody has graded.
   watcherId = '', severity = 'medium',
+  /*
+   * Which dataset the catalogue matched this to.
+   *
+   * Set here as well as on a rebind, because a watcher started when the
+   * records were already the right ones is never rebound and so never gained
+   * one — and without it a change in those records cannot find its way back
+   * to the watcher reading them. See wakeWatchersFor().
+   */
+  boundTo = '',
 }) {
   const clean = String(name || '').trim();
   if (!clean) throw new Error('An agent needs a name.');
@@ -482,6 +491,7 @@ export async function createAgent({
     atHour: Number.isInteger(atHour) ? Math.min(Math.max(0, atHour), 23) : 7,
     tz: String(tz || 'UTC').slice(0, 64),
     watcherId: String(watcherId || '').slice(0, 64),
+    boundTo: String(boundTo || '').slice(0, 120),
     severity: SEVERITY_RANK[severity] === undefined ? 'medium' : severity,
     // No condition means "tell me whenever there is anything at all", which is
     // the rule somebody means when they do not state one.
@@ -865,6 +875,7 @@ export async function autoStartWatchers(catalogue, { tz = 'UTC', categories = []
         condition: c.condition || null,
         watcherId: c.id,
         severity: c.severity || 'medium',
+        boundTo: c.using || '',
       });
       started.push(c.id);
       sendSignal('watcher_started', { watcherId: c.id });
@@ -1010,6 +1021,81 @@ export async function rebindWatchers(catalogue) {
     console.log(`[agents] due again after moving: ${waiting.map((a) => a.watcherId).join(', ')}`);
   }
   return { rebound, due: waiting.map((a) => a.watcherId) };
+}
+
+/**
+ * The soonest a change in the records may wake a watcher that has already run
+ * today. One hour.
+ *
+ * A watcher on a daily schedule costs one model call a day, and that is the
+ * number the plan, the spend cap and the owner's inbox are all sized for.
+ * Waking on change is worth real money, so it is bounded: a source somebody
+ * is editing all afternoon wakes its watchers once an hour, not once a
+ * keystroke. In steady state it costs nothing at all, because a source that
+ * has not changed wakes nothing.
+ */
+export const WAKE_FLOOR_MS = 60 * 60 * 1000;
+
+/**
+ * Which watchers read a dataset that has just changed. Pure.
+ *
+ * ── Why this exists ────────────────────────────────────────────────────────
+ *
+ * A finding is a claim about records. When the records change the claim is
+ * not wrong — it is unverified, which is worse, because the board goes on
+ * stating it in the present tense.
+ *
+ * Measured on the live physiotherapy application. Nine Zoho modules were
+ * connected and the owner then deleted the sample records out of the CRM.
+ * The Data page caught up within seconds and was correct. The front page was
+ * not: eighteen findings, seventeen of them naming leads, deals and tasks
+ * that no longer existed anywhere — "Promise Overdue: Kris Marrier (Sample)"
+ * about a contact deleted an hour earlier. Every watcher had already run that
+ * morning, so the record said the question had been asked today and the next
+ * look was seven o'clock tomorrow. The owner's words were "the home page
+ * still shows old data, is it possible to run it quickly".
+ *
+ * There is no quickly. There is only a watcher that knows its evidence moved.
+ *
+ * ── What this refuses to do ────────────────────────────────────────────────
+ *
+ * It does not decide which findings are stale. A finding's key is whatever
+ * the pipeline called the thing — a name here, a record id there — and
+ * guessing whether that row is still present would quietly resolve findings
+ * that are still true. Instead the watcher looks again, in code, through the
+ * pipeline that counted them in the first place, and diffFindings resolves
+ * what has genuinely gone. Slower by one tick, and right.
+ *
+ * It also does not overrule the hour the owner chose. This makes a watcher
+ * DUE; dueAgents still decides, so a change at three in the morning is picked
+ * up at seven with everything else.
+ */
+export function watchersToWake(live = [], datasetName = '', now = Date.now()) {
+  const name = String(datasetName || '').trim();
+  if (!name) return [];
+  return (live || []).filter((a) => {
+    if (!a || a.enabled === false) return false;
+    if (a.status === 'degraded' || a.status === 'paused') return false;
+    if (String(a.boundTo || '') !== name) return false;
+    // Never run, or already waiting: it is due without any help from here.
+    if (!a.lastRunAt) return false;
+    return now - new Date(a.lastRunAt).getTime() >= WAKE_FLOOR_MS;
+  });
+}
+
+/** The records behind these watchers moved, so they are due again. */
+export async function wakeWatchersFor(datasetName, { now = Date.now() } = {}) {
+  if (mongoose.connection.readyState !== 1) return { woken: [] };
+  const live = await agentsCollection()
+    .find({ boundTo: String(datasetName || '') }).toArray().catch(() => []);
+  const wake = watchersToWake(live, datasetName, now);
+  for (const a of wake) {
+    await agentsCollection().updateOne({ _id: a._id }, { $set: { lastRunAt: null } }).catch(() => {});
+  }
+  if (wake.length) {
+    console.log(`[agents] ${datasetName} changed — looking again: ${wake.map((a) => a.watcherId || a.name).join(', ')}`);
+  }
+  return { woken: wake.map((a) => a.watcherId || a.name) };
 }
 
 /** What this application has already been offered, so it is offered once. */

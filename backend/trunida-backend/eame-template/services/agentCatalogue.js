@@ -494,7 +494,18 @@ const PREFER = {
    * than nothing.
    */
   who: {
-    good: /name|who_?id|participant|attendee|invitee/i,
+    /*
+     * A person's name, not a pointer to one.
+     *
+     * who_id and participants are eligible — on a CRM's Meetings they are the
+     * only columns naming the person an appointment is with — but they are
+     * references, and a finding that names somebody reads better than one
+     * that cites a record. Left unranked rather than good, so they still win
+     * where nothing better exists and lose to First_Name where it does:
+     * Stopped Coming was going to Tasks on a Who_Id while Leads sat there
+     * with a name.
+     */
+    good: /name/i,
     weak: /owner|assign|responsible|manager/i,
     /*
      * An address is not a person, however many name-shaped words are in it.
@@ -775,7 +786,21 @@ export function catalogueFor(datasets, plan = {}) {
     } else {
       for (const d of datasets || []) {
         const m = matchDataset(entry, d);
-        if (m && (!match || m.fit > match.fit)) match = m;
+        if (!m) continue;
+        /*
+         * Fit first; then, between two that answer equally well, the one
+         * holding more of the business's records.
+         *
+         * Nine CRM modules are structurally alike, so ties are the normal
+         * case rather than the edge one, and "keep the earlier dataset" then
+         * means alphabetical order: Stopped Coming went to Calls (two rows)
+         * over Leads (ten), because C sorts before L. More records is not
+         * proof of a better answer, but it is a better guess than the
+         * alphabet, and it keeps a one-source application unchanged.
+         */
+        if (!match || m.fit > match.fit || (m.fit === match.fit && (Number(d.own) || 0) > (match.own || 0))) {
+          match = { ...m, own: Number(d.own) || 0 };
+        }
       }
     }
     return {

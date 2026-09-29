@@ -19,7 +19,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { columnsFor, matchDataset, catalogueFor, entryFor } from '../eame-template/services/agentCatalogue.js';
+import { columnsFor, matchDataset, catalogueFor, entryFor, entryFor } from '../eame-template/services/agentCatalogue.js';
 
 /** The real columns Cob generated for the clinic's package sheet. */
 const packages = {
@@ -280,5 +280,38 @@ describe('a name-shaped column that is not a name', () => {
     // Accounts sorts first; nothing but the veto separates them.
     const r = catalogueFor([accounts, leads], {}).find((x) => x.id === 'stopped-coming');
     expect(r.question).toContain('First_Name');
+  });
+});
+
+/**
+ * A watcher must name the columns it bound.
+ *
+ * ── Measured on a live CRM ─────────────────────────────────────────────────
+ *
+ * No Show asked "{who} in {dataset} booked but marked absent". It requires a
+ * status column in order to match a dataset at all — and then never told the
+ * pipeline which one. Against Meetings (Zoho CRM), where one row said
+ * Appointment_Status = "No Show", it ran clean, planned nothing, read nothing
+ * and reported nothing.
+ *
+ * That is the worst failure this product has: a watcher that is green, a
+ * board that is empty, and a business that reads the silence as good news.
+ */
+describe('a watcher says where to look', () => {
+  it('names the status it bound, because the absence is written there', () => {
+    const e = entryFor('no-show');
+    expect(e.needs).toContain('status');
+    expect(e.question).toContain('{status}');
+  });
+
+  it('puts the real column into the question it will ask', () => {
+    const meetings = {
+      name: 'Meetings (Zoho CRM)',
+      columns: ['id', 'Event_Title', 'Start_DateTime', 'Owner', 'Who_Id', 'Appointment_Status'],
+      own: 10,
+    };
+    const r = catalogueFor([meetings], {}).find((x) => x.id === 'no-show');
+    expect(r.question).toContain('Appointment_Status');
+    expect(r.question).toContain('Who_Id');
   });
 });

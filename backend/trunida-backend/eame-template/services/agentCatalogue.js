@@ -207,9 +207,24 @@ export const CATALOGUE = [
   { id: 'over-capacity', area: 'Schedule', name: 'Over Capacity',
     says: 'More booked than there is room for',
     needs: ['slot', 'who'], question: '{slot} in {dataset} with more {who} than places' },
+  /*
+   * The status column is named, because it is the whole question.
+   *
+   * This asked "{who} in {dataset} booked but marked absent" — it bound a
+   * status column in order to match at all, and then never told the pipeline
+   * which one. Measured on a live CRM: it ran clean against Meetings, where
+   * one row said Appointment_Status = "No Show", planned nothing, read
+   * nothing and reported nothing. A watcher that cannot say where the absence
+   * is written cannot find it, and the customer sees a working watcher with
+   * an empty board — the failure that looks exactly like good news.
+   *
+   * Phrased like no-show-then-contact, which names its status column and does
+   * find these.
+   */
   { id: 'no-show', area: 'Schedule', name: 'No Show',
     says: 'Booked and did not arrive',
-    needs: ['slot', 'who', 'status'], question: '{who} in {dataset} booked but marked absent' },
+    needs: ['slot', 'who', 'status'],
+    question: '{who} in {dataset} whose {slot} was booked and whose {status} says no show, absent or did not attend' },
   { id: 'unstaffed-session', area: 'Schedule', name: 'Unstaffed Session',
     says: 'Scheduled with nobody assigned',
     needs: ['slot', 'who'], question: '{slot} in {dataset} with no {who} assigned' },

@@ -271,6 +271,16 @@ async function start() {
   );
 
   /*
+   * The watchers already running follow the data.
+   *
+   * The scheduler does this on every tick too, but its first tick is five
+   * minutes away, and an application that has been asking about the wrong
+   * dataset for a week should not spend another five minutes doing it.
+   */
+  rebindWatchers(catalogueFor(readIndex(), agentPlan()))
+    .catch((err) => console.warn('[agents] rebind skipped:', err.message));
+
+  /*
    * And it starts watching without being asked.
    *
    * The watchers Cob named for this business, limited to the ones whose data
@@ -281,16 +291,6 @@ async function start() {
    * Never blocks the boot and never fails it: an application that cannot start
    * its watchers must still serve, so the owner can go and start them by hand.
    */
-  /*
-   * First, the watchers already running follow the data.
-   *
-   * The scheduler does this on every tick, but its first tick is five minutes
-   * away, and an application that has been asking about the wrong dataset for
-   * a week should not spend another five minutes doing it.
-   */
-  rebindWatchers(catalogueFor(readIndex(), agentPlan()))
-    .catch((err) => console.warn('[agents] rebind skipped:', err.message));
-
   autoStartWatchers(catalogueFor(readIndex(), agentPlan()), {
     tz: process.env.APP_TZ || 'UTC',
     categories: agentPlan().categories || [],

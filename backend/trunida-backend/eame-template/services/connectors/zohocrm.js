@@ -114,10 +114,27 @@ export async function fieldsFor(config) {
   } catch (err) {
     throw new Error(reason(err, config));
   }
+  /*
+   * Fifty is Zoho's ceiling, so something has to be cut on a wide module —
+   * and it must never be the field the customer added themselves.
+   *
+   * Leads and Contacts both arrive with more than fifty, and taking them in
+   * the order Zoho lists them cut from the end, which is where a custom
+   * field sits. A CRM was connected in order to read one custom field, and
+   * that was the field dropped, in favour of Latitude, Longitude, a record
+   * image and six internal status flags.
+   *
+   * So: the customer's own fields first, Zoho's housekeeping last, and
+   * everything else in between in the order Zoho gave it.
+   */
+  const HOUSEKEEPING = /latitude|longitude|record_image|unsubscribed|skype|enrich|__s$/i;
+  const rank = (f) => (f.custom_field ? 0 : HOUSEKEEPING.test(f.api_name) ? 2 : 1);
+
   const names = (r.data?.fields || [])
-    .filter((f) => f.api_name && f.data_type !== 'subform')
-    .map((f) => f.api_name)
-    .filter((n) => n !== 'id');
+    .filter((f) => f.api_name && f.data_type !== 'subform' && f.api_name !== 'id')
+    .map((f, i) => ({ f, i }))
+    .sort((a, b) => rank(a.f) - rank(b.f) || a.i - b.i)
+    .map((x) => x.f.api_name);
 
   const list = ['id', ...names].slice(0, MAX_FIELDS);
   fieldCache.set(key, list);
@@ -409,27 +426,20 @@ export async function listPopulated(config, modules, { batch = 5 } = {}) {
  * The id column leads, because it is what makes a row the same row on the next sync.
  */
 export async function describeShape(config) {
-  const token = await accessToken(config);
   const name = moduleOf(config);
-  let r;
-  try {
-    r = await client(config, token).get('/settings/fields', { params: { module: name } });
-  } catch (err) {
-    throw new Error(reason(err, config));
-  }
-  const fields = (r.data?.fields || [])
-    .filter((f) => f.api_name && f.data_type !== 'subform')
-    .map((f) => f.api_name);
-  if (!fields.length) throw new Error(`Zoho listed no readable fields for ${name}.`);
   /*
-   * The same fifty the sync will ask for, in the same order.
+   * The same fifty the sync will ask for, in the same order — because it is
+   * literally the same call.
    *
-   * Zoho takes at most fifty field names per request, so a dataset built
-   * from every field of a wide module would promise columns no sync could
-   * ever fill. The id leads: Zoho does not list it as a field, and it is the
-   * only value that identifies a record from one sync to the next.
+   * This used to read /settings/fields itself and cut the list the same way,
+   * with a comment promising the two agreed. They agreed until one of them
+   * changed: fieldsFor learned to keep the customer's custom fields ahead of
+   * Zoho's housekeeping, and this did not, so a dataset promised fifty
+   * columns while the sync asked for a different fifty. A comment is not a
+   * mechanism; one function is.
    */
-  const columns = ['id', ...fields.filter((f) => f !== 'id')].slice(0, MAX_FIELDS);
+  const columns = await fieldsFor(config);
+  if (columns.length < 2) throw new Error(`Zoho listed no readable fields for ${name}.`);
   return { name, columns, key: 'id' };
 }
 

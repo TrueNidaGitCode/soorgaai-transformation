@@ -81,12 +81,15 @@ describe('what a connected module becomes', () => {
      * having no shape — which is exactly the state a customer is in five
      * minutes before they put the first record in.
      */
-    expect(zoho).toContain("get('/settings/fields', { params: { module: name } })");
+    expect(zoho).toContain("get('/settings/fields', { params: { module: moduleOf(config) } })");
     expect(zoho).toContain('export async function describeShape(config)');
   });
 
   it('keys on the record id, so a sync is an update and not a new set of people', () => {
-    expect(zoho).toContain("const columns = ['id', ...fields.filter((f) => f !== 'id')].slice(0, MAX_FIELDS);");
+    // Through fieldsFor, so the columns a dataset promises and the fields a
+    // sync asks for are the same list rather than two copies of one rule.
+    expect(zoho).toContain('const columns = await fieldsFor(config);');
+    expect(zoho).toContain("const list = ['id', ...names].slice(0, MAX_FIELDS);");
     expect(zoho).toContain("key: 'id'");
   });
 

@@ -1162,7 +1162,9 @@ body {
 .ch-view__search { width: min(320px, 100%); padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: var(--ch-text); font: inherit; font-size: 14px; }
 .ch-view__search:focus { outline: none; border-color: color-mix(in srgb, var(--ch-accent) 55%, transparent); }
 .ch-view__tablewrap { flex: 1; min-height: 0; overflow: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; background: rgba(255,255,255,0.02); }
-.ch-view__table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+/* max-content, so thirty-six columns scroll rather than squeeze into the
+   width of the panel. min-width keeps a two-column dataset filling it. */
+.ch-view__table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .ch-view__table th { position: sticky; top: 0; z-index: 1; text-align: left; padding: 11px 14px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ch-faint); background: var(--ch-bg-2); border-bottom: 1px solid rgba(255,255,255,0.08); white-space: nowrap; }
 .ch-view__table td { padding: 10px 14px; border-top: 1px solid rgba(255,255,255,0.05); color: var(--ch-text); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ch-view__table tbody tr:hover td { background: color-mix(in srgb, var(--ch-accent) 4%, transparent); }

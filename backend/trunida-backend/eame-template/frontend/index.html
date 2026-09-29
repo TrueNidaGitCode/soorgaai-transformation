@@ -1138,17 +1138,41 @@
           var r = await fetch(API + '/api/data/rows?dataset=' + encodeURIComponent(current.name) + '&kind=' + kind + '&q=' + encodeURIComponent(q) + '&limit=200', { headers: { Authorization: 'Bearer ' + t } });
           var d = r.ok ? await r.json() : null;
           if (!d) throw new Error('The rows could not be read (' + r.status + ').');
-          var cols = d.columns.slice(0, 9);
+          /*
+           * Every column that holds something — not the first nine.
+           *
+           * Nine was a guess at how much fits across. A Zoho module arrives
+           * with thirty-six columns, and the one somebody connected a CRM in
+           * order to see — their own custom field — was the thirty-fourth. So
+           * the table showed Zoho's housekeeping and hid the answer, under a
+           * note saying the rest could be had by asking the chat.
+           *
+           * The table scrolls sideways, so width is not the constraint it was
+           * treated as. The only column worth dropping is one that is empty
+           * for every row on screen.
+           */
+          var keep = [];
+          for (var ci = 0; ci < d.columns.length; ci += 1) {
+            var any = false;
+            for (var ri = 0; ri < d.rows.length; ri += 1) {
+              var cell = d.rows[ri].cells[ci];
+              if (cell !== null && cell !== undefined && String(cell).trim() !== '') { any = true; break; }
+            }
+            if (any) keep.push(ci);
+          }
+          // Nothing filled anywhere: show the head of the dataset rather than
+          // an empty table, so the columns it promises are still visible.
+          if (!keep.length) for (var ki = 0; ki < Math.min(9, d.columns.length); ki += 1) keep.push(ki);
           viewSub.textContent = (d.total === d.rows.length ? d.total : d.rows.length + ' of ' + d.total) + (d.total === 1 ? ' row' : ' rows') + (d.key ? ' · told apart by ' + d.key : '');
-          viewTable.innerHTML = '<thead><tr>' + cols.map(function (c) { return '<th>' + escT(c) + '</th>'; }).join('') + '<th>From</th></tr></thead><tbody>'
-            + d.rows.map(function (row) { return '<tr>' + cols.map(function (c, i) { return '<td>' + escT(row.cells[i]) + '</td>'; }).join('') + '<td><span class="ch-view__src ch-view__src--' + escT(row.source) + '">' + escT(SRC[row.source] || row.source) + '</span></td></tr>'; }).join('')
+          viewTable.innerHTML = '<thead><tr>' + keep.map(function (i) { return '<th>' + escT(d.columns[i]) + '</th>'; }).join('') + '<th>From</th></tr></thead><tbody>'
+            + d.rows.map(function (row) { return '<tr>' + keep.map(function (i) { return '<td>' + escT(row.cells[i]) + '</td>'; }).join('') + '<td><span class="ch-view__src ch-view__src--' + escT(row.source) + '">' + escT(SRC[row.source] || row.source) + '</span></td></tr>'; }).join('')
             + '</tbody>';
           // Shown only while the rows on screen really are the simulated ones;
           // cleared otherwise, so importing your own records takes the notice
           // away rather than leaving it contradicting the data beneath it.
           if (kind === 'sample' && d.rows.length) { viewNote.textContent = 'Simulated rows, generated to show the shape of this data. Not your records; the answers use your data as soon as it is brought in.'; viewNote.hidden = false; }
           else if (!d.rows.length) { viewNote.textContent = q ? 'Nothing matches "' + q + '".' : (kind === 'own' ? 'Nothing of yours here yet. Bring it in on the Data page, or tell the chat.' : 'No simulated rows for this dataset.'); viewNote.hidden = false; }
-          else if (d.columns.length > cols.length) { viewNote.textContent = 'Showing the first ' + cols.length + ' of ' + d.columns.length + ' columns. Ask the chat for the rest.'; viewNote.hidden = false; }
+          else if (keep.length < d.columns.length) { viewNote.textContent = (d.columns.length - keep.length) + ' of ' + d.columns.length + ' columns are empty for these rows, so they are not shown. The table scrolls sideways.'; viewNote.hidden = false; }
           // Nothing to say about these rows: clear the notice rather than
           // leaving the last one standing over data it is not about. This
           // belongs LAST — put between the branches above it, it was an

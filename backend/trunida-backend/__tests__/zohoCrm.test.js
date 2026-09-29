@@ -247,3 +247,73 @@ describe('the frame every connector shares', () => {
       .toBe('Zoho CRM (in) · Contacts · (Stage:equals:Won)');
   });
 });
+
+/**
+ * Fifty field names is Zoho's ceiling on a record read, so a wide module
+ * loses some — and the ones it lost were at the end of Zoho's own list,
+ * which is where a field the customer added themselves sits.
+ *
+ * Measured on a real account: Leads and Contacts both came back at exactly
+ * fifty columns, and the custom field the CRM had been connected in order to
+ * read was not among them. Latitude, Longitude, a record image and six
+ * internal status flags were.
+ */
+describe('which fifty fields, when a module has more', () => {
+  const wide = (extra) => ({ status: 200, data: { fields: [
+    ...Array.from({ length: 60 }, (_, i) => ({ api_name: 'Standard_' + i, data_type: 'text' })),
+    ...extra,
+  ] } });
+
+  it('keeps the customer’s own fields, whatever else is cut', async () => {
+    tokenOk();
+    const get = vi.fn((path) => {
+      if (String(path).includes('/settings/fields')) {
+        return Promise.resolve(wide([{ api_name: 'Appointment_Status', data_type: 'picklist', custom_field: true }]));
+      }
+      return Promise.resolve({ status: 204, data: null });
+    });
+    axios.create.mockReturnValue({ get });
+
+    const shape = await zoho.describeShape({ ...CONFIG, module: 'Leads' });
+    expect(shape.columns.length).toBe(50);
+    expect(shape.columns).toContain('Appointment_Status');
+    expect(shape.columns[0]).toBe('id');
+  });
+
+  it('cuts Zoho’s housekeeping before anything a business would read', async () => {
+    tokenOk();
+    const get = vi.fn((path) => {
+      if (String(path).includes('/settings/fields')) {
+        return Promise.resolve(wide([
+          { api_name: 'Latitude', data_type: 'double' },
+          { api_name: 'Record_Image', data_type: 'profileimage' },
+          { api_name: 'Locked__s', data_type: 'boolean' },
+        ]));
+      }
+      return Promise.resolve({ status: 204, data: null });
+    });
+    axios.create.mockReturnValue({ get });
+
+    const shape = await zoho.describeShape({ ...CONFIG, module: 'Leads' });
+    expect(shape.columns).not.toContain('Latitude');
+    expect(shape.columns).not.toContain('Record_Image');
+    expect(shape.columns).not.toContain('Locked__s');
+  });
+
+  it('asks for exactly the columns the dataset promises', async () => {
+    tokenOk();
+    const get = vi.fn((path) => {
+      if (String(path).includes('/settings/fields')) {
+        return Promise.resolve(wide([{ api_name: 'Appointment_Status', data_type: 'picklist', custom_field: true }]));
+      }
+      return Promise.resolve({ status: 204, data: null });
+    });
+    axios.create.mockReturnValue({ get });
+
+    const cfg = { ...CONFIG, module: 'Leads' };
+    const shape = await zoho.describeShape(cfg);
+    await zoho.pull(cfg);
+    const asked = get.mock.calls.find((c) => !String(c[0]).includes('/settings/'));
+    expect(String(asked[1].params.fields).split(',')).toEqual(shape.columns);
+  });
+});

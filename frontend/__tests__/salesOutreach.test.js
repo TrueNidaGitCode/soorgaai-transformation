@@ -56,19 +56,29 @@ describe('the pitches tab is split by industry', () => {
 
   it('keeps the patterns from earlier conversations rather than deleting them', () => {
     /*
-     * Five pitch patterns cost real meetings to learn. One industry being the
-     * focus is not a reason to lose the other four — an academy walking in
-     * next month should not find an empty screen.
+     * These cost real meetings to learn. One industry being the focus is not
+     * a reason to lose the rest — an academy walking in next month should not
+     * find an empty screen.
+     *
+     * Four, not five: the clinics pattern was removed when the Pitches tab
+     * became the messages and the presentation. That was a deliberate edit to
+     * the tab, not an industry being dropped.
      */
     const view = fn('renderPitches');
     expect(view).toContain("PITCH_SEGMENT_OF[p.id] || 'other'");
-    expect(js.match(/id: '[a-z-]+',\n\s*industry:/g) || []).toHaveLength(5);
+    expect(js.match(/id: '[a-z-]+',\n\s*industry:/g) || []).toHaveLength(4);
   });
 
-  it('files the wellness pattern under the wellness industry', () => {
-    // Vesoma's own pattern. It belongs beside the message being sent to its
-    // neighbours, not one click away under "other".
-    expect(js).toContain("const PITCH_SEGMENT_OF = { 'multi-service-wellness': 'clinics' };");
+  it('leaves the clinics tab as the messages and the presentation', () => {
+    /*
+     * The walk-through that used to sit here was written before there was a
+     * deck to walk through, and the two said the same thing twice. What
+     * leaves the building is the email, the short message and the deck.
+     */
+    expect(js).toContain('const PITCH_SEGMENT_OF = {};');
+    expect(js).toContain('<p class="sg-fm__kind">Email</p>');
+    expect(js).toContain('<p class="sg-fm__kind">Presentation</p>');
+    expect(js).toContain('<div id="sg-deck"></div>');
   });
 
   it('owns its class names, and styles them', () => {
@@ -130,13 +140,11 @@ describe('what the first message claims', () => {
      * ₹20,000 a month is the centre's own estimate with no arithmetic behind
      * it. The first number out of your mouth should be one you can defend.
      */
-    const spoken = text.slice(0, text.indexOf('avoid:'));
-    expect(spoken).not.toMatch(/20,000|2\.4L/);
-  });
-
-  it('says out loud which two sentences not to use', () => {
-    const avoid = text.slice(text.indexOf('avoid:'));
-    expect(avoid).toMatch(/20,000/);
-    expect(avoid).toMatch(/We detected these problems/);
+    /*
+     * The whole message now, rather than the part before the avoid list.
+     * That list has been removed, so indexOf returned -1 and this was
+     * checking all but the last character of the file by accident.
+     */
+    expect(text).not.toMatch(/20,000|2\.4L/);
   });
 });

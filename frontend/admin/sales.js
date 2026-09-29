@@ -2019,15 +2019,6 @@ function wireAccountControls() {
  * as an attack on a decision they already defended.
  */
 
-/** The shape every meeting follows, whatever the prospect. */
-const PITCH_FLOW = [
-  { step: 'Question',  say: 'What is something your team needs to know regularly?' },
-  { step: 'Answer',    say: 'SvargAI finds the relevant people and information.' },
-  { step: 'Drill down', say: 'Why do these people need attention? SvargAI explains.' },
-  { step: 'Action',    say: 'Draft a message, report or task. Human reviews, approves, executes.' },
-  { step: 'Learning',  say: 'What other questions would your team want to ask?' },
-];
-
 /*
  * By industry, not by prospect.
  *
@@ -2089,52 +2080,6 @@ const PITCHES = [
       },
     ],
     close: 'We\'d like to run this with your team for two weeks, using the questions they actually ask every day, and see how much useful work SvargAI can take off their plate.',
-  },
-
-  {
-    id: 'multi-service-wellness',
-    industry: 'Fitness, physiotherapy & sports medicine',
-    thesis: 'Connect information across services',
-    whoYouMeet: 'The centre manager or owner — whoever is answerable for members leaving',
-    alreadyRun: 'GymShim, Zenoti, a gym CRM — built to run one service, not five',
-    seen: 'Vesoma Sports Medicine',
-    elevator: [
-      'You already have a system, and it does a good job managing your gym operations.',
-      'But you are more than a gym — you have fitness, physiotherapy, nutrition, hydro and recovery. So information about the same person can be spread across different services.',
-      'SvargAI helps your team ask questions that bring that information together — for example, “Which rehab patients haven\'t returned to training?”',
-      'Instead of someone checking different records and putting the answer together manually, SvargAI finds the people who need attention and helps your team take the next step.',
-    ],
-    steps: [
-      {
-        title: 'Start with the cross-service problem',
-        say: 'Imagine I\'m managing the centre and I want to know who needs attention.',
-        ask: 'Show me the rehab patients who haven\'t returned to training.',
-        showLabel: 'Show',
-        show: ['Name', 'Rehab programme', 'Last session', 'Training status', 'Coach / physio', 'Reason for attention'],
-      },
-      {
-        title: 'Narrow the result',
-        ask: 'Show me the patients who completed rehab but haven\'t returned to training.',
-        note: 'Now you\'re demonstrating that SvargAI can reason across the information, rather than simply retrieve a list.',
-      },
-      {
-        title: 'Take action',
-        ask: 'Draft a WhatsApp message asking these patients how their recovery is going and inviting them for a training assessment.',
-        note: 'Review → Approve → Send.',
-      },
-      {
-        title: 'Expand the idea',
-        say: 'What other questions could we answer?',
-        showLabel: 'Examples',
-        show: [
-          'Which members use recovery services but aren\'t training regularly?',
-          'Who finished physiotherapy but hasn\'t returned?',
-          'Which members haven\'t been contacted recently?',
-          'Who might need follow-up this week?',
-        ],
-      },
-    ],
-    close: 'This is the kind of workflow we\'d like to test with you — one question your team currently has to answer manually, and we\'ll see whether SvargAI can take that work off their plate.',
   },
 
   {
@@ -3624,18 +3569,6 @@ const FIRST_MESSAGE = {
       'Do you see similar problems at your centre? Happy to have a short chat.',
       'Learn more: https://www.svargai.com/',
     ],
-    /*
-     * Two sentences that must not appear in a first message. Both are true
-     * things said wrongly, which is the kind that survives a proofread.
-     */
-    avoid: [
-      ['&ldquo;We found &#8377;20,000 a month of leakage.&rdquo;',
-        'That figure is the centre&rsquo;s own estimate and nobody has checked the arithmetic. '
-        + 'Quoting it as ours makes the first number out of your mouth one you cannot defend.'],
-      ['&ldquo;We detected these problems.&rdquo;',
-        'A customer described them in an interview. Say so &mdash; having sat with somebody in '
-        + 'their trade is worth more in a cold mail than a claim they cannot check.'],
-    ],
   },
 };
 
@@ -3645,8 +3578,14 @@ const PITCH_SEGMENTS = [
   { id: 'other', name: 'Other industries', note: 'Patterns kept from earlier conversations' },
 ];
 
-/** Which industry a pitch pattern belongs to. */
-const PITCH_SEGMENT_OF = { 'multi-service-wellness': 'clinics' };
+/**
+ * Which industry a pitch pattern belongs to.
+ *
+ * Empty, and the Clinics tab is the messages and the presentation — which is
+ * what leaves the building. The walk-through that used to sit here was
+ * written before there was a deck to walk through.
+ */
+const PITCH_SEGMENT_OF = {};
 
 let pitchSegment = 'clinics';
 
@@ -3697,10 +3636,6 @@ function renderFirstMessage(seg) {
         </article>
       </div>
 
-      <p class="sg-fm__label">Two things not to say</p>
-      <ul class="sg-fm__avoid">
-        ${o.avoid.map(([said, why]) => `<li><b>${said}</b><span>${why}</span></li>`).join('')}
-      </ul>
     </section>`;
 }
 
@@ -3986,21 +3921,6 @@ function renderPitches() {
     </div>
 
     ${renderFirstMessage(pitchSegment)}
-
-    <section class="sg-flow">
-      <h3 class="sg-flow__title">The demonstration structure</h3>
-      <p class="sg-flow__sub">Use this in every meeting. Not a product tour — five moves, in order.</p>
-      <ol class="sg-flow__steps">
-        ${PITCH_FLOW.map((f, i) => `
-          <li class="sg-flow__step">
-            <span class="sg-flow__n">${i + 1}</span>
-            <div>
-              <p class="sg-flow__name">${esc(f.step)}</p>
-              <p class="sg-flow__say">${esc(f.say)}</p>
-            </div>
-          </li>`).join('')}
-      </ol>
-    </section>
 
     <div class="sg-pitches">${mine.map(renderPitch).join('')}</div>
 

@@ -83,9 +83,17 @@ describe('class names the ICP tab owns', () => {
     expect(view).not.toMatch(/'\s*sg-flow--/);
   });
 
-  it('leaves sg-flow to renderPitches, which still uses it', () => {
-    expect(js).toMatch(/<section class="sg-flow">/);
-    expect(js).toContain('sg-flow__steps');
+  it('leaves sg-flow unused by anybody, now the Pitches tab has dropped it', () => {
+    /*
+     * This used to assert that renderPitches still owned the name, which was
+     * the other half of the collision guard above. The demonstration
+     * structure it styled has been removed from the Pitches tab, so nothing
+     * claims sg-flow at all — and the rules went with it. A stronger
+     * invariant than the one it replaces: the name is free, so nobody is
+     * fighting over it.
+     */
+    expect(js).not.toMatch(/class="sg-flow/);
+    expect(css).not.toMatch(/^\.sg-flow/m);
   });
 
   it('shares no block name with the Pitches tab', () => {
@@ -100,11 +108,15 @@ describe('class names the ICP tab owns', () => {
     expect(shared).toEqual([]);
   });
 
-  it('styles both of them, so neither name is merely unused', () => {
-    // Guards the reverse mistake: renaming the markup and leaving the rules
-    // behind reads as "no collision" while rendering unstyled.
+  it('styles the name it kept, so it is not merely unused', () => {
+    /*
+     * Guards the reverse mistake: renaming the markup and leaving the rules
+     * behind reads as "no collision" while rendering unstyled.
+     *
+     * Only sg-chain now. sg-flow's markup left with the demonstration
+     * structure and its rules left with it, which the test above asserts.
+     */
     expect(css).toMatch(/^\.sg-chain \{/m);
-    expect(css).toMatch(/^\.sg-flow \{/m);
   });
 
   it('puts the preparation tabs before the tabs that are worked', () => {

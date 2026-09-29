@@ -153,7 +153,15 @@ describe('the date window Exotel insists on', () => {
     // Contiguous: each window starts where the one before it ended.
     expect(w[0].to.getTime()).toBe(w[1].from.getTime());
     expect(w[1].to.getTime()).toBe(w[2].from.getTime());
-    expect(w[2].to.getTime()).toBe(NOW.getTime());
+    /*
+     * And the last one ends a day AFTER now, not at it.
+     *
+     * This assertion used to read `toBe(NOW.getTime())`, which is the bug it
+     * was written before: a window ending at the container's now ends in the
+     * past of any account east of it, and every call made that afternoon
+     * falls outside. See the timezone block at the foot of this file.
+     */
+    expect(w[2].to.getTime()).toBe(NOW.getTime() + 24 * 60 * 60 * 1000);
   });
 
   it('sends the format Exotel parses, not an ISO string', () => {
@@ -324,5 +332,76 @@ describe('it ships', () => {
   it('is in both lists, because a file in only one ships to nobody', () => {
     expect(read('../services/eameSpec.js')).toContain("'services/exotelApi.js',");
     expect(read('../services/eameProjectBuilder.js')).toContain("'services/exotelApi.js':");
+  });
+});
+
+/**
+ * The timezone that cost the first real connection its calls.
+ *
+ * ── Measured, on a live Exotel account ─────────────────────────────────────
+ *
+ * The connection tested green. The dataset built itself. Two syncs ran, no
+ * error, zero rows — twice — while Exotel held a call with a recording on it.
+ *
+ * Exotel stamps a call in the ACCOUNT's timezone and compares the requested
+ * range against that stamp. The container asking runs in UTC. An account in
+ * India is five and a half hours ahead, so a window ending at "now" ends five
+ * and a half hours in that account's past:
+ *
+ *     asked   gte:2026-08-30 12:24  lte:2026-09-29 12:24   (UTC)
+ *     call    2026-09-29 17:54                             (IST)
+ *
+ * Every call made that afternoon was after the window closed. There was no
+ * error to find, because there was no error: Exotel answered exactly the
+ * question it was asked.
+ *
+ * The window now reaches a day past now, which covers every timezone on
+ * earth. Asking the owner for their account's timezone was the alternative,
+ * and it is the kind of question this connector spent two rounds removing.
+ */
+describe('a call made minutes ago, in a timezone ahead of the container', () => {
+  // The container, in UTC, the way Railway runs it.
+  const CONTAINER_NOW = new Date(2026, 8, 29, 12, 24, 0);
+  const newest = (days = 30) => {
+    const w = windowsFor(days, CONTAINER_NOW);
+    return w[w.length - 1];
+  };
+
+  it('is inside the window, not five hours past its end', () => {
+    const callInIST = new Date(2026, 8, 29, 17, 54, 0);
+    expect(stamp(callInIST) <= stamp(newest().to)).toBe(true);
+  });
+
+  it('would have been excluded before, which is the whole bug', () => {
+    // The old behaviour, stated so the regression is unmistakable.
+    const endedAtNow = stamp(CONTAINER_NOW);
+    const callInIST = stamp(new Date(2026, 8, 29, 17, 54, 0));
+    expect(callInIST > endedAtNow).toBe(true);
+    expect(callInIST <= stamp(newest().to)).toBe(true);
+  });
+
+  it('covers the furthest timezone there is, not just India', () => {
+    // UTC+14 exists, and a day of slack swallows it.
+    const kiritimati = new Date(CONTAINER_NOW.getTime() + 14 * 3600 * 1000);
+    expect(stamp(kiritimati) <= stamp(newest().to)).toBe(true);
+  });
+
+  it('keeps each request inside the month Exotel allows', () => {
+    // The slack must not widen a request past what Exotel accepts.
+    for (const w of windowsFor(90, CONTAINER_NOW)) {
+      expect((w.to - w.from) / 86400000).toBeLessThanOrEqual(30);
+    }
+  });
+
+  it('asks the same question on the card as it does on the sync', () => {
+    /*
+     * ping() counts the calls the connection reports on screen and fetchCalls
+     * brings them in. Two different windows would mean a card promising calls
+     * that never arrive, which is worse than either being wrong alone.
+     */
+    const api = read('../eame-template/services/exotelApi.js');
+    expect((api.match(/SKEW_MS/g) || []).length).toBeGreaterThanOrEqual(3);
+    expect(api).toContain('const to = new Date(now.getTime() + SKEW_MS);');
+    expect(api).toContain('let end = new Date(now.getTime() + SKEW_MS);');
   });
 });

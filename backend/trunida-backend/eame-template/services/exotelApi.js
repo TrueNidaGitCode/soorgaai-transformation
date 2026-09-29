@@ -85,12 +85,37 @@ const MAX_PAGES = 50;
 const pad = (n) => String(n).padStart(2, '0');
 
 /**
+ * How far past "now" the window reaches. One day.
+ *
+ * ── The bug this is ───────────────────────────────────────────────────────
+ *
+ * Exotel stamps a call in the ACCOUNT's timezone and compares this range
+ * against that stamp. The container asking runs in UTC. An account in India
+ * is five and a half hours ahead, so a window ending at "now" ends five and a
+ * half hours in that account's past — and every call made this afternoon is
+ * stamped after it and correctly excluded.
+ *
+ * Measured on the first real connection. Exotel held one call, with a
+ * recording. The sync asked for gte:2026-08-30 12:24 / lte:2026-09-29 12:24
+ * in UTC while the account was living at 17:54, and landed zero rows, twice,
+ * with no error — because there was no error. Exotel answered the question
+ * it was asked.
+ *
+ * A day covers every timezone on earth, which is the point: the alternative
+ * is asking the owner what their Exotel account's timezone is, and that is
+ * exactly the kind of question this connector spent two rounds removing. A
+ * window reaching into the future costs nothing, because a call cannot be
+ * stamped later than it happened.
+ */
+const SKEW_MS = 24 * 60 * 60 * 1000;
+
+/**
  * Exotel's date format: 'YYYY-MM-DD HH:MM:SS', in the account's own timezone.
  *
- * Sent as local time deliberately. Exotel compares this against DateCreated
+ * Sent without a zone deliberately. Exotel compares this against DateCreated
  * as it stored it, and an ISO string with a Z on the end is not read as UTC —
  * it is read as malformed, and a malformed range is silently the whole
- * account.
+ * account. Which zone the numbers are in is what SKEW_MS absorbs.
  */
 export function stamp(d) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} `
@@ -107,7 +132,9 @@ export function stamp(d) {
 export function windowsFor(days, now = new Date()) {
   const want = Math.min(Math.max(1, Math.round(days)), MAX_HISTORY_DAYS);
   const out = [];
-  let end = new Date(now);
+  // A day past now, so an account in a timezone ahead of this container is
+  // still inside the window. See SKEW_MS.
+  let end = new Date(now.getTime() + SKEW_MS);
   let left = want;
   while (left > 0) {
     const span = Math.min(left, WINDOW_DAYS);
@@ -234,7 +261,9 @@ export async function fetchCalls({
  */
 export async function ping({ key, token, sid, timeout = 15000, now = new Date(), hosts = HOSTS } = {}) {
   const auth = credentials({ key, token, sid });
-  const to = new Date(now);
+  // The same day of slack as the pull, so the count shown on the card and the
+  // rows that arrive afterwards are answers to the same question.
+  const to = new Date(now.getTime() + SKEW_MS);
   const from = new Date(to.getTime() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
   const params = {
     DateCreated: `gte:${stamp(from)};lte:${stamp(to)}`,

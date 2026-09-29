@@ -129,7 +129,10 @@ export async function readSignals(transcript, ask) {
       // what was promised. Thinking is billed as output and buys nothing here.
       thinking: false,
     });
-  } catch {
+  } catch (err) {
+    // 'no' means it could not be asked. Said out loud, because a silent
+    // return here is indistinguishable from a call with nothing in it.
+    console.warn('[signals] could not ask —', String(err?.message || err).slice(0, 200));
     return none;
   }
 
@@ -137,7 +140,19 @@ export async function readSignals(transcript, ask) {
   try {
     out = JSON.parse(String(raw).replace(/^```(?:json)?\s*|\s*```$/g, '').trim());
   } catch {
-    return none;
+    /*
+     * It answered, and not in JSON. Kept apart from 'no' deliberately.
+     *
+     * These are different repairs and they looked identical for as long as
+     * they shared a value. The first real call came back with every signal
+     * empty and `signals_checked: 'no'`, which reads as "the model was
+     * unreachable" — it was reachable, and answering in plain prose, because
+     * the caller had framed the prompt with the application's conduct and
+     * the conduct outranks the caller on how to speak. One value would have
+     * sent somebody to check the gateway; this one names the prompt.
+     */
+    console.warn('[signals] answered, but not in JSON:', String(raw).slice(0, 160));
+    return { ...none, signals_checked: 'unreadable' };
   }
 
   const intent = INTENTS.includes(String(out?.intent || '').toLowerCase())
@@ -170,10 +185,11 @@ export async function readSignals(transcript, ask) {
     /*
      * Whether the reading stood up.
      *
-     * 'yes'      the model answered and its quotes were in the transcript
-     * 'unquoted' it answered and claimed something it could not quote
-     * 'no'       it could not be asked, or did not answer usably
-     * 'empty'    there was no transcript to read
+     * 'yes'        the model answered and its quotes were in the transcript
+     * 'unquoted'   it answered and claimed something it could not quote
+     * 'unreadable' it answered, and not in JSON — a prompt problem
+     * 'no'         it could not be asked at all — a gateway or model problem
+     * 'empty'      there was no transcript to read
      *
      * 'unquoted' is kept apart from 'no' deliberately: a run of it is a
      * prompt that has drifted or a model that is guessing, and it should be

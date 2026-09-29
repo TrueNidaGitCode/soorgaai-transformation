@@ -144,8 +144,17 @@ describe('when it cannot read the call', () => {
      * "nobody could read this call" are different facts, and a watcher
      * counting kept promises must not treat the second as the first.
      */
+    /*
+     * And the two ways of not reading it are now told apart.
+     *
+     * They shared 'no' until the first real call failed, and the value sent
+     * somebody to check whether the gateway was up. It was: the model was
+     * answering fine, in prose, because the prompt had been framed with the
+     * application's conduct. One points at the gateway and the other at the
+     * prompt, so they are different words. See callSignalsRead.test.js.
+     */
     const broken = await readSignals(RAHUL, async () => 'not json at all');
-    expect(broken.signals_checked).toBe('no');
+    expect(broken.signals_checked).toBe('unreadable');
     expect(broken.promise).toBe('');
 
     const threw = await readSignals(RAHUL, async () => { throw new Error('gateway down'); });

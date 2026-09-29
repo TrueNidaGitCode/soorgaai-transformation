@@ -45,7 +45,7 @@ import { callsIn, PROVIDERS, PROVIDER_IDS } from '../phoneProviders.js';
 import { transcribe, canTranscribe } from '../transcribeService.js';
 import { readSignals, SIGNAL_FIELDS } from '../callSignalService.js';
 import { fetchCalls, ping, MAX_HISTORY_DAYS } from '../exotelApi.js';
-import { generate } from '../llmService.js';
+import { generateRaw } from '../llmService.js';
 
 export const kind = 'phone';
 export const label = 'Your phone system';
@@ -341,6 +341,48 @@ async function transcribePending(config) {
 }
 
 /**
+ * Read the signals again on a call that has a transcript and no signals.
+ *
+ * ── Why a transcript is not enough ─────────────────────────────────────────
+ *
+ * Transcribing is the expensive half and it is done once: a call that has
+ * been read is never listened to again. But the signals are a second,
+ * separate reading of that text, and it can fail on its own — a model that
+ * was briefly unreachable, a prompt that was wrong until it was fixed.
+ *
+ * Without this, such a call is blind for ever. Its audio will not be fetched
+ * again because the transcript is already there, and nothing else ever looks
+ * at it. Measured: the first real call on the first real connection landed
+ * with a perfect transcript and five empty signal columns, and no amount of
+ * fixing the prompt afterwards would have touched it.
+ *
+ * Only where it failed. 'yes' and 'unquoted' are answers — the second means
+ * the model claimed something it could not quote, and asking again would
+ * spend a model call to be lied to twice. Bounded by the same ceiling as
+ * listening, so a bad afternoon cannot become an unbounded bill.
+ */
+async function rereadSignals(config) {
+  if (config.transcribe === 'no' || !canTranscribe()) return;
+  const col = callsCollection();
+  const stuck = await col.find({
+    transcriptStatus: 'read',
+    transcript: { $nin: ['', null] },
+    $or: [
+      { 'signals.signals_checked': { $in: ['no', 'unreadable'] } },
+      { signals: { $exists: false } },
+    ],
+  }).sort({ at: -1 }).limit(MAX_PER_SYNC).toArray().catch(() => []);
+
+  for (const call of stuck) {
+    const signals = await readSignals(call.transcript, askModel);
+    await col.updateOne({ _id: call._id }, { $set: { signals } }).catch(() => {});
+    if (signals.signals_checked === 'yes') {
+      console.log(`[phone] signals read on second look: ${call.callId}`);
+    }
+  }
+}
+
+/**
  * The one model call this connector makes on its own behalf.
  *
  * Wrapped rather than passed straight through so the signature stays the one
@@ -348,7 +390,27 @@ async function transcribePending(config) {
  * logs rather than appearing as an anonymous generate().
  */
 async function askModel({ systemPrompt, userMessage, thinking }) {
-  const out = await generate({
+  /*
+   * generateRaw, and the difference is the whole feature.
+   *
+   * generate() frames the prompt with the application's conduct, and the
+   * conduct outranks the caller on how to speak: "Plain sentences. There is
+   * no Markdown renderer on this page... no headings, no asterisks." Then,
+   * underneath it, this asks for nothing but JSON.
+   *
+   * Measured on the first real call. An eighty-four second conversation
+   * transcribed perfectly — a patient explaining why he missed his
+   * appointment, asking about a monthly package, and staff saying "I will
+   * just check with the team and get back to you". Every signal came back
+   * empty, because the model did as it was told twice and answered in plain
+   * sentences, and JSON.parse threw the lot away.
+   *
+   * llmService says exactly this, in the file: generateRaw is "for the rare
+   * model call that is not an answer to a person — classifying a message,
+   * extracting a field. Conduct written for a reader would only get in its
+   * way." Reading a transcript into columns is that call.
+   */
+  const out = await generateRaw({
     systemPrompt, userMessage, thinking, label: 'call-signals',
     maxTokens: Number(process.env.CALL_SIGNAL_MAX_TOKENS || 400),
   });
@@ -399,6 +461,8 @@ export async function pull(config, { maxRows = 50000 } = {}) {
   }
 
   await transcribePending(config);
+  // And any call whose transcript arrived but whose signals did not.
+  await rereadSignals(config);
 
   const docs = await callsCollection().find({}).sort({ at: 1 }).limit(maxRows).toArray();
   return docs.map((c) => {

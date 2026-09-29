@@ -220,11 +220,18 @@ export const CATALOGUE = [
    *
    * Phrased like no-show-then-contact, which names its status column and does
    * find these.
+   *
+   * Short, too. Naming all three bound columns produced "{who} in {dataset}
+   * whose {slot} was booked and whose {status} says no show, absent or did
+   * not attend" — the most convoluted sentence in the catalogue, and it
+   * returned nothing where the plain questions on the same dataset returned
+   * rows. The status is the question; the slot is only how the dataset was
+   * chosen.
    */
   { id: 'no-show', area: 'Schedule', name: 'No Show',
     says: 'Booked and did not arrive',
     needs: ['slot', 'who', 'status'],
-    question: '{who} in {dataset} whose {slot} was booked and whose {status} says no show, absent or did not attend' },
+    question: '{who} in {dataset} whose {status} says no show or absent' },
   { id: 'unstaffed-session', area: 'Schedule', name: 'Unstaffed Session',
     says: 'Scheduled with nobody assigned',
     needs: ['slot', 'who'], question: '{slot} in {dataset} with no {who} assigned' },

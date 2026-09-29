@@ -44,6 +44,7 @@ import mongoose from 'mongoose';
 import { callsIn, PROVIDERS, PROVIDER_IDS } from '../phoneProviders.js';
 import { transcribe, canTranscribe } from '../transcribeService.js';
 import { readSignals, SIGNAL_FIELDS } from '../callSignalService.js';
+import { fetchCalls, ping, REGIONS, REGION_IDS, MAX_HISTORY_DAYS } from '../exotelApi.js';
 import { generate } from '../llmService.js';
 
 export const kind = 'phone';
@@ -64,7 +65,37 @@ export const fields = [
     hint: 'Sent with the download request. Left blank, recordings are fetched without credentials, which works where the link is already signed.' },
   { name: 'transcribe', label: 'Read the recordings', options: ['yes', 'no'],
     hint: 'Turning this off keeps who rang and when, and skips the cost of listening.' },
+  /*
+   * The three that turn Exotel from a letterbox into a source.
+   *
+   * Optional, because every other provider here is webhook-only and a
+   * required field somebody cannot fill is a card they cannot save. Filled,
+   * the calls are FETCHED — history included, with nothing to configure in
+   * Exotel — and the webhook becomes the thing that makes it immediate
+   * rather than the thing that makes it work at all. See services/exotelApi.js.
+   */
+  { name: 'accountSid', label: 'Account SID', required: false,
+    hint: 'Exotel only, and the reason it can read your call history without a webhook. '
+      + 'API Settings in your Exotel dashboard, beside the key and token above.' },
+  { name: 'region', label: 'Exotel region', options: REGION_IDS, required: false,
+    hint: REGIONS.map((r) => `${r.id} = ${r.label}`).join(' · ')
+      + '. An account in one is answered "no such account" by the other.' },
+  { name: 'history', label: 'How far back to read', required: false, placeholder: '30',
+    hint: `Days of call history to fetch on Exotel. Up to ${MAX_HISTORY_DAYS}, which is all Exotel keeps.` },
 ];
+
+/** Whether this connection can fetch, or only receive. */
+export function canPull(config) {
+  return String(config.provider || '') === 'exotel'
+    && !!String(config.authUser || '').trim()
+    && !!String(config.authToken || '').trim()
+    && !!String(config.accountSid || '').trim();
+}
+
+const historyDays = (config) => {
+  const n = Number(String(config.history || '').trim());
+  return Number.isFinite(n) && n > 0 ? Math.min(n, MAX_HISTORY_DAYS) : 30;
+};
 
 /**
  * What one call carries, for the mapping onto the dataset.
@@ -110,6 +141,39 @@ export async function test(config) {
       + 'Read the recordings, or ask Svarg to enable it.');
   }
   const held = await callsCollection().countDocuments().catch(() => 0);
+
+  /*
+   * Where it can ask, it asks.
+   *
+   * The paragraph above is still true of seven of the eight providers here.
+   * Exotel with credentials is not a letterbox but a source, and a source
+   * that cannot say "yes, I can see your calls" while somebody is looking at
+   * the card is one they find out about tomorrow, from an empty screen.
+   */
+  if (canPull(config)) {
+    const seen = await ping({
+      key: config.authUser, token: config.authToken,
+      sid: config.accountSid, region: config.region,
+    });
+    return {
+      ok: true,
+      message: `Connected to Exotel at ${seen.host}. ${seen.total} call${seen.total === 1 ? '' : 's'} `
+        + `in the last 30 days, and ${historyDays(config)} days of history on the first sync.`
+        + (held ? ` ${held} already here from the webhook.` : ''),
+    };
+  }
+
+  if (provider === 'exotel') {
+    return {
+      ok: true,
+      message: held
+        ? `Ready. ${held} call${held === 1 ? '' : 's'} received so far. Add the API key, token and `
+          + 'Account SID to read your history as well, without configuring anything in Exotel.'
+        : 'Ready, but nothing will arrive until you either paste the webhook address into Exotel, '
+          + 'or fill in the API key, token and Account SID so this can read the calls itself.',
+    };
+  }
+
   return {
     ok: true,
     message: held
@@ -239,6 +303,41 @@ async function askModel({ systemPrompt, userMessage, thinking }) {
  * has arrived, and listening to new recordings happens on the same tick.
  */
 export async function pull(config, { maxRows = 50000 } = {}) {
+  /*
+   * Fetch first, then listen, then hand over everything held.
+   *
+   * In that order because a call fetched on this tick should be read on this
+   * tick: pulling and then waiting an hour to listen would make the first
+   * sync of a new connection land a screen of rows with nothing in them,
+   * which reads as a product that does not work.
+   *
+   * Never fatal. A pull that fails has lost nothing — the calls the webhook
+   * delivered are still here and still worth landing — and a connection that
+   * goes red because Exotel was slow is a connection somebody deletes.
+   */
+  if (canPull(config)) {
+    try {
+      const got = await fetchCalls({
+        key: config.authUser, token: config.authToken,
+        sid: config.accountSid, region: config.region,
+        days: historyDays(config),
+      });
+      /*
+       * The same parser the webhook uses.
+       *
+       * Exotel spells its fields the same way in the API as in the callback —
+       * Sid, From, StartTime, ConversationDuration, RecordingUrl — and two
+       * parsers for one provider is how they drift. keep() is keyed on the
+       * call id, so a call that arrived at the webhook and is fetched again
+       * is one row, and the transcript it already has survives.
+       */
+      const added = await keep(callsIn(got.calls, 'exotel'));
+      if (added) console.log(`[phone] Exotel: ${added} new of ${got.calls.length} read`);
+    } catch (err) {
+      console.warn('[phone] could not read from Exotel:', err.message);
+    }
+  }
+
   await transcribePending(config);
 
   const docs = await callsCollection().find({}).sort({ at: 1 }).limit(maxRows).toArray();

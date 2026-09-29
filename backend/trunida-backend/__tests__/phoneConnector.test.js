@@ -185,13 +185,25 @@ describe('connecting it', () => {
 
   it('says plainly that nothing arrives until the address is pasted in', async () => {
     /*
-     * Every other connector tests by calling its source. This one is the
-     * reverse — the provider calls us — and no credential proves that will
-     * happen. A test that returned a confident "connected" would be checking
+     * For a webhook-only provider this connector is the reverse of every
+     * other one: the provider calls us, and no credential here proves that
+     * will happen. A test returning a confident "connected" would be checking
      * nothing and saying something.
+     */
+    const out = await phone.test({ provider: 'twilio', transcribe: 'no' });
+    expect(out.ok).toBe(true);
+    expect(out.message).toMatch(/Nothing will appear until you do|calls? received so far/);
+  });
+
+  it('offers Exotel the way out, because Exotel can be read instead', async () => {
+    /*
+     * Exotel is the one provider here that has an API worth pulling, so the
+     * honest answer for it is not "nothing will appear until you paste an
+     * address" — it is that there are two ways, and one of them needs nothing
+     * doing in Exotel at all. See __tests__/exotelPull.test.js.
      */
     const out = await phone.test({ provider: 'exotel', transcribe: 'no' });
     expect(out.ok).toBe(true);
-    expect(out.message).toMatch(/Nothing will appear until you do|calls? received so far/);
+    expect(out.message).toMatch(/API key, token and Account SID/);
   });
 });

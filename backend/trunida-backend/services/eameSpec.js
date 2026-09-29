@@ -78,6 +78,9 @@ export const FIXED_PATHS = [
   'services/connectors/whatsapp.js',
   'services/connectors/phone.js',
   'services/phoneProviders.js',
+  // Exotel answered rather than waited for: the one provider here that can be
+  // read like a CRM, so a connection has history the moment it is made.
+  'services/exotelApi.js',
   'services/connectors/svarg.js',
   'services/connectors/database.js',
   'services/connectors/zohocrm.js',

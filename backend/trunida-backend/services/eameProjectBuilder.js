@@ -265,6 +265,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'routes/whatsappRoutes.js':         { template: 'routes/whatsappRoutes.js' },
     'services/connectors/phone.js':     { template: 'services/connectors/phone.js' },
     'services/phoneProviders.js':       { template: 'services/phoneProviders.js' },
+    'services/exotelApi.js':            { template: 'services/exotelApi.js' },
     'controllers/phoneController.js':   { template: 'controllers/phoneController.js' },
     'routes/phoneRoutes.js':            { template: 'routes/phoneRoutes.js' },
     'controllers/connectorController.js': { template: 'controllers/connectorController.js' },

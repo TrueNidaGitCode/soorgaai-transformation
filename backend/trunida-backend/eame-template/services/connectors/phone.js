@@ -368,7 +368,7 @@ async function rereadSignals(config) {
     transcriptStatus: 'read',
     transcript: { $nin: ['', null] },
     $or: [
-      { 'signals.signals_checked': { $in: ['no', 'unreadable'] } },
+      { 'signals.signals_checked': { $in: ['no', 'unreadable', 'truncated'] } },
       { signals: { $exists: false } },
     ],
   }).sort({ at: -1 }).limit(MAX_PER_SYNC).toArray().catch(() => []);

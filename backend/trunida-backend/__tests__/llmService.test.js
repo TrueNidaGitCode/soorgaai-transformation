@@ -311,8 +311,26 @@ describe('thinking is billed, so it is counted and can be turned off', () => {
 
   it('lets a caller refuse to pay for reasoning it does not need', () => {
     expect(src).toMatch(/thinkingConfig: \{ thinkingBudget: 0 \}/);
-    // And drops the headroom with it, so the budget is what was asked for.
-    expect(src).toMatch(/wantsThinking \? asked \+ THINKING_HEADROOM : asked/);
+  });
+
+  it('keeps the headroom anyway, because the refusal can be ignored', () => {
+    /*
+     * The headroom used to be dropped whenever thinking was switched off, on
+     * the reasoning that thinkingBudget: 0 means there is nothing to pay for.
+     *
+     * Measured on Gemini 3.8 Flash. A call asking for 400 tokens with
+     * thinkingBudget: 0 came back with about twenty-five, mid-sentence — it
+     * thought anyway and spent the budget doing it. The call was reading a
+     * phone conversation for what a patient asked for and what a member of
+     * staff promised, and it returned an opening brace, two fields and
+     * nothing else. Truncated rather than empty, so the empty-response guard
+     * below never fired and the caller was handed a fragment to parse.
+     *
+     * A cap is not a bill. Nothing is charged for tokens that are not
+     * produced, so the headroom costs nothing when thinking really is off,
+     * and is the difference between an answer and a fragment when it is not.
+     */
+    expect(src).toMatch(/const budget = asked \+ THINKING_HEADROOM;/);
   });
 
   it('threads the option from generate through the failover chain', () => {

@@ -216,8 +216,31 @@ const PROVIDERS = {
        * thinking: false turns it off and drops the headroom with it, so the
        * budget is what the caller actually asked for.
        */
+      /*
+       * The headroom stays even when thinking is switched off.
+       *
+       * It used to be dropped, on the reasoning that thinkingBudget: 0 means
+       * no thinking to pay for. Measured on Gemini 3.8 Flash: a call asking
+       * for 400 tokens with thinkingBudget: 0 came back with about
+       * twenty-five, mid-sentence — the model thought anyway and spent the
+       * budget doing it. It was reading a phone call for what a patient asked
+       * for and what a member of staff promised, and it returned:
+       *
+       *     ```json
+       *     {"intent":"other",
+       *      "request":"subscription service",
+       *
+       * Truncated, not empty, so the guard below never fired and the caller
+       * got a partial answer to fail on. A cap is not a bill — nothing is
+       * charged for tokens that are not produced — so keeping the headroom
+       * costs nothing when thinking really is off, and is the difference
+       * between an answer and a fragment when it is not.
+       *
+       * thinkingConfig still asks for none. This is what happens when the
+       * asking is ignored.
+       */
       const wantsThinking = thinking !== false;
-      const budget = wantsThinking ? asked + THINKING_HEADROOM : asked;
+      const budget = asked + THINKING_HEADROOM;
 
       const result   = await mdl.generateContent({
         contents:         [{ role: 'user', parts: [{ text: userMessage }] }],

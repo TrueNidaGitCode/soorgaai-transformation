@@ -153,7 +153,7 @@ describe('reading the signals again on a call that already has its words', () =>
 
   it('looks at calls whose transcript arrived and whose signals did not', () => {
     expect(phone).toContain('async function rereadSignals(config)');
-    expect(block).toContain("'signals.signals_checked': { $in: ['no', 'unreadable'] }");
+    expect(block).toContain("'signals.signals_checked': { $in: ['no', 'unreadable', 'truncated'] }");
     expect(block).toContain('{ signals: { $exists: false } }');
   });
 
@@ -262,5 +262,57 @@ describe('finding the answer inside whatever the model said', () => {
     ));
     expect(r.promise).toBe('no');
     expect(r.signals_checked).toBe('unquoted');
+  });
+});
+
+/**
+ * Round three, and the last one, because the evidence was finally kept.
+ *
+ * The `said` field added in round two paid for itself on its first run. What
+ * the model actually returned was not prose at all:
+ *
+ *     ```json
+ *     {"intent":"other",
+ *      "request":"subscription service",
+ *
+ * Correct JSON, cut off after about twenty-five tokens. The parser was never
+ * the problem in round two either — there was no closing brace to find.
+ *
+ * Gemini 3.8 Flash was asked for 400 tokens with thinkingBudget: 0, thought
+ * anyway, and spent the budget doing it. Svarg's llmService dropped its
+ * thinking headroom whenever a caller switched thinking off, on the
+ * reasoning that there was then nothing to pay for. A cap is not a bill, so
+ * the headroom now stays on both branches.
+ *
+ * Three rounds, three different causes, one symptom. The lesson this file
+ * keeps is the one that ended it: every failure has to name itself, because
+ * a shared value sends the next person to the wrong repair.
+ */
+describe('an answer that ran out of room', () => {
+  const CUT = '```json\n{"intent":"other",\n "request":"subscription service",\n';
+
+  it('is called truncated, not unreadable', async () => {
+    // One points at the token budget, the other at the prompt.
+    expect((await readSignals(REAL, async () => CUT)).signals_checked).toBe('truncated');
+  });
+
+  it('is still told apart from an answer with no object in it', async () => {
+    const r = await readSignals(REAL, async () => 'The customer asked about an upgrade.');
+    expect(r.signals_checked).toBe('unreadable');
+  });
+
+  it('keeps what came back, which is how this was found', async () => {
+    expect((await readSignals(REAL, async () => CUT)).said).toContain('"intent":"other"');
+  });
+
+  it('is picked up by the re-read, or the call that exposed it stays blind', () => {
+    const phone = read('../eame-template/services/connectors/phone.js');
+    expect(phone).toContain("$in: ['no', 'unreadable', 'truncated']");
+  });
+
+  it('cannot happen again for want of room', () => {
+    // The headroom is no longer dropped when thinking is switched off.
+    const llm = readFileSync(new URL('../services/llmService.js', import.meta.url), 'utf8');
+    expect(llm).toMatch(/const budget = asked \+ THINKING_HEADROOM;/);
   });
 });

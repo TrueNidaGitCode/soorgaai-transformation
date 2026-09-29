@@ -209,8 +209,24 @@ export async function readSignals(transcript, ask) {
      * else — so this costs a few hundred characters in the database and turns
      * the next occurrence into a question somebody can answer by looking.
      */
-    console.warn('[signals] answered, but not in JSON:', String(raw).slice(0, 160));
-    return { ...none, signals_checked: 'unreadable', said: String(raw).slice(0, 400) };
+    /*
+     * Cut off is not the same as wrong, and they are different repairs.
+     *
+     * An answer that starts an object and never closes it ran out of room.
+     * One that never starts an object ignored the instruction. The first
+     * points at the token budget, the second at the prompt — and the first is
+     * what actually happened: Gemini thought its way through a 400-token
+     * budget with thinking switched off and returned twenty-five tokens of
+     * perfectly good JSON with no end to it.
+     */
+    const cut = String(raw).includes('{') && !jsonIn(raw);
+    console.warn(`[signals] ${cut ? 'answer was cut off' : 'answered, but not in JSON'}:`,
+      String(raw).slice(0, 160));
+    return {
+      ...none,
+      signals_checked: cut ? 'truncated' : 'unreadable',
+      said: String(raw).slice(0, 400),
+    };
   }
 
   const intent = INTENTS.includes(String(out?.intent || '').toLowerCase())
@@ -246,6 +262,7 @@ export async function readSignals(transcript, ask) {
      * 'yes'        the model answered and its quotes were in the transcript
      * 'unquoted'   it answered and claimed something it could not quote
      * 'unreadable' it answered, and not in JSON — a prompt problem
+     * 'truncated'  it began an answer and ran out of room — a budget problem
      * 'no'         it could not be asked at all — a gateway or model problem
      * 'empty'      there was no transcript to read
      *

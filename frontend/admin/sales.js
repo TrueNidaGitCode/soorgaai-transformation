@@ -3623,18 +3623,25 @@ function renderFirstMessage(seg) {
           <p class="sg-fm__kind">Presentation</p>
           <p class="sg-fm__subject"><span>When</span>Emailed after the call, or instead of one.</p>
           <div class="sg-fm__body">
-            <p>Six slides, written to be read by a clinic owner with nobody there
-              to explain them: the problem, what it watches, what they would see,
-              how it works, what happens to their records, and what it costs.</p>
-            <p>Slide 2's figures are read from the running product every time this
-              page loads, and every check it names is looked up in the catalogue
-              first \u2014 so the deck cannot promise something that is not there.</p>
-            <p><b>One thing to hold in your head.</b> Slide 4 says SvargAI
-              <i>will</i> connect findings across systems. That is future tense
-              because it is not built: each check finds its own thing and the
-              briefing lists them separately. Reading a No Show and a phone call
-              as one patient is the slide 3 story, and today a person does that
-              last step. Do not say it in the present tense in a room.</p>
+            <p>The finalised clinic proposal. Seven slides: a cover, the problem,
+              what it watches, what they would see, how it works, what happens to
+              their records, and what it costs.</p>
+            <p>The count on slide 2 is read from the running product every time this
+              page loads, and every check named beside it is looked up in the
+              catalogue first \u2014 so the deck cannot promise something that is
+              not there.</p>
+            <p><b>Two things the deck no longer says, that you should know.</b></p>
+            <p>The Rahul card on slide 3 holds an appointment, a phone call, a
+              promise and a missing follow-up. Today that is more than one finding:
+              Promise Not Kept joins the call to the CRM and gives the last two
+              lines, and the No Show comes from a different check. Reading several
+              findings as one patient is still being built. Fair as a picture of
+              where this goes; do not describe it as one row on the board today.</p>
+            <p>And the strongest privacy line was dropped for a softer one.
+              <b>No message is ever sent to a patient automatically</b> is
+              checkable and structural \u2014 the application holds no mail
+              credentials. Worth saying out loud even though the slide now reads
+              \u201cyou control what information is shared and when\u201d.</p>
           </div>
           <a class="sg-fm__go" href="#sg-deck">Read it below</a>
         </article>
@@ -3647,43 +3654,37 @@ function renderFirstMessage(seg) {
 
 /* ── The presentation ───────────────────────────────────────────────────────
  *
- * The third thing that leaves this page, and the only one that leaves it
- * alone. The email and the short message get a meeting; this is read by a
- * clinic owner at their desk with nobody there to explain it.
+ * The finalised clinic proposal, as approved. Seven slides, emailed to clinic
+ * owners, managers and admin leads who open it with nobody there to explain
+ * it — which is why it opens on a cover rather than on a problem, and why
+ * every slide states its point in one line before it shows anything.
  *
- * That is the whole design brief. Six slides, each answering one question a
- * clinic owner would actually ask, in the order they would ask it: is this my
- * problem, what does it do, what would I see, how does it work, what happens
- * to my records, what does it cost and what do I do next.
+ * ── What is read rather than written ──────────────────────────────────────
  *
- * ── The words ─────────────────────────────────────────────────────────────
+ * The count on slide 3. A deck goes stale the day it is exported and the
+ * stale part is always the numbers, so it is counted from the running product
+ * on every page load. Every check named beside it is looked up in the live
+ * catalogue first, so the deck cannot name something the product does not
+ * have. Everything else here is prose and is meant to be.
  *
- * "Patient did not turn up", not "appointment status changed to No Show".
- * "SvargAI checks your records", not "agents evaluate datasets". Nothing on
- * these slides says dataset, column, row, rule, model, pipeline or webhook —
- * a reader who knows nothing about software has to finish it understanding
- * the product, and every one of those words costs a reader rather than
- * earning one.
+ * ── Two things a seller should carry in their head ────────────────────────
  *
- * ── Why the figures are read rather than typed ────────────────────────────
+ * The approved deck drops the "Coming next" panel and the sentence "no
+ * message is ever sent to a patient automatically". Both were doing work.
  *
- * A deck goes stale the day it is exported and the stale part is always the
- * numbers. They are counted from the running product on every page load, and
- * they sit UNDER the examples rather than over them: a clinic owner does not
- * buy thirty-six of anything, they buy "I will know when somebody does not
- * turn up". The count is there to be checked, not to persuade.
+ * Slide 4 draws one card holding an appointment, a phone call, a promise and
+ * a missing follow-up. Today that is more than one finding: Promise Not Kept
+ * joins the call to the CRM and gives the last two lines; the No Show comes
+ * from a different check. Reading several findings as one patient is the
+ * piece still being built. The card is the product's intent and a fair
+ * picture of where it is going — it is not yet one row on the board, and the
+ * gap is worth knowing before somebody asks.
  *
- * Every watcher named on slide 2 is looked up in that live catalogue before
- * it is drawn, so the deck cannot name something the product does not have.
- *
- * ── The one claim that is future tense ────────────────────────────────────
- *
- * Reading a No Show and a phone call as one patient who needs attention is
- * not built: each watcher finds its own thing and the briefing lists them
- * separately. Slide 4 says "Coming next" and says it in the future — which is
- * true, and is the difference between a roadmap and a claim a buyer finds out
- * about in week one. The Presentation card above says it in blunter words,
- * because the person reading that card is the one selling it.
+ * And "you control what information is shared and when" is a weaker claim
+ * than the one it replaced. "No message is ever sent to a patient
+ * automatically" is checkable, structural and true: the application holds no
+ * mail credentials. It is the strongest thing on that slide and it is worth
+ * saying out loud in the room even though the deck no longer prints it.
  */
 
 /** Filled from /deck. Null until it answers; the deck renders either way. */
@@ -3692,42 +3693,47 @@ let deckFacts = null;
 /**
  * What a clinic would call the things SvargAI looks for.
  *
- * Four groups a clinic owner recognises, rather than the seven areas the
- * product organises itself by. Each entry names a real watcher by its
- * catalogue id and gives it the words a clinic uses — and an id the
- * catalogue no longer has is dropped before it is drawn, so this cannot
- * promise something that has been removed.
+ * Two per group, as approved — a slide a reader takes in at a glance beats a
+ * complete list nobody finishes. Each names a real watcher by its catalogue
+ * id, and an id the catalogue no longer has is dropped before it is drawn.
  */
 const CLINIC_WATCHERS = [
   { group: 'Patients', items: [
     ['unanswered-enquiry', 'Enquiry with no reply'],
     ['gone-quiet', 'Patient gone quiet'],
-    ['repeat-complaint', 'The same complaint again'],
   ] },
   { group: 'Appointments', items: [
     ['no-show', 'Patient did not turn up'],
     ['empty-slot', 'Empty appointment slot'],
-    ['over-capacity', 'Overbooked schedule'],
   ] },
   { group: 'Payments', items: [
     ['overdue-invoice', 'Payment overdue'],
     ['part-payment', 'Only part paid'],
-    ['never-invoiced', 'Treated but never invoiced'],
   ] },
   { group: 'Follow-ups', items: [
     ['promise-overdue', 'Promised a call back, not made'],
     ['stopped-coming', 'Stopped coming mid-treatment'],
-    ['missing-detail', 'Record left unfinished'],
   ] },
 ];
 
-/** The slides. Prose is written here; every figure comes from deckFacts. */
+/** The slides. Prose is written here; the one figure comes from deckFacts. */
 const DECK = [
+  {
+    n: '00',
+    kicker: 'Sales proposal',
+    cover: true,
+    title: 'Your Clinic Has All the Information.',
+    titleAccent: 'Nobody Sees the Full Picture.',
+    sub: 'SvargAI connects the dots across your existing systems — so your team knows '
+      + 'exactly what needs attention, and why. No new software to learn. No workflows to replace.',
+    hub: ['CRM', 'Calendar', 'Phone', 'Staff', 'Payments'],
+  },
   {
     n: '01',
     kicker: 'The problem',
     title: 'Your clinic already has the information. It is just spread across different places.',
-    sub: 'Nothing here is broken. Every one of these was recorded properly — no two of them were recorded together.',
+    sub: 'Nothing here is broken. Every one of these was recorded properly — no two of '
+      + 'them were recorded together.',
     caseTitle: 'One patient. One week.',
     case: [
       ['CRM', 'Patient books an appointment.', false],
@@ -3741,53 +3747,44 @@ const DECK = [
   {
     n: '02',
     kicker: 'What it does',
-    title: 'SvargAI watches your clinic while your team runs it.',
-    sub: 'It checks the systems you already use and speaks up when something needs attention. '
-      + 'There is no new system to learn and nothing to replace.',
-    lead: 'Watchers are small checks that look for specific situations in the records you already keep.',
+    title: 'SvargAI Watches Your Clinic While Your Team Runs It',
+    sub: 'No new system to learn. Nothing to replace.',
     live: 'watchers',
-    close: 'You choose which of these SvargAI watches, and you can change it whenever you like.',
   },
   {
     n: '03',
     kicker: 'What you see',
     title: 'A short list of things that need attention.',
-    sub: 'Not a dashboard to go and check. A short list, with the reason attached to every item on it.',
+    sub: 'Not a dashboard to go and check.',
     finding: {
       who: 'Rahul Sharma',
       verdict: 'Needs follow-up',
       what: [
-        ['Appointment', 'Did not turn up'],
-        ['Phone call', 'Asked about upgrading his treatment package'],
-        ['Staff', 'Promised to call him back'],
-        ['CRM', 'No follow-up recorded'],
+        ['Appointment', 'Did not turn up', false],
+        ['Phone call', 'Asked about upgrading his treatment package', false],
+        ['Staff', 'Promised to call him back', false],
+        ['CRM', 'No follow-up recorded', true],
       ],
-      why: 'Rahul may still be interested, but there is no recorded next step.',
-      doNext: 'Call Rahul back about the package he asked about.',
+      why: 'Rahul may still be interested, but there is <b>no recorded next step</b>.',
       evidence: [
-        'The appointment in your CRM, marked No Show',
+        'The appointment in your CRM, marked <b>No Show</b>',
         'The phone call where he asked about the package',
-        'Your CRM, showing nothing recorded since',
       ],
     },
-    close: 'SvargAI does not simply say that something looks wrong. It shows you why it raised it, '
-      + 'so your team can judge it in seconds.',
+    close: 'SvargAI shows exactly why each item was raised.',
   },
   {
     n: '04',
     kicker: 'How it works',
-    title: 'From information to action.',
-    sub: 'Four steps, and your team decides the last one.',
-    steps: [
-      ['SvargAI checks', 'It looks at the systems you have connected, on a schedule you set.'],
-      ['It finds something', 'A watcher spots a situation that needs attention.'],
-      ['It shows the evidence', 'You can see exactly why it was raised, in plain words.'],
-      ['Your team decides', 'Your team decides what to do next, and does it.'],
+    title: 'From Information to Action — Four Steps',
+    sub: '',
+    ring: [
+      ['SvargAI Checks', 'clock'],
+      ['It Finds Something', 'alert'],
+      ['It Shows the Evidence', 'page'],
+      ['Your Team Decides', 'people'],
     ],
-    control: 'SvargAI can draft the follow-up message for you. A person reads it and decides '
-      + 'whether to send it.',
-    soon: 'SvargAI will connect related findings across your systems, so your team can see the '
-      + 'full picture of a patient or a situation in one place.',
+    close: 'Your team makes the final call.',
   },
   {
     n: '05',
@@ -3795,10 +3792,10 @@ const DECK = [
     title: 'Your clinic keeps control of its data.',
     sub: '',
     pillars: [
-      ['Your systems', 'SvargAI only reads the systems you choose to connect.'],
-      ['Your data', 'Your records stay in your own application.'],
-      ['Your decisions', 'SvargAI finds issues and can prepare a follow-up. Your team decides what happens next.'],
-      ['Your patients', 'No message is ever sent to a patient automatically.'],
+      ['Your systems', 'SvargAI only reads the systems you connect.'],
+      ['Your data', 'Records stay in your own application.'],
+      ['Your decisions', 'Your team decides what happens next.'],
+      ['Your patients', 'You control what information is shared and when.'],
     ],
     close: 'Connect what you want. Disconnect what you want. Your team stays in control.',
   },
@@ -3808,34 +3805,81 @@ const DECK = [
     title: 'Simple pricing, based on how much of your clinic you want watched.',
     sub: '',
     plans: [
-      ['Hobby', '₹0', '',
+      ['Hobby', '₹0', '', false,
         'For watching a small part of the clinic.',
         ['2 of 5 areas watched', '2 connected systems', 'Checked every day', '1 person']],
-      ['Pro', '₹2,999', 'a month, or ₹28,999 a year',
+      ['Pro', '₹2,999', 'a month', true,
         'For keeping core clinic operations under continuous watch.',
-        ['3 of 5 areas watched', '5 connected systems', 'Checked every day', '3 people']],
-      ['Ultra', '₹16,999', 'a month, or ₹1,63,999 a year',
+        ['3 of 5 areas watched', '5 connected systems', 'Checked every day', '3 people'],
+        'or ₹28,999 a year'],
+      ['Ultra', '₹16,999', 'a month', false,
         'For watching the clinic across every area.',
-        ['All 5 areas watched', '10 connected systems', 'Checked every hour', '10 people']],
-      ['Enterprise', 'Talk to us', '',
+        ['All 5 areas watched', '10 connected systems', 'Checked every hour', '10 people'],
+        'or ₹1,63,999 a year'],
+      ['Enterprise', 'Talk to us', '', false,
         'For larger organisations, several teams or more than one location.',
-        ['Areas and coverage agreed with you', 'Connected systems as needed', 'As often as you need', 'Your whole team']],
+        ['Areas and coverage agreed with you', 'Connected systems as needed',
+          'As often as you need', 'Your whole team']],
     ],
     cta: {
-      head: 'Show us where your clinic loses the signal.',
-      body: 'Connect one or two systems. We’ll show you what SvargAI finds.',
-      where: 'www.svargai.com',
+      head: 'Want to see what SvargAI can find in your clinic?',
+      body: 'Connect one or two existing systems and we’ll show you.',
+      where: 'svargai.com',
     },
   },
 ];
 
+/** The cover's diagram: five systems, one place they meet. */
+function deckHub(names) {
+  const R = 118;
+  const cx = 160;
+  const cy = 150;
+  const at = (i) => {
+    const a = (-90 + (i * 360) / names.length) * (Math.PI / 180);
+    return { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) };
+  };
+  const spokes = names.map((_, i) => {
+    const p = at(i);
+    return `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}"
+      stroke="rgba(92,197,167,0.32)" stroke-width="1" stroke-dasharray="3 4"/>`;
+  }).join('');
+  const nodes = names.map((name, i) => {
+    const p = at(i);
+    const below = p.y > cy + 20;
+    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="7"
+        fill="none" stroke="#5CC5A7" stroke-width="1.6"/>
+      <text x="${p.x.toFixed(1)}" y="${(p.y + (below ? 24 : -16)).toFixed(1)}"
+        text-anchor="middle" fill="rgba(255,255,255,0.62)"
+        font-size="11" letter-spacing="1.6">${esc(name.toUpperCase())}</text>`;
+  }).join('');
+  return `
+    <svg class="sg-deck__hub" viewBox="0 0 320 300" role="img"
+         aria-label="Five systems — ${esc(names.join(', '))} — meeting in one place">
+      <circle cx="${cx}" cy="${cy}" r="86" fill="none" stroke="rgba(92,197,167,0.12)"/>
+      <circle cx="${cx}" cy="${cy}" r="56" fill="none" stroke="rgba(92,197,167,0.16)"/>
+      ${spokes}
+      <circle cx="${cx}" cy="${cy}" r="30" fill="rgba(92,197,167,0.12)"/>
+      <circle cx="${cx}" cy="${cy}" r="19" fill="#5CC5A7"/>
+      <path d="M${cx - 8} ${cy} l6 6 l10 -11" fill="none" stroke="#0d0d0f"
+            stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      ${nodes}
+    </svg>`;
+}
+
+/** The four marks on How it works. Line drawings, nothing decorative. */
+const RING_ICON = {
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  alert: '<path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4M12 17h.01"/>',
+  page: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+  people: '<circle cx="8" cy="9" r="2.4"/><circle cx="16" cy="9" r="2.4"/><circle cx="12" cy="7" r="2.4"/>'
+    + '<path d="M4 18c1-3 3-4 4-4M20 18c-1-3-3-4-4-4M8.5 18c1-3.5 2-4.5 3.5-4.5s2.5 1 3.5 4.5"/>',
+};
+
 /**
- * Slide 02: what SvargAI looks for, in a clinic's own words.
+ * Slide 02: the count, then what it looks for in a clinic's own words.
  *
- * Every watcher is checked against the live catalogue before it is drawn. The
- * counts sit underneath, small: a clinic owner does not buy thirty-six of
- * anything, and a number leading this slide is a number arguing with the
- * examples that would have persuaded them.
+ * Every watcher is checked against the live catalogue before it is drawn, so
+ * the number and the examples beside it are answers to the same question.
  */
 function deckWatchers() {
   const f = deckFacts;
@@ -3843,93 +3887,104 @@ function deckWatchers() {
   if (f) {
     for (const a of f.watchers.areas) for (const w of a.watchers) known.set(w.id, w.name);
   }
-
   const groups = CLINIC_WATCHERS.map((g) => ({
     group: g.group,
     items: g.items.filter(([id]) => !f || known.has(id)).map(([, said]) => said),
   })).filter((g) => g.items.length);
 
-  const counted = f
-    ? `<p class="sg-deck__quiet">${f.watchers.total} checks like these are available today, across
-       ${f.connectors.total} kinds of system.
-       <em>Counted from the running product, ${new Date(f.generatedAt).toLocaleDateString()}.</em></p>`
-    : '';
-
   return `
+    ${f ? `<p class="sg-deck__count"><b>${f.watchers.total}</b> checks available today</p>
+      <p class="sg-deck__countsub">across your clinic — <b>you choose what to watch.</b></p>` : ''}
     <div class="sg-deck__groups">
       ${groups.map((g) => `
         <section>
           <p class="sg-deck__gname">${esc(g.group)}</p>
           <ul>${g.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
         </section>`).join('')}
-    </div>
-    ${counted}`;
+    </div>`;
 }
 
-/** Slide 03: one finding, as it would actually arrive. */
+/** Slide 03: one finding, as it would arrive. */
 function deckFinding(fd) {
   return `
-    <div class="sg-deck__find">
-      <p class="sg-deck__findh"><b>${esc(fd.who)}</b><span>${esc(fd.verdict)}</span></p>
-
-      <p class="sg-deck__lbl">What happened</p>
-      <ul class="sg-deck__what">
-        ${fd.what.map(([where, said]) => `<li><span>${esc(where)}</span><b>${esc(said)}</b></li>`).join('')}
-      </ul>
-
-      <p class="sg-deck__lbl">Why it matters</p>
-      <p class="sg-deck__why">${esc(fd.why)}</p>
-
-      <p class="sg-deck__lbl">Suggested next step</p>
-      <p class="sg-deck__do">${esc(fd.doNext)}</p>
-
-      <p class="sg-deck__lbl">The evidence behind it</p>
-      <ul class="sg-deck__ev">${fd.evidence.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>
+    <div class="sg-deck__three">
+      <div class="sg-deck__find">
+        <p class="sg-deck__findh"><b>${esc(fd.who)}</b><span>${esc(fd.verdict)}</span></p>
+        <p class="sg-deck__lbl">What happened</p>
+        <ul class="sg-deck__what">
+          ${fd.what.map(([where, said, bad]) => `
+            <li${bad ? ' class="is-bad"' : ''}><span>${esc(where)}</span><b>${esc(said)}</b></li>`).join('')}
+        </ul>
+      </div>
+      <div>
+        <p class="sg-deck__lbl">Why it matters</p>
+        <p class="sg-deck__why">${fd.why}</p>
+      </div>
+      <div>
+        <p class="sg-deck__lbl">The evidence behind it</p>
+        <ul class="sg-deck__ev">${fd.evidence.map((e) => `<li>${e}</li>`).join('')}</ul>
+      </div>
     </div>`;
 }
 
 function deckSlide(sl) {
+  if (sl.cover) {
+    return `
+      <article class="sg-deck__slide sg-deck__slide--cover">
+        <div>
+          <span class="sg-deck__pill">${esc(sl.kicker)}</span>
+          <h4 class="sg-deck__cover-title">${esc(sl.title)}<br>
+            <em>${esc(sl.titleAccent)}</em></h4>
+          <p class="sg-deck__cover-sub">${esc(sl.sub)}</p>
+        </div>
+        ${deckHub(sl.hub)}
+      </article>`;
+  }
+
   let body = '';
 
   if (sl.case) {
-    body += `<div class="sg-deck__case">
-      <p class="sg-deck__caseh">${esc(sl.caseTitle)}</p>
-      <ul>${sl.case.map(([where, said, bad]) => `
-        <li${bad ? ' class="is-bad"' : ''}><span>${esc(where)}</span><b>${esc(said)}</b></li>`).join('')}</ul>
-    </div>`;
+    body += `<p class="sg-deck__caseh">${esc(sl.caseTitle)}</p>
+      <ol class="sg-deck__steps">${sl.case.map(([where, said, bad], i) => `
+        <li${bad ? ' class="is-bad"' : ''}>
+          <span class="sg-deck__chev">${i + 1}</span>
+          <p class="sg-deck__where">${esc(where)}</p>
+          <p class="sg-deck__said">${esc(said)}</p>
+        </li>`).join('')}</ol>`;
   }
 
-  if (sl.lead) body += `<p class="sg-deck__lead">${esc(sl.lead)}</p>`;
   if (sl.live === 'watchers') body += deckWatchers();
   if (sl.finding) body += deckFinding(sl.finding);
 
-  if (sl.steps) {
-    body += `<ol class="sg-deck__steps">${sl.steps.map(([t, d], i) => `
-      <li><span>${i + 1}</span><div><b>${esc(t)}</b><p>${esc(d)}</p></div></li>`).join('')}</ol>
-      <p class="sg-deck__control">${esc(sl.control)}</p>
-      <div class="sg-deck__soon">
-        <p class="sg-deck__lbl">Coming next</p>
-        <p>${esc(sl.soon)}</p>
-      </div>`;
+  if (sl.ring) {
+    body += `<div class="sg-deck__ring">${sl.ring.map(([label, icon], i) => `
+      <div${i === sl.ring.length - 1 ? ' class="is-last"' : ''}>
+        <span class="sg-deck__disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${RING_ICON[icon]}</svg></span>
+        <p>${esc(label)}</p>
+      </div>`).join('')}</div>`;
   }
 
   if (sl.pillars) {
-    body += `<div class="sg-deck__pillars">${sl.pillars.map(([t, d]) => `
-      <article><b>${esc(t)}</b><p>${esc(d)}</p></article>`).join('')}</div>`;
+    body += `<div class="sg-deck__pillars">${sl.pillars.map(([t, d], i) => `
+      <article><span>0${i + 1}</span><b>${esc(t)}</b><p>${esc(d)}</p></article>`).join('')}</div>`;
   }
 
   if (sl.plans) {
-    body += `<div class="sg-deck__plans">${sl.plans.map(([name, price, per, who, has]) => `
-      <article>
+    body += `<div class="sg-deck__plans">${sl.plans.map(([name, price, per, on, who, has, year]) => `
+      <article${on ? ' class="is-on"' : ''}>
         <p class="sg-deck__pname">${esc(name)}</p>
         <p class="sg-deck__price">${esc(price)}${per ? `<span>${esc(per)}</span>` : ''}</p>
+        ${year ? `<p class="sg-deck__year">${esc(year)}</p>` : ''}
         <p class="sg-deck__pwho">${esc(who)}</p>
         <ul>${has.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>
       </article>`).join('')}</div>
       <div class="sg-deck__cta">
-        <p class="sg-deck__ctah">${esc(sl.cta.head)}</p>
-        <p class="sg-deck__ctab">${esc(sl.cta.body)}</p>
-        <p class="sg-deck__ctaw">${esc(sl.cta.where)}</p>
+        <div>
+          <p class="sg-deck__ctah">${esc(sl.cta.head)}</p>
+          <p class="sg-deck__ctab">${esc(sl.cta.body)}</p>
+        </div>
+        <span class="sg-deck__ctaw">${esc(sl.cta.where)}</span>
       </div>`;
   }
 
@@ -3937,10 +3992,7 @@ function deckSlide(sl) {
 
   return `
     <article class="sg-deck__slide">
-      <header>
-        <span class="sg-deck__n">${esc(sl.n)}</span>
-        <span class="sg-deck__kicker">${esc(sl.kicker)}</span>
-      </header>
+      <header><span class="sg-deck__pill">${esc(sl.kicker)}</span></header>
       <h4 class="sg-deck__title">${esc(sl.title)}</h4>
       ${sl.sub ? `<p class="sg-deck__sub">${esc(sl.sub)}</p>` : ''}
       ${body}
@@ -3950,8 +4002,8 @@ function deckSlide(sl) {
 /**
  * The deck, drawn from the slides above and whatever /deck has answered with.
  *
- * Drawn before the figures arrive and again after, so a slow answer shows a
- * deck missing one small line rather than an empty panel. Nothing here waits.
+ * Drawn before the figure arrives and again after, so a slow answer shows a
+ * deck missing one line rather than an empty panel. Nothing here waits.
  */
 function renderDeck() {
   const el = document.getElementById('sg-deck');
@@ -3959,10 +4011,10 @@ function renderDeck() {
   el.innerHTML = `
     <section class="sg-deck">
       <h3 class="sg-deck__h">The presentation</h3>
-      <p class="sg-deck__s">Six slides, written to be read by a clinic owner with nobody there to
-        explain them. Send it after the call, or instead of one. The figures on slide 2 are counted
-        from the running product each time this page loads, so the deck cannot claim more than
-        exists.</p>
+      <p class="sg-deck__s">The finalised clinic proposal. Seven slides, emailed to a clinic owner
+        who opens it with nobody there to explain it. The count on slide 2 is read from the running
+        product each time this page loads, and every check named beside it is looked up in the
+        catalogue first — so the deck cannot promise something that is not there.</p>
       ${DECK.map(deckSlide).join('')}
     </section>`;
 }

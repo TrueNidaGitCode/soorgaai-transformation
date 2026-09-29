@@ -1493,7 +1493,10 @@
       delete open[kind];
       addingMore = false;
       await refresh();
-      say(els.note, r.connector.label + ' connected to ' + datasets[di].name + (kind === 'whatsapp' ? '. Messages land here as they are sent.' : '. Press Sync now to bring its rows in, or set a schedule.'));
+      // Not "press Sync now to bring its rows in" -- that button was removed
+      // when reading became automatic, and the sentence outlived it, telling
+      // people to press something that is not on the screen.
+      say(els.note, r.connector.label + ' connected to ' + datasets[di].name + (kind === 'whatsapp' ? '. Messages land here as they are sent.' : '. Its rows are being read now, and every hour after that.'));
     } catch (err) {
       flowErr(kind, err.message);
       btn.disabled = false; btn.textContent = 'Test and connect';

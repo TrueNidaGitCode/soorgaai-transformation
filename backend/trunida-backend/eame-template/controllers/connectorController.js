@@ -7,6 +7,7 @@
  */
 import {
   catalog, listConnectors, createConnector, updateConnector, testConnector, deleteConnector, syncConnector,
+  freshenConnections,
 } from '../services/connectorService.js';
 import { connectionLimit } from '../services/coverage.js';
 
@@ -14,6 +15,25 @@ const fail = (res, err, code = 400) => res.status(code).json({ error: String(err
 
 export async function list(req, res) {
   try {
+    /*
+     * Opening this page is the signal to look again.
+     *
+     * Connections read every hour, which is right for a business running all
+     * day and wrong for the moment somebody has just changed something in the
+     * source and come here to see it. An hour of "the application disagrees
+     * with my CRM" is the whole product's credibility, and the fix used to be
+     * a Sync now button on every row — nine of them, each inviting somebody
+     * to believe nothing happens unless they press it.
+     *
+     * So there is no button. Opening the page is the intent, and it is the
+     * one moment where being current matters more than being cheap. Anything
+     * read in the last few minutes is left alone, so reloading twice costs
+     * nothing, and it never blocks the response: the page draws from what is
+     * held and the rows arrive on the refresh the page already does when the
+     * data changes.
+     */
+    freshenConnections().catch(() => {});
+
     const connectors = await listConnectors();
     res.json({
       kinds: catalog(),

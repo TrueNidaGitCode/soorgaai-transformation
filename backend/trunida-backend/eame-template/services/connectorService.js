@@ -520,8 +520,27 @@ export async function reseed(datasetName, filePath) {
  * source's file for this dataset and that file reseeded, so there is one
  * row per key in the application.
  */
-export async function landRows({ dataset, rows, source, by = 'owner', detail = '', origin = '', mode = 'merge', complete = false }) {
-  if (!Array.isArray(rows) || !rows.length) throw new Error('No rows to land.');
+export async function landRows({
+  dataset, rows, source, by = 'owner', detail = '', origin = '', mode = 'merge', complete = false,
+  /*
+   * "The source has nothing" is an answer, and it has to be landable.
+   *
+   * Refusing empty rows is right for a person uploading a file — an empty
+   * spreadsheet is a mistake, not an instruction to delete everything. It is
+   * wrong for a connection that has just read the whole of a module and found
+   * it empty, which is what emptying that module in the source LOOKS like.
+   *
+   * Measured: eight Zoho modules were emptied in the CRM, the sync read 0
+   * rows from each, and the application went on holding every one of them.
+   * Sample leads, deals and tasks that no longer existed anywhere were still
+   * producing findings.
+   *
+   * Opt-in rather than inferred, so the capability to empty a dataset belongs
+   * to the one caller that has read the whole source and can say so.
+   */
+  allowEmpty = false,
+}) {
+  if (!Array.isArray(rows) || (!rows.length && !allowEmpty)) throw new Error('No rows to land.');
   if (rows.length > MAX_ROWS) throw new Error(`That is more than ${MAX_ROWS.toLocaleString()} rows. Import it in parts.`);
   const src = String(source || 'own').replace(/[^a-z0-9_-]/gi, '').toLowerCase() || 'own';
   const columns = (dataset.columns || []).filter(c => c !== '_source');
@@ -915,13 +934,22 @@ export async function syncConnector(id, { by = 'owner' } = {}) {
     await connectorsCollection().updateOne({ _id: doc._id }, { $set: { status: 'syncing', lastError: '' } });
 
     const objects = await kind.pull(openConfig(kind, doc.config), { maxRows: MAX_ROWS });
-    if (!objects.length) {
-      await connectorsCollection().updateOne({ _id: doc._id }, { $set: { status: 'connected', lastSyncAt: new Date(), lastRows: 0 } });
-      return { rows: 0, message: 'The source returned nothing to import.' };
-    }
+    /*
+     * An empty source empties the dataset, rather than being ignored.
+     *
+     * This used to return here, before landing anything, so a module emptied
+     * at the source stayed in the application for ever. Measured: eight Zoho
+     * modules were emptied in the CRM, each sync read zero rows and recorded
+     * a clean run, and the application went on holding — and raising findings
+     * about — leads, deals and tasks that no longer existed anywhere.
+     *
+     * Reaching here with nothing means the source ANSWERED and had nothing: a
+     * read that fails throws, and is caught below. So it is a fact about the
+     * business, and landing it is how the two stay the same.
+     */
     const rows = mapOntoColumns(dataset, objects, doc.mapping || {});
     // A pull is the whole source: this source's rows are exactly these now.
-    const landed = await landRows({ dataset, rows, source: doc.kind, by, detail: kind.describe ? kind.describe(openConfig(kind, doc.config)) : '', origin: kind.label, mode: 'replace', complete: true });
+    const landed = await landRows({ dataset, rows, source: doc.kind, by, detail: kind.describe ? kind.describe(openConfig(kind, doc.config)) : '', origin: kind.label, mode: 'replace', complete: true, allowEmpty: true });
     await connectorsCollection().updateOne({ _id: doc._id }, { $set: { status: 'connected', lastSyncAt: new Date(), lastRows: landed.rows } });
     return landed;
   } catch (err) {
@@ -930,6 +958,38 @@ export async function syncConnector(id, { by = 'owner' } = {}) {
   } finally {
     running.delete(String(doc._id));
   }
+}
+
+/**
+ * How stale a connection may be when somebody opens the Data page.
+ *
+ * Two minutes: long enough that reloading the page, or two people opening it
+ * at once, costs one read rather than several; short enough that a change
+ * made in the source a moment ago is there by the time anybody has read the
+ * cards above it.
+ */
+export const FRESHEN_MS = 2 * 60 * 1000;
+
+/**
+ * Read anything that has not been read in the last couple of minutes.
+ *
+ * Called when the Data page is opened, and never awaited by the response —
+ * a slow CRM must not make the page slow, and the page already redraws when
+ * the data changes. Failures are the connection's own business: each is
+ * recorded against it and shown on its row, exactly as a scheduled sync is.
+ */
+export async function freshenConnections({ now = Date.now() } = {}) {
+  if (mongoose.connection.readyState !== 1) return { started: [] };
+  const docs = await connectorsCollection().find({}).toArray().catch(() => []);
+  const stale = docs.filter((d) => {
+    if (running.has(String(d._id))) return false;
+    const last = d.lastSyncAt ? new Date(d.lastSyncAt).getTime() : 0;
+    return now - last >= FRESHEN_MS;
+  });
+  for (const d of stale) {
+    await syncConnector(d._id).catch(() => {});
+  }
+  return { started: stale.map((d) => String(d._id)) };
 }
 
 // ── The schedule ────────────────────────────────────────────────────────────

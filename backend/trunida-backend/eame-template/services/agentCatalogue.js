@@ -680,6 +680,24 @@ export function matchPair(entry, datasets) {
  */
 function fitOf(entry, dataset, using) {
   let score = 0;
+  /*
+   * Records the business actually has beat records this application invented.
+   *
+   * Worth more than every other signal here put together, and it has to be.
+   * The sample datasets an application ships with were built to have exactly
+   * the columns the business uses, so they win on structure by construction:
+   * measured on a live physiotherapy application, "Appointment Booking Diary"
+   * and a real "Meetings (Zoho CRM)" both scored 4 for No Show, and the tie
+   * went to whichever came first in the index — the sample one.
+   *
+   * A watcher reads `kind: 'own'`. Bound to a dataset holding none of the
+   * owner's rows it finds nothing every morning, which is indistinguishable
+   * from a business with nothing wrong.
+   *
+   * Absent when the caller did not count — then this is 0 for everything and
+   * the choice falls back to structure, exactly as before.
+   */
+  if (Number(dataset?.own) > 0) score += 4;
   for (const [role, col] of Object.entries(using || {})) {
     const p = PREFER[role];
     if (p?.good && p.good.test(String(col))) score += 1;

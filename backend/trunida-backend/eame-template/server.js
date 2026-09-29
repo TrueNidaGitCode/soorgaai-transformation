@@ -25,7 +25,7 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { startScheduler, restoreOwnFiles, readIndex, loadDefinedDatasets } from './services/connectorService.js';
+import { startScheduler, restoreOwnFiles, readIndex, loadDefinedDatasets, indexWithOwnCounts } from './services/connectorService.js';
 import { startAgentScheduler, autoStartWatchers, rebindWatchers } from './services/agentService.js';
 import { catalogueFor } from './services/agentCatalogue.js';
 import { activeCategories, categoryLimit } from './services/coverage.js';
@@ -267,7 +267,7 @@ async function start() {
     ({ question, usePlan }) => answer({ question, kind: 'own', usePlan }),
     // Read fresh on every tick, so connecting a source moves the watchers
     // onto it without a restart and without anybody being asked.
-    { catalogue: () => catalogueFor(readIndex(), agentPlan()) },
+    { catalogue: async () => catalogueFor(await indexWithOwnCounts(), agentPlan()) },
   );
 
   /*
@@ -277,7 +277,8 @@ async function start() {
    * minutes away, and an application that has been asking about the wrong
    * dataset for a week should not spend another five minutes doing it.
    */
-  rebindWatchers(catalogueFor(readIndex(), agentPlan()))
+  indexWithOwnCounts()
+    .then((index) => rebindWatchers(catalogueFor(index, agentPlan())))
     .catch((err) => console.warn('[agents] rebind skipped:', err.message));
 
   /*

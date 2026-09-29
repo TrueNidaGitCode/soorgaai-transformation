@@ -573,6 +573,43 @@ export async function readAllRows(dataset, kind = 'own') {
 }
 
 /** How much of each a dataset holds: the owner's rows, and the sample's. */
+/**
+ * The index, with how many of the owner's OWN rows each dataset holds.
+ *
+ * For choosing between two datasets that could answer the same watcher. A
+ * delivered application ships with sample datasets whose columns are, by
+ * design, exactly the columns the business uses — so an appointment diary
+ * full of invented rows beats a real CRM module on every structural signal
+ * there is, and a watcher reading `kind: 'own'` then finds nothing, for ever,
+ * which looks exactly like a business with no problems.
+ *
+ * Deliberately cheaper than countRows: one aggregation and one readdir, not a
+ * full read of every dataset. A dataset whose rows this cannot see reads as
+ * zero and the choice falls back to structure, which is where it was.
+ */
+export async function indexWithOwnCounts() {
+  const counts = {};
+  try {
+    const grouped = await rowsCollection()
+      .aggregate([{ $group: { _id: '$datasetName', n: { $sum: 1 } } }]).toArray();
+    for (const g of grouped) counts[g._id] = g.n;
+  } catch { /* none, which is a real answer */ }
+
+  // Rows an earlier version of this application left on disk.
+  let files = [];
+  try { files = fs.existsSync(OWN_DIR) ? fs.readdirSync(OWN_DIR) : []; } catch { files = []; }
+
+  return readIndex().map((d) => {
+    let own = counts[d.name] || 0;
+    if (!own && d.slug) {
+      const escaped = String(d.slug).replace(/[.*+?^${}()|[\]\\]/g, (m) => '\\' + m);
+      const re = new RegExp('^' + escaped + '(?:\\.[a-z0-9_-]+)?\\.csv$', 'i');
+      if (files.some((f) => re.test(f))) own = 1;
+    }
+    return { ...d, own };
+  });
+}
+
 export async function countRows(dataset) {
   const own = await rowsCollection().countDocuments({ datasetName: dataset.name }).catch(() => 0);
   return { own: own || (await readAllRows(dataset, 'own')).rows.length, sample: (await readAllRows(dataset, 'sample')).rows.length };

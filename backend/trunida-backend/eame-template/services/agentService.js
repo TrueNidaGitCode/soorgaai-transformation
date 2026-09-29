@@ -1018,7 +1018,11 @@ export function startAgentScheduler(ask, { catalogue = null } = {}) {
       // Before anything is due, so a watcher that runs this tick runs the
       // question that fits today's data rather than yesterday's.
       if (typeof catalogue === 'function') {
-        await rebindWatchers(catalogue()).catch((err) => console.warn('[agents] rebind skipped:', err.message));
+        try {
+          await rebindWatchers(await catalogue());
+        } catch (err) {
+          console.warn('[agents] rebind skipped:', err.message);
+        }
       }
 
       const due = dueAgents(await agentsCollection().find({}).toArray(), Date.now(), { lookedAt });

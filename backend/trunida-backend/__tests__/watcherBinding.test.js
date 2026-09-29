@@ -192,3 +192,56 @@ describe('a CRM’s own words', () => {
     if (r.ready) expect(r.question).toContain('Owner');
   });
 });
+
+/**
+ * Records the business has beat records this application invented.
+ *
+ * ── Why this outranks everything else in fitOf ─────────────────────────────
+ *
+ * A delivered application ships with sample datasets whose columns were built
+ * to be exactly the columns the business uses. That makes them unbeatable on
+ * structure by construction: measured live, "Appointment Booking Diary"
+ * (sample) and "Meetings (Zoho CRM)" (real, ten records, one of them a No
+ * Show against a real patient) both scored 4 for the No Show watcher, and the
+ * tie went to whichever came first in the index — the sample one.
+ *
+ * A watcher reads `kind: 'own'`. Bound to a dataset holding none of the
+ * owner's rows it finds nothing every morning, which on the board and in the
+ * digest is indistinguishable from a business with nothing wrong.
+ */
+describe('sample data and the real thing', () => {
+  const shipped = {
+    name: 'Appointment Booking Diary',
+    columns: ['appointment_id', 'client_id', 'practitioner_name', 'appointment_date', 'booking_status'],
+    own: 0,
+  };
+  const real = {
+    name: 'Meetings (Zoho CRM)',
+    columns: ['id', 'Event_Title', 'Start_DateTime', 'Owner', 'Who_Id', 'Appointment_Status'],
+    own: 10,
+  };
+
+  it('takes the dataset the owner’s records are actually in', () => {
+    const r = catalogueFor([shipped, real], {}).find((x) => x.id === 'no-show');
+    expect(r.ready).toBe(true);
+    expect(r.using).toBe('Meetings (Zoho CRM)');
+  });
+
+  it('is not decided by which came first', () => {
+    const r = catalogueFor([real, shipped], {}).find((x) => x.id === 'no-show');
+    expect(r.using).toBe('Meetings (Zoho CRM)');
+  });
+
+  it('still uses the sample one when nothing real has arrived', () => {
+    // Before anything is connected this is all there is, and a watcher on it
+    // is how somebody sees what the product does.
+    const r = catalogueFor([shipped, { ...real, own: 0 }], {}).find((x) => x.id === 'no-show');
+    expect(r.using).toBe('Appointment Booking Diary');
+  });
+
+  it('changes nothing for a caller that did not count', () => {
+    const uncounted = [{ ...shipped, own: undefined }, { ...real, own: undefined }];
+    const r = catalogueFor(uncounted, {}).find((x) => x.id === 'no-show');
+    expect(r.ready).toBe(true);
+  });
+});

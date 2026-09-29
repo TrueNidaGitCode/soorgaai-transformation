@@ -14,7 +14,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { catalogueFor, entryFor, fillQuestion, matchDataset, severityFor } from '../services/agentCatalogue.js';
-import { readIndex, provenanceSummary, sourcesFrom } from '../services/connectorService.js';
+import { readIndex, provenanceSummary, sourcesFrom, indexWithOwnCounts } from '../services/connectorService.js';
 import { hasOwnRows } from '../services/answerService.js';
 import { isOwner } from './accessController.js';
 import { activeCategories, categoryLimit, coversWatcher, allowedSchedule, coverageSummary } from '../services/coverage.js';
@@ -377,7 +377,9 @@ export async function listAgentsHandler(req, res) {
      */
     const prov = await provenanceSummary();
 
-    const catalogue = catalogueFor(readIndex(), plan())
+    // The same counted index the scheduler binds from, so the board never
+    // names a dataset the watcher is not actually reading.
+    const catalogue = catalogueFor(await indexWithOwnCounts(), plan())
       .map((c) => {
         const live = byWatcher.get(c.id) || null;
         // `using` is one dataset name, or two joined by " + " for a watcher

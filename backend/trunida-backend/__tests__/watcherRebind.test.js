@@ -100,12 +100,12 @@ describe('when it happens', () => {
   const srv = read('../eame-template/server.js');
 
   it('runs on every scheduler tick, so connecting a source needs no restart', () => {
-    expect(svc).toContain('await rebindWatchers(catalogue())');
-    expect(srv).toContain('catalogue: () => catalogueFor(readIndex(), agentPlan())');
+    expect(svc).toContain('await rebindWatchers(await catalogue())');
+    expect(srv).toContain('catalogue: async () => catalogueFor(await indexWithOwnCounts(), agentPlan())');
   });
 
   it('runs at boot too, rather than waiting five minutes', () => {
-    expect(srv).toContain('rebindWatchers(catalogueFor(readIndex(), agentPlan()))');
+    expect(srv).toContain('.then((index) => rebindWatchers(catalogueFor(index, agentPlan())))');
   });
 
   it('is read fresh each time rather than captured once', () => {

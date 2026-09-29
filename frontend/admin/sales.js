@@ -2569,11 +2569,13 @@ function renderIcpView() {
           and neither was prompted with it. Two words in the second one are doing more work than the
           product does, and this page does not let them pass unmarked. <b>&ldquo;The systems you
           already use&rdquo;</b> means whatever Svarg can read: an upload, a database connection, or
-          Confluence, GitHub, Jira and inbound WhatsApp. There is no CRM connector and none for a
-          phone system, so call activity arrives as an export or a database, and that is the first
-          thing to establish rather than the last. <b>&ldquo;Put it in front of&rdquo;</b> is a
-          morning email &mdash; true, and the whole of it. Act is still not built; see the spine
-          above.</p>
+          Zoho CRM, cloud telephony, inbound WhatsApp, Confluence, GitHub and Jira. The CRM and the
+          phone connectors are new and were the two gaps this paragraph used to name; another CRM or
+          a different phone provider is still an export or a database, and that is the first thing to
+          establish rather than the last. <b>&ldquo;Put it in front of&rdquo;</b> is a morning email
+          &mdash; true, and the whole of it. Act is drafted and never sent; joining signals ACROSS
+          agents, which is what &ldquo;comparing the signals&rdquo; sounds like, is still not built.
+          See the spine above, and the Next column on the presentation.</p>
       </div>
 
       <p class="sg-who__label">What we believe, and would test</p>
@@ -3677,6 +3679,22 @@ function renderFirstMessage(seg) {
           <p class="sg-fm__subject"><span>Ends with</span>The link. Nothing after it gets read on a phone.</p>
           <div class="sg-fm__body">${para(o.short)}</div>
         </article>
+
+        <article class="sg-fm__msg sg-fm__msg--deck">
+          <p class="sg-fm__kind">Presentation</p>
+          <p class="sg-fm__subject"><span>When</span>In the meeting, and left behind after it.</p>
+          <div class="sg-fm__body">
+            <p>Four slides: the problem, what it does, what you get, and what
+              happens to your records.</p>
+            <p>Its figures are read from the running product every time this page
+              loads, so the deck cannot claim more watchers, connectors or usage
+              than actually exist.</p>
+            <p>It separates <b>what runs today</b> from <b>what is next</b>. Present it
+              that way \u2014 the most persuasive claim in the old version was the
+              one thing not yet built.</p>
+          </div>
+          <a class="sg-fm__go" href="#sg-deck">Read it below</a>
+        </article>
       </div>
 
       <p class="sg-fm__label">Two things not to say</p>
@@ -3684,6 +3702,263 @@ function renderFirstMessage(seg) {
         ${o.avoid.map(([said, why]) => `<li><b>${said}</b><span>${why}</span></li>`).join('')}
       </ul>
     </section>`;
+}
+
+
+
+/* ── The presentation ───────────────────────────────────────────────────────
+ *
+ * The third thing that leaves this page. The email and the short message get
+ * a meeting; this is what is walked through in it, and what gets left behind
+ * afterwards.
+ *
+ * ── Why it is here and not a PDF ───────────────────────────────────────────
+ *
+ * A deck goes stale the day it is exported, and the stale parts are always
+ * the numbers. An earlier version of this one said five agents watch for five
+ * things; the catalogue is thirty-six across seven areas, and neither the
+ * slide nor the person presenting it knew that. So the countable claims are
+ * counted, from the same code the product runs on, and the deck says what is
+ * true this morning.
+ *
+ * ── The line that matters most ─────────────────────────────────────────────
+ *
+ * RUNS TODAY and NEXT are separate, and every claim sits under one of them.
+ *
+ * That is not caution, it is the finding that this deck was built on. The
+ * original slide three has a Chief of Agents connecting a No Show, a phone
+ * call and an unkept promise into "Rahul needs attention" — which is the most
+ * persuasive thing in the deck and the one thing the product does not do.
+ * Each watcher finds its own thing and the briefing lists them per watcher;
+ * nothing joins them. Sold as present tense, that is the claim a buyer
+ * discovers in week one, and everything else in the deck gets re-examined
+ * when they do.
+ *
+ * Stated as where this is going, it is a roadmap a buyer can be excited by
+ * without being misled, and the rest of the deck keeps its credibility. See
+ * eame-template/services/notifyService.js — composeDigest walks the results
+ * agent by agent and never compares two.
+ */
+
+/** Filled from /deck. Null until it answers; the deck renders either way. */
+let deckFacts = null;
+
+/**
+ * The slides. Prose is written here; every figure comes from deckFacts.
+ *
+ * Each slide names what it is for, because a deck read by somebody who did
+ * not write it needs to say what each part is doing, not only what it says.
+ */
+const DECK = [
+  {
+    n: '01',
+    kicker: 'The problem',
+    title: 'Your business already knows. It just does not know it in one place.',
+    sub: 'Every one of these is recorded. No two of them are recorded together.',
+    lead: [
+      ['Books an appointment', 'CRM'],
+      ['Does not turn up', 'CRM'],
+      ['Rings the centre', 'Phone'],
+      ['Asks about a package', 'Phone or WhatsApp'],
+      ['Is promised a call back', 'The conversation, and nowhere else'],
+    ],
+    caseTitle: 'One customer, one week',
+    case: [
+      ['CRM', 'Appointment marked No Show', false],
+      ['Phone', 'Asked about upgrading his package', false],
+      ['Staff', '\u201cI\u2019ll check and get back to you.\u201d', false],
+      ['CRM', 'No follow-up recorded', true],
+    ],
+    close: 'Nobody did anything wrong. The record and what actually happened '
+      + 'came apart, and nothing in the business is watching for that.',
+  },
+  {
+    n: '02',
+    kicker: 'What it does',
+    title: 'Agents watch the business while your team runs it.',
+    sub: 'Not a dashboard to check. Watchers that run on a schedule and speak up '
+      + 'only when something is true.',
+    live: 'areas',
+    close: 'Each one is a question asked of your own records, evaluated in code '
+      + 'rather than guessed at \u2014 so a finding is either true or it is not raised.',
+  },
+  {
+    n: '03',
+    kicker: 'What you get',
+    title: 'A short list of things that need attention, with the evidence attached.',
+    sub: 'Every finding names the records behind it, so the first question in the '
+      + 'room \u2014 how do you know \u2014 has an answer on the screen.',
+    today: [
+      ['A watcher finds it', 'Counted in code against your own records. A finding '
+        + 'that cannot be evidenced is not raised.'],
+      ['The evidence travels with it', 'Which dataset, which columns, which rows, '
+        + 'under what rule \u2014 refreshed on every run, not frozen at first sight.'],
+      ['One briefing, not six emails', 'Everything found that morning arrives '
+        + 'together, and it says what has been resolved as well as what is new.'],
+      ['A follow-up is drafted', 'Written from the finding\u2019s own evidence. The '
+        + 'model writes the sentence and supplies no fact.'],
+      ['A person sends it', 'The application holds no mail credentials. It cannot '
+        + 'contact your customer, by construction.'],
+    ],
+    next: [
+      ['Signals joined across agents', 'Today the No Show and the phone call are '
+        + 'two findings from two watchers. Reading them as one customer who needs '
+        + 'attention is the next piece of work, and it is not built.'],
+      ['Ranked, not just listed', 'The briefing lists findings in agent order. '
+        + '\u201cWhich three first\u201d has no implementation yet.'],
+    ],
+  },
+  {
+    n: '04',
+    kicker: 'Privacy and control',
+    title: 'Your records stay in your application.',
+    sub: 'Not a policy. Where the code puts things.',
+    pillars: [
+      ['Your data', 'Connected records are stored in your own application\u2019s '
+        + 'database, on your own instance. Credentials are encrypted there and '
+        + 'nowhere else.'],
+      ['Your systems', 'It reads the systems you connect and nothing else. '
+        + 'Connecting and disconnecting is the owner\u2019s, not ours.'],
+      ['Your decisions', 'It finds things and drafts follow-ups. What happens '
+        + 'next is a person\u2019s decision, every time.'],
+    ],
+    claims: [
+      ['No message reaches a customer without a person sending it',
+        'The application holds no mail credentials. This is not a setting that '
+        + 'can be switched the other way.'],
+      ['Svarg cannot read your records',
+        'A delivered application reports which watcher fired and nothing else '
+        + '\u2014 no finding, no name, no row. The allow-list drops the rest '
+        + 'before it is stored.'],
+    ],
+    live: 'boundary',
+  },
+];
+
+/** A figure with its provenance, so "how do you know" is answerable. */
+function deckStat(value, label, source) {
+  return `<div class="sg-deck__stat">
+    <b>${esc(String(value))}</b>
+    <span>${esc(label)}</span>
+    <em>${esc(source)}</em>
+  </div>`;
+}
+
+/** Slide 02: the catalogue, counted off the code the applications run. */
+function deckAreas() {
+  const f = deckFacts;
+  if (!f) return '<p class="sg-deck__wait">Reading the catalogue\u2026</p>';
+  return `
+    <div class="sg-deck__stats">
+      ${deckStat(f.watchers.total, 'watchers in the catalogue', f.watchers.source)}
+      ${deckStat(f.watchers.areas.length, 'areas of a business', f.watchers.source)}
+      ${deckStat(f.connectors.total, 'systems it can read', f.connectors.source)}
+    </div>
+    <ul class="sg-deck__areas">
+      ${f.watchers.areas.map((a) => `
+        <li>
+          <p class="sg-deck__area">${esc(a.area)}<span>${a.count}</span></p>
+          <p class="sg-deck__eg">${a.watchers.slice(0, 3).map((w) => esc(w.name)).join(' \u00b7 ')}</p>
+        </li>`).join('')}
+    </ul>
+    <p class="sg-deck__conn"><b>Reads</b> ${f.connectors.list.map((c) => esc(c.name)).join(' \u00b7 ')}</p>`;
+}
+
+/** Slide 04: what customers have actually done with it, and the boundary. */
+function deckBoundary() {
+  const f = deckFacts;
+  if (!f) return '';
+  const u = f.use;
+  const any = u.started || u.opened;
+  return `
+    ${any ? `<div class="sg-deck__stats">
+      ${deckStat(u.started, 'watchers switched on by customers', u.source)}
+      ${deckStat(u.kept, 'still running', u.source)}
+      ${deckStat(`${u.resolved} of ${u.opened}`, 'findings resolved', u.source)}
+    </div>` : ''}
+    <p class="sg-deck__wire"><b>What Svarg receives</b> ${esc(u.boundary)}</p>`;
+}
+
+function deckSlide(sl) {
+  const rows = (list) => list.map(([a, b, bad]) => `
+    <li${bad ? ' class="is-bad"' : ''}><span>${esc(a)}</span><b>${esc(b)}</b></li>`).join('');
+
+  let body = '';
+  if (sl.lead) {
+    body += `<div class="sg-deck__two">
+      <ul class="sg-deck__lead">${rows(sl.lead)}</ul>
+      <div class="sg-deck__case">
+        <p class="sg-deck__caseh">${esc(sl.caseTitle)}</p>
+        <ul>${rows(sl.case)}</ul>
+      </div>
+    </div>`;
+  }
+  if (sl.live === 'areas') body += deckAreas();
+  if (sl.today) {
+    body += `<div class="sg-deck__split">
+      <section>
+        <p class="sg-deck__when sg-deck__when--now">Runs today</p>
+        <ol class="sg-deck__steps">${sl.today.map(([t, d], i) => `
+          <li><span>${i + 1}</span><div><b>${esc(t)}</b><p>${esc(d)}</p></div></li>`).join('')}</ol>
+      </section>
+      <section>
+        <p class="sg-deck__when sg-deck__when--next">Next \u2014 say so as next</p>
+        <ul class="sg-deck__next">${sl.next.map(([t, d]) => `
+          <li><b>${esc(t)}</b><p>${esc(d)}</p></li>`).join('')}</ul>
+      </section>
+    </div>`;
+  }
+  if (sl.pillars) {
+    body += `<div class="sg-deck__pillars">${sl.pillars.map(([t, d], i) => `
+      <article><span>0${i + 1}</span><b>${esc(t)}</b><p>${esc(d)}</p></article>`).join('')}</div>`;
+  }
+  if (sl.claims) {
+    body += `<ul class="sg-deck__claims">${sl.claims.map(([t, d]) => `
+      <li><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join('')}</ul>`;
+  }
+  if (sl.live === 'boundary') body += deckBoundary();
+  if (sl.close) body += `<p class="sg-deck__close">${esc(sl.close)}</p>`;
+
+  return `
+    <article class="sg-deck__slide">
+      <header>
+        <span class="sg-deck__n">${esc(sl.n)}</span>
+        <span class="sg-deck__kicker">${esc(sl.kicker)}</span>
+      </header>
+      <h4 class="sg-deck__title">${esc(sl.title)}</h4>
+      <p class="sg-deck__sub">${esc(sl.sub)}</p>
+      ${body}
+    </article>`;
+}
+
+/**
+ * The deck, drawn from the slides above and whatever /deck has answered with.
+ *
+ * Drawn before the figures arrive and again after, so a slow answer shows a
+ * deck missing its numbers rather than an empty panel. Nothing here waits.
+ */
+function renderDeck() {
+  const el = document.getElementById('sg-deck');
+  if (!el) return;
+  const when = deckFacts
+    ? `Figures read ${new Date(deckFacts.generatedAt).toLocaleString()}, live from the product`
+    : 'Reading the figures\u2026';
+  el.innerHTML = `
+    <section class="sg-deck">
+      <h3 class="sg-deck__h">The presentation</h3>
+      <p class="sg-deck__s">Walked through in the meeting and left behind after it. Every
+        number below is counted from the running product when this page loads \u2014 nothing
+        here is typed in, so nothing here goes stale. <em>${esc(when)}</em></p>
+      ${DECK.map(deckSlide).join('')}
+    </section>`;
+}
+
+/** Ask once per page load; the deck redraws itself when the answer lands. */
+function loadDeckFacts() {
+  if (deckFacts) { renderDeck(); return; }
+  api('/deck')
+    .then((f) => { deckFacts = f; renderDeck(); })
+    .catch(() => { renderDeck(); });
 }
 
 /*
@@ -3727,7 +4002,12 @@ function renderPitches() {
       </ol>
     </section>
 
-    <div class="sg-pitches">${mine.map(renderPitch).join('')}</div>`;
+    <div class="sg-pitches">${mine.map(renderPitch).join('')}</div>
+
+    <div id="sg-deck"></div>`;
+
+  // Drawn immediately from what is already known, and again when /deck answers.
+  loadDeckFacts();
 
   el.querySelector('.sg-seg').addEventListener('click', (e) => {
     const b = e.target.closest('[data-seg]');

@@ -26,6 +26,7 @@ import {
   getTemplate, setTemplate, previewFor, generateOutreach, trackedLink,
 } from '../services/outreachService.js';
 import { motionRegistry, motionEmails, motionSharesLink, DEFAULT_MOTION } from '../services/gtmMotions.js';
+import { deckFacts } from '../services/pitchDeckService.js';
 
 /** The unsubscribe page echoes a stored address back into HTML. */
 function escapeHtml(str) {
@@ -118,6 +119,21 @@ export async function createLead(req, res) {
  * Served rather than hard-coded in sales.js so the plays, the lanes and the
  * validator cannot drift apart. Static, so it is cheap to fetch on load.
  */
+/**
+ * The deck, with the numbers it can actually stand behind.
+ *
+ * Read-only and admin-only like the rest of this board. Nothing here is a
+ * customer record: see services/pitchDeckService.js for what the wire does
+ * and does not carry.
+ */
+export async function getDeck(req, res) {
+  try {
+    res.json(await deckFacts());
+  } catch (err) {
+    res.status(500).json({ error: String(err?.message || err) });
+  }
+}
+
 export async function getMotions(req, res) {
   try {
     /*

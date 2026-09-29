@@ -4,6 +4,7 @@ import { adminOnly } from '../middleware/adminMiddleware.js';
 import {
   getBoard, ask, createLead, patchLead, removeLead, mailStatus,
   sendLeadNow, putSequence, readTemplate, writeTemplate, previewLead, setAccountKind, generateLeadEmail, getMotions,
+  getDeck,
 } from '../controllers/salesSignalsController.js';
 
 const router = express.Router();
@@ -11,6 +12,8 @@ const router = express.Router();
 // Platform-admin-only. This board names customers, objectives, IPs and spend.
 router.get('/',                    protect, adminOnly, getBoard);
 router.get('/motions',             protect, adminOnly, getMotions);
+// The deck's live half: what the product is and how much of it is used.
+router.get('/deck',                protect, adminOnly, getDeck);
 router.get('/mail-status',         protect, adminOnly, mailStatus);
 router.post('/ask',                protect, adminOnly, ask);
 router.post('/leads',              protect, adminOnly, createLead);

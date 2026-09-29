@@ -244,24 +244,46 @@ describe('the problem, as two interviews described it', () => {
      * a CRM integration and an action, in a room, to a customer.
      */
     if (!/systems you already use/.test(view)) return;
-    expect(view).toMatch(/no CRM connector/);
+    // What the sentence may not be allowed to imply, as of today. "No CRM
+    // connector" used to be one of these and was retired when one shipped;
+    // what replaced it is the claim the product still cannot make.
     expect(view).toMatch(/morning email/);
-    expect(view).toMatch(/Act is still not built/);
+    expect(view).toMatch(/joining signals ACROSS\s+agents.*is still not built/s);
   });
 
-  it('is still true that there is no CRM connector', () => {
+  it('names every connector that ships, and claims no more', () => {
     /*
      * The other direction of staleness, and the one nobody notices: the page
      * says a capability is missing, somebody builds it, and the page keeps
      * talking a seller out of a claim they could now make.
+     *
+     * This tripwire fired exactly as designed. The page said "there is no CRM
+     * connector and none for a phone system" for weeks after both shipped, so
+     * a seller reading it was told to promise less than the product does.
+     *
+     * Turned around rather than deleted: the list on the page must match the
+     * directory in both directions, so it cannot go stale again in either.
      */
     const dir = join(dirname(fileURLToPath(import.meta.url)),
       '../../backend/trunida-backend/eame-template/services/connectors');
     const shipped = readdirSync(dir).map((f) => f.replace(/\.js$/, ''));
     expect(shipped.length, 'no connectors found — has the directory moved?')
       .toBeGreaterThan(0);
-    expect(shipped.filter((c) => /crm|salesforce|hubspot|zoho|pipedrive/i.test(c)))
-      .toEqual([]);
+
+    /** What the page calls each shipped connector. 'svarg' talks to itself. */
+    const SAID = {
+      zohocrm: /Zoho CRM/, phone: /cloud telephony/i, whatsapp: /WhatsApp/,
+      database: /database/, confluence: /Confluence/, github: /GitHub/, jira: /Jira/,
+    };
+    for (const c of shipped.filter((x) => x !== 'svarg')) {
+      expect(SAID[c], `${c} ships but this test does not know what the page calls it`)
+        .toBeTruthy();
+      expect(view, `${c} ships but the page does not mention it`).toMatch(SAID[c]);
+    }
+
+    // And the other way: nothing is described as missing once it exists.
+    expect(view).not.toMatch(/no CRM connector/);
+    expect(view).not.toMatch(/none for a\s+phone system/);
     // And the ones the page does name are the ones that are there.
     for (const named of ['confluence', 'github', 'jira', 'whatsapp']) {
       expect(shipped, named).toContain(named);

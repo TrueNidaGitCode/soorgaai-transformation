@@ -177,3 +177,90 @@ describe('reading the signals again on a call that already has its words', () =>
     expect(pull.indexOf('transcribePending')).toBeLessThan(pull.indexOf('rereadSignals'));
   });
 });
+
+/**
+ * The model complies in substance and not always in form.
+ *
+ * ── The second round of the same failure ───────────────────────────────────
+ *
+ * The first fix stopped the prompt being wrapped in the application's
+ * conduct, which was real and needed doing. The call was re-read and came
+ * back marked `unreadable` — the model answered, and the answer still would
+ * not parse.
+ *
+ * The parser stripped a code fence off each end, which works exactly as long
+ * as the model returns the object and nothing else. A model told "Return ONLY
+ * JSON" writes "Here is what I found:" above it, or a sentence below it, or
+ * fences it, or all three. None of that is worth throwing a whole call away
+ * for, and the call it was throwing away was the one the demonstration is
+ * built on.
+ *
+ * What loosened is how the answer is FOUND. Nothing about how it is TRUSTED:
+ * every quote is still checked against the transcript, which is the guard
+ * between reporting a promise and inventing one.
+ */
+describe('finding the answer inside whatever the model said', () => {
+  const GOOD = {
+    intent: 'upgrade',
+    request: 'monthly subscription package',
+    request_quote: 'I would like to go for a subscription service',
+    promise: 'yes',
+    promise_quote: 'I will just check with the team and get back to you',
+  };
+  const said = (raw) => async () => raw;
+  const obj = JSON.stringify(GOOD);
+
+  it('reads a bare object', async () => {
+    expect((await readSignals(REAL, said(obj))).promise).toBe('yes');
+  });
+
+  it('reads it through a code fence', async () => {
+    expect((await readSignals(REAL, said('```json\n' + obj + '\n```'))).promise).toBe('yes');
+  });
+
+  it('reads it under a sentence of preamble', async () => {
+    const r = await readSignals(REAL, said('Here is what I found:\n' + obj));
+    expect(r.signals_checked).toBe('yes');
+    expect(r.intent).toBe('upgrade');
+  });
+
+  it('reads it with prose on both sides, which is the shape that failed', async () => {
+    const r = await readSignals(REAL, said(
+      'Sure! Here you go.\n```json\n' + obj + '\n```\nLet me know if you need anything else.',
+    ));
+    expect(r.promise).toBe('yes');
+    expect(r.promise_quote).toContain('check with the team');
+  });
+
+  it('does not end the object early on a brace inside a quote', async () => {
+    // A promise quote containing a brace would otherwise truncate the object
+    // and turn a good answer into a bad one.
+    const r = await readSignals(REAL, said(JSON.stringify({ ...GOOD, request: 'the {monthly} package' })));
+    expect(r.signals_checked).toBe('yes');
+  });
+
+  it('still fails honestly when there is no object at all', async () => {
+    const r = await readSignals(REAL, said('The customer asked about an upgrade.'));
+    expect(r.signals_checked).toBe('unreadable');
+    expect(r.promise).toBe('');
+  });
+
+  it('keeps what the model said, so the next failure is not guesswork', async () => {
+    /*
+     * Two rounds of this were diagnosed by guessing, because the only
+     * evidence was a container log nobody was watching. It is never a column
+     * — the connector lands the five named signals and nothing else.
+     */
+    const r = await readSignals(REAL, said('Nope, not doing JSON today.'));
+    expect(r.said).toContain('not doing JSON today');
+    expect(Object.keys(r)).not.toContain('transcript');
+  });
+
+  it('checks the quotes exactly as before, however the answer was wrapped', async () => {
+    const r = await readSignals(REAL, said(
+      'Here you go!\n' + JSON.stringify({ ...GOOD, promise_quote: 'I will refund you this afternoon' }),
+    ));
+    expect(r.promise).toBe('no');
+    expect(r.signals_checked).toBe('unquoted');
+  });
+});

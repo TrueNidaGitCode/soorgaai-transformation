@@ -82,6 +82,55 @@ const RULES = [
 ].join('\n');
 
 /**
+ * The JSON object out of whatever the model actually said.
+ *
+ * ── Why this is not a trim ────────────────────────────────────────────────
+ *
+ * It used to strip a code fence off each end and parse the rest, which works
+ * exactly as long as the model returns the object and nothing else. Measured
+ * on a real call: it did not. The first reading came back marked unreadable —
+ * the model answered, and the answer was not parseable — and a prompt saying
+ * "Return ONLY JSON" had already been through one round of fixing.
+ *
+ * A model that is complying in substance and not in form writes "Here is what
+ * I found:" above the object, or a sentence below it, or fences it, or all
+ * three. None of that is a failure worth throwing an entire call away for.
+ *
+ * So the first balanced object in the text is taken, wherever it starts.
+ * Braces inside strings are not counted — a promise quote containing a brace
+ * would otherwise end the object early and turn a good answer into a bad one.
+ *
+ * This loosens how the answer is FOUND and nothing about how it is TRUSTED.
+ * Every quote is still checked against the transcript afterwards, which is
+ * the guard that matters: it is the difference between reporting a promise
+ * and inventing one.
+ */
+export function jsonIn(text) {
+  const s = String(text || '');
+  const start = s.indexOf('{');
+  if (start < 0) return '';
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < s.length; i += 1) {
+    const ch = s[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === '{') depth += 1;
+    else if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) return s.slice(start, i + 1);
+    }
+  }
+  return '';
+}
+
+/**
  * Loose enough to survive a transcript, strict enough to catch an invention.
  *
  * Case, punctuation and whitespace are normalised away because a model will
@@ -138,7 +187,7 @@ export async function readSignals(transcript, ask) {
 
   let out;
   try {
-    out = JSON.parse(String(raw).replace(/^```(?:json)?\s*|\s*```$/g, '').trim());
+    out = JSON.parse(jsonIn(raw));
   } catch {
     /*
      * It answered, and not in JSON. Kept apart from 'no' deliberately.
@@ -151,8 +200,17 @@ export async function readSignals(transcript, ask) {
      * the conduct outranks the caller on how to speak. One value would have
      * sent somebody to check the gateway; this one names the prompt.
      */
+    /*
+     * And what it said is kept, not only logged.
+     *
+     * Two rounds of this failure have now been diagnosed by guessing, because
+     * the only evidence was a container log nobody was watching. `said` is
+     * never a column — the connector lands the five named signals and nothing
+     * else — so this costs a few hundred characters in the database and turns
+     * the next occurrence into a question somebody can answer by looking.
+     */
     console.warn('[signals] answered, but not in JSON:', String(raw).slice(0, 160));
-    return { ...none, signals_checked: 'unreadable' };
+    return { ...none, signals_checked: 'unreadable', said: String(raw).slice(0, 400) };
   }
 
   const intent = INTENTS.includes(String(out?.intent || '').toLowerCase())

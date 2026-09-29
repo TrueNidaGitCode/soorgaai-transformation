@@ -3637,11 +3637,18 @@ function renderFirstMessage(seg) {
               lines, and the No Show comes from a different check. Reading several
               findings as one patient is still being built. Fair as a picture of
               where this goes; do not describe it as one row on the board today.</p>
-            <p>And the strongest privacy line was dropped for a softer one.
-              <b>No message is ever sent to a patient automatically</b> is
-              checkable and structural \u2014 the application holds no mail
-              credentials. Worth saying out loud even though the slide now reads
-              \u201cyou control what information is shared and when\u201d.</p>
+            <p><b>If a clinic asks exactly what reaches the AI service</b>, the
+              slide gives the honest shape and this is the detail behind it.
+              Answering a question sends the dataset names and columns with up to
+              four example values from each column, for every connected dataset,
+              and then up to twenty-five names per group to the step that writes
+              the answer. Reading a call sends the whole recording, then the
+              whole transcript. Drafting a follow-up sends that finding\u2019s own
+              evidence. Nothing is kept by the provider or by us; the credentials
+              to their CRM and phone system never leave their application at all.</p>
+            <p>No minimisation is claimed on the slide because none is performed
+              \u2014 the catalogue covers every connected dataset, not only the
+              ones a question touches. Do not offer it.</p>
           </div>
           <a class="sg-fm__go" href="#sg-deck">Read it below</a>
         </article>
@@ -3816,13 +3823,40 @@ const DECK = [
         + 'email or messaging login — it cannot contact anyone. That is how it is built, not a setting.'],
       ['Your decisions', 'SvargAI can prepare a follow-up. A person reads it and decides whether to send it.'],
     ],
+    /*
+     * The disclosure, said in the words it actually deserves.
+     *
+     * This began as "that information is sent to the AI service that does the
+     * work" — true, and hiding a great deal behind "that information". A
+     * clinic reading it would not guess it meant patient names and whole
+     * recorded conversations, and a clinic that discovers that later stops
+     * believing the other three claims on the slide.
+     *
+     * Traced before it was written, so each line is the code:
+     *
+     *   names and details   answerService sends up to 25 names per group to
+     *                       the writing step, and up to 4 example values per
+     *                       column to the planning step
+     *   the recording       transcribeService sends the audio itself
+     *   the text comes back the transcript is stored in this application,
+     *                       nowhere else
+     *   not stored          gatewayController forwards and records tokens;
+     *                       transcribeService keeps no audio
+     *
+     * No minimisation is claimed, because none is performed: the catalogue
+     * sent at planning time covers every connected dataset, not only the ones
+     * a question touches. Saying "only what the question needs" would have
+     * been the one sentence here that was not true.
+     */
     seen: {
-      head: 'What SvargAI can see',
+      head: 'What leaves your clinic, and what does not',
       points: [
         ['We never receive your patient records.',
           'Our platform is told which check ran and how often — never who it was about.'],
-        ['To answer a question or turn a recording into text, that information is sent to the AI service that does the work.',
+        ['To answer a question, patient names and appointment details go to the AI service that does the reading.',
           'It is not stored there, and it is not stored by us.'],
+        ['To read a recorded call, the recording itself is sent, and the text that comes back is kept in your own application.',
+          'The recording is not kept by the AI service, and not by us.'],
       ],
     },
     note: 'Recording a patient call is your clinic’s decision. Switch the “this call is being '

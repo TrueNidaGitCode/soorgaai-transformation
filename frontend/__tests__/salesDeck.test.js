@@ -41,8 +41,15 @@ const html = read('../admin/sales.html');
 /** The deck's own block, so a match elsewhere in the file cannot pass for it. */
 const deck = js.slice(js.indexOf('/* ── The presentation'), js.indexOf('/*\n * Pitches, by industry.'));
 
-/** The prose a reader actually sees, without the comments that explain it. */
-const slides = deck.slice(deck.indexOf('const CLINIC_WATCHERS = ['), deck.indexOf('function deckHub'));
+/**
+ * The prose a reader actually sees.
+ *
+ * Comments are stripped, not merely excluded by slicing: several of them quote
+ * the exact phrases the slides must not use, in order to forbid them, and a
+ * slice that keeps them makes every such assertion fail on its own reasoning.
+ */
+const strip = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '');
+const slides = strip(deck.slice(deck.indexOf('const CLINIC_WATCHERS = ['), deck.indexOf('function deckHub')));
 
 /** The card above the deck, which the seller reads and the customer never does. */
 const card = js.slice(js.indexOf('sg-fm__msg--deck'), js.indexOf('href="#sg-deck"'));
@@ -194,10 +201,13 @@ describe('what the deck stopped saying, and where it went', () => {
     expect(card).toContain('do not describe it as one row on the board today');
   });
 
-  it('keeps the strongest privacy claim alive for the room', () => {
-    // Structural and checkable: the application holds no mail credentials.
-    expect(card).toContain('No message is ever sent to a patient automatically');
-    expect(card).toContain('holds no mail');
+  it('puts the strongest privacy claim back on the slide itself', () => {
+    /*
+     * It lived on the seller's card while the approved slide carried the
+     * softer 'you control what information is shared and when'. It is
+     * structural and checkable, so it belongs in front of the customer.
+     */
+    expect(strip(deck)).toContain('No message is ever sent to a patient automatically');
   });
 
   it('never states the unbuilt joining as something it does today', () => {
@@ -260,7 +270,7 @@ describe('every privacy claim, against the code that makes it true', () => {
   // read by the bundler as a module import and refused.
   const HERE = dirname(fileURLToPath(import.meta.url));
   const api = (p) => readFileSync(join(HERE, '../../backend/trunida-backend', p), 'utf8');
-  const privacy = deck.slice(deck.indexOf("n: '05'"), deck.indexOf("n: '06'"));
+  const privacy = strip(deck.slice(deck.indexOf("n: '05'"), deck.indexOf("n: '06'")));
 
   it('says the records stay in the clinic\u2019s own application', () => {
     expect(privacy).toContain('Patient records stay in your own application');
@@ -295,15 +305,57 @@ describe('every privacy claim, against the code that makes it true', () => {
     expect(wire).toContain("doc.watcherId = String(raw.watcherId || '').slice(0, 64);");
   });
 
-  it('discloses that answering a question sends the information onward', () => {
+  it('names what actually goes, rather than hiding it behind "information"', () => {
     /*
      * The one thing on this slide that is a disclosure rather than a
-     * reassurance, and it belongs there. A clinic handing over patient
-     * information is entitled to know it reaches the service that does the
-     * reading, and would find out anyway.
+     * reassurance, and it belongs there.
+     *
+     * It first read "that information is sent to the AI service that does the
+     * work" — true, and hiding a great deal. A clinic would not guess that
+     * meant patient names and whole recorded conversations, and a clinic that
+     * finds out later stops believing the other three claims.
      */
-    expect(privacy).toContain('sent to the AI service that does the work');
+    expect(privacy).toContain('patient names and appointment details go to the AI service');
+    expect(privacy).toContain('the recording itself is sent');
+    expect(privacy).not.toContain('that information is sent to the AI service');
+  });
+
+  it('says what happens to it afterwards, for both', () => {
     expect(privacy).toContain('It is not stored there, and it is not stored by us.');
+    expect(privacy).toContain('The recording is not kept by the AI service, and not by us.');
+  });
+
+  it('claims no minimisation, because none is performed', () => {
+    /*
+     * The catalogue sent at planning time covers every connected dataset, not
+     * only the ones a question touches. "Only what the question needs" would
+     * have been the one sentence on this slide that was not true, so it is
+     * asserted absent rather than left to somebody's judgement later.
+     */
+    expect(privacy).not.toMatch(/only what the question needs|only the records needed|minimum necessary/i);
+    const ans = api('eame-template/services/answerService.js');
+    expect(ans).toContain('for (const d of readIndex())');
+  });
+
+  it('is what the writing step is actually given', () => {
+    // Up to twenty-five names per group, and the rules tell it to use them.
+    const ans = api('eame-template/services/answerService.js');
+    expect(ans).toContain('const SAMPLE_FOR_MODEL = 25;');
+    expect(ans).toContain('g.items.slice(0, SAMPLE_FOR_MODEL)');
+    expect(ans).toContain('NAME PEOPLE.');
+  });
+
+  it('is what the planning step is actually given', () => {
+    // Column examples, drawn from real rows, capped at 32 characters.
+    const ans = api('eame-template/services/answerService.js');
+    expect(ans).toContain('if (v && v.length <= 32) seen.add(v);');
+    expect(ans).toContain('(e.g. ${v.slice(0, 4).join(\', \')})');
+  });
+
+  it('gives the seller the detail behind the slide, for a clinic that asks', () => {
+    expect(card).toContain('exactly what reaches the AI service');
+    expect(card).toContain('up to twenty-five names per group');
+    expect(card).toContain('No minimisation is claimed');
   });
 
   it('is true that we do not store it: the gateway forwards and counts', () => {

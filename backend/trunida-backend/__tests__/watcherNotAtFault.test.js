@@ -21,7 +21,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
-import { notTheWatchersFault } from '../eame-template/services/agentService.js';
+import { notTheWatchersFault, dueAgents, RETRY_AFTER_MS } from '../eame-template/services/agentService.js';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
@@ -77,9 +77,57 @@ describe('what a run does with that', () => {
     expect(fail).toContain('lastError: message.slice(0, 500)');
   });
 
-  it('still marks the run as done, rather than retrying every five minutes', () => {
-    // Twelve watchers retrying a depleted provider on every tick helps nobody
-    // and costs somebody.
+  it('records when it last tried, and brakes before trying again', () => {
+    // dueAgents decides whether that counted as a look; retryAfter is what
+    // stops twelve watchers retrying a depleted provider on every tick.
     expect(fail).toContain('lastRunAt: new Date()');
+    expect(fail).toContain('retryAfter: new Date(Date.now() + RETRY_AFTER_MS)');
+  });
+});
+
+/**
+ * And a failed run does not use up the day.
+ *
+ * The provider ran out of credit at 05:46. Every watcher recorded a run and
+ * none of them answered anything — but the record said they had run today, so
+ * the next look was 07:00 the following morning. The account was topped up at
+ * eleven and the product's answer to "is it working now" was still "wait until
+ * tomorrow".
+ */
+describe('catching up after an outage', () => {
+  const at = (iso) => new Date(iso).getTime();
+  // A Tuesday, 11:00 in Calcutta.
+  const NOW = at('2026-09-29T05:30:00Z');
+  const base = {
+    enabled: true, status: 'active', schedule: 'weekdays', atHour: 7, tz: 'Asia/Calcutta',
+    lastRunAt: new Date('2026-09-29T00:16:00Z'), // 05:46 local, earlier today
+  };
+  const outage = '502 The model provider rejected the request for lack of credit. This is on Svarg to resolve, not your application.';
+
+  it('looks again once the provider is back, rather than tomorrow', () => {
+    const due = dueAgents([{ ...base, lastError: outage }], NOW, { lookedAt: NOW });
+    expect(due.length).toBe(1);
+  });
+
+  it('waits out the brake rather than retrying on every tick', () => {
+    const a = { ...base, lastError: outage, retryAfter: new Date(NOW + 60_000) };
+    expect(dueAgents([a], NOW, { lookedAt: NOW }).length).toBe(0);
+    expect(dueAgents([a], NOW + 120_000, { lookedAt: NOW + 120_000 }).length).toBe(1);
+  });
+
+  it('leaves a run that actually answered alone', () => {
+    const a = { ...base, lastError: '' };
+    expect(dueAgents([a], NOW, { lookedAt: NOW }).length).toBe(0);
+  });
+
+  it('still waits for the hour the owner chose', () => {
+    // 05:00 local, before 07:00: catching up is not a licence to run at dawn.
+    const early = at('2026-09-28T23:30:00Z');
+    const due = dueAgents([{ ...base, lastError: outage }], early, { lookedAt: early });
+    expect(due.length).toBe(0);
+  });
+
+  it('brakes for a quarter of an hour', () => {
+    expect(RETRY_AFTER_MS).toBe(15 * 60 * 1000);
   });
 });

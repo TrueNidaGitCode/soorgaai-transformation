@@ -51,6 +51,14 @@ export const TICK_MS = 5 * 60 * 1000;
 /** Stops itself after this many failures in a row. */
 export const MAX_FAILURES = 3;
 
+/**
+ * How long to leave an outage above this application alone before trying
+ * again. Four times an hour: often enough that nobody is sitting waiting for
+ * it, rare enough that a provider that is down is not being hammered by every
+ * watcher in every delivered application.
+ */
+export const RETRY_AFTER_MS = 15 * 60 * 1000;
+
 export function agentsCollection() {
   return mongoose.connection.collection('svarg_agents');
 }
@@ -196,7 +204,27 @@ export function dueAgents(docs, now = Date.now(), { lookedAt = null } = {}) {
     const spec = SCHEDULES[allowedSchedule(a.schedule)];
     if (!spec) return false;
 
-    const last = a.lastRunAt ? new Date(a.lastRunAt).getTime() : 0;
+    /*
+     * A run that never reached a model is not a look.
+     *
+     * Svarg's provider ran out of credit at 05:46. Every watcher recorded a
+     * run, none of them answered anything, and because the record said they
+     * had run today the next look was 07:00 the following morning — so the
+     * account was topped up at eleven and the product's answer to "is it
+     * working now" was still "wait until tomorrow".
+     *
+     * retryAfter is the brake. Without it this retries on every tick for as
+     * long as the outage lasts; with it, four times an hour, which is often
+     * enough that nobody is waiting and rare enough that nobody notices.
+     *
+     * The hour and the weekday still apply below. A watcher catching up on a
+     * failed morning should do it during the day it was meant to run, not at
+     * three in the morning because that is when the provider came back.
+     */
+    const failedAbove = notTheWatchersFault(a.lastError);
+    if (failedAbove && a.retryAfter && new Date(a.retryAfter).getTime() > now) return false;
+
+    const last = failedAbove || !a.lastRunAt ? 0 : new Date(a.lastRunAt).getTime();
 
     if (!spec.atHour) return now - last >= spec.every;
 
@@ -654,10 +682,13 @@ export async function runAgent(agent, ask) {
     const degraded = !ours && failures >= MAX_FAILURES;
     await agentsCollection().updateOne({ _id }, {
       $set: {
-        // Set either way: retrying a depleted provider every five minutes,
-        // once per watcher, helps nobody and costs somebody.
+        // Recorded either way, so the board can say when it last tried.
+        // dueAgents is what decides whether that counted as a look.
         lastRunAt: new Date(),
         lastError: message.slice(0, 500),
+        // The brake on retrying an outage. Only meaningful while lastError
+        // is one of Svarg's; a run that answers clears it.
+        ...(ours ? { retryAfter: new Date(Date.now() + RETRY_AFTER_MS) } : {}),
         failures,
         // Stops itself rather than erroring quietly for ever. Visible on the
         // board, and switching it back on clears the count.

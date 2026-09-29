@@ -882,7 +882,27 @@ export async function rebindWatchers(catalogue) {
       await agentsCollection().updateOne(
         { _id: a._id },
         {
-          $set: { question: c.question, reboundAt: new Date(), boundTo: c.using || '' },
+          $set: {
+            question: c.question,
+            reboundAt: new Date(),
+            boundTo: c.using || '',
+            /*
+             * And it is due again.
+             *
+             * `lastRunAt` means "this question has been asked today". After a
+             * rebind it has not — a different question was. Left standing, a
+             * watcher moved onto a newly connected CRM at nine in the morning
+             * would next look at seven the following day, and the board would
+             * sit empty until then. Which is what happened: the CRM was
+             * connected, the watcher moved, the front page said nothing, and
+             * the honest explanation was "wait until tomorrow".
+             *
+             * dueAgents treats no last run as due, so the next tick picks it
+             * up — inside five minutes, and still no earlier than the hour
+             * the owner chose.
+             */
+            lastRunAt: null,
+          },
           // The plan named the old dataset; the findings were about it.
           $unset: { plan: '' },
         },

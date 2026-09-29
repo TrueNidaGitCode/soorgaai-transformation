@@ -88,6 +88,13 @@ describe('what moving one costs', () => {
     expect(rebind).toContain('findingsCollection().deleteMany({ agentId: a._id })');
   });
 
+  it('is due again, because the last run answered a different question', () => {
+    // dueAgents treats no last run as due, so the next tick picks it up --
+    // inside five minutes, and no earlier than the hour the owner chose. A
+    // watcher moved at nine would otherwise next look at seven tomorrow.
+    expect(rebind).toContain('lastRunAt: null');
+  });
+
   it('creates nothing, deletes nothing, and switches nothing on', () => {
     expect(rebind).not.toContain('createAgent');
     expect(rebind).not.toContain('deleteAgent');

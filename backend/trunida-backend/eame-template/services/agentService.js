@@ -507,6 +507,26 @@ export async function deleteAgent(id) {
  * Returns what changed. It sends nothing: telling somebody is a separate step,
  * with its own rails.
  */
+/**
+ * Was this failure the watcher's, or something above it?
+ *
+ * Two signals, and both are Svarg's own words rather than a provider's. The
+ * gateway answers a tenant with an HTTP status and a sentence it chose: 5xx
+ * for the model plane, 429 for rate limiting, and prose that says plainly
+ * whose problem it is. The OpenAI-compatible client the application uses puts
+ * that status at the front of the message, which is why the code is read from
+ * there — it is the one part of the text that is not prose.
+ *
+ * Deliberately narrow. Anything unrecognised counts against the watcher,
+ * because a watcher that can never degrade is a watcher that fails silently
+ * for ever, which is the thing MAX_FAILURES exists to prevent.
+ */
+export function notTheWatchersFault(message = '') {
+  const m = String(message);
+  if (/^\s*(408|429|5\d\d)\b/.test(m)) return true;
+  return /on Svarg to resolve|rate limiting requests|upstream model provider could not be reached/i.test(m);
+}
+
 export async function runAgent(agent, ask) {
   const _id = agent._id;
   try {
@@ -612,22 +632,43 @@ export async function runAgent(agent, ask) {
      */
     return { ran: true, fired, simulated: !!result?.simulated, ...change };
   } catch (err) {
-    const failures = (agent.failures || 0) + 1;
+    const message = String(err.message || err);
+    /*
+     * A watcher stops itself after three failures because a watcher that
+     * errors quietly for ever is worse than one that says it gave up. That
+     * counts failures of the WATCHER — a question that cannot be planned, a
+     * dataset that went away.
+     *
+     * It was counting Svarg's failures too. Measured live: Svarg's model
+     * provider ran out of credit, every watcher in the application failed on
+     * the same tick with "this is on Svarg to resolve, not your application",
+     * and twelve of them were two strikes from switching themselves off. Top
+     * the account up and the customer still has a dead board, and the repair
+     * is to go and re-enable each one by hand — for an outage that was never
+     * theirs.
+     *
+     * So it is recorded, and shown, and not held against them.
+     */
+    const ours = notTheWatchersFault(message);
+    const failures = ours ? (agent.failures || 0) : (agent.failures || 0) + 1;
+    const degraded = !ours && failures >= MAX_FAILURES;
     await agentsCollection().updateOne({ _id }, {
       $set: {
+        // Set either way: retrying a depleted provider every five minutes,
+        // once per watcher, helps nobody and costs somebody.
         lastRunAt: new Date(),
-        lastError: String(err.message || err).slice(0, 500),
+        lastError: message.slice(0, 500),
         failures,
         // Stops itself rather than erroring quietly for ever. Visible on the
         // board, and switching it back on clears the count.
-        ...(failures >= MAX_FAILURES ? { status: 'degraded' } : {}),
+        ...(degraded ? { status: 'degraded' } : {}),
       },
     }).catch(() => {});
     // A watcher giving up is worth knowing centrally: one customer's broken
     // watcher is a support ticket, the same watcher breaking everywhere is a
     // defect in the catalogue.
-    if (failures >= MAX_FAILURES) sendSignal('watcher_degraded', { watcherId: agent.watcherId || '' });
-    return { ran: false, error: String(err.message || err) };
+    if (degraded) sendSignal('watcher_degraded', { watcherId: agent.watcherId || '' });
+    return { ran: false, error: message };
   }
 }
 

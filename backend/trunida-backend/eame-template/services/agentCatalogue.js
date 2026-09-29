@@ -520,7 +520,22 @@ const PREFER = {
      * Stopped Coming was going to Tasks on a Who_Id while Leads sat there
      * with a name.
      */
-    good: /name/i,
+    /*
+     * A column that names people, including the ones that do it without the
+     * word "name" in them.
+     *
+     * who_id is deliberately NOT here. It is a reference — Zoho's pointer at
+     * the contact a meeting belongs to — and on the meeting that mattered it
+     * was empty, while Participants held "Rahul Sharma". Both matched the
+     * role, neither ranked, and the tie fell to column order: Who_Id sits at
+     * position 7 and Participants at 15. So the no-show watcher asked about a
+     * blank and found nobody, on a row whose Appointment_Status said "No
+     * Show" in as many words.
+     *
+     * It stays eligible below, because on a meeting with a contact linked it
+     * is the right answer and sometimes the only one.
+     */
+    good: /name|participant|attendee|invitee|guest/i,
     weak: /owner|assign|responsible|manager/i,
     /*
      * An address is not a person, however many name-shaped words are in it.

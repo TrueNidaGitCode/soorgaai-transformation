@@ -158,8 +158,9 @@ describe('a CRM’s own words', () => {
     const r = row('no-show');
     expect(r.ready).toBe(true);
     expect(r.using).toBe('Meetings (Zoho CRM)');
-    // The person the appointment is WITH, and the status the practice set.
-    expect(r.question).toContain('Who_Id');
+    // The person the appointment is with -- Participants, where a meeting
+    // lists them, because Who_Id is a pointer and is often empty.
+    expect(r.question).toContain('Participants');
   });
 
   it('never reads a deadline off the name of whoever created the record', () => {
@@ -313,5 +314,52 @@ describe('a watcher says where to look', () => {
     const r = catalogueFor([meetings], {}).find((x) => x.id === 'no-show');
     expect(r.question).toContain('Appointment_Status');
     expect(r.question).toContain('Who_Id');
+  });
+});
+
+/**
+ * Who_Id is a pointer, and on the row that mattered it was empty.
+ *
+ * ── The row, exactly as the CRM held it ────────────────────────────────────
+ *
+ *   Event_Title        Physiotherapy Consultation - Rahul
+ *   Who_Id             (empty)
+ *   Participants       Rahul Sharma
+ *   Appointment_Status No Show
+ *
+ * Both columns matched the `who` role and neither ranked, so the tie fell to
+ * column order — Who_Id at position 7, Participants at 15. The watcher asked
+ * about a blank, found nobody, and left the board empty on a row that said
+ * "No Show" in as many words.
+ */
+describe('who a meeting is with', () => {
+  const meeting = {
+    name: 'Meetings (Zoho CRM)',
+    columns: ['id', 'Event_Title', 'Start_DateTime', 'Owner', 'Who_Id', 'What_Id',
+      'Participants', 'Remind_Participants', 'Appointment_Status'],
+    own: 10,
+  };
+
+  it('takes the people over the pointer at them', () => {
+    const r = catalogueFor([meeting], {}).find((x) => x.id === 'no-show');
+    expect(r.question).toContain('Participants');
+    expect(r.question).not.toContain('Who_Id');
+  });
+
+  it('takes the pointer when that is all there is', () => {
+    const thin = { ...meeting, columns: meeting.columns.filter((c) => !/participant/i.test(c)) };
+    const r = catalogueFor([thin], {}).find((x) => x.id === 'no-show');
+    expect(r.question).toContain('Who_Id');
+  });
+
+  it('does not let a reminder field stand in for the guest list', () => {
+    const r = catalogueFor([meeting], {}).find((x) => x.id === 'no-show');
+    expect(r.question).not.toContain('Remind_Participants');
+  });
+
+  it('still prefers a plain name where a dataset has one', () => {
+    const leads = { name: 'Leads (Zoho CRM)', columns: ['id', 'First_Name', 'Lead_Status', 'Last_Activity_Time'], own: 10 };
+    const r = catalogueFor([leads], {}).find((x) => x.id === 'stopped-coming');
+    expect(r.question).toContain('First_Name');
   });
 });

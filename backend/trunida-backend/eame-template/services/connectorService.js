@@ -860,7 +860,12 @@ export function publicView(doc) {
 }
 
 export function catalog() {
-  return Object.values(KINDS).map(k => ({ kind: k.kind, label: k.label, help: k.help, fields: k.fields, provides: k.provides }));
+  return Object.values(KINDS).map(k => ({
+    kind: k.kind, label: k.label, help: k.help, fields: k.fields, provides: k.provides,
+    // Whether this source names its own dataset. The card asks 'into which
+    // dataset' only where the answer is genuinely the owner's to give.
+    definesDataset: typeof k.describeShape === 'function',
+  }));
 }
 
 export async function listConnectors() {
@@ -869,14 +874,54 @@ export async function listConnectors() {
 }
 
 /** Test, then keep. A connection that cannot reach its source is not kept. */
+/**
+ * Whether a field has to be filled in, given what else has been.
+ *
+ * A field can be optional in general and required in one case. Exotel's API
+ * cannot be called without the key, the token and the Account SID; the same
+ * three are genuinely optional on a webhook-only provider, where the
+ * recording link may need no login at all. One field list, one card, and the
+ * answer depends on the service chosen — so the rule is declared beside the
+ * field rather than being seven copies of the card.
+ */
+export function fieldIsRequired(field, config = {}) {
+  if (field.required !== false) return true;
+  const when = field.requiredWhen;
+  if (!when) return false;
+  return Object.entries(when).every(([name, allowed]) => {
+    const v = String(config[name] || '').trim();
+    return Array.isArray(allowed) ? allowed.includes(v) : allowed === v;
+  });
+}
+
 export async function createConnector({ kind: kindName, datasetName, config = {}, mapping = null, schedule = 'manual' }) {
   const kind = kindOf(kindName);
-  const dataset = findDataset(datasetName);
-  if (!dataset) throw new Error('That dataset is not one this application was built on.');
   for (const f of kind.fields) {
-    if (f.required !== false && !String(config[f.name] || '').trim()) throw new Error(`${f.label} is needed.`);
+    if (fieldIsRequired(f, config) && !String(config[f.name] || '').trim()) throw new Error(`${f.label} is needed.`);
   }
   await kind.test(config);
+
+  /*
+   * Which dataset, answered by the source where the source knows.
+   *
+   * A CRM module and a phone system both have one shape, and it is theirs to
+   * describe: asking somebody to file calls into a list of datasets about
+   * patients and appointments is asking them to make a decision on behalf of
+   * a program that already knows the answer. So a kind with describeShape
+   * defines its own, and the dataset arrives named, keyed and mapped one to
+   * one from `provides`.
+   *
+   * After test(), deliberately. Defining a dataset for a credential that
+   * turns out to be wrong leaves an empty table nobody asked for and nobody
+   * will delete.
+   */
+  let dataset = datasetName ? findDataset(datasetName) : null;
+  if (!dataset && typeof kind.describeShape === 'function') {
+    const shape = await kind.describeShape(config);
+    await defineDataset({ ...shape, from: kind.kind });
+    dataset = findDataset(shape.name);
+  }
+  if (!dataset) throw new Error('That dataset is not one this application was built on.');
   const columns = (dataset.columns || []).filter(c => c !== '_source');
   const doc = {
     kind: kind.kind, datasetName: dataset.name, config: sealConfig(kind, config),

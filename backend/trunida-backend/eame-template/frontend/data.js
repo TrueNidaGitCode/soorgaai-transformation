@@ -1260,7 +1260,17 @@
       + brings
       + setupHtml
       + '<div class="dt-form__grid">'
-      + '<label class="dt-form__field">Into which dataset<select class="dt-select" name="__dataset">' + datasetOptions(guessDs >= 0 ? guessDs : 0) + '</select></label>'
+      /*
+       * "Into which dataset" is asked only where it is a real question.
+       *
+       * A CRM module and a phone system each have one shape and describe
+       * it themselves, so the answer is already known — and putting it on
+       * the form asks somebody to file calls into a list of datasets about
+       * patients and appointments. Where the source cannot say, it is
+       * still asked.
+       */
+      + (k.definesDataset ? ''
+        : '<label class="dt-form__field">Into which dataset<select class="dt-select" name="__dataset">' + datasetOptions(guessDs >= 0 ? guessDs : 0) + '</select></label>')
       // A field the flow writes rather than a person: 'brokered' says how
       // this connection was made and is set by the one-click path. Declared
       // on the kind because connectorService stores only declared fields,
@@ -1271,13 +1281,52 @@
           ? '<select name="' + esc(f.name) + '">' + f.options.map(function (o) { return '<option value="' + esc(o) + '">' + esc(o) + '</option>'; }).join('') + '</select>'
           : '<input type="' + (f.secret ? 'password' : 'text') + '" name="' + esc(f.name) + '" placeholder="' + esc(f.placeholder || '') + '" autocomplete="off">';
         return '<label class="dt-form__field">' + esc(f.label)
-          + (f.required === false ? '<span class="dt-form__opt">optional</span>' : '')
+          + '<span class="dt-form__opt" data-opt="' + esc(f.name) + '"' + (needed(f, {}) ? ' hidden' : '') + '>optional</span>'
           + input
           + (f.hint ? '<em class="dt-form__note">' + esc(f.hint) + '</em>' : '')
           + '</label>';
       }).join('') + '</div>'
       + '<div class="dt-map__actions"><button type="button" class="dt-btn" data-connect="1" data-kind="' + esc(k.kind) + '">Test and connect</button>'
       + '<button type="button" class="dt-btn dt-btn--quiet" data-cancel="1">Cancel</button></div>');
+    markOptional(k);
+  }
+
+  /**
+   * Whether a field has to be filled in, given what else has been.
+   *
+   * The same rule as connectorService.fieldIsRequired, applied here so the
+   * form says it before the server does. Exotel's three credentials are
+   * what its API needs; on a webhook-only service the same three are
+   * genuinely optional, because the recording link may need no login.
+   * Labelling the only three fields that matter "optional" leaves somebody
+   * wondering what the form is for.
+   */
+  function needed(f, config) {
+    if (f.required !== false) return true;
+    if (!f.requiredWhen) return false;
+    return Object.keys(f.requiredWhen).every(function (name) {
+      var allowed = f.requiredWhen[name];
+      var v = String(config[name] == null ? '' : config[name]).trim();
+      return allowed && allowed.indexOf ? allowed.indexOf(v) >= 0 : allowed === v;
+    });
+  }
+
+  /** Redraw the optional marks from what is in the form right now. */
+  function markOptional(k) {
+    var b = bodyOf(k.kind);
+    if (!b) return;
+    var apply = function () {
+      var config = {};
+      b.querySelectorAll('[name]').forEach(function (el) { config[el.name] = el.value; });
+      (k.fields || []).forEach(function (f) {
+        var tag = b.querySelector('[data-opt="' + f.name + '"]');
+        if (tag) tag.hidden = needed(f, config);
+      });
+    };
+    b.querySelectorAll('select[name], input[name]').forEach(function (el) {
+      el.addEventListener('change', apply);
+    });
+    apply();
   }
 
   /**
@@ -1484,19 +1533,22 @@
 
   async function submitConnector(btn, kind) {
     var b = bodyOf(kind);
-    var config = {}; var di = 0;
+    var config = {}; var di = -1;
     b.querySelectorAll('[name]').forEach(function (el) { if (el.name === '__dataset') di = Number(el.value); else config[el.name] = el.value; });
     btn.disabled = true; btn.textContent = 'Testing…';
     var old = b.querySelector('.dt-card__err'); if (old) old.remove();
     try {
-      var r = await ownerJson('/api/connectors', 'POST', { kind: btn.dataset.kind, datasetName: datasets[di].name, config: config });
+      // No dataset picked means the source names its own: the server defines
+      // it from the shape and answers with the name it chose.
+      var chosen = di >= 0 && datasets[di] ? datasets[di].name : '';
+      var r = await ownerJson('/api/connectors', 'POST', { kind: btn.dataset.kind, datasetName: chosen, config: config });
       delete open[kind];
       addingMore = false;
       await refresh();
       // Not "press Sync now to bring its rows in" -- that button was removed
       // when reading became automatic, and the sentence outlived it, telling
       // people to press something that is not on the screen.
-      say(els.note, r.connector.label + ' connected to ' + datasets[di].name + (kind === 'whatsapp' ? '. Messages land here as they are sent.' : '. Its rows are being read now, and every hour after that.'));
+      say(els.note, r.connector.label + ' connected to ' + (r.connector.datasetName || chosen || 'its own dataset') + (kind === 'whatsapp' ? '. Messages land here as they are sent.' : '. Its rows are being read now, and every hour after that.'));
     } catch (err) {
       flowErr(kind, err.message);
       btn.disabled = false; btn.textContent = 'Test and connect';

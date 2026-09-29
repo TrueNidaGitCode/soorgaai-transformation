@@ -58,48 +58,56 @@ export const help = 'Calls from your cloud telephony service. '
   + 'before you start: that announcement is how a caller consents, and it cannot be set '
   + 'from here.';
 
+/**
+ * What the card asks, and what it refuses to ask.
+ *
+ * ── Three fields, not six ──────────────────────────────────────────────────
+ *
+ * Every question here was measured against one test: can the person in front
+ * of it answer without guessing? Four could not, and they are gone.
+ *
+ * WHICH DATASET. The rows are calls. There is exactly one shape a call has,
+ * this connector declares it in `provides`, and asking somebody to pick a
+ * home for it — from a list of datasets about patients and appointments — is
+ * asking them to make a filing decision on behalf of a program that already
+ * knows the answer. describeShape() below answers it instead.
+ *
+ * READ THE RECORDINGS. A phone connector that does not read recordings
+ * captures who rang and nothing about why, and the transcript is the entire
+ * reason this source exists. It stays on. The cost it was guarding is
+ * guarded properly elsewhere: MAX_PER_SYNC bounds how many recordings one
+ * sync listens to, and an application with no transcription configured
+ * simply does not transcribe.
+ *
+ * WHICH CLUSTER, and HOW FAR BACK. Nothing on an Exotel dashboard is
+ * labelled "region", and nobody can pick a number of days before they have
+ * seen anything. Both clusters are tried; the window is a month. See
+ * exotelApi.js.
+ *
+ * ── And "optional" is a fact about the provider, not the field ─────────────
+ *
+ * The three credentials are what Exotel's API requires: without any one of
+ * them there is nothing to call. On a webhook-only provider the same three
+ * are genuinely optional, because the recording link may need no login. So
+ * they are marked required FOR the providers that cannot work without them,
+ * and the card says so — rather than labelling the only three things that
+ * matter "optional" and leaving somebody to wonder what the form is for.
+ */
 export const fields = [
   { name: 'provider', label: 'Which service', options: PROVIDER_IDS,
     hint: PROVIDERS.map((p) => `${p.id} = ${p.label}`).join(' · ') },
-  { name: 'authUser', label: 'API key or account id', required: false,
-    hint: 'Only needed if your recordings are behind a login. Twilio: the Account SID. Exotel: your API key.' },
+  { name: 'authUser', label: 'API key', required: false, requiredWhen: { provider: ['exotel'] },
+    hint: 'Exotel: your API Key, from Settings → API Settings. Twilio: the Account SID.' },
   { name: 'authToken', label: 'API token', required: false, secret: true,
-    hint: 'Sent with the download request. Left blank, recordings are fetched without credentials, which works where the link is already signed.' },
-  { name: 'transcribe', label: 'Read the recordings', options: ['yes', 'no'],
-    hint: 'Turning this off keeps who rang and when, and skips the cost of listening.' },
-  /*
-   * The one that turns Exotel from a letterbox into a source.
-   *
-   * The key and token above were already here for downloading a recording;
-   * this is the third thing Exotel's API wants, and with all three the calls
-   * are FETCHED — history included, with nothing to configure in Exotel — so
-   * the webhook becomes the thing that makes it immediate rather than the
-   * thing that makes it work at all. See services/exotelApi.js.
-   *
-   * Optional, because every other provider here is webhook-only and a
-   * required field somebody cannot fill is a card they cannot save.
-   */
+    requiredWhen: { provider: ['exotel'] },
+    hint: 'On the same page as the key. Not your sign-in password.' },
   { name: 'accountSid', label: 'Account SID', required: false,
-    hint: 'Exotel only. Fill this in and your calls are read straight from Exotel, history '
-      + 'and all, with nothing to set up there. It sits beside the key and token on the '
-      + 'same page.' },
+    requiredWhen: { provider: ['exotel'] },
+    hint: 'Also on that page. This is what lets your calls be read straight from Exotel, '
+      + 'last month included, with nothing to set up there.' },
 ];
 
-/**
- * Two things this deliberately does not ask.
- *
- * WHICH CLUSTER. Nothing on an Exotel dashboard is labelled "region", so it
- * was a question with no findable answer, and getting it wrong produced a 404
- * that reads as a bad Account SID. Both are tried and the one that answers is
- * remembered — see exotelApi.js.
- *
- * HOW FAR BACK. A number of days is a decision nobody can make before they
- * have seen anything, and every answer but the first is a re-sync. A month is
- * what a business has an opinion about, and it is one request.
- *
- * Both are still read from the config where an older connection set them, so
- * nothing already saved changes behaviour.
- */
+/** Left at a month: one request, and all anybody has an opinion about. */
 const HISTORY_DAYS = 30;
 
 /** Whether this connection can fetch, or only receive. */
@@ -130,6 +138,35 @@ export const provides = [
   ...SIGNAL_FIELDS,
 ];
 
+/**
+ * The dataset this fills, worked out rather than asked about.
+ *
+ * A call has one shape and this connector declares it, so there is no filing
+ * decision for anybody to make: the columns ARE `provides`, in that order,
+ * and the mapping is therefore one to one — every column tagged to the field
+ * that fills it, with nothing to line up by hand.
+ *
+ * Named after the service, so a business running two of them gets two
+ * datasets rather than one with both mixed in. `call_id` is the key, which is
+ * what makes a call landing twice — once from the webhook, once from the
+ * pull — one row rather than two.
+ */
+export function describeShape(config = {}) {
+  const p = PROVIDERS.find((x) => x.id === config.provider);
+  return {
+    name: `Calls (${p ? p.label : 'Phone'})`,
+    columns: provides,
+    key: 'call_id',
+    /*
+     * Bookkeeping, not business. transcript_status says how far to trust the
+     * transcript beside it and received_at is when this application heard
+     * about the call — both matter to a person reading a row and neither is
+     * a column a watcher should ever bind itself to.
+     */
+    internal: ['transcript_status', 'received_at', 'call_id'],
+  };
+}
+
 /** Where calls received at the webhook are kept: this application's database. */
 export function callsCollection() {
   return mongoose.connection.collection('svarg_phone_calls');
@@ -154,10 +191,16 @@ export async function test(config) {
   if (!PROVIDER_IDS.includes(provider)) {
     throw new Error(`Choose one of: ${PROVIDER_IDS.join(', ')}.`);
   }
-  if (config.transcribe !== 'no' && !canTranscribe()) {
-    throw new Error('This application cannot read recordings yet, so choose "no" under '
-      + 'Read the recordings, or ask Svarg to enable it.');
-  }
+  /*
+   * Not being able to listen is no longer a refusal.
+   *
+   * It used to throw, and told somebody to answer "no" under a question that
+   * no longer exists. Who rang, when, for how long and how it ended is a real
+   * source on its own, so the connection is made and the shortfall is said
+   * out loud in the message instead of costing them the whole card.
+   */
+  const deaf = !canTranscribe() ? ' Recordings will not be read — this application has no '
+    + 'transcription configured, so calls arrive with who rang and when, but no words.' : '';
   const held = await callsCollection().countDocuments().catch(() => 0);
 
   /*
@@ -176,7 +219,7 @@ export async function test(config) {
       ok: true,
       message: `Connected to Exotel at ${seen.host}. ${seen.total} call${seen.total === 1 ? '' : 's'} `
         + `in the last 30 days, and ${historyDays(config)} days of history on the first sync.`
-        + (held ? ` ${held} already here from the webhook.` : ''),
+        + (held ? ` ${held} already here from the webhook.` : '') + deaf,
     };
   }
 
@@ -408,7 +451,11 @@ export async function pull(config, { maxRows = 50000 } = {}) {
 }
 
 function statusOf(call, config) {
-  if (config.transcribe === 'no') return 'off';
+  // 'off' covers both ways it can be off: an older connection that answered
+  // "no" while that question existed, and an application with no
+  // transcription configured. Neither is 'pending', which would promise a
+  // reading that is never coming.
+  if (config.transcribe === 'no' || !canTranscribe()) return 'off';
   if (!call.recordingUrl) return 'none';
   return call.transcriptStatus || 'pending';
 }

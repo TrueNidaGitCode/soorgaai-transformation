@@ -175,3 +175,57 @@ describe('an application that cannot read recordings', () => {
     expect(p).toContain("if (config.transcribe === 'no' || !canTranscribe()) return 'off';");
   });
 });
+
+/**
+ * A connection reads itself every hour, which the card has always said.
+ *
+ * ── Measured on the first Exotel connection ────────────────────────────────
+ *
+ * Nine Zoho modules, made through their own flow: all hourly, all reading.
+ * One phone connection, made through the generic form: 'manual' — two reads
+ * in two hours, both at moments somebody happened to be on the Data page, and
+ * nothing in between. The scheduler only looks at connections with a real
+ * schedule, so 'manual' means never.
+ *
+ * And 'manual' stopped meaning anything the day the Sync now button was
+ * removed. There is nothing manual to do. The Data page says, in its own
+ * words, "A connection reads itself every hour and reads itself the moment it
+ * is made" — a contract the product stated and did not keep for anything made
+ * through the form that all new connectors use.
+ */
+describe('what a connection does when nobody says otherwise', () => {
+  const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
+  const svc = read('../eame-template/services/connectorService.js');
+  const create = svc.slice(svc.indexOf('export async function createConnector'));
+
+  it('reads itself every hour', () => {
+    expect(svc).toContain("const DEFAULT_SCHEDULE = 'hourly';");
+    expect(svc).toContain('schedule = DEFAULT_SCHEDULE }');
+  });
+
+  it('does not fall back to never when the caller says nothing', () => {
+    // The bug, exactly: an unrecognised schedule became 'manual', and manual
+    // is not a slower schedule, it is no schedule.
+    expect(create).not.toContain("schedule: SCHEDULES[schedule] ? schedule : 'manual'");
+    expect(create).toContain("SCHEDULES[schedule] || schedule === 'manual' ? schedule : DEFAULT_SCHEDULE");
+  });
+
+  it('still lets somebody choose manual on purpose', () => {
+    // Wanting a source read only when asked is a real thing to want. It is
+    // just not what anybody gets by saying nothing.
+    expect(create).toContain("schedule === 'manual'");
+  });
+
+  it('keeps the promise the card makes in its own words', () => {
+    // Wrapped across a comment, so matched across the wrap rather than
+    // asserting a line break that a reformat would move.
+    const ui = read('../eame-template/frontend/data.js');
+    expect(ui).toMatch(/reads itself every hour and reads itself the moment it is\s+\*?\s*made/);
+  });
+
+  it('is only read by the scheduler when it has a real schedule', () => {
+    // Which is why the default matters: this query is the whole reason a
+    // 'manual' connection is a connection that stopped.
+    expect(svc).toContain('find({ schedule: { $in: Object.keys(SCHEDULES) } })');
+  });
+});

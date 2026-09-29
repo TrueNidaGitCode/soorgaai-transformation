@@ -894,7 +894,30 @@ export function fieldIsRequired(field, config = {}) {
   });
 }
 
-export async function createConnector({ kind: kindName, datasetName, config = {}, mapping = null, schedule = 'manual' }) {
+/**
+ * What a connection does if nobody says otherwise: read itself, every hour.
+ *
+ * ── Why this is not 'manual' ───────────────────────────────────────────────
+ *
+ * It was, and 'manual' stopped meaning anything the day the Sync now button
+ * was removed. There is no manual. A connection left on it reads once, when
+ * it is made, and then never again unless somebody happens to open the Data
+ * page — the scheduler only looks at connections with a real schedule.
+ *
+ * Measured. Nine Zoho modules, made through their own flow, all hourly and
+ * all reading. One Exotel connection, made through the generic form, on
+ * 'manual' — two reads in two hours, both at moments a person was on the
+ * page, and nothing in between. The card beside it says "A connection reads
+ * itself every hour and reads itself the moment it is made", which is the
+ * contract the product states in its own words and did not keep.
+ *
+ * So the default is the contract. 'manual' stays settable, because a source
+ * somebody wants read only when they ask is a real thing to want — it is
+ * just not what anybody gets by saying nothing.
+ */
+const DEFAULT_SCHEDULE = 'hourly';
+
+export async function createConnector({ kind: kindName, datasetName, config = {}, mapping = null, schedule = DEFAULT_SCHEDULE }) {
   const kind = kindOf(kindName);
   for (const f of kind.fields) {
     if (fieldIsRequired(f, config) && !String(config[f.name] || '').trim()) throw new Error(`${f.label} is needed.`);
@@ -926,7 +949,10 @@ export async function createConnector({ kind: kindName, datasetName, config = {}
   const doc = {
     kind: kind.kind, datasetName: dataset.name, config: sealConfig(kind, config),
     mapping: mapping && typeof mapping === 'object' ? mapping : guessMapping(columns, kind.provides),
-    schedule: SCHEDULES[schedule] ? schedule : 'manual',
+    // A recognised schedule, or a deliberate 'manual'. Anything else is a
+    // caller that did not say, and falling back to 'manual' there is how a
+    // connection ends up never reading again.
+    schedule: SCHEDULES[schedule] || schedule === 'manual' ? schedule : DEFAULT_SCHEDULE,
     status: 'connected', lastSyncAt: null, lastRows: 0, lastError: '', createdAt: new Date(),
   };
   bumpDataVersion();

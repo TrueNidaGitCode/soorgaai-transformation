@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import {
-  phoneKey, looksLikePhone, buildPhoneBook, personFor, peopleIn,
+  phoneKey, looksLikePhone, buildPhoneBook, personFor, peopleIn, nameColumnsIn, isName,
 } from '../eame-template/services/peopleService.js';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
@@ -178,5 +178,69 @@ describe('how the board uses it', () => {
   it('is on the board, above the findings', () => {
     expect(html).toContain('id="fn-who"');
     expect(html.indexOf('id="fn-who"')).toBeLessThan(html.indexOf('id="fn-list"'));
+  });
+});
+
+/**
+ * Which column names the patient, measured against a real Zoho module.
+ *
+ * Being loose here cost dearly. Last_Activity_Time matches the name pattern
+ * on "last". Account_Name matches on "name". Joined with the patient's own
+ * name they produced, as the name of a person:
+ *
+ *     "Rahul Sharma Rahul Sharma Clinic and Wellness 2026-09-29T12:44:04+05:30"
+ *
+ * which is not a near miss, it is four fields in a trench coat.
+ */
+describe('which column names the patient', () => {
+  const pick = (columns) => nameColumnsIn(columns).map((i) => columns[i]);
+
+  it('takes a whole name where the record keeps one', () => {
+    expect(pick(['id', 'Full_Name', 'First_Name', 'Last_Name', 'Phone'])).toEqual(['Full_Name']);
+  });
+
+  it('takes a first and last pair, which is one name split in two', () => {
+    expect(pick(['id', 'First_Name', 'Last_Name', 'Phone'])).toEqual(['First_Name', 'Last_Name']);
+  });
+
+  it('never joins a handful of name-ish columns', () => {
+    // The rule the answer pipeline holds itself to: one column, or a pair.
+    expect(pick(['Full_Name', 'Account_Name', 'Owner_Name', 'Last_Activity_Time'])).toEqual(['Full_Name']);
+  });
+
+  it('refuses a timestamp that matched on "last"', () => {
+    expect(pick(['Last_Activity_Time', 'Phone'])).toEqual([]);
+  });
+
+  it('refuses the account or the company', () => {
+    expect(pick(['Account_Name', 'Company_Name', 'Phone'])).toEqual([]);
+  });
+
+  it('refuses an address, however it ends', () => {
+    // Zoho ships Billing_Flat_House_No_Building_Apartment_Name, which matches
+    // the name pattern on its last word and is a doorway.
+    expect(pick(['Billing_Flat_House_No_Building_Apartment_Name', 'Phone'])).toEqual([]);
+  });
+
+  it('refuses the physiotherapist standing beside the patient', () => {
+    expect(pick(['Physio_Name', 'Emergency_Contact_Name', 'Phone'])).toEqual([]);
+  });
+});
+
+describe('the last guard on a value', () => {
+  it('refuses a timestamp that landed in a name column', () => {
+    expect(isName('2026-09-29T12:44:04+05:30')).toBe(false);
+    expect(isName('29/09/2026')).toBe(false);
+  });
+
+  it('refuses a number, an empty cell and a paragraph', () => {
+    expect(isName('7349250983')).toBe(false);
+    expect(isName('   ')).toBe(false);
+    expect(isName('x'.repeat(61))).toBe(false);
+  });
+
+  it('accepts a name', () => {
+    expect(isName('Rahul Sharma')).toBe(true);
+    expect(isName('Priya')).toBe(true);
   });
 });

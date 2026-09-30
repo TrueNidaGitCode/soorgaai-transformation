@@ -39,8 +39,54 @@ const PHONE_COLUMN = /phone|mobile|whatsapp|\btel\b|contact_?number|msisdn/i;
  * _name. Taking them all names two people as one, which reads as true.
  */
 const NAME_COLUMN = /(^|_)(name|first|last|given|surname|full)(_|$)/i;
-const NOT_A_NAME = /(id|code|ref|number|phone|mobile|email|date|amount|status|owner)/i;
+/*
+ * Measured against a real Zoho module, where being loose cost dearly.
+ *
+ * Last_Activity_Time matches the name pattern on "last". Account_Name matches
+ * on "name". Joined with the patient's own name they produced
+ *
+ *     "Rahul Sharma Rahul Sharma Clinic and Wellness 2026-09-29T12:44:04+05:30"
+ *
+ * as the name of a person — which is not a near miss, it is four fields in a
+ * trench coat. time, activity and account are here for that reason.
+ */
+const NOT_A_NAME = /(id|code|ref|number|phone|mobile|email|date|time|amount|status|owner|activity|created|modified|account|company|source|stage|type|title)/i;
+/*
+ * And an address is not a person, however it ends.
+ *
+ * Zoho ships a column called Billing_Flat_House_No_Building_Apartment_Name,
+ * which matches the name pattern on its last word and is a doorway. The
+ * watcher catalogue learned this the same way and vetoes the same words.
+ */
+const AN_ADDRESS = /(address|street|house|flat|building|apartment|city|country|postal|zip|province|lane|road|locality|landmark)/i;
 const SOMEONE_ELSE = /(coach|guardian|parent|instructor|teacher|staff|manager|owner|emergency|referr|next_of_kin|trainer|admin|physio|doctor|consultant)/i;
+
+/**
+ * The column, or the pair of columns, that name THIS person.
+ *
+ * One column, or a first/last pair, and never a handful joined — the same
+ * rule the answer pipeline holds itself to when it resolves an identifier.
+ * A record carries several name-ish columns and only one of them is the
+ * patient; taking them all reads as true and is not.
+ */
+export function nameColumnsIn(columns = []) {
+  const candidates = columns
+    .map((c, i) => [c, i])
+    .filter(([c]) => NAME_COLUMN.test(c) && !NOT_A_NAME.test(c)
+      && !SOMEONE_ELSE.test(c) && !AN_ADDRESS.test(c));
+  if (!candidates.length) return [];
+
+  // A whole name, where the record keeps one.
+  const full = candidates.find(([c]) => /(^|_)full(_|$)/i.test(c) || /^name$/i.test(c));
+  if (full) return [full[1]];
+
+  // Otherwise one person's name split in two, which is one name.
+  const first = candidates.find(([c]) => /(^|_)(first|given)(_|$)/i.test(c));
+  const last = candidates.find(([c]) => /(^|_)(last|surname)(_|$)/i.test(c));
+  if (first && last) return [first[1], last[1]];
+
+  return [candidates[0][1]];
+}
 
 /** The last ten digits, which is the same telephone however it was typed. */
 export function phoneKey(value) {
@@ -65,6 +111,24 @@ export function looksLikePhone(value) {
 }
 
 /**
+ * Is this a person's name, or something that landed in a name column?
+ *
+ * The last guard, and a cheap one. A column can be chosen correctly and still
+ * hold a timestamp, a phone number or an empty string on a given row, and a
+ * board naming a patient "2026-09-29T12:44:04+05:30" is worse than one
+ * showing the number it started with.
+ */
+export function isName(value) {
+  const s = String(value == null ? '' : value).trim();
+  if (!s || s.length > 60) return false;
+  if (looksLikePhone(s)) return false;
+  // A date or a timestamp, however it was written.
+  if (/\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{1,2}:\d{2}/.test(s)) return false;
+  // A name has letters in it.
+  return /\p{L}/u.test(s);
+}
+
+/**
  * number -> name, built from whatever the customer's own records hold.
  *
  * Pure over the datasets it is given, so the rule can be tested without a
@@ -82,10 +146,7 @@ export function buildPhoneBook(datasets = []) {
       .map(([, i]) => i);
     if (!phones.length) continue;
 
-    const names = columns
-      .map((c, i) => [c, i])
-      .filter(([c]) => NAME_COLUMN.test(c) && !NOT_A_NAME.test(c) && !SOMEONE_ELSE.test(c))
-      .map(([, i]) => i);
+    const names = nameColumnsIn(columns);
     if (!names.length) continue;
 
     for (const row of d.rows || []) {
@@ -94,7 +155,7 @@ export function buildPhoneBook(datasets = []) {
         .filter(Boolean)
         .join(' ')
         .trim();
-      if (!person || looksLikePhone(person)) continue;
+      if (!isName(person)) continue;
 
       for (const i of phones) {
         const key = phoneKey(row[i]);

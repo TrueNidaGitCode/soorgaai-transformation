@@ -215,7 +215,7 @@ describe('starting a watcher that reads two datasets', () => {
   const start = ctl.slice(ctl.indexOf('export async function startFromCatalogueHandler'));
 
   it('binds the way the board bound it when it drew the button', () => {
-    expect(start).toContain('catalogueFor(readIndex(), plan())');
+    expect(start).toContain('catalogueFor(await indexWithOwnCounts(), plan())');
     expect(start).toContain("find((c) => c.id === entry.id && c.ready && c.question)");
   });
 
@@ -266,5 +266,49 @@ describe('waking a watcher that reads two datasets', () => {
     // And the query can no longer ask for an exact boundTo, or a pair would
     // never be read back to be filtered.
     expect(src).toContain("find({ boundTo: { $nin: ['', null] } })");
+  });
+});
+
+/**
+ * And it has to bind to the customer's records, not to the samples.
+ *
+ * An application ships with sample datasets whose columns were designed to
+ * fit the catalogue, so they out-score the customer's own records on shape
+ * alone. Only the row count separates them, which is why there are two
+ * indexes and only one of them is worth binding from.
+ *
+ * Measured: Promise Not Kept was started from the board and bound to "Calls
+ * (Exotel) + Appointment Booking Diary" — a sample diary that has never held
+ * a row — while the real follow-ups sat in Tasks. It would have run every
+ * morning against nothing and reported nothing, which is indistinguishable
+ * from a clinic with no unkept promises.
+ */
+describe('binding to real records rather than to the samples', () => {
+  const ctl = read('../eame-template/controllers/agentsController.js');
+  const start = ctl.slice(ctl.indexOf('export async function startFromCatalogueHandler'));
+
+  it('binds from the counted index', () => {
+    expect(start).toContain('catalogueFor(await indexWithOwnCounts(), plan())');
+  });
+
+  it('does not bind from the uncounted one', () => {
+    // readIndex cannot tell a sample dataset from a real one.
+    expect(start).not.toContain('catalogueFor(readIndex(), plan())');
+  });
+
+  it('is the same index the board lists from, so the two agree', () => {
+    /*
+     * The listing already knew this — "so the board never names a dataset the
+     * watcher is not actually reading" — and the button beside it did not. A
+     * screen that shows one binding and creates another is worse than either
+     * being wrong on its own.
+     */
+    const listing = ctl.slice(ctl.indexOf('export async function listAgentsHandler'), ctl.indexOf('export async function createAgentHandler'));
+    expect(listing).toContain('catalogueFor(await indexWithOwnCounts(), plan())');
+  });
+
+  it('is the same index the scheduler rebinds from', () => {
+    const server = read('../eame-template/server.js');
+    expect(server).toContain('catalogueFor(await indexWithOwnCounts(), agentPlan())');
   });
 });

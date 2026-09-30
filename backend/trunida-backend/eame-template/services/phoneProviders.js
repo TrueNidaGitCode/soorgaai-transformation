@@ -39,6 +39,10 @@
 /** Everything a call is, whoever delivered it. */
 export const CALL_FIELDS = [
   'callId', 'from', 'to', 'direction', 'at', 'durationSec', 'agent', 'status', 'recordingUrl',
+  // Where the provider knows one. Several do, from their own contact list or
+  // from the caller ID the network supplied, and it was being dropped: the
+  // connector asked for c.name and nothing here ever set it.
+  'name',
 ];
 
 /*
@@ -65,6 +69,18 @@ const COMMON = {
   status: ['Status', 'status', 'CallStatus', 'call_status', 'DialCallStatus', 'disposition'],
   recordingUrl: ['RecordingUrl', 'RecordingURL', 'recording_url', 'recordingUrl', 'recording',
     'call_recording_url', 'Filename', 'file_name', 'resource_url', 'audio_url', 'RecordingFile'],
+  /*
+   * The person, where the provider knows them.
+   *
+   * A phone system usually does not, which is why the phone book exists — but
+   * several keep a contact list or pass on the caller ID name the network
+   * supplied, and a name the provider already has is better than one this
+   * application has to infer. The agent's own name is NOT here: several
+   * providers send both, and taking the wrong one labels every call with the
+   * member of staff who answered it.
+   */
+  name: ['CustomerName', 'customer_name', 'CallerName', 'caller_name', 'ContactName',
+    'contact_name', 'from_name', 'FromName', 'to_name', 'ToName', 'client_name'],
 };
 
 /** Ahead of COMMON for that provider, where its own spelling is known. */
@@ -231,6 +247,9 @@ export function readCall(payload, provider = 'other') {
     agent: pick(payload, names('agent')),
     status: pick(payload, names('status')),
     recordingUrl: pick(payload, names('recordingUrl')),
+    // Where the provider knows who it was. Usually blank, and the connector
+    // falls back to the number.
+    name: pick(payload, names('name')),
   };
 
   /*

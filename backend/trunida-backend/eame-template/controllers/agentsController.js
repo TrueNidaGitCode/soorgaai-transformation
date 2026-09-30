@@ -14,7 +14,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { catalogueFor, entryFor, fillQuestion, matchDataset, severityFor } from '../services/agentCatalogue.js';
-import { phoneBook, personFor, peopleIn } from '../services/peopleService.js';
+import { phoneBook, personForFinding, peopleIn } from '../services/peopleService.js';
 import { readIndex, provenanceSummary, sourcesFrom, indexWithOwnCounts } from '../services/connectorService.js';
 import { hasOwnRows } from '../services/answerService.js';
 import { isOwner } from './accessController.js';
@@ -145,7 +145,7 @@ export async function listFindingsHandler(req, res) {
      * records has it, and leaves it alone otherwise. See peopleService.
      */
     const book = await phoneBook().catch(() => new Map());
-    const withPerson = (f) => { const v = findingView(f); v.person = personFor(v.title, book); return v; };
+    const withPerson = (f) => { const v = findingView(f); v.person = personForFinding(v, book); return v; };
 
     const RANK = { high: 0, medium: 1, low: 2 };
     const rows = open.map(withPerson).sort((a, b) =>

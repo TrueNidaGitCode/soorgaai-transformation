@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import {
-  phoneKey, looksLikePhone, buildPhoneBook, personFor, peopleIn, nameColumnsIn, isName,
+  phoneKey, looksLikePhone, buildPhoneBook, personFor, peopleIn, nameColumnsIn, isName, personForFinding, numbersIn,
 } from '../eame-template/services/peopleService.js';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
@@ -151,7 +151,7 @@ describe('how the board uses it', () => {
   const html = read('../eame-template/frontend/index.html');
 
   it('attaches the person to every finding it serves', () => {
-    expect(ctl).toContain('v.person = personFor(v.title, book)');
+    expect(ctl).toContain('v.person = personForFinding(v, book)');
     expect(ctl).toContain('resolved: resolved.map(withPerson)');
   });
 
@@ -242,5 +242,132 @@ describe('the last guard on a value', () => {
   it('accepts a name', () => {
     expect(isName('Rahul Sharma')).toBe(true);
     expect(isName('Priya')).toBe(true);
+  });
+});
+
+/**
+ * A call has two ends, and the CRM may know the other one.
+ *
+ * ── Measured ───────────────────────────────────────────────────────────────
+ *
+ * A clinic rang a patient from 07349250500 and reached him on 07349250983.
+ * Their own Zoho contact for Rahul Sharma carries 07349250500 — the line they
+ * dialled from — so the call's subject, which is correctly the end they
+ * reached, resolved to nobody. The same man sat on the board as "Rahul
+ * Sharma" three times and as a telephone number once.
+ *
+ * Both ends are in the finding's own evidence. A call with two ends, one of
+ * which is a known patient, is a call with that patient.
+ */
+describe('resolving a finding by every number it carries', () => {
+  const book = buildPhoneBook([{
+    columns: ['Full_Name', 'Phone'],
+    rows: [['Rahul Sharma', '07349250500']],
+  }]);
+
+  /** The call finding, shaped as the pipeline stores it. */
+  const call = {
+    title: '07349250983',
+    evidence: {
+      sides: [
+        { dataset: 'Calls (Exotel)', columns: ['name', 'phone', 'call_id', 'received_at', 'called_from', 'called_to'] },
+        { dataset: 'Contacts (Zoho CRM)', columns: ['Full_Name'] },
+      ],
+      leftCount: 1,
+      lines: [
+        ['07349250983', '07349250983', '80592ec7bca66af93e4450e5fe981a9t',
+          '2026-09-29T20:12:12.000Z', '07349250500', '07349250983'],
+        ['Rahul Sharma'],
+      ],
+    },
+  };
+
+  it('reads both ends of the call', () => {
+    expect(numbersIn(call.evidence).sort()).toEqual(['7349250500', '7349250983']);
+  });
+
+  it('never reads a call id or a timestamp as a telephone number', () => {
+    /*
+     * phoneKey takes the last ten digits of whatever it is given, so
+     * 80592ec7bca66af93e4450e5fe981a9t and 2026-09-29T20:12:12.000Z both
+     * yield a perfectly plausible number. Matching on one of those would
+     * name a patient from a coincidence.
+     */
+    expect(numbersIn(call.evidence)).not.toContain('3445059819');
+    expect(numbersIn(call.evidence)).not.toContain('9201212000');
+  });
+
+  it('names the patient the clinic dialled from, because the records do', () => {
+    expect(personForFinding(call, book)).toBe('Rahul Sharma');
+  });
+
+  it('leaves it as a number when no end is anybody the records know', () => {
+    expect(personForFinding(call, buildPhoneBook([]))).toBe('07349250983');
+  });
+
+  it('refuses when the two ends name two different people', () => {
+    /*
+     * The same asymmetry, for the same reason. A clinic's main line sitting
+     * in fifty contact records names fifty people, and that must resolve to
+     * none of them rather than to whichever came first — which is what stops
+     * this attaching every outbound call in the practice to one patient.
+     */
+    const two = buildPhoneBook([{
+      columns: ['Full_Name', 'Phone'],
+      rows: [['Rahul Sharma', '07349250500'], ['Priya Nair', '07349250983']],
+    }]);
+    // The title's own end wins outright when it resolves, which it does here.
+    expect(personForFinding(call, two)).toBe('Priya Nair');
+
+    const crossed = buildPhoneBook([{
+      columns: ['Full_Name', 'Phone'],
+      rows: [['Rahul Sharma', '07349250500'], ['Anil Kumar', '9999999999']],
+    }]);
+    const other = { title: '9999999999', evidence: call.evidence };
+    expect(personForFinding(other, crossed)).toBe('Anil Kumar');
+  });
+
+  it('never turns a name into another name', () => {
+    expect(personForFinding({ title: 'Rahul Sharma', evidence: call.evidence }, book)).toBe('Rahul Sharma');
+  });
+
+  it('is what the board uses', () => {
+    const ctl = read('../eame-template/controllers/agentsController.js');
+    expect(ctl).toContain('v.person = personForFinding(v, book)');
+  });
+});
+
+/**
+ * And a name the provider already knows beats one this application infers.
+ *
+ * readCall had no name field at all, so the connector's `c.name` was always
+ * undefined and any name a provider reported was dropped on the floor.
+ */
+describe('a name the phone system already knows', () => {
+  it('is read where the provider sends one', async () => {
+    const { readCall } = await import('../eame-template/services/phoneProviders.js');
+    const { call } = readCall({
+      Sid: 'x', From: '07349250500', To: '07349250983', Direction: 'outbound-dial',
+      StartTime: '2026-09-29 20:12:12', CustomerName: 'Rahul Sharma',
+    }, 'exotel');
+    expect(call.name).toBe('Rahul Sharma');
+  });
+
+  it('is blank where it does not, and the number stands in', async () => {
+    const { readCall } = await import('../eame-template/services/phoneProviders.js');
+    const { call } = readCall({ Sid: 'x', From: '9845012345', To: '08047188888' }, 'exotel');
+    expect(call.name).toBe('');
+  });
+
+  it('never takes the member of staff who answered as the customer', async () => {
+    /*
+     * Several providers send both. Taking the wrong one labels every call
+     * with whoever picked up rather than whoever rang.
+     */
+    const { readCall } = await import('../eame-template/services/phoneProviders.js');
+    const { call } = readCall({
+      Sid: 'x', From: '9845012345', To: '08047188888', AgentName: 'Front Desk',
+    }, 'exotel');
+    expect(call.name).toBe('');
   });
 });

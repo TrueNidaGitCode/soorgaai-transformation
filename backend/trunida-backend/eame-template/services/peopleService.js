@@ -27,8 +27,15 @@
  */
 import { readIndex, readAllRows, dataVersion } from './connectorService.js';
 
-/** Columns that hold a telephone number. */
-const PHONE_COLUMN = /phone|mobile|whatsapp|\btel\b|contact_?number|msisdn/i;
+/**
+ * Columns that hold a telephone number.
+ *
+ * called_from and called_to are here because a call has two ends and the
+ * connector lands both. Without them the only number a call finding offered
+ * was the one end the application had already picked as the subject — which
+ * is the end the CRM may not know.
+ */
+const PHONE_COLUMN = /phone|mobile|whatsapp|\btel\b|contact_?number|msisdn|called_(from|to)|(from|to|caller|dialled|dialed)_number/i;
 
 /**
  * Columns that hold THIS person's name.
@@ -184,6 +191,78 @@ export function personFor(title, book) {
   if (!looksLikePhone(s)) return s;
   const name = book && book.get ? book.get(phoneKey(s)) : '';
   return name || s;
+}
+
+/** The phone numbers standing in one finding's own evidence rows. */
+export function numbersIn(evidence) {
+  const out = new Set();
+  const sides = Array.isArray(evidence?.sides) && evidence.sides.length === 2
+    ? [
+      { columns: evidence.sides[0].columns, rows: (evidence.lines || []).slice(0, evidence.leftCount) },
+      { columns: evidence.sides[1].columns, rows: (evidence.lines || []).slice(evidence.leftCount) },
+    ]
+    : [{ columns: evidence?.columns || [], rows: evidence?.lines || [] }];
+
+  for (const s of sides) {
+    (s.columns || []).forEach((c, i) => {
+      if (!PHONE_COLUMN.test(c)) return;
+      for (const r of s.rows || []) {
+        const v = (r || [])[i];
+        /*
+         * The value has to look like a telephone, not merely sit in a column
+         * that could hold one. phoneKey takes the last ten digits of whatever
+         * it is given, so a call id of 80592ec7bca66af93e4450e5fe981a9t and a
+         * timestamp of 2026-09-29T20:12:12.000Z both yield a perfectly
+         * plausible number — and matching on one of those would name a
+         * patient from a coincidence.
+         */
+        if (!looksLikePhone(v)) continue;
+        const key = phoneKey(v);
+        if (key) out.add(key);
+      }
+    });
+  }
+  return [...out];
+}
+
+/**
+ * Who a finding is about, using every number it carries.
+ *
+ * ── Why the title alone is not enough ──────────────────────────────────────
+ *
+ * A call has two ends, and the application picks one of them to be the
+ * subject — whoever the call was with, by direction. That is the right
+ * subject, and it is not always the end the CRM knows.
+ *
+ * Measured. A clinic rang a patient from 07349250500 and reached him on
+ * 07349250983. Their own Zoho contact for Rahul Sharma carries 07349250500 —
+ * the line they dialled from — so the call's subject resolved to nobody, and
+ * the same man sat on the board as "Rahul Sharma" three times and as a
+ * telephone number once.
+ *
+ * Both ends are in the finding's own evidence. If exactly one person in the
+ * customer's records is named by ANY number on it, the finding is about that
+ * person: a call with two ends, one of which is a known patient, is a call
+ * with that patient.
+ *
+ * ── And the same refusal, for the same reason ──────────────────────────────
+ *
+ * Exactly one, across every number. A clinic's main line sitting in fifty
+ * contact records names fifty people, and that resolves to none of them
+ * rather than to whichever came first — which is what stops this rule
+ * attaching every outbound call in the practice to one unlucky patient.
+ */
+export function personForFinding(view, book) {
+  const titled = personFor(view?.title, book);
+  if (titled !== String(view?.title || '').trim()) return titled;
+  if (!looksLikePhone(view?.title)) return titled;
+
+  const named = new Set();
+  for (const key of numbersIn(view?.evidence)) {
+    const who = book && book.get ? book.get(key) : '';
+    if (who) named.add(who);
+  }
+  return named.size === 1 ? [...named][0] : titled;
 }
 
 /*

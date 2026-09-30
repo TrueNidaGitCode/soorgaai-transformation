@@ -165,10 +165,22 @@ describe('how the board uses it', () => {
     expect(ui).toContain('if (_last) render(_last);');
   });
 
-  it('hides the box when there is nobody to choose between', () => {
-    // A control offering a choice of one does nothing, and a reader has to
-    // work that out for themselves.
-    expect(ui).toContain('if (people.length < 2)');
+  it('shows the box from the first person, and hides it only when nobody has anything open', () => {
+    /*
+     * This threshold used to be two, on the reasoning that a control offering
+     * a choice of one does nothing. Measured against a real board, that rule
+     * hid the feature exactly when it was most needed: resolving one patient's
+     * four findings to one person took the count from two to one, so making
+     * the board MORE correct made the picker vanish. A reader who cannot see
+     * that the board reads one person at a time does not know to look for it.
+     */
+    expect(ui).toContain('if (!people.length)');
+    expect(ui).not.toContain('if (people.length < 2)');
+  });
+
+  it('counts one person as a person', () => {
+    // "Everyone — 1 people" is a reader noticing the grammar before the finding.
+    expect(ui).toContain("people.length === 1 ? '1 person' : people.length + ' people'");
   });
 
   it('clears a selection whose findings have all resolved', () => {

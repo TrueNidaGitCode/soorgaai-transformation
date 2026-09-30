@@ -432,20 +432,35 @@
   /**
    * The people this morning is about.
    *
-   * Hidden below two, because a box offering a choice of one is a control
-   * that does nothing and a reader has to work that out for themselves. The
-   * count beside each name is how many findings name them, so the person
+   * Shown from the first person, and hidden only when nobody has anything
+   * open.
+   *
+   * ── Why not hidden below two ───────────────────────────────────────────────
+   *
+   * It was, on the reasoning that a box offering a choice of one is a control
+   * that does nothing. Measured against a real board, that rule hid the
+   * feature exactly when it was most needed: resolving a patient's four
+   * findings to one person took the count from two to one, so making the
+   * board more correct made the picker disappear. A reader who cannot see
+   * that the board can be read one person at a time does not know to look for
+   * it — and a board grows people, so the control is a promise about how this
+   * page works rather than a switch that has to pay for itself today.
+   *
+   * The count beside each name is how many findings name them, so the person
    * worth opening first is visible without opening anybody.
    */
   function drawPeople(people) {
     if (!el.who || !el.person) return;
-    if (people.length < 2) {
+    if (!people.length) {
       el.who.hidden = true;
       person = '';
       return;
     }
     el.who.hidden = false;
-    el.person.innerHTML = '<option value="">Everyone &mdash; ' + people.length + ' people</option>'
+    // "1 person", not "1 people" — the board says one man's name four times,
+    // and a reader noticing the grammar before the finding is a reader lost.
+    var many = people.length === 1 ? '1 person' : people.length + ' people';
+    el.person.innerHTML = '<option value="">Everyone &mdash; ' + many + '</option>'
       + people.map(function (p) {
         return '<option value="' + esc(p.person) + '"' + (p.person === person ? ' selected' : '') + '>'
           + esc(p.person) + ' (' + p.findings + ')</option>';

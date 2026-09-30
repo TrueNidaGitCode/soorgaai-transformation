@@ -14,6 +14,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { catalogueFor, entryFor, fillQuestion, matchDataset, severityFor } from '../services/agentCatalogue.js';
+import { phoneBook, personFor, peopleIn } from '../services/peopleService.js';
 import { readIndex, provenanceSummary, sourcesFrom, indexWithOwnCounts } from '../services/connectorService.js';
 import { hasOwnRows } from '../services/answerService.js';
 import { isOwner } from './accessController.js';
@@ -135,8 +136,19 @@ export async function listFindingsHandler(req, res) {
     const resolved = await findingsCollection()
       .find({ state: 'resolved', ...onlyKind }).sort({ resolvedAt: -1 }).limit(20).toArray();
 
+    /*
+     * Who each finding is about, as a person.
+     *
+     * A phone system knows a number and a CRM knows a name, so the same
+     * patient arrives on the board twice under two spellings. The book turns
+     * a number into a name where exactly one person in the customer's own
+     * records has it, and leaves it alone otherwise. See peopleService.
+     */
+    const book = await phoneBook().catch(() => new Map());
+    const withPerson = (f) => { const v = findingView(f); v.person = personFor(v.title, book); return v; };
+
     const RANK = { high: 0, medium: 1, low: 2 };
-    const rows = open.map(findingView).sort((a, b) =>
+    const rows = open.map(withPerson).sort((a, b) =>
       (RANK[a.severity] ?? 1) - (RANK[b.severity] ?? 1)
       || new Date(a.since || 0) - new Date(b.since || 0));
 
@@ -176,9 +188,18 @@ export async function listFindingsHandler(req, res) {
     }));
     return res.json({
       open: rows,
-      resolved: resolved.map(findingView),
+      resolved: resolved.map(withPerson),
       counts,
       categories: byCategory,
+      /*
+       * The people this morning is about, worst first.
+       *
+       * Only people something is wrong with. A list of every patient in the
+       * practice is a directory, and a directory is not what somebody reading
+       * a morning list wants — they want to know which of the handful in
+       * front of them to deal with, and then everything about that one.
+       */
+      people: peopleIn(rows),
       /*
        * Whether this application holds any of the customer's own records.
        *
@@ -525,8 +546,23 @@ export async function startFromCatalogueHandler(req, res) {
      * So it asks catalogueFor, which is what the listing above already calls
      * and what auto-start calls at boot. One binding, three callers, and a
      * button that cannot offer what it will then refuse.
+     *
+     * ── And the COUNTED index, which is the other half ────────────────────
+     *
+     * indexWithOwnCounts, not readIndex. An application ships with sample
+     * datasets whose columns were designed to fit the catalogue, so they
+     * out-score the customer's own records on shape alone; only the row count
+     * separates them. The listing above already knew this — "so the board
+     * never names a dataset the watcher is not actually reading" — and the
+     * button beside it did not.
+     *
+     * Measured: Promise Not Kept was started from the board and bound to
+     * "Calls (Exotel) + Appointment Booking Diary", a sample diary that has
+     * never held a row, while the real follow-ups sat in Tasks. It would have
+     * run every morning against nothing and reported nothing, which is
+     * indistinguishable from a clinic with no unkept promises.
      */
-    const bound = catalogueFor(readIndex(), plan())
+    const bound = catalogueFor(await indexWithOwnCounts(), plan())
       .find((c) => c.id === entry.id && c.ready && c.question);
     if (!bound) {
       return res.status(400).json({ error: `Nothing here holds the records this needs yet.` });

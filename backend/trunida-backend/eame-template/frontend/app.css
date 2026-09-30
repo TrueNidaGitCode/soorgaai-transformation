@@ -2141,6 +2141,53 @@ body {
 .fd__facts dt { margin: 0; font-size: 13px; color: var(--ch-faint); }
 .fd__facts dd { margin: 0; font-size: 13.5px; color: var(--ch-text); word-break: break-word; }
 
+/* One person at a time.
+
+   A morning list answers "what needs me today". The other question a reader
+   has is "what is going on with this one patient", and the box answers it
+   without leaving the screen. Quiet, because it is a lens rather than the
+   point: the findings are the point. */
+.fn__who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+.fn__who-label {
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ch-faint);
+}
+.fn__who-pick {
+  min-width: 240px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--ch-line);
+  border-radius: 8px;
+  background: var(--ch-panel);
+  color: var(--ch-text);
+  font-size: 13.5px;
+  font-family: inherit;
+}
+.fn__who-pick:focus-visible { outline: 2px solid var(--ch-accent); outline-offset: 2px; }
+.fn__who-clear {
+  padding: 8px 12px;
+  border: 1px solid var(--ch-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ch-faint);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.fn__who-clear:hover { color: var(--ch-text); border-color: var(--ch-line-hi); }
+
+@media (max-width: 560px) {
+  .fn__who { flex-wrap: wrap; }
+  .fn__who-pick { min-width: 0; flex: 1 1 100%; }
+}
+
 /* What was actually said, above the table of what was recorded.
 
    A finding built on a phone call carries the whole conversation in one

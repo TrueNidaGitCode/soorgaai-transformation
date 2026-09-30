@@ -283,6 +283,26 @@
       <div class="fn__areagrid" id="fn-areagrid" role="group" aria-label="Business areas"></div>
     </section>
 
+    <!--
+      One person at a time, when somebody wants that.
+
+      A morning list answers "what needs me today". The other question a
+      reader has is "what is going on with this one patient", and until now
+      the only way to ask it was to read every row looking for a name — which
+      is worse than it sounds, because a phone system reports a number and a
+      CRM reports a name, so the same person appears twice under two
+      spellings.
+
+      Only people something is wrong with. A box holding every patient in the
+      practice is a directory, and nobody reading a morning list wants a
+      directory. Hidden entirely when there is nobody to choose between.
+    -->
+    <div class="fn__who" id="fn-who" hidden>
+      <label class="fn__who-label" for="fn-person">Show</label>
+      <select class="fn__who-pick" id="fn-person"></select>
+      <button type="button" class="fn__who-clear" id="fn-person-clear" hidden>Everyone</button>
+    </div>
+
     <div class="fn__list" id="fn-list"></div>
 
     <!-- Example mode only, and only when the demonstration itself has

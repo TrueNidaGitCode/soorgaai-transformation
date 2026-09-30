@@ -266,6 +266,7 @@ export function buildRuntime({ appName = '', copy = {}, connectors = null } = {}
     'services/connectors/phone.js':     { template: 'services/connectors/phone.js' },
     'services/phoneProviders.js':       { template: 'services/phoneProviders.js' },
     'services/exotelApi.js':            { template: 'services/exotelApi.js' },
+    'services/peopleService.js':        { template: 'services/peopleService.js' },
     'controllers/phoneController.js':   { template: 'controllers/phoneController.js' },
     'routes/phoneRoutes.js':            { template: 'routes/phoneRoutes.js' },
     'controllers/connectorController.js': { template: 'controllers/connectorController.js' },

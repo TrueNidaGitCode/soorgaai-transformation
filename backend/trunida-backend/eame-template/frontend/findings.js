@@ -26,6 +26,9 @@
 
   var el = {
     list: document.getElementById('fn-list'),
+    who: document.getElementById('fn-who'),
+    person: document.getElementById('fn-person'),
+    personClear: document.getElementById('fn-person-clear'),
     empty: document.getElementById('fn-empty'),
     emptyTitle: document.getElementById('fn-empty-title'),
     emptyNote: document.getElementById('fn-empty-note'),
@@ -416,6 +419,40 @@
   }
 
   var _last = null;   // the last body, so a chip can re-filter without refetching
+  /*
+   * Whose findings are being shown, or empty for everyone.
+   *
+   * Held beside the category chip and applied the same way: both narrow the
+   * same list, neither refetches, and a selection that no longer has
+   * anything under it clears itself rather than leaving somebody on an empty
+   * screen after their last finding resolved.
+   */
+  var person = '';
+
+  /**
+   * The people this morning is about.
+   *
+   * Hidden below two, because a box offering a choice of one is a control
+   * that does nothing and a reader has to work that out for themselves. The
+   * count beside each name is how many findings name them, so the person
+   * worth opening first is visible without opening anybody.
+   */
+  function drawPeople(people) {
+    if (!el.who || !el.person) return;
+    if (people.length < 2) {
+      el.who.hidden = true;
+      person = '';
+      return;
+    }
+    el.who.hidden = false;
+    el.person.innerHTML = '<option value="">Everyone &mdash; ' + people.length + ' people</option>'
+      + people.map(function (p) {
+        return '<option value="' + esc(p.person) + '"' + (p.person === person ? ' selected' : '') + '>'
+          + esc(p.person) + ' (' + p.findings + ')</option>';
+      }).join('');
+    el.person.value = person;
+    if (el.personClear) el.personClear.hidden = !person;
+  }
 
   function render(body) {
     _last = body;
@@ -427,7 +464,21 @@
     // A chip that no longer has anything under it stops being selected, rather
     // than leaving the reader on an empty screen after a finding resolves.
     if (picked && !cats.some(function (c) { return c.name === picked; })) picked = '';
-    var open = picked ? all.filter(function (f) { return f.category === picked; }) : all;
+
+    /*
+     * And the same rule for the person: a selection with nothing left under it
+     * clears itself, rather than leaving somebody on an empty screen after
+     * their last finding resolved.
+     */
+    var people = body.people || [];
+    if (person && !people.some(function (p) { return p.person === person; })) person = '';
+    drawPeople(people);
+
+    var open = all.filter(function (f) {
+      if (picked && f.category !== picked) return false;
+      if (person && (f.person || f.title) !== person) return false;
+      return true;
+    });
 
     /*
      * The examples follow the switch, because they are the demonstration.
@@ -813,6 +864,24 @@
     picked = picked === name ? '' : name;
     if (_last) render(_last);
   });
+
+  /*
+   * Choosing a person re-filters what is already loaded, exactly as a
+   * category chip does. Both are a lens on one morning's findings rather
+   * than a new question, so neither asks the server again.
+   */
+  if (el.person) {
+    el.person.addEventListener('change', function () {
+      person = el.person.value || '';
+      if (_last) render(_last);
+    });
+  }
+  if (el.personClear) {
+    el.personClear.addEventListener('click', function () {
+      person = '';
+      if (_last) render(_last);
+    });
+  }
 
   if (el.areasLink) {
     el.areasLink.addEventListener('click', function (e) {

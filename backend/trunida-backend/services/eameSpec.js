@@ -110,6 +110,9 @@ export const FIXED_PATHS = [
   // A transcript read into columns a watcher can filter on. Without it the
   // recording is readable by a person and invisible to the product.
   'services/callSignalService.js',
+  // Who a finding is about: a phone system reports a number and a CRM reports
+  // a name, and a board that shows one person as two cannot be read.
+  'services/peopleService.js',
   'controllers/agentsController.js',
   'routes/agentsRoutes.js',
   'frontend/agents.js',
